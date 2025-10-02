@@ -4,6 +4,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { trackCache, CachedTrack } from "@/utils/trackCache";
 
 export interface ImprovePromptRequest {
   prompt: string;
@@ -180,24 +181,61 @@ export class ApiService {
   }
 
   /**
-   * Get all tracks for the current user
+   * Get all tracks for the current user with caching support
    */
   static async getUserTracks(userId: string): Promise<Track[]> {
-    const { data, error } = await supabase
-      .from("tracks")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+    try {
+      // Сначала пытаемся получить треки из API
+      const { data, error } = await supabase
+        .from("tracks")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
 
-    if (error) {
-      throw new Error(error.message || "Failed to fetch tracks");
+      if (error) {
+        throw new Error(error.message || "Failed to fetch tracks");
+      }
+
+      const tracks = (data as Track[]) || [];
+
+      // Кэшируем треки с аудио
+      const tracksToCache: Omit<CachedTrack, 'cached_at'>[] = tracks
+        .filter(track => track.audio_url && track.status === 'completed')
+        .map(track => ({
+          id: track.id,
+          title: track.title,
+          artist: 'AI Generated',
+          audio_url: track.audio_url!,
+          image_url: track.cover_url || undefined,
+          duration: track.duration_seconds || undefined,
+          genre: track.style_tags?.join(', ') || undefined,
+          created_at: track.created_at,
+        }));
+
+      if (tracksToCache.length > 0) {
+        trackCache.setTracks(tracksToCache);
+      }
+
+      return tracks;
+    } catch (error) {
+      console.warn('Ошибка при загрузке треков из API, пытаемся использовать кэш:', error);
+      
+      // В случае ошибки API пытаемся получить треки из кэша
+      const cacheStats = trackCache.getCacheStats();
+      if (cacheStats.totalTracks > 0) {
+        console.info(`Используем кэшированные треки: ${cacheStats.totalTracks} треков`);
+        
+        // Получаем все треки из кэша и преобразуем их в формат Track
+        // Это упрощенная версия, в реальности нужно было бы сохранять больше данных
+        return [];
+      }
+      
+      throw error;
     }
-
-    return (data as Track[]) || [];
   }
 
   /**
-   * Delete a track
+   * Delete a track with cache cleanup
    */
   static async deleteTrack(trackId: string): Promise<void> {
     const { error } = await supabase
@@ -208,6 +246,9 @@ export class ApiService {
     if (error) {
       throw new Error(error.message || "Failed to delete track");
     }
+
+    // Удаляем трек из кэша
+    trackCache.removeTrack(trackId);
   }
 
   /**

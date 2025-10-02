@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useRef, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, useRef, ReactNode, useEffect, useCallback, useMemo } from 'react';
 import { usePlayAnalytics } from '@/hooks/usePlayAnalytics';
 import { logError, logInfo } from '@/utils/logger';
 
@@ -53,18 +53,51 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   const [currentVersionIndex, setCurrentVersionIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(new Audio());
 
+  // Мемоизированные обработчики событий аудио
+  const handleTimeUpdate = useCallback(() => {
+    setCurrentTime(audioRef.current.currentTime);
+  }, []);
+
+  const handleDurationChange = useCallback(() => {
+    setDuration(audioRef.current.duration);
+  }, []);
+
+  const handlePlay = useCallback(() => {
+    setIsPlaying(true);
+  }, []);
+
+  const handlePause = useCallback(() => {
+    setIsPlaying(false);
+  }, []);
+
+  const playNext = useCallback(() => {
+    if (queue.length === 0) return;
+    
+    const nextIndex = (currentQueueIndex + 1) % queue.length;
+    setCurrentQueueIndex(nextIndex);
+    
+    const nextTrack = queue[nextIndex];
+    if (nextTrack?.audio_url) {
+      const audio = audioRef.current;
+      audio.src = nextTrack.audio_url;
+      audio.load();
+      audio.play().catch(err => logError('Ошибка воспроизведения следующего трека', err as Error, 'AudioPlayerContext', {
+        trackId: nextTrack.id,
+        trackTitle: nextTrack.title
+      }));
+      setCurrentTrack(nextTrack);
+      setIsPlaying(true);
+    }
+  }, [queue, currentQueueIndex]);
+
+  const handleEnded = useCallback(() => {
+    setIsPlaying(false);
+    playNext();
+  }, [playNext]);
+
   // Setup audio element event listeners
   useEffect(() => {
     const audio = audioRef.current;
-
-    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const handleDurationChange = () => setDuration(audio.duration);
-    const handleEnded = () => {
-      setIsPlaying(false);
-      playNext();
-    };
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('durationchange', handleDurationChange);
@@ -79,7 +112,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
     };
-  }, []);
+  }, [handleTimeUpdate, handleDurationChange, handleEnded, handlePlay, handlePause]);
 
   // Update volume when changed
   useEffect(() => {
@@ -93,7 +126,8 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     currentTime
   );
 
-  const playTrack = (track: Track) => {
+  // Мемоизированная функция воспроизведения трека
+  const playTrack = useCallback((track: Track) => {
     if (!track.audio_url) return;
     
     const audio = audioRef.current;
@@ -111,9 +145,10 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     if (trackIndex !== -1) {
       setCurrentQueueIndex(trackIndex);
     }
-  };
+  }, [queue]);
 
-  const playTrackWithQueue = (track: Track, allTracks: Track[]) => {
+  // Мемоизированная функция воспроизведения с очередью
+  const playTrackWithQueue = useCallback((track: Track, allTracks: Track[]) => {
     if (!track.audio_url) return;
     
     // Filter only tracks with audio
@@ -128,9 +163,10 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     setQueue(playableTracks);
     setCurrentQueueIndex(trackIndex);
     playTrack(track);
-  };
+  }, [playTrack]);
 
-  const togglePlayPause = () => {
+  // Мемоизированная функция переключения воспроизведения
+  const togglePlayPause = useCallback(() => {
     const audio = audioRef.current;
     if (isPlaying) {
       audio.pause();
@@ -139,27 +175,22 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
         currentTrackId: currentTrack?.id
       }));
     }
-  };
+  }, [isPlaying, currentTrack?.id]);
 
-  const seekTo = (time: number) => {
+  // Мемоизированная функция перемотки
+  const seekTo = useCallback((time: number) => {
     audioRef.current.currentTime = time;
     setCurrentTime(time);
-  };
+  }, []);
 
-  const setVolume = (newVolume: number) => {
+  // Мемоизированная функция установки громкости
+  const setVolume = useCallback((newVolume: number) => {
     const clampedVolume = Math.max(0, Math.min(1, newVolume));
     setVolumeState(clampedVolume);
-  };
+  }, []);
 
-  const playNext = () => {
-    if (queue.length === 0) return;
-    
-    const nextIndex = (currentQueueIndex + 1) % queue.length;
-    setCurrentQueueIndex(nextIndex);
-    playTrack(queue[nextIndex]);
-  };
-
-  const playPrevious = () => {
+  // Мемоизированная функция предыдущего трека
+  const playPrevious = useCallback(() => {
     if (queue.length === 0) return;
     
     // If more than 3 seconds in, restart current track
@@ -170,17 +201,23 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     
     const previousIndex = currentQueueIndex <= 0 ? queue.length - 1 : currentQueueIndex - 1;
     setCurrentQueueIndex(previousIndex);
-    playTrack(queue[previousIndex]);
-  };
+    
+    const previousTrack = queue[previousIndex];
+    if (previousTrack) {
+      playTrack(previousTrack);
+    }
+  }, [queue, currentTime, currentQueueIndex, seekTo, playTrack]);
 
-  const addToQueue = (track: Track) => {
+  // Мемоизированная функция добавления в очередь
+  const addToQueue = useCallback((track: Track) => {
     setQueue(prev => {
       if (prev.find(t => t.id === track.id)) return prev;
       return [...prev, track];
     });
-  };
+  }, []);
 
-  const removeFromQueue = (trackId: string) => {
+  // Мемоизированная функция удаления из очереди
+  const removeFromQueue = useCallback((trackId: string) => {
     setQueue(prev => {
       const newQueue = prev.filter(t => t.id !== trackId);
       // Adjust index if needed
@@ -189,14 +226,16 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       }
       return newQueue;
     });
-  };
+  }, [currentQueueIndex]);
 
-  const clearQueue = () => {
+  // Мемоизированная функция очистки очереди
+  const clearQueue = useCallback(() => {
     setQueue([]);
     setCurrentQueueIndex(0);
-  };
+  }, []);
 
-  const reorderQueue = (startIndex: number, endIndex: number) => {
+  // Мемоизированная функция переупорядочивания очереди
+  const reorderQueue = useCallback((startIndex: number, endIndex: number) => {
     setQueue(prev => {
       const result = Array.from(prev);
       const [removed] = result.splice(startIndex, 1);
@@ -213,9 +252,26 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       
       return result;
     });
-  };
+  }, [currentQueueIndex]);
 
-  const switchToVersion = (versionId: string) => {
+  // Мемоизированная функция получения доступных версий
+  const getAvailableVersions = useCallback((): Track[] => {
+    if (!currentTrack) return [];
+    
+    // Get parent track ID (current track's parent or itself if it's the parent)
+    const parentId = currentTrack.parentTrackId || currentTrack.id;
+    
+    // Find all tracks in queue with the same parent
+    const versions = queue.filter(track => {
+      const trackParentId = track.parentTrackId || track.id;
+      return trackParentId === parentId;
+    });
+    
+    return versions;
+  }, [currentTrack, queue]);
+
+  // Мемоизированная функция переключения версии
+  const switchToVersion = useCallback((versionId: string) => {
     const versions = getAvailableVersions();
     const versionIndex = versions.findIndex(v => v.id === versionId);
     
@@ -239,50 +295,58 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     }
-  };
+  }, [getAvailableVersions, isPlaying]);
 
-  const getAvailableVersions = (): Track[] => {
-    if (!currentTrack) return [];
-    
-    // Get parent track ID (current track's parent or itself if it's the parent)
-    const parentId = currentTrack.parentTrackId || currentTrack.id;
-    
-    // Find all tracks in queue with the same parent
-    const versions = queue.filter(track => {
-      const trackParentId = track.parentTrackId || track.id;
-      return trackParentId === parentId;
-    });
-    
-    return versions;
-  };
+  // Мемоизированное значение контекста
+  const contextValue = useMemo(() => ({
+    currentTrack,
+    isPlaying,
+    currentTime,
+    duration,
+    volume,
+    queue,
+    currentQueueIndex,
+    playTrack,
+    playTrackWithQueue,
+    togglePlayPause,
+    seekTo,
+    setVolume,
+    playNext,
+    playPrevious,
+    addToQueue,
+    removeFromQueue,
+    clearQueue,
+    reorderQueue,
+    switchToVersion,
+    getAvailableVersions,
+    currentVersionIndex,
+    audioRef,
+  }), [
+    currentTrack,
+    isPlaying,
+    currentTime,
+    duration,
+    volume,
+    queue,
+    currentQueueIndex,
+    playTrack,
+    playTrackWithQueue,
+    togglePlayPause,
+    seekTo,
+    setVolume,
+    playNext,
+    playPrevious,
+    addToQueue,
+    removeFromQueue,
+    clearQueue,
+    reorderQueue,
+    switchToVersion,
+    getAvailableVersions,
+    currentVersionIndex,
+  ]);
 
   return (
-    <AudioPlayerContext.Provider
-      value={{
-        currentTrack,
-        isPlaying,
-        currentTime,
-        duration,
-        volume,
-        queue,
-        currentQueueIndex,
-        playTrack,
-        playTrackWithQueue,
-        togglePlayPause,
-        seekTo,
-        setVolume,
-        playNext,
-        playPrevious,
-        addToQueue,
-        removeFromQueue,
-        clearQueue,
-        reorderQueue,
-        switchToVersion,
-        getAvailableVersions,
-        currentVersionIndex,
-        audioRef,
-      }}
-    >
+    <AudioPlayerContext.Provider value={contextValue}>
       {children}
     </AudioPlayerContext.Provider>
   );

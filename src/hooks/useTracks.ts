@@ -1,12 +1,13 @@
 /**
  * Custom hook for managing user tracks
- * Handles data fetching and track operations
+ * Handles data fetching and track operations with caching support
  */
 
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ApiService, Track } from "@/services/api.service";
 import { supabase } from "@/integrations/supabase/client";
+import { trackCache, CachedTrack } from "@/utils/trackCache";
 
 export const useTracks = (refreshTrigger?: number) => {
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -22,7 +23,27 @@ export const useTracks = (refreshTrigger?: number) => {
         return;
       }
 
+      // Сначала пытаемся загрузить треки из кэша
       const userTracks = await ApiService.getUserTracks(user.id);
+      
+      // Кэшируем загруженные треки
+      const tracksToCache: Omit<CachedTrack, 'cached_at'>[] = userTracks
+        .filter(track => track.audio_url) // Кэшируем только треки с аудио
+        .map(track => ({
+          id: track.id,
+          title: track.title,
+          artist: 'AI Generated', // Можно добавить поле artist в Track интерфейс
+          audio_url: track.audio_url!,
+          image_url: track.cover_url || undefined,
+          duration: track.duration_seconds || undefined,
+          genre: track.style_tags?.join(', ') || undefined,
+          created_at: track.created_at,
+        }));
+
+      if (tracksToCache.length > 0) {
+        trackCache.setTracks(tracksToCache);
+      }
+
       setTracks(userTracks);
     } catch (error) {
       console.error("Error loading tracks:", error);
@@ -40,6 +61,9 @@ export const useTracks = (refreshTrigger?: number) => {
     try {
       await ApiService.deleteTrack(trackId);
       setTracks(tracks.filter((t) => t.id !== trackId));
+      
+      // Удаляем трек из кэша
+      trackCache.removeTrack(trackId);
       
       toast({
         title: "Трек удалён",
