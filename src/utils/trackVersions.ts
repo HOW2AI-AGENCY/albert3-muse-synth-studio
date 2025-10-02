@@ -1,4 +1,5 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
+import { logError } from '@/utils/logger';
 
 export interface TrackWithVersions {
   id: string;
@@ -84,7 +85,9 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
 
     return result;
   } catch (error) {
-    console.error('Error loading track with versions:', error);
+    logError('Ошибка получения треков с версиями', error as Error, 'trackVersions', {
+      trackId
+    });
     return [];
   }
 }

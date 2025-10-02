@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useRef, ReactNode, useEffect } from 'react';
 import { usePlayAnalytics } from '@/hooks/usePlayAnalytics';
+import { logError, logInfo } from '@/utils/logger';
 
 interface Track {
   id: string;
@@ -98,7 +99,10 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     const audio = audioRef.current;
     audio.src = track.audio_url;
     audio.load();
-    audio.play().catch(err => console.error('Error playing track:', err));
+    audio.play().catch(err => logError('Ошибка воспроизведения трека', err as Error, 'AudioPlayerContext', {
+        trackId: track.id,
+        trackTitle: track.title
+      }));
     setCurrentTrack(track);
     setIsPlaying(true);
     
@@ -131,7 +135,9 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     if (isPlaying) {
       audio.pause();
     } else {
-      audio.play().catch(err => console.error('Error playing:', err));
+      audio.play().catch(err => logError('Ошибка воспроизведения', err as Error, 'AudioPlayerContext', {
+        currentTrackId: currentTrack?.id
+      }));
     }
   };
 
@@ -224,7 +230,11 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       
       if (isPlaying) {
         audio.play().catch(error => {
-          console.error('Error playing version:', error);
+          logError('Ошибка воспроизведения версии', error as Error, 'AudioPlayerContext', {
+            versionId,
+            trackId: version.id,
+            trackTitle: version.title
+          });
           setIsPlaying(false);
         });
       }

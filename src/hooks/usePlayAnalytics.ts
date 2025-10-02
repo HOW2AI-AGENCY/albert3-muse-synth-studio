@@ -58,14 +58,16 @@ export const usePlayAnalytics = (
         
         // Record the play
         AnalyticsService.recordPlay(trackId).catch(error => {
-          console.error('Failed to record play:', error);
+          logError('Ошибка записи воспроизведения', error as Error, 'usePlayAnalytics', {
+            trackId
+          });
         });
 
         // Store timestamp to prevent duplicate counts
         const storageKey = `${STORAGE_KEY_PREFIX}${trackId}`;
         localStorage.setItem(storageKey, Date.now().toString());
 
-        console.log(`Play recorded for track ${trackId}`);
+        logInfo('Воспроизведение записано', 'usePlayAnalytics', { trackId });
       }
     }, 1000);
 
