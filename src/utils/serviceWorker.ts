@@ -177,6 +177,27 @@ class ServiceWorkerManager {
 export const serviceWorkerManager = new ServiceWorkerManager();
 
 /**
+ * Экспорт функции для кэширования аудио файлов
+ */
+export const cacheAudioFile = async (url: string): Promise<void> => {
+  return serviceWorkerManager.cacheAudioFile(url);
+};
+
+/**
+ * Экспорт функции для очистки кэша
+ */
+export const clearAudioCache = async (): Promise<void> => {
+  return serviceWorkerManager.clearAudioCache();
+};
+
+/**
+ * Экспорт функции для получения информации о кэше
+ */
+export const getCacheInfo = async (): Promise<CacheInfo | null> => {
+  return serviceWorkerManager.getCacheInfo();
+};
+
+/**
  * Хук для автоматической регистрации Service Worker при загрузке приложения
  */
 export const initServiceWorker = async (): Promise<void> => {
