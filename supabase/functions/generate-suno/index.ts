@@ -12,11 +12,27 @@ serve(async (req) => {
   }
 
   try {
-    const { trackId, userId, title, prompt, lyrics, hasVocals = false, styleTags = [], customMode = false } = await req.json();
+    // Extract user from JWT token
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: req.headers.get('Authorization')! } }
+    });
+
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { trackId, title, prompt, lyrics, hasVocals = false, styleTags = [], customMode = false } = await req.json();
+    const userId = user.id;
     
     const SUNO_API_KEY = Deno.env.get("SUNO_API_KEY");
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     if (!SUNO_API_KEY) {
       throw new Error("SUNO_API_KEY is not configured");

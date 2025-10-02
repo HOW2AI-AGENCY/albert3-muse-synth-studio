@@ -6,6 +6,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { z } from "zod";
+
+const authSchema = z.object({
+  email: z.string().trim().email("Invalid email address").max(255, "Email too long"),
+  password: z.string()
+    .min(8, "Password must be at least 8 characters")
+    .max(128, "Password too long")
+    .regex(/[A-Z]/, "Password must contain uppercase letter")
+    .regex(/[a-z]/, "Password must contain lowercase letter")
+    .regex(/[0-9]/, "Password must contain number")
+});
 
 export const AuthForm = () => {
   const [email, setEmail] = useState("");
@@ -18,9 +29,18 @@ export const AuthForm = () => {
     setIsLoading(true);
 
     try {
+      const validation = authSchema.safeParse({ email, password });
+      if (!validation.success) {
+        const firstError = validation.error.errors[0];
+        throw new Error(firstError.message);
+      }
+
       const { error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: validation.data.email,
+        password: validation.data.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
       });
 
       if (error) throw error;
@@ -45,8 +65,13 @@ export const AuthForm = () => {
     setIsLoading(true);
 
     try {
+      const emailValidation = z.string().email().safeParse(email);
+      if (!emailValidation.success) {
+        throw new Error("Invalid email address");
+      }
+
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: emailValidation.data,
         password,
       });
 
@@ -125,11 +150,11 @@ export const AuthForm = () => {
             <div className="space-y-2">
               <Input
                 type="password"
-                placeholder="Password (min. 6 characters)"
+                placeholder="Password (min. 8 chars, uppercase, lowercase, number)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
                 disabled={isLoading}
               />
             </div>

@@ -13,6 +13,12 @@ serve(async (req) => {
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Unauthorized');
+    }
+
     const { trackId, prompt } = await req.json();
 
     if (!trackId || !prompt) {

@@ -1,16 +1,16 @@
 project_id = "qycfsepwguaiwcquwwbw"
 
 [functions.improve-prompt]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-music]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-lyrics]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-suno]
-verify_jwt = false
+verify_jwt = true
 
 [functions.suno-callback]
 verify_jwt = false

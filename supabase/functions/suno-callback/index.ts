@@ -6,6 +6,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const MAX_PAYLOAD_SIZE = 5 * 1024 * 1024; // 5MB limit
+
+function sanitizeText(text: string | undefined): string | null {
+  if (!text) return null;
+  // Remove potential XSS vectors and limit length
+  return text.replace(/<script[^>]*>.*?<\/script>/gi, '')
+    .replace(/<[^>]+>/g, '')
+    .trim()
+    .substring(0, 10000);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -16,7 +27,26 @@ serve(async (req) => {
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Check content length before reading
+    const contentLength = req.headers.get('content-length');
+    if (contentLength && parseInt(contentLength) > MAX_PAYLOAD_SIZE) {
+      console.error('Payload too large:', contentLength);
+      return new Response(
+        JSON.stringify({ ok: false, error: 'payload_too_large' }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const bodyText = await req.text();
+    
+    // Additional size check after reading
+    if (bodyText.length > MAX_PAYLOAD_SIZE) {
+      console.error('Payload too large after read:', bodyText.length);
+      return new Response(
+        JSON.stringify({ ok: false, error: 'payload_too_large' }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     let payload: any;
     try {
       payload = JSON.parse(bodyText || "{}");
@@ -115,15 +145,15 @@ serve(async (req) => {
       const firstAudioUrl = successTask.audioUrl || successTask.audio_url || 
                            successTask.stream_audio_url || successTask.source_stream_audio_url;
       const firstDuration = successTask.duration || successTask.duration_seconds || 0;
-      const actualLyrics = successTask.prompt || successTask.lyric || successTask.lyrics;
-      const title = successTask.title || "Generated Track";
+      const actualLyrics = sanitizeText(successTask.prompt || successTask.lyric || successTask.lyrics);
+      const title = sanitizeText(successTask.title) || "Generated Track";
       const coverUrl = successTask.image_url || successTask.image_large_url || successTask.imageUrl;
       const videoUrl = successTask.video_url || successTask.videoUrl;
-      const sunoId = successTask.id;
-      const modelName = successTask.model || successTask.model_name;
+      const sunoId = sanitizeText(successTask.id);
+      const modelName = sanitizeText(successTask.model || successTask.model_name);
       const createdAtSuno = successTask.created_at || successTask.createdAt;
       const tagsString = successTask.tags || '';
-      const styleTags = tagsString ? tagsString.split(/[,;]/).map((t: string) => t.trim()).filter(Boolean) : null;
+      const styleTags = tagsString ? tagsString.split(/[,;]/).map((t: string) => sanitizeText(t)).filter(Boolean) : null;
       
       console.log("Suno callback: Full metadata", { 
         audioUrl: firstAudioUrl?.substring(0, 50),
