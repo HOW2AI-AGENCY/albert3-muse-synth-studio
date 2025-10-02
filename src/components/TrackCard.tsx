@@ -70,7 +70,7 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick }: TrackCardPr
   
   // Проверяем валидность данных трека
   if (!track || !track.id) {
-    logError('Invalid track data', 'TrackCard validation', 'TrackCard', { track });
+    logError('Invalid track data', undefined, 'TrackCard', { track });
     return (
       <Card className="p-4">
         <div className="text-center">
@@ -96,8 +96,7 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick }: TrackCardPr
       e.stopPropagation();
       toggleLike();
     } catch (error) {
-      logError('TrackCard like error', 'TrackCard', 'TrackCard', { 
-        error: error instanceof Error ? error.message : String(error),
+      logError('TrackCard like error', error instanceof Error ? error : new Error(String(error)), 'TrackCard', { 
         trackId: track.id, 
         trackTitle: track.title 
       });
@@ -134,8 +133,7 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick }: TrackCardPr
         });
       }
     } catch (error) {
-      logError('TrackCard play error', 'TrackCard', 'TrackCard', {
-        error: error instanceof Error ? error.message : String(error),
+      logError('TrackCard play error', error instanceof Error ? error : new Error(String(error)), 'TrackCard', {
         trackId: track.id,
         trackTitle: track.title,
         audioUrl: track.audio_url
@@ -294,8 +292,9 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick }: TrackCardPr
   );
 };
 
-export const TrackCard = withErrorBoundary(memo(TrackCardComponent), {
-  fallback: (
+export const TrackCard = withErrorBoundary(
+  memo(TrackCardComponent),
+  (
     <Card className="p-4">
       <div className="text-center">
         <Music className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
@@ -304,11 +303,10 @@ export const TrackCard = withErrorBoundary(memo(TrackCardComponent), {
       </div>
     </Card>
   ),
-  onError: (error, errorInfo) => {
-    logError('TrackCard Error Boundary', 'TrackCard', 'ErrorBoundary', {
-      error: error.message,
+  (error, errorInfo) => {
+    logError('TrackCard Error Boundary', error, 'ErrorBoundary', {
       stack: error.stack,
       componentStack: errorInfo.componentStack
     });
   }
-});
+);

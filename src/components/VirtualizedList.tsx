@@ -33,7 +33,7 @@ export const VirtualizedList: React.FC<VirtualizedListProps> = ({
         <div key={track.id} className="px-2 py-1">
           <TrackCard 
             {...track}
-            onClick={() => handleTrackSelect(track)}
+            onClick={() => handleTrackSelect(track)}={() => handleTrackSelect(track)}
           />
         </div>
       ))}
