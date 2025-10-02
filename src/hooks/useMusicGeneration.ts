@@ -72,9 +72,8 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
         return;
       }
 
-      // Start generation process (track will be created by the edge function)
+      // Start generation process (userId extracted from JWT by edge function)
       await ApiService.generateMusic({
-        userId: user.id,
         title: prompt.substring(0, 50) || "Untitled Track",
         prompt: prompt,
         provider,
