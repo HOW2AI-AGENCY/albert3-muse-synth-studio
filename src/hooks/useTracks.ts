@@ -59,6 +59,58 @@ export const useTracks = (refreshTrigger?: number) => {
     loadTracks();
   }, [refreshTrigger]);
 
+  // Realtime updates: reflect INSERT/UPDATE/DELETE immediately
+  useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let userId: string | null = null;
+
+    const setup = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      userId = user.id;
+
+      channel = supabase
+        .channel(`tracks-user-${user.id}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'tracks', filter: `user_id=eq.${user.id}` },
+          (payload) => {
+            if (payload.eventType === 'INSERT') {
+              // @ts-ignore payload.new typed as any
+              setTracks((prev) => [payload.new as Track, ...prev]);
+            } else if (payload.eventType === 'UPDATE') {
+              // @ts-ignore
+              const updated = payload.new as Track;
+              setTracks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+            } else if (payload.eventType === 'DELETE') {
+              // @ts-ignore
+              const removed = payload.old as { id: string };
+              setTracks((prev) => prev.filter((t) => t.id !== removed.id));
+            }
+          }
+        )
+        .subscribe();
+    };
+
+    setup();
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Fallback polling while there are processing tracks
+  useEffect(() => {
+    const hasProcessing = tracks.some((t) => t.status === 'processing');
+    if (!hasProcessing) return;
+
+    const interval = setInterval(() => {
+      loadTracks();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [tracks]);
+
   return {
     tracks,
     isLoading,
