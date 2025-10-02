@@ -83,7 +83,9 @@ export type Database = {
       tracks: {
         Row: {
           audio_url: string | null
+          cover_url: string | null
           created_at: string
+          created_at_suno: string | null
           duration: number | null
           duration_seconds: number | null
           error_message: string | null
@@ -95,20 +97,25 @@ export type Database = {
           like_count: number | null
           lyrics: string | null
           metadata: Json | null
+          model_name: string | null
           mood: string | null
           prompt: string
           provider: string | null
           reference_audio_url: string | null
           status: string
           style_tags: string[] | null
+          suno_id: string | null
           title: string
           updated_at: string
           user_id: string
+          video_url: string | null
           view_count: number | null
         }
         Insert: {
           audio_url?: string | null
+          cover_url?: string | null
           created_at?: string
+          created_at_suno?: string | null
           duration?: number | null
           duration_seconds?: number | null
           error_message?: string | null
@@ -120,20 +127,25 @@ export type Database = {
           like_count?: number | null
           lyrics?: string | null
           metadata?: Json | null
+          model_name?: string | null
           mood?: string | null
           prompt: string
           provider?: string | null
           reference_audio_url?: string | null
           status?: string
           style_tags?: string[] | null
+          suno_id?: string | null
           title: string
           updated_at?: string
           user_id: string
+          video_url?: string | null
           view_count?: number | null
         }
         Update: {
           audio_url?: string | null
+          cover_url?: string | null
           created_at?: string
+          created_at_suno?: string | null
           duration?: number | null
           duration_seconds?: number | null
           error_message?: string | null
@@ -145,15 +157,18 @@ export type Database = {
           like_count?: number | null
           lyrics?: string | null
           metadata?: Json | null
+          model_name?: string | null
           mood?: string | null
           prompt?: string
           provider?: string | null
           reference_audio_url?: string | null
           status?: string
           style_tags?: string[] | null
+          suno_id?: string | null
           title?: string
           updated_at?: string
           user_id?: string
+          video_url?: string | null
           view_count?: number | null
         }
         Relationships: []

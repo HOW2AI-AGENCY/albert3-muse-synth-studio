@@ -111,15 +111,29 @@ serve(async (req) => {
 
     // Process successful tasks - Suno returns 2 versions, save both as separate tracks
     if (successTask) {
+      // Extract all metadata from Suno response
       const firstAudioUrl = successTask.audioUrl || successTask.audio_url || 
                            successTask.stream_audio_url || successTask.source_stream_audio_url;
       const firstDuration = successTask.duration || successTask.duration_seconds || 0;
       const actualLyrics = successTask.prompt || successTask.lyric || successTask.lyrics;
       const title = successTask.title || "Generated Track";
+      const coverUrl = successTask.image_url || successTask.image_large_url || successTask.imageUrl;
+      const videoUrl = successTask.video_url || successTask.videoUrl;
+      const sunoId = successTask.id;
+      const modelName = successTask.model || successTask.model_name;
+      const createdAtSuno = successTask.created_at || successTask.createdAt;
       
-      console.log("Suno callback: processing track", { audioUrl: firstAudioUrl?.substring(0, 50) });
+      console.log("Suno callback: Full metadata", { 
+        audioUrl: firstAudioUrl?.substring(0, 50),
+        coverUrl: coverUrl?.substring(0, 50),
+        videoUrl: videoUrl?.substring(0, 50),
+        sunoId,
+        modelName,
+        title,
+        lyrics: actualLyrics?.substring(0, 50)
+      });
 
-      // Update the original track with first version
+      // Update the original track with first version and all metadata
       await supabase
         .from("tracks")
         .update({
@@ -129,6 +143,11 @@ serve(async (req) => {
           duration_seconds: Math.round(firstDuration),
           lyrics: actualLyrics,
           title: title,
+          cover_url: coverUrl,
+          video_url: videoUrl,
+          suno_id: sunoId,
+          model_name: modelName,
+          created_at_suno: createdAtSuno,
           metadata: { suno_data: tasks, suno_task_id: taskId },
         })
         .eq("id", track.id);
@@ -149,6 +168,13 @@ serve(async (req) => {
             .single();
 
           if (originalTrack) {
+            // Extract metadata for second version
+            const secondCoverUrl = secondTask.image_url || secondTask.image_large_url || secondTask.imageUrl;
+            const secondVideoUrl = secondTask.video_url || secondTask.videoUrl;
+            const secondSunoId = secondTask.id;
+            const secondModelName = secondTask.model || secondTask.model_name;
+            const secondCreatedAtSuno = secondTask.created_at || secondTask.createdAt;
+
             await supabase
               .from("tracks")
               .insert({
@@ -163,10 +189,18 @@ serve(async (req) => {
                 lyrics: secondTask.prompt || secondTask.lyric || secondTask.lyrics || originalTrack.lyrics,
                 has_vocals: originalTrack.has_vocals,
                 style_tags: originalTrack.style_tags,
+                cover_url: secondCoverUrl,
+                video_url: secondVideoUrl,
+                suno_id: secondSunoId,
+                model_name: secondModelName,
+                created_at_suno: secondCreatedAtSuno,
                 metadata: { suno_data: secondTask, suno_task_id: taskId, version: 2 },
               });
 
-            console.log("Suno callback: created second version track", { secondAudioUrl });
+            console.log("Suno callback: created second version track", { 
+              secondAudioUrl: secondAudioUrl?.substring(0, 50),
+              secondCoverUrl: secondCoverUrl?.substring(0, 50)
+            });
           }
         }
       }

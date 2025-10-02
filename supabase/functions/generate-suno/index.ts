@@ -228,13 +228,24 @@ async function pollSunoCompletion(
 
       const data = await response.json();
       
+      // Log full response for debugging (only first 3 attempts to avoid spam)
+      if (attempts <= 3) {
+        console.log('Suno poll full response:', JSON.stringify(data, null, 2));
+      }
+      
       if (data.code !== 200 || !data.data) {
         console.error('Invalid response:', data);
         continue;
       }
 
       const tasks = data.data;
-      const statusesLog = tasks.map((t: any) => ({ id: t.id || t.taskId, status: t.status, hasAudio: Boolean(t.audioUrl || t.audio_url) }));
+      const statusesLog = tasks.map((t: any) => ({ 
+        id: t.id || t.taskId, 
+        status: t.status, 
+        hasAudio: Boolean(t.audioUrl || t.audio_url || t.stream_audio_url || t.source_stream_audio_url),
+        hasCover: Boolean(t.image_url || t.image_large_url || t.imageUrl),
+        hasVideo: Boolean(t.video_url || t.videoUrl)
+      }));
       console.log('Suno poll statuses:', statusesLog);
       
       // Check if all tasks are complete
@@ -258,12 +269,29 @@ async function pollSunoCompletion(
 
       if (allComplete && tasks.length > 0) {
         // Use first successful track with audio
-        const successTrack = tasks.find((t: any) => t.audioUrl || t.audio_url);
+        const successTrack = tasks.find((t: any) => 
+          t.audioUrl || t.audio_url || t.stream_audio_url || t.source_stream_audio_url
+        );
         
         if (successTrack) {
-          const audioUrl = successTrack.audioUrl || successTrack.audio_url;
-          const duration = successTrack.duration || 0;
-          const actualLyrics = successTrack.lyric || successTrack.lyrics;
+          const audioUrl = successTrack.audioUrl || successTrack.audio_url || 
+                          successTrack.stream_audio_url || successTrack.source_stream_audio_url;
+          const duration = successTrack.duration || successTrack.duration_seconds || 0;
+          const actualLyrics = successTrack.lyric || successTrack.lyrics || successTrack.prompt;
+          const coverUrl = successTrack.image_url || successTrack.image_large_url || successTrack.imageUrl;
+          const videoUrl = successTrack.video_url || successTrack.videoUrl;
+          const sunoId = successTrack.id;
+          const modelName = successTrack.model || successTrack.model_name;
+          const createdAtSuno = successTrack.created_at || successTrack.createdAt;
+
+          console.log('Track metadata extracted:', {
+            audioUrl: audioUrl?.substring(0, 50),
+            coverUrl: coverUrl?.substring(0, 50),
+            videoUrl: videoUrl?.substring(0, 50),
+            sunoId,
+            modelName,
+            duration
+          });
 
           await supabase
             .from('tracks')
@@ -271,7 +299,13 @@ async function pollSunoCompletion(
               status: 'completed',
               audio_url: audioUrl,
               duration: Math.round(duration),
+              duration_seconds: Math.round(duration),
               lyrics: actualLyrics,
+              cover_url: coverUrl,
+              video_url: videoUrl,
+              suno_id: sunoId,
+              model_name: modelName,
+              created_at_suno: createdAtSuno,
               metadata: { suno_data: tasks }
             })
             .eq('id', trackId);
