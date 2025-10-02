@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DetailPanelContent } from "./DetailPanelContent";
+import { TrackDeleteDialog } from "@/components/tracks/TrackDeleteDialog";
+import { ApiService } from "@/services/api.service";
 
 interface DetailPanelProps {
   track: {
@@ -41,6 +43,7 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
   const [isSaving, setIsSaving] = useState(false);
   const [versions, setVersions] = useState<any[]>([]);
   const [stems, setStems] = useState<any[]>([]);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
 
   // Load track versions and stems
@@ -120,19 +123,12 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
   };
 
   const handleDelete = async () => {
-    if (!confirm("Вы уверены, что хотите удалить этот трек?")) return;
-
     try {
-      const { error } = await supabase
-        .from("tracks")
-        .delete()
-        .eq("id", track.id);
-
-      if (error) throw error;
+      await ApiService.deleteTrackCompletely(track.id);
 
       toast({
         title: "🗑️ Трек удалён",
-        description: "Трек успешно удалён из библиотеки",
+        description: "Трек и все связанные данные успешно удалены",
       });
 
       onDelete?.();
@@ -197,10 +193,19 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
           onSave={handleSave}
           onDownload={handleDownload}
           onShare={handleShare}
-          onDelete={handleDelete}
+          onDelete={() => setDeleteDialogOpen(true)}
           loadVersionsAndStems={loadVersionsAndStems}
         />
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <TrackDeleteDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        trackId={track.id}
+        trackTitle={track.title}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };

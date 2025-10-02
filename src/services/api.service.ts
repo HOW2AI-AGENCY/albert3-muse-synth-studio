@@ -211,6 +211,34 @@ export class ApiService {
   }
 
   /**
+   * Delete a specific track version
+   */
+  static async deleteTrackVersion(versionId: string): Promise<void> {
+    const { error } = await supabase
+      .from('track_versions')
+      .delete()
+      .eq('id', versionId);
+
+    if (error) {
+      throw new Error(error.message || "Failed to delete version");
+    }
+  }
+
+  /**
+   * Delete track completely with all versions and stems (cascade)
+   */
+  static async deleteTrackCompletely(trackId: string): Promise<void> {
+    const { error } = await supabase
+      .from('tracks')
+      .delete()
+      .eq('id', trackId);
+
+    if (error) {
+      throw new Error(error.message || "Failed to delete track completely");
+    }
+  }
+
+  /**
    * Update track status
    */
   static async updateTrackStatus(

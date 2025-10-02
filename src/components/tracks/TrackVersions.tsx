@@ -2,11 +2,21 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, Star, Music2, ChevronDown, ChevronUp } from "lucide-react";
+import { Play, Pause, Star, Music2, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface TrackVersion {
   id: string;
@@ -29,6 +39,8 @@ interface TrackVersionsProps {
 
 export const TrackVersions = ({ trackId, versions, onVersionUpdate }: TrackVersionsProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [versionToDelete, setVersionToDelete] = useState<TrackVersion | null>(null);
   const { currentTrack, isPlaying, playTrack, togglePlayPause } = useAudioPlayer();
   const { vibrate } = useHapticFeedback();
 
@@ -75,6 +87,55 @@ export const TrackVersions = ({ trackId, versions, onVersionUpdate }: TrackVersi
         cover_url: version.cover_url,
         duration: version.duration,
       });
+    }
+  };
+
+  const handleDeleteVersion = async (version: TrackVersion) => {
+    // Check if this is the last version
+    if (versions.length === 1) {
+      toast.error('Невозможно удалить единственную версию');
+      return;
+    }
+
+    setVersionToDelete(version);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteVersion = async () => {
+    if (!versionToDelete) return;
+
+    try {
+      vibrate('warning');
+      
+      // If deleting master version, reassign to first remaining
+      if (versionToDelete.is_master && versions.length > 1) {
+        const nextVersion = versions.find(v => v.id !== versionToDelete.id);
+        if (nextVersion) {
+          await supabase
+            .from('track_versions')
+            .update({ is_master: true })
+            .eq('id', nextVersion.id);
+        }
+      }
+
+      // Delete the version
+      const { error } = await supabase
+        .from('track_versions')
+        .delete()
+        .eq('id', versionToDelete.id);
+
+      if (error) throw error;
+
+      vibrate('success');
+      toast.success(`Версия ${versionToDelete.version_number} удалена`);
+      onVersionUpdate?.();
+    } catch (error) {
+      console.error('Error deleting version:', error);
+      vibrate('error');
+      toast.error('Ошибка при удалении версии');
+    } finally {
+      setDeleteDialogOpen(false);
+      setVersionToDelete(null);
     }
   };
 
@@ -160,24 +221,66 @@ export const TrackVersions = ({ trackId, versions, onVersionUpdate }: TrackVersi
                     </div>
                   </div>
 
-                  {!version.is_master && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleSetMaster(version.id, version.version_number)}
-                      className="text-xs h-8 transition-transform active:scale-95"
-                    >
-                      <Star className="w-3 h-3 mr-1" />
-                      <span className="hidden sm:inline">Сделать главной</span>
-                      <span className="sm:hidden">Главная</span>
-                    </Button>
-                  )}
+                  <div className="flex gap-1">
+                    {!version.is_master && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleSetMaster(version.id, version.version_number)}
+                        className="text-xs h-8 transition-transform active:scale-95"
+                      >
+                        <Star className="w-3 h-3 mr-1" />
+                        <span className="hidden sm:inline">Сделать главной</span>
+                        <span className="sm:hidden">Главная</span>
+                      </Button>
+                    )}
+                    
+                    {versions.length > 1 && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeleteVersion(version)}
+                        className="text-xs h-8 text-destructive hover:text-destructive transition-transform active:scale-95"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </Card>
             );
           })}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить версию?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Вы собираетесь удалить версию {versionToDelete?.version_number}.
+              {versionToDelete?.is_master && (
+                <span className="block mt-2 text-orange-500 font-medium">
+                  ⚠️ Это главная версия. Статус главной будет присвоен другой версии.
+                </span>
+              )}
+              <span className="block mt-2">
+                Это действие нельзя отменить.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteVersion}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
