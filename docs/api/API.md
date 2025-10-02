@@ -172,37 +172,134 @@ interface ReplicateGenerationResponse {
 
 ---
 
-### 3. Разделение на стемы
+---
+
+## 🎛️ Эндпоинты для обработки аудио
+
+### 1. Разделение треков на стемы
 
 **Эндпоинт:** `POST /separate-stems`
 
-Разделяет аудиотрек на отдельные инструментальные дорожки (стемы).
+Разделяет аудиотрек на отдельные инструментальные стемы (вокал, барабаны, бас, другие инструменты).
 
 #### Параметры запроса
+
 ```typescript
-interface SeparateStemsRequest {
-  trackId: string;           // ID трека для разделения
-  separationMode?: string;   // Режим разделения (по умолчанию: "4stems")
+interface StemSeparationRequest {
+  audio_url?: string;                // URL аудиофайла (обязательно, если нет audio_file)
+  audio_file?: File;                 // Файл аудио (обязательно, если нет audio_url)
+  model?: "spleeter" | "demucs" | "htdemucs"; // Модель для разделения (по умолчанию: "htdemucs")
+  stems?: "2stems" | "4stems" | "5stems"; // Количество стемов (по умолчанию: "4stems")
+  output_format?: "wav" | "mp3" | "flac"; // Формат выходных файлов (по умолчанию: "wav")
+  quality?: "low" | "medium" | "high";    // Качество обработки (по умолчанию: "medium")
+  normalize?: boolean;               // Нормализовать громкость (по умолчанию: true)
+  track_id?: string;                 // ID трека в базе данных
+  user_id?: string;                  // ID пользователя
 }
 ```
 
+#### Доступные модели и стемы
+
+**Модели:**
+- `spleeter`: Быстрая модель от Deezer (2, 4, 5 стемов)
+- `demucs`: Высококачественная модель Facebook (4 стема)
+- `htdemucs`: Улучшенная версия Demucs (4 стема, лучшее качество)
+
+**Конфигурации стемов:**
+- `2stems`: Вокал + Аккомпанемент
+- `4stems`: Вокал + Барабаны + Бас + Другие инструменты
+- `5stems`: Вокал + Барабаны + Бас + Фортепиано + Другие инструменты
+
 #### Пример запроса
+
 ```bash
-curl -X POST https://your-project.supabase.co/functions/v1/separate-stems \
-  -H "Authorization: Bearer <jwt_token>" \
+curl -X POST "https://your-project.supabase.co/functions/v1/separate-stems" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "trackId": "123e4567-e89b-12d3-a456-426614174000",
-    "separationMode": "4stems"
+    "audio_url": "https://example.com/track.mp3",
+    "model": "htdemucs",
+    "stems": "4stems",
+    "output_format": "wav",
+    "quality": "high",
+    "normalize": true
   }'
 ```
 
 #### Ответ
+
 ```typescript
-interface SeparateStemsResponse {
+interface StemSeparationResponse {
   success: boolean;
-  message: string;
-  predictionId?: string;     // ID задачи разделения
+  data?: {
+    id: string;                     // ID задачи разделения
+    status: "queued" | "processing" | "completed" | "failed";
+    input_file: {
+      url: string;                  // URL исходного файла
+      duration: number;             // Длительность в секундах
+      format: string;               // Формат файла
+      size: number;                 // Размер в байтах
+    };
+    stems?: {
+      vocals?: string;              // URL файла с вокалом
+      drums?: string;               // URL файла с барабанами
+      bass?: string;                // URL файла с басом
+      piano?: string;               // URL файла с фортепиано (только для 5stems)
+      other?: string;               // URL файла с другими инструментами
+      accompaniment?: string;       // URL файла с аккомпанементом (только для 2stems)
+    };
+    metadata: {
+      model: string;                // Использованная модель
+      stems_config: string;         // Конфигурация стемов
+      processing_time: number;      // Время обработки в секундах
+      quality: string;              // Качество обработки
+    };
+    created_at: string;             // Время создания
+    completed_at?: string;          // Время завершения
+  };
+  error?: string;                   // Сообщение об ошибке
+  request_id?: string;              // ID запроса для отслеживания
+}
+```
+
+### 2. Получение статуса разделения стемов
+
+**Эндпоинт:** `GET /separate-stems/{task_id}/status`
+
+Получает текущий статус задачи разделения стемов.
+
+#### Параметры запроса
+
+- `task_id` (path parameter): ID задачи разделения
+
+#### Пример запроса
+
+```bash
+curl -X GET "https://your-project.supabase.co/functions/v1/separate-stems/123e4567-e89b-12d3-a456-426614174000/status" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+#### Ответ
+
+```typescript
+interface StemSeparationStatusResponse {
+  success: boolean;
+  data?: {
+    id: string;                     // ID задачи
+    status: "queued" | "processing" | "completed" | "failed";
+    progress?: number;              // Прогресс выполнения (0-100)
+    estimated_time_remaining?: number; // Оставшееся время в секундах
+    error_message?: string;         // Сообщение об ошибке (если статус "failed")
+    stems?: {                       // Доступно только при статусе "completed"
+      vocals?: string;
+      drums?: string;
+      bass?: string;
+      piano?: string;
+      other?: string;
+      accompaniment?: string;
+    };
+  };
+  error?: string;
 }
 ```
 
