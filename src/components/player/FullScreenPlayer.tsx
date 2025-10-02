@@ -1,12 +1,19 @@
-import { Play, Pause, SkipBack, SkipForward, Minimize2, Volume2, VolumeX, Share2, Download, Heart } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Minimize2, Volume2, VolumeX, Share2, Download, Heart, Repeat, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { Badge } from "@/components/ui/badge";
 import { PlayerQueue } from "./PlayerQueue";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface FullScreenPlayerProps {
   onMinimize: () => void;
@@ -31,12 +38,18 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
     setVolume,
     playNext,
     playPrevious,
+    switchToVersion,
+    getAvailableVersions,
+    currentVersionIndex,
   } = useAudioPlayer();
 
   const { vibrate } = useHapticFeedback();
   const { toast } = useToast();
   const [isMuted, setIsMuted] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  
+  const availableVersions = getAvailableVersions();
+  const hasVersions = availableVersions.length > 1;
 
   const swipeRef = useSwipeGesture({
     onSwipeDown: () => {
@@ -143,6 +156,39 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
             >
               <Share2 className="h-5 w-5" />
             </Button>
+            {hasVersions && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative h-10 w-10">
+                    <Repeat className="h-5 w-5" />
+                    <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
+                      {availableVersions.length}
+                    </Badge>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {availableVersions.map((version, idx) => (
+                    <DropdownMenuItem
+                      key={version.id}
+                      onClick={() => {
+                        vibrate('light');
+                        switchToVersion(version.id);
+                      }}
+                      className={currentVersionIndex === idx ? 'bg-primary/10' : ''}
+                    >
+                      <div className="flex items-center gap-2 w-full">
+                        <span className="flex-1">
+                          {version.versionNumber === 0 ? 'Оригинал' : `Версия ${version.versionNumber}`}
+                        </span>
+                        {version.isMasterVersion && (
+                          <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+                        )}
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <PlayerQueue />
           </div>
         </div>

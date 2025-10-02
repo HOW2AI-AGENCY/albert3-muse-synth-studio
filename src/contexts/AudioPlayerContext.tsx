@@ -2,6 +2,9 @@ import { createContext, useContext, useState, useRef, ReactNode, useEffect } fro
 
 interface Track {
   id: string;
+  parentTrackId?: string;
+  versionNumber?: number;
+  isMasterVersion?: boolean;
   title: string;
   audio_url: string;
   cover_url?: string;
@@ -29,6 +32,9 @@ interface AudioPlayerContextType {
   removeFromQueue: (trackId: string) => void;
   clearQueue: () => void;
   reorderQueue: (startIndex: number, endIndex: number) => void;
+  switchToVersion: (versionId: string) => void;
+  getAvailableVersions: () => Track[];
+  currentVersionIndex: number;
   audioRef: React.RefObject<HTMLAudioElement>;
 }
 
@@ -42,6 +48,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   const [volume, setVolumeState] = useState(0.7);
   const [queue, setQueue] = useState<Track[]>([]);
   const [currentQueueIndex, setCurrentQueueIndex] = useState(0);
+  const [currentVersionIndex, setCurrentVersionIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(new Audio());
 
   // Setup audio element event listeners
@@ -194,6 +201,43 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const switchToVersion = (versionId: string) => {
+    const versions = getAvailableVersions();
+    const versionIndex = versions.findIndex(v => v.id === versionId);
+    
+    if (versionIndex !== -1) {
+      const version = versions[versionIndex];
+      setCurrentVersionIndex(versionIndex);
+      setCurrentTrack(version);
+      
+      const audio = audioRef.current;
+      audio.src = version.audio_url;
+      audio.load();
+      
+      if (isPlaying) {
+        audio.play().catch(error => {
+          console.error('Error playing version:', error);
+          setIsPlaying(false);
+        });
+      }
+    }
+  };
+
+  const getAvailableVersions = (): Track[] => {
+    if (!currentTrack) return [];
+    
+    // Get parent track ID (current track's parent or itself if it's the parent)
+    const parentId = currentTrack.parentTrackId || currentTrack.id;
+    
+    // Find all tracks in queue with the same parent
+    const versions = queue.filter(track => {
+      const trackParentId = track.parentTrackId || track.id;
+      return trackParentId === parentId;
+    });
+    
+    return versions;
+  };
+
   return (
     <AudioPlayerContext.Provider
       value={{
@@ -215,6 +259,9 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
         removeFromQueue,
         clearQueue,
         reorderQueue,
+        switchToVersion,
+        getAvailableVersions,
+        currentVersionIndex,
         audioRef,
       }}
     >

@@ -1,7 +1,8 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ListMusic, Play, X, GripVertical } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ListMusic, Play, X, GripVertical, Star } from "lucide-react";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 
@@ -47,6 +48,8 @@ export const PlayerQueue = () => {
             {queue.map((track, index) => {
               const isCurrentTrack = track.id === currentTrack?.id;
               const isPlaying = isCurrentTrack;
+              const isVersion = track.versionNumber !== undefined && track.versionNumber > 0;
+              const isMaster = track.isMasterVersion;
 
               return (
                 <div
@@ -88,9 +91,19 @@ export const PlayerQueue = () => {
 
                   {/* Track Info */}
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm truncate">
-                      {track.title}
-                    </h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium text-sm truncate">
+                        {track.title}
+                      </h4>
+                      {isVersion && (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                          V{track.versionNumber}
+                        </Badge>
+                      )}
+                      {isMaster && (
+                        <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+                      )}
+                    </div>
                     {track.style_tags && track.style_tags.length > 0 && (
                       <p className="text-xs text-muted-foreground truncate">
                         {track.style_tags.slice(0, 2).join(', ')}
