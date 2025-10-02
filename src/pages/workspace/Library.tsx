@@ -1,24 +1,431 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TracksListLazy as TracksList } from "@/components/LazyComponents";
-
-const Library = () => {
-  return (
-    <div className="p-4 md:p-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Библиотека треков</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <TracksList
-            tracks={[]}
-            isLoading={false}
-            deleteTrack={() => {}}
-            refreshTracks={() => {}}
-          />
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
-
-export default Library;
+[{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2305",
+	"severity": 8,
+	"message": "Module '\"react-window\"' has no exported member 'VariableSizeList'.",
+	"source": "ts",
+	"startLineNumber": 2,
+	"startColumn": 10,
+	"endLineNumber": 2,
+	"endColumn": 26,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2307",
+	"severity": 8,
+	"message": "Cannot find module '@/hooks/use-toast' or its corresponding type declarations.",
+	"source": "ts",
+	"startLineNumber": 8,
+	"startColumn": 26,
+	"endLineNumber": 8,
+	"endColumn": 45,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2307",
+	"severity": 8,
+	"message": "Cannot find module '@/contexts/AudioPlayerContext' or its corresponding type declarations.",
+	"source": "ts",
+	"startLineNumber": 9,
+	"startColumn": 32,
+	"endLineNumber": 9,
+	"endColumn": 63,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2307",
+	"severity": 8,
+	"message": "Cannot find module '@/hooks/useTracks' or its corresponding type declarations.",
+	"source": "ts",
+	"startLineNumber": 10,
+	"startColumn": 27,
+	"endLineNumber": 10,
+	"endColumn": 46,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2307",
+	"severity": 8,
+	"message": "Cannot find module '@/services/api.service' or its corresponding type declarations.",
+	"source": "ts",
+	"startLineNumber": 11,
+	"startColumn": 47,
+	"endLineNumber": 11,
+	"endColumn": 71,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2307",
+	"severity": 8,
+	"message": "Cannot find module '@/integrations/supabase/client' or its corresponding type declarations.",
+	"source": "ts",
+	"startLineNumber": 12,
+	"startColumn": 26,
+	"endLineNumber": 12,
+	"endColumn": 58,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2307",
+	"severity": 8,
+	"message": "Cannot find module '@/utils/logger' or its corresponding type declarations.",
+	"source": "ts",
+	"startLineNumber": 13,
+	"startColumn": 26,
+	"endLineNumber": 13,
+	"endColumn": 42,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'audio_url' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 65,
+	"startColumn": 15,
+	"endLineNumber": 65,
+	"endColumn": 24,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'status' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 65,
+	"startColumn": 34,
+	"endLineNumber": 65,
+	"endColumn": 40,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'id' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 67,
+	"startColumn": 19,
+	"endLineNumber": 67,
+	"endColumn": 21,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'title' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 68,
+	"startColumn": 22,
+	"endLineNumber": 68,
+	"endColumn": 27,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'audio_url' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 69,
+	"startColumn": 26,
+	"endLineNumber": 69,
+	"endColumn": 35,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'cover_url' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 70,
+	"startColumn": 26,
+	"endLineNumber": 70,
+	"endColumn": 35,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'duration' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 71,
+	"startColumn": 25,
+	"endLineNumber": 71,
+	"endColumn": 33,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'audio_url' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 74,
+	"startColumn": 31,
+	"endLineNumber": 74,
+	"endColumn": 40,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'status' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 74,
+	"startColumn": 46,
+	"endLineNumber": 74,
+	"endColumn": 52,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'id' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 75,
+	"startColumn": 15,
+	"endLineNumber": 75,
+	"endColumn": 17,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'title' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 76,
+	"startColumn": 18,
+	"endLineNumber": 76,
+	"endColumn": 23,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'audio_url' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 77,
+	"startColumn": 22,
+	"endLineNumber": 77,
+	"endColumn": 31,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'cover_url' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 78,
+	"startColumn": 22,
+	"endLineNumber": 78,
+	"endColumn": 31,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'duration' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 79,
+	"startColumn": 21,
+	"endLineNumber": 79,
+	"endColumn": 29,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'id' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 92,
+	"startColumn": 44,
+	"endLineNumber": 92,
+	"endColumn": 46,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'id' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 94,
+	"startColumn": 46,
+	"endLineNumber": 94,
+	"endColumn": 48,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2739",
+	"severity": 8,
+	"message": "Type 'Track' is missing the following properties from type '{ id: string; title: string; audio_url?: string | undefined; cover_url?: string | undefined; style_tags?: string[] | undefined; duration_seconds?: number | undefined; status: string; like_count?: number | undefined; has_stems?: boolean | undefined; }': id, title, status",
+	"source": "ts",
+	"startLineNumber": 99,
+	"startColumn": 13,
+	"endLineNumber": 99,
+	"endColumn": 18,
+	"relatedInformation": [
+		{
+			"startLineNumber": 9,
+			"startColumn": 3,
+			"endLineNumber": 9,
+			"endColumn": 8,
+			"message": "The expected type comes from property 'track' which is declared here on type 'IntrinsicAttributes & TrackListItemProps'",
+			"resource": "/c:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/tracks/TrackListItem.tsx"
+		}
+	],
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'id' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 100,
+	"startColumn": 44,
+	"endLineNumber": 100,
+	"endColumn": 46,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'id' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 102,
+	"startColumn": 46,
+	"endLineNumber": 102,
+	"endColumn": 48,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'status' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 107,
+	"startColumn": 17,
+	"endLineNumber": 107,
+	"endColumn": 23,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'id' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 149,
+	"startColumn": 31,
+	"endLineNumber": 149,
+	"endColumn": 33,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'title' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 156,
+	"startColumn": 22,
+	"endLineNumber": 156,
+	"endColumn": 27,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'prompt' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 157,
+	"startColumn": 23,
+	"endLineNumber": 157,
+	"endColumn": 29,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'status' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 183,
+	"startColumn": 15,
+	"endLineNumber": 183,
+	"endColumn": 21,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'created_at' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 184,
+	"startColumn": 38,
+	"endLineNumber": 184,
+	"endColumn": 48,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'audio_url' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 222,
+	"startColumn": 16,
+	"endLineNumber": 222,
+	"endColumn": 25,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2339",
+	"severity": 8,
+	"message": "Property 'audio_url' does not exist on type 'Track'.",
+	"source": "ts",
+	"startLineNumber": 223,
+	"startColumn": 23,
+	"endLineNumber": 223,
+	"endColumn": 32,
+	"extensionID": "vscode.typescript-language-features"
+},{
+	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
+	"owner": "typescript",
+	"code": "2322",
+	"severity": 8,
+	"message": "Type '{ viewMode: \"grid\" | \"list\"; onViewChange: (view: \"grid\" | \"list\") => void; }' is not assignable to type 'IntrinsicAttributes & ViewSwitcherProps'.\n  Property 'viewMode' does not exist on type 'IntrinsicAttributes & ViewSwitcherProps'.",
+	"source": "ts",
+	"startLineNumber": 301,
+	"startColumn": 21,
+	"endLineNumber": 301,
+	"endColumn": 29,
+	"extensionID": "vscode.typescript-language-features"
+}]

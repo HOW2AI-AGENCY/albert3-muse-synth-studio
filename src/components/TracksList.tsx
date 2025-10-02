@@ -2,6 +2,7 @@ import { useEffect, useState, memo, useCallback, useMemo } from "react";
 import { TrackCard } from "./TrackCard";
 import { TrackListItem } from "./tracks/TrackListItem";
 import { ViewSwitcher } from "./tracks/ViewSwitcher";
+import { LoadingSkeleton } from "./ui/LoadingSkeleton";
 import { useTracks } from "@/hooks/useTracks";
 import { ApiService, Track as ApiTrack } from "@/services/api.service";
 import { Button } from "./ui/button";
@@ -151,8 +152,28 @@ const TracksListComponent = ({ refreshTrigger, onTrackSelect, selectedTrackId }:
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <LoadingSkeleton width="120px" height="32px" />
+            <LoadingSkeleton width="60px" height="24px" />
+          </div>
+          <LoadingSkeleton width="100px" height="32px" />
+        </div>
+        
+        {viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <LoadingSkeleton key={i} variant="rectangular" height="300px" />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <LoadingSkeleton key={i} variant="track-item" />
+            ))}
+          </div>
+        )}
       </div>
     );
   }

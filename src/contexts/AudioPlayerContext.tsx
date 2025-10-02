@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useRef, ReactNode, useEffect, useCallback, useMemo } from 'react';
 import { usePlayAnalytics } from '@/hooks/usePlayAnalytics';
 import { logError, logInfo } from '@/utils/logger';
+import { cacheAudioFile } from '@/utils/serviceWorker';
 
 interface Track {
   id: string;
@@ -129,6 +130,14 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   // Мемоизированная функция воспроизведения трека
   const playTrack = useCallback((track: Track) => {
     if (!track.audio_url) return;
+    
+    // Кэшируем аудио файл через Service Worker
+    cacheAudioFile(track.audio_url).catch(err => 
+      logError('Ошибка кэширования аудио файла', err as Error, 'AudioPlayerContext', {
+        trackId: track.id,
+        audioUrl: track.audio_url
+      })
+    );
     
     const audio = audioRef.current;
     audio.src = track.audio_url;
