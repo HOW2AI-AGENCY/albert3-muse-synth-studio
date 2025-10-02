@@ -613,3 +613,5 @@ export const MusicGenerator = withErrorBoundary(
     )
   }
 );
+
+export default MusicGenerator;

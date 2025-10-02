@@ -534,6 +534,8 @@ export const TrackCard = memo(withErrorBoundary(TrackCardComponent, {
 
 TrackCard.displayName = 'TrackCard';
 
+export default TrackCard;
+
 // Добавляем CSS анимации в глобальные стили
 if (typeof document !== 'undefined') {
   const style = document.createElement('style');

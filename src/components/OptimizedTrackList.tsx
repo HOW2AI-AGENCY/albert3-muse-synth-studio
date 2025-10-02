@@ -118,7 +118,7 @@ export const OptimizedTrackList: React.FC<OptimizedTrackListProps> = memo(({
           itemData={itemData}
           width="100%"
         >
-          {VirtualizedItemComponent}
+          {VirtualizedItemComponent as any}
         </List>
       </div>
     );

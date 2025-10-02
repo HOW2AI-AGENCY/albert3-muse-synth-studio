@@ -308,3 +308,5 @@ export const GlobalAudioPlayer = () => {
     </div>
   );
 };
+
+export default GlobalAudioPlayer;
