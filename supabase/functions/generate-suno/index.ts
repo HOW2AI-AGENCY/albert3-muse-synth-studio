@@ -35,22 +35,21 @@ serve(async (req) => {
     // Prepare Suno API request
     const sunoPayload: any = {
       prompt: prompt,
-      make_instrumental: !hasVocals,
-      wait_audio: false, // Async generation
+      instrumental: !hasVocals,
     };
 
     if (customMode && lyrics) {
-      sunoPayload.custom_mode = true;
+      sunoPayload.customMode = true;
       sunoPayload.lyrics = lyrics;
       if (styleTags.length > 0) {
-        sunoPayload.tags = styleTags.join(', ');
+        sunoPayload.style = styleTags.join(', ');
       }
     }
 
     console.log('Suno API request:', sunoPayload);
 
-    // Call Suno API (using sunoapi.org endpoint)
-    const sunoResponse = await fetch('https://api.sunoapi.org/api/v1/gateway/generate/music', {
+    // Call Suno API (using correct endpoint)
+    const sunoResponse = await fetch('https://api.sunoapi.org/api/v1/generate', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${SUNO_API_KEY}`,
@@ -77,26 +76,28 @@ serve(async (req) => {
     const sunoData = await sunoResponse.json();
     console.log('Suno response:', sunoData);
 
-    // Extract task IDs for polling
-    const taskIds = sunoData.data?.map((item: any) => item.song_id || item.id) || [];
-
-    if (taskIds.length === 0) {
-      throw new Error('No task IDs returned from Suno');
+    // Check for API error
+    if (sunoData.code !== 200 || !sunoData.data?.taskId) {
+      throw new Error(`Suno API error: ${sunoData.msg || 'Unknown error'}`);
     }
 
-    // Store task IDs in metadata for polling
+    const taskId = sunoData.data.taskId;
+
+    // Store task ID in metadata for polling
     await supabase
       .from('tracks')
       .update({ 
         metadata: { 
-          suno_task_ids: taskIds,
+          suno_task_id: taskId,
           suno_response: sunoData 
         }
       })
       .eq('id', trackId);
 
-    // Start background polling
-    EdgeRuntime.waitUntil(pollSunoCompletion(trackId, taskIds[0], supabase, SUNO_API_KEY));
+    // Start background polling (fire and forget)
+    pollSunoCompletion(trackId, taskId, supabase, SUNO_API_KEY).catch(err => {
+      console.error('Polling error:', err);
+    });
 
     console.log('Suno generation started, polling initiated');
 
@@ -104,7 +105,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true,
         trackId,
-        taskIds,
+        taskId,
         message: 'Generation started'
       }),
       { 
@@ -141,7 +142,7 @@ async function pollSunoCompletion(
     try {
       console.log(`Polling Suno task ${taskId}, attempt ${attempts}`);
 
-      const response = await fetch(`https://api.sunoapi.org/api/v1/gateway/query?ids=${taskId}`, {
+      const response = await fetch(`https://api.sunoapi.org/api/v1/query?taskId=${taskId}`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`,
         },
@@ -153,21 +154,40 @@ async function pollSunoCompletion(
       }
 
       const data = await response.json();
-      const task = data.data?.[0];
-
-      if (!task) {
-        console.error('No task data in response');
+      
+      if (data.code !== 200 || !data.data) {
+        console.error('Invalid response:', data);
         continue;
       }
 
-      console.log('Task status:', task.status);
+      const tasks = data.data;
+      
+      // Check if all tasks are complete
+      const allComplete = tasks.every((t: any) => t.status === 'success' || t.status === 'complete');
+      const anyFailed = tasks.some((t: any) => t.status === 'error' || t.status === 'failed');
 
-      if (task.status === 'complete' || task.status === 'success') {
-        const audioUrl = task.audio_url || task.song_path;
-        const duration = task.duration || 0;
-        const actualLyrics = task.lyric || task.lyrics;
+      if (anyFailed) {
+        await supabase
+          .from('tracks')
+          .update({ 
+            status: 'failed',
+            error_message: 'Generation failed'
+          })
+          .eq('id', trackId);
 
-        if (audioUrl) {
+        console.log('Track generation failed:', trackId);
+        return;
+      }
+
+      if (allComplete && tasks.length > 0) {
+        // Use first successful track
+        const successTrack = tasks.find((t: any) => t.audioUrl || t.audio_url);
+        
+        if (successTrack) {
+          const audioUrl = successTrack.audioUrl || successTrack.audio_url;
+          const duration = successTrack.duration || 0;
+          const actualLyrics = successTrack.lyric || successTrack.lyrics;
+
           await supabase
             .from('tracks')
             .update({ 
@@ -175,24 +195,13 @@ async function pollSunoCompletion(
               audio_url: audioUrl,
               duration: Math.round(duration),
               lyrics: actualLyrics,
-              metadata: { suno_data: task }
+              metadata: { suno_data: tasks }
             })
             .eq('id', trackId);
 
           console.log('Track completed successfully:', trackId);
           return;
         }
-      } else if (task.status === 'error' || task.status === 'failed') {
-        await supabase
-          .from('tracks')
-          .update({ 
-            status: 'failed',
-            error_message: task.error_message || 'Generation failed'
-          })
-          .eq('id', trackId);
-
-        console.log('Track generation failed:', trackId);
-        return;
       }
 
     } catch (error) {
