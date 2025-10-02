@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, memo } from 'react';
-import { FixedSizeList as List } from 'react-window';
+import { List } from 'react-window';
 
 
 import { LazyLoadWrapper } from '../components/LazyLoadWrapper';
@@ -118,9 +118,8 @@ export const OptimizedTrackList: React.FC<OptimizedTrackListProps> = memo(({
           itemData={itemData}
           width="100%"
         >
-          {VirtualizedItemComponent as any}
+          {VirtualizedItemComponent}
         </List>
-          
       </div>
     );
   }
