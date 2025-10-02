@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -5,19 +6,48 @@ import { Badge } from "@/components/ui/badge";
 import { ListMusic, Play, X, GripVertical, Star } from "lucide-react";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
+import { useToast } from "@/hooks/use-toast";
 
 export const PlayerQueue = () => {
   const { queue, currentTrack, currentQueueIndex, playTrack, removeFromQueue } = useAudioPlayer();
   const { vibrate } = useHapticFeedback();
+  const { toast } = useToast();
+  const [removingTrackId, setRemovingTrackId] = useState<string | null>(null);
 
   const handlePlayTrack = (track: typeof queue[0], index: number) => {
     vibrate('light');
     playTrack(track);
+    
+    toast({
+      title: "Воспроизведение",
+      description: `Играет: ${track.title}`,
+      duration: 2000,
+    });
   };
 
-  const handleRemove = (trackId: string) => {
+  const handleRemove = async (trackId: string) => {
+    setRemovingTrackId(trackId);
     vibrate('warning');
-    removeFromQueue(trackId);
+    
+    try {
+      const trackToRemove = queue.find(t => t.id === trackId);
+      removeFromQueue(trackId);
+      
+      toast({
+        title: "Удалено из очереди",
+        description: `Трек "${trackToRemove?.title}" убран из очереди`,
+        duration: 2000,
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить трек из очереди",
+        variant: "destructive",
+        duration: 3000,
+      });
+    } finally {
+      setRemovingTrackId(null);
+    }
   };
 
   if (queue.length === 0) return null;
@@ -133,6 +163,7 @@ export const PlayerQueue = () => {
                       size="icon"
                       className="h-8 w-8 text-destructive hover:text-destructive"
                       onClick={() => handleRemove(track.id)}
+                      disabled={removingTrackId === track.id}
                     >
                       <X className="h-4 w-4" />
                     </Button>

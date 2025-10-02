@@ -44,8 +44,13 @@ const Settings = () => {
             <p className="text-sm text-muted-foreground mb-4">
               Управление вашим аккаунтом и профилем
             </p>
-            <Button variant="destructive" onClick={handleSignOut}>
-              Выйти из аккаунта
+            <Button 
+              variant="destructive" 
+              onClick={handleSignOut}
+              loading={isSigningOut}
+              disabled={isSigningOut}
+            >
+              {isSigningOut ? "Выход..." : "Выйти из аккаунта"}
             </Button>
           </div>
         </CardContent>
