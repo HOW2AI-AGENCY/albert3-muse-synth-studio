@@ -39,7 +39,7 @@ export const TrackDeleteDialog = ({
       setCountdown(3);
       setCanDelete(false);
     }
-  }, [open, trackId]);
+  }, [open, trackId, loadRelatedData]);
 
   useEffect(() => {
     if (open && countdown > 0) {

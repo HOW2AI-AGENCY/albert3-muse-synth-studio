@@ -6,7 +6,14 @@ import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 
 interface HeaderProps {
-  user?: any;
+  user?: {
+    id: string;
+    email?: string;
+    user_metadata?: {
+      full_name?: string;
+      avatar_url?: string;
+    };
+  };
   onAuthClick: () => void;
 }
 

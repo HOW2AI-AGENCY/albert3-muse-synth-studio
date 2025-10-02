@@ -1,11 +1,39 @@
-import { Card } from "@/components/ui/card";
+import React, { useState, useCallback, memo } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, Heart, Download, Share2, MoreVertical, Music4 } from "lucide-react";
-import { useState, useMemo, useCallback, memo } from "react";
-import { Track } from "@/services/api.service";
+import { 
+  Play, 
+  Pause, 
+  Download, 
+  Heart, 
+  Share2, 
+  MoreHorizontal, 
+  Clock,
+  Music,
+  Headphones,
+  Volume2,
+  VolumeX
+} from "lucide-react";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { useTrackLike } from "@/hooks/useTrackLike";
+import { useHapticFeedback } from "@/hooks/useHapticFeedback";
+import { withErrorBoundary } from "@/components/ErrorBoundary";
+import { logError } from "@/utils/logger";
+
+interface Track {
+  id: string;
+  title: string;
+  prompt: string;
+  audio_url?: string;
+  image_url?: string;
+  duration?: number;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  created_at: string;
+  has_vocals?: boolean;
+  genre?: string;
+  like_count?: number;
+  view_count?: number;
+}
 
 interface TrackCardProps {
   track: Track;
@@ -217,5 +245,15 @@ const TrackCardComponent = ({
   );
 };
 
-// Экспортируем мемоизированный компонент
-export const TrackCard = memo(TrackCardComponent);
+// Экспортируем мемоизированный компонент с Error Boundary
+export const TrackCard = withErrorBoundary(
+  memo(TrackCardComponent),
+  <Card className="p-4">
+    <div className="text-center">
+      <Music className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+      <p className="text-sm text-muted-foreground">
+        Ошибка загрузки трека
+      </p>
+    </div>
+  </Card>
+);

@@ -51,10 +51,11 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
   const availableVersions = getAvailableVersions();
   const hasVersions = availableVersions.length > 1;
   
-  // Use like hook only if currentTrack has an id
-  const { isLiked, toggleLike } = currentTrack 
-    ? useTrackLike(currentTrack.id, 0)
-    : { isLiked: false, toggleLike: () => {} };
+  // Always call the hook, but pass null if no currentTrack
+  const { isLiked, toggleLike } = useTrackLike(
+    currentTrack?.id || null, 
+    0
+  );
 
   const swipeRef = useSwipeGesture({
     onSwipeDown: () => {

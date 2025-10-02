@@ -1,14 +1,19 @@
+import React, { useState, useCallback, memo, useMemo } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Wand2, Music, Lightbulb, Mic, Music2 } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Sparkles, Music, Wand2, Play, Pause, Download, Heart, Share2, MoreHorizontal, Volume2, VolumeX } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { useMusicGeneration } from "@/hooks/useMusicGeneration";
-import { LyricsEditor } from "./LyricsEditor";
-import { memo, useCallback, useMemo } from "react";
+import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useHapticFeedback } from "@/hooks/useHapticFeedback";
+import { withErrorBoundary } from "@/components/ErrorBoundary";
+import { logError } from "@/utils/logger";
 
 interface MusicGeneratorProps {
   onTrackGenerated?: () => void;
@@ -40,7 +45,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
 
   // Мемоизируем функцию переключения тегов
   const toggleTag = useCallback((tag: string) => {
-    setStyleTags(prev => 
+    setStyleTags(prev =>
       prev.includes(tag) 
         ? prev.filter(t => t !== tag)
         : [...prev, tag]
@@ -234,5 +239,16 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   );
 };
 
-// Экспортируем мемоизированный компонент
-export const MusicGenerator = memo(MusicGeneratorComponent);
+// Экспортируем мемоизированный компонент с Error Boundary
+export const MusicGenerator = withErrorBoundary(
+  memo(MusicGeneratorComponent),
+  <Card className="p-6">
+    <div className="text-center">
+      <Music className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+      <h3 className="text-lg font-semibold mb-2">Ошибка генератора музыки</h3>
+      <p className="text-muted-foreground">
+        Произошла ошибка при загрузке генератора. Попробуйте обновить страницу.
+      </p>
+    </div>
+  </Card>
+);

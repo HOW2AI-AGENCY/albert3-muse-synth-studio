@@ -7,15 +7,31 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { preloadDashboard, preloadGenerate, preloadLibrary } from '../../utils/lazyImports';
 
 const MinimalSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const menuItems = [
-    { icon: Home, label: "Главная", path: "/workspace/dashboard" },
-    { icon: Sparkles, label: "Генерация", path: "/workspace/generate" },
-    { icon: Library, label: "Библиотека", path: "/workspace/library" },
+    { 
+      icon: Home, 
+      label: "Главная", 
+      path: "/workspace/dashboard",
+      preload: preloadDashboard
+    },
+    { 
+      icon: Sparkles, 
+      label: "Генерация", 
+      path: "/workspace/generate",
+      preload: preloadGenerate
+    },
+    { 
+      icon: Library, 
+      label: "Библиотека", 
+      path: "/workspace/library",
+      preload: preloadLibrary
+    },
     { icon: Heart, label: "Избранное", path: "/workspace/favorites" },
     { icon: BarChart3, label: "Аналитика", path: "/workspace/analytics" },
     { icon: Settings, label: "Настройки", path: "/workspace/settings" },
@@ -42,6 +58,7 @@ const MinimalSidebar = () => {
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => navigate(item.path)}
+                    onMouseEnter={() => item.preload?.()}
                     className={cn(
                       "w-12 h-12 rounded-lg flex items-center justify-center transition-colors",
                       isActive

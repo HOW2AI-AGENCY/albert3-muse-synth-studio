@@ -49,10 +49,11 @@ export const AuthForm = () => {
         title: "Success!",
         description: "Your account has been created. You can now sign in.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       toast({
         title: "Error",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -81,10 +82,11 @@ export const AuthForm = () => {
         title: "Welcome back!",
         description: "You have successfully signed in.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       toast({
         title: "Error",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

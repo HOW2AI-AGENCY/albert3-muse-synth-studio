@@ -27,7 +27,18 @@ const Generate = () => {
     setShowGenerator(false);
   };
 
-  const handleTrackSelect = (track: any) => {
+  const handleTrackSelect = (track: {
+    id: string;
+    title: string;
+    prompt: string;
+    audio_url?: string;
+    cover_url?: string;
+    status: string;
+    created_at: string;
+    duration?: number;
+    style_tags?: string[];
+    lyrics?: string;
+  }) => {
     setSelectedTrack(track);
   };
 
