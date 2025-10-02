@@ -9,7 +9,12 @@ const Library = () => {
           <CardTitle className="text-2xl">Библиотека треков</CardTitle>
         </CardHeader>
         <CardContent>
-          <TracksList />
+          <TracksList
+            tracks={[]}
+            isLoading={false}
+            deleteTrack={() => {}}
+            refreshTracks={() => {}}
+          />
         </CardContent>
       </Card>
     </div>
