@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo, useCallback, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,14 +38,15 @@ interface TrackVersionsProps {
   onVersionUpdate?: () => void;
 }
 
-export const TrackVersions = ({ trackId, versions, onVersionUpdate }: TrackVersionsProps) => {
+const TrackVersionsComponent = ({ trackId, versions, onVersionUpdate }: TrackVersionsProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [versionToDelete, setVersionToDelete] = useState<TrackVersion | null>(null);
   const { currentTrack, isPlaying, playTrack, togglePlayPause } = useAudioPlayer();
   const { vibrate } = useHapticFeedback();
 
-  const handleSetMaster = async (versionId: string, versionNumber: number) => {
+  // Мемоизируем функцию установки мастер-версии
+  const handleSetMaster = useCallback(async (versionId: string, versionNumber: number) => {
     try {
       vibrate('medium');
       
@@ -75,9 +76,10 @@ export const TrackVersions = ({ trackId, versions, onVersionUpdate }: TrackVersi
       vibrate('error');
       toast.error('Ошибка при установке главной версии');
     }
-  };
+  }, [trackId, vibrate, onVersionUpdate]);
 
-  const handlePlayVersion = (version: TrackVersion) => {
+  // Мемоизируем функцию воспроизведения версии
+  const handlePlayVersion = useCallback((version: TrackVersion) => {
     vibrate('light');
     const trackKey = `${trackId}-v${version.version_number}`;
     const isCurrentVersion = currentTrack?.id === trackKey;
@@ -93,9 +95,10 @@ export const TrackVersions = ({ trackId, versions, onVersionUpdate }: TrackVersi
         duration: version.duration,
       });
     }
-  };
+  }, [trackId, currentTrack, isPlaying, vibrate, togglePlayPause, playTrack]);
 
-  const handleDeleteVersion = async (version: TrackVersion) => {
+  // Мемоизируем функцию удаления версии
+  const handleDeleteVersion = useCallback(async (version: TrackVersion) => {
     // Check if this is the last version
     if (versions.length === 1) {
       toast.error('Невозможно удалить единственную версию');
@@ -104,7 +107,7 @@ export const TrackVersions = ({ trackId, versions, onVersionUpdate }: TrackVersi
 
     setVersionToDelete(version);
     setDeleteDialogOpen(true);
-  };
+  }, [versions.length]);
 
   const confirmDeleteVersion = async () => {
     if (!versionToDelete) return;

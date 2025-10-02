@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Play, Pause, Heart, Download, Share2, MoreVertical, Music4 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo, useCallback, memo } from "react";
 import { Track } from "@/services/api.service";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useTrackLike } from "@/hooks/useTrackLike";
@@ -23,7 +23,7 @@ const gradients = [
   'from-orange-500/20 via-red-500/20 to-orange-500/10',
 ];
 
-export const TrackCard = ({ 
+const TrackCardComponent = ({ 
   track, 
   onDownload, 
   onShare,
@@ -33,17 +33,30 @@ export const TrackCard = ({
   const [isHovered, setIsHovered] = useState(false);
   const { currentTrack, isPlaying, playTrack, togglePlayPause } = useAudioPlayer();
   const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count || 0);
-  const gradientIndex = Math.abs(track.id.charCodeAt(0) % gradients.length);
   
-  const isCurrentTrack = currentTrack?.id === track.id;
-  const showPlayButton = track.audio_url && track.status === 'completed';
+  // Мемоизируем тяжелые вычисления
+  const gradientIndex = useMemo(() => 
+    Math.abs(track.id.charCodeAt(0) % gradients.length), 
+    [track.id]
+  );
+  
+  const isCurrentTrack = useMemo(() => 
+    currentTrack?.id === track.id, 
+    [currentTrack?.id, track.id]
+  );
+  
+  const showPlayButton = useMemo(() => 
+    track.audio_url && track.status === 'completed', 
+    [track.audio_url, track.status]
+  );
 
-  const handleLikeClick = (e: React.MouseEvent) => {
+  // Мемоизируем обработчики событий
+  const handleLikeClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     toggleLike();
-  };
+  }, [toggleLike]);
   
-  const getStatusBadge = () => {
+  const getStatusBadge = useCallback(() => {
     switch (track.status) {
       case 'completed':
         return <Badge variant="default" className="bg-green-500">Готов</Badge>;
@@ -54,9 +67,9 @@ export const TrackCard = ({
       default:
         return <Badge variant="outline">{track.status}</Badge>;
     }
-  };
+  }, [track.status]);
 
-  const handlePlayClick = (e: React.MouseEvent) => {
+  const handlePlayClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (isCurrentTrack && isPlaying) {
       togglePlayPause();
@@ -71,7 +84,12 @@ export const TrackCard = ({
         lyrics: track.lyrics,
       });
     }
-  };
+  }, [isCurrentTrack, isPlaying, togglePlayPause, playTrack, track]);
+
+  const formattedDuration = useMemo(() => {
+    if (!track.duration) return null;
+    return `${Math.floor(track.duration / 60)}:${String(track.duration % 60).padStart(2, '0')}`;
+  }, [track.duration]);
 
   return (
     <Card 
@@ -190,7 +208,7 @@ export const TrackCard = ({
           
           {track.duration && (
             <span className="text-xs text-muted-foreground">
-              {Math.floor(track.duration / 60)}:{String(track.duration % 60).padStart(2, '0')}
+              {formattedDuration}
             </span>
           )}
         </div>
@@ -198,3 +216,6 @@ export const TrackCard = ({
     </Card>
   );
 };
+
+// Экспортируем мемоизированный компонент
+export const TrackCard = memo(TrackCardComponent);

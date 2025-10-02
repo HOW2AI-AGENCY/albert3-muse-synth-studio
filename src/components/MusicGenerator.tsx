@@ -8,12 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Sparkles, Wand2, Music, Lightbulb, Mic, Music2 } from "lucide-react";
 import { useMusicGeneration } from "@/hooks/useMusicGeneration";
 import { LyricsEditor } from "./LyricsEditor";
+import { memo, useCallback, useMemo } from "react";
 
 interface MusicGeneratorProps {
   onTrackGenerated?: () => void;
 }
 
-export const MusicGenerator = ({ onTrackGenerated }: MusicGeneratorProps) => {
+const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   const {
     prompt,
     setPrompt,
@@ -31,18 +32,20 @@ export const MusicGenerator = ({ onTrackGenerated }: MusicGeneratorProps) => {
     setStyleTags,
   } = useMusicGeneration(onTrackGenerated);
 
-  const popularGenres = [
+  // Мемоизируем массив популярных жанров
+  const popularGenres = useMemo(() => [
     "Электроника", "Поп", "Рок", "Хип-хоп", "Джаз", 
     "Классика", "Эмбиент", "Лоу-фай", "Трэп", "Хаус"
-  ];
+  ], []);
 
-  const toggleTag = (tag: string) => {
+  // Мемоизируем функцию переключения тегов
+  const toggleTag = useCallback((tag: string) => {
     setStyleTags(prev => 
       prev.includes(tag) 
         ? prev.filter(t => t !== tag)
         : [...prev, tag]
     );
-  };
+  }, [setStyleTags]);
 
   return (
     <Card className="card-glass p-8 space-y-6 hover-lift">
@@ -230,3 +233,6 @@ export const MusicGenerator = ({ onTrackGenerated }: MusicGeneratorProps) => {
     </Card>
   );
 };
+
+// Экспортируем мемоизированный компонент
+export const MusicGenerator = memo(MusicGeneratorComponent);

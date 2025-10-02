@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo, useCallback, useMemo } from "react";
 import { TrackCard } from "./TrackCard";
 import { TrackListItem } from "./tracks/TrackListItem";
 import { ViewSwitcher } from "./tracks/ViewSwitcher";
@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "./ui/badge";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { logError, logWarn } from "@/utils/logger";
 
 interface TracksListProps {
   refreshTrigger?: number;
@@ -24,7 +25,7 @@ interface Track extends ApiTrack {
   has_vocals: boolean | null;
 }
 
-export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: TracksListProps) => {
+const TracksListComponent = ({ refreshTrigger, onTrackSelect, selectedTrackId }: TracksListProps) => {
   const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks(refreshTrigger);
   const { playTrackWithQueue } = useAudioPlayer();
   const { toast } = useToast();
@@ -33,10 +34,11 @@ export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: T
     return (saved as 'grid' | 'list') || 'grid';
   });
 
-  const handleViewChange = (view: 'grid' | 'list') => {
+  // Мемоизируем обработчик изменения вида
+  const handleViewChange = useCallback((view: 'grid' | 'list') => {
     setViewMode(view);
     localStorage.setItem('tracks-view-mode', view);
-  };
+  }, []);
 
   // Auto-check for stale processing tracks (over 10 minutes)
   useEffect(() => {
@@ -47,7 +49,7 @@ export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: T
           const createdAt = new Date(track.created_at).getTime();
           const elapsed = now - createdAt;
           if (elapsed > 600000) {
-            console.warn('Stale processing track detected:', track.id, 'elapsed:', elapsed);
+            logWarn(`Stale processing track detected: ${track.id}, elapsed: ${elapsed}`);
           }
         }
       });
@@ -57,7 +59,8 @@ export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: T
     return () => clearInterval(interval);
   }, [tracks]);
 
-  const retryTrack = async (track: Track) => {
+  // Мемоизируем функцию повтора трека
+  const retryTrack = useCallback(async (track: Track) => {
     try {
       await deleteTrack(track.id);
       
@@ -82,23 +85,25 @@ export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: T
 
       refreshTracks();
     } catch (error) {
-      console.error('Retry error:', error);
+      logError('Retry error:', error);
       toast({
         title: 'Ошибка повтора',
         description: error instanceof Error ? error.message : 'Не удалось перезапустить',
         variant: 'destructive',
       });
     }
-  };
+  }, [deleteTrack, toast, refreshTracks]);
 
-  const isStale = (track: Track) => {
+  // Мемоизируем функцию проверки устаревших треков
+  const isStale = useCallback((track: Track) => {
     if (track.status !== 'processing') return false;
     const createdAt = new Date(track.created_at).getTime();
     const elapsed = Date.now() - createdAt;
     return elapsed > 600000; // 10 minutes
-  };
+  }, []);
 
-  const handleLike = async (trackId: string) => {
+  // Мемоизируем функцию лайка
+  const handleLike = useCallback(async (trackId: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -124,23 +129,25 @@ export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: T
 
       refreshTracks();
     } catch (error) {
-      console.error('Like error:', error);
+      logError('Like error:', error);
     }
-  };
+  }, [refreshTracks]);
 
-  const handleDownload = (track: Track) => {
+  // Мемоизируем функцию скачивания
+  const handleDownload = useCallback((track: Track) => {
     if (!track.audio_url) return;
     window.open(track.audio_url, '_blank');
-  };
+  }, []);
 
-  const handleShare = (trackId: string) => {
+  // Мемоизируем функцию поделиться
+  const handleShare = useCallback((trackId: string) => {
     const url = `${window.location.origin}/track/${trackId}`;
     navigator.clipboard.writeText(url);
     toast({
       title: "Ссылка скопирована",
       description: "Ссылка на трек скопирована в буфер обмена",
     });
-  };
+  }, [toast]);
 
   if (isLoading) {
     return (
@@ -283,3 +290,6 @@ export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: T
     </div>
   );
 };
+
+// Экспортируем мемоизированный компонент
+export const TracksList = memo(TracksListComponent);
