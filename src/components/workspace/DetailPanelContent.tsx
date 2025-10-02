@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { TrackVersions } from "@/components/tracks/TrackVersions";
 import { TrackStemsPanel } from "@/components/tracks/TrackStemsPanel";
+import { useTrackLike } from "@/hooks/useTrackLike";
 
 interface DetailPanelContentProps {
   track: any;
@@ -65,10 +66,21 @@ export const DetailPanelContent = ({
   onDelete,
   loadVersionsAndStems,
 }: DetailPanelContentProps) => {
+  const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count || 0);
+
   return (
     <div className="p-3 space-y-3">
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
+        <Button 
+          variant={isLiked ? "default" : "outline"} 
+          size="sm" 
+          onClick={() => toggleLike()}
+          className={isLiked ? "bg-red-500 hover:bg-red-600" : ""}
+        >
+          <Heart className={`h-3.5 w-3.5 mr-1.5 ${isLiked ? 'fill-current' : ''}`} />
+          {likeCount > 0 ? likeCount : 'Лайк'}
+        </Button>
         <Button variant="outline" size="sm" onClick={onDownload} disabled={!track.audio_url}>
           <Download className="h-3.5 w-3.5 mr-1.5" />
           Скачать

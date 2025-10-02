@@ -69,6 +69,8 @@ export interface Track {
   style_tags: string[] | null;
   has_vocals: boolean | null;
   has_stems?: boolean;
+  like_count?: number;
+  view_count?: number;
 }
 
 /**

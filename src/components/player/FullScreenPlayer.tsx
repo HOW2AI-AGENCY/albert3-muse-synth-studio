@@ -6,6 +6,7 @@ import { PlayerQueue } from "./PlayerQueue";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
+import { useTrackLike } from "@/hooks/useTrackLike";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -46,10 +47,14 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
   const { vibrate } = useHapticFeedback();
   const { toast } = useToast();
   const [isMuted, setIsMuted] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
   
   const availableVersions = getAvailableVersions();
   const hasVersions = availableVersions.length > 1;
+  
+  // Use like hook only if currentTrack has an id
+  const { isLiked, toggleLike } = currentTrack 
+    ? useTrackLike(currentTrack.id, 0)
+    : { isLiked: false, toggleLike: () => {} };
 
   const swipeRef = useSwipeGesture({
     onSwipeDown: () => {
@@ -125,7 +130,7 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
 
   const handleLike = () => {
     vibrate(isLiked ? 'light' : 'success');
-    setIsLiked(!isLiked);
+    toggleLike();
   };
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;

@@ -186,7 +186,6 @@ export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: T
               <div key={track.id} className="space-y-3">
                 <TrackCard
                   track={track}
-                  onLike={() => handleLike(track.id)}
                   onDownload={() => handleDownload(typedTrack)}
                   onShare={() => handleShare(track.id)}
                   onClick={() => {

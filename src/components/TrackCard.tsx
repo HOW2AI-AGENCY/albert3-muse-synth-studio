@@ -5,13 +5,12 @@ import { Play, Pause, Heart, Download, Share2, MoreVertical, Music4 } from "luci
 import { useState } from "react";
 import { Track } from "@/services/api.service";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useTrackLike } from "@/hooks/useTrackLike";
 
 interface TrackCardProps {
   track: Track;
-  onLike?: () => void;
   onDownload?: () => void;
   onShare?: () => void;
-  isLiked?: boolean;
   isSelected?: boolean;
   onClick?: () => void;
 }
@@ -26,19 +25,23 @@ const gradients = [
 
 export const TrackCard = ({ 
   track, 
-  onLike, 
   onDownload, 
   onShare,
-  isLiked = false,
   isSelected = false,
   onClick
 }: TrackCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const { currentTrack, isPlaying, playTrack, togglePlayPause } = useAudioPlayer();
+  const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count || 0);
   const gradientIndex = Math.abs(track.id.charCodeAt(0) % gradients.length);
   
   const isCurrentTrack = currentTrack?.id === track.id;
   const showPlayButton = track.audio_url && track.status === 'completed';
+
+  const handleLikeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleLike();
+  };
   
   const getStatusBadge = () => {
     switch (track.status) {
@@ -153,10 +156,13 @@ export const TrackCard = ({
             variant="ghost"
             size="icon"
             className={`h-7 w-7 ${isLiked ? "text-red-500" : ""}`}
-            onClick={onLike}
+            onClick={handleLikeClick}
           >
             <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
           </Button>
+          {likeCount > 0 && (
+            <span className="text-xs text-muted-foreground">{likeCount}</span>
+          )}
           
           {track.audio_url && (
             <>
