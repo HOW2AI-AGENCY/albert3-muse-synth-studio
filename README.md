@@ -8,10 +8,13 @@
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-[🚀 Демо](https://lovable.dev/projects/02875d5f-a8ca-4fc2-97f1-474a7f7a6d00) • [📖 Документация](#-документация) • [🛠️ Установка](#️-установка) • [🎯 Функции](#-основные-функции)
+**Версия:** 0.0.1 | **Статус:** В разработке | **Последнее обновление:** Январь 2025
+
+[🚀 Демо](http://localhost:5173) • [📖 Документация](#-документация) • [🛠️ Установка](#️-установка) • [🎯 Функции](#-основные-функции)
 
 </div>
 
@@ -23,13 +26,16 @@
 
 ### 🎯 Основные функции
 
-- 🎼 **Генерация музыки с ИИ** — создание треков по текстовому описанию
-- 📝 **Создание текстов песен** — автоматическая генерация лирики
+- 🎼 **Генерация музыки с ИИ** — создание треков по текстовому описанию через Suno AI
+- 📝 **Создание текстов песен** — автоматическая генерация лирики с помощью ИИ
 - 🎚️ **Разделение на стемы** — извлечение отдельных инструментов из трека
-- 🎵 **Управление треками** — организация и версионирование музыки
-- 👥 **Система пользователей** — регистрация, аутентификация, профили
-- 📊 **Аналитика** — отслеживание прослушиваний и взаимодействий
-- 💾 **Облачное хранение** — безопасное сохранение всех данных
+- 🎵 **Управление треками** — организация, версионирование и каталогизация музыки
+- 👥 **Система пользователей** — регистрация, аутентификация через Supabase Auth
+- 📊 **Аналитика прослушиваний** — отслеживание взаимодействий и популярности
+- 💾 **Облачное хранение** — безопасное сохранение в Supabase Storage
+- 🎧 **Продвинутый аудиоплеер** — с поддержкой плейлистов и управления
+- 🔄 **Виртуализированные списки** — оптимизированная производительность для больших коллекций
+- 🎨 **Современный UI/UX** — адаптивный дизайн с темной/светлой темой
 
 ## 🏗️ Архитектура
 
@@ -70,32 +76,42 @@ graph TB
 ## 🛠️ Технологический стек
 
 ### Frontend
-- **React 18** — современная библиотека для UI
-- **TypeScript** — типизированный JavaScript
-- **Vite** — быстрый сборщик проектов
-- **Tailwind CSS** — utility-first CSS фреймворк
-- **Radix UI** — доступные UI компоненты
-- **React Query** — управление серверным состоянием
-- **React Hook Form** — управление формами
+- **React 18** — современная библиотека для UI с Concurrent Features
+- **TypeScript 5.x** — типизированный JavaScript для надежности кода
+- **Vite 6.x** — молниеносный сборщик проектов нового поколения
+- **Tailwind CSS 3.x** — utility-first CSS фреймворк
+- **Radix UI** — доступные и настраиваемые UI компоненты
+- **TanStack Query** — мощное управление серверным состоянием
+- **React Hook Form** — производительное управление формами
+- **Lucide React** — красивые SVG иконки
+- **Embla Carousel** — легкий и гибкий карусель компонент
 
-### Backend
-- **Supabase** — Backend-as-a-Service платформа
-- **PostgreSQL** — реляционная база данных
-- **Edge Functions** — серверные функции на Deno
-- **Row Level Security** — безопасность на уровне строк
+### Backend & Infrastructure
+- **Supabase** — полнофункциональная Backend-as-a-Service платформа
+- **PostgreSQL** — надежная реляционная база данных
+- **Supabase Edge Functions** — серверные функции на Deno Runtime
+- **Supabase Storage** — масштабируемое файловое хранилище
+- **Row Level Security (RLS)** — безопасность на уровне строк БД
 
 ### AI & External Services
-- **Suno AI** — генерация музыки
-- **Replicate** — разделение аудио на стемы
-- **Custom AI Models** — создание текстов песен
+- **Suno AI API** — профессиональная генерация музыки
+- **Replicate API** — разделение аудио на стемы через ML модели
+- **Custom AI Models** — создание текстов песен и улучшение промптов
+
+### Development & Build Tools
+- **ESLint** — статический анализ кода
+- **PostCSS** — трансформация CSS
+- **SWC** — быстрый компилятор для JavaScript/TypeScript
+- **Rollup** — оптимизированная сборка для продакшена
 
 ## 🚀 Быстрый старт
 
 ### Предварительные требования
 
 - **Node.js** 18+ ([установить с nvm](https://github.com/nvm-sh/nvm#installing-and-updating))
-- **npm** или **yarn**
-- **Git**
+- **npm** 9+ или **yarn** 1.22+
+- **Git** для клонирования репозитория
+- **Аккаунт Supabase** для backend сервисов
 
 ### Установка
 
@@ -107,48 +123,134 @@ cd albert3-muse-synth-studio
 
 2. **Установка зависимостей**
 ```bash
+# Используя npm
 npm install
+
+# Или используя yarn
+yarn install
 ```
 
 3. **Настройка переменных окружения**
 ```bash
+# Копируем пример конфигурации
 cp .env.example .env
 ```
 
-Заполните `.env` файл:
+Заполните `.env` файл своими данными:
 ```env
-VITE_SUPABASE_URL=your_supabase_url
+# Supabase Configuration
+VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
 VITE_SUPABASE_PROJECT_ID=your_project_id
+
+# AI Services (опционально)
+VITE_SUNO_API_KEY=your_suno_api_key
+VITE_REPLICATE_API_TOKEN=your_replicate_token
 ```
 
-4. **Запуск в режиме разработки**
+4. **Настройка Supabase (если требуется)**
+```bash
+# Установка Supabase CLI
+npm install -g @supabase/cli
+
+# Инициализация проекта
+supabase init
+
+# Запуск локальной разработки
+supabase start
+```
+
+5. **Запуск в режиме разработки**
 ```bash
 npm run dev
 ```
 
 Приложение будет доступно по адресу `http://localhost:5173`
 
+### Дополнительные команды
+
+```bash
+# Сборка для продакшена
+npm run build
+
+# Предварительный просмотр сборки
+npm run preview
+
+# Проверка кода с ESLint
+npm run lint
+```
+
 ## 📁 Структура проекта
 
 ```
-src/
-├── components/          # React компоненты
-│   ├── ui/             # Базовые UI компоненты
-│   ├── player/         # Аудио плеер
-│   ├── tracks/         # Компоненты треков
-│   └── workspace/      # Рабочее пространство
-├── hooks/              # Пользовательские хуки
-├── pages/              # Страницы приложения
-├── services/           # API сервисы
-├── contexts/           # React контексты
-├── utils/              # Утилиты
-└── integrations/       # Интеграции (Supabase)
-
-supabase/
-├── functions/          # Edge Functions
-├── migrations/         # Миграции БД
-└── config.toml        # Конфигурация
+albert3-muse-synth-studio/
+├── 📁 public/                    # Статические файлы
+│   ├── favicon.ico              # Иконка сайта
+│   └── manifest.json            # PWA манифест
+├── 📁 src/                      # Исходный код приложения
+│   ├── 📁 components/           # React компоненты
+│   │   ├── ui/                  # Базовые UI компоненты (Radix UI)
+│   │   ├── AudioPlayer.tsx      # Аудиоплеер с расширенным функционалом
+│   │   ├── TrackCard.tsx        # Карточка трека с действиями
+│   │   ├── VirtualizedList.tsx  # Виртуализированный список треков
+│   │   ├── ErrorBoundary.tsx    # Обработка ошибок React
+│   │   └── Layout.tsx           # Основной макет приложения
+│   ├── 📁 hooks/                # Пользовательские React хуки
+│   │   ├── useAudio.ts          # Управление аудио воспроизведением
+│   │   ├── useSupabase.ts       # Интеграция с Supabase
+│   │   └── useVirtualization.ts # Виртуализация больших списков
+│   ├── 📁 lib/                  # Библиотеки и конфигурации
+│   │   ├── supabase.ts          # Клиент Supabase
+│   │   ├── ai-services.ts       # Интеграция с AI сервисами
+│   │   └── audio-processing.ts  # Обработка аудио файлов
+│   ├── 📁 pages/                # Страницы приложения
+│   │   ├── Dashboard.tsx        # Главная панель
+│   │   ├── Studio.tsx           # Студия создания музыки
+│   │   ├── Library.tsx          # Библиотека треков
+│   │   └── Profile.tsx          # Профиль пользователя
+│   ├── 📁 services/             # Сервисы и API
+│   │   ├── api.ts               # Основной API клиент
+│   │   ├── suno-api.ts          # Интеграция с Suno AI
+│   │   ├── replicate-api.ts     # Интеграция с Replicate
+│   │   └── storage.ts           # Управление файлами
+│   ├── 📁 types/                # TypeScript типы
+│   │   ├── audio.ts             # Типы для аудио
+│   │   ├── user.ts              # Типы пользователей
+│   │   └── api.ts               # Типы API ответов
+│   ├── 📁 utils/                # Утилиты и хелперы
+│   │   ├── formatters.ts        # Форматирование данных
+│   │   ├── logger.ts            # Система логирования
+│   │   ├── validation.ts        # Валидация данных
+│   │   └── constants.ts         # Константы приложения
+│   ├── 📁 styles/               # Стили приложения
+│   │   ├── globals.css          # Глобальные стили
+│   │   └── components.css       # Стили компонентов
+│   ├── App.tsx                  # Корневой компонент
+│   ├── main.tsx                 # Точка входа приложения
+│   └── vite-env.d.ts           # Типы Vite
+├── 📁 docs/                     # Документация проекта
+│   ├── 📁 api/                  # API документация
+│   ├── 📁 architecture/         # Архитектурная документация
+│   └── 📁 guides/               # Руководства пользователя
+├── 📁 tests/                    # Тесты
+│   ├── 📁 unit/                 # Модульные тесты
+│   ├── 📁 integration/          # Интеграционные тесты
+│   └── 📁 e2e/                  # End-to-end тесты
+├── 📁 supabase/                 # Supabase конфигурация
+│   ├── functions/               # Edge Functions
+│   ├── migrations/              # Миграции БД
+│   └── config.toml             # Конфигурация
+├── .env.example                 # Пример переменных окружения
+├── .gitignore                   # Игнорируемые Git файлы
+├── package.json                 # Зависимости и скрипты
+├── tsconfig.json               # Конфигурация TypeScript
+├── tailwind.config.js          # Конфигурация Tailwind CSS
+├── vite.config.ts              # Конфигурация Vite
+├── eslint.config.js            # Конфигурация ESLint
+├── postcss.config.js           # Конфигурация PostCSS
+├── CHANGELOG.md                # История изменений
+├── SETUP-GUIDE.md              # Подробное руководство по установке
+└── README.md                   # Этот файл
 ```
 
 ## 🎮 Использование
