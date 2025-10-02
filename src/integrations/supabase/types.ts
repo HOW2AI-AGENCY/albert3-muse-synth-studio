@@ -14,7 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      tracks: {
+        Row: {
+          audio_url: string | null
+          created_at: string
+          duration: number | null
+          error_message: string | null
+          id: string
+          improved_prompt: string | null
+          metadata: Json | null
+          prompt: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string
+          duration?: number | null
+          error_message?: string | null
+          id?: string
+          improved_prompt?: string | null
+          metadata?: Json | null
+          prompt: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string
+          duration?: number | null
+          error_message?: string | null
+          id?: string
+          improved_prompt?: string | null
+          metadata?: Json | null
+          prompt?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
