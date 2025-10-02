@@ -72,20 +72,10 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
         return;
       }
 
-      // Create track record
-      const track = await ApiService.createTrack(
-        user.id,
-        prompt.substring(0, 50) || "Untitled Track",
-        prompt,
-        provider,
-        lyrics || undefined,
-        hasVocals,
-        styleTags.length > 0 ? styleTags : undefined
-      );
-
-      // Start generation process
+      // Start generation process (track will be created by the edge function)
       await ApiService.generateMusic({
-        trackId: track.id,
+        userId: user.id,
+        title: prompt.substring(0, 50) || "Untitled Track",
         prompt: prompt,
         provider,
         lyrics: lyrics || undefined,

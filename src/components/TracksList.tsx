@@ -1,13 +1,14 @@
-import { Loader2, Music, RefreshCw } from "lucide-react";
+import { useEffect, useState } from "react";
+import { TrackCard } from "./TrackCard";
+import { TrackListItem } from "./tracks/TrackListItem";
+import { ViewSwitcher } from "./tracks/ViewSwitcher";
 import { useTracks } from "@/hooks/useTracks";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
 import { ApiService, Track as ApiTrack } from "@/services/api.service";
+import { Button } from "./ui/button";
+import { RefreshCcw, Music, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { TrackCard } from "./TrackCard";
-import { AudioPlayer } from "./AudioPlayer";
+import { Badge } from "./ui/badge";
 
 interface TracksListProps {
   refreshTrigger?: number;
@@ -25,7 +26,15 @@ interface Track extends ApiTrack {
 export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: TracksListProps) => {
   const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks(refreshTrigger);
   const { toast } = useToast();
-  const [retrying, setRetrying] = useState<Record<string, boolean>>({});
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    const saved = localStorage.getItem('tracks-view-mode');
+    return (saved as 'grid' | 'list') || 'grid';
+  });
+
+  const handleViewChange = (view: 'grid' | 'list') => {
+    setViewMode(view);
+    localStorage.setItem('tracks-view-mode', view);
+  };
 
   // Auto-check for stale processing tracks (over 10 minutes)
   useEffect(() => {
@@ -35,7 +44,6 @@ export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: T
         if (track.status === 'processing') {
           const createdAt = new Date(track.created_at).getTime();
           const elapsed = now - createdAt;
-          // If over 10 minutes (600000ms), mark as likely stale
           if (elapsed > 600000) {
             console.warn('Stale processing track detected:', track.id, 'elapsed:', elapsed);
           }
@@ -43,35 +51,22 @@ export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: T
       });
     };
     checkStaleProcessing();
-    const interval = setInterval(checkStaleProcessing, 60000); // Check every minute
+    const interval = setInterval(checkStaleProcessing, 60000);
     return () => clearInterval(interval);
   }, [tracks]);
 
   const retryTrack = async (track: Track) => {
-    setRetrying(prev => ({ ...prev, [track.id]: true }));
     try {
-      // Delete the old track
       await deleteTrack(track.id);
       
-      // Create a new track with the same params
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const newTrack = await ApiService.createTrack(
-        user.id,
-        track.title,
-        track.prompt,
-        track.provider || 'replicate',
-        track.lyrics || undefined,
-        track.has_vocals || false,
-        track.style_tags || []
-      );
-
-      // Start generation
       await ApiService.generateMusic({
-        trackId: newTrack.id,
+        userId: user.id,
+        title: track.title,
         prompt: track.prompt,
-        provider: (track.provider as 'suno' | 'replicate') || 'replicate',
+        provider: (track.provider as 'suno' | 'replicate') || 'suno',
         lyrics: track.lyrics || undefined,
         hasVocals: track.has_vocals || false,
         styleTags: track.style_tags || [],
@@ -91,8 +86,6 @@ export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: T
         description: error instanceof Error ? error.message : 'Не удалось перезапустить',
         variant: 'destructive',
       });
-    } finally {
-      setRetrying(prev => ({ ...prev, [track.id]: false }));
     }
   };
 
@@ -101,11 +94,6 @@ export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: T
     const createdAt = new Date(track.created_at).getTime();
     const elapsed = Date.now() - createdAt;
     return elapsed > 600000; // 10 minutes
-  };
-
-  const handlePlay = (track: Track) => {
-    // AudioPlayer handles play functionality
-    console.log('Playing track:', track.id);
   };
 
   const handleLike = async (trackId: string) => {
@@ -143,8 +131,8 @@ export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: T
     window.open(track.audio_url, '_blank');
   };
 
-  const handleShare = (track: Track) => {
-    const url = `${window.location.origin}/track/${track.id}`;
+  const handleShare = (trackId: string) => {
+    const url = `${window.location.origin}/track/${trackId}`;
     navigator.clipboard.writeText(url);
     toast({
       title: "Ссылка скопирована",
@@ -177,66 +165,78 @@ export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: T
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-gradient-primary">Ваши треки</h2>
-        <Badge variant="outline" className="text-base px-4 py-2 shadow-glow">
-          {tracks.length} {tracks.length === 1 ? "трек" : "треков"}
-        </Badge>
+        <div className="flex items-center gap-4">
+          <h2 className="text-2xl font-bold">Ваши треки</h2>
+          <Badge variant="outline">
+            {tracks.length} {tracks.length === 1 ? "трек" : "треков"}
+          </Badge>
+        </div>
+        <ViewSwitcher view={viewMode} onViewChange={handleViewChange} />
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {tracks.map((track) => {
-          const showRetry = track.status === 'failed' || isStale(track as Track);
-          
-          return (
-            <div 
-              key={track.id} 
-              className="space-y-2 cursor-pointer"
-              onClick={() => onTrackSelect?.(track as Track)}
-            >
-              {showRetry && (
-                <div className="flex gap-2 items-center">
-                  {isStale(track as Track) && (
-                    <Badge variant="outline" className="text-xs text-orange-500">
-                      Возможно зависло
-                    </Badge>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      retryTrack(track as Track);
-                    }}
-                    disabled={retrying[track.id]}
-                    className="gap-1 h-7 text-xs ml-auto"
-                  >
-                    <RefreshCw className={`h-3 w-3 ${retrying[track.id] ? 'animate-spin' : ''}`} />
-                    Повторить
-                  </Button>
-                </div>
-              )}
-              
-              <TrackCard
-                track={track}
-                onLike={() => handleLike(track.id)}
-                onDownload={() => handleDownload(track as Track)}
-                onShare={() => handleShare(track as Track)}
-                isSelected={selectedTrackId === track.id}
-                onClick={() => onTrackSelect?.(track as Track)}
-              />
-              
-              {track.audio_url && track.status === 'completed' && (
-                <AudioPlayer
-                  trackId={track.id}
-                  title={track.title}
-                  audioUrl={track.audio_url}
-                  onDelete={() => deleteTrack(track.id)}
+
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {tracks.map((track) => {
+            const typedTrack = track as Track;
+            const isStaleTrack = isStale(typedTrack);
+            
+            return (
+              <div key={track.id} className="space-y-3">
+                <TrackCard
+                  track={track}
+                  onLike={() => handleLike(track.id)}
+                  onDownload={() => handleDownload(typedTrack)}
+                  onShare={() => handleShare(track.id)}
+                  onClick={() => onTrackSelect?.(typedTrack)}
                 />
-              )}
-            </div>
-          );
-        })}
-      </div>
+                
+                {(track.status === 'failed' || isStaleTrack) && (
+                  <Button
+                    onClick={() => retryTrack(typedTrack)}
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                  >
+                    <RefreshCcw className="h-4 w-4 mr-2" />
+                    {isStaleTrack ? "Повторить (застрял)" : "Повторить попытку"}
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {tracks.map((track) => {
+            const typedTrack = track as Track;
+            const isStaleTrack = isStale(typedTrack);
+            
+            return (
+              <div key={track.id} className="space-y-2">
+                <TrackListItem
+                  track={track}
+                  onLike={() => handleLike(track.id)}
+                  onDownload={() => handleDownload(typedTrack)}
+                  onShare={() => handleShare(track.id)}
+                  onClick={() => onTrackSelect?.(typedTrack)}
+                />
+                
+                {(track.status === 'failed' || isStaleTrack) && (
+                  <Button
+                    onClick={() => retryTrack(typedTrack)}
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                  >
+                    <RefreshCcw className="h-4 w-4 mr-2" />
+                    {isStaleTrack ? "Повторить (застрял)" : "Повторить попытку"}
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

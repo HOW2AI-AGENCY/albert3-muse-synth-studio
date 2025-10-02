@@ -14,7 +14,9 @@ export interface ImprovePromptResponse {
 }
 
 export interface GenerateMusicRequest {
-  trackId: string;
+  trackId?: string;
+  userId?: string;
+  title?: string;
   prompt: string;
   provider?: 'replicate' | 'suno';
   lyrics?: string;

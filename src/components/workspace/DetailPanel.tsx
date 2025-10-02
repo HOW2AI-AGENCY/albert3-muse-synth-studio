@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Download, Share2, Trash2, Eye, Heart, Calendar, Clock } from "lucide-react";
+import { X, Download, Share2, Trash2, Eye, Heart, Calendar, Clock, ExternalLink, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -17,6 +18,12 @@ interface DetailPanelProps {
     prompt: string;
     status: string;
     audio_url?: string;
+    cover_url?: string;
+    video_url?: string;
+    suno_id?: string;
+    model_name?: string;
+    lyrics?: string;
+    style_tags?: string[];
     genre?: string;
     mood?: string;
     is_public?: boolean;
@@ -144,14 +151,90 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
       {/* Content */}
       <div className="flex-1 overflow-auto p-4 space-y-6">
         {/* Cover Art Preview */}
-        <div className="aspect-square rounded-lg bg-gradient-to-br from-primary/20 via-accent/20 to-primary/10 flex items-center justify-center">
-          <div className="text-center space-y-2">
-            <div className="text-6xl">🎵</div>
-            <Badge variant={track.status === "completed" ? "default" : "secondary"}>
-              {track.status}
-            </Badge>
-          </div>
+        <div className="aspect-square rounded-lg overflow-hidden">
+          {track.cover_url ? (
+            <img
+              src={track.cover_url}
+              alt={track.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary/20 via-accent/20 to-primary/10 flex items-center justify-center">
+              <div className="text-center space-y-2">
+                <div className="text-6xl">🎵</div>
+                <Badge variant={track.status === "completed" ? "default" : "secondary"}>
+                  {track.status}
+                </Badge>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Style Tags */}
+        {track.style_tags && track.style_tags.length > 0 && (
+          <div className="space-y-2">
+            <Label>Теги стиля</Label>
+            <div className="flex flex-wrap gap-2">
+              {track.style_tags.map((tag, i) => (
+                <Badge key={i} variant="secondary">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Suno Details */}
+        {(track.suno_id || track.model_name) && (
+          <div className="space-y-2">
+            <Label>Детали генерации</Label>
+            <div className="space-y-1 text-sm text-muted-foreground">
+              {track.model_name && <p>Модель: {track.model_name}</p>}
+              {track.suno_id && <p className="font-mono text-xs">ID: {track.suno_id}</p>}
+            </div>
+            
+            {/* External Links */}
+            <div className="flex flex-col gap-2 pt-2">
+              {track.suno_id && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start"
+                  onClick={() => window.open(`https://suno.com/song/${track.suno_id}`, "_blank")}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Открыть в Suno
+                </Button>
+              )}
+              
+              {track.video_url && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start"
+                  onClick={() => window.open(track.video_url, "_blank")}
+                >
+                  <Play className="h-4 w-4 mr-2" />
+                  Посмотреть видео
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
+        <Separator />
+
+        {/* Lyrics */}
+        {track.lyrics && (
+          <div className="space-y-2">
+            <Label>Текст песни</Label>
+            <Textarea
+              value={track.lyrics}
+              readOnly
+              className="min-h-[120px] resize-none"
+            />
+          </div>
+        )}
 
         {/* Metadata Form */}
         <div className="space-y-4">

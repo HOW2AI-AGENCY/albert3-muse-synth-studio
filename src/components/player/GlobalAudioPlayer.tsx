@@ -1,7 +1,7 @@
 import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1 } from 'lucide-react';
 import { useState } from 'react';
 
 const formatTime = (seconds: number): string => {
@@ -30,7 +30,7 @@ export const GlobalAudioPlayer = () => {
 
   if (!currentTrack) return null;
 
-  const handleVolumeToggle = () => {
+  const toggleMute = () => {
     if (isMuted) {
       setVolume(previousVolume);
       setIsMuted(false);
@@ -48,109 +48,119 @@ export const GlobalAudioPlayer = () => {
     if (newVolume > 0) setPreviousVolume(newVolume);
   };
 
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
-
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border z-50">
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex items-center gap-4">
-          {/* Track Info */}
-          <div className="flex items-center gap-3 min-w-0 w-64">
-            {currentTrack.cover_url ? (
-              <img
-                src={currentTrack.cover_url}
-                alt={currentTrack.title}
-                className="w-12 h-12 rounded object-cover"
-              />
-            ) : (
-              <div className="w-12 h-12 rounded bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                <Play className="w-5 h-5 text-primary" />
-              </div>
-            )}
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-medium truncate">{currentTrack.title}</div>
-              {currentTrack.style_tags && currentTrack.style_tags.length > 0 && (
-                <div className="text-xs text-muted-foreground truncate">
-                  {currentTrack.style_tags.slice(0, 2).join(', ')}
+    <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-card via-card/95 to-card backdrop-blur-xl border-t border-border/50 shadow-2xl z-50">
+      <div className="max-w-screen-2xl mx-auto flex items-center gap-4 p-4">
+        {/* Track Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 shadow-lg">
+              {currentTrack.cover_url ? (
+                <img 
+                  src={currentTrack.cover_url} 
+                  alt={currentTrack.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-primary/30 via-accent/30 to-secondary/30 flex items-center justify-center text-2xl">
+                  🎵
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Controls & Progress */}
-          <div className="flex-1 flex flex-col gap-2">
-            {/* Controls */}
-            <div className="flex items-center justify-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={playPrevious}
-                className="h-8 w-8"
-              >
-                <SkipBack className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="default"
-                size="icon"
-                onClick={togglePlayPause}
-                className="h-10 w-10"
-              >
-                {isPlaying ? (
-                  <Pause className="h-5 w-5" fill="currentColor" />
+            <div className="min-w-0 flex-1">
+              <h4 className="font-semibold truncate text-foreground">{currentTrack.title}</h4>
+              <div className="flex items-center gap-2 mt-0.5">
+                {currentTrack.style_tags && currentTrack.style_tags.length > 0 ? (
+                  <p className="text-xs text-muted-foreground truncate">
+                    {currentTrack.style_tags.slice(0, 3).join(" • ")}
+                  </p>
                 ) : (
-                  <Play className="h-5 w-5" fill="currentColor" />
+                  <p className="text-xs text-muted-foreground">AI Generated</p>
                 )}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={playNext}
-                className="h-8 w-8"
-              >
-                <SkipForward className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground w-12 text-right">
-                {formatTime(currentTime)}
-              </span>
-              <Slider
-                value={[currentTime]}
-                max={duration || 100}
-                step={0.1}
-                onValueChange={(value) => seekTo(value[0])}
-                className="flex-1"
-              />
-              <span className="text-xs text-muted-foreground w-12">
-                {formatTime(duration)}
-              </span>
+              </div>
             </div>
           </div>
+        </div>
 
-          {/* Volume Control */}
-          <div className="flex items-center gap-2 w-32">
+        {/* Playback Controls */}
+        <div className="flex flex-col items-center gap-2 flex-1 max-w-2xl">
+          <div className="flex items-center gap-4">
             <Button
-              variant="ghost"
               size="icon"
-              onClick={handleVolumeToggle}
-              className="h-8 w-8"
+              variant="ghost"
+              onClick={playPrevious}
+              className="h-9 w-9 hover:bg-primary/10 transition-colors"
             >
-              {isMuted || volume === 0 ? (
-                <VolumeX className="h-4 w-4" />
+              <SkipBack className="h-5 w-5" />
+            </Button>
+
+            <Button
+              size="icon"
+              variant="default"
+              onClick={togglePlayPause}
+              className="h-12 w-12 rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all hover:scale-105"
+            >
+              {isPlaying ? (
+                <Pause className="h-6 w-6" />
               ) : (
-                <Volume2 className="h-4 w-4" />
+                <Play className="h-6 w-6 ml-0.5" />
               )}
             </Button>
-            <Slider
-              value={[volume]}
-              max={1}
-              step={0.01}
-              onValueChange={handleVolumeChange}
-              className="flex-1"
-            />
+
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={playNext}
+              className="h-9 w-9 hover:bg-primary/10 transition-colors"
+            >
+              <SkipForward className="h-5 w-5" />
+            </Button>
           </div>
+
+          {/* Progress Bar */}
+          <div className="w-full flex items-center gap-3">
+            <span className="text-xs font-medium text-foreground tabular-nums">
+              {formatTime(currentTime)}
+            </span>
+            <Slider
+              value={[currentTime]}
+              max={duration || 100}
+              step={0.1}
+              onValueChange={(value) => seekTo(value[0])}
+              className="flex-1 cursor-pointer"
+            />
+            <span className="text-xs font-medium text-foreground tabular-nums">
+              {formatTime(duration)}
+            </span>
+          </div>
+        </div>
+
+        {/* Volume Control */}
+        <div className="flex items-center gap-3 min-w-[180px]">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={toggleMute}
+            className="h-9 w-9 hover:bg-primary/10 transition-colors"
+          >
+            {isMuted || volume === 0 ? (
+              <VolumeX className="h-5 w-5" />
+            ) : volume < 0.5 ? (
+              <Volume1 className="h-5 w-5" />
+            ) : (
+              <Volume2 className="h-5 w-5" />
+            )}
+          </Button>
+          <Slider
+            value={[isMuted ? 0 : volume]}
+            max={1}
+            step={0.01}
+            onValueChange={handleVolumeChange}
+            className="flex-1 cursor-pointer"
+          />
+          <span className="text-xs font-medium text-muted-foreground tabular-nums w-8 text-right">
+            {Math.round((isMuted ? 0 : volume) * 100)}%
+          </span>
         </div>
       </div>
     </div>
