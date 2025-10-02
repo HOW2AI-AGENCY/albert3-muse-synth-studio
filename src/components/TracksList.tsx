@@ -1,14 +1,104 @@
 import { AudioPlayer } from "./AudioPlayer";
-import { Loader2, Music, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, Music, Clock, CheckCircle, XCircle, RefreshCw } from "lucide-react";
 import { useTracks } from "@/hooks/useTracks";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { ApiService, Track as ApiTrack } from "@/services/api.service";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TracksListProps {
   refreshTrigger?: number;
 }
 
+interface Track extends ApiTrack {
+  provider: string | null;
+  lyrics: string | null;
+  style_tags: string[] | null;
+  has_vocals: boolean | null;
+}
+
 export const TracksList = ({ refreshTrigger }: TracksListProps) => {
-  const { tracks, isLoading, deleteTrack } = useTracks(refreshTrigger);
+  const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks(refreshTrigger);
+  const { toast } = useToast();
+  const [retrying, setRetrying] = useState<Record<string, boolean>>({});
+
+  // Auto-check for stale processing tracks (over 10 minutes)
+  useEffect(() => {
+    const checkStaleProcessing = () => {
+      const now = Date.now();
+      tracks.forEach(track => {
+        if (track.status === 'processing') {
+          const createdAt = new Date(track.created_at).getTime();
+          const elapsed = now - createdAt;
+          // If over 10 minutes (600000ms), mark as likely stale
+          if (elapsed > 600000) {
+            console.warn('Stale processing track detected:', track.id, 'elapsed:', elapsed);
+          }
+        }
+      });
+    };
+    checkStaleProcessing();
+    const interval = setInterval(checkStaleProcessing, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [tracks]);
+
+  const retryTrack = async (track: Track) => {
+    setRetrying(prev => ({ ...prev, [track.id]: true }));
+    try {
+      // Delete the old track
+      await deleteTrack(track.id);
+      
+      // Create a new track with the same params
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const newTrack = await ApiService.createTrack(
+        user.id,
+        track.title,
+        track.prompt,
+        track.provider || 'replicate',
+        track.lyrics || undefined,
+        track.has_vocals || false,
+        track.style_tags || []
+      );
+
+      // Start generation
+      await ApiService.generateMusic({
+        trackId: newTrack.id,
+        prompt: track.prompt,
+        provider: (track.provider as 'suno' | 'replicate') || 'replicate',
+        lyrics: track.lyrics || undefined,
+        hasVocals: track.has_vocals || false,
+        styleTags: track.style_tags || [],
+        customMode: !!(track.lyrics && track.style_tags?.length)
+      });
+
+      toast({
+        title: 'Трек перезапущен',
+        description: 'Генерация началась заново',
+      });
+
+      refreshTracks();
+    } catch (error) {
+      console.error('Retry error:', error);
+      toast({
+        title: 'Ошибка повтора',
+        description: error instanceof Error ? error.message : 'Не удалось перезапустить',
+        variant: 'destructive',
+      });
+    } finally {
+      setRetrying(prev => ({ ...prev, [track.id]: false }));
+    }
+  };
+
+  const isStale = (track: Track) => {
+    if (track.status !== 'processing') return false;
+    const createdAt = new Date(track.created_at).getTime();
+    const elapsed = Date.now() - createdAt;
+    return elapsed > 600000; // 10 minutes
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -75,22 +165,42 @@ export const TracksList = ({ refreshTrigger }: TracksListProps) => {
       </div>
       
       <div className="grid gap-4">
-        {tracks.map((track) => (
-          <div key={track.id} className="space-y-2">
-            <div className="flex items-center gap-2">
-              {getStatusBadge(track.status)}
-              {track.error_message && (
-                <span className="text-xs text-destructive">{track.error_message}</span>
-              )}
+        {tracks.map((track) => {
+          const showRetry = track.status === 'failed' || isStale(track as Track);
+          return (
+            <div key={track.id} className="space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                {getStatusBadge(track.status)}
+                {isStale(track as Track) && (
+                  <Badge variant="outline" className="text-xs text-orange-500">
+                    Возможно зависло
+                  </Badge>
+                )}
+                {track.error_message && (
+                  <span className="text-xs text-destructive">{track.error_message}</span>
+                )}
+                {showRetry && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => retryTrack(track as Track)}
+                    disabled={retrying[track.id]}
+                    className="gap-1 h-7 text-xs"
+                  >
+                    <RefreshCw className={`h-3 w-3 ${retrying[track.id] ? 'animate-spin' : ''}`} />
+                    Повторить
+                  </Button>
+                )}
+              </div>
+              <AudioPlayer
+                trackId={track.id}
+                title={track.title}
+                audioUrl={track.audio_url || undefined}
+                onDelete={() => deleteTrack(track.id)}
+              />
             </div>
-            <AudioPlayer
-              trackId={track.id}
-              title={track.title}
-              audioUrl={track.audio_url || undefined}
-              onDelete={() => deleteTrack(track.id)}
-            />
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
