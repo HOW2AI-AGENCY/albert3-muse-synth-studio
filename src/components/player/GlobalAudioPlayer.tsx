@@ -1,14 +1,18 @@
-import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1 } from 'lucide-react';
-import { useState } from 'react';
+import { useState } from "react";
+import { MiniPlayer } from "./MiniPlayer";
+import { FullScreenPlayer } from "./FullScreenPlayer";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useMediaSession } from "@/hooks/useMediaSession";
+import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 
 const formatTime = (seconds: number): string => {
-  if (!seconds || isNaN(seconds)) return '0:00';
+  if (!seconds || isNaN(seconds)) return "0:00";
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
 };
 
 export const GlobalAudioPlayer = () => {
@@ -25,11 +29,48 @@ export const GlobalAudioPlayer = () => {
     playPrevious,
   } = useAudioPlayer();
 
+  const isMobile = useIsMobile();
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(volume);
 
+  // Media Session API integration
+  useMediaSession(
+    currentTrack
+      ? {
+          title: currentTrack.title,
+          artist: currentTrack.style_tags?.[0] || 'AI Generated',
+          artwork: currentTrack.cover_url
+            ? [
+                {
+                  src: currentTrack.cover_url,
+                  sizes: '512x512',
+                  type: 'image/jpeg',
+                },
+              ]
+            : [],
+        }
+      : null,
+    {
+      onPlay: togglePlayPause,
+      onPause: togglePlayPause,
+      onNext: playNext,
+      onPrevious: playPrevious,
+      onSeek: seekTo,
+    }
+  );
+
   if (!currentTrack) return null;
 
+  // Mobile: Use mini player + full screen player
+  if (isMobile) {
+    if (isExpanded) {
+      return <FullScreenPlayer onMinimize={() => setIsExpanded(false)} />;
+    }
+    return <MiniPlayer onExpand={() => setIsExpanded(true)} />;
+  }
+
+  // Desktop: Enhanced player
   const toggleMute = () => {
     if (isMuted) {
       setVolume(previousVolume);

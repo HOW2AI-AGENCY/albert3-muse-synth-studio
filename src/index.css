@@ -124,4 +124,17 @@ All colors MUST be HSL.
       box-shadow: 0 0 60px hsl(262 83% 58% / 0.5);
     }
   }
+
+  /* Safe area insets for mobile */
+  .safe-area-inset {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Touch target optimization */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
 }

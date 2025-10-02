@@ -194,12 +194,18 @@ serve(async (req) => {
         
         if (!versionAudioUrl) continue;
 
-        await supabase
+        console.log(`[suno-callback] Saving version ${i + 1}:`, {
+          parent_track_id: track.id,
+          version_number: i + 1,
+          audio_url: versionAudioUrl?.substring(0, 50)
+        });
+
+        const { data: insertedVersion, error: versionError } = await supabase
           .from("track_versions")
-          .upsert({
+          .insert({
             parent_track_id: track.id,
             version_number: i + 1,
-            is_master: i === 0, // First version is master by default
+            is_master: i === 0,
             suno_id: sanitizeText(versionTask.id),
             audio_url: versionAudioUrl,
             video_url: versionTask.video_url || versionTask.videoUrl,
@@ -207,9 +213,15 @@ serve(async (req) => {
             lyrics: sanitizeText(versionTask.prompt || versionTask.lyric || versionTask.lyrics),
             duration: Math.round(versionTask.duration || versionTask.duration_seconds || 0),
             metadata: { suno_data: versionTask }
-          }, {
-            onConflict: 'parent_track_id,version_number'
-          });
+          })
+          .select()
+          .single();
+
+        if (versionError) {
+          console.error(`[suno-callback] Error saving version ${i + 1}:`, versionError);
+        } else {
+          console.log(`[suno-callback] Version ${i + 1} saved with ID:`, insertedVersion?.id);
+        }
       }
 
       console.log("Suno callback: track completed", { taskId, audioUrl: firstAudioUrl, versionsCount: tasks.length });

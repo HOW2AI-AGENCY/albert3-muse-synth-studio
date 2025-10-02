@@ -3,7 +3,11 @@ import { TracksList } from "@/components/TracksList";
 import { DetailPanel } from "@/components/workspace/DetailPanel";
 import { useState } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Plus, Menu } from "lucide-react";
+import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -13,11 +17,14 @@ import {
 const Generate = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [selectedTrack, setSelectedTrack] = useState<any>(null);
-  // Check if desktop view (1024px and above)
+  const [showGenerator, setShowGenerator] = useState(false);
+  
   const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const isMobile = useIsMobile();
 
   const handleTrackGenerated = () => {
     setRefreshTrigger((prev) => prev + 1);
+    setShowGenerator(false);
   };
 
   const handleTrackSelect = (track: any) => {
@@ -81,16 +88,11 @@ const Generate = () => {
     );
   }
 
-  // Mobile/Tablet: Stack layout with Sheet for details
+  // Mobile: Optimized layout with Drawer for generator
   return (
-    <div className="flex flex-col lg:flex-row gap-4 p-4 md:p-6 h-[calc(100vh-4rem)]">
-      {/* Create Panel */}
-      <div className="w-full lg:w-80 shrink-0">
-        <MusicGenerator onTrackGenerated={handleTrackGenerated} />
-      </div>
-
-      {/* Track List */}
-      <div className="flex-1 overflow-auto">
+    <div className="flex flex-col h-[calc(100vh-4rem)] pb-20 relative">
+      {/* Track List - Full Screen */}
+      <div className="flex-1 overflow-auto p-4">
         <TracksList
           refreshTrigger={refreshTrigger}
           onTrackSelect={handleTrackSelect}
@@ -98,9 +100,29 @@ const Generate = () => {
         />
       </div>
 
+      {/* Floating Action Button */}
+      <Drawer open={showGenerator} onOpenChange={setShowGenerator}>
+        <DrawerTrigger asChild>
+          <Button
+            size="lg"
+            className="fixed bottom-24 right-4 h-14 w-14 rounded-full shadow-2xl glow-primary bg-gradient-primary hover:scale-110 transition-all z-40 animate-pulse-glow"
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
+        </DrawerTrigger>
+        <DrawerContent className="max-h-[85vh] p-0">
+          <div className="overflow-auto p-4">
+            <MusicGenerator onTrackGenerated={handleTrackGenerated} />
+          </div>
+        </DrawerContent>
+      </Drawer>
+
       {/* Detail Sheet (Mobile) */}
       <Sheet open={!!selectedTrack} onOpenChange={(open) => !open && handleCloseDetail()}>
-        <SheetContent side="right" className="w-full sm:max-w-md p-0">
+        <SheetContent 
+          side="bottom" 
+          className="h-[90vh] rounded-t-2xl p-0 animate-slide-up"
+        >
           {selectedTrack && (
             <DetailPanel
               track={selectedTrack}
