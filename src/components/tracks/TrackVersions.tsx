@@ -109,7 +109,8 @@ const TrackVersionsComponent = ({ trackId, versions, onVersionUpdate }: TrackVer
     setDeleteDialogOpen(true);
   }, [versions.length]);
 
-  const confirmDeleteVersion = async () => {
+  // Мемоизируем функцию подтверждения удаления
+  const confirmDeleteVersion = useCallback(async () => {
     if (!versionToDelete) return;
 
     try {
@@ -149,14 +150,15 @@ const TrackVersionsComponent = ({ trackId, versions, onVersionUpdate }: TrackVer
       setDeleteDialogOpen(false);
       setVersionToDelete(null);
     }
-  };
+  }, [versionToDelete, versions, trackId, vibrate, onVersionUpdate]);
 
-  const formatDuration = (seconds?: number) => {
+  // Мемоизируем функцию форматирования длительности
+  const formatDuration = useCallback((seconds?: number) => {
     if (!seconds) return '--:--';
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  }, []);
 
   if (!versions || versions.length <= 1) {
     return null;
