@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, memo } from "react";
+import React, { useState, useMemo, useCallback, memo, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ import { useTrackLike } from "@/hooks/useTrackLike";
 import { withErrorBoundary } from "@/components/ErrorBoundary";
 import { formatDuration } from "@/utils/formatters";
 import { logError } from "@/utils/logger";
+import { cn } from "@/lib/utils";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -53,18 +54,22 @@ interface TrackCardProps {
   onDownload?: () => void;
   onShare?: () => void;
   onClick?: () => void;
+  className?: string;
+  variant?: 'default' | 'compact' | 'minimal';
 }
 
 const gradients = [
-  'from-purple-500 to-pink-500',
-  'from-blue-500 to-cyan-500',
-  'from-green-500 to-teal-500',
-  'from-orange-500 to-red-500',
-  'from-indigo-500 to-purple-500',
+  'from-purple-500/20 to-pink-500/20',
+  'from-blue-500/20 to-cyan-500/20',
+  'from-green-500/20 to-emerald-500/20',
+  'from-orange-500/20 to-red-500/20',
+  'from-indigo-500/20 to-purple-500/20',
+  'from-teal-500/20 to-blue-500/20'
 ];
 
-const TrackCardComponent = ({ track, onDownload, onShare, onClick }: TrackCardProps) => {
+const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, variant = 'default' }: TrackCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
   const { currentTrack, isPlaying, playTrack, togglePlayPause } = useAudioPlayer();
   const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count || 0);
   
@@ -165,39 +170,147 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick }: TrackCardPr
     return gradients[index];
   }, [track.id]);
 
+  // Intersection Observer для анимации появления
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('animate-fade-in');
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Компактный вариант карточки
+  if (variant === 'compact') {
+    return (
+      <Card 
+        ref={cardRef}
+        className={cn(
+          "group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-primary/10",
+          "border-border/50 bg-card/80 backdrop-blur-sm hover:bg-card/90",
+          "hover:scale-[1.02] hover:-translate-y-1",
+          className
+        )}
+        onClick={handleCardClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <CardContent className="p-3">
+          <div className="flex items-center gap-3">
+            {/* Play Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handlePlayClick}
+              disabled={playButtonDisabled}
+              className={cn(
+                "w-10 h-10 rounded-full transition-all duration-300",
+                isCurrentTrack && isPlaying 
+                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" 
+                  : "hover:bg-primary/10 hover:scale-110"
+              )}
+            >
+              {isCurrentTrack && isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+            </Button>
+
+            {/* Track Info */}
+            <div className="flex-1 min-w-0">
+              <h3 className="font-medium text-sm truncate">{track.title || 'Без названия'}</h3>
+              {track.prompt && (
+                <p className="text-xs text-muted-foreground truncate">{track.prompt}</p>
+              )}
+            </div>
+
+            {/* Duration */}
+            {formattedDuration && (
+              <span className="text-xs text-muted-foreground">
+                {formattedDuration}
+              </span>
+            )}
+
+            {/* Actions */}
+            <div className={cn(
+              "flex items-center gap-1 transition-opacity duration-200",
+              isHovered ? "opacity-100" : "opacity-0"
+            )}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLikeClick}
+                className={cn(
+                  "w-8 h-8 p-0 transition-all duration-200",
+                  isLiked ? "text-red-500 hover:text-red-600" : "hover:text-red-500"
+                )}
+              >
+                <Heart className={cn("w-4 h-4", isLiked && "fill-current")} />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card 
-      className={`group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-[1.02] ${
-        isCurrentTrack ? 'ring-2 ring-primary/50' : ''
-      }`}
+      ref={cardRef}
+      className={cn(
+        "group relative overflow-hidden cursor-pointer transition-all duration-500 hover:shadow-xl hover:shadow-primary/20",
+        "border-border/50 bg-card/80 backdrop-blur-sm hover:bg-card/95",
+        "hover:scale-[1.03] hover:-translate-y-2",
+        "before:absolute before:inset-0 before:bg-gradient-to-br before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-500",
+        `before:${randomGradient}`,
+        isCurrentTrack && 'ring-2 ring-primary/50',
+        className
+      )}
       onClick={handleCardClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Обложка трека */}
-      <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
+      <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 group-hover:shadow-lg transition-shadow duration-300">
         {track.cover_url || track.image_url ? (
           <img 
             src={track.cover_url || track.image_url} 
             alt={track.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
         ) : (
-          <div className={`w-full h-full bg-gradient-to-br ${randomGradient} flex items-center justify-center`}>
-            <Music className="w-12 h-12 text-white/80" />
+          <div className={cn(
+            "w-full h-full flex items-center justify-center bg-gradient-to-br transition-all duration-500",
+            randomGradient,
+            "group-hover:scale-110"
+          )}>
+            <Music className="w-12 h-12 text-primary/60" />
           </div>
         )}
         
         {/* Оверлей с кнопкой воспроизведения */}
-        <div className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-200 ${
+        <div className={cn(
+          "absolute inset-0 bg-black/40 flex items-center justify-center transition-all duration-300",
           isHovered || (isCurrentTrack && isPlaying) ? 'opacity-100' : 'opacity-0'
-        }`}>
+        )}>
           <Button
             variant="secondary"
             size="lg"
             onClick={handlePlayClick}
             disabled={playButtonDisabled}
-            className="rounded-full w-16 h-16 bg-white/90 hover:bg-white text-black shadow-lg"
+            className={cn(
+              "rounded-full w-14 h-14 transition-all duration-300 shadow-lg",
+              isCurrentTrack && isPlaying
+                ? "bg-primary text-primary-foreground shadow-primary/25 animate-pulse-glow" 
+                : "bg-white/90 hover:bg-white text-black hover:scale-110 hover:shadow-xl"
+            )}
           >
             {isCurrentTrack && isPlaying ? (
               <Pause className="w-6 h-6" />
@@ -213,9 +326,9 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick }: TrackCardPr
         </div>
       </div>
 
-      <CardContent className="p-4">
+      <CardContent className="relative p-4">
         {/* Заголовок */}
-        <h3 className="font-semibold text-base mb-2 line-clamp-1">
+        <h3 className="font-semibold text-base mb-2 line-clamp-1 group-hover:text-primary transition-colors duration-300">
           {track.title || 'Без названия'}
         </h3>
         
@@ -252,13 +365,13 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick }: TrackCardPr
               <Badge 
                 key={index} 
                 variant="secondary" 
-                className="text-xs px-2 py-0.5"
+                className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors duration-200"
               >
                 {tag}
               </Badge>
             ))}
             {track.style_tags.length > 2 && (
-              <Badge variant="outline" className="text-xs px-2 py-0.5">
+              <Badge variant="outline" className="text-xs px-2 py-0.5 border-primary/20 text-primary">
                 +{track.style_tags.length - 2}
               </Badge>
             )}
@@ -271,11 +384,17 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick }: TrackCardPr
             variant="ghost"
             size="sm"
             onClick={handleLikeClick}
-            className={`transition-colors ${
-              isLiked ? 'text-red-500 hover:text-red-600' : 'hover:text-red-500'
-            }`}
+            className={cn(
+              "transition-all duration-300 hover:scale-110",
+              isLiked 
+                ? 'text-red-500 hover:text-red-600 animate-pulse' 
+                : 'hover:text-red-500'
+            )}
           >
-            <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+            <Heart className={cn(
+              "w-4 h-4 transition-all duration-200",
+              isLiked && 'fill-current scale-110'
+            )} />
             {likeCount > 0 && <span className="ml-1 text-xs">{likeCount}</span>}
           </Button>
           
@@ -285,7 +404,7 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick }: TrackCardPr
               size="sm"
               onClick={handleDownloadClick}
               disabled={!track.audio_url}
-              className="hover:text-green-500"
+              className="hover:text-green-500 transition-all duration-200 hover:scale-110"
             >
               <Download className="w-4 h-4" />
             </Button>
@@ -294,7 +413,7 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick }: TrackCardPr
               variant="ghost"
               size="sm"
               onClick={handleShareClick}
-              className="hover:text-blue-500"
+              className="hover:text-blue-500 transition-all duration-200 hover:scale-110"
             >
               <Share2 className="w-4 h-4" />
             </Button>
@@ -321,3 +440,25 @@ export const TrackCard = memo(withErrorBoundary(TrackCardComponent, {
 }));
 
 TrackCard.displayName = 'TrackCard';
+
+// Добавляем CSS анимации в глобальные стили
+if (typeof document !== 'undefined') {
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(var(--primary), 0.3); }
+      50% { box-shadow: 0 0 30px rgba(var(--primary), 0.5); }
+    }
+    .animate-fade-in {
+      animation: fade-in 0.6s ease-out;
+    }
+    .animate-pulse-glow {
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+  `;
+  document.head.appendChild(style);
+}

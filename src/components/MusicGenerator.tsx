@@ -1,23 +1,19 @@
-import React, { useState, useCallback, memo, useMemo } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, Music, Wand2, Play, Pause, Download, Heart, Share2, MoreHorizontal, Volume2, VolumeX, Lightbulb, Mic, Music2, Settings2, Hash, FileText } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { useMusicGeneration } from "@/hooks/useMusicGeneration";
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { useHapticFeedback } from "@/hooks/useHapticFeedback";
-import { withErrorBoundary } from "@/components/ErrorBoundary";
-import { logError } from "@/utils/logger";
-import { LyricsEditor } from "@/components/LyricsEditor";
+import React, { memo, useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Sparkles, Music, Wand2, Mic, Settings2, Hash, FileText, Volume2, Clock, Zap } from 'lucide-react';
+import { useMusicGeneration } from '@/hooks/useMusicGeneration';
+import { useAudioPlayer } from '@/hooks/useAudioPlayer';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { withErrorBoundary } from '@/components/ui/error-boundary';
+import { LyricsEditor } from '@/components/LyricsEditor';
 
 interface MusicGeneratorProps {
   onTrackGenerated?: () => void;
@@ -40,11 +36,69 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     styleTags,
     setStyleTags,
   } = useMusicGeneration(onTrackGenerated);
+  
+  const { triggerHaptic } = useHapticFeedback();
+  const [mood, setMood] = useState("");
+  const [tempo, setTempo] = useState("");
+  const [isVisible, setIsVisible] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Мемоизируем массив популярных жанров
+  // Intersection Observer для анимации появления
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Автоматическое изменение размера textarea
+  const adjustTextareaHeight = useCallback(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, []);
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [prompt, adjustTextareaHeight]);
+
+  // Популярные жанры с анимированными иконками
   const popularGenres = useMemo(() => [
-    "Электроника", "Поп", "Рок", "Хип-хоп", "Джаз", 
-    "Классика", "Эмбиент", "Лоу-фай", "Трэп", "Хаус"
+    { name: "Поп", icon: "🎵", gradient: "from-pink-500 to-purple-500" },
+    { name: "Рок", icon: "🎸", gradient: "from-red-500 to-orange-500" },
+    { name: "Электроника", icon: "🎛️", gradient: "from-blue-500 to-cyan-500" },
+    { name: "Джаз", icon: "🎺", gradient: "from-yellow-500 to-amber-500" },
+    { name: "Хип-хоп", icon: "🎤", gradient: "from-purple-500 to-indigo-500" },
+    { name: "Классика", icon: "🎼", gradient: "from-emerald-500 to-teal-500" },
+  ], []);
+
+  // Настройки настроения
+  const moodOptions = useMemo(() => [
+    { value: "energetic", label: "Энергичное", icon: "⚡" },
+    { value: "calm", label: "Спокойное", icon: "🌙" },
+    { value: "happy", label: "Радостное", icon: "☀️" },
+    { value: "melancholic", label: "Меланхоличное", icon: "🌧️" },
+    { value: "mysterious", label: "Загадочное", icon: "🌟" },
+  ], []);
+
+  // Настройки темпа
+  const tempoOptions = useMemo(() => [
+    { value: "slow", label: "Медленный", bpm: "60-80", icon: "🐌" },
+    { value: "medium", label: "Средний", bpm: "80-120", icon: "🚶" },
+    { value: "fast", label: "Быстрый", bpm: "120-140", icon: "🏃" },
+    { value: "very-fast", label: "Очень быстрый", bpm: "140+", icon: "⚡" },
   ], []);
 
   // Мемоизируем функцию переключения тегов
@@ -54,10 +108,41 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
         ? prev.filter(t => t !== tag)
         : [...prev, tag]
     );
-  }, [setStyleTags]);
+    triggerHaptic('light');
+  }, [setStyleTags, triggerHaptic]);
+
+  const handleGenerateMusic = useCallback(async () => {
+    triggerHaptic('medium');
+    await generateMusic({
+      prompt,
+      hasVocals,
+      lyrics: hasVocals ? lyrics : undefined,
+      provider,
+      styleTags,
+      mood,
+      tempo,
+    });
+  }, [generateMusic, prompt, hasVocals, lyrics, provider, styleTags, mood, tempo, triggerHaptic]);
+
+  const handleImprovePrompt = useCallback(async () => {
+    triggerHaptic('light');
+    await improvePrompt(prompt);
+  }, [improvePrompt, prompt, triggerHaptic]);
 
   return (
-    <Card variant="gradient" className="p-8 space-y-6 hover-lift animate-fade-in">
+    <Card 
+      ref={cardRef}
+      variant="gradient" 
+      className={`
+        p-8 space-y-6 hover-lift transition-all duration-700 ease-out
+        ${isVisible ? 'animate-fade-in opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
+      `}
+    >
+      {/* Декоративный фон */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+      
+      <div className="relative z-10">
       <div className="space-y-3">
         <div className="flex items-center gap-3">
           <div className="p-3 rounded-xl bg-gradient-primary shadow-glow animate-float">
@@ -91,9 +176,13 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
               <span>Подсказка: Опишите жанр, инструменты, настроение и темп</span>
             </div>
             <Textarea
+              ref={textareaRef}
               placeholder="Пример: Энергичный электронный трек с синтезаторными мелодиями и мощным басом, идеально подходит для тренировки..."
               value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              onChange={(e) => {
+                setPrompt(e.target.value);
+                adjustTextareaHeight();
+              }}
               className="min-h-[140px] resize-none bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300"
               disabled={isGenerating || isImproving}
             />
@@ -125,7 +214,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
           <div className="flex flex-col sm:flex-row gap-3">
             <Button
               variant="glass"
-              onClick={improvePrompt}
+              onClick={handleImprovePrompt}
               disabled={isImproving || isGenerating}
               className="flex-1 h-12 group"
             >
@@ -135,7 +224,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
 
             <Button
               variant="hero"
-              onClick={generateMusic}
+              onClick={handleGenerateMusic}
               disabled={isGenerating || isImproving}
               className="flex-1 h-12 text-base shadow-glow"
             >
@@ -245,7 +334,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
               <div className="flex flex-col gap-3">
                 <Button
                   variant="glass"
-                  onClick={improvePrompt}
+                  onClick={handleImprovePrompt}
                   disabled={isImproving || isGenerating}
                   className="h-12 group"
                 >
@@ -255,7 +344,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
 
                 <Button
                   variant="hero"
-                  onClick={generateMusic}
+                  onClick={handleGenerateMusic}
                   disabled={isGenerating || isImproving}
                   className="h-12 text-base shadow-glow"
                 >
@@ -267,6 +356,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
           </div>
         </TabsContent>
       </Tabs>
+      </div>
     </Card>
   );
 };
