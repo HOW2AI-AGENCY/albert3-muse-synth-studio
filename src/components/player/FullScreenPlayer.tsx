@@ -138,11 +138,14 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
   return (
     <div
       ref={swipeRef as any}
-      className="fixed inset-0 z-50 bg-gradient-to-b from-background via-background to-card animate-fade-in"
+      className="fixed inset-0 z-[60] bg-gradient-to-b from-background via-background to-card animate-fade-in overflow-y-auto"
+      style={{ 
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)'
+      }}
     >
-      <div className="flex flex-col h-full p-6 safe-area-inset">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col min-h-screen p-4 sm:p-6">{/* Header */}
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
           <Button
             variant="ghost"
             size="icon"
@@ -171,11 +174,12 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
                     </Badge>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="bg-card z-[100]">
                   {availableVersions.map((version, idx) => (
                     <DropdownMenuItem
                       key={version.id}
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         vibrate('light');
                         switchToVersion(version.id);
                       }}
@@ -199,7 +203,7 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
         </div>
 
         {/* Album Art */}
-        <div className="flex-1 flex items-center justify-center mb-8">
+        <div className="flex-1 flex items-center justify-center mb-6 sm:mb-8 px-4">
           <div className="relative w-full max-w-sm aspect-square rounded-2xl overflow-hidden shadow-2xl glow-primary animate-scale-in">
             {currentTrack.cover_url ? (
               <img
@@ -214,17 +218,17 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
         </div>
 
         {/* Track Info */}
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-foreground mb-2">
+        <div className="text-center mb-4 sm:mb-6 px-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2 line-clamp-2">
             {currentTrack.title}
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground truncate">
             {currentTrack.style_tags?.join(', ') || 'AI Generated'}
           </p>
         </div>
 
         {/* Progress Bar */}
-        <div className="mb-2">
+        <div className="mb-2 px-4">
           <Slider
             value={[currentTime]}
             max={duration}
@@ -239,12 +243,12 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
         </div>
 
         {/* Main Controls */}
-        <div className="flex items-center justify-center gap-6 mb-6">
+        <div className="flex items-center justify-center gap-4 sm:gap-6 mb-4 sm:mb-6 px-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={handlePrevious}
-            className="h-12 w-12"
+            className="h-12 w-12 sm:h-14 sm:w-14"
           >
             <SkipBack className="h-6 w-6" />
           </Button>
@@ -252,12 +256,12 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
           <Button
             size="icon"
             onClick={handlePlayPause}
-            className="h-16 w-16 rounded-full bg-primary hover:bg-primary/90 glow-primary"
+            className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-primary hover:bg-primary/90 glow-primary"
           >
             {isPlaying ? (
-              <Pause className="h-8 w-8" fill="currentColor" />
+              <Pause className="h-8 w-8 sm:h-10 sm:w-10" fill="currentColor" />
             ) : (
-              <Play className="h-8 w-8" fill="currentColor" />
+              <Play className="h-8 w-8 sm:h-10 sm:w-10" fill="currentColor" />
             )}
           </Button>
 
@@ -265,14 +269,14 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
             variant="ghost"
             size="icon"
             onClick={handleNext}
-            className="h-12 w-12"
+            className="h-12 w-12 sm:h-14 sm:w-14"
           >
             <SkipForward className="h-6 w-6" />
           </Button>
         </div>
 
         {/* Secondary Controls */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4 sm:mb-6 px-4">
           <Button
             variant="ghost"
             size="icon"
@@ -286,7 +290,7 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
             />
           </Button>
 
-          <div className="flex items-center gap-2 flex-1 max-w-xs mx-4">
+          <div className="hidden sm:flex items-center gap-2 flex-1 max-w-xs mx-4">
             <Button
               variant="ghost"
               size="icon"

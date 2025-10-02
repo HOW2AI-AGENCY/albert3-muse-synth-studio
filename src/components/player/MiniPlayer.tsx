@@ -36,7 +36,8 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
   return (
     <div
       onClick={handleExpand}
-      className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border/50 cursor-pointer animate-slide-up"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border shadow-2xl cursor-pointer animate-slide-up safe-area-bottom"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="flex items-center gap-3 p-3">
         {/* Album Art */}
