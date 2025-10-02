@@ -14,17 +14,88 @@ export type Database = {
   }
   public: {
     Tables: {
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          subscription_tier: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          subscription_tier?: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          subscription_tier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      track_likes: {
+        Row: {
+          created_at: string
+          id: string
+          track_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          track_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          track_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_likes_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tracks: {
         Row: {
           audio_url: string | null
           created_at: string
           duration: number | null
+          duration_seconds: number | null
           error_message: string | null
+          genre: string | null
           has_vocals: boolean | null
           id: string
           improved_prompt: string | null
+          is_public: boolean | null
+          like_count: number | null
           lyrics: string | null
           metadata: Json | null
+          mood: string | null
           prompt: string
           provider: string | null
           reference_audio_url: string | null
@@ -33,17 +104,23 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          view_count: number | null
         }
         Insert: {
           audio_url?: string | null
           created_at?: string
           duration?: number | null
+          duration_seconds?: number | null
           error_message?: string | null
+          genre?: string | null
           has_vocals?: boolean | null
           id?: string
           improved_prompt?: string | null
+          is_public?: boolean | null
+          like_count?: number | null
           lyrics?: string | null
           metadata?: Json | null
+          mood?: string | null
           prompt: string
           provider?: string | null
           reference_audio_url?: string | null
@@ -52,17 +129,23 @@ export type Database = {
           title: string
           updated_at?: string
           user_id: string
+          view_count?: number | null
         }
         Update: {
           audio_url?: string | null
           created_at?: string
           duration?: number | null
+          duration_seconds?: number | null
           error_message?: string | null
+          genre?: string | null
           has_vocals?: boolean | null
           id?: string
           improved_prompt?: string | null
+          is_public?: boolean | null
+          like_count?: number | null
           lyrics?: string | null
           metadata?: Json | null
+          mood?: string | null
           prompt?: string
           provider?: string | null
           reference_audio_url?: string | null
@@ -71,6 +154,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          view_count?: number | null
         }
         Relationships: []
       }
