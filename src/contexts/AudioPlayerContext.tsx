@@ -17,14 +17,18 @@ interface AudioPlayerContextType {
   duration: number;
   volume: number;
   queue: Track[];
+  currentQueueIndex: number;
   playTrack: (track: Track) => void;
+  playTrackWithQueue: (track: Track, allTracks: Track[]) => void;
   togglePlayPause: () => void;
   seekTo: (time: number) => void;
   setVolume: (volume: number) => void;
   playNext: () => void;
   playPrevious: () => void;
   addToQueue: (track: Track) => void;
+  removeFromQueue: (trackId: string) => void;
   clearQueue: () => void;
+  reorderQueue: (startIndex: number, endIndex: number) => void;
   audioRef: React.RefObject<HTMLAudioElement>;
 }
 
@@ -37,6 +41,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   const [duration, setDuration] = useState(0);
   const [volume, setVolumeState] = useState(0.7);
   const [queue, setQueue] = useState<Track[]>([]);
+  const [currentQueueIndex, setCurrentQueueIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(new Audio());
 
   // Setup audio element event listeners
@@ -81,6 +86,29 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     audio.play().catch(err => console.error('Error playing track:', err));
     setCurrentTrack(track);
     setIsPlaying(true);
+    
+    // Update queue index if track is in queue
+    const trackIndex = queue.findIndex(t => t.id === track.id);
+    if (trackIndex !== -1) {
+      setCurrentQueueIndex(trackIndex);
+    }
+  };
+
+  const playTrackWithQueue = (track: Track, allTracks: Track[]) => {
+    if (!track.audio_url) return;
+    
+    // Filter only tracks with audio
+    const playableTracks = allTracks.filter(t => t.audio_url);
+    
+    // Find the clicked track index
+    const trackIndex = playableTracks.findIndex(t => t.id === track.id);
+    
+    if (trackIndex === -1) return;
+    
+    // Set queue and play
+    setQueue(playableTracks);
+    setCurrentQueueIndex(trackIndex);
+    playTrack(track);
   };
 
   const togglePlayPause = () => {
@@ -105,22 +133,22 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   const playNext = () => {
     if (queue.length === 0) return;
     
-    const currentIndex = currentTrack 
-      ? queue.findIndex(t => t.id === currentTrack.id)
-      : -1;
-    
-    const nextIndex = (currentIndex + 1) % queue.length;
+    const nextIndex = (currentQueueIndex + 1) % queue.length;
+    setCurrentQueueIndex(nextIndex);
     playTrack(queue[nextIndex]);
   };
 
   const playPrevious = () => {
     if (queue.length === 0) return;
     
-    const currentIndex = currentTrack 
-      ? queue.findIndex(t => t.id === currentTrack.id)
-      : -1;
+    // If more than 3 seconds in, restart current track
+    if (currentTime > 3) {
+      seekTo(0);
+      return;
+    }
     
-    const previousIndex = currentIndex <= 0 ? queue.length - 1 : currentIndex - 1;
+    const previousIndex = currentQueueIndex <= 0 ? queue.length - 1 : currentQueueIndex - 1;
+    setCurrentQueueIndex(previousIndex);
     playTrack(queue[previousIndex]);
   };
 
@@ -131,8 +159,39 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const removeFromQueue = (trackId: string) => {
+    setQueue(prev => {
+      const newQueue = prev.filter(t => t.id !== trackId);
+      // Adjust index if needed
+      if (currentQueueIndex >= newQueue.length && newQueue.length > 0) {
+        setCurrentQueueIndex(newQueue.length - 1);
+      }
+      return newQueue;
+    });
+  };
+
   const clearQueue = () => {
     setQueue([]);
+    setCurrentQueueIndex(0);
+  };
+
+  const reorderQueue = (startIndex: number, endIndex: number) => {
+    setQueue(prev => {
+      const result = Array.from(prev);
+      const [removed] = result.splice(startIndex, 1);
+      result.splice(endIndex, 0, removed);
+      
+      // Update current index if needed
+      if (startIndex === currentQueueIndex) {
+        setCurrentQueueIndex(endIndex);
+      } else if (startIndex < currentQueueIndex && endIndex >= currentQueueIndex) {
+        setCurrentQueueIndex(currentQueueIndex - 1);
+      } else if (startIndex > currentQueueIndex && endIndex <= currentQueueIndex) {
+        setCurrentQueueIndex(currentQueueIndex + 1);
+      }
+      
+      return result;
+    });
   };
 
   return (
@@ -144,14 +203,18 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
         duration,
         volume,
         queue,
+        currentQueueIndex,
         playTrack,
+        playTrackWithQueue,
         togglePlayPause,
         seekTo,
         setVolume,
         playNext,
         playPrevious,
         addToQueue,
+        removeFromQueue,
         clearQueue,
+        reorderQueue,
         audioRef,
       }}
     >

@@ -9,6 +9,7 @@ import { RefreshCcw, Music, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "./ui/badge";
+import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 
 interface TracksListProps {
   refreshTrigger?: number;
@@ -25,6 +26,7 @@ interface Track extends ApiTrack {
 
 export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: TracksListProps) => {
   const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks(refreshTrigger);
+  const { playTrackWithQueue } = useAudioPlayer();
   const { toast } = useToast();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
     const saved = localStorage.getItem('tracks-view-mode');
@@ -187,7 +189,28 @@ export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: T
                   onLike={() => handleLike(track.id)}
                   onDownload={() => handleDownload(typedTrack)}
                   onShare={() => handleShare(track.id)}
-                  onClick={() => onTrackSelect?.(typedTrack)}
+                  onClick={() => {
+                    onTrackSelect?.(typedTrack);
+                    if (track.audio_url && track.status === 'completed') {
+                      playTrackWithQueue({
+                        id: track.id,
+                        title: track.title,
+                        audio_url: track.audio_url,
+                        cover_url: track.cover_url,
+                        duration: track.duration,
+                        style_tags: track.style_tags,
+                        lyrics: track.lyrics,
+                      }, tracks.filter(t => t.audio_url && t.status === 'completed').map(t => ({
+                        id: t.id,
+                        title: t.title,
+                        audio_url: t.audio_url!,
+                        cover_url: t.cover_url,
+                        duration: t.duration,
+                        style_tags: t.style_tags,
+                        lyrics: t.lyrics,
+                      })));
+                    }
+                  }}
                 />
                 
                 {(track.status === 'failed' || isStaleTrack) && (
@@ -218,7 +241,28 @@ export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: T
                   onLike={() => handleLike(track.id)}
                   onDownload={() => handleDownload(typedTrack)}
                   onShare={() => handleShare(track.id)}
-                  onClick={() => onTrackSelect?.(typedTrack)}
+                  onClick={() => {
+                    onTrackSelect?.(typedTrack);
+                    if (track.audio_url && track.status === 'completed') {
+                      playTrackWithQueue({
+                        id: track.id,
+                        title: track.title,
+                        audio_url: track.audio_url,
+                        cover_url: track.cover_url,
+                        duration: track.duration,
+                        style_tags: track.style_tags,
+                        lyrics: track.lyrics,
+                      }, tracks.filter(t => t.audio_url && t.status === 'completed').map(t => ({
+                        id: t.id,
+                        title: t.title,
+                        audio_url: t.audio_url!,
+                        cover_url: t.cover_url,
+                        duration: t.duration,
+                        style_tags: t.style_tags,
+                        lyrics: t.lyrics,
+                      })));
+                    }
+                  }}
                 />
                 
                 {(track.status === 'failed' || isStaleTrack) && (

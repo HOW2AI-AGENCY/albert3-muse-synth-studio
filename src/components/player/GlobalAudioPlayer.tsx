@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MiniPlayer } from "./MiniPlayer";
 import { FullScreenPlayer } from "./FullScreenPlayer";
+import { PlayerQueue } from "./PlayerQueue";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMediaSession } from "@/hooks/useMediaSession";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
@@ -33,6 +34,42 @@ export const GlobalAudioPlayer = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(volume);
+
+  // Keyboard shortcuts for desktop
+  useEffect(() => {
+    if (isMobile) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in input/textarea
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
+
+      switch (e.code) {
+        case 'Space':
+          e.preventDefault();
+          togglePlayPause();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          seekTo(Math.min(currentTime + 10, duration));
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          seekTo(Math.max(currentTime - 10, 0));
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          setVolume(Math.min(volume + 0.1, 1));
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          setVolume(Math.max(volume - 0.1, 0));
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobile, togglePlayPause, currentTime, duration, seekTo, volume, setVolume]);
 
   // Media Session API integration
   useMediaSession(
@@ -130,6 +167,7 @@ export const GlobalAudioPlayer = () => {
               size="icon"
               variant="ghost"
               onClick={playPrevious}
+              title="Предыдущий трек (←)"
               className="h-9 w-9 hover:bg-primary/10 transition-colors"
             >
               <SkipBack className="h-5 w-5" />
@@ -139,6 +177,7 @@ export const GlobalAudioPlayer = () => {
               size="icon"
               variant="default"
               onClick={togglePlayPause}
+              title={isPlaying ? "Пауза (Space)" : "Воспроизвести (Space)"}
               className="h-12 w-12 rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all hover:scale-105"
             >
               {isPlaying ? (
@@ -152,10 +191,13 @@ export const GlobalAudioPlayer = () => {
               size="icon"
               variant="ghost"
               onClick={playNext}
+              title="Следующий трек (→)"
               className="h-9 w-9 hover:bg-primary/10 transition-colors"
             >
               <SkipForward className="h-5 w-5" />
             </Button>
+
+            <PlayerQueue />
           </div>
 
           {/* Progress Bar */}

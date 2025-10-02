@@ -1,4 +1,4 @@
-import { Play, Pause, SkipBack, SkipForward, Maximize2 } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Maximize2, ListMusic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
@@ -8,7 +8,7 @@ interface MiniPlayerProps {
 }
 
 export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
-  const { currentTrack, isPlaying, togglePlayPause, playNext, playPrevious } = useAudioPlayer();
+  const { currentTrack, isPlaying, togglePlayPause, playNext, playPrevious, queue, currentQueueIndex } = useAudioPlayer();
   const { vibrate } = useHapticFeedback();
 
   if (!currentTrack) return null;
@@ -57,9 +57,20 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
           <h4 className="text-sm font-semibold text-foreground truncate">
             {currentTrack.title}
           </h4>
-          <p className="text-xs text-muted-foreground truncate">
-            {currentTrack.style_tags?.[0] || 'AI Generated'}
-          </p>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="truncate">
+              {currentTrack.style_tags?.[0] || 'AI Generated'}
+            </span>
+            {queue.length > 0 && (
+              <>
+                <span>•</span>
+                <span className="flex items-center gap-1">
+                  <ListMusic className="h-3 w-3" />
+                  {currentQueueIndex + 1}/{queue.length}
+                </span>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Controls */}

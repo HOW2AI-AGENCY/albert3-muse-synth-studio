@@ -1,6 +1,7 @@
 import { Play, Pause, SkipBack, SkipForward, Minimize2, Volume2, VolumeX, Share2, Download, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { PlayerQueue } from "./PlayerQueue";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
@@ -142,6 +143,7 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
             >
               <Share2 className="h-5 w-5" />
             </Button>
+            <PlayerQueue />
           </div>
         </div>
 
