@@ -29,7 +29,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Логируем ошибку
-    logError('ErrorBoundary caught an error:', error, {
+    logError('ErrorBoundary caught an error:', error, 'ErrorBoundary', {
       componentStack: errorInfo.componentStack,
       errorBoundary: true
     });

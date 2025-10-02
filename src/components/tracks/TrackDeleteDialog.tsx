@@ -33,25 +33,6 @@ export const TrackDeleteDialog = ({
   const [countdown, setCountdown] = useState(3);
   const [canDelete, setCanDelete] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      loadRelatedData();
-      setCountdown(3);
-      setCanDelete(false);
-    }
-  }, [open, trackId, loadRelatedData]);
-
-  useEffect(() => {
-    if (open && countdown > 0) {
-      const timer = setTimeout(() => {
-        setCountdown(countdown - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (countdown === 0) {
-      setCanDelete(true);
-    }
-  }, [open, countdown]);
-
   const loadRelatedData = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -75,6 +56,25 @@ export const TrackDeleteDialog = ({
       setIsLoading(false);
     }
   }, [trackId]);
+
+  useEffect(() => {
+    if (open) {
+      loadRelatedData();
+      setCountdown(3);
+      setCanDelete(false);
+    }
+  }, [open, trackId, loadRelatedData]);
+
+  useEffect(() => {
+    if (open && countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (countdown === 0) {
+      setCanDelete(true);
+    }
+  }, [open, countdown]);
 
   const handleConfirm = () => {
     if (canDelete) {
