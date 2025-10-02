@@ -97,20 +97,26 @@ export const validators = {
  */
 export const validationSchemas = {
   generateMusic: {
-    trackId: [validators.required, validators.string, validators.uuid],
-    title: [validators.required, validators.string, validators.minLength(1), validators.maxLength(200)],
+    trackId: [validators.string, validators.uuid],
+    title: [validators.string, validators.minLength(1), validators.maxLength(200)],
     prompt: [validators.required, validators.string, validators.minLength(10), validators.maxLength(2000)],
     lyrics: [validators.string, validators.maxLength(5000)],
     hasVocals: [validators.boolean],
     styleTags: [validators.array],
-    customMode: [validators.boolean]
+    customMode: [validators.boolean],
+    tags: [validators.string, validators.maxLength(500)],
+    make_instrumental: [validators.boolean],
+    model_version: [validators.string],
+    wait_audio: [validators.boolean]
   },
 
   generateLyrics: {
-    trackId: [validators.required, validators.string, validators.uuid],
-    prompt: [validators.required, validators.string, validators.minLength(5), validators.maxLength(1000)],
-    style: [validators.string, validators.maxLength(100)],
-    mood: [validators.string, validators.maxLength(100)]
+    trackId: [validators.string, validators.uuid],
+    theme: [validators.required, validators.string, validators.minLength(1), validators.maxLength(500)],
+    mood: [validators.required, validators.string, validators.minLength(1), validators.maxLength(100)],
+    genre: [validators.required, validators.string, validators.minLength(1), validators.maxLength(100)],
+    language: [validators.string, validators.maxLength(10)],
+    structure: [validators.string, validators.maxLength(200)]
   },
 
   separateStems: {

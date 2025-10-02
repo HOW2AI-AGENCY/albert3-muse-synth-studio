@@ -1,77 +1,89 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "../types.d.ts";
+import { createClient } from "../types.d.ts";
+import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
+import { validateRequest, validationSchemas } from "../_shared/validation.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': Deno.env.get('FRONTEND_URL') || 'https://localhost:3000',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Credentials': 'true',
+  ...createSecurityHeaders()
 };
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+const handler = async (req: Request): Promise<Response> => {
   try {
-    // Verify authentication
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const { theme, mood, genre, language = 'ru', structure = 'verse-chorus-verse-chorus-bridge-chorus' } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
-
-    console.log('Generating lyrics with params:', { theme, mood, genre, language, structure });
-
-    const systemPrompt = `Ты профессиональный автор песен. Создавай креативные, эмоциональные и запоминающиеся тексты песен.
+    // Валидация входных данных
+    const validatedData = await validateRequest(req, validationSchemas.generateLyrics)
     
-Правила:
-- Используй структуру: ${structure}
-- Язык: ${language === 'ru' ? 'русский' : 'английский'}
-- Каждая секция должна быть помечена [Verse], [Chorus], [Bridge]
-- Текст должен быть ритмичным и подходить для пения
-- Избегай клише, будь креативным
-- Используй метафоры и образы
-- Длина куплета: 4-6 строк
-- Длина припева: 2-4 строки`;
+    // Получение пользователя из JWT токена
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'Authorization header required' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
 
-    const userPrompt = `Напиши текст песни:
-Тема: ${theme}
-Настроение: ${mood}
-Жанр: ${genre}
+    const token = authHeader.replace('Bearer ', '')
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: `Bearer ${token}` } } }
+    )
 
-Создай полноценный текст песни с указанными секциями.`;
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const { theme, mood, genre, language, structure } = validatedData
+    
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY not configured')
+    }
+
+    // Create the lyrics generation prompt
+    const prompt = `Generate song lyrics with the following specifications:
+    Theme: ${theme}
+    Mood: ${mood}
+    Genre: ${genre}
+    Language: ${language}
+    Structure: ${structure}
+    
+    Please create original, creative lyrics that match these requirements.`
+
+    console.log('Generating lyrics with params:', { theme, mood, genre, language, structure })
+
+    // Call Lovable API for lyrics generation
+    const response = await fetch('https://lovableapi.com/api/lyrics/generate', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.9,
+        prompt,
+        theme,
+        mood,
+        genre,
+        language,
+        structure
       }),
-    });
+    })
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Lovable AI error:', response.status, errorText);
-      throw new Error(`AI generation failed: ${response.status}`);
+      const errorText = await response.text()
+      console.error('Lovable API error:', response.status, errorText)
+      throw new Error(`Lovable API error: ${response.status} ${errorText}`)
     }
 
-    const data = await response.json();
-    const generatedLyrics = data.choices[0].message.content;
+    const result = await response.json()
+    const generatedLyrics = result.lyrics || result.text || 'No lyrics generated'
 
     console.log('Lyrics generated successfully');
 
@@ -96,4 +108,17 @@ serve(async (req) => {
       }
     );
   }
-});
+}
+
+// Wrap handler with rate limiting
+serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  return withRateLimit(handler, {
+    maxRequests: 20,
+    windowMinutes: 1,
+    endpoint: 'generate-lyrics'
+  })(req)
+})
