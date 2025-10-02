@@ -14,3 +14,9 @@ verify_jwt = true
 
 [functions.suno-callback]
 verify_jwt = false
+
+[functions.separate-stems]
+verify_jwt = true
+
+[functions.stems-callback]
+verify_jwt = false

@@ -68,6 +68,7 @@ export interface Track {
   lyrics: string | null;
   style_tags: string[] | null;
   has_vocals: boolean | null;
+  has_stems?: boolean;
 }
 
 /**

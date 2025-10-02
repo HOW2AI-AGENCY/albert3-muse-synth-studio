@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, Heart, Download, Share2, MoreVertical } from "lucide-react";
+import { Play, Pause, Heart, Download, Share2, MoreVertical, Music4 } from "lucide-react";
 import { useState } from "react";
 import { Track } from "@/services/api.service";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
@@ -113,7 +113,13 @@ export const TrackCard = ({
         )}
         
         {/* Status Badge */}
-        <div className="absolute top-3 right-3">
+        <div className="absolute top-3 right-3 flex gap-2">
+          {track.has_stems && (
+            <Badge variant="secondary" className="gap-1">
+              <Music4 className="w-3 h-3" />
+              Стемы
+            </Badge>
+          )}
           {getStatusBadge()}
         </div>
       </div>

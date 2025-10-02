@@ -80,6 +80,110 @@ export type Database = {
           },
         ]
       }
+      track_stems: {
+        Row: {
+          audio_url: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          separation_mode: string
+          stem_type: string
+          suno_task_id: string | null
+          track_id: string
+          version_id: string | null
+        }
+        Insert: {
+          audio_url: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          separation_mode: string
+          stem_type: string
+          suno_task_id?: string | null
+          track_id: string
+          version_id?: string | null
+        }
+        Update: {
+          audio_url?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          separation_mode?: string
+          stem_type?: string
+          suno_task_id?: string | null
+          track_id?: string
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_stems_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_stems_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "track_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      track_versions: {
+        Row: {
+          audio_url: string | null
+          cover_url: string | null
+          created_at: string
+          duration: number | null
+          id: string
+          is_master: boolean | null
+          lyrics: string | null
+          metadata: Json | null
+          parent_track_id: string
+          suno_id: string | null
+          version_number: number
+          video_url: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          cover_url?: string | null
+          created_at?: string
+          duration?: number | null
+          id?: string
+          is_master?: boolean | null
+          lyrics?: string | null
+          metadata?: Json | null
+          parent_track_id: string
+          suno_id?: string | null
+          version_number: number
+          video_url?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          cover_url?: string | null
+          created_at?: string
+          duration?: number | null
+          id?: string
+          is_master?: boolean | null
+          lyrics?: string | null
+          metadata?: Json | null
+          parent_track_id?: string
+          suno_id?: string | null
+          version_number?: number
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_versions_parent_track_id_fkey"
+            columns: ["parent_track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tracks: {
         Row: {
           audio_url: string | null
@@ -90,6 +194,7 @@ export type Database = {
           duration_seconds: number | null
           error_message: string | null
           genre: string | null
+          has_stems: boolean | null
           has_vocals: boolean | null
           id: string
           improved_prompt: string | null
@@ -120,6 +225,7 @@ export type Database = {
           duration_seconds?: number | null
           error_message?: string | null
           genre?: string | null
+          has_stems?: boolean | null
           has_vocals?: boolean | null
           id?: string
           improved_prompt?: string | null
@@ -150,6 +256,7 @@ export type Database = {
           duration_seconds?: number | null
           error_message?: string | null
           genre?: string | null
+          has_stems?: boolean | null
           has_vocals?: boolean | null
           id?: string
           improved_prompt?: string | null

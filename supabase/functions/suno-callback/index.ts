@@ -139,20 +139,21 @@ serve(async (req) => {
       });
     }
 
-    // Process successful tasks - Suno returns 2 versions, save both as separate tracks
-    if (successTask) {
-      // Extract all metadata from Suno response
-      const firstAudioUrl = successTask.audioUrl || successTask.audio_url || 
-                           successTask.stream_audio_url || successTask.source_stream_audio_url;
-      const firstDuration = successTask.duration || successTask.duration_seconds || 0;
-      const actualLyrics = sanitizeText(successTask.prompt || successTask.lyric || successTask.lyrics);
-      const title = sanitizeText(successTask.title) || "Generated Track";
-      const coverUrl = successTask.image_url || successTask.image_large_url || successTask.imageUrl;
-      const videoUrl = successTask.video_url || successTask.videoUrl;
-      const sunoId = sanitizeText(successTask.id);
-      const modelName = sanitizeText(successTask.model || successTask.model_name);
-      const createdAtSuno = successTask.created_at || successTask.createdAt;
-      const tagsString = successTask.tags || '';
+    // Process successful tasks - save versions using track_versions table
+    if (successTask && tasks.length > 0) {
+      // Extract metadata from first task
+      const firstTask = tasks[0];
+      const firstAudioUrl = firstTask.audioUrl || firstTask.audio_url || 
+                           firstTask.stream_audio_url || firstTask.source_stream_audio_url;
+      const firstDuration = firstTask.duration || firstTask.duration_seconds || 0;
+      const actualLyrics = sanitizeText(firstTask.prompt || firstTask.lyric || firstTask.lyrics);
+      const title = sanitizeText(firstTask.title) || "Generated Track";
+      const coverUrl = firstTask.image_url || firstTask.image_large_url || firstTask.imageUrl;
+      const videoUrl = firstTask.video_url || firstTask.videoUrl;
+      const sunoId = sanitizeText(firstTask.id);
+      const modelName = sanitizeText(firstTask.model || firstTask.model_name);
+      const createdAtSuno = firstTask.created_at || firstTask.createdAt;
+      const tagsString = firstTask.tags || '';
       const styleTags = tagsString ? tagsString.split(/[,;]/).map((t: string) => sanitizeText(t)).filter(Boolean) : null;
       
       console.log("Suno callback: Full metadata", { 
@@ -165,7 +166,7 @@ serve(async (req) => {
         lyrics: actualLyrics?.substring(0, 50)
       });
 
-      // Update the original track with first version and all metadata
+      // Update the parent track with first version metadata
       await supabase
         .from("tracks")
         .update({
@@ -185,60 +186,33 @@ serve(async (req) => {
         })
         .eq("id", track.id);
 
-      console.log("Suno callback: track completed", { taskId, audioUrl: firstAudioUrl, versionsCount: tasks.length });
-
-      // If there's a second version, create a new track for it
-      if (tasks.length > 1 && tasks[1]) {
-        const secondTask = tasks[1];
-        const secondAudioUrl = secondTask.audioUrl || secondTask.audio_url || 
-                              secondTask.stream_audio_url || secondTask.source_stream_audio_url;
+      // Save all versions to track_versions table
+      for (let i = 0; i < tasks.length; i++) {
+        const versionTask = tasks[i];
+        const versionAudioUrl = versionTask.audioUrl || versionTask.audio_url || 
+                               versionTask.stream_audio_url || versionTask.source_stream_audio_url;
         
-        if (secondAudioUrl && track.user_id) {
-          const { data: originalTrack } = await supabase
-            .from("tracks")
-            .select("user_id, title, prompt, provider, has_vocals, style_tags, lyrics")
-            .eq("id", track.id)
-            .single();
+        if (!versionAudioUrl) continue;
 
-          if (originalTrack) {
-            // Extract metadata for second version
-            const secondCoverUrl = secondTask.image_url || secondTask.image_large_url || secondTask.imageUrl;
-            const secondVideoUrl = secondTask.video_url || secondTask.videoUrl;
-            const secondSunoId = secondTask.id;
-            const secondModelName = secondTask.model || secondTask.model_name;
-            const secondCreatedAtSuno = secondTask.created_at || secondTask.createdAt;
-            const secondTagsString = secondTask.tags || '';
-            const secondStyleTags = secondTagsString ? secondTagsString.split(/[,;]/).map((t: string) => t.trim()).filter(Boolean) : originalTrack.style_tags;
-
-            await supabase
-              .from("tracks")
-              .insert({
-                user_id: originalTrack.user_id,
-                title: `${secondTask.title || originalTrack.title} (v2)`,
-                prompt: originalTrack.prompt,
-                audio_url: secondAudioUrl,
-                duration: Math.round(secondTask.duration || secondTask.duration_seconds || 0),
-                duration_seconds: Math.round(secondTask.duration || secondTask.duration_seconds || 0),
-                status: "completed",
-                provider: "suno",
-                lyrics: secondTask.prompt || secondTask.lyric || secondTask.lyrics || originalTrack.lyrics,
-                has_vocals: originalTrack.has_vocals,
-                style_tags: secondStyleTags,
-                cover_url: secondCoverUrl,
-                video_url: secondVideoUrl,
-                suno_id: secondSunoId,
-                model_name: secondModelName,
-                created_at_suno: secondCreatedAtSuno,
-                metadata: { suno_data: secondTask, suno_task_id: taskId, version: 2 },
-              });
-
-            console.log("Suno callback: created second version track", { 
-              secondAudioUrl: secondAudioUrl?.substring(0, 50),
-              secondCoverUrl: secondCoverUrl?.substring(0, 50)
-            });
-          }
-        }
+        await supabase
+          .from("track_versions")
+          .upsert({
+            parent_track_id: track.id,
+            version_number: i + 1,
+            is_master: i === 0, // First version is master by default
+            suno_id: sanitizeText(versionTask.id),
+            audio_url: versionAudioUrl,
+            video_url: versionTask.video_url || versionTask.videoUrl,
+            cover_url: versionTask.image_url || versionTask.image_large_url || versionTask.imageUrl,
+            lyrics: sanitizeText(versionTask.prompt || versionTask.lyric || versionTask.lyrics),
+            duration: Math.round(versionTask.duration || versionTask.duration_seconds || 0),
+            metadata: { suno_data: versionTask }
+          }, {
+            onConflict: 'parent_track_id,version_number'
+          });
       }
+
+      console.log("Suno callback: track completed", { taskId, audioUrl: firstAudioUrl, versionsCount: tasks.length });
 
       return new Response(JSON.stringify({ ok: true, versionsCreated: tasks.length }), {
         status: 200,

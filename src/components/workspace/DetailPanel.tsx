@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Download, Share2, Trash2, Eye, Heart, Calendar, Clock, ExternalLink, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { TrackVersions } from "@/components/tracks/TrackVersions";
+import { TrackStemsPanel } from "@/components/tracks/TrackStemsPanel";
 
 interface DetailPanelProps {
   track: {
@@ -31,6 +33,7 @@ interface DetailPanelProps {
     like_count?: number;
     created_at: string;
     duration_seconds?: number;
+    has_stems?: boolean;
   };
   onClose?: () => void;
   onUpdate?: () => void;
@@ -43,7 +46,37 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
   const [mood, setMood] = useState(track.mood || "");
   const [isPublic, setIsPublic] = useState(track.is_public || false);
   const [isSaving, setIsSaving] = useState(false);
+  const [versions, setVersions] = useState<any[]>([]);
+  const [stems, setStems] = useState<any[]>([]);
   const { toast } = useToast();
+
+  // Load track versions and stems
+  useEffect(() => {
+    loadVersionsAndStems();
+  }, [track.id]);
+
+  const loadVersionsAndStems = async () => {
+    // Load versions
+    const { data: versionsData } = await supabase
+      .from('track_versions')
+      .select('*')
+      .eq('parent_track_id', track.id)
+      .order('version_number');
+    
+    if (versionsData) {
+      setVersions(versionsData);
+    }
+
+    // Load stems
+    const { data: stemsData } = await supabase
+      .from('track_stems')
+      .select('*')
+      .eq('track_id', track.id);
+    
+    if (stemsData) {
+      setStems(stemsData);
+    }
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -169,6 +202,32 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
             </div>
           )}
         </div>
+
+        {/* Track Versions */}
+        {versions.length > 0 && (
+          <>
+            <Separator />
+            <TrackVersions 
+              trackId={track.id}
+              versions={versions}
+              onVersionUpdate={loadVersionsAndStems}
+            />
+          </>
+        )}
+
+        {/* Track Stems */}
+        {track.status === 'completed' && track.audio_url && (
+          <>
+            <Separator />
+            <TrackStemsPanel
+              trackId={track.id}
+              stems={stems}
+              onStemsGenerated={loadVersionsAndStems}
+            />
+          </>
+        )}
+
+        <Separator />
 
         {/* Style Tags */}
         {track.style_tags && track.style_tags.length > 0 && (

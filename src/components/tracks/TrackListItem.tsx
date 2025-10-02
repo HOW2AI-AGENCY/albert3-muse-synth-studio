@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Play, Pause, Heart, Download, Share2, MoreVertical } from "lucide-react";
+import { Play, Pause, Heart, Download, Share2, MoreVertical, Music4 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
@@ -15,6 +15,7 @@ interface TrackListItemProps {
     duration_seconds?: number;
     status: string;
     like_count?: number;
+    has_stems?: boolean;
   };
   onClick?: () => void;
   onLike?: () => void;
@@ -109,6 +110,12 @@ export const TrackListItem = ({
                 </Badge>
               ))}
             </div>
+          )}
+          {track.has_stems && (
+            <Badge variant="secondary" className="gap-1 text-xs">
+              <Music4 className="w-3 h-3" />
+              Стемы
+            </Badge>
           )}
           {track.status !== 'completed' && (
             <Badge variant="outline" className="text-xs">
