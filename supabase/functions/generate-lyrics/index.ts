@@ -1,5 +1,4 @@
-import { serve } from "../types.d.ts";
-import { createClient } from "../types.d.ts";
+import { serve, createClient } from "../types.ts";
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { validateRequest, validationSchemas } from "../_shared/validation.ts";
 
