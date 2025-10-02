@@ -23,16 +23,20 @@ const WorkspaceHeader = ({ onMenuClick, className }: WorkspaceHeaderProps) => {
           size="sm"
           onClick={onMenuClick}
           className="lg:hidden w-10 h-10 p-0 hover:bg-accent/10"
+          aria-label="Открыть меню навигации"
+          aria-expanded="false"
         >
           <Menu className="w-5 h-5" />
         </Button>
 
         {/* Search */}
         <div className="relative hidden sm:block">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
           <Input
             placeholder="Поиск треков..."
             className="pl-10 w-64 lg:w-80 bg-background/50 border-border/50 focus:border-primary/50 transition-all duration-300"
+            aria-label="Поиск треков"
+            role="searchbox"
           />
         </div>
       </div>
@@ -44,6 +48,7 @@ const WorkspaceHeader = ({ onMenuClick, className }: WorkspaceHeaderProps) => {
           variant="ghost"
           size="sm"
           className="sm:hidden w-10 h-10 p-0 hover:bg-accent/10"
+          aria-label="Открыть поиск"
         >
           <Search className="w-5 h-5" />
         </Button>
@@ -52,26 +57,36 @@ const WorkspaceHeader = ({ onMenuClick, className }: WorkspaceHeaderProps) => {
         <Button
           variant="ghost"
           size="sm"
-          className="relative w-10 h-10 p-0 hover:bg-accent/10 transition-all duration-300 hover:scale-105"
+          className="relative w-10 h-10 p-0 hover:bg-accent/10"
+          aria-label="Уведомления"
         >
           <Bell className="w-5 h-5" />
           <Badge 
             variant="destructive" 
-            className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center text-xs animate-pulse-glow"
+            className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center text-xs"
+            aria-label="3 новых уведомления"
           >
             3
           </Badge>
         </Button>
 
         {/* User Menu */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <div className="hidden sm:block text-right">
             <p className="text-sm font-medium">Пользователь</p>
-            <p className="text-xs text-muted-foreground">Pro план</p>
+            <p className="text-xs text-muted-foreground">user@example.com</p>
           </div>
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center border border-primary/30 hover:border-primary/50 transition-all duration-300 hover:scale-105 cursor-pointer">
-            <span className="text-primary font-semibold text-sm sm:text-base">У</span>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-10 h-10 p-0 rounded-full hover:bg-accent/10"
+            aria-label="Меню пользователя"
+            aria-haspopup="menu"
+          >
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <span className="text-sm font-medium text-primary">У</span>
+            </div>
+          </Button>
         </div>
       </div>
     </header>

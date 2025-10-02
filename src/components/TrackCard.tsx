@@ -24,6 +24,7 @@ import { withErrorBoundary } from "@/components/ErrorBoundary";
 import { formatDuration } from "@/utils/formatters";
 import { logError } from "@/utils/logger";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -72,14 +73,15 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
   const cardRef = useRef<HTMLDivElement>(null);
   const { currentTrack, isPlaying, playTrack, togglePlayPause } = useAudioPlayer();
   const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count || 0);
+  const { toast } = useToast();
   
   // Проверяем валидность данных трека
   if (!track || !track.id) {
     logError('Invalid track data', undefined, 'TrackCard', { track });
     return (
-      <Card className="p-4">
+      <Card className="p-4" role="alert" aria-label="Ошибка загрузки трека">
         <div className="text-center">
-          <Music className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+          <Music className="mx-auto h-8 w-8 text-muted-foreground mb-2" aria-hidden="true" />
           <p className="text-sm text-muted-foreground">Некорректные данные трека</p>
         </div>
       </Card>
@@ -100,24 +102,38 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
     try {
       e.stopPropagation();
       toggleLike();
+      
+      // Показываем toast-уведомление
+      toast({
+        title: isLiked ? "Убрано из избранного" : "Добавлено в избранное",
+        description: `Трек "${track.title}" ${isLiked ? 'убран из' : 'добавлен в'} избранное`,
+        duration: 2000,
+      });
     } catch (error) {
       logError('TrackCard like error', error instanceof Error ? error : new Error(String(error)), 'TrackCard', { 
         trackId: track.id, 
         trackTitle: track.title 
       });
+      
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить статус избранного",
+        variant: "destructive",
+        duration: 3000,
+      });
     }
-  }, [toggleLike, track.id, track.title]);
+  }, [toggleLike, track.id, track.title, isLiked, toast]);
   
   const getStatusBadge = useCallback(() => {
     switch (track.status) {
       case 'completed':
-        return <Badge variant="default" className="bg-green-500">Готов</Badge>;
+        return <Badge variant="default" className="bg-green-500" aria-label="Статус: готов">Готов</Badge>;
       case 'processing':
-        return <Badge variant="secondary">Обработка</Badge>;
+        return <Badge variant="secondary" aria-label="Статус: обработка">Обработка</Badge>;
       case 'failed':
-        return <Badge variant="destructive">Ошибка</Badge>;
+        return <Badge variant="destructive" aria-label="Статус: ошибка">Ошибка</Badge>;
       default:
-        return <Badge variant="outline">{track.status}</Badge>;
+        return <Badge variant="outline" aria-label={`Статус: ${track.status}`}>{track.status}</Badge>;
     }
   }, [track.status]);
 
@@ -153,13 +169,65 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
 
   const handleDownloadClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    onDownload?.();
-  }, [onDownload]);
+    
+    try {
+      if (!track.audio_url) {
+        toast({
+          title: "Ошибка скачивания",
+          description: "Аудиофайл недоступен для скачивания",
+          variant: "destructive",
+          duration: 3000,
+        });
+        return;
+      }
+
+      onDownload?.();
+      
+      toast({
+        title: "Скачивание начато",
+        description: `Трек "${track.title}" загружается`,
+        duration: 3000,
+      });
+    } catch (error) {
+      logError('TrackCard download error', error instanceof Error ? error : new Error(String(error)), 'TrackCard', {
+        trackId: track.id,
+        trackTitle: track.title
+      });
+      
+      toast({
+        title: "Ошибка скачивания",
+        description: "Не удалось скачать трек",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  }, [onDownload, track.audio_url, track.title, toast]);
 
   const handleShareClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    onShare?.();
-  }, [onShare]);
+    
+    try {
+      onShare?.();
+      
+      toast({
+        title: "Ссылка скопирована",
+        description: `Ссылка на трек "${track.title}" скопирована в буфер обмена`,
+        duration: 3000,
+      });
+    } catch (error) {
+      logError('TrackCard share error', error instanceof Error ? error : new Error(String(error)), 'TrackCard', {
+        trackId: track.id,
+        trackTitle: track.title
+      });
+      
+      toast({
+        title: "Ошибка",
+        description: "Не удалось поделиться треком",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  }, [onShare, track.title, toast]);
 
   const handleCardClick = useCallback(() => {
     onClick?.();
@@ -204,6 +272,9 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
         onClick={handleCardClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        role="article"
+        aria-label={`Трек ${track.title || 'Без названия'}`}
+        tabIndex={0}
       >
         <CardContent className="p-3">
           <div className="flex items-center gap-3">
@@ -219,6 +290,12 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
                   ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" 
                   : "hover:bg-primary/10 hover:scale-110"
               )}
+              aria-label={
+                isCurrentTrack && isPlaying 
+                  ? `Приостановить воспроизведение трека ${track.title}` 
+                  : `Воспроизвести трек ${track.title}`
+              }
+              aria-pressed={isCurrentTrack && isPlaying}
             >
               {isCurrentTrack && isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
             </Button>
@@ -233,7 +310,7 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
 
             {/* Duration */}
             {formattedDuration && (
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-muted-foreground" aria-label={`Длительность: ${formattedDuration}`}>
                 {formattedDuration}
               </span>
             )}
@@ -251,6 +328,8 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
                   "w-8 h-8 p-0 transition-all duration-200",
                   isLiked ? "text-red-500 hover:text-red-600" : "hover:text-red-500"
                 )}
+                aria-label={isLiked ? `Убрать из избранного: ${track.title}` : `Добавить в избранное: ${track.title}`}
+                aria-pressed={isLiked}
               >
                 <Heart className={cn("w-4 h-4", isLiked && "fill-current")} />
               </Button>
@@ -276,13 +355,16 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
       onClick={handleCardClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      role="article"
+      aria-label={`Трек ${track.title || 'Без названия'}`}
+      tabIndex={0}
     >
       {/* Обложка трека */}
       <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 group-hover:shadow-lg transition-shadow duration-300">
         {track.cover_url || track.image_url ? (
           <img 
             src={track.cover_url || track.image_url} 
-            alt={track.title}
+            alt={`Обложка трека ${track.title || 'Без названия'}`}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
         ) : (
@@ -291,7 +373,7 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
             randomGradient,
             "group-hover:scale-110"
           )}>
-            <Music className="w-12 h-12 text-primary/60" />
+            <Music className="w-12 h-12 text-primary/60" aria-hidden="true" />
           </div>
         )}
         
@@ -311,6 +393,12 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
                 ? "bg-primary text-primary-foreground shadow-primary/25 animate-pulse-glow" 
                 : "bg-white/90 hover:bg-white text-black hover:scale-110 hover:shadow-xl"
             )}
+            aria-label={
+              isCurrentTrack && isPlaying 
+                ? `Приостановить воспроизведение трека ${track.title}` 
+                : `Воспроизвести трек ${track.title}`
+            }
+            aria-pressed={isCurrentTrack && isPlaying}
           >
             {isCurrentTrack && isPlaying ? (
               <Pause className="w-6 h-6" />
@@ -343,15 +431,15 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
         <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
           <div className="flex items-center gap-3">
             {formattedDuration && (
-              <div className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
+              <div className="flex items-center gap-1" aria-label={`Длительность: ${formattedDuration}`}>
+                <Clock className="w-3 h-3" aria-hidden="true" />
                 <span>{formattedDuration}</span>
               </div>
             )}
             
             {track.view_count !== undefined && (
-              <div className="flex items-center gap-1">
-                <Eye className="w-3 h-3" />
+              <div className="flex items-center gap-1" aria-label={`Просмотров: ${track.view_count}`}>
+                <Eye className="w-3 h-3" aria-hidden="true" />
                 <span>{track.view_count}</span>
               </div>
             )}
@@ -360,18 +448,19 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
 
         {/* Теги стилей */}
         {track.style_tags && track.style_tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
+          <div className="flex flex-wrap gap-1 mb-3" role="list" aria-label="Теги стилей">
             {track.style_tags.slice(0, 2).map((tag, index) => (
               <Badge 
                 key={index} 
                 variant="secondary" 
                 className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors duration-200"
+                role="listitem"
               >
                 {tag}
               </Badge>
             ))}
             {track.style_tags.length > 2 && (
-              <Badge variant="outline" className="text-xs px-2 py-0.5 border-primary/20 text-primary">
+              <Badge variant="outline" className="text-xs px-2 py-0.5 border-primary/20 text-primary" role="listitem">
                 +{track.style_tags.length - 2}
               </Badge>
             )}
@@ -379,7 +468,7 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
         )}
 
         {/* Кнопки действий */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between" role="toolbar" aria-label="Действия с треком">
           <Button
             variant="ghost"
             size="sm"
@@ -390,12 +479,14 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
                 ? 'text-red-500 hover:text-red-600 animate-pulse' 
                 : 'hover:text-red-500'
             )}
+            aria-label={isLiked ? `Убрать из избранного: ${track.title}` : `Добавить в избранное: ${track.title}`}
+            aria-pressed={isLiked}
           >
             <Heart className={cn(
               "w-4 h-4 transition-all duration-200",
               isLiked && 'fill-current scale-110'
             )} />
-            {likeCount > 0 && <span className="ml-1 text-xs">{likeCount}</span>}
+            {likeCount > 0 && <span className="ml-1 text-xs" aria-label={`${likeCount} лайков`}>{likeCount}</span>}
           </Button>
           
           <div className="flex items-center gap-1">
@@ -405,6 +496,7 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
               onClick={handleDownloadClick}
               disabled={!track.audio_url}
               className="hover:text-green-500 transition-all duration-200 hover:scale-110"
+              aria-label={`Скачать трек ${track.title}`}
             >
               <Download className="w-4 h-4" />
             </Button>
@@ -414,6 +506,7 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
               size="sm"
               onClick={handleShareClick}
               className="hover:text-blue-500 transition-all duration-200 hover:scale-110"
+              aria-label={`Поделиться треком ${track.title}`}
             >
               <Share2 className="w-4 h-4" />
             </Button>

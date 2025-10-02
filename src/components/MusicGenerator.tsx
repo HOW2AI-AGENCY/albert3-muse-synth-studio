@@ -12,6 +12,7 @@ import { Sparkles, Music, Wand2, Mic, Settings2, Hash, FileText, Volume2, Clock,
 import { useMusicGeneration } from '@/hooks/useMusicGeneration';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { useToast } from '@/hooks/use-toast';
 import { withErrorBoundary } from '@/components/ui/error-boundary';
 import { LyricsEditor } from '@/components/LyricsEditor';
 
@@ -37,6 +38,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     improvePrompt
   } = useMusicGeneration();
   
+  const { toast } = useToast();
   const { vibrate } = useHapticFeedback();
   const [mood, setMood] = useState("");
   const [tempo, setTempo] = useState("");
@@ -113,13 +115,55 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
 
   const handleGenerateMusic = useCallback(async () => {
     vibrate('medium');
-    await generateMusic();
-  }, [generateMusic, vibrate]);
+    
+    try {
+      toast({
+        title: "Генерация началась",
+        description: "Создаём вашу музыку с помощью AI...",
+      });
+      
+      await generateMusic();
+      
+      toast({
+        title: "Музыка создана!",
+        description: "Ваш трек успешно сгенерирован и готов к прослушиванию.",
+      });
+      
+      if (onTrackGenerated) {
+        onTrackGenerated();
+      }
+    } catch (error) {
+      toast({
+        title: "Ошибка генерации",
+        description: "Не удалось создать музыку. Попробуйте ещё раз.",
+        variant: "destructive",
+      });
+    }
+  }, [generateMusic, vibrate, toast, onTrackGenerated]);
 
   const handleImprovePrompt = useCallback(async () => {
     vibrate('light');
-    await improvePrompt();
-  }, [improvePrompt, vibrate]);
+    
+    try {
+      toast({
+        title: "Улучшение промпта",
+        description: "AI анализирует и улучшает ваше описание...",
+      });
+      
+      await improvePrompt();
+      
+      toast({
+        title: "Промпт улучшен!",
+        description: "Описание музыки было оптимизировано для лучшего результата.",
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка улучшения",
+        description: "Не удалось улучшить промпт. Попробуйте ещё раз.",
+        variant: "destructive",
+      });
+    }
+  }, [improvePrompt, vibrate, toast]);
 
   return (
     <Card 

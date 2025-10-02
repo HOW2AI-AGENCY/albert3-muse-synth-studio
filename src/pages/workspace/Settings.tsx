@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,17 +8,27 @@ import { useToast } from "@/hooks/use-toast";
 const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast({
-        title: "Ошибка",
-        description: error.message,
-        variant: "destructive",
-      });
-    } else {
-      navigate("/");
+    setIsSigningOut(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        toast({
+          title: "Ошибка",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Успешно",
+          description: "Вы вышли из аккаунта",
+        });
+        navigate("/");
+      }
+    } finally {
+      setIsSigningOut(false);
     }
   };
 

@@ -13,6 +13,7 @@ import {
   Headphones
 } from 'lucide-react';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { DisplayTrack, convertToAudioPlayerTrack } from '../../types/track';
 
@@ -50,18 +51,75 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
     pauseTrack 
   } = useAudioPlayer();
 
+  const { toast } = useToast();
+
   // Мемоизируем обработчики для предотвращения лишних ререндеров
   const handleLike = useCallback(() => {
-    onLike?.(track.id);
-  }, [onLike, track.id]);
+    try {
+      onLike?.(track.id);
+      
+      toast({
+        title: isLiked ? "Убрано из избранного" : "Добавлено в избранное",
+        description: `Трек "${track.title}" ${isLiked ? 'убран из' : 'добавлен в'} избранное`,
+        duration: 2000,
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить статус избранного",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  }, [onLike, track.id, track.title, isLiked, toast]);
 
   const handleDownload = useCallback(() => {
-    onDownload?.(track.id);
-  }, [onDownload, track.id]);
+    try {
+      if (!track.audio_url) {
+        toast({
+          title: "Ошибка скачивания",
+          description: "Аудиофайл недоступен для скачивания",
+          variant: "destructive",
+          duration: 3000,
+        });
+        return;
+      }
+
+      onDownload?.(track.id);
+      
+      toast({
+        title: "Скачивание начато",
+        description: `Трек "${track.title}" загружается`,
+        duration: 3000,
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка скачивания",
+        description: "Не удалось скачать трек",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  }, [onDownload, track.id, track.title, track.audio_url, toast]);
 
   const handleShare = useCallback(() => {
-    onShare?.(track.id);
-  }, [onShare, track.id]);
+    try {
+      onShare?.(track.id);
+      
+      toast({
+        title: "Ссылка скопирована",
+        description: `Ссылка на трек "${track.title}" скопирована в буфер обмена`,
+        duration: 3000,
+      });
+    } catch (error) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось поделиться треком",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  }, [onShare, track.id, track.title, toast]);
 
   // Intersection Observer для анимации появления
   useEffect(() => {
@@ -336,5 +394,3 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
     </div>
   );
 });
-
-// Удаляем дублированные обработчики, которые были добавлены в конце файла
