@@ -1,0 +1,188 @@
+/**
+ * Модуль валидации входных данных для Edge Functions
+ * Обеспечивает безопасность и целостность данных
+ */
+
+export interface ValidationError {
+  field: string;
+  message: string;
+}
+
+export class ValidationException extends Error {
+  public errors: ValidationError[];
+  
+  constructor(errors: ValidationError[]) {
+    super('Validation failed');
+    this.errors = errors;
+    this.name = 'ValidationException';
+  }
+}
+
+/**
+ * Базовые валидаторы
+ */
+export const validators = {
+  required: (value: any, fieldName: string): ValidationError | null => {
+    if (value === undefined || value === null || value === '') {
+      return { field: fieldName, message: `${fieldName} обязательно для заполнения` };
+    }
+    return null;
+  },
+
+  string: (value: any, fieldName: string): ValidationError | null => {
+    if (typeof value !== 'string') {
+      return { field: fieldName, message: `${fieldName} должно быть строкой` };
+    }
+    return null;
+  },
+
+  minLength: (minLen: number) => (value: string, fieldName: string): ValidationError | null => {
+    if (value.length < minLen) {
+      return { field: fieldName, message: `${fieldName} должно содержать минимум ${minLen} символов` };
+    }
+    return null;
+  },
+
+  maxLength: (maxLen: number) => (value: string, fieldName: string): ValidationError | null => {
+    if (value.length > maxLen) {
+      return { field: fieldName, message: `${fieldName} не должно превышать ${maxLen} символов` };
+    }
+    return null;
+  },
+
+  boolean: (value: any, fieldName: string): ValidationError | null => {
+    if (typeof value !== 'boolean') {
+      return { field: fieldName, message: `${fieldName} должно быть булевым значением` };
+    }
+    return null;
+  },
+
+  array: (value: any, fieldName: string): ValidationError | null => {
+    if (!Array.isArray(value)) {
+      return { field: fieldName, message: `${fieldName} должно быть массивом` };
+    }
+    return null;
+  },
+
+  uuid: (value: string, fieldName: string): ValidationError | null => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(value)) {
+      return { field: fieldName, message: `${fieldName} должно быть валидным UUID` };
+    }
+    return null;
+  },
+
+  sanitizeString: (value: string): string => {
+    // Удаляем потенциально опасные символы
+    return value
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/javascript:/gi, '')
+      .replace(/on\w+\s*=/gi, '')
+      .trim();
+  },
+
+  sanitizeHtml: (value: string): string => {
+    // Базовая санитизация HTML
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+  }
+};
+
+/**
+ * Схемы валидации для различных API
+ */
+export const validationSchemas = {
+  generateMusic: {
+    trackId: [validators.required, validators.string, validators.uuid],
+    title: [validators.required, validators.string, validators.minLength(1), validators.maxLength(200)],
+    prompt: [validators.required, validators.string, validators.minLength(10), validators.maxLength(2000)],
+    lyrics: [validators.string, validators.maxLength(5000)],
+    hasVocals: [validators.boolean],
+    styleTags: [validators.array],
+    customMode: [validators.boolean]
+  },
+
+  generateLyrics: {
+    trackId: [validators.required, validators.string, validators.uuid],
+    prompt: [validators.required, validators.string, validators.minLength(5), validators.maxLength(1000)],
+    style: [validators.string, validators.maxLength(100)],
+    mood: [validators.string, validators.maxLength(100)]
+  },
+
+  separateStems: {
+    trackId: [validators.required, validators.string, validators.uuid],
+    audioUrl: [validators.required, validators.string, validators.minLength(10)]
+  }
+};
+
+/**
+ * Валидирует данные согласно схеме
+ */
+export const validateData = (data: any, schema: Record<string, Function[]>): void => {
+  const errors: ValidationError[] = [];
+
+  for (const [fieldName, validatorFunctions] of Object.entries(schema)) {
+    const value = data[fieldName];
+
+    for (const validatorFn of validatorFunctions) {
+      const error = validatorFn(value, fieldName);
+      if (error) {
+        errors.push(error);
+        break; // Останавливаемся на первой ошибке для поля
+      }
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new ValidationException(errors);
+  }
+};
+
+/**
+ * Санитизирует входные данные
+ */
+export const sanitizeInput = (data: any): any => {
+  if (typeof data === 'string') {
+    return validators.sanitizeString(data);
+  }
+
+  if (Array.isArray(data)) {
+    return data.map(sanitizeInput);
+  }
+
+  if (typeof data === 'object' && data !== null) {
+    const sanitized: any = {};
+    for (const [key, value] of Object.entries(data)) {
+      sanitized[key] = sanitizeInput(value);
+    }
+    return sanitized;
+  }
+
+  return data;
+};
+
+/**
+ * Middleware для валидации запросов
+ */
+export const validateRequest = async (
+  req: Request,
+  schema: Record<string, Function[]>
+): Promise<any> => {
+  try {
+    const rawData = await req.json();
+    const sanitizedData = sanitizeInput(rawData);
+    validateData(sanitizedData, schema);
+    return sanitizedData;
+  } catch (error) {
+    if (error instanceof ValidationException) {
+      throw error;
+    }
+    throw new ValidationException([
+      { field: 'request', message: 'Неверный формат JSON данных' }
+    ]);
+  }
+};
