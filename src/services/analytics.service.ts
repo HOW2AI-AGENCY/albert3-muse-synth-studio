@@ -7,18 +7,23 @@ export class AnalyticsService {
    */
   static async recordPlay(trackId: string): Promise<void> {
     try {
-      const { error } = await supabase.rpc('increment_view_count', {
-        track_id: trackId
-      });
+      // First get current view_count
+      const { data: currentTrack } = await supabase
+        .from('tracks')
+        .select('view_count')
+        .eq('id', trackId)
+        .maybeSingle();
+
+      const newCount = (currentTrack?.view_count || 0) + 1;
+
+      // Update with new count
+      const { error } = await supabase
+        .from('tracks')
+        .update({ view_count: newCount })
+        .eq('id', trackId);
 
       if (error) {
-        // Fallback to direct update if RPC doesn't exist
-        const { error: updateError } = await supabase
-          .from('tracks')
-          .update({ view_count: supabase.raw('view_count + 1') })
-          .eq('id', trackId);
-
-        if (updateError) throw updateError;
+        console.error('Error in recordPlay:', error);
       }
     } catch (error) {
       console.error('Error recording play:', error);
