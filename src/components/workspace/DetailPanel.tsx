@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { DetailPanelContent } from "./DetailPanelContent";
 import { TrackDeleteDialog } from "@/components/tracks/TrackDeleteDialog";
 import { ApiService } from "@/services/api.service";
+
+interface TrackVersion {
+  id: string;
+  version_number: number;
+  is_master: boolean;
+  suno_id: string;
+  audio_url: string;
+  video_url?: string;
+  cover_url?: string;
+  lyrics?: string;
+  duration?: number;
+  metadata?: Record<string, unknown>;
+}
+
+interface TrackStem {
+  id: string;
+  stem_type: string;
+  audio_url: string;
+  separation_mode: string;
+}
 
 interface DetailPanelProps {
   track: {
@@ -41,17 +61,12 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
   const [mood, setMood] = useState(track.mood || "");
   const [isPublic, setIsPublic] = useState(track.is_public || false);
   const [isSaving, setIsSaving] = useState(false);
-  const [versions, setVersions] = useState<any[]>([]);
-  const [stems, setStems] = useState<any[]>([]);
+  const [versions, setVersions] = useState<TrackVersion[]>([]);
+  const [stems, setStems] = useState<TrackStem[]>([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
 
-  // Load track versions and stems
-  useEffect(() => {
-    loadVersionsAndStems();
-  }, [track.id]);
-
-  const loadVersionsAndStems = async () => {
+  const loadVersionsAndStems = useCallback(async () => {
     // Load versions
     const { data: versionsData } = await supabase
       .from('track_versions')
@@ -60,7 +75,10 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
       .order('version_number');
     
     if (versionsData) {
-      setVersions(versionsData);
+      setVersions(versionsData.map(v => ({
+        ...v,
+        metadata: v.metadata as Record<string, unknown>
+      })));
     }
 
     // Load stems
@@ -72,7 +90,12 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
     if (stemsData) {
       setStems(stemsData);
     }
-  };
+  }, [track.id]);
+
+  // Load track versions and stems
+  useEffect(() => {
+    loadVersionsAndStems();
+  }, [loadVersionsAndStems]);
 
   const handleSave = async () => {
     setIsSaving(true);

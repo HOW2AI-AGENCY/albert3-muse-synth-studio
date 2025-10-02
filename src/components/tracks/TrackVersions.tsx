@@ -29,7 +29,7 @@ interface TrackVersion {
   cover_url?: string;
   lyrics?: string;
   duration?: number;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 interface TrackVersionsProps {

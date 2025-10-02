@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,7 +52,7 @@ export const TrackDeleteDialog = ({
     }
   }, [open, countdown]);
 
-  const loadRelatedData = async () => {
+  const loadRelatedData = useCallback(async () => {
     setIsLoading(true);
     try {
       // Load versions count
@@ -74,7 +74,7 @@ export const TrackDeleteDialog = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [trackId]);
 
   const handleConfirm = () => {
     if (canDelete) {

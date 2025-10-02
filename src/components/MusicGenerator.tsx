@@ -7,13 +7,15 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Sparkles, Music, Wand2, Play, Pause, Download, Heart, Share2, MoreHorizontal, Volume2, VolumeX } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Sparkles, Music, Wand2, Play, Pause, Download, Heart, Share2, MoreHorizontal, Volume2, VolumeX, Lightbulb, Mic, Music2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMusicGeneration } from "@/hooks/useMusicGeneration";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { withErrorBoundary } from "@/components/ErrorBoundary";
 import { logError } from "@/utils/logger";
+import { LyricsEditor } from "@/components/LyricsEditor";
 
 interface MusicGeneratorProps {
   onTrackGenerated?: () => void;

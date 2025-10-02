@@ -12,8 +12,47 @@ import { TrackVersions } from "@/components/tracks/TrackVersions";
 import { TrackStemsPanel } from "@/components/tracks/TrackStemsPanel";
 import { useTrackLike } from "@/hooks/useTrackLike";
 
+interface Track {
+  id: string;
+  title: string;
+  prompt: string;
+  status: string;
+  audio_url?: string;
+  cover_url?: string;
+  video_url?: string;
+  suno_id?: string;
+  genre?: string;
+  mood?: string;
+  is_public?: boolean;
+  created_at?: string;
+  user_id?: string;
+  duration?: number;
+  lyrics?: string;
+  metadata?: Record<string, unknown>;
+}
+
+interface TrackVersion {
+  id: string;
+  version_number: number;
+  is_master: boolean;
+  suno_id: string;
+  audio_url: string;
+  video_url?: string;
+  cover_url?: string;
+  lyrics?: string;
+  duration?: number;
+  metadata?: Record<string, unknown>;
+}
+
+interface TrackStem {
+  id: string;
+  stem_type: string;
+  audio_url: string;
+  separation_mode: string;
+}
+
 interface DetailPanelContentProps {
-  track: any;
+  track: Track;
   title: string;
   setTitle: (value: string) => void;
   genre: string;
@@ -23,8 +62,8 @@ interface DetailPanelContentProps {
   isPublic: boolean;
   setIsPublic: (value: boolean) => void;
   isSaving: boolean;
-  versions: any[];
-  stems: any[];
+  versions: TrackVersion[];
+  stems: TrackStem[];
   onSave: () => void;
   onDownload: () => void;
   onShare: () => void;

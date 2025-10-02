@@ -138,7 +138,7 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
 
   return (
     <div
-      ref={swipeRef as any}
+      ref={swipeRef}
       className="fixed inset-0 z-[60] bg-gradient-to-b from-background via-background to-card animate-fade-in overflow-y-auto"
       style={{ 
         paddingTop: 'env(safe-area-inset-top)',
