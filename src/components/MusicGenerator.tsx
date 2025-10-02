@@ -55,50 +55,58 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   }, [setStyleTags]);
 
   return (
-    <Card className="card-glass p-8 space-y-6 hover-lift">
+    <Card variant="gradient" className="p-8 space-y-6 hover-lift animate-fade-in">
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-gradient-primary">
-            <Music className="h-5 w-5 text-white" />
+          <div className="p-3 rounded-xl bg-gradient-primary shadow-glow animate-float">
+            <Music className="h-6 w-6 text-white" />
           </div>
-          <h3 className="text-2xl font-bold text-gradient-primary">
-            Создайте свою музыку с AI
-          </h3>
+          <div>
+            <h3 className="text-3xl font-bold text-gradient-primary animate-shimmer">
+              Создайте свою музыку с AI
+            </h3>
+            <p className="text-muted-foreground/80 text-sm">
+              Профессиональная генерация музыки с вокалом и лирикой
+            </p>
+          </div>
         </div>
-        <p className="text-muted-foreground">
-          Профессиональная генерация музыки с вокалом и лирикой
-        </p>
       </div>
 
       <Tabs defaultValue="simple" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="simple">Простой режим</TabsTrigger>
-          <TabsTrigger value="advanced">Продвинутый</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 bg-background/50 backdrop-blur-sm">
+          <TabsTrigger value="simple" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            Простой режим
+          </TabsTrigger>
+          <TabsTrigger value="advanced" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            Продвинутый
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="simple" className="space-y-5 mt-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Lightbulb className="h-4 w-4" />
+        <TabsContent value="simple" className="space-y-6 mt-6 animate-slide-up">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground/80">
+              <Lightbulb className="h-4 w-4 text-yellow-500 animate-pulse" />
               <span>Подсказка: Опишите жанр, инструменты, настроение и темп</span>
             </div>
             <Textarea
               placeholder="Пример: Энергичный электронный трек с синтезаторными мелодиями и мощным басом, идеально подходит для тренировки..."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              className="min-h-[140px] resize-none bg-background/50 focus-visible:ring-primary/50 transition-all"
+              className="min-h-[140px] resize-none bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300"
               disabled={isGenerating || isImproving}
             />
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-lg border bg-background/30">
+          <div className="flex items-center justify-between p-4 rounded-xl border border-primary/20 bg-gradient-to-r from-background/50 to-background/30 backdrop-blur-sm hover:border-primary/40 transition-all duration-300">
             <div className="flex items-center gap-3">
-              <Mic className="h-5 w-5 text-primary" />
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Mic className="h-5 w-5 text-primary" />
+              </div>
               <div>
                 <Label htmlFor="vocals-switch" className="text-sm font-medium">
                   Добавить вокал
                 </Label>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground/70">
                   AI создаст вокал и лирику
                 </p>
               </div>
@@ -108,17 +116,18 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
               checked={hasVocals}
               onCheckedChange={setHasVocals}
               disabled={isGenerating || isImproving}
+              className="data-[state=checked]:bg-primary"
             />
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
             <Button
-              variant="glow"
+              variant="glass"
               onClick={improvePrompt}
               disabled={isImproving || isGenerating}
-              className="flex-1 h-12"
+              className="flex-1 h-12 group"
             >
-              <Wand2 className="mr-2 h-5 w-5" />
+              <Wand2 className="mr-2 h-5 w-5 group-hover:animate-spin transition-transform" />
               {isImproving ? "Улучшение..." : "Улучшить с AI"}
             </Button>
 
@@ -126,10 +135,10 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
               variant="hero"
               onClick={generateMusic}
               disabled={isGenerating || isImproving}
-              className="flex-1 h-12 text-base"
+              className="flex-1 h-12 text-base shadow-glow"
             >
-              <Sparkles className="mr-2 h-5 w-5" />
-              {isGenerating ? "Сгенерировать музыку" : "Сгенерировать музыку"}
+              <Sparkles className="mr-2 h-5 w-5 animate-pulse" />
+              {isGenerating ? "Генерация..." : "Сгенерировать музыку"}
             </Button>
           </div>
         </TabsContent>
