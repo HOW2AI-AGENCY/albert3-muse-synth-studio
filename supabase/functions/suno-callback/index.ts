@@ -122,6 +122,8 @@ serve(async (req) => {
       const sunoId = successTask.id;
       const modelName = successTask.model || successTask.model_name;
       const createdAtSuno = successTask.created_at || successTask.createdAt;
+      const tagsString = successTask.tags || '';
+      const styleTags = tagsString ? tagsString.split(/[,;]/).map((t: string) => t.trim()).filter(Boolean) : null;
       
       console.log("Suno callback: Full metadata", { 
         audioUrl: firstAudioUrl?.substring(0, 50),
@@ -148,6 +150,7 @@ serve(async (req) => {
           suno_id: sunoId,
           model_name: modelName,
           created_at_suno: createdAtSuno,
+          style_tags: styleTags,
           metadata: { suno_data: tasks, suno_task_id: taskId },
         })
         .eq("id", track.id);
@@ -174,6 +177,8 @@ serve(async (req) => {
             const secondSunoId = secondTask.id;
             const secondModelName = secondTask.model || secondTask.model_name;
             const secondCreatedAtSuno = secondTask.created_at || secondTask.createdAt;
+            const secondTagsString = secondTask.tags || '';
+            const secondStyleTags = secondTagsString ? secondTagsString.split(/[,;]/).map((t: string) => t.trim()).filter(Boolean) : originalTrack.style_tags;
 
             await supabase
               .from("tracks")
@@ -188,7 +193,7 @@ serve(async (req) => {
                 provider: "suno",
                 lyrics: secondTask.prompt || secondTask.lyric || secondTask.lyrics || originalTrack.lyrics,
                 has_vocals: originalTrack.has_vocals,
-                style_tags: originalTrack.style_tags,
+                style_tags: secondStyleTags,
                 cover_url: secondCoverUrl,
                 video_url: secondVideoUrl,
                 suno_id: secondSunoId,

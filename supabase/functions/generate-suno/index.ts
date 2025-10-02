@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { trackId, prompt, lyrics, hasVocals = false, styleTags = [], customMode = false } = await req.json();
+    const { trackId, userId, title, prompt, lyrics, hasVocals = false, styleTags = [], customMode = false } = await req.json();
     
     const SUNO_API_KEY = Deno.env.get("SUNO_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -23,14 +23,46 @@ serve(async (req) => {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    
+    let finalTrackId = trackId;
+    
+    // Create track if not provided
+    if (!trackId && userId && title) {
+      const { data: newTrack, error: createError } = await supabase
+        .from('tracks')
+        .insert({
+          user_id: userId,
+          title: title,
+          prompt: prompt,
+          provider: 'suno',
+          lyrics: lyrics || null,
+          has_vocals: hasVocals || false,
+          style_tags: styleTags || null,
+          status: 'processing',
+        })
+        .select()
+        .single();
+      
+      if (createError) {
+        console.error('Error creating track:', createError);
+        throw createError;
+      }
+      
+      finalTrackId = newTrack.id;
+      console.log('Created new track:', finalTrackId);
+    }
+    
+    if (!finalTrackId) {
+      throw new Error('No trackId provided and failed to create track');
+    }
 
-    console.log('Starting Suno generation for track:', trackId);
+    console.log('Starting Suno generation for track:', finalTrackId);
 
     // If there's an existing Suno task for this track still processing, resume polling instead of creating a new one
     const { data: existingTrack, error: loadErr } = await supabase
       .from('tracks')
       .select('metadata,status')
-      .eq('id', trackId)
+      .eq('id', finalTrackId)
       .maybeSingle();
     if (loadErr) {
       console.error('Error loading track for resume:', loadErr);
@@ -38,13 +70,13 @@ serve(async (req) => {
     const existingTaskId = existingTrack?.metadata?.suno_task_id;
     if (existingTaskId && existingTrack?.status === 'processing') {
       console.log('Resuming existing Suno task:', existingTaskId);
-      pollSunoCompletion(trackId, existingTaskId, supabase, SUNO_API_KEY).catch(err => {
+      pollSunoCompletion(finalTrackId, existingTaskId, supabase, SUNO_API_KEY).catch(err => {
         console.error('Resume polling error:', err);
       });
       return new Response(
         JSON.stringify({
           success: true,
-          trackId,
+          trackId: finalTrackId,
           taskId: existingTaskId,
           message: 'Resumed polling for existing task',
         }),
@@ -59,7 +91,7 @@ serve(async (req) => {
     await supabase
       .from('tracks')
       .update({ status: 'processing', provider: 'suno' })
-      .eq('id', trackId);
+      .eq('id', finalTrackId);
 
     // Prepare Suno API request
     const callbackUrl = `${SUPABASE_URL}/functions/v1/suno-callback`;
@@ -133,7 +165,7 @@ serve(async (req) => {
           status: 'failed', 
           error_message: `Suno API error: ${sunoResponse?.status ?? 'no_response'} - ${errorText}` 
         })
-        .eq('id', trackId);
+        .eq('id', finalTrackId);
       throw new Error(`Suno API failed: ${sunoResponse?.status ?? 'no_response'}`);
     }
 
@@ -150,7 +182,7 @@ serve(async (req) => {
           status: 'failed',
           error_message: `Suno API error: ${msg}`
         })
-        .eq('id', trackId);
+        .eq('id', finalTrackId);
       throw new Error(`Suno API error: ${msg}`);
     }
 
@@ -165,10 +197,10 @@ serve(async (req) => {
           suno_response: sunoData 
         }
       })
-      .eq('id', trackId);
+      .eq('id', finalTrackId);
 
     // Start background polling (fire and forget)
-    pollSunoCompletion(trackId, taskId, supabase, SUNO_API_KEY).catch(err => {
+    pollSunoCompletion(finalTrackId, taskId, supabase, SUNO_API_KEY).catch(err => {
       console.error('Polling error:', err);
     });
 
@@ -177,7 +209,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true,
-        trackId,
+        trackId: finalTrackId,
         taskId,
         message: 'Generation started'
       }),
