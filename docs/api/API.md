@@ -1,8 +1,12 @@
 # 🔌 API Документация Albert3 Muse Synth Studio
 
+[![API Version](https://img.shields.io/badge/API-v1.2.0-blue.svg)](https://github.com/your-repo/albert3-muse-synth-studio)
+[![Last Updated](https://img.shields.io/badge/Updated-January%202025-green.svg)](https://github.com/your-repo/albert3-muse-synth-studio)
+[![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)](https://github.com/your-repo/albert3-muse-synth-studio)
+
 ## 📋 Обзор API
 
-Albert3 Muse Synth Studio предоставляет RESTful API через Supabase Edge Functions для генерации музыки, текстов песен и обработки аудио. Все эндпоинты требуют аутентификации через JWT токены.
+Albert3 Muse Synth Studio предоставляет современный RESTful API через Supabase Edge Functions для генерации музыки с помощью ИИ, создания текстов песен, разделения треков на стемы и обработки аудио. Все эндпоинты требуют аутентификации через JWT токены и поддерживают real-time уведомления.
 
 ### Базовый URL
 ```
@@ -13,7 +17,14 @@ https://[your-project-id].supabase.co/functions/v1/
 Все запросы должны содержать заголовок Authorization:
 ```http
 Authorization: Bearer <jwt_token>
+Content-Type: application/json
 ```
+
+### Поддерживаемые форматы
+- **Входные данные:** JSON
+- **Аудио форматы:** MP3, WAV, FLAC
+- **Изображения:** JPEG, PNG, WebP
+- **Максимальный размер файла:** 50MB
 
 ---
 
