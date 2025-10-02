@@ -97,6 +97,14 @@ All colors MUST be HSL.
     animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
+  .hover-lift {
+    @apply transition-all duration-300;
+  }
+
+  .hover-lift:hover {
+    @apply -translate-y-1 shadow-lg;
+  }
+
   @keyframes pulse-glow {
     0%, 100% {
       opacity: 1;

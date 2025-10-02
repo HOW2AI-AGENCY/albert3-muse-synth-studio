@@ -1,79 +1,45 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { AudioPlayer } from "./AudioPlayer";
-import { Loader2, Music } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-
-interface Track {
-  id: string;
-  title: string;
-  audio_url: string | null;
-  status: string;
-  created_at: string;
-}
+import { Loader2, Music, Clock, CheckCircle, XCircle } from "lucide-react";
+import { useTracks } from "@/hooks/useTracks";
+import { Badge } from "@/components/ui/badge";
 
 interface TracksListProps {
   refreshTrigger?: number;
 }
 
 export const TracksList = ({ refreshTrigger }: TracksListProps) => {
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const { tracks, isLoading, deleteTrack } = useTracks(refreshTrigger);
 
-  const loadTracks = async () => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from("tracks")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setTracks(data || []);
-    } catch (error) {
-      console.error("Error loading tracks:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load tracks",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadTracks();
-  }, [refreshTrigger]);
-
-  const handleDelete = async (trackId: string) => {
-    try {
-      const { error } = await supabase
-        .from("tracks")
-        .delete()
-        .eq("id", trackId);
-
-      if (error) throw error;
-
-      setTracks(tracks.filter((t) => t.id !== trackId));
-      toast({
-        title: "Track deleted",
-        description: "Your track has been removed",
-      });
-    } catch (error) {
-      console.error("Error deleting track:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete track",
-        variant: "destructive",
-      });
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "completed":
+        return (
+          <Badge variant="default" className="gap-1">
+            <CheckCircle className="h-3 w-3" />
+            Готово
+          </Badge>
+        );
+      case "processing":
+        return (
+          <Badge variant="secondary" className="gap-1">
+            <Clock className="h-3 w-3 animate-spin" />
+            Обработка
+          </Badge>
+        );
+      case "failed":
+        return (
+          <Badge variant="destructive" className="gap-1">
+            <XCircle className="h-3 w-3" />
+            Ошибка
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline" className="gap-1">
+            <Clock className="h-3 w-3" />
+            Ожидание
+          </Badge>
+        );
     }
   };
 
@@ -87,28 +53,43 @@ export const TracksList = ({ refreshTrigger }: TracksListProps) => {
 
   if (tracks.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <Music className="h-16 w-16 text-muted-foreground mb-4 opacity-50" />
-        <h3 className="text-xl font-semibold mb-2">No tracks yet</h3>
-        <p className="text-muted-foreground">
-          Generate your first AI music track to get started!
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="p-6 rounded-full bg-gradient-primary/10 mb-6">
+          <Music className="h-16 w-16 text-primary" />
+        </div>
+        <h3 className="text-2xl font-semibold mb-2">Треков пока нет</h3>
+        <p className="text-muted-foreground max-w-md">
+          Создайте свой первый AI-трек прямо сейчас! Опишите желаемую музыку и получите уникальную композицию.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-gradient-secondary">Your Tracks</h2>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-gradient-secondary">Ваши треки</h2>
+        <Badge variant="outline" className="text-base px-4 py-2">
+          {tracks.length} {tracks.length === 1 ? "трек" : "треков"}
+        </Badge>
+      </div>
+      
       <div className="grid gap-4">
         {tracks.map((track) => (
-          <AudioPlayer
-            key={track.id}
-            trackId={track.id}
-            title={track.title}
-            audioUrl={track.audio_url || undefined}
-            onDelete={() => handleDelete(track.id)}
-          />
+          <div key={track.id} className="space-y-2">
+            <div className="flex items-center gap-2">
+              {getStatusBadge(track.status)}
+              {track.error_message && (
+                <span className="text-xs text-destructive">{track.error_message}</span>
+              )}
+            </div>
+            <AudioPlayer
+              trackId={track.id}
+              title={track.title}
+              audioUrl={track.audio_url || undefined}
+              onDelete={() => deleteTrack(track.id)}
+            />
+          </div>
         ))}
       </div>
     </div>
