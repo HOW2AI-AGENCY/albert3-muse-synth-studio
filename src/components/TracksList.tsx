@@ -11,6 +11,8 @@ import { AudioPlayer } from "./AudioPlayer";
 
 interface TracksListProps {
   refreshTrigger?: number;
+  onTrackSelect?: (track: Track) => void;
+  selectedTrackId?: string;
 }
 
 interface Track extends ApiTrack {
@@ -20,7 +22,7 @@ interface Track extends ApiTrack {
   has_vocals: boolean | null;
 }
 
-export const TracksList = ({ refreshTrigger }: TracksListProps) => {
+export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: TracksListProps) => {
   const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks(refreshTrigger);
   const { toast } = useToast();
   const [retrying, setRetrying] = useState<Record<string, boolean>>({});
@@ -186,7 +188,11 @@ export const TracksList = ({ refreshTrigger }: TracksListProps) => {
           const showRetry = track.status === 'failed' || isStale(track as Track);
           
           return (
-            <div key={track.id} className="space-y-2">
+            <div 
+              key={track.id} 
+              className="space-y-2 cursor-pointer"
+              onClick={() => onTrackSelect?.(track as Track)}
+            >
               {showRetry && (
                 <div className="flex gap-2 items-center">
                   {isStale(track as Track) && (
@@ -197,7 +203,10 @@ export const TracksList = ({ refreshTrigger }: TracksListProps) => {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => retryTrack(track as Track)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      retryTrack(track as Track);
+                    }}
                     disabled={retrying[track.id]}
                     className="gap-1 h-7 text-xs ml-auto"
                   >
@@ -213,6 +222,7 @@ export const TracksList = ({ refreshTrigger }: TracksListProps) => {
                 onLike={() => handleLike(track.id)}
                 onDownload={() => handleDownload(track as Track)}
                 onShare={() => handleShare(track as Track)}
+                isSelected={selectedTrackId === track.id}
               />
               
               {track.audio_url && track.status === 'completed' && (

@@ -12,6 +12,7 @@ interface TrackCardProps {
   onDownload?: () => void;
   onShare?: () => void;
   isLiked?: boolean;
+  isSelected?: boolean;
 }
 
 const gradients = [
@@ -28,7 +29,8 @@ export const TrackCard = ({
   onLike, 
   onDownload, 
   onShare,
-  isLiked = false 
+  isLiked = false,
+  isSelected = false 
 }: TrackCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const gradientIndex = Math.abs(track.id.charCodeAt(0) % gradients.length);
@@ -48,7 +50,9 @@ export const TrackCard = ({
 
   return (
     <Card 
-      className="overflow-hidden hover:border-primary/50 transition-all duration-300 hover-lift"
+      className={`overflow-hidden hover:border-primary/50 transition-all duration-300 hover-lift ${
+        isSelected ? "ring-2 ring-primary" : ""
+      }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
