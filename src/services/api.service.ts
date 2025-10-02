@@ -53,7 +53,7 @@ export interface Track {
   id: string;
   title: string;
   audio_url: string | null;
-  status: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
   created_at: string;
   prompt: string;
   improved_prompt: string | null;
