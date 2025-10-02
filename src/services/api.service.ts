@@ -56,7 +56,16 @@ export interface Track {
   prompt: string;
   improved_prompt: string | null;
   duration: number | null;
+  duration_seconds: number | null;
   error_message: string | null;
+  cover_url: string | null;
+  video_url: string | null;
+  suno_id: string | null;
+  model_name: string | null;
+  created_at_suno: string | null;
+  lyrics: string | null;
+  style_tags: string[] | null;
+  has_vocals: boolean | null;
 }
 
 /**

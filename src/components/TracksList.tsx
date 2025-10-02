@@ -218,11 +218,11 @@ export const TracksList = ({ refreshTrigger, onTrackSelect, selectedTrackId }: T
               
               <TrackCard
                 track={track}
-                onPlay={() => handlePlay(track as Track)}
                 onLike={() => handleLike(track.id)}
                 onDownload={() => handleDownload(track as Track)}
                 onShare={() => handleShare(track as Track)}
                 isSelected={selectedTrackId === track.id}
+                onClick={() => onTrackSelect?.(track as Track)}
               />
               
               {track.audio_url && track.status === 'completed' && (
