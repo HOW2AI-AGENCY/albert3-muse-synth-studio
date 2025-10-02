@@ -11,7 +11,7 @@ const corsHeaders = {
   ...createSecurityHeaders()
 };
 
-const handler = async (req: Request): Promise<Response> => {
+const mainHandler = async (req: Request): Promise<Response> => {
   try {
     // Валидация входных данных
     const validatedData = await validateRequest(req, validationSchemas.generateLyrics)
@@ -110,15 +110,11 @@ const handler = async (req: Request): Promise<Response> => {
   }
 }
 
-// Wrap handler with rate limiting
-serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+// Применяем rate limiting middleware
+const handler = withRateLimit(mainHandler, {
+  maxRequests: 20,
+  windowMs: 60000, // 1 минута
+  endpoint: 'generate-lyrics'
+});
 
-  return withRateLimit(handler, {
-    maxRequests: 20,
-    windowMinutes: 1,
-    endpoint: 'generate-lyrics'
-  })(req)
-})
+serve(handler);

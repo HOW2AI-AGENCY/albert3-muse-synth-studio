@@ -11,7 +11,7 @@ const corsHeaders = {
   ...createSecurityHeaders()
 };
 
-const handler = async (req: Request): Promise<Response> => {
+const mainHandler = async (req: Request): Promise<Response> => {
   try {
     // Валидация входных данных
     const validatedData = await validateRequest(req, validationSchemas.generateMusic)
@@ -195,19 +195,6 @@ const handler = async (req: Request): Promise<Response> => {
   }
 }
 
-// Wrap handler with rate limiting
-serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-
-  return withRateLimit(handler, {
-    maxRequests: 10,
-    windowMinutes: 1,
-    endpoint: 'generate-suno'
-  })(req)
-})
-
 async function pollSunoCompletion(
   trackId: string, 
   taskId: string, 
@@ -350,3 +337,12 @@ async function pollSunoCompletion(
 
   console.log('Track generation timeout:', trackId);
 }
+
+// Применяем rate limiting middleware
+const handler = withRateLimit(mainHandler, {
+  maxRequests: 10,
+  windowMinutes: 1, // 1 minute
+  endpoint: 'generate-suno'
+});
+
+serve(handler);
