@@ -28,48 +28,69 @@ Content-Type: application/json
 
 ---
 
-## 🎵 Музыкальные API
+## 🎵 Эндпоинты для генерации музыки
 
 ### 1. Генерация музыки через Suno AI
 
-**Эндпоинт:** `POST /generate-suno`
+**Эндпоинт:** `POST /generate-music-suno`
 
-Создает музыкальный трек с использованием Suno AI API.
+Создает музыкальную композицию с помощью Suno AI на основе текстового описания.
 
 #### Параметры запроса
+
 ```typescript
-interface GenerateSunoRequest {
-  trackId: string;           // ID трека в базе данных
-  title: string;             // Название трека
-  prompt: string;            // Описание желаемой музыки
-  lyrics?: string;           // Текст песни (опционально)
-  hasVocals?: boolean;       // Включить вокал (по умолчанию: false)
-  styleTags?: string[];      // Теги стиля музыки
-  customMode?: boolean;      // Использовать кастомный режим (по умолчанию: false)
+interface SunoGenerationRequest {
+  prompt: string;                    // Описание желаемой музыки (обязательно)
+  make_instrumental?: boolean;       // Инструментальная версия (по умолчанию: false)
+  wait_audio?: boolean;             // Ожидать готовый аудиофайл (по умолчанию: false)
+  model_version?: string;           // Версия модели (по умолчанию: "chirp-v3-5")
+  tags?: string;                    // Музыкальные теги/жанры
+  title?: string;                   // Название композиции
+  continue_at?: number;             // Продолжить с определенной секунды
+  continue_clip_id?: string;        // ID клипа для продолжения
+  add_to_playlist?: boolean;        // Добавить в плейлист (по умолчанию: false)
+  user_id?: string;                 // ID пользователя
 }
 ```
 
 #### Пример запроса
+
 ```bash
-curl -X POST https://your-project.supabase.co/functions/v1/generate-suno \
-  -H "Authorization: Bearer <jwt_token>" \
+curl -X POST "https://your-project.supabase.co/functions/v1/generate-music-suno" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "trackId": "123e4567-e89b-12d3-a456-426614174000",
-    "title": "Летняя мелодия",
-    "prompt": "Легкая акустическая мелодия с гитарой, летнее настроение",
-    "hasVocals": false,
-    "styleTags": ["acoustic", "summer", "chill"]
+    "prompt": "Энергичная рок-композиция с гитарными соло и мощными барабанами",
+    "tags": "rock, energetic, guitar solo",
+    "title": "Электрический шторм",
+    "make_instrumental": false,
+    "wait_audio": true,
+    "model_version": "chirp-v3-5"
   }'
 ```
 
 #### Ответ
+
 ```typescript
-interface GenerateSunoResponse {
+interface SunoGenerationResponse {
   success: boolean;
-  message: string;
-  trackId: string;
-  sunoIds?: string[];        // ID треков в Suno API
+  data?: {
+    id: string;                     // Уникальный ID генерации
+    title: string;                  // Название композиции
+    image_url?: string;             // URL обложки
+    lyric?: string;                 // Текст песни
+    audio_url?: string;             // URL аудиофайла (если wait_audio: true)
+    video_url?: string;             // URL видео
+    created_at: string;             // Время создания
+    model_name: string;             // Используемая модель
+    status: "submitted" | "queued" | "streaming" | "complete" | "error";
+    gpt_description_prompt?: string; // Улучшенное описание от GPT
+    prompt: string;                 // Исходный промпт
+    type: string;                   // Тип генерации
+    tags: string;                   // Теги композиции
+  }[];
+  error?: string;                   // Сообщение об ошибке
+  request_id?: string;              // ID запроса для отслеживания
 }
 ```
 
@@ -83,35 +104,69 @@ interface GenerateSunoResponse {
 
 ### 2. Генерация музыки через Replicate
 
-**Эндпоинт:** `POST /generate-music`
+**Эндпоинт:** `POST /generate-music-replicate`
 
-Альтернативный способ генерации музыки через Replicate API.
+Создает музыкальную композицию с помощью различных моделей на платформе Replicate.
 
 #### Параметры запроса
+
 ```typescript
-interface GenerateMusicRequest {
-  trackId: string;           // ID трека в базе данных
-  prompt: string;            // Описание желаемой музыки
+interface ReplicateGenerationRequest {
+  model: string;                     // Модель для генерации (обязательно)
+  prompt: string;                    // Описание желаемой музыки (обязательно)
+  duration?: number;                 // Длительность в секундах (по умолчанию: 30)
+  temperature?: number;              // Креативность (0.0-1.0, по умолчанию: 0.8)
+  top_k?: number;                   // Top-k sampling (по умолчанию: 250)
+  top_p?: number;                   // Top-p sampling (по умолчанию: 0.0)
+  seed?: number;                    // Seed для воспроизводимости
+  format?: "wav" | "mp3";           // Формат выходного файла (по умолчанию: "wav")
+  normalization_strategy?: "loudness" | "clip" | "peak" | "rms"; // Стратегия нормализации
+  user_id?: string;                 // ID пользователя
 }
 ```
 
+#### Доступные модели
+
+- `facebook/musicgen-large`: Большая модель MusicGen для высококачественной генерации
+- `facebook/musicgen-medium`: Средняя модель MusicGen (баланс качества и скорости)
+- `facebook/musicgen-small`: Компактная модель MusicGen для быстрой генерации
+- `riffusion/riffusion`: Модель Riffusion для экспериментальной генерации
+- `meta-llama/musicgen-stereo-large`: Стерео версия MusicGen
+
 #### Пример запроса
+
 ```bash
-curl -X POST https://your-project.supabase.co/functions/v1/generate-music \
-  -H "Authorization: Bearer <jwt_token>" \
+curl -X POST "https://your-project.supabase.co/functions/v1/generate-music-replicate" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "trackId": "123e4567-e89b-12d3-a456-426614174000",
-    "prompt": "Энергичная электронная музыка в стиле synthwave"
+    "model": "facebook/musicgen-large",
+    "prompt": "Спокойная джазовая композиция с саксофоном и фортепиано",
+    "duration": 60,
+    "temperature": 0.7,
+    "format": "mp3",
+    "normalization_strategy": "loudness"
   }'
 ```
 
 #### Ответ
+
 ```typescript
-interface GenerateMusicResponse {
+interface ReplicateGenerationResponse {
   success: boolean;
-  message: string;
-  predictionId?: string;     // ID предсказания в Replicate
+  data?: {
+    id: string;                     // ID предсказания Replicate
+    status: "starting" | "processing" | "succeeded" | "failed" | "canceled";
+    urls?: string[];                // URLs сгенерированных аудиофайлов
+    created_at: string;             // Время создания
+    completed_at?: string;          // Время завершения
+    model: string;                  // Использованная модель
+    input: ReplicateGenerationRequest; // Входные параметры
+    logs?: string;                  // Логи генерации
+    error?: string;                 // Сообщение об ошибке (если есть)
+  };
+  error?: string;                   // Общее сообщение об ошибке
+  request_id?: string;              // ID запроса для отслеживания
 }
 ```
 
@@ -153,82 +208,130 @@ interface SeparateStemsResponse {
 
 ---
 
-## ✍️ Текстовые API
+## 🎤 Эндпоинты для работы с текстами песен
 
-### 4. Генерация текстов песен
+### 1. Генерация текстов песен
 
 **Эндпоинт:** `POST /generate-lyrics`
 
-Создает текст песни на основе заданных параметров.
+Создает текст песни на основе темы, настроения и музыкального стиля с помощью ИИ.
 
 #### Параметры запроса
+
 ```typescript
-interface GenerateLyricsRequest {
-  theme: string;             // Тема песни
-  mood: string;              // Настроение
-  genre: string;             // Жанр музыки
-  language?: 'ru' | 'en';    // Язык (по умолчанию: 'ru')
-  structure?: string;        // Структура песни
+interface LyricsGenerationRequest {
+  theme: string;                     // Тема песни (обязательно)
+  mood?: string;                     // Настроение (например: "веселое", "грустное", "энергичное")
+  genre?: string;                    // Музыкальный жанр (например: "рок", "поп", "джаз")
+  language?: string;                 // Язык текста (по умолчанию: "ru")
+  structure?: "verse-chorus" | "verse-chorus-bridge" | "custom"; // Структура песни
+  length?: "short" | "medium" | "long"; // Длина текста (по умолчанию: "medium")
+  style?: string;                    // Стиль написания (например: "поэтический", "разговорный")
+  keywords?: string[];               // Ключевые слова для включения
+  avoid_words?: string[];            // Слова, которых следует избегать
+  user_id?: string;                  // ID пользователя
 }
 ```
 
 #### Пример запроса
+
 ```bash
-curl -X POST https://your-project.supabase.co/functions/v1/generate-lyrics \
-  -H "Authorization: Bearer <jwt_token>" \
+curl -X POST "https://your-project.supabase.co/functions/v1/generate-lyrics" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "theme": "любовь",
-    "mood": "романтичное",
-    "genre": "поп",
+    "theme": "Путешествие по звездам",
+    "mood": "мечтательное",
+    "genre": "космический рок",
     "language": "ru",
-    "structure": "verse-chorus-verse-chorus-bridge-chorus"
+    "structure": "verse-chorus-bridge",
+    "length": "medium",
+    "keywords": ["звезды", "космос", "мечты"],
+    "style": "поэтический"
   }'
 ```
 
 #### Ответ
+
 ```typescript
-interface GenerateLyricsResponse {
-  lyrics: string;            // Сгенерированный текст
-  metadata: {
-    theme: string;
-    mood: string;
-    genre: string;
-    language: string;
-    structure: string;
+interface LyricsGenerationResponse {
+  success: boolean;
+  data?: {
+    id: string;                     // Уникальный ID генерации
+    lyrics: string;                 // Сгенерированный текст песни
+    structure: {                    // Структура песни
+      verses: string[];             // Куплеты
+      chorus?: string;              // Припев
+      bridge?: string;              // Бридж
+      outro?: string;               // Концовка
+    };
+    metadata: {
+      theme: string;                // Тема песни
+      mood: string;                 // Настроение
+      genre: string;                // Жанр
+      language: string;             // Язык
+      word_count: number;           // Количество слов
+      estimated_duration: number;   // Примерная длительность в секундах
+    };
+    created_at: string;             // Время создания
   };
+  error?: string;                   // Сообщение об ошибке
+  request_id?: string;              // ID запроса для отслеживания
 }
 ```
 
----
-
-### 5. Улучшение промптов
+### 2. Улучшение промптов
 
 **Эндпоинт:** `POST /improve-prompt`
 
-Улучшает описание музыки для более качественной генерации.
+Улучшает и расширяет пользовательский промпт для более качественной генерации музыки.
 
 #### Параметры запроса
+
 ```typescript
-interface ImprovePromptRequest {
-  prompt: string;            // Исходное описание музыки
+interface PromptImprovementRequest {
+  original_prompt: string;           // Исходный промпт (обязательно)
+  target_service?: "suno" | "replicate" | "both"; // Целевой сервис (по умолчанию: "both")
+  enhancement_level?: "light" | "medium" | "heavy"; // Уровень улучшения (по умолчанию: "medium")
+  focus_areas?: string[];            // Области для улучшения (например: ["rhythm", "instruments", "mood"])
+  language?: string;                 // Язык промпта (по умолчанию: "ru")
+  user_id?: string;                  // ID пользователя
 }
 ```
 
 #### Пример запроса
+
 ```bash
-curl -X POST https://your-project.supabase.co/functions/v1/improve-prompt \
-  -H "Authorization: Bearer <jwt_token>" \
+curl -X POST "https://your-project.supabase.co/functions/v1/improve-prompt" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "prompt": "грустная музыка"
+    "original_prompt": "грустная песня",
+    "target_service": "suno",
+    "enhancement_level": "medium",
+    "focus_areas": ["instruments", "mood", "tempo"],
+    "language": "ru"
   }'
 ```
 
 #### Ответ
+
 ```typescript
-interface ImprovePromptResponse {
-  improvedPrompt: string;    // Улучшенное описание
+interface PromptImprovementResponse {
+  success: boolean;
+  data?: {
+    original_prompt: string;        // Исходный промпт
+    improved_prompt: string;        // Улучшенный промпт
+    improvements: {
+      added_elements: string[];     // Добавленные элементы
+      enhanced_aspects: string[];   // Улучшенные аспекты
+      suggestions: string[];        // Дополнительные предложения
+    };
+    target_service: string;         // Целевой сервис
+    confidence_score: number;       // Оценка качества улучшения (0-1)
+  };
+  error?: string;                   // Сообщение об ошибке
+  request_id?: string;              // ID запроса для отслеживания
 }
 ```
 
