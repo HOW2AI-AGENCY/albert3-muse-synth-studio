@@ -1,431 +1,364 @@
-[{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2305",
-	"severity": 8,
-	"message": "Module '\"react-window\"' has no exported member 'VariableSizeList'.",
-	"source": "ts",
-	"startLineNumber": 2,
-	"startColumn": 10,
-	"endLineNumber": 2,
-	"endColumn": 26,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2307",
-	"severity": 8,
-	"message": "Cannot find module '@/hooks/use-toast' or its corresponding type declarations.",
-	"source": "ts",
-	"startLineNumber": 8,
-	"startColumn": 26,
-	"endLineNumber": 8,
-	"endColumn": 45,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2307",
-	"severity": 8,
-	"message": "Cannot find module '@/contexts/AudioPlayerContext' or its corresponding type declarations.",
-	"source": "ts",
-	"startLineNumber": 9,
-	"startColumn": 32,
-	"endLineNumber": 9,
-	"endColumn": 63,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2307",
-	"severity": 8,
-	"message": "Cannot find module '@/hooks/useTracks' or its corresponding type declarations.",
-	"source": "ts",
-	"startLineNumber": 10,
-	"startColumn": 27,
-	"endLineNumber": 10,
-	"endColumn": 46,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2307",
-	"severity": 8,
-	"message": "Cannot find module '@/services/api.service' or its corresponding type declarations.",
-	"source": "ts",
-	"startLineNumber": 11,
-	"startColumn": 47,
-	"endLineNumber": 11,
-	"endColumn": 71,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2307",
-	"severity": 8,
-	"message": "Cannot find module '@/integrations/supabase/client' or its corresponding type declarations.",
-	"source": "ts",
-	"startLineNumber": 12,
-	"startColumn": 26,
-	"endLineNumber": 12,
-	"endColumn": 58,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2307",
-	"severity": 8,
-	"message": "Cannot find module '@/utils/logger' or its corresponding type declarations.",
-	"source": "ts",
-	"startLineNumber": 13,
-	"startColumn": 26,
-	"endLineNumber": 13,
-	"endColumn": 42,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'audio_url' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 65,
-	"startColumn": 15,
-	"endLineNumber": 65,
-	"endColumn": 24,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'status' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 65,
-	"startColumn": 34,
-	"endLineNumber": 65,
-	"endColumn": 40,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'id' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 67,
-	"startColumn": 19,
-	"endLineNumber": 67,
-	"endColumn": 21,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'title' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 68,
-	"startColumn": 22,
-	"endLineNumber": 68,
-	"endColumn": 27,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'audio_url' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 69,
-	"startColumn": 26,
-	"endLineNumber": 69,
-	"endColumn": 35,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'cover_url' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 70,
-	"startColumn": 26,
-	"endLineNumber": 70,
-	"endColumn": 35,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'duration' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 71,
-	"startColumn": 25,
-	"endLineNumber": 71,
-	"endColumn": 33,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'audio_url' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 74,
-	"startColumn": 31,
-	"endLineNumber": 74,
-	"endColumn": 40,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'status' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 74,
-	"startColumn": 46,
-	"endLineNumber": 74,
-	"endColumn": 52,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'id' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 75,
-	"startColumn": 15,
-	"endLineNumber": 75,
-	"endColumn": 17,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'title' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 76,
-	"startColumn": 18,
-	"endLineNumber": 76,
-	"endColumn": 23,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'audio_url' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 77,
-	"startColumn": 22,
-	"endLineNumber": 77,
-	"endColumn": 31,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'cover_url' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 78,
-	"startColumn": 22,
-	"endLineNumber": 78,
-	"endColumn": 31,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'duration' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 79,
-	"startColumn": 21,
-	"endLineNumber": 79,
-	"endColumn": 29,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'id' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 92,
-	"startColumn": 44,
-	"endLineNumber": 92,
-	"endColumn": 46,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'id' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 94,
-	"startColumn": 46,
-	"endLineNumber": 94,
-	"endColumn": 48,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2739",
-	"severity": 8,
-	"message": "Type 'Track' is missing the following properties from type '{ id: string; title: string; audio_url?: string | undefined; cover_url?: string | undefined; style_tags?: string[] | undefined; duration_seconds?: number | undefined; status: string; like_count?: number | undefined; has_stems?: boolean | undefined; }': id, title, status",
-	"source": "ts",
-	"startLineNumber": 99,
-	"startColumn": 13,
-	"endLineNumber": 99,
-	"endColumn": 18,
-	"relatedInformation": [
-		{
-			"startLineNumber": 9,
-			"startColumn": 3,
-			"endLineNumber": 9,
-			"endColumn": 8,
-			"message": "The expected type comes from property 'track' which is declared here on type 'IntrinsicAttributes & TrackListItemProps'",
-			"resource": "/c:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/tracks/TrackListItem.tsx"
-		}
-	],
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'id' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 100,
-	"startColumn": 44,
-	"endLineNumber": 100,
-	"endColumn": 46,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'id' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 102,
-	"startColumn": 46,
-	"endLineNumber": 102,
-	"endColumn": 48,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'status' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 107,
-	"startColumn": 17,
-	"endLineNumber": 107,
-	"endColumn": 23,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'id' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 149,
-	"startColumn": 31,
-	"endLineNumber": 149,
-	"endColumn": 33,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'title' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 156,
-	"startColumn": 22,
-	"endLineNumber": 156,
-	"endColumn": 27,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'prompt' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 157,
-	"startColumn": 23,
-	"endLineNumber": 157,
-	"endColumn": 29,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'status' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 183,
-	"startColumn": 15,
-	"endLineNumber": 183,
-	"endColumn": 21,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'created_at' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 184,
-	"startColumn": 38,
-	"endLineNumber": 184,
-	"endColumn": 48,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'audio_url' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 222,
-	"startColumn": 16,
-	"endLineNumber": 222,
-	"endColumn": 25,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2339",
-	"severity": 8,
-	"message": "Property 'audio_url' does not exist on type 'Track'.",
-	"source": "ts",
-	"startLineNumber": 223,
-	"startColumn": 23,
-	"endLineNumber": 223,
-	"endColumn": 32,
-	"extensionID": "vscode.typescript-language-features"
-},{
-	"resource": "/C:/Users/oat70/Documents/SUNO-API-ALBERT-FINAL/albert3-muse-synth-studio/src/components/VirtualizedTracksList.tsx",
-	"owner": "typescript",
-	"code": "2322",
-	"severity": 8,
-	"message": "Type '{ viewMode: \"grid\" | \"list\"; onViewChange: (view: \"grid\" | \"list\") => void; }' is not assignable to type 'IntrinsicAttributes & ViewSwitcherProps'.\n  Property 'viewMode' does not exist on type 'IntrinsicAttributes & ViewSwitcherProps'.",
-	"source": "ts",
-	"startLineNumber": 301,
-	"startColumn": 21,
-	"endLineNumber": 301,
-	"endColumn": 29,
-	"extensionID": "vscode.typescript-language-features"
-}]
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Search, 
+  Filter, 
+  Music, 
+  RefreshCcw, 
+  Grid3X3, 
+  List,
+  SortAsc,
+  SortDesc
+} from "lucide-react";
+import { TrackCard } from "@/components/TrackCard";
+import { TrackListItem } from "@/components/tracks/TrackListItem";
+import { OptimizedTrackList } from "@/components/OptimizedTrackList";
+import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
+import { useTracks } from "@/hooks/useTracks";
+import { useToast } from "@/hooks/use-toast";
+import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { DisplayTrack, convertToDisplayTrack, convertToOptimizedTrack } from "@/types/track";
+import { cn } from "@/lib/utils";
+
+type ViewMode = 'grid' | 'list' | 'optimized';
+type SortBy = 'created_at' | 'title' | 'duration' | 'like_count';
+type SortOrder = 'asc' | 'desc';
+
+const Library: React.FC = () => {
+  const { tracks, isLoading, refreshTracks } = useTracks();
+  const { toast } = useToast();
+  const { playTrackWithQueue } = useAudioPlayer();
+  
+  // Состояние UI
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const saved = localStorage.getItem('library-view-mode');
+    return (saved as ViewMode) || 'grid';
+  });
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<SortBy>('created_at');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  
+  // Сохранение настроек просмотра
+  useEffect(() => {
+    localStorage.setItem('library-view-mode', viewMode);
+  }, [viewMode]);
+
+  // Мемоизированная фильтрация и сортировка треков
+  const filteredAndSortedTracks = useMemo(() => {
+    let filtered = tracks.filter(track => {
+      const matchesSearch = !searchQuery || 
+        track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (track.style_tags && track.style_tags.some(tag => 
+          tag.toLowerCase().includes(searchQuery.toLowerCase())
+        ));
+      
+      const matchesStatus = selectedStatus === 'all' || track.status === selectedStatus;
+      
+      return matchesSearch && matchesStatus;
+    });
+
+    // Сортировка
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any;
+      
+      switch (sortBy) {
+        case 'title':
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+          break;
+        case 'duration':
+          aValue = a.duration || 0;
+          bValue = b.duration || 0;
+          break;
+        case 'like_count':
+          aValue = a.like_count || 0;
+          bValue = b.like_count || 0;
+          break;
+        case 'created_at':
+        default:
+          aValue = new Date(a.created_at || 0).getTime();
+          bValue = new Date(b.created_at || 0).getTime();
+          break;
+      }
+      
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    return filtered;
+  }, [tracks, searchQuery, selectedStatus, sortBy, sortOrder]);
+
+  // Обработчики событий
+  const handleViewModeChange = useCallback((mode: ViewMode) => {
+    setViewMode(mode);
+  }, []);
+
+  const handleSortChange = useCallback((newSortBy: SortBy) => {
+    if (sortBy === newSortBy) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(newSortBy);
+      setSortOrder('desc');
+    }
+  }, [sortBy]);
+
+  const handleTrackPlay = useCallback((track: DisplayTrack) => {
+    if (track.audio_url && track.status === 'completed') {
+      playTrackWithQueue({
+        id: track.id,
+        title: track.title,
+        audio_url: track.audio_url,
+        cover_url: track.cover_url,
+        duration: track.duration,
+        style_tags: track.style_tags || []
+      }, filteredAndSortedTracks.map(t => ({
+        id: t.id,
+        title: t.title,
+        audio_url: t.audio_url || '',
+        cover_url: t.cover_url,
+        duration: t.duration,
+        style_tags: t.style_tags || []
+      })));
+    }
+  }, [playTrackWithQueue, filteredAndSortedTracks]);
+
+  const handleLike = useCallback((trackId: string) => {
+    // TODO: Реализовать функцию лайка
+    toast({
+      title: "Функция в разработке",
+      description: "Лайки будут добавлены в следующем обновлении",
+    });
+  }, [toast]);
+
+  const handleDownload = useCallback((trackId: string) => {
+    // TODO: Реализовать функцию скачивания
+    toast({
+      title: "Функция в разработке", 
+      description: "Скачивание будет добавлено в следующем обновлении",
+    });
+  }, [toast]);
+
+  const handleShare = useCallback((trackId: string) => {
+    // TODO: Реализовать функцию шаринга
+    toast({
+      title: "Функция в разработке",
+      description: "Шаринг будет добавлен в следующем обновлении",
+    });
+  }, [toast]);
+
+  // Уникальные статусы для фильтра
+  const availableStatuses = useMemo(() => {
+    const statuses = new Set(tracks.map(track => track.status));
+    return Array.from(statuses);
+  }, [tracks]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 p-6">
+        <div className="flex items-center justify-between">
+          <LoadingSkeleton width="200px" height="32px" />
+          <LoadingSkeleton width="120px" height="32px" />
+        </div>
+        
+        <div className="flex gap-4">
+          <LoadingSkeleton width="300px" height="40px" />
+          <LoadingSkeleton width="100px" height="40px" />
+        </div>
+
+        {viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <LoadingSkeleton key={i} variant="rectangular" height="300px" />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <LoadingSkeleton key={i} variant="track-item" />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 p-6" role="main" aria-label="Библиотека треков">
+      {/* Заголовок и статистика */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold">Библиотека</h1>
+          <Badge variant="outline" aria-label={`Всего треков: ${tracks.length}`}>
+            {tracks.length} {tracks.length === 1 ? "трек" : "треков"}
+          </Badge>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refreshTracks}
+            aria-label="Обновить список треков"
+          >
+            <RefreshCcw className="h-4 w-4" />
+          </Button>
+          
+          {/* Переключатель вида */}
+          <div className="flex items-center border rounded-lg p-1">
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleViewModeChange('grid')}
+              aria-label="Сетка"
+            >
+              <Grid3X3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleViewModeChange('list')}
+              aria-label="Список"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'optimized' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => handleViewModeChange('optimized')}
+              aria-label="Оптимизированный список"
+            >
+              <Music className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Фильтры и поиск */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Поиск */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Поиск по названию или тегам..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+                aria-label="Поиск треков"
+              />
+            </div>
+            
+            {/* Фильтр по статусу */}
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="px-3 py-2 border rounded-md bg-background"
+              aria-label="Фильтр по статусу"
+            >
+              <option value="all">Все статусы</option>
+              {availableStatuses.map(status => (
+                <option key={status} value={status}>
+                  {status === 'completed' ? 'Завершено' : 
+                   status === 'processing' ? 'Обработка' : 
+                   status === 'pending' ? 'Ожидание' : status}
+                </option>
+              ))}
+            </select>
+            
+            {/* Сортировка */}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleSortChange('created_at')}
+                className={cn(sortBy === 'created_at' && 'bg-accent')}
+              >
+                Дата {sortBy === 'created_at' && (sortOrder === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleSortChange('title')}
+                className={cn(sortBy === 'title' && 'bg-accent')}
+              >
+                Название {sortBy === 'title' && (sortOrder === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Список треков */}
+      {filteredAndSortedTracks.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="p-6 rounded-full bg-gradient-primary/10 mb-6">
+            <Music className="h-16 w-16 text-primary" />
+          </div>
+          <h3 className="text-2xl font-semibold mb-2">
+            {searchQuery ? 'Треки не найдены' : 'Библиотека пуста'}
+          </h3>
+          <p className="text-muted-foreground max-w-md">
+            {searchQuery 
+              ? 'Попробуйте изменить поисковый запрос или фильтры'
+              : 'Создайте свой первый AI-трек в разделе "Генерация"'
+            }
+          </p>
+        </div>
+      ) : (
+        <>
+          {viewMode === 'grid' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredAndSortedTracks.map((track) => (
+                <TrackCard
+                  key={track.id}
+                  track={track}
+                  onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
+                  onDownload={() => handleDownload(track.id)}
+                  onShare={() => handleShare(track.id)}
+                />
+              ))}
+            </div>
+          )}
+          
+          {viewMode === 'list' && (
+            <div className="space-y-2">
+              {filteredAndSortedTracks.map((track, index) => (
+                <TrackListItem
+                  key={track.id}
+                  track={convertToDisplayTrack(track)}
+                  index={index}
+                  onLike={() => handleLike(track.id)}
+                  onDownload={() => handleDownload(track.id)}
+                  onShare={() => handleShare(track.id)}
+                  onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
+                />
+              ))}
+            </div>
+          )}
+          
+          {viewMode === 'optimized' && (
+            <OptimizedTrackList
+              tracks={filteredAndSortedTracks.map(convertToOptimizedTrack)}
+              onLike={handleLike}
+              onDownload={handleDownload}
+              onShare={handleShare}
+              height={600}
+              enableVirtualization={filteredAndSortedTracks.length > 50}
+            />
+          )}
+        </>
+      )}
+    </div>
+  );
+};
+
+export default Library;

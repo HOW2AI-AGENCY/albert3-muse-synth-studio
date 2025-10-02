@@ -48,78 +48,102 @@ const MinimalSidebar = ({ onClose }: MinimalSidebarProps) => {
     onClose?.();
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent, path: string, preload?: () => void) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleNavigation(path, preload);
+    }
+  };
+
   return (
-    <TooltipProvider delayDuration={200}>
-      <div className="w-16 sm:w-20 lg:w-16 bg-card/95 backdrop-blur-xl border-r border-border/50 flex flex-col items-center py-4 gap-2 h-full">
-        {/* Mobile Close Button */}
+    <TooltipProvider>
+      <aside 
+        className="fixed left-0 top-0 z-40 h-full w-16 bg-card/95 backdrop-blur-xl border-r border-border/50 flex flex-col items-center py-4 transition-all duration-300 hover:w-64 group"
+        role="navigation"
+        aria-label="Основная навигация"
+      >
+        {/* Close button for mobile */}
         {onClose && (
           <Button
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="lg:hidden absolute top-4 right-4 z-10 w-8 h-8 p-0"
+            className="absolute top-4 right-4 lg:hidden w-8 h-8 p-0 hover:bg-accent/10"
+            aria-label="Закрыть меню навигации"
           >
             <X className="w-4 h-4" />
           </Button>
         )}
 
-        {/* Logo */}
-        <div className="p-3 mb-4">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-8 lg:h-8 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center backdrop-blur-sm border border-primary/20 hover:border-primary/40 transition-all duration-300 hover:scale-105">
-            <span className="text-primary font-bold text-xl sm:text-2xl lg:text-xl gradient-text">M</span>
+        {/* Logo/Brand */}
+        <div className="mb-8 p-2">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <User className="w-6 h-6 text-primary" />
           </div>
         </div>
 
-        {/* Menu Items */}
-        <div className="flex-1 flex flex-col gap-2 w-full px-2">
+        {/* Navigation Items */}
+        <nav className="flex-1 w-full px-2" role="menubar">
           {menuItems.map((item) => {
-            const Icon = item.icon;
             const isActive = location.pathname === item.path;
-
+            const Icon = item.icon;
+            
             return (
               <Tooltip key={item.path}>
                 <TooltipTrigger asChild>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleNavigation(item.path, item.preload)}
-                    onMouseEnter={() => item.preload?.()}
+                    onKeyDown={(e) => handleKeyDown(e, item.path, item.preload)}
                     className={cn(
-                      "w-12 h-12 sm:w-14 sm:h-14 lg:w-12 lg:h-12 rounded-xl flex items-center justify-center transition-all duration-300 touch-target group relative overflow-hidden",
-                      isActive
-                        ? "bg-gradient-to-br from-primary/20 to-accent/20 text-primary border border-primary/30 shadow-lg glow-primary"
-                        : "hover:bg-accent/10 text-muted-foreground hover:text-foreground hover:border-accent/30 border border-transparent hover:scale-105"
+                      "w-full h-12 mb-2 justify-start px-3 hover:bg-accent/10 transition-all duration-300",
+                      "group-hover:justify-start",
+                      isActive && "bg-primary/10 text-primary border-r-2 border-primary"
                     )}
+                    role="menuitem"
+                    aria-label={item.label}
+                    aria-current={isActive ? "page" : undefined}
+                    tabIndex={0}
                   >
-                    <Icon className={cn(
-                      "w-5 h-5 sm:w-6 sm:h-6 lg:w-5 lg:h-5 transition-all duration-300",
-                      isActive ? "scale-110" : "group-hover:scale-110"
-                    )} />
-                    
-                    {/* Active indicator */}
-                    {isActive && (
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl animate-pulse-glow" />
-                    )}
-                  </button>
+                    <Icon className="w-5 h-5 shrink-0" aria-hidden="true" />
+                    <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                      {item.label}
+                    </span>
+                  </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="hidden lg:block">
+                <TooltipContent side="right" className="lg:group-hover:hidden">
                   <p>{item.label}</p>
                 </TooltipContent>
               </Tooltip>
             );
           })}
-        </div>
+        </nav>
 
-        {/* User Avatar */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button className="w-10 h-10 sm:w-12 sm:h-12 lg:w-10 lg:h-10 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center hover:from-primary/20 hover:to-accent/20 transition-all duration-300 hover:scale-105 border border-primary/20 hover:border-primary/40 touch-target">
-              <User className="w-5 h-5 sm:w-6 sm:h-6 lg:w-5 lg:h-5 text-primary" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right" className="hidden lg:block">
-            <p>Профиль</p>
-          </TooltipContent>
-        </Tooltip>
-      </div>
+        {/* User Profile */}
+        <div className="mt-auto p-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full h-12 justify-start px-3 hover:bg-accent/10 transition-all duration-300"
+                role="menuitem"
+                aria-label="Профиль пользователя"
+                tabIndex={0}
+              >
+                <User className="w-5 h-5 shrink-0" aria-hidden="true" />
+                <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                  Профиль
+                </span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="lg:group-hover:hidden">
+              <p>Профиль</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </aside>
     </TooltipProvider>
   );
 };
