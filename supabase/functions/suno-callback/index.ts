@@ -89,7 +89,9 @@ serve(async (req) => {
 
     // Decide final status
     const anyFailed = tasks.some((t: any) => ["error", "failed"].includes((t?.status || "").toLowerCase()));
-    const successTask = tasks.find((t: any) => t?.audioUrl || t?.audio_url);
+    const successTask = tasks.find((t: any) => 
+      t?.audioUrl || t?.audio_url || t?.stream_audio_url || t?.source_stream_audio_url
+    );
 
     if (anyFailed && !successTask) {
       const firstErr = tasks.find((t: any) => ["error", "failed"].includes((t?.status || "").toLowerCase()));
@@ -109,10 +111,13 @@ serve(async (req) => {
 
     // Process successful tasks - Suno returns 2 versions, save both as separate tracks
     if (successTask) {
-      const firstAudioUrl = successTask.audioUrl || successTask.audio_url;
+      const firstAudioUrl = successTask.audioUrl || successTask.audio_url || 
+                           successTask.stream_audio_url || successTask.source_stream_audio_url;
       const firstDuration = successTask.duration || successTask.duration_seconds || 0;
       const actualLyrics = successTask.prompt || successTask.lyric || successTask.lyrics;
       const title = successTask.title || "Generated Track";
+      
+      console.log("Suno callback: processing track", { audioUrl: firstAudioUrl?.substring(0, 50) });
 
       // Update the original track with first version
       await supabase
@@ -133,7 +138,8 @@ serve(async (req) => {
       // If there's a second version, create a new track for it
       if (tasks.length > 1 && tasks[1]) {
         const secondTask = tasks[1];
-        const secondAudioUrl = secondTask.audioUrl || secondTask.audio_url;
+        const secondAudioUrl = secondTask.audioUrl || secondTask.audio_url || 
+                              secondTask.stream_audio_url || secondTask.source_stream_audio_url;
         
         if (secondAudioUrl && track.user_id) {
           const { data: originalTrack } = await supabase
