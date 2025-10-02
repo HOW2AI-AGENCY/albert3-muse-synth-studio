@@ -25,8 +25,6 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     setPrompt,
     isGenerating,
     isImproving,
-    improvePrompt,
-    generateMusic,
     provider,
     setProvider,
     hasVocals,
@@ -35,9 +33,11 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     setLyrics,
     styleTags,
     setStyleTags,
-  } = useMusicGeneration(onTrackGenerated);
+    generateMusic,
+    improvePrompt
+  } = useMusicGeneration();
   
-  const { triggerHaptic } = useHapticFeedback();
+  const { vibrate } = useHapticFeedback();
   const [mood, setMood] = useState("");
   const [tempo, setTempo] = useState("");
   const [isVisible, setIsVisible] = useState(false);
@@ -108,11 +108,11 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
         ? prev.filter(t => t !== tag)
         : [...prev, tag]
     );
-    triggerHaptic('light');
-  }, [setStyleTags, triggerHaptic]);
+    vibrate('light');
+  }, [setStyleTags, vibrate]);
 
   const handleGenerateMusic = useCallback(async () => {
-    triggerHaptic('medium');
+    vibrate('medium');
     await generateMusic({
       prompt,
       hasVocals,
@@ -122,12 +122,12 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       mood,
       tempo,
     });
-  }, [generateMusic, prompt, hasVocals, lyrics, provider, styleTags, mood, tempo, triggerHaptic]);
+  }, [generateMusic, prompt, hasVocals, lyrics, provider, styleTags, mood, tempo, vibrate]);
 
   const handleImprovePrompt = useCallback(async () => {
-    triggerHaptic('light');
+    vibrate('light');
     await improvePrompt(prompt);
-  }, [improvePrompt, prompt, triggerHaptic]);
+  }, [improvePrompt, prompt, vibrate]);
 
   return (
     <Card 
@@ -159,22 +159,32 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
         </div>
       </div>
 
+      {/* Вкладки */}
       <Tabs defaultValue="simple" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-background/50 backdrop-blur-sm">
-          <TabsTrigger value="simple" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+        <TabsList className="grid w-full grid-cols-2 mb-6 bg-background/50 backdrop-blur-sm border border-primary/20">
+          <TabsTrigger 
+            value="simple" 
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300"
+          >
+            <Zap className="w-4 h-4 mr-2" />
             Простой режим
           </TabsTrigger>
-          <TabsTrigger value="advanced" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            Продвинутый
+          <TabsTrigger 
+            value="advanced"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300"
+          >
+            <Settings2 className="w-4 h-4 mr-2" />
+            Расширенный
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="simple" className="space-y-6 mt-6 animate-slide-up">
+        <TabsContent value="simple" className="space-y-6 animate-slide-up">
+          {/* Основной промпт */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground/80">
-              <Lightbulb className="h-4 w-4 text-yellow-500 animate-pulse" />
-              <span>Подсказка: Опишите жанр, инструменты, настроение и темп</span>
-            </div>
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <Music className="h-4 w-4 text-primary" />
+              Опишите желаемую музыку
+            </Label>
             <Textarea
               ref={textareaRef}
               placeholder="Пример: Энергичный электронный трек с синтезаторными мелодиями и мощным басом, идеально подходит для тренировки..."
@@ -183,18 +193,106 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                 setPrompt(e.target.value);
                 adjustTextareaHeight();
               }}
-              className="min-h-[140px] resize-none bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300"
+              className="min-h-[120px] resize-none bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300 hover:border-primary/30"
               disabled={isGenerating || isImproving}
             />
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-xl border border-primary/20 bg-gradient-to-r from-background/50 to-background/30 backdrop-blur-sm hover:border-primary/40 transition-all duration-300">
+          {/* Популярные жанры */}
+          <div className="space-y-3">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <Hash className="h-4 w-4 text-primary" />
+              Популярные жанры
+            </Label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {popularGenres.map((genre) => (
+                <Button
+                  key={genre.name}
+                  variant={styleTags.includes(genre.name) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => toggleTag(genre.name)}
+                  disabled={isGenerating || isImproving}
+                  className={`
+                    h-auto p-3 flex flex-col items-center gap-2 transition-all duration-300 group
+                    ${styleTags.includes(genre.name) 
+                      ? `bg-gradient-to-r ${genre.gradient} text-white shadow-lg scale-105` 
+                      : 'hover:scale-105 hover:border-primary/50 bg-background/50 backdrop-blur-sm'
+                    }
+                  `}
+                >
+                  <span className="text-lg group-hover:animate-bounce">{genre.icon}</span>
+                  <span className="text-xs font-medium">{genre.name}</span>
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Настроение и темп */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Volume2 className="h-4 w-4 text-primary" />
+                Настроение
+              </Label>
+              <Select value={mood} onValueChange={setMood} disabled={isGenerating}>
+                <SelectTrigger className="bg-background/50 backdrop-blur-sm border-primary/20 focus:ring-primary/50 focus:border-primary/50 transition-all duration-300 hover:border-primary/30">
+                  <SelectValue placeholder="Выберите настроение" />
+                </SelectTrigger>
+                <SelectContent className="bg-background/95 backdrop-blur-sm border-primary/20">
+                  {moodOptions.map((option) => (
+                    <SelectItem 
+                      key={option.value} 
+                      value={option.value} 
+                      className="hover:bg-primary/10 transition-colors duration-200"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>{option.icon}</span>
+                        {option.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <Clock className="h-4 w-4 text-primary" />
+                Темп
+              </Label>
+              <Select value={tempo} onValueChange={setTempo} disabled={isGenerating}>
+                <SelectTrigger className="bg-background/50 backdrop-blur-sm border-primary/20 focus:ring-primary/50 focus:border-primary/50 transition-all duration-300 hover:border-primary/30">
+                  <SelectValue placeholder="Выберите темп" />
+                </SelectTrigger>
+                <SelectContent className="bg-background/95 backdrop-blur-sm border-primary/20">
+                  {tempoOptions.map((option) => (
+                    <SelectItem 
+                      key={option.value} 
+                      value={option.value} 
+                      className="hover:bg-primary/10 transition-colors duration-200"
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2">
+                          <span>{option.icon}</span>
+                          {option.label}
+                        </div>
+                        <span className="text-xs text-muted-foreground">{option.bpm}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Переключатель вокала */}
+          <div className="flex items-center justify-between p-4 rounded-xl border border-primary/20 bg-gradient-to-r from-background/50 to-background/30 backdrop-blur-sm hover:border-primary/40 transition-all duration-300 group">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Mic className="h-5 w-5 text-primary" />
+              <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
+                <Mic className="h-5 w-5 text-primary group-hover:scale-110 transition-transform duration-300" />
               </div>
               <div>
-                <Label htmlFor="vocals-switch" className="text-sm font-medium">
+                <Label htmlFor="vocals-switch" className="text-sm font-medium cursor-pointer">
                   Добавить вокал
                 </Label>
                 <p className="text-xs text-muted-foreground/70">
@@ -205,156 +303,257 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
             <Switch
               id="vocals-switch"
               checked={hasVocals}
-              onCheckedChange={setHasVocals}
+              onCheckedChange={(checked) => {
+                setHasVocals(checked);
+                triggerHaptic('light');
+              }}
               disabled={isGenerating || isImproving}
-              className="data-[state=checked]:bg-primary"
+              className="data-[state=checked]:bg-primary transition-all duration-300"
             />
           </div>
 
+          {/* Кнопки действий */}
           <div className="flex flex-col sm:flex-row gap-3">
             <Button
               variant="glass"
               onClick={handleImprovePrompt}
-              disabled={isImproving || isGenerating}
-              className="flex-1 h-12 group"
+              disabled={isImproving || isGenerating || !prompt.trim()}
+              className="flex-1 h-12 group hover:scale-105 transition-all duration-300"
             >
-              <Wand2 className="mr-2 h-5 w-5 group-hover:animate-spin transition-transform" />
-              {isImproving ? "Улучшение..." : "Улучшить с AI"}
+              <Wand2 className="mr-2 h-5 w-5 group-hover:animate-spin transition-transform duration-500" />
+              {isImproving ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  Улучшение...
+                </div>
+              ) : (
+                "Улучшить с AI"
+              )}
             </Button>
 
             <Button
               variant="hero"
               onClick={handleGenerateMusic}
-              disabled={isGenerating || isImproving}
-              className="flex-1 h-12 text-base shadow-glow"
+              disabled={isGenerating || isImproving || !prompt.trim()}
+              className="flex-1 h-12 text-base shadow-glow hover:scale-105 transition-all duration-300 relative overflow-hidden"
             >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               <Sparkles className="mr-2 h-5 w-5 animate-pulse" />
-              {isGenerating ? "Генерация..." : "Сгенерировать музыку"}
+              {isGenerating ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  Генерация...
+                </div>
+              ) : (
+                "Сгенерировать музыку"
+              )}
             </Button>
           </div>
         </TabsContent>
 
-        <TabsContent value="advanced" className="space-y-6 mt-6 animate-slide-up">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <Music className="h-4 w-4 text-primary" />
-                  Описание музыки
-                </Label>
-                <Textarea
-                  placeholder="Опишите желаемый стиль, инструменты, настроение..."
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  className="min-h-[120px] resize-none bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300"
-                  disabled={isGenerating || isImproving}
-                />
-              </div>
-
-              <div className="space-y-3">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <Settings2 className="h-4 w-4 text-primary" />
-                  Провайдер AI
-                </Label>
-                <Select value={provider} onValueChange={(v) => setProvider(v as "replicate" | "suno")} disabled={isGenerating}>
-                  <SelectTrigger className="bg-background/50 backdrop-blur-sm border-primary/20 focus:ring-primary/50 focus:border-primary/50 transition-all duration-300">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background/95 backdrop-blur-sm border-primary/20">
-                    <SelectItem value="suno" className="hover:bg-primary/10">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                        Suno AI (Рекомендуется)
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="musicgen" className="hover:bg-primary/10">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                        MusicGen
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-3">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <Hash className="h-4 w-4 text-primary" />
-                  Жанры и стили
-                </Label>
-                <Input
-                  placeholder="рок, электроника, джаз..."
-                  value={styleTags}
-                  onChange={(e) => setStyleTags(e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
-                  className="bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300"
-                  disabled={isGenerating || isImproving}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-xl border border-primary/20 bg-gradient-to-r from-background/50 to-background/30 backdrop-blur-sm hover:border-primary/40 transition-all duration-300">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <Mic className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <Label htmlFor="advanced-vocals" className="text-sm font-medium">
-                      Расширенный вокал
+            <TabsContent value="advanced" className="space-y-6 animate-slide-up">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Левая колонка */}
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <Music className="h-4 w-4 text-primary" />
+                      Описание музыки
                     </Label>
-                    <p className="text-xs text-muted-foreground/70">
-                      Настройка лирики и вокального стиля
-                    </p>
-                  </div>
-                </div>
-                <Switch
-                  id="advanced-vocals"
-                  checked={hasVocals}
-                  onCheckedChange={setHasVocals}
-                  disabled={isGenerating || isImproving}
-                  className="data-[state=checked]:bg-primary"
-                />
-              </div>
-
-              {hasVocals && (
-                <div className="space-y-4 animate-fade-in">
-                  <div className="p-4 rounded-xl border border-primary/20 bg-gradient-to-br from-background/50 to-background/30 backdrop-blur-sm">
-                    <Label className="text-sm font-medium mb-3 flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-primary" />
-                      Лирика
-                    </Label>
-                    <LyricsEditor
-                      lyrics={lyrics}
-                      onLyricsChange={(newLyrics) => setLyrics(newLyrics)}
+                    <Textarea
+                      ref={textareaRef}
+                      placeholder="Опишите желаемый стиль, инструменты, настроение..."
+                      value={prompt}
+                      onChange={(e) => {
+                        setPrompt(e.target.value);
+                        adjustTextareaHeight();
+                      }}
+                      className="min-h-[120px] resize-none bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300 hover:border-primary/30"
+                      disabled={isGenerating || isImproving}
                     />
                   </div>
+
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <Settings2 className="h-4 w-4 text-primary" />
+                      Провайдер AI
+                    </Label>
+                    <Select value={provider} onValueChange={(v) => setProvider(v as "replicate" | "suno")} disabled={isGenerating}>
+                      <SelectTrigger className="bg-background/50 backdrop-blur-sm border-primary/20 focus:ring-primary/50 focus:border-primary/50 transition-all duration-300 hover:border-primary/30">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background/95 backdrop-blur-sm border-primary/20">
+                        <SelectItem value="suno" className="hover:bg-primary/10 transition-colors duration-200">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                            Suno AI (Рекомендуется)
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="musicgen" className="hover:bg-primary/10 transition-colors duration-200">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                            MusicGen
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-              )}
 
-              <div className="flex flex-col gap-3">
-                <Button
-                  variant="glass"
-                  onClick={handleImprovePrompt}
-                  disabled={isImproving || isGenerating}
-                  className="h-12 group"
-                >
-                  <Wand2 className="mr-2 h-5 w-5 group-hover:animate-spin transition-transform" />
-                  {isImproving ? "Улучшение..." : "Улучшить с AI"}
-                </Button>
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <Hash className="h-4 w-4 text-primary" />
+                      Жанры и стили
+                    </Label>
+                    <Input
+                      placeholder="рок, электроника, джаз..."
+                      value={styleTags.join(', ')}
+                      onChange={(e) => setStyleTags(e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
+                      className="bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300 hover:border-primary/30"
+                      disabled={isGenerating || isImproving}
+                    />
+                  </div>
 
-                <Button
-                  variant="hero"
-                  onClick={handleGenerateMusic}
-                  disabled={isGenerating || isImproving}
-                  className="h-12 text-base shadow-glow"
-                >
-                  <Sparkles className="mr-2 h-5 w-5 animate-pulse" />
-                  {isGenerating ? "Генерация..." : "Создать музыку"}
-                </Button>
+                  {/* Настроение и темп для расширенного режима */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium flex items-center gap-2">
+                        <Volume2 className="h-4 w-4 text-primary" />
+                        Настроение
+                      </Label>
+                      <Select value={mood} onValueChange={setMood} disabled={isGenerating}>
+                        <SelectTrigger className="bg-background/50 backdrop-blur-sm border-primary/20 focus:ring-primary/50 focus:border-primary/50 transition-all duration-300 hover:border-primary/30">
+                          <SelectValue placeholder="Выберите настроение" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background/95 backdrop-blur-sm border-primary/20">
+                          {moodOptions.map((option) => (
+                            <SelectItem 
+                              key={option.value} 
+                              value={option.value} 
+                              className="hover:bg-primary/10 transition-colors duration-200"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span>{option.icon}</span>
+                                {option.label}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-primary" />
+                        Темп
+                      </Label>
+                      <Select value={tempo} onValueChange={setTempo} disabled={isGenerating}>
+                        <SelectTrigger className="bg-background/50 backdrop-blur-sm border-primary/20 focus:ring-primary/50 focus:border-primary/50 transition-all duration-300 hover:border-primary/30">
+                          <SelectValue placeholder="Выберите темп" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background/95 backdrop-blur-sm border-primary/20">
+                          {tempoOptions.map((option) => (
+                            <SelectItem 
+                              key={option.value} 
+                              value={option.value} 
+                              className="hover:bg-primary/10 transition-colors duration-200"
+                            >
+                              <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center gap-2">
+                                  <span>{option.icon}</span>
+                                  {option.label}
+                                </div>
+                                <span className="text-xs text-muted-foreground">{option.bpm}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Правая колонка */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-xl border border-primary/20 bg-gradient-to-r from-background/50 to-background/30 backdrop-blur-sm hover:border-primary/40 transition-all duration-300 group">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
+                        <Mic className="h-5 w-5 text-primary group-hover:scale-110 transition-transform duration-300" />
+                      </div>
+                      <div>
+                        <Label htmlFor="advanced-vocals" className="text-sm font-medium cursor-pointer">
+                          Расширенный вокал
+                        </Label>
+                        <p className="text-xs text-muted-foreground/70">
+                          Настройка лирики и вокального стиля
+                        </p>
+                      </div>
+                    </div>
+                    <Switch
+                      id="advanced-vocals"
+                      checked={hasVocals}
+                      onCheckedChange={(checked) => {
+                        setHasVocals(checked);
+                        triggerHaptic('light');
+                      }}
+                      disabled={isGenerating || isImproving}
+                      className="data-[state=checked]:bg-primary transition-all duration-300"
+                    />
+                  </div>
+
+                  {hasVocals && (
+                    <div className="space-y-4 animate-fade-in">
+                      <div className="p-4 rounded-xl border border-primary/20 bg-gradient-to-br from-background/50 to-background/30 backdrop-blur-sm">
+                        <Label className="text-sm font-medium mb-3 flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-primary" />
+                          Лирика
+                        </Label>
+                        <LyricsEditor
+                          lyrics={lyrics}
+                          onLyricsChange={(newLyrics) => setLyrics(newLyrics)}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-3">
+                    <Button
+                      variant="glass"
+                      onClick={handleImprovePrompt}
+                      disabled={isImproving || isGenerating || !prompt.trim()}
+                      className="h-12 group hover:scale-105 transition-all duration-300"
+                    >
+                      <Wand2 className="mr-2 h-5 w-5 group-hover:animate-spin transition-transform duration-500" />
+                      {isImproving ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          Улучшение...
+                        </div>
+                      ) : (
+                        "Улучшить с AI"
+                      )}
+                    </Button>
+
+                    <Button
+                      variant="hero"
+                      onClick={handleGenerateMusic}
+                      disabled={isGenerating || isImproving || !prompt.trim()}
+                      className="h-12 text-base shadow-glow hover:scale-105 transition-all duration-300 relative overflow-hidden group"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                      <Sparkles className="mr-2 h-5 w-5 animate-pulse" />
+                      {isGenerating ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          Генерация...
+                        </div>
+                      ) : (
+                        "Создать музыку"
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </TabsContent>
+            </TabsContent>
       </Tabs>
       </div>
     </Card>
@@ -364,13 +563,17 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
 // Экспортируем мемоизированный компонент с Error Boundary
 export const MusicGenerator = withErrorBoundary(
   memo(MusicGeneratorComponent),
-  <Card className="p-6">
-    <div className="text-center">
-      <Music className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-      <h3 className="text-lg font-semibold mb-2">Ошибка генератора музыки</h3>
-      <p className="text-muted-foreground">
-        Произошла ошибка при загрузке генератора. Попробуйте обновить страницу.
-      </p>
-    </div>
-  </Card>
+  {
+    fallback: (
+      <Card className="p-6">
+        <div className="text-center">
+          <Music className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Ошибка генератора музыки</h3>
+          <p className="text-muted-foreground">
+            Произошла ошибка при загрузке генератора. Попробуйте обновить страницу.
+          </p>
+        </div>
+      </Card>
+    )
+  }
 );
