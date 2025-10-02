@@ -25,7 +25,7 @@ export const createLazyComponent = <T extends ComponentType<any>>(
       );
       
       return {
-        default: FallbackComponent as T
+        default: FallbackComponent as unknown as T
       };
     }
   });
