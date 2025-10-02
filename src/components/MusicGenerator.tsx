@@ -2,13 +2,15 @@ import React, { useState, useCallback, memo, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Sparkles, Music, Wand2, Play, Pause, Download, Heart, Share2, MoreHorizontal, Volume2, VolumeX, Lightbulb, Mic, Music2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sparkles, Music, Wand2, Play, Pause, Download, Heart, Share2, MoreHorizontal, Volume2, VolumeX, Lightbulb, Mic, Music2, Settings2, Hash, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMusicGeneration } from "@/hooks/useMusicGeneration";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
@@ -165,7 +167,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                   <Settings2 className="h-4 w-4 text-primary" />
                   Провайдер AI
                 </Label>
-                <Select value={provider} onValueChange={setProvider} disabled={isGenerating}>
+                <Select value={provider} onValueChange={(v) => setProvider(v as "replicate" | "suno")} disabled={isGenerating}>
                   <SelectTrigger className="bg-background/50 backdrop-blur-sm border-primary/20 focus:ring-primary/50 focus:border-primary/50 transition-all duration-300">
                     <SelectValue />
                   </SelectTrigger>
@@ -194,7 +196,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                 <Input
                   placeholder="рок, электроника, джаз..."
                   value={styleTags}
-                  onChange={(e) => setStyleTags(e.target.value)}
+                  onChange={(e) => setStyleTags(e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
                   className="bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300"
                   disabled={isGenerating || isImproving}
                 />
@@ -228,18 +230,16 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
               {hasVocals && (
                 <div className="space-y-4 animate-fade-in">
                   <div className="p-4 rounded-xl border border-primary/20 bg-gradient-to-br from-background/50 to-background/30 backdrop-blur-sm">
-                    <Label className="text-sm font-medium mb-3 block flex items-center gap-2">
+                    <Label className="text-sm font-medium mb-3 flex items-center gap-2">
                       <FileText className="h-4 w-4 text-primary" />
                       Лирика
                     </Label>
                     <LyricsEditor
-                      value={lyrics}
-                      onChange={setLyrics}
-                      disabled={isGenerating || isImproving}
-                      className="bg-background/30 border-primary/20"
+                      lyrics={lyrics}
+                      onLyricsChange={(newLyrics) => setLyrics(newLyrics)}
                     />
                   </div>
-                </div>
+                  </div>
               )}
 
               <div className="flex flex-col gap-3">
