@@ -298,3 +298,6 @@ const TrackVersionsComponent = ({ trackId, versions, onVersionUpdate }: TrackVer
     </div>
   );
 };
+
+// Экспортируем мемоизированный компонент
+export const TrackVersions = memo(TrackVersionsComponent);
