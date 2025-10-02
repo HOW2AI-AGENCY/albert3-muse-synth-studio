@@ -62,7 +62,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
         try {
           await cacheAudioFile(track.audio_url);
         } catch (error) {
-          logError('Failed to cache audio file', { error, trackId: track.id });
+          logError('Failed to cache audio file', error as Error, track.id);
         }
 
         try {
@@ -71,11 +71,11 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
           
           // Аналитика воспроизведения обрабатывается автоматически хуком usePlayAnalytics
         } catch (error) {
-          logError('Failed to play track', { error, trackId: track.id });
+          logError('Failed to play track', error as Error, track.id);
         }
       }
     } catch (error) {
-      logError('Error in playTrack', { error, trackId: track.id });
+      logError('Error in playTrack', error as Error, track.id);
     }
   }, []);
 
@@ -97,7 +97,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
         audioRef.current.play().then(() => {
           setIsPlaying(true);
         }).catch(error => {
-          logError('Failed to play/pause track', { error });
+          logError('Failed to play/pause track', error as Error);
         });
       }
     }

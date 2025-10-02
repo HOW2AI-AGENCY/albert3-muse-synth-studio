@@ -113,21 +113,13 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
 
   const handleGenerateMusic = useCallback(async () => {
     vibrate('medium');
-    await generateMusic({
-      prompt,
-      hasVocals,
-      lyrics: hasVocals ? lyrics : undefined,
-      provider,
-      styleTags,
-      mood,
-      tempo,
-    });
-  }, [generateMusic, prompt, hasVocals, lyrics, provider, styleTags, mood, tempo, vibrate]);
+    await generateMusic();
+  }, [generateMusic, vibrate]);
 
   const handleImprovePrompt = useCallback(async () => {
     vibrate('light');
-    await improvePrompt(prompt);
-  }, [improvePrompt, prompt, vibrate]);
+    await improvePrompt();
+  }, [improvePrompt, vibrate]);
 
   return (
     <Card 
@@ -305,7 +297,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
               checked={hasVocals}
               onCheckedChange={(checked) => {
                 setHasVocals(checked);
-                triggerHaptic('light');
+                vibrate('light');
               }}
               disabled={isGenerating || isImproving}
               className="data-[state=checked]:bg-primary transition-all duration-300"
@@ -493,7 +485,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                       checked={hasVocals}
                       onCheckedChange={(checked) => {
                         setHasVocals(checked);
-                        triggerHaptic('light');
+                        vibrate('light');
                       }}
                       disabled={isGenerating || isImproving}
                       className="data-[state=checked]:bg-primary transition-all duration-300"

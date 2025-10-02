@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, ComponentType } from 'react';
+import React, { Suspense, lazy, ComponentType, memo, useMemo } from 'react';
 import { Skeleton } from './ui/skeleton';
 import { ErrorBoundary } from './ErrorBoundary';
 
@@ -11,14 +11,18 @@ interface LazyLoadWrapperProps {
 
 /**
  * Обертка для ленивой загрузки компонентов с обработкой ошибок
+ * Мемоизирована для предотвращения лишних ререндеров
  */
-export const LazyLoadWrapper: React.FC<LazyLoadWrapperProps> = ({
+export const LazyLoadWrapper: React.FC<LazyLoadWrapperProps> = memo(({
   children,
   fallback,
   errorFallback,
   className
 }) => {
-  const defaultFallback = fallback || <Skeleton className={className} />;
+  const defaultFallback = useMemo(() => 
+    fallback || <Skeleton className={className} />, 
+    [fallback, className]
+  );
   
   return (
     <ErrorBoundary fallback={errorFallback}>
@@ -27,34 +31,64 @@ export const LazyLoadWrapper: React.FC<LazyLoadWrapperProps> = ({
       </Suspense>
     </ErrorBoundary>
   );
-};
+});
+
+LazyLoadWrapper.displayName = 'LazyLoadWrapper';
 
 /**
  * HOC для создания ленивых компонентов с оптимизацией
+ * Кэширует созданные компоненты для повторного использования
  */
+const componentCache = new Map<string, React.ComponentType<any>>();
+
 export const createLazyComponent = <P extends object>(
   importFn: () => Promise<{ default: ComponentType<P> }>,
   fallback?: React.ReactNode,
-  errorFallback?: React.ReactNode
+  errorFallback?: React.ReactNode,
+  cacheKey?: string
 ) => {
+  // Используем кэш для предотвращения создания дублирующих компонентов
+  if (cacheKey && componentCache.has(cacheKey)) {
+    return componentCache.get(cacheKey) as React.ComponentType<P>;
+  }
+
   const LazyComponent = lazy(importFn);
   
-  return React.forwardRef<any, P>((props, ref) => (
+  const MemoizedLazyComponent = memo(React.forwardRef<any, P>((props, ref) => (
     <LazyLoadWrapper fallback={fallback} errorFallback={errorFallback}>
       <LazyComponent {...props} ref={ref} />
     </LazyLoadWrapper>
-  ));
+  )));
+
+  MemoizedLazyComponent.displayName = `LazyComponent(${cacheKey || 'Anonymous'})`;
+
+  if (cacheKey) {
+    componentCache.set(cacheKey, MemoizedLazyComponent);
+  }
+
+  return MemoizedLazyComponent;
 };
 
 /**
- * Хук для предзагрузки компонентов
+ * Хук для предзагрузки компонентов с кэшированием
  */
+const preloadCache = new Set<string>();
+
 export const usePreloadComponent = (
-  importFn: () => Promise<{ default: ComponentType<any> }>
+  importFn: () => Promise<{ default: ComponentType<any> }>,
+  cacheKey?: string
 ) => {
   const preload = React.useCallback(() => {
-    importFn();
-  }, [importFn]);
+    if (cacheKey && preloadCache.has(cacheKey)) {
+      return; // Уже предзагружен
+    }
+    
+    importFn().then(() => {
+      if (cacheKey) {
+        preloadCache.add(cacheKey);
+      }
+    });
+  }, [importFn, cacheKey]);
 
   return preload;
 };
@@ -65,7 +99,8 @@ export const LazyMusicGenerator = createLazyComponent(
   <div className="animate-pulse bg-card/50 rounded-xl h-96" />,
   <div className="text-center p-8 text-muted-foreground">
     Ошибка загрузки генератора музыки
-  </div>
+  </div>,
+  'MusicGenerator'
 );
 
 export const LazyGlobalAudioPlayer = createLazyComponent(
@@ -73,7 +108,8 @@ export const LazyGlobalAudioPlayer = createLazyComponent(
   <div className="animate-pulse bg-card/50 rounded-xl h-20" />,
   <div className="text-center p-4 text-muted-foreground">
     Ошибка загрузки аудиоплеера
-  </div>
+  </div>,
+  'GlobalAudioPlayer'
 );
 
 export const LazyTrackCard = createLazyComponent(
@@ -81,5 +117,6 @@ export const LazyTrackCard = createLazyComponent(
   <div className="animate-pulse bg-card/50 rounded-xl h-64" />,
   <div className="text-center p-4 text-muted-foreground">
     Ошибка загрузки карточки трека
-  </div>
+  </div>,
+  'TrackCard'
 );
