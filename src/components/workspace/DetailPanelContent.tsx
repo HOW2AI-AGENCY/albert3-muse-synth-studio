@@ -29,6 +29,11 @@ interface Track {
   duration?: number;
   lyrics?: string;
   metadata?: Record<string, unknown>;
+  like_count?: number;
+  view_count?: number;
+  duration_seconds?: number;
+  style_tags?: string[];
+  model_name?: string;
 }
 
 interface TrackVersion {
