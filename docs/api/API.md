@@ -434,40 +434,229 @@ interface PromptImprovementResponse {
 
 ---
 
-## 🔄 Callback API
+## 🔄 Callback эндпоинты
 
-### 6. Suno Callback
+### 1. Callback для Suno AI
 
 **Эндпоинт:** `POST /suno-callback`
 
-Webhook для получения результатов генерации от Suno API.
+Получает уведомления о завершении генерации музыки через Suno AI.
 
 #### Параметры запроса
+
 ```typescript
 interface SunoCallbackRequest {
-  id: string;                // ID задачи в Suno
-  status: string;            // Статус выполнения
-  audio_url?: string;        // URL аудиофайла
-  video_url?: string;        // URL видеофайла
-  image_url?: string;        // URL обложки
-  // ... другие поля от Suno API
+  id: string;                        // ID задачи генерации
+  status: "queued" | "generating" | "completed" | "failed";
+  clips?: Array<{
+    id: string;                      // ID клипа
+    title: string;                   // Название трека
+    audio_url?: string;              // URL аудиофайла
+    image_url?: string;              // URL изображения обложки
+    video_url?: string;              // URL видеофайла
+    lyric?: string;                  // Текст песни
+    prompt?: string;                 // Использованный промпт
+    tags?: string;                   // Теги/жанры
+    duration?: number;               // Длительность в секундах
+    created_at: string;              // Время создания
+  }>;
+  error_message?: string;            // Сообщение об ошибке
+  metadata?: {
+    model_version?: string;          // Версия модели Suno
+    generation_time?: number;        // Время генерации в секундах
+    credits_used?: number;           // Использованные кредиты
+  };
 }
 ```
 
----
+#### Пример запроса
 
-### 7. Stems Callback
+```bash
+curl -X POST "https://your-project.supabase.co/functions/v1/suno-callback" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "123e4567-e89b-12d3-a456-426614174000",
+    "status": "completed",
+    "clips": [{
+      "id": "clip_123",
+      "title": "Электронная мечта",
+      "audio_url": "https://suno.ai/audio/clip_123.mp3",
+      "image_url": "https://suno.ai/images/clip_123.jpg",
+      "lyric": "В мире электронных снов...",
+      "prompt": "электронная музыка, мечтательная",
+      "tags": "electronic, ambient",
+      "duration": 180,
+      "created_at": "2025-01-15T10:30:00Z"
+    }],
+    "metadata": {
+      "model_version": "v3.5",
+      "generation_time": 45,
+      "credits_used": 10
+    }
+  }'
+```
+
+#### Ответ
+
+```typescript
+interface SunoCallbackResponse {
+  success: boolean;
+  message: string;                   // Сообщение о результате обработки
+  processed_clips?: number;          // Количество обработанных клипов
+  error?: string;                    // Сообщение об ошибке
+}
+```
+
+### 2. Callback для разделения стемов
 
 **Эндпоинт:** `POST /stems-callback`
 
-Webhook для получения результатов разделения на стемы.
+Получает уведомления о завершении разделения аудио на стемы.
 
 #### Параметры запроса
+
 ```typescript
 interface StemsCallbackRequest {
-  id: string;                // ID предсказания
-  status: string;            // Статус выполнения
-  output?: string[];         // Массив URL стемов
+  task_id: string;                   // ID задачи разделения
+  status: "queued" | "processing" | "completed" | "failed";
+  input_file: {
+    url: string;                     // URL исходного файла
+    duration: number;                // Длительность в секундах
+    format: string;                  // Формат файла
+    size: number;                    // Размер в байтах
+  };
+  stems?: {
+    vocals?: string;                 // URL файла с вокалом
+    drums?: string;                  // URL файла с барабанами
+    bass?: string;                   // URL файла с басом
+    piano?: string;                  // URL файла с фортепиано
+    other?: string;                  // URL файла с другими инструментами
+    accompaniment?: string;          // URL файла с аккомпанементом
+  };
+  metadata: {
+    model: string;                   // Использованная модель
+    stems_config: string;            // Конфигурация стемов
+    processing_time: number;         // Время обработки в секундах
+    quality: string;                 // Качество обработки
+  };
+  error_message?: string;            // Сообщение об ошибке
+  created_at: string;                // Время создания задачи
+  completed_at?: string;             // Время завершения
+}
+```
+
+#### Пример запроса
+
+```bash
+curl -X POST "https://your-project.supabase.co/functions/v1/stems-callback" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "task_id": "456e7890-e89b-12d3-a456-426614174000",
+    "status": "completed",
+    "input_file": {
+      "url": "https://example.com/track.mp3",
+      "duration": 240,
+      "format": "mp3",
+      "size": 5242880
+    },
+    "stems": {
+      "vocals": "https://storage.example.com/stems/vocals.wav",
+      "drums": "https://storage.example.com/stems/drums.wav",
+      "bass": "https://storage.example.com/stems/bass.wav",
+      "other": "https://storage.example.com/stems/other.wav"
+    },
+    "metadata": {
+      "model": "htdemucs",
+      "stems_config": "4stems",
+      "processing_time": 120,
+      "quality": "high"
+    },
+    "created_at": "2025-01-15T10:30:00Z",
+    "completed_at": "2025-01-15T10:32:00Z"
+  }'
+```
+
+#### Ответ
+
+```typescript
+interface StemsCallbackResponse {
+  success: boolean;
+  message: string;                   // Сообщение о результате обработки
+  stems_saved?: number;              // Количество сохраненных стемов
+  track_updated?: boolean;           // Обновлен ли трек в базе данных
+  error?: string;                    // Сообщение об ошибке
+}
+```
+
+### 3. Webhook для уведомлений
+
+**Эндпоинт:** `POST /webhook-notifications`
+
+Универсальный webhook для получения уведомлений от внешних сервисов.
+
+#### Параметры запроса
+
+```typescript
+interface WebhookNotificationRequest {
+  event_type: "music_generated" | "stems_separated" | "lyrics_created" | "error_occurred";
+  source: "suno" | "replicate" | "internal";
+  timestamp: string;                 // ISO 8601 timestamp
+  data: {
+    task_id?: string;                // ID связанной задачи
+    user_id?: string;                // ID пользователя
+    track_id?: string;               // ID трека
+    status?: string;                 // Статус операции
+    result_urls?: string[];          // URLs результатов
+    error_details?: {
+      code: string;                  // Код ошибки
+      message: string;               // Сообщение об ошибке
+      details?: any;                 // Дополнительные детали
+    };
+    metadata?: any;                  // Дополнительные метаданные
+  };
+  signature?: string;                // Подпись для верификации
+}
+```
+
+#### Пример запроса
+
+```bash
+curl -X POST "https://your-project.supabase.co/functions/v1/webhook-notifications" \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "X-Webhook-Signature: sha256=abc123..." \
+  -d '{
+    "event_type": "music_generated",
+    "source": "suno",
+    "timestamp": "2025-01-15T10:30:00Z",
+    "data": {
+      "task_id": "123e4567-e89b-12d3-a456-426614174000",
+      "user_id": "user_456",
+      "status": "completed",
+      "result_urls": [
+        "https://suno.ai/audio/clip_123.mp3",
+        "https://suno.ai/images/clip_123.jpg"
+      ],
+      "metadata": {
+        "title": "Электронная мечта",
+        "duration": 180,
+        "genre": "electronic"
+      }
+    }
+  }'
+```
+
+#### Ответ
+
+```typescript
+interface WebhookNotificationResponse {
+  success: boolean;
+  message: string;                   // Сообщение о результате обработки
+  processed: boolean;                // Обработано ли уведомление
+  actions_taken?: string[];          // Список выполненных действий
+  error?: string;                    // Сообщение об ошибке
 }
 ```
 
