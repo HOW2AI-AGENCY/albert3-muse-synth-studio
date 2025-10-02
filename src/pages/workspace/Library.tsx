@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TracksList } from "@/components/TracksList";
+import { TracksListLazy as TracksList } from "@/components/LazyComponents";
 
 const Library = () => {
   return (

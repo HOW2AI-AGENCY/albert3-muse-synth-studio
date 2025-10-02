@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
-import { MusicGenerator } from "@/components/MusicGenerator";
-import { TracksList } from "@/components/TracksList";
+import { 
+  MusicGeneratorLazy as MusicGenerator,
+  TracksListLazy as TracksList
+} from "@/components/LazyComponents";
 import { AuthForm } from "@/components/AuthForm";
 import heroBackground from "@/assets/hero-bg.jpg";
 

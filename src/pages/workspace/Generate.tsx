@@ -1,6 +1,8 @@
-import { MusicGenerator } from "@/components/MusicGenerator";
-import { TracksList } from "@/components/TracksList";
-import { DetailPanel } from "@/components/workspace/DetailPanel";
+import { 
+  MusicGeneratorLazy as MusicGenerator,
+  TracksListLazy as TracksList,
+  DetailPanelLazy as DetailPanel
+} from "@/components/LazyComponents";
 import { useState } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useIsMobile } from "@/hooks/use-mobile";
