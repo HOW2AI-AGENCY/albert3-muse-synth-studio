@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useRef, ReactNode, useEffect, useCallback, useMemo } from 'react';
 import { usePlayAnalytics } from '@/hooks/usePlayAnalytics';
 import { logError, logInfo } from '@/utils/logger';
-import { cacheAudioFile } from '@/utils/serviceWorker';
+import { cacheAudioFile } from '../utils/serviceWorker';
 
 interface Track {
   id: string;
