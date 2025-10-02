@@ -43,7 +43,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   const [currentVersionIndex, setCurrentVersionIndex] = useState(0);
   
   const audioRef = useRef<HTMLAudioElement>(null);
-  const { playTime: trackPlay } = usePlayAnalytics(currentTrack?.id || '', currentTrack?.title || '', true);
+  const { playTime, hasRecorded } = usePlayAnalytics(currentTrack?.id || null, isPlaying, currentTime);
 
   // Мемоизированная функция воспроизведения трека
   const playTrack = useCallback(async (track: AudioPlayerTrack) => {
@@ -69,11 +69,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
           await audioRef.current.play();
           setIsPlaying(true);
           
-          trackPlay({
-            trackId: track.id,
-            trackTitle: track.title,
-            source: 'audio_player'
-          });
+          // Аналитика воспроизведения обрабатывается автоматически хуком usePlayAnalytics
         } catch (error) {
           logError('Failed to play track', { error, trackId: track.id });
         }
@@ -81,9 +77,9 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       logError('Error in playTrack', { error, trackId: track.id });
     }
-  }, [trackPlay]);
+  }, []);
 
-  // Мемоизированная функция воспроизведения с очередью
+  // Мемоизированная функция воспроизведения трека с очередью
   const playTrackWithQueue = useCallback((track: AudioPlayerTrack, allTracks: AudioPlayerTrack[]) => {
     setQueue(allTracks);
     const trackIndex = allTracks.findIndex(t => t.id === track.id);
@@ -197,16 +193,12 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       
       if (isPlaying) {
         playTrack(version).then(() => {
-          trackPlay({
-            versionId,
-            trackId: version.id,
-            trackTitle: version.title
-          });
+          // Аналитика переключения версий обрабатывается автоматически хуком usePlayAnalytics
           setIsPlaying(false);
         });
       }
     }
-  }, [getAvailableVersions, isPlaying, playTrack, trackPlay]);
+  }, [getAvailableVersions, isPlaying, playTrack]);
 
   // Обработчики событий аудио элемента
   useEffect(() => {
