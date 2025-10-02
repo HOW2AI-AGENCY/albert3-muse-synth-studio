@@ -62,11 +62,14 @@ serve(async (req) => {
       .eq('id', trackId);
 
     // Prepare Suno API request
+    const callbackUrl = `${SUPABASE_URL}/functions/v1/suno-callback`;
+
     const sunoPayload: any = {
       prompt,
       instrumental: !hasVocals,
       model: 'V5', // Latest Suno model for best quality
       customMode: !!customMode,
+      callBackUrl: callbackUrl,
     };
 
     if (customMode) {
@@ -75,6 +78,8 @@ serve(async (req) => {
         sunoPayload.style = styleTags.join(', ');
       }
     }
+
+    console.log('Suno API request:', sunoPayload);
 
     console.log('Suno API request:', sunoPayload);
 

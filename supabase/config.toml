@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.generate-suno]
 verify_jwt = false
+
+[functions.suno-callback]
+verify_jwt = false
