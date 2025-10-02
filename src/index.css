@@ -1,54 +1,38 @@
+/* Импорт системы дизайн-токенов */
+@import './styles/design-tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .gradient-text {
-    background: linear-gradient(135deg, hsl(264 83% 57%) 0%, hsl(210 100% 56%) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-}
-
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-
-    --card: 217 33% 17%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 262 83% 58%;
-    --primary-foreground: 210 40% 98%;
-    --primary-glow: 262 90% 70%;
-
-    --secondary: 189 94% 43%;
-    --secondary-foreground: 210 40% 98%;
-    --secondary-glow: 189 100% 60%;
-
-    --accent: 330 81% 60%;
-    --accent-foreground: 210 40% 98%;
-    --accent-glow: 330 90% 70%;
-
-    --muted: 215 25% 27%;
-    --muted-foreground: 217 11% 65%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 215 25% 27%;
-    --input: 215 25% 27%;
-    --ring: 262 83% 58%;
-
-    --radius: 0.75rem;
+    /* Совместимость с существующими компонентами */
+    --background: var(--color-neutral-900);
+    --foreground: var(--color-neutral-50);
+    --card: var(--surface);
+    --card-foreground: var(--foreground);
+    --popover: var(--surface);
+    --popover-foreground: var(--foreground);
+    --primary: var(--color-accent-purple);
+    --primary-foreground: var(--foreground);
+    --secondary: var(--surface-variant);
+    --secondary-foreground: var(--foreground);
+    --muted: var(--color-neutral-700);
+    --muted-foreground: var(--color-neutral-400);
+    --accent: var(--color-accent-blue);
+    --accent-foreground: var(--foreground);
+    --destructive: var(--color-error);
+    --destructive-foreground: var(--foreground);
+    --border: var(--outline-variant);
+    --input: var(--surface-variant);
+    --ring: var(--color-accent-purple);
+    --radius: var(--radius-lg);
+    --chart-1: var(--color-accent-blue);
+    --chart-2: var(--color-accent-green);
+    --chart-3: var(--color-accent-orange);
+    --chart-4: var(--color-accent-purple);
+    --chart-5: var(--color-accent-pink);
 
     --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(330 81% 60%) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(189 94% 43%) 0%, hsl(262 83% 58%) 100%);

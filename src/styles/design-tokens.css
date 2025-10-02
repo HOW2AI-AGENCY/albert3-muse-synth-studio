@@ -1,0 +1,360 @@
+/* 
+ * 🎨 Система дизайн-токенов Albert3 Muse Synth Studio
+ * Современная система дизайн-токенов с поддержкой Material Design и iOS HIG
+ * Версия: 2.0.0
+ */
+
+@layer base {
+  :root {
+    /* ===== ЦВЕТОВАЯ ПАЛИТРА ===== */
+    
+    /* Основные цвета */
+    --color-primary-50: 248 250 252;
+    --color-primary-100: 241 245 249;
+    --color-primary-200: 226 232 240;
+    --color-primary-300: 203 213 225;
+    --color-primary-400: 148 163 184;
+    --color-primary-500: 100 116 139;
+    --color-primary-600: 71 85 105;
+    --color-primary-700: 51 65 85;
+    --color-primary-800: 30 41 59;
+    --color-primary-900: 15 23 42;
+    --color-primary-950: 2 6 23;
+
+    /* Акцентные цвета */
+    --color-accent-purple: 262 83% 58%;
+    --color-accent-blue: 189 94% 43%;
+    --color-accent-pink: 330 81% 60%;
+    --color-accent-green: 142 76% 36%;
+    --color-accent-orange: 25 95% 53%;
+    --color-accent-red: 0 84% 60%;
+
+    /* Семантические цвета */
+    --color-success: 142 76% 36%;
+    --color-warning: 45 93% 47%;
+    --color-error: 0 84% 60%;
+    --color-info: 217 91% 60%;
+
+    /* Нейтральные цвета */
+    --color-neutral-0: 0 0% 100%;
+    --color-neutral-50: 210 20% 98%;
+    --color-neutral-100: 220 14% 96%;
+    --color-neutral-200: 220 13% 91%;
+    --color-neutral-300: 216 12% 84%;
+    --color-neutral-400: 218 11% 65%;
+    --color-neutral-500: 220 9% 46%;
+    --color-neutral-600: 215 14% 34%;
+    --color-neutral-700: 217 19% 27%;
+    --color-neutral-800: 215 28% 17%;
+    --color-neutral-900: 222 84% 5%;
+    --color-neutral-950: 229 84% 2%;
+
+    /* Темная тема */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --surface: 217 33% 17%;
+    --surface-variant: 215 25% 27%;
+    --outline: 217 11% 65%;
+    --outline-variant: 215 25% 27%;
+
+    /* ===== ТИПОГРАФИКА ===== */
+    
+    /* Размеры шрифтов (Mobile-first) */
+    --font-size-xs: 0.75rem;     /* 12px */
+    --font-size-sm: 0.875rem;    /* 14px */
+    --font-size-base: 1rem;      /* 16px */
+    --font-size-lg: 1.125rem;    /* 18px */
+    --font-size-xl: 1.25rem;     /* 20px */
+    --font-size-2xl: 1.5rem;     /* 24px */
+    --font-size-3xl: 1.875rem;   /* 30px */
+    --font-size-4xl: 2.25rem;    /* 36px */
+    --font-size-5xl: 3rem;       /* 48px */
+    --font-size-6xl: 3.75rem;    /* 60px */
+
+    /* Высота строк */
+    --line-height-tight: 1.25;
+    --line-height-snug: 1.375;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.625;
+    --line-height-loose: 2;
+
+    /* Веса шрифтов */
+    --font-weight-thin: 100;
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+    --font-weight-black: 900;
+
+    /* Семейства шрифтов */
+    --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-family-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+
+    /* ===== ПРОСТРАНСТВО И РАЗМЕРЫ ===== */
+    
+    /* Отступы (8px базовая сетка) */
+    --space-0: 0;
+    --space-1: 0.25rem;   /* 4px */
+    --space-2: 0.5rem;    /* 8px */
+    --space-3: 0.75rem;   /* 12px */
+    --space-4: 1rem;      /* 16px */
+    --space-5: 1.25rem;   /* 20px */
+    --space-6: 1.5rem;    /* 24px */
+    --space-8: 2rem;      /* 32px */
+    --space-10: 2.5rem;   /* 40px */
+    --space-12: 3rem;     /* 48px */
+    --space-16: 4rem;     /* 64px */
+    --space-20: 5rem;     /* 80px */
+    --space-24: 6rem;     /* 96px */
+    --space-32: 8rem;     /* 128px */
+
+    /* Радиусы скругления */
+    --radius-none: 0;
+    --radius-sm: 0.125rem;    /* 2px */
+    --radius-base: 0.25rem;   /* 4px */
+    --radius-md: 0.375rem;    /* 6px */
+    --radius-lg: 0.5rem;      /* 8px */
+    --radius-xl: 0.75rem;     /* 12px */
+    --radius-2xl: 1rem;       /* 16px */
+    --radius-3xl: 1.5rem;     /* 24px */
+    --radius-full: 9999px;
+
+    /* ===== ТЕНИ И ЭФФЕКТЫ ===== */
+    
+    /* Тени Material Design */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-base: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
+    /* Светящиеся тени */
+    --shadow-glow-primary: 0 0 20px hsl(var(--color-accent-purple) / 0.3);
+    --shadow-glow-secondary: 0 0 20px hsl(var(--color-accent-blue) / 0.3);
+    --shadow-glow-accent: 0 0 20px hsl(var(--color-accent-pink) / 0.3);
+    --shadow-glow-success: 0 0 20px hsl(var(--color-success) / 0.3);
+    --shadow-glow-error: 0 0 20px hsl(var(--color-error) / 0.3);
+
+    /* ===== АНИМАЦИИ И ПЕРЕХОДЫ ===== */
+    
+    /* Длительности */
+    --duration-instant: 0ms;
+    --duration-fast: 150ms;
+    --duration-normal: 300ms;
+    --duration-slow: 500ms;
+    --duration-slower: 750ms;
+
+    /* Кривые анимации */
+    --ease-linear: linear;
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    /* Готовые переходы */
+    --transition-fast: all var(--duration-fast) var(--ease-out);
+    --transition-normal: all var(--duration-normal) var(--ease-out);
+    --transition-slow: all var(--duration-slow) var(--ease-out);
+    --transition-colors: color var(--duration-fast) var(--ease-out), 
+                        background-color var(--duration-fast) var(--ease-out),
+                        border-color var(--duration-fast) var(--ease-out);
+    --transition-transform: transform var(--duration-normal) var(--ease-out);
+    --transition-opacity: opacity var(--duration-fast) var(--ease-out);
+
+    /* ===== БРЕЙКПОИНТЫ (для JS) ===== */
+    --breakpoint-xs: 320px;
+    --breakpoint-sm: 640px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 1024px;
+    --breakpoint-xl: 1280px;
+    --breakpoint-2xl: 1536px;
+    --breakpoint-3xl: 1920px;
+    --breakpoint-4xl: 2560px;
+
+    /* ===== Z-INDEX СЛОИ ===== */
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-fixed: 1030;
+    --z-modal-backdrop: 1040;
+    --z-modal: 1050;
+    --z-popover: 1060;
+    --z-tooltip: 1070;
+    --z-toast: 1080;
+    --z-maximum: 2147483647;
+
+    /* ===== ГРАДИЕНТЫ ===== */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--color-accent-purple)) 0%, hsl(var(--color-accent-pink)) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--color-accent-blue)) 0%, hsl(var(--color-accent-purple)) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(var(--color-success)) 0%, hsl(var(--color-accent-blue)) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(222 47% 8%) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+
+    /* ===== РАЗМЕРЫ КОМПОНЕНТОВ ===== */
+    
+    /* Высоты элементов управления */
+    --height-control-sm: 2rem;      /* 32px */
+    --height-control-md: 2.5rem;    /* 40px */
+    --height-control-lg: 3rem;      /* 48px */
+    --height-control-xl: 3.5rem;    /* 56px */
+
+    /* Размеры иконок */
+    --icon-xs: 0.75rem;   /* 12px */
+    --icon-sm: 1rem;      /* 16px */
+    --icon-md: 1.25rem;   /* 20px */
+    --icon-lg: 1.5rem;    /* 24px */
+    --icon-xl: 2rem;      /* 32px */
+    --icon-2xl: 2.5rem;   /* 40px */
+
+    /* Ширины контейнеров */
+    --container-xs: 20rem;     /* 320px */
+    --container-sm: 24rem;     /* 384px */
+    --container-md: 28rem;     /* 448px */
+    --container-lg: 32rem;     /* 512px */
+    --container-xl: 36rem;     /* 576px */
+    --container-2xl: 42rem;    /* 672px */
+    --container-3xl: 48rem;    /* 768px */
+    --container-4xl: 56rem;    /* 896px */
+    --container-5xl: 64rem;    /* 1024px */
+    --container-6xl: 72rem;    /* 1152px */
+    --container-7xl: 80rem;    /* 1280px */
+  }
+
+  /* ===== АДАПТИВНЫЕ ТОКЕНЫ ===== */
+  
+  /* Мобильные устройства (320px - 767px) */
+  @media (max-width: 767px) {
+    :root {
+      --space-container: var(--space-4);
+      --font-size-display: var(--font-size-3xl);
+      --font-size-heading: var(--font-size-2xl);
+      --radius-default: var(--radius-lg);
+    }
+  }
+
+  /* Планшеты (768px - 1023px) */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    :root {
+      --space-container: var(--space-6);
+      --font-size-display: var(--font-size-4xl);
+      --font-size-heading: var(--font-size-3xl);
+      --radius-default: var(--radius-xl);
+    }
+  }
+
+  /* Десктоп (1024px+) */
+  @media (min-width: 1024px) {
+    :root {
+      --space-container: var(--space-8);
+      --font-size-display: var(--font-size-5xl);
+      --font-size-heading: var(--font-size-4xl);
+      --radius-default: var(--radius-2xl);
+    }
+  }
+
+  /* 4K и выше (2560px+) */
+  @media (min-width: 2560px) {
+    :root {
+      --space-container: var(--space-12);
+      --font-size-display: var(--font-size-6xl);
+      --font-size-heading: var(--font-size-5xl);
+    }
+  }
+}
+
+/* ===== УТИЛИТАРНЫЕ КЛАССЫ ===== */
+
+@layer utilities {
+  /* Быстрые переходы */
+  .transition-fast { transition: var(--transition-fast); }
+  .transition-normal { transition: var(--transition-normal); }
+  .transition-slow { transition: var(--transition-slow); }
+  .transition-colors { transition: var(--transition-colors); }
+  .transition-transform { transition: var(--transition-transform); }
+  .transition-opacity { transition: var(--transition-opacity); }
+
+  /* Светящиеся эффекты */
+  .glow-primary { box-shadow: var(--shadow-glow-primary); }
+  .glow-secondary { box-shadow: var(--shadow-glow-secondary); }
+  .glow-accent { box-shadow: var(--shadow-glow-accent); }
+  .glow-success { box-shadow: var(--shadow-glow-success); }
+  .glow-error { box-shadow: var(--shadow-glow-error); }
+
+  /* Градиентные тексты */
+  .text-gradient-primary {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-secondary {
+    background: var(--gradient-secondary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Стеклянный эффект */
+  .glass-effect {
+    background: var(--gradient-glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Безопасные зоны для мобильных устройств */
+  .safe-top { padding-top: env(safe-area-inset-top); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-left { padding-left: env(safe-area-inset-left); }
+  .safe-right { padding-right: env(safe-area-inset-right); }
+  .safe-area { 
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Скрытие скроллбара */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Тактильная обратная связь */
+  .haptic-light { 
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .haptic-medium {
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transform: scale(1);
+    transition: transform var(--duration-fast) var(--ease-out);
+  }
+  
+  .haptic-medium:active {
+    transform: scale(0.98);
+  }
+
+  .haptic-heavy {
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transform: scale(1);
+    transition: transform var(--duration-fast) var(--ease-out);
+  }
+  
+  .haptic-heavy:active {
+    transform: scale(0.95);
+  }
+}
