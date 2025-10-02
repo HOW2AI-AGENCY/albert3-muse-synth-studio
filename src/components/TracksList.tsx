@@ -1,5 +1,4 @@
-import { AudioPlayer } from "./AudioPlayer";
-import { Loader2, Music, Clock, CheckCircle, XCircle, RefreshCw } from "lucide-react";
+import { Loader2, Music, RefreshCw } from "lucide-react";
 import { useTracks } from "@/hooks/useTracks";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,6 +6,8 @@ import { useState, useEffect } from "react";
 import { ApiService, Track as ApiTrack } from "@/services/api.service";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { TrackCard } from "./TrackCard";
+import { AudioPlayer } from "./AudioPlayer";
 
 interface TracksListProps {
   refreshTrigger?: number;
@@ -100,37 +101,53 @@ export const TracksList = ({ refreshTrigger }: TracksListProps) => {
     return elapsed > 600000; // 10 minutes
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "completed":
-        return (
-          <Badge variant="default" className="gap-1">
-            <CheckCircle className="h-3 w-3" />
-            Готово
-          </Badge>
-        );
-      case "processing":
-        return (
-          <Badge variant="secondary" className="gap-1">
-            <Clock className="h-3 w-3 animate-spin" />
-            Обработка
-          </Badge>
-        );
-      case "failed":
-        return (
-          <Badge variant="destructive" className="gap-1">
-            <XCircle className="h-3 w-3" />
-            Ошибка
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="outline" className="gap-1">
-            <Clock className="h-3 w-3" />
-            Ожидание
-          </Badge>
-        );
+  const handlePlay = (track: Track) => {
+    // AudioPlayer handles play functionality
+    console.log('Playing track:', track.id);
+  };
+
+  const handleLike = async (trackId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: existingLike } = await supabase
+        .from('track_likes')
+        .select()
+        .eq('track_id', trackId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (existingLike) {
+        await supabase
+          .from('track_likes')
+          .delete()
+          .eq('track_id', trackId)
+          .eq('user_id', user.id);
+      } else {
+        await supabase
+          .from('track_likes')
+          .insert({ track_id: trackId, user_id: user.id });
+      }
+
+      refreshTracks();
+    } catch (error) {
+      console.error('Like error:', error);
     }
+  };
+
+  const handleDownload = (track: Track) => {
+    if (!track.audio_url) return;
+    window.open(track.audio_url, '_blank');
+  };
+
+  const handleShare = (track: Track) => {
+    const url = `${window.location.origin}/track/${track.id}`;
+    navigator.clipboard.writeText(url);
+    toast({
+      title: "Ссылка скопирована",
+      description: "Ссылка на трек скопирована в буфер обмена",
+    });
   };
 
   if (isLoading) {
@@ -158,46 +175,54 @@ export const TracksList = ({ refreshTrigger }: TracksListProps) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold text-gradient-secondary">Ваши треки</h2>
-        <Badge variant="outline" className="text-base px-4 py-2">
+        <h2 className="text-3xl font-bold text-gradient-primary">Ваши треки</h2>
+        <Badge variant="outline" className="text-base px-4 py-2 shadow-glow">
           {tracks.length} {tracks.length === 1 ? "трек" : "треков"}
         </Badge>
       </div>
       
-      <div className="grid gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {tracks.map((track) => {
           const showRetry = track.status === 'failed' || isStale(track as Track);
+          
           return (
             <div key={track.id} className="space-y-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                {getStatusBadge(track.status)}
-                {isStale(track as Track) && (
-                  <Badge variant="outline" className="text-xs text-orange-500">
-                    Возможно зависло
-                  </Badge>
-                )}
-                {track.error_message && (
-                  <span className="text-xs text-destructive">{track.error_message}</span>
-                )}
-                {showRetry && (
+              {showRetry && (
+                <div className="flex gap-2 items-center">
+                  {isStale(track as Track) && (
+                    <Badge variant="outline" className="text-xs text-orange-500">
+                      Возможно зависло
+                    </Badge>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => retryTrack(track as Track)}
                     disabled={retrying[track.id]}
-                    className="gap-1 h-7 text-xs"
+                    className="gap-1 h-7 text-xs ml-auto"
                   >
                     <RefreshCw className={`h-3 w-3 ${retrying[track.id] ? 'animate-spin' : ''}`} />
                     Повторить
                   </Button>
-                )}
-              </div>
-              <AudioPlayer
-                trackId={track.id}
-                title={track.title}
-                audioUrl={track.audio_url || undefined}
-                onDelete={() => deleteTrack(track.id)}
+                </div>
+              )}
+              
+              <TrackCard
+                track={track}
+                onPlay={() => handlePlay(track as Track)}
+                onLike={() => handleLike(track.id)}
+                onDownload={() => handleDownload(track as Track)}
+                onShare={() => handleShare(track as Track)}
               />
+              
+              {track.audio_url && track.status === 'completed' && (
+                <AudioPlayer
+                  trackId={track.id}
+                  title={track.title}
+                  audioUrl={track.audio_url}
+                  onDelete={() => deleteTrack(track.id)}
+                />
+              )}
             </div>
           );
         })}
