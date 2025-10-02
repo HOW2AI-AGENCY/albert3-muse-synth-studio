@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useRef, ReactNode, useEffect } from 'react';
+import { usePlayAnalytics } from '@/hooks/usePlayAnalytics';
 
 interface Track {
   id: string;
@@ -83,6 +84,13 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     audioRef.current.volume = volume;
   }, [volume]);
+
+  // Track play analytics
+  usePlayAnalytics(
+    currentTrack?.id || null,
+    isPlaying,
+    currentTime
+  );
 
   const playTrack = (track: Track) => {
     if (!track.audio_url) return;
