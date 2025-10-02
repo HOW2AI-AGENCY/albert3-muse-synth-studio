@@ -143,105 +143,126 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
           </div>
         </TabsContent>
 
-        <TabsContent value="advanced" className="space-y-5 mt-6">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Провайдер генерации</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant={provider === 'suno' ? 'default' : 'outline'}
-                  onClick={() => setProvider('suno')}
-                  disabled={isGenerating}
-                  className="h-20 flex flex-col items-center justify-center gap-1"
-                >
-                  <Music2 className="h-5 w-5" />
-                  <span className="font-semibold">Suno AI</span>
-                  <span className="text-xs opacity-70">До 4 мин, вокал</span>
-                </Button>
-                <Button
-                  variant={provider === 'replicate' ? 'default' : 'outline'}
-                  onClick={() => setProvider('replicate')}
-                  disabled={isGenerating}
-                  className="h-20 flex flex-col items-center justify-center gap-1"
-                >
-                  <Music className="h-5 w-5" />
-                  <span className="font-semibold">MusicGen</span>
-                  <span className="text-xs opacity-70">Быстро, instrumental</span>
-                </Button>
+        <TabsContent value="advanced" className="space-y-6 mt-6 animate-slide-up">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Music className="h-4 w-4 text-primary" />
+                  Описание музыки
+                </Label>
+                <Textarea
+                  placeholder="Опишите желаемый стиль, инструменты, настроение..."
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  className="min-h-[120px] resize-none bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300"
+                  disabled={isGenerating || isImproving}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Settings2 className="h-4 w-4 text-primary" />
+                  Провайдер AI
+                </Label>
+                <Select value={provider} onValueChange={setProvider} disabled={isGenerating}>
+                  <SelectTrigger className="bg-background/50 backdrop-blur-sm border-primary/20 focus:ring-primary/50 focus:border-primary/50 transition-all duration-300">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background/95 backdrop-blur-sm border-primary/20">
+                    <SelectItem value="suno" className="hover:bg-primary/10">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                        Suno AI (Рекомендуется)
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="musicgen" className="hover:bg-primary/10">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                        MusicGen
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-sm font-medium flex items-center gap-2">
+                  <Hash className="h-4 w-4 text-primary" />
+                  Жанры и стили
+                </Label>
+                <Input
+                  placeholder="рок, электроника, джаз..."
+                  value={styleTags}
+                  onChange={(e) => setStyleTags(e.target.value)}
+                  className="bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300"
+                  disabled={isGenerating || isImproving}
+                />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Промпт описания</Label>
-              <Textarea
-                placeholder="Опишите желаемый стиль музыки..."
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                className="min-h-[100px]"
-                disabled={isGenerating || isImproving}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Жанры и стили</Label>
-              <div className="flex flex-wrap gap-2">
-                {popularGenres.map((genre) => (
-                  <Badge
-                    key={genre}
-                    variant={styleTags.includes(genre) ? "default" : "outline"}
-                    className="cursor-pointer hover:bg-primary/80 transition-colors"
-                    onClick={() => toggleTag(genre)}
-                  >
-                    {genre}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between p-4 rounded-lg border bg-background/30">
-              <div className="flex items-center gap-3">
-                <Mic className="h-5 w-5 text-primary" />
-                <div>
-                  <Label htmlFor="vocals-advanced" className="text-sm font-medium">
-                    Добавить вокал
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Только для Suno AI
-                  </p>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-xl border border-primary/20 bg-gradient-to-r from-background/50 to-background/30 backdrop-blur-sm hover:border-primary/40 transition-all duration-300">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Mic className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <Label htmlFor="advanced-vocals" className="text-sm font-medium">
+                      Расширенный вокал
+                    </Label>
+                    <p className="text-xs text-muted-foreground/70">
+                      Настройка лирики и вокального стиля
+                    </p>
+                  </div>
                 </div>
+                <Switch
+                  id="advanced-vocals"
+                  checked={hasVocals}
+                  onCheckedChange={setHasVocals}
+                  disabled={isGenerating || isImproving}
+                  className="data-[state=checked]:bg-primary"
+                />
               </div>
-              <Switch
-                id="vocals-advanced"
-                checked={hasVocals}
-                onCheckedChange={setHasVocals}
-                disabled={isGenerating || provider !== 'suno'}
-              />
-            </div>
 
-            {hasVocals && provider === 'suno' && (
-              <LyricsEditor lyrics={lyrics} onLyricsChange={setLyrics} />
-            )}
+              {hasVocals && (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="p-4 rounded-xl border border-primary/20 bg-gradient-to-br from-background/50 to-background/30 backdrop-blur-sm">
+                    <Label className="text-sm font-medium mb-3 block flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-primary" />
+                      Лирика
+                    </Label>
+                    <LyricsEditor
+                      value={lyrics}
+                      onChange={setLyrics}
+                      disabled={isGenerating || isImproving}
+                      className="bg-background/30 border-primary/20"
+                    />
+                  </div>
+                </div>
+              )}
 
-            <div className="flex gap-3">
-              <Button
-                variant="glow"
-                onClick={improvePrompt}
-                disabled={isImproving || isGenerating}
-                className="flex-1 h-12"
-              >
-                <Wand2 className="mr-2 h-5 w-5" />
-                {isImproving ? "Улучшение..." : "Улучшить промпт"}
-              </Button>
+              <div className="flex flex-col gap-3">
+                <Button
+                  variant="glass"
+                  onClick={improvePrompt}
+                  disabled={isImproving || isGenerating}
+                  className="h-12 group"
+                >
+                  <Wand2 className="mr-2 h-5 w-5 group-hover:animate-spin transition-transform" />
+                  {isImproving ? "Улучшение..." : "Улучшить с AI"}
+                </Button>
 
-              <Button
-                variant="hero"
-                onClick={generateMusic}
-                disabled={isGenerating || isImproving}
-                className="flex-1 h-12 text-base"
-              >
-                <Sparkles className="mr-2 h-5 w-5" />
-                {isGenerating ? "Генерация..." : "Создать трек"}
-              </Button>
+                <Button
+                  variant="hero"
+                  onClick={generateMusic}
+                  disabled={isGenerating || isImproving}
+                  className="h-12 text-base shadow-glow"
+                >
+                  <Sparkles className="mr-2 h-5 w-5 animate-pulse" />
+                  {isGenerating ? "Генерация..." : "Создать музыку"}
+                </Button>
+              </div>
             </div>
           </div>
         </TabsContent>

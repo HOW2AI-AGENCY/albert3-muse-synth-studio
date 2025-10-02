@@ -139,19 +139,20 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
   return (
     <div
       ref={swipeRef as React.RefObject<HTMLDivElement>}
-      className="fixed inset-0 z-[60] bg-gradient-to-b from-background via-background to-card animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-[60] bg-gradient-to-b from-background via-background/95 to-card/90 backdrop-blur-xl animate-fade-in overflow-y-auto"
       style={{ 
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)'
       }}
     >
-      <div className="flex flex-col min-h-screen p-4 sm:p-6">{/* Header */}
-        <div className="flex items-center justify-between mb-6 sm:mb-8">
+      <div className="flex flex-col min-h-screen p-4 sm:p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6 sm:mb-8 animate-slide-up">
           <Button
             variant="ghost"
             size="icon"
             onClick={onMinimize}
-            className="h-10 w-10"
+            className="h-10 w-10 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
           >
             <Minimize2 className="h-5 w-5" />
           </Button>
@@ -161,21 +162,21 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
               variant="ghost"
               size="icon"
               onClick={handleShare}
-              className="h-10 w-10"
+              className="h-10 w-10 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
             >
               <Share2 className="h-5 w-5" />
             </Button>
             {hasVersions && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative h-10 w-10">
+                  <Button variant="ghost" size="icon" className="relative h-10 w-10 hover:bg-primary/10 hover:scale-105 transition-all duration-200">
                     <Repeat className="h-5 w-5" />
-                    <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
+                    <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-gradient-primary animate-pulse">
                       {availableVersions.length}
                     </Badge>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-card z-[100]">
+                <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-xl border-primary/20 shadow-glow z-[100]">
                   {availableVersions.map((version, idx) => (
                     <DropdownMenuItem
                       key={version.id}
@@ -184,14 +185,14 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
                         vibrate('light');
                         switchToVersion(version.id);
                       }}
-                      className={currentVersionIndex === idx ? 'bg-primary/10' : ''}
+                      className={`hover:bg-primary/10 transition-colors ${currentVersionIndex === idx ? 'bg-primary/20' : ''}`}
                     >
                       <div className="flex items-center gap-2 w-full">
                         <span className="flex-1">
                           {version.versionNumber === 0 ? 'Оригинал' : `Версия ${version.versionNumber}`}
                         </span>
                         {version.isMasterVersion && (
-                          <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+                          <Star className="h-3 w-3 fill-yellow-500 text-yellow-500 animate-pulse" />
                         )}
                       </div>
                     </DropdownMenuItem>
@@ -205,7 +206,7 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
 
         {/* Album Art */}
         <div className="flex-1 flex items-center justify-center mb-6 sm:mb-8 px-4">
-          <div className="relative w-full max-w-sm aspect-square rounded-2xl overflow-hidden shadow-2xl glow-primary animate-scale-in">
+          <div className="relative w-full max-w-sm aspect-square rounded-3xl overflow-hidden shadow-glow-primary animate-scale-in hover:scale-105 transition-transform duration-500">
             {currentTrack.cover_url ? (
               <img
                 src={currentTrack.cover_url}
@@ -213,43 +214,44 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full bg-gradient-primary" />
+              <div className="w-full h-full bg-gradient-primary animate-pulse" />
             )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
           </div>
         </div>
 
         {/* Track Info */}
-        <div className="text-center mb-4 sm:mb-6 px-4">
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2 line-clamp-2">
+        <div className="text-center mb-4 sm:mb-6 px-4 animate-slide-up">
+          <h2 className="text-xl sm:text-2xl font-bold text-gradient-primary mb-2 line-clamp-2 animate-shimmer">
             {currentTrack.title}
           </h2>
-          <p className="text-sm sm:text-base text-muted-foreground truncate">
-            {currentTrack.style_tags?.join(', ') || 'AI Generated'}
+          <p className="text-sm sm:text-base text-muted-foreground/80 truncate">
+            {currentTrack.style_tags?.join(' • ') || 'AI Generated'}
           </p>
         </div>
 
         {/* Progress Bar */}
-        <div className="mb-2 px-4">
+        <div className="mb-2 px-4 animate-slide-up">
           <Slider
             value={[currentTime]}
             max={duration}
             step={0.1}
             onValueChange={handleSeek}
-            className="w-full cursor-pointer"
+            className="w-full cursor-pointer hover:scale-y-110 transition-transform duration-200"
           />
-          <div className="flex justify-between text-xs text-muted-foreground mt-2">
+          <div className="flex justify-between text-xs text-muted-foreground/80 mt-2 font-medium tabular-nums">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration)}</span>
           </div>
         </div>
 
         {/* Main Controls */}
-        <div className="flex items-center justify-center gap-4 sm:gap-6 mb-4 sm:mb-6 px-4">
+        <div className="flex items-center justify-center gap-4 sm:gap-6 mb-4 sm:mb-6 px-4 animate-slide-up">
           <Button
             variant="ghost"
             size="icon"
             onClick={handlePrevious}
-            className="h-12 w-12 sm:h-14 sm:w-14"
+            className="h-12 w-12 sm:h-14 sm:w-14 hover:bg-primary/10 hover:scale-110 transition-all duration-200"
           >
             <SkipBack className="h-6 w-6" />
           </Button>
@@ -257,12 +259,12 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
           <Button
             size="icon"
             onClick={handlePlayPause}
-            className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-primary hover:bg-primary/90 glow-primary"
+            className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gradient-primary hover:shadow-glow-primary hover:scale-110 transition-all duration-200"
           >
             {isPlaying ? (
               <Pause className="h-8 w-8 sm:h-10 sm:w-10" fill="currentColor" />
             ) : (
-              <Play className="h-8 w-8 sm:h-10 sm:w-10" fill="currentColor" />
+              <Play className="h-8 w-8 sm:h-10 sm:w-10 ml-1" fill="currentColor" />
             )}
           </Button>
 
@@ -270,23 +272,25 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
             variant="ghost"
             size="icon"
             onClick={handleNext}
-            className="h-12 w-12 sm:h-14 sm:w-14"
+            className="h-12 w-12 sm:h-14 sm:w-14 hover:bg-primary/10 hover:scale-110 transition-all duration-200"
           >
             <SkipForward className="h-6 w-6" />
           </Button>
         </div>
 
         {/* Secondary Controls */}
-        <div className="flex items-center justify-between mb-4 sm:mb-6 px-4">
+        <div className="flex items-center justify-between mb-4 sm:mb-6 px-4 animate-slide-up">
           <Button
             variant="ghost"
             size="icon"
             onClick={handleLike}
-            className="h-10 w-10"
+            className={`h-10 w-10 hover:scale-110 transition-all duration-200 ${
+              isLiked ? 'text-accent hover:bg-accent/10' : 'hover:bg-primary/10'
+            }`}
           >
             <Heart
-              className={`h-5 w-5 transition-colors ${
-                isLiked ? 'fill-accent text-accent' : ''
+              className={`h-5 w-5 transition-all duration-200 ${
+                isLiked ? 'fill-accent text-accent animate-pulse' : ''
               }`}
             />
           </Button>
@@ -296,7 +300,7 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
               variant="ghost"
               size="icon"
               onClick={toggleMute}
-              className="h-8 w-8"
+              className="h-8 w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
             >
               {isMuted ? (
                 <VolumeX className="h-4 w-4" />
@@ -309,7 +313,7 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
               max={1}
               step={0.01}
               onValueChange={handleVolumeChange}
-              className="flex-1"
+              className="flex-1 hover:scale-y-110 transition-transform duration-200"
             />
           </div>
 
@@ -317,7 +321,7 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
             variant="ghost"
             size="icon"
             onClick={handleDownload}
-            className="h-10 w-10"
+            className="h-10 w-10 hover:bg-primary/10 hover:scale-110 transition-all duration-200"
           >
             <Download className="h-5 w-5" />
           </Button>
