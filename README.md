@@ -270,7 +270,8 @@ albert3-muse-synth-studio/
 ├── 📁 src/                      # Исходный код приложения
 │   ├── 📁 components/           # React компоненты
 │   │   ├── ui/                  # Базовые UI компоненты (Radix UI)
-│   │   ├── AudioPlayer.tsx      # Аудиоплеер с расширенным функционалом
+│   │   ├── player/              # Компоненты аудиоплеера
+│   │   │   └── GlobalAudioPlayer.tsx  # Глобальный аудиоплеер с расширенным функционалом
 │   │   ├── TrackCard.tsx        # Карточка трека с действиями
 │   │   ├── VirtualizedList.tsx  # Виртуализированный список треков
 │   │   ├── ErrorBoundary.tsx    # Обработка ошибок React

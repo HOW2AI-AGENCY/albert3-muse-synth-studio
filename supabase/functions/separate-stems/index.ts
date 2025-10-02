@@ -1,16 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
+import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  ...createCorsHeaders(),
+  ...createSecurityHeaders()
 };
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return handleCorsPreflightRequest(req);
   }
 
+const mainHandler = async (req: Request) => {
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -172,4 +175,15 @@ serve(async (req) => {
       }
     );
   }
+};
+
+const handler = withRateLimit(mainHandler, {
+  maxRequests: 10,
+  windowMs: 60000, // 1 minute
+  keyGenerator: (req) => {
+    const authHeader = req.headers.get('Authorization');
+    return authHeader ? `stems_${authHeader.split(' ')[1]?.substring(0, 10)}` : 'anonymous';
+  }
 });
+
+serve(handler);

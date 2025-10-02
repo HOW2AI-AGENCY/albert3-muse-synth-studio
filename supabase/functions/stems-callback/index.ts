@@ -1,9 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
+import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  ...createCorsHeaders(),
+  ...createSecurityHeaders()
 };
 
 const MAX_PAYLOAD_SIZE = 5 * 1024 * 1024; // 5MB
@@ -18,9 +20,9 @@ function sanitizeText(text: string, maxLength: number): string {
   return cleaned.substring(0, maxLength);
 }
 
-serve(async (req) => {
+const mainHandler = async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return handleCorsPreflightRequest(req);
   }
 
   try {
@@ -153,7 +155,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in stems-callback function:', error);
+    console.error('Error in stems callback:', error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
       { 
@@ -162,4 +164,17 @@ serve(async (req) => {
       }
     );
   }
+};
+
+const handler = withRateLimit(mainHandler, {
+  maxRequests: 50,
+  windowMs: 60000, // 1 minute
+  keyGenerator: (req) => {
+    // For callbacks, use IP-based rate limiting since they come from external services
+    const forwarded = req.headers.get('x-forwarded-for');
+    const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
+    return `stems_callback_${ip}`;
+  }
 });
+
+serve(handler);

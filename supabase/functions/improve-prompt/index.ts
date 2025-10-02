@@ -1,13 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
+import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  ...createCorsHeaders(),
+  ...createSecurityHeaders()
 };
 
-serve(async (req) => {
+const mainHandler = async (req: Request) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return handleCorsPreflightRequest(req);
   }
 
   try {
@@ -90,4 +92,15 @@ Keep the improved prompt concise (2-4 sentences) but highly descriptive. Focus o
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
+};
+
+const handler = withRateLimit(mainHandler, {
+  maxRequests: 20,
+  windowMs: 60000, // 1 minute
+  keyGenerator: (req) => {
+    const authHeader = req.headers.get('Authorization');
+    return authHeader ? `prompt_${authHeader.split(' ')[1]?.substring(0, 10)}` : 'anonymous';
+  }
 });
+
+serve(handler);
