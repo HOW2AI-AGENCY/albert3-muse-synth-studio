@@ -36,6 +36,7 @@ serve(async (req) => {
     const sunoPayload: any = {
       prompt: prompt,
       instrumental: !hasVocals,
+      model: 'V5', // Latest Suno model for best quality
     };
 
     if (customMode && lyrics) {
