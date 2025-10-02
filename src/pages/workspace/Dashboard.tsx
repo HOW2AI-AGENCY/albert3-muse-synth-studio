@@ -22,41 +22,44 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        // Load user stats
-        const { data: userTracks } = await supabase
-          .from("tracks")
-          .select("*")
-          .eq("user_id", user.id);
+      if (!user) return;
 
-        if (userTracks) {
-          setStats({
-            total: userTracks.length,
-            processing: userTracks.filter(t => t.status === 'processing').length,
-            completed: userTracks.filter(t => t.status === 'completed').length,
-            public: userTracks.filter(t => t.is_public).length,
-          });
-        }
+      // Load user stats
+      const { data: userTracks } = await supabase
+        .from('tracks')
+        .select('status, is_public')
+        .eq('user_id', user.id);
+
+      if (userTracks) {
+        const stats = {
+          total: userTracks.length,
+          processing: userTracks.filter(t => t.status === 'processing').length,
+          completed: userTracks.filter(t => t.status === 'completed').length,
+          public: userTracks.filter(t => t.is_public).length,
+        };
+        setStats(stats);
       }
 
       // Load public tracks
-      const { data: tracks } = await supabase
-        .from("tracks")
-        .select("*")
-        .eq("is_public", true)
-        .eq("status", "completed")
-        .order("created_at", { ascending: false })
+      const { data: publicTracksData } = await supabase
+        .from('tracks')
+        .select(`
+          *,
+          profiles!inner(username, avatar_url)
+        `)
+        .eq('is_public', true)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false })
         .limit(6);
 
-      if (tracks) {
-        setPublicTracks(tracks as Track[]);
+      if (publicTracksData) {
+        setPublicTracks(publicTracksData as Track[]);
       }
     } catch (error) {
-      console.error("Error loading dashboard:", error);
+      console.error('Error loading dashboard data:', error);
       toast({
-        title: "Ошибка загрузки",
-        description: "Не удалось загрузить данные",
+        title: "Ошибка",
+        description: "Не удалось загрузить данные дашборда",
         variant: "destructive",
       });
     } finally {
@@ -65,108 +68,105 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="p-4 md:p-6 space-y-6">
-      {/* Welcome Card */}
-      <Card className="card-glass border-primary/20">
-        <CardHeader>
-          <CardTitle className="text-2xl md:text-3xl gradient-text">
-            Добро пожаловать в MusicAI Pro! 🎵
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Начните создавать музыку с помощью искусственного интеллекта
-          </p>
-        </CardContent>
-      </Card>
+    <div className="p-4 md:p-6 space-y-8 animate-fade-in">
+      {/* Welcome Section */}
+      <div className="text-center space-y-4 animate-slide-up">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 animate-float">
+          <Music className="w-8 h-8 text-primary" />
+        </div>
+        <h1 className="text-4xl font-bold text-gradient-primary">
+          Добро пожаловать в MusicAI Pro
+        </h1>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Создавайте невероятную музыку с помощью искусственного интеллекта
+        </p>
+      </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="hover-lift">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Всего треков</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-primary">{stats.total}</div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-scale-in">
+        <Card variant="modern" className="text-center">
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-primary">{stats.total}</div>
+            <div className="text-sm text-muted-foreground">Всего треков</div>
           </CardContent>
         </Card>
         
-        <Card className="hover-lift">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">В процессе</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-secondary">{stats.processing}</div>
+        <Card variant="modern" className="text-center">
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-secondary">{stats.processing}</div>
+            <div className="text-sm text-muted-foreground">В обработке</div>
           </CardContent>
         </Card>
         
-        <Card className="hover-lift">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Завершено</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-green-500">{stats.completed}</div>
+        <Card variant="modern" className="text-center">
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-accent">{stats.completed}</div>
+            <div className="text-sm text-muted-foreground">Завершено</div>
           </CardContent>
         </Card>
         
-        <Card className="hover-lift">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Публичных</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-accent">{stats.public}</div>
+        <Card variant="modern" className="text-center">
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-gradient-secondary">{stats.public}</div>
+            <div className="text-sm text-muted-foreground">Публичных</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Quick Actions */}
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-3 gap-6">
         <Card 
-          className="cursor-pointer hover:border-primary/50 transition-all hover-lift"
+          variant="interactive"
+          className="cursor-pointer hover:border-primary/50 transition-all hover-lift animate-scale-in"
           onClick={() => navigate("/workspace/generate")}
+          style={{ animationDelay: '0.1s' }}
         >
           <CardHeader>
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mb-2 animate-pulse-glow">
               <Sparkles className="w-6 h-6 text-primary" />
             </div>
-            <CardTitle>Создать трек</CardTitle>
+            <CardTitle className="text-gradient-primary">Создать трек</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground text-sm mb-4">
               Сгенерируйте новую композицию с помощью AI
             </p>
-            <Button className="w-full" variant="hero">
+            <Button variant="hero" className="w-full">
               Перейти
             </Button>
           </CardContent>
         </Card>
 
         <Card 
-          className="cursor-pointer hover:border-primary/50 transition-all hover-lift"
+          variant="interactive"
+          className="cursor-pointer hover:border-secondary/50 transition-all hover-lift animate-scale-in"
           onClick={() => navigate("/workspace/library")}
+          style={{ animationDelay: '0.2s' }}
         >
           <CardHeader>
-            <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center mb-2">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-secondary/20 to-secondary/10 flex items-center justify-center mb-2">
               <Library className="w-6 h-6 text-secondary" />
             </div>
-            <CardTitle>Библиотека</CardTitle>
+            <CardTitle className="text-gradient-secondary">Библиотека</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground text-sm mb-4">
               Просмотрите все ваши треки
             </p>
-            <Button variant="outline" className="w-full">
+            <Button variant="glow" className="w-full">
               Перейти
             </Button>
           </CardContent>
         </Card>
 
         <Card 
-          className="cursor-pointer hover:border-primary/50 transition-all hover-lift"
+          variant="interactive"
+          className="cursor-pointer hover:border-accent/50 transition-all hover-lift animate-scale-in"
           onClick={() => navigate("/workspace/settings")}
+          style={{ animationDelay: '0.3s' }}
         >
           <CardHeader>
-            <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mb-2">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent/20 to-accent/10 flex items-center justify-center mb-2">
               <Settings className="w-6 h-6 text-accent" />
             </div>
             <CardTitle>Настройки</CardTitle>
@@ -175,7 +175,7 @@ const Dashboard = () => {
             <p className="text-muted-foreground text-sm mb-4">
               Управляйте вашим аккаунтом
             </p>
-            <Button variant="outline" className="w-full">
+            <Button variant="modern" className="w-full">
               Перейти
             </Button>
           </CardContent>
@@ -183,14 +183,14 @@ const Dashboard = () => {
       </div>
 
       {/* Public Tracks Feed */}
-      <Card>
+      <Card variant="glass" className="animate-slide-up" style={{ animationDelay: '0.4s' }}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-primary" />
-              Популярные треки
+              <TrendingUp className="w-5 h-5 text-primary animate-pulse" />
+              <span className="text-shimmer">Популярные треки</span>
             </CardTitle>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="hover:text-primary">
               Показать все
             </Button>
           </div>
@@ -199,17 +199,23 @@ const Dashboard = () => {
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="text-muted-foreground mt-2">Загрузка...</p>
+              <p className="text-muted-foreground mt-2">Загружаем треки...</p>
             </div>
           ) : publicTracks.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {publicTracks.map((track) => (
-                <TrackCard key={track.id} track={track} />
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {publicTracks.map((track, index) => (
+                <div 
+                  key={track.id} 
+                  className="animate-scale-in"
+                  style={{ animationDelay: `${0.5 + index * 0.1}s` }}
+                >
+                  <TrackCard track={track} />
+                </div>
               ))}
             </div>
           ) : (
             <div className="text-center py-8">
-              <Music className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+              <Music className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
               <p className="text-muted-foreground">Пока нет публичных треков</p>
             </div>
           )}
