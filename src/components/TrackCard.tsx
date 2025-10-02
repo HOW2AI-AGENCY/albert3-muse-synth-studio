@@ -72,7 +72,7 @@ export const TrackCard = ({
 
   return (
     <Card 
-      className={`overflow-hidden hover:border-primary/50 transition-all duration-300 hover-lift cursor-pointer ${
+      className={`overflow-hidden hover:border-primary/50 transition-all duration-300 cursor-pointer ${
         isSelected ? "ring-2 ring-primary" : ""
       } ${isCurrentTrack ? "ring-2 ring-accent" : ""}`}
       onMouseEnter={() => setIsHovered(true)}
@@ -100,24 +100,23 @@ export const TrackCard = ({
           >
             <Button
               size="lg"
-              className="rounded-full w-16 h-16 shadow-xl"
+              className="rounded-full w-14 h-14 shadow-xl"
               onClick={handlePlayClick}
             >
               {isCurrentTrack && isPlaying ? (
-                <Pause className="w-8 h-8 fill-current" />
+                <Pause className="w-7 h-7 fill-current" />
               ) : (
-                <Play className="w-8 h-8 fill-current" />
+                <Play className="w-7 h-7 fill-current" />
               )}
             </Button>
           </div>
         )}
         
         {/* Status Badge */}
-        <div className="absolute top-3 right-3 flex gap-2">
+        <div className="absolute top-2 right-2 flex gap-1.5">
           {track.has_stems && (
-            <Badge variant="secondary" className="gap-1">
+            <Badge variant="secondary" className="gap-1 text-xs px-1.5 py-0.5">
               <Music4 className="w-3 h-3" />
-              Стемы
             </Badge>
           )}
           {getStatusBadge()}
@@ -125,48 +124,38 @@ export const TrackCard = ({
       </div>
 
       {/* Track Info */}
-      <div className="p-4 space-y-3">
+      <div className="p-3 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <h4 className="font-semibold truncate">{track.title}</h4>
+            <h4 className="font-semibold text-sm truncate">{track.title}</h4>
             
-            {/* Style Tags */}
+            {/* Style Tags - max 2 */}
             {track.style_tags && track.style_tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {track.style_tags.slice(0, 3).map((tag, idx) => (
-                  <Badge key={idx} variant="secondary" className="text-xs">
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {track.style_tags.slice(0, 2).map((tag, idx) => (
+                  <Badge key={idx} variant="secondary" className="text-xs px-1.5 py-0">
                     {tag}
                   </Badge>
                 ))}
-                {track.style_tags.length > 3 && (
-                  <Badge variant="outline" className="text-xs">
-                    +{track.style_tags.length - 3}
+                {track.style_tags.length > 2 && (
+                  <Badge variant="outline" className="text-xs px-1.5 py-0">
+                    +{track.style_tags.length - 2}
                   </Badge>
                 )}
               </div>
             )}
-            
-            {!track.style_tags && track.improved_prompt && (
-              <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                {track.improved_prompt}
-              </p>
-            )}
           </div>
-          
-          <Button variant="ghost" size="icon" className="shrink-0">
-            <MoreVertical className="w-4 h-4" />
-          </Button>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
+            className={`h-7 w-7 ${isLiked ? "text-red-500" : ""}`}
             onClick={onLike}
-            className={isLiked ? "text-red-500" : ""}
           >
-            <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+            <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
           </Button>
           
           {track.audio_url && (
@@ -174,17 +163,19 @@ export const TrackCard = ({
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-7 w-7"
                 onClick={onDownload}
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-3.5 h-3.5" />
               </Button>
               
               <Button
                 variant="ghost"
                 size="icon"
+                className="h-7 w-7"
                 onClick={onShare}
               >
-                <Share2 className="w-4 h-4" />
+                <Share2 className="w-3.5 h-3.5" />
               </Button>
             </>
           )}
