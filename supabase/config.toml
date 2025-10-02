@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.generate-music]
 verify_jwt = false
+
+[functions.generate-lyrics]
+verify_jwt = false
+
+[functions.generate-suno]
+verify_jwt = false

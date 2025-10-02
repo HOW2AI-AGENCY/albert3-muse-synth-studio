@@ -12,6 +12,10 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
+  const [provider, setProvider] = useState<'replicate' | 'suno'>('suno');
+  const [hasVocals, setHasVocals] = useState(false);
+  const [lyrics, setLyrics] = useState("");
+  const [styleTags, setStyleTags] = useState<string[]>([]);
   const { toast } = useToast();
 
   const improvePrompt = async () => {
@@ -72,13 +76,22 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
       const track = await ApiService.createTrack(
         user.id,
         prompt.substring(0, 50) || "Untitled Track",
-        prompt
+        prompt,
+        provider,
+        lyrics || undefined,
+        hasVocals,
+        styleTags.length > 0 ? styleTags : undefined
       );
 
       // Start generation process
       await ApiService.generateMusic({
         trackId: track.id,
         prompt: prompt,
+        provider,
+        lyrics: lyrics || undefined,
+        hasVocals,
+        styleTags,
+        customMode: !!lyrics,
       });
 
       toast({
@@ -107,5 +120,13 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
     isImproving,
     improvePrompt,
     generateMusic,
+    provider,
+    setProvider,
+    hasVocals,
+    setHasVocals,
+    lyrics,
+    setLyrics,
+    styleTags,
+    setStyleTags,
   };
 };

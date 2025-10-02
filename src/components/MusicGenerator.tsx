@@ -1,8 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Sparkles, Wand2, Music, Lightbulb } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Sparkles, Wand2, Music, Lightbulb, Mic, Music2 } from "lucide-react";
 import { useMusicGeneration } from "@/hooks/useMusicGeneration";
+import { LyricsEditor } from "./LyricsEditor";
 
 interface MusicGeneratorProps {
   onTrackGenerated?: () => void;
@@ -16,7 +21,28 @@ export const MusicGenerator = ({ onTrackGenerated }: MusicGeneratorProps) => {
     isImproving,
     improvePrompt,
     generateMusic,
+    provider,
+    setProvider,
+    hasVocals,
+    setHasVocals,
+    lyrics,
+    setLyrics,
+    styleTags,
+    setStyleTags,
   } = useMusicGeneration(onTrackGenerated);
+
+  const popularGenres = [
+    "Электроника", "Поп", "Рок", "Хип-хоп", "Джаз", 
+    "Классика", "Эмбиент", "Лоу-фай", "Трэп", "Хаус"
+  ];
+
+  const toggleTag = (tag: string) => {
+    setStyleTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
 
   return (
     <Card className="card-glass p-8 space-y-6 hover-lift">
@@ -26,51 +52,181 @@ export const MusicGenerator = ({ onTrackGenerated }: MusicGeneratorProps) => {
             <Music className="h-5 w-5 text-white" />
           </div>
           <h3 className="text-2xl font-bold text-gradient-primary">
-            Создайте свою музыку
+            Создайте свою музыку с AI
           </h3>
         </div>
         <p className="text-muted-foreground">
-          Опишите желаемую музыку, и AI создаст её для вас всего за минуту
+          Профессиональная генерация музыки с вокалом и лирикой
         </p>
       </div>
 
-      <div className="space-y-5">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Lightbulb className="h-4 w-4" />
-            <span>Подсказка: Опишите жанр, инструменты, настроение и темп</span>
+      <Tabs defaultValue="simple" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="simple">Простой режим</TabsTrigger>
+          <TabsTrigger value="advanced">Продвинутый</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="simple" className="space-y-5 mt-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Lightbulb className="h-4 w-4" />
+              <span>Подсказка: Опишите жанр, инструменты, настроение и темп</span>
+            </div>
+            <Textarea
+              placeholder="Пример: Энергичный электронный трек с синтезаторными мелодиями и мощным басом, идеально подходит для тренировки..."
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              className="min-h-[140px] resize-none bg-background/50 focus-visible:ring-primary/50 transition-all"
+              disabled={isGenerating || isImproving}
+            />
           </div>
-          <Textarea
-            placeholder="Пример: Энергичный электронный трек с синтезаторными мелодиями и мощным басом, идеально подходит для тренировки..."
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            className="min-h-[140px] resize-none bg-background/50 focus-visible:ring-primary/50 transition-all"
-            disabled={isGenerating || isImproving}
-          />
-        </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button
-            variant="glow"
-            onClick={improvePrompt}
-            disabled={isImproving || isGenerating}
-            className="flex-1 h-12"
-          >
-            <Wand2 className="mr-2 h-5 w-5" />
-            {isImproving ? "Улучшение..." : "Улучшить с AI"}
-          </Button>
+          <div className="flex items-center justify-between p-4 rounded-lg border bg-background/30">
+            <div className="flex items-center gap-3">
+              <Mic className="h-5 w-5 text-primary" />
+              <div>
+                <Label htmlFor="vocals-switch" className="text-sm font-medium">
+                  Добавить вокал
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  AI создаст вокал и лирику
+                </p>
+              </div>
+            </div>
+            <Switch
+              id="vocals-switch"
+              checked={hasVocals}
+              onCheckedChange={setHasVocals}
+              disabled={isGenerating || isImproving}
+            />
+          </div>
 
-          <Button
-            variant="hero"
-            onClick={generateMusic}
-            disabled={isGenerating || isImproving}
-            className="flex-1 h-12 text-base"
-          >
-            <Sparkles className="mr-2 h-5 w-5" />
-            {isGenerating ? "Генерация..." : "Сгенерировать музыку"}
-          </Button>
-        </div>
-      </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              variant="glow"
+              onClick={improvePrompt}
+              disabled={isImproving || isGenerating}
+              className="flex-1 h-12"
+            >
+              <Wand2 className="mr-2 h-5 w-5" />
+              {isImproving ? "Улучшение..." : "Улучшить с AI"}
+            </Button>
+
+            <Button
+              variant="hero"
+              onClick={generateMusic}
+              disabled={isGenerating || isImproving}
+              className="flex-1 h-12 text-base"
+            >
+              <Sparkles className="mr-2 h-5 w-5" />
+              {isGenerating ? "Сгенерировать музыку" : "Сгенерировать музыку"}
+            </Button>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="advanced" className="space-y-5 mt-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Провайдер генерации</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant={provider === 'suno' ? 'default' : 'outline'}
+                  onClick={() => setProvider('suno')}
+                  disabled={isGenerating}
+                  className="h-20 flex flex-col items-center justify-center gap-1"
+                >
+                  <Music2 className="h-5 w-5" />
+                  <span className="font-semibold">Suno AI</span>
+                  <span className="text-xs opacity-70">До 4 мин, вокал</span>
+                </Button>
+                <Button
+                  variant={provider === 'replicate' ? 'default' : 'outline'}
+                  onClick={() => setProvider('replicate')}
+                  disabled={isGenerating}
+                  className="h-20 flex flex-col items-center justify-center gap-1"
+                >
+                  <Music className="h-5 w-5" />
+                  <span className="font-semibold">MusicGen</span>
+                  <span className="text-xs opacity-70">Быстро, instrumental</span>
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Промпт описания</Label>
+              <Textarea
+                placeholder="Опишите желаемый стиль музыки..."
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                className="min-h-[100px]"
+                disabled={isGenerating || isImproving}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Жанры и стили</Label>
+              <div className="flex flex-wrap gap-2">
+                {popularGenres.map((genre) => (
+                  <Badge
+                    key={genre}
+                    variant={styleTags.includes(genre) ? "default" : "outline"}
+                    className="cursor-pointer hover:bg-primary/80 transition-colors"
+                    onClick={() => toggleTag(genre)}
+                  >
+                    {genre}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-4 rounded-lg border bg-background/30">
+              <div className="flex items-center gap-3">
+                <Mic className="h-5 w-5 text-primary" />
+                <div>
+                  <Label htmlFor="vocals-advanced" className="text-sm font-medium">
+                    Добавить вокал
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Только для Suno AI
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="vocals-advanced"
+                checked={hasVocals}
+                onCheckedChange={setHasVocals}
+                disabled={isGenerating || provider !== 'suno'}
+              />
+            </div>
+
+            {hasVocals && provider === 'suno' && (
+              <LyricsEditor lyrics={lyrics} onLyricsChange={setLyrics} />
+            )}
+
+            <div className="flex gap-3">
+              <Button
+                variant="glow"
+                onClick={improvePrompt}
+                disabled={isImproving || isGenerating}
+                className="flex-1 h-12"
+              >
+                <Wand2 className="mr-2 h-5 w-5" />
+                {isImproving ? "Улучшение..." : "Улучшить промпт"}
+              </Button>
+
+              <Button
+                variant="hero"
+                onClick={generateMusic}
+                disabled={isGenerating || isImproving}
+                className="flex-1 h-12 text-base"
+              >
+                <Sparkles className="mr-2 h-5 w-5" />
+                {isGenerating ? "Генерация..." : "Создать трек"}
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </Card>
   );
 };

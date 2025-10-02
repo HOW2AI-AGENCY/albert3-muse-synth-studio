@@ -20,11 +20,16 @@ export type Database = {
           created_at: string
           duration: number | null
           error_message: string | null
+          has_vocals: boolean | null
           id: string
           improved_prompt: string | null
+          lyrics: string | null
           metadata: Json | null
           prompt: string
+          provider: string | null
+          reference_audio_url: string | null
           status: string
+          style_tags: string[] | null
           title: string
           updated_at: string
           user_id: string
@@ -34,11 +39,16 @@ export type Database = {
           created_at?: string
           duration?: number | null
           error_message?: string | null
+          has_vocals?: boolean | null
           id?: string
           improved_prompt?: string | null
+          lyrics?: string | null
           metadata?: Json | null
           prompt: string
+          provider?: string | null
+          reference_audio_url?: string | null
           status?: string
+          style_tags?: string[] | null
           title: string
           updated_at?: string
           user_id: string
@@ -48,11 +58,16 @@ export type Database = {
           created_at?: string
           duration?: number | null
           error_message?: string | null
+          has_vocals?: boolean | null
           id?: string
           improved_prompt?: string | null
+          lyrics?: string | null
           metadata?: Json | null
           prompt?: string
+          provider?: string | null
+          reference_audio_url?: string | null
           status?: string
+          style_tags?: string[] | null
           title?: string
           updated_at?: string
           user_id?: string

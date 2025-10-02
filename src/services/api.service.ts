@@ -16,11 +16,35 @@ export interface ImprovePromptResponse {
 export interface GenerateMusicRequest {
   trackId: string;
   prompt: string;
+  provider?: 'replicate' | 'suno';
+  lyrics?: string;
+  hasVocals?: boolean;
+  styleTags?: string[];
+  customMode?: boolean;
 }
 
 export interface GenerateMusicResponse {
   success: boolean;
   trackId: string;
+}
+
+export interface GenerateLyricsRequest {
+  theme: string;
+  mood: string;
+  genre: string;
+  language?: 'ru' | 'en';
+  structure?: string;
+}
+
+export interface GenerateLyricsResponse {
+  lyrics: string;
+  metadata: {
+    theme: string;
+    mood: string;
+    genre: string;
+    language: string;
+    structure: string;
+  };
 }
 
 export interface Track {
@@ -67,8 +91,10 @@ export class ApiService {
   static async generateMusic(
     request: GenerateMusicRequest
   ): Promise<GenerateMusicResponse> {
+    const functionName = request.provider === 'suno' ? 'generate-suno' : 'generate-music';
+    
     const { data, error } = await supabase.functions.invoke<GenerateMusicResponse>(
-      "generate-music",
+      functionName,
       { body: request }
     );
 
@@ -84,9 +110,39 @@ export class ApiService {
   }
 
   /**
+   * Generate lyrics using AI
+   */
+  static async generateLyrics(
+    request: GenerateLyricsRequest
+  ): Promise<GenerateLyricsResponse> {
+    const { data, error } = await supabase.functions.invoke<GenerateLyricsResponse>(
+      "generate-lyrics",
+      { body: request }
+    );
+
+    if (error) {
+      throw new Error(error.message || "Failed to generate lyrics");
+    }
+
+    if (!data) {
+      throw new Error("No response from server");
+    }
+
+    return data;
+  }
+
+  /**
    * Create a new track record
    */
-  static async createTrack(userId: string, title: string, prompt: string): Promise<Track> {
+  static async createTrack(
+    userId: string, 
+    title: string, 
+    prompt: string,
+    provider: string = 'replicate',
+    lyrics?: string,
+    hasVocals?: boolean,
+    styleTags?: string[]
+  ): Promise<Track> {
     const { data, error } = await supabase
       .from("tracks")
       .insert({
@@ -94,6 +150,10 @@ export class ApiService {
         title: title.substring(0, 100),
         prompt: prompt,
         status: "pending",
+        provider,
+        lyrics,
+        has_vocals: hasVocals,
+        style_tags: styleTags,
       })
       .select()
       .single();
