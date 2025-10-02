@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Sparkles, Music2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ApiService } from "@/services/api.service";
+import { logError, logInfo } from "@/utils/logger";
 
 interface LyricsEditorProps {
   lyrics: string;
@@ -46,10 +47,16 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
         description: "Текст песни сгенерирован с помощью AI",
       });
     } catch (error) {
-      console.error("Error generating lyrics:", error);
+      logError("Ошибка при генерации текста", error as Error, "LyricsEditor", {
+        theme,
+        mood,
+        genre,
+        language: 'ru'
+      });
+      
       toast({
         title: "Ошибка",
-        description: error instanceof Error ? error.message : "Не удалось создать лирику",
+        description: "Не удалось сгенерировать текст. Попробуйте еще раз.",
         variant: "destructive",
       });
     } finally {

@@ -17,6 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { logError, logInfo } from "@/utils/logger";
 
 interface TrackVersion {
   id: string;
@@ -66,7 +67,11 @@ export const TrackVersions = ({ trackId, versions, onVersionUpdate }: TrackVersi
       toast.success(`Версия ${versionNumber} установлена как главная`);
       onVersionUpdate?.();
     } catch (error) {
-      console.error('Error setting master version:', error);
+      logError("Ошибка при установке мастер-версии", error as Error, "TrackVersions", {
+        trackId,
+        versionId
+      });
+      
       vibrate('error');
       toast.error('Ошибка при установке главной версии');
     }
@@ -130,7 +135,11 @@ export const TrackVersions = ({ trackId, versions, onVersionUpdate }: TrackVersi
       toast.success(`Версия ${versionToDelete.version_number} удалена`);
       onVersionUpdate?.();
     } catch (error) {
-      console.error('Error deleting version:', error);
+      logError("Ошибка при удалении версии", error as Error, "TrackVersions", {
+        trackId,
+        versionId: versionToDelete.id
+      });
+      
       vibrate('error');
       toast.error('Ошибка при удалении версии');
     } finally {

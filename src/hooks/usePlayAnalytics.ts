@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { AnalyticsService } from '@/services/analytics.service';
+import { logError, logInfo } from '@/utils/logger';
 
 const PLAY_THRESHOLD_SECONDS = 30; // Track counts as played after 30 seconds
 const STORAGE_KEY_PREFIX = 'track_play_';
