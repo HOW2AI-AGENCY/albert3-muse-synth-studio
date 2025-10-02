@@ -9,6 +9,7 @@ import WorkspaceLayout from "./components/workspace/WorkspaceLayout";
 import Dashboard from "./pages/workspace/Dashboard";
 import Generate from "./pages/workspace/Generate";
 import Library from "./pages/workspace/Library";
+import Favorites from "./pages/workspace/Favorites";
 import Analytics from "./pages/workspace/Analytics";
 import Settings from "./pages/workspace/Settings";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="generate" element={<Generate />} />
               <Route path="library" element={<Library />} />
+              <Route path="favorites" element={<Favorites />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="settings" element={<Settings />} />
             </Route>

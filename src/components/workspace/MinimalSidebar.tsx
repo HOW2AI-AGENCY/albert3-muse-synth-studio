@@ -1,4 +1,4 @@
-import { Home, Sparkles, Library, BarChart3, Settings, User } from "lucide-react";
+import { Home, Sparkles, Library, Heart, BarChart3, Settings, User } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Tooltip,
@@ -16,6 +16,7 @@ const MinimalSidebar = () => {
     { icon: Home, label: "Главная", path: "/workspace/dashboard" },
     { icon: Sparkles, label: "Генерация", path: "/workspace/generate" },
     { icon: Library, label: "Библиотека", path: "/workspace/library" },
+    { icon: Heart, label: "Избранное", path: "/workspace/favorites" },
     { icon: BarChart3, label: "Аналитика", path: "/workspace/analytics" },
     { icon: Settings, label: "Настройки", path: "/workspace/settings" },
   ];
