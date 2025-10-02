@@ -77,7 +77,7 @@ Keep the improved prompt concise (2-4 sentences) but highly descriptive. Focus o
   } catch (error) {
     console.error('Error in improve-prompt:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
