@@ -13,6 +13,7 @@ import {
 const Generate = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [selectedTrack, setSelectedTrack] = useState<any>(null);
+  // Check if desktop view (1024px and above)
   const isDesktop = useMediaQuery("(min-width: 1024px)");
 
   const handleTrackGenerated = () => {
