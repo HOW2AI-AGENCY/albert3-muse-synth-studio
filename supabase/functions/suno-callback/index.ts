@@ -28,27 +28,46 @@ serve(async (req) => {
       });
     }
 
-    console.log("Suno callback payload:", payload);
+    console.log("Suno callback payload:", JSON.stringify(payload, null, 2));
 
-    // Normalize payload to an array of tasks
-    const tasks = Array.isArray(payload?.data) && payload.data.length > 0
-      ? payload.data
-      : [payload];
+    // Extract tracks array from payload
+    // Suno can send: { data: { data: [...] } } or { data: [...] } or just single task
+    let tasks: any[] = [];
+    if (payload?.data?.data && Array.isArray(payload.data.data)) {
+      // New format: { data: { data: [...], task_id: "..." } }
+      tasks = payload.data.data;
+    } else if (Array.isArray(payload?.data)) {
+      // Alternative format: { data: [...] }
+      tasks = payload.data;
+    } else if (payload?.audio_url || payload?.audioUrl) {
+      // Single task format
+      tasks = [payload];
+    }
 
-    // Extract taskId flexibly
-    const taskId = payload?.taskId || tasks?.[0]?.taskId || payload?.id || payload?.data?.taskId;
+    // Extract taskId with support for both taskId and task_id
+    const taskId = 
+      payload?.data?.task_id ||  // New Suno format
+      payload?.data?.taskId ||
+      payload?.taskId || 
+      payload?.task_id ||
+      tasks?.[0]?.taskId || 
+      tasks?.[0]?.task_id ||
+      payload?.id;
+
     if (!taskId) {
-      console.error("Suno callback: missing taskId in payload");
+      console.error("Suno callback: missing taskId. Available keys:", Object.keys(payload), Object.keys(payload?.data || {}));
       return new Response(JSON.stringify({ ok: false, error: "missing_taskId" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    console.log("Extracted taskId:", taskId, "Tasks count:", tasks.length);
+
     // Find the track by metadata.suno_task_id
     const { data: track, error: findErr } = await supabase
       .from("tracks")
-      .select("id, status")
+      .select("id, status, user_id")
       .contains("metadata", { suno_task_id: taskId })
       .maybeSingle();
 
@@ -88,24 +107,65 @@ serve(async (req) => {
       });
     }
 
+    // Process successful tasks - Suno returns 2 versions, save both as separate tracks
     if (successTask) {
-      const audioUrl = successTask.audioUrl || successTask.audio_url;
-      const duration = successTask.duration || 0;
-      const actualLyrics = successTask.lyric || successTask.lyrics;
+      const firstAudioUrl = successTask.audioUrl || successTask.audio_url;
+      const firstDuration = successTask.duration || successTask.duration_seconds || 0;
+      const actualLyrics = successTask.prompt || successTask.lyric || successTask.lyrics;
+      const title = successTask.title || "Generated Track";
 
+      // Update the original track with first version
       await supabase
         .from("tracks")
         .update({
           status: "completed",
-          audio_url: audioUrl,
-          duration: Math.round(duration),
+          audio_url: firstAudioUrl,
+          duration: Math.round(firstDuration),
+          duration_seconds: Math.round(firstDuration),
           lyrics: actualLyrics,
-          metadata: { suno_data: tasks },
+          title: title,
+          metadata: { suno_data: tasks, suno_task_id: taskId },
         })
-        .contains("metadata", { suno_task_id: taskId });
+        .eq("id", track.id);
 
-      console.log("Suno callback: track completed", { taskId, audioUrl });
-      return new Response(JSON.stringify({ ok: true }), {
+      console.log("Suno callback: track completed", { taskId, audioUrl: firstAudioUrl, versionsCount: tasks.length });
+
+      // If there's a second version, create a new track for it
+      if (tasks.length > 1 && tasks[1]) {
+        const secondTask = tasks[1];
+        const secondAudioUrl = secondTask.audioUrl || secondTask.audio_url;
+        
+        if (secondAudioUrl && track.user_id) {
+          const { data: originalTrack } = await supabase
+            .from("tracks")
+            .select("user_id, title, prompt, provider, has_vocals, style_tags, lyrics")
+            .eq("id", track.id)
+            .single();
+
+          if (originalTrack) {
+            await supabase
+              .from("tracks")
+              .insert({
+                user_id: originalTrack.user_id,
+                title: `${secondTask.title || originalTrack.title} (v2)`,
+                prompt: originalTrack.prompt,
+                audio_url: secondAudioUrl,
+                duration: Math.round(secondTask.duration || secondTask.duration_seconds || 0),
+                duration_seconds: Math.round(secondTask.duration || secondTask.duration_seconds || 0),
+                status: "completed",
+                provider: "suno",
+                lyrics: secondTask.prompt || secondTask.lyric || secondTask.lyrics || originalTrack.lyrics,
+                has_vocals: originalTrack.has_vocals,
+                style_tags: originalTrack.style_tags,
+                metadata: { suno_data: secondTask, suno_task_id: taskId, version: 2 },
+              });
+
+            console.log("Suno callback: created second version track", { secondAudioUrl });
+          }
+        }
+      }
+
+      return new Response(JSON.stringify({ ok: true, versionsCreated: tasks.length }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
