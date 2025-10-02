@@ -1,13 +1,26 @@
 /**
  * Custom hook for music generation logic
  * Separates business logic from UI components
+ * Optimized with memoization and debouncing
  */
 
-import { useState } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ApiService } from "@/services/api.service";
 import { supabase } from "@/integrations/supabase/client";
 import { logError, logInfo, logDebug, logWarn } from "@/utils/logger";
+
+// Debounce utility
+const useDebounce = (callback: Function, delay: number) => {
+  const timeoutRef = useRef<NodeJS.Timeout>();
+  
+  return useCallback((...args: any[]) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => callback(...args), delay);
+  }, [callback, delay]);
+};
 
 export const useMusicGeneration = (onSuccess?: () => void) => {
   const [prompt, setPrompt] = useState("");
@@ -19,8 +32,42 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
   const [styleTags, setStyleTags] = useState<string[]>([]);
   const { toast } = useToast();
 
-  const improvePrompt = async () => {
-    if (!prompt.trim()) {
+  // Memoized validation functions
+  const isValidPrompt = useMemo(() => {
+    return prompt.trim().length > 0;
+  }, [prompt]);
+
+  const canGenerate = useMemo(() => {
+    return isValidPrompt && !isGenerating && !isImproving;
+  }, [isValidPrompt, isGenerating, isImproving]);
+
+  // Memoized generation parameters
+  const generationParams = useMemo(() => ({
+    title: prompt.substring(0, 50) || "Untitled Track",
+    prompt: prompt,
+    provider,
+    lyrics: lyrics || undefined,
+    hasVocals,
+    styleTags,
+    customMode: !!lyrics,
+  }), [prompt, provider, lyrics, hasVocals, styleTags]);
+
+  // Debounced prompt validation
+  const debouncedValidatePrompt = useDebounce((promptValue: string) => {
+    if (promptValue.trim().length > 0 && promptValue.trim().length < 10) {
+      logWarn("Короткий промпт может дать неточные результаты", "useMusicGeneration");
+    }
+  }, 500);
+
+  // Optimized prompt setter with validation
+  const setPromptOptimized = useCallback((value: string) => {
+    setPrompt(value);
+    debouncedValidatePrompt(value);
+  }, [debouncedValidatePrompt]);
+
+  // Memoized improve prompt function
+  const improvePrompt = useCallback(async () => {
+    if (!isValidPrompt) {
       toast({
         title: "Ошибка",
         description: "Пожалуйста, введите описание музыки",
@@ -29,17 +76,31 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
       return;
     }
 
+    if (isImproving) return; // Prevent double calls
+
     setIsImproving(true);
+    logInfo("Начало улучшения промпта", "useMusicGeneration", { 
+      originalPrompt: prompt.substring(0, 50) 
+    });
+
     try {
       const response = await ApiService.improvePrompt({ prompt });
       setPrompt(response.improvedPrompt);
+      
+      logInfo("Промпт успешно улучшен", "useMusicGeneration", {
+        originalLength: prompt.length,
+        improvedLength: response.improvedPrompt.length
+      });
       
       toast({
         title: "✨ Промпт улучшен!",
         description: "Ваше описание было улучшено с помощью AI",
       });
     } catch (error) {
-      console.error("Error improving prompt:", error);
+      logError("Ошибка при улучшении промпта", error as Error, "useMusicGeneration", {
+        prompt: prompt.substring(0, 100)
+      });
+      
       toast({
         title: "Ошибка",
         description: error instanceof Error ? error.message : "Не удалось улучшить промпт",
@@ -48,16 +109,19 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
     } finally {
       setIsImproving(false);
     }
-  };
+  }, [prompt, isValidPrompt, isImproving, toast]);
 
-  const generateMusic = async () => {
-    if (!prompt.trim()) {
-      logWarn("Попытка генерации музыки с пустым промптом", "useMusicGeneration");
-      toast({
-        title: "Ошибка",
-        description: "Пожалуйста, введите описание музыки",
-        variant: "destructive",
-      });
+  // Memoized generate music function
+  const generateMusic = useCallback(async () => {
+    if (!canGenerate) {
+      if (!isValidPrompt) {
+        logWarn("Попытка генерации музыки с пустым промптом", "useMusicGeneration");
+        toast({
+          title: "Ошибка",
+          description: "Пожалуйста, введите описание музыки",
+          variant: "destructive",
+        });
+      }
       return;
     }
 
@@ -65,7 +129,9 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
     logInfo("Начало генерации музыки", "useMusicGeneration", { 
       prompt: prompt.substring(0, 100), 
       provider, 
-      hasVocals 
+      hasVocals,
+      lyricsLength: lyrics.length,
+      styleTagsCount: styleTags.length
     });
 
     try {
@@ -82,20 +148,13 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
       }
 
       // Start generation process (userId extracted from JWT by edge function)
-      await ApiService.generateMusic({
-        title: prompt.substring(0, 50) || "Untitled Track",
-        prompt: prompt,
-        provider,
-        lyrics: lyrics || undefined,
-        hasVocals,
-        styleTags,
-        customMode: !!lyrics,
-      });
+      await ApiService.generateMusic(generationParams);
 
       logInfo("Генерация музыки успешно запущена", "useMusicGeneration", {
         userId: user.id,
         provider,
-        title: prompt.substring(0, 50)
+        title: generationParams.title,
+        hasCustomLyrics: !!lyrics
       });
 
       toast({
@@ -103,13 +162,18 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
         description: "Ваш трек создаётся. Это может занять около минуты...",
       });
 
+      // Clear form after successful submission
       setPrompt("");
+      setLyrics("");
+      setStyleTags([]);
+      
       onSuccess?.();
     } catch (error) {
       logError("Ошибка при генерации музыки", error as Error, "useMusicGeneration", {
         prompt: prompt.substring(0, 100),
         provider,
-        hasVocals
+        hasVocals,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error'
       });
       
       toast({
@@ -120,11 +184,23 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [canGenerate, isValidPrompt, generationParams, toast, onSuccess, prompt, provider, hasVocals, lyrics, styleTags]);
 
-  return {
+  // Memoized style tags handlers
+  const addStyleTag = useCallback((tag: string) => {
+    if (!styleTags.includes(tag) && styleTags.length < 5) {
+      setStyleTags(prev => [...prev, tag]);
+    }
+  }, [styleTags]);
+
+  const removeStyleTag = useCallback((tag: string) => {
+    setStyleTags(prev => prev.filter(t => t !== tag));
+  }, []);
+
+  // Memoized return object to prevent unnecessary re-renders
+  return useMemo(() => ({
     prompt,
-    setPrompt,
+    setPrompt: setPromptOptimized,
     isGenerating,
     isImproving,
     improvePrompt,
@@ -137,5 +213,24 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
     setLyrics,
     styleTags,
     setStyleTags,
-  };
+    addStyleTag,
+    removeStyleTag,
+    canGenerate,
+    isValidPrompt,
+  }), [
+    prompt,
+    setPromptOptimized,
+    isGenerating,
+    isImproving,
+    improvePrompt,
+    generateMusic,
+    provider,
+    hasVocals,
+    lyrics,
+    styleTags,
+    addStyleTag,
+    removeStyleTag,
+    canGenerate,
+    isValidPrompt,
+  ]);
 };
