@@ -102,8 +102,56 @@ All colors MUST be HSL.
     @apply bg-card/50 backdrop-blur-xl border border-border/50;
   }
 
+  .card-modern {
+    @apply bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-border/30 shadow-lg;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-modern:hover {
+    @apply border-primary/30 shadow-xl;
+    transform: translateY(-2px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), var(--shadow-glow-primary);
+  }
+
+  .button-modern {
+    @apply relative overflow-hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .button-modern::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent;
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+  }
+
+  .button-modern:hover::before {
+    transform: translateX(100%);
+  }
+
+  .button-modern:hover {
+    @apply scale-105;
+    box-shadow: var(--shadow-glow-primary);
+  }
+
   .animate-pulse-glow {
     animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.5s ease-out;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.6s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .hover-lift {
@@ -114,6 +162,47 @@ All colors MUST be HSL.
     @apply -translate-y-1 shadow-lg;
   }
 
+  .interactive-element {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .interactive-element:hover {
+    @apply scale-105;
+  }
+
+  .interactive-element:active {
+    @apply scale-95;
+  }
+
+  .gradient-border {
+    position: relative;
+    background: linear-gradient(var(--gradient-primary));
+    border-radius: var(--radius);
+    padding: 2px;
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    background: hsl(var(--card));
+    border-radius: calc(var(--radius) - 2px);
+  }
+
+  .text-shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted-foreground)) 0%,
+      hsl(var(--foreground)) 50%,
+      hsl(var(--muted-foreground)) 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 2s ease-in-out infinite;
+  }
+
   @keyframes pulse-glow {
     0%, 100% {
       opacity: 1;
@@ -122,6 +211,55 @@ All colors MUST be HSL.
     50% {
       opacity: 0.8;
       box-shadow: 0 0 60px hsl(262 83% 58% / 0.5);
+    }
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
     }
   }
 
@@ -136,5 +274,26 @@ All colors MUST be HSL.
   /* Touch target optimization */
   .touch-target {
     @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Improved focus states for accessibility */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  /* Loading states */
+  .loading-skeleton {
+    @apply animate-pulse bg-gradient-to-r from-muted/50 via-muted/80 to-muted/50;
+    background-size: 200% 100%;
+    animation: loading-shimmer 1.5s ease-in-out infinite;
+  }
+
+  @keyframes loading-shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
   }
 }
