@@ -11,10 +11,13 @@ import { cn } from "@/lib/utils";
 import { preloadDashboard, preloadGenerate, preloadLibrary } from '../../utils/lazyImports';
 
 interface MinimalSidebarProps {
+  isExpanded: boolean;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
   onClose?: () => void;
 }
 
-const MinimalSidebar = ({ onClose }: MinimalSidebarProps) => {
+const MinimalSidebar = ({ isExpanded, onMouseEnter, onMouseLeave, onClose }: MinimalSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -59,11 +62,13 @@ const MinimalSidebar = ({ onClose }: MinimalSidebarProps) => {
     <TooltipProvider>
       <aside 
         className={cn(
-          "fixed left-0 top-0 z-40 h-full w-16 bg-card/95 backdrop-blur-xl border-r border-border/50",
+          "fixed left-0 top-0 z-40 h-full bg-card/95 backdrop-blur-xl border-r border-border/50",
           "flex flex-col items-center py-4 transition-all duration-300",
-          "lg:hover:w-64 group",
+          isExpanded ? "w-64" : "w-16",
           "hidden lg:flex" // Скрыть на мобильных, показать только на desktop
         )}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
         role="navigation"
         aria-label="Основная навигация"
       >
@@ -103,7 +108,6 @@ const MinimalSidebar = ({ onClose }: MinimalSidebarProps) => {
                     onKeyDown={(e) => handleKeyDown(e, item.path, item.preload)}
                     className={cn(
                       "w-full h-12 mb-2 justify-start px-3 hover:bg-accent/10 transition-all duration-300",
-                      "group-hover:justify-start",
                       isActive && "bg-primary/10 text-primary border-r-2 border-primary"
                     )}
                     role="menuitem"
@@ -112,12 +116,15 @@ const MinimalSidebar = ({ onClose }: MinimalSidebarProps) => {
                     tabIndex={0}
                   >
                     <Icon className="w-5 h-5 shrink-0" aria-hidden="true" />
-                    <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                    <span className={cn(
+                      "ml-3 whitespace-nowrap transition-opacity duration-300",
+                      isExpanded ? "opacity-100" : "opacity-0"
+                    )}>
                       {item.label}
                     </span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="lg:group-hover:hidden">
+                <TooltipContent side="right" className={cn(isExpanded && "hidden")}>
                   <p>{item.label}</p>
                 </TooltipContent>
               </Tooltip>
@@ -138,12 +145,15 @@ const MinimalSidebar = ({ onClose }: MinimalSidebarProps) => {
                 tabIndex={0}
               >
                 <User className="w-5 h-5 shrink-0" aria-hidden="true" />
-                <span className="ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+                <span className={cn(
+                  "ml-3 whitespace-nowrap transition-opacity duration-300",
+                  isExpanded ? "opacity-100" : "opacity-0"
+                )}>
                   Профиль
                 </span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right" className="lg:group-hover:hidden">
+            <TooltipContent side="right" className={cn(isExpanded && "hidden")}>
               <p>Профиль</p>
             </TooltipContent>
           </Tooltip>
