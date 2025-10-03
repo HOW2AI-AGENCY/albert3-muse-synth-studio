@@ -1,133 +1,158 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Suspense, lazy } from "react";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import Landing from "./pages/Landing";
-import Auth from "./pages/Auth";
-import WorkspaceLayout from "./components/workspace/WorkspaceLayout";
-import ProtectedRoute from "./components/ProtectedRoute";
-import NotFound from "./pages/NotFound";
-import { AudioPlayerProvider } from "./contexts/AudioPlayerContext";
-import { GlobalAudioPlayer } from "./components/player/GlobalAudioPlayer";
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from '@/components/ui/toaster';
+import { ThemeProvider } from '@/components/theme-provider';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { ProjectProvider } from '@/contexts/ProjectContext';
+import { SettingsProvider } from '@/contexts/SettingsContext';
 
-// Импортируем оптимизированные ленивые компоненты
-import { 
-  LazyDashboard, 
-  LazyGenerate, 
-  LazyLibrary, 
-  LazyFavorites, 
-  LazyAnalytics, 
-  LazySettings,
-  preloadDashboard,
-  preloadGenerate,
-  preloadLibrary
-} from './utils/lazyImports';
+// Основные страницы
+import { LoginPage } from '@/pages/LoginPage';
+import { DashboardPage } from '@/pages/DashboardPage';
+import { ProjectPage } from '@/pages/ProjectPage';
+import { SettingsPage } from '@/pages/SettingsPage';
 
-// Компонент загрузки
-const LoadingSpinner = () => (
-  <div className="flex items-center justify-center min-h-[200px]">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-  </div>
-);
+// Новый UI Showcase
+import UIShowcase from '@/components/demo/UIShowcase';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 минут
-      retry: (failureCount, error: Error & { status?: number }) => {
-        // Не повторяем запросы для 4xx ошибок
-        if (error?.status && error.status >= 400 && error.status < 500) {
-          return false;
+// Компоненты загрузки и ошибок
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
+
+/**
+ * 🎵 Главное приложение Albert3 Muse Synth Studio
+ */
+function App() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [showUIShowcase, setShowUIShowcase] = useState(false);
+
+  useEffect(() => {
+    // Имитация загрузки приложения
+    const initializeApp = async () => {
+      try {
+        // Здесь может быть инициализация сервисов, проверка аутентификации и т.д.
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Проверяем, нужно ли показать UI Showcase (например, в dev режиме)
+        const isDevelopment = process.env.NODE_ENV === 'development';
+        const showShowcase = localStorage.getItem('show-ui-showcase') === 'true';
+        
+        if (isDevelopment || showShowcase) {
+          setShowUIShowcase(true);
         }
-        return failureCount < 3;
-      },
-    },
-  },
-});
+      } catch (error) {
+        console.error('Ошибка инициализации приложения:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AudioPlayerProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/auth" element={<Auth />} />
-              
-              {/* Protected Workspace Routes */}
-              <Route
-                path="/workspace"
-                element={
-                  <ProtectedRoute>
-                    <WorkspaceLayout />
-                  </ProtectedRoute>
-                }
+    initializeApp();
+  }, []);
+
+  // Показываем загрузку во время инициализации
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <LoadingSpinner size="lg" />
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold">Albert3 Muse Synth Studio</h2>
+            <p className="text-muted-foreground">Загрузка приложения...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Если включён режим демонстрации UI
+  if (showUIShowcase) {
+    return (
+      <ThemeProvider defaultTheme="dark" storageKey="albert3-ui-theme">
+        <ErrorBoundary>
+          <div className="min-h-screen bg-background">
+            {/* Переключатель режимов */}
+            <div className="fixed top-4 right-4 z-50">
+              <button
+                onClick={() => setShowUIShowcase(false)}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg shadow-lg hover:bg-primary/90 transition-colors"
               >
-                <Route 
-                  path="dashboard" 
-                  element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <LazyDashboard />
-                    </Suspense>
-                  } 
-                />
-                <Route 
-                  path="generate" 
-                  element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <LazyGenerate />
-                    </Suspense>
-                  } 
-                />
-                <Route 
-                  path="library" 
-                  element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <LazyLibrary />
-                    </Suspense>
-                  } 
-                />
-                <Route 
-                  path="favorites" 
-                  element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <LazyFavorites />
-                    </Suspense>
-                  } 
-                />
-                <Route 
-                  path="analytics" 
-                  element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <LazyAnalytics />
-                    </Suspense>
-                  } 
-                />
-                <Route 
-                  path="settings" 
-                  element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <LazySettings />
-                    </Suspense>
-                  } 
-                />
-              </Route>
+                Вернуться к приложению
+              </button>
+            </div>
+            
+            <UIShowcase />
+          </div>
+          <Toaster />
+        </ErrorBoundary>
+      </ThemeProvider>
+    );
+  }
 
-              {/* Catch-all route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <GlobalAudioPlayer />
-          </BrowserRouter>
-        </AudioPlayerProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </ErrorBoundary>
-);
+  // Основное приложение
+  return (
+    <ThemeProvider defaultTheme="dark" storageKey="albert3-ui-theme">
+      <ErrorBoundary>
+        <AuthProvider>
+          <SettingsProvider>
+            <ProjectProvider>
+              <Router>
+                <div className="min-h-screen bg-background">
+                  {/* Переключатель на UI Showcase в dev режиме */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <div className="fixed bottom-4 right-4 z-50">
+                      <button
+                        onClick={() => setShowUIShowcase(true)}
+                        className="px-3 py-2 bg-accent text-accent-foreground rounded-lg shadow-lg hover:bg-accent/90 transition-colors text-sm"
+                        title="Показать UI Showcase"
+                      >
+                        🎨 UI
+                      </button>
+                    </div>
+                  )}
+
+                  <Routes>
+                    {/* Главная страница - перенаправление на дашборд */}
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    
+                    {/* Аутентификация */}
+                    <Route path="/login" element={<LoginPage />} />
+                    
+                    {/* Основные страницы */}
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/project/:id" element={<ProjectPage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
+                    
+                    {/* UI Showcase как отдельная страница */}
+                    <Route path="/ui-showcase" element={<UIShowcase />} />
+                    
+                    {/* 404 страница */}
+                    <Route path="*" element={
+                      <div className="min-h-screen flex items-center justify-center">
+                        <div className="text-center space-y-4">
+                          <h1 className="text-4xl font-bold text-muted-foreground">404</h1>
+                          <p className="text-muted-foreground">Страница не найдена</p>
+                          <button
+                            onClick={() => window.history.back()}
+                            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                          >
+                            Назад
+                          </button>
+                        </div>
+                      </div>
+                    } />
+                  </Routes>
+                </div>
+              </Router>
+              
+              {/* Глобальные компоненты */}
+              <Toaster />
+            </ProjectProvider>
+          </SettingsProvider>
+        </AuthProvider>
+      </ErrorBoundary>
+    </ThemeProvider>
+  );
+}
 
 export default App;

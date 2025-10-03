@@ -16,7 +16,7 @@ import { Check, ChevronDown, AlertCircle, Info, CheckCircle, X } from 'lucide-re
  * 🎯 AccessibleButton - Доступная кнопка с полной поддержкой ARIA
  */
 interface AccessibleButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'default';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   loading?: boolean;
   loadingText?: string;
@@ -46,6 +46,7 @@ export const AccessibleButton = forwardRef<HTMLButtonElement, AccessibleButtonPr
       outline: 'border-2 border-outline text-on-surface hover:bg-surface-variant focus:ring-primary/20',
       ghost: 'text-primary hover:bg-primary/10 focus:ring-primary/20',
       danger: 'bg-error text-on-error hover:bg-error/90 focus:ring-error/20',
+      default: 'bg-surface text-on-surface hover:bg-surface-variant focus:ring-primary/20',
     };
 
     const sizes = {
@@ -113,6 +114,7 @@ interface AccessibleInputProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
   error?: string;
   hint?: string;
+  helpText?: string;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
   showLabel?: boolean;
@@ -123,6 +125,7 @@ export const AccessibleInput = forwardRef<HTMLInputElement, AccessibleInputProps
     label,
     error,
     hint,
+    helpText,
     leftIcon,
     rightIcon,
     showLabel = true,
@@ -202,6 +205,13 @@ export const AccessibleInput = forwardRef<HTMLInputElement, AccessibleInputProps
         {hint && !error && (
           <p id={hintId} className="text-sm text-on-surface-variant">
             {hint}
+          </p>
+        )}
+
+        {/* Help Text */}
+        {helpText && !error && !hint && (
+          <p className="text-sm text-on-surface-variant">
+            {helpText}
           </p>
         )}
 
@@ -301,6 +311,13 @@ export const AccessibleTextarea = forwardRef<HTMLTextAreaElement, AccessibleText
           </p>
         )}
 
+        {/* Help Text */}
+        {helpText && !error && !hint && (
+          <p className="text-sm text-on-surface-variant">
+            {helpText}
+          </p>
+        )}
+
         {/* Error */}
         {error && (
           <p id={errorId} className="text-sm text-error flex items-center gap-1" role="alert">
@@ -329,6 +346,7 @@ interface AccessibleSelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElem
   options: SelectOption[];
   error?: string;
   hint?: string;
+  helpText?: string;
   showLabel?: boolean;
   placeholder?: string;
 }
@@ -339,6 +357,7 @@ export const AccessibleSelect = forwardRef<HTMLSelectElement, AccessibleSelectPr
     options,
     error,
     hint,
+    helpText,
     showLabel = true,
     placeholder,
     className,
@@ -444,6 +463,7 @@ interface AccessibleCheckboxProps {
   id?: string;
   label: string;
   description?: string;
+  helpText?: string;
   checked?: boolean;
   onChange?: (checked: boolean) => void;
   disabled?: boolean;
@@ -456,6 +476,7 @@ export const AccessibleCheckbox: React.FC<AccessibleCheckboxProps> = ({
   id,
   label,
   description,
+  helpText,
   checked = false,
   onChange,
   disabled = false,
@@ -530,6 +551,12 @@ export const AccessibleCheckbox: React.FC<AccessibleCheckboxProps> = ({
           {description && (
             <p id={descriptionId} className="text-sm text-on-surface-variant mt-1">
               {description}
+            </p>
+          )}
+
+          {helpText && !description && (
+            <p className="text-sm text-on-surface-variant mt-1">
+              {helpText}
             </p>
           )}
         </div>
