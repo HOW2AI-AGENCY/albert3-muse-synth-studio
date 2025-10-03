@@ -236,6 +236,7 @@ interface AccessibleTextareaProps extends TextareaHTMLAttributes<HTMLTextAreaEle
   label: string;
   error?: string;
   hint?: string;
+  helpText?: string;
   showLabel?: boolean;
   resize?: boolean;
 }
@@ -245,6 +246,7 @@ export const AccessibleTextarea = forwardRef<HTMLTextAreaElement, AccessibleText
     label,
     error,
     hint,
+    helpText,
     showLabel = true,
     resize = true,
     className,
