@@ -58,7 +58,12 @@ const MinimalSidebar = ({ onClose }: MinimalSidebarProps) => {
   return (
     <TooltipProvider>
       <aside 
-        className="fixed left-0 top-0 z-40 h-full w-16 bg-card/95 backdrop-blur-xl border-r border-border/50 flex flex-col items-center py-4 transition-all duration-300 hover:w-64 group"
+        className={cn(
+          "fixed left-0 top-0 z-40 h-full w-16 bg-card/95 backdrop-blur-xl border-r border-border/50",
+          "flex flex-col items-center py-4 transition-all duration-300",
+          "lg:hover:w-64 group",
+          "hidden lg:flex" // Скрыть на мобильных, показать только на desktop
+        )}
         role="navigation"
         aria-label="Основная навигация"
       >

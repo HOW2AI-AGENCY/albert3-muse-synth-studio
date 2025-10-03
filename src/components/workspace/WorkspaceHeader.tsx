@@ -1,15 +1,14 @@
-import { Search, Bell, Menu } from "lucide-react";
+import { Search, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface WorkspaceHeaderProps {
-  onMenuClick?: () => void;
   className?: string;
 }
 
-const WorkspaceHeader = ({ onMenuClick, className }: WorkspaceHeaderProps) => {
+const WorkspaceHeader = ({ className }: WorkspaceHeaderProps) => {
   return (
     <header className={cn(
       "h-16 border-b border-border/50 bg-card/95 backdrop-blur-xl flex items-center justify-between px-4 sm:px-6 lg:px-8",
@@ -17,17 +16,6 @@ const WorkspaceHeader = ({ onMenuClick, className }: WorkspaceHeaderProps) => {
     )}>
       {/* Left Section */}
       <div className="flex items-center gap-4">
-        {/* Mobile Menu Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onMenuClick}
-          className="lg:hidden w-10 h-10 p-0 hover:bg-accent/10"
-          aria-label="Открыть меню навигации"
-          aria-expanded="false"
-        >
-          <Menu className="w-5 h-5" />
-        </Button>
 
         {/* Search */}
         <div className="relative hidden sm:block">
