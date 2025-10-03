@@ -1,4 +1,4 @@
-import { Play, Pause, SkipBack, SkipForward, Maximize2, ListMusic } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, X, ListMusic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ResponsiveStack } from "@/components/ui/ResponsiveLayout";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
@@ -9,22 +9,25 @@ interface MiniPlayerProps {
 }
 
 export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
-  const { currentTrack, isPlaying, togglePlayPause, playNext, playPrevious, queue, currentQueueIndex } = useAudioPlayer();
+  const { currentTrack, isPlaying, togglePlayPause, playNext, playPrevious, queue, currentQueueIndex, clearCurrentTrack } = useAudioPlayer();
   const { vibrate } = useHapticFeedback();
 
   if (!currentTrack) return null;
 
-  const handlePlayPause = () => {
+  const handlePlayPause = (e: React.MouseEvent) => {
+    e.stopPropagation();
     vibrate('light');
     togglePlayPause();
   };
 
-  const handleNext = () => {
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
     vibrate('light');
     playNext();
   };
 
-  const handlePrevious = () => {
+  const handlePrevious = (e: React.MouseEvent) => {
+    e.stopPropagation();
     vibrate('light');
     playPrevious();
   };
@@ -32,6 +35,12 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
   const handleExpand = () => {
     vibrate('medium');
     onExpand();
+  };
+
+  const handleClose = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    vibrate('medium');
+    clearCurrentTrack();
   };
 
   return (
@@ -86,10 +95,7 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
           <Button
             size="icon"
             variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              handlePrevious();
-            }}
+            onClick={handlePrevious}
             className="h-8 w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
           >
             <SkipBack className="h-4 w-4" />
@@ -98,10 +104,7 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
           <Button
             size="icon"
             variant="default"
-            onClick={(e) => {
-              e.stopPropagation();
-              handlePlayPause();
-            }}
+            onClick={handlePlayPause}
             className="h-10 w-10 rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-200 hover:scale-105"
           >
             {isPlaying ? (
@@ -114,10 +117,7 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
           <Button
             size="icon"
             variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleNext();
-            }}
+            onClick={handleNext}
             className="h-8 w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
           >
             <SkipForward className="h-4 w-4" />
@@ -126,13 +126,10 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
           <Button
             size="icon"
             variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleExpand();
-            }}
-            className="h-8 w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+            onClick={handleClose}
+            className="h-8 w-8 hover:bg-destructive/20 hover:scale-105 transition-all duration-200"
           >
-            <Maximize2 className="h-4 w-4" />
+            <X className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors" />
           </Button>
         </div>
       </ResponsiveStack>
