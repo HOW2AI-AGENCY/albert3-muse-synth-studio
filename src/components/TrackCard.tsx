@@ -350,6 +350,7 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
         "before:absolute before:inset-0 before:bg-gradient-to-br before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-500",
         `before:${randomGradient}`,
         isCurrentTrack && 'ring-2 ring-primary/50',
+        "flex flex-col h-full",
         className
       )}
       onClick={handleCardClick}
@@ -414,61 +415,63 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
         </div>
       </div>
 
-      <CardContent className="relative p-4">
-        {/* Заголовок */}
-        <h3 className="font-semibold text-base mb-2 line-clamp-1 group-hover:text-primary transition-colors duration-300">
-          {track.title || 'Без названия'}
-        </h3>
-        
-        {/* Промпт */}
-        {track.prompt && (
-          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-            {track.prompt}
-          </p>
-        )}
+      <CardContent className="relative p-4 flex-1 flex flex-col">
+        <div className="flex-1">
+          {/* Заголовок */}
+          <h3 className="font-semibold text-base mb-2 line-clamp-1 group-hover:text-primary transition-colors duration-300">
+            {track.title || 'Без названия'}
+          </h3>
 
-        {/* Метаданные */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-          <div className="flex items-center gap-3">
-            {formattedDuration && (
-              <div className="flex items-center gap-1" aria-label={`Длительность: ${formattedDuration}`}>
-                <Clock className="w-3 h-3" aria-hidden="true" />
-                <span>{formattedDuration}</span>
-              </div>
-            )}
-            
-            {track.view_count !== undefined && (
-              <div className="flex items-center gap-1" aria-label={`Просмотров: ${track.view_count}`}>
-                <Eye className="w-3 h-3" aria-hidden="true" />
-                <span>{track.view_count}</span>
-              </div>
-            )}
+          {/* Промпт */}
+          {track.prompt && (
+            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+              {track.prompt}
+            </p>
+          )}
+
+          {/* Метаданные */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+            <div className="flex items-center gap-3">
+              {formattedDuration && (
+                <div className="flex items-center gap-1" aria-label={`Длительность: ${formattedDuration}`}>
+                  <Clock className="w-3 h-3" aria-hidden="true" />
+                  <span>{formattedDuration}</span>
+                </div>
+              )}
+
+              {track.view_count !== undefined && (
+                <div className="flex items-center gap-1" aria-label={`Просмотров: ${track.view_count}`}>
+                  <Eye className="w-3 h-3" aria-hidden="true" />
+                  <span>{track.view_count}</span>
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Теги стилей */}
+          {track.style_tags && track.style_tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-3" role="list" aria-label="Теги стилей">
+              {track.style_tags.slice(0, 2).map((tag, index) => (
+                <Badge
+                  key={index}
+                  variant="secondary"
+                  className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors duration-200"
+                  role="listitem"
+                >
+                  {tag}
+                </Badge>
+              ))}
+              {track.style_tags.length > 2 && (
+                <Badge variant="outline" className="text-xs px-2 py-0.5 border-primary/20 text-primary" role="listitem">
+                  +{track.style_tags.length - 2}
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Теги стилей */}
-        {track.style_tags && track.style_tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3" role="list" aria-label="Теги стилей">
-            {track.style_tags.slice(0, 2).map((tag, index) => (
-              <Badge 
-                key={index} 
-                variant="secondary" 
-                className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors duration-200"
-                role="listitem"
-              >
-                {tag}
-              </Badge>
-            ))}
-            {track.style_tags.length > 2 && (
-              <Badge variant="outline" className="text-xs px-2 py-0.5 border-primary/20 text-primary" role="listitem">
-                +{track.style_tags.length - 2}
-              </Badge>
-            )}
-          </div>
-        )}
-
         {/* Кнопки действий */}
-        <div className="flex items-center justify-between" role="toolbar" aria-label="Действия с треком">
+        <div className="flex items-center justify-between mt-auto" role="toolbar" aria-label="Действия с треком">
           <Button
             variant="ghost"
             size="sm"
