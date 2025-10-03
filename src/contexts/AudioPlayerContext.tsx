@@ -28,6 +28,7 @@ interface AudioPlayerContextType {
   getAvailableVersions: () => AudioPlayerTrack[];
   currentVersionIndex: number;
   audioRef: React.RefObject<HTMLAudioElement>;
+  clearCurrentTrack: () => void;
 }
 
 const AudioPlayerContext = createContext<AudioPlayerContextType | undefined>(undefined);
@@ -171,6 +172,17 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     });
   }, []);
 
+  const clearCurrentTrack = useCallback(() => {
+    setCurrentTrack(null);
+    setQueue([]);
+    setCurrentQueueIndex(-1);
+    setIsPlaying(false);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+    }
+  }, []);
+
   // Мемоизированная функция получения доступных версий
   const getAvailableVersions = useCallback((): AudioPlayerTrack[] => {
     if (!currentTrack) return [];
@@ -251,6 +263,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     getAvailableVersions,
     currentVersionIndex,
     audioRef,
+    clearCurrentTrack,
   }), [
     currentTrack,
     isPlaying,
@@ -274,6 +287,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     switchToVersion,
     getAvailableVersions,
     currentVersionIndex,
+    clearCurrentTrack,
   ]);
 
   return (
