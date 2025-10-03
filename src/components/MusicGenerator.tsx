@@ -243,7 +243,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
               <Hash className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
               Популярные жанры
             </Label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2">
+            <div className="flex flex-wrap gap-2">
               {popularGenres.map((genre) => (
                 <Button
                   key={genre.name}
@@ -252,7 +252,8 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                   onClick={() => toggleTag(genre.name)}
                   disabled={isGenerating || isImproving}
                   className={`
-                    h-auto p-2 sm:p-3 flex flex-col items-center gap-1 sm:gap-2 transition-all duration-300 group
+                    h-auto p-2 flex-1 flex flex-col items-center gap-1 transition-all duration-300 group
+                    basis-[calc(33.333%-0.5rem)] md:basis-[calc(16.666%-0.84rem)]
                     ${styleTags.includes(genre.name) 
                       ? `bg-gradient-to-r ${genre.gradient} text-white shadow-lg scale-105` 
                       : 'hover:scale-105 hover:border-primary/50 bg-background/50 backdrop-blur-sm'
@@ -260,7 +261,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                   `}
                 >
                   <span className="text-base sm:text-lg group-hover:animate-bounce">{genre.icon}</span>
-                  <span className="text-[10px] sm:text-xs font-medium truncate w-full text-center">{genre.name}</span>
+                  <span className="text-xs font-medium w-full text-center truncate">{genre.name}</span>
                 </Button>
               ))}
             </div>
