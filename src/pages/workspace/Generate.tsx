@@ -3,7 +3,7 @@ import {
   TracksListLazy as TracksList,
   DetailPanelLazy as DetailPanel
 } from "@/components/LazyComponents";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -15,32 +15,45 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable";
+import { useTracks } from "@/hooks/useTracks";
 
 const Generate = () => {
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks();
   const [selectedTrack, setSelectedTrack] = useState<any>(null);
   const [showGenerator, setShowGenerator] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
   
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const isMobile = useIsMobile();
 
   const handleTrackGenerated = () => {
-    setRefreshTrigger((prev) => prev + 1);
     setShowGenerator(false);
+    if (pollingRef.current) clearInterval(pollingRef.current);
+    // Start polling immediately
+    refreshTracks();
+    pollingRef.current = setInterval(refreshTracks, 3000);
+    setIsPolling(true);
   };
 
-  const handleTrackSelect = (track: {
-    id: string;
-    title: string;
-    prompt: string;
-    audio_url?: string;
-    cover_url?: string;
-    status: string;
-    created_at: string;
-    duration?: number;
-    style_tags?: string[];
-    lyrics?: string;
-  }) => {
+  useEffect(() => {
+    if (!isPolling) return;
+
+    const hasProcessingTrack = tracks.some(track => track.status === 'processing');
+    if (hasProcessingTrack) {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+      setIsPolling(false);
+    }
+
+    const timeout = setTimeout(() => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+      setIsPolling(false);
+    }, 60000); // 1 minute timeout
+
+    return () => clearTimeout(timeout);
+  }, [tracks, isPolling]);
+
+  const handleTrackSelect = (track: any) => {
     setSelectedTrack(track);
   };
 
@@ -49,12 +62,14 @@ const Generate = () => {
   };
 
   const handleUpdate = () => {
-    setRefreshTrigger((prev) => prev + 1);
+    refreshTracks();
   };
 
-  const handleDelete = () => {
-    setRefreshTrigger((prev) => prev + 1);
-    setSelectedTrack(null);
+  const handleDelete = async () => {
+    if (selectedTrack?.id) {
+      await deleteTrack(selectedTrack.id);
+      setSelectedTrack(null);
+    }
   };
 
   // Desktop: 3-panel resizable layout
@@ -75,7 +90,10 @@ const Generate = () => {
           <ResizablePanel defaultSize={selectedTrack ? 50 : 80} minSize={40}>
             <div className="h-full overflow-auto p-4">
               <TracksList
-                refreshTrigger={refreshTrigger}
+                tracks={tracks}
+                isLoading={isLoading}
+                deleteTrack={deleteTrack}
+                refreshTracks={refreshTracks}
                 onTrackSelect={handleTrackSelect}
                 selectedTrackId={selectedTrack?.id}
               />
@@ -105,9 +123,12 @@ const Generate = () => {
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] relative">
       {/* Track List - Full Screen */}
-      <div className="flex-1 overflow-auto px-4 py-4 pb-20">
+      <div className="flex-1 overflow-auto px-4 py-4 pb-32">
         <TracksList
-          refreshTrigger={refreshTrigger}
+          tracks={tracks}
+          isLoading={isLoading}
+          deleteTrack={deleteTrack}
+          refreshTracks={refreshTracks}
           onTrackSelect={handleTrackSelect}
           selectedTrackId={selectedTrack?.id}
         />
