@@ -38,7 +38,6 @@ interface MobileNavigationProps {
   drawerItems?: DrawerItem[];
   activeTab?: string;
   onTabChange?: (tabId: string) => void;
-  onDrawerItemClick?: (item: DrawerItem) => void;
   className?: string;
 }
 
@@ -57,7 +56,6 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
   drawerItems = [],
   activeTab,
   onTabChange,
-  onDrawerItemClick,
   className,
 }) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
