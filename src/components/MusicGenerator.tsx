@@ -170,7 +170,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       ref={cardRef}
       variant="gradient" 
       className={`
-        w-full max-w-full p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6
+        w-full max-w-full p-3 sm:p-6 lg:p-8 space-y-4 sm:space-y-6
         hover-lift transition-all duration-700 ease-out
         ${isVisible ? 'animate-fade-in opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
       `}
@@ -182,14 +182,14 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       <div className="relative z-10">
       <div className="space-y-2 sm:space-y-3">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
-          <div className="p-2 sm:p-3 rounded-xl bg-gradient-primary shadow-glow animate-float">
+          <div className="p-2 sm:p-3 rounded-xl bg-gradient-primary shadow-glow animate-float shrink-0">
             <Music className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gradient-primary animate-shimmer truncate">
+            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gradient-primary animate-shimmer">
               Создайте свою музыку с AI
             </h3>
-            <p className="text-muted-foreground/80 text-xs sm:text-sm line-clamp-2">
+            <p className="text-muted-foreground/80 text-xs sm:text-sm">
               Профессиональная генерация музыки с вокалом и лирикой
             </p>
           </div>
@@ -201,19 +201,19 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
         <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6 bg-background/50 backdrop-blur-sm border border-primary/20 h-auto">
           <TabsTrigger 
             value="simple" 
-            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300 text-xs sm:text-sm py-2 px-2 sm:px-4"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300 text-xs sm:text-sm py-2.5 px-2 sm:px-4"
           >
-            <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 shrink-0" />
             <span className="hidden xs:inline">Простой режим</span>
-            <span className="xs:hidden">Простой</span>
+            <span className="xs:hidden truncate">Простой</span>
           </TabsTrigger>
           <TabsTrigger 
             value="advanced"
-            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300 text-xs sm:text-sm py-2 px-2 sm:px-4"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300 text-xs sm:text-sm py-2.5 px-2 sm:px-4"
           >
-            <Settings2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            <Settings2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 shrink-0" />
             <span className="hidden xs:inline">Расширенный</span>
-            <span className="xs:hidden">Расширенный</span>
+            <span className="xs:hidden truncate">Расширенный</span>
           </TabsTrigger>
         </TabsList>
 
@@ -232,7 +232,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                 setPrompt(e.target.value);
                 adjustTextareaHeight();
               }}
-              className="min-h-[80px] sm:min-h-[120px] resize-none bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300 hover:border-primary/30 text-sm"
+              className="min-h-[80px] sm:min-h-[100px] resize-none bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300 hover:border-primary/30 text-sm"
               disabled={isGenerating || isImproving}
             />
           </div>
@@ -243,7 +243,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
               <Hash className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
               Популярные жанры
             </Label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2">
+            <div className="flex flex-wrap gap-2">
               {popularGenres.map((genre) => (
                 <Button
                   key={genre.name}
@@ -252,7 +252,8 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                   onClick={() => toggleTag(genre.name)}
                   disabled={isGenerating || isImproving}
                   className={`
-                    h-auto p-2 sm:p-3 flex flex-col items-center gap-1 sm:gap-2 transition-all duration-300 group
+                    h-auto p-2 flex-1 flex flex-col items-center gap-1 transition-all duration-300 group
+                    basis-[calc(33.333%-0.5rem)] sm:basis-[calc(16.666%-0.84rem)]
                     ${styleTags.includes(genre.name) 
                       ? `bg-gradient-to-r ${genre.gradient} text-white shadow-lg scale-105` 
                       : 'hover:scale-105 hover:border-primary/50 bg-background/50 backdrop-blur-sm'
@@ -260,7 +261,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                   `}
                 >
                   <span className="text-base sm:text-lg group-hover:animate-bounce">{genre.icon}</span>
-                  <span className="text-[10px] sm:text-xs font-medium truncate w-full text-center">{genre.name}</span>
+                  <span className="text-xs font-medium w-full text-center truncate">{genre.name}</span>
                 </Button>
               ))}
             </div>
@@ -334,7 +335,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                 <Label htmlFor="vocals-switch" className="text-xs sm:text-sm font-medium cursor-pointer">
                   Добавить вокал
                 </Label>
-                <p className="text-[10px] sm:text-xs text-muted-foreground/70 truncate">
+                <p className="text-xs text-muted-foreground/70">
                   AI создаст вокал и лирику
                 </p>
               </div>
