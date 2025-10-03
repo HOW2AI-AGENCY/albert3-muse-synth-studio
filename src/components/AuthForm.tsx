@@ -152,13 +152,16 @@ export const AuthForm = () => {
             <div className="space-y-2">
               <Input
                 type="password"
-                placeholder="Password (min. 8 chars, uppercase, lowercase, number)"
+                placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
                 disabled={isLoading}
               />
+              <p className="text-xs text-muted-foreground px-1">
+                Must be 8+ characters with uppercase, lowercase, and a number.
+              </p>
             </div>
             <Button type="submit" className="w-full" variant="hero" disabled={isLoading}>
               {isLoading ? (
