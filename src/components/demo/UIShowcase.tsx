@@ -94,7 +94,7 @@ export const UIShowcase: React.FC = () => {
         return {
           deviceId: device.id,
           testName: 'Загрузка компонентов',
-          status: loadTime < 200 ? 'pass' : 'warning' as const,
+          status: (loadTime < 200 ? 'pass' : 'warning') as 'pass' | 'fail' | 'warning' | 'pending',
           message: `Время загрузки: ${Math.round(loadTime)}ms`,
           timestamp: new Date(),
           metrics: {
@@ -114,7 +114,7 @@ export const UIShowcase: React.FC = () => {
         return {
           deviceId: device.id,
           testName: 'Адаптивность',
-          status: isResponsive ? 'pass' : 'fail' as const,
+          status: (isResponsive ? 'pass' : 'fail') as 'pass' | 'fail' | 'warning' | 'pending',
           message: isResponsive ? 'Поддерживается' : 'Не поддерживается',
           timestamp: new Date(),
         };
@@ -128,7 +128,7 @@ export const UIShowcase: React.FC = () => {
         return {
           deviceId: device.id,
           testName: 'Доступность',
-          status: hasAccessibilityFeatures ? 'pass' : 'warning' as const,
+          status: (hasAccessibilityFeatures ? 'pass' : 'warning') as 'pass' | 'fail' | 'warning' | 'pending',
           message: hasAccessibilityFeatures ? 'ARIA поддерживается' : 'Ограниченная поддержка',
           timestamp: new Date(),
         };
@@ -294,7 +294,7 @@ export const UIShowcase: React.FC = () => {
                       <AccessibleButton
                         variant="default"
                         onClick={() => setShowToast(true)}
-                        ariaLabel="Показать уведомление"
+                        aria-label="Показать уведомление"
                       >
                         Показать Toast
                       </AccessibleButton>
@@ -509,7 +509,7 @@ export const UIShowcase: React.FC = () => {
                       
                       <div className="flex gap-2">
                         <AccessibleButton size="sm">Кнопка</AccessibleButton>
-                        <AccessibleInput placeholder="Поле ввода" className="flex-1" />
+                        <AccessibleInput label="Поле ввода" placeholder="Поле ввода" className="flex-1" />
                       </div>
                     </div>
                   </AutoTester>
@@ -525,8 +525,8 @@ export const UIShowcase: React.FC = () => {
                     <AccessibleSelect
                       label="Выберите устройство"
                       value={selectedDevice.id}
-                      onChange={(value) => {
-                        const device = deviceProfiles.find(d => d.id === value);
+                      onChange={(e) => {
+                        const device = deviceProfiles.find(d => d.id === e.target.value);
                         if (device) setSelectedDevice(device);
                       }}
                       options={deviceProfiles.map(device => ({
@@ -539,7 +539,7 @@ export const UIShowcase: React.FC = () => {
                   <DeviceSimulator device={selectedDevice}>
                     <div className="p-4 space-y-4">
                       <h4 className="font-medium">Тестовое приложение</h4>
-                      <AccessibleInput placeholder="Поиск..." />
+                      <AccessibleInput label="Поиск" placeholder="Поиск..." />
                       <div className="grid grid-cols-2 gap-2">
                         <AccessibleButton size="sm">Кнопка 1</AccessibleButton>
                         <AccessibleButton size="sm" variant="outline">Кнопка 2</AccessibleButton>
@@ -609,6 +609,7 @@ export const UIShowcase: React.FC = () => {
       {/* Toast уведомление */}
       {showToast && (
         <AccessibleToast
+          title="Уведомление"
           message="Это доступное уведомление!"
           type="success"
           onClose={() => setShowToast(false)}
