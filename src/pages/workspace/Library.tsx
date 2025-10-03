@@ -351,8 +351,6 @@ const Library: React.FC = () => {
               onLike={handleLike}
               onDownload={handleDownload}
               onShare={handleShare}
-              height={600}
-              enableVirtualization={filteredAndSortedTracks.length > 50}
             />
           )}
         </>

@@ -119,11 +119,18 @@ export class ErrorBoundary extends Component<Props, State> {
 }
 
 // HOC для оборачивания компонентов в Error Boundary
+interface ErrorBoundaryOptions {
+  fallback?: ReactNode;
+  FallbackComponent?: React.ComponentType<{ error?: Error }>;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
+}
+
 export const withErrorBoundary = <P extends object>(
   Component: React.ComponentType<P>,
-  fallback?: ReactNode,
-  onError?: (error: Error, errorInfo: ErrorInfo) => void
+  options?: ErrorBoundaryOptions
 ) => {
+  const { fallback, FallbackComponent, onError } = options || {};
+  
   const WrappedComponent = (props: P) => (
     <ErrorBoundary fallback={fallback} onError={onError}>
       <Component {...props} />

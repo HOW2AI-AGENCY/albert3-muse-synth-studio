@@ -518,7 +518,7 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
 };
 
 export const TrackCard = memo(withErrorBoundary(TrackCardComponent, {
-  fallback: ({ error }) => (
+  FallbackComponent: ({ error }) => (
     <Card className="p-4">
       <div className="text-center">
         <Music className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
