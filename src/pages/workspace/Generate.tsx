@@ -103,9 +103,9 @@ const Generate = () => {
 
   // Mobile: Optimized layout with Drawer for generator
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] pb-20 relative">
+    <div className="flex flex-col h-[calc(100vh-8rem)] relative">
       {/* Track List - Full Screen */}
-      <div className="flex-1 overflow-auto p-4">
+      <div className="flex-1 overflow-auto px-4 py-4 pb-20">
         <TracksList
           refreshTrigger={refreshTrigger}
           onTrackSelect={handleTrackSelect}
@@ -113,18 +113,19 @@ const Generate = () => {
         />
       </div>
 
-      {/* Floating Action Button */}
+      {/* Floating Action Button - Right Side Mobile */}
       <Drawer open={showGenerator} onOpenChange={setShowGenerator}>
         <DrawerTrigger asChild>
           <Button
             size="lg"
-            className="fixed bottom-24 right-4 h-14 w-14 rounded-full shadow-2xl glow-primary bg-gradient-primary hover:scale-110 transition-all z-40 animate-pulse-glow"
+            className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-2xl glow-primary bg-gradient-primary hover:scale-110 transition-all z-40 animate-pulse-glow"
+            aria-label="Создать музыку"
           >
             <Plus className="h-6 w-6" />
           </Button>
         </DrawerTrigger>
-        <DrawerContent className="max-h-[85vh] p-0">
-          <div className="overflow-auto p-4">
+        <DrawerContent className="max-h-[90vh] p-0">
+          <div className="overflow-auto p-4 max-w-2xl mx-auto w-full">
             <MusicGenerator onTrackGenerated={handleTrackGenerated} />
           </div>
         </DrawerContent>
