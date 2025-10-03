@@ -13,12 +13,6 @@ import { Badge } from "./ui/badge";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { logError, logWarn } from "@/utils/logger";
 
-interface TracksListProps {
-  refreshTrigger?: number;
-  onTrackSelect?: (track: Track) => void;
-  selectedTrackId?: string;
-}
-
 interface Track extends ApiTrack {
   provider: string | null;
   lyrics: string | null;
@@ -26,8 +20,23 @@ interface Track extends ApiTrack {
   has_vocals: boolean | null;
 }
 
-const TracksListComponent = ({ refreshTrigger, onTrackSelect, selectedTrackId }: TracksListProps) => {
-  const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks(refreshTrigger);
+interface TracksListProps {
+  tracks: Track[];
+  isLoading: boolean;
+  deleteTrack: (trackId: string) => Promise<void>;
+  refreshTracks: () => void;
+  onTrackSelect?: (track: Track) => void;
+  selectedTrackId?: string;
+}
+
+const TracksListComponent = ({
+  tracks,
+  isLoading,
+  deleteTrack,
+  refreshTracks,
+  onTrackSelect,
+  selectedTrackId,
+}: TracksListProps) => {
   const { playTrackWithQueue } = useAudioPlayer();
   const { toast } = useToast();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
