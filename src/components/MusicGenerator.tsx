@@ -253,7 +253,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                   disabled={isGenerating || isImproving}
                   className={`
                     h-auto p-2 flex-1 flex flex-col items-center gap-1 transition-all duration-300 group
-                    basis-[calc(33.333%-0.5rem)] sm:basis-[calc(16.666%-0.84rem)]
+                    basis-[calc(33.333%-0.5rem)] md:basis-[calc(16.666%-0.84rem)]
                     ${styleTags.includes(genre.name) 
                       ? `bg-gradient-to-r ${genre.gradient} text-white shadow-lg scale-105` 
                       : 'hover:scale-105 hover:border-primary/50 bg-background/50 backdrop-blur-sm'
