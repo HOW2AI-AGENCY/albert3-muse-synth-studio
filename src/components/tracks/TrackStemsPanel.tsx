@@ -113,8 +113,8 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
   const hasMultiStemMode = stems.some(s => s.separation_mode === 'split_stem');
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between mb-3">
+    <Card className="p-4 space-y-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Music4 className="w-5 h-5 text-primary" />
           <h3 className="font-semibold">Стемы</h3>
@@ -138,36 +138,38 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
       </div>
 
       {stems.length === 0 ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Разделите трек на отдельные элементы
+            Разделите трек на отдельные элементы для более гибкой работы со звуком
           </p>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Button
               onClick={() => handleGenerateStems('separate_vocal')}
               disabled={isGenerating}
               variant="outline"
-              className="flex-1"
+              className="h-auto py-3 flex-col gap-1"
             >
-              Вокал + Инструментал
+              <span className="font-semibold">Вокал + Инструментал</span>
+              <span className="text-xs text-muted-foreground">2 стема</span>
             </Button>
             <Button
               onClick={() => handleGenerateStems('split_stem')}
               disabled={isGenerating}
               variant="outline"
-              className="flex-1"
+              className="h-auto py-3 flex-col gap-1"
             >
-              По инструментам
+              <span className="font-semibold">По инструментам</span>
+              <span className="text-xs text-muted-foreground">До 8 стемов</span>
             </Button>
           </div>
         </div>
       ) : (
         <>
           {isExpanded && (
-            <div className="space-y-2 mt-3">
+            <div className="space-y-4">
               {hasTwoStemMode && (
-                <>
-                  <div className="text-xs font-medium text-muted-foreground mb-2">
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     Базовое разделение
                   </div>
                   {stems
@@ -178,11 +180,11 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
                       const isStemPlaying = isCurrentStem && isPlaying;
 
                       return (
-                        <div key={stem.id} className="flex items-center gap-2 p-2 rounded hover:bg-accent/50">
+                        <div key={stem.id} className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
                           <Button
                             size="icon"
                             variant={isStemPlaying ? "default" : "ghost"}
-                            className="shrink-0"
+                            className="shrink-0 h-9 w-9"
                             onClick={() => handlePlayStem(stem)}
                           >
                             {isStemPlaying ? (
@@ -191,12 +193,13 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
                               <Play className="w-4 h-4" />
                             )}
                           </Button>
-                          <span className="flex-1 text-sm">
+                          <span className="flex-1 text-sm font-medium">
                             {stemTypeLabels[stem.stem_type] || stem.stem_type}
                           </span>
                           <Button
                             size="icon"
                             variant="ghost"
+                            className="shrink-0 h-9 w-9"
                             onClick={() => handleDownloadStem(stem)}
                           >
                             <Download className="w-4 h-4" />
@@ -204,7 +207,7 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
                         </div>
                       );
                     })}
-                </>
+                </div>
               )}
 
               {hasMultiStemMode && hasTwoStemMode && (
@@ -212,8 +215,8 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
               )}
 
               {hasMultiStemMode && (
-                <>
-                  <div className="text-xs font-medium text-muted-foreground mb-2">
+                <div className="space-y-2">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     Детальное разделение
                   </div>
                   {stems
@@ -224,11 +227,11 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
                       const isStemPlaying = isCurrentStem && isPlaying;
 
                       return (
-                        <div key={stem.id} className="flex items-center gap-2 p-2 rounded hover:bg-accent/50">
+                        <div key={stem.id} className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
                           <Button
                             size="icon"
                             variant={isStemPlaying ? "default" : "ghost"}
-                            className="shrink-0"
+                            className="shrink-0 h-9 w-9"
                             onClick={() => handlePlayStem(stem)}
                           >
                             {isStemPlaying ? (
@@ -237,12 +240,13 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
                               <Play className="w-4 h-4" />
                             )}
                           </Button>
-                          <span className="flex-1 text-sm">
+                          <span className="flex-1 text-sm font-medium">
                             {stemTypeLabels[stem.stem_type] || stem.stem_type}
                           </span>
                           <Button
                             size="icon"
                             variant="ghost"
+                            className="shrink-0 h-9 w-9"
                             onClick={() => handleDownloadStem(stem)}
                           >
                             <Download className="w-4 h-4" />
@@ -250,7 +254,7 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
                         </div>
                       );
                     })}
-                </>
+                </div>
               )}
             </div>
           )}

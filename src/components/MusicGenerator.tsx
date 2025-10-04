@@ -170,8 +170,8 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       ref={cardRef}
       variant="gradient" 
       className={`
-        w-full max-w-full p-3 sm:p-6 lg:p-8 space-y-4 sm:space-y-6
-        hover-lift transition-all duration-700 ease-out
+        w-full max-w-4xl mx-auto p-4 sm:p-6 space-y-6
+        transition-all duration-700 ease-out
         ${isVisible ? 'animate-fade-in opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
       `}
     >
@@ -180,16 +180,16 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       <div className="absolute top-0 right-0 w-20 h-20 sm:w-32 sm:h-32 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-3xl pointer-events-none" />
       
       <div className="relative z-10">
-      <div className="space-y-2 sm:space-y-3">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
-          <div className="p-2 sm:p-3 rounded-xl bg-gradient-primary shadow-glow animate-float shrink-0">
-            <Music className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+      <div className="space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="p-3 rounded-xl bg-gradient-primary shadow-glow shrink-0">
+            <Music className="h-6 w-6 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gradient-primary animate-shimmer">
+            <h3 className="text-2xl sm:text-3xl font-bold text-gradient-primary">
               Создайте свою музыку с AI
             </h3>
-            <p className="text-muted-foreground/80 text-xs sm:text-sm">
+            <p className="text-muted-foreground/80 text-sm mt-1">
               Профессиональная генерация музыки с вокалом и лирикой
             </p>
           </div>
@@ -198,52 +198,50 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
 
       {/* Вкладки */}
       <Tabs defaultValue="simple" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6 bg-background/50 backdrop-blur-sm border border-primary/20 h-auto">
+        <TabsList className="grid w-full grid-cols-2 mb-6 bg-background/50 backdrop-blur-sm border border-primary/20">
           <TabsTrigger 
             value="simple" 
-            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300 text-xs sm:text-sm py-2.5 px-2 sm:px-4"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300 text-sm py-2.5 px-4"
           >
-            <Zap className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 shrink-0" />
-            <span className="hidden xs:inline">Простой режим</span>
-            <span className="xs:hidden truncate">Простой</span>
+            <Zap className="w-4 h-4 mr-2 shrink-0" />
+            <span>Простой режим</span>
           </TabsTrigger>
           <TabsTrigger 
             value="advanced"
-            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300 text-xs sm:text-sm py-2.5 px-2 sm:px-4"
+            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300 text-sm py-2.5 px-4"
           >
-            <Settings2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 shrink-0" />
-            <span className="hidden xs:inline">Расширенный</span>
-            <span className="xs:hidden truncate">Расширенный</span>
+            <Settings2 className="w-4 h-4 mr-2 shrink-0" />
+            <span>Расширенный</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="simple" className="space-y-4 sm:space-y-6 animate-slide-up">
+        <TabsContent value="simple" className="space-y-6 animate-slide-up">
           {/* Основной промпт */}
-          <div className="space-y-2 sm:space-y-3">
-            <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
-              <Music className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+          <div className="space-y-3">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <Music className="h-4 w-4 text-primary" />
               Опишите желаемую музыку
             </Label>
             <Textarea
               ref={textareaRef}
-              placeholder="Пример: Энергичный электронный трек..."
+              placeholder="Пример: Энергичный электронный трек с глубоким басом и атмосферными синтезаторами..."
               value={prompt}
               onChange={(e) => {
                 setPrompt(e.target.value);
                 adjustTextareaHeight();
               }}
-              className="min-h-[80px] sm:min-h-[100px] resize-none bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300 hover:border-primary/30 text-sm"
+              className="min-h-[100px] resize-none bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300 hover:border-primary/30"
               disabled={isGenerating || isImproving}
             />
           </div>
 
           {/* Популярные жанры */}
-          <div className="space-y-2 sm:space-y-3">
-            <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
-              <Hash className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+          <div className="space-y-3">
+            <Label className="text-sm font-medium flex items-center gap-2">
+              <Hash className="h-4 w-4 text-primary" />
               Популярные жанры
             </Label>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
               {popularGenres.map((genre) => (
                 <Button
                   key={genre.name}
@@ -252,16 +250,15 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                   onClick={() => toggleTag(genre.name)}
                   disabled={isGenerating || isImproving}
                   className={`
-                    h-auto p-2 flex-1 flex flex-col items-center gap-1 transition-all duration-300 group
-                    basis-[calc(33.333%-0.5rem)] md:basis-[calc(16.666%-0.84rem)]
+                    h-auto p-3 flex flex-col items-center gap-1.5 transition-all duration-300 group
                     ${styleTags.includes(genre.name) 
                       ? `bg-gradient-to-r ${genre.gradient} text-white shadow-lg scale-105` 
                       : 'hover:scale-105 hover:border-primary/50 bg-background/50 backdrop-blur-sm'
                     }
                   `}
                 >
-                  <span className="text-base sm:text-lg group-hover:animate-bounce">{genre.icon}</span>
-                  <span className="text-xs font-medium w-full text-center truncate">{genre.name}</span>
+                  <span className="text-xl group-hover:animate-bounce">{genre.icon}</span>
+                  <span className="text-xs font-medium text-center truncate w-full">{genre.name}</span>
                 </Button>
               ))}
             </div>

@@ -72,13 +72,7 @@ const Index = () => {
       </section>
 
       {/* Tracks Section */}
-      {user && (
-        <section className="py-20 px-4">
-          <div className="container mx-auto max-w-6xl">
-            <TracksList refreshTrigger={refreshTracks} />
-          </div>
-        </section>
-      )}
+      {/* Tracks will be shown in workspace */}
     </div>
   );
 };

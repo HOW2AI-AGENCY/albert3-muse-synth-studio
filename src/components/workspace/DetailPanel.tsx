@@ -306,9 +306,9 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto p-4">
         {/* Cover Art Preview - Compact */}
-        <div className="aspect-square max-h-64 overflow-hidden border-b border-border">
+        <div className="aspect-square max-h-64 overflow-hidden border border-border rounded-lg mb-4">
           {track.cover_url ? (
             <img
               src={track.cover_url}
