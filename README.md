@@ -32,6 +32,8 @@
 - [🔌 API документация](docs/api/API.md)
 - [🚀 Руководство по развертыванию](docs/deployment/DEPLOYMENT.md)
 - [⚡ Оптимизация производительности](docs/PERFORMANCE_OPTIMIZATIONS.md)
+- [📱 Мобильная оптимизация](docs/MOBILE_OPTIMIZATION.md)
+- [🎚️ Система разделения на стемы](docs/STEMS_SYSTEM.md)
 
 </td>
 <td width="33%">
