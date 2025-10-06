@@ -8,12 +8,11 @@ const corsHeaders = {
   ...createSecurityHeaders()
 };
 
-serve(async (req) => {
+const mainHandler = async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return handleCorsPreflightRequest(req);
   }
 
-const mainHandler = async (req: Request) => {
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -179,11 +178,8 @@ const mainHandler = async (req: Request) => {
 
 const handler = withRateLimit(mainHandler, {
   maxRequests: 10,
-  windowMs: 60000, // 1 minute
-  keyGenerator: (req) => {
-    const authHeader = req.headers.get('Authorization');
-    return authHeader ? `stems_${authHeader.split(' ')[1]?.substring(0, 10)}` : 'anonymous';
-  }
+  windowMinutes: 1,
+  endpoint: 'separate-stems'
 });
 
 serve(handler);

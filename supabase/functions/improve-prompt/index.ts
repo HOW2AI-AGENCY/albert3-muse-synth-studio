@@ -96,11 +96,8 @@ Keep the improved prompt concise (2-4 sentences) but highly descriptive. Focus o
 
 const handler = withRateLimit(mainHandler, {
   maxRequests: 20,
-  windowMs: 60000, // 1 minute
-  keyGenerator: (req) => {
-    const authHeader = req.headers.get('Authorization');
-    return authHeader ? `prompt_${authHeader.split(' ')[1]?.substring(0, 10)}` : 'anonymous';
-  }
+  windowMinutes: 1,
+  endpoint: 'improve-prompt'
 });
 
 serve(handler);

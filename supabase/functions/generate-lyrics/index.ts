@@ -113,7 +113,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
 // Применяем rate limiting middleware
 const handler = withRateLimit(mainHandler, {
   maxRequests: 20,
-  windowMs: 60000, // 1 минута
+  windowMinutes: 1,
   endpoint: 'generate-lyrics'
 });
 

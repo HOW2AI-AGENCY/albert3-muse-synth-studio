@@ -256,14 +256,9 @@ const mainHandler = async (req: Request) => {
 };
 
 const handler = withRateLimit(mainHandler, {
-  maxRequests: 50,
-  windowMs: 60000, // 1 minute
-  keyGenerator: (req) => {
-    // For callbacks, use IP-based rate limiting since they come from external services
-    const forwarded = req.headers.get('x-forwarded-for');
-    const ip = forwarded ? forwarded.split(',')[0] : 'unknown';
-    return `callback_${ip}`;
-  }
+  maxRequests: 100,
+  windowMinutes: 1,
+  endpoint: 'suno-callback'
 });
 
 serve(handler);

@@ -121,11 +121,8 @@ Format as JSON:
 
 const handler = withRateLimit(mainHandler, {
   maxRequests: 30,
-  windowMs: 60000,
-  keyGenerator: (req) => {
-    const authHeader = req.headers.get('Authorization');
-    return authHeader ? `suggest_${authHeader.split(' ')[1]?.substring(0, 10)}` : 'anonymous';
-  }
+  windowMinutes: 1,
+  endpoint: 'suggest-styles'
 });
 
 serve(handler);

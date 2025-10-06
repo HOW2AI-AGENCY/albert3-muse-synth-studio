@@ -7,7 +7,7 @@
 const getAllowedOrigins = (): string[] => {
   const allowedOrigins = (globalThis as any).Deno?.env?.get('ALLOWED_ORIGINS');
   if (allowedOrigins) {
-    return allowedOrigins.split(',').map(origin => origin.trim());
+    return allowedOrigins.split(',').map((origin: string) => origin.trim());
   }
   
   // Дефолтные разрешенные домены для разработки и продакшена

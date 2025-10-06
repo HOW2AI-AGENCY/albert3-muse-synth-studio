@@ -127,11 +127,8 @@ Format the response as JSON with these fields:
 
 const handler = withRateLimit(mainHandler, {
   maxRequests: 30,
-  windowMs: 60000,
-  keyGenerator: (req) => {
-    const authHeader = req.headers.get('Authorization');
-    return authHeader ? `analyze_${authHeader.split(' ')[1]?.substring(0, 10)}` : 'anonymous';
-  }
+  windowMinutes: 1,
+  endpoint: 'analyze-track'
 });
 
 serve(handler);
