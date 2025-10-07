@@ -100,12 +100,17 @@ export default function Favorites() {
 
   if (likedTracks.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-center px-4">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-          <Heart className="h-8 w-8 text-primary" />
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center px-4 animate-fade-in">
+        <div className="relative mb-6 animate-float">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-pink-500/20 rounded-full blur-2xl" />
+          <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-red-500/20 to-pink-500/20 flex items-center justify-center backdrop-blur-xl border border-red-500/20">
+            <Heart className="h-10 w-10 text-red-500" />
+          </div>
         </div>
-        <h2 className="text-2xl font-bold mb-2">Нет избранных треков</h2>
-        <p className="text-muted-foreground max-w-md">
+        <h2 className="text-3xl font-black mb-3 text-gradient-primary">
+          Нет избранных треков
+        </h2>
+        <p className="text-muted-foreground max-w-md text-lg">
           Треки, которым вы поставите лайк, будут отображаться здесь
         </p>
       </div>
@@ -113,30 +118,42 @@ export default function Favorites() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 md:p-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Heart className="h-8 w-8 text-red-500 fill-red-500" />
-            Избранное
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {likedTracks.length} {likedTracks.length === 1 ? 'трек' : likedTracks.length < 5 ? 'трека' : 'треков'}
-          </p>
+      <div className="flex items-center justify-between animate-slide-up">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-pink-500/20 rounded-xl blur-xl animate-pulse-glow" />
+            <div className="relative p-3 rounded-xl bg-gradient-to-br from-red-500/20 to-pink-500/20 backdrop-blur-xl border border-red-500/20">
+              <Heart className="h-6 w-6 text-red-500 fill-red-500" />
+            </div>
+          </div>
+          <div>
+            <h1 className="text-3xl md:text-4xl font-black text-gradient-primary flex items-center gap-2">
+              Избранное
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              {likedTracks.length} {likedTracks.length === 1 ? 'трек' : likedTracks.length < 5 ? 'трека' : 'треков'} в избранном
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Tracks Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {likedTracks.map((track) => (
-          <TrackCard
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+        {likedTracks.map((track, index) => (
+          <div 
             key={track.id}
-            track={track as any}
-            onDownload={() => handleDownload(track)}
-            onShare={() => handleShare(track.id)}
-            onClick={() => handleTrackClick(track)}
-          />
+            className="animate-scale-in"
+            style={{ animationDelay: `${index * 0.05}s` }}
+          >
+            <TrackCard
+              track={track as any}
+              onDownload={() => handleDownload(track)}
+              onShare={() => handleShare(track.id)}
+              onClick={() => handleTrackClick(track)}
+            />
+          </div>
         ))}
       </div>
     </div>

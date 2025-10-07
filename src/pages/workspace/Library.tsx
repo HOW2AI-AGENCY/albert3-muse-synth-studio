@@ -191,33 +191,42 @@ const Library: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 p-6" role="main" aria-label="Библиотека треков">
+    <div className="space-y-6 p-4 md:p-6 animate-fade-in" role="main" aria-label="Библиотека треков">
       {/* Заголовок и статистика */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold">Библиотека</h1>
-          <Badge variant="outline" aria-label={`Всего треков: ${tracks.length}`}>
-            {tracks.length} {tracks.length === 1 ? "трек" : "треков"}
-          </Badge>
+      <div className="flex items-center justify-between animate-slide-up">
+        <div className="flex items-center gap-3">
+          <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 backdrop-blur-xl">
+            <Music className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl md:text-4xl font-black text-gradient-primary">
+              Библиотека
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              {tracks.length} {tracks.length === 1 ? "трек" : "треков"} всего
+            </p>
+          </div>
         </div>
         
         <div className="flex items-center gap-2">
           <Button
-            variant="outline"
+            variant="glass"
             size="sm"
             onClick={refreshTracks}
             aria-label="Обновить список треков"
+            className="hover:scale-105 transition-all duration-300"
           >
             <RefreshCcw className="h-4 w-4" />
           </Button>
           
           {/* Переключатель вида */}
-          <div className="flex items-center border rounded-lg p-1">
+          <div className="flex items-center border border-border/30 rounded-lg p-1 bg-background/50 backdrop-blur-sm">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => handleViewModeChange('grid')}
               aria-label="Сетка"
+              className="transition-all duration-300"
             >
               <Grid3X3 className="h-4 w-4" />
             </Button>
@@ -226,6 +235,7 @@ const Library: React.FC = () => {
               size="sm"
               onClick={() => handleViewModeChange('list')}
               aria-label="Список"
+              className="transition-all duration-300"
             >
               <List className="h-4 w-4" />
             </Button>
@@ -234,6 +244,7 @@ const Library: React.FC = () => {
               size="sm"
               onClick={() => handleViewModeChange('optimized')}
               aria-label="Оптимизированный список"
+              className="transition-all duration-300"
             >
               <Music className="h-4 w-4" />
             </Button>
@@ -242,17 +253,17 @@ const Library: React.FC = () => {
       </div>
 
       {/* Фильтры и поиск */}
-      <Card>
+      <Card variant="modern" className="animate-scale-in" style={{ animationDelay: '0.1s' }}>
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Поиск */}
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-primary animate-pulse" />
               <Input
                 placeholder="Поиск по названию или тегам..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-background/50 backdrop-blur-sm border-primary/20 focus:border-primary/50 transition-all duration-300"
                 aria-label="Поиск треков"
               />
             </div>
@@ -261,7 +272,7 @@ const Library: React.FC = () => {
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-3 py-2 border rounded-md bg-background"
+              className="px-3 py-2 border border-border/30 rounded-md bg-background/50 backdrop-blur-sm hover:border-primary/30 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/20"
               aria-label="Фильтр по статусу"
             >
               <option value="all">Все статусы</option>
@@ -280,7 +291,10 @@ const Library: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => handleSortChange('created_at')}
-                className={cn(sortBy === 'created_at' && 'bg-accent')}
+                className={cn(
+                  sortBy === 'created_at' && 'bg-primary/10 border-primary/50',
+                  "hover:scale-105 transition-all duration-300"
+                )}
               >
                 Дата {sortBy === 'created_at' && (sortOrder === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
               </Button>
@@ -288,7 +302,10 @@ const Library: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => handleSortChange('title')}
-                className={cn(sortBy === 'title' && 'bg-accent')}
+                className={cn(
+                  sortBy === 'title' && 'bg-primary/10 border-primary/50',
+                  "hover:scale-105 transition-all duration-300"
+                )}
               >
                 Название {sortBy === 'title' && (sortOrder === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
               </Button>
@@ -299,14 +316,17 @@ const Library: React.FC = () => {
 
       {/* Список треков */}
       {filteredAndSortedTracks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="p-6 rounded-full bg-gradient-primary/10 mb-6">
-            <Music className="h-16 w-16 text-primary" />
+        <div className="flex flex-col items-center justify-center py-16 text-center animate-fade-in">
+          <div className="relative mb-6 animate-float">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full blur-2xl" />
+            <div className="relative p-6 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 backdrop-blur-xl border border-primary/20">
+              <Music className="h-16 w-16 text-primary" />
+            </div>
           </div>
-          <h3 className="text-2xl font-semibold mb-2">
+          <h3 className="text-3xl font-black mb-3 text-gradient-primary">
             {searchQuery ? 'Треки не найдены' : 'Библиотека пуста'}
           </h3>
-          <p className="text-muted-foreground max-w-md">
+          <p className="text-muted-foreground max-w-md text-lg">
             {searchQuery 
               ? 'Попробуйте изменить поисковый запрос или фильтры'
               : 'Создайте свой первый AI-трек в разделе "Генерация"'
