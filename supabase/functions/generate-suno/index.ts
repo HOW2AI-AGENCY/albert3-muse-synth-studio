@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
+import { downloadAndUploadAudio, downloadAndUploadCover, downloadAndUploadVideo } from "../_shared/storage.ts";
 
 const mainHandler = async (req: Request): Promise<Response> => {
   const corsHeaders = {
@@ -390,15 +391,66 @@ async function pollSunoCompletion(
         const mainTrack = successfulTracks[0];
         
         // Извлекаем метаданные из первого трека
-        const audioUrl = mainTrack.audioUrl || mainTrack.audio_url || 
-                        mainTrack.stream_audio_url || mainTrack.source_stream_audio_url;
+        const externalAudioUrl = mainTrack.audioUrl || mainTrack.audio_url || 
+                                mainTrack.stream_audio_url || mainTrack.source_stream_audio_url;
         const duration = mainTrack.duration || mainTrack.duration_seconds || 0;
         const actualLyrics = mainTrack.lyric || mainTrack.lyrics || mainTrack.prompt;
-        const coverUrl = mainTrack.image_url || mainTrack.image_large_url || mainTrack.imageUrl;
-        const videoUrl = mainTrack.video_url || mainTrack.videoUrl;
+        const externalCoverUrl = mainTrack.image_url || mainTrack.image_large_url || mainTrack.imageUrl;
+        const externalVideoUrl = mainTrack.video_url || mainTrack.videoUrl;
         const sunoId = mainTrack.id;
         const modelName = mainTrack.model || mainTrack.model_name;
         const createdAtSuno = mainTrack.created_at || mainTrack.createdAt;
+        
+        // Получаем user_id для создания правильной структуры папок в Storage
+        const { data: trackData } = await supabase
+          .from('tracks')
+          .select('user_id')
+          .eq('id', trackId)
+          .single();
+        
+        const userId = trackData?.user_id;
+        if (!userId) {
+          console.error('🔴 [COMPLETION] Failed to get user_id for track:', trackId);
+          throw new Error('User ID not found for track');
+        }
+        
+        // ========================================
+        // КРИТИЧЕСКИ ВАЖНО: Скачать и загрузить в Storage
+        // ========================================
+        console.log('📦 [STORAGE] Starting file uploads to Supabase Storage...');
+        
+        // Загружаем аудио в Storage
+        const audioUrl = await downloadAndUploadAudio(
+          externalAudioUrl,
+          trackId,
+          userId,
+          'main.mp3',
+          supabase
+        );
+        
+        // Загружаем обложку в Storage (если есть)
+        let coverUrl = externalCoverUrl;
+        if (externalCoverUrl) {
+          coverUrl = await downloadAndUploadCover(
+            externalCoverUrl,
+            trackId,
+            userId,
+            'cover.jpg',
+            supabase
+          );
+        }
+        
+        // Загружаем видео в Storage (если есть)
+        let videoUrl = externalVideoUrl;
+        if (externalVideoUrl) {
+          videoUrl = await downloadAndUploadVideo(
+            externalVideoUrl,
+            trackId,
+            userId,
+            'video.mp4',
+            supabase
+          );
+        }
 
         console.log('📦 [MAIN TRACK] Metadata extracted:', {
           audioUrl: audioUrl?.substring(0, 50) + '...',
@@ -446,13 +498,46 @@ async function pollSunoCompletion(
             const versionTrack = successfulTracks[i];
             
             // Извлекаем метаданные для версии
-            const versionAudioUrl = versionTrack.audioUrl || versionTrack.audio_url || 
-                                   versionTrack.stream_audio_url || versionTrack.source_stream_audio_url;
+            const externalVersionAudioUrl = versionTrack.audioUrl || versionTrack.audio_url || 
+                                           versionTrack.stream_audio_url || versionTrack.source_stream_audio_url;
             const versionDuration = versionTrack.duration || versionTrack.duration_seconds || 0;
             const versionLyrics = versionTrack.lyric || versionTrack.lyrics || versionTrack.prompt;
-            const versionCoverUrl = versionTrack.image_url || versionTrack.image_large_url || versionTrack.imageUrl;
-            const versionVideoUrl = versionTrack.video_url || versionTrack.videoUrl;
+            const externalVersionCoverUrl = versionTrack.image_url || versionTrack.image_large_url || versionTrack.imageUrl;
+            const externalVersionVideoUrl = versionTrack.video_url || versionTrack.videoUrl;
             const versionSunoId = versionTrack.id;
+            
+            // Загружаем файлы версии в Storage
+            console.log(`📦 [VERSION ${i}] Uploading to Storage...`);
+            
+            const versionAudioUrl = await downloadAndUploadAudio(
+              externalVersionAudioUrl,
+              trackId,
+              userId,
+              `version-${i}.mp3`,
+              supabase
+            );
+            
+            let versionCoverUrl = externalVersionCoverUrl;
+            if (externalVersionCoverUrl) {
+              versionCoverUrl = await downloadAndUploadCover(
+                externalVersionCoverUrl,
+                trackId,
+                userId,
+                `version-${i}-cover.jpg`,
+                supabase
+              );
+            }
+            
+            let versionVideoUrl = externalVersionVideoUrl;
+            if (externalVersionVideoUrl) {
+              versionVideoUrl = await downloadAndUploadVideo(
+                externalVersionVideoUrl,
+                trackId,
+                userId,
+                `version-${i}-video.mp4`,
+                supabase
+              );
+            }
             
             console.log(`📦 [VERSION ${i}] Metadata extracted:`, {
               audioUrl: versionAudioUrl?.substring(0, 50) + '...',
