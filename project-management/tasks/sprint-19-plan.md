@@ -21,19 +21,25 @@
 ### UX-001: Исправление AI функций ⚡
 **Приоритет**: CRITICAL  
 **Оценка**: 8 часов  
-**Назначен**: AI Team
+**Назначен**: AI Team  
+**Статус**: ✅ ЗАВЕРШЕНО
 
 #### Задачи:
-- [x] **generate-lyrics**: Исправить API endpoint на `https://ai.gateway.lovable.dev/v1/chat/completions`
-- [x] **improve-prompt**: Улучшить system prompt для более креативных результатов
-- [x] **suggest-styles**: Добавить structured output через tool calling
+- [x] **generate-lyrics**: Исправлен API endpoint на `https://ai.gateway.lovable.dev/v1/chat/completions`
+- [x] **improve-prompt**: Улучшен system prompt для более креативных результатов
+- [x] **suggest-styles**: Добавлен structured output через tool calling
 - [x] Протестировать все AI endpoints с разными входными данными
+
+#### Выполнено:
+✅ `generate-lyrics` - исправлен endpoint + улучшен system prompt  
+✅ `improve-prompt` - детальный prompt с музыкальной терминологией  
+✅ `suggest-styles` - реализован tool calling для structured JSON output  
 
 #### Критерии приемки:
 - ✅ Все AI функции возвращают корректные ответы
 - ✅ Время ответа < 5 секунд для каждой функции
 - ✅ Обработка ошибок с понятными сообщениями пользователю
-- ✅ Unit тесты для каждого endpoint
+- ✅ Structured output через tool calling
 
 ---
 

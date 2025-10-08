@@ -20,8 +20,11 @@ import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
 import { useTracks } from "@/hooks/useTracks";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { LikesService } from "@/services/likes.service";
+import { supabase } from "@/integrations/supabase/client";
 import { DisplayTrack, convertToDisplayTrack, convertToOptimizedTrack } from "@/types/track";
 import { cn } from "@/lib/utils";
+import { logger } from "@/utils/logger";
 
 type ViewMode = 'grid' | 'list' | 'optimized';
 type SortBy = 'created_at' | 'title' | 'duration' | 'like_count';
@@ -130,29 +133,153 @@ const Library: React.FC = () => {
     }
   }, [playTrackWithQueue, filteredAndSortedTracks]);
 
-  const handleLike = useCallback((trackId: string) => {
-    // TODO: Реализовать функцию лайка
-    toast({
-      title: "Функция в разработке",
-      description: "Лайки будут добавлены в следующем обновлении",
-    });
-  }, [toast]);
+  const handleLike = useCallback(async (trackId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Требуется авторизация",
+          description: "Войдите в систему, чтобы ставить лайки",
+          variant: "destructive",
+        });
+        return;
+      }
 
-  const handleDownload = useCallback((trackId: string) => {
-    // TODO: Реализовать функцию скачивания
-    toast({
-      title: "Функция в разработке", 
-      description: "Скачивание будет добавлено в следующем обновлении",
-    });
-  }, [toast]);
+      const isNowLiked = await LikesService.toggleLike(trackId, user.id);
+      
+      toast({
+        title: isNowLiked ? "❤️ Добавлено в избранное" : "Удалено из избранного",
+        description: isNowLiked 
+          ? "Трек сохранен в вашей коллекции" 
+          : "Трек удален из избранного",
+      });
 
-  const handleShare = useCallback((trackId: string) => {
-    // TODO: Реализовать функцию шаринга
-    toast({
-      title: "Функция в разработке",
-      description: "Шаринг будет добавлен в следующем обновлении",
-    });
-  }, [toast]);
+      // Refresh tracks to update like count
+      await refreshTracks();
+      
+      logger.info('Track like toggled', `trackId: ${trackId}, isNowLiked: ${isNowLiked}, userId: ${user.id}`);
+    } catch (error) {
+      logger.error('Failed to toggle like', error instanceof Error ? error : new Error(`trackId: ${trackId}`));
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить статус лайка",
+        variant: "destructive",
+      });
+    }
+  }, [toast, refreshTracks]);
+
+  const handleDownload = useCallback(async (trackId: string) => {
+    try {
+      const track = tracks.find(t => t.id === trackId);
+      if (!track || !track.audio_url) {
+        toast({
+          title: "Ошибка",
+          description: "Аудиофайл недоступен для скачивания",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Show loading toast
+      toast({
+        title: "Загрузка...",
+        description: "Подготовка файла к скачиванию",
+      });
+
+      // Fetch the audio file
+      const response = await fetch(track.audio_url);
+      if (!response.ok) throw new Error('Failed to fetch audio');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create download link
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${track.title}.mp3`;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      // Increment download count in database
+      await supabase.rpc('increment_download_count', { track_id: trackId });
+
+      toast({
+        title: "✅ Скачано",
+        description: `Трек "${track.title}" успешно загружен`,
+      });
+
+      logger.info('Track downloaded', `trackId: ${trackId}, title: ${track.title}`);
+    } catch (error) {
+      logger.error('Failed to download track', error instanceof Error ? error : new Error(`trackId: ${trackId}`));
+      toast({
+        title: "Ошибка",
+        description: "Не удалось скачать трек. Попробуйте позже",
+        variant: "destructive",
+      });
+    }
+  }, [tracks, toast]);
+
+  const handleShare = useCallback(async (trackId: string) => {
+    try {
+      const track = tracks.find(t => t.id === trackId);
+      if (!track) {
+        toast({
+          title: "Ошибка",
+          description: "Трек не найден",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if track is public (some tracks may not have this field)
+      const isPublic = (track as any).is_public;
+      if (!isPublic) {
+        toast({
+          title: "Трек приватный",
+          description: "Сначала сделайте трек публичным, чтобы делиться им",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Generate shareable link
+      const shareUrl = `${window.location.origin}/track/${trackId}`;
+
+      // Try to use Web Share API if available
+      if (navigator.share) {
+        await navigator.share({
+          title: track.title,
+          text: `Послушайте этот трек: ${track.title}`,
+          url: shareUrl,
+        });
+        
+        logger.info('Track shared via Web Share API', `trackId: ${trackId}`);
+      } else {
+        // Fallback: Copy to clipboard
+        await navigator.clipboard.writeText(shareUrl);
+        
+        toast({
+          title: "🔗 Ссылка скопирована",
+          description: "Публичная ссылка скопирована в буфер обмена",
+        });
+
+        logger.info('Track share link copied', `trackId: ${trackId}, shareUrl: ${shareUrl}`);
+      }
+    } catch (error) {
+      logger.error('Failed to share track', error instanceof Error ? error : new Error(`trackId: ${trackId}`));
+      
+      // Fallback for clipboard error
+      const track = tracks.find(t => t.id === trackId);
+      if (track) {
+        const shareUrl = `${window.location.origin}/track/${trackId}`;
+        prompt('Скопируйте ссылку:', shareUrl);
+      }
+    }
+  }, [tracks, toast]);
 
   // Уникальные статусы для фильтра
   const availableStatuses = useMemo(() => {
