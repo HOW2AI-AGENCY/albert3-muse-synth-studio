@@ -7,12 +7,41 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { Settings as SettingsIcon, User, LogOut, Bell, Shield, Palette } from "lucide-react";
+import { Settings as SettingsIcon, User, LogOut, Bell, Shield, Palette, Database } from "lucide-react";
 
 const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isMigrating, setIsMigrating] = useState(false);
+
+  const handleMigrateTracks = async () => {
+    setIsMigrating(true);
+    try {
+      toast({
+        title: "Миграция началась...",
+        description: "Это может занять несколько минут",
+      });
+
+      const { data, error } = await supabase.functions.invoke('migrate-tracks-to-storage');
+
+      if (error) throw error;
+
+      toast({
+        title: "Миграция завершена",
+        description: `Перенесено: ${data?.migrated || 0}, Ошибок: ${data?.failed || 0}`,
+      });
+    } catch (error) {
+      console.error('Migration error:', error);
+      toast({
+        title: "Ошибка миграции",
+        description: error instanceof Error ? error.message : "Неизвестная ошибка",
+        variant: "destructive",
+      });
+    } finally {
+      setIsMigrating(false);
+    }
+  };
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -142,6 +171,30 @@ const Settings = () => {
             </div>
             <Button variant="outline" size="sm" disabled>Скоро</Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Storage Migration Card */}
+      <Card variant="modern" className="animate-scale-in" style={{ animationDelay: '0.35s' }}>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Database className="h-5 w-5 text-blue-500" />
+            <CardTitle>Миграция треков</CardTitle>
+          </div>
+          <CardDescription>
+            Перенести старые треки в Supabase Storage для долгосрочного хранения
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            onClick={handleMigrateTracks}
+            disabled={isMigrating}
+            variant="outline"
+            className="gap-2"
+          >
+            <Database className="h-4 w-4" />
+            {isMigrating ? "Миграция..." : "Запустить миграцию"}
+          </Button>
         </CardContent>
       </Card>
 

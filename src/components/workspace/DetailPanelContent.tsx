@@ -12,6 +12,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { TrackVersions } from "@/components/tracks/TrackVersions";
 import { TrackStemsPanel } from "@/components/tracks/TrackStemsPanel";
 import { useTrackLike } from "@/hooks/useTrackLike";
+import { cn } from "@/lib/utils";
 
 interface Track {
   id: string;
@@ -116,40 +117,51 @@ export const DetailPanelContent = ({
   return (
     <TooltipProvider delayDuration={500}>
     <div className="p-4 space-y-4">
-      {/* Quick Actions */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Quick Actions - только иконки */}
+      <div className="flex items-center justify-center gap-2">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button 
-              variant={isLiked ? "default" : "outline"} 
-              size="default"
+              variant="ghost" 
+              size="icon"
+              className={cn(
+                "relative",
+                isLiked && "text-red-500"
+              )}
               onClick={() => toggleLike()}
-              className={isLiked ? "bg-red-500 hover:bg-red-600" : ""}
             >
-              <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
-              <span className="hidden sm:inline">{likeCount > 0 ? likeCount : 'Лайк'}</span>
-              <span className="sm:hidden">{likeCount || 0}</span>
+              <Heart className={cn("h-5 w-5", isLiked && "fill-current")} />
+              {likeCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
+                  {likeCount}
+                </Badge>
+              )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Добавить трек в избранное</TooltipContent>
+          <TooltipContent>Избранное</TooltipContent>
         </Tooltip>
+
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="default" onClick={onDownload} disabled={!track.audio_url}>
-              <Download className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Скачать</span>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onDownload} 
+              disabled={!track.audio_url}
+            >
+              <Download className="h-5 w-5" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Скачать трек в формате MP3</TooltipContent>
+          <TooltipContent>Скачать MP3</TooltipContent>
         </Tooltip>
+
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="default" onClick={onShare}>
-              <Share2 className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Поделиться</span>
+            <Button variant="ghost" size="icon" onClick={onShare}>
+              <Share2 className="h-5 w-5" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Поделиться треком с друзьями</TooltipContent>
+          <TooltipContent>Поделиться</TooltipContent>
         </Tooltip>
       </div>
 
@@ -193,8 +205,8 @@ export const DetailPanelContent = ({
             Метаданные
           </AccordionTrigger>
           <AccordionContent className="space-y-3 pb-3">
-            <div className="space-y-2">
-              <Label htmlFor="title" className="text-sm">Название</Label>
+            {/* Название без лейбла */}
+            <div className="relative">
               <Input
                 id="title"
                 value={title}
@@ -204,25 +216,24 @@ export const DetailPanelContent = ({
               />
             </div>
 
+            {/* Жанр и Настроение в одной строке без лейблов */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="genre" className="text-sm">Жанр</Label>
+              <div className="relative">
                 <Input
                   id="genre"
                   value={genre}
                   onChange={(e) => setGenre(e.target.value)}
-                  placeholder="Electronic"
+                  placeholder="Жанр"
                   className="h-10 text-sm"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="mood" className="text-sm">Настроение</Label>
+              <div className="relative">
                 <Input
                   id="mood"
                   value={mood}
                   onChange={(e) => setMood(e.target.value)}
-                  placeholder="Energetic"
+                  placeholder="Настроение"
                   className="h-10 text-sm"
                 />
               </div>
@@ -313,33 +324,52 @@ export const DetailPanelContent = ({
           </AccordionItem>
         )}
 
-        {/* Statistics */}
+        {/* Statistics - только иконки и цифры */}
         <AccordionItem value="stats" className="border rounded-lg px-3">
           <AccordionTrigger className="text-sm py-2 hover:no-underline">
             Статистика
           </AccordionTrigger>
           <AccordionContent className="pb-2">
-            <div className="grid grid-cols-2 gap-2">
-              <div className="flex items-center gap-2 text-xs">
-                <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-muted-foreground">Просмотры:</span>
-                <span className="font-medium">{track.view_count || 0}</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <Heart className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-muted-foreground">Лайки:</span>
-                <span className="font-medium">{track.like_count || 0}</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-muted-foreground">Создан:</span>
-                <span className="font-medium">{formatDate(track.created_at)}</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-muted-foreground">Длина:</span>
-                <span className="font-medium">{formatDuration(track.duration_seconds)}</span>
-              </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5 text-sm">
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{track.view_count || 0}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>Просмотры</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5 text-sm">
+                    <Heart className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{track.like_count || 0}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>Лайки</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5 text-sm">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium text-xs">{formatDate(track.created_at)}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>Дата создания</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5 text-sm">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{formatDuration(track.duration_seconds)}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>Длительность</TooltipContent>
+              </Tooltip>
             </div>
           </AccordionContent>
         </AccordionItem>
