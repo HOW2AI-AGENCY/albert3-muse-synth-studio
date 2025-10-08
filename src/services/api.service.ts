@@ -128,24 +128,6 @@ export class ApiService {
     logInfo('🎵 [API Service] Sending to:', 'ApiService', { functionName });
     logDebug('📤 [API Service] Payload:', 'ApiService', { payload });
 
-    // Log the request to the new table
-    const { data: logData, error: logErrorInitial } = await supabase
-      .from('generation_requests')
-      .insert({
-        user_id: request.userId,
-        track_id: request.trackId,
-        provider: provider,
-        status: 'pending',
-        request_payload: payload,
-      })
-      .select()
-      .single();
-
-    if (logErrorInitial) {
-      logError('🔴 [API Service] Failed to log generation request', logErrorInitial, 'ApiService');
-      // Do not block generation if logging fails, but log the error
-    }
-
     logInfo('⏳ [API Service] Invoking edge function...', 'ApiService');
 
     const { data, error } = await supabase.functions.invoke<GenerateMusicResponse>(
@@ -155,12 +137,6 @@ export class ApiService {
 
     if (error) {
       logError('🔴 [API Service] Edge function error', error, 'ApiService');
-      if (logData) {
-        await supabase
-          .from('generation_requests')
-          .update({ status: 'failed', error_message: error.message })
-          .eq('id', logData.id);
-      }
       let userMessage = error.message || "Failed to generate music";
       if (error.message?.includes('429') || error.message?.includes('Rate limit')) {
         userMessage = 'Превышен лимит запросов. Пожалуйста, подождите немного';
@@ -173,20 +149,7 @@ export class ApiService {
     if (!data) {
       const err = new Error("No response from server");
       logError('🔴 [API Service] No response from server', err, 'ApiService');
-      if (logData) {
-        await supabase
-          .from('generation_requests')
-          .update({ status: 'failed', error_message: 'No response from server' })
-          .eq('id', logData.id);
-      }
       throw err;
-    }
-
-    if (logData) {
-      await supabase
-        .from('generation_requests')
-        .update({ status: 'completed', response_payload: data })
-        .eq('id', logData.id);
     }
 
     logInfo('✅ [API Service] Success:', 'ApiService', { data });

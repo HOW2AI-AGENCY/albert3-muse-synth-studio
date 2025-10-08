@@ -129,7 +129,7 @@ export const withErrorBoundary = <P extends object>(
   Component: React.ComponentType<P>,
   options?: ErrorBoundaryOptions
 ) => {
-  const { fallback, FallbackComponent, onError } = options || {};
+  const { fallback, onError } = options || {};
   
   const WrappedComponent = (props: P) => (
     <ErrorBoundary fallback={fallback} onError={onError}>

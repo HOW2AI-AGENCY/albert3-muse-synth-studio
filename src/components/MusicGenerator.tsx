@@ -1,4 +1,4 @@
-import React, { memo, useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { memo, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Sparkles, Music, Wand2, Mic, Settings2, FileText, Volume2, Clock, Zap, X } from 'lucide-react';
 import { useMusicGeneration } from '@/hooks/useMusicGeneration';
-import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
 import { withErrorBoundary } from '@/components/ui/error-boundary';
