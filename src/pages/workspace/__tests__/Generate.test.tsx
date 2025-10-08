@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import type { ReactNode, ButtonHTMLAttributes } from "react";
 import Generate from "../Generate";
 import type { Track } from "@/services/api.service";
@@ -148,6 +148,18 @@ describe("Generate polling interval", () => {
       style_tags: null,
       has_vocals: null,
       provider: null,
+      download_count: null,
+      genre: null,
+      has_stems: null,
+      is_public: false,
+      like_count: null,
+      mood: null,
+      play_count: null,
+      updated_at: new Date().toISOString(),
+      user_id: "user-123",
+      view_count: null,
+      metadata: null,
+      reference_audio_url: null,
     };
 
     await act(async () => {

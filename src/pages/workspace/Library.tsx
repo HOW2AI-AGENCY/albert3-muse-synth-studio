@@ -20,7 +20,7 @@ import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
 import { useTracks } from "@/hooks/useTracks";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { LikesService } from "@/services/likes.service";
+// import { LikesService } from "@/services/likes.service"; // Now handled in TrackCard
 import { supabase } from "@/integrations/supabase/client";
 import { DisplayTrack, convertToDisplayTrack, convertToOptimizedTrack } from "@/types/track";
 import { cn } from "@/lib/utils";
@@ -137,40 +137,41 @@ const Library: React.FC = () => {
     }
   }, [playTrackWithQueue, filteredAndSortedTracks]);
 
-  const handleLike = useCallback(async (trackId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Требуется авторизация",
-          description: "Войдите в систему, чтобы ставить лайки",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const isNowLiked = await LikesService.toggleLike(trackId, user.id);
-      
-      toast({
-        title: isNowLiked ? "❤️ Добавлено в избранное" : "Удалено из избранного",
-        description: isNowLiked 
-          ? "Трек сохранен в вашей коллекции" 
-          : "Трек удален из избранного",
-      });
-
-      // Refresh tracks to update like count
-      await refreshTracks();
-      
-      logger.info('Track like toggled', `trackId: ${trackId}, isNowLiked: ${isNowLiked}, userId: ${user.id}`);
-    } catch (error) {
-      logger.error('Failed to toggle like', error instanceof Error ? error : new Error(`trackId: ${trackId}`));
-      toast({
-        title: "Ошибка",
-        description: "Не удалось обновить статус лайка",
-        variant: "destructive",
-      });
-    }
-  }, [toast, refreshTracks]);
+  // handleLike is now handled by useTrackLike hook in TrackCard
+  // const handleLike = useCallback(async (trackId: string) => {
+  //   try {
+  //     const { data: { user } } = await supabase.auth.getUser();
+  //     if (!user) {
+  //       toast({
+  //         title: "Требуется авторизация",
+  //         description: "Войдите в систему, чтобы ставить лайки",
+  //         variant: "destructive",
+  //       });
+  //       return;
+  //     }
+  //
+  //     const isNowLiked = await LikesService.toggleLike(trackId, user.id);
+  //     
+  //     toast({
+  //       title: isNowLiked ? "❤️ Добавлено в избранное" : "Удалено из избранного",
+  //       description: isNowLiked 
+  //         ? "Трек сохранен в вашей коллекции" 
+  //         : "Трек удален из избранного",
+  //     });
+  //
+  //     // Refresh tracks to update like count
+  //     await refreshTracks();
+  //     
+  //     logger.info('Track like toggled', `trackId: ${trackId}, isNowLiked: ${isNowLiked}, userId: ${user.id}`);
+  //   } catch (error) {
+  //     logger.error('Failed to toggle like', error instanceof Error ? error : new Error(`trackId: ${trackId}`));
+  //     toast({
+  //       title: "Ошибка",
+  //       description: "Не удалось обновить статус лайка",
+  //       variant: "destructive",
+  //     });
+  //   }
+  // }, [toast, refreshTracks]);
 
   const handleDownload = useCallback(async (trackId: string) => {
     try {
