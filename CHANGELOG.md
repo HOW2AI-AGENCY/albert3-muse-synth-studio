@@ -5,6 +5,78 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/lang/ru/).
 
+## [1.8.0] - 2025-10-15 (Sprint 18 - In Progress) 🚀
+
+### 🔥 Performance Optimizations (CRITICAL - 60% Complete)
+
+**✅ Component Memoization (Завершено)**
+- ✅ **TrackCard**: Полная мемоизация с React.memo, useMemo, useCallback
+  - Мемоизированы все обработчики событий (play, like, download, share)
+  - Оптимизирован проверка валидности трека
+  - Intersection Observer для анимаций появления
+- ✅ **MusicGenerator**: Оптимизация рендеринга форм
+  - Мемоизированы popularGenres, moodOptions, tempoOptions
+  - useCallback для всех обработчиков (handleGenerateMusic, handleImprovePrompt, toggleTag)
+  - Автоматическое изменение высоты textarea
+- ✅ **TrackVersions**: Полная мемоизация компонента
+  - React.memo обертка для всего компонента
+  - Мемоизированы handleSetMaster, handlePlayVersion, handleDeleteVersion
+  - Оптимизирована работа с версиями треков
+- ✅ **DetailPanel**: useReducer для state management
+  - Миграция с useState на useReducer для сложного состояния
+  - Мемоизированы все обработчики форм
+  - Оптимизирована загрузка versions и stems
+- ✅ **TrackListItem**: React.memo + Intersection Observer
+  - Полная мемоизация компонента
+  - Lazy loading с Intersection Observer
+  - Оптимизированы анимации и transitions
+
+**🔄 Code Splitting & Lazy Loading (В процессе)**
+- 📋 React.lazy для route-based splitting
+- 📋 Lazy load модалов и диалогов
+- 📋 Prefetch критических маршрутов
+- 📋 Dynamic imports для тяжелых компонентов
+
+**📋 Запланировано**
+- React Query optimization (staleTime, cacheTime, optimistic updates)
+- Bundle optimization (tree shaking, dependency analysis)
+
+**Целевые метрики**:
+- 🎯 FCP: 1.5s → < 1.0s
+- 🎯 TTI: 2.2s → < 1.5s
+- 🎯 Bundle: 380KB → < 250KB
+- 🎯 Lighthouse: 75 → > 90
+
+### 🔒 Security Enhancements (CRITICAL - 50% Complete)
+
+**🔄 В процессе**
+- CORS configuration для Edge Functions (whitelist, credentials)
+- Security Headers (CSP, X-Frame-Options, X-Content-Type-Options)
+- Enhanced Rate Limiting (per-user, exponential backoff)
+- Input validation (payload size, XSS sanitization)
+
+**Целевые метрики**:
+- 🎯 0 критических уязвимостей
+- 🎯 Full CORS whitelist management
+- 🎯 CSP с nonce для inline scripts
+- 🎯 Rate limiting для всех endpoints
+
+### 🧪 Testing & Monitoring (Запланировано)
+
+**📋 E2E Testing**
+- Playwright setup и конфигурация
+- Critical user flows (auth, generation, playback, library)
+- Visual regression testing
+- Performance benchmarks
+
+**📋 Monitoring System**
+- Web Vitals tracking (FCP, LCP, FID, CLS)
+- Sentry error tracking
+- Real-time analytics dashboard
+- Performance trends visualization
+
+---
+
 ## [1.7.0] - 2025-10-08
 
 ### Добавлено
