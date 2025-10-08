@@ -20,15 +20,19 @@ vi.mock('@/hooks/useTrackLike', () => ({
   }),
 }));
 
+const vibrateMock = vi.fn();
+
 vi.mock('@/hooks/useHapticFeedback', () => ({
   useHapticFeedback: () => ({
-    triggerHaptic: vi.fn(),
+    vibrate: vibrateMock,
   }),
 }));
 
+const toastMock = vi.fn();
+
 vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({
-    toast: vi.fn(),
+    toast: toastMock,
   }),
 }));
 
@@ -48,6 +52,8 @@ describe('TrackCard', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    toastMock.mockReset();
+    vibrateMock.mockReset();
   });
 
   describe('Rendering', () => {
@@ -111,9 +117,9 @@ describe('TrackCard', () => {
     });
 
     it('renders error message for missing track', () => {
-      // @ts-ignore - testing invalid data
+      // @ts-expect-error - testing invalid data
       render(<TrackCard track={null} />);
-      
+
       expect(screen.getByRole('alert')).toBeInTheDocument();
     });
   });
@@ -149,11 +155,42 @@ describe('TrackCard', () => {
     it('stops event propagation on action buttons', () => {
       const onClickMock = vi.fn();
       render(<TrackCard track={mockTrack} onClick={onClickMock} />);
-      
+
       const likeButton = screen.getByLabelText(/добавить в избранное/i);
       fireEvent.click(likeButton);
-      
+
       expect(onClickMock).not.toHaveBeenCalled();
+      expect(vibrateMock).toHaveBeenCalledWith('light');
+    });
+
+    it('shows toast when sharing track', () => {
+      render(<TrackCard track={mockTrack} />);
+
+      const shareButton = screen.getByLabelText(/поделиться треком/i);
+      fireEvent.click(shareButton);
+
+      expect(toastMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Ссылка скопирована',
+        })
+      );
+      expect(vibrateMock).toHaveBeenCalledWith('light');
+    });
+
+    it('warns user when download is unavailable', () => {
+      const trackWithoutAudio = { ...mockTrack, audio_url: undefined };
+      const onDownloadMock = vi.fn();
+      render(<TrackCard track={trackWithoutAudio} onDownload={onDownloadMock} />);
+
+      const downloadButton = screen.getByLabelText(/скачать трек/i);
+      fireEvent.click(downloadButton);
+
+      expect(onDownloadMock).not.toHaveBeenCalled();
+      expect(toastMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Ошибка скачивания',
+        })
+      );
     });
   });
 
