@@ -25,12 +25,24 @@ export const mainHandler = async (req: Request): Promise<Response> => {
   }
 
   let jobId: string | null = null;
-  const supabaseAdmin = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE') ?? ''
-  );
+  let supabaseAdmin: ReturnType<typeof createClient> | null = null;
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE') ?? '';
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error('🔴 [GENERATE-SUNO] Supabase credentials are not configured');
+  }
 
   try {
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new Error('Supabase service role credentials are not configured');
+    }
+
+    supabaseAdmin = createClient(
+      supabaseUrl,
+      serviceRoleKey
+    );
+
     const body = await req.json();
     console.log('🎵 [GENERATE-SUNO] Request received:', JSON.stringify({
       trackId: body.trackId,
@@ -226,7 +238,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-    if (jobId) {
+    if (jobId && supabaseAdmin) {
       await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: errorMessage }).eq('id', jobId);
     }
 
