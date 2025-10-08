@@ -2,7 +2,6 @@ import { createClient, type SupabaseClientOptions } from "@supabase/supabase-js"
 
 import { appEnv } from "@/config/env";
 import type { Database } from "./types";
-import { logError } from "@/utils/logger";
 
 const resolveStorage = (): Storage | undefined => {
   if (typeof window === "undefined") {
@@ -22,21 +21,28 @@ const resolveGlobalHeaders = (): Record<string, string> => {
     return { "x-app-environment": appEnv.appEnv };
   }
 
-  try {
-    const supabaseHost = new URL(appEnv.supabaseUrl).host;
+  return {};
+};
 
-    if (window.location.host === supabaseHost) {
-      return { "x-app-environment": appEnv.appEnv };
-    }
-  } catch (error) {
-    logError(
-      "Failed to resolve Supabase URL when building headers",
-      error instanceof Error ? error : new Error(String(error)),
-      "SupabaseClient",
-    );
+const withAppEnvironmentHeader = (init?: HeadersInit): HeadersInit => {
+  if (typeof Headers !== "undefined") {
+    const headers = new Headers(init ?? {});
+    headers.set("x-app-environment", appEnv.appEnv);
+    return headers;
   }
 
-  return {};
+  if (!init) {
+    return { "x-app-environment": appEnv.appEnv };
+  }
+
+  if (Array.isArray(init)) {
+    return [...init, ["x-app-environment", appEnv.appEnv]] as HeadersInit;
+  }
+
+  return {
+    ...(init as Record<string, string>),
+    "x-app-environment": appEnv.appEnv,
+  };
 };
 
 const clientOptions: SupabaseClientOptions<"public"> = {
@@ -55,3 +61,11 @@ export const createSupabaseClient = () =>
   createClient<Database>(appEnv.supabaseUrl, appEnv.supabaseAnonKey, clientOptions);
 
 export const supabase = createSupabaseClient();
+
+const originalInvoke = supabase.functions.invoke.bind(supabase.functions);
+
+supabase.functions.invoke = (async (functionName, options = {}) =>
+  originalInvoke(functionName, {
+    ...options,
+    headers: withAppEnvironmentHeader(options.headers),
+  })) as typeof supabase.functions.invoke;
