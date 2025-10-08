@@ -62,8 +62,8 @@ const MinimalSidebar = ({ isExpanded, onMouseEnter, onMouseLeave, onClose }: Min
     <TooltipProvider>
       <aside 
         className={cn(
-          "fixed left-0 top-0 z-40 h-full bg-card/95 backdrop-blur-2xl border-r border-border/30 shadow-2xl",
-          "flex flex-col items-center py-6 transition-all duration-300",
+          "fixed left-0 top-0 z-40 h-full bg-card/95 backdrop-blur-2xl border-r border-border/50",
+          "flex flex-col items-center py-6 transition-all duration-300 ease-in-out",
           isExpanded ? "w-64" : "w-16",
           "hidden lg:flex"
         )}

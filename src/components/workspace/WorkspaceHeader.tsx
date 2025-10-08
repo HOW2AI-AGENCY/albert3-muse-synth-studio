@@ -65,9 +65,16 @@ const WorkspaceHeader = ({ className }: WorkspaceHeaderProps) => {
 
         {/* User Profile */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="hidden md:block text-right">
-            <p className="text-sm font-semibold text-foreground">{userEmail.split('@')[0] || "Пользователь"}</p>
-            <p className="text-xs text-muted-foreground truncate max-w-[150px]">{userEmail}</p>
+          <div className="hidden md:flex flex-col items-end min-w-0 max-w-[180px]">
+            <p className="text-sm font-semibold text-foreground truncate w-full">
+              {userEmail.split('@')[0] || "Пользователь"}
+            </p>
+            <p 
+              className="text-xs text-muted-foreground truncate w-full overflow-hidden text-ellipsis" 
+              title={userEmail}
+            >
+              {userEmail}
+            </p>
           </div>
           <Button
             variant="ghost"

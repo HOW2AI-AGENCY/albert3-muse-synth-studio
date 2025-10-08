@@ -4,8 +4,7 @@
  * Версия: 2.0.0
  */
 
-@layer base {
-  :root {
+:root {
     /* ===== ЦВЕТОВАЯ ПАЛИТРА ===== */
     
     /* Основные цвета */
@@ -263,11 +262,8 @@
       --font-size-heading: var(--font-size-5xl);
     }
   }
-}
 
 /* ===== УТИЛИТАРНЫЕ КЛАССЫ ===== */
-
-@layer utilities {
   /* Быстрые переходы */
   .transition-fast { transition: var(--transition-fast); }
   .transition-normal { transition: var(--transition-normal); }
@@ -357,4 +353,3 @@
   .haptic-heavy:active {
     transform: scale(0.95);
   }
-}
