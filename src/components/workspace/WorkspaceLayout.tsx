@@ -11,7 +11,8 @@ const WorkspaceLayout = () => {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       {/* Sidebar - Desktop only (visible >= 1024px) */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-accent/5 pointer-events-none" />
         <MinimalSidebar
           isExpanded={isSidebarExpanded}
           onMouseEnter={() => setIsSidebarExpanded(true)}
@@ -26,7 +27,7 @@ const WorkspaceLayout = () => {
       )}>
         <WorkspaceHeader className="safe-area-inset lg:block hidden" />
         
-        <main className="flex-1 overflow-auto pb-[72px] lg:pb-0">
+        <main className="flex-1 overflow-auto pb-[72px] lg:pb-0 bg-gradient-to-br from-background via-background to-accent/5">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-7xl">
             <Outlet />
           </div>
