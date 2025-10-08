@@ -64,6 +64,13 @@ export const validators = {
     return null;
   },
 
+  object: (value: any, fieldName: string): ValidationError | null => {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+      return { field: fieldName, message: `${fieldName} должно быть объектом` };
+    }
+    return null;
+  },
+
   uuid: (value: string, fieldName: string): ValidationError | null => {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(value)) {
@@ -102,17 +109,28 @@ export const validationSchemas = {
   },
 
   generateLyrics: {
+    prompt: [validators.required, validators.string, validators.minLength(10), validators.maxLength(2000)],
     trackId: [validators.string, validators.uuid],
-    theme: [validators.required, validators.string, validators.minLength(1), validators.maxLength(500)],
-    mood: [validators.required, validators.string, validators.minLength(1), validators.maxLength(100)],
-    genre: [validators.required, validators.string, validators.minLength(1), validators.maxLength(100)],
-    language: [validators.string, validators.maxLength(10)],
-    structure: [validators.string, validators.maxLength(200)]
+    metadata: [validators.object]
+  },
+
+  syncLyricsJob: {
+    jobId: [validators.required, validators.string, validators.uuid],
+    forceRefresh: [validators.boolean]
   },
 
   separateStems: {
     trackId: [validators.required, validators.string, validators.uuid],
-    audioUrl: [validators.required, validators.string, validators.minLength(10)]
+    versionId: [validators.string, validators.uuid],
+    separationMode: [validators.required, validators.string, validators.minLength(3), validators.maxLength(50)]
+  },
+
+  syncStemJob: {
+    trackId: [validators.required, validators.string, validators.uuid],
+    versionId: [validators.string, validators.uuid],
+    taskId: [validators.string, validators.minLength(8), validators.maxLength(128)],
+    separationMode: [validators.string, validators.minLength(3), validators.maxLength(50)],
+    forceRefresh: [validators.boolean]
   }
 };
 

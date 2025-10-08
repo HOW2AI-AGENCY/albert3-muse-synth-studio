@@ -8,6 +8,12 @@ export interface SunoGenerationPayload {
   continue_clip_id?: string | null;
   audio_prompt_id?: string | null;
   style?: string | null;
+  callBackUrl?: string;
+}
+
+export interface SunoLyricsPayload {
+  prompt: string;
+  callBackUrl: string;
 }
 
 export interface SunoTaskStatus {
@@ -44,8 +50,31 @@ export interface SunoGenerationResult {
   endpoint: string;
 }
 
+export interface SunoLyricsGenerationResult {
+  taskId: string;
+  rawResponse: unknown;
+  endpoint: string;
+}
+
 export interface SunoQueryResult {
   tasks: SunoTaskStatus[];
+  rawResponse: unknown;
+  endpoint: string;
+  code?: number;
+}
+
+export interface SunoLyricsVariantStatus {
+  text?: string;
+  title?: string;
+  status?: string;
+  errorMessage?: string;
+  [key: string]: unknown;
+}
+
+export interface SunoLyricsQueryResult {
+  taskId: string;
+  data: SunoLyricsVariantStatus[];
+  status?: string;
   rawResponse: unknown;
   endpoint: string;
   code?: number;
@@ -64,12 +93,30 @@ export interface SunoStemResult {
   endpoint: string;
 }
 
+export interface SunoStemAsset {
+  sourceKey: string;
+  url: string;
+}
+
+export interface SunoStemQueryResult {
+  taskId: string;
+  assets: SunoStemAsset[];
+  status?: string | null;
+  rawResponse: unknown;
+  endpoint: string;
+  code?: number;
+  message?: string | null;
+}
+
 export interface CreateSunoClientOptions {
   apiKey: string;
   fetchImpl?: typeof fetch;
   generateEndpoints?: string[];
   queryEndpoints?: string[];
   stemEndpoints?: string[];
+  stemQueryEndpoints?: string[];
+  lyricsGenerateEndpoints?: string[];
+  lyricsQueryEndpoints?: string[];
 }
 
 export class SunoApiError extends Error {
@@ -118,6 +165,21 @@ const DEFAULT_QUERY_ENDPOINTS = unique([
 const DEFAULT_STEM_ENDPOINTS = unique([
   Deno.env.get("SUNO_STEM_URL"),
   "https://api.sunoapi.org/api/v1/vocal-removal/generate",
+]);
+
+const DEFAULT_STEM_QUERY_ENDPOINTS = unique([
+  Deno.env.get("SUNO_STEM_QUERY_URL"),
+  "https://api.sunoapi.org/api/v1/vocal-removal/record-info",
+]);
+
+const DEFAULT_LYRICS_GENERATE_ENDPOINTS = unique([
+  Deno.env.get("SUNO_LYRICS_URL"),
+  "https://api.sunoapi.org/api/v1/lyrics",
+]);
+
+const DEFAULT_LYRICS_QUERY_ENDPOINTS = unique([
+  Deno.env.get("SUNO_LYRICS_QUERY_URL"),
+  "https://api.sunoapi.org/api/v1/lyrics/record-info",
 ]);
 
 const appendQueryParam = (base: string, params: Record<string, string>): string => {
@@ -218,6 +280,97 @@ const parseQueryTasks = (payload: unknown): SunoTaskStatus[] => {
   return [];
 };
 
+const parseLyricsVariants = (payload: unknown): SunoLyricsVariantStatus[] => {
+  if (!payload || typeof payload !== "object") return [];
+
+  const root = payload as Record<string, unknown>;
+  const data = root.data;
+
+  const candidates: unknown[] = [];
+
+  if (Array.isArray(data)) {
+    candidates.push(...data);
+  }
+
+  if (data && typeof data === "object") {
+    const dataObj = data as Record<string, unknown>;
+    if (Array.isArray(dataObj.data)) {
+      candidates.push(...dataObj.data);
+    }
+    if (dataObj.response && typeof dataObj.response === "object") {
+      const responseObj = dataObj.response as Record<string, unknown>;
+      if (Array.isArray(responseObj.data)) {
+        candidates.push(...responseObj.data);
+      }
+    }
+  }
+
+  const variants: SunoLyricsVariantStatus[] = [];
+  for (const candidate of candidates) {
+    if (candidate && typeof candidate === "object") {
+      variants.push(candidate as SunoLyricsVariantStatus);
+    }
+  }
+
+  return variants;
+};
+
+const extractStemContainer = (value: unknown): Record<string, unknown> | null => {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const container = value as Record<string, unknown>;
+
+  if (container.vocal_removal_info && typeof container.vocal_removal_info === "object") {
+    return container.vocal_removal_info as Record<string, unknown>;
+  }
+
+  if (container.vocalRemovalInfo && typeof container.vocalRemovalInfo === "object") {
+    return container.vocalRemovalInfo as Record<string, unknown>;
+  }
+
+  if (container.response && typeof container.response === "object") {
+    return container.response as Record<string, unknown>;
+  }
+
+  if (container.data && typeof container.data === "object") {
+    return extractStemContainer(container.data);
+  }
+
+  return container;
+};
+
+const parseStemAssets = (payload: unknown): SunoStemAsset[] => {
+  if (!payload || typeof payload !== "object") return [];
+
+  const root = payload as Record<string, unknown>;
+  let container: Record<string, unknown> | null = null;
+
+  if (root.data && typeof root.data === "object") {
+    container = extractStemContainer(root.data);
+  }
+
+  if (!container && root.response && typeof root.response === "object") {
+    container = root.response as Record<string, unknown>;
+  }
+
+  if (!container) {
+    return [];
+  }
+
+  const assets: SunoStemAsset[] = [];
+  for (const [key, value] of Object.entries(container)) {
+    if (typeof value !== "string") continue;
+    const trimmed = value.trim();
+    if (!trimmed) continue;
+    if (!key.toLowerCase().includes("url")) continue;
+    assets.push({ sourceKey: key, url: trimmed });
+  }
+
+  return assets;
+};
+
 export const createSunoClient = (options: CreateSunoClientOptions) => {
   const {
     apiKey,
@@ -225,6 +378,9 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
     generateEndpoints = DEFAULT_GENERATE_ENDPOINTS,
     queryEndpoints = DEFAULT_QUERY_ENDPOINTS,
     stemEndpoints = DEFAULT_STEM_ENDPOINTS,
+    stemQueryEndpoints = DEFAULT_STEM_QUERY_ENDPOINTS,
+    lyricsGenerateEndpoints = DEFAULT_LYRICS_GENERATE_ENDPOINTS,
+    lyricsQueryEndpoints = DEFAULT_LYRICS_QUERY_ENDPOINTS,
   } = options;
 
   if (!apiKey) {
@@ -298,6 +454,73 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
     });
   };
 
+  const generateLyrics = async (payload: SunoLyricsPayload): Promise<SunoLyricsGenerationResult> => {
+    const errors: SunoApiError[] = [];
+    for (const endpoint of lyricsGenerateEndpoints) {
+      try {
+        const response = await fetchImpl(`${endpoint}`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const rawText = await response.text();
+        let json: unknown = null;
+        try {
+          json = rawText ? JSON.parse(rawText) : null;
+        } catch (parseError) {
+          throw new SunoApiError("Unable to parse Suno lyrics response", {
+            endpoint,
+            status: response.status,
+            body: rawText,
+            cause: parseError,
+          });
+        }
+
+        if (!response.ok) {
+          throw new SunoApiError(`Suno lyrics generation failed with status ${response.status}`, {
+            endpoint,
+            status: response.status,
+            body: rawText,
+          });
+        }
+
+        const { taskId } = parseTaskId(json);
+        if (!taskId) {
+          throw new SunoApiError("Suno lyrics response did not include a task identifier", {
+            endpoint,
+            status: response.status,
+            body: rawText,
+          });
+        }
+
+        return { taskId, rawResponse: json, endpoint };
+      } catch (error) {
+        const sunoError = error instanceof SunoApiError
+          ? error
+          : new SunoApiError((error as Error)?.message ?? "Unknown Suno lyrics error", {
+            endpoint,
+            cause: error,
+          });
+        errors.push(sunoError);
+        console.error("🔴 [SUNO] Lyrics generation attempt failed", {
+          endpoint,
+          message: sunoError.message,
+          status: sunoError.details.status,
+        });
+      }
+    }
+
+    const summary = errors.map(err => `${err.details.endpoint}: ${err.message}`).join("; ");
+    throw new SunoApiError(`All Suno lyrics endpoints failed. Attempts: ${summary}`, {
+      endpoint: lyricsGenerateEndpoints.join(", "),
+    });
+  };
+
   const queryTask = async (taskId: string): Promise<SunoQueryResult> => {
     const errors: SunoApiError[] = [];
     for (const endpoint of queryEndpoints) {
@@ -363,6 +586,90 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
     const summary = errors.map(err => `${err.details.endpoint}: ${err.message}`).join("; ");
     throw new SunoApiError(`All Suno query endpoints failed. Attempts: ${summary}`, {
       endpoint: queryEndpoints.join(", "),
+    });
+  };
+
+  const queryLyricsTask = async (taskId: string): Promise<SunoLyricsQueryResult> => {
+    const errors: SunoApiError[] = [];
+    for (const endpoint of lyricsQueryEndpoints) {
+      const url = appendQueryParam(endpoint, { taskId });
+      try {
+        const response = await fetchImpl(url, {
+          headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Accept": "application/json",
+          },
+        });
+
+        const rawText = await response.text();
+        let json: unknown = null;
+        try {
+          json = rawText ? JSON.parse(rawText) : null;
+        } catch (parseError) {
+          throw new SunoApiError("Unable to parse Suno lyrics query response", {
+            endpoint: url,
+            status: response.status,
+            body: rawText,
+            cause: parseError,
+          });
+        }
+
+        if (!response.ok) {
+          throw new SunoApiError(`Suno lyrics query failed with status ${response.status}`, {
+            endpoint: url,
+            status: response.status,
+            body: rawText,
+          });
+        }
+
+        const variants = parseLyricsVariants(json);
+        if (!variants.length) {
+          throw new SunoApiError("Suno lyrics query response did not include variants", {
+            endpoint: url,
+            status: response.status,
+            body: rawText,
+          });
+        }
+
+        const bodyObj = (json ?? {}) as Record<string, unknown>;
+        const dataObj = typeof bodyObj.data === "object" && bodyObj.data !== null
+          ? (bodyObj.data as Record<string, unknown>)
+          : undefined;
+        const status = typeof dataObj?.status === "string" ? dataObj.status : undefined;
+        const resolvedTaskId = typeof dataObj?.taskId === "string"
+          ? dataObj.taskId
+          : typeof dataObj?.task_id === "string"
+            ? (dataObj?.task_id as string)
+            : taskId;
+        const code = typeof bodyObj.code === "number" ? bodyObj.code : undefined;
+
+        return {
+          taskId: resolvedTaskId,
+          data: variants,
+          status,
+          rawResponse: json,
+          endpoint: url,
+          code,
+        };
+      } catch (error) {
+        const sunoError = error instanceof SunoApiError
+          ? error
+          : new SunoApiError((error as Error)?.message ?? "Unknown Suno lyrics query error", {
+            endpoint: url,
+            cause: error,
+          });
+        errors.push(sunoError);
+        console.error("🔴 [SUNO] Lyrics query attempt failed", {
+          endpoint: url,
+          message: sunoError.message,
+          status: sunoError.details.status,
+        });
+      }
+    }
+
+    const summary = errors.map(err => `${err.details.endpoint}: ${err.message}`).join("; ");
+    throw new SunoApiError(`All Suno lyrics query endpoints failed. Attempts: ${summary}`, {
+      endpoint: lyricsQueryEndpoints.join(", "),
     });
   };
 
@@ -440,10 +747,110 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
     });
   };
 
+  const queryStemTask = async (taskId: string): Promise<SunoStemQueryResult> => {
+    const errors: SunoApiError[] = [];
+
+    for (const endpoint of stemQueryEndpoints) {
+      try {
+        const url = appendQueryParam(endpoint, { taskId });
+        const response = await fetchImpl(url, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Accept": "application/json",
+          },
+        });
+
+        const rawText = await response.text();
+        let json: unknown = null;
+        try {
+          json = rawText ? JSON.parse(rawText) : null;
+        } catch (parseError) {
+          throw new SunoApiError("Unable to parse Suno stem query response", {
+            endpoint: url,
+            status: response.status,
+            body: rawText,
+            cause: parseError,
+          });
+        }
+
+        if (!response.ok) {
+          throw new SunoApiError(`Suno stem query failed with status ${response.status}`, {
+            endpoint: url,
+            status: response.status,
+            body: rawText,
+          });
+        }
+
+        const { taskId: parsedTaskId } = parseTaskId(json);
+        const assets = parseStemAssets(json);
+
+        let status: string | null = null;
+        let message: string | null = null;
+        let code: number | undefined = undefined;
+
+        if (json && typeof json === "object") {
+          const root = json as Record<string, unknown>;
+          if (typeof root.code === "number") {
+            code = root.code;
+          }
+          if (typeof root.msg === "string") {
+            message = root.msg;
+          } else if (typeof root.message === "string") {
+            message = root.message;
+          }
+
+          if (root.data && typeof root.data === "object") {
+            const dataObj = root.data as Record<string, unknown>;
+            if (typeof dataObj.status === "string") {
+              status = dataObj.status;
+            } else if (typeof dataObj.successFlag === "string") {
+              status = dataObj.successFlag;
+            }
+            if (!message && typeof dataObj.msg === "string") {
+              message = dataObj.msg;
+            }
+          }
+        }
+
+        return {
+          taskId: parsedTaskId ?? taskId,
+          assets,
+          status,
+          rawResponse: json,
+          endpoint: endpoint,
+          code,
+          message,
+        };
+      } catch (error) {
+        const sunoError = error instanceof SunoApiError
+          ? error
+          : new SunoApiError((error as Error)?.message ?? "Unknown Suno stem query error", {
+            endpoint,
+            cause: error,
+          });
+        errors.push(sunoError);
+        console.error("🔴 [SUNO] Stem query failed", {
+          endpoint,
+          message: sunoError.message,
+          status: sunoError.details.status,
+        });
+      }
+    }
+
+    const summary = errors.map(err => `${err.details.endpoint}: ${err.message}`).join("; ");
+    throw new SunoApiError(`All Suno stem query endpoints failed. Attempts: ${summary}`, {
+      endpoint: stemQueryEndpoints.join(", "),
+    });
+  };
+
   return {
     generateTrack,
+    generateLyrics,
     queryTask,
+    queryLyricsTask,
     requestStemSeparation,
+    queryStemTask,
   };
 };
 

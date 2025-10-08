@@ -12,6 +12,12 @@ verify_jwt = true
 [functions.generate-suno]
 verify_jwt = true
 
+[functions.sync-lyrics-job]
+verify_jwt = true
+
+[functions.lyrics-callback]
+verify_jwt = false
+
 [functions.suno-callback]
 verify_jwt = false
 
@@ -20,6 +26,9 @@ verify_jwt = true
 
 [functions.stems-callback]
 verify_jwt = false
+
+[functions.sync-stem-job]
+verify_jwt = true
 
 [functions.migrate-tracks-to-storage]
 verify_jwt = true

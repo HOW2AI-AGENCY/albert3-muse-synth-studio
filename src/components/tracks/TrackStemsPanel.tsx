@@ -7,12 +7,14 @@ import { Music4, ChevronDown, ChevronUp, Play, Pause, Download } from "lucide-re
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { ApiService } from "@/services/api.service";
 
 interface TrackStem {
   id: string;
   stem_type: string;
   audio_url: string;
   separation_mode: string;
+  suno_task_id?: string;
 }
 
 interface TrackStemsPanelProps {
@@ -22,9 +24,11 @@ interface TrackStemsPanelProps {
   onStemsGenerated?: () => void;
 }
 
-const stemTypeLabels: { [key: string]: string } = {
+const stemTypeLabels: Record<string, string> = {
   vocals: "Вокал",
+  backing_vocals: "Бэк-вокал",
   instrumental: "Инструментал",
+  original: "Оригинал",
   drums: "Ударные",
   bass: "Бас",
   guitar: "Гитара",
@@ -34,7 +38,45 @@ const stemTypeLabels: { [key: string]: string } = {
   woodwinds: "Духовые (деревянные)",
   percussion: "Перкуссия",
   synth: "Синтезатор",
-  fx: "Эффекты"
+  fx: "Эффекты",
+};
+
+const stemTypeOrder: Record<string, number> = {
+  vocals: 0,
+  backing_vocals: 1,
+  instrumental: 2,
+  original: 3,
+  drums: 10,
+  bass: 20,
+  guitar: 30,
+  keyboard: 40,
+  percussion: 50,
+  strings: 60,
+  brass: 70,
+  woodwinds: 80,
+  synth: 90,
+  fx: 100,
+};
+
+const sortStems = (collection: TrackStem[]) => {
+  return [...collection].sort((a, b) => {
+    const orderA = stemTypeOrder[a.stem_type] ?? 999;
+    const orderB = stemTypeOrder[b.stem_type] ?? 999;
+    if (orderA !== orderB) {
+      return orderA - orderB;
+    }
+    return a.stem_type.localeCompare(b.stem_type);
+  });
+};
+
+const formatStemLabel = (stemType: string) => {
+  if (stemTypeLabels[stemType]) {
+    return stemTypeLabels[stemType];
+  }
+  return stemType
+    .split("_")
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 };
 
 export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }: TrackStemsPanelProps) => {
@@ -43,49 +85,130 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
   const { currentTrack, isPlaying, playTrack, togglePlayPause } = useAudioPlayer();
 
   const handleGenerateStems = async (mode: 'separate_vocal' | 'split_stem') => {
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+    let abortTimeout: ReturnType<typeof setTimeout> | null = null;
+    let syncInterval: ReturnType<typeof setInterval> | null = null;
+    let syncStartTimeout: ReturnType<typeof setTimeout> | null = null;
+    let syncInFlight = false;
+
+    const clearTimers = () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+      if (abortTimeout) {
+        clearTimeout(abortTimeout);
+        abortTimeout = null;
+      }
+      if (syncInterval) {
+        clearInterval(syncInterval);
+        syncInterval = null;
+      }
+      if (syncStartTimeout) {
+        clearTimeout(syncStartTimeout);
+        syncStartTimeout = null;
+      }
+      syncInFlight = false;
+    };
+
     try {
       setIsGenerating(true);
-      
-      const { error } = await supabase.functions.invoke('separate-stems', {
-        body: {
-          trackId,
-          versionId,
-          separationMode: mode
-        }
+
+      const requestBody: Record<string, unknown> = {
+        trackId,
+        separationMode: mode,
+      };
+
+      if (versionId) {
+        requestBody.versionId = versionId;
+      }
+
+      const { data: response, error } = await supabase.functions.invoke<{
+        success?: boolean;
+        taskId?: string;
+        error?: string;
+      }>('separate-stems', {
+        body: requestBody,
       });
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(error.message ?? 'Не удалось запустить разделение стемов');
+      }
+
+      if (response?.error) {
+        throw new Error(response.error);
+      }
+
+      const targetTaskId = response?.taskId;
+
+      if (!response?.success || !targetTaskId) {
+        throw new Error('Сервис не вернул идентификатор задачи разделения стемов');
+      }
 
       toast.success(
-        mode === 'separate_vocal' 
-          ? 'Начато разделение на вокал и инструментал' 
-          : 'Начато разделение на инструменты'
+        mode === 'separate_vocal'
+          ? 'Запущено разделение на вокал и инструментал'
+          : 'Запущено инструментальное разделение трека'
       );
-      
-      // Poll for stems completion
-      const pollInterval = setInterval(async () => {
+
+      pollInterval = setInterval(async () => {
         const { data: stemsData, error: stemsError } = await supabase
           .from('track_stems')
           .select('*')
           .eq('track_id', trackId);
 
-        if (!stemsError && stemsData && stemsData.length > 0) {
-          clearInterval(pollInterval);
+        if (stemsError) {
+          console.error('Error polling stems:', stemsError);
+          return;
+        }
+
+        const matchingStems = stemsData?.filter(stem => stem.suno_task_id === targetTaskId);
+
+        if (matchingStems && matchingStems.length > 0) {
+          clearTimers();
           onStemsGenerated?.();
           toast.success('Стемы успешно созданы!');
           setIsGenerating(false);
         }
       }, 5000);
 
-      // Stop polling after 5 minutes
-      setTimeout(() => {
-        clearInterval(pollInterval);
+      const attemptSync = async () => {
+        if (syncInFlight) {
+          return;
+        }
+        syncInFlight = true;
+        try {
+          await ApiService.syncStemJob({
+            trackId,
+            versionId,
+            taskId: targetTaskId,
+            separationMode: mode,
+          });
+        } catch (syncError) {
+          console.error('Error synchronising stem job:', syncError);
+        } finally {
+          syncInFlight = false;
+        }
+      };
+
+      syncStartTimeout = setTimeout(() => {
+        void attemptSync();
+        syncInterval = setInterval(() => {
+          void attemptSync();
+        }, 60000);
+      }, 45000);
+
+      abortTimeout = setTimeout(() => {
+        clearTimers();
         setIsGenerating(false);
+        toast.error('Не удалось получить новые стемы. Попробуйте еще раз через несколько минут.');
       }, 300000);
 
     } catch (error) {
+      clearTimers();
+      const message = error instanceof Error ? error.message : 'Ошибка при создании стемов';
       console.error('Error generating stems:', error);
-      toast.error('Ошибка при создании стемов');
+      toast.error(message);
       setIsGenerating(false);
     }
   };
@@ -99,7 +222,7 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
     } else {
       playTrack({
         id: stemKey,
-        title: stemTypeLabels[stem.stem_type] || stem.stem_type,
+        title: formatStemLabel(stem.stem_type),
         audio_url: stem.audio_url,
       });
     }
@@ -109,8 +232,11 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
     window.open(stem.audio_url, '_blank');
   };
 
-  const hasTwoStemMode = stems.some(s => s.separation_mode === 'separate_vocal');
-  const hasMultiStemMode = stems.some(s => s.separation_mode === 'split_stem');
+  const twoStemCollection = sortStems(stems.filter(s => s.separation_mode === 'separate_vocal'));
+  const multiStemCollection = sortStems(stems.filter(s => s.separation_mode === 'split_stem'));
+
+  const hasTwoStemMode = twoStemCollection.length > 0;
+  const hasMultiStemMode = multiStemCollection.length > 0;
 
   return (
     <Card className="p-4 space-y-4">
@@ -137,6 +263,12 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
         )}
       </div>
 
+      {isGenerating && (
+        <p className="text-xs text-muted-foreground animate-pulse">
+          Генерация стемов запущена. Мы обновим список автоматически, как только Suno пришлёт результат.
+        </p>
+      )}
+
       {stems.length === 0 ? (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
@@ -162,6 +294,11 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
               <span className="text-xs text-muted-foreground">До 8 стемов</span>
             </Button>
           </div>
+          {isGenerating && (
+            <p className="text-xs text-muted-foreground animate-pulse">
+              Обработка может занять до пары минут. Оставьте окно открытым — мы пришлём уведомление, когда стемы будут готовы.
+            </p>
+          )}
         </div>
       ) : (
         <>
@@ -172,9 +309,7 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
                   <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     Базовое разделение
                   </div>
-                  {stems
-                    .filter(s => s.separation_mode === 'separate_vocal')
-                    .map(stem => {
+                  {twoStemCollection.map(stem => {
                       const stemKey = `stem-${stem.id}`;
                       const isCurrentStem = currentTrack?.id === stemKey;
                       const isStemPlaying = isCurrentStem && isPlaying;
@@ -194,7 +329,7 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
                             )}
                           </Button>
                           <span className="flex-1 text-sm font-medium">
-                            {stemTypeLabels[stem.stem_type] || stem.stem_type}
+                            {formatStemLabel(stem.stem_type)}
                           </span>
                           <Button
                             size="icon"
@@ -219,9 +354,7 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
                   <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                     Детальное разделение
                   </div>
-                  {stems
-                    .filter(s => s.separation_mode === 'split_stem')
-                    .map(stem => {
+                  {multiStemCollection.map(stem => {
                       const stemKey = `stem-${stem.id}`;
                       const isCurrentStem = currentTrack?.id === stemKey;
                       const isStemPlaying = isCurrentStem && isPlaying;
@@ -241,7 +374,7 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
                             )}
                           </Button>
                           <span className="flex-1 text-sm font-medium">
-                            {stemTypeLabels[stem.stem_type] || stem.stem_type}
+                            {formatStemLabel(stem.stem_type)}
                           </span>
                           <Button
                             size="icon"
