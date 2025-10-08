@@ -14,7 +14,6 @@ import {
 import { useMusicGeneration } from '@/hooks/useMusicGeneration';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
-import { LyricsEditor } from '@/components/LyricsEditor';
 
 interface MusicGeneratorProps {
   onTrackGenerated?: () => void;
@@ -70,8 +69,13 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   const [isLyricsDialogOpen, setIsLyricsDialogOpen] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
 
-  // Toggle style tags
-  const toggleStyleTag = useCallback((tag: string) => {
+  const lyricLineCount = lyrics
+    ? lyrics.split(/\r?\n/).filter((line) => line.trim().length > 0).length
+    : 0;
+  const lyricCharCount = lyrics.length;
+
+  // Toggle inspiration chips
+  const toggleInspiration = useCallback((chip: string) => {
     vibrate('light');
     setStyleTags(prev =>
       prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
@@ -439,15 +443,37 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
 
       {/* Lyrics Editor Dialog */}
       <Dialog open={isLyricsDialogOpen} onOpenChange={setIsLyricsDialogOpen}>
-        <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0">
+        <DialogContent className="max-w-2xl max-h-[90vh] p-0">
           <DialogHeader className="p-6 pb-4">
-            <DialogTitle>Редактор текста</DialogTitle>
+            <DialogTitle>Lyrics editor</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 px-6 overflow-hidden">
-            <LyricsEditor
-              lyrics={lyrics}
-              onLyricsChange={setLyrics}
-            />
+          <div className="px-6 pb-6 space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Lyrics</Label>
+              <Textarea
+                value={lyrics}
+                onChange={(event) => setLyrics(event.target.value)}
+                placeholder="Write lyrics or paste your draft..."
+                className="min-h-[200px] resize-none bg-background/50 text-sm"
+              />
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{lyricLineCount} lines</span>
+              <span>{lyricCharCount} characters</span>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setLyrics('')}
+                disabled={!lyrics}
+              >
+                Clear lyrics
+              </Button>
+              <Button size="sm" onClick={() => setIsLyricsDialogOpen(false)}>
+                Done
+              </Button>
+            </div>
           </div>
           <div className="p-6 border-t bg-muted/50">
             <Button onClick={() => setIsLyricsDialogOpen(false)}>Закрыть</Button>
