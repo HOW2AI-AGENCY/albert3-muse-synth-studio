@@ -59,20 +59,33 @@ const mainHandler = async (req: Request): Promise<Response> => {
 
     console.log('Generating lyrics with params:', { theme, mood, genre, language, structure })
 
-    // Call Lovable API for lyrics generation
-    const response = await fetch('https://lovableapi.com/api/lyrics/generate', {
+    // Call Lovable AI Gateway (ИСПРАВЛЕНО: правильный endpoint)
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        prompt,
-        theme,
-        mood,
-        genre,
-        language,
-        structure
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a professional songwriter and lyrics writer. Create original, creative, and emotionally resonant song lyrics that perfectly match the specified requirements. 
+
+Your lyrics should:
+- Follow the requested structure naturally
+- Match the mood and genre authentically  
+- Use vivid imagery and metaphors
+- Have strong hooks and memorable lines
+- Be grammatically correct in the requested language
+- Flow naturally with rhythm and rhyme (when appropriate for the genre)`
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
       }),
     })
 
@@ -83,7 +96,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
     }
 
     const result = await response.json()
-    const generatedLyrics = result.lyrics || result.text || 'No lyrics generated'
+    const generatedLyrics = result.choices?.[0]?.message?.content || 'No lyrics generated'
 
     console.log('Lyrics generated successfully');
 

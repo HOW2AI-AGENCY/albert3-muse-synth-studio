@@ -36,29 +36,7 @@ const mainHandler = async (req: Request) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const suggestionPrompt = `Based on the following music preferences, suggest specific style tags and musical elements:
-
-${mood ? `Desired Mood: ${mood}` : ''}
-${genre ? `Genre: ${genre}` : ''}
-${context ? `Context/Use Case: ${context}` : ''}
-${currentTags ? `Current Tags: ${currentTags.join(', ')}` : ''}
-
-Please suggest:
-1. 5-10 specific style tags (e.g., "lo-fi", "ambient", "synthwave", "trap beats")
-2. Instrument recommendations
-3. Production techniques or effects
-4. Vocal style suggestions (if applicable)
-5. Reference tracks or artists that match this style
-
-Format as JSON:
-{
-  "tags": [],
-  "instruments": [],
-  "techniques": [],
-  "vocalStyle": "",
-  "references": []
-}`;
-
+    // УЛУЧШЕНО: Используем tool calling для structured output
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -70,13 +48,58 @@ Format as JSON:
         messages: [
           {
             role: 'system',
-            content: 'You are a music production expert and style consultant. Suggest specific, actionable style elements for music creation.'
+            content: 'You are a music production expert and style consultant. Suggest specific, actionable style elements for AI music creation based on user preferences.'
           },
           {
             role: 'user',
-            content: suggestionPrompt
+            content: `Based on these preferences, suggest music style elements:
+${mood ? `Mood: ${mood}` : ''}
+${genre ? `Genre: ${genre}` : ''}
+${context ? `Context: ${context}` : ''}
+${currentTags ? `Current Tags: ${currentTags.join(', ')}` : ''}`
           }
         ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "suggest_music_styles",
+              description: "Suggest comprehensive music style elements and recommendations",
+              parameters: {
+                type: "object",
+                properties: {
+                  tags: {
+                    type: "array",
+                    description: "5-10 specific style tags (e.g., lo-fi, synthwave, trap beats)",
+                    items: { type: "string" }
+                  },
+                  instruments: {
+                    type: "array",
+                    description: "Recommended instruments for this style",
+                    items: { type: "string" }
+                  },
+                  techniques: {
+                    type: "array",
+                    description: "Production techniques or effects",
+                    items: { type: "string" }
+                  },
+                  vocalStyle: {
+                    type: "string",
+                    description: "Vocal style recommendation (if applicable)"
+                  },
+                  references: {
+                    type: "array",
+                    description: "Reference tracks or artists matching this style",
+                    items: { type: "string" }
+                  }
+                },
+                required: ["tags", "instruments", "techniques"],
+                additionalProperties: false
+              }
+            }
+          }
+        ],
+        tool_choice: { type: "function", function: { name: "suggest_music_styles" } }
       }),
     });
 
@@ -87,22 +110,20 @@ Format as JSON:
     }
 
     const data = await response.json();
-    const suggestionText = data.choices?.[0]?.message?.content;
-
-    if (!suggestionText) {
-      throw new Error('No response from AI');
-    }
-
-    // Try to parse JSON from response
+    
+    // Extract structured output from tool call
+    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     let suggestions;
-    try {
-      const jsonMatch = suggestionText.match(/```json\n([\s\S]*?)\n```/) || 
-                       suggestionText.match(/```\n([\s\S]*?)\n```/);
-      const jsonText = jsonMatch ? jsonMatch[1] : suggestionText;
-      suggestions = JSON.parse(jsonText);
-    } catch (e) {
-      console.error('Failed to parse AI response as JSON:', suggestionText);
-      suggestions = { raw: suggestionText };
+    
+    if (toolCall?.function?.arguments) {
+      try {
+        suggestions = JSON.parse(toolCall.function.arguments);
+      } catch (e) {
+        console.error('Failed to parse tool call arguments:', toolCall.function.arguments);
+        throw new Error('Invalid AI response format');
+      }
+    } else {
+      throw new Error('No tool call in AI response');
     }
 
     return new Response(
