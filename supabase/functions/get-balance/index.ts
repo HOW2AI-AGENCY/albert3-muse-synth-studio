@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { createCorsHeaders, createSecurityHeaders } from "../_shared/cors.ts";
+import { createCorsHeaders } from "../_shared/cors.ts";
+import { createSecurityHeaders } from "../_shared/security.ts";
 
 const handler = async (req: Request): Promise<Response> => {
   const corsHeaders = createCorsHeaders();
@@ -33,16 +34,17 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // 2. Get provider from query params or request body (supports POST via functions.invoke)
+    // 2. Get provider from query params or request body
     const url = new URL(req.url);
     let provider = url.searchParams.get('provider');
 
-    if (!provider) {
+    // If not in query params and method is POST, try reading from body
+    if (!provider && req.method === 'POST') {
       try {
         const body = await req.json();
         provider = body?.provider;
-      } catch (_) {
-        // ignore JSON parse errors (e.g., GET without body)
+      } catch (e) {
+        console.error('Failed to parse POST body:', e);
       }
     }
 
@@ -69,7 +71,8 @@ const handler = async (req: Request): Promise<Response> => {
 
   } catch (error) {
     console.error(`Error in get-balance for provider:`, error);
-    return new Response(JSON.stringify({ error: error.message || 'An unknown error occurred' }), {
+    const message = error instanceof Error ? error.message : 'An unknown error occurred';
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
     });
