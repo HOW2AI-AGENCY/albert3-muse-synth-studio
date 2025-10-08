@@ -36,7 +36,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero">
-      <Header user={user} onAuthClick={() => setShowAuth(true)} />
+      <Header user={user || undefined} onAuthClick={() => setShowAuth(true)} />
 
       {/* Hero Section */}
       <section
