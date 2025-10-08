@@ -291,9 +291,9 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
         </div>
 
         {/* Теги стиля */}
-        {(track as any).style && !compact && (
+        {track.style_tags && track.style_tags.length > 0 && !compact && (
           <div className="flex flex-wrap gap-1">
-            {(track as any).style?.split(',').slice(0, 3).map((style, idx) => (
+            {track.style_tags.slice(0, 3).map((style, idx) => (
               <Badge
                 key={idx}
                 variant="secondary"

@@ -5,25 +5,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ApiService, Track } from "@/services/api.service";
+import { ApiService, Track, mapTrackRowToTrack } from "@/services/api.service";
 import { supabase } from "@/integrations/supabase/client";
 import { trackCache, CachedTrack } from "@/utils/trackCache";
-import { logInfo, logDebug } from "@/utils/logger";
+import type { Database } from "@/integrations/supabase/types";
+import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
-export interface UseTracksOptions {
-  pollingEnabled?: boolean;
-  pollingInitialDelay?: number;
-  pollingMaxDelay?: number;
-}
+type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
 
-const POLLING_CONTEXT = "useTracks";
-const DEFAULT_POLLING_INITIAL_DELAY = 5000;
-const DEFAULT_POLLING_MAX_DELAY = 30000;
-
-export const useTracks = (
-  refreshTrigger?: number,
-  options: UseTracksOptions = {}
-) => {
+export const useTracks = (refreshTrigger?: number) => {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -115,32 +105,29 @@ export const useTracks = (
   // Realtime updates: reflect INSERT/UPDATE/DELETE immediately
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
-    let userId: string | null = null;
+
+    const handlePayload = (payload: RealtimePostgresChangesPayload<TrackRow>) => {
+      if (payload.eventType === 'INSERT' && payload.new) {
+        const newTrack = mapTrackRowToTrack(payload.new);
+        setTracks((prev) => [newTrack, ...prev]);
+      } else if (payload.eventType === 'UPDATE' && payload.new) {
+        const updated = mapTrackRowToTrack(payload.new);
+        setTracks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+      } else if (payload.eventType === 'DELETE' && payload.old) {
+        const removedId = payload.old.id;
+        setTracks((prev) => prev.filter((t) => t.id !== removedId));
+      }
+    };
 
     const setup = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      userId = user.id;
-
       channel = supabase
         .channel(`tracks-user-${user.id}`)
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'tracks', filter: `user_id=eq.${user.id}` },
-          (payload) => {
-            if (payload.eventType === 'INSERT') {
-              // @ts-ignore payload.new typed as any
-              setTracks((prev) => [payload.new as Track, ...prev]);
-            } else if (payload.eventType === 'UPDATE') {
-              // @ts-ignore
-              const updated = payload.new as Track;
-              setTracks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
-            } else if (payload.eventType === 'DELETE') {
-              // @ts-ignore
-              const removed = payload.old as { id: string };
-              setTracks((prev) => prev.filter((t) => t.id !== removed.id));
-            }
-          }
+          handlePayload
         )
         .subscribe();
     };

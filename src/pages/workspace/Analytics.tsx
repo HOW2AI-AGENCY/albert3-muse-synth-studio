@@ -28,7 +28,10 @@ const Analytics = () => {
   const [topTracks, setTopTracks] = useState<TrackStats[]>([]);
   const [overallStats, setOverallStats] = useState<OverallStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'all'>('30d');
+  type TimeRange = '7d' | '30d' | 'all';
+  const isTimeRange = (value: string): value is TimeRange =>
+    value === '7d' || value === '30d' || value === 'all';
+  const [timeRange, setTimeRange] = useState<TimeRange>('30d');
 
   useEffect(() => {
     fetchAnalytics();
@@ -93,7 +96,14 @@ const Analytics = () => {
           <h1 className="text-3xl font-bold text-gradient-primary">Аналитика</h1>
           <p className="text-muted-foreground mt-1">Статистика ваших треков</p>
         </div>
-        <Tabs value={timeRange} onValueChange={(v) => setTimeRange(v as any)}>
+        <Tabs
+          value={timeRange}
+          onValueChange={(value) => {
+            if (isTimeRange(value)) {
+              setTimeRange(value);
+            }
+          }}
+        >
           <TabsList>
             <TabsTrigger value="7d">7 дней</TabsTrigger>
             <TabsTrigger value="30d">30 дней</TabsTrigger>

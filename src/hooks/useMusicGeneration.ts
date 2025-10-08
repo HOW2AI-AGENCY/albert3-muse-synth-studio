@@ -11,10 +11,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { logError, logInfo, logDebug, logWarn } from "@/utils/logger";
 
 // Debounce utility
-const useDebounce = (callback: Function, delay: number) => {
+const useDebounce = <Args extends unknown[]>(
+  callback: (...args: Args) => void,
+  delay: number
+) => {
   const timeoutRef = useRef<NodeJS.Timeout>();
-  
-  return useCallback((...args: any[]) => {
+
+  return useCallback((...args: Args) => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }

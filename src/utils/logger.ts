@@ -15,7 +15,7 @@ interface LogEntry {
   message: string;
   timestamp: Date;
   context?: string;
-  data?: any;
+  data?: Record<string, unknown>;
   error?: Error;
 }
 
@@ -27,28 +27,28 @@ class Logger {
   /**
    * Логирование ошибки
    */
-  error(message: string, error?: Error, context?: string, data?: any) {
+  error(message: string, error?: Error, context?: string, data?: Record<string, unknown>) {
     this.log(LogLevel.ERROR, message, context, data, error);
   }
 
   /**
    * Логирование предупреждения
    */
-  warn(message: string, context?: string, data?: any) {
+  warn(message: string, context?: string, data?: Record<string, unknown>) {
     this.log(LogLevel.WARN, message, context, data);
   }
 
   /**
    * Логирование информации
    */
-  info(message: string, context?: string, data?: any) {
+  info(message: string, context?: string, data?: Record<string, unknown>) {
     this.log(LogLevel.INFO, message, context, data);
   }
 
   /**
    * Отладочное логирование (только в development)
    */
-  debug(message: string, context?: string, data?: any) {
+  debug(message: string, context?: string, data?: Record<string, unknown>) {
     if (this.isDevelopment) {
       this.log(LogLevel.DEBUG, message, context, data);
     }
@@ -57,7 +57,13 @@ class Logger {
   /**
    * Основной метод логирования
    */
-  private log(level: LogLevel, message: string, context?: string, data?: any, error?: Error) {
+  private log(
+    level: LogLevel,
+    message: string,
+    context?: string,
+    data?: Record<string, unknown>,
+    error?: Error
+  ) {
     const logEntry: LogEntry = {
       level,
       message,
@@ -206,14 +212,14 @@ window.addEventListener('unhandledrejection', (event) => {
 });
 
 // Экспортируем удобные функции для быстрого использования
-export const logError = (message: string, error?: Error, context?: string, data?: any) => 
+export const logError = (message: string, error?: Error, context?: string, data?: Record<string, unknown>) =>
   logger.error(message, error, context, data);
 
-export const logWarn = (message: string, context?: string, data?: any) => 
+export const logWarn = (message: string, context?: string, data?: Record<string, unknown>) =>
   logger.warn(message, context, data);
 
-export const logInfo = (message: string, context?: string, data?: any) => 
+export const logInfo = (message: string, context?: string, data?: Record<string, unknown>) =>
   logger.info(message, context, data);
 
-export const logDebug = (message: string, context?: string, data?: any) => 
+export const logDebug = (message: string, context?: string, data?: Record<string, unknown>) =>
   logger.debug(message, context, data);

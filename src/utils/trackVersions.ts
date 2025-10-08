@@ -1,5 +1,29 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logError, logInfo } from '@/utils/logger';
+import type { Database } from '@/integrations/supabase/types';
+
+type TrackRow = Database['public']['Tables']['tracks']['Row'];
+type TrackVersionRow = Database['public']['Tables']['track_versions']['Row'];
+
+interface SunoMetadataEntry {
+  id?: string;
+  audioUrl?: string;
+  audio_url?: string;
+  stream_audio_url?: string;
+  image_url?: string;
+  imageUrl?: string;
+  video_url?: string;
+  videoUrl?: string;
+  duration?: number;
+  duration_seconds?: number;
+  lyric?: string;
+  lyrics?: string;
+}
+
+interface TrackMetadata {
+  suno_data?: SunoMetadataEntry[];
+  [key: string]: unknown;
+}
 
 export interface TrackWithVersions {
   id: string;
@@ -16,8 +40,32 @@ export interface TrackWithVersions {
   artist?: string;
   status?: string;
   user_id?: string;
-  metadata?: any; // Add metadata to the interface
+  metadata?: TrackMetadata | null;
 }
+
+const isTrackMetadata = (metadata: unknown): metadata is TrackMetadata =>
+  typeof metadata === 'object' && metadata !== null;
+
+const isSunoMetadataEntry = (entry: unknown): entry is SunoMetadataEntry =>
+  typeof entry === 'object' && entry !== null;
+
+const hasAudioSource = (entry: SunoMetadataEntry | undefined): entry is SunoMetadataEntry =>
+  Boolean(entry && (entry.audioUrl || entry.audio_url || entry.stream_audio_url));
+
+const resolveAudioUrl = (entry: SunoMetadataEntry): string =>
+  entry.audioUrl || entry.audio_url || entry.stream_audio_url || '';
+
+const resolveImageUrl = (entry: SunoMetadataEntry, fallback?: string | null): string | undefined =>
+  entry.image_url || entry.imageUrl || fallback || undefined;
+
+const resolveVideoUrl = (entry: SunoMetadataEntry): string | undefined =>
+  entry.video_url || entry.videoUrl || undefined;
+
+const resolveDuration = (entry: SunoMetadataEntry): number | undefined =>
+  entry.duration ?? entry.duration_seconds ?? undefined;
+
+const resolveLyrics = (entry: SunoMetadataEntry, fallback?: string | null): string | undefined =>
+  entry.lyric || entry.lyrics || fallback || undefined;
 
 /**
  * Loads a track and all its versions from the database
@@ -30,9 +78,9 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
     // Load the main track, including its metadata
     const { data: mainTrack, error: trackError } = await supabase
       .from('tracks')
-      .select('*, metadata')
+      .select('*')
       .eq('id', trackId)
-      .single();
+      .single<TrackRow>();
 
     if (trackError) throw trackError;
     if (!mainTrack) return [];
@@ -42,7 +90,8 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       .from('track_versions')
       .select('*')
       .eq('parent_track_id', trackId)
-      .order('version_number', { ascending: true });
+      .order('version_number', { ascending: true })
+      .returns<TrackVersionRow[]>();
 
     if (versionsError) throw versionsError;
 
@@ -66,9 +115,10 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       user_id: mainTrack.user_id,
     });
 
-    // Add all versions from the dedicated table
+    const metadata = isTrackMetadata(mainTrack.metadata) ? mainTrack.metadata : null;
+
     if (versions && versions.length > 0) {
-      versions.forEach(version => {
+      versions.forEach((version: TrackVersionRow) => {
         result.push({
           id: version.id,
           parentTrackId: mainTrack.id,
@@ -77,129 +127,37 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
           title: `${mainTrack.title} (V${version.version_number})`,
           audio_url: version.audio_url || '',
           cover_url: version.cover_url || mainTrack.cover_url,
-          video_url: version.video_url,
-          duration: version.duration,
-          lyrics: version.lyrics,
-          style_tags: mainTrack.style_tags,
+          video_url: version.video_url || undefined,
+          duration: version.duration || undefined,
+          lyrics: version.lyrics || undefined,
+          style_tags: mainTrack.style_tags || undefined,
           user_id: mainTrack.user_id,
         });
       });
-    } else if (mainTrack.metadata && typeof mainTrack.metadata === 'object' && !Array.isArray(mainTrack.metadata)) {
-      // FALLBACK: Если нет записей в track_versions, но есть suno_data в metadata
-      const metadata = mainTrack.metadata as Record<string, any>;
-      if (metadata.suno_data && Array.isArray(metadata.suno_data)) {
-        const sunoVersions = metadata.suno_data.filter((v: any) => 
-          v.audioUrl || v.audio_url
-        );
-        
-        if (sunoVersions.length > 1) {
-          // Пропускаем первый элемент (это основной трек), добавляем остальные как виртуальные версии
-          sunoVersions.slice(1).forEach((version: any, idx: number) => {
-            result.push({
-              id: `${mainTrack.id}_virtual_v${idx + 1}`, // Виртуальный ID
-              parentTrackId: mainTrack.id,
-              versionNumber: idx + 1,
-              isMasterVersion: false,
-              title: `${mainTrack.title} (V${idx + 1})`,
-              audio_url: version.audioUrl || version.audio_url || '',
-              cover_url: version.image_url || version.imageUrl || mainTrack.cover_url,
-              video_url: version.video_url || version.videoUrl,
-              duration: version.duration || version.duration_seconds,
-              lyrics: version.lyric || version.lyrics,
-              style_tags: mainTrack.style_tags,
-              user_id: mainTrack.user_id,
-            });
+    } else if (metadata?.suno_data && metadata.suno_data.length > 1) {
+      logInfo('Using fallback to extract versions from metadata', 'trackVersions', { trackId });
+
+      const [, ...versionEntries] = metadata.suno_data.filter(isSunoMetadataEntry);
+
+      versionEntries
+        .filter(hasAudioSource)
+        .forEach((versionEntry, index) => {
+          result.push({
+            id: versionEntry.id || `${mainTrack.id}_virtual_v${index + 1}`,
+            parentTrackId: mainTrack.id,
+            versionNumber: index + 1,
+            isMasterVersion: false,
+            title: `${mainTrack.title} (V${index + 1})`,
+            audio_url: resolveAudioUrl(versionEntry),
+            cover_url: resolveImageUrl(versionEntry, mainTrack.cover_url),
+            video_url: resolveVideoUrl(versionEntry),
+            duration: resolveDuration(versionEntry),
+            lyrics: resolveLyrics(versionEntry, mainTrack.lyrics),
+            style_tags: mainTrack.style_tags || undefined,
+            user_id: mainTrack.user_id,
+            status: 'completed',
           });
-        }
-      }
-    }
-    // Fallback for older tracks that store versions in metadata
-    else if (mainTrack.metadata?.suno_data && Array.isArray(mainTrack.metadata.suno_data) && mainTrack.metadata.suno_data.length > 1) {
-      logInfo('Using fallback to extract versions from metadata', 'trackVersions', { trackId });
-      // The first item in suno_data is the main track, so we slice from the second item
-      mainTrack.metadata.suno_data.slice(1).forEach((versionData: any, index: number) => {
-        result.push({
-          id: versionData.id, // Use the ID from the metadata version
-          parentTrackId: mainTrack.id,
-          versionNumber: index + 1, // Version numbers start from 1
-          isMasterVersion: false, // Cannot determine master status from metadata
-          title: `${mainTrack.title} (V${index + 1})`,
-          audio_url: versionData.audio_url || versionData.stream_audio_url || '',
-          cover_url: versionData.image_url || mainTrack.cover_url,
-          video_url: versionData.video_url,
-          duration: versionData.duration,
-          lyrics: mainTrack.lyrics, // Lyrics are likely for the main track
-          style_tags: mainTrack.style_tags,
-          user_id: mainTrack.user_id,
-          status: 'completed' // Assume completed if it's in metadata
         });
-      });
-    }
-    // Fallback for older tracks that store versions in metadata
-    else if (mainTrack.metadata?.suno_data && Array.isArray(mainTrack.metadata.suno_data) && mainTrack.metadata.suno_data.length > 1) {
-      logInfo('Using fallback to extract versions from metadata', 'trackVersions', { trackId });
-      // The first item in suno_data is the main track, so we slice from the second item
-      mainTrack.metadata.suno_data.slice(1).forEach((versionData: any, index: number) => {
-        result.push({
-          id: versionData.id, // Use the ID from the metadata version
-          parentTrackId: mainTrack.id,
-          versionNumber: index + 1, // Version numbers start from 1
-          isMasterVersion: false, // Cannot determine master status from metadata
-          title: `${mainTrack.title} (V${index + 1})`,
-          audio_url: versionData.audio_url || versionData.stream_audio_url || '',
-          cover_url: versionData.image_url || mainTrack.cover_url,
-          video_url: versionData.video_url,
-          duration: versionData.duration,
-          lyrics: mainTrack.lyrics, // Lyrics are likely for the main track
-          style_tags: mainTrack.style_tags,
-          user_id: mainTrack.user_id,
-          status: 'completed' // Assume completed if it's in metadata
-        });
-      });
-    }
-    // Fallback for older tracks that store versions in metadata
-    else if (mainTrack.metadata?.suno_data && Array.isArray(mainTrack.metadata.suno_data) && mainTrack.metadata.suno_data.length > 1) {
-      logInfo('Using fallback to extract versions from metadata', 'trackVersions', { trackId });
-      // The first item in suno_data is the main track, so we slice from the second item
-      mainTrack.metadata.suno_data.slice(1).forEach((versionData: any, index: number) => {
-        result.push({
-          id: versionData.id, // Use the ID from the metadata version
-          parentTrackId: mainTrack.id,
-          versionNumber: index + 1, // Version numbers start from 1
-          isMasterVersion: false, // Cannot determine master status from metadata
-          title: `${mainTrack.title} (V${index + 1})`,
-          audio_url: versionData.audio_url || versionData.stream_audio_url || '',
-          cover_url: versionData.image_url || mainTrack.cover_url,
-          video_url: versionData.video_url,
-          duration: versionData.duration,
-          lyrics: mainTrack.lyrics, // Lyrics are likely for the main track
-          style_tags: mainTrack.style_tags,
-          user_id: mainTrack.user_id,
-          status: 'completed' // Assume completed if it's in metadata
-        });
-      });
-    }
-    // Fallback for older tracks that store versions in metadata
-    else if (mainTrack.metadata?.suno_data && Array.isArray(mainTrack.metadata.suno_data) && mainTrack.metadata.suno_data.length > 1) {
-      logInfo('Using fallback to extract versions from metadata', 'trackVersions', { trackId });
-      // The first item in suno_data is the main track, so we slice from the second item
-      mainTrack.metadata.suno_data.slice(1).forEach((versionData: any, index: number) => {
-        result.push({
-          id: versionData.id, // Use the ID from the metadata version
-          parentTrackId: mainTrack.id,
-          versionNumber: index + 1, // Version numbers start from 1
-          isMasterVersion: false, // Cannot determine master status from metadata
-          title: `${mainTrack.title} (V${index + 1})`,
-          audio_url: versionData.audio_url || versionData.stream_audio_url || '',
-          cover_url: versionData.image_url || mainTrack.cover_url,
-          video_url: versionData.video_url,
-          duration: versionData.duration,
-          lyrics: mainTrack.lyrics, // Lyrics are likely for the main track
-          style_tags: mainTrack.style_tags,
-          user_id: mainTrack.user_id,
-          status: 'completed' // Assume completed if it's in metadata
-        });
-      });
     }
 
     return result;
