@@ -323,6 +323,10 @@ export type Database = {
         Args: { track_id: string }
         Returns: undefined
       }
+      increment_play_count: {
+        Args: { track_id: string }
+        Returns: undefined
+      }
       increment_view_count: {
         Args: { track_id: string }
         Returns: undefined

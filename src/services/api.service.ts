@@ -324,4 +324,17 @@ export class ApiService {
 
     return (data as Track[]) || [];
   }
+
+  /**
+   * Increment play count for a track
+   */
+  static async incrementPlayCount(trackId: string): Promise<void> {
+    const { error } = await supabase.rpc('increment_play_count', {
+      track_id: trackId
+    });
+
+    if (error) {
+      console.error('Failed to increment play count:', error);
+    }
+  }
 }
