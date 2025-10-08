@@ -56,24 +56,43 @@ export interface GenerateMusicResponse {
 }
 
 export interface GenerateLyricsRequest {
-  theme: string;
-  mood: string;
-  genre: string;
-  language?: 'ru' | 'en';
-  structure?: string;
-  vocalStyle?: string;
-  references?: string;
+  prompt: string;
+  trackId?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface GenerateLyricsResponse {
-  lyrics: string;
-  metadata: {
-    theme: string;
-    mood: string;
-    genre: string;
-    language: string;
-    structure: string;
-  };
+  success: boolean;
+  jobId: string;
+  taskId: string;
+  status: string;
+}
+
+export interface LyricsVariant {
+  id: string;
+  jobId: string;
+  index: number;
+  title: string | null;
+  status: string | null;
+  content: string | null;
+  errorMessage: string | null;
+  updatedAt: string;
+}
+
+export interface LyricsGenerationJob {
+  id: string;
+  trackId: string | null;
+  prompt: string;
+  status: string;
+  sunoTaskId: string | null;
+  errorMessage: string | null;
+  metadata: Record<string, unknown> | null;
+  callStrategy: string;
+  callbackUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  lastCallback: Record<string, unknown> | null;
+  variants: LyricsVariant[];
 }
 
 export type ProviderBalanceResponse = {
@@ -195,17 +214,89 @@ export class ApiService {
     if (error || !data) {
       return handleSupabaseFunctionError(
         error,
-        "Failed to generate lyrics",
+        "Failed to start lyrics generation",
         context,
         {
-          theme: request.theme,
-          mood: request.mood,
-          genre: request.genre,
+          promptLength: request.prompt.length,
+          hasTrack: Boolean(request.trackId),
         }
       );
     }
 
     return data;
+  }
+
+  /**
+   * Fetch lyrics generation job with variants
+   */
+  static async getLyricsJob(jobId: string): Promise<LyricsGenerationJob | null> {
+    const context = "ApiService.getLyricsJob";
+    const { data, error } = await supabase
+      .from("lyrics_jobs")
+      .select(`
+        id,
+        track_id,
+        prompt,
+        status,
+        suno_task_id,
+        error_message,
+        metadata,
+        call_strategy,
+        callback_url,
+        created_at,
+        updated_at,
+        last_callback,
+        variants:lyrics_variants (
+          id,
+          job_id,
+          variant_index,
+          title,
+          status,
+          content,
+          error_message,
+          updated_at
+        )
+      `)
+      .eq("id", jobId)
+      .maybeSingle();
+
+    if (error) {
+      handlePostgrestError(error, "Failed to fetch lyrics job", context, { jobId });
+      return null;
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    const variants = Array.isArray(data.variants)
+      ? (data.variants as Array<{ id: string; job_id: string; variant_index: number; title: string | null; status: string | null; content: string | null; error_message: string | null; updated_at: string; }>).map((variant) => ({
+          id: variant.id,
+          jobId: variant.job_id,
+          index: variant.variant_index,
+          title: variant.title,
+          status: variant.status,
+          content: variant.content,
+          errorMessage: variant.error_message,
+          updatedAt: variant.updated_at,
+        }))
+      : [];
+
+    return {
+      id: data.id,
+      trackId: data.track_id,
+      prompt: data.prompt,
+      status: data.status,
+      sunoTaskId: data.suno_task_id,
+      errorMessage: data.error_message,
+      metadata: (data.metadata ?? null) as Record<string, unknown> | null,
+      callStrategy: data.call_strategy,
+      callbackUrl: data.callback_url,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+      lastCallback: (data.last_callback ?? null) as Record<string, unknown> | null,
+      variants,
+    };
   }
 
   /**
