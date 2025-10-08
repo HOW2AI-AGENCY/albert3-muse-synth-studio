@@ -42,12 +42,12 @@ interface TrackVersion {
   id: string;
   version_number: number;
   is_master: boolean;
-  suno_id: string | null;
-  audio_url: string | null;
-  video_url?: string | null;
-  cover_url?: string | null;
-  lyrics?: string | null;
-  duration?: number | null;
+  suno_id: string;
+  audio_url: string;
+  video_url?: string;
+  cover_url?: string;
+  lyrics?: string;
+  duration?: number;
   metadata?: Record<string, unknown>;
 }
 

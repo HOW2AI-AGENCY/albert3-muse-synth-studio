@@ -9,7 +9,7 @@ import type { Track as ApiTrack } from '@/services/api.service';
  * Нормализует трек из API формата в формат компонентов
  * Преобразует все null значения в undefined
  */
-export const normalizeTrack = <T extends ApiTrack>(track: T): Omit<T, 'audio_url' | 'cover_url' | 'video_url' | 'duration' | 'duration_seconds' | 'style_tags' | 'lyrics' | 'has_vocals' | 'genre' | 'mood' | 'like_count' | 'view_count' | 'has_stems' | 'suno_id'> & {
+export const normalizeTrack = <T extends ApiTrack>(track: T): Omit<T, 'audio_url' | 'cover_url' | 'video_url' | 'duration' | 'duration_seconds' | 'style_tags' | 'lyrics' | 'has_vocals' | 'genre' | 'mood' | 'like_count' | 'view_count' | 'has_stems' | 'suno_id' | 'model_name' | 'improved_prompt' | 'download_count' | 'play_count' | 'is_public'> & {
   audio_url?: string;
   cover_url?: string;
   video_url?: string;
@@ -24,6 +24,11 @@ export const normalizeTrack = <T extends ApiTrack>(track: T): Omit<T, 'audio_url
   view_count?: number;
   has_stems?: boolean;
   suno_id?: string;
+  model_name?: string;
+  improved_prompt?: string;
+  download_count?: number;
+  play_count?: number;
+  is_public?: boolean;
 } => {
   return {
     ...track,
@@ -41,6 +46,11 @@ export const normalizeTrack = <T extends ApiTrack>(track: T): Omit<T, 'audio_url
     view_count: track.view_count ?? undefined,
     has_stems: track.has_stems ?? undefined,
     suno_id: track.suno_id ?? undefined,
+    model_name: track.model_name ?? undefined,
+    improved_prompt: track.improved_prompt ?? undefined,
+    download_count: track.download_count ?? undefined,
+    play_count: track.play_count ?? undefined,
+    is_public: track.is_public ?? undefined,
   };
 };
 

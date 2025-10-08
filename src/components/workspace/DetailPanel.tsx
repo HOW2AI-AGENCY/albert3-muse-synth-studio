@@ -12,12 +12,12 @@ interface TrackVersion {
   id: string;
   version_number: number;
   is_master: boolean;
-  suno_id: string | null;
-  audio_url: string | null;
-  video_url?: string | null;
-  cover_url?: string | null;
-  lyrics?: string | null;
-  duration?: number | null;
+  suno_id: string;
+  audio_url: string;
+  video_url?: string;
+  cover_url?: string;
+  lyrics?: string;
+  duration?: number;
   metadata?: Record<string, unknown>;
 }
 
@@ -178,11 +178,19 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
       if (versionsData) {
         dispatch({ 
           type: 'SET_VERSIONS', 
-          value: versionsData.map(v => ({
-            ...v,
-            is_master: v.is_master ?? false,
-            metadata: v.metadata as Record<string, unknown>
-          }))
+          value: versionsData
+            .filter(v => v.suno_id && v.audio_url)
+            .map(v => ({
+              ...v,
+              is_master: v.is_master ?? false,
+              suno_id: v.suno_id!,
+              audio_url: v.audio_url!,
+              video_url: v.video_url ?? undefined,
+              cover_url: v.cover_url ?? undefined,
+              lyrics: v.lyrics ?? undefined,
+              duration: v.duration ?? undefined,
+              metadata: v.metadata as Record<string, unknown>
+            }))
         });
       }
 

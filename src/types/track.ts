@@ -23,9 +23,9 @@ export interface BaseTrack {
   lyrics: string | null;
   style_tags: string[] | null;
   has_vocals: boolean | null;
-  has_stems?: boolean;
-  like_count?: number;
-  view_count?: number;
+  has_stems?: boolean | null;
+  like_count?: number | null;
+  view_count?: number | null;
 }
 
 // Трек для аудиоплеера (требует обязательный audio_url)

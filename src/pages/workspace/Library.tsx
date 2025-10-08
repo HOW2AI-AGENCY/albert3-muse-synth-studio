@@ -25,6 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DisplayTrack, convertToDisplayTrack, convertToOptimizedTrack } from "@/types/track";
 import { cn } from "@/lib/utils";
 import { logger } from "@/utils/logger";
+import { normalizeTrack } from "@/utils/trackNormalizer";
 
 type ViewMode = 'grid' | 'list' | 'optimized';
 type SortBy = 'created_at' | 'title' | 'duration' | 'like_count';
@@ -119,18 +120,20 @@ const Library: React.FC = () => {
       playTrackWithQueue({
         id: track.id,
         title: track.title,
-        audio_url: track.audio_url,
-        cover_url: track.cover_url,
-        duration: track.duration,
-        style_tags: track.style_tags || []
-      }, filteredAndSortedTracks.map(t => ({
-        id: t.id,
-        title: t.title,
-        audio_url: t.audio_url || '',
-        cover_url: t.cover_url,
-        duration: t.duration,
-        style_tags: t.style_tags || []
-      })));
+        audio_url: track.audio_url!,
+        cover_url: track.cover_url ?? undefined,
+        duration: track.duration ?? undefined,
+        style_tags: track.style_tags ?? undefined,
+      }, filteredAndSortedTracks
+        .filter(t => t.audio_url)
+        .map(t => ({
+          id: t.id,
+          title: t.title,
+          audio_url: t.audio_url!,
+          cover_url: t.cover_url ?? undefined,
+          duration: t.duration ?? undefined,
+          style_tags: t.style_tags ?? undefined,
+        })));
     }
   }, [playTrackWithQueue, filteredAndSortedTracks]);
 
@@ -468,7 +471,7 @@ const Library: React.FC = () => {
               {filteredAndSortedTracks.map((track) => (
                 <TrackCard
                   key={track.id}
-                  track={track}
+                  track={normalizeTrack(track)}
                   onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
                   onDownload={() => handleDownload(track.id)}
                   onShare={() => handleShare(track.id)}

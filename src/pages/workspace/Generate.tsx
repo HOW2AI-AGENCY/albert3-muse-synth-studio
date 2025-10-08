@@ -22,6 +22,7 @@ import { useTrackRecovery } from "@/hooks/useTrackRecovery";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { supabase } from "@/integrations/supabase/client";
 import { logInfo } from "@/utils/logger";
+import { normalizeTrack } from "@/utils/trackNormalizer";
 import type { Track } from "@/services/api.service";
 
 const Generate = () => {
