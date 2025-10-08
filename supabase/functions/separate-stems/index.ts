@@ -4,6 +4,7 @@ import {
   createCorsHeaders,
   handleCorsPreflightRequest,
 } from "../_shared/cors.ts";
+import { logger, withSentry } from "../_shared/logger.ts";
 import { createSunoClient, SunoApiError } from "../_shared/suno.ts";
 import {
   createSupabaseAdminClient,
@@ -244,7 +245,7 @@ const mainHandler = async (req: Request) => {
       },
     );
   } catch (error) {
-    console.error("[separate-stems] error", error);
+    logger.error("[separate-stems] error", { error: error instanceof Error ? error : new Error(String(error)) });
 
     if (error instanceof ValidationException) {
       return new Response(
@@ -283,10 +284,12 @@ const mainHandler = async (req: Request) => {
   }
 };
 
-const handler = withRateLimit(mainHandler, {
+const rateLimitedHandler = withRateLimit(mainHandler, {
   maxRequests: 10,
   windowMinutes: 1,
   endpoint: "separate-stems",
 });
+
+const handler = withSentry(rateLimitedHandler, { transaction: "separate-stems" });
 
 serve(handler);
