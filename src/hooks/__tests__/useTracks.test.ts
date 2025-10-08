@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { useTracks } from '../useTracks';
 import { ApiService } from '@/services/api.service';
 import { supabase } from '@/integrations/supabase/client';
+import { logInfo, logDebug } from '@/utils/logger';
 
 // Mock dependencies
 vi.mock('@/services/api.service', () => ({
@@ -25,9 +26,11 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
+const toastMock = vi.fn();
+
 vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({
-    toast: vi.fn(),
+    toast: toastMock,
   }),
 }));
 
@@ -37,6 +40,13 @@ vi.mock('@/utils/trackCache', () => ({
     removeTrack: vi.fn(),
     getTracks: vi.fn(),
   },
+}));
+
+vi.mock('@/utils/logger', () => ({
+  logInfo: vi.fn(),
+  logDebug: vi.fn(),
+  logError: vi.fn(),
+  logWarn: vi.fn(),
 }));
 
 describe('useTracks', () => {
@@ -80,7 +90,7 @@ describe('useTracks', () => {
     it('loads tracks on mount', async () => {
       vi.mocked(ApiService.getUserTracks).mockResolvedValue(mockTracks as any);
 
-      const { result } = renderHook(() => useTracks());
+      const { result } = renderHook(() => useTracks(undefined, { pollingEnabled: false }));
 
       expect(result.current.isLoading).toBe(true);
 
@@ -95,7 +105,7 @@ describe('useTracks', () => {
     it('handles loading errors gracefully', async () => {
       vi.mocked(ApiService.getUserTracks).mockRejectedValue(new Error('Network error'));
 
-      const { result } = renderHook(() => useTracks());
+      const { result } = renderHook(() => useTracks(undefined, { pollingEnabled: false }));
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -110,7 +120,7 @@ describe('useTracks', () => {
         error: null,
       });
 
-      const { result } = renderHook(() => useTracks());
+      const { result } = renderHook(() => useTracks(undefined, { pollingEnabled: false }));
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -126,15 +136,22 @@ describe('useTracks', () => {
       vi.mocked(ApiService.getUserTracks).mockResolvedValue(mockTracks as any);
       vi.mocked(ApiService.deleteTrack).mockResolvedValue(undefined);
 
-      const { result } = renderHook(() => useTracks());
+      const { result } = renderHook(() => useTracks(undefined, { pollingEnabled: false }));
 
       await waitFor(() => {
         expect(result.current.tracks).toHaveLength(2);
       });
 
-      await result.current.deleteTrack('track-1');
+      await act(async () => {
+        await result.current.deleteTrack('track-1');
+      });
 
       expect(ApiService.deleteTrack).toHaveBeenCalledWith('track-1');
+
+      await waitFor(() => {
+        expect(result.current.tracks.some(track => track.id === 'track-1')).toBe(false);
+      });
+
       expect(result.current.tracks).toHaveLength(1);
       expect(result.current.tracks[0].id).toBe('track-2');
     });
@@ -143,7 +160,7 @@ describe('useTracks', () => {
       vi.mocked(ApiService.getUserTracks).mockResolvedValue(mockTracks as any);
       vi.mocked(ApiService.deleteTrack).mockRejectedValue(new Error('Delete failed'));
 
-      const { result } = renderHook(() => useTracks());
+      const { result } = renderHook(() => useTracks(undefined, { pollingEnabled: false }));
 
       await waitFor(() => {
         expect(result.current.tracks).toHaveLength(2);
@@ -158,7 +175,7 @@ describe('useTracks', () => {
     it('refreshes tracks when called', async () => {
       vi.mocked(ApiService.getUserTracks).mockResolvedValue(mockTracks as any);
 
-      const { result } = renderHook(() => useTracks());
+      const { result } = renderHook(() => useTracks(undefined, { pollingEnabled: false }));
 
       await waitFor(() => {
         expect(result.current.tracks).toHaveLength(2);
@@ -173,7 +190,9 @@ describe('useTracks', () => {
       }];
       vi.mocked(ApiService.getUserTracks).mockResolvedValue(updatedTracks as any);
 
-      await result.current.refreshTracks();
+      await act(async () => {
+        await result.current.refreshTracks();
+      });
 
       await waitFor(() => {
         expect(result.current.tracks).toHaveLength(3);
@@ -186,19 +205,22 @@ describe('useTracks', () => {
       vi.mocked(ApiService.getUserTracks).mockResolvedValue(mockTracks as any);
 
       const { rerender } = renderHook(
-        ({ trigger }) => useTracks(trigger),
+        ({ trigger }) => useTracks(trigger, { pollingEnabled: false }),
         { initialProps: { trigger: 1 } }
       );
 
-      await waitFor(() => {
-        expect(ApiService.getUserTracks).toHaveBeenCalledTimes(1);
+      await act(async () => {
+        await Promise.resolve();
       });
+      expect(ApiService.getUserTracks).toHaveBeenCalled();
+
+      const initialCallCount = vi.mocked(ApiService.getUserTracks).mock.calls.length;
 
       // Change trigger
       rerender({ trigger: 2 });
 
       await waitFor(() => {
-        expect(ApiService.getUserTracks).toHaveBeenCalledTimes(2);
+        expect(vi.mocked(ApiService.getUserTracks).mock.calls.length).toBe(initialCallCount + 1);
       });
     });
   });
@@ -215,37 +237,113 @@ describe('useTracks', () => {
     it('polls when there are processing tracks', async () => {
       vi.mocked(ApiService.getUserTracks).mockResolvedValue(mockTracks as any);
 
-      renderHook(() => useTracks());
+      const { unmount } = renderHook(() =>
+        useTracks(undefined, { pollingInitialDelay: 10, pollingMaxDelay: 10 })
+      );
 
-      await waitFor(() => {
-        expect(ApiService.getUserTracks).toHaveBeenCalled();
+      await Promise.resolve();
+      expect(ApiService.getUserTracks).toHaveBeenCalled();
+
+      const logInfoMock = vi.mocked(logInfo);
+      const logDebugMock = vi.mocked(logDebug);
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(logInfoMock).toHaveBeenCalled();
+
+      const [, infoContext, infoData] = logInfoMock.mock.calls.at(-1)!;
+
+      expect(infoContext).toBe('useTracks');
+      expect(infoData).toMatchObject({
+        attempt: 1,
+        pendingTracks: expect.arrayContaining([
+          expect.objectContaining({ id: 'track-2', status: 'processing' })
+        ]),
       });
 
-      // Fast-forward 5 seconds
-      vi.advanceTimersByTime(5000);
+      expect(vi.getTimerCount()).toBeGreaterThan(0);
 
-      await waitFor(() => {
-        expect(ApiService.getUserTracks).toHaveBeenCalledTimes(2);
+      vi.runOnlyPendingTimers();
+
+      await act(async () => {
+        await Promise.resolve();
       });
+      expect(logDebugMock).toHaveBeenCalled();
+
+      const [, debugContext, debugData] = logDebugMock.mock.calls.at(-1)!;
+
+      expect(debugContext).toBe('useTracks');
+      expect(debugData).toMatchObject({
+        attempt: 1,
+        pendingTracks: expect.arrayContaining([
+          expect.objectContaining({ id: 'track-2', status: 'processing' })
+        ]),
+      });
+
+      unmount();
     });
 
     it('stops polling when no processing tracks', async () => {
+      vi.mocked(ApiService.getUserTracks).mockResolvedValue(mockTracks as any);
+
+      const logInfoMock = vi.mocked(logInfo);
+
+      const { result } = renderHook(() =>
+        useTracks(undefined, { pollingInitialDelay: 10, pollingMaxDelay: 10 })
+      );
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(ApiService.getUserTracks).toHaveBeenCalled();
+
+      expect(vi.getTimerCount()).toBeGreaterThan(0);
+
       const completedTracks = mockTracks.map(t => ({ ...t, status: 'completed' }));
       vi.mocked(ApiService.getUserTracks).mockResolvedValue(completedTracks as any);
 
-      renderHook(() => useTracks());
-
-      await waitFor(() => {
-        expect(ApiService.getUserTracks).toHaveBeenCalled();
+      await act(async () => {
+        await result.current.refreshTracks();
       });
 
-      const initialCallCount = vi.mocked(ApiService.getUserTracks).mock.calls.length;
+      await act(async () => {
+        await Promise.resolve();
+      });
 
-      // Fast-forward 10 seconds
-      vi.advanceTimersByTime(10000);
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(logInfoMock).toHaveBeenCalledWith(
+        'Stopping track polling - no pending tracks',
+        'useTracks',
+        expect.objectContaining({ pendingTracks: [] })
+      );
 
-      // Should not have called again since all tracks are completed
-      expect(vi.mocked(ApiService.getUserTracks).mock.calls.length).toBe(initialCallCount);
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('clears polling timer on unmount', async () => {
+      vi.mocked(ApiService.getUserTracks).mockResolvedValue(mockTracks as any);
+      const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+
+      const { unmount } = renderHook(() =>
+        useTracks(undefined, { pollingInitialDelay: 10, pollingMaxDelay: 10 })
+      );
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(ApiService.getUserTracks).toHaveBeenCalled();
+
+      expect(vi.getTimerCount()).toBeGreaterThan(0);
+
+      unmount();
+
+      expect(clearTimeoutSpy).toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
+
+      clearTimeoutSpy.mockRestore();
     });
   });
 });
