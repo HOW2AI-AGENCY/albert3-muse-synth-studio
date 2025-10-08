@@ -113,6 +113,10 @@ const mainHandler = async (req: Request) => {
       } else {
         deleteQuery.is("version_id", null);
       }
+    }
+
+    const derivedMode = stemAssets.length > 2 ? "split_stem" : "separate_vocal";
+    const separationMode = currentMode ?? derivedMode;
 
       const { error: deleteError } = await deleteQuery;
       if (deleteError) {
