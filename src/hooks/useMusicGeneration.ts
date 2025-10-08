@@ -6,7 +6,7 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ApiService } from "@/services/api.service";
+import { ApiService, GenerateMusicRequest } from "@/services/api.service";
 import { supabase } from "@/integrations/supabase/client";
 import { logError, logInfo, logDebug, logWarn } from "@/utils/logger";
 import { useDebounce } from "@/utils/performance";
@@ -23,7 +23,6 @@ interface GenerateMusicOptions {
 }
 
 export const useMusicGeneration = (onSuccess?: () => void) => {
-  const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
   const [provider, setProvider] = useState<'replicate' | 'suno'>('suno');
@@ -67,13 +66,13 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
     if (!promptToImprove.trim()) {
       toast({
         title: "Ошибка",
-        description: "Пожалуйста, введите описание музыки",
+        description: "Пожалуйста, введите описание музыки для улучшения.",
         variant: "destructive",
       });
-      return;
+      return null;
     }
 
-    if (isImproving) return; // Prevent double calls
+    if (isImproving) return null;
 
     setIsImproving(true);
     logInfo("Начало улучшения промпта", "useMusicGeneration", {
@@ -91,7 +90,7 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
 
       toast({
         title: "✨ Промпт улучшен!",
-        description: "Ваше описание было улучшено с помощью AI",
+        description: "Ваше описание было оптимизировано с помощью AI.",
       });
 
       return response.improvedPrompt;
@@ -102,9 +101,10 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
 
       toast({
         title: "Ошибка",
-        description: error instanceof Error ? error.message : "Не удалось улучшить промпт",
+        description: error instanceof Error ? error.message : "Не удалось улучшить промпт.",
         variant: "destructive",
       });
+      return null;
     } finally {
       setIsImproving(false);
     }
@@ -210,6 +210,7 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
       });
 
       await ApiService.generateMusic({
+        ...params,
         trackId: newTrack.id,
         userId: user.id,
         title: trackTitle,
@@ -295,7 +296,7 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
 
       toast({
         title: "Ошибка генерации",
-        description: error instanceof Error ? error.message : "Не удалось сгенерировать музыку",
+        description: error instanceof Error ? error.message : "Не удалось сгенерировать музыку.",
         variant: "destructive",
       });
 
@@ -307,6 +308,10 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
       return false;
     } finally {
       setIsGenerating(false);
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
     }
   }, [prompt, provider, hasVocals, lyrics, styleTags, isGenerating, isImproving, toast, onSuccess]);
 
@@ -329,38 +334,9 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
 
   // Memoized return object to prevent unnecessary re-renders
   return useMemo(() => ({
-    prompt,
-    setPrompt: setPromptOptimized,
     isGenerating,
     isImproving,
-    improvePrompt,
     generateMusic,
-    provider,
-    setProvider,
-    hasVocals,
-    setHasVocals,
-    lyrics,
-    setLyrics,
-    styleTags,
-    setStyleTags,
-    addStyleTag,
-    removeStyleTag,
-    canGenerate,
-    isValidPrompt,
-  }), [
-    prompt,
-    setPromptOptimized,
-    isGenerating,
-    isImproving,
     improvePrompt,
-    generateMusic,
-    provider,
-    hasVocals,
-    lyrics,
-    styleTags,
-    addStyleTag,
-    removeStyleTag,
-    canGenerate,
-    isValidPrompt,
-  ]);
+  }), [isGenerating, isImproving, generateMusic, improvePrompt]);
 };

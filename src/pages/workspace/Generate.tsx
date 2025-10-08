@@ -246,15 +246,15 @@ const Generate = () => {
 
   // Mobile: Optimized layout with Drawer for generator
   const mobilePaddingBottom = currentTrack 
-    ? `calc(${PLAYER_HEIGHTS.mobile}px + env(safe-area-inset-bottom) + 1rem)`
-    : '1rem';
+    ? `calc(${PLAYER_HEIGHTS.mobile}px + env(safe-area-inset-bottom, 0px) + 1rem)`
+    : 'calc(env(safe-area-inset-bottom, 0px) + 1rem)';
   
   return (
     <div className="flex flex-col h-full relative">
       {/* Track List - Full Screen */}
       <div 
         className="flex-1 overflow-y-auto scrollbar-styled p-4 sm:p-5 transition-all duration-300"
-        style={{ paddingBottom: mobilePaddingBottom }}
+        style={{ paddingBottom: `calc(${mobilePaddingBottom} + 4rem)` }} // Add extra space for FAB
       >
         {isPolling && (
           <div className="space-y-4 mb-4">
