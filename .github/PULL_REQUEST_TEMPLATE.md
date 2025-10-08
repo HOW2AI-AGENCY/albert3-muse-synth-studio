@@ -40,6 +40,11 @@ Relates to #(номер issue)
 - [ ] Inline documentation добавлена
 - [ ] API docs обновлены (если применимо)
 
+### Docs & Logs
+- [ ] Обновлены навигационные индексы (`docs/INDEX.md`, `project-management/NAVIGATION_INDEX.md`)
+- [ ] Синхронизированы журналы и отчёты в `project-management/reports`
+- [ ] Локально выполнен `npm run docs:validate`
+
 ### TypeScript
 - [ ] Нет TypeScript errors
 - [ ] Все новые функции типизированы

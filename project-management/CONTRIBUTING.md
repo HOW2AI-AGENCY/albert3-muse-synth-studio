@@ -31,8 +31,8 @@
 ### Создание новой задачи
 
 1. **Используйте GitHub Issues** с соответствующими шаблонами:
-   - [Bug Report](.github/ISSUE_TEMPLATE/bug_report.yml) для багов
-   - [Feature Request](.github/ISSUE_TEMPLATE/feature_request.yml) для новых функций
+   - [Bug Report](https://github.com/your-username/albert3-muse-synth-studio/issues/new?template=bug_report.yml) для багов
+   - [Feature Request](https://github.com/your-username/albert3-muse-synth-studio/issues/new?template=feature_request.yml) для новых функций
 
 2. **Заполните все обязательные поля**:
    - Четкое описание проблемы или требования
