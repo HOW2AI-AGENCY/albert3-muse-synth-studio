@@ -59,7 +59,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   const {
     generateMusic,
     isGenerating,
-    setPrompt: setHookPrompt,
+    isImproving,
     improvePrompt: hookImprovePrompt
   } = useMusicGeneration();
   
@@ -89,7 +89,6 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   
   // UI State
   const [isLyricsDialogOpen, setIsLyricsDialogOpen] = useState(false);
-  const [isImproving, setIsImproving] = useState(false);
 
   const lyricLineCount = lyrics
     ? lyrics.split(/\r?\n/).filter((line) => line.trim().length > 0).length
@@ -125,38 +124,20 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       return;
     }
 
-    setIsImproving(true);
     vibrate('medium');
 
-    try {
-      // Set hook prompt first
-      setHookPrompt(currentPrompt);
-      // Call improve and receive improved text
-      const improved = await hookImprovePrompt(currentPrompt);
+    const improved = await hookImprovePrompt(currentPrompt);
 
-      if (improved) {
-        if (generationMode === 'simple') {
-          setSongDescription(improved);
-        } else {
-          setLyrics(improved);
-        }
-      }
-      
-      toast({
-        title: "✨ Промпт улучшен!",
-        description: "Описание оптимизировано для лучшего результата"
-      });
-    } catch (error) {
-      console.error('Error improving prompt:', error);
-      toast({
-        title: "❌ Ошибка",
-        description: "Не удалось улучшить промпт",
-        variant: "destructive"
-      });
-    } finally {
-      setIsImproving(false);
+    if (!improved) {
+      return;
     }
-  }, [generationMode, songDescription, lyrics, setHookPrompt, hookImprovePrompt, vibrate, toast]);
+
+    if (generationMode === 'simple') {
+      setSongDescription(improved);
+    } else {
+      setLyrics(improved);
+    }
+  }, [generationMode, songDescription, lyrics, hookImprovePrompt, vibrate, toast]);
 
   // Validation
   const validateForm = useCallback(() => {
@@ -220,9 +201,6 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       const shouldIncludeVocals = generationMode === 'simple' ? !isInstrumental : hasVocals;
       const sanitizedLyrics = lyrics.trim();
 
-      // Keep hook state in sync for other consumers
-      setHookPrompt(finalPrompt);
-
       // Call generate with explicit parameters to avoid stale state
       const started = await generateMusic({
         prompt: finalPrompt,
@@ -264,7 +242,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   }, [
     generationMode, songDescription, selectedInspirations, customStyles, isInstrumental,
     hasVocals, lyrics, tempo, musicalKey, vocalType, songTitle, selectedModel,
-    setHookPrompt, generateMusic, vibrate, validateForm, toast, onTrackGenerated,
+    generateMusic, vibrate, validateForm, toast, onTrackGenerated,
     setIsLyricsDialogOpen
   ]);
 
