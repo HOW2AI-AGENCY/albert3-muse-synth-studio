@@ -12,6 +12,17 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Tooltip,
   TooltipContent,
@@ -83,6 +94,8 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { balance, isLoading: balanceLoading, error: balanceError } = useProviderBalance();
 
+  type GenerateMusicParams = Parameters<typeof generateMusic>[0];
+
   // Mode & UI State
   const [generationMode, setGenerationMode] = useState<'simple' | 'custom'>('simple');
   const [selectedModel, setSelectedModel] = useState('chirp-v3-5');
@@ -108,6 +121,9 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
 
   // UI State
   const [isLyricsDialogOpen, setIsLyricsDialogOpen] = useState(false);
+  const [showVocalWarning, setShowVocalWarning] = useState(false);
+  const [pendingWarningMessage, setPendingWarningMessage] = useState<string | null>(null);
+  const [pendingGeneration, setPendingGeneration] = useState<GenerateMusicParams | null>(null);
   const audioInputRef = useRef<HTMLInputElement | null>(null);
 
   const lyricLineCount = lyrics
@@ -220,66 +236,67 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     return { valid: true };
   }, [generationMode, songDescription, selectedInspirations, isInstrumental, lyrics, customStyles]);
 
-  // Generate music
-  const handleGenerate = useCallback(async () => {
-    const validation = validateForm();
-    
-    if (!validation.valid) {
-      toast({
-        title: "❌ Ошибка валидации",
-        description: validation.error,
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (validation.warning) {
-      const confirm = window.confirm(validation.warning);
-      if (!confirm) return;
+  const prepareGenerationParams = useCallback((): GenerateMusicParams => {
+    let finalPrompt = songDescription.trim();
+    const tags = generationMode === 'simple' ? selectedInspirations : customStyles;
+
+    if (tags.length > 0) {
+      const prefix = finalPrompt.length > 0 ? `${finalPrompt}\n\n` : '';
+      finalPrompt = `${prefix}Styles: ${tags.join(', ')}`;
     }
 
+    if (generationMode === 'custom') {
+      const options: string[] = [];
+      if (tempo[0] !== 120) options.push(`Tempo: ${tempo[0]} BPM`);
+      if (musicalKey) options.push(`Key: ${musicalKey}`);
+      if (vocalType) options.push(`Vocal: ${vocalType}`);
+      if (selectedPersona) {
+        const personaLabel = personaPresets.find(persona => persona.value === selectedPersona)?.label ?? selectedPersona;
+        options.push(`Persona: ${personaLabel}`);
+      }
+      if (audioReference) {
+        options.push(`Audio reference: ${audioReference.name}`);
+      }
+
+      if (options.length > 0) {
+        finalPrompt = `${finalPrompt}\n\n${options.join(', ')}`;
+      }
+    }
+
+    const shouldIncludeVocals = generationMode === 'simple' ? !isInstrumental : hasVocals;
+    const sanitizedLyrics = lyrics.trim();
+
+    return {
+      prompt: finalPrompt,
+      title: songTitle.trim() || undefined,
+      lyrics: shouldIncludeVocals && sanitizedLyrics ? sanitizedLyrics : undefined,
+      hasVocals: shouldIncludeVocals,
+      styleTags: tags,
+      customMode: generationMode === 'custom',
+      modelVersion: selectedModel,
+    };
+  }, [
+    audioReference,
+    customStyles,
+    generationMode,
+    hasVocals,
+    isInstrumental,
+    lyrics,
+    musicalKey,
+    selectedInspirations,
+    selectedModel,
+    selectedPersona,
+    songDescription,
+    songTitle,
+    tempo,
+    vocalType,
+  ]);
+
+  const executeGeneration = useCallback(async (params: GenerateMusicParams) => {
     vibrate('heavy');
 
     try {
-      let finalPrompt = songDescription.trim();
-      const tags = generationMode === 'simple' ? selectedInspirations : customStyles;
-
-      if (tags.length > 0) {
-        const prefix = finalPrompt.length > 0 ? `${finalPrompt}\n\n` : '';
-        finalPrompt = `${prefix}Styles: ${tags.join(', ')}`;
-      }
-
-      if (generationMode === 'custom') {
-        const options: string[] = [];
-        if (tempo[0] !== 120) options.push(`Tempo: ${tempo[0]} BPM`);
-        if (musicalKey) options.push(`Key: ${musicalKey}`);
-        if (vocalType) options.push(`Vocal: ${vocalType}`);
-        if (selectedPersona) {
-          const personaLabel = personaPresets.find(persona => persona.value === selectedPersona)?.label ?? selectedPersona;
-          options.push(`Persona: ${personaLabel}`);
-        }
-        if (audioReference) {
-          options.push(`Audio reference: ${audioReference.name}`);
-        }
-
-        if (options.length > 0) {
-          finalPrompt = `${finalPrompt}\n\n${options.join(', ')}`;
-        }
-      }
-
-      const shouldIncludeVocals = generationMode === 'simple' ? !isInstrumental : hasVocals;
-      const sanitizedLyrics = lyrics.trim();
-
-      // Call generate with explicit parameters to avoid stale state
-      const started = await generateMusic({
-        prompt: finalPrompt,
-        title: songTitle.trim() || undefined,
-        lyrics: shouldIncludeVocals && sanitizedLyrics ? sanitizedLyrics : undefined,
-        hasVocals: shouldIncludeVocals,
-        styleTags: tags,
-        customMode: generationMode === 'custom',
-        modelVersion: selectedModel,
-      });
+      const started = await generateMusic(params);
 
       if (!started) {
         return;
@@ -315,11 +332,57 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       });
     }
   }, [
-    generationMode, songDescription, selectedInspirations, customStyles, isInstrumental,
-    hasVocals, lyrics, tempo, musicalKey, vocalType, songTitle, selectedModel,
-    selectedPersona, audioReference,
-    generateMusic, vibrate, validateForm, toast, onTrackGenerated,
-    setIsLyricsDialogOpen
+    generateMusic,
+    onTrackGenerated,
+    setIsLyricsDialogOpen,
+    toast,
+    vibrate,
+  ]);
+
+  const handleWarningCancel = useCallback(() => {
+    setShowVocalWarning(false);
+    setPendingGeneration(null);
+    setPendingWarningMessage(null);
+  }, []);
+
+  const handleWarningConfirm = useCallback(async () => {
+    if (isGenerating || isImproving || !pendingGeneration) {
+      return;
+    }
+
+    const params = pendingGeneration;
+    handleWarningCancel();
+    await executeGeneration(params);
+  }, [executeGeneration, handleWarningCancel, isGenerating, isImproving, pendingGeneration]);
+
+  // Generate music
+  const handleGenerate = useCallback(async () => {
+    const validation = validateForm();
+
+    if (!validation.valid) {
+      toast({
+        title: "❌ Ошибка валидации",
+        description: validation.error,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const params = prepareGenerationParams();
+
+    if (validation.warning) {
+      setPendingGeneration(params);
+      setPendingWarningMessage(validation.warning);
+      setShowVocalWarning(true);
+      return;
+    }
+
+    await executeGeneration(params);
+  }, [
+    executeGeneration,
+    prepareGenerationParams,
+    toast,
+    validateForm,
   ]);
 
   // Keyboard shortcuts
@@ -830,6 +893,35 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={showVocalWarning}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleWarningCancel();
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm generation</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingWarningMessage ?? ''}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleWarningCancel}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isGenerating || isImproving}
+              onClick={() => void handleWarningConfirm()}
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
