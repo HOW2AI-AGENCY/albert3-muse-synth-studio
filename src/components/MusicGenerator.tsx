@@ -60,7 +60,6 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   const {
     generateMusic,
     isGenerating,
-    prompt: hookPrompt,
     setPrompt: setHookPrompt,
     improvePrompt: hookImprovePrompt
   } = useMusicGeneration();
@@ -128,15 +127,15 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     try {
       // Set hook prompt first
       setHookPrompt(currentPrompt);
-      // Call improve
-      await hookImprovePrompt();
-      // Get improved from hook
-      const improved = hookPrompt;
-      
-      if (improved && mode === 'simple') {
-        setSongDescription(improved);
-      } else if (improved) {
-        setLyrics(improved);
+      // Call improve and receive improved text
+      const improved = await hookImprovePrompt(currentPrompt);
+
+      if (improved) {
+        if (mode === 'simple') {
+          setSongDescription(improved);
+        } else {
+          setLyrics(improved);
+        }
       }
       
       toast({
@@ -153,7 +152,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     } finally {
       setIsImproving(false);
     }
-  }, [mode, songDescription, lyrics, hookPrompt, setHookPrompt, hookImprovePrompt, vibrate, toast]);
+  }, [mode, songDescription, lyrics, setHookPrompt, hookImprovePrompt, vibrate, toast]);
 
   // Validation
   const validateForm = useCallback(() => {
@@ -213,11 +212,21 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
         }
       }
 
-      // Set the prompt in the hook
+      const shouldIncludeVocals = mode === 'simple' ? !isInstrumental : hasVocals;
+      const sanitizedLyrics = lyrics.trim();
+
+      // Keep hook state in sync for other consumers
       setHookPrompt(finalPrompt);
-      
-      // Call generate from hook
-      await generateMusic();
+
+      // Call generate with explicit parameters to avoid stale state
+      await generateMusic({
+        prompt: finalPrompt,
+        title: songTitle.trim() || undefined,
+        lyrics: shouldIncludeVocals && sanitizedLyrics ? sanitizedLyrics : undefined,
+        hasVocals: shouldIncludeVocals,
+        styleTags: tags,
+        customMode: mode === 'custom'
+      });
 
       toast({
         title: "🎵 Генерация началась!",
@@ -237,7 +246,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     }
   }, [
     mode, songDescription, selectedInspirations, customStyles, isInstrumental,
-    hasVocals, lyrics, tempo, musicalKey, vocalType, setHookPrompt,
+    hasVocals, lyrics, tempo, musicalKey, vocalType, songTitle, setHookPrompt,
     generateMusic, vibrate, validateForm, toast, onTrackGenerated
   ]);
 
