@@ -19,7 +19,6 @@ import {
 import { useMusicGeneration } from '@/hooks/useMusicGeneration';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
-import { LyricsEditor } from '@/components/LyricsEditor';
 
 interface MusicGeneratorProps {
   onTrackGenerated?: () => void;
@@ -45,9 +44,9 @@ const inspirationChips = [
 
 // Model versions
 const modelVersions = [
-  { value: 'v5', label: 'v5 (Latest)' },
-  { value: 'v4.5', label: 'v4.5' },
-  { value: 'v4', label: 'v4' },
+  { value: 'chirp-v3-5', label: 'Suno v5 (chirp-v3-5)' },
+  { value: 'chirp-v3-0', label: 'Suno v4.5 (chirp-v3-0)' },
+  { value: 'chirp-v2-5', label: 'Suno v4 (chirp-v2-5)' },
 ];
 
 // Vocal options
@@ -60,7 +59,6 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   const {
     generateMusic,
     isGenerating,
-    prompt: hookPrompt,
     setPrompt: setHookPrompt,
     improvePrompt: hookImprovePrompt
   } = useMusicGeneration();
@@ -70,8 +68,8 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Mode & UI State
-  const [mode, setMode] = useState<'simple' | 'custom'>('simple');
-  const [selectedModel, setSelectedModel] = useState('v5');
+  const [generationMode, setGenerationMode] = useState<'simple' | 'custom'>('simple');
+  const [selectedModel, setSelectedModel] = useState('chirp-v3-5');
   
   // Simple Mode State
   const [songDescription, setSongDescription] = useState('');
@@ -93,6 +91,11 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   const [isLyricsDialogOpen, setIsLyricsDialogOpen] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
 
+  const lyricLineCount = lyrics
+    ? lyrics.split(/\r?\n/).filter((line) => line.trim().length > 0).length
+    : 0;
+  const lyricCharCount = lyrics.length;
+
   // Toggle inspiration chips
   const toggleInspiration = useCallback((chip: string) => {
     vibrate('light');
@@ -111,7 +114,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
 
   // Enhance prompt with AI
   const handleEnhancePrompt = useCallback(async () => {
-    const currentPrompt = mode === 'simple' ? songDescription : lyrics;
+    const currentPrompt = generationMode === 'simple' ? songDescription : lyrics;
     
     if (!currentPrompt.trim()) {
       toast({
@@ -128,15 +131,15 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     try {
       // Set hook prompt first
       setHookPrompt(currentPrompt);
-      // Call improve
-      await hookImprovePrompt();
-      // Get improved from hook
-      const improved = hookPrompt;
-      
-      if (improved && mode === 'simple') {
-        setSongDescription(improved);
-      } else if (improved) {
-        setLyrics(improved);
+      // Call improve and receive improved text
+      const improved = await hookImprovePrompt(currentPrompt);
+
+      if (improved) {
+        if (generationMode === 'simple') {
+          setSongDescription(improved);
+        } else {
+          setLyrics(improved);
+        }
       }
       
       toast({
@@ -153,11 +156,11 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     } finally {
       setIsImproving(false);
     }
-  }, [mode, songDescription, lyrics, hookPrompt, setHookPrompt, hookImprovePrompt, vibrate, toast]);
+  }, [generationMode, songDescription, lyrics, setHookPrompt, hookImprovePrompt, vibrate, toast]);
 
   // Validation
   const validateForm = useCallback(() => {
-    if (mode === 'simple') {
+    if (generationMode === 'simple') {
       if (!songDescription.trim() && selectedInspirations.length === 0) {
         return { valid: false, error: 'Введите описание или выберите вдохновение' };
       }
@@ -172,7 +175,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     }
     
     return { valid: true };
-  }, [mode, songDescription, selectedInspirations, isInstrumental, lyrics, customStyles]);
+  }, [generationMode, songDescription, selectedInspirations, isInstrumental, lyrics, customStyles]);
 
   // Generate music
   const handleGenerate = useCallback(async () => {
@@ -195,14 +198,15 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     vibrate('heavy');
 
     try {
-      let finalPrompt = songDescription;
-      const tags = mode === 'simple' ? selectedInspirations : customStyles;
-      
+      let finalPrompt = songDescription.trim();
+      const tags = generationMode === 'simple' ? selectedInspirations : customStyles;
+
       if (tags.length > 0) {
-        finalPrompt = `${finalPrompt}\n\nStyles: ${tags.join(', ')}`;
+        const prefix = finalPrompt.length > 0 ? `${finalPrompt}\n\n` : '';
+        finalPrompt = `${prefix}Styles: ${tags.join(', ')}`;
       }
-      
-      if (mode === 'custom') {
+
+      if (generationMode === 'custom') {
         const options: string[] = [];
         if (tempo[0] !== 120) options.push(`Tempo: ${tempo[0]} BPM`);
         if (musicalKey) options.push(`Key: ${musicalKey}`);
@@ -213,17 +217,39 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
         }
       }
 
-      // Set the prompt in the hook
-      setHookPrompt(finalPrompt);
-      
-      // Call generate from hook
-      await generateMusic();
+      const shouldIncludeVocals = generationMode === 'simple' ? !isInstrumental : hasVocals;
+      const sanitizedLyrics = lyrics.trim();
 
-      toast({
-        title: "🎵 Генерация началась!",
-        description: "Создаём вашу музыку..."
+      // Keep hook state in sync for other consumers
+      setHookPrompt(finalPrompt);
+
+      // Call generate with explicit parameters to avoid stale state
+      const started = await generateMusic({
+        prompt: finalPrompt,
+        title: songTitle.trim() || undefined,
+        lyrics: shouldIncludeVocals && sanitizedLyrics ? sanitizedLyrics : undefined,
+        hasVocals: shouldIncludeVocals,
+        styleTags: tags,
+        customMode: generationMode === 'custom',
+        modelVersion: selectedModel,
       });
-      
+
+      if (!started) {
+        return;
+      }
+
+      setSongDescription('');
+      setSelectedInspirations([]);
+      setCustomStyles([]);
+      setLyrics('');
+      setSongTitle('');
+      setTempo([120]);
+      setMusicalKey('');
+      setHasVocals(true);
+      setVocalType('');
+      setIsInstrumental(false);
+      setIsLyricsDialogOpen(false);
+
       if (onTrackGenerated) {
         onTrackGenerated();
       }
@@ -236,9 +262,10 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       });
     }
   }, [
-    mode, songDescription, selectedInspirations, customStyles, isInstrumental,
-    hasVocals, lyrics, tempo, musicalKey, vocalType, setHookPrompt,
-    generateMusic, vibrate, validateForm, toast, onTrackGenerated
+    generationMode, songDescription, selectedInspirations, customStyles, isInstrumental,
+    hasVocals, lyrics, tempo, musicalKey, vocalType, songTitle, selectedModel,
+    setHookPrompt, generateMusic, vibrate, validateForm, toast, onTrackGenerated,
+    setIsLyricsDialogOpen
   ]);
 
   // Keyboard shortcuts
@@ -272,7 +299,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
             </div>
             
             <div className="flex items-center gap-2">
-              <Tabs value={mode} onValueChange={(v) => setMode(v as 'simple' | 'custom')} className="w-auto">
+              <Tabs value={generationMode} onValueChange={(v) => setGenerationMode(v as 'simple' | 'custom')} className="w-auto">
                 <TabsList className="h-9 p-1 bg-background/50">
                   <TabsTrigger value="simple" className="text-xs px-3">Simple</TabsTrigger>
                   <TabsTrigger value="custom" className="text-xs px-3">Custom</TabsTrigger>
@@ -296,7 +323,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
         <ScrollArea ref={scrollRef} className="h-[calc(100%-80px)]">
           <div className="p-4 space-y-4">
             {/* Simple Mode */}
-            {mode === 'simple' && (
+            {generationMode === 'simple' && (
               <div className="space-y-4 animate-fade-in">
                 {/* Song Description */}
                 <div className="space-y-2">
@@ -383,7 +410,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
             )}
 
             {/* Custom Mode */}
-            {mode === 'custom' && (
+            {generationMode === 'custom' && (
               <div className="space-y-4 animate-fade-in">
                 {/* Tabs: Audio / Persona / Inspo */}
                 <Tabs defaultValue="lyrics" className="w-full">
@@ -616,15 +643,37 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
 
       {/* Lyrics Editor Dialog */}
       <Dialog open={isLyricsDialogOpen} onOpenChange={setIsLyricsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+        <DialogContent className="max-w-2xl max-h-[90vh] p-0">
           <DialogHeader className="p-6 pb-4">
-            <DialogTitle>Lyrics & Tags Editor</DialogTitle>
+            <DialogTitle>Lyrics editor</DialogTitle>
           </DialogHeader>
-          <div className="px-6 pb-6">
-            <LyricsEditor
-              lyrics={lyrics}
-              onLyricsChange={setLyrics}
-            />
+          <div className="px-6 pb-6 space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Lyrics</Label>
+              <Textarea
+                value={lyrics}
+                onChange={(event) => setLyrics(event.target.value)}
+                placeholder="Write lyrics or paste your draft..."
+                className="min-h-[200px] resize-none bg-background/50 text-sm"
+              />
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{lyricLineCount} lines</span>
+              <span>{lyricCharCount} characters</span>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setLyrics('')}
+                disabled={!lyrics}
+              >
+                Clear lyrics
+              </Button>
+              <Button size="sm" onClick={() => setIsLyricsDialogOpen(false)}>
+                Done
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

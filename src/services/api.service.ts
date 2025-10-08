@@ -47,6 +47,7 @@ export interface GenerateMusicRequest {
   hasVocals?: boolean;
   styleTags?: string[];
   customMode?: boolean;
+  modelVersion?: string;
 }
 
 export interface GenerateMusicResponse {
@@ -124,7 +125,7 @@ export class ApiService {
       prompt: request.prompt,
       tags: request.styleTags?.join(', ') || '',
       make_instrumental: !request.hasVocals,
-      model_version: 'chirp-v3-5',
+      model_version: request.modelVersion || 'chirp-v3-5',
       wait_audio: false,
     };
 
