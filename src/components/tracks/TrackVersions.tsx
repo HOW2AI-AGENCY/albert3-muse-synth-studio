@@ -81,14 +81,21 @@ const TrackVersionsComponent = ({ trackId, versions, onVersionUpdate }: TrackVer
   // Мемоизируем функцию воспроизведения версии
   const handlePlayVersion = useCallback((version: TrackVersion) => {
     vibrate('light');
-    const trackKey = `${trackId}-v${version.version_number}`;
-    const isCurrentVersion = currentTrack?.id === trackKey;
+    
+    logInfo(`Playing version ${version.version_number}`, 'TrackVersions', { 
+      versionId: version.id, 
+      versionNumber: version.version_number,
+      trackId 
+    });
+    
+    // Используем реальный ID версии вместо синтетического
+    const isCurrentVersion = currentTrack?.id === version.id;
 
     if (isCurrentVersion && isPlaying) {
       togglePlayPause();
     } else {
       playTrack({
-        id: trackKey,
+        id: version.id, // Реальный UUID версии
         title: `Версия ${version.version_number}`,
         audio_url: version.audio_url,
         cover_url: version.cover_url,
@@ -96,6 +103,9 @@ const TrackVersionsComponent = ({ trackId, versions, onVersionUpdate }: TrackVer
         status: 'completed',
         style_tags: [],
         lyrics: version.lyrics,
+        parentTrackId: trackId, // ID основного трека
+        versionNumber: version.version_number, // Номер версии
+        isMasterVersion: version.is_master, // Является ли мастер-версией
       });
     }
   }, [trackId, currentTrack, isPlaying, vibrate, togglePlayPause, playTrack]);
@@ -173,7 +183,7 @@ const TrackVersionsComponent = ({ trackId, versions, onVersionUpdate }: TrackVer
         <div className="flex items-center gap-2">
           <Music2 className="w-4 h-4 text-muted-foreground" />
           <span className="text-sm font-medium">
-            Версии ({versions.length})
+            Версии ({Math.max(versions.length - 1, 0)})
           </span>
         </div>
         <Button
@@ -196,8 +206,8 @@ const TrackVersionsComponent = ({ trackId, versions, onVersionUpdate }: TrackVer
       {isExpanded && (
         <div className="space-y-2 animate-fade-in">
           {versions.map((version) => {
-            const trackKey = `${trackId}-v${version.version_number}`;
-            const isCurrentVersion = currentTrack?.id === trackKey;
+            // Сравниваем с реальным ID версии
+            const isCurrentVersion = currentTrack?.id === version.id;
             const isVersionPlaying = isCurrentVersion && isPlaying;
 
             return (

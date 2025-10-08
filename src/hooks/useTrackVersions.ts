@@ -27,6 +27,9 @@ interface UseTrackVersionsReturn {
   /** Количество версий (включая основную) */
   versionCount: number;
   
+  /** Количество дополнительных версий (без основной) */
+  additionalVersionCount: number;
+  
   /** Мастер-версия трека (или основная если мастер не задан) */
   masterVersion: TrackWithVersions | null;
   
@@ -126,10 +129,14 @@ export function useTrackVersions(
   /** Есть ли несколько версий */
   const hasVersions = hasMultipleVersions(versions);
   
+  /** Количество дополнительных версий (без учёта оригинала) */
+  const additionalVersionCount = Math.max(versionCount - 1, 0);
+  
   return {
     versions,
     isLoading,
     versionCount,
+    additionalVersionCount, // Добавляем новое поле
     masterVersion,
     hasVersions,
     loadVersions,

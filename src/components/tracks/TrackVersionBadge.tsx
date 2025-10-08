@@ -30,6 +30,7 @@ interface TrackVersionBadgeProps {
  * 
  * Автоматически загружает количество версий и отображает бадж
  * Если версий нет (только основной трек), бадж не отображается
+ * Показывает количество ДОПОЛНИТЕЛЬНЫХ версий (без основной)
  */
 export function TrackVersionBadge({ 
   trackId, 
@@ -39,8 +40,11 @@ export function TrackVersionBadge({
   // Загружаем количество версий через хук
   const versionCount = useTrackVersionCount(trackId);
   
-  // Не показываем бадж если только одна версия (основной трек)
-  if (versionCount <= 1) {
+  // Вычисляем количество дополнительных версий
+  const additionalVersions = Math.max(versionCount - 1, 0);
+  
+  // Не показываем бадж если нет дополнительных версий
+  if (additionalVersions === 0) {
     return null;
   }
   
@@ -48,10 +52,10 @@ export function TrackVersionBadge({
     <Badge 
       variant={variant}
       className={`flex items-center gap-1 ${className}`}
-      title={`${versionCount} versions available`}
+      title={`${additionalVersions} дополнительных версий`}
     >
       <Layers className="w-3 h-3" />
-      <span>{versionCount}</span>
+      <span>{additionalVersions}</span>
     </Badge>
   );
 }
@@ -59,6 +63,7 @@ export function TrackVersionBadge({
 /**
  * Компактная версия бадж а (только иконка + число)
  * Используется в местах с ограниченным пространством
+ * Показывает количество ДОПОЛНИТЕЛЬНЫХ версий (без основной)
  */
 export function TrackVersionBadgeCompact({ 
   trackId, 
@@ -66,17 +71,20 @@ export function TrackVersionBadgeCompact({
 }: Pick<TrackVersionBadgeProps, 'trackId' | 'className'>) {
   const versionCount = useTrackVersionCount(trackId);
   
-  if (versionCount <= 1) {
+  // Вычисляем количество дополнительных версий
+  const additionalVersions = Math.max(versionCount - 1, 0);
+  
+  if (additionalVersions === 0) {
     return null;
   }
   
   return (
     <div 
       className={`inline-flex items-center gap-1 text-xs text-muted-foreground ${className}`}
-      title={`${versionCount} versions`}
+      title={`${additionalVersions} дополнительных версий`}
     >
       <Layers className="w-3 h-3" />
-      {versionCount}
+      {additionalVersions}
     </div>
   );
 }

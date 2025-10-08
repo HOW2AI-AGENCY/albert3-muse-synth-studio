@@ -57,15 +57,18 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   /**
    * Загрузка всех версий для трека
    * @param trackId - ID трека (может быть основной трек или версия)
+   * @returns Массив загруженных версий
    */
-  const loadVersions = useCallback(async (trackId: string) => {
+  const loadVersions = useCallback(async (trackId: string): Promise<TrackWithVersions[]> => {
     try {
       logInfo(`Loading versions for track: ${trackId}`, 'AudioPlayerContext');
       const versions = await getTrackWithVersions(trackId);
       
       if (versions.length > 0) {
         setAvailableVersions(versions);
-        logInfo(`Loaded ${versions.length} versions for track ${trackId}`, 'AudioPlayerContext');
+        logInfo(`Loaded ${versions.length} versions for track ${trackId}`, 'AudioPlayerContext', {
+          versionIds: versions.map(v => ({ id: v.id, num: v.versionNumber }))
+        });
         
         // Если включено автовоспроизведение версий, добавить их в очередь
         if (autoPlayVersions && versions.length > 1) {
@@ -90,9 +93,12 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
         setAvailableVersions([]);
         logInfo(`No versions found for track ${trackId}`, 'AudioPlayerContext');
       }
+      
+      return versions;
     } catch (error) {
       logError('Failed to load track versions', error as Error, 'AudioPlayerContext', { trackId });
       setAvailableVersions([]);
+      return [];
     }
   }, [autoPlayVersions]);
 
@@ -121,6 +127,16 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     
     // Используем нормализованный URL
     const normalizedTrack = { ...track, audio_url: audioUrl };
+    
+    // Детальное логирование трека
+    logInfo('Preparing to play track', 'AudioPlayerContext', {
+      trackId: normalizedTrack.id,
+      title: normalizedTrack.title,
+      parentTrackId: normalizedTrack.parentTrackId,
+      versionNumber: normalizedTrack.versionNumber,
+      urlPreview: audioUrl.substring(0, 60) + '...',
+      status: normalizedTrack.status
+    });
 
     // ============= ПРОВЕРКА ДОСТУПНОСТИ URL =============
     // Проверяем, доступен ли аудиофайл перед воспроизведением
@@ -157,12 +173,40 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       setIsPlaying(false);
 
       // ============= ЗАГРУЗКА ВЕРСИЙ ТРЕКА =============
-      // При воспроизведении трека автоматически загружаем все его версии
-      await loadVersions(normalizedTrack.id);
+      // Загружаем версии используя parentTrackId или id основного трека
+      const baseTrackId = normalizedTrack.parentTrackId || normalizedTrack.id;
+      logInfo('Loading versions', 'AudioPlayerContext', { 
+        trackId: normalizedTrack.id, 
+        baseTrackId,
+        hasParent: !!normalizedTrack.parentTrackId
+      });
+      
+      const versions = await loadVersions(baseTrackId);
+      
+      // Определяем индекс текущей версии
+      if (versions.length > 0) {
+        const currentIdx = versions.findIndex(v => v.id === normalizedTrack.id);
+        setCurrentVersionIndex(currentIdx >= 0 ? currentIdx : 0);
+        logInfo('Set current version index', 'AudioPlayerContext', { 
+          currentVersionIndex: currentIdx >= 0 ? currentIdx : 0,
+          totalVersions: versions.length 
+        });
+      }
 
       if (audioRef.current && audioUrl) {
+        // Условное применение crossOrigin только для внутренних файлов
+        const isInternalUrl = audioUrl.includes('supabase') || audioUrl.includes('lovable');
+        if (isInternalUrl) {
+          audioRef.current.crossOrigin = 'anonymous';
+          logInfo('Applied crossOrigin for internal URL', 'AudioPlayerContext');
+        } else {
+          // Для внешних URL не устанавливаем crossOrigin
+          audioRef.current.removeAttribute('crossOrigin');
+          logInfo('Skipped crossOrigin for external URL', 'AudioPlayerContext');
+        }
+        
         audioRef.current.src = audioUrl;
-        audioRef.current.crossOrigin = 'anonymous'; // Enable CORS for audio
+        audioRef.current.load(); // Явно загружаем для детерминизма
         
         try {
           await cacheAudioFile(audioUrl);
@@ -174,7 +218,20 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
           await audioRef.current.play();
           setIsPlaying(true);
           
-          logInfo(`Now playing: ${normalizedTrack.title}`, 'AudioPlayerContext', { trackId: normalizedTrack.id });
+          logInfo(`Now playing: ${normalizedTrack.title}`, 'AudioPlayerContext', { 
+            trackId: normalizedTrack.id,
+            versionNumber: normalizedTrack.versionNumber || 0 
+          });
+          
+          // Показываем тост при переключении версии
+          if (normalizedTrack.versionNumber && normalizedTrack.versionNumber > 0) {
+            toast({
+              title: `Версия ${normalizedTrack.versionNumber}`,
+              description: `Переключено на ${normalizedTrack.title}`,
+              duration: 2000,
+            });
+          }
+          
           // Аналитика воспроизведения обрабатывается автоматически хуком usePlayAnalytics
         } catch (error) {
           logError('Failed to play track', error as Error, 'AudioPlayerContext', { trackId: normalizedTrack.id });
