@@ -6,10 +6,12 @@ import { LoadingSkeleton } from "../ui/LoadingSkeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMediaSession } from "@/hooks/useMediaSession";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1, Music } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1, Music, Repeat, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 
 const formatTime = (seconds: number): string => {
   if (!seconds || isNaN(seconds)) return "0:00";
@@ -30,7 +32,14 @@ export const GlobalAudioPlayer = () => {
     setVolume,
     playNext,
     playPrevious,
+    switchToVersion,
+    getAvailableVersions,
+    currentVersionIndex,
   } = useAudioPlayer();
+  
+  // ============= ВЕРСИИ ТРЕКОВ =============
+  const availableVersions = getAvailableVersions();
+  const hasVersions = availableVersions.length > 1;
 
   const isMobile = useIsMobile();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -190,9 +199,17 @@ export const GlobalAudioPlayer = () => {
             </div>
             
             <div className="min-w-0 flex-1">
-              <h4 className="font-semibold text-sm truncate text-foreground hover:text-primary transition-colors duration-200">
-                {currentTrack.title}
-              </h4>
+              <div className="flex items-center gap-2">
+                <h4 className="font-semibold text-sm truncate text-foreground hover:text-primary transition-colors duration-200">
+                  {currentTrack.title}
+                </h4>
+                {/* Индикатор текущей версии */}
+                {hasVersions && currentVersionIndex > 0 && (
+                  <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
+                    V{currentVersionIndex + 1}
+                  </Badge>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 {currentTrack.style_tags && currentTrack.style_tags.length > 0 ? (
                   <p className="text-xs text-muted-foreground/80 truncate">
@@ -242,6 +259,53 @@ export const GlobalAudioPlayer = () => {
               >
                 <SkipForward className="h-5 w-5 group-hover:text-primary transition-colors duration-200" />
               </Button>
+
+              {/* Версии трека */}
+              {hasVersions && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="relative h-10 w-10 hover:bg-primary/10 hover:scale-110 transition-all duration-200"
+                          title={`${availableVersions.length} версий`}
+                        >
+                          <Repeat className="h-5 w-5" />
+                          <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-gradient-primary">
+                            {availableVersions.length}
+                          </Badge>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-xl border-primary/20 shadow-glow z-[100]">
+                        {availableVersions.map((version, idx) => (
+                          <DropdownMenuItem
+                            key={version.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              switchToVersion(version.id);
+                            }}
+                            className={`hover:bg-primary/10 transition-colors ${currentVersionIndex === idx ? 'bg-primary/20' : ''}`}
+                          >
+                            <div className="flex items-center gap-2 w-full">
+                              <span className="flex-1">
+                                {version.versionNumber === 0 ? 'Оригинал' : `Версия ${version.versionNumber}`}
+                              </span>
+                              {version.isMasterVersion && (
+                                <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+                              )}
+                            </div>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Версии трека ({availableVersions.length})</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
 
               <PlayerQueue />
             </div>

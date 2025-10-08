@@ -49,6 +49,8 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
   const { toast } = useToast();
   const [isMuted, setIsMuted] = useState(false);
   
+  // ============= ВЕРСИИ ТРЕКОВ =============
+  // Получаем доступные версии для текущего трека из AudioPlayerContext
   const availableVersions = getAvailableVersions();
   const hasVersions = availableVersions.length > 1;
   
@@ -228,9 +230,17 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
 
         {/* Track Info */}
         <div className="text-center mb-4 sm:mb-6 px-4 animate-slide-up">
-          <h2 className="text-xl sm:text-2xl font-bold text-gradient-primary mb-2 line-clamp-2 animate-shimmer">
-            {currentTrack.title}
-          </h2>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <h2 className="text-xl sm:text-2xl font-bold text-gradient-primary line-clamp-2 animate-shimmer">
+              {currentTrack.title}
+            </h2>
+            {/* Индикатор текущей версии */}
+            {hasVersions && currentVersionIndex > 0 && (
+              <Badge variant="secondary" className="text-sm">
+                V{currentVersionIndex + 1}
+              </Badge>
+            )}
+          </div>
           <p className="text-sm sm:text-base text-muted-foreground/80 truncate">
             {currentTrack.style_tags?.join(' • ') || 'AI Generated'}
           </p>

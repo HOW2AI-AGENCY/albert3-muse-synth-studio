@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "./ui/badge";
 import { useAudioPlayerSafe } from "@/contexts/AudioPlayerContext";
 import { logError, logWarn } from "@/utils/logger";
+import { TrackVersionBadge } from "./tracks/TrackVersionBadge";
 
 interface Track extends ApiTrack {
   provider: string | null;
@@ -234,33 +235,41 @@ const TracksListComponent = ({
             
             return (
               <div key={track.id} className="space-y-3">
-                <TrackCard
-                  track={track}
-                  onDownload={() => handleDownload(typedTrack)}
-                  onShare={() => handleShare(track.id)}
-                  onClick={() => {
-                    onTrackSelect?.(typedTrack);
-                    if (track.audio_url && track.status === 'completed' && audioPlayer?.playTrackWithQueue) {
-                      audioPlayer.playTrackWithQueue({
-                        id: track.id,
-                        title: track.title,
-                        audio_url: track.audio_url,
-                        cover_url: track.cover_url,
-                        duration: track.duration,
-                        style_tags: track.style_tags,
-                        lyrics: track.lyrics,
-                      }, tracks.filter(t => t.audio_url && t.status === 'completed').map(t => ({
-                        id: t.id,
-                        title: t.title,
-                        audio_url: t.audio_url!,
-                        cover_url: t.cover_url,
-                        duration: t.duration,
-                        style_tags: t.style_tags,
-                        lyrics: t.lyrics,
-                      })));
-                    }
-                  }}
-                />
+                <div className="relative">
+                  <TrackCard
+                    track={track}
+                    onDownload={() => handleDownload(typedTrack)}
+                    onShare={() => handleShare(track.id)}
+                    onClick={() => {
+                      onTrackSelect?.(typedTrack);
+                      if (track.audio_url && track.status === 'completed' && audioPlayer?.playTrackWithQueue) {
+                        audioPlayer.playTrackWithQueue({
+                          id: track.id,
+                          title: track.title,
+                          audio_url: track.audio_url,
+                          cover_url: track.cover_url,
+                          duration: track.duration,
+                          style_tags: track.style_tags,
+                          lyrics: track.lyrics,
+                        }, tracks.filter(t => t.audio_url && t.status === 'completed').map(t => ({
+                          id: t.id,
+                          title: t.title,
+                          audio_url: t.audio_url!,
+                          cover_url: t.cover_url,
+                          duration: t.duration,
+                          style_tags: t.style_tags,
+                          lyrics: t.lyrics,
+                        })));
+                      }
+                    }}
+                  />
+                  {/* Бадж с количеством версий */}
+                  {track.status === 'completed' && (
+                    <div className="absolute top-2 right-2">
+                      <TrackVersionBadge trackId={track.id} />
+                    </div>
+                  )}
+                </div>
                 
                 {(track.status === 'failed' || isStaleTrack) && (
                   <Button
@@ -285,33 +294,41 @@ const TracksListComponent = ({
             
             return (
               <div key={track.id} className="space-y-2">
-                <TrackListItem
-                  track={track}
-                  onDownload={() => handleDownload(typedTrack)}
-                  onShare={() => handleShare(track.id)}
-                  onClick={() => {
-                    onTrackSelect?.(typedTrack);
-                    if (track.audio_url && track.status === 'completed' && audioPlayer?.playTrackWithQueue) {
-                      audioPlayer.playTrackWithQueue({
-                        id: track.id,
-                        title: track.title,
-                        audio_url: track.audio_url,
-                        cover_url: track.cover_url,
-                        duration: track.duration,
-                        style_tags: track.style_tags,
-                        lyrics: track.lyrics,
-                      }, tracks.filter(t => t.audio_url && t.status === 'completed').map(t => ({
-                        id: t.id,
-                        title: t.title,
-                        audio_url: t.audio_url!,
-                        cover_url: t.cover_url,
-                        duration: t.duration,
-                        style_tags: t.style_tags,
-                        lyrics: t.lyrics,
-                      })));
-                    }
-                  }}
-                />
+                <div className="relative">
+                  <TrackListItem
+                    track={track}
+                    onDownload={() => handleDownload(typedTrack)}
+                    onShare={() => handleShare(track.id)}
+                    onClick={() => {
+                      onTrackSelect?.(typedTrack);
+                      if (track.audio_url && track.status === 'completed' && audioPlayer?.playTrackWithQueue) {
+                        audioPlayer.playTrackWithQueue({
+                          id: track.id,
+                          title: track.title,
+                          audio_url: track.audio_url,
+                          cover_url: track.cover_url,
+                          duration: track.duration,
+                          style_tags: track.style_tags,
+                          lyrics: track.lyrics,
+                        }, tracks.filter(t => t.audio_url && t.status === 'completed').map(t => ({
+                          id: t.id,
+                          title: t.title,
+                          audio_url: t.audio_url!,
+                          cover_url: t.cover_url,
+                          duration: t.duration,
+                          style_tags: t.style_tags,
+                          lyrics: t.lyrics,
+                        })));
+                      }
+                    }}
+                  />
+                  {/* Компактный бадж версий для list view */}
+                  {track.status === 'completed' && (
+                    <div className="absolute top-2 right-2">
+                      <TrackVersionBadge trackId={track.id} variant="outline" className="text-xs" />
+                    </div>
+                  )}
+                </div>
                 
                 {(track.status === 'failed' || isStaleTrack) && (
                   <Button

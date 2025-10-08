@@ -4,6 +4,7 @@ import { logError, logInfo } from '@/utils/logger';
 import { cacheAudioFile } from '../utils/serviceWorker';
 import { AudioPlayerTrack } from '@/types/track';
 import { useToast } from '@/hooks/use-toast';
+import { getTrackWithVersions, TrackWithVersions } from '@/utils/trackVersions';
 
 interface AudioPlayerContextType {
   currentTrack: AudioPlayerTrack | null;
@@ -42,20 +43,67 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   const [volume, setVolumeState] = useState(1);
   const [queue, setQueue] = useState<AudioPlayerTrack[]>([]);
   const [currentQueueIndex, setCurrentQueueIndex] = useState(-1);
+  
+  // ============= TRACK VERSIONS SYSTEM =============
+  // Управление версиями треков: загрузка, переключение, автоматическая очередь
+  const [availableVersions, setAvailableVersions] = useState<TrackWithVersions[]>([]);
   const [currentVersionIndex, setCurrentVersionIndex] = useState(0);
+  const [autoPlayVersions, setAutoPlayVersions] = useState(false); // Настройка автовоспроизведения версий
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const { toast } = useToast();
   const { playTime, hasRecorded } = usePlayAnalytics(currentTrack?.id || null, isPlaying, currentTime);
 
+  /**
+   * Загрузка всех версий для трека
+   * @param trackId - ID трека (может быть основной трек или версия)
+   */
+  const loadVersions = useCallback(async (trackId: string) => {
+    try {
+      logInfo(`Loading versions for track: ${trackId}`, 'AudioPlayerContext');
+      const versions = await getTrackWithVersions(trackId);
+      
+      if (versions.length > 0) {
+        setAvailableVersions(versions);
+        logInfo(`Loaded ${versions.length} versions for track ${trackId}`, 'AudioPlayerContext');
+        
+        // Если включено автовоспроизведение версий, добавить их в очередь
+        if (autoPlayVersions && versions.length > 1) {
+          const versionTracks = versions.map(v => ({
+            id: v.id,
+            title: v.title,
+            audio_url: v.audio_url,
+            cover_url: v.cover_url,
+            duration: v.duration,
+            style_tags: v.style_tags,
+            lyrics: v.lyrics,
+            status: 'completed' as const,
+            parentTrackId: v.parentTrackId,
+            versionNumber: v.versionNumber,
+            isMasterVersion: v.isMasterVersion,
+          }));
+          
+          logInfo(`Auto-queueing ${versionTracks.length} versions`, 'AudioPlayerContext');
+          setQueue(prev => [...prev, ...versionTracks.slice(1)]); // Добавить версии после текущего трека
+        }
+      } else {
+        setAvailableVersions([]);
+        logInfo(`No versions found for track ${trackId}`, 'AudioPlayerContext');
+      }
+    } catch (error) {
+      logError('Failed to load track versions', error as Error, 'AudioPlayerContext', { trackId });
+      setAvailableVersions([]);
+    }
+  }, [autoPlayVersions]);
+
   // Мемоизированная функция воспроизведения трека
   const playTrack = useCallback(async (track: AudioPlayerTrack) => {
     // Validate track can be played
     if (!track.audio_url || track.status !== 'completed') {
-      logError('Cannot play track - missing audio_url or not completed', new Error(`Track status: ${track.status}`), track.id);
+      logError('Cannot play track - missing audio_url or not completed', new Error(`Track status: ${track.status}`), 'AudioPlayerContext', { trackId: track.id, status: track.status });
       toast({
-        title: "Cannot play track",
-        description: track.status === 'processing' ? "Track is still being generated" : "Track audio is not available",
+        title: "Невозможно воспроизвести",
+        description: track.status === 'processing' ? "Трек всё ещё генерируется" : "Аудио недоступно",
         variant: "destructive",
       });
       return;
@@ -70,6 +118,10 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       setCurrentTrack(track);
       setIsPlaying(false);
 
+      // ============= ЗАГРУЗКА ВЕРСИЙ ТРЕКА =============
+      // При воспроизведении трека автоматически загружаем все его версии
+      await loadVersions(track.id);
+
       if (audioRef.current && track.audio_url) {
         audioRef.current.src = track.audio_url;
         audioRef.current.crossOrigin = 'anonymous'; // Enable CORS for audio
@@ -77,22 +129,23 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
         try {
           await cacheAudioFile(track.audio_url);
         } catch (error) {
-          logError('Failed to cache audio file', error as Error, track.id);
+          logError('Failed to cache audio file', error as Error, 'AudioPlayerContext', { trackId: track.id });
         }
 
         try {
           await audioRef.current.play();
           setIsPlaying(true);
           
+          logInfo(`Now playing: ${track.title}`, 'AudioPlayerContext', { trackId: track.id });
           // Аналитика воспроизведения обрабатывается автоматически хуком usePlayAnalytics
         } catch (error) {
-          logError('Failed to play track', error as Error, track.id);
+          logError('Failed to play track', error as Error, 'AudioPlayerContext', { trackId: track.id });
         }
       }
     } catch (error) {
-      logError('Error in playTrack', error as Error, track.id);
+      logError('Error in playTrack', error as Error, 'AudioPlayerContext', { trackId: track.id });
     }
-  }, [toast]);
+  }, [toast, loadVersions]);
 
   // Мемоизированная функция воспроизведения трека с очередью
   const playTrackWithQueue = useCallback((track: AudioPlayerTrack, allTracks: AudioPlayerTrack[]) => {
@@ -197,34 +250,67 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // Мемоизированная функция получения доступных версий
+  /**
+   * Получение списка доступных версий текущего трека
+   * @returns Массив версий текущего трека
+   */
   const getAvailableVersions = useCallback((): AudioPlayerTrack[] => {
-    if (!currentTrack) return [];
+    if (availableVersions.length === 0) return [];
     
-    return queue.filter(track => 
-      track.parentTrackId === currentTrack.parentTrackId || 
-      track.id === currentTrack.parentTrackId ||
-      currentTrack.id === track.parentTrackId
-    );
-  }, [currentTrack, queue]);
+    // Преобразуем TrackWithVersions в AudioPlayerTrack
+    return availableVersions.map(v => ({
+      id: v.id,
+      title: v.title,
+      audio_url: v.audio_url,
+      cover_url: v.cover_url,
+      duration: v.duration,
+      style_tags: v.style_tags,
+      lyrics: v.lyrics,
+      status: 'completed' as const,
+      parentTrackId: v.parentTrackId,
+      versionNumber: v.versionNumber,
+      isMasterVersion: v.isMasterVersion,
+    }));
+  }, [availableVersions]);
 
-  // Мемоизированная функция переключения версии
+  /**
+   * Переключение на конкретную версию трека
+   * @param versionId - ID версии для переключения
+   */
   const switchToVersion = useCallback((versionId: string) => {
-    const versions = getAvailableVersions();
-    const version = versions.find(v => v.id === versionId);
+    const version = availableVersions.find(v => v.id === versionId);
     
-    if (version) {
-      const versionIndex = versions.findIndex(v => v.id === versionId);
-      setCurrentVersionIndex(versionIndex);
-      
-      if (isPlaying) {
-        playTrack(version).then(() => {
-          // Аналитика переключения версий обрабатывается автоматически хуком usePlayAnalytics
-          setIsPlaying(false);
-        });
-      }
+    if (!version) {
+      logError('Version not found', new Error(`Version ${versionId} not found`), 'AudioPlayerContext', { versionId, availableCount: availableVersions.length });
+      return;
     }
-  }, [getAvailableVersions, isPlaying, playTrack]);
+    
+    const versionIndex = availableVersions.findIndex(v => v.id === versionId);
+    setCurrentVersionIndex(versionIndex);
+    
+    logInfo(`Switching to version ${versionIndex + 1}/${availableVersions.length}`, 'AudioPlayerContext', { 
+      versionId, 
+      versionNumber: version.versionNumber,
+      isMaster: version.isMasterVersion 
+    });
+    
+    // Создаем AudioPlayerTrack из версии
+    const trackToPlay: AudioPlayerTrack = {
+      id: version.id,
+      title: version.title,
+      audio_url: version.audio_url,
+      cover_url: version.cover_url,
+      duration: version.duration,
+      style_tags: version.style_tags,
+      lyrics: version.lyrics,
+      status: 'completed',
+      parentTrackId: version.parentTrackId,
+      versionNumber: version.versionNumber,
+      isMasterVersion: version.isMasterVersion,
+    };
+    
+    playTrack(trackToPlay);
+  }, [availableVersions, playTrack]);
 
   // Обработчики событий аудио элемента
   useEffect(() => {
