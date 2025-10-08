@@ -903,9 +903,9 @@ supabase functions deploy stems-callback
 - [Supabase Edge Functions](https://supabase.com/docs/guides/functions)
 
 ### Примеры интеграции
-- [React Hook для генерации музыки](./src/hooks/useMusicGeneration.ts)
-- [API Service Layer](./src/services/api.service.ts)
-- [Компонент генератора музыки](./src/components/MusicGenerator.tsx)
+- [React Hook для генерации музыки](../../src/hooks/useMusicGeneration.ts)
+- [API Service Layer](../../src/services/api.service.ts)
+- [Компонент генератора музыки](../../src/components/MusicGenerator.tsx)
 
 ---
 

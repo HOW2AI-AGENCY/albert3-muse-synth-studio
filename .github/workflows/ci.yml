@@ -50,6 +50,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Validate docs & logs
+        run: npm run docs:validate
+
       - name: Typecheck
         run: npx tsc --noEmit
 

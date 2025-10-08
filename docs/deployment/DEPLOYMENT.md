@@ -647,8 +647,8 @@ supabase functions deploy function-name --version previous
 
 Если у вас возникли проблемы с развертыванием:
 
-1. Проверьте [документацию проекта](./README.md)
-2. Изучите [известные проблемы](./README.md#known-issues)
+1. Проверьте [документацию проекта](../README.md)
+2. Изучите [известные проблемы](../README.md#known-issues)
 3. Создайте [issue на GitHub](https://github.com/your-username/albert3-muse-synth-studio/issues)
 4. Обратитесь к [команде разработки](mailto:support@albert3studio.com)
 

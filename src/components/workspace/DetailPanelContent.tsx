@@ -13,6 +13,9 @@ import { TrackVersions } from "@/components/tracks/TrackVersions";
 import { TrackStemsPanel } from "@/components/tracks/TrackStemsPanel";
 import { useTrackLike } from "@/hooks/useTrackLike";
 import { cn } from "@/lib/utils";
+import { StyleRecommendationsPanel } from "./StyleRecommendationsPanel";
+import type { StylePreset } from "@/types/styles";
+import { getStyleById } from "@/data/music-styles";
 
 interface Track {
   id: string;
@@ -114,6 +117,24 @@ export const DetailPanelContent = ({
 }: DetailPanelContentProps) => {
   const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count || 0);
 
+  const handlePresetApply = (preset: StylePreset) => {
+    const presetGenre = preset.styleIds
+      .map(styleId => getStyleById(styleId)?.name ?? styleId)
+      .join(", ");
+
+    if (presetGenre) {
+      setGenre(presetGenre);
+    }
+  };
+
+  const handleTagsApply = (tags: string[]) => {
+    if (!tags.length) {
+      return;
+    }
+
+    setMood(tags.slice(0, 3).join(", "));
+  };
+
   return (
     <TooltipProvider delayDuration={500}>
     <div className="p-4 space-y-4">
@@ -174,7 +195,7 @@ export const DetailPanelContent = ({
               Версии ({versions.length})
             </AccordionTrigger>
             <AccordionContent className="pb-3">
-              <TrackVersions 
+              <TrackVersions
                 trackId={track.id}
                 versions={versions}
                 onVersionUpdate={loadVersionsAndStems}
@@ -250,6 +271,22 @@ export const DetailPanelContent = ({
             <Button size="default" className="w-full" onClick={onSave} disabled={isSaving}>
               {isSaving ? "Сохранение..." : "Сохранить"}
             </Button>
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="ai-style" className="border rounded-lg px-4">
+          <AccordionTrigger className="text-sm py-3 hover:no-underline">
+            AI рекомендации по стилю
+          </AccordionTrigger>
+          <AccordionContent className="pb-3">
+            <StyleRecommendationsPanel
+              mood={mood}
+              genre={genre}
+              context={track.prompt}
+              currentTags={track.style_tags ?? []}
+              onApplyPreset={handlePresetApply}
+              onApplyTags={handleTagsApply}
+            />
           </AccordionContent>
         </AccordionItem>
 
