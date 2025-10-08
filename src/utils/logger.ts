@@ -21,6 +21,7 @@ interface LogEntry {
 
 class Logger {
   private isDevelopment = import.meta.env.DEV;
+  private isBrowser = typeof window !== 'undefined';
   private logs: LogEntry[] = [];
   private maxLogs = 1000; // Максимальное количество логов в памяти
 
@@ -85,8 +86,8 @@ class Logger {
     this.consoleLog(logEntry);
 
     // В production отправляем критические ошибки на сервер
-    if (!this.isDevelopment && level === LogLevel.ERROR) {
-      this.sendToServer(logEntry);
+    if (!this.isDevelopment && this.isBrowser && level === LogLevel.ERROR) {
+      void this.sendToServer(logEntry);
     }
   }
 
@@ -119,10 +120,14 @@ class Logger {
    * Отправка критических ошибок на сервер (в production)
    */
   private async sendToServer(entry: LogEntry) {
+    if (!this.isBrowser) {
+      return;
+    }
+
     try {
       // Здесь можно интегрировать с сервисами логирования
       // например, Sentry, LogRocket, или собственный API
-      
+
       // Пример отправки в Supabase Edge Function
       const response = await fetch('/functions/v1/log-error', {
         method: 'POST',
@@ -140,8 +145,8 @@ class Logger {
             message: entry.error.message,
             stack: entry.error.stack
           } : undefined,
-          userAgent: navigator.userAgent,
-          url: window.location.href
+          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+          url: typeof window !== 'undefined' ? window.location.href : undefined
         })
       });
 
@@ -185,31 +190,33 @@ class Logger {
 // Создаем единственный экземпляр логгера
 export const logger = new Logger();
 
-// Перехватываем необработанные ошибки
-window.addEventListener('error', (event) => {
-  logger.error(
-    'Необработанная ошибка JavaScript',
-    event.error,
-    'GlobalErrorHandler',
-    {
-      filename: event.filename,
-      lineno: event.lineno,
-      colno: event.colno
-    }
-  );
-});
+if (typeof window !== 'undefined') {
+  // Перехватываем необработанные ошибки
+  window.addEventListener('error', (event) => {
+    logger.error(
+      'Необработанная ошибка JavaScript',
+      event.error,
+      'GlobalErrorHandler',
+      {
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno
+      }
+    );
+  });
 
-// Перехватываем необработанные Promise rejections
-window.addEventListener('unhandledrejection', (event) => {
-  logger.error(
-    'Необработанное отклонение Promise',
-    event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
-    'GlobalPromiseHandler',
-    {
-      reason: event.reason
-    }
-  );
-});
+  // Перехватываем необработанные Promise rejections
+  window.addEventListener('unhandledrejection', (event) => {
+    logger.error(
+      'Необработанное отклонение Promise',
+      event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
+      'GlobalPromiseHandler',
+      {
+        reason: event.reason
+      }
+    );
+  });
+}
 
 // Экспортируем удобные функции для быстрого использования
 export const logError = (message: string, error?: Error, context?: string, data?: Record<string, unknown>) =>

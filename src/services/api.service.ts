@@ -5,8 +5,9 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { ApiError, handlePostgrestError, ensureData, handleSupabaseFunctionError } from "@/services/api/errors";
 import { trackCache, CachedTrack } from "@/utils/trackCache";
-import { logInfo, logError, logDebug } from "@/utils/logger";
+import { logInfo, logError, logDebug, logWarn } from "@/utils/logger";
 
 type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
 
@@ -89,17 +90,19 @@ export class ApiService {
   static async improvePrompt(
     request: ImprovePromptRequest
   ): Promise<ImprovePromptResponse> {
+    const context = "ApiService.improvePrompt";
     const { data, error } = await supabase.functions.invoke<ImprovePromptResponse>(
       "improve-prompt",
       { body: request }
     );
 
-    if (error) {
-      throw new Error(error.message || "Failed to improve prompt");
-    }
-
-    if (!data) {
-      throw new Error("No response from server");
+    if (error || !data) {
+      return handleSupabaseFunctionError(
+        error,
+        "Failed to improve prompt",
+        context,
+        { promptLength: request.prompt.length }
+      );
     }
 
     return data;
@@ -111,6 +114,7 @@ export class ApiService {
   static async generateMusic(
     request: GenerateMusicRequest
   ): Promise<GenerateMusicResponse> {
+    const context = "ApiService.generateMusic";
     const provider = request.provider || 'suno';
     const functionName = provider === 'suno' ? 'generate-suno' : 'generate-music';
 
@@ -124,11 +128,15 @@ export class ApiService {
       wait_audio: false,
     };
 
-    logInfo('🎵 [API Service] Provider:', 'ApiService', { provider });
-    logInfo('🎵 [API Service] Sending to:', 'ApiService', { functionName });
-    logDebug('📤 [API Service] Payload:', 'ApiService', { payload });
+    logInfo('🎵 [API Service] Selected provider', context, { provider, functionName });
+    logDebug('📤 [API Service] Payload summary', context, {
+      hasTrackId: Boolean(request.trackId),
+      promptLength: request.prompt.length,
+      tagsCount: request.styleTags?.length ?? 0,
+      hasVocals: request.hasVocals ?? false,
+    });
 
-    logInfo('⏳ [API Service] Invoking edge function...', 'ApiService');
+    logInfo('⏳ [API Service] Invoking edge function...', context);
 
     const { data, error } = await supabase.functions.invoke<GenerateMusicResponse>(
       functionName,
@@ -136,23 +144,38 @@ export class ApiService {
     );
 
     if (error) {
-      logError('🔴 [API Service] Edge function error', error, 'ApiService');
+      logError('🔴 [API Service] Edge function error', error, context, { provider, functionName });
       let userMessage = error.message || "Failed to generate music";
       if (error.message?.includes('429') || error.message?.includes('Rate limit')) {
         userMessage = 'Превышен лимит запросов. Пожалуйста, подождите немного';
       } else if (error.message?.includes('402') || error.message?.includes('Payment')) {
         userMessage = 'Недостаточно средств. Пополните баланс API';
       }
-      throw new Error(userMessage);
+
+      throw new ApiError(userMessage, {
+        context,
+        payload: { provider, functionName },
+        cause: error,
+      });
     }
 
     if (!data) {
-      const err = new Error("No response from server");
-      logError('🔴 [API Service] No response from server', err, 'ApiService');
-      throw err;
+      const err = new Error('No response from server');
+      logError('🔴 [API Service] No response from server', err, context, { provider, functionName });
+      throw new ApiError('No response from server', {
+        context,
+        payload: { provider, functionName },
+        cause: err,
+      });
     }
 
-    logInfo('✅ [API Service] Success:', 'ApiService', { data });
+    logInfo('✅ [API Service] Generation success', context, {
+      provider,
+      functionName,
+      trackId: data.trackId,
+      success: data.success,
+    });
+
     return data;
   }
 
@@ -162,17 +185,23 @@ export class ApiService {
   static async generateLyrics(
     request: GenerateLyricsRequest
   ): Promise<GenerateLyricsResponse> {
+    const context = "ApiService.generateLyrics";
     const { data, error } = await supabase.functions.invoke<GenerateLyricsResponse>(
       "generate-lyrics",
       { body: request }
     );
 
-    if (error) {
-      throw new Error(error.message || "Failed to generate lyrics");
-    }
-
-    if (!data) {
-      throw new Error("No response from server");
+    if (error || !data) {
+      return handleSupabaseFunctionError(
+        error,
+        "Failed to generate lyrics",
+        context,
+        {
+          theme: request.theme,
+          mood: request.mood,
+          genre: request.genre,
+        }
+      );
     }
 
     return data;
@@ -182,14 +211,15 @@ export class ApiService {
    * Create a new track record
    */
   static async createTrack(
-    userId: string, 
-    title: string, 
+    userId: string,
+    title: string,
     prompt: string,
     provider: string = 'replicate',
     lyrics?: string,
     hasVocals?: boolean,
     styleTags?: string[]
   ): Promise<Track> {
+    const context = "ApiService.createTrack";
     const { data, error } = await supabase
       .from("tracks")
       .insert({
@@ -205,21 +235,25 @@ export class ApiService {
       .select()
       .single();
 
-    if (error) {
-      throw new Error(error.message || "Failed to create track");
-    }
+    handlePostgrestError(error, "Failed to create track", context, {
+      userId,
+      provider,
+      hasLyrics: Boolean(lyrics),
+    });
 
-    if (!data) {
-      throw new Error("Failed to create track");
-    }
+    const record = ensureData(data, "Failed to create track", context, {
+      userId,
+      provider,
+    });
 
-    return mapTrackRowToTrack(data);
+    return mapTrackRowToTrack(record);
   }
 
   /**
    * Get all tracks for the current user with caching support
    */
   static async getUserTracks(userId: string): Promise<Track[]> {
+    const context = "ApiService.getUserTracks";
     try {
       // Сначала пытаемся получить треки из API
       // КРИТИЧЕСКИ ВАЖНО: Явно указываем все поля, чтобы избежать undefined значений
@@ -261,9 +295,7 @@ export class ApiService {
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        throw new Error(error.message || "Failed to fetch tracks");
-      }
+      handlePostgrestError(error, "Failed to fetch tracks", context, { userId });
 
       const tracks = (data ?? []).map(mapTrackRowToTrack);
 
@@ -287,19 +319,22 @@ export class ApiService {
 
       return tracks;
     } catch (error) {
-      console.warn('Ошибка при загрузке треков из API, пытаемся использовать кэш:', error);
-      
+      logWarn('Ошибка при загрузке треков из API, пытаемся использовать кэш', context, {
+        userId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
       // В случае ошибки API пытаемся получить треки из кэша
       const cacheStats = trackCache.getCacheStats();
       if (cacheStats.totalTracks > 0) {
-        console.info(`Используем кэшированные треки: ${cacheStats.totalTracks} треков`);
-        
+        logInfo(`Используем кэшированные треки: ${cacheStats.totalTracks} треков`, context);
+
         // Получаем все треки из кэша и преобразуем их в формат Track
         // Это упрощенная версия, в реальности нужно было бы сохранять больше данных
         const cachedTracks: Track[] = [];
         return cachedTracks;
       }
-      
+
       throw error;
     }
   }
@@ -308,6 +343,7 @@ export class ApiService {
    * Get a single track by its ID
    */
   static async getTrackById(trackId: string): Promise<Track | null> {
+    const context = "ApiService.getTrackById";
     const { data, error } = await supabase
       .from('tracks')
       .select('*')
@@ -315,7 +351,10 @@ export class ApiService {
       .single();
 
     if (error) {
-      logError('Failed to fetch track by ID', error, 'ApiService', { trackId });
+      logError('Failed to fetch track by ID', new Error(error.message), context, {
+        trackId,
+        details: error.details,
+      });
       // Don't throw, just return null, as the caller might handle it
       return null;
     }
@@ -327,14 +366,13 @@ export class ApiService {
    * Delete a track with cache cleanup
    */
   static async deleteTrack(trackId: string): Promise<void> {
+    const context = "ApiService.deleteTrack";
     const { error } = await supabase
       .from("tracks")
       .delete()
       .eq("id", trackId);
 
-    if (error) {
-      throw new Error(error.message || "Failed to delete track");
-    }
+    handlePostgrestError(error, "Failed to delete track", context, { trackId });
 
     // Удаляем трек из кэша
     trackCache.removeTrack(trackId);
@@ -344,28 +382,26 @@ export class ApiService {
    * Delete a specific track version
    */
   static async deleteTrackVersion(versionId: string): Promise<void> {
+    const context = "ApiService.deleteTrackVersion";
     const { error } = await supabase
       .from('track_versions')
       .delete()
       .eq('id', versionId);
 
-    if (error) {
-      throw new Error(error.message || "Failed to delete version");
-    }
+    handlePostgrestError(error, "Failed to delete version", context, { versionId });
   }
 
   /**
    * Delete track completely with all versions and stems (cascade)
    */
   static async deleteTrackCompletely(trackId: string): Promise<void> {
+    const context = "ApiService.deleteTrackCompletely";
     const { error } = await supabase
       .from('tracks')
       .delete()
       .eq('id', trackId);
 
-    if (error) {
-      throw new Error(error.message || "Failed to delete track completely");
-    }
+    handlePostgrestError(error, "Failed to delete track completely", context, { trackId });
   }
 
   /**
@@ -377,6 +413,7 @@ export class ApiService {
     audioUrl?: string,
     errorMessage?: string
   ): Promise<void> {
+    const context = "ApiService.updateTrackStatus";
     const updates: Partial<TrackRow> = { status };
     if (audioUrl) updates.audio_url = audioUrl;
     if (errorMessage) updates.error_message = errorMessage;
@@ -386,9 +423,12 @@ export class ApiService {
       .update(updates)
       .eq("id", trackId);
 
-    if (error) {
-      throw new Error(error.message || "Failed to update track");
-    }
+    handlePostgrestError(error, "Failed to update track", context, {
+      trackId,
+      status,
+      hasAudioUrl: Boolean(audioUrl),
+      hasErrorMessage: Boolean(errorMessage),
+    });
   }
 
   /**
@@ -398,6 +438,7 @@ export class ApiService {
     limit: number = 9,
     orderBy: 'created_at' | 'like_count' | 'view_count' = 'like_count'
   ): Promise<Track[]> {
+    const context = "ApiService.getPublicTracks";
     const { data, error } = await supabase
       .from("tracks")
       .select("*")
@@ -407,9 +448,10 @@ export class ApiService {
       .order(orderBy, { ascending: false })
       .limit(limit);
 
-    if (error) {
-      throw new Error(error.message || "Failed to fetch public tracks");
-    }
+    handlePostgrestError(error, "Failed to fetch public tracks", context, {
+      limit,
+      orderBy,
+    });
 
     return (data ?? []).map(mapTrackRowToTrack);
   }
@@ -418,12 +460,16 @@ export class ApiService {
    * Increment play count for a track
    */
   static async incrementPlayCount(trackId: string): Promise<void> {
+    const context = "ApiService.incrementPlayCount";
     const { error } = await supabase.rpc('increment_play_count', {
       track_id: trackId
     });
 
     if (error) {
-      console.error('Failed to increment play count:', error);
+      logWarn('Failed to increment play count', context, {
+        trackId,
+        error: error.message,
+      });
     }
   }
 
@@ -431,17 +477,18 @@ export class ApiService {
    * Get provider balance
    */
   static async getProviderBalance(provider: 'suno' | 'replicate'): Promise<ProviderBalanceResponse> {
+    const context = "ApiService.getProviderBalance";
     const { data, error } = await supabase.functions.invoke('get-balance', {
       body: { provider },
     });
 
-    if (error) {
-      logError('Failed to get provider balance', error, 'ApiService', { provider });
-      throw new Error(error.message || `Failed to get balance for ${provider}`);
-    }
-
-    if (!data) {
-      throw new Error('No response from server when fetching balance');
+    if (error || !data) {
+      return handleSupabaseFunctionError(
+        error,
+        `Failed to get balance for ${provider}`,
+        context,
+        { provider }
+      );
     }
 
     return data as ProviderBalanceResponse;
