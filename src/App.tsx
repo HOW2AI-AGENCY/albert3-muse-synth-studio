@@ -26,7 +26,7 @@ import {
   preloadLibrary
 } from './utils/lazyImports';
 
-// Ленивая загрузка админ-панели
+// Ленивая загрузка админ-панели (защищенный роут)
 const LazyAdmin = lazy(() => import('./pages/workspace/Admin'));
 
 // Компонент загрузки
