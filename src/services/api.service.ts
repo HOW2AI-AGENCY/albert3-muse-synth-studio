@@ -302,4 +302,24 @@ export class ApiService {
       throw new Error(error.message || "Failed to update track");
     }
   }
+
+  /**
+   * Get public tracks (featured/popular)
+   */
+  static async getPublicTracks(limit: number = 9, orderBy: 'created_at' | 'like_count' | 'view_count' = 'like_count'): Promise<Track[]> {
+    const { data, error } = await supabase
+      .from("tracks")
+      .select("*")
+      .eq("is_public", true)
+      .eq("status", "completed")
+      .not("audio_url", "is", null)
+      .order(orderBy, { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      throw new Error(error.message || "Failed to fetch public tracks");
+    }
+
+    return (data as Track[]) || [];
+  }
 }

@@ -1,11 +1,17 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { Music, Sparkles, Zap, Headphones, Wand2 } from "lucide-react";
+import { Music, Sparkles, Zap, Headphones, Wand2, Play, Heart } from "lucide-react";
+import { ApiService, Track } from "@/services/api.service";
+import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const Landing = () => {
   const navigate = useNavigate();
-
+  const { playTrack } = useAudioPlayer();
+  const [featuredTracks, setFeaturedTracks] = useState<Track[]>([]);
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
