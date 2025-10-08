@@ -2,6 +2,7 @@
  * Comprehensive music styles system with 70+ genres across 8 categories
  * Includes style recommendations, search, and preset combinations
  */
+import type { StylePreset } from "@/types/styles";
 
 export interface MusicStyle {
   id: string;
@@ -139,30 +140,21 @@ export const styleCategories: StyleCategory[] = [
 export const allStyles = styleCategories.flatMap(cat => cat.styles);
 
 // Preset combinations
-export interface StylePreset {
-  id: string;
-  name: string;
-  icon: string;
-  description: string;
-  styleIds: string[];
-  gradient: string;
-}
-
 export const stylePresets: StylePreset[] = [
   {
     id: "summer-hit",
     name: "Летний хит",
     icon: "☀️",
-    description: "Энергичный танцевальный трек для вечеринки",
-    styleIds: ["dance-pop", "edm", "house"],
+    description: "Энергичный трек с фестивальной атмосферой",
+    styleIds: ["house", "future-bass", "tech-house"],
     gradient: "from-yellow-400 to-orange-500"
   },
   {
     id: "melancholic-vibe",
     name: "Меланхоличный вайб",
     icon: "🌧️",
-    description: "Грустная, задумчивая композиция",
-    styleIds: ["indie", "dream-pop", "ambient"],
+    description: "Задумчивая атмосферная композиция",
+    styleIds: ["shoegaze", "post-rock", "ambient"],
     gradient: "from-blue-500 to-purple-600"
   },
   {
@@ -170,7 +162,7 @@ export const stylePresets: StylePreset[] = [
     name: "Энергичная тренировка",
     icon: "💪",
     description: "Мощный трек для интенсивных тренировок",
-    styleIds: ["trap", "dubstep", "hard-rock"],
+    styleIds: ["trap", "dubstep", "hardstyle"],
     gradient: "from-red-600 to-orange-700"
   },
   {
@@ -178,7 +170,7 @@ export const stylePresets: StylePreset[] = [
     name: "Учёба и фокус",
     icon: "📚",
     description: "Спокойная музыка для концентрации",
-    styleIds: ["lofi-hip-hop", "ambient", "chillwave"],
+    styleIds: ["lo-fi-hip-hop", "chillwave", "ambient"],
     gradient: "from-teal-500 to-blue-600"
   },
   {
@@ -186,7 +178,7 @@ export const stylePresets: StylePreset[] = [
     name: "Романтический вечер",
     icon: "💕",
     description: "Нежная музыка для романтики",
-    styleIds: ["soul", "bossa-nova", "smooth-jazz"],
+    styleIds: ["smooth-jazz", "romantic", "bebop"],
     gradient: "from-pink-500 to-rose-600"
   },
   {
@@ -194,7 +186,7 @@ export const stylePresets: StylePreset[] = [
     name: "Дорожное приключение",
     icon: "🚗",
     description: "Драйвовая музыка для поездки",
-    styleIds: ["rock", "indie", "alternative"],
+    styleIds: ["classic-rock", "indie-rock", "alternative-rock"],
     gradient: "from-orange-500 to-red-600"
   }
 ];

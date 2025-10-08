@@ -16,5 +16,55 @@
     "ui": "@/components/ui",
     "lib": "@/lib",
     "hooks": "@/hooks"
-  }
+  },
+  "stylePresets": [
+    {
+      "id": "summer-hit",
+      "name": "Летний хит",
+      "icon": "☀️",
+      "description": "Энергичный трек с фестивальной атмосферой",
+      "styleIds": ["house", "future-bass", "tech-house"],
+      "gradient": "from-yellow-400 to-orange-500"
+    },
+    {
+      "id": "melancholic-vibe",
+      "name": "Меланхоличный вайб",
+      "icon": "🌧️",
+      "description": "Задумчивая атмосферная композиция",
+      "styleIds": ["shoegaze", "post-rock", "ambient"],
+      "gradient": "from-blue-500 to-purple-600"
+    },
+    {
+      "id": "workout-energy",
+      "name": "Энергичная тренировка",
+      "icon": "💪",
+      "description": "Мощный трек для интенсивных тренировок",
+      "styleIds": ["trap", "dubstep", "hardstyle"],
+      "gradient": "from-red-600 to-orange-700"
+    },
+    {
+      "id": "chill-study",
+      "name": "Учёба и фокус",
+      "icon": "📚",
+      "description": "Спокойная музыка для концентрации",
+      "styleIds": ["lo-fi-hip-hop", "chillwave", "ambient"],
+      "gradient": "from-teal-500 to-blue-600"
+    },
+    {
+      "id": "romantic-evening",
+      "name": "Романтический вечер",
+      "icon": "💕",
+      "description": "Нежная музыка для романтики",
+      "styleIds": ["smooth-jazz", "romantic", "bebop"],
+      "gradient": "from-pink-500 to-rose-600"
+    },
+    {
+      "id": "road-trip",
+      "name": "Дорожное приключение",
+      "icon": "🚗",
+      "description": "Драйвовая музыка для поездки",
+      "styleIds": ["classic-rock", "indie-rock", "alternative-rock"],
+      "gradient": "from-orange-500 to-red-600"
+    }
+  ]
 }
