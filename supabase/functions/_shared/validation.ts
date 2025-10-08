@@ -121,7 +121,8 @@ export const validationSchemas = {
 
   separateStems: {
     trackId: [validators.required, validators.string, validators.uuid],
-    audioUrl: [validators.required, validators.string, validators.minLength(10)]
+    versionId: [validators.string, validators.uuid],
+    separationMode: [validators.required, validators.string, validators.minLength(3), validators.maxLength(50)]
   }
 };
 
