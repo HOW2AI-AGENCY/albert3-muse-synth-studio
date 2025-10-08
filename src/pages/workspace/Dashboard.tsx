@@ -2,71 +2,36 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Music, Library, Settings, Sparkles, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Track } from "@/services/api.service";
+import { useCallback, useEffect, useMemo } from "react";
 import { TrackCard } from "@/components/TrackCard";
 import { useToast } from "@/hooks/use-toast";
-import { normalizeTrack } from "@/utils/trackNormalizer";
+import { normalizeTracks } from "@/utils/trackNormalizer";
+import { useDashboardData, DEFAULT_DASHBOARD_STATS } from "@/hooks/useDashboardData";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [stats, setStats] = useState({ total: 0, processing: 0, completed: 0, public: 0 });
-  const [publicTracks, setPublicTracks] = useState<Track[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading, error } = useDashboardData();
+  const stats = data?.stats ?? DEFAULT_DASHBOARD_STATS;
+  const publicTracks = useMemo(() => normalizeTracks(data?.publicTracks ?? []), [data?.publicTracks]);
 
   useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Load user stats
-      const { data: userTracks } = await supabase
-        .from('tracks')
-        .select('status, is_public')
-        .eq('user_id', user.id);
-
-      if (userTracks) {
-        const stats = {
-          total: userTracks.length,
-          processing: userTracks.filter(t => t.status === 'processing').length,
-          completed: userTracks.filter(t => t.status === 'completed').length,
-          public: userTracks.filter(t => t.is_public).length,
-        };
-        setStats(stats);
-      }
-
-      // Load public tracks
-      const { data: publicTracksData } = await supabase
-        .from('tracks')
-        .select(`
-          *,
-          profiles!inner(username, avatar_url)
-        `)
-        .eq('is_public', true)
-        .eq('status', 'completed')
-        .order('created_at', { ascending: false })
-        .limit(6);
-
-      if (publicTracksData) {
-        setPublicTracks(publicTracksData as Track[]);
-      }
-    } catch (error) {
-      console.error('Error loading dashboard data:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось загрузить данные дашборда",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+    if (!error) {
+      return;
     }
-  };
+
+    console.error("Error loading dashboard data:", error);
+    toast({
+      title: "Ошибка",
+      description: "Не удалось загрузить данные дашборда",
+      variant: "destructive",
+    });
+  }, [error, toast]);
+
+  const handleGenerateClick = useCallback(() => navigate("/workspace/generate"), [navigate]);
+  const handleLibraryClick = useCallback(() => navigate("/workspace/library"), [navigate]);
+  const handleSettingsClick = useCallback(() => navigate("/workspace/settings"), [navigate]);
+  const handleShowAllTracks = useCallback(() => navigate("/workspace/library"), [navigate]);
 
   return (
     <div className="p-4 md:p-6 space-y-8 animate-fade-in">
@@ -119,7 +84,7 @@ const Dashboard = () => {
         <Card 
           variant="interactive"
           className="cursor-pointer hover:border-primary/50 transition-all hover-lift animate-scale-in"
-          onClick={() => navigate("/workspace/generate")}
+          onClick={handleGenerateClick}
           style={{ animationDelay: '0.1s' }}
         >
           <CardHeader>
@@ -141,7 +106,7 @@ const Dashboard = () => {
         <Card 
           variant="interactive"
           className="cursor-pointer hover:border-secondary/50 transition-all hover-lift animate-scale-in"
-          onClick={() => navigate("/workspace/library")}
+          onClick={handleLibraryClick}
           style={{ animationDelay: '0.2s' }}
         >
           <CardHeader>
@@ -163,7 +128,7 @@ const Dashboard = () => {
         <Card 
           variant="interactive"
           className="cursor-pointer hover:border-accent/50 transition-all hover-lift animate-scale-in"
-          onClick={() => navigate("/workspace/settings")}
+          onClick={handleSettingsClick}
           style={{ animationDelay: '0.3s' }}
         >
           <CardHeader>
@@ -191,13 +156,13 @@ const Dashboard = () => {
               <TrendingUp className="w-5 h-5 text-primary animate-pulse" />
               <span className="text-shimmer">Популярные треки</span>
             </CardTitle>
-            <Button variant="ghost" size="sm" className="hover:text-primary">
+            <Button variant="ghost" size="sm" className="hover:text-primary" onClick={handleShowAllTracks}>
               Показать все
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {isLoading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
               <p className="text-muted-foreground mt-2">Загружаем треки...</p>
@@ -205,12 +170,12 @@ const Dashboard = () => {
           ) : publicTracks.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               {publicTracks.map((track, index) => (
-                <div 
-                  key={track.id} 
+                <div
+                  key={track.id}
                   className="animate-scale-in"
                   style={{ animationDelay: `${0.5 + index * 0.1}s` }}
                 >
-                  <TrackCard track={normalizeTrack(track)} />
+                  <TrackCard track={track} />
                 </div>
               ))}
             </div>
