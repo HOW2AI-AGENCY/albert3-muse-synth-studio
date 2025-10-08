@@ -12,13 +12,15 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
+import { Skeleton } from '@/components/ui/skeleton';
+import {
   Music, Loader2, Plus, Wand2, Maximize2,
   Music2, FileText, Settings2, Play
 } from 'lucide-react';
 import { useMusicGeneration } from '@/hooks/useMusicGeneration';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
+import { useProviderBalance } from '@/hooks/useProviderBalance';
 
 interface MusicGeneratorProps {
   onTrackGenerated?: () => void;
@@ -62,10 +64,11 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     isImproving,
     improvePrompt: hookImprovePrompt
   } = useMusicGeneration();
-  
+
   const { toast } = useToast();
   const { vibrate } = useHapticFeedback();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { balance, isLoading: balanceLoading, error: balanceError } = useProviderBalance();
 
   // Mode & UI State
   const [generationMode, setGenerationMode] = useState<'simple' | 'custom'>('simple');
@@ -263,6 +266,16 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleGenerate]);
 
+  useEffect(() => {
+    if (balanceError) {
+      toast({
+        title: '⚠️ Не удалось загрузить баланс',
+        description: balanceError,
+        variant: 'destructive'
+      });
+    }
+  }, [balanceError, toast]);
+
   return (
     <div className="h-full w-full">
       <Card className="h-full border-border/40 bg-background/95 backdrop-blur-sm shadow-lg">
@@ -270,10 +283,14 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
         <div className="p-4 border-b border-border/40 bg-muted/20">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="text-xs px-2 py-1">
-                <Music className="h-3 w-3 mr-1" />
-                10k Credits
-              </Badge>
+              {balanceLoading ? (
+                <Skeleton className="h-6 w-24" />
+              ) : (
+                <Badge variant="secondary" className="text-xs px-2 py-1">
+                  <Music className="h-3 w-3 mr-1" />
+                  {balance?.balance ?? 0} {balance?.currency ?? 'credits'} · {balance?.provider ?? 'unknown'}
+                </Badge>
+              )}
             </div>
             
             <div className="flex items-center gap-2">
