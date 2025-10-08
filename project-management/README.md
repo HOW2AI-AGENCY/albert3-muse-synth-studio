@@ -214,6 +214,7 @@ project-management/
 │   └── backlog.md                 # Бэклог проекта
 │
 ├── 📊 reports/                     # Отчетность
+│   ├── README.md                  # Индекс и быстрые ссылки по отчетам
 │   ├── team-dashboard.md          # Дашборд команды
 │   ├── automated-reports.md       # Автоматические отчеты
 │   └── sprint-*/                  # Отчеты по спринтам
@@ -227,9 +228,10 @@ project-management/
 ### 1. 📋 Планирование задач
 См. [NAVIGATION_INDEX.md](NAVIGATION_INDEX.md) для полной навигации по проекту.
 
-**Текущий Sprint**: [Sprint 20](tasks/current-sprint.md)  
-**Все задачи**: [TASKS_STATUS.md](tasks/TASKS_STATUS.md)  
+**Текущий Sprint**: [Sprint 20](tasks/current-sprint.md)
+**Все задачи**: [TASKS_STATUS.md](tasks/TASKS_STATUS.md)
 **Technical Debt**: [TECHNICAL_DEBT_PLAN.md](TECHNICAL_DEBT_PLAN.md)
+**Отчеты проекта**: [reports/README.md](reports/README.md)
 
 ### 2. 🏃‍♂️ Управление спринтом
 - **Планирование спринта**: Каждый понедельник в 10:00
@@ -244,6 +246,7 @@ project-management/
 
 ### 4. 📊 Мониторинг прогресса
 - **Дашборд команды**: `reports/team-dashboard.md`
+- **Полный индекс отчетов**: `reports/README.md`
 - **Burndown Chart**: Автоматически в GitHub Projects
 - **Velocity Tracking**: Еженедельные отчеты в `reports/weekly/`
 
