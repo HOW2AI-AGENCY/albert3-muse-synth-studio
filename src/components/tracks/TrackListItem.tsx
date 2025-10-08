@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, memo, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -61,7 +62,7 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
     toggleLike();
   }, [toggleLike]);
 
-  const handleDownload = useCallback(() => {
+  const handleDownload = useCallback(async () => {
     try {
       if (!track.audio_url) {
         toast({
@@ -72,6 +73,25 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
         });
         return;
       }
+
+      // Инкрементируем счетчик скачиваний
+      try {
+        const { error } = await supabase.rpc('increment_download_count', { 
+          track_id: track.id 
+        });
+        if (error) console.error('Error incrementing download count:', error);
+      } catch (error) {
+        console.error('Error tracking download:', error);
+      }
+
+      // Открываем файл для скачивания
+      const link = document.createElement('a');
+      link.href = track.audio_url;
+      link.download = `${track.title}.mp3`;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
       onDownload?.(track.id);
       

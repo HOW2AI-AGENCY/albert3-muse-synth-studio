@@ -190,6 +190,7 @@ export type Database = {
           cover_url: string | null
           created_at: string
           created_at_suno: string | null
+          download_count: number | null
           duration: number | null
           duration_seconds: number | null
           error_message: string | null
@@ -221,6 +222,7 @@ export type Database = {
           cover_url?: string | null
           created_at?: string
           created_at_suno?: string | null
+          download_count?: number | null
           duration?: number | null
           duration_seconds?: number | null
           error_message?: string | null
@@ -252,6 +254,7 @@ export type Database = {
           cover_url?: string | null
           created_at?: string
           created_at_suno?: string | null
+          download_count?: number | null
           duration?: number | null
           duration_seconds?: number | null
           error_message?: string | null
@@ -312,6 +315,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_download_count: {
+        Args: { track_id: string }
+        Returns: undefined
       }
       increment_view_count: {
         Args: { track_id: string }
