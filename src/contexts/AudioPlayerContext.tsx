@@ -98,8 +98,18 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
 
   // Мемоизированная функция воспроизведения трека
   const playTrack = useCallback(async (track: AudioPlayerTrack) => {
+    // Нормализация URL - добавить .mp3 если отсутствует
+    let audioUrl = track.audio_url;
+    if (audioUrl && !audioUrl.endsWith('.mp3') && !audioUrl.includes('?')) {
+      audioUrl = audioUrl + '.mp3';
+      logInfo('Normalized audio URL', 'AudioPlayerContext', { 
+        original: track.audio_url, 
+        normalized: audioUrl 
+      });
+    }
+    
     // Validate track can be played
-    if (!track.audio_url || track.status !== 'completed') {
+    if (!audioUrl || track.status !== 'completed') {
       logError('Cannot play track - missing audio_url or not completed', new Error(`Track status: ${track.status}`), 'AudioPlayerContext', { trackId: track.id, status: track.status });
       toast({
         title: "Невозможно воспроизвести",
@@ -108,13 +118,16 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       });
       return;
     }
+    
+    // Используем нормализованный URL
+    const normalizedTrack = { ...track, audio_url: audioUrl };
 
     // ============= ПРОВЕРКА ДОСТУПНОСТИ URL =============
     // Проверяем, доступен ли аудиофайл перед воспроизведением
     try {
-      logInfo('Checking audio URL availability...', 'AudioPlayerContext', { url: track.audio_url.substring(0, 50) + '...' });
+      logInfo('Checking audio URL availability...', 'AudioPlayerContext', { url: audioUrl.substring(0, 50) + '...' });
       
-      const response = await fetch(track.audio_url, { 
+      const response = await fetch(audioUrl, { 
         method: 'HEAD',
         mode: 'no-cors' // Избегаем CORS ошибок при проверке
       });
@@ -124,7 +137,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       logInfo('Audio URL check completed', 'AudioPlayerContext');
       
     } catch (error) {
-      logError('Audio URL is not accessible', error as Error, 'AudioPlayerContext', { trackId: track.id });
+      logError('Audio URL is not accessible', error as Error, 'AudioPlayerContext', { trackId: normalizedTrack.id });
       toast({
         title: "Аудио недоступно",
         description: "Файл устарел или удалён. Попробуйте регенерировать трек.",
@@ -140,31 +153,31 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
         audioRef.current.currentTime = 0;
       }
 
-      setCurrentTrack(track);
+      setCurrentTrack(normalizedTrack);
       setIsPlaying(false);
 
       // ============= ЗАГРУЗКА ВЕРСИЙ ТРЕКА =============
       // При воспроизведении трека автоматически загружаем все его версии
-      await loadVersions(track.id);
+      await loadVersions(normalizedTrack.id);
 
-      if (audioRef.current && track.audio_url) {
-        audioRef.current.src = track.audio_url;
+      if (audioRef.current && audioUrl) {
+        audioRef.current.src = audioUrl;
         audioRef.current.crossOrigin = 'anonymous'; // Enable CORS for audio
         
         try {
-          await cacheAudioFile(track.audio_url);
+          await cacheAudioFile(audioUrl);
         } catch (error) {
-          logError('Failed to cache audio file', error as Error, 'AudioPlayerContext', { trackId: track.id });
+          logError('Failed to cache audio file', error as Error, 'AudioPlayerContext', { trackId: normalizedTrack.id });
         }
 
         try {
           await audioRef.current.play();
           setIsPlaying(true);
           
-          logInfo(`Now playing: ${track.title}`, 'AudioPlayerContext', { trackId: track.id });
+          logInfo(`Now playing: ${normalizedTrack.title}`, 'AudioPlayerContext', { trackId: normalizedTrack.id });
           // Аналитика воспроизведения обрабатывается автоматически хуком usePlayAnalytics
         } catch (error) {
-          logError('Failed to play track', error as Error, 'AudioPlayerContext', { trackId: track.id });
+          logError('Failed to play track', error as Error, 'AudioPlayerContext', { trackId: normalizedTrack.id });
           toast({
             title: "Ошибка воспроизведения",
             description: "Не удалось загрузить аудиофайл. Попробуйте ещё раз.",
@@ -173,7 +186,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     } catch (error) {
-      logError('Error in playTrack', error as Error, 'AudioPlayerContext', { trackId: track.id });
+      logError('Error in playTrack', error as Error, 'AudioPlayerContext', { trackId: normalizedTrack.id });
     }
   }, [toast, loadVersions]);
 

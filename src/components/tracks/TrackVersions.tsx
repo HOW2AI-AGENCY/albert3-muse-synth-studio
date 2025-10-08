@@ -93,6 +93,9 @@ const TrackVersionsComponent = ({ trackId, versions, onVersionUpdate }: TrackVer
         audio_url: version.audio_url,
         cover_url: version.cover_url,
         duration: version.duration,
+        status: 'completed',
+        style_tags: [],
+        lyrics: version.lyrics,
       });
     }
   }, [trackId, currentTrack, isPlaying, vibrate, togglePlayPause, playTrack]);

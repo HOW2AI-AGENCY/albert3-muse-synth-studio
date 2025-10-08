@@ -149,6 +149,7 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
           audio_url: track.audio_url!,
           cover_url: track.cover_url,
           duration: track.duration,
+          status: track.status,
           style_tags: track.style_tags,
           lyrics: track.lyrics,
         });
