@@ -27,6 +27,9 @@ verify_jwt = true
 [functions.stems-callback]
 verify_jwt = false
 
+[functions.sync-stem-job]
+verify_jwt = true
+
 [functions.migrate-tracks-to-storage]
 verify_jwt = true
 

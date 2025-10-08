@@ -7,6 +7,7 @@ import { Music4, ChevronDown, ChevronUp, Play, Pause, Download } from "lucide-re
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { ApiService } from "@/services/api.service";
 
 interface TrackStem {
   id: string;
@@ -86,6 +87,29 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
   const handleGenerateStems = async (mode: 'separate_vocal' | 'split_stem') => {
     let pollInterval: ReturnType<typeof setInterval> | null = null;
     let abortTimeout: ReturnType<typeof setTimeout> | null = null;
+    let syncInterval: ReturnType<typeof setInterval> | null = null;
+    let syncStartTimeout: ReturnType<typeof setTimeout> | null = null;
+    let syncInFlight = false;
+
+    const clearTimers = () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+      if (abortTimeout) {
+        clearTimeout(abortTimeout);
+        abortTimeout = null;
+      }
+      if (syncInterval) {
+        clearInterval(syncInterval);
+        syncInterval = null;
+      }
+      if (syncStartTimeout) {
+        clearTimeout(syncStartTimeout);
+        syncStartTimeout = null;
+      }
+      syncInFlight = false;
+    };
 
     try {
       setIsGenerating(true);
@@ -141,33 +165,47 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
         const matchingStems = stemsData?.filter(stem => stem.suno_task_id === targetTaskId);
 
         if (matchingStems && matchingStems.length > 0) {
-          if (pollInterval) {
-            clearInterval(pollInterval);
-          }
-          if (abortTimeout) {
-            clearTimeout(abortTimeout);
-          }
+          clearTimers();
           onStemsGenerated?.();
           toast.success('Стемы успешно созданы!');
           setIsGenerating(false);
         }
       }, 5000);
 
-      abortTimeout = setTimeout(() => {
-        if (pollInterval) {
-          clearInterval(pollInterval);
+      const attemptSync = async () => {
+        if (syncInFlight) {
+          return;
         }
+        syncInFlight = true;
+        try {
+          await ApiService.syncStemJob({
+            trackId,
+            versionId,
+            taskId: targetTaskId,
+            separationMode: mode,
+          });
+        } catch (syncError) {
+          console.error('Error synchronising stem job:', syncError);
+        } finally {
+          syncInFlight = false;
+        }
+      };
+
+      syncStartTimeout = setTimeout(() => {
+        void attemptSync();
+        syncInterval = setInterval(() => {
+          void attemptSync();
+        }, 60000);
+      }, 45000);
+
+      abortTimeout = setTimeout(() => {
+        clearTimers();
         setIsGenerating(false);
         toast.error('Не удалось получить новые стемы. Попробуйте еще раз через несколько минут.');
       }, 300000);
 
     } catch (error) {
-      if (pollInterval) {
-        clearInterval(pollInterval);
-      }
-      if (abortTimeout) {
-        clearTimeout(abortTimeout);
-      }
+      clearTimers();
       const message = error instanceof Error ? error.message : 'Ошибка при создании стемов';
       console.error('Error generating stems:', error);
       toast.error(message);

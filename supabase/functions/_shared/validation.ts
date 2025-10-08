@@ -123,6 +123,14 @@ export const validationSchemas = {
     trackId: [validators.required, validators.string, validators.uuid],
     versionId: [validators.string, validators.uuid],
     separationMode: [validators.required, validators.string, validators.minLength(3), validators.maxLength(50)]
+  },
+
+  syncStemJob: {
+    trackId: [validators.required, validators.string, validators.uuid],
+    versionId: [validators.string, validators.uuid],
+    taskId: [validators.string, validators.minLength(8), validators.maxLength(128)],
+    separationMode: [validators.string, validators.minLength(3), validators.maxLength(50)],
+    forceRefresh: [validators.boolean]
   }
 };
 

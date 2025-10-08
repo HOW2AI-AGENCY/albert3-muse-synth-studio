@@ -2,6 +2,13 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { createSupabaseAdminClient } from "../_shared/supabase.ts";
+import {
+  determineSeparationMode,
+  extractStatusMessage,
+  extractStemAssetsFromPayload,
+  getRecord,
+  sanitizeStemText,
+} from "../_shared/stems.ts";
 
 const corsHeaders = {
   ...createCorsHeaders(),
@@ -9,104 +16,6 @@ const corsHeaders = {
 };
 
 const MAX_PAYLOAD_SIZE = 5 * 1024 * 1024; // 5MB
-
-const getRecord = (value: unknown): Record<string, unknown> | null => {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return null;
-  }
-  return value as Record<string, unknown>;
-};
-
-const sanitizeText = (text: unknown, maxLength: number): string => {
-  if (typeof text !== "string") {
-    return "";
-  }
-  return text
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, "")
-    .replace(/javascript:/gi, "")
-    .replace(/on\w+\s*=/gi, "")
-    .substring(0, maxLength)
-    .trim();
-};
-
-const resolveStemType = (key: string): string | null => {
-  const normalised = key.toLowerCase().replace(/[^a-z]/g, "");
-  if (!normalised.includes("url")) {
-    return null;
-  }
-  if (normalised.includes("stream") || normalised.includes("source")) {
-    return null;
-  }
-
-  const map: Record<string, string> = {
-    originurl: "original",
-    originalurl: "original",
-    vocalurl: "vocals",
-    vocalsurl: "vocals",
-    backingvocalsurl: "backing_vocals",
-    instrumentalurl: "instrumental",
-    accompanimenturl: "instrumental",
-    drumsurl: "drums",
-    bassurl: "bass",
-    guitarurl: "guitar",
-    keyboardurl: "keyboard",
-    percussionurl: "percussion",
-    stringsurl: "strings",
-    synthurl: "synth",
-    fxurl: "fx",
-    brassurl: "brass",
-    woodwindsurl: "woodwinds",
-  };
-
-  if (map[normalised]) {
-    return map[normalised];
-  }
-
-  return null;
-};
-
-const extractMessage = (payload: Record<string, unknown>): string | null => {
-  if (typeof payload.msg === "string") {
-    return payload.msg;
-  }
-  if (typeof payload.message === "string") {
-    return payload.message;
-  }
-
-  const data = getRecord(payload.data);
-  if (data) {
-    if (typeof data.msg === "string") {
-      return data.msg;
-    }
-    if (typeof data.message === "string") {
-      return data.message;
-    }
-  }
-
-  return null;
-};
-
-const extractVocalRemovalInfo = (payload: Record<string, unknown>): Record<string, unknown> | null => {
-  const data = getRecord(payload.data);
-  if (data) {
-    const info = getRecord(data.vocal_removal_info) ?? getRecord(data.vocalRemovalInfo);
-    if (info) {
-      return info;
-    }
-    const response = getRecord(data.response);
-    if (response) {
-      return response;
-    }
-  }
-
-  const response = getRecord(payload.response);
-  if (response) {
-    return response;
-  }
-
-  return null;
-};
 
 const mainHandler = async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -156,7 +65,7 @@ const mainHandler = async (req: Request) => {
     }
 
     const code = typeof root.code === "number" ? root.code : undefined;
-    const statusMessage = sanitizeText(extractMessage(root), 500) || null;
+    const statusMessage = sanitizeStemText(extractStatusMessage(root), 500) || null;
 
     const supabase = createSupabaseAdminClient();
 
@@ -187,30 +96,10 @@ const mainHandler = async (req: Request) => {
     const versionId = versionRecord?.id ?? null;
     const versionMetadata = versionRecord ? getRecord(versionRecord.metadata) : null;
 
-    const vocalRemovalInfo = extractVocalRemovalInfo(root);
-    const stemAssets: { stemType: string; audioUrl: string; sourceKey: string }[] = [];
+    const stemAssets = extractStemAssetsFromPayload(root);
+    const separationMode = determineSeparationMode(currentMode, stemAssets.length);
 
-    if (vocalRemovalInfo) {
-      for (const [key, value] of Object.entries(vocalRemovalInfo)) {
-        if (typeof value !== "string" || !value.trim()) {
-          continue;
-        }
-        const stemType = resolveStemType(key);
-        if (!stemType) {
-          continue;
-        }
-        stemAssets.push({
-          stemType,
-          audioUrl: value.trim(),
-          sourceKey: key,
-        });
-      }
-    }
-
-    const derivedMode = stemAssets.length > 2 ? "split_stem" : "separate_vocal";
-    const separationMode = currentMode ?? derivedMode;
-
-    const isSuccess = code === 200 && stemAssets.length > 0;
+    const isSuccess = (code === 200 || code === undefined) && stemAssets.length > 0;
 
     if (isSuccess) {
       const deleteQuery = supabase
@@ -224,6 +113,10 @@ const mainHandler = async (req: Request) => {
       } else {
         deleteQuery.is("version_id", null);
       }
+    }
+
+    const derivedMode = stemAssets.length > 2 ? "split_stem" : "separate_vocal";
+    const separationMode = currentMode ?? derivedMode;
 
       const { error: deleteError } = await deleteQuery;
       if (deleteError) {
@@ -236,7 +129,7 @@ const mainHandler = async (req: Request) => {
           version_id: versionId,
           stem_type: stemType,
           separation_mode: separationMode,
-          audio_url: sanitizeText(audioUrl, 2048),
+          audio_url: sanitizeStemText(audioUrl, 2048),
           suno_task_id: stemTaskId,
           metadata: { source_key: sourceKey },
         }));
