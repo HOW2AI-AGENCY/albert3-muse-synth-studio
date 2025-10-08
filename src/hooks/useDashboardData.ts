@@ -1,4 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import type { QueryFunctionContext } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Track } from "@/services/api.service";
 
@@ -23,6 +26,56 @@ export const DEFAULT_DASHBOARD_STATS: DashboardStats = {
 
 const DASHBOARD_QUERY_KEY = ["dashboard", "overview"] as const;
 
+const getDefaultDashboardData = (): DashboardData => ({
+  stats: { ...DEFAULT_DASHBOARD_STATS },
+  publicTracks: [],
+});
+
+type DashboardQueryKey = readonly [
+  typeof DASHBOARD_QUERY_KEY[0],
+  typeof DASHBOARD_QUERY_KEY[1],
+  string | null,
+];
+
+const useCurrentUser = () => {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    supabase.auth.getUser().then(({ data, error }) => {
+      if (!isMounted) {
+        return;
+      }
+
+      if (error) {
+        console.error("Error fetching current user:", error);
+        setUser(null);
+        return;
+      }
+
+      setUser(data.user ?? null);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) {
+        return;
+      }
+
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  return user;
+};
+
 const computeStats = (tracks: { status: string | null; is_public: boolean | null }[]): DashboardStats => {
   if (!tracks.length) {
     return { ...DEFAULT_DASHBOARD_STATS };
@@ -45,27 +98,20 @@ const computeStats = (tracks: { status: string | null; is_public: boolean | null
   }, { ...DEFAULT_DASHBOARD_STATS });
 };
 
-const fetchDashboardData = async (): Promise<DashboardData> => {
-  const { data: userData, error: userError } = await supabase.auth.getUser();
+const fetchDashboardData = async ({
+  queryKey,
+}: QueryFunctionContext<DashboardQueryKey>): Promise<DashboardData> => {
+  const [, , userId] = queryKey;
 
-  if (userError) {
-    throw new Error(userError.message);
-  }
-
-  const user = userData?.user;
-
-  if (!user) {
-    return {
-      stats: DEFAULT_DASHBOARD_STATS,
-      publicTracks: [],
-    };
+  if (!userId) {
+    return getDefaultDashboardData();
   }
 
   const [userTracksResult, publicTracksResult] = await Promise.all([
     supabase
       .from("tracks")
       .select("status, is_public")
-      .eq("user_id", user.id),
+      .eq("user_id", userId),
     supabase
       .from("tracks")
       .select(`
@@ -96,10 +142,34 @@ const fetchDashboardData = async (): Promise<DashboardData> => {
   };
 };
 
-export const useDashboardData = () =>
-  useQuery({
-    queryKey: DASHBOARD_QUERY_KEY,
+export const useDashboardData = () => {
+  const user = useCurrentUser();
+  const userId = user?.id ?? null;
+  const queryClient = useQueryClient();
+  const previousUserIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const previousUserId = previousUserIdRef.current;
+
+    if (previousUserId && previousUserId !== userId) {
+      queryClient.removeQueries({
+        queryKey: [...DASHBOARD_QUERY_KEY, previousUserId],
+      });
+    }
+
+    if (!userId) {
+      queryClient.removeQueries({ queryKey: DASHBOARD_QUERY_KEY, exact: false });
+    }
+
+    previousUserIdRef.current = userId;
+  }, [userId, queryClient]);
+
+  return useQuery({
+    queryKey: [...DASHBOARD_QUERY_KEY, userId] as DashboardQueryKey,
     queryFn: fetchDashboardData,
+    enabled: Boolean(userId),
+    initialData: getDefaultDashboardData,
     suspense: false,
   });
+};
 
