@@ -1,18 +1,15 @@
+/**
+ * Custom hook for music generation logic
+ * Separates business logic from UI components
+ * Optimized with memoization and debouncing
+ */
+
 import { useState, useCallback, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ApiService, GenerateMusicRequest } from "@/services/api.service";
 import { supabase } from "@/integrations/supabase/client";
-import { logError, logInfo } from "@/utils/logger";
-
-interface GenerateMusicOptions {
-  prompt?: string;
-  title?: string;
-  lyrics?: string;
-  hasVocals?: boolean;
-  styleTags?: string[];
-  provider?: "replicate" | "suno";
-  customMode?: boolean;
-}
+import { logError, logInfo, logDebug, logWarn } from "@/utils/logger";
+import { useDebounce } from "@/utils/performance";
 
 interface GenerateMusicOptions {
   prompt?: string;
