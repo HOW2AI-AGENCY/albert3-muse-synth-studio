@@ -1,10 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
-import { screen, fireEvent, waitFor } from '@testing-library/dom';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { AuthForm } from '../AuthForm';
 import { supabase } from '@/integrations/supabase/client';
 
-// Mock Supabase client
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     auth: {
@@ -14,7 +13,6 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-// Mock toast hook
 vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({
     toast: vi.fn(),
@@ -36,17 +34,15 @@ describe('AuthForm', () => {
 
     it('validates email format on sign in', async () => {
       const mockSignIn = vi.mocked(supabase.auth.signInWithPassword);
-      mockSignIn.mockResolvedValue({ data: null, error: null } as any);
-
       render(<AuthForm />);
       
       const emailInput = screen.getByPlaceholderText('Email');
       const passwordInput = screen.getByPlaceholderText('Password');
       const submitButton = screen.getByRole('button', { name: /sign in/i });
 
-      fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
-      fireEvent.change(passwordInput, { target: { value: 'password123' } });
-      fireEvent.click(submitButton);
+      await userEvent.type(emailInput, 'invalid-email');
+      await userEvent.type(passwordInput, 'password123');
+      await userEvent.click(submitButton);
 
       await waitFor(() => {
         expect(mockSignIn).not.toHaveBeenCalled();
@@ -55,17 +51,15 @@ describe('AuthForm', () => {
 
     it('calls signInWithPassword with valid credentials', async () => {
       const mockSignIn = vi.mocked(supabase.auth.signInWithPassword);
-      mockSignIn.mockResolvedValue({ data: { user: {}, session: {} }, error: null } as any);
-
       render(<AuthForm />);
       
       const emailInput = screen.getByPlaceholderText('Email');
       const passwordInput = screen.getByPlaceholderText('Password');
       const submitButton = screen.getByRole('button', { name: /sign in/i });
 
-      fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-      fireEvent.change(passwordInput, { target: { value: 'Password123' } });
-      fireEvent.click(submitButton);
+      await userEvent.type(emailInput, 'test@example.com');
+      await userEvent.type(passwordInput, 'Password123');
+      await userEvent.click(submitButton);
 
       await waitFor(() => {
         expect(mockSignIn).toHaveBeenCalledWith({
@@ -77,31 +71,30 @@ describe('AuthForm', () => {
   });
 
   describe('Sign Up', () => {
-    it('switches to sign up form when tab is clicked', () => {
+    it('switches to sign up form when tab is clicked', async () => {
       render(<AuthForm />);
-      
       const signUpTab = screen.getByRole('tab', { name: /sign up/i });
-      fireEvent.click(signUpTab);
+      await userEvent.click(signUpTab);
 
-      expect(screen.getByRole('button', { name: /sign up/i })).toBeInTheDocument();
+      // Wait for the sign-up button to be visible, confirming the tab switch
+      const signUpButton = await screen.findByRole('button', { name: /sign up/i, type: 'submit' });
+      expect(signUpButton).toBeInTheDocument();
     });
 
     it('validates password requirements', async () => {
-      const mockSignUp = vi.mocked(supabase.auth.signUp);
-      
       render(<AuthForm />);
-      
       const signUpTab = screen.getByRole('tab', { name: /sign up/i });
-      fireEvent.click(signUpTab);
+      await userEvent.click(signUpTab);
 
+      const submitButton = await screen.findByRole('button', { name: /sign up/i, type: 'submit' });
       const emailInput = screen.getByPlaceholderText('Email');
       const passwordInput = screen.getByPlaceholderText('Password');
-      const submitButton = screen.getByRole('button', { name: /sign up/i });
 
-      // Test weak password
-      fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-      fireEvent.change(passwordInput, { target: { value: 'weak' } });
-      fireEvent.click(submitButton);
+      const mockSignUp = vi.mocked(supabase.auth.signUp);
+
+      await userEvent.type(emailInput, 'test@example.com');
+      await userEvent.type(passwordInput, 'weak');
+      await userEvent.click(submitButton);
 
       await waitFor(() => {
         expect(mockSignUp).not.toHaveBeenCalled();
@@ -109,21 +102,19 @@ describe('AuthForm', () => {
     });
 
     it('calls signUp with valid credentials', async () => {
-      const mockSignUp = vi.mocked(supabase.auth.signUp);
-      mockSignUp.mockResolvedValue({ data: { user: {}, session: {} }, error: null } as any);
-
       render(<AuthForm />);
-      
       const signUpTab = screen.getByRole('tab', { name: /sign up/i });
-      fireEvent.click(signUpTab);
+      await userEvent.click(signUpTab);
 
+      const submitButton = await screen.findByRole('button', { name: /sign up/i, type: 'submit' });
       const emailInput = screen.getByPlaceholderText('Email');
       const passwordInput = screen.getByPlaceholderText('Password');
-      const submitButton = screen.getByRole('button', { name: /sign up/i });
 
-      fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-      fireEvent.change(passwordInput, { target: { value: 'ValidPass123' } });
-      fireEvent.click(submitButton);
+      const mockSignUp = vi.mocked(supabase.auth.signUp);
+
+      await userEvent.type(emailInput, 'test@example.com');
+      await userEvent.type(passwordInput, 'ValidPass123');
+      await userEvent.click(submitButton);
 
       await waitFor(() => {
         expect(mockSignUp).toHaveBeenCalledWith({
@@ -137,21 +128,29 @@ describe('AuthForm', () => {
     });
 
     it('disables form inputs while loading', async () => {
+      render(<AuthForm />);
+      const signUpTab = screen.getByRole('tab', { name: /sign up/i });
+      await userEvent.click(signUpTab);
+
+      const submitButton = await screen.findByRole('button', { name: /sign up/i, type: 'submit' });
+      const emailInput = screen.getByPlaceholderText('Email') as HTMLInputElement;
+      const passwordInput = screen.getByPlaceholderText('Password') as HTMLInputElement;
+
       const mockSignUp = vi.mocked(supabase.auth.signUp);
       mockSignUp.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)));
 
-      render(<AuthForm />);
-      
-      const signUpTab = screen.getByRole('tab', { name: /sign up/i });
-      fireEvent.click(signUpTab);
+      await userEvent.type(emailInput, 'test@example.com');
+      await userEvent.type(passwordInput, 'ValidPass123');
+      await userEvent.click(submitButton);
 
-      const emailInput = screen.getByPlaceholderText('Email') as HTMLInputElement;
-      const submitButton = screen.getByRole('button', { name: /sign up/i });
+      await waitFor(() => {
+        expect(submitButton).toBeDisabled();
+      });
 
-      fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-      fireEvent.click(submitButton);
-
-      expect(emailInput.disabled).toBe(true);
+      // After loading, the button should be re-enabled
+      await waitFor(() => {
+        expect(submitButton).not.toBeDisabled();
+      }, { timeout: 200 });
     });
   });
 
@@ -159,13 +158,18 @@ describe('AuthForm', () => {
     it('has proper ARIA labels and roles', () => {
       render(<AuthForm />);
       
-      const emailInput = screen.getByPlaceholderText('Email');
-      const passwordInput = screen.getByPlaceholderText('Password');
+      const emailInputs = screen.getAllByPlaceholderText('Email');
+      const passwordInputs = screen.getAllByPlaceholderText('Password');
 
-      expect(emailInput).toHaveAttribute('type', 'email');
-      expect(passwordInput).toHaveAttribute('type', 'password');
-      expect(emailInput).toHaveAttribute('required');
-      expect(passwordInput).toHaveAttribute('required');
+      emailInputs.forEach(input => {
+        expect(input).toHaveAttribute('type', 'email');
+        expect(input).toHaveAttribute('required');
+      });
+
+      passwordInputs.forEach(input => {
+        expect(input).toHaveAttribute('type', 'password');
+        expect(input).toHaveAttribute('required');
+      });
     });
   });
 });

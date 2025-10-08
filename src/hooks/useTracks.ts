@@ -123,28 +123,34 @@ export const useTracks = (refreshTrigger?: number) => {
     };
   }, []);
 
+  const [isPolling, setIsPolling] = useState(false);
+
   // Fallback polling while there are processing tracks
   useEffect(() => {
-    // Check if any tracks need polling
-    const needsPolling = tracks.some(track => 
-      track.status === 'processing' || 
+    const shouldPoll = tracks.some(track =>
+      track.status === 'processing' ||
       track.status === 'pending' ||
       (track.status === 'completed' && !track.audio_url)
     );
-    
-    if (!needsPolling) return;
+    setIsPolling(shouldPoll);
+  }, [tracks]);
+
+  useEffect(() => {
+    if (!isPolling) {
+      return;
+    }
 
     console.log('Starting polling for track updates...');
     const interval = setInterval(() => {
       console.log('Polling for track updates...');
       loadTracks();
-    }, 5000);
+    }, 5000); // Poll every 5 seconds
 
     return () => {
       console.log('Stopping polling');
       clearInterval(interval);
     };
-  }, [tracks]);
+  }, [isPolling]);
 
   return {
     tracks,

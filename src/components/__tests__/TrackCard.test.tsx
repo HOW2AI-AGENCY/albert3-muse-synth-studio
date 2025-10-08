@@ -117,7 +117,6 @@ describe('TrackCard', () => {
     });
 
     it('renders error message for missing track', () => {
-      // @ts-expect-error - testing invalid data
       render(<TrackCard track={null} />);
 
       expect(screen.getByRole('alert')).toBeInTheDocument();

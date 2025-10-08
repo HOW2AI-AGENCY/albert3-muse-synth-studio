@@ -8,7 +8,9 @@
  * @returns Отформатированная строка в формате MM:SS или "—" если значение не задано
  */
 export const formatDuration = (seconds?: number): string => {
-  if (!seconds || isNaN(seconds)) return "—";
+  if (typeof seconds === 'undefined' || seconds === null || isNaN(seconds)) {
+    return "—";
+  }
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, "0")}`;
@@ -20,7 +22,9 @@ export const formatDuration = (seconds?: number): string => {
  * @returns Отформатированная строка в формате MM:SS или "0:00" если значение не задано
  */
 export const formatTime = (seconds: number): string => {
-  if (!seconds || isNaN(seconds)) return "0:00";
+  if (typeof seconds === 'undefined' || seconds === null || isNaN(seconds)) {
+    return "0:00";
+  }
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, "0")}`;
@@ -52,13 +56,20 @@ export const formatDate = (date: string | Date | null | undefined): string => {
  * @returns Отформатированная строка с единицами измерения
  */
 export const formatFileSize = (bytes: number): string => {
+  if (bytes === null || typeof bytes === 'undefined' || isNaN(bytes) || bytes < 0) {
+    return "0 Б";
+  }
   if (bytes === 0) return "0 Б";
   
   const k = 1024;
   const sizes = ["Б", "КБ", "МБ", "ГБ"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+  if (i === 0) {
+    return `${bytes} ${sizes[i]}`;
+  }
+
+  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
 };
 
 /**
