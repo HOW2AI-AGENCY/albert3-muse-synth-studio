@@ -107,10 +107,11 @@ const TracksListComponent = ({
 
       refreshTracks();
     } catch (error) {
-      logError('Retry error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Не удалось перезапустить';
+      logError('Retry error:', error instanceof Error ? error : new Error(String(error)));
       toast({
         title: 'Ошибка повтора',
-        description: error instanceof Error ? error.message : 'Не удалось перезапустить',
+        description: errorMessage,
         variant: 'destructive',
       });
     }
@@ -151,7 +152,7 @@ const TracksListComponent = ({
 
       refreshTracks();
     } catch (error) {
-      logError('Like error:', error);
+      logError('Like error:', error instanceof Error ? error : new Error(String(error)));
     }
   }, [refreshTracks]);
 

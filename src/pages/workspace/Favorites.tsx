@@ -81,8 +81,8 @@ export default function Favorites() {
       playTrackWithQueue({
         id: track.id,
         title: track.title,
-        audio_url: track.audio_url,
-        cover_url: track.cover_url,
+        audio_url: track.audio_url!,
+        cover_url: track.cover_url || undefined,
         duration: track.duration || undefined,
         style_tags: track.style_tags || undefined,
       }, likedTracks

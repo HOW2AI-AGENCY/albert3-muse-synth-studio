@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { Track } from '@/services/api.service';
 import { TrackCard } from './TrackCard';
+import { normalizeTrack } from '@/utils/trackNormalizer';
 
 interface VirtualizedListProps {
   tracks: Track[];
@@ -32,7 +33,7 @@ export const VirtualizedList: React.FC<VirtualizedListProps> = ({
       {tracks.map((track) => (
         <div key={track.id} className="px-2 py-1">
           <TrackCard 
-            track={track}
+            track={normalizeTrack(track)}
             onClick={() => handleTrackSelect(track)}
           />
         </div>

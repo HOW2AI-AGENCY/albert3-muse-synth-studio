@@ -26,7 +26,7 @@ interface TrackForModeration {
   created_at: string;
   like_count: number;
   profiles?: {
-    email: string;
+    email: string | null;
   };
 }
 
@@ -137,6 +137,8 @@ export default function Admin() {
             
             return {
               ...track,
+              is_public: track.is_public ?? false,
+              like_count: track.like_count ?? 0,
               profiles: profile || { email: 'Unknown' }
             };
           })

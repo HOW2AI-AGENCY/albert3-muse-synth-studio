@@ -66,7 +66,14 @@ const Analytics = () => {
       const { data: tracksData } = await query;
 
       if (tracksData) {
-        setTopTracks(tracksData);
+        const normalizedTracks = tracksData.map(track => ({
+          ...track,
+          view_count: track.view_count ?? 0,
+          play_count: track.play_count ?? 0,
+          like_count: track.like_count ?? 0,
+          download_count: track.download_count ?? 0,
+        }));
+        setTopTracks(normalizedTracks);
 
         // Подсчитываем общую статистику
         const stats: OverallStats = {

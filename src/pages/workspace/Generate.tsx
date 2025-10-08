@@ -175,7 +175,7 @@ const Generate = () => {
               <ResizableHandle withHandle className="hover:bg-primary/20 transition-colors" />
               <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
                 <DetailPanel
-                  track={selectedTrack}
+                  track={normalizeTrack(selectedTrack)}
                   onClose={handleCloseDetail}
                   onUpdate={refreshTracks}
                   onDelete={handleDelete}
@@ -235,7 +235,7 @@ const Generate = () => {
         >
           {selectedTrack && (
             <DetailPanel
-              track={selectedTrack}
+              track={normalizeTrack(selectedTrack)}
               onClose={handleCloseDetail}
               onUpdate={refreshTracks}
               onDelete={handleDelete}
