@@ -123,8 +123,8 @@ export class ApiService {
       trackId: request.trackId,
       title: request.title || request.prompt.substring(0, 50),
       prompt: request.prompt,
-      tags: request.styleTags?.join(', ') || '',
-      make_instrumental: !request.hasVocals,
+      tags: request.styleTags ?? [],
+      make_instrumental: request.hasVocals === false,
       model_version: request.modelVersion || 'chirp-v3-5',
       wait_audio: false,
     };
