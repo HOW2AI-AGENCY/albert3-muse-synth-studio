@@ -1,4 +1,4 @@
-import { Home, Sparkles, Library, Heart, BarChart3, Settings, User, X } from "lucide-react";
+import { Home, Sparkles, Library, Heart, BarChart3, Settings, User, X, Shield } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Tooltip,
@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { preloadDashboard, preloadGenerate, preloadLibrary } from '../../utils/lazyImports';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface MinimalSidebarProps {
   isExpanded: boolean;
@@ -20,6 +21,7 @@ interface MinimalSidebarProps {
 const MinimalSidebar = ({ isExpanded, onMouseEnter, onMouseLeave, onClose }: MinimalSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAdmin } = useUserRole();
 
   const menuItems = [
     { 
@@ -42,6 +44,7 @@ const MinimalSidebar = ({ isExpanded, onMouseEnter, onMouseLeave, onClose }: Min
     },
     { icon: Heart, label: "Избранное", path: "/workspace/favorites" },
     { icon: BarChart3, label: "Аналитика", path: "/workspace/analytics" },
+    ...(isAdmin ? [{ icon: Shield, label: "Админ-панель", path: "/workspace/admin" }] : []),
     { icon: Settings, label: "Настройки", path: "/workspace/settings" },
   ];
 

@@ -1,0 +1,283 @@
+import { useEffect, useState } from 'react';
+import { useUserRole } from '@/hooks/useUserRole';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Users, Music, Shield, TrendingUp, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
+
+interface AdminStats {
+  totalUsers: number;
+  totalTracks: number;
+  publicTracks: number;
+  totalLikes: number;
+}
+
+interface TrackForModeration {
+  id: string;
+  title: string;
+  user_id: string;
+  is_public: boolean;
+  created_at: string;
+  like_count: number;
+  profiles?: {
+    email: string;
+  };
+}
+
+export default function Admin() {
+  const { isAdmin, isLoading: roleLoading } = useUserRole();
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [tracks, setTracks] = useState<TrackForModeration[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (!roleLoading && isAdmin) {
+      fetchAdminData();
+    }
+  }, [roleLoading, isAdmin]);
+
+  const fetchAdminData = async () => {
+    setIsLoading(true);
+    try {
+      // Получаем статистику
+      const [usersRes, tracksRes, publicTracksRes, likesRes] = await Promise.all([
+        supabase.from('profiles').select('id', { count: 'exact', head: true }),
+        supabase.from('tracks').select('id', { count: 'exact', head: true }),
+        supabase.from('tracks').select('id', { count: 'exact', head: true }).eq('is_public', true),
+        supabase.from('track_likes').select('id', { count: 'exact', head: true }),
+      ]);
+
+      setStats({
+        totalUsers: usersRes.count || 0,
+        totalTracks: tracksRes.count || 0,
+        publicTracks: publicTracksRes.count || 0,
+        totalLikes: likesRes.count || 0,
+      });
+
+      // Получаем последние треки для модерации
+      const { data: tracksData } = await supabase
+        .from('tracks')
+        .select('id, title, user_id, is_public, created_at, like_count')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (tracksData) {
+        // Получаем email для каждого пользователя
+        const tracksWithProfiles = await Promise.all(
+          tracksData.map(async (track) => {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('email')
+              .eq('id', track.user_id)
+              .single();
+            
+            return {
+              ...track,
+              profiles: profile || { email: 'Unknown' }
+            };
+          })
+        );
+        
+        setTracks(tracksWithProfiles);
+      }
+    } catch (error) {
+      console.error('Error fetching admin data:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось загрузить данные админ-панели',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteTrack = async (trackId: string) => {
+    if (!confirm('Вы уверены, что хотите удалить этот трек?')) return;
+
+    try {
+      const { error } = await supabase.from('tracks').delete().eq('id', trackId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Успешно',
+        description: 'Трек удален',
+      });
+
+      fetchAdminData();
+    } catch (error) {
+      console.error('Error deleting track:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось удалить трек',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleTogglePublic = async (trackId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('tracks')
+        .update({ is_public: !currentStatus })
+        .eq('id', trackId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Успешно',
+        description: `Трек ${!currentStatus ? 'опубликован' : 'скрыт'}`,
+      });
+
+      fetchAdminData();
+    } catch (error) {
+      console.error('Error toggling track visibility:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось изменить видимость трека',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  if (roleLoading || isLoading) {
+    return <LoadingSkeleton />;
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Доступ запрещен</CardTitle>
+            <CardDescription>У вас нет прав для доступа к админ-панели</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gradient-primary">Панель администратора</h1>
+          <p className="text-muted-foreground mt-1">Управление пользователями и контентом</p>
+        </div>
+        <Badge variant="default" className="bg-gradient-primary">
+          <Shield className="h-4 w-4 mr-1" />
+          Администратор
+        </Badge>
+      </div>
+
+      {/* Статистика */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Всего пользователей</CardTitle>
+            <Users className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gradient-primary">{stats?.totalUsers || 0}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Всего треков</CardTitle>
+            <Music className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gradient-primary">{stats?.totalTracks || 0}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Публичных треков</CardTitle>
+            <TrendingUp className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gradient-primary">{stats?.publicTracks || 0}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Всего лайков</CardTitle>
+            <span className="text-2xl">❤️</span>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-gradient-primary">{stats?.totalLikes || 0}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Модерация */}
+      <Tabs defaultValue="tracks" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="tracks">Модерация треков</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="tracks" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Последние треки</CardTitle>
+              <CardDescription>Управление контентом пользователей</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {tracks.map((track) => (
+                  <div
+                    key={track.id}
+                    className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium truncate">{track.title}</h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs text-muted-foreground">
+                          {(track.profiles as any)?.email || 'Unknown'}
+                        </p>
+                        <Badge variant={track.is_public ? 'default' : 'secondary'} className="text-xs">
+                          {track.is_public ? 'Публичный' : 'Приватный'}
+                        </Badge>
+                        {track.like_count > 0 && (
+                          <Badge variant="outline" className="text-xs">
+                            ❤️ {track.like_count}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant={track.is_public ? 'outline' : 'default'}
+                        onClick={() => handleTogglePublic(track.id, track.is_public)}
+                      >
+                        {track.is_public ? 'Скрыть' : 'Опубликовать'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeleteTrack(track.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

@@ -26,6 +26,9 @@ import {
   preloadLibrary
 } from './utils/lazyImports';
 
+// Ленивая загрузка админ-панели
+const LazyAdmin = lazy(() => import('./pages/workspace/Admin'));
+
 // Компонент загрузки
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center min-h-[200px]">
@@ -123,6 +126,14 @@ const App = () => (
                   element={
                     <Suspense fallback={<LoadingSpinner />}>
                       <LazySettings />
+                    </Suspense>
+                  } 
+                />
+                <Route 
+                  path="admin" 
+                  element={
+                    <Suspense fallback={<LoadingSpinner />}>
+                      <LazyAdmin />
                     </Suspense>
                   } 
                 />
