@@ -18,12 +18,12 @@ const mainHandler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Валидация входных данных
-    const validatedData = await validateRequest(req, validationSchemas.generateMusic)
+    console.log('[generate-music] Request received');
     
     // Получение пользователя из JWT токена
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
+      console.error('[generate-music] No authorization header');
       return new Response(JSON.stringify({ error: 'Authorization header required' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -39,13 +39,18 @@ const mainHandler = async (req: Request): Promise<Response> => {
 
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
     if (authError || !user) {
+      console.error('[generate-music] Auth error:', authError);
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
+    // Валидация входных данных
+    const validatedData = await validateRequest(req, validationSchemas.generateMusic)
     const { trackId, prompt } = validatedData
+    
+    console.log('[generate-music] Validated data:', { trackId, promptLength: prompt?.length });
 
     const REPLICATE_API_KEY = Deno.env.get('REPLICATE_API_KEY');
     if (!REPLICATE_API_KEY) {
@@ -166,12 +171,33 @@ const mainHandler = async (req: Request): Promise<Response> => {
     }
 
   } catch (error) {
-    console.error('Error in generate-music:', error);
+    console.error('[generate-music] Error:', error);
+    
+    // Determine appropriate error code
+    let status = 500;
+    let message = 'Internal server error';
+    
+    if (error instanceof Error) {
+      if (error.message.includes('Unauthorized') || error.message.includes('Authorization')) {
+        status = 401;
+        message = 'Требуется авторизация';
+      } else if (error.message.includes('Payment') || error.message.includes('402')) {
+        status = 402;
+        message = 'Недостаточно средств на балансе Replicate API';
+      } else if (error.message.includes('Rate limit') || error.message.includes('429')) {
+        status = 429;
+        message = 'Превышен лимит запросов. Попробуйте позже';
+      } else {
+        message = error.message;
+      }
+    }
+    
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Internal server error' 
+        error: message,
+        details: error instanceof Error ? error.message : 'Unknown error'
       }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 };

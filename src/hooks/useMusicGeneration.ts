@@ -147,13 +147,43 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
         return;
       }
 
-      // Start generation process (userId extracted from JWT by edge function)
-      await ApiService.generateMusic(generationParams);
+      // Step 1: Create track record first
+      const trackTitle = generationParams.title;
+      const trackPrompt = generationParams.prompt;
+      
+      logDebug("Creating track record", "useMusicGeneration", {
+        title: trackTitle,
+        provider,
+        hasVocals
+      });
+
+      const newTrack = await ApiService.createTrack(
+        user.id,
+        trackTitle,
+        trackPrompt,
+        provider,
+        hasVocals ? lyrics : undefined,
+        hasVocals,
+        styleTags
+      );
+
+      logInfo("Track record created", "useMusicGeneration", {
+        trackId: newTrack.id,
+        title: trackTitle
+      });
+
+      // Step 2: Trigger generation with trackId
+      await ApiService.generateMusic({
+        ...generationParams,
+        trackId: newTrack.id,
+        userId: user.id
+      });
 
       logInfo("Генерация музыки успешно запущена", "useMusicGeneration", {
         userId: user.id,
+        trackId: newTrack.id,
         provider,
-        title: generationParams.title,
+        title: trackTitle,
         hasCustomLyrics: !!lyrics
       });
 

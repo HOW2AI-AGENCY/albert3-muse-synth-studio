@@ -3,9 +3,8 @@ import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 const mainHandler = async (req: Request) => {
-  const origin = req.headers.get('Origin');
   const corsHeaders = {
-    ...createCorsHeaders(origin),
+    ...createCorsHeaders(),
     ...createSecurityHeaders()
   };
 

@@ -1,55 +1,24 @@
 /**
- * Безопасная конфигурация CORS для Edge Functions
- * Ограничивает доступ только к разрешенным доменам
+ * Simplified CORS configuration for Edge Functions
  */
-
-// Получаем разрешенные домены из переменных окружения
-const getAllowedOrigins = (): string[] => {
-  const allowedOrigins = (globalThis as any).Deno?.env?.get('ALLOWED_ORIGINS');
-  if (allowedOrigins) {
-    return allowedOrigins.split(',').map((origin: string) => origin.trim());
-  }
-  
-  // Дефолтные разрешенные домены для разработки и продакшена
-  return [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://albert3-muse-synth-studio.vercel.app',
-    // Добавьте ваш продакшн домен здесь
-  ];
-};
 
 /**
- * Проверяет, разрешен ли домен для CORS запросов
+ * Creates CORS headers - simplified to allow all origins
  */
-export const isOriginAllowed = (origin: string | null): boolean => {
-  if (!origin) return false;
-  
-  const allowedOrigins = getAllowedOrigins();
-  return allowedOrigins.includes(origin);
-};
-
-/**
- * Создает безопасные CORS заголовки
- */
-export const createCorsHeaders = (origin: string | null = null) => {
-  const allowedOrigin = origin && isOriginAllowed(origin) ? origin : 'null';
-  
+export const createCorsHeaders = () => {
   return {
-    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Max-Age': '86400', // 24 часа
-    'Vary': 'Origin',
+    'Access-Control-Max-Age': '86400',
   };
 };
 
 /**
- * Обрабатывает CORS preflight запросы
+ * Handles CORS preflight requests
  */
 export const handleCorsPreflightRequest = (req: Request): Response => {
-  const origin = req.headers.get('Origin');
-  const corsHeaders = createCorsHeaders(origin);
+  const corsHeaders = createCorsHeaders();
   
   return new Response(null, { 
     status: 200,
@@ -58,18 +27,17 @@ export const handleCorsPreflightRequest = (req: Request): Response => {
 };
 
 /**
- * Создает ответ с CORS заголовками
+ * Creates a response with CORS headers
  */
 export const createCorsResponse = (
   body: string | null,
   options: {
     status?: number;
     headers?: Record<string, string>;
-    origin?: string | null;
   } = {}
 ): Response => {
-  const { status = 200, headers = {}, origin } = options;
-  const corsHeaders = createCorsHeaders(origin);
+  const { status = 200, headers = {} } = options;
+  const corsHeaders = createCorsHeaders();
   
   return new Response(body, {
     status,

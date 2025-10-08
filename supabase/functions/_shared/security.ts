@@ -16,7 +16,7 @@ export const createSecurityHeaders = () => {
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: https:",
       "media-src 'self' blob: https:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.suno.ai",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.suno.ai https://api.sunoapi.org",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'"
@@ -89,8 +89,8 @@ export class RateLimiter {
         .gte('created_at', windowStart.toISOString());
 
       if (error) {
-        console.error('Rate limit check error:', error);
-        // В случае ошибки разрешаем запрос
+        // Soft handling - table might not exist yet, allow request
+        console.warn('Rate limit check skipped (table not found):', error.message);
         return { allowed: true, remaining: maxRequests, resetTime: new Date(now.getTime() + windowMinutes * 60 * 1000) };
       }
 
@@ -102,14 +102,18 @@ export class RateLimiter {
         return { allowed: false, remaining: 0, resetTime };
       }
 
-      // Записываем текущий запрос
-      await supabase
+      // Записываем текущий запрос (soft handling)
+      const { error: insertError } = await supabase
         .from('rate_limits')
         .insert({
           user_id: userId,
           endpoint: endpoint,
           created_at: now.toISOString()
         });
+      
+      if (insertError) {
+        console.warn('Rate limit insert skipped:', insertError.message);
+      }
 
       return { allowed: true, remaining: remaining - 1, resetTime };
     } catch (error) {

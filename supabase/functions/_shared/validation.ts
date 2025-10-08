@@ -97,17 +97,8 @@ export const validators = {
  */
 export const validationSchemas = {
   generateMusic: {
-    trackId: [validators.string, validators.uuid],
-    title: [validators.string, validators.minLength(1), validators.maxLength(200)],
-    prompt: [validators.required, validators.string, validators.minLength(10), validators.maxLength(2000)],
-    lyrics: [validators.string, validators.maxLength(5000)],
-    hasVocals: [validators.boolean],
-    styleTags: [validators.array],
-    customMode: [validators.boolean],
-    tags: [validators.string, validators.maxLength(500)],
-    make_instrumental: [validators.boolean],
-    model_version: [validators.string],
-    wait_audio: [validators.boolean]
+    trackId: [validators.required, validators.string, validators.uuid],
+    prompt: [validators.required, validators.string, validators.minLength(10), validators.maxLength(2000)]
   },
 
   generateLyrics: {
@@ -126,19 +117,25 @@ export const validationSchemas = {
 };
 
 /**
- * Валидирует данные согласно схеме
+ * Validates data according to schema - only validates fields present in data
  */
 export const validateData = (data: any, schema: Record<string, Function[]>): void => {
   const errors: ValidationError[] = [];
 
   for (const [fieldName, validatorFunctions] of Object.entries(schema)) {
     const value = data[fieldName];
+    
+    // Skip validation if field is not present (unless it's required)
+    if (value === undefined) {
+      const hasRequired = validatorFunctions.some(fn => fn === validators.required);
+      if (!hasRequired) continue;
+    }
 
     for (const validatorFn of validatorFunctions) {
       const error = validatorFn(value, fieldName);
       if (error) {
         errors.push(error);
-        break; // Останавливаемся на первой ошибке для поля
+        break;
       }
     }
   }

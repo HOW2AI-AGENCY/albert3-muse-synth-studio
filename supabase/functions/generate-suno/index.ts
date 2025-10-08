@@ -4,9 +4,8 @@ import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 
 const mainHandler = async (req: Request): Promise<Response> => {
-  const origin = req.headers.get('Origin');
   const corsHeaders = {
-    ...createCorsHeaders(origin),
+    ...createCorsHeaders(),
     ...createSecurityHeaders()
   };
 
@@ -59,6 +58,8 @@ const mainHandler = async (req: Request): Promise<Response> => {
         .insert({
           user_id: user.id,
           title: title || 'Untitled Track',
+          prompt: prompt || 'Untitled Track', // CRITICAL: prompt is required by table
+          provider: 'suno',
           status: 'processing',
           metadata: {
             prompt,
@@ -78,6 +79,29 @@ const mainHandler = async (req: Request): Promise<Response> => {
       
       finalTrackId = newTrack.id;
       console.log('Created new track:', finalTrackId);
+    } else {
+      // Verify track ownership
+      console.log('Verifying track ownership for trackId:', trackId);
+      const { data: existingTrackCheck, error: verifyError } = await supabase
+        .from('tracks')
+        .select('id, user_id')
+        .eq('id', trackId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (verifyError || !existingTrackCheck) {
+        console.error('Track not found or unauthorized:', verifyError);
+        return new Response(JSON.stringify({ error: 'Track not found or unauthorized' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      // Update status to processing
+      await supabase
+        .from('tracks')
+        .update({ status: 'processing', provider: 'suno' })
+        .eq('id', trackId);
     }
     
     if (!finalTrackId) {
@@ -183,15 +207,38 @@ const mainHandler = async (req: Request): Promise<Response> => {
     )
 
   } catch (error) {
-    console.error('Error in generate-suno function:', error)
+    console.error('Error in generate-suno function:', error);
+    
+    // Determine appropriate error code
+    let status = 500;
+    let message = 'Internal server error';
+    
+    if (error instanceof Error) {
+      if (error.message.includes('Unauthorized') || error.message.includes('Authorization')) {
+        status = 401;
+        message = 'Требуется авторизация';
+      } else if (error.message.includes('Payment') || error.message.includes('402')) {
+        status = 402;
+        message = 'Недостаточно средств на балансе Suno API';
+      } else if (error.message.includes('Rate limit') || error.message.includes('429')) {
+        status = 429;
+        message = 'Превышен лимит запросов. Попробуйте позже';
+      } else if (error.message.includes('not found') || error.message.includes('404')) {
+        status = 404;
+        message = 'Трек не найден';
+      } else {
+        message = error.message;
+      }
+    }
+    
     return new Response(
       JSON.stringify({ 
-        error: 'Internal server error',
+        error: message,
         details: error instanceof Error ? error.message : 'Unknown error'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
+        status,
       }
     )
   }
@@ -226,9 +273,9 @@ async function pollSunoCompletion(
 
       const data = await response.json();
       
-      // Log full response for debugging (only first 3 attempts to avoid spam)
+      // Log full response for debugging (first 3 attempts and completion)
       if (attempts <= 3) {
-        console.log('Suno poll full response:', JSON.stringify(data, null, 2));
+        console.log(`[Attempt ${attempts}] Suno poll response:`, JSON.stringify(data, null, 2));
       }
       
       if (data.code !== 200 || !data.data) {
@@ -308,7 +355,7 @@ async function pollSunoCompletion(
             })
             .eq('id', trackId);
 
-          console.log('Track completed successfully:', trackId);
+          console.log(`✅ [COMPLETION] Track ${trackId} completed successfully with audio URL`);
           return;
         } else {
           await supabase

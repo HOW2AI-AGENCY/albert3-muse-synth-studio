@@ -77,6 +77,18 @@ const TracksListComponent = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Step 1: Re-create track record
+      const newTrack = await ApiService.createTrack(
+        user.id,
+        track.title,
+        track.prompt,
+        (track.provider as 'suno' | 'replicate') || 'suno',
+        track.lyrics || undefined,
+        track.has_vocals || false,
+        track.style_tags || []
+      );
+
+      // Step 2: Trigger generation
       await ApiService.generateMusic({
         userId: user.id,
         title: track.title,
@@ -85,7 +97,8 @@ const TracksListComponent = ({
         lyrics: track.lyrics || undefined,
         hasVocals: track.has_vocals || false,
         styleTags: track.style_tags || [],
-        customMode: !!(track.lyrics && track.style_tags?.length)
+        customMode: !!(track.lyrics && track.style_tags?.length),
+        trackId: newTrack.id
       });
 
       toast({

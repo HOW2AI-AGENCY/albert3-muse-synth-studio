@@ -133,7 +133,19 @@ export class ApiService {
 
     if (error) {
       console.error('API Service: Edge function error:', error);
-      throw new Error(error.message || "Failed to generate music");
+      
+      // Parse error message for user-friendly display
+      let userMessage = error.message || "Failed to generate music";
+      
+      if (error.message?.includes('429') || error.message?.includes('Rate limit')) {
+        userMessage = 'Превышен лимит запросов. Пожалуйста, подождите немного';
+      } else if (error.message?.includes('402') || error.message?.includes('Payment')) {
+        userMessage = 'Недостаточно средств. Пополните баланс API';
+      } else if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+        userMessage = 'Требуется авторизация. Войдите в систему';
+      }
+      
+      throw new Error(userMessage);
     }
 
     if (!data) {
