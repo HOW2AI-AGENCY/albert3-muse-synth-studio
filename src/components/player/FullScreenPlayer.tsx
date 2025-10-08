@@ -56,7 +56,7 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
   
   // Always call the hook, but pass null if no currentTrack
   const { isLiked, toggleLike } = useTrackLike(
-    currentTrack?.id || null, 
+    currentTrack?.id ?? "", 
     0
   );
 
@@ -137,7 +137,7 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
     toggleLike();
   };
 
-  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  // const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
     <div

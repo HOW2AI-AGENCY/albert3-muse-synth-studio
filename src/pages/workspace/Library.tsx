@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import { 
   Search, 
-  Filter, 
+  // Filter,
   Music, 
   RefreshCcw, 
   Grid3X3, 
@@ -20,11 +20,12 @@ import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
 import { useTracks } from "@/hooks/useTracks";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { LikesService } from "@/services/likes.service";
+// import { LikesService } from "@/services/likes.service"; // Now handled in TrackCard
 import { supabase } from "@/integrations/supabase/client";
 import { DisplayTrack, convertToDisplayTrack, convertToOptimizedTrack } from "@/types/track";
 import { cn } from "@/lib/utils";
 import { logger } from "@/utils/logger";
+import { normalizeTrack } from "@/utils/trackNormalizer";
 
 type ViewMode = 'grid' | 'list' | 'optimized';
 type SortBy = 'created_at' | 'title' | 'duration' | 'like_count';
@@ -67,7 +68,8 @@ const Library: React.FC = () => {
 
     // Сортировка
     filtered.sort((a, b) => {
-      let aValue: any, bValue: any;
+      let aValue: number | string;
+      let bValue: number | string;
       
       switch (sortBy) {
         case 'title':
@@ -118,55 +120,58 @@ const Library: React.FC = () => {
       playTrackWithQueue({
         id: track.id,
         title: track.title,
-        audio_url: track.audio_url,
-        cover_url: track.cover_url,
-        duration: track.duration,
-        style_tags: track.style_tags || []
-      }, filteredAndSortedTracks.map(t => ({
-        id: t.id,
-        title: t.title,
-        audio_url: t.audio_url || '',
-        cover_url: t.cover_url,
-        duration: t.duration,
-        style_tags: t.style_tags || []
-      })));
+        audio_url: track.audio_url!,
+        cover_url: track.cover_url ?? undefined,
+        duration: track.duration ?? undefined,
+        style_tags: track.style_tags ?? undefined,
+      }, filteredAndSortedTracks
+        .filter(t => t.audio_url)
+        .map(t => ({
+          id: t.id,
+          title: t.title,
+          audio_url: t.audio_url!,
+          cover_url: t.cover_url ?? undefined,
+          duration: t.duration ?? undefined,
+          style_tags: t.style_tags ?? undefined,
+        })));
     }
   }, [playTrackWithQueue, filteredAndSortedTracks]);
 
-  const handleLike = useCallback(async (trackId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({
-          title: "Требуется авторизация",
-          description: "Войдите в систему, чтобы ставить лайки",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const isNowLiked = await LikesService.toggleLike(trackId, user.id);
-      
-      toast({
-        title: isNowLiked ? "❤️ Добавлено в избранное" : "Удалено из избранного",
-        description: isNowLiked 
-          ? "Трек сохранен в вашей коллекции" 
-          : "Трек удален из избранного",
-      });
-
-      // Refresh tracks to update like count
-      await refreshTracks();
-      
-      logger.info('Track like toggled', `trackId: ${trackId}, isNowLiked: ${isNowLiked}, userId: ${user.id}`);
-    } catch (error) {
-      logger.error('Failed to toggle like', error instanceof Error ? error : new Error(`trackId: ${trackId}`));
-      toast({
-        title: "Ошибка",
-        description: "Не удалось обновить статус лайка",
-        variant: "destructive",
-      });
-    }
-  }, [toast, refreshTracks]);
+  // handleLike is now handled by useTrackLike hook in TrackCard
+  // const handleLike = useCallback(async (trackId: string) => {
+  //   try {
+  //     const { data: { user } } = await supabase.auth.getUser();
+  //     if (!user) {
+  //       toast({
+  //         title: "Требуется авторизация",
+  //         description: "Войдите в систему, чтобы ставить лайки",
+  //         variant: "destructive",
+  //       });
+  //       return;
+  //     }
+  //
+  //     const isNowLiked = await LikesService.toggleLike(trackId, user.id);
+  //     
+  //     toast({
+  //       title: isNowLiked ? "❤️ Добавлено в избранное" : "Удалено из избранного",
+  //       description: isNowLiked 
+  //         ? "Трек сохранен в вашей коллекции" 
+  //         : "Трек удален из избранного",
+  //     });
+  //
+  //     // Refresh tracks to update like count
+  //     await refreshTracks();
+  //     
+  //     logger.info('Track like toggled', `trackId: ${trackId}, isNowLiked: ${isNowLiked}, userId: ${user.id}`);
+  //   } catch (error) {
+  //     logger.error('Failed to toggle like', error instanceof Error ? error : new Error(`trackId: ${trackId}`));
+  //     toast({
+  //       title: "Ошибка",
+  //       description: "Не удалось обновить статус лайка",
+  //       variant: "destructive",
+  //     });
+  //   }
+  // }, [toast, refreshTracks]);
 
   const handleDownload = useCallback(async (trackId: string) => {
     try {
@@ -236,7 +241,7 @@ const Library: React.FC = () => {
       }
 
       // Check if track is public (some tracks may not have this field)
-      const isPublic = (track as any).is_public;
+      const isPublic = Boolean(track.is_public);
       if (!isPublic) {
         toast({
           title: "Трек приватный",
@@ -467,7 +472,7 @@ const Library: React.FC = () => {
               {filteredAndSortedTracks.map((track) => (
                 <TrackCard
                   key={track.id}
-                  track={track}
+                  track={normalizeTrack(track)}
                   onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
                   onDownload={() => handleDownload(track.id)}
                   onShare={() => handleShare(track.id)}

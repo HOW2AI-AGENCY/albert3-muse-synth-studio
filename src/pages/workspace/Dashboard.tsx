@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Track } from "@/services/api.service";
 import { TrackCard } from "@/components/TrackCard";
 import { useToast } from "@/hooks/use-toast";
+import { normalizeTrack } from "@/utils/trackNormalizer";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -209,7 +210,7 @@ const Dashboard = () => {
                   className="animate-scale-in"
                   style={{ animationDelay: `${0.5 + index * 0.1}s` }}
                 >
-                  <TrackCard track={track} />
+                  <TrackCard track={normalizeTrack(track)} />
                 </div>
               ))}
             </div>

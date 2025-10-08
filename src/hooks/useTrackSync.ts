@@ -7,16 +7,21 @@ import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { logInfo, logWarn, logError } from '@/utils/logger';
+import type { Database } from '@/integrations/supabase/types';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+
+type TrackRow = Database['public']['Tables']['tracks']['Row'];
+
 
 interface TrackSyncOptions {
   onTrackCompleted?: (trackId: string) => void;
-  onTrackFailed?: (trackId: string, error: string) => void;
+  onTrackFailed?: (trackId: string, error: string | null) => void;
   enabled?: boolean;
 }
 
 export const useTrackSync = (userId: string | undefined, options: TrackSyncOptions = {}) => {
   const { toast } = useToast();
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const { onTrackCompleted, onTrackFailed, enabled = true } = options;
 
   useEffect(() => {
@@ -37,18 +42,26 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
           table: 'tracks',
           filter: `user_id=eq.${userId}`,
         },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<TrackRow>) => {
           const newTrack = payload.new;
           const oldTrack = payload.old;
 
+          if (!newTrack || !oldTrack) {
+            return;
+          }
+
+          if (!newTrack || !('id' in newTrack) || !('status' in newTrack)) {
+            return;
+          }
+
           logInfo('Track update received', 'useTrackSync', {
             trackId: newTrack.id,
-            oldStatus: oldTrack.status,
+            oldStatus: oldTrack && 'status' in oldTrack ? oldTrack.status : undefined,
             newStatus: newTrack.status,
           });
 
           // Track completed
-          if (oldTrack.status !== 'completed' && newTrack.status === 'completed') {
+          if (oldTrack && 'status' in oldTrack && oldTrack.status !== 'completed' && newTrack.status === 'completed') {
             logInfo('Track completed', 'useTrackSync', { trackId: newTrack.id });
             
             toast({
@@ -60,7 +73,7 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
           }
 
           // Track failed
-          if (oldTrack.status !== 'failed' && newTrack.status === 'failed') {
+          if (oldTrack && 'status' in oldTrack && oldTrack.status !== 'failed' && newTrack.status === 'failed') {
             logWarn('Track failed', 'useTrackSync', {
               trackId: newTrack.id,
               error: newTrack.error_message,
@@ -72,11 +85,11 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
               variant: 'destructive',
             });
 
-            onTrackFailed?.(newTrack.id, newTrack.error_message);
+            onTrackFailed?.(newTrack.id, newTrack.error_message ?? null);
           }
 
           // Track processing (from pending)
-          if (oldTrack.status === 'pending' && newTrack.status === 'processing') {
+          if (oldTrack && 'status' in oldTrack && oldTrack.status === 'pending' && newTrack.status === 'processing') {
             logInfo('Track processing started', 'useTrackSync', { trackId: newTrack.id });
           }
         }

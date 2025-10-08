@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Heart, Loader2, Music } from "lucide-react";
+import { Heart, Loader2 } from "lucide-react";
 import { TrackCard } from "@/components/TrackCard";
 import { LikesService } from "@/services/likes.service";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +7,10 @@ import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { getTrackWithVersions } from "@/utils/trackVersions";
 import { toast } from "sonner";
 import { convertToAudioPlayerTrack } from "@/types/track";
+import type { TrackStatus } from "@/services/api.service";
+
+const isTrackStatus = (status: string): status is TrackStatus =>
+  status === 'pending' || status === 'processing' || status === 'completed' || status === 'failed';
 
 interface LikedTrack {
   id: string;
@@ -77,8 +81,8 @@ export default function Favorites() {
       playTrackWithQueue({
         id: track.id,
         title: track.title,
-        audio_url: track.audio_url,
-        cover_url: track.cover_url,
+        audio_url: track.audio_url!,
+        cover_url: track.cover_url || undefined,
         duration: track.duration || undefined,
         style_tags: track.style_tags || undefined,
       }, likedTracks
@@ -147,13 +151,24 @@ export default function Favorites() {
       {/* Tracks Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
         {likedTracks.map((track, index) => (
-          <div 
+          <div
             key={track.id}
             className="animate-scale-in"
             style={{ animationDelay: `${index * 0.05}s` }}
           >
             <TrackCard
-              track={track as any}
+              track={{
+                id: track.id,
+                title: track.title,
+                audio_url: track.audio_url ?? undefined,
+                cover_url: track.cover_url ?? undefined,
+                status: isTrackStatus(track.status) ? track.status : 'completed',
+                created_at: track.created_at,
+                style_tags: track.style_tags ?? undefined,
+                duration: track.duration ?? undefined,
+                like_count: track.like_count ?? undefined,
+                view_count: track.view_count ?? undefined,
+              }}
               onDownload={() => handleDownload(track)}
               onShare={() => handleShare(track.id)}
               onClick={() => handleTrackClick(track)}

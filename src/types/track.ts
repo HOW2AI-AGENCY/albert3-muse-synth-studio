@@ -23,9 +23,9 @@ export interface BaseTrack {
   lyrics: string | null;
   style_tags: string[] | null;
   has_vocals: boolean | null;
-  has_stems?: boolean;
-  like_count?: number;
-  view_count?: number;
+  has_stems?: boolean | null;
+  like_count?: number | null;
+  view_count?: number | null;
 }
 
 // Трек для аудиоплеера (требует обязательный audio_url)
@@ -77,13 +77,13 @@ export interface OptimizedTrack {
 export interface TrackVersion {
   id: string;
   version_number: number;
-  is_master: boolean;
-  suno_id: string;
-  audio_url: string;
-  video_url?: string;
-  cover_url?: string;
-  lyrics?: string;
-  duration?: number;
+  is_master: boolean | null;
+  suno_id: string | null;
+  audio_url: string | null;
+  video_url?: string | null;
+  cover_url?: string | null;
+  lyrics?: string | null;
+  duration?: number | null;
   metadata?: Record<string, unknown>;
 }
 
@@ -135,10 +135,22 @@ export interface TrackWithVersions extends BaseTrack {
 // Утилитарные типы для преобразования
 export type TrackStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
+type ConvertibleTrack = {
+  id: string;
+  title: string;
+  audio_url?: string | null;
+  cover_url?: string | null;
+  duration?: number | null;
+  duration_seconds?: number | null;
+  style_tags?: string[] | null;
+  lyrics?: string | null;
+  status?: string | null;
+};
+
 // Функции-хелперы для преобразования типов
-export const convertToAudioPlayerTrack = (track: any): AudioPlayerTrack | null => {
+export const convertToAudioPlayerTrack = (track: ConvertibleTrack): AudioPlayerTrack | null => {
   if (!track.audio_url) return null;
-  
+
   return {
     id: track.id,
     title: track.title,
@@ -160,8 +172,8 @@ export const convertToDisplayTrack = (track: BaseTrack): DisplayTrack => {
     style_tags: track.style_tags || undefined,
     duration_seconds: track.duration_seconds || undefined,
     status: track.status,
-    like_count: track.like_count,
-    has_stems: track.has_stems,
+    like_count: track.like_count ?? undefined,
+    has_stems: track.has_stems ?? undefined,
     prompt: track.prompt,
     created_at: track.created_at,
     duration: track.duration || undefined,

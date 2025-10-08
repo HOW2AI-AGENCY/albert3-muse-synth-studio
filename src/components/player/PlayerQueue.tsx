@@ -9,12 +9,12 @@ import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { useToast } from "@/hooks/use-toast";
 
 export const PlayerQueue = () => {
-  const { queue, currentTrack, currentQueueIndex, playTrack, removeFromQueue } = useAudioPlayer();
+  const { queue, currentTrack, playTrack, removeFromQueue } = useAudioPlayer();
   const { vibrate } = useHapticFeedback();
   const { toast } = useToast();
   const [removingTrackId, setRemovingTrackId] = useState<string | null>(null);
 
-  const handlePlayTrack = (track: typeof queue[0], index: number) => {
+  const handlePlayTrack = (track: typeof queue[0]) => {
     vibrate('light');
     playTrack(track);
     
@@ -77,7 +77,6 @@ export const PlayerQueue = () => {
           <div className="space-y-2">
             {queue.map((track, index) => {
               const isCurrentTrack = track.id === currentTrack?.id;
-              const isPlaying = isCurrentTrack;
               const isVersion = track.versionNumber !== undefined && track.versionNumber > 0;
               const isMaster = track.isMasterVersion;
 
@@ -153,7 +152,7 @@ export const PlayerQueue = () => {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => handlePlayTrack(track, index)}
+                        onClick={() => handlePlayTrack(track)}
                       >
                         <Play className="h-4 w-4" />
                       </Button>

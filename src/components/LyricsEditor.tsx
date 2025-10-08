@@ -7,11 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Sparkles, Music2, Wand2, FileText, Eye } from "lucide-react";
+import { Sparkles, Music2, Wand2, FileText, Eye, Music } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ApiService } from "@/services/api.service";
 import { supabase } from "@/integrations/supabase/client";
 import { logError } from "@/utils/logger";
+import { LyricsEditorAdvanced } from "./lyrics/LyricsEditorAdvanced";
 
 interface LyricsEditorProps {
   lyrics: string;
@@ -37,6 +38,7 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [useAdvancedEditor, setUseAdvancedEditor] = useState(false);
   const { toast } = useToast();
 
   // Character and line count
@@ -142,10 +144,26 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
           <Music2 className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-semibold">Лирика песни</h3>
         </div>
-        <div className="text-xs text-muted-foreground">
-          {lineCount} строк · {charCount} символов
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setUseAdvancedEditor(!useAdvancedEditor)}
+            className="gap-2"
+          >
+            <Music className="h-4 w-4" />
+            {useAdvancedEditor ? 'Простой редактор' : 'Продвинутый редактор'}
+          </Button>
+          <div className="text-xs text-muted-foreground">
+            {lineCount} строк · {charCount} символов
+          </div>
         </div>
       </div>
+
+      {useAdvancedEditor ? (
+        <LyricsEditorAdvanced lyrics={lyrics} onLyricsChange={onLyricsChange} />
+      ) : (
+        <>
 
       <Tabs defaultValue="generate" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-4">
@@ -347,6 +365,8 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
             />
           )}
         </div>
+      )}
+      </>
       )}
     </Card>
   );

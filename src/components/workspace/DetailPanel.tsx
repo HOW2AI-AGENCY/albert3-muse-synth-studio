@@ -178,10 +178,19 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
       if (versionsData) {
         dispatch({ 
           type: 'SET_VERSIONS', 
-          value: versionsData.map(v => ({
-            ...v,
-            metadata: v.metadata as Record<string, unknown>
-          }))
+          value: versionsData
+            .filter(v => v.suno_id && v.audio_url)
+            .map(v => ({
+              ...v,
+              is_master: v.is_master ?? false,
+              suno_id: v.suno_id!,
+              audio_url: v.audio_url!,
+              video_url: v.video_url ?? undefined,
+              cover_url: v.cover_url ?? undefined,
+              lyrics: v.lyrics ?? undefined,
+              duration: v.duration ?? undefined,
+              metadata: v.metadata as Record<string, unknown>
+            }))
         });
       }
 

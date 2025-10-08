@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Music2, LogOut, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";

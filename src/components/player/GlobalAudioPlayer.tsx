@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { MiniPlayer } from "./MiniPlayer";
 import { FullScreenPlayer } from "./FullScreenPlayer";
 import { PlayerQueue } from "./PlayerQueue";
-import { LoadingSkeleton } from "../ui/LoadingSkeleton";
+// import { LoadingSkeleton } from "../ui/LoadingSkeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMediaSession } from "@/hooks/useMediaSession";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
@@ -147,7 +147,7 @@ export const GlobalAudioPlayer = () => {
     <TooltipProvider delayDuration={500}>
     <div 
       ref={playerRef}
-      className={`fixed bottom-0 left-0 right-0 z-50 transition-all duration-500 ease-out ${
+      className={`fixed bottom-0 left-0 right-0 z-[60] transition-all duration-500 ease-out ${
         isVisible 
           ? 'translate-y-0 opacity-100' 
           : 'translate-y-full opacity-0'

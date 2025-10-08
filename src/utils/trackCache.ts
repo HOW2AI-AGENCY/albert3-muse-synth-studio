@@ -205,7 +205,7 @@ class TrackCacheManager {
   cleanExpiredTracks(): number {
     try {
       const cache = this.getCache();
-      const initialCount = Object.keys(cache).length;
+      // const initialCount = Object.keys(cache).length;
       let removedCount = 0;
 
       for (const [trackId, track] of Object.entries(cache)) {

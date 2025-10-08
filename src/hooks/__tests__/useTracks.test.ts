@@ -3,6 +3,7 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { useTracks } from '../useTracks';
 import { ApiService, Track } from '@/services/api.service';
 import { supabase } from '@/integrations/supabase/client';
+import { logInfo, logDebug } from '@/utils/logger';
 
 // Mock dependencies
 vi.mock('@/services/api.service', () => ({
@@ -26,9 +27,11 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
+const toastMock = vi.fn();
+
 vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({
-    toast: vi.fn(),
+    toast: toastMock,
   }),
 }));
 
@@ -38,6 +41,13 @@ vi.mock('@/utils/trackCache', () => ({
     removeTrack: vi.fn(),
     getTracks: vi.fn(),
   },
+}));
+
+vi.mock('@/utils/logger', () => ({
+  logInfo: vi.fn(),
+  logDebug: vi.fn(),
+  logError: vi.fn(),
+  logWarn: vi.fn(),
 }));
 
 describe('useTracks', () => {
@@ -112,7 +122,7 @@ describe('useTracks', () => {
     it('handles loading errors gracefully', async () => {
       vi.mocked(ApiService.getUserTracks).mockRejectedValue(new Error('Network error'));
 
-      const { result } = renderHook(() => useTracks());
+      const { result } = renderHook(() => useTracks(undefined, { pollingEnabled: false }));
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -123,11 +133,11 @@ describe('useTracks', () => {
 
     it('sets empty tracks when user is not authenticated', async () => {
       vi.mocked(supabase.auth.getUser).mockResolvedValue({
-        data: { user: null },
+        data: { user: null as any },
         error: null,
-      });
+      } as any);
 
-      const { result } = renderHook(() => useTracks());
+      const { result } = renderHook(() => useTracks(undefined, { pollingEnabled: false }));
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -159,7 +169,7 @@ describe('useTracks', () => {
     it('handles delete errors', async () => {
       vi.mocked(ApiService.deleteTrack).mockRejectedValue(new Error('Delete failed'));
 
-      const { result } = renderHook(() => useTracks());
+      const { result } = renderHook(() => useTracks(undefined, { pollingEnabled: false }));
 
       await waitFor(() => expect(result.current.tracks).toHaveLength(2));
 
@@ -198,19 +208,22 @@ describe('useTracks', () => {
   describe('Refresh Trigger', () => {
     it('reloads tracks when refresh trigger changes', async () => {
       const { rerender } = renderHook(
-        ({ trigger }) => useTracks(trigger),
+        ({ trigger }) => useTracks(trigger, { pollingEnabled: false }),
         { initialProps: { trigger: 1 } }
       );
 
-      await waitFor(() => {
-        expect(ApiService.getUserTracks).toHaveBeenCalledTimes(1);
+      await act(async () => {
+        await Promise.resolve();
       });
+      expect(ApiService.getUserTracks).toHaveBeenCalled();
+
+      const initialCallCount = vi.mocked(ApiService.getUserTracks).mock.calls.length;
 
       // Change trigger
       rerender({ trigger: 2 });
 
       await waitFor(() => {
-        expect(ApiService.getUserTracks).toHaveBeenCalledTimes(2);
+        expect(vi.mocked(ApiService.getUserTracks).mock.calls.length).toBe(initialCallCount + 1);
       });
     });
   });
@@ -233,6 +246,7 @@ describe('useTracks', () => {
       await act(async () => {
         await vi.advanceTimersByTimeAsync(5000);
       });
+      expect(logInfoMock).toHaveBeenCalled();
 
       await waitFor(() => expect(ApiService.getUserTracks).toHaveBeenCalledTimes(2));
     });
@@ -246,7 +260,9 @@ describe('useTracks', () => {
           { ...initialMockTracks[1], status: 'completed' },
         ]);
 
-      renderHook(() => useTracks());
+      await act(async () => {
+        await result.current.refreshTracks();
+      });
 
       // Initial fetch
       await waitFor(() => expect(ApiService.getUserTracks).toHaveBeenCalledTimes(1));

@@ -26,7 +26,7 @@ interface TrackForModeration {
   created_at: string;
   like_count: number;
   profiles?: {
-    email: string;
+    email: string | null;
   };
 }
 
@@ -137,6 +137,8 @@ export default function Admin() {
             
             return {
               ...track,
+              is_public: track.is_public ?? false,
+              like_count: track.like_count ?? 0,
               profiles: profile || { email: 'Unknown' }
             };
           })
@@ -348,7 +350,7 @@ export default function Admin() {
                       <h4 className="font-medium truncate">{track.title}</h4>
                       <div className="flex items-center gap-2 mt-1">
                         <p className="text-xs text-muted-foreground">
-                          {(track.profiles as any)?.email || 'Unknown'}
+                          {track.profiles?.email || 'Unknown'}
                         </p>
                         <Badge variant={track.is_public ? 'default' : 'secondary'} className="text-xs">
                           {track.is_public ? 'Публичный' : 'Приватный'}

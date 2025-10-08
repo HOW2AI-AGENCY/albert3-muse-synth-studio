@@ -20,10 +20,7 @@ import {
   LazyLibrary, 
   LazyFavorites, 
   LazyAnalytics, 
-  LazySettings,
-  preloadDashboard,
-  preloadGenerate,
-  preloadLibrary
+  LazySettings
 } from './utils/lazyImports';
 
 // Ленивая загрузка админ-панели (защищенный роут)

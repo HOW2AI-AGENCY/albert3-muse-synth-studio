@@ -1,10 +1,10 @@
-import { useState } from "react";
+// import { useState } from "react";
 import { Download, Share2, Trash2, Eye, Heart, Calendar, Clock, ExternalLink, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Card } from "@/components/ui/card";
+// import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -254,7 +254,7 @@ export const DetailPanelContent = ({
         </AccordionItem>
 
         {/* Tags & Details */}
-        {(track.style_tags?.length > 0 || track.suno_id || track.model_name || track.lyrics) && (
+        {(track.style_tags && track.style_tags.length > 0 || track.suno_id || track.model_name || track.lyrics) && (
           <AccordionItem value="details" className="border rounded-lg px-4">
             <AccordionTrigger className="text-sm py-3 hover:no-underline">
               Детали
@@ -355,7 +355,7 @@ export const DetailPanelContent = ({
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1.5 text-sm">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium text-xs">{formatDate(track.created_at)}</span>
+                    <span className="font-medium text-xs">{track.created_at ? formatDate(track.created_at) : '—'}</span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>Дата создания</TooltipContent>

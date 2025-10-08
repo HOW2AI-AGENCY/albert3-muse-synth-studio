@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart3, TrendingUp, Download, Heart, Eye, Music } from 'lucide-react';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +28,10 @@ const Analytics = () => {
   const [topTracks, setTopTracks] = useState<TrackStats[]>([]);
   const [overallStats, setOverallStats] = useState<OverallStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<'7d' | '30d' | 'all'>('30d');
+  type TimeRange = '7d' | '30d' | 'all';
+  const isTimeRange = (value: string): value is TimeRange =>
+    value === '7d' || value === '30d' || value === 'all';
+  const [timeRange, setTimeRange] = useState<TimeRange>('30d');
 
   useEffect(() => {
     fetchAnalytics();
@@ -63,7 +66,14 @@ const Analytics = () => {
       const { data: tracksData } = await query;
 
       if (tracksData) {
-        setTopTracks(tracksData);
+        const normalizedTracks = tracksData.map(track => ({
+          ...track,
+          view_count: track.view_count ?? 0,
+          play_count: track.play_count ?? 0,
+          like_count: track.like_count ?? 0,
+          download_count: track.download_count ?? 0,
+        }));
+        setTopTracks(normalizedTracks);
 
         // Подсчитываем общую статистику
         const stats: OverallStats = {
@@ -93,7 +103,14 @@ const Analytics = () => {
           <h1 className="text-3xl font-bold text-gradient-primary">Аналитика</h1>
           <p className="text-muted-foreground mt-1">Статистика ваших треков</p>
         </div>
-        <Tabs value={timeRange} onValueChange={(v) => setTimeRange(v as any)}>
+        <Tabs
+          value={timeRange}
+          onValueChange={(value) => {
+            if (isTimeRange(value)) {
+              setTimeRange(value);
+            }
+          }}
+        >
           <TabsList>
             <TabsTrigger value="7d">7 дней</TabsTrigger>
             <TabsTrigger value="30d">30 дней</TabsTrigger>

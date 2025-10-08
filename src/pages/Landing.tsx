@@ -183,7 +183,18 @@ const Landing = () => {
                         size="icon"
                         variant="ghost"
                         className="shrink-0 hover:bg-primary/20 hover:text-primary transition-all hover:scale-110"
-                        onClick={() => audioPlayer?.playTrack && audioPlayer.playTrack(track)}
+                        onClick={() => {
+                          if (audioPlayer?.playTrack && track.audio_url) {
+                            audioPlayer.playTrack({
+                              id: track.id,
+                              title: track.title,
+                              audio_url: track.audio_url,
+                              cover_url: track.cover_url || undefined,
+                              duration: track.duration || undefined,
+                              style_tags: track.style_tags || undefined,
+                            });
+                          }
+                        }}
                       >
                         <Play className="h-5 w-5" />
                       </Button>

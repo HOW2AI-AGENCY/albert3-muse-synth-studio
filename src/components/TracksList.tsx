@@ -1,12 +1,11 @@
-import { useEffect, useState, memo, useCallback, useMemo } from "react";
+import { useEffect, useState, memo, useCallback } from "react";
 import { TrackCard } from "./TrackCard";
 import { TrackListItem } from "./tracks/TrackListItem";
 import { ViewSwitcher } from "./tracks/ViewSwitcher";
 import { LoadingSkeleton } from "./ui/LoadingSkeleton";
-import { useTracks } from "@/hooks/useTracks";
 import { ApiService, Track as ApiTrack } from "@/services/api.service";
 import { Button } from "./ui/button";
-import { RefreshCcw, Music, Loader2 } from "lucide-react";
+import { RefreshCcw, Music } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "./ui/badge";
@@ -36,7 +35,6 @@ const TracksListComponent = ({
   deleteTrack,
   refreshTracks,
   onTrackSelect,
-  selectedTrackId,
 }: TracksListProps) => {
   const audioPlayer = useAudioPlayerSafe();
   const { toast } = useToast();
@@ -109,10 +107,11 @@ const TracksListComponent = ({
 
       refreshTracks();
     } catch (error) {
-      logError('Retry error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Не удалось перезапустить';
+      logError('Retry error:', error instanceof Error ? error : new Error(String(error)));
       toast({
         title: 'Ошибка повтора',
-        description: error instanceof Error ? error.message : 'Не удалось перезапустить',
+        description: errorMessage,
         variant: 'destructive',
       });
     }
@@ -126,36 +125,7 @@ const TracksListComponent = ({
     return elapsed > 600000; // 10 minutes
   }, []);
 
-  // Мемоизируем функцию лайка
-  const handleLike = useCallback(async (trackId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: existingLike } = await supabase
-        .from('track_likes')
-        .select()
-        .eq('track_id', trackId)
-        .eq('user_id', user.id)
-        .single();
-
-      if (existingLike) {
-        await supabase
-          .from('track_likes')
-          .delete()
-          .eq('track_id', trackId)
-          .eq('user_id', user.id);
-      } else {
-        await supabase
-          .from('track_likes')
-          .insert({ track_id: trackId, user_id: user.id });
-      }
-
-      refreshTracks();
-    } catch (error) {
-      logError('Like error:', error);
-    }
-  }, [refreshTracks]);
+  // Функцию лайка убрана - используется в TrackCard
 
   // Мемоизируем функцию скачивания
   const handleDownload = useCallback((track: Track) => {
@@ -237,7 +207,18 @@ const TracksListComponent = ({
               <div key={track.id} className="space-y-3">
                 <div className="relative">
                   <TrackCard
-                    track={track}
+                    track={{
+                      ...track,
+                      audio_url: track.audio_url || undefined,
+                      cover_url: track.cover_url || undefined,
+                      duration: track.duration || undefined,
+                      style_tags: track.style_tags || undefined,
+                      lyrics: track.lyrics || undefined,
+                      has_vocals: track.has_vocals || undefined,
+                      genre: track.genre || undefined,
+                      like_count: track.like_count || undefined,
+                      view_count: track.view_count || undefined,
+                    }}
                     onDownload={() => handleDownload(typedTrack)}
                     onShare={() => handleShare(track.id)}
                     onClick={() => {
@@ -247,18 +228,18 @@ const TracksListComponent = ({
                           id: track.id,
                           title: track.title,
                           audio_url: track.audio_url,
-                          cover_url: track.cover_url,
-                          duration: track.duration,
-                          style_tags: track.style_tags,
-                          lyrics: track.lyrics,
+                          cover_url: track.cover_url || undefined,
+                          duration: track.duration || undefined,
+                          style_tags: track.style_tags || undefined,
+                          lyrics: track.lyrics || undefined,
                         }, tracks.filter(t => t.audio_url && t.status === 'completed').map(t => ({
                           id: t.id,
                           title: t.title,
                           audio_url: t.audio_url!,
-                          cover_url: t.cover_url,
-                          duration: t.duration,
-                          style_tags: t.style_tags,
-                          lyrics: t.lyrics,
+                          cover_url: t.cover_url || undefined,
+                          duration: t.duration || undefined,
+                          style_tags: t.style_tags || undefined,
+                          lyrics: t.lyrics || undefined,
                         })));
                       }
                     }}
@@ -296,7 +277,16 @@ const TracksListComponent = ({
               <div key={track.id} className="space-y-2">
                 <div className="relative">
                   <TrackListItem
-                    track={track}
+                    track={{
+                      ...track,
+                      audio_url: track.audio_url || undefined,
+                      cover_url: track.cover_url || undefined,
+                      duration: track.duration || undefined,
+                      duration_seconds: track.duration_seconds || undefined,
+                      style_tags: track.style_tags || undefined,
+                      like_count: track.like_count || undefined,
+                      has_stems: track.has_stems || undefined,
+                    }}
                     onDownload={() => handleDownload(typedTrack)}
                     onShare={() => handleShare(track.id)}
                     onClick={() => {
@@ -306,18 +296,18 @@ const TracksListComponent = ({
                           id: track.id,
                           title: track.title,
                           audio_url: track.audio_url,
-                          cover_url: track.cover_url,
-                          duration: track.duration,
-                          style_tags: track.style_tags,
-                          lyrics: track.lyrics,
+                          cover_url: track.cover_url || undefined,
+                          duration: track.duration || undefined,
+                          style_tags: track.style_tags || undefined,
+                          lyrics: track.lyrics || undefined,
                         }, tracks.filter(t => t.audio_url && t.status === 'completed').map(t => ({
                           id: t.id,
                           title: t.title,
                           audio_url: t.audio_url!,
-                          cover_url: t.cover_url,
-                          duration: t.duration,
-                          style_tags: t.style_tags,
-                          lyrics: t.lyrics,
+                          cover_url: t.cover_url || undefined,
+                          duration: t.duration || undefined,
+                          style_tags: t.style_tags || undefined,
+                          lyrics: t.lyrics || undefined,
                         })));
                       }
                     }}

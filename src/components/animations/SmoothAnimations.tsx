@@ -3,7 +3,7 @@ import React, {
   useEffect, 
   useRef, 
   ReactNode, 
-  CSSProperties,
+  
   useCallback
 } from 'react';
 import { cn } from '@/lib/utils';

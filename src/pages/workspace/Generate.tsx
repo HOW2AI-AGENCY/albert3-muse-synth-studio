@@ -6,9 +6,10 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useIsMobile } from "@/hooks/use-mobile";
+// import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Plus, Menu } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -20,13 +21,16 @@ import { useTracks } from "@/hooks/useTracks";
 import { useTrackSync } from "@/hooks/useTrackSync";
 import { useTrackRecovery } from "@/hooks/useTrackRecovery";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { PLAYER_HEIGHTS } from "@/contexts/AudioPlayerContext";
 import { supabase } from "@/integrations/supabase/client";
 import { logInfo } from "@/utils/logger";
+import { normalizeTrack } from "@/utils/trackNormalizer";
+import type { Track } from "@/services/api.service";
 
 const Generate = () => {
   const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks();
   const { currentTrack } = useAudioPlayer();
-  const [selectedTrack, setSelectedTrack] = useState<any>(null);
+  const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showGenerator, setShowGenerator] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
@@ -34,7 +38,10 @@ const Generate = () => {
   const [userId, setUserId] = useState<string | undefined>();
 
   const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1023px)");
   const isMobile = useIsMobile();
+  
+  console.log('Viewport:', { isDesktop, isTablet, isMobile }); // Debug responsive behavior
 
   // Get current user for track sync
   useEffect(() => {
@@ -51,13 +58,19 @@ const Generate = () => {
       logInfo('Track completed - refreshing list', 'Generate', { trackId });
       refreshTracks();
       setIsPolling(false);
-      if (pollingRef.current) clearInterval(pollingRef.current);
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
     },
     onTrackFailed: (trackId, error) => {
       logInfo('Track failed - refreshing list', 'Generate', { trackId, error });
       refreshTracks();
       setIsPolling(false);
-      if (pollingRef.current) clearInterval(pollingRef.current);
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
     },
     enabled: true,
   });
@@ -71,12 +84,15 @@ const Generate = () => {
 
   const handleTrackGenerated = () => {
     setShowGenerator(false);
-    if (pollingRef.current) clearInterval(pollingRef.current);
 
     initialTrackCount.current = tracks.length;
     setIsPolling(true);
 
-    // Start polling, but clear any existing timers first
+    if (pollingRef.current) {
+      return;
+    }
+
+    // Start polling if no existing timer
     pollingRef.current = setInterval(() => {
       refreshTracks();
     }, 2500); // Poll every 2.5 seconds
@@ -85,28 +101,38 @@ const Generate = () => {
   useEffect(() => {
     if (!isPolling) return;
 
-    // Stop polling if a new track has been added
-    if (tracks.length > initialTrackCount.current) {
-      const newTrack = tracks.find(t => !tracks.slice(initialTrackCount.current).some(it => it.id === t.id));
-      if(newTrack || tracks.some(t => t.status === 'processing')) {
-        if (pollingRef.current) clearInterval(pollingRef.current);
-        setIsPolling(false);
+    const hasNewTrack =
+      tracks.length > initialTrackCount.current &&
+      tracks.slice(initialTrackCount.current).some((track) => Boolean(track));
+    const hasProcessingTracks = tracks.some(t => t.status === 'processing');
+
+    if (hasNewTrack || hasProcessingTracks) {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
       }
+      setIsPolling(false);
     }
 
     // Failsafe timeout after 1 minute
     const timeout = setTimeout(() => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
       setIsPolling(false);
     }, 60000);
 
     return () => {
       clearTimeout(timeout);
-      if (pollingRef.current) clearInterval(pollingRef.current);
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
     };
-  }, [tracks, isPolling, initialTrackCount]);
+  }, [tracks, isPolling]);
 
-  const handleTrackSelect = (track: any) => {
+  const handleTrackSelect = (track: Track) => {
     setSelectedTrack(track);
   };
 
@@ -123,12 +149,17 @@ const Generate = () => {
 
   // Desktop: 3-panel resizable layout
   if (isDesktop) {
+    // Вычисляем высоту с учетом плеера
+    const pageHeight = currentTrack 
+      ? `calc(100vh - 4rem - ${PLAYER_HEIGHTS.desktop}px - ${PLAYER_HEIGHTS.safeAreaOffset}px)`
+      : 'calc(100vh - 4rem)';
+    
     return (
-      <div className="h-[calc(100vh-4rem)] p-4">
-        <ResizablePanelGroup direction="horizontal" className="rounded-lg border border-border overflow-hidden">
+      <div className="p-4" style={{ height: pageHeight }}>
+        <ResizablePanelGroup direction="horizontal" className="rounded-lg border border-border overflow-hidden h-full">
           {/* Create Panel */}
           <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
-            <div className="h-full overflow-auto">
+            <div className="h-full overflow-y-auto scrollbar-styled">
               <MusicGenerator onTrackGenerated={handleTrackGenerated} />
             </div>
           </ResizablePanel>
@@ -137,7 +168,7 @@ const Generate = () => {
 
           {/* Track List */}
           <ResizablePanel defaultSize={selectedTrack ? 50 : 80} minSize={40}>
-            <div className="h-full overflow-auto">
+            <div className="h-full overflow-y-auto scrollbar-styled">
               <TracksList
                 tracks={tracks}
                 isLoading={isLoading}
@@ -155,7 +186,7 @@ const Generate = () => {
               <ResizableHandle withHandle className="hover:bg-primary/20 transition-colors" />
               <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
                 <DetailPanel
-                  track={selectedTrack}
+                  track={normalizeTrack(selectedTrack)}
                   onClose={handleCloseDetail}
                   onUpdate={refreshTracks}
                   onDelete={handleDelete}
@@ -168,11 +199,65 @@ const Generate = () => {
     );
   }
 
+  // Tablet: Semi-expanded layout
+  if (isTablet) {
+    const pageHeight = currentTrack 
+      ? `calc(100vh - 4rem - ${PLAYER_HEIGHTS.desktop}px - ${PLAYER_HEIGHTS.safeAreaOffset}px)`
+      : 'calc(100vh - 4rem)';
+    
+    return (
+      <div className="p-4" style={{ height: pageHeight }}>
+        <ResizablePanelGroup direction="horizontal" className="rounded-lg border border-border overflow-hidden h-full">
+          <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
+            <div className="h-full overflow-y-auto scrollbar-styled">
+              <MusicGenerator onTrackGenerated={handleTrackGenerated} />
+            </div>
+          </ResizablePanel>
+
+          <ResizableHandle withHandle className="hover:bg-primary/20 transition-colors" />
+
+          <ResizablePanel defaultSize={70} minSize={60}>
+            <div className="h-full overflow-y-auto scrollbar-styled">
+              <TracksList
+                tracks={tracks}
+                isLoading={isLoading}
+                deleteTrack={deleteTrack}
+                refreshTracks={refreshTracks}
+                onTrackSelect={handleTrackSelect}
+                selectedTrackId={selectedTrack?.id}
+              />
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+
+        <Sheet open={!!selectedTrack} onOpenChange={(open) => !open && handleCloseDetail()}>
+          <SheetContent side="right" className="w-full sm:w-[540px] p-0">
+            {selectedTrack && (
+              <DetailPanel
+                track={normalizeTrack(selectedTrack)}
+                onClose={handleCloseDetail}
+                onUpdate={refreshTracks}
+                onDelete={handleDelete}
+              />
+            )}
+          </SheetContent>
+        </Sheet>
+      </div>
+    );
+  }
+
   // Mobile: Optimized layout with Drawer for generator
+  const mobilePaddingBottom = currentTrack 
+    ? `calc(${PLAYER_HEIGHTS.mobile}px + env(safe-area-inset-bottom) + 1rem)`
+    : '1rem';
+  
   return (
     <div className="flex flex-col h-full relative">
       {/* Track List - Full Screen */}
-      <div className={`flex-1 overflow-y-auto p-4 transition-all duration-300 ${currentTrack ? 'pb-24' : 'pb-4'}`}>
+      <div 
+        className="flex-1 overflow-y-auto scrollbar-styled p-4 sm:p-5 transition-all duration-300"
+        style={{ paddingBottom: mobilePaddingBottom }}
+      >
         {isPolling && (
           <div className="space-y-4 mb-4">
             <Skeleton className="h-24 w-full rounded-lg" />
@@ -193,15 +278,26 @@ const Generate = () => {
         <DrawerTrigger asChild>
           <Button
             size="lg"
-            className={`fixed right-4 h-14 w-14 rounded-full shadow-2xl glow-primary bg-gradient-primary hover:scale-110 transition-all duration-300 z-40 animate-pulse-glow touch-action-manipulation`}
-            style={{ bottom: currentTrack ? 'calc(env(safe-area-inset-bottom) + 88px)' : 'calc(env(safe-area-inset-bottom) + 16px)' }}
+            className="fixed right-4 h-14 w-14 rounded-full shadow-2xl glow-primary bg-gradient-primary hover:scale-110 transition-all duration-300 z-40 animate-pulse-glow touch-action-manipulation min-h-[48px] min-w-[48px]"
+            style={{ 
+              bottom: currentTrack 
+                ? `calc(${PLAYER_HEIGHTS.mobile}px + env(safe-area-inset-bottom) + 1rem)` 
+                : 'calc(env(safe-area-inset-bottom) + 1rem)' 
+            }}
             aria-label="Создать музыку"
           >
             <Plus className="h-6 w-6" />
           </Button>
         </DrawerTrigger>
-        <DrawerContent className="max-h-[90vh] p-0">
-          <div className="overflow-auto p-4 max-w-2xl mx-auto w-full">
+        <DrawerContent 
+          className="p-0 z-[55]"
+          style={{ 
+            maxHeight: currentTrack 
+              ? `calc(90vh - ${PLAYER_HEIGHTS.mobile}px - env(safe-area-inset-bottom))` 
+              : '90vh'
+          }}
+        >
+          <div className="overflow-y-auto scrollbar-styled p-5 sm:p-6 max-w-2xl mx-auto w-full">
             <MusicGenerator onTrackGenerated={handleTrackGenerated} />
           </div>
         </DrawerContent>
@@ -215,7 +311,7 @@ const Generate = () => {
         >
           {selectedTrack && (
             <DetailPanel
-              track={selectedTrack}
+              track={normalizeTrack(selectedTrack)}
               onClose={handleCloseDetail}
               onUpdate={refreshTracks}
               onDelete={handleDelete}

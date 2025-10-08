@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, memo, useRef, useEffect } from "react";
+import React, { useState, useCallback, memo, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,25 +10,25 @@ import {
   Share2,
   Clock,
   Music,
-  Eye
+  Eye,
 } from "lucide-react";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { useTrackLike } from "@/hooks/useTrackLike";
 import { withErrorBoundary } from "@/components/ErrorBoundary";
 import { logError } from "@/utils/logger";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { formatDuration } from "@/utils/formatters";
 
 interface Track {
   id: string;
   title: string;
-  prompt: string;
+  prompt?: string;
   audio_url?: string;
   image_url?: string;
   cover_url?: string;
   duration?: number;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: "pending" | "processing" | "completed" | "failed";
   created_at: string;
   has_vocals?: boolean;
   genre?: string;
@@ -44,167 +44,184 @@ interface TrackCardProps {
   onShare?: () => void;
   onClick?: () => void;
   className?: string;
-  variant?: 'default' | 'compact' | 'minimal';
+  variant?: "default" | "compact" | "minimal";
 }
 
 const gradients = [
-  'from-purple-500/20 to-pink-500/20',
-  'from-blue-500/20 to-cyan-500/20',
-  'from-green-500/20 to-emerald-500/20',
-  'from-orange-500/20 to-red-500/20',
-  'from-indigo-500/20 to-purple-500/20',
-  'from-teal-500/20 to-blue-500/20'
+  "from-purple-500/20 to-pink-500/20",
+  "from-blue-500/20 to-cyan-500/20",
+  "from-green-500/20 to-emerald-500/20",
+  "from-orange-500/20 to-red-500/20",
+  "from-indigo-500/20 to-purple-500/20",
+  "from-teal-500/20 to-blue-500/20",
 ];
 
-const isValidTrack = (track?: Track | null): track is Track => {
-  return Boolean(track && typeof track.id === "string" && track.id.trim().length > 0);
+const getGradientByTrackId = (trackId: string) => {
+  const index = trackId.charCodeAt(0) % gradients.length;
+  return gradients[index];
 };
 
-const InvalidTrackCard: React.FC = () => (
-  <Card className="p-4" role="alert" aria-label="Ошибка загрузки трека">
-    <div className="text-center">
-      <Music className="mx-auto h-8 w-8 text-muted-foreground mb-2" aria-hidden="true" />
-      <p className="text-sm text-muted-foreground">Некорректные данные трека</p>
-    </div>
-  </Card>
-);
+const StatusBadge: React.FC<{ status: Track["status"] }> = ({ status }) => {
+  switch (status) {
+    case "completed":
+      return (
+        <Badge variant="default" className="bg-green-500" aria-label="Статус: готов">
+          Готов
+        </Badge>
+      );
+    case "processing":
+      return (
+        <Badge variant="secondary" aria-label="Статус: обработка">
+          Обработка
+        </Badge>
+      );
+    case "failed":
+      return (
+        <Badge variant="destructive" aria-label="Статус: ошибка">
+          Ошибка
+        </Badge>
+      );
+    default:
+      return (
+        <Badge variant="outline" aria-label={`Статус: ${status}`}>
+          {status}
+        </Badge>
+      );
+  }
+};
 
-type ToastFunction = ReturnType<typeof useToast>["toast"];
-type VibrateFunction = ReturnType<typeof useHapticFeedback>["vibrate"];
+const useFadeInOnIntersect = (ref: React.RefObject<HTMLDivElement>) => {
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) {
+      return;
+    }
 
-interface UseTrackCardActionsOptions {
-  track: Track;
-  isCurrentTrack: boolean;
-  isPlaying: boolean;
-  togglePlayPause: () => void;
-  playTrack: ReturnType<typeof useAudioPlayer>["playTrack"];
-  toggleLike: ReturnType<typeof useTrackLike>["toggleLike"];
-  isLiked: boolean;
-  onDownload?: () => void;
-  onShare?: () => void;
-  onClick?: () => void;
-  toast: ToastFunction;
-  vibrate: VibrateFunction;
-}
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("animate-fade-in");
+          }
+        });
+      },
+      { threshold: 0.1 },
+    );
+
+    observer.observe(element);
+
+    return () => {
+      observer.unobserve(element);
+      observer.disconnect();
+    };
+  }, [ref]);
+};
 
 const useTrackCardActions = ({
   track,
-  isCurrentTrack,
-  isPlaying,
-  togglePlayPause,
-  playTrack,
-  toggleLike,
-  isLiked,
   onDownload,
   onShare,
   onClick,
-  toast,
-  vibrate,
-}: UseTrackCardActionsOptions) => {
-  const handleLikeClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
+}: {
+  track: Track;
+  onDownload?: () => void;
+  onShare?: () => void;
+  onClick?: () => void;
+}) => {
+  const { toast } = useToast();
+  const { currentTrack, isPlaying, playTrack, togglePlayPause } = useAudioPlayer();
+  const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count || 0);
 
-    try {
-      toggleLike();
-      vibrate("light");
+  const isCurrentTrack = currentTrack?.id === track.id;
+  const playButtonDisabled = track.status === "processing";
 
-      toast({
-        title: isLiked ? "Убрано из избранного" : "Добавлено в избранное",
-        description: `Трек "${track.title}" ${isLiked ? "убран из" : "добавлен в"} избранное`,
-        duration: 2000,
-      });
-    } catch (error) {
-      logError(
-        "TrackCard like error",
-        error instanceof Error ? error : new Error(String(error)),
-        "TrackCard",
-        {
-          trackId: track.id,
-          trackTitle: track.title,
-        },
-      );
+  const handleCardClick = useCallback(() => {
+    onClick?.();
+  }, [onClick]);
 
-      toast({
-        title: "Ошибка",
-        description: "Не удалось обновить статус избранного",
-        variant: "destructive",
-        duration: 3000,
-      });
-    }
-  }, [isLiked, toast, track.id, track.title, toggleLike, vibrate]);
+  const handlePlayClick = useCallback(
+    (event: React.MouseEvent) => {
+      try {
+        event.stopPropagation();
 
-  const handlePlayClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
+        if (isCurrentTrack && isPlaying) {
+          togglePlayPause();
+          return;
+        }
 
-    try {
-      if (isCurrentTrack && isPlaying) {
-        togglePlayPause();
-        vibrate("light");
-        return;
+        if (!track.audio_url) {
+          toast({
+            title: "Ошибка воспроизведения",
+            description: "Аудиофайл недоступен для воспроизведения",
+            variant: "destructive",
+            duration: 3000,
+          });
+          return;
+        }
+
+        playTrack({
+          id: track.id,
+          title: track.title,
+          audio_url: track.audio_url,
+          cover_url: track.cover_url,
+          duration: track.duration,
+          status: track.status,
+          style_tags: track.style_tags,
+          lyrics: track.lyrics,
+        });
+      } catch (error) {
+        logError(
+          "TrackCard play error",
+          error instanceof Error ? error : new Error(String(error)),
+          "TrackCard",
+          {
+            trackId: track.id,
+            trackTitle: track.title,
+            audioUrl: track.audio_url,
+          },
+        );
       }
+    },
+    [isCurrentTrack, isPlaying, togglePlayPause, track, playTrack, toast],
+  );
 
-      if (!track.audio_url) {
+  const handleLikeClick = useCallback(
+    (event: React.MouseEvent) => {
+      try {
+        event.stopPropagation();
+        toggleLike();
+
         toast({
-          title: "Ошибка воспроизведения",
-          description: "Аудиофайл недоступен",
+          title: isLiked ? "Убрано из избранного" : "Добавлено в избранное",
+          description: `Трек "${track.title}" ${isLiked ? "убран из" : "добавлен в"} избранное`,
+          duration: 2000,
+        });
+      } catch (error) {
+        logError(
+          "TrackCard like error",
+          error instanceof Error ? error : new Error(String(error)),
+          "TrackCard",
+          {
+            trackId: track.id,
+            trackTitle: track.title,
+          },
+        );
+
+        toast({
+          title: "Ошибка",
+          description: "Не удалось обновить статус избранного",
           variant: "destructive",
           duration: 3000,
         });
-        return;
       }
+    },
+    [isLiked, toggleLike, toast, track.id, track.title],
+  );
 
-      playTrack({
-        id: track.id,
-        title: track.title,
-        audio_url: track.audio_url,
-        cover_url: track.cover_url,
-        duration: track.duration,
-        status: track.status,
-        style_tags: track.style_tags,
-        lyrics: track.lyrics,
-      });
+  const handleDownloadClick = useCallback(
+    (event: React.MouseEvent) => {
+      event.stopPropagation();
 
-      vibrate("light");
-    } catch (error) {
-      logError(
-        "TrackCard play error",
-        error instanceof Error ? error : new Error(String(error)),
-        "TrackCard",
-        {
-          trackId: track.id,
-          trackTitle: track.title,
-          audioUrl: track.audio_url,
-        },
-      );
-
-      toast({
-        title: "Ошибка воспроизведения",
-        description: "Не удалось воспроизвести трек",
-        variant: "destructive",
-        duration: 3000,
-      });
-    }
-  }, [
-    isCurrentTrack,
-    isPlaying,
-    playTrack,
-    toast,
-    togglePlayPause,
-    track.audio_url,
-    track.cover_url,
-    track.duration,
-    track.id,
-    track.lyrics,
-    track.status,
-    track.style_tags,
-    track.title,
-    vibrate,
-  ]);
-
-  const handleDownloadClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-
-    try {
       if (!track.audio_url) {
         toast({
           title: "Ошибка скачивания",
@@ -215,114 +232,105 @@ const useTrackCardActions = ({
         return;
       }
 
-      onDownload?.();
-      vibrate("medium");
+      try {
+        onDownload?.();
 
-      toast({
-        title: "Скачивание начато",
-        description: `Трек "${track.title}" загружается`,
-        duration: 3000,
-      });
-    } catch (error) {
-      logError(
-        "TrackCard download error",
-        error instanceof Error ? error : new Error(String(error)),
-        "TrackCard",
-        {
-          trackId: track.id,
-          trackTitle: track.title,
-        },
-      );
+        toast({
+          title: "Скачивание начато",
+          description: `Трек "${track.title}" загружается`,
+          duration: 3000,
+        });
+      } catch (error) {
+        logError(
+          "TrackCard download error",
+          error instanceof Error ? error : new Error(String(error)),
+          "TrackCard",
+          {
+            trackId: track.id,
+            trackTitle: track.title,
+          },
+        );
 
-      toast({
-        title: "Ошибка скачивания",
-        description: "Не удалось скачать трек",
-        variant: "destructive",
-        duration: 3000,
-      });
-    }
-  }, [onDownload, toast, track.audio_url, track.id, track.title, vibrate]);
+        toast({
+          title: "Ошибка скачивания",
+          description: "Не удалось скачать трек",
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    },
+    [onDownload, toast, track.audio_url, track.id, track.title],
+  );
 
-  const handleShareClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
+  const handleShareClick = useCallback(
+    (event: React.MouseEvent) => {
+      event.stopPropagation();
 
-    try {
-      onShare?.();
-      vibrate("light");
+      try {
+        onShare?.();
 
-      toast({
-        title: "Ссылка скопирована",
-        description: `Ссылка на трек "${track.title}" скопирована в буфер обмена`,
-        duration: 3000,
-      });
-    } catch (error) {
-      logError(
-        "TrackCard share error",
-        error instanceof Error ? error : new Error(String(error)),
-        "TrackCard",
-        {
-          trackId: track.id,
-          trackTitle: track.title,
-        },
-      );
+        toast({
+          title: "Ссылка скопирована",
+          description: `Ссылка на трек "${track.title}" скопирована в буфер обмена`,
+          duration: 3000,
+        });
+      } catch (error) {
+        logError(
+          "TrackCard share error",
+          error instanceof Error ? error : new Error(String(error)),
+          "TrackCard",
+          {
+            trackId: track.id,
+            trackTitle: track.title,
+          },
+        );
 
-      toast({
-        title: "Ошибка",
-        description: "Не удалось поделиться треком",
-        variant: "destructive",
-        duration: 3000,
-      });
-    }
-  }, [onShare, toast, track.id, track.title, vibrate]);
-
-  const handleCardClick = useCallback(() => {
-    onClick?.();
-  }, [onClick]);
+        toast({
+          title: "Ошибка",
+          description: "Не удалось поделиться треком",
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    },
+    [onShare, toast, track.id, track.title],
+  );
 
   return {
-    handleLikeClick,
+    isLiked,
+    likeCount,
+    isCurrentTrack,
+    isPlaying,
+    playButtonDisabled,
+    handleCardClick,
     handlePlayClick,
+    handleLikeClick,
     handleDownloadClick,
     handleShareClick,
-    handleCardClick,
   };
 };
 
-interface TrackCardViewProps {
+interface ValidTrackCardProps extends TrackCardProps {
   track: Track;
-  className?: string;
-  cardRef: React.RefObject<HTMLDivElement>;
-  isHovered: boolean;
-  setIsHovered: React.Dispatch<React.SetStateAction<boolean>>;
-  formattedDuration: string | null;
-  randomGradient: string;
-  statusBadge: React.ReactNode;
-  playButtonDisabled: boolean;
-  isCurrentTrack: boolean;
-  isPlaying: boolean;
-  isLiked: boolean;
-  likeCount: number;
-  onCardClick: () => void;
-  onPlayClick: (event: React.MouseEvent) => void;
-  onLikeClick: (event: React.MouseEvent) => void;
-  onDownloadClick: (event: React.MouseEvent) => void;
-  onShareClick: (event: React.MouseEvent) => void;
+  variant?: "default" | "compact" | "minimal";
 }
 
-const CompactTrackCard: React.FC<TrackCardViewProps> = ({
+const CompactTrackCard: React.FC<
+  ValidTrackCardProps & {
+    cardRef: React.RefObject<HTMLDivElement>;
+    isHovered: boolean;
+    onHoverChange: (value: boolean) => void;
+    formattedDuration: string | null;
+    actions: ReturnType<typeof useTrackCardActions>;
+  }
+> = ({
   track,
   className,
   cardRef,
   isHovered,
-  setIsHovered,
+  onHoverChange,
   formattedDuration,
-  playButtonDisabled,
-  isCurrentTrack,
-  isPlaying,
-  isLiked,
-  onCardClick,
-  onPlayClick,
-  onLikeClick,
+  actions,
 }) => (
   <Card
     ref={cardRef}
@@ -332,9 +340,9 @@ const CompactTrackCard: React.FC<TrackCardViewProps> = ({
       "hover:scale-[1.02] hover:-translate-y-1",
       className,
     )}
-    onClick={onCardClick}
-    onMouseEnter={() => setIsHovered(true)}
-    onMouseLeave={() => setIsHovered(false)}
+    onClick={actions.handleCardClick}
+    onMouseEnter={() => onHoverChange(true)}
+    onMouseLeave={() => onHoverChange(false)}
     role="article"
     aria-label={`Трек ${track.title || "Без названия"}`}
     tabIndex={0}
@@ -344,22 +352,26 @@ const CompactTrackCard: React.FC<TrackCardViewProps> = ({
         <Button
           variant="ghost"
           size="sm"
-          onClick={onPlayClick}
-          disabled={playButtonDisabled}
+          onClick={actions.handlePlayClick}
+          disabled={actions.playButtonDisabled}
           className={cn(
             "w-12 h-12 sm:w-10 sm:h-10 rounded-full transition-all duration-200 touch-action-manipulation",
-            isCurrentTrack && isPlaying
+            actions.isCurrentTrack && actions.isPlaying
               ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
               : "hover:bg-primary/10 hover:scale-110",
           )}
           aria-label={
-            isCurrentTrack && isPlaying
+            actions.isCurrentTrack && actions.isPlaying
               ? `Приостановить воспроизведение трека ${track.title}`
               : `Воспроизвести трек ${track.title}`
           }
-          aria-pressed={isCurrentTrack && isPlaying}
+          aria-pressed={actions.isCurrentTrack && actions.isPlaying}
         >
-          {isCurrentTrack && isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+          {actions.isCurrentTrack && actions.isPlaying ? (
+            <Pause className="w-4 h-4" />
+          ) : (
+            <Play className="w-4 h-4 ml-0.5" />
+          )}
         </Button>
 
         <div className="flex-1 min-w-0">
@@ -384,17 +396,19 @@ const CompactTrackCard: React.FC<TrackCardViewProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={onLikeClick}
+            onClick={actions.handleLikeClick}
             className={cn(
               "w-10 h-10 sm:w-8 sm:h-8 p-0 transition-all duration-200 touch-action-manipulation",
-              isLiked ? "text-red-500 hover:text-red-600" : "hover:text-red-500",
+              actions.isLiked ? "text-red-500 hover:text-red-600" : "hover:text-red-500",
             )}
             aria-label={
-              isLiked ? `Убрать из избранного: ${track.title}` : `Добавить в избранное: ${track.title}`
+              actions.isLiked
+                ? `Убрать из избранного: ${track.title}`
+                : `Добавить в избранное: ${track.title}`
             }
-            aria-pressed={isLiked}
+            aria-pressed={actions.isLiked}
           >
-            <Heart className={cn("w-4 h-4", isLiked && "fill-current")} />
+            <Heart className={cn("w-4 h-4", actions.isLiked && "fill-current")} />
           </Button>
         </div>
       </div>
@@ -402,25 +416,24 @@ const CompactTrackCard: React.FC<TrackCardViewProps> = ({
   </Card>
 );
 
-const DefaultTrackCard: React.FC<TrackCardViewProps> = ({
+const DefaultTrackCard: React.FC<
+  ValidTrackCardProps & {
+    cardRef: React.RefObject<HTMLDivElement>;
+    isHovered: boolean;
+    onHoverChange: (value: boolean) => void;
+    formattedDuration: string | null;
+    gradient: string;
+    actions: ReturnType<typeof useTrackCardActions>;
+  }
+> = ({
   track,
   className,
   cardRef,
   isHovered,
-  setIsHovered,
+  onHoverChange,
   formattedDuration,
-  randomGradient,
-  statusBadge,
-  playButtonDisabled,
-  isCurrentTrack,
-  isPlaying,
-  isLiked,
-  likeCount,
-  onCardClick,
-  onPlayClick,
-  onLikeClick,
-  onDownloadClick,
-  onShareClick,
+  gradient,
+  actions,
 }) => (
   <Card
     ref={cardRef}
@@ -429,14 +442,14 @@ const DefaultTrackCard: React.FC<TrackCardViewProps> = ({
       "border-border/50 bg-card/80 backdrop-blur-sm hover:bg-card/95",
       "hover:scale-[1.03] hover:-translate-y-2",
       "before:absolute before:inset-0 before:bg-gradient-to-br before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-500",
-      `before:${randomGradient}`,
-      isCurrentTrack && "ring-2 ring-primary/50",
+      `before:${gradient}`,
+      actions.isCurrentTrack && "ring-2 ring-primary/50",
       "flex flex-col h-full",
       className,
     )}
-    onClick={onCardClick}
-    onMouseEnter={() => setIsHovered(true)}
-    onMouseLeave={() => setIsHovered(false)}
+    onClick={actions.handleCardClick}
+    onMouseEnter={() => onHoverChange(true)}
+    onMouseLeave={() => onHoverChange(false)}
     role="article"
     aria-label={`Трек ${track.title || "Без названия"}`}
     tabIndex={0}
@@ -452,7 +465,7 @@ const DefaultTrackCard: React.FC<TrackCardViewProps> = ({
         <div
           className={cn(
             "w-full h-full flex items-center justify-center bg-gradient-to-br transition-all duration-500",
-            randomGradient,
+            gradient,
             "group-hover:scale-110",
           )}
         >
@@ -464,32 +477,40 @@ const DefaultTrackCard: React.FC<TrackCardViewProps> = ({
         className={cn(
           "absolute inset-0 bg-black/40 flex items-center justify-center transition-all duration-300",
           "@media (hover: hover)",
-          isHovered || (isCurrentTrack && isPlaying) ? "opacity-100" : "opacity-0 md:opacity-0",
+          isHovered || (actions.isCurrentTrack && actions.isPlaying)
+            ? "opacity-100"
+            : "opacity-0 md:opacity-0",
         )}
       >
         <Button
           variant="secondary"
           size="lg"
-          onClick={onPlayClick}
-          disabled={playButtonDisabled}
+          onClick={actions.handlePlayClick}
+          disabled={actions.playButtonDisabled}
           className={cn(
             "rounded-full w-16 h-16 sm:w-14 sm:h-14 transition-all duration-200 shadow-lg touch-action-manipulation",
-            isCurrentTrack && isPlaying
+            actions.isCurrentTrack && actions.isPlaying
               ? "bg-primary text-primary-foreground shadow-primary/25"
               : "bg-white/90 hover:bg-white text-black hover:scale-110 hover:shadow-xl",
           )}
           aria-label={
-            isCurrentTrack && isPlaying
+            actions.isCurrentTrack && actions.isPlaying
               ? `Приостановить воспроизведение трека ${track.title}`
               : `Воспроизвести трек ${track.title}`
           }
-          aria-pressed={isCurrentTrack && isPlaying}
+          aria-pressed={actions.isCurrentTrack && actions.isPlaying}
         >
-          {isCurrentTrack && isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-1" />}
+          {actions.isCurrentTrack && actions.isPlaying ? (
+            <Pause className="w-6 h-6" />
+          ) : (
+            <Play className="w-6 h-6 ml-1" />
+          )}
         </Button>
       </div>
 
-      <div className="absolute top-2 right-2">{statusBadge}</div>
+      <div className="absolute top-2 right-2">
+        <StatusBadge status={track.status} />
+      </div>
     </div>
 
     <CardContent className="relative p-4 flex-1 flex flex-col">
@@ -545,22 +566,27 @@ const DefaultTrackCard: React.FC<TrackCardViewProps> = ({
         <Button
           variant="ghost"
           size="sm"
-          onClick={onLikeClick}
+          onClick={actions.handleLikeClick}
           className={cn(
             "transition-all duration-300 hover:scale-110",
-            isLiked ? "text-red-500 hover:text-red-600 animate-pulse" : "hover:text-red-500",
+            actions.isLiked ? "text-red-500 hover:text-red-600 animate-pulse" : "hover:text-red-500",
           )}
           aria-label={
-            isLiked ? `Убрать из избранного: ${track.title}` : `Добавить в избранное: ${track.title}`
+            actions.isLiked
+              ? `Убрать из избранного: ${track.title}`
+              : `Добавить в избранное: ${track.title}`
           }
-          aria-pressed={isLiked}
+          aria-pressed={actions.isLiked}
         >
           <Heart
-            className={cn("w-4 h-4 transition-all duration-200", isLiked && "fill-current scale-110")}
+            className={cn(
+              "w-4 h-4 transition-all duration-200",
+              actions.isLiked && "fill-current scale-110",
+            )}
           />
-          {likeCount > 0 && (
-            <span className="ml-1 text-xs" aria-label={`${likeCount} лайков`}>
-              {likeCount}
+          {actions.likeCount > 0 && (
+            <span className="ml-1 text-xs" aria-label={`${actions.likeCount} лайков`}>
+              {actions.likeCount}
             </span>
           )}
         </Button>
@@ -569,7 +595,8 @@ const DefaultTrackCard: React.FC<TrackCardViewProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={onDownloadClick}
+            onClick={actions.handleDownloadClick}
+            disabled={track.status !== "completed"}
             className="hover:text-green-500 transition-all duration-200 hover:scale-110"
             aria-label={`Скачать трек ${track.title}`}
           >
@@ -579,7 +606,7 @@ const DefaultTrackCard: React.FC<TrackCardViewProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={onShareClick}
+            onClick={actions.handleShareClick}
             className="hover:text-blue-500 transition-all duration-200 hover:scale-110"
             aria-label={`Поделиться треком ${track.title}`}
           >
@@ -591,162 +618,87 @@ const DefaultTrackCard: React.FC<TrackCardViewProps> = ({
   </Card>
 );
 
-interface ValidTrackCardProps extends TrackCardProps {
-  track: Track;
-}
-
-const ValidTrackCard: React.FC<ValidTrackCardProps> = ({
-  track,
-  onDownload,
-  onShare,
-  onClick,
-  className,
-  variant = "default",
-}) => {
+const ValidTrackCard: React.FC<ValidTrackCardProps> = ({ variant = "default", ...props }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
-  const { currentTrack, isPlaying, playTrack, togglePlayPause } = useAudioPlayer();
-  const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count ?? 0);
-  const { toast } = useToast();
-  const { vibrate } = useHapticFeedback();
+  const actions = useTrackCardActions(props);
+  const formattedDuration = props.track.duration ? formatDuration(props.track.duration) : null;
+  const gradient = getGradientByTrackId(props.track.id);
 
-  const isCurrentTrack = currentTrack?.id === track.id;
-  const canPlay = track.status === "completed" && Boolean(track.audio_url);
-  const playButtonDisabled = !canPlay || track.status === "processing";
-
-  const formattedDuration = useMemo(() => {
-    if (!track.duration) return null;
-    return `${Math.floor(track.duration / 60)}:${String(track.duration % 60).padStart(2, "0")}`;
-  }, [track.duration]);
-
-  const randomGradient = useMemo(() => {
-    const index = track.id.charCodeAt(0) % gradients.length;
-    return gradients[index];
-  }, [track.id]);
-
-  const statusBadge = useMemo(() => {
-    switch (track.status) {
-      case "completed":
-        return (
-          <Badge variant="default" className="bg-green-500" aria-label="Статус: готов">
-            Готов
-          </Badge>
-        );
-      case "processing":
-        return (
-          <Badge variant="secondary" aria-label="Статус: обработка">
-            Обработка
-          </Badge>
-        );
-      case "failed":
-        return (
-          <Badge variant="destructive" aria-label="Статус: ошибка">
-            Ошибка
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="outline" aria-label={`Статус: ${track.status}`}>
-            {track.status}
-          </Badge>
-        );
-    }
-  }, [track.status]);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("animate-fade-in");
-          }
-        });
-      },
-      { threshold: 0.1 },
-    );
-
-    if (cardRef.current) {
-      observer.observe(cardRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, []);
-
-  const { handleCardClick, handleDownloadClick, handleLikeClick, handlePlayClick, handleShareClick } = useTrackCardActions({
-    track,
-    isCurrentTrack,
-    isPlaying,
-    togglePlayPause,
-    playTrack,
-    toggleLike,
-    isLiked,
-    onDownload,
-    onShare,
-    onClick,
-    toast,
-    vibrate,
-  });
-
-  const baseProps: TrackCardViewProps = {
-    track,
-    className,
-    cardRef,
-    isHovered,
-    setIsHovered,
-    formattedDuration,
-    randomGradient,
-    statusBadge,
-    playButtonDisabled,
-    isCurrentTrack,
-    isPlaying,
-    isLiked,
-    likeCount,
-    onCardClick: handleCardClick,
-    onPlayClick: handlePlayClick,
-    onLikeClick: handleLikeClick,
-    onDownloadClick: handleDownloadClick,
-    onShareClick: handleShareClick,
-  };
+  useFadeInOnIntersect(cardRef);
 
   if (variant === "compact") {
-    return <CompactTrackCard {...baseProps} />;
+    return (
+      <CompactTrackCard
+        {...props}
+        variant={variant}
+        cardRef={cardRef}
+        isHovered={isHovered}
+        onHoverChange={setIsHovered}
+        formattedDuration={formattedDuration}
+        actions={actions}
+      />
+    );
   }
 
-  return <DefaultTrackCard {...baseProps} />;
+  return (
+    <DefaultTrackCard
+      {...props}
+      variant={variant}
+      cardRef={cardRef}
+      isHovered={isHovered}
+      onHoverChange={setIsHovered}
+      formattedDuration={formattedDuration}
+      gradient={gradient}
+      actions={actions}
+    />
+  );
 };
 
-const TrackCardComponent: React.FC<TrackCardProps> = (props) => {
-  if (!isValidTrack(props.track)) {
-    logError("Invalid track data", undefined, "TrackCard", { track: props.track });
-    return <InvalidTrackCard />;
+const InvalidTrackFallback: React.FC<{ track: TrackCardProps["track"] }> = ({ track }) => (
+  <Card className="p-4" role="alert" aria-label="Ошибка загрузки трека">
+    <div className="text-center">
+      <Music className="mx-auto h-8 w-8 text-muted-foreground mb-2" aria-hidden="true" />
+      <p className="text-sm text-muted-foreground">Некорректные данные трека</p>
+      {track?.title && <p className="text-xs text-muted-foreground mt-1">{track.title}</p>}
+    </div>
+  </Card>
+);
+
+const TrackCardComponent = ({ track, ...rest }: TrackCardProps) => {
+  if (!track || !track.id) {
+    logError("Invalid track data", undefined, "TrackCard", { track });
+    return <InvalidTrackFallback track={track} />;
   }
 
-  return <ValidTrackCard {...props} track={props.track} />;
+  return <ValidTrackCard track={track} {...rest} />;
 };
 
 export const TrackCard = memo(
   withErrorBoundary(TrackCardComponent, {
-  FallbackComponent: ({ error }) => (
-    <Card className="p-4">
-      <div className="text-center">
-        <Music className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-        <p className="text-sm text-muted-foreground">Ошибка загрузки трека</p>
-        <p className="text-xs text-muted-foreground mt-1">{error?.message}</p>
-      </div>
-    </Card>
-  ),
-  onError: (error, errorInfo) => {
-    logError('TrackCard component error', error, 'TrackCard', errorInfo);
-  }
-}));
+    FallbackComponent: ({ error }) => (
+      <Card className="p-4">
+        <div className="text-center">
+          <Music className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">Ошибка загрузки трека</p>
+          <p className="text-xs text-muted-foreground mt-1">{error?.message}</p>
+        </div>
+      </Card>
+    ),
+    onError: (error, errorInfo) => {
+      logError("TrackCard component error", error, "TrackCard", { 
+        componentStack: errorInfo.componentStack 
+      });
+    },
+  }),
+);
 
-TrackCard.displayName = 'TrackCard';
+TrackCard.displayName = "TrackCard";
 
 export default TrackCard;
 
-// Добавляем CSS анимации в глобальные стили
-if (typeof document !== 'undefined') {
-  const style = document.createElement('style');
+if (typeof document !== "undefined") {
+  const style = document.createElement("style");
   style.textContent = `
     @keyframes fade-in {
       from { opacity: 0; transform: translateY(20px); }

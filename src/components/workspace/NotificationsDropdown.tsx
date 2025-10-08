@@ -1,4 +1,4 @@
-import { Bell, Music, Heart, MessageCircle, Check, X } from "lucide-react";
+import { Bell, Music, Heart, MessageCircle, Check } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,

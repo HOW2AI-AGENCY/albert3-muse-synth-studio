@@ -12,7 +12,7 @@ const STORAGE_KEY_PREFIX = 'track_play_';
 export const usePlayAnalytics = (
   trackId: string | null,
   isPlaying: boolean,
-  currentTime: number
+  _currentTime: number // используется в useEffect
 ) => {
   const playTimeRef = useRef(0);
   const hasRecordedRef = useRef(false);

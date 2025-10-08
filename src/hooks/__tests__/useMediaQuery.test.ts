@@ -20,10 +20,10 @@ describe('useMediaQuery', () => {
     matchMediaMock.mockImplementation((query: string) => ({
       matches: true,
       media: query,
-      addEventListener: (event: string, listener: (e: any) => void) => {
+      addEventListener: (_event: string, listener: (e: any) => void) => {
         listeners.push(listener);
       },
-      removeEventListener: (event: string, listener: (e: any) => void) => {
+      removeEventListener: (_event: string, listener: (e: any) => void) => {
         const index = listeners.indexOf(listener);
         if (index > -1) listeners.splice(index, 1);
       },
@@ -39,10 +39,10 @@ describe('useMediaQuery', () => {
     matchMediaMock.mockImplementation((query: string) => ({
       matches: false,
       media: query,
-      addEventListener: (event: string, listener: (e: any) => void) => {
+      addEventListener: (_event: string, listener: (e: any) => void) => {
         listeners.push(listener);
       },
-      removeEventListener: (event: string, listener: (e: any) => void) => {
+      removeEventListener: (_event: string, listener: (e: any) => void) => {
         const index = listeners.indexOf(listener);
         if (index > -1) listeners.splice(index, 1);
       },
@@ -59,10 +59,10 @@ describe('useMediaQuery', () => {
     matchMediaMock.mockImplementation((query: string) => ({
       get matches() { return currentMatches; },
       media: query,
-      addEventListener: (event: string, listener: (e: any) => void) => {
+      addEventListener: (_event: string, listener: (e: any) => void) => {
         listeners.push(listener);
       },
-      removeEventListener: (event: string, listener: (e: any) => void) => {
+      removeEventListener: (_event: string, listener: (e: any) => void) => {
         const index = listeners.indexOf(listener);
         if (index > -1) listeners.splice(index, 1);
       },
@@ -87,7 +87,7 @@ describe('useMediaQuery', () => {
     matchMediaMock.mockImplementation((query: string) => ({
       matches: false,
       media: query,
-      addEventListener: (event: string, listener: (e: any) => void) => {
+      addEventListener: (_event: string, listener: (e: any) => void) => {
         listeners.push(listener);
       },
       removeEventListener: removeEventListenerSpy,
