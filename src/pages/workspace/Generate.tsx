@@ -5,7 +5,7 @@ import {
 } from "@/components/LazyComponents";
 import { useState, useEffect, useRef } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { useIsMobile } from "@/hooks/use-mobile";
+// import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -36,7 +36,7 @@ const Generate = () => {
   const [userId, setUserId] = useState<string | undefined>();
 
   const isDesktop = useMediaQuery("(min-width: 1024px)");
-  const isMobile = useIsMobile();
+  // const isMobile = useIsMobile();
 
   // Get current user for track sync
   useEffect(() => {

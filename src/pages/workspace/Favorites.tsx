@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Heart, Loader2, Music } from "lucide-react";
+import { Heart, Loader2 } from "lucide-react";
 import { TrackCard } from "@/components/TrackCard";
 import { LikesService } from "@/services/likes.service";
 import { supabase } from "@/integrations/supabase/client";

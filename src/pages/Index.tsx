@@ -11,7 +11,7 @@ import type { User } from "@supabase/supabase-js";
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [showAuth, setShowAuth] = useState(false);
+  const [, setShowAuth] = useState(false);
   const [, setRefreshTracks] = useState(0); // используется в handleTrackGenerated
 
   useEffect(() => {

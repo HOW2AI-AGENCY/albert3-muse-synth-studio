@@ -126,7 +126,7 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
           isMasterVersion: version.is_master || false,
           title: `${mainTrack.title} (V${version.version_number})`,
           audio_url: version.audio_url || '',
-          cover_url: version.cover_url ?? mainTrack.cover_url,
+          cover_url: (version.cover_url ?? mainTrack.cover_url) ?? undefined,
           video_url: version.video_url ?? undefined,
           duration: version.duration ?? undefined,
           lyrics: version.lyrics ?? undefined,

@@ -7,7 +7,7 @@
  * @param seconds - Длительность в секундах
  * @returns Отформатированная строка в формате MM:SS или "—" если значение не задано
  */
-export const formatDuration = (seconds?: number): string => {
+export const formatDuration = (seconds?: number | null): string => {
   if (!seconds || isNaN(seconds)) return "—";
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
@@ -51,8 +51,8 @@ export const formatDate = (date: string | Date | null | undefined): string => {
  * @param bytes - Размер в байтах
  * @returns Отформатированная строка с единицами измерения
  */
-export const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return "0 Б";
+export const formatFileSize = (bytes?: number | null): string => {
+  if (!bytes || bytes <= 0) return "0 Б";
   
   const k = 1024;
   const sizes = ["Б", "КБ", "МБ", "ГБ"];
