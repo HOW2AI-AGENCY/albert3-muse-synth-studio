@@ -1,3 +1,5 @@
+import { logger } from "./logger.ts";
+
 /**
  * Модуль безопасности для Edge Functions
  * Включает заголовки безопасности и rate limiting
@@ -51,6 +53,13 @@ export const createSecurityHeaders = () => {
   };
 };
 
+export class RateLimitUnavailableError extends Error {
+  constructor(message: string, public cause?: unknown) {
+    super(message);
+    this.name = "RateLimitUnavailableError";
+  }
+}
+
 /**
  * Rate Limiting с использованием Supabase
  */
@@ -72,15 +81,18 @@ export class RateLimiter {
     maxRequests: number = 10,
     windowMinutes: number = 1
   ): Promise<{ allowed: boolean; remaining: number; resetTime: Date }> {
+    if (!this.supabaseUrl || !this.supabaseKey) {
+      logger.error("Rate limiter configuration missing", { endpoint, userId });
+      throw new RateLimitUnavailableError("Rate limiter secrets are not configured");
+    }
+
     const now = new Date();
     const windowStart = new Date(now.getTime() - windowMinutes * 60 * 1000);
-    
+
     try {
-      // Создаем клиент Supabase для rate limiting
       const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.39.3');
       const supabase = createClient(this.supabaseUrl, this.supabaseKey);
 
-      // Получаем количество запросов в текущем окне
       const { data: requests, error } = await supabase
         .from('rate_limits')
         .select('*')
@@ -89,9 +101,8 @@ export class RateLimiter {
         .gte('created_at', windowStart.toISOString());
 
       if (error) {
-        // Soft handling - table might not exist yet, allow request
-        console.warn('Rate limit check skipped (table not found):', error.message);
-        return { allowed: true, remaining: maxRequests, resetTime: new Date(now.getTime() + windowMinutes * 60 * 1000) };
+        logger.error("Failed to query rate limit storage", { endpoint, userId, error });
+        throw new RateLimitUnavailableError("Rate limit storage unavailable", error);
       }
 
       const requestCount = requests?.length || 0;
@@ -102,7 +113,6 @@ export class RateLimiter {
         return { allowed: false, remaining: 0, resetTime };
       }
 
-      // Записываем текущий запрос (soft handling)
       const { error: insertError } = await supabase
         .from('rate_limits')
         .insert({
@@ -110,16 +120,20 @@ export class RateLimiter {
           endpoint: endpoint,
           created_at: now.toISOString()
         });
-      
+
       if (insertError) {
-        console.warn('Rate limit insert skipped:', insertError.message);
+        logger.error("Failed to store rate limit usage", { endpoint, userId, error: insertError });
+        throw new RateLimitUnavailableError("Rate limit storage unavailable", insertError);
       }
 
       return { allowed: true, remaining: remaining - 1, resetTime };
     } catch (error) {
-      console.error('Rate limiter error:', error);
-      // В случае ошибки разрешаем запрос
-      return { allowed: true, remaining: maxRequests, resetTime: new Date(now.getTime() + windowMinutes * 60 * 1000) };
+      if (error instanceof RateLimitUnavailableError) {
+        throw error;
+      }
+
+      logger.error("Unexpected rate limiter error", { endpoint, userId, error });
+      throw new RateLimitUnavailableError("Unexpected rate limiter failure", error);
     }
   }
 
@@ -130,15 +144,15 @@ export class RateLimiter {
     try {
       const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.39.3');
       const supabase = createClient(this.supabaseUrl, this.supabaseKey);
-      
+
       const cutoffTime = new Date(Date.now() - olderThanHours * 60 * 60 * 1000);
-      
+
       await supabase
         .from('rate_limits')
         .delete()
         .lt('created_at', cutoffTime.toISOString());
     } catch (error) {
-      console.error('Rate limit cleanup error:', error);
+      logger.error('Rate limit cleanup error', { error });
     }
   }
 }
@@ -177,12 +191,12 @@ export const withRateLimit = (
 ) => {
   return async (req: Request): Promise<Response> => {
     const { maxRequests = 10, windowMinutes = 1, endpoint } = options;
-    
+
     try {
       // Извлекаем пользователя из токена
       const authHeader = req.headers.get('Authorization') || '';
       const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-      
+
       if (!token) {
         return new Response(
           JSON.stringify({ error: 'Unauthorized' }),
@@ -190,12 +204,23 @@ export const withRateLimit = (
         );
       }
 
-      const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-      const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+      const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE");
+
+      if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+        logger.error("Rate limiter secrets missing", { endpoint });
+        return new Response(
+          JSON.stringify({
+            error: 'Service Unavailable',
+            message: 'Rate limiter configuration missing',
+          }),
+          { status: 503, headers: { 'Content-Type': 'application/json', ...createSecurityHeaders() } }
+        );
+      }
+
       const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.39.3');
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-      
+
       const { data: { user }, error: authError } = await supabase.auth.getUser(token);
       if (authError || !user) {
         return new Response(
@@ -238,9 +263,22 @@ export const withRateLimit = (
       });
 
     } catch (error) {
-      console.error('Rate limit middleware error:', error);
-      // В случае ошибки выполняем обработчик без rate limiting
-      return handler(req);
+      if (error instanceof RateLimitUnavailableError) {
+        logger.error('Rate limiter unavailable', { endpoint, error: error.message });
+        return new Response(
+          JSON.stringify({
+            error: 'Service Unavailable',
+            message: 'Rate limiting temporarily unavailable',
+          }),
+          { status: 503, headers: { 'Content-Type': 'application/json', ...createSecurityHeaders() } }
+        );
+      }
+
+      logger.error('Rate limit middleware error', { endpoint, error });
+      return new Response(
+        JSON.stringify({ error: 'Internal Server Error' }),
+        { status: 500, headers: { 'Content-Type': 'application/json', ...createSecurityHeaders() } }
+      );
     }
   };
 };

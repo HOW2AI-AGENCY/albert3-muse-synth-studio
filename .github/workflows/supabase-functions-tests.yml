@@ -1,0 +1,47 @@
+name: Supabase Functions Tests
+
+on:
+  push:
+    paths:
+      - "supabase/**"
+      - "package.json"
+      - ".github/workflows/supabase-functions-tests.yml"
+  pull_request:
+    paths:
+      - "supabase/**"
+      - "package.json"
+      - ".github/workflows/supabase-functions-tests.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Start Supabase stack
+        run: npx supabase start
+
+      - name: Run generate-suno tests
+        run: |
+          set -a
+          source supabase/.env
+          set +a
+          cd supabase/functions
+          deno task test
+
+      - name: Stop Supabase stack
+        if: always()
+        run: npx supabase stop
