@@ -14,35 +14,63 @@ interface ProviderBalance {
 export const useProviderBalance = () => {
   const [balance, setBalance] = useState<ProviderBalance | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchBalance = async () => {
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase.functions.invoke('get-provider-balance');
-      
-      if (error) {
-        console.error('Error fetching balance:', error);
-        setBalance({
-          provider: 'suno',
-          balance: 0,
-          currency: 'credits',
-          error: error.message
-        });
-        return;
-      }
+    setIsLoading(true);
+    setError(null);
 
-      setBalance(data);
-    } catch (error) {
-      console.error('Error fetching balance:', error);
+    // Define providers in order of priority
+    const providers = ['replicate', 'suno'];
+    let finalBalance: ProviderBalance | null = null;
+
+    for (const provider of providers) {
+      try {
+        console.log(`Fetching balance for provider: ${provider}`);
+        const { data, error: invokeError } = await supabase.functions.invoke('get-balance', {
+          queryString: { provider }
+        });
+
+        if (invokeError) {
+          console.warn(`Failed to invoke balance function for ${provider}:`, invokeError.message);
+          continue; // Try next provider
+        }
+
+        // The function returns a data object that is the balance response
+        const providerBalance: ProviderBalance = data;
+
+        // If the provider returns its own error field (e.g. Suno is down),
+        // we log it and try the next provider.
+        if (providerBalance.error) {
+          console.warn(`Provider ${provider} returned an error:`, providerBalance.error);
+          continue; // Try next provider
+        }
+
+        // Success! We found a working provider.
+        finalBalance = providerBalance;
+        break; // Exit loop
+
+      } catch (e) {
+        console.error(`Unexpected error fetching balance for ${provider}:`, e);
+        // This is a network or unexpected error, try next provider
+      }
+    }
+
+    if (finalBalance) {
+      setBalance(finalBalance);
+    } else {
+      // If all providers failed
+      const errorMessage = 'Could not fetch balance from any provider.';
+      setError(errorMessage);
       setBalance({
-        provider: 'suno',
+        provider: 'unknown',
         balance: 0,
         currency: 'credits',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: errorMessage,
       });
-    } finally {
-      setIsLoading(false);
     }
+
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -54,5 +82,5 @@ export const useProviderBalance = () => {
     return () => clearInterval(interval);
   }, []);
 
-  return { balance, isLoading, refetch: fetchBalance };
+  return { balance, isLoading, error, refetch: fetchBalance };
 };
