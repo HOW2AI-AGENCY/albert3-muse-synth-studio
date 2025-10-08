@@ -14,6 +14,16 @@ interface GenerateMusicOptions {
   customMode?: boolean;
 }
 
+interface GenerateMusicOptions {
+  prompt?: string;
+  title?: string;
+  lyrics?: string;
+  hasVocals?: boolean;
+  styleTags?: string[];
+  provider?: "replicate" | "suno";
+  customMode?: boolean;
+}
+
 export const useMusicGeneration = (onSuccess?: () => void) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
@@ -21,7 +31,8 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
 
   // Memoized validation functions
   const isValidPrompt = useMemo(() => {
-    return prompt.trim().length > 0;
+    const safePrompt = typeof prompt === "string" ? prompt : "";
+    return safePrompt.trim().length > 0;
   }, [prompt]);
 
   const canGenerate = useMemo(() => {
@@ -30,20 +41,24 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
 
   // Debounced prompt validation
   const debouncedValidatePrompt = useDebounce((promptValue: string) => {
-    if (promptValue.trim().length > 0 && promptValue.trim().length < 10) {
+    const safePrompt = typeof promptValue === "string" ? promptValue : "";
+    if (safePrompt.trim().length > 0 && safePrompt.trim().length < 10) {
       logWarn("Короткий промпт может дать неточные результаты", "useMusicGeneration");
     }
   }, 500);
 
   // Optimized prompt setter with validation
-  const setPromptOptimized = useCallback((value: string) => {
-    setPrompt(value);
-    debouncedValidatePrompt(value);
+  const setPromptOptimized = useCallback((value: string | null | undefined) => {
+    const nextValue = typeof value === "string" ? value : value == null ? "" : String(value);
+    setPrompt(nextValue);
+    debouncedValidatePrompt(nextValue);
   }, [debouncedValidatePrompt]);
 
   // Memoized improve prompt function
   const improvePrompt = useCallback(async (overridePrompt?: string) => {
-    const promptToImprove = overridePrompt ?? prompt;
+    const promptToImprove = typeof (overridePrompt ?? prompt) === "string"
+      ? (overridePrompt ?? prompt)
+      : "";
 
     if (!promptToImprove.trim()) {
       toast({
@@ -94,7 +109,8 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
 
   // Memoized generate music function
   const generateMusic = useCallback(async (options?: GenerateMusicOptions) => {
-    const effectivePrompt = (options?.prompt ?? prompt).trim();
+    const rawPrompt = options?.prompt ?? prompt;
+    const effectivePrompt = typeof rawPrompt === "string" ? rawPrompt.trim() : "";
     const effectiveProvider = options?.provider ?? provider;
     const effectiveLyrics = options?.lyrics ?? lyrics;
     const effectiveHasVocals = options?.hasVocals ?? hasVocals;
@@ -211,6 +227,8 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
       setPrompt("");
       setLyrics("");
       setStyleTags([]);
+
+      onSuccess?.();
 
       onSuccess?.();
 
