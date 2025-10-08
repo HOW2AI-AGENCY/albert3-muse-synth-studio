@@ -97,7 +97,10 @@ export const usePreloadComponent = <P extends object>(
 
 // Предопределенные ленивые компоненты для основных частей приложения
 export const LazyMusicGenerator = createLazyComponent(
-  () => import('./MusicGenerator'),
+  async () => {
+    const module = await import('./MusicGenerator');
+    return { default: module.MusicGenerator as ComponentType<any> };
+  },
   <div className="animate-pulse bg-card/50 rounded-xl h-96" />,
   <div className="text-center p-8 text-muted-foreground">
     Ошибка загрузки генератора музыки
