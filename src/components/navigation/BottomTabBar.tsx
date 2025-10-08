@@ -72,9 +72,9 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
     <nav
       className={cn(
         'fixed bottom-0 left-0 right-0 z-30',
-        'bg-surface/95 backdrop-blur-md border-t border-border',
-        'pb-[env(safe-area-inset-bottom)] pt-1',
-        'lg:hidden', // Hide on desktop
+        'bg-card/95 backdrop-blur-2xl border-t border-border/30 shadow-2xl',
+        'pb-[env(safe-area-inset-bottom)] pt-2',
+        'lg:hidden',
         className
       )}
       role="navigation"
@@ -93,11 +93,11 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
               onClick={handleTabClick}
               className={cn(
                 'flex flex-col items-center justify-center p-2 rounded-xl relative',
-                'min-h-[56px] min-w-[56px] flex-1',
-                'transition-all duration-200 ease-out',
-                'hover:bg-surface-variant active:scale-95',
+                'min-h-[60px] min-w-[60px] flex-1',
+                'transition-all duration-300 ease-out',
+                'hover:bg-accent/10 active:scale-95',
                 'focus:outline-none focus:ring-2 focus:ring-primary/20',
-                isActive && 'bg-primary-container/50'
+                isActive && 'bg-gradient-to-b from-primary/10 to-accent/10 scale-105'
               )}
               aria-label={tab.label}
               aria-current={isActive ? 'page' : undefined}
@@ -105,7 +105,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
               {/* Badge */}
               {tab.badge && tab.badge > 0 && (
                 <div 
-                  className="absolute -top-0.5 right-2 bg-error text-on-error text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 font-medium shadow-sm"
+                  className="absolute -top-0.5 right-2 bg-destructive text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 font-bold shadow-lg animate-pulse-glow"
                   aria-label={`${tab.badge} уведомлений`}
                 >
                   {tab.badge > 99 ? '99+' : tab.badge}
@@ -114,20 +114,20 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
 
               <Icon 
                 className={cn(
-                  'w-5 h-5 mb-0.5 transition-all duration-200',
+                  'w-6 h-6 mb-1 transition-all duration-300',
                   isActive 
-                    ? 'text-on-primary-container scale-110' 
-                    : 'text-on-surface-variant'
+                    ? 'text-primary scale-110 drop-shadow-glow' 
+                    : 'text-muted-foreground'
                 )} 
                 strokeWidth={isActive ? 2.5 : 2}
               />
               
               <span 
                 className={cn(
-                  'text-[10px] leading-tight transition-all duration-200',
+                  'text-[11px] leading-tight transition-all duration-300',
                   isActive 
-                    ? 'text-on-primary-container font-semibold' 
-                    : 'text-on-surface-variant font-medium'
+                    ? 'text-primary font-bold' 
+                    : 'text-muted-foreground font-medium'
                 )}
               >
                 {tab.label}
@@ -136,7 +136,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
               {/* Active Indicator */}
               {isActive && (
                 <div 
-                  className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-8 h-1 bg-primary rounded-t-full animate-scale-in"
+                  className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-12 h-1 bg-gradient-primary rounded-b-full animate-scale-in shadow-glow-primary"
                   aria-hidden="true"
                 />
               )}
