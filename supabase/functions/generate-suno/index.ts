@@ -1,10 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { v4 as uuidv4 } from "https://deno.land/std@0.168.0/uuid/mod.ts";
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { downloadAndUploadAudio, downloadAndUploadCover, downloadAndUploadVideo } from "../_shared/storage.ts";
 import { createSunoClient, SunoApiError } from "../_shared/suno.ts";
+import {
+  createSupabaseAdminClient,
+  createSupabaseUserClient,
+  getSupabaseServiceRoleKey,
+  getSupabaseUrl,
+} from "../_shared/supabase.ts";
 
 export type PollSunoCompletionFn = (
   trackId: string,
@@ -25,12 +31,21 @@ export const mainHandler = async (req: Request): Promise<Response> => {
   }
 
   let jobId: string | null = null;
-  const supabaseAdmin = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE') ?? ''
-  );
+  let supabaseAdmin: SupabaseClient | null = null;
+  const supabaseUrl = getSupabaseUrl();
+  const serviceRoleKey = getSupabaseServiceRoleKey();
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error('🔴 [GENERATE-SUNO] Supabase credentials are not configured');
+  }
 
   try {
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new Error('Supabase service role credentials are not configured');
+    }
+
+    supabaseAdmin = createSupabaseAdminClient();
+
     const body = await req.json();
     console.log('🎵 [GENERATE-SUNO] Request received:', JSON.stringify({
       trackId: body.trackId,
@@ -53,11 +68,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: `Bearer ${token}` } } }
-    );
+    const supabase = createSupabaseUserClient(token);
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
@@ -226,7 +237,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-    if (jobId) {
+    if (jobId && supabaseAdmin) {
       await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: errorMessage }).eq('id', jobId);
     }
 
