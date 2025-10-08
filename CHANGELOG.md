@@ -5,6 +5,18 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/lang/ru/).
 
+## [2.5.1] - 2025-10-08
+
+### Fixed
+- Edge Function `get-balance`: поддержка provider из POST body (совместимо с supabase.functions.invoke);
+- Хук `useProviderBalance`: переход на `supabase.functions.invoke` вместо raw fetch (устранены CORS/Failed to fetch);
+- Desktop UI генератора: корректная слоистость и позиционирование (relative/overflow-hidden) для стабильной разметки.
+
+### Changed
+- Обновлены навигация и статус спринта: создан `tasks/sprint-22-plan.md`, назначен текущим.
+
+---
+
 ## [2.4.0] - 2025-10-08
 
 ### Added

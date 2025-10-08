@@ -27,27 +27,18 @@ export const useProviderBalance = () => {
     for (const provider of providers) {
       try {
         console.log(`Fetching balance for provider: ${provider}`);
-        
-        // Используем fetch напрямую с query параметром
-        const session = await supabase.auth.getSession();
-        const response = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-balance?provider=${provider}`,
-          {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${session.data.session?.access_token}`,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
 
-        if (!response.ok) {
-          console.warn(`Failed to fetch balance for ${provider}:`, response.status);
+        // Call Edge Function via supabase SDK (handles auth & CORS)
+        const { data, error } = await supabase.functions.invoke<ProviderBalance>('get-balance', {
+          body: { provider }
+        });
+
+        if (error) {
+          console.warn(`Failed to invoke get-balance for ${provider}:`, error.message);
           continue; // Try next provider
         }
 
-        const data = await response.json();
-        const providerBalance: ProviderBalance = data;
+        const providerBalance: ProviderBalance = data as ProviderBalance;
 
         // If the provider returns its own error field (e.g. Suno is down),
         // we log it and try the next provider.

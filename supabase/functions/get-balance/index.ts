@@ -33,9 +33,18 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // 2. Get provider from query params
+    // 2. Get provider from query params or request body (supports POST via functions.invoke)
     const url = new URL(req.url);
-    const provider = url.searchParams.get('provider');
+    let provider = url.searchParams.get('provider');
+
+    if (!provider) {
+      try {
+        const body = await req.json();
+        provider = body?.provider;
+      } catch (_) {
+        // ignore JSON parse errors (e.g., GET without body)
+      }
+    }
 
     if (!provider || (provider !== 'suno' && provider !== 'replicate')) {
       return new Response(JSON.stringify({ error: "Missing or invalid 'provider' parameter. Must be 'suno' or 'replicate'." }), {
