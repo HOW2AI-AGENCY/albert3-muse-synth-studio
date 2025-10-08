@@ -63,27 +63,6 @@ export interface TrackWithVersions {
 const isTrackMetadata = (metadata: unknown): metadata is TrackMetadata =>
   typeof metadata === 'object' && metadata !== null;
 
-const isSunoMetadataEntry = (entry: unknown): entry is SunoMetadataEntry =>
-  typeof entry === 'object' && entry !== null;
-
-const hasAudioSource = (entry: SunoMetadataEntry | undefined): entry is SunoMetadataEntry =>
-  Boolean(entry && (entry.audioUrl || entry.audio_url || entry.stream_audio_url));
-
-const resolveAudioUrl = (entry: SunoMetadataEntry): string =>
-  entry.audioUrl || entry.audio_url || entry.stream_audio_url || '';
-
-const resolveImageUrl = (entry: SunoMetadataEntry, fallback?: string | null): string | undefined =>
-  entry.image_url || entry.imageUrl || fallback || undefined;
-
-const resolveVideoUrl = (entry: SunoMetadataEntry): string | undefined =>
-  entry.video_url || entry.videoUrl || undefined;
-
-const resolveDuration = (entry: SunoMetadataEntry): number | undefined =>
-  entry.duration ?? entry.duration_seconds ?? undefined;
-
-const resolveLyrics = (entry: SunoMetadataEntry, fallback?: string | null): string | undefined =>
-  entry.lyric || entry.lyrics || fallback || undefined;
-
 /**
  * Loads a track and all its versions from the database
  * Returns an array where first element is the main track, followed by all versions

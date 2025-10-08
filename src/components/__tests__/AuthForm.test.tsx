@@ -77,7 +77,7 @@ describe('AuthForm', () => {
       await userEvent.click(signUpTab);
 
       // Wait for the sign-up button to be visible, confirming the tab switch
-      const signUpButton = await screen.findByRole('button', { name: /sign up/i, type: 'submit' });
+      const signUpButton = await screen.findByRole('button', { name: /sign up/i });
       expect(signUpButton).toBeInTheDocument();
     });
 
@@ -86,7 +86,7 @@ describe('AuthForm', () => {
       const signUpTab = screen.getByRole('tab', { name: /sign up/i });
       await userEvent.click(signUpTab);
 
-      const submitButton = await screen.findByRole('button', { name: /sign up/i, type: 'submit' });
+      const submitButton = await screen.findByRole('button', { name: /sign up/i });
       const emailInput = screen.getByPlaceholderText('Email');
       const passwordInput = screen.getByPlaceholderText('Password');
 
@@ -106,7 +106,7 @@ describe('AuthForm', () => {
       const signUpTab = screen.getByRole('tab', { name: /sign up/i });
       await userEvent.click(signUpTab);
 
-      const submitButton = await screen.findByRole('button', { name: /sign up/i, type: 'submit' });
+      const submitButton = await screen.findByRole('button', { name: /sign up/i });
       const emailInput = screen.getByPlaceholderText('Email');
       const passwordInput = screen.getByPlaceholderText('Password');
 
@@ -132,7 +132,7 @@ describe('AuthForm', () => {
       const signUpTab = screen.getByRole('tab', { name: /sign up/i });
       await userEvent.click(signUpTab);
 
-      const submitButton = await screen.findByRole('button', { name: /sign up/i, type: 'submit' });
+      const submitButton = await screen.findByRole('button', { name: /sign up/i });
       const emailInput = screen.getByPlaceholderText('Email') as HTMLInputElement;
       const passwordInput = screen.getByPlaceholderText('Password') as HTMLInputElement;
 

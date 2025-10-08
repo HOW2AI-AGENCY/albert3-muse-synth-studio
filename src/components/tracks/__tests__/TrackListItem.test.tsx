@@ -5,7 +5,6 @@ import { useAudioPlayer, useAudioPlayerSafe } from '@/hooks/useAudioPlayer';
 import { useToast } from '@/hooks/use-toast';
 import { useTrackLike } from '@/hooks/useTrackLike';
 import { DisplayTrack } from '@/types/track';
-import { supabase } from '@/integrations/supabase/client';
 
 // Mock the source of the hooks
 vi.mock('@/contexts/AudioPlayerContext', () => ({
@@ -32,7 +31,6 @@ describe('TrackListItem', () => {
     created_at: '2024-01-15T12:00:00Z',
     style_tags: ['rock', 'indie'],
     like_count: 5,
-    is_liked: false,
   };
 
   const playTrackMock = vi.fn();
@@ -40,24 +38,29 @@ describe('TrackListItem', () => {
   const toastMock = vi.fn();
   const toggleLikeMock = vi.fn();
 
+  const mockedUseAudioPlayer = vi.mocked(useAudioPlayer);
+  const mockedUseAudioPlayerSafe = vi.mocked(useAudioPlayerSafe);
+  const mockedUseToast = vi.mocked(useToast);
+  const mockedUseTrackLike = vi.mocked(useTrackLike);
+
   beforeEach(() => {
     vi.clearAllMocks();
-    (useAudioPlayer as vi.Mock).mockReturnValue({
+    mockedUseAudioPlayer.mockReturnValue({
       currentTrack: null,
       isPlaying: false,
       playTrack: playTrackMock,
       pauseTrack: pauseTrackMock,
     });
-    (useAudioPlayerSafe as vi.Mock).mockReturnValue({
+    mockedUseAudioPlayerSafe.mockReturnValue({
       currentTrack: null,
       isPlaying: false,
       playTrack: playTrackMock,
       pauseTrack: pauseTrackMock,
     });
-    (useToast as vi.Mock).mockReturnValue({
+    mockedUseToast.mockReturnValue({
       toast: toastMock,
     });
-    (useTrackLike as vi.Mock).mockReturnValue({
+    mockedUseTrackLike.mockReturnValue({
       isLiked: false,
       likeCount: 5,
       toggleLike: toggleLikeMock,
@@ -121,9 +124,11 @@ describe('TrackListItem', () => {
     });
 
     it('shows pause button for currently playing track', async () => {
-      (useAudioPlayerSafe as vi.Mock).mockReturnValue({
+      mockedUseAudioPlayerSafe.mockReturnValue({
         currentTrack: { id: 'track-1' },
         isPlaying: true,
+        playTrack: playTrackMock,
+        pauseTrack: pauseTrackMock,
       });
       const { getByTestId } = setup();
       fireEvent.mouseEnter(getByTestId(`track-list-item-${mockTrack.id}`));

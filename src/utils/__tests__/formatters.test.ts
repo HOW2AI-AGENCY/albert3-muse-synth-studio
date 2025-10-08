@@ -20,7 +20,7 @@ describe('formatDuration', () => {
   });
 
   it('handles null and undefined', () => {
-    expect(formatDuration(null)).toBe('—');
+    expect(formatDuration(null as unknown as number)).toBe('—');
     expect(formatDuration(undefined)).toBe('—');
     expect(formatDuration(NaN)).toBe('—');
   });
@@ -85,8 +85,8 @@ describe('formatFileSize', () => {
   });
 
   it('handles null and undefined gracefully', () => {
-    expect(formatFileSize(null)).toBe('0 Б');
-    expect(formatFileSize(undefined)).toBe('0 Б');
+    expect(formatFileSize(null as unknown as number)).toBe('0 Б');
+    expect(formatFileSize(undefined as unknown as number)).toBe('0 Б');
   });
 
   it('handles negative values gracefully', () => {

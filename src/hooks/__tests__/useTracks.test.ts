@@ -3,14 +3,13 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { useTracks } from '../useTracks';
 import { ApiService, Track } from '@/services/api.service';
 import { supabase } from '@/integrations/supabase/client';
-import { logInfo, logDebug } from '@/utils/logger';
+import { logInfo } from '@/utils/logger';
 
 // Mock dependencies
 vi.mock('@/services/api.service', () => ({
   ApiService: {
     getUserTracks: vi.fn(),
     deleteTrack: vi.fn(),
-    updateTrack: vi.fn(),
   },
 }));
 
@@ -45,10 +44,11 @@ vi.mock('@/utils/trackCache', () => ({
 
 vi.mock('@/utils/logger', () => ({
   logInfo: vi.fn(),
-  logDebug: vi.fn(),
   logError: vi.fn(),
   logWarn: vi.fn(),
 }));
+
+const logInfoMock = vi.mocked(logInfo);
 
 describe('useTracks', () => {
   const mockUser = {
@@ -56,23 +56,45 @@ describe('useTracks', () => {
     email: 'test@example.com',
   };
 
+  const createTrack = (overrides: Partial<Track> = {}): Track => ({
+    id: 'track-id',
+    title: 'Track Title',
+    prompt: 'Test prompt',
+    audio_url: 'https://example.com/audio.mp3',
+    status: 'completed',
+    created_at: '2024-01-15T12:00:00Z',
+    improved_prompt: null,
+    duration: null,
+    duration_seconds: null,
+    error_message: null,
+    cover_url: null,
+    video_url: null,
+    suno_id: null,
+    model_name: null,
+    created_at_suno: null,
+    lyrics: null,
+    style_tags: null,
+    has_vocals: null,
+    has_stems: null,
+    like_count: null,
+    view_count: null,
+    download_count: null,
+    metadata: null,
+    genre: null,
+    mood: null,
+    play_count: null,
+    provider: null,
+    reference_audio_url: null,
+    updated_at: '2024-01-15T12:00:00Z',
+    user_id: mockUser.id,
+    is_public: null,
+    style: null,
+    ...overrides,
+  });
+
   const initialMockTracks: Track[] = [
-    {
-      id: 'track-1',
-      title: 'Track 1',
-      prompt: 'Test prompt 1',
-      audio_url: 'https://example.com/track1.mp3',
-      status: 'completed',
-      created_at: '2024-01-15T12:00:00Z',
-    },
-    {
-      id: 'track-2',
-      title: 'Track 2',
-      prompt: 'Test prompt 2',
-      audio_url: 'https://example.com/track2.mp3',
-      status: 'processing',
-      created_at: '2024-01-15T13:00:00Z',
-    },
+    createTrack({ id: 'track-1', title: 'Track 1', status: 'completed' }),
+    createTrack({ id: 'track-2', title: 'Track 2', status: 'processing' }),
   ];
 
   let mockTracksDb: Track[];
@@ -92,13 +114,6 @@ describe('useTracks', () => {
       mockTracksDb = mockTracksDb.filter(t => t.id !== trackId);
     });
 
-    vi.mocked(ApiService.updateTrack).mockImplementation(async (trackId: string, data: Partial<Track>) => {
-      const trackIndex = mockTracksDb.findIndex(t => t.id === trackId);
-      if (trackIndex !== -1) {
-        mockTracksDb[trackIndex] = { ...mockTracksDb[trackIndex], ...data };
-      }
-      return mockTracksDb.find(t => t.id === trackId) as any;
-    });
   });
 
   afterEach(() => {
@@ -187,13 +202,13 @@ describe('useTracks', () => {
       await waitFor(() => expect(result.current.tracks).toHaveLength(2));
 
       // Manually add a track to our mock DB to simulate a change on the backend
-      const newTrack = {
+      const newTrack = createTrack({
         id: 'track-3',
         title: 'Track 3',
         status: 'completed',
         created_at: '2024-01-15T14:00:00Z',
-      };
-      mockTracksDb.push(newTrack as any);
+      });
+      mockTracksDb.push(newTrack);
 
       await act(async () => {
         await result.current.refreshTracks();
@@ -223,7 +238,7 @@ describe('useTracks', () => {
       rerender({ trigger: 2 });
 
       await waitFor(() => {
-        expect(vi.mocked(ApiService.getUserTracks).mock.calls.length).toBe(initialCallCount + 1);
+      expect(vi.mocked(ApiService.getUserTracks).mock.calls.length).toBe(initialCallCount + 1);
       });
     });
   });
@@ -237,15 +252,15 @@ describe('useTracks', () => {
       vi.useRealTimers();
     });
 
-    it.skip('polls when there are processing tracks', async () => {
-      // Skipped due to persistent timeout issues with fake timers and useEffect dependency array.
-      // The polling logic is difficult to test reliably in JSDOM.
-      renderHook(() => useTracks());
-      await waitFor(() => expect(ApiService.getUserTracks).toHaveBeenCalledTimes(1));
+      it.skip('polls when there are processing tracks', async () => {
+        // Skipped due to persistent timeout issues with fake timers and useEffect dependency array.
+        // The polling logic is difficult to test reliably in JSDOM.
+        renderHook(() => useTracks());
+        await waitFor(() => expect(ApiService.getUserTracks).toHaveBeenCalledTimes(1));
 
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(5000);
-      });
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(5000);
+        });
       expect(logInfoMock).toHaveBeenCalled();
 
       await waitFor(() => expect(ApiService.getUserTracks).toHaveBeenCalledTimes(2));
@@ -259,6 +274,8 @@ describe('useTracks', () => {
           { ...initialMockTracks[0], status: 'completed' },
           { ...initialMockTracks[1], status: 'completed' },
         ]);
+
+      const { result } = renderHook(() => useTracks());
 
       await act(async () => {
         await result.current.refreshTracks();
