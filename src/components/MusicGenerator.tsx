@@ -9,13 +9,23 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Sparkles, Music, Wand2, Mic, Settings2, Hash, FileText, Volume2, Clock, Zap } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Sparkles, Music, Wand2, Mic, Settings2, Hash, FileText, Volume2, Clock, Zap, Search, History, Lightbulb, X } from 'lucide-react';
 import { useMusicGeneration } from '@/hooks/useMusicGeneration';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
 import { withErrorBoundary } from '@/components/ui/error-boundary';
 import { LyricsEditor } from '@/components/LyricsEditor';
+import { 
+  styleCategories, 
+  stylePresets, 
+  searchStyles, 
+  getStyleById, 
+  getRelatedStyles,
+  getStyleHistory,
+  addToStyleHistory 
+} from '@/utils/musicStyles';
 
 interface MusicGeneratorProps {
   onTrackGenerated?: () => void;
@@ -44,6 +54,8 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   const [mood, setMood] = useState("");
   const [tempo, setTempo] = useState("");
   const [isVisible, setIsVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showRecommendations, setShowRecommendations] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -105,14 +117,47 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   ], []);
 
   // Мемоизируем функцию переключения тегов
-  const toggleTag = useCallback((tag: string) => {
+  const toggleTag = useCallback((styleId: string) => {
+    const style = getStyleById(styleId);
+    if (!style) return;
+    
     setStyleTags(prev =>
-      prev.includes(tag) 
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag]
+      prev.includes(style.name) 
+        ? prev.filter(t => t !== style.name)
+        : [...prev, style.name]
     );
+    addToStyleHistory(styleId);
     vibrate('light');
   }, [setStyleTags, vibrate]);
+
+  // Filtered styles based on search
+  const filteredStyles = useMemo(() => {
+    if (!searchQuery.trim()) return styleCategories;
+    const results = searchStyles(searchQuery);
+    return styleCategories.map(cat => ({
+      ...cat,
+      styles: cat.styles.filter(s => results.some(r => r.id === s.id))
+    })).filter(cat => cat.styles.length > 0);
+  }, [searchQuery]);
+
+  // Style history
+  const styleHistory = useMemo(() => {
+    return getStyleHistory()
+      .map(id => getStyleById(id))
+      .filter((s): s is NonNullable<typeof s> => s !== undefined)
+      .slice(0, 10);
+  }, [styleTags]);
+
+  // AI Recommendations
+  const recommendations = useMemo(() => {
+    if (styleTags.length === 0) return [];
+    const selectedIds = styleTags
+      .map(name => styleCategories.flatMap(c => c.styles).find(s => s.name === name)?.id)
+      .filter((id): id is string => id !== undefined);
+    
+    const related = selectedIds.flatMap(id => getRelatedStyles(id, 3));
+    return [...new Map(related.map(s => [s.id, s])).values()].slice(0, 5);
+  }, [styleTags]);
 
   const handleGenerateMusic = useCallback(async () => {
     vibrate('medium');
@@ -248,33 +293,88 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
             />
           </div>
 
-          {/* Популярные жанры */}
+          {/* Music Styles Selector */}
           <div className="space-y-3">
             <Label className="text-sm font-medium flex items-center gap-2">
               <Hash className="h-4 w-4 text-primary" />
-              Популярные жанры
+              Музыкальные стили (70+ жанров)
             </Label>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              {popularGenres.map((genre) => (
+            
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Поиск стилей..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 bg-background/50 backdrop-blur-sm"
+              />
+            </div>
+
+            {/* Presets */}
+            <div className="flex flex-wrap gap-2">
+              {stylePresets.map(preset => (
                 <Button
-                  key={genre.name}
-                  variant={styleTags.includes(genre.name) ? "default" : "outline"}
+                  key={preset.id}
                   size="sm"
-                  onClick={() => toggleTag(genre.name)}
-                  disabled={isGenerating || isImproving}
-                  className={`
-                    h-auto p-3 flex flex-col items-center gap-1.5 transition-all duration-300 group
-                    ${styleTags.includes(genre.name) 
-                      ? `bg-gradient-to-r ${genre.gradient} text-white shadow-lg scale-105` 
-                      : 'hover:scale-105 hover:border-primary/50 bg-background/50 backdrop-blur-sm'
-                    }
-                  `}
+                  variant="outline"
+                  onClick={() => {
+                    preset.styleIds.forEach(id => {
+                      const style = getStyleById(id);
+                      if (style && !styleTags.includes(style.name)) {
+                        toggleTag(id);
+                      }
+                    });
+                  }}
+                  className={`bg-gradient-to-r ${preset.gradient} text-white`}
                 >
-                  <span className="text-xl group-hover:animate-bounce">{genre.icon}</span>
-                  <span className="text-xs font-medium text-center truncate w-full">{genre.name}</span>
+                  {preset.icon} {preset.name}
                 </Button>
               ))}
             </div>
+
+            {/* Style Categories Accordion */}
+            <Accordion type="multiple" className="w-full">
+              {filteredStyles.map(category => (
+                <AccordionItem key={category.id} value={category.id}>
+                  <AccordionTrigger className="text-sm hover:no-underline">
+                    <span className={`bg-gradient-to-r ${category.gradient} bg-clip-text text-transparent font-semibold`}>
+                      {category.name}
+                    </span>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2">
+                      {category.styles.map(style => (
+                        <Button
+                          key={style.id}
+                          size="sm"
+                          variant={styleTags.includes(style.name) ? "default" : "outline"}
+                          onClick={() => toggleTag(style.id)}
+                          className={styleTags.includes(style.name) ? `bg-gradient-to-r ${style.gradient}` : ''}
+                        >
+                          {style.icon} {style.name}
+                        </Button>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+
+            {/* Selected Styles */}
+            {styleTags.length > 0 && (
+              <div className="flex flex-wrap gap-2 p-3 bg-muted/50 rounded-lg">
+                {styleTags.map(tag => (
+                  <Badge key={tag} variant="secondary" className="gap-1">
+                    {tag}
+                    <X className="h-3 w-3 cursor-pointer" onClick={() => {
+                      const style = styleCategories.flatMap(c => c.styles).find(s => s.name === tag);
+                      if (style) toggleTag(style.id);
+                    }} />
+                  </Badge>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Настроение и темп */}
