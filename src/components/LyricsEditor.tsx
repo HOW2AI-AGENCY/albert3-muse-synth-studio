@@ -14,6 +14,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { logError } from "@/utils/logger";
 import { LyricsEditorAdvanced } from "./lyrics/LyricsEditorAdvanced";
 
+const limitWords = (value: string, limit: number): string => {
+  if (!value.trim()) return "";
+  const words = value.trim().split(/\s+/);
+  if (words.length <= limit) return value.trim();
+  return words.slice(0, limit).join(" ");
+};
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 interface LyricsEditorProps {
   lyrics: string;
   onLyricsChange: (lyrics: string) => void;
@@ -45,6 +54,75 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
   const lineCount = lyrics.split('\n').filter(line => line.trim()).length;
   const charCount = lyrics.length;
 
+  const buildPrompt = () => {
+    const sections: string[] = [];
+    if (includeIntro) sections.push("Intro");
+    if (includeVerse) sections.push("Verse");
+    if (includeChorus) sections.push("Chorus");
+    if (includeBridge) sections.push("Bridge");
+    if (includeOutro) sections.push("Outro");
+
+    const trimmedReferences = limitWords(references, 80);
+
+    const lines: string[] = [
+      "Create professional, performance-ready song lyrics that match the provided brief.",
+      `Theme: ${theme.trim()}`,
+      `Mood: ${mood.trim()}`,
+      `Genre: ${genre.trim()}`,
+      `Language: ${language === 'ru' ? 'Russian' : 'English'}`,
+    ];
+
+    if (sections.length > 0) {
+      lines.push(`Desired structure: ${sections.join(', ')}`);
+    }
+
+    if (vocalStyle.trim()) {
+      lines.push(`Preferred vocal style: ${vocalStyle.trim()}`);
+    }
+
+    if (trimmedReferences) {
+      lines.push(`Creative references or instructions: ${trimmedReferences}`);
+    }
+
+    lines.push("Deliver at least two distinct lyric variations, marking sections like [Verse] and [Chorus].");
+    lines.push("Ensure the lyrics flow naturally, respect the requested language, and keep wording within 200 words.");
+
+    return lines.join("\n");
+  };
+
+  const pollLyricsJob = async (jobId: string): Promise<string> => {
+    const maxAttempts = 30;
+    const delayMs = 4000;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      if (attempt > 0) {
+        await wait(delayMs);
+      }
+
+      const job = await ApiService.getLyricsJob(jobId);
+      if (!job) {
+        continue;
+      }
+
+      if (job.status === "failed") {
+        throw new Error(job.errorMessage || "Lyrics generation failed");
+      }
+
+      if (job.status === "completed") {
+        const variants = job.variants || [];
+        const completedVariant = variants.find((variant) => (variant.status ?? "").toLowerCase() === "complete" && variant.content);
+        const fallbackVariant = variants.find((variant) => variant.content);
+        const chosen = completedVariant ?? fallbackVariant;
+        if (chosen?.content) {
+          return chosen.content;
+        }
+        throw new Error("Lyrics generation completed without content");
+      }
+    }
+
+    throw new Error("Lyrics generation timed out");
+  };
+
   const generateLyrics = async () => {
     if (!theme.trim() || !mood.trim() || !genre.trim()) {
       toast({
@@ -55,39 +133,54 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
       return;
     }
 
+    const prompt = buildPrompt();
+    const trimmedReferences = limitWords(references, 80);
+    const metadata = {
+      theme: theme.trim(),
+      mood: mood.trim(),
+      genre: genre.trim(),
+      language,
+      structure: {
+        intro: includeIntro,
+        verse: includeVerse,
+        chorus: includeChorus,
+        bridge: includeBridge,
+        outro: includeOutro,
+      },
+      vocalStyle: vocalStyle.trim() || null,
+      references: trimmedReferences || null,
+    };
+
     setIsGenerating(true);
     try {
-      const structure = [];
-      if (includeIntro) structure.push('Intro');
-      if (includeVerse) structure.push('Verse');
-      if (includeChorus) structure.push('Chorus');
-      if (includeBridge) structure.push('Bridge');
-      if (includeOutro) structure.push('Outro');
-
       const response = await ApiService.generateLyrics({
+        prompt,
+        metadata,
+      });
+
+      toast({
+        title: "✨ Генерация запущена",
+        description: "Ожидаем ответ от Suno...",
+      });
+
+      const generated = await pollLyricsJob(response.jobId);
+      onLyricsChange(generated);
+
+      toast({
+        title: "✨ Лирика создана!",
+        description: "Текст песни получен от Suno",
+      });
+    } catch (error) {
+      logError("Ошибка при генерации текста", error as Error, "LyricsEditor", {
         theme,
         mood,
         genre,
         language,
-        structure: structure.join(', '),
-        vocalStyle,
-        references,
       });
 
-      onLyricsChange(response.lyrics);
-      
-      toast({
-        title: "✨ Лирика создана!",
-        description: "Текст песни сгенерирован с помощью AI",
-      });
-    } catch (error) {
-      logError("Ошибка при генерации текста", error as Error, "LyricsEditor", {
-        theme, mood, genre, language
-      });
-      
       toast({
         title: "Ошибка",
-        description: "Не удалось сгенерировать текст. Попробуйте еще раз.",
+        description: error instanceof Error ? error.message : "Не удалось сгенерировать текст. Попробуйте еще раз.",
         variant: "destructive",
       });
     } finally {

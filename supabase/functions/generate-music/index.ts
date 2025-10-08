@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { validateRequest, validationSchemas } from "../_shared/validation.ts";
+import { createSupabaseAdminClient, createSupabaseUserClient } from "../_shared/supabase.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,11 +31,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
     }
 
     const token = authHeader.replace('Bearer ', '')
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: `Bearer ${token}` } } }
-    )
+    const supabaseClient = createSupabaseUserClient(token)
 
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
     if (authError || !user) {
@@ -58,9 +54,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
     }
 
     // Initialize Supabase client for updating track status
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createSupabaseAdminClient();
 
     console.log(`Starting music generation for track ${trackId} with prompt: ${prompt}`);
 
