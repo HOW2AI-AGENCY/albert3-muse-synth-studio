@@ -1,9 +1,9 @@
 # 🎯 Система управления проектом Albert3 Muse Synth Studio
 
-![Project Management](https://img.shields.io/badge/Project%20Management-v2.3.3-blue)
+![Project Management](https://img.shields.io/badge/Project%20Management-v2.4.0-blue)
 ![Last Updated](https://img.shields.io/badge/Last%20Updated-October%202025-green)
 ![Status](https://img.shields.io/badge/Status-Active%20Development-orange)
-![Sprint](https://img.shields.io/badge/Sprint-20-purple)
+![Sprint](https://img.shields.io/badge/Sprint-21-purple)
 
 > Комплексная система управления проектом для эффективной разработки AI-powered музыкального приложения
 
