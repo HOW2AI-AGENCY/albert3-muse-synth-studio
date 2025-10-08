@@ -33,17 +33,26 @@ const LoadingSpinner = () => (
   </div>
 );
 
+// Оптимизированная конфигурация React Query
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 минут
+      staleTime: 1000 * 60 * 5, // 5 минут - кэш считается свежим
+      gcTime: 1000 * 60 * 10, // 10 минут - время хранения в памяти (ранее cacheTime)
+      refetchOnWindowFocus: false, // Не перезапрашивать при фокусе окна
+      refetchOnMount: false, // Не перезапрашивать при монтировании
+      refetchOnReconnect: true, // Перезапросить при восстановлении соединения
       retry: (failureCount, error: Error & { status?: number }) => {
         // Не повторяем запросы для 4xx ошибок
         if (error?.status && error.status >= 400 && error.status < 500) {
           return false;
         }
-        return failureCount < 3;
+        return failureCount < 2; // Максимум 2 попытки
       },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    },
+    mutations: {
+      retry: 1, // Одна попытка для мутаций
     },
   },
 });

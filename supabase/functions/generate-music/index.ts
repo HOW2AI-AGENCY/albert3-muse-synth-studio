@@ -3,32 +3,15 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { validateRequest, validationSchemas } from "../_shared/validation.ts";
 
-// CORS Configuration with whitelist
-const ALLOWED_ORIGINS = [
-  'https://localhost:3000',
-  'https://localhost:5173',
-  'https://localhost:8080',
-  Deno.env.get('FRONTEND_URL'),
-  Deno.env.get('PRODUCTION_URL'),
-].filter(Boolean);
-
-const getCorsHeaders = (origin: string | null) => {
-  const isAllowed = origin && ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed as string));
-  
-  return {
-    'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Credentials': 'true',
-    ...createSecurityHeaders()
-  };
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Credentials': 'true',
+  ...createSecurityHeaders()
 };
 
 const mainHandler = async (req: Request): Promise<Response> => {
-  // Get CORS headers based on origin
-  const origin = req.headers.get('Origin');
-  const corsHeaders = getCorsHeaders(origin);
-
   // Handle OPTIONS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: corsHeaders });
