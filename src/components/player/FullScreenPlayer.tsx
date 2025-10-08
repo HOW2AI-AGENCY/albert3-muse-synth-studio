@@ -9,6 +9,7 @@ import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useTrackLike } from "@/hooks/useTrackLike";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -144,7 +145,12 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)'
       }}
+      role="dialog"
+      aria-label="Full Screen Player"
     >
+      <VisuallyHidden.Root>
+        <h1>Now playing: {currentTrack?.title || 'No track selected'}</h1>
+      </VisuallyHidden.Root>
       <div className="flex flex-col min-h-screen p-4 sm:p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6 sm:mb-8 animate-slide-up">

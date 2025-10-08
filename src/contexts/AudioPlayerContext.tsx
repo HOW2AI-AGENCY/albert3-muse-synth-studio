@@ -3,6 +3,7 @@ import { usePlayAnalytics } from '@/hooks/usePlayAnalytics';
 import { logError, logInfo } from '@/utils/logger';
 import { cacheAudioFile } from '../utils/serviceWorker';
 import { AudioPlayerTrack } from '@/types/track';
+import { useToast } from '@/hooks/use-toast';
 
 interface AudioPlayerContextType {
   currentTrack: AudioPlayerTrack | null;
@@ -44,10 +45,22 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   const [currentVersionIndex, setCurrentVersionIndex] = useState(0);
   
   const audioRef = useRef<HTMLAudioElement>(null);
+  const { toast } = useToast();
   const { playTime, hasRecorded } = usePlayAnalytics(currentTrack?.id || null, isPlaying, currentTime);
 
   // Мемоизированная функция воспроизведения трека
   const playTrack = useCallback(async (track: AudioPlayerTrack) => {
+    // Validate track can be played
+    if (!track.audio_url || track.status !== 'completed') {
+      logError('Cannot play track - missing audio_url or not completed', new Error(`Track status: ${track.status}`), track.id);
+      toast({
+        title: "Cannot play track",
+        description: track.status === 'processing' ? "Track is still being generated" : "Track audio is not available",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       if (audioRef.current) {
         audioRef.current.pause();
@@ -59,6 +72,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
 
       if (audioRef.current && track.audio_url) {
         audioRef.current.src = track.audio_url;
+        audioRef.current.crossOrigin = 'anonymous'; // Enable CORS for audio
         
         try {
           await cacheAudioFile(track.audio_url);
@@ -78,7 +92,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       logError('Error in playTrack', error as Error, track.id);
     }
-  }, []);
+  }, [toast]);
 
   // Мемоизированная функция воспроизведения трека с очередью
   const playTrackWithQueue = useCallback((track: AudioPlayerTrack, allTracks: AudioPlayerTrack[]) => {

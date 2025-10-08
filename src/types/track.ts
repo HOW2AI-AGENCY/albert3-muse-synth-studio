@@ -40,6 +40,7 @@ export interface AudioPlayerTrack {
   duration?: number;
   style_tags?: string[];
   lyrics?: string;
+  status?: 'pending' | 'processing' | 'completed' | 'failed'; // Track status for playback validation
 }
 
 // Трек для отображения в списках (может не иметь audio_url)
@@ -126,13 +127,16 @@ export interface CachedTrack {
 export interface TrackWithVersions extends BaseTrack {
   versions: TrackVersion[];
   stems?: TrackStem[];
+  parentTrackId?: string;
+  versionNumber?: number;
+  isMasterVersion?: boolean;
 }
 
 // Утилитарные типы для преобразования
 export type TrackStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 // Функции-хелперы для преобразования типов
-export const convertToAudioPlayerTrack = (track: BaseTrack | DisplayTrack): AudioPlayerTrack | null => {
+export const convertToAudioPlayerTrack = (track: any): AudioPlayerTrack | null => {
   if (!track.audio_url) return null;
   
   return {
@@ -142,7 +146,8 @@ export const convertToAudioPlayerTrack = (track: BaseTrack | DisplayTrack): Audi
     cover_url: track.cover_url || undefined,
     duration: track.duration || track.duration_seconds || undefined,
     style_tags: track.style_tags || undefined,
-    lyrics: 'lyrics' in track ? track.lyrics || undefined : undefined,
+    lyrics: track.lyrics || undefined,
+    status: track.status as TrackStatus | undefined,
   };
 };
 

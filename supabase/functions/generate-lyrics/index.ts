@@ -2,16 +2,16 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { validateRequest, validationSchemas } from "../_shared/validation.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': Deno.env.get('FRONTEND_URL') || 'https://localhost:3000',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Credentials': 'true',
-  ...createSecurityHeaders()
-};
+import { createCorsHeaders, handleCorsPreflightRequest } from '../_shared/cors.ts';
 
 const mainHandler = async (req: Request): Promise<Response> => {
+  const corsHeaders = createCorsHeaders();
+  
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return handleCorsPreflightRequest(req);
+  }
+  
   try {
     // Валидация входных данных
     const validatedData = await validateRequest(req, validationSchemas.generateLyrics)

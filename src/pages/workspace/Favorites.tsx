@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { getTrackWithVersions } from "@/utils/trackVersions";
 import { toast } from "sonner";
+import { convertToAudioPlayerTrack } from "@/types/track";
 
 interface LikedTrack {
   id: string;
@@ -66,7 +67,11 @@ export default function Favorites() {
 
     if (tracksWithVersions.length > 0) {
       const masterOrMain = tracksWithVersions.find(t => t.isMasterVersion) || tracksWithVersions[0];
-      playTrackWithQueue(masterOrMain, tracksWithVersions);
+      const audioTrack = convertToAudioPlayerTrack(masterOrMain);
+      const audioTracks = tracksWithVersions.map(convertToAudioPlayerTrack).filter((t): t is NonNullable<typeof t> => t !== null);
+      if (audioTrack) {
+        playTrackWithQueue(audioTrack, audioTracks);
+      }
     } else {
       // Fallback to single track
       playTrackWithQueue({

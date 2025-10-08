@@ -79,7 +79,27 @@ class TrackCacheManager {
       this.saveCache(cache);
       this.updateMetadata();
     } catch (error) {
-      console.warn('Ошибка при сохранении трека в кэш:', error);
+      // Handle quota exceeded error
+      if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.code === 22)) {
+        console.warn('[TrackCache] Storage quota exceeded, clearing old entries and retrying');
+        this.cleanExpiredTracks();
+        // If still failing, reduce cache size by 50%
+        const cache = this.getCache();
+        const entries = Object.entries(cache).sort((a, b) => a[1].cached_at - b[1].cached_at);
+        const half = Math.floor(entries.length / 2);
+        const reducedCache = Object.fromEntries(entries.slice(half));
+        try {
+          localStorage.setItem(this.CACHE_KEY, JSON.stringify(reducedCache));
+          // Retry with reduced cache
+          const newCache = this.getCache();
+          newCache[track.id] = { ...track, cached_at: Date.now() };
+          localStorage.setItem(this.CACHE_KEY, JSON.stringify(newCache));
+        } catch (retryError) {
+          console.error('[TrackCache] Failed to cache even after cleanup:', retryError);
+        }
+      } else {
+        console.warn('Ошибка при сохранении трека в кэш:', error);
+      }
     }
   }
 
