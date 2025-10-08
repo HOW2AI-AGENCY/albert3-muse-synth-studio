@@ -205,6 +205,7 @@ export type Database = {
           metadata: Json | null
           model_name: string | null
           mood: string | null
+          play_count: number | null
           prompt: string
           provider: string | null
           reference_audio_url: string | null
@@ -237,6 +238,7 @@ export type Database = {
           metadata?: Json | null
           model_name?: string | null
           mood?: string | null
+          play_count?: number | null
           prompt: string
           provider?: string | null
           reference_audio_url?: string | null
@@ -269,6 +271,7 @@ export type Database = {
           metadata?: Json | null
           model_name?: string | null
           mood?: string | null
+          play_count?: number | null
           prompt?: string
           provider?: string | null
           reference_audio_url?: string | null
