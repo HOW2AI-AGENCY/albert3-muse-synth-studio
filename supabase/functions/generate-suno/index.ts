@@ -5,7 +5,15 @@ import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { downloadAndUploadAudio, downloadAndUploadCover, downloadAndUploadVideo } from "../_shared/storage.ts";
 
-const mainHandler = async (req: Request): Promise<Response> => {
+export type PollSunoCompletionFn = (
+  trackId: string,
+  taskId: string,
+  supabaseAdmin: any,
+  apiKey: string,
+  jobId: string | null,
+) => Promise<void>;
+
+export const mainHandler = async (req: Request): Promise<Response> => {
   const corsHeaders = {
     ...createCorsHeaders(),
     ...createSecurityHeaders()
@@ -249,24 +257,18 @@ const mainHandler = async (req: Request): Promise<Response> => {
 
 /**
  * Опрашивает Suno API для проверки статуса генерации и сохраняет результаты
- * 
+ *
  * ВАЖНО: Suno API возвращает массив из 2 треков на каждый запрос
  * - Первый трек (tasks[0]) → обновляется в таблице `tracks`
  * - Второй трек (tasks[1]) → сохраняется в таблицу `track_versions`
- * 
- * @param trackId - ID основного трека в базе данных
- * @param taskId - ID задачи в Suno API для отслеживания
- * @param supabaseAdmin - Инициализированный Supabase admin клиент
- * @param apiKey - API ключ для доступа к Suno API
- * @param jobId - ID задачи в таблице `ai_jobs`
  */
-async function pollSunoCompletion(
-  trackId: string, 
-  taskId: string, 
-  supabaseAdmin: any,
-  apiKey: string,
-  jobId: string | null
-) {
+const defaultPollSunoCompletion: PollSunoCompletionFn = async (
+  trackId,
+  taskId,
+  supabaseAdmin,
+  apiKey,
+  jobId,
+) => {
   const maxAttempts = 60; // Максимум 60 попыток = 5 минут (интервал 5 секунд)
   let attempts = 0;
 
@@ -479,13 +481,29 @@ async function pollSunoCompletion(
   await supabaseAdmin.from('tracks').update({ status: 'failed', error_message: 'Generation timeout' }).eq('id', trackId);
   if (jobId) await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: 'Generation timeout' }).eq('id', jobId);
   console.log('Track generation timeout:', trackId);
-}
+};
+
+let pollSunoCompletionImpl: PollSunoCompletionFn = defaultPollSunoCompletion;
+
+const pollSunoCompletion: PollSunoCompletionFn = async (
+  trackId,
+  taskId,
+  supabaseAdmin,
+  apiKey,
+  jobId,
+) => pollSunoCompletionImpl(trackId, taskId, supabaseAdmin, apiKey, jobId);
+
+export const setPollSunoCompletionOverride = (override?: PollSunoCompletionFn) => {
+  pollSunoCompletionImpl = override ?? defaultPollSunoCompletion;
+};
 
 // Применяем rate limiting middleware
-const handler = withRateLimit(mainHandler, {
+export const handler = withRateLimit(mainHandler, {
   maxRequests: 10,
   windowMinutes: 1, // 1 minute
   endpoint: 'generate-suno'
 });
 
-serve(handler);
+if (import.meta.main) {
+  serve(handler);
+}
