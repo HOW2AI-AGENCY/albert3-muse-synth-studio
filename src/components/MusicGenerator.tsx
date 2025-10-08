@@ -1,4 +1,4 @@
-import { memo, useState, useCallback, useEffect, useRef } from 'react';
+import { memo, useState, useCallback, useEffect, useRef, type ChangeEvent } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,6 +12,12 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Slider } from '@/components/ui/slider';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from '@/components/ui/tooltip';
 import { 
   Music, Loader2, Plus, Wand2, Maximize2,
   Music2, FileText, Settings2, Play
@@ -55,6 +61,14 @@ const vocalTypes = ['Lead Vocal', 'Backing Vocals', 'Duet', 'Choir', 'Rap Verse'
 // Musical keys
 const musicalKeys = ['C major', 'C minor', 'D major', 'D minor', 'E major', 'E minor', 'F major', 'F minor', 'G major', 'G minor', 'A major', 'A minor', 'B major', 'B minor'];
 
+// Persona presets
+const personaPresets = [
+  { value: 'none', label: 'No persona', description: 'Позвольте модели подобрать подходящий тембр.' },
+  { value: 'female-pop', label: 'Female Pop Lead', description: 'Яркий женский вокал с воздушными гармониями.' },
+  { value: 'male-indie', label: 'Male Indie', description: 'Тёплый баритон для спокойных и гитарных треков.' },
+  { value: 'duet', label: 'Duet Voices', description: 'Микс мужского и женского вокала для дуэтов.' },
+];
+
 const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   const {
     generateMusic,
@@ -70,25 +84,29 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   // Mode & UI State
   const [generationMode, setGenerationMode] = useState<'simple' | 'custom'>('simple');
   const [selectedModel, setSelectedModel] = useState('chirp-v3-5');
-  
+  const [customActiveTab, setCustomActiveTab] = useState<'audio' | 'persona' | 'lyrics'>('lyrics');
+
   // Simple Mode State
   const [songDescription, setSongDescription] = useState('');
   const [selectedInspirations, setSelectedInspirations] = useState<string[]>([]);
   const [isInstrumental, setIsInstrumental] = useState(false);
-  
+
   // Custom Mode State
   const [lyrics, setLyrics] = useState('');
   const [customStyles, setCustomStyles] = useState<string[]>([]);
   const [songTitle, setSongTitle] = useState('');
-  
+  const [selectedPersona, setSelectedPersona] = useState('');
+  const [audioReference, setAudioReference] = useState<File | null>(null);
+
   // Advanced Options
   const [tempo, setTempo] = useState([120]);
   const [musicalKey, setMusicalKey] = useState('');
   const [hasVocals, setHasVocals] = useState(true);
   const [vocalType, setVocalType] = useState('');
-  
+
   // UI State
   const [isLyricsDialogOpen, setIsLyricsDialogOpen] = useState(false);
+  const audioInputRef = useRef<HTMLInputElement | null>(null);
 
   const lyricLineCount = lyrics
     ? lyrics.split(/\r?\n/).filter((line) => line.trim().length > 0).length
@@ -106,10 +124,52 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   // Toggle custom styles
   const toggleCustomStyle = useCallback((style: string) => {
     vibrate('light');
-    setCustomStyles(prev => 
+    setCustomStyles(prev =>
       prev.includes(style) ? prev.filter(s => s !== style) : [...prev, style]
     );
   }, [vibrate]);
+
+  const handleAudioQuickAction = useCallback(() => {
+    vibrate('light');
+    setGenerationMode('custom');
+    setCustomActiveTab('audio');
+
+    requestAnimationFrame(() => {
+      audioInputRef.current?.focus();
+    });
+  }, [vibrate]);
+
+  const handleAudioFileChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      setAudioReference(null);
+      return;
+    }
+
+    if (!file.type.startsWith('audio/')) {
+      toast({
+        title: "⚠️ Неподдерживаемый файл",
+        description: "Загрузите аудиофайл в формате MP3, WAV или AIFF.",
+        variant: "destructive"
+      });
+      setAudioReference(null);
+      return;
+    }
+
+    setAudioReference(file);
+    toast({
+      title: "🎧 Референс добавлен",
+      description: `${file.name} будет использован как ориентир при генерации.`
+    });
+  }, [toast]);
+
+  const handleClearAudioReference = useCallback(() => {
+    setAudioReference(null);
+    if (audioInputRef.current) {
+      audioInputRef.current.value = '';
+    }
+  }, []);
 
   // Enhance prompt with AI
   const handleEnhancePrompt = useCallback(async () => {
@@ -192,7 +252,14 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
         if (tempo[0] !== 120) options.push(`Tempo: ${tempo[0]} BPM`);
         if (musicalKey) options.push(`Key: ${musicalKey}`);
         if (vocalType) options.push(`Vocal: ${vocalType}`);
-        
+        if (selectedPersona) {
+          const personaLabel = personaPresets.find(persona => persona.value === selectedPersona)?.label ?? selectedPersona;
+          options.push(`Persona: ${personaLabel}`);
+        }
+        if (audioReference) {
+          options.push(`Audio reference: ${audioReference.name}`);
+        }
+
         if (options.length > 0) {
           finalPrompt = `${finalPrompt}\n\n${options.join(', ')}`;
         }
@@ -227,6 +294,12 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       setVocalType('');
       setIsInstrumental(false);
       setIsLyricsDialogOpen(false);
+      setSelectedPersona('');
+      setCustomActiveTab('lyrics');
+      setAudioReference(null);
+      if (audioInputRef.current) {
+        audioInputRef.current.value = '';
+      }
 
       if (onTrackGenerated) {
         onTrackGenerated();
@@ -242,6 +315,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   }, [
     generationMode, songDescription, selectedInspirations, customStyles, isInstrumental,
     hasVocals, lyrics, tempo, musicalKey, vocalType, songTitle, selectedModel,
+    selectedPersona, audioReference,
     generateMusic, vibrate, validateForm, toast, onTrackGenerated,
     setIsLyricsDialogOpen
   ]);
@@ -336,37 +410,48 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs gap-1"
-                  >
-                    <Plus className="h-3 w-3" />
-                    Audio
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs gap-1"
-                    onClick={() => setIsLyricsDialogOpen(true)}
-                  >
-                    <Plus className="h-3 w-3" />
-                    Lyrics
-                  </Button>
-                  
-                  <div className="flex-1" />
-                  
-                  <Button
-                    variant={isInstrumental ? "default" : "outline"}
-                    size="sm"
-                    className="h-8 text-xs gap-1"
-                    onClick={() => setIsInstrumental(!isInstrumental)}
-                  >
-                    {isInstrumental && <Music className="h-3 w-3" />}
-                    Instrumental
-                  </Button>
-                </div>
+                <TooltipProvider delayDuration={200}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs gap-1"
+                          onClick={handleAudioQuickAction}
+                        >
+                          <Plus className="h-3 w-3" />
+                          Audio
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-[220px] text-xs">
+                        Загрузите аудио-референс во вкладке Custom → Audio. Функция в бета-режиме и используется для тонкой
+                        настройки промпта.
+                      </TooltipContent>
+                    </Tooltip>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs gap-1"
+                      onClick={() => setIsLyricsDialogOpen(true)}
+                    >
+                      <Plus className="h-3 w-3" />
+                      Lyrics
+                    </Button>
+
+                    <div className="flex-1" />
+
+                    <Button
+                      variant={isInstrumental ? "default" : "outline"}
+                      size="sm"
+                      className="h-8 text-xs gap-1"
+                      onClick={() => setIsInstrumental(!isInstrumental)}
+                    >
+                      {isInstrumental && <Music className="h-3 w-3" />}
+                      Instrumental
+                    </Button>
+                  </div>
+                </TooltipProvider>
 
                 {/* Inspiration */}
                 <div className="space-y-2">
@@ -395,32 +480,102 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
             {generationMode === 'custom' && (
               <div className="space-y-4 animate-fade-in">
                 {/* Tabs: Audio / Persona / Inspo */}
-                <Tabs defaultValue="lyrics" className="w-full">
+                <Tabs
+                  value={customActiveTab}
+                  onValueChange={(value) => setCustomActiveTab(value as 'audio' | 'persona' | 'lyrics')}
+                  className="w-full"
+                >
                   <TabsList className="grid w-full grid-cols-3 h-9 p-1">
                     <TabsTrigger value="audio" className="text-xs">
-                      <Plus className="h-3 w-3 mr-1" />
+                      <Music2 className="h-3 w-3 mr-1" />
                       Audio
                     </TabsTrigger>
                     <TabsTrigger value="persona" className="text-xs">
-                      <Plus className="h-3 w-3 mr-1" />
+                      <Settings2 className="h-3 w-3 mr-1" />
                       Persona
                     </TabsTrigger>
                     <TabsTrigger value="lyrics" className="text-xs">
-                      <Plus className="h-3 w-3 mr-1" />
+                      <FileText className="h-3 w-3 mr-1" />
                       Inspo
                     </TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="audio" className="mt-4">
-                    <div className="text-sm text-muted-foreground text-center py-8">
-                      Upload audio reference (coming soon)
+                  <TabsContent value="audio" className="mt-4 space-y-4">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Badge variant="outline" className="text-[10px] uppercase tracking-wide">Beta</Badge>
+                      <span>Аудио-референс помогает настроить тональность и энергетику трека.</span>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Audio reference</Label>
+                      <input
+                        ref={audioInputRef}
+                        type="file"
+                        accept="audio/*"
+                        onChange={handleAudioFileChange}
+                        className="hidden"
+                      />
+                      {audioReference ? (
+                        <div className="flex items-center justify-between rounded-md border bg-background/60 px-3 py-2">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Play className="h-4 w-4 text-muted-foreground" />
+                            <span className="truncate max-w-[200px] sm:max-w-[260px]">{audioReference.name}</span>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs"
+                            onClick={handleClearAudioReference}
+                          >
+                            Очистить
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          className="text-xs gap-2"
+                          onClick={() => audioInputRef.current?.click()}
+                        >
+                          <Plus className="h-3 w-3" />
+                          Добавить референс
+                        </Button>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Поддерживаются MP3, WAV, AIFF до 20 МБ. Референс используется только во время генерации и не сохраняется.
+                      </p>
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="persona" className="mt-4">
-                    <div className="text-sm text-muted-foreground text-center py-8">
-                      Select vocal persona (coming soon)
+                  <TabsContent value="persona" className="mt-4 space-y-4">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Badge variant="outline" className="text-[10px] uppercase tracking-wide">Preview</Badge>
+                      <span>Персона уточняет характер вокала, но итог зависит от модели.</span>
                     </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">Vocal persona</Label>
+                      <Select value={selectedPersona} onValueChange={setSelectedPersona}>
+                        <SelectTrigger className="h-9 bg-background/50 text-xs">
+                          <SelectValue placeholder="Выберите настроение голоса" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {personaPresets.map((persona) => (
+                            <SelectItem key={persona.value} value={persona.value}>
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-sm font-medium">{persona.label}</span>
+                                <span className="text-xs text-muted-foreground">{persona.description}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {selectedPersona && (
+                      <div className="rounded-md border border-dashed bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                        Мы добавим описание персонажа «{personaPresets.find(p => p.value === selectedPersona)?.label ?? selectedPersona}» в промпт, чтобы направить модель.
+                      </div>
+                    )}
                   </TabsContent>
 
                   <TabsContent value="lyrics" className="mt-4 space-y-4">
