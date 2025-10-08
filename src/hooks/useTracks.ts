@@ -125,14 +125,25 @@ export const useTracks = (refreshTrigger?: number) => {
 
   // Fallback polling while there are processing tracks
   useEffect(() => {
-    const hasProcessing = tracks.some((t) => t.status === 'processing');
-    if (!hasProcessing) return;
+    // Check if any tracks need polling
+    const needsPolling = tracks.some(track => 
+      track.status === 'processing' || 
+      track.status === 'pending' ||
+      (track.status === 'completed' && !track.audio_url)
+    );
+    
+    if (!needsPolling) return;
 
+    console.log('Starting polling for track updates...');
     const interval = setInterval(() => {
+      console.log('Polling for track updates...');
       loadTracks();
     }, 5000);
 
-    return () => clearInterval(interval);
+    return () => {
+      console.log('Stopping polling');
+      clearInterval(interval);
+    };
   }, [tracks]);
 
   return {

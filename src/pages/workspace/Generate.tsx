@@ -10,6 +10,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Plus, Menu } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -134,6 +135,11 @@ const Generate = () => {
     <div className="flex flex-col h-full relative">
       {/* Track List - Full Screen */}
       <div className={`flex-1 overflow-y-auto p-4 transition-all duration-300 ${currentTrack ? 'pb-24' : 'pb-4'}`}>
+        {isPolling && (
+          <div className="space-y-4 mb-4">
+            <Skeleton className="h-24 w-full rounded-lg" />
+          </div>
+        )}
         <TracksList
           tracks={tracks}
           isLoading={isLoading}

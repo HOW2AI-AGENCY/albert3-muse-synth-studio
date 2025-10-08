@@ -1,20 +1,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
-import { validateRequest, validationSchemas } from "../_shared/validation.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': Deno.env.get('FRONTEND_URL') || 'https://localhost:3000',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Credentials': 'true',
-  ...createSecurityHeaders()
-};
+import { createCorsHeaders } from "../_shared/cors.ts";
 
 const mainHandler = async (req: Request): Promise<Response> => {
+  const origin = req.headers.get('Origin');
+  const corsHeaders = {
+    ...createCorsHeaders(origin),
+    ...createSecurityHeaders()
+  };
+
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   try {
-    // Валидация входных данных
-    const validatedData = await validateRequest(req, validationSchemas.generateMusic)
+    // Parse and validate request data
+    const body = await req.json();
     
     // Получение пользователя из JWT токена
     const authHeader = req.headers.get('Authorization')
@@ -40,7 +42,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
       })
     }
 
-    const { trackId, prompt, tags, title, make_instrumental, model_version, wait_audio } = validatedData
+    const { trackId, prompt, tags, title, make_instrumental, model_version, wait_audio } = body;
     
     const SUNO_API_KEY = Deno.env.get('SUNO_API_KEY')
     if (!SUNO_API_KEY) {

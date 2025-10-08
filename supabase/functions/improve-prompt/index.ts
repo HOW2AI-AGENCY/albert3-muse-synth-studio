@@ -2,14 +2,15 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
-const corsHeaders = {
-  ...createCorsHeaders(),
-  ...createSecurityHeaders()
-};
-
 const mainHandler = async (req: Request) => {
+  const origin = req.headers.get('Origin');
+  const corsHeaders = {
+    ...createCorsHeaders(origin),
+    ...createSecurityHeaders()
+  };
+
   if (req.method === 'OPTIONS') {
-    return handleCorsPreflightRequest(req);
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {

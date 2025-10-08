@@ -239,7 +239,8 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
               placeholder="Пример: Энергичный электронный трек с глубоким басом и атмосферными синтезаторами..."
               value={prompt}
               onChange={(e) => {
-                setPrompt(e.target.value);
+                const newValue = e.target.value;
+                setPrompt(newValue);
                 adjustTextareaHeight();
               }}
               className="min-h-[100px] resize-none bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300 hover:border-primary/30"

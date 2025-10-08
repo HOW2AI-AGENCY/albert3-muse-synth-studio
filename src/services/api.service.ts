@@ -113,12 +113,26 @@ export class ApiService {
   ): Promise<GenerateMusicResponse> {
     const functionName = request.provider === 'suno' ? 'generate-suno' : 'generate-music';
     
+    // Transform request to match backend expectations
+    const payload = {
+      trackId: request.trackId,
+      title: request.title || request.prompt.substring(0, 50),
+      prompt: request.prompt,
+      tags: request.styleTags?.join(', ') || '',
+      make_instrumental: !request.hasVocals,
+      model_version: 'chirp-v3-5',
+      wait_audio: false,
+    };
+
+    console.log('API Service: Sending to', functionName, payload);
+    
     const { data, error } = await supabase.functions.invoke<GenerateMusicResponse>(
       functionName,
-      { body: request }
+      { body: payload }
     );
 
     if (error) {
+      console.error('API Service: Edge function error:', error);
       throw new Error(error.message || "Failed to generate music");
     }
 
