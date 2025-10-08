@@ -185,10 +185,17 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
         timestamp: new Date().toISOString()
       });
 
+      // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Явно передаём provider в запросе
       await ApiService.generateMusic({
-        ...generationParams,
         trackId: newTrack.id,
-        userId: user.id
+        userId: user.id,
+        title: generationParams.title,
+        prompt: generationParams.prompt,
+        provider: provider, // Явно передаём provider
+        lyrics: generationParams.lyrics,
+        hasVocals: generationParams.hasVocals,
+        styleTags: generationParams.styleTags,
+        customMode: generationParams.customMode,
       });
 
       logInfo("✅ [useMusicGeneration] Генерация музыки успешно запущена", "useMusicGeneration", {

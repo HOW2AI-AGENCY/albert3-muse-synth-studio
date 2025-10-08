@@ -111,7 +111,9 @@ export class ApiService {
   static async generateMusic(
     request: GenerateMusicRequest
   ): Promise<GenerateMusicResponse> {
-    const functionName = request.provider === 'suno' ? 'generate-suno' : 'generate-music';
+    // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Явно определяем провайдера с fallback
+    const provider = request.provider || 'suno'; // По умолчанию используем suno
+    const functionName = provider === 'suno' ? 'generate-suno' : 'generate-music';
     
     // Transform request to match backend expectations
     const payload = {
@@ -124,8 +126,10 @@ export class ApiService {
       wait_audio: false,
     };
 
-    console.log('🎵 [API Service] Sending to', functionName);
+    console.log('🎵 [API Service] Provider:', provider);
+    console.log('🎵 [API Service] Sending to:', functionName);
     console.log('📤 [API Service] Payload:', JSON.stringify(payload, null, 2));
+    console.log('📤 [API Service] Full request:', JSON.stringify(request, null, 2));
     
     console.log('⏳ [API Service] Invoking edge function...');
     
