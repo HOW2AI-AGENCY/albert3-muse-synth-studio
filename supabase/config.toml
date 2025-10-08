@@ -12,6 +12,9 @@ verify_jwt = true
 [functions.generate-suno]
 verify_jwt = true
 
+[functions.sync-lyrics-job]
+verify_jwt = true
+
 [functions.lyrics-callback]
 verify_jwt = false
 

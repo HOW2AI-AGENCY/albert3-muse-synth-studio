@@ -99,9 +99,13 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
         await wait(delayMs);
       }
 
-      const job = await ApiService.getLyricsJob(jobId);
+      let job = await ApiService.getLyricsJob(jobId);
+
       if (!job) {
-        continue;
+        job = await ApiService.syncLyricsJob(jobId);
+        if (!job) {
+          continue;
+        }
       }
 
       if (job.status === "failed") {
@@ -117,6 +121,32 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
           return chosen.content;
         }
         throw new Error("Lyrics generation completed without content");
+      }
+
+      const hasCallbackData = Boolean(job.lastCallback) || Boolean(job.lastPollResponse);
+      const needsSync = attempt >= 3 && (job.variants.length === 0 || !hasCallbackData);
+      const isSyncInterval = attempt >= 3 && attempt % 3 === 0;
+
+      if (needsSync && isSyncInterval) {
+        const synced = await ApiService.syncLyricsJob(jobId);
+        if (synced) {
+          job = synced;
+
+          if (job.status === "failed") {
+            throw new Error(job.errorMessage || "Lyrics generation failed");
+          }
+
+          if (job.status === "completed") {
+            const variants = job.variants || [];
+            const completedVariant = variants.find((variant) => (variant.status ?? "").toLowerCase() === "complete" && variant.content);
+            const fallbackVariant = variants.find((variant) => variant.content);
+            const chosen = completedVariant ?? fallbackVariant;
+            if (chosen?.content) {
+              return chosen.content;
+            }
+            throw new Error("Lyrics generation completed without content");
+          }
+        }
       }
     }
 

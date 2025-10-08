@@ -114,6 +114,11 @@ export const validationSchemas = {
     metadata: [validators.object]
   },
 
+  syncLyricsJob: {
+    jobId: [validators.required, validators.string, validators.uuid],
+    forceRefresh: [validators.boolean]
+  },
+
   separateStems: {
     trackId: [validators.required, validators.string, validators.uuid],
     audioUrl: [validators.required, validators.string, validators.minLength(10)]

@@ -92,8 +92,52 @@ export interface LyricsGenerationJob {
   createdAt: string;
   updatedAt: string;
   lastCallback: Record<string, unknown> | null;
+  lastPollResponse: Record<string, unknown> | null;
   variants: LyricsVariant[];
 }
+
+type LyricsJobRow = Database["public"]["Tables"]["lyrics_jobs"]["Row"];
+type LyricsVariantRow = Database["public"]["Tables"]["lyrics_variants"]["Row"];
+
+interface LyricsJobRecord extends LyricsJobRow {
+  variants?: LyricsVariantRow[] | null;
+}
+
+const mapLyricsVariant = (variant: LyricsVariantRow): LyricsVariant => ({
+  id: variant.id,
+  jobId: variant.job_id,
+  index: variant.variant_index,
+  title: variant.title,
+  status: variant.status,
+  content: variant.content,
+  errorMessage: variant.error_message,
+  updatedAt: variant.updated_at,
+});
+
+const mapLyricsJobRecord = (record: LyricsJobRecord): LyricsGenerationJob => {
+  const variants = Array.isArray(record.variants)
+    ? record.variants
+        .map(mapLyricsVariant)
+        .sort((a, b) => a.index - b.index)
+    : [];
+
+  return {
+    id: record.id,
+    trackId: record.track_id,
+    prompt: record.prompt,
+    status: record.status,
+    sunoTaskId: record.suno_task_id,
+    errorMessage: record.error_message,
+    metadata: (record.metadata ?? null) as Record<string, unknown> | null,
+    callStrategy: record.call_strategy,
+    callbackUrl: record.callback_url,
+    createdAt: record.created_at,
+    updatedAt: record.updated_at,
+    lastCallback: (record.last_callback ?? null) as Record<string, unknown> | null,
+    lastPollResponse: (record.last_poll_response ?? null) as Record<string, unknown> | null,
+    variants,
+  };
+};
 
 export type ProviderBalanceResponse = {
   balance: number | null;
@@ -246,6 +290,7 @@ export class ApiService {
         created_at,
         updated_at,
         last_callback,
+        last_poll_response,
         variants:lyrics_variants (
           id,
           job_id,
@@ -269,34 +314,32 @@ export class ApiService {
       return null;
     }
 
-    const variants = Array.isArray(data.variants)
-      ? (data.variants as Array<{ id: string; job_id: string; variant_index: number; title: string | null; status: string | null; content: string | null; error_message: string | null; updated_at: string; }>).map((variant) => ({
-          id: variant.id,
-          jobId: variant.job_id,
-          index: variant.variant_index,
-          title: variant.title,
-          status: variant.status,
-          content: variant.content,
-          errorMessage: variant.error_message,
-          updatedAt: variant.updated_at,
-        }))
-      : [];
+    return mapLyricsJobRecord(data as LyricsJobRecord);
+  }
 
-    return {
-      id: data.id,
-      trackId: data.track_id,
-      prompt: data.prompt,
-      status: data.status,
-      sunoTaskId: data.suno_task_id,
-      errorMessage: data.error_message,
-      metadata: (data.metadata ?? null) as Record<string, unknown> | null,
-      callStrategy: data.call_strategy,
-      callbackUrl: data.callback_url,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
-      lastCallback: (data.last_callback ?? null) as Record<string, unknown> | null,
-      variants,
-    };
+  /**
+   * Request a fresh sync with Suno for a lyrics job
+   */
+  static async syncLyricsJob(jobId: string): Promise<LyricsGenerationJob | null> {
+    const context = "ApiService.syncLyricsJob";
+    const { data, error } = await supabase.functions.invoke<{
+      success: boolean;
+      job: LyricsJobRecord | null;
+    }>("sync-lyrics-job", {
+      body: { jobId },
+    });
+
+    if (error) {
+      handleSupabaseFunctionError(error, "Failed to synchronise lyrics job", context, { jobId });
+      return null;
+    }
+
+    if (!data?.success || !data.job) {
+      logWarn("⚠️ [API Service] Sync lyrics job returned no data", context, { jobId, success: data?.success ?? false });
+      return null;
+    }
+
+    return mapLyricsJobRecord(data.job);
   }
 
   /**

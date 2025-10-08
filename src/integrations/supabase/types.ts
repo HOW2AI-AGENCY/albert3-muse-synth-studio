@@ -20,6 +20,7 @@ export type Database = {
           call_strategy: string
           created_at: string
           error_message: string | null
+          last_poll_response: Json | null
           id: string
           initial_response: Json | null
           last_callback: Json | null
@@ -37,6 +38,7 @@ export type Database = {
           call_strategy?: string
           created_at?: string
           error_message?: string | null
+          last_poll_response?: Json | null
           id?: string
           initial_response?: Json | null
           last_callback?: Json | null
@@ -54,6 +56,7 @@ export type Database = {
           call_strategy?: string
           created_at?: string
           error_message?: string | null
+          last_poll_response?: Json | null
           id?: string
           initial_response?: Json | null
           last_callback?: Json | null
