@@ -39,22 +39,24 @@ LazyLoadWrapper.displayName = 'LazyLoadWrapper';
  * HOC для создания ленивых компонентов с оптимизацией
  * Кэширует созданные компоненты для повторного использования
  */
-const componentCache = new Map<string, React.ComponentType<any>>();
+type LazyImport<P extends object> = () => Promise<{ default: ComponentType<P> }>;
+
+const componentCache = new Map<string, ComponentType<unknown>>();
 
 export const createLazyComponent = <P extends object>(
-  importFn: () => Promise<{ default: ComponentType<P> }>,
+  importFn: LazyImport<P>,
   fallback?: React.ReactNode,
   errorFallback?: React.ReactNode,
   cacheKey?: string
 ) => {
   // Используем кэш для предотвращения создания дублирующих компонентов
   if (cacheKey && componentCache.has(cacheKey)) {
-    return componentCache.get(cacheKey) as React.ComponentType<P>;
+    return componentCache.get(cacheKey) as ComponentType<P>;
   }
 
   const LazyComponent = lazy(importFn);
-  
-  const MemoizedLazyComponent = memo(React.forwardRef<any, P>((props, ref) => (
+
+  const MemoizedLazyComponent = memo(React.forwardRef<unknown, P>((props, ref) => (
     <LazyLoadWrapper fallback={fallback} errorFallback={errorFallback}>
       <LazyComponent {...props} ref={ref} />
     </LazyLoadWrapper>
@@ -63,7 +65,7 @@ export const createLazyComponent = <P extends object>(
   MemoizedLazyComponent.displayName = `LazyComponent(${cacheKey || 'Anonymous'})`;
 
   if (cacheKey) {
-    componentCache.set(cacheKey, MemoizedLazyComponent);
+    componentCache.set(cacheKey, MemoizedLazyComponent as ComponentType<unknown>);
   }
 
   return MemoizedLazyComponent;
@@ -74,8 +76,8 @@ export const createLazyComponent = <P extends object>(
  */
 const preloadCache = new Set<string>();
 
-export const usePreloadComponent = (
-  importFn: () => Promise<{ default: ComponentType<any> }>,
+export const usePreloadComponent = <P extends object>(
+  importFn: LazyImport<P>,
   cacheKey?: string
 ) => {
   const preload = React.useCallback(() => {
