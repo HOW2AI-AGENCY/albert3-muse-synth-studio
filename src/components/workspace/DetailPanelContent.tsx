@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { TrackVersions } from "@/components/tracks/TrackVersions";
 import { TrackStemsPanel } from "@/components/tracks/TrackStemsPanel";
 import { useTrackLike } from "@/hooks/useTrackLike";
@@ -113,27 +114,43 @@ export const DetailPanelContent = ({
   const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count || 0);
 
   return (
+    <TooltipProvider delayDuration={500}>
     <div className="p-4 space-y-4">
       {/* Quick Actions */}
       <div className="grid grid-cols-3 gap-3">
-        <Button 
-          variant={isLiked ? "default" : "outline"} 
-          size="default"
-          onClick={() => toggleLike()}
-          className={isLiked ? "bg-red-500 hover:bg-red-600" : ""}
-        >
-          <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
-          <span className="hidden sm:inline">{likeCount > 0 ? likeCount : 'Лайк'}</span>
-          <span className="sm:hidden">{likeCount || 0}</span>
-        </Button>
-        <Button variant="outline" size="default" onClick={onDownload} disabled={!track.audio_url}>
-          <Download className="h-4 w-4 mr-2" />
-          <span className="hidden sm:inline">Скачать</span>
-        </Button>
-        <Button variant="outline" size="default" onClick={onShare}>
-          <Share2 className="h-4 w-4 mr-2" />
-          <span className="hidden sm:inline">Поделиться</span>
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              variant={isLiked ? "default" : "outline"} 
+              size="default"
+              onClick={() => toggleLike()}
+              className={isLiked ? "bg-red-500 hover:bg-red-600" : ""}
+            >
+              <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
+              <span className="hidden sm:inline">{likeCount > 0 ? likeCount : 'Лайк'}</span>
+              <span className="sm:hidden">{likeCount || 0}</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Добавить трек в избранное</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="outline" size="default" onClick={onDownload} disabled={!track.audio_url}>
+              <Download className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Скачать</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Скачать трек в формате MP3</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="outline" size="default" onClick={onShare}>
+              <Share2 className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Поделиться</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Поделиться треком с друзьями</TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Collapsible Sections */}
@@ -342,11 +359,17 @@ export const DetailPanelContent = ({
 
       {/* Danger Zone */}
       <div className="pt-2 space-y-2">
-        <Button variant="destructive" size="sm" className="w-full" onClick={onDelete}>
-          <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-          Удалить трек
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="destructive" size="sm" className="w-full" onClick={onDelete}>
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              Удалить трек
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Удалить трек безвозвратно</TooltipContent>
+        </Tooltip>
       </div>
     </div>
+    </TooltipProvider>
   );
 };

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Sparkles, Music, Wand2, Mic, Settings2, Hash, FileText, Volume2, Clock, Zap } from 'lucide-react';
 import { useMusicGeneration } from '@/hooks/useMusicGeneration';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
@@ -166,6 +167,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   }, [improvePrompt, vibrate, toast]);
 
   return (
+    <TooltipProvider delayDuration={500}>
     <Card 
       ref={cardRef}
       variant="gradient" 
@@ -199,20 +201,30 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       {/* Вкладки */}
       <Tabs defaultValue="simple" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6 bg-background/50 backdrop-blur-sm border border-primary/20">
-          <TabsTrigger 
-            value="simple" 
-            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300 text-sm py-2.5 px-4"
-          >
-            <Zap className="w-4 h-4 mr-2 shrink-0" />
-            <span>Простой режим</span>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="advanced"
-            className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300 text-sm py-2.5 px-4"
-          >
-            <Settings2 className="w-4 h-4 mr-2 shrink-0" />
-            <span>Расширенный</span>
-          </TabsTrigger>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <TabsTrigger 
+                value="simple" 
+                className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300 text-sm py-2.5 px-4"
+              >
+                <Zap className="w-4 h-4 mr-2 shrink-0" />
+                <span>Простой режим</span>
+              </TabsTrigger>
+            </TooltipTrigger>
+            <TooltipContent>Быстрая генерация с основными настройками</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <TabsTrigger 
+                value="advanced"
+                className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary transition-all duration-300 text-sm py-2.5 px-4"
+              >
+                <Settings2 className="w-4 h-4 mr-2 shrink-0" />
+                <span>Расширенный</span>
+              </TabsTrigger>
+            </TooltipTrigger>
+            <TooltipContent>Детальная настройка лирики и параметров</TooltipContent>
+          </Tooltip>
         </TabsList>
 
         <TabsContent value="simple" className="space-y-6 animate-slide-up">
@@ -351,42 +363,52 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
 
           {/* Кнопки действий */}
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            <Button
-              variant="glass"
-              onClick={handleImprovePrompt}
-              disabled={isImproving || isGenerating || !prompt.trim()}
-              className="flex-1 h-10 sm:h-12 group hover:scale-105 transition-all duration-300 text-xs sm:text-sm"
-            >
-              <Wand2 className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:animate-spin transition-transform duration-500" />
-              {isImproving ? (
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  <span className="hidden xs:inline">Улучшение...</span>
-                  <span className="xs:hidden">...</span>
-                </div>
-              ) : (
-                <span className="truncate">Улучшить с AI</span>
-              )}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="glass"
+                  onClick={handleImprovePrompt}
+                  disabled={isImproving || isGenerating || !prompt.trim()}
+                  className="flex-1 h-10 sm:h-12 group hover:scale-105 transition-all duration-300 text-xs sm:text-sm"
+                >
+                  <Wand2 className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:animate-spin transition-transform duration-500" />
+                  {isImproving ? (
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      <span className="hidden xs:inline">Улучшение...</span>
+                      <span className="xs:hidden">...</span>
+                    </div>
+                  ) : (
+                    <span className="truncate">Улучшить с AI</span>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>AI оптимизирует описание для лучшего результата</TooltipContent>
+            </Tooltip>
 
-            <Button
-              variant="hero"
-              onClick={handleGenerateMusic}
-              disabled={isGenerating || isImproving || !prompt.trim()}
-              className="flex-1 h-10 sm:h-12 text-xs sm:text-base shadow-glow hover:scale-105 transition-all duration-300 relative overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-              <Sparkles className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-pulse" />
-              {isGenerating ? (
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  <span className="hidden xs:inline">Генерация...</span>
-                  <span className="xs:hidden">...</span>
-                </div>
-              ) : (
-                <span className="truncate">Сгенерировать музыку</span>
-              )}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="hero"
+                  onClick={handleGenerateMusic}
+                  disabled={isGenerating || isImproving || !prompt.trim()}
+                  className="flex-1 h-10 sm:h-12 text-xs sm:text-base shadow-glow hover:scale-105 transition-all duration-300 relative overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                  <Sparkles className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-pulse" />
+                  {isGenerating ? (
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      <span className="hidden xs:inline">Генерация...</span>
+                      <span className="xs:hidden">...</span>
+                    </div>
+                  ) : (
+                    <span className="truncate">Сгенерировать музыку</span>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Создать трек на основе вашего описания</TooltipContent>
+            </Tooltip>
           </div>
         </TabsContent>
 
@@ -596,6 +618,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       </Tabs>
       </div>
     </Card>
+    </TooltipProvider>
   );
 };
 

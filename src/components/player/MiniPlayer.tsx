@@ -1,5 +1,6 @@
 import { Play, Pause, SkipBack, SkipForward, X, ListMusic } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ResponsiveStack } from "@/components/ui/ResponsiveLayout";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
@@ -44,6 +45,7 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
   };
 
   return (
+    <TooltipProvider delayDuration={500}>
     <div
       onClick={handleExpand}
       className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-primary/20 shadow-glow cursor-pointer animate-slide-up safe-area-bottom hover:bg-card/98 transition-all duration-300"
@@ -92,47 +94,68 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
 
         {/* Playback Controls */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={handlePrevious}
-            className="h-8 w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
-          >
-            <SkipBack className="h-4 w-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={handlePrevious}
+                className="h-8 w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+              >
+                <SkipBack className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Предыдущий трек</TooltipContent>
+          </Tooltip>
 
-          <Button
-            size="icon"
-            variant="default"
-            onClick={handlePlayPause}
-            className="h-10 w-10 rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-200 hover:scale-105"
-          >
-            {isPlaying ? (
-              <Pause className="h-5 w-5" />
-            ) : (
-              <Play className="h-5 w-5 ml-0.5" />
-            )}
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="default"
+                onClick={handlePlayPause}
+                className="h-10 w-10 rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-200 hover:scale-105"
+              >
+                {isPlaying ? (
+                  <Pause className="h-5 w-5" />
+                ) : (
+                  <Play className="h-5 w-5 ml-0.5" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{isPlaying ? 'Пауза' : 'Воспроизвести'}</TooltipContent>
+          </Tooltip>
 
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={handleNext}
-            className="h-8 w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
-          >
-            <SkipForward className="h-4 w-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={handleNext}
+                className="h-8 w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+              >
+                <SkipForward className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Следующий трек</TooltipContent>
+          </Tooltip>
 
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={handleClose}
-            className="h-8 w-8 hover:bg-destructive/20 hover:scale-105 transition-all duration-200"
-          >
-            <X className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={handleClose}
+                className="h-8 w-8 hover:bg-destructive/20 hover:scale-105 transition-all duration-200"
+              >
+                <X className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Закрыть плеер</TooltipContent>
+          </Tooltip>
         </div>
       </ResponsiveStack>
     </div>
+    </TooltipProvider>
   );
 };

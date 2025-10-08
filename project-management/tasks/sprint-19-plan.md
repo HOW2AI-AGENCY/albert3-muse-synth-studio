@@ -46,14 +46,15 @@
 ### UX-002: Реализация функций Library ⚡
 **Приоритет**: CRITICAL  
 **Оценка**: 6 часов  
-**Назначен**: Frontend Team
+**Назначен**: Frontend Team  
+**Статус**: ✅ ЗАВЕРШЕНО
 
 #### Задачи:
-- [ ] Реализовать `handleLike(trackId)` с интеграцией likes.service.ts
-- [ ] Реализовать `handleDownload(trackId)` с загрузкой из Supabase Storage
-- [ ] Реализовать `handleShare(trackId)` с генерацией публичной ссылки
-- [ ] Добавить loading states для всех действий
-- [ ] Toast уведомления для каждого действия
+- [x] Реализовать `handleLike(trackId)` с интеграцией likes.service.ts
+- [x] Реализовать `handleDownload(trackId)` с загрузкой из Supabase Storage
+- [x] Реализовать `handleShare(trackId)` с генерацией публичной ссылки
+- [x] Добавить loading states для всех действий
+- [x] Toast уведомления для каждого действия
 
 #### Критерии приемки:
 - ✅ Like/Unlike работает с мгновенным UI обновлением
@@ -66,37 +67,38 @@
 ### UX-003: Система Tooltips (Часть 1) 💡
 **Приоритет**: HIGH  
 **Оценка**: 12 часов  
-**Назначен**: UI/UX Team
+**Назначен**: UI/UX Team  
+**Статус**: ✅ ЗАВЕРШЕНО
 
 #### Целевые компоненты:
 **MusicGenerator** (20 tooltips):
-- [ ] Provider selector (Replicate/Suno)
-- [ ] Mode toggle (Simple/Custom)
-- [ ] Prompt input
-- [ ] Improve Prompt button
-- [ ] Style tags (каждый тег)
-- [ ] Has Vocals toggle
-- [ ] Generate button
-- [ ] All genre/mood/tempo options
+- [x] Provider selector (Replicate/Suno)
+- [x] Mode toggle (Simple/Custom)
+- [x] Prompt input
+- [x] Improve Prompt button
+- [x] Style tags (каждый тег)
+- [x] Has Vocals toggle
+- [x] Generate button
+- [x] All genre/mood/tempo options
 
 **DetailPanel** (15 tooltips):
-- [ ] Edit metadata button
-- [ ] Public toggle
-- [ ] Like button
-- [ ] Share button
-- [ ] Download button
-- [ ] Delete button
-- [ ] Version switcher
-- [ ] Stems panel buttons
+- [x] Edit metadata button
+- [x] Public toggle
+- [x] Like button
+- [x] Share button
+- [x] Download button
+- [x] Delete button
+- [x] Version switcher
+- [x] Stems panel buttons
 
 **Player** (10 tooltips):
-- [ ] Play/Pause
-- [ ] Previous/Next
-- [ ] Shuffle
-- [ ] Repeat modes
-- [ ] Volume control
-- [ ] Queue button
-- [ ] Full screen
+- [x] Play/Pause
+- [x] Previous/Next
+- [x] Shuffle
+- [x] Repeat modes
+- [x] Volume control
+- [x] Queue button
+- [x] Full screen
 
 #### Критерии приемки:
 - ✅ 45+ tooltips добавлено

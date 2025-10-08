@@ -9,6 +9,7 @@ import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const formatTime = (seconds: number): string => {
   if (!seconds || isNaN(seconds)) return "0:00";
@@ -139,6 +140,7 @@ export const GlobalAudioPlayer = () => {
   };
 
   return (
+    <TooltipProvider delayDuration={500}>
     <div 
       ref={playerRef}
       className={`fixed bottom-0 left-0 right-0 z-50 transition-all duration-500 ease-out ${
@@ -306,6 +308,7 @@ export const GlobalAudioPlayer = () => {
         </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 };
 
