@@ -389,7 +389,7 @@ class DailyReportGenerator(BaseReportGenerator):
 
 🔗 *Ссылки*
 • [GitHub Project](https://github.com/{self.repo_name}/projects)
-• [Current Sprint](project-management/tasks/current-sprint.md)
+• [Current Sprint](tasks/current-sprint.md)
         """
     
     def send_to_slack(self, report):
