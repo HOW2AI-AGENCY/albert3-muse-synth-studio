@@ -1,0 +1,84 @@
+version: 1
+updated_at: 2025-01-15T00:00:00.000Z
+sources:
+  sentry:
+    organization: albert3-labs
+    project: muse-synth-web
+    dashboard_slug: web-vitals-overview
+    metrics_namespace: web-vitals
+    charts:
+      - id: sentry-area-fcp
+        title: First Contentful Paint (P75)
+        metric: web-vitals.fcp
+        aggregate: p75
+        unit: milliseconds
+        alert:
+          name: Web Vitals · FCP regression
+          threshold_ms: 1800
+          environment: production
+          operator: '>'
+          evaluation_period: '5m'
+          min_events: 50
+          action:
+            type: sentry_issue
+            priority: high
+      - id: sentry-area-lcp
+        title: Largest Contentful Paint (P75)
+        metric: web-vitals.lcp
+        aggregate: p75
+        unit: milliseconds
+        alert:
+          name: Web Vitals · LCP regression
+          threshold_ms: 2500
+          environment: production
+          operator: '>'
+          evaluation_period: '5m'
+          min_events: 50
+          action:
+            type: pagerduty
+            service: frontend-latency
+      - id: sentry-area-cls
+        title: Cumulative Layout Shift (P75)
+        metric: web-vitals.cls
+        aggregate: p75
+        unit: score
+        alert:
+          name: Web Vitals · CLS regression
+          threshold: 0.1
+          environment: production
+          operator: '>'
+          evaluation_period: '10m'
+          min_events: 50
+          action:
+            type: slack
+            channel: '#perf-alerts'
+  supabase:
+    project_ref: abcd1234perf
+    schema: observability
+    table: web_vitals_events
+    retention_days: 30
+    refresh_job: 'SELECT refresh_web_vitals_mv();'
+    dashboards:
+      - name: Performance overview
+        url: https://app.supabase.com/project/abcd1234perf/editor/dashboard/performance-overview
+        widgets:
+          - type: table
+            title: Raw Web Vitals events
+            columns:
+              - name
+              - value
+              - rating
+              - navigation_type
+              - reported_at
+          - type: histogram
+            title: FCP distribution
+            column: value
+            filter: name = 'FCP'
+          - type: histogram
+            title: LCP distribution
+            column: value
+            filter: name = 'LCP'
+          - type: histogram
+            title: CLS distribution
+            column: value
+            filter: name = 'CLS'
