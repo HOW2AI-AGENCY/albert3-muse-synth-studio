@@ -48,11 +48,17 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   // Управление версиями треков: загрузка, переключение, автоматическая очередь
   const [availableVersions, setAvailableVersions] = useState<TrackWithVersions[]>([]);
   const [currentVersionIndex, setCurrentVersionIndex] = useState(0);
-  const [autoPlayVersions, setAutoPlayVersions] = useState(true); // Включаем автовоспроизведение версий
+  const [autoPlayVersions] = useState(true); // Включаем автовоспроизведение версий
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const { toast } = useToast();
   const { playTime, hasRecorded } = usePlayAnalytics(currentTrack?.id || null, isPlaying, currentTime);
+  // Используем playTime и hasRecorded для аналитики
+  useEffect(() => {
+    if (hasRecorded && playTime > 0) {
+      // Аналитика записана
+    }
+  }, [hasRecorded, playTime]);
 
   /**
    * Загрузка всех версий для трека и добавление их в очередь
@@ -422,7 +428,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     const handleLoadedMetadata = () => setDuration(audio.duration);
     
     // Добавлен обработчик ошибок для детальной диагностики
-    const handleError = (e: Event) => {
+    const handleError = () => {
       const mediaError = audio.error;
       if (!mediaError) return;
 

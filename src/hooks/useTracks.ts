@@ -19,7 +19,7 @@ interface UseTracksOptions {
   pollingMaxDelay?: number;
 }
 
-export const useTracks = (refreshTrigger?: number, options?: UseTracksOptions) => {
+export const useTracks = (refreshTrigger?: number, _options?: UseTracksOptions) => {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();

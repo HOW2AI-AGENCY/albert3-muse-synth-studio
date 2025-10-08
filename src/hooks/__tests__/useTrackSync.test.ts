@@ -16,7 +16,7 @@ const eqChain = vi.fn((column: string) => {
 const selectMock = vi.fn(() => ({ eq: eqChain }));
 
 const channelMock: any = {};
-channelMock.on = channelOnMock.mockImplementation((event, filter, callback) => {
+channelMock.on = channelOnMock.mockImplementation((_event, _filter, callback) => {
   channelMock.__callback = callback;
   return channelMock;
 });

@@ -116,9 +116,9 @@ describe('useTracks', () => {
 
     it('sets empty tracks when user is not authenticated', async () => {
       vi.mocked(supabase.auth.getUser).mockResolvedValue({
-        data: { user: null },
+        data: { user: null as any },
         error: null,
-      });
+      } as any);
 
       const { result } = renderHook(() => useTracks(undefined, { pollingEnabled: false }));
 

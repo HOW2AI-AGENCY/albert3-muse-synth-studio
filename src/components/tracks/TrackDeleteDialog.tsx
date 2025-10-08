@@ -9,7 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+// import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 

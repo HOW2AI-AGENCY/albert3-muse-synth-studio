@@ -46,7 +46,7 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
     try {
       setIsGenerating(true);
       
-      const { data, error } = await supabase.functions.invoke('separate-stems', {
+      const { error } = await supabase.functions.invoke('separate-stems', {
         body: {
           trackId,
           versionId,
