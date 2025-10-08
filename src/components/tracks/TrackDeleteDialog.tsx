@@ -96,24 +96,21 @@ export const TrackDeleteDialog = ({
               Удалить трек?
             </AlertDialogTitle>
           </div>
-          <AlertDialogDescription className="text-left space-y-3 pt-2">
-            <p className="font-medium text-foreground">
-              Вы собираетесь удалить трек "{trackTitle}"
-            </p>
+          <AlertDialogDescription className="text-left pt-2 font-medium text-foreground">
+            Вы собираетесь удалить трек "{trackTitle}"
           </AlertDialogDescription>
-          
-          <div className="space-y-3">
+          <div className="text-sm text-muted-foreground space-y-3 pt-2">
             {isLoading ? (
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span>Загрузка информации...</span>
               </div>
             ) : (
               <div className="space-y-2">
-                <p className="text-sm">
+                <p>
                   Это действие удалит:
                 </p>
-                <ul className="list-disc list-inside text-sm space-y-1 text-muted-foreground">
+                <ul className="list-disc list-inside space-y-1">
                   <li>Основной трек</li>
                   {versionsCount > 0 && (
                     <li className="text-orange-500 font-medium">
@@ -127,7 +124,7 @@ export const TrackDeleteDialog = ({
                   )}
                   <li>Все связанные данные (лайки, аналитика)</li>
                 </ul>
-                <p className="text-sm font-medium text-destructive pt-2">
+                <p className="font-medium text-destructive pt-2">
                   ⚠️ Это действие нельзя отменить
                 </p>
               </div>

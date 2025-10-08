@@ -48,16 +48,14 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   // Управление версиями треков: загрузка, переключение, автоматическая очередь
   const [availableVersions, setAvailableVersions] = useState<TrackWithVersions[]>([]);
   const [currentVersionIndex, setCurrentVersionIndex] = useState(0);
-  const [autoPlayVersions, setAutoPlayVersions] = useState(false); // Настройка автовоспроизведения версий
+  const [autoPlayVersions, setAutoPlayVersions] = useState(true); // Включаем автовоспроизведение версий
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const { toast } = useToast();
   const { playTime, hasRecorded } = usePlayAnalytics(currentTrack?.id || null, isPlaying, currentTime);
 
   /**
-   * Загрузка всех версий для трека
-   * @param trackId - ID трека (может быть основной трек или версия)
-   * @returns Массив загруженных версий
+   * Загрузка всех версий для трека и добавление их в очередь
    */
   const loadVersions = useCallback(async (trackId: string): Promise<TrackWithVersions[]> => {
     try {
@@ -86,8 +84,17 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
             isMasterVersion: v.isMasterVersion,
           }));
           
-          logInfo(`Auto-queueing ${versionTracks.length} versions`, 'AudioPlayerContext');
-          setQueue(prev => [...prev, ...versionTracks.slice(1)]); // Добавить версии после текущего трека
+          setQueue(prev => {
+            const currentIdx = Math.max(0, currentQueueIndex);
+            const next = [...prev];
+            const firstVersionId = versionTracks[1]?.id;
+            if (firstVersionId && next.some(t => t.id === firstVersionId)) {
+                return prev; // Already queued
+            }
+            next.splice(currentIdx + 1, 0, ...versionTracks.slice(1));
+            logInfo(`Auto-queued ${versionTracks.length - 1} versions after index ${currentIdx}`, 'AudioPlayerContext');
+            return next;
+          });
         }
       } else {
         setAvailableVersions([]);
@@ -100,7 +107,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       setAvailableVersions([]);
       return [];
     }
-  }, [autoPlayVersions]);
+  }, [autoPlayVersions, currentQueueIndex]);
 
   // Мемоизированная функция воспроизведения трека
   const playTrack = useCallback(async (track: AudioPlayerTrack) => {
@@ -152,13 +159,6 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       status: normalizedTrack.status
     });
 
-    // ============= УБРАЛИ ПРОВЕРКУ URL =============
-    // Убрали HEAD-запрос, так как:
-    // 1. С mode: 'no-cors' response.ok всегда false (false-negative)
-    // 2. Создаёт "шумные" запросы в логах
-    // 3. Может вызывать ошибки на мобильных
-    // Вместо этого полагаемся на встроенную обработку ошибок <audio> элемента
-    
     try {
       if (audioRef.current) {
         audioRef.current.pause();

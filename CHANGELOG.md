@@ -2,6 +2,17 @@
 
 Все важные изменения в этом проекте будут документированы в этом файле.
 
+## [2.5.2] - 2025-10-08
+
+### Fixed
+- **Track Versioning**: Implemented a fallback to correctly load versions for older tracks from metadata. The playback queue now correctly handles and orders all track versions.
+- **Player UI**: Corrected the layout of the desktop player's volume and close controls. Fixed a DOM nesting issue in the track delete dialog.
+- **Music Generation**: Standardized the Supabase client version across all edge functions to prevent build conflicts. Implemented a polling mechanism to provide users with real-time feedback on track generation status.
+- **Provider Balance**: Ensured the frontend gracefully handles API errors when fetching the provider balance and displays appropriate user feedback.
+
+### Added
+- **Generation Request Logging**: Implemented a new `generation_requests` table and integrated logging into the `ApiService` to provide a detailed audit trail for all music generation requests.
+
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/lang/ru/).
 

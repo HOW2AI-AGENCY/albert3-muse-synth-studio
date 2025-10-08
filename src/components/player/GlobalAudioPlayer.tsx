@@ -330,43 +330,46 @@ export const GlobalAudioPlayer = () => {
             </div>
           </div>
 
-          {/* Volume Control */}
-          <div className="flex items-center gap-3 min-w-[200px]">
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={toggleMute}
-              className="h-10 w-10 hover:bg-primary/10 hover:scale-110 transition-all duration-200 group"
-            >
-              {isMuted || volume === 0 ? (
-                <VolumeX className="h-5 w-5 group-hover:text-primary transition-colors duration-200" />
-              ) : volume < 0.5 ? (
-                <Volume1 className="h-5 w-5 group-hover:text-primary transition-colors duration-200" />
-              ) : (
-                <Volume2 className="h-5 w-5 group-hover:text-primary transition-colors duration-200" />
-              )}
-            </Button>
-            <div className="flex-1 relative group min-w-[100px]">
-              <Slider
-                value={[isMuted ? 0 : volume]}
-                max={1}
-                step={0.01}
-                onValueChange={handleVolumeChange}
-                className="cursor-pointer group-hover:scale-y-125 transition-transform duration-200"
-              />
-              {/* Индикатор громкости */}
-              <div 
-                className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-primary/60 to-primary rounded-full -translate-y-1/2 transition-all duration-100"
-                style={{ width: `${(isMuted ? 0 : volume) * 100}%` }}
-              />
+          {/* Volume & Other Controls */}
+          <div className="flex items-center gap-4">
+            {/* Volume Control */}
+            <div className="flex items-center gap-2 min-w-[200px]">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={toggleMute}
+                    className="h-10 w-10 hover:bg-primary/10 hover:scale-110 transition-all duration-200 group"
+                  >
+                    {isMuted || volume === 0 ? (
+                      <VolumeX className="h-5 w-5 group-hover:text-primary transition-colors duration-200" />
+                    ) : volume < 0.5 ? (
+                      <Volume1 className="h-5 w-5 group-hover:text-primary transition-colors duration-200" />
+                    ) : (
+                      <Volume2 className="h-5 w-5 group-hover:text-primary transition-colors duration-200" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isMuted ? 'Включить звук' : 'Выключить звук'}</p>
+                </TooltipContent>
+              </Tooltip>
+              <div className="flex-1 relative group min-w-[120px]">
+                <Slider
+                  value={[isMuted ? 0 : volume]}
+                  max={1}
+                  step={0.01}
+                  onValueChange={handleVolumeChange}
+                  className="cursor-pointer group-hover:scale-y-125 transition-transform duration-200"
+                />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground/80 tabular-nums w-10 text-right">
+                {Math.round((isMuted ? 0 : volume) * 100)}%
+              </span>
             </div>
-            <span className="text-xs font-medium text-muted-foreground/80 tabular-nums w-10 text-right">
-              {Math.round((isMuted ? 0 : volume) * 100)}%
-            </span>
-          </div>
 
-          {/* Close Button - separate column */}
-          <div className="flex items-center">
+            {/* Close Button */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
