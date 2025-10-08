@@ -2,6 +2,18 @@
 
 Все важные изменения в этом проекте будут документированы в этом файле.
 
+## [2.5.3] - 2025-10-08
+
+### Security
+- **Suno API Calls**: Moved all client-side calls to the Suno API into a secure Supabase Edge Function (`generate-suno`) to protect the `SUNO_API_KEY` from being exposed.
+
+### Added
+- **Idempotency for AI Jobs**: Implemented a new `ai_jobs` table with a unique `idempotency_key` to prevent duplicate track generation requests and ensure reliability.
+- **Job Status Tracking**: The `generate-suno` Edge Function now tracks the lifecycle of each generation job (pending, processing, completed, failed) in the `ai_jobs` table, providing better observability.
+
+### Fixed
+- **Reliability**: The generation process is now more robust. The system can handle retries and prevent duplicate processing, minimizing errors and wasted resources.
+
 ## [2.5.2] - 2025-10-08
 
 ### Fixed
