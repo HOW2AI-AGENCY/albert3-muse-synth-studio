@@ -214,7 +214,7 @@ const TracksListComponent = ({
       </div>
 
       {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {tracks.map((track) => {
             const typedTrack = track as Track;
             const isStaleTrack = isStale(typedTrack);
@@ -254,7 +254,7 @@ const TracksListComponent = ({
                     onClick={() => retryTrack(typedTrack)}
                     variant="outline"
                     size="sm"
-                    className="w-full"
+                    className="w-full sm:w-auto touch-action-manipulation"
                   >
                     <RefreshCcw className="h-4 w-4 mr-2" />
                     {isStaleTrack ? "Повторить (застрял)" : "Повторить попытку"}

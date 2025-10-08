@@ -172,7 +172,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       ref={cardRef}
       variant="gradient" 
       className={`
-        w-full h-full p-6 space-y-6
+        w-full h-full p-4 sm:p-6 space-y-6
         transition-all duration-700 ease-out
         ${isVisible ? 'animate-fade-in opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
       `}
@@ -243,7 +243,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                 setPrompt(newValue);
                 adjustTextareaHeight();
               }}
-              className="min-h-[100px] resize-none bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300 hover:border-primary/30"
+              className="min-h-[120px] sm:min-h-[100px] resize-none bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300 hover:border-primary/30 text-base sm:text-sm leading-relaxed"
               disabled={isGenerating || isImproving}
             />
           </div>
@@ -289,7 +289,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
           </div>
 
           {/* Настроение и темп */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2 sm:space-y-3">
               <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
                 <Volume2 className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />

@@ -155,7 +155,8 @@ const Generate = () => {
         <DrawerTrigger asChild>
           <Button
             size="lg"
-            className={`fixed right-4 h-14 w-14 rounded-full shadow-2xl glow-primary bg-gradient-primary hover:scale-110 transition-all duration-300 z-40 animate-pulse-glow ${currentTrack ? 'bottom-24' : 'bottom-8'}`}
+            className={`fixed right-4 h-14 w-14 rounded-full shadow-2xl glow-primary bg-gradient-primary hover:scale-110 transition-all duration-300 z-40 animate-pulse-glow touch-action-manipulation`}
+            style={{ bottom: currentTrack ? 'calc(env(safe-area-inset-bottom) + 88px)' : 'calc(env(safe-area-inset-bottom) + 16px)' }}
             aria-label="Создать музыку"
           >
             <Plus className="h-6 w-6" />

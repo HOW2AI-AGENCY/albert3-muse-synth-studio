@@ -142,7 +142,7 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
           <p className="text-sm text-muted-foreground">
             Разделите трек на отдельные элементы для более гибкой работы со звуком
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
             <Button
               onClick={() => handleGenerateStems('separate_vocal')}
               disabled={isGenerating}
@@ -184,7 +184,7 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
                           <Button
                             size="icon"
                             variant={isStemPlaying ? "default" : "ghost"}
-                            className="shrink-0 h-9 w-9"
+                            className="shrink-0 h-11 w-11 sm:h-9 sm:w-9 touch-action-manipulation"
                             onClick={() => handlePlayStem(stem)}
                           >
                             {isStemPlaying ? (
@@ -199,7 +199,7 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="shrink-0 h-9 w-9"
+                            className="shrink-0 h-11 w-11 sm:h-9 sm:w-9 touch-action-manipulation"
                             onClick={() => handleDownloadStem(stem)}
                           >
                             <Download className="w-4 h-4" />
@@ -231,7 +231,7 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
                           <Button
                             size="icon"
                             variant={isStemPlaying ? "default" : "ghost"}
-                            className="shrink-0 h-9 w-9"
+                            className="shrink-0 h-11 w-11 sm:h-9 sm:w-9 touch-action-manipulation"
                             onClick={() => handlePlayStem(stem)}
                           >
                             {isStemPlaying ? (
@@ -246,7 +246,7 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="shrink-0 h-9 w-9"
+                            className="shrink-0 h-11 w-11 sm:h-9 sm:w-9 touch-action-manipulation"
                             onClick={() => handleDownloadStem(stem)}
                           >
                             <Download className="w-4 h-4" />

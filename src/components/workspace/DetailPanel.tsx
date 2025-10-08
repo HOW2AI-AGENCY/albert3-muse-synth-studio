@@ -316,15 +316,17 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto overscroll-contain pb-[env(safe-area-inset-bottom)]">
         {/* Cover Art Preview */}
         {track.cover_url && (
           <div className="p-4">
-            <div className="aspect-square max-h-48 overflow-hidden border border-border rounded-xl shadow-lg">
+            <div className="aspect-square max-h-32 sm:max-h-48 overflow-hidden border border-border rounded-xl shadow-lg">
               <img
                 src={track.cover_url}
                 alt={`Обложка трека ${track.title}`}
                 className="w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
               />
             </div>
           </div>

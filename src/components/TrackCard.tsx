@@ -280,16 +280,16 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
           <div className="flex items-center gap-3">
             {/* Play Button */}
             <Button
-              variant="ghost"
-              size="sm"
-              onClick={handlePlayClick}
-              disabled={playButtonDisabled}
-              className={cn(
-                "w-10 h-10 rounded-full transition-all duration-300",
-                isCurrentTrack && isPlaying 
-                  ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" 
-                  : "hover:bg-primary/10 hover:scale-110"
-              )}
+            variant="ghost"
+            size="sm"
+            onClick={handlePlayClick}
+            disabled={playButtonDisabled}
+            className={cn(
+              "w-12 h-12 sm:w-10 sm:h-10 rounded-full transition-all duration-200 touch-action-manipulation",
+              isCurrentTrack && isPlaying 
+                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25" 
+                : "hover:bg-primary/10 hover:scale-110"
+            )}
               aria-label={
                 isCurrentTrack && isPlaying 
                   ? `Приостановить воспроизведение трека ${track.title}` 
@@ -325,7 +325,7 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
                 size="sm"
                 onClick={handleLikeClick}
                 className={cn(
-                  "w-8 h-8 p-0 transition-all duration-200",
+                  "w-10 h-10 sm:w-8 sm:h-8 p-0 transition-all duration-200 touch-action-manipulation",
                   isLiked ? "text-red-500 hover:text-red-600" : "hover:text-red-500"
                 )}
                 aria-label={isLiked ? `Убрать из избранного: ${track.title}` : `Добавить в избранное: ${track.title}`}
@@ -381,7 +381,8 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
         {/* Оверлей с кнопкой воспроизведения */}
         <div className={cn(
           "absolute inset-0 bg-black/40 flex items-center justify-center transition-all duration-300",
-          isHovered || (isCurrentTrack && isPlaying) ? 'opacity-100' : 'opacity-0'
+          "@media (hover: hover)",
+          isHovered || (isCurrentTrack && isPlaying) ? 'opacity-100' : 'opacity-0 md:opacity-0'
         )}>
           <Button
             variant="secondary"
@@ -389,9 +390,9 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className, va
             onClick={handlePlayClick}
             disabled={playButtonDisabled}
             className={cn(
-              "rounded-full w-14 h-14 transition-all duration-300 shadow-lg",
+              "rounded-full w-16 h-16 sm:w-14 sm:h-14 transition-all duration-200 shadow-lg touch-action-manipulation",
               isCurrentTrack && isPlaying
-                ? "bg-primary text-primary-foreground shadow-primary/25 animate-pulse-glow" 
+                ? "bg-primary text-primary-foreground shadow-primary/25" 
                 : "bg-white/90 hover:bg-white text-black hover:scale-110 hover:shadow-xl"
             )}
             aria-label={

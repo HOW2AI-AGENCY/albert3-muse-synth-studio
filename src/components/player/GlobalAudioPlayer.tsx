@@ -48,13 +48,13 @@ export const GlobalAudioPlayer = () => {
     }
   }, [currentTrack]);
 
-  // Keyboard shortcuts for desktop
+  // Keyboard shortcuts for desktop only
   useEffect(() => {
     if (isMobile) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is typing in input/textarea
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
+      // Ignore if user is typing in input/textarea or on mobile
+      if (isMobile || ['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
 
       switch (e.code) {
         case 'Space':
@@ -287,7 +287,7 @@ export const GlobalAudioPlayer = () => {
                 <Volume2 className="h-5 w-5 group-hover:text-primary transition-colors duration-200" />
               )}
             </Button>
-            <div className="flex-1 relative group">
+            <div className="flex-1 relative group min-w-[150px] sm:min-w-[200px]">
               <Slider
                 value={[isMuted ? 0 : volume]}
                 max={1}
