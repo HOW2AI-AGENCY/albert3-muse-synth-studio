@@ -12,7 +12,7 @@ interface ProviderBalance {
   [key: string]: unknown;
 }
 
-const PROVIDER_PRIORITY: readonly string[] = ['suno', 'replicate'];
+const PRIMARY_PROVIDER = 'suno';
 
 export const useProviderBalance = () => {
   const [balance, setBalance] = useState<ProviderBalance | null>(null);
@@ -23,52 +23,37 @@ export const useProviderBalance = () => {
     setIsLoading(true);
     setError(null);
 
-    const providerErrors: string[] = [];
-    let fetchedBalance: ProviderBalance | null = null;
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke<ProviderBalance>('get-balance', {
+        body: { provider: PRIMARY_PROVIDER }
+      });
 
-    for (const provider of PROVIDER_PRIORITY) {
-      try {
-        const { data, error: invokeError } = await supabase.functions.invoke<ProviderBalance>('get-balance', {
-          body: { provider }
-        });
-
-        if (invokeError) {
-          providerErrors.push(`[${provider}] ${invokeError.message}`);
-          continue;
-        }
-
-        if (!data) {
-          providerErrors.push(`[${provider}] пустой ответ от функции get-balance`);
-          continue;
-        }
-
-        if (data.error) {
-          providerErrors.push(`[${provider}] ${data.error}`);
-          continue;
-        }
-
-        fetchedBalance = data;
-        break;
-      } catch (fetchError) {
-        providerErrors.push(`[${provider}] ${(fetchError as Error).message}`);
+      if (invokeError) {
+        throw new Error(invokeError.message);
       }
-    }
 
-    if (fetchedBalance) {
-      setBalance(fetchedBalance);
+      if (!data) {
+        throw new Error(`[${PRIMARY_PROVIDER}] пустой ответ от функции get-balance`);
+      }
+
+      if (data.error) {
+        throw new Error(`[${PRIMARY_PROVIDER}] ${data.error}`);
+      }
+
+      setBalance(data);
       setError(null);
-    } else {
-      const combinedError = providerErrors.join('; ') || 'Не удалось получить баланс провайдеров.';
-      setError(combinedError);
+    } catch (fetchError) {
+      const errorMessage = (fetchError as Error).message;
+      setError(errorMessage);
       setBalance({
-        provider: 'unknown',
+        provider: PRIMARY_PROVIDER,
         balance: 0,
         currency: 'credits',
-        error: combinedError,
+        error: errorMessage,
       });
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   }, []);
 
   useEffect(() => {
