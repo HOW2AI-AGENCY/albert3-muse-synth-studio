@@ -17,6 +17,11 @@
 - FIX: Edge Function get-balance принимает provider из POST body (совместимо с functions.invoke)
 - FIX: Хук useProviderBalance теперь вызывает get-balance через supabase.functions.invoke (устранены CORS/префлайт-проблемы)
 - FIX (UI): MusicGenerator (desktop) — добавлены relative/overflow-hidden к карточке для корректной слоёв и размеров
+- FIX: Track Versions — добавлен fallback для загрузки из metadata.suno_data
+- FIX: Desktop Player — исправлена разметка volume slider и close button
+- FIX: DOM nesting в TrackDeleteDialog (убрана вложенность ul внутри AlertDialogDescription)
+- FIX: Унифицирована версия @supabase/supabase-js@2.39.3 во всех edge functions
+- IMPROVED: Детальное логирование в api.service.ts (timestamps, duration, structured logs)
 
 ---
 
