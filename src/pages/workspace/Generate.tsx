@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/resizable";
 import { useTracks } from "@/hooks/useTracks";
 import { useTrackSync } from "@/hooks/useTrackSync";
+import { useTrackRecovery } from "@/hooks/useTrackRecovery";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { supabase } from "@/integrations/supabase/client";
 import { logInfo } from "@/utils/logger";
@@ -59,6 +60,13 @@ const Generate = () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     },
     enabled: true,
+  });
+
+  // Auto-recovery for stuck tracks (треки в pending без suno_id)
+  useTrackRecovery(userId, refreshTracks, {
+    enabled: true,
+    checkIntervalMs: 60000, // Проверять каждую минуту
+    pendingThresholdMs: 120000, // Восстанавливать треки старше 2 минут
   });
 
   const handleTrackGenerated = () => {

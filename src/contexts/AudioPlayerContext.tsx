@@ -114,15 +114,29 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       });
     }
     
-    // Validate track can be played
-    if (!audioUrl || track.status !== 'completed') {
-      logError('Cannot play track - missing audio_url or not completed', new Error(`Track status: ${track.status}`), 'AudioPlayerContext', { trackId: track.id, status: track.status });
+    // Validate track can be played - смягчаем проверку статуса
+    if (!audioUrl) {
+      logError('Cannot play track - missing audio_url', new Error('No audio URL'), 'AudioPlayerContext', { trackId: track.id, status: track.status });
       toast({
         title: "Невозможно воспроизвести",
-        description: track.status === 'processing' ? "Трек всё ещё генерируется" : "Аудио недоступно",
+        description: "Аудио недоступно",
         variant: "destructive",
       });
       return;
+    }
+    
+    // Разрешаем воспроизведение для треков с audio_url, даже если status !== 'completed'
+    // Это важно для версий треков, которые могут иметь другой статус
+    if (track.status === 'processing' || track.status === 'pending') {
+      logInfo('Attempting to play track with non-completed status', 'AudioPlayerContext', { 
+        trackId: track.id, 
+        status: track.status 
+      });
+      toast({
+        title: "Внимание",
+        description: "Трек всё ещё генерируется, но мы попробуем воспроизвести",
+        duration: 3000,
+      });
     }
     
     // Используем нормализованный URL
@@ -138,30 +152,12 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       status: normalizedTrack.status
     });
 
-    // ============= ПРОВЕРКА ДОСТУПНОСТИ URL =============
-    // Проверяем, доступен ли аудиофайл перед воспроизведением
-    try {
-      logInfo('Checking audio URL availability...', 'AudioPlayerContext', { url: audioUrl.substring(0, 50) + '...' });
-      
-      const response = await fetch(audioUrl, { 
-        method: 'HEAD',
-        mode: 'no-cors' // Избегаем CORS ошибок при проверке
-      });
-      
-      // Note: с mode: 'no-cors' response.ok всегда будет false, но мы можем проверить type
-      // Если fetch не выбросил ошибку, URL скорее всего доступен
-      logInfo('Audio URL check completed', 'AudioPlayerContext');
-      
-    } catch (error) {
-      logError('Audio URL is not accessible', error as Error, 'AudioPlayerContext', { trackId: normalizedTrack.id });
-      toast({
-        title: "Аудио недоступно",
-        description: "Файл устарел или удалён. Попробуйте регенерировать трек.",
-        variant: "destructive",
-        duration: 5000,
-      });
-      return;
-    }
+    // ============= УБРАЛИ ПРОВЕРКУ URL =============
+    // Убрали HEAD-запрос, так как:
+    // 1. С mode: 'no-cors' response.ok всегда false (false-negative)
+    // 2. Создаёт "шумные" запросы в логах
+    // 3. Может вызывать ошибки на мобильных
+    // Вместо этого полагаемся на встроенную обработку ошибок <audio> элемента
     
     try {
       if (audioRef.current) {
@@ -424,19 +420,77 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       playNext();
     };
     const handleLoadedMetadata = () => setDuration(audio.duration);
+    
+    // Добавлен обработчик ошибок для детальной диагностики
+    const handleError = (e: Event) => {
+      const mediaError = audio.error;
+      if (!mediaError) return;
+
+      let errorMessage = 'Неизвестная ошибка загрузки аудио';
+      let shouldRetry = false;
+
+      switch (mediaError.code) {
+        case MediaError.MEDIA_ERR_ABORTED:
+          errorMessage = 'Загрузка прервана пользователем';
+          break;
+        case MediaError.MEDIA_ERR_NETWORK:
+          errorMessage = 'Ошибка сети при загрузке';
+          shouldRetry = true;
+          break;
+        case MediaError.MEDIA_ERR_DECODE:
+          errorMessage = 'Ошибка декодирования аудио';
+          break;
+        case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+          errorMessage = 'Формат аудио не поддерживается';
+          break;
+      }
+
+      logError('Audio playback error', new Error(errorMessage), 'AudioPlayerContext', {
+        code: mediaError.code,
+        message: mediaError.message,
+        src: audio.src,
+        trackId: currentTrack?.id,
+      });
+
+      // Автоматический retry для сетевых ошибок (1 раз)
+      if (shouldRetry && audio.src) {
+        logInfo('Retrying audio load after network error...', 'AudioPlayerContext');
+        setTimeout(() => {
+          audio.load();
+          audio.play().catch(err => {
+            logError('Retry failed', err as Error, 'AudioPlayerContext');
+            toast({
+              title: "Ошибка воспроизведения",
+              description: errorMessage,
+              variant: "destructive",
+              duration: 5000,
+            });
+          });
+        }, 1000);
+      } else {
+        toast({
+          title: "Ошибка воспроизведения",
+          description: errorMessage,
+          variant: "destructive",
+          duration: 5000,
+        });
+      }
+    };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('durationchange', handleDurationChange);
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('error', handleError);
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('durationchange', handleDurationChange);
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('error', handleError);
     };
-  }, [playNext]);
+  }, [playNext, currentTrack, toast]);
 
   // Мемоизированное значение контекста
   const contextValue = useMemo(() => ({
