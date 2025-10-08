@@ -4,7 +4,7 @@
  * Optimized with memoization and debouncing
  */
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ApiService, GenerateMusicRequest } from "@/services/api.service";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +24,11 @@ interface GenerateMusicOptions {
 export const useMusicGeneration = (onSuccess?: () => void) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
+  const [provider, setProvider] = useState<'replicate' | 'suno'>('suno');
+  const [hasVocals, setHasVocals] = useState(false);
+  const [lyrics, setLyrics] = useState("");
+  const [styleTags, setStyleTags] = useState<string[]>([]);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
   // Memoized validation functions
@@ -131,6 +136,9 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
     }
 
     setIsGenerating(true);
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+    }
     const requestTimestamp = new Date().toISOString();
     logInfo("🎵 [useMusicGeneration] Начало генерации музыки", "useMusicGeneration", {
       timestamp: requestTimestamp,
@@ -227,7 +235,43 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
 
       onSuccess?.();
 
-      onSuccess?.();
+      // Start polling for track status
+      pollIntervalRef.current = setInterval(async () => {
+        try {
+          const track = await ApiService.getTrackById(newTrack.id);
+          if (track) {
+            if (track.status === 'completed') {
+              if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current);
+                pollIntervalRef.current = null;
+              }
+              toast({
+                title: "✅ Трек готов!",
+                description: `Ваш трек "${track.title}" успешно сгенерирован.`,
+              });
+              onSuccess?.(); // Optional: another callback for completion
+            } else if (track.status === 'failed') {
+              if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current);
+                pollIntervalRef.current = null;
+              }
+              logError('🔴 [useMusicGeneration] Генерация трека не удалась', new Error(track.error_message || 'Unknown error'), 'useMusicGeneration', { trackId: newTrack.id });
+              toast({
+                title: "❌ Ошибка генерации",
+                description: track.error_message || "Произошла ошибка при обработке вашего трека.",
+                variant: "destructive",
+              });
+            }
+            // If status is 'pending' or 'processing', do nothing and let it poll again.
+          }
+        } catch (pollError) {
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
+          }
+          logError('🔴 [useMusicGeneration] Ошибка при опросе статуса трека', pollError as Error, 'useMusicGeneration', { trackId: newTrack.id });
+        }
+      }, 5000); // Poll every 5 seconds
 
     } catch (error) {
       logError("🔴 [useMusicGeneration] Ошибка при генерации музыки", error as Error, "useMusicGeneration", {
@@ -247,6 +291,10 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
       });
     } finally {
       setIsGenerating(false);
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
     }
   }, [prompt, provider, hasVocals, lyrics, styleTags, isGenerating, isImproving, toast, onSuccess]);
 
@@ -257,6 +305,17 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
     }
   }, [styleTags]);
 
+  const removeStyleTag = useCallback((tag: string) => {
+    setStyleTags(prev => prev.filter(t => t !== tag));
+  }, []);
+
+  useEffect(() => () => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+    }
+  }, []);
+
+  // Memoized return object to prevent unnecessary re-renders
   return useMemo(() => ({
     isGenerating,
     isImproving,

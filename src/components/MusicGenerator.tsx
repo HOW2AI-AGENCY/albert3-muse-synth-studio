@@ -32,6 +32,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   const {
     generateMusic,
     isGenerating,
+    setPrompt: setHookPrompt,
     improvePrompt: hookImprovePrompt
   } = useMusicGeneration();
   
@@ -99,7 +100,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     } finally {
       setIsImproving(false);
     }
-  }, [prompt, hookImprovePrompt, vibrate, toast]);
+  }, [mode, songDescription, lyrics, setHookPrompt, hookImprovePrompt, vibrate, toast]);
 
   // Validation
   const validateForm = useCallback(() => {
