@@ -12,7 +12,7 @@
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-**Версия:** 2.5.2 | **Статус:** Активная разработка | **Sprint:** 22 (ЗАВЕРШЁН) - Generation Reliability & Desktop UX
+**Версия:** 2.5.2 | **Статус:** Активная разработка | **Sprint:** 23 (Запланирован) - Quality & Feature Foundation
 
 [🚀 Демо](http://localhost:5173) • [📖 Документация](#-документация) • [🛠️ Установка](#️-установка) • [🎯 Функции](#-основные-функции)
 
