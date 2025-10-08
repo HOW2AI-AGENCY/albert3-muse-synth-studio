@@ -28,7 +28,7 @@
 
 ### 📚 **Документация**
 - [📖 Основная документация](docs/README.md)
-- [🏗️ Архитектура системы](docs/architecture/ARCHITECTURE.md)
+- [🏗️ Обзор архитектуры](docs/architecture-overview.md)
 - [🔌 API документация](docs/api/API.md)
 - [⚡ Оптимизация производительности](docs/PERFORMANCE_OPTIMIZATIONS.md)
 - [🔧 Troubleshooting треков](docs/TROUBLESHOOTING_TRACKS.md)
