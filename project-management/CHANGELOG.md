@@ -5,6 +5,42 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
 и этот проект придерживается [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.3] - 2025-10-08
+
+### ✅ Sprint 20 - ЗАВЕРШЁН
+
+**Статус**: 100% выполнено (6/6 задач)  
+**Время**: 38.5 часов  
+**Версия**: 2.3.3
+
+#### Добавлено
+- Полный статус задач в `tasks/TASKS_STATUS.md`
+- Централизованная навигация в `NAVIGATION_INDEX.md`
+- Архив Sprint 20: `archive/2025/october/sprint-20-completed.md`
+- PR template в `.github/PULL_REQUEST_TEMPLATE.md`
+
+#### Изменено
+- `current-sprint.md` - очищен для нового спринта
+- Обновлён `README.md` - версия 2.3.3, навигация
+- Обновлён `TECHNICAL_DEBT_PLAN.md` - прогресс 2.5/112h
+- Синхронизирован `TASKS_STATUS.md` со всеми завершёнными задачами
+
+#### Архивировано
+- Sprint 20 complete → `archive/2025/october/sprint-20-completed.md`
+- Sprint 19 plan → `archive/2025/october/sprint-19-plan.md`
+- Sprint 20 initial → `archive/2025/october/sprint-20-plan-initial.md`
+- UI Audit → `archive/2025/october/WORKSPACE_UI_AUDIT_REPORT.md`
+
+#### Достижения Sprint 20
+- ✅ GEN-001: Production-Ready Generation (8h)
+- ✅ GEN-002: Track Versions System (10h)
+- ✅ STOR-001: Storage System & Auto-Upload (8h)
+- ✅ BUGFIX-001: Critical Playback Issues (4h)
+- ✅ BUGFIX-002: Track Versions Architecture Fix (3.5h)
+- ✅ BUGFIX-003: Track Generation & Playback Issues (2.5h)
+
+---
+
 ## [2.2.0] - 2025-10-08
 
 ### ✨ Sprint 17 Начат - Октябрь 2025
