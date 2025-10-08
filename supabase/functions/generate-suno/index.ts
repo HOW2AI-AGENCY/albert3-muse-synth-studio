@@ -268,13 +268,25 @@ const mainHandler = async (req: Request): Promise<Response> => {
   }
 }
 
+/**
+ * Опрашивает Suno API для проверки статуса генерации и сохраняет результаты
+ * 
+ * ВАЖНО: Suno API возвращает массив из 2 треков на каждый запрос
+ * - Первый трек (tasks[0]) → обновляется в таблице `tracks`
+ * - Второй трек (tasks[1]) → сохраняется в таблицу `track_versions`
+ * 
+ * @param trackId - ID основного трека в базе данных
+ * @param taskId - ID задачи в Suno API для отслеживания
+ * @param supabase - Инициализированный Supabase клиент
+ * @param apiKey - API ключ для доступа к Suno API
+ */
 async function pollSunoCompletion(
   trackId: string, 
   taskId: string, 
   supabase: any,
   apiKey: string
 ) {
-  const maxAttempts = 60; // 5 minutes max (5s intervals)
+  const maxAttempts = 60; // Максимум 60 попыток = 5 минут (интервал 5 секунд)
   let attempts = 0;
 
   while (attempts < maxAttempts) {
@@ -337,51 +349,28 @@ async function pollSunoCompletion(
       }
 
       if (allComplete && tasks.length > 0) {
-        // Use first successful track with audio
-        const successTrack = tasks.find((t: any) => 
+        console.log(`🎉 [COMPLETION] All ${tasks.length} tracks completed. Processing...`);
+        
+        /**
+         * КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: Обработка ВСЕХ треков из ответа Suno
+         * 
+         * Suno API возвращает массив tasks[], обычно с 2 треками:
+         * - tasks[0] - Первая версия (основной трек)
+         * - tasks[1] - Вторая версия (альтернативная версия)
+         * 
+         * Стратегия сохранения:
+         * 1. Первый трек → обновляем запись в таблице `tracks` (основной трек)
+         * 2. Остальные треки → создаем записи в таблице `track_versions`
+         * 3. Первый трек автоматически становится мастер-версией
+         */
+        
+        // Фильтруем только успешные треки с аудио
+        const successfulTracks = tasks.filter((t: any) => 
           t.audioUrl || t.audio_url || t.stream_audio_url || t.source_stream_audio_url
         );
         
-        if (successTrack) {
-          const audioUrl = successTrack.audioUrl || successTrack.audio_url || 
-                          successTrack.stream_audio_url || successTrack.source_stream_audio_url;
-          const duration = successTrack.duration || successTrack.duration_seconds || 0;
-          const actualLyrics = successTrack.lyric || successTrack.lyrics || successTrack.prompt;
-          const coverUrl = successTrack.image_url || successTrack.image_large_url || successTrack.imageUrl;
-          const videoUrl = successTrack.video_url || successTrack.videoUrl;
-          const sunoId = successTrack.id;
-          const modelName = successTrack.model || successTrack.model_name;
-          const createdAtSuno = successTrack.created_at || successTrack.createdAt;
-
-          console.log('Track metadata extracted:', {
-            audioUrl: audioUrl?.substring(0, 50),
-            coverUrl: coverUrl?.substring(0, 50),
-            videoUrl: videoUrl?.substring(0, 50),
-            sunoId,
-            modelName,
-            duration
-          });
-
-          await supabase
-            .from('tracks')
-            .update({ 
-              status: 'completed',
-              audio_url: audioUrl,
-              duration: Math.round(duration),
-              duration_seconds: Math.round(duration),
-              lyrics: actualLyrics,
-              cover_url: coverUrl,
-              video_url: videoUrl,
-              suno_id: sunoId,
-              model_name: modelName,
-              created_at_suno: createdAtSuno,
-              metadata: { suno_data: tasks }
-            })
-            .eq('id', trackId);
-
-          console.log(`✅ [COMPLETION] Track ${trackId} completed successfully with audio URL`);
-          return;
-        } else {
+        if (successfulTracks.length === 0) {
+          // Нет ни одного трека с аудио - помечаем как failed
           await supabase
             .from('tracks')
             .update({
@@ -389,9 +378,135 @@ async function pollSunoCompletion(
               error_message: 'Completed without audio URL in response'
             })
             .eq('id', trackId);
-          console.error('Suno completed but no audio URL. Track:', trackId);
+          console.error('🔴 [COMPLETION] No tracks with audio URL. Track:', trackId);
           return;
         }
+        
+        console.log(`✅ [COMPLETION] Found ${successfulTracks.length} successful tracks with audio`);
+        
+        // ========================================
+        // ШАГ 1: Обработка первого трека (основной)
+        // ========================================
+        const mainTrack = successfulTracks[0];
+        
+        // Извлекаем метаданные из первого трека
+        const audioUrl = mainTrack.audioUrl || mainTrack.audio_url || 
+                        mainTrack.stream_audio_url || mainTrack.source_stream_audio_url;
+        const duration = mainTrack.duration || mainTrack.duration_seconds || 0;
+        const actualLyrics = mainTrack.lyric || mainTrack.lyrics || mainTrack.prompt;
+        const coverUrl = mainTrack.image_url || mainTrack.image_large_url || mainTrack.imageUrl;
+        const videoUrl = mainTrack.video_url || mainTrack.videoUrl;
+        const sunoId = mainTrack.id;
+        const modelName = mainTrack.model || mainTrack.model_name;
+        const createdAtSuno = mainTrack.created_at || mainTrack.createdAt;
+
+        console.log('📦 [MAIN TRACK] Metadata extracted:', {
+          audioUrl: audioUrl?.substring(0, 50) + '...',
+          coverUrl: coverUrl?.substring(0, 50) + '...',
+          videoUrl: videoUrl?.substring(0, 50) + '...',
+          sunoId,
+          modelName,
+          duration: `${Math.round(duration)}s`,
+          hasLyrics: Boolean(actualLyrics)
+        });
+
+        // Обновляем основной трек в таблице `tracks`
+        const { error: updateMainError } = await supabase
+          .from('tracks')
+          .update({ 
+            status: 'completed',
+            audio_url: audioUrl,
+            duration: Math.round(duration),
+            duration_seconds: Math.round(duration),
+            lyrics: actualLyrics,
+            cover_url: coverUrl,
+            video_url: videoUrl,
+            suno_id: sunoId,
+            model_name: modelName,
+            created_at_suno: createdAtSuno,
+            metadata: { suno_data: tasks } // Сохраняем полный ответ для отладки
+          })
+          .eq('id', trackId);
+
+        if (updateMainError) {
+          console.error('🔴 [MAIN TRACK] Failed to update:', updateMainError);
+          throw updateMainError;
+        }
+
+        console.log(`✅ [MAIN TRACK] Successfully updated track ${trackId}`);
+
+        // ========================================
+        // ШАГ 2: Обработка остальных треков (версии)
+        // ========================================
+        if (successfulTracks.length > 1) {
+          console.log(`🎵 [VERSIONS] Processing ${successfulTracks.length - 1} additional version(s)...`);
+          
+          // Проходим по всем трекам начиная со второго (индекс 1)
+          for (let i = 1; i < successfulTracks.length; i++) {
+            const versionTrack = successfulTracks[i];
+            
+            // Извлекаем метаданные для версии
+            const versionAudioUrl = versionTrack.audioUrl || versionTrack.audio_url || 
+                                   versionTrack.stream_audio_url || versionTrack.source_stream_audio_url;
+            const versionDuration = versionTrack.duration || versionTrack.duration_seconds || 0;
+            const versionLyrics = versionTrack.lyric || versionTrack.lyrics || versionTrack.prompt;
+            const versionCoverUrl = versionTrack.image_url || versionTrack.image_large_url || versionTrack.imageUrl;
+            const versionVideoUrl = versionTrack.video_url || versionTrack.videoUrl;
+            const versionSunoId = versionTrack.id;
+            
+            console.log(`📦 [VERSION ${i}] Metadata extracted:`, {
+              audioUrl: versionAudioUrl?.substring(0, 50) + '...',
+              coverUrl: versionCoverUrl?.substring(0, 50) + '...',
+              sunoId: versionSunoId,
+              duration: `${Math.round(versionDuration)}s`
+            });
+            
+            /**
+             * Создаем запись в таблице track_versions
+             * 
+             * Структура:
+             * - parent_track_id: ID основного трека
+             * - version_number: Порядковый номер версии (1, 2, 3...)
+             * - is_master: false (первый трек всегда мастер)
+             * - audio_url, cover_url, video_url, duration, lyrics: метаданные версии
+             * - suno_id: ID в Suno API для отслеживания
+             * - metadata: дополнительная информация из Suno
+             */
+            const { error: insertVersionError } = await supabase
+              .from('track_versions')
+              .insert({
+                parent_track_id: trackId,
+                version_number: i, // Номер версии (1, 2, 3...)
+                is_master: false, // Версии не являются мастер-версией
+                audio_url: versionAudioUrl,
+                cover_url: versionCoverUrl,
+                video_url: versionVideoUrl,
+                duration: Math.round(versionDuration),
+                lyrics: versionLyrics,
+                suno_id: versionSunoId,
+                metadata: {
+                  suno_track_data: versionTrack, // Полные данные трека из Suno
+                  created_from_generation: true,
+                  generation_task_id: taskId
+                }
+              });
+            
+            if (insertVersionError) {
+              // Логируем ошибку, но не прерываем процесс
+              // Даже если не удалось сохранить версию, основной трек уже сохранен
+              console.error(`🔴 [VERSION ${i}] Failed to insert:`, insertVersionError);
+            } else {
+              console.log(`✅ [VERSION ${i}] Successfully created version for track ${trackId}`);
+            }
+          }
+          
+          console.log(`✅ [VERSIONS] All versions processed successfully`);
+        } else {
+          console.log('ℹ️ [VERSIONS] Only 1 track returned, no versions to create');
+        }
+
+        console.log(`✅ [COMPLETION] Track ${trackId} completed with ${successfulTracks.length} version(s)`);
+        return;
       }
 
     } catch (error) {
