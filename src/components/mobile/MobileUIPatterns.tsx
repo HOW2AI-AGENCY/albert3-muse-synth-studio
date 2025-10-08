@@ -8,7 +8,7 @@ import React, {
   MouseEvent,
 } from 'react';
 import { cn } from '@/lib/utils';
-import { SmoothAnimation } from '../animations/SmoothAnimations';
+// import { SmoothAnimation } from '../animations/SmoothAnimations';
 
 /**
  * 🔄 Pull-to-Refresh компонент
@@ -305,7 +305,7 @@ export const SwipeActions: React.FC<SwipeActionsProps> = ({
             opacity: isSwipingRight ? 1 : 0,
           }}
         >
-          {leftActions.map((action, index) => (
+          {leftActions.map((action) => (
             <div
               key={action.id}
               className={cn(
@@ -333,7 +333,7 @@ export const SwipeActions: React.FC<SwipeActionsProps> = ({
             opacity: isSwipingLeft ? 1 : 0,
           }}
         >
-          {rightActions.map((action, index) => (
+          {rightActions.map((action) => (
             <div
               key={action.id}
               className={cn(

@@ -18,7 +18,7 @@ interface VirtualizedListProps {
 export const VirtualizedList: React.FC<VirtualizedListProps> = ({
   tracks,
   height,
-  itemHeight = 200,
+  
   className,
   onTrackSelect
 }) => {

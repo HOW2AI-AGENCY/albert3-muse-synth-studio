@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { MiniPlayer } from "./MiniPlayer";
 import { FullScreenPlayer } from "./FullScreenPlayer";
 import { PlayerQueue } from "./PlayerQueue";
-import { LoadingSkeleton } from "../ui/LoadingSkeleton";
+// import { LoadingSkeleton } from "../ui/LoadingSkeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMediaSession } from "@/hooks/useMediaSession";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";

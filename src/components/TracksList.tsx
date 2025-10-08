@@ -125,36 +125,7 @@ const TracksListComponent = ({
     return elapsed > 600000; // 10 minutes
   }, []);
 
-  // Мемоизируем функцию лайка
-  const handleLike = useCallback(async (trackId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: existingLike } = await supabase
-        .from('track_likes')
-        .select()
-        .eq('track_id', trackId)
-        .eq('user_id', user.id)
-        .single();
-
-      if (existingLike) {
-        await supabase
-          .from('track_likes')
-          .delete()
-          .eq('track_id', trackId)
-          .eq('user_id', user.id);
-      } else {
-        await supabase
-          .from('track_likes')
-          .insert({ track_id: trackId, user_id: user.id });
-      }
-
-      refreshTracks();
-    } catch (error) {
-      logError('Like error:', error instanceof Error ? error : new Error(String(error)));
-    }
-  }, [refreshTracks]);
+  // Функцию лайка убрана - используется в TrackCard
 
   // Мемоизируем функцию скачивания
   const handleDownload = useCallback((track: Track) => {
