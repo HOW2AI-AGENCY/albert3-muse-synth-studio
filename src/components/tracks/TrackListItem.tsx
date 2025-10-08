@@ -186,7 +186,7 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
         className
       )}
       style={{
-        transitionDelay: `${index * 50}ms`
+        transitionDelay: `${(index ?? 0) * 50}ms`
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -204,7 +204,7 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
             isCurrentTrack && "from-primary/40 to-primary/30"
           )}>
             <span className="text-xs font-medium text-primary">
-              {index + 1}
+              {(index ?? 0) + 1}
             </span>
           </div>
         ) : (

@@ -11,7 +11,7 @@ import type { Database } from '@/integrations/supabase/types';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 type TrackRow = Database['public']['Tables']['tracks']['Row'];
-type ProcessingTrack = Pick<TrackRow, 'id' | 'title' | 'created_at' | 'status'>;
+
 
 interface TrackSyncOptions {
   onTrackCompleted?: (trackId: string) => void;
@@ -50,14 +50,18 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
             return;
           }
 
+          if (!newTrack || !('id' in newTrack) || !('status' in newTrack)) {
+            return;
+          }
+
           logInfo('Track update received', 'useTrackSync', {
             trackId: newTrack.id,
-            oldStatus: oldTrack.status,
+            oldStatus: oldTrack && 'status' in oldTrack ? oldTrack.status : undefined,
             newStatus: newTrack.status,
           });
 
           // Track completed
-          if (oldTrack.status !== 'completed' && newTrack.status === 'completed') {
+          if (oldTrack && 'status' in oldTrack && oldTrack.status !== 'completed' && newTrack.status === 'completed') {
             logInfo('Track completed', 'useTrackSync', { trackId: newTrack.id });
             
             toast({
@@ -69,7 +73,7 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
           }
 
           // Track failed
-          if (oldTrack.status !== 'failed' && newTrack.status === 'failed') {
+          if (oldTrack && 'status' in oldTrack && oldTrack.status !== 'failed' && newTrack.status === 'failed') {
             logWarn('Track failed', 'useTrackSync', {
               trackId: newTrack.id,
               error: newTrack.error_message,
@@ -85,7 +89,7 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
           }
 
           // Track processing (from pending)
-          if (oldTrack.status === 'pending' && newTrack.status === 'processing') {
+          if (oldTrack && 'status' in oldTrack && oldTrack.status === 'pending' && newTrack.status === 'processing') {
             logInfo('Track processing started', 'useTrackSync', { trackId: newTrack.id });
           }
         }
@@ -120,7 +124,7 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
       try {
         const { data: processingTracks, error } = await supabase
           .from('tracks')
-          .select<ProcessingTrack>('id, title, created_at, status')
+          .select('id, title, created_at, status')
           .eq('user_id', userId)
           .eq('status', 'processing');
 

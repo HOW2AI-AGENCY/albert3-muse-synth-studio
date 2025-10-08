@@ -18,6 +18,7 @@ import { withErrorBoundary } from "@/components/ErrorBoundary";
 import { logError } from "@/utils/logger";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { formatDuration } from "@/utils/formatters";
 
 interface Track {
   id: string;
@@ -685,7 +686,9 @@ export const TrackCard = memo(
       </Card>
     ),
     onError: (error, errorInfo) => {
-      logError("TrackCard component error", error, "TrackCard", errorInfo);
+      logError("TrackCard component error", error, "TrackCard", { 
+        componentStack: errorInfo.componentStack 
+      });
     },
   }),
 );
