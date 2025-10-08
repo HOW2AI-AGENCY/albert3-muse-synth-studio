@@ -15,7 +15,6 @@ import {
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useTrackLike } from "@/hooks/useTrackLike";
 import { withErrorBoundary } from "@/components/ErrorBoundary";
-import { formatDuration } from "@/utils/formatters";
 import { logError } from "@/utils/logger";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -23,7 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 interface Track {
   id: string;
   title: string;
-  prompt: string;
+  prompt?: string;
   audio_url?: string;
   image_url?: string;
   cover_url?: string;

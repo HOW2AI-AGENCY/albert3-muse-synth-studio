@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
-import { 
+import {
   MusicGeneratorLazy as MusicGenerator,
   TracksListLazy as TracksList
 } from "@/components/LazyComponents";
 import { AuthForm } from "@/components/AuthForm";
 import heroBackground from "@/assets/hero-bg.jpg";
+import type { User } from "@supabase/supabase-js";
 
 const Index = () => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [refreshTracks, setRefreshTracks] = useState(0);
 

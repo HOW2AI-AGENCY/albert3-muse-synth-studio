@@ -67,7 +67,8 @@ const Library: React.FC = () => {
 
     // Сортировка
     filtered.sort((a, b) => {
-      let aValue: any, bValue: any;
+      let aValue: number | string;
+      let bValue: number | string;
       
       switch (sortBy) {
         case 'title':
@@ -236,7 +237,7 @@ const Library: React.FC = () => {
       }
 
       // Check if track is public (some tracks may not have this field)
-      const isPublic = (track as any).is_public;
+      const isPublic = Boolean(track.is_public);
       if (!isPublic) {
         toast({
           title: "Трек приватный",

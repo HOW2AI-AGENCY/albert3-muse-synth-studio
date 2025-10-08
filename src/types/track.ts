@@ -135,10 +135,22 @@ export interface TrackWithVersions extends BaseTrack {
 // Утилитарные типы для преобразования
 export type TrackStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
+type ConvertibleTrack = {
+  id: string;
+  title: string;
+  audio_url?: string | null;
+  cover_url?: string | null;
+  duration?: number | null;
+  duration_seconds?: number | null;
+  style_tags?: string[] | null;
+  lyrics?: string | null;
+  status?: string | null;
+};
+
 // Функции-хелперы для преобразования типов
-export const convertToAudioPlayerTrack = (track: any): AudioPlayerTrack | null => {
+export const convertToAudioPlayerTrack = (track: ConvertibleTrack): AudioPlayerTrack | null => {
   if (!track.audio_url) return null;
-  
+
   return {
     id: track.id,
     title: track.title,

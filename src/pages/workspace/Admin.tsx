@@ -348,7 +348,7 @@ export default function Admin() {
                       <h4 className="font-medium truncate">{track.title}</h4>
                       <div className="flex items-center gap-2 mt-1">
                         <p className="text-xs text-muted-foreground">
-                          {(track.profiles as any)?.email || 'Unknown'}
+                          {track.profiles?.email || 'Unknown'}
                         </p>
                         <Badge variant={track.is_public ? 'default' : 'secondary'} className="text-xs">
                           {track.is_public ? 'Публичный' : 'Приватный'}

@@ -7,16 +7,21 @@ import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { logInfo, logWarn, logError } from '@/utils/logger';
+import type { Database } from '@/integrations/supabase/types';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+
+type TrackRow = Database['public']['Tables']['tracks']['Row'];
+type ProcessingTrack = Pick<TrackRow, 'id' | 'title' | 'created_at' | 'status'>;
 
 interface TrackSyncOptions {
   onTrackCompleted?: (trackId: string) => void;
-  onTrackFailed?: (trackId: string, error: string) => void;
+  onTrackFailed?: (trackId: string, error: string | null) => void;
   enabled?: boolean;
 }
 
 export const useTrackSync = (userId: string | undefined, options: TrackSyncOptions = {}) => {
   const { toast } = useToast();
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const { onTrackCompleted, onTrackFailed, enabled = true } = options;
 
   useEffect(() => {
@@ -37,9 +42,13 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
           table: 'tracks',
           filter: `user_id=eq.${userId}`,
         },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<TrackRow>) => {
           const newTrack = payload.new;
           const oldTrack = payload.old;
+
+          if (!newTrack || !oldTrack) {
+            return;
+          }
 
           logInfo('Track update received', 'useTrackSync', {
             trackId: newTrack.id,
@@ -72,7 +81,7 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
               variant: 'destructive',
             });
 
-            onTrackFailed?.(newTrack.id, newTrack.error_message);
+            onTrackFailed?.(newTrack.id, newTrack.error_message ?? null);
           }
 
           // Track processing (from pending)
@@ -111,7 +120,7 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
       try {
         const { data: processingTracks, error } = await supabase
           .from('tracks')
-          .select('id, title, created_at, status')
+          .select<ProcessingTrack>('id, title, created_at, status')
           .eq('user_id', userId)
           .eq('status', 'processing');
 

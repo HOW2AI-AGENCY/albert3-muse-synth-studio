@@ -1,11 +1,11 @@
-import { lazy, ComponentType } from 'react';
+import { lazy, type ComponentType } from 'react';
 import { logError } from './logger';
 
 /**
  * Утилита для создания ленивых компонентов с обработкой ошибок
  */
-export const createLazyComponent = <T extends ComponentType<any>>(
-  importFn: () => Promise<{ default: T }>,
+export const createLazyComponent = <Props extends object>(
+  importFn: () => Promise<{ default: ComponentType<Props> }>,
   componentName: string
 ) => {
   return lazy(async () => {
@@ -14,18 +14,18 @@ export const createLazyComponent = <T extends ComponentType<any>>(
       return module;
     } catch (error) {
       logError(`Failed to load lazy component: ${componentName}`, error);
-      
+
       // Возвращаем fallback компонент в случае ошибки
-      const FallbackComponent = () => (
+      const FallbackComponent: ComponentType<Props> = () => (
         <div className="p-4 text-center">
           <p className="text-muted-foreground">
             Ошибка загрузки компонента {componentName}
           </p>
         </div>
       );
-      
+
       return {
-        default: FallbackComponent as unknown as T
+        default: FallbackComponent
       };
     }
   });
@@ -34,7 +34,7 @@ export const createLazyComponent = <T extends ComponentType<any>>(
 /**
  * Предзагрузка компонентов для улучшения UX
  */
-export const preloadComponent = (importFn: () => Promise<any>) => {
+export const preloadComponent = (importFn: () => Promise<unknown>) => {
   // Предзагружаем компонент при наведении или других событиях
   const preload = () => {
     importFn().catch(error => {
