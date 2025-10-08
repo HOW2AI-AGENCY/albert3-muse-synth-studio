@@ -16,6 +16,16 @@ const mainHandler = async (req: Request): Promise<Response> => {
   try {
     // Parse and validate request data
     const body = await req.json();
+    console.log('🎵 [GENERATE-SUNO] Request received:', JSON.stringify({
+      trackId: body.trackId,
+      title: body.title,
+      prompt: body.prompt?.substring(0, 100),
+      tags: body.tags,
+      make_instrumental: body.make_instrumental,
+      model_version: body.model_version,
+      wait_audio: body.wait_audio,
+      timestamp: new Date().toISOString()
+    }, null, 2));
     
     // Получение пользователя из JWT токена
     const authHeader = req.headers.get('Authorization')
@@ -35,24 +45,30 @@ const mainHandler = async (req: Request): Promise<Response> => {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
+      console.error('🔴 [GENERATE-SUNO] Auth failed:', authError);
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
 
+    console.log('✅ [GENERATE-SUNO] User authenticated:', user.id);
+
     const { trackId, prompt, tags, title, make_instrumental, model_version, wait_audio } = body;
     
     const SUNO_API_KEY = Deno.env.get('SUNO_API_KEY')
     if (!SUNO_API_KEY) {
+      console.error('🔴 [GENERATE-SUNO] SUNO_API_KEY not configured');
       throw new Error('SUNO_API_KEY not configured')
     }
+    
+    console.log('✅ [GENERATE-SUNO] API key configured');
     
     let finalTrackId = trackId;
     
     // If no trackId provided, create a new track
     if (!trackId) {
-      console.log('No trackId provided, creating new track');
+      console.log('⚠️ [GENERATE-SUNO] No trackId provided, creating new track');
       const { data: newTrack, error: createError } = await supabase
         .from('tracks')
         .insert({
@@ -73,15 +89,15 @@ const mainHandler = async (req: Request): Promise<Response> => {
         .single();
       
       if (createError) {
-        console.error('Error creating track:', createError);
+        console.error('🔴 [GENERATE-SUNO] Error creating track:', createError);
         throw createError;
       }
       
       finalTrackId = newTrack.id;
-      console.log('Created new track:', finalTrackId);
+      console.log('✅ [GENERATE-SUNO] Created new track:', finalTrackId);
     } else {
       // Verify track ownership
-      console.log('Verifying track ownership for trackId:', trackId);
+      console.log('🔍 [GENERATE-SUNO] Verifying track ownership for trackId:', trackId);
       const { data: existingTrackCheck, error: verifyError } = await supabase
         .from('tracks')
         .select('id, user_id')
@@ -90,12 +106,14 @@ const mainHandler = async (req: Request): Promise<Response> => {
         .maybeSingle();
       
       if (verifyError || !existingTrackCheck) {
-        console.error('Track not found or unauthorized:', verifyError);
+        console.error('🔴 [GENERATE-SUNO] Track not found or unauthorized:', verifyError);
         return new Response(JSON.stringify({ error: 'Track not found or unauthorized' }), {
           status: 404,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }
+      
+      console.log('✅ [GENERATE-SUNO] Track ownership verified');
       
       // Update status to processing
       await supabase
@@ -105,10 +123,11 @@ const mainHandler = async (req: Request): Promise<Response> => {
     }
     
     if (!finalTrackId) {
+      console.error('🔴 [GENERATE-SUNO] No trackId provided and failed to create track');
       throw new Error('No trackId provided and failed to create track');
     }
 
-    console.log('Starting Suno generation for track:', finalTrackId);
+    console.log('🚀 [GENERATE-SUNO] Starting Suno generation for track:', finalTrackId);
 
     // If there's an existing Suno task for this track still processing, resume polling instead of creating a new one
     const { data: existingTrack, error: loadErr } = await supabase
@@ -117,13 +136,13 @@ const mainHandler = async (req: Request): Promise<Response> => {
       .eq('id', finalTrackId)
       .maybeSingle();
     if (loadErr) {
-      console.error('Error loading track for resume:', loadErr);
+      console.error('🔴 [GENERATE-SUNO] Error loading track for resume:', loadErr);
     }
     const existingTaskId = existingTrack?.metadata?.suno_task_id;
     if (existingTaskId && existingTrack?.status === 'processing') {
-      console.log('Resuming existing Suno task:', existingTaskId);
+      console.log('♻️ [GENERATE-SUNO] Resuming existing Suno task:', existingTaskId);
       pollSunoCompletion(finalTrackId, existingTaskId, supabase, SUNO_API_KEY).catch(err => {
-        console.error('Resume polling error:', err);
+        console.error('🔴 [GENERATE-SUNO] Resume polling error:', err);
       });
       return new Response(
         JSON.stringify({
@@ -149,7 +168,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
       wait_audio: wait_audio || false
     }
 
-    console.log('Sending request to Suno API:', sunoPayload)
+    console.log('📤 [GENERATE-SUNO] Sending request to Suno API:', JSON.stringify(sunoPayload, null, 2));
 
     const response = await fetch('https://api.suno.ai/generate/v2/', {
       method: 'POST',
@@ -162,12 +181,12 @@ const mainHandler = async (req: Request): Promise<Response> => {
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Suno API error:', response.status, errorText)
+      console.error('🔴 [GENERATE-SUNO] Suno API error:', response.status, errorText)
       throw new Error(`Suno API error: ${response.status} ${errorText}`)
     }
 
     const result = await response.json()
-    console.log('Suno API response:', result)
+    console.log('📥 [GENERATE-SUNO] Suno API response:', JSON.stringify(result, null, 2));
 
     // Update track with task ID and start polling
     const taskId = result.id
@@ -184,14 +203,18 @@ const mainHandler = async (req: Request): Promise<Response> => {
       .eq('id', finalTrackId)
 
     if (updateError) {
-      console.error('Error updating track:', updateError)
+      console.error('🔴 [GENERATE-SUNO] Error updating track:', updateError)
       throw updateError
     }
 
+    console.log('✅ [GENERATE-SUNO] Track updated with task ID, starting background polling');
+
     // Start polling for completion (don't await - let it run in background)
     pollSunoCompletion(finalTrackId, taskId, supabase, SUNO_API_KEY).catch(err => {
-      console.error('Polling error:', err)
+      console.error('🔴 [GENERATE-SUNO] Polling error:', err)
     })
+
+    console.log('✅ [GENERATE-SUNO] Generation started successfully');
 
     return new Response(
       JSON.stringify({
@@ -207,7 +230,8 @@ const mainHandler = async (req: Request): Promise<Response> => {
     )
 
   } catch (error) {
-    console.error('Error in generate-suno function:', error);
+    console.error('🔴 [GENERATE-SUNO] Error in generate-suno function:', error);
+    console.error('🔴 [GENERATE-SUNO] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     
     // Determine appropriate error code
     let status = 500;

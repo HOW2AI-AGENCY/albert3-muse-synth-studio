@@ -124,7 +124,10 @@ export class ApiService {
       wait_audio: false,
     };
 
-    console.log('API Service: Sending to', functionName, payload);
+    console.log('🎵 [API Service] Sending to', functionName);
+    console.log('📤 [API Service] Payload:', JSON.stringify(payload, null, 2));
+    
+    console.log('⏳ [API Service] Invoking edge function...');
     
     const { data, error } = await supabase.functions.invoke<GenerateMusicResponse>(
       functionName,
@@ -132,7 +135,8 @@ export class ApiService {
     );
 
     if (error) {
-      console.error('API Service: Edge function error:', error);
+      console.error('🔴 [API Service] Edge function error:', error);
+      console.error('🔴 [API Service] Error details:', JSON.stringify(error, null, 2));
       
       // Parse error message for user-friendly display
       let userMessage = error.message || "Failed to generate music";
@@ -149,9 +153,11 @@ export class ApiService {
     }
 
     if (!data) {
+      console.error('🔴 [API Service] No response from server');
       throw new Error("No response from server");
     }
 
+    console.log('✅ [API Service] Success:', JSON.stringify(data, null, 2));
     return data;
   }
 
