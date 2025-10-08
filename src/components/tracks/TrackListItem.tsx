@@ -13,7 +13,7 @@ import {
   Music,
   Headphones
 } from 'lucide-react';
-import { useAudioPlayer, useAudioPlayerSafe } from '@/hooks/useAudioPlayer';
+import { useAudioPlayerSafe } from '@/hooks/useAudioPlayer';
 import { useToast } from '@/hooks/use-toast';
 import { useTrackLike } from '@/hooks/useTrackLike';
 import { cn } from '@/lib/utils';
@@ -42,12 +42,9 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const itemRef = useRef<HTMLDivElement>(null);
   
-  const { 
-    currentTrack, 
-    isPlaying, 
-    playTrack, 
-    pauseTrack 
-  } = useAudioPlayerSafe();
+  const audioPlayer = useAudioPlayerSafe();
+  const currentTrack = audioPlayer?.currentTrack;
+  const isPlaying = audioPlayer?.isPlaying ?? false;
 
   const { toast } = useToast();
   
@@ -154,16 +151,16 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
 
   const handlePlayClick = useCallback(() => {
     if (!track.audio_url) return;
-    
-    const audioPlayerTrack = convertToAudioPlayerTrack(track);
-    if (!audioPlayerTrack) return;
 
-    if (isCurrentTrack && isPlaying) {
-      pauseTrack();
+    const audioPlayerTrack = convertToAudioPlayerTrack(track);
+    if (!audioPlayerTrack || !audioPlayer) return;
+
+    if (audioPlayer.currentTrack?.id === track.id && audioPlayer.isPlaying) {
+      audioPlayer.pauseTrack();
     } else {
-      playTrack(audioPlayerTrack);
+      audioPlayer.playTrack(audioPlayerTrack);
     }
-  }, [track, isCurrentTrack, isPlaying, playTrack, pauseTrack]);
+  }, [audioPlayer, track]);
 
   const formatDuration = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);

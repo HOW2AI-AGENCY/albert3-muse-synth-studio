@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { GlobalAudioPlayer } from '../GlobalAudioPlayer';
 import { useAudioPlayer, useAudioPlayerSafe } from '@/contexts/AudioPlayerContext';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Track } from '@/types/track';
+import { AudioPlayerTrack } from '@/types/track';
 
 // Mock the hooks
 vi.mock('@/contexts/AudioPlayerContext');
@@ -12,9 +12,9 @@ vi.mock('@/hooks/useMediaSession', () => ({
   useMediaSession: vi.fn(),
 }));
 
-const mockUseAudioPlayer = useAudioPlayer as vi.Mock;
-const mockUseAudioPlayerSafe = useAudioPlayerSafe as vi.Mock;
-const mockUseIsMobile = useIsMobile as vi.Mock;
+const mockUseAudioPlayer = vi.mocked(useAudioPlayer);
+const mockUseAudioPlayerSafe = vi.mocked(useAudioPlayerSafe);
+const mockUseIsMobile = vi.mocked(useIsMobile);
 
 const defaultMockData = {
   currentTrack: {
@@ -23,7 +23,7 @@ const defaultMockData = {
     audio_url: 'https://example.com/audio.mp3',
     cover_url: 'https://example.com/cover.jpg',
     style_tags: ['rock', 'indie'],
-  } as Track,
+  } as AudioPlayerTrack,
   isPlaying: true,
   currentTime: 30,
   duration: 180,

@@ -129,6 +129,7 @@ describe('TrackCard', () => {
     });
 
     it('renders error message for missing track', () => {
+      // @ts-expect-error - testing component fallback with null track
       render(<TrackCard track={null} />);
 
       expect(screen.getByRole('alert')).toBeInTheDocument();

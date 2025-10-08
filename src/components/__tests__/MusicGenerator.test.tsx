@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MusicGenerator } from '../MusicGenerator';
@@ -20,6 +20,10 @@ const mockUseMusicGeneration = {
   setStyleTags: vi.fn(),
   generateMusic: vi.fn(),
   improvePrompt: vi.fn(),
+  addStyleTag: vi.fn(),
+  removeStyleTag: vi.fn(),
+  canGenerate: true,
+  isValidPrompt: true,
 };
 
 vi.mock('@/hooks/useMusicGeneration', () => ({
@@ -48,6 +52,10 @@ vi.mock('@/hooks/use-toast', () => ({
 describe('MusicGenerator', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseMusicGeneration.prompt = '';
+    mockUseMusicGeneration.isGenerating = false;
+    mockUseMusicGeneration.isImproving = false;
+    mockUseMusicGeneration.styleTags = [];
   });
 
   describe('Rendering', () => {
