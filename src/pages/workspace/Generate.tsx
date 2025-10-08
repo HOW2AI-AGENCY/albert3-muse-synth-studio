@@ -8,7 +8,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Plus, Menu } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -52,13 +52,19 @@ const Generate = () => {
       logInfo('Track completed - refreshing list', 'Generate', { trackId });
       refreshTracks();
       setIsPolling(false);
-      if (pollingRef.current) clearInterval(pollingRef.current);
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
     },
     onTrackFailed: (trackId, error) => {
       logInfo('Track failed - refreshing list', 'Generate', { trackId, error });
       refreshTracks();
       setIsPolling(false);
-      if (pollingRef.current) clearInterval(pollingRef.current);
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
     },
     enabled: true,
   });
@@ -72,12 +78,15 @@ const Generate = () => {
 
   const handleTrackGenerated = () => {
     setShowGenerator(false);
-    if (pollingRef.current) clearInterval(pollingRef.current);
 
     initialTrackCount.current = tracks.length;
     setIsPolling(true);
 
-    // Start polling, but clear any existing timers first
+    if (pollingRef.current) {
+      return;
+    }
+
+    // Start polling if no existing timer
     pollingRef.current = setInterval(() => {
       refreshTracks();
     }, 2500); // Poll every 2.5 seconds
@@ -86,26 +95,36 @@ const Generate = () => {
   useEffect(() => {
     if (!isPolling) return;
 
-    // Stop polling if a new track has been added
-    if (tracks.length > initialTrackCount.current) {
-      const newTrack = tracks.find(t => !tracks.slice(initialTrackCount.current).some(it => it.id === t.id));
-      if(newTrack || tracks.some(t => t.status === 'processing')) {
-        if (pollingRef.current) clearInterval(pollingRef.current);
-        setIsPolling(false);
+    const hasNewTrack =
+      tracks.length > initialTrackCount.current &&
+      tracks.slice(initialTrackCount.current).some((track) => Boolean(track));
+    const hasProcessingTracks = tracks.some(t => t.status === 'processing');
+
+    if (hasNewTrack || hasProcessingTracks) {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
       }
+      setIsPolling(false);
     }
 
     // Failsafe timeout after 1 minute
     const timeout = setTimeout(() => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
       setIsPolling(false);
     }, 60000);
 
     return () => {
       clearTimeout(timeout);
-      if (pollingRef.current) clearInterval(pollingRef.current);
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
     };
-  }, [tracks, isPolling, initialTrackCount]);
+  }, [tracks, isPolling]);
 
   const handleTrackSelect = (track: Track) => {
     setSelectedTrack(track);

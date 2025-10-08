@@ -3,7 +3,7 @@
  * Handles data fetching and track operations with caching support
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ApiService, Track, mapTrackRowToTrack } from "@/services/api.service";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,11 +17,26 @@ export const useTracks = (refreshTrigger?: number) => {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const pollingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollingAttemptRef = useRef(0);
+  const wasPollingRef = useRef(false);
 
-  const loadTracks = async () => {
+  const {
+    pollingEnabled = true,
+    pollingInitialDelay = DEFAULT_POLLING_INITIAL_DELAY,
+    pollingMaxDelay = DEFAULT_POLLING_MAX_DELAY,
+  } = options;
+
+  const normalizedInitialDelay = Math.max(0, pollingInitialDelay);
+  const normalizedMaxDelay = Math.max(
+    normalizedInitialDelay,
+    Math.max(0, pollingMaxDelay)
+  );
+
+  const loadTracks = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         setTracks([]);
         return;
@@ -59,13 +74,13 @@ export const useTracks = (refreshTrigger?: number) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   const deleteTrack = async (trackId: string) => {
     try {
       await ApiService.deleteTrack(trackId);
-      setTracks(tracks.filter((t) => t.id !== trackId));
-      
+      setTracks((currentTracks) => currentTracks.filter((t) => t.id !== trackId));
+
       // Удаляем трек из кэша
       trackCache.removeTrack(trackId);
       
@@ -85,7 +100,7 @@ export const useTracks = (refreshTrigger?: number) => {
 
   useEffect(() => {
     loadTracks();
-  }, [refreshTrigger]);
+  }, [loadTracks, refreshTrigger]);
 
   // Realtime updates: reflect INSERT/UPDATE/DELETE immediately
   useEffect(() => {
@@ -126,26 +141,88 @@ export const useTracks = (refreshTrigger?: number) => {
 
   // Fallback polling while there are processing tracks
   useEffect(() => {
-    // Check if any tracks need polling
-    const needsPolling = tracks.some(track => 
-      track.status === 'processing' || 
+    if (!pollingEnabled) {
+      if (pollingTimeoutRef.current) {
+        clearTimeout(pollingTimeoutRef.current);
+        pollingTimeoutRef.current = null;
+        logInfo('Polling disabled - clearing timer', POLLING_CONTEXT, {
+          attempt: pollingAttemptRef.current,
+        });
+        wasPollingRef.current = false;
+      }
+      pollingAttemptRef.current = 0;
+      return;
+    }
+
+    const pendingTracks = tracks.filter(track =>
+      track.status === 'processing' ||
       track.status === 'pending' ||
       (track.status === 'completed' && !track.audio_url)
     );
-    
-    if (!needsPolling) return;
 
-    console.log('Starting polling for track updates...');
-    const interval = setInterval(() => {
-      console.log('Polling for track updates...');
-      loadTracks();
-    }, 5000);
+    const pendingMetadata = pendingTracks.map(track => ({
+      id: track.id,
+      status: track.status,
+      hasAudio: Boolean(track.audio_url),
+    }));
+
+    if (pendingTracks.length === 0) {
+      if (pollingTimeoutRef.current) {
+        clearTimeout(pollingTimeoutRef.current);
+        pollingTimeoutRef.current = null;
+        logInfo('Stopping track polling - no pending tracks', POLLING_CONTEXT, {
+          attempt: pollingAttemptRef.current,
+          pendingTracks: pendingMetadata,
+        });
+        wasPollingRef.current = false;
+      } else if (wasPollingRef.current || pollingAttemptRef.current > 0) {
+        logInfo('Stopping track polling - no pending tracks', POLLING_CONTEXT, {
+          attempt: pollingAttemptRef.current,
+          pendingTracks: pendingMetadata,
+        });
+        wasPollingRef.current = false;
+      }
+      pollingAttemptRef.current = 0;
+      return;
+    }
+
+    if (pollingTimeoutRef.current) {
+      return;
+    }
+
+    const nextAttempt = pollingAttemptRef.current + 1;
+    const delay = Math.min(
+      normalizedMaxDelay,
+      normalizedInitialDelay * Math.pow(2, nextAttempt - 1)
+    );
+
+    logInfo('Scheduling track polling', POLLING_CONTEXT, {
+      attempt: nextAttempt,
+      delay,
+      pendingTracks: pendingMetadata,
+    });
+
+    const timeoutId = setTimeout(async () => {
+      logDebug('Executing track polling', POLLING_CONTEXT, {
+        attempt: nextAttempt,
+        delay,
+        pendingTracks: pendingMetadata,
+      });
+      pollingTimeoutRef.current = null;
+      pollingAttemptRef.current = nextAttempt;
+      await loadTracks();
+    }, delay);
+
+    pollingTimeoutRef.current = timeoutId;
+    wasPollingRef.current = true;
 
     return () => {
-      console.log('Stopping polling');
-      clearInterval(interval);
+      if (pollingTimeoutRef.current) {
+        clearTimeout(pollingTimeoutRef.current);
+        pollingTimeoutRef.current = null;
+      }
     };
-  }, [tracks]);
+  }, [tracks, pollingEnabled, normalizedInitialDelay, normalizedMaxDelay, loadTracks]);
 
   return {
     tracks,
