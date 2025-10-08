@@ -47,6 +47,7 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
   return (
     <TooltipProvider delayDuration={500}>
     <div
+      data-testid="mini-player"
       onClick={handleExpand}
       className="fixed bottom-0 left-0 right-0 z-[60] bg-card/95 backdrop-blur-xl border-t border-primary/20 shadow-glow cursor-pointer animate-slide-up safe-area-bottom hover:bg-card/98 transition-all duration-300"
       style={{ 

@@ -19,9 +19,12 @@ const authSchema = z.object({
 });
 
 export const AuthForm = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [signInEmail, setSignInEmail] = useState("");
+  const [signInPassword, setSignInPassword] = useState("");
+  const [signUpEmail, setSignUpEmail] = useState("");
+  const [signUpPassword, setSignUpPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("signin");
   const { toast } = useToast();
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -29,7 +32,7 @@ export const AuthForm = () => {
     setIsLoading(true);
 
     try {
-      const validation = authSchema.safeParse({ email, password });
+      const validation = authSchema.safeParse({ email: signUpEmail, password: signUpPassword });
       if (!validation.success) {
         const firstError = validation.error.errors[0];
         throw new Error(firstError.message);
@@ -66,14 +69,14 @@ export const AuthForm = () => {
     setIsLoading(true);
 
     try {
-      const emailValidation = z.string().email().safeParse(email);
+      const emailValidation = z.string().email().safeParse(signInEmail);
       if (!emailValidation.success) {
         throw new Error("Invalid email address");
       }
 
       const { error } = await supabase.auth.signInWithPassword({
         email: emailValidation.data,
-        password,
+        password: signInPassword,
       });
 
       if (error) throw error;
@@ -94,9 +97,12 @@ export const AuthForm = () => {
     }
   };
 
+  const isSigningIn = isLoading && activeTab === 'signin';
+  const isSigningUp = isLoading && activeTab === 'signup';
+
   return (
     <Card className="card-glass p-6 w-full max-w-md mx-auto">
-      <Tabs defaultValue="signin" className="w-full">
+      <Tabs defaultValue="signin" className="w-full" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="signin">Sign In</TabsTrigger>
           <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -108,8 +114,8 @@ export const AuthForm = () => {
               <Input
                 type="email"
                 placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={signInEmail}
+                onChange={(e) => setSignInEmail(e.target.value)}
                 required
                 disabled={isLoading}
               />
@@ -118,14 +124,14 @@ export const AuthForm = () => {
               <Input
                 type="password"
                 placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={signInPassword}
+                onChange={(e) => setSignInPassword(e.target.value)}
                 required
                 disabled={isLoading}
               />
             </div>
-            <Button type="submit" className="w-full" variant="hero" disabled={isLoading}>
-              {isLoading ? (
+            <Button type="submit" className="w-full" variant="hero" disabled={isSigningIn}>
+              {isSigningIn ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Signing in...
@@ -143,8 +149,8 @@ export const AuthForm = () => {
               <Input
                 type="email"
                 placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={signUpEmail}
+                onChange={(e) => setSignUpEmail(e.target.value)}
                 required
                 disabled={isLoading}
               />
@@ -153,8 +159,8 @@ export const AuthForm = () => {
               <Input
                 type="password"
                 placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={signUpPassword}
+                onChange={(e) => setSignUpPassword(e.target.value)}
                 required
                 minLength={8}
                 disabled={isLoading}
@@ -163,8 +169,8 @@ export const AuthForm = () => {
                 Must be 8+ characters with uppercase, lowercase, and a number.
               </p>
             </div>
-            <Button type="submit" className="w-full" variant="hero" disabled={isLoading}>
-              {isLoading ? (
+            <Button type="submit" className="w-full" variant="hero" disabled={isSigningUp}>
+              {isSigningUp ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Creating account...

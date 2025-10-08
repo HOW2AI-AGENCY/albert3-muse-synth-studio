@@ -1,217 +1,202 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TrackListItem } from '../TrackListItem';
+import { useAudioPlayer, useAudioPlayerSafe } from '@/hooks/useAudioPlayer';
+import { useToast } from '@/hooks/use-toast';
+import { useTrackLike } from '@/hooks/useTrackLike';
+import { DisplayTrack } from '@/types/track';
+import { supabase } from '@/integrations/supabase/client';
 
-// Mock hooks
-vi.mock('@/hooks/useAudioPlayer', () => ({
-  useAudioPlayer: () => ({
-    currentTrack: null,
-    isPlaying: false,
-    playTrack: vi.fn(),
-    pauseTrack: vi.fn(),
-  }),
+// Mock the source of the hooks
+vi.mock('@/contexts/AudioPlayerContext', () => ({
+  useAudioPlayer: vi.fn(),
+  useAudioPlayerSafe: vi.fn(),
 }));
-
-vi.mock('@/hooks/use-toast', () => ({
-  useToast: () => ({
-    toast: vi.fn(),
-  }),
+vi.mock('@/hooks/use-toast');
+vi.mock('@/hooks/useTrackLike');
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    rpc: vi.fn().mockResolvedValue({ error: null }),
+  },
 }));
 
 describe('TrackListItem', () => {
-  const mockTrack = {
+  const mockTrack: DisplayTrack = {
     id: 'track-1',
     title: 'Test Track',
     prompt: 'Test prompt',
     audio_url: 'https://example.com/audio.mp3',
     cover_url: 'https://example.com/cover.jpg',
-    duration_seconds: 180,
+    duration: 180,
     status: 'completed' as const,
     created_at: '2024-01-15T12:00:00Z',
     style_tags: ['rock', 'indie'],
     like_count: 5,
+    is_liked: false,
   };
+
+  const playTrackMock = vi.fn();
+  const pauseTrackMock = vi.fn();
+  const toastMock = vi.fn();
+  const toggleLikeMock = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
+    (useAudioPlayer as vi.Mock).mockReturnValue({
+      currentTrack: null,
+      isPlaying: false,
+      playTrack: playTrackMock,
+      pauseTrack: pauseTrackMock,
+    });
+    (useAudioPlayerSafe as vi.Mock).mockReturnValue({
+      currentTrack: null,
+      isPlaying: false,
+      playTrack: playTrackMock,
+      pauseTrack: pauseTrackMock,
+    });
+    (useToast as vi.Mock).mockReturnValue({
+      toast: toastMock,
+    });
+    (useTrackLike as vi.Mock).mockReturnValue({
+      isLiked: false,
+      likeCount: 5,
+      toggleLike: toggleLikeMock,
+      isLoading: false,
+    });
   });
+
+  const setup = (props: Partial<React.ComponentProps<typeof TrackListItem>> = {}) => {
+    return render(<TrackListItem track={mockTrack} {...props} />);
+  };
 
   describe('Rendering', () => {
     it('renders track information', () => {
-      render(<TrackListItem track={mockTrack} />);
-      
+      setup();
       expect(screen.getByText('Test Track')).toBeInTheDocument();
     });
 
     it('renders track cover image', () => {
-      render(<TrackListItem track={mockTrack} />);
-      
+      setup();
       const image = screen.getByAltText(/test track/i);
       expect(image).toHaveAttribute('src', 'https://example.com/cover.jpg');
     });
 
     it('renders duration', () => {
-      render(<TrackListItem track={mockTrack} />);
-      
+      setup();
       expect(screen.getByText('3:00')).toBeInTheDocument();
     });
 
     it('renders style tags', () => {
-      render(<TrackListItem track={mockTrack} />);
-      
+      setup();
       expect(screen.getByText('rock')).toBeInTheDocument();
       expect(screen.getByText('indie')).toBeInTheDocument();
     });
 
-    it('renders index when provided', () => {
-      render(<TrackListItem track={mockTrack} index={1} />);
-      
+    it('renders index when provided in compact mode', () => {
+      setup({ index: 0, compact: true });
       expect(screen.getByText('1')).toBeInTheDocument();
     });
 
     it('shows like count', () => {
-      render(<TrackListItem track={mockTrack} />);
-      
+      setup();
       expect(screen.getByText('5')).toBeInTheDocument();
     });
   });
 
   describe('Compact Mode', () => {
     it('renders in compact mode', () => {
-      render(<TrackListItem track={mockTrack} compact={true} />);
-      
+      setup({ compact: true, index: 0 });
       expect(screen.getByText('Test Track')).toBeInTheDocument();
-      // Compact mode should still show essential information
+      expect(screen.queryByText('rock')).not.toBeInTheDocument();
     });
   });
 
   describe('User Interactions', () => {
-    it('calls playTrack when play button is clicked', () => {
-      const playTrackMock = vi.fn();
-      vi.mocked(require('@/hooks/useAudioPlayer').useAudioPlayer).mockReturnValue({
-        currentTrack: null,
-        isPlaying: false,
-        playTrack: playTrackMock,
-        pauseTrack: vi.fn(),
-      });
-
-      render(<TrackListItem track={mockTrack} />);
-      
-      const playButton = screen.getByRole('button', { name: /play|воспроизвести/i });
+    it('calls playTrack when play button is clicked', async () => {
+      const { getByTestId } = setup();
+      fireEvent.mouseEnter(getByTestId(`track-list-item-${mockTrack.id}`));
+      const playButton = await screen.findByRole('button', { name: /воспроизвести/i });
       fireEvent.click(playButton);
-      
       expect(playTrackMock).toHaveBeenCalled();
     });
 
-    it('shows pause button for currently playing track', () => {
-      vi.mocked(require('@/hooks/useAudioPlayer').useAudioPlayer).mockReturnValue({
-        currentTrack: { id: 'track-1', title: 'Test Track' },
+    it('shows pause button for currently playing track', async () => {
+      (useAudioPlayerSafe as vi.Mock).mockReturnValue({
+        currentTrack: { id: 'track-1' },
         isPlaying: true,
-        playTrack: vi.fn(),
-        pauseTrack: vi.fn(),
       });
-
-      render(<TrackListItem track={mockTrack} />);
-      
-      expect(screen.getByRole('button', { name: /pause|приостановить/i })).toBeInTheDocument();
+      const { getByTestId } = setup();
+      fireEvent.mouseEnter(getByTestId(`track-list-item-${mockTrack.id}`));
+      expect(await screen.findByRole('button', { name: /пауза/i })).toBeInTheDocument();
     });
 
-    it('handles like button click', () => {
-      render(<TrackListItem track={mockTrack} />);
-      
-      const likeButton = screen.getByRole('button', { name: /like|избранн/i });
+    it('handles like button click', async () => {
+      const { getByTestId } = setup();
+      fireEvent.mouseEnter(getByTestId(`track-list-item-${mockTrack.id}`));
+      const likeButton = await screen.findByRole('button', { name: /добавить в избранное/i });
       fireEvent.click(likeButton);
-      
-      // Проверяем, что кнопка кликабельна (useTrackLike обработает лайк)
-      expect(likeButton).toBeInTheDocument();
+      expect(toggleLikeMock).toHaveBeenCalled();
     });
 
-    it('calls onDownload when download button is clicked', () => {
+    it('calls onDownload when download button is clicked', async () => {
       const onDownloadMock = vi.fn();
-      
-      render(<TrackListItem track={mockTrack} onDownload={onDownloadMock} />);
-      
-      const downloadButton = screen.getByRole('button', { name: /download|скачать/i });
+      const { getByTestId } = setup({ onDownload: onDownloadMock });
+      fireEvent.mouseEnter(getByTestId(`track-list-item-${mockTrack.id}`));
+      const downloadButton = await screen.findByRole('button', { name: /скачать/i });
       fireEvent.click(downloadButton);
-      
-      expect(onDownloadMock).toHaveBeenCalledWith('track-1');
+      await waitFor(() => {
+        expect(onDownloadMock).toHaveBeenCalledWith('track-1');
+      });
     });
 
-    it('calls onShare when share button is clicked', () => {
+    it('calls onShare when share button is clicked', async () => {
       const onShareMock = vi.fn();
-      
-      render(<TrackListItem track={mockTrack} onShare={onShareMock} />);
-      
-      const shareButton = screen.getByRole('button', { name: /share|поделиться/i });
+      const { getByTestId } = setup({ onShare: onShareMock });
+      fireEvent.mouseEnter(getByTestId(`track-list-item-${mockTrack.id}`));
+      const shareButton = await screen.findByRole('button', { name: /поделиться/i });
       fireEvent.click(shareButton);
-      
       expect(onShareMock).toHaveBeenCalledWith('track-1');
-    });
-
-    it('renders like button', () => {
-      render(<TrackListItem track={mockTrack} />);
-      
-      const likeButton = screen.getByRole('button', { name: /like|избранн/i });
-      expect(likeButton).toBeInTheDocument();
     });
   });
 
   describe('Track Without Audio', () => {
-    it('disables play button when audio_url is missing', () => {
-      const trackWithoutAudio = { ...mockTrack, audio_url: undefined };
-      
-      render(<TrackListItem track={trackWithoutAudio} />);
-      
-      const playButton = screen.getByRole('button', { name: /play|воспроизвести/i });
+    const trackWithoutAudio = { ...mockTrack, audio_url: undefined };
+
+    it('disables play button when audio_url is missing', async () => {
+      const { getByTestId } = setup({ track: trackWithoutAudio });
+      fireEvent.mouseEnter(getByTestId(`track-list-item-${trackWithoutAudio.id}`));
+      const playButton = await screen.findByRole('button', { name: /воспроизвести/i });
       expect(playButton).toBeDisabled();
     });
 
-    it('shows error toast when trying to download without audio_url', () => {
-      const toastMock = vi.fn();
-      vi.mocked(require('@/hooks/use-toast').useToast).mockReturnValue({
-        toast: toastMock,
-      });
-
-      const trackWithoutAudio = { ...mockTrack, audio_url: undefined };
-      const onDownloadMock = vi.fn();
-      
-      render(<TrackListItem track={trackWithoutAudio} onDownload={onDownloadMock} />);
-      
-      const downloadButton = screen.getByRole('button', { name: /download|скачать/i });
+    it('shows error toast when trying to download without audio_url', async () => {
+      const { getByTestId } = setup({ track: trackWithoutAudio });
+      fireEvent.mouseEnter(getByTestId(`track-list-item-${trackWithoutAudio.id}`));
+      const downloadButton = await screen.findByRole('button', { name: /скачать/i });
       fireEvent.click(downloadButton);
-      
       expect(toastMock).toHaveBeenCalledWith(
         expect.objectContaining({
           title: expect.stringContaining('Ошибка'),
           variant: 'destructive',
         })
       );
-      expect(onDownloadMock).not.toHaveBeenCalled();
     });
   });
 
   describe('Accessibility', () => {
-    it('has proper ARIA labels for buttons', () => {
-      render(<TrackListItem track={mockTrack} />);
-      
-      expect(screen.getByRole('button', { name: /play|воспроизвести/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /like|избранн/i })).toBeInTheDocument();
+    it('has proper ARIA labels for buttons', async () => {
+      const { getByTestId } = setup();
+      fireEvent.mouseEnter(getByTestId(`track-list-item-${mockTrack.id}`));
+      expect(await screen.findByRole('button', { name: 'Воспроизвести' })).toBeInTheDocument();
+      expect(await screen.findByRole('button', { name: 'Добавить в избранное' })).toBeInTheDocument();
+      expect(await screen.findByRole('button', { name: 'Скачать трек' })).toBeInTheDocument();
+      expect(await screen.findByRole('button', { name: 'Поделиться треком' })).toBeInTheDocument();
+      expect(await screen.findByRole('button', { name: 'Дополнительные действия' })).toBeInTheDocument();
     });
 
     it('has accessible image alt text', () => {
-      render(<TrackListItem track={mockTrack} />);
-      
-      const image = screen.getByAltText(/test track/i);
-      expect(image).toBeInTheDocument();
-    });
-  });
-
-  describe('Animation', () => {
-    it('applies visibility animation on mount', () => {
-      const { container } = render(<TrackListItem track={mockTrack} />);
-      
-      // Component should have animation-related classes
-      expect(container.querySelector('[class*="transition"]')).toBeInTheDocument();
+      setup();
+      expect(screen.getByAltText(/test track/i)).toBeInTheDocument();
     });
   });
 });

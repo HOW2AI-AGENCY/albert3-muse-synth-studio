@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useMediaQuery } from '../useMediaQuery';
 
 describe('useMediaQuery', () => {
@@ -72,8 +72,10 @@ describe('useMediaQuery', () => {
     expect(result.current).toBe(false);
 
     // Simulate media query change
-    currentMatches = true;
-    listeners.forEach(listener => listener({ matches: true }));
+    act(() => {
+      currentMatches = true;
+      listeners.forEach(listener => listener({ matches: true }));
+    });
     
     expect(result.current).toBe(true);
   });

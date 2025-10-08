@@ -13,7 +13,7 @@ import {
   Music,
   Headphones
 } from 'lucide-react';
-import { useAudioPlayer } from '@/hooks/useAudioPlayer';
+import { useAudioPlayer, useAudioPlayerSafe } from '@/hooks/useAudioPlayer';
 import { useToast } from '@/hooks/use-toast';
 import { useTrackLike } from '@/hooks/useTrackLike';
 import { cn } from '@/lib/utils';
@@ -47,7 +47,7 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
     isPlaying, 
     playTrack, 
     pauseTrack 
-  } = useAudioPlayer();
+  } = useAudioPlayerSafe();
 
   const { toast } = useToast();
   
@@ -167,13 +167,14 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
 
   const formatDuration = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
+    const remainingSeconds = Math.round(seconds % 60);
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
   return (
     <div
       ref={itemRef}
+      data-testid={`track-list-item-${track.id}`}
       className={cn(
         "group relative flex items-center gap-3 p-3 rounded-xl transition-all duration-500 ease-out",
         "hover:bg-gradient-to-r hover:from-primary/5 hover:to-primary/10",
@@ -186,7 +187,7 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
         className
       )}
       style={{
-        transitionDelay: `${(index ?? 0) * 50}ms`
+        transitionDelay: `${index ? index * 50 : 0}ms`
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -196,7 +197,7 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
       
       {/* Номер трека / Обложка */}
       <div className="relative flex-shrink-0">
-        {compact ? (
+        {compact && index !== undefined ? (
           <div className={cn(
             "w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-300",
             "bg-gradient-to-br from-primary/20 to-primary/10",
@@ -235,6 +236,7 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
               <Button
                 size="sm"
                 variant="ghost"
+                aria-label={isCurrentlyPlaying ? 'Пауза' : 'Воспроизвести'}
                 disabled={!track.audio_url}
                 className={cn(
                   "h-8 w-8 p-0 rounded-full transition-all duration-300",
@@ -291,7 +293,7 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
         </div>
 
         {/* Теги стиля */}
-        {track.style_tags && track.style_tags.length > 0 && !compact && (
+        {track.style_tags && !compact && (
           <div className="flex flex-wrap gap-1">
             {track.style_tags.slice(0, 3).map((style, idx) => (
               <Badge
@@ -356,6 +358,7 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
         <Button
           size="sm"
           variant="ghost"
+          aria-label={isLiked ? 'Убрать из избранного' : 'Добавить в избранное'}
           disabled={isLikeLoading}
           className={cn(
             "h-8 w-8 p-0 rounded-full transition-all duration-300",
@@ -376,6 +379,7 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
         <Button
           size="sm"
           variant="ghost"
+          aria-label="Скачать трек"
           className="h-8 w-8 p-0 rounded-full hover:bg-blue-500/10 hover:text-blue-500 hover:scale-110 active:scale-95 transition-all duration-300"
           onClick={handleDownload}
         >
@@ -386,6 +390,7 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
         <Button
           size="sm"
           variant="ghost"
+          aria-label="Поделиться треком"
           className="h-8 w-8 p-0 rounded-full hover:bg-green-500/10 hover:text-green-500 hover:scale-110 active:scale-95 transition-all duration-300"
           onClick={handleShare}
         >
@@ -396,6 +401,7 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
         <Button
           size="sm"
           variant="ghost"
+          aria-label="Дополнительные действия"
           className="h-8 w-8 p-0 rounded-full hover:bg-primary/10 hover:text-primary hover:scale-110 active:scale-95 transition-all duration-300"
         >
           <MoreHorizontal className="h-4 w-4" />

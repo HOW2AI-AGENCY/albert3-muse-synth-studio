@@ -315,6 +315,7 @@ export const GlobalAudioPlayer = () => {
                   value={[currentTime]}
                   max={duration || 100}
                   step={0.1}
+                  aria-label="Seek progress"
                   onValueChange={(value) => seekTo(value[0])}
                   className="cursor-pointer group-hover:scale-y-125 transition-transform duration-200"
                 />
@@ -340,6 +341,7 @@ export const GlobalAudioPlayer = () => {
                     size="icon"
                     variant="ghost"
                     onClick={toggleMute}
+                    title={isMuted ? 'Включить звук' : 'Выключить звук'}
                     className="h-10 w-10 hover:bg-primary/10 hover:scale-110 transition-all duration-200 group"
                   >
                     {isMuted || volume === 0 ? (
@@ -360,6 +362,7 @@ export const GlobalAudioPlayer = () => {
                   value={[isMuted ? 0 : volume]}
                   max={1}
                   step={0.01}
+                  aria-label="Volume"
                   onValueChange={handleVolumeChange}
                   className="cursor-pointer group-hover:scale-y-125 transition-transform duration-200"
                 />
