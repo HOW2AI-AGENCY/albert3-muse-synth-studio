@@ -14,15 +14,14 @@ import {
 } from 'lucide-react';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 import { useToast } from '@/hooks/use-toast';
+import { useTrackLike } from '@/hooks/useTrackLike';
 import { cn } from '@/lib/utils';
 import { DisplayTrack, convertToAudioPlayerTrack } from '../../types/track';
 
 interface TrackListItemProps {
   track: DisplayTrack;
   index?: number;
-  isLiked?: boolean;
   onClick?: () => void;
-  onLike?: (trackId: string) => void;
   onDownload?: (trackId: string) => void;
   onShare?: (trackId: string) => void;
   className?: string;
@@ -32,8 +31,6 @@ interface TrackListItemProps {
 export const TrackListItem: React.FC<TrackListItemProps> = memo(({
   track,
   index,
-  isLiked = false,
-  onLike,
   onDownload,
   onShare,
   className,
@@ -52,26 +49,17 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
   } = useAudioPlayer();
 
   const { toast } = useToast();
+  
+  // Используем hook для лайков
+  const { isLiked, likeCount, toggleLike, isLoading: isLikeLoading } = useTrackLike(
+    track.id, 
+    track.like_count || 0
+  );
 
-  // Мемоизируем обработчики для предотвращения лишних ререндеров
+  // Мемоизируем обработчик лайка
   const handleLike = useCallback(() => {
-    try {
-      onLike?.(track.id);
-      
-      toast({
-        title: isLiked ? "Убрано из избранного" : "Добавлено в избранное",
-        description: `Трек "${track.title}" ${isLiked ? 'убран из' : 'добавлен в'} избранное`,
-        duration: 2000,
-      });
-    } catch (error) {
-      toast({
-        title: "Ошибка",
-        description: "Не удалось обновить статус избранного",
-        variant: "destructive",
-        duration: 3000,
-      });
-    }
-  }, [onLike, track.id, track.title, isLiked, toast]);
+    toggleLike();
+  }, [toggleLike]);
 
   const handleDownload = useCallback(() => {
     try {
@@ -337,11 +325,13 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
         <Button
           size="sm"
           variant="ghost"
+          disabled={isLikeLoading}
           className={cn(
             "h-8 w-8 p-0 rounded-full transition-all duration-300",
             "hover:bg-red-500/10 hover:text-red-500 hover:scale-110",
             "active:scale-95",
-            isLiked && "text-red-500 bg-red-500/10"
+            isLiked && "text-red-500 bg-red-500/10",
+            isLikeLoading && "opacity-50 cursor-not-allowed"
           )}
           onClick={handleLike}
         >
@@ -382,13 +372,13 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
       </div>
 
       {/* Счетчик лайков */}
-      {track.like_count !== undefined && track.like_count > 0 && (
+      {likeCount > 0 && (
         <div className={cn(
           "flex items-center gap-1 text-xs text-muted-foreground transition-all duration-300",
           "opacity-60 group-hover:opacity-100"
         )}>
-          <Heart className="h-3 w-3" />
-          <span>{track.like_count}</span>
+          <Heart className={cn("h-3 w-3", isLiked && "fill-current text-red-500")} />
+          <span>{likeCount}</span>
         </div>
       )}
     </div>

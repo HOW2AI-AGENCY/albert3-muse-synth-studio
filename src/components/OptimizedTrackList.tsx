@@ -4,27 +4,19 @@ import { OptimizedTrack } from '../types/track';
 
 interface OptimizedTrackListProps {
   tracks: OptimizedTrack[];
-  onLike?: (trackId: string) => void;
   onDownload?: (trackId: string) => void;
   onShare?: (trackId: string) => void;
-  likedTracks?: Set<string>;
   className?: string;
 }
 
 
 export const OptimizedTrackList: React.FC<OptimizedTrackListProps> = memo(({
   tracks,
-  onLike,
   onDownload,
   onShare,
-  likedTracks = new Set(),
   className = '',
 }) => {
   // Мемоизируем обработчики для предотвращения лишних ререндеров
-  const handleLike = useCallback((trackId: string) => {
-    onLike?.(trackId);
-  }, [onLike]);
-
   const handleDownload = useCallback((trackId: string) => {
     onDownload?.(trackId);
   }, [onDownload]);
@@ -40,14 +32,12 @@ export const OptimizedTrackList: React.FC<OptimizedTrackListProps> = memo(({
         <TrackListItem
           key={track.id}
           track={{ ...track, status: track.status ?? 'ready' }}
-          isLiked={likedTracks.has(track.id)}
-          onLike={handleLike}
           onDownload={handleDownload}
           onShare={handleShare}
         />
       ))}
     </div>
-  ), [tracks, likedTracks, handleLike, handleDownload, handleShare, className]);
+  ), [tracks, handleDownload, handleShare, className]);
 });
 
 OptimizedTrackList.displayName = 'OptimizedTrackList';

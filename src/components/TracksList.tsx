@@ -274,7 +274,6 @@ const TracksListComponent = ({
               <div key={track.id} className="space-y-2">
                 <TrackListItem
                   track={track}
-                  onLike={() => handleLike(track.id)}
                   onDownload={() => handleDownload(typedTrack)}
                   onShare={() => handleShare(track.id)}
                   onClick={() => {

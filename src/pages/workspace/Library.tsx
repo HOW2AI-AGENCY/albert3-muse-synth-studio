@@ -356,7 +356,6 @@ const Library: React.FC = () => {
                   key={track.id}
                   track={convertToDisplayTrack(track)}
                   index={index}
-                  onLike={() => handleLike(track.id)}
                   onDownload={() => handleDownload(track.id)}
                   onShare={() => handleShare(track.id)}
                   onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
@@ -368,7 +367,6 @@ const Library: React.FC = () => {
           {viewMode === 'optimized' && (
             <OptimizedTrackList
               tracks={filteredAndSortedTracks.map(convertToOptimizedTrack)}
-              onLike={handleLike}
               onDownload={handleDownload}
               onShare={handleShare}
             />
