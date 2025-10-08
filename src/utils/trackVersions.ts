@@ -106,11 +106,11 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       isMasterVersion: !versions?.some(v => v.is_master), // Master if no versions marked as master
       title: mainTrack.title,
       audio_url: mainTrack.audio_url || '',
-      cover_url: mainTrack.cover_url,
-      video_url: mainTrack.video_url,
-      duration: mainTrack.duration,
-      lyrics: mainTrack.lyrics,
-      style_tags: mainTrack.style_tags,
+      cover_url: mainTrack.cover_url ?? undefined,
+      video_url: mainTrack.video_url ?? undefined,
+      duration: mainTrack.duration ?? undefined,
+      lyrics: mainTrack.lyrics ?? undefined,
+      style_tags: mainTrack.style_tags ?? undefined,
       status: mainTrack.status,
       user_id: mainTrack.user_id,
     });
@@ -126,11 +126,11 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
           isMasterVersion: version.is_master || false,
           title: `${mainTrack.title} (V${version.version_number})`,
           audio_url: version.audio_url || '',
-          cover_url: version.cover_url || mainTrack.cover_url,
-          video_url: version.video_url || undefined,
-          duration: version.duration || undefined,
-          lyrics: version.lyrics || undefined,
-          style_tags: mainTrack.style_tags || undefined,
+          cover_url: version.cover_url ?? mainTrack.cover_url,
+          video_url: version.video_url ?? undefined,
+          duration: version.duration ?? undefined,
+          lyrics: version.lyrics ?? undefined,
+          style_tags: mainTrack.style_tags ?? undefined,
           user_id: mainTrack.user_id,
         });
       });

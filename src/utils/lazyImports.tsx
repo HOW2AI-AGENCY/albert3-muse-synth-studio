@@ -13,7 +13,7 @@ export const createLazyComponent = <Props extends object>(
       const module = await importFn();
       return module;
     } catch (error) {
-      logError(`Failed to load lazy component: ${componentName}`, error);
+      logError(`Failed to load lazy component: ${componentName}`, error instanceof Error ? error : undefined);
 
       // Возвращаем fallback компонент в случае ошибки
       const FallbackComponent: ComponentType<Props> = () => (
@@ -38,7 +38,7 @@ export const preloadComponent = (importFn: () => Promise<unknown>) => {
   // Предзагружаем компонент при наведении или других событиях
   const preload = () => {
     importFn().catch(error => {
-      logError('Failed to preload component:', error);
+      logError('Failed to preload component:', error instanceof Error ? error : undefined);
     });
   };
 

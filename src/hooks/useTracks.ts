@@ -13,7 +13,13 @@ import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
 
-export const useTracks = (refreshTrigger?: number) => {
+interface UseTracksOptions {
+  pollingEnabled?: boolean;
+  pollingInitialDelay?: number;
+  pollingMaxDelay?: number;
+}
+
+export const useTracks = (refreshTrigger?: number, options?: UseTracksOptions) => {
   const [tracks, setTracks] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
