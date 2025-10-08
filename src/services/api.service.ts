@@ -5,6 +5,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { trackCache, CachedTrack } from "@/utils/trackCache";
+import { logInfo, logError, logDebug } from "@/utils/logger";
 
 export interface ImprovePromptRequest {
   prompt: string;
@@ -111,11 +112,9 @@ export class ApiService {
   static async generateMusic(
     request: GenerateMusicRequest
   ): Promise<GenerateMusicResponse> {
-    // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Явно определяем провайдера с fallback
-    const provider = request.provider || 'suno'; // По умолчанию используем suno
+    const provider = request.provider || 'suno';
     const functionName = provider === 'suno' ? 'generate-suno' : 'generate-music';
-    
-    // Transform request to match backend expectations
+
     const payload = {
       trackId: request.trackId,
       title: request.title || request.prompt.substring(0, 50),
@@ -126,42 +125,72 @@ export class ApiService {
       wait_audio: false,
     };
 
-    console.log('🎵 [API Service] Provider:', provider);
-    console.log('🎵 [API Service] Sending to:', functionName);
-    console.log('📤 [API Service] Payload:', JSON.stringify(payload, null, 2));
-    console.log('📤 [API Service] Full request:', JSON.stringify(request, null, 2));
-    
-    console.log('⏳ [API Service] Invoking edge function...');
-    
+    logInfo('🎵 [API Service] Provider:', 'ApiService', { provider });
+    logInfo('🎵 [API Service] Sending to:', 'ApiService', { functionName });
+    logDebug('📤 [API Service] Payload:', 'ApiService', { payload });
+
+    // Log the request to the new table
+    const { data: logData, error: logErrorInitial } = await supabase
+      .from('generation_requests')
+      .insert({
+        user_id: request.userId,
+        track_id: request.trackId,
+        provider: provider,
+        status: 'pending',
+        request_payload: payload,
+      })
+      .select()
+      .single();
+
+    if (logErrorInitial) {
+      logError('🔴 [API Service] Failed to log generation request', logErrorInitial, 'ApiService');
+      // Do not block generation if logging fails, but log the error
+    }
+
+    logInfo('⏳ [API Service] Invoking edge function...', 'ApiService');
+
     const { data, error } = await supabase.functions.invoke<GenerateMusicResponse>(
       functionName,
       { body: payload }
     );
 
     if (error) {
-      console.error('🔴 [API Service] Edge function error:', error);
-      console.error('🔴 [API Service] Error details:', JSON.stringify(error, null, 2));
-      
-      // Parse error message for user-friendly display
+      logError('🔴 [API Service] Edge function error', error, 'ApiService');
+      if (logData) {
+        await supabase
+          .from('generation_requests')
+          .update({ status: 'failed', error_message: error.message })
+          .eq('id', logData.id);
+      }
       let userMessage = error.message || "Failed to generate music";
-      
       if (error.message?.includes('429') || error.message?.includes('Rate limit')) {
         userMessage = 'Превышен лимит запросов. Пожалуйста, подождите немного';
       } else if (error.message?.includes('402') || error.message?.includes('Payment')) {
         userMessage = 'Недостаточно средств. Пополните баланс API';
-      } else if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
-        userMessage = 'Требуется авторизация. Войдите в систему';
       }
-      
       throw new Error(userMessage);
     }
 
     if (!data) {
-      console.error('🔴 [API Service] No response from server');
-      throw new Error("No response from server");
+      const err = new Error("No response from server");
+      logError('🔴 [API Service] No response from server', err, 'ApiService');
+      if (logData) {
+        await supabase
+          .from('generation_requests')
+          .update({ status: 'failed', error_message: 'No response from server' })
+          .eq('id', logData.id);
+      }
+      throw err;
     }
 
-    console.log('✅ [API Service] Success:', JSON.stringify(data, null, 2));
+    if (logData) {
+      await supabase
+        .from('generation_requests')
+        .update({ status: 'completed', response_payload: data })
+        .eq('id', logData.id);
+    }
+
+    logInfo('✅ [API Service] Success:', 'ApiService', { data });
     return data;
   }
 
@@ -309,6 +338,25 @@ export class ApiService {
   }
 
   /**
+   * Get a single track by its ID
+   */
+  static async getTrackById(trackId: string): Promise<Track | null> {
+    const { data, error } = await supabase
+      .from('tracks')
+      .select('*')
+      .eq('id', trackId)
+      .single();
+
+    if (error) {
+      logError('Failed to fetch track by ID', error, 'ApiService', { trackId });
+      // Don't throw, just return null, as the caller might handle it
+      return null;
+    }
+
+    return data as Track | null;
+  }
+
+  /**
    * Delete a track with cache cleanup
    */
   static async deleteTrack(trackId: string): Promise<void> {
@@ -407,5 +455,25 @@ export class ApiService {
     if (error) {
       console.error('Failed to increment play count:', error);
     }
+  }
+
+  /**
+   * Get provider balance
+   */
+  static async getProviderBalance(provider: 'suno' | 'replicate'): Promise<any> {
+    const { data, error } = await supabase.functions.invoke('get-balance', {
+      body: { provider },
+    });
+
+    if (error) {
+      logError('Failed to get provider balance', error, 'ApiService', { provider });
+      throw new Error(error.message || `Failed to get balance for ${provider}`);
+    }
+
+    if (!data) {
+      throw new Error('No response from server when fetching balance');
+    }
+
+    return data;
   }
 }
