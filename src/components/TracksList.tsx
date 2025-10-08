@@ -10,7 +10,7 @@ import { RefreshCcw, Music, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "./ui/badge";
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useAudioPlayerSafe } from "@/contexts/AudioPlayerContext";
 import { logError, logWarn } from "@/utils/logger";
 
 interface Track extends ApiTrack {
@@ -37,7 +37,7 @@ const TracksListComponent = ({
   onTrackSelect,
   selectedTrackId,
 }: TracksListProps) => {
-  const { playTrackWithQueue } = useAudioPlayer();
+  const audioPlayer = useAudioPlayerSafe();
   const { toast } = useToast();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
     const saved = localStorage.getItem('tracks-view-mode');
@@ -227,8 +227,8 @@ const TracksListComponent = ({
                   onShare={() => handleShare(track.id)}
                   onClick={() => {
                     onTrackSelect?.(typedTrack);
-                    if (track.audio_url && track.status === 'completed') {
-                      playTrackWithQueue({
+                    if (track.audio_url && track.status === 'completed' && audioPlayer?.playTrackWithQueue) {
+                      audioPlayer.playTrackWithQueue({
                         id: track.id,
                         title: track.title,
                         audio_url: track.audio_url,
@@ -278,8 +278,8 @@ const TracksListComponent = ({
                   onShare={() => handleShare(track.id)}
                   onClick={() => {
                     onTrackSelect?.(typedTrack);
-                    if (track.audio_url && track.status === 'completed') {
-                      playTrackWithQueue({
+                    if (track.audio_url && track.status === 'completed' && audioPlayer?.playTrackWithQueue) {
+                      audioPlayer.playTrackWithQueue({
                         id: track.id,
                         title: track.title,
                         audio_url: track.audio_url,

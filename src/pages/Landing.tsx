@@ -5,12 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { Music, Sparkles, Zap, Headphones, Wand2, Play, Heart } from "lucide-react";
 import { ApiService, Track } from "@/services/api.service";
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useAudioPlayerSafe } from "@/contexts/AudioPlayerContext";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const Landing = () => {
   const navigate = useNavigate();
-  const { playTrack } = useAudioPlayer();
+  const audioPlayer = useAudioPlayerSafe();
   const [featuredTracks, setFeaturedTracks] = useState<Track[]>([]);
 
   useEffect(() => {
@@ -183,7 +183,7 @@ const Landing = () => {
                         size="icon"
                         variant="ghost"
                         className="shrink-0 hover:bg-primary/20 hover:text-primary transition-all hover:scale-110"
-                        onClick={() => playTrack(track)}
+                        onClick={() => audioPlayer?.playTrack && audioPlayer.playTrack(track)}
                       >
                         <Play className="h-5 w-5" />
                       </Button>

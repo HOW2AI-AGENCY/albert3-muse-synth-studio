@@ -301,7 +301,18 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
 export const useAudioPlayer = () => {
   const context = useContext(AudioPlayerContext);
   if (context === undefined) {
+    if (process.env.NODE_ENV === 'development') {
+      console.error(
+        'useAudioPlayer must be used within AudioPlayerProvider. ' +
+        'Make sure your component is wrapped with <AudioPlayerProvider>.'
+      );
+    }
     throw new Error('useAudioPlayer must be used within AudioPlayerProvider');
   }
   return context;
+};
+
+// Safe version that returns null if context is not available
+export const useAudioPlayerSafe = () => {
+  return useContext(AudioPlayerContext);
 };
