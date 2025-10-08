@@ -111,6 +111,8 @@ export class ApiService {
   static async generateMusic(
     request: GenerateMusicRequest
   ): Promise<GenerateMusicResponse> {
+    const startTime = Date.now();
+    
     // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Явно определяем провайдера с fallback
     const provider = request.provider || 'suno'; // По умолчанию используем suno
     const functionName = provider === 'suno' ? 'generate-suno' : 'generate-music';
@@ -126,43 +128,82 @@ export class ApiService {
       wait_audio: false,
     };
 
-    console.log('🎵 [API Service] Provider:', provider);
-    console.log('🎵 [API Service] Sending to:', functionName);
-    console.log('📤 [API Service] Payload:', JSON.stringify(payload, null, 2));
-    console.log('📤 [API Service] Full request:', JSON.stringify(request, null, 2));
-    
-    console.log('⏳ [API Service] Invoking edge function...');
-    
-    const { data, error } = await supabase.functions.invoke<GenerateMusicResponse>(
+    console.log('🎵 [API Service] Generation Request Started', {
+      timestamp: new Date().toISOString(),
+      provider,
       functionName,
-      { body: payload }
-    );
+      trackId: request.trackId,
+      userId: request.userId,
+      hasVocals: request.hasVocals,
+      prompt: request.prompt.substring(0, 100),
+    });
+    console.log('📤 [API Service] Payload:', JSON.stringify(payload, null, 2));
+    
+    try {
+      console.log('⏳ [API Service] Invoking edge function...', {
+        function: functionName,
+        timestamp: new Date().toISOString()
+      });
+      
+      const { data, error } = await supabase.functions.invoke<GenerateMusicResponse>(
+        functionName,
+        { body: payload }
+      );
 
-    if (error) {
-      console.error('🔴 [API Service] Edge function error:', error);
-      console.error('🔴 [API Service] Error details:', JSON.stringify(error, null, 2));
-      
-      // Parse error message for user-friendly display
-      let userMessage = error.message || "Failed to generate music";
-      
-      if (error.message?.includes('429') || error.message?.includes('Rate limit')) {
-        userMessage = 'Превышен лимит запросов. Пожалуйста, подождите немного';
-      } else if (error.message?.includes('402') || error.message?.includes('Payment')) {
-        userMessage = 'Недостаточно средств. Пополните баланс API';
-      } else if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
-        userMessage = 'Требуется авторизация. Войдите в систему';
+      const duration = Date.now() - startTime;
+
+      if (error) {
+        console.error('🔴 [API Service] Edge function error:', {
+          error,
+          duration,
+          timestamp: new Date().toISOString(),
+          functionName,
+          statusCode: error.context?.status || 'unknown'
+        });
+        
+        // Parse error message for user-friendly display
+        let userMessage = error.message || "Failed to generate music";
+        
+        if (error.message?.includes('429') || error.message?.includes('Rate limit')) {
+          userMessage = 'Превышен лимит запросов. Пожалуйста, подождите немного';
+        } else if (error.message?.includes('402') || error.message?.includes('Payment')) {
+          userMessage = 'Недостаточно средств. Пополните баланс API';
+        } else if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+          userMessage = 'Требуется авторизация. Войдите в систему';
+        } else if (error.message?.includes('Failed to fetch')) {
+          userMessage = 'Не удалось подключиться к серверу. Проверьте соединение';
+        }
+        
+        throw new Error(userMessage);
       }
+
+      if (!data) {
+        console.error('🔴 [API Service] No response from server', {
+          duration,
+          timestamp: new Date().toISOString()
+        });
+        throw new Error("No response from server");
+      }
+
+      console.log('✅ [API Service] Success:', {
+        trackId: data.trackId,
+        success: data.success,
+        duration,
+        timestamp: new Date().toISOString()
+      });
       
-      throw new Error(userMessage);
+      return data;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      console.error('🔴 [API Service] Generation failed:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        duration,
+        timestamp: new Date().toISOString(),
+        provider,
+        functionName
+      });
+      throw error;
     }
-
-    if (!data) {
-      console.error('🔴 [API Service] No response from server');
-      throw new Error("No response from server");
-    }
-
-    console.log('✅ [API Service] Success:', JSON.stringify(data, null, 2));
-    return data;
   }
 
   /**

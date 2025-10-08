@@ -21,6 +21,8 @@ export interface TrackWithVersions {
 /**
  * Loads a track and all its versions from the database
  * Returns an array where first element is the main track, followed by all versions
+ * 
+ * FALLBACK: Если track_versions пустая, пытается извлечь версии из metadata.suno_data
  */
 export async function getTrackWithVersions(trackId: string): Promise<TrackWithVersions[]> {
   try {
@@ -63,7 +65,7 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       user_id: mainTrack.user_id,
     });
 
-    // Add all versions
+    // Add all versions from track_versions table
     if (versions && versions.length > 0) {
       versions.forEach(version => {
         result.push({
@@ -81,6 +83,34 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
           user_id: mainTrack.user_id,
         });
       });
+    } else if (mainTrack.metadata && typeof mainTrack.metadata === 'object' && !Array.isArray(mainTrack.metadata)) {
+      // FALLBACK: Если нет записей в track_versions, но есть suno_data в metadata
+      const metadata = mainTrack.metadata as Record<string, any>;
+      if (metadata.suno_data && Array.isArray(metadata.suno_data)) {
+        const sunoVersions = metadata.suno_data.filter((v: any) => 
+          v.audioUrl || v.audio_url
+        );
+        
+        if (sunoVersions.length > 1) {
+          // Пропускаем первый элемент (это основной трек), добавляем остальные как виртуальные версии
+          sunoVersions.slice(1).forEach((version: any, idx: number) => {
+            result.push({
+              id: `${mainTrack.id}_virtual_v${idx + 1}`, // Виртуальный ID
+              parentTrackId: mainTrack.id,
+              versionNumber: idx + 1,
+              isMasterVersion: false,
+              title: `${mainTrack.title} (V${idx + 1})`,
+              audio_url: version.audioUrl || version.audio_url || '',
+              cover_url: version.image_url || version.imageUrl || mainTrack.cover_url,
+              video_url: version.video_url || version.videoUrl,
+              duration: version.duration || version.duration_seconds,
+              lyrics: version.lyric || version.lyrics,
+              style_tags: mainTrack.style_tags,
+              user_id: mainTrack.user_id,
+            });
+          });
+        }
+      }
     }
 
     return result;

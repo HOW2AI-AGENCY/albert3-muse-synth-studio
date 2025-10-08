@@ -100,7 +100,9 @@ export const TrackDeleteDialog = ({
             <p className="font-medium text-foreground">
               Вы собираетесь удалить трек "{trackTitle}"
             </p>
-            
+          </AlertDialogDescription>
+          
+          <div className="space-y-3">
             {isLoading ? (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -130,7 +132,7 @@ export const TrackDeleteDialog = ({
                 </p>
               </div>
             )}
-          </AlertDialogDescription>
+          </div>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Отмена</AlertDialogCancel>

@@ -346,7 +346,7 @@ export const GlobalAudioPlayer = () => {
                 <Volume2 className="h-5 w-5 group-hover:text-primary transition-colors duration-200" />
               )}
             </Button>
-            <div className="flex-1 relative group min-w-[150px] sm:min-w-[200px]">
+            <div className="flex-1 relative group min-w-[100px]">
               <Slider
                 value={[isMuted ? 0 : volume]}
                 max={1}
@@ -359,25 +359,27 @@ export const GlobalAudioPlayer = () => {
                 className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-primary/60 to-primary rounded-full -translate-y-1/2 transition-all duration-100"
                 style={{ width: `${(isMuted ? 0 : volume) * 100}%` }}
               />
-            
-            {/* Close Button */}
+            </div>
+            <span className="text-xs font-medium text-muted-foreground/80 tabular-nums w-10 text-right">
+              {Math.round((isMuted ? 0 : volume) * 100)}%
+            </span>
+          </div>
+
+          {/* Close Button - separate column */}
+          <div className="flex items-center">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   size="icon"
                   variant="ghost"
                   onClick={clearCurrentTrack}
-                  className="h-10 w-10 hover:bg-destructive/10 hover:text-destructive hover:scale-110 transition-all duration-200 ml-2"
+                  className="h-10 w-10 hover:bg-destructive/10 hover:text-destructive hover:scale-110 transition-all duration-200"
                 >
                   <X className="h-5 w-5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Закрыть плеер</TooltipContent>
             </Tooltip>
-          </div>
-            <span className="text-xs font-medium text-muted-foreground/80 tabular-nums w-10 text-right">
-              {Math.round((isMuted ? 0 : volume) * 100)}%
-            </span>
           </div>
         </div>
       </div>
