@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "https://deno.land/std@0.168.0/uuid/mod.ts";
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { downloadAndUploadAudio, downloadAndUploadCover, downloadAndUploadVideo } from "../_shared/storage.ts";
+import { createSunoClient, SunoApiError } from "../_shared/suno.ts";
 
 export type PollSunoCompletionFn = (
   trackId: string,
@@ -105,6 +106,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       throw new Error('SUNO_API_KEY not configured');
     }
 
+    const sunoClient = createSunoClient({ apiKey: SUNO_API_KEY });
     console.log('✅ [GENERATE-SUNO] API key configured');
 
     let finalTrackId = trackId;
@@ -182,26 +184,24 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     const sunoPayload = { prompt, tags, title: title || 'Generated Track', make_instrumental: make_instrumental || false, model_version: model_version || 'chirp-v3-5', wait_audio: wait_audio || false };
     console.log('📤 [GENERATE-SUNO] Sending request to Suno API:', JSON.stringify(sunoPayload, null, 2));
 
-    const response = await fetch('https://api.suno.ai/generate/v2/', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${SUNO_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(sunoPayload),
-    });
+    const generationResult = await sunoClient.generateTrack(sunoPayload);
+    console.log('📥 [GENERATE-SUNO] Suno API response:', JSON.stringify(generationResult.rawResponse, null, 2));
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('🔴 [GENERATE-SUNO] Suno API error:', response.status, errorText);
-      throw new Error(`Suno API error: ${response.status} ${errorText}`);
-    }
-
-    const result = await response.json();
-    console.log('📥 [GENERATE-SUNO] Suno API response:', JSON.stringify(result, null, 2));
-
-    const taskId = result.id;
+    const taskId = generationResult.taskId;
     await supabaseAdmin.from('ai_jobs').update({ external_id: taskId, status: 'processing' }).eq('id', jobId);
     const { error: updateError } = await supabaseAdmin
       .from('tracks')
-      .update({ status: 'processing', metadata: { ...existingTrack?.metadata, suno_task_id: taskId, suno_response: result, job_id: jobId } })
+      .update({
+        status: 'processing',
+        metadata: {
+          ...(existingTrack?.metadata ?? {}),
+          suno_task_id: taskId,
+          suno_response: generationResult.rawResponse,
+          job_id: jobId,
+          suno_generate_endpoint: generationResult.endpoint,
+          ...(generationResult.jobId ? { suno_job_id: generationResult.jobId } : {}),
+        },
+      })
       .eq('id', finalTrackId);
 
     if (updateError) {
@@ -223,14 +223,41 @@ export const mainHandler = async (req: Request): Promise<Response> => {
   } catch (error) {
     console.error('🔴 [GENERATE-SUNO] Error in generate-suno function:', error);
     console.error('🔴 [GENERATE-SUNO] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
     if (jobId) {
-      await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: error.message }).eq('id', jobId);
+      await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: errorMessage }).eq('id', jobId);
     }
 
     let status = 500;
     let message = 'Internal server error';
-    if (error instanceof Error) {
+    let details: unknown = errorMessage;
+
+    if (error instanceof SunoApiError) {
+      const detailStatus = error.details.status ?? 0;
+      if (detailStatus) {
+        status = detailStatus === 0 ? 502 : detailStatus;
+      }
+      if (status === 401) {
+        message = 'Требуется авторизация к Suno API';
+      } else if (status === 402) {
+        message = 'Недостаточно средств на балансе Suno API';
+      } else if (status === 404) {
+        message = 'Запрос Suno API не найден';
+      } else if (status === 429) {
+        message = 'Превышен лимит Suno API. Попробуйте позже';
+      } else if (status >= 500) {
+        message = 'Suno API временно недоступен';
+      } else {
+        message = error.message;
+      }
+      details = {
+        endpoint: error.details.endpoint,
+        status: error.details.status ?? null,
+        body: error.details.body ?? null,
+      };
+    } else if (error instanceof Error) {
       if (error.message.includes('Unauthorized') || error.message.includes('Authorization')) {
         status = 401;
         message = 'Требуется авторизация';
@@ -247,8 +274,8 @@ export const mainHandler = async (req: Request): Promise<Response> => {
         message = error.message;
       }
     }
-    
-    return new Response(JSON.stringify({ error: message, details: error instanceof Error ? error.message : 'Unknown error' }), {
+
+    return new Response(JSON.stringify({ error: message, details }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status,
     });
@@ -269,6 +296,7 @@ const defaultPollSunoCompletion: PollSunoCompletionFn = async (
   apiKey,
   jobId,
 ) => {
+  const sunoClient = createSunoClient({ apiKey });
   const maxAttempts = 60; // Максимум 60 попыток = 5 минут (интервал 5 секунд)
   let attempts = 0;
 
@@ -279,33 +307,21 @@ const defaultPollSunoCompletion: PollSunoCompletionFn = async (
     try {
       console.log(`Polling Suno task ${taskId}, attempt ${attempts}`);
 
-      const response = await fetch(`https://api.sunoapi.org/api/v1/query?taskId=${taskId}`, {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-        },
-      });
+      const queryResult = await sunoClient.queryTask(taskId);
 
-      if (!response.ok) {
-        console.error('Polling error:', response.status);
-        continue;
-      }
-
-      const data = await response.json();
-      
-      // Log full response for debugging (first 3 attempts and completion)
       if (attempts <= 3) {
-        console.log(`[Attempt ${attempts}] Suno poll response:`, JSON.stringify(data, null, 2));
+        console.log(`[Attempt ${attempts}] Suno poll response (${queryResult.endpoint}):`, JSON.stringify(queryResult.rawResponse, null, 2));
       }
-      
-      if (data.code !== 200 || !data.data) {
-        console.error('Invalid response:', data);
+
+      if (typeof queryResult.code === 'number' && queryResult.code !== 200) {
+        console.error('Unexpected Suno poll code:', queryResult.code);
         continue;
       }
 
-      const tasks = data.data;
-      const statusesLog = tasks.map((t: any) => ({ 
-        id: t.id || t.taskId, 
-        status: t.status, 
+      const tasks = queryResult.tasks;
+      const statusesLog = tasks.map((t: any) => ({
+        id: t.id || t.taskId,
+        status: t.status,
         hasAudio: Boolean(t.audioUrl || t.audio_url || t.stream_audio_url || t.source_stream_audio_url),
         hasCover: Boolean(t.image_url || t.image_large_url || t.imageUrl),
         hasVideo: Boolean(t.video_url || t.videoUrl)
@@ -342,10 +358,10 @@ const defaultPollSunoCompletion: PollSunoCompletionFn = async (
          */
         
         // Фильтруем только успешные треки с аудио
-        const successfulTracks = tasks.filter((t: any) => 
+        const successfulTracks = tasks.filter((t: any) =>
           t.audioUrl || t.audio_url || t.stream_audio_url || t.source_stream_audio_url
         );
-        
+
         if (successfulTracks.length === 0) {
           await supabaseAdmin.from('tracks').update({ status: 'failed', error_message: 'Completed without audio URL in response' }).eq('id', trackId);
           if (jobId) await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: 'Completed without audio URL' }).eq('id', jobId);
@@ -371,12 +387,14 @@ const defaultPollSunoCompletion: PollSunoCompletionFn = async (
         const modelName = mainTrack.model || mainTrack.model_name;
         const createdAtSuno = mainTrack.created_at || mainTrack.createdAt;
         
-        const { data: trackData } = await supabaseAdmin.from('tracks').select('user_id').eq('id', trackId).single();
+        const { data: trackData } = await supabaseAdmin.from('tracks').select('user_id, metadata').eq('id', trackId).single();
         const userId = trackData?.user_id;
         if (!userId) {
           throw new Error('User ID not found for track');
         }
-        
+
+        const existingMetadata = (trackData?.metadata && typeof trackData.metadata === 'object') ? trackData.metadata as Record<string, unknown> : {};
+
         console.log('📦 [STORAGE] Starting file uploads to Supabase Storage...');
         const audioUrl = await downloadAndUploadAudio(externalAudioUrl, trackId, userId, 'main.mp3', supabaseAdmin);
         let coverUrl = externalCoverUrl;
@@ -398,10 +416,27 @@ const defaultPollSunoCompletion: PollSunoCompletionFn = async (
           hasLyrics: Boolean(actualLyrics)
         });
 
+        const pollMetadata = {
+          ...existingMetadata,
+          suno_data: tasks,
+          suno_last_poll_endpoint: queryResult.endpoint,
+          suno_last_poll_code: queryResult.code ?? null,
+          suno_last_poll_at: new Date().toISOString(),
+          suno_poll_snapshot: queryResult.rawResponse,
+        };
+
         const { error: updateMainError } = await supabaseAdmin.from('tracks').update({
-          status: 'completed', audio_url: audioUrl, duration: Math.round(duration), duration_seconds: Math.round(duration),
-          lyrics: actualLyrics, cover_url: coverUrl, video_url: videoUrl, suno_id: sunoId, model_name: modelName,
-          created_at_suno: createdAtSuno, metadata: { suno_data: tasks }
+          status: 'completed',
+          audio_url: audioUrl,
+          duration: Math.round(duration),
+          duration_seconds: Math.round(duration),
+          lyrics: actualLyrics,
+          cover_url: coverUrl,
+          video_url: videoUrl,
+          suno_id: sunoId,
+          model_name: modelName,
+          created_at_suno: createdAtSuno,
+          metadata: pollMetadata,
         }).eq('id', trackId);
 
         if (updateMainError) {
@@ -450,10 +485,21 @@ const defaultPollSunoCompletion: PollSunoCompletionFn = async (
             });
             
             const { error: insertVersionError } = await supabaseAdmin.from('track_versions').insert({
-              parent_track_id: trackId, version_number: i, is_master: false, audio_url: versionAudioUrl,
-              cover_url: versionCoverUrl, video_url: versionVideoUrl, duration: Math.round(versionDuration),
-              lyrics: versionLyrics, suno_id: versionSunoId,
-              metadata: { suno_track_data: versionTrack, created_from_generation: true, generation_task_id: taskId }
+              parent_track_id: trackId,
+              version_number: i,
+              is_master: false,
+              audio_url: versionAudioUrl,
+              cover_url: versionCoverUrl,
+              video_url: versionVideoUrl,
+              duration: Math.round(versionDuration),
+              lyrics: versionLyrics,
+              suno_id: versionSunoId,
+              metadata: {
+                suno_track_data: versionTrack,
+                created_from_generation: true,
+                generation_task_id: taskId,
+                suno_last_poll_endpoint: queryResult.endpoint,
+              }
             });
             
             if (insertVersionError) {
@@ -474,7 +520,25 @@ const defaultPollSunoCompletion: PollSunoCompletionFn = async (
 
     } catch (error) {
       console.error('Polling iteration error:', error);
-      if (jobId) await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: error.message }).eq('id', jobId);
+
+      if (error instanceof SunoApiError) {
+        const status = error.details.status ?? 0;
+        if (status === 0 || status === 200 || status === 202 || status === 429 || status >= 500) {
+          console.log('Retryable Suno polling error, continuing...');
+          continue;
+        }
+        const reason = error.message || 'Suno polling error';
+        await supabaseAdmin.from('tracks').update({ status: 'failed', error_message: reason }).eq('id', trackId);
+        if (jobId) await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: reason }).eq('id', jobId);
+        return;
+      }
+
+      const message = error instanceof Error ? error.message : 'Unknown polling error';
+      if (jobId) {
+        await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: message }).eq('id', jobId);
+      }
+      await supabaseAdmin.from('tracks').update({ status: 'failed', error_message: message }).eq('id', trackId);
+      return;
     }
   }
 
