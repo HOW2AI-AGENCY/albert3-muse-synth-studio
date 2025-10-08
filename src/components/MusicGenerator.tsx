@@ -72,9 +72,17 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     vibrate('medium');
 
     try {
-      const improved = await hookImprovePrompt(prompt);
+      // Set hook prompt first
+      setHookPrompt(currentPrompt);
+      // Call improve and receive improved text
+      const improved = await hookImprovePrompt(currentPrompt);
+
       if (improved) {
-        setPrompt(improved.improvedPrompt);
+        if (mode === 'simple') {
+          setSongDescription(improved);
+        } else {
+          setLyrics(improved);
+        }
       }
       
       toast({
@@ -117,11 +125,38 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     vibrate('heavy');
 
     try {
+      let finalPrompt = songDescription;
+      const tags = mode === 'simple' ? selectedInspirations : customStyles;
+      
+      if (tags.length > 0) {
+        finalPrompt = `${finalPrompt}\n\nStyles: ${tags.join(', ')}`;
+      }
+      
+      if (mode === 'custom') {
+        const options: string[] = [];
+        if (tempo[0] !== 120) options.push(`Tempo: ${tempo[0]} BPM`);
+        if (musicalKey) options.push(`Key: ${musicalKey}`);
+        if (vocalType) options.push(`Vocal: ${vocalType}`);
+        
+        if (options.length > 0) {
+          finalPrompt = `${finalPrompt}\n\n${options.join(', ')}`;
+        }
+      }
+
+      const shouldIncludeVocals = mode === 'simple' ? !isInstrumental : hasVocals;
+      const sanitizedLyrics = lyrics.trim();
+
+      // Keep hook state in sync for other consumers
+      setHookPrompt(finalPrompt);
+
+      // Call generate with explicit parameters to avoid stale state
       await generateMusic({
-        prompt: prompt,
-        lyrics: lyrics,
-        styleTags: styleTags,
-        hasVocals: !isInstrumental,
+        prompt: finalPrompt,
+        title: songTitle.trim() || undefined,
+        lyrics: shouldIncludeVocals && sanitizedLyrics ? sanitizedLyrics : undefined,
+        hasVocals: shouldIncludeVocals,
+        styleTags: tags,
+        customMode: mode === 'custom'
       });
 
       toast({
@@ -141,7 +176,8 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       });
     }
   }, [
-    prompt, lyrics, styleTags, isInstrumental,
+    mode, songDescription, selectedInspirations, customStyles, isInstrumental,
+    hasVocals, lyrics, tempo, musicalKey, vocalType, songTitle, setHookPrompt,
     generateMusic, vibrate, validateForm, toast, onTrackGenerated
   ]);
 
