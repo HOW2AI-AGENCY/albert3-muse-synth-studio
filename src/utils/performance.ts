@@ -2,27 +2,33 @@
  * Утилиты для оптимизации производительности UI компонентов
  */
 
-import { useCallback, useRef, useEffect, useMemo, useState } from 'react';
+import { useCallback, useRef, useEffect, useMemo, useState, type DependencyList } from 'react';
+
+declare global {
+  interface Window {
+    webkitAudioContext?: typeof AudioContext;
+  }
+}
 
 /**
  * Хук для дебаунса функций
  */
-export const useDebounce = <T extends (...args: any[]) => any>(
-  callback: T,
+export const useDebounce = <Args extends unknown[]>(
+  callback: (...args: Args) => void,
   delay: number
-): T => {
+): ((...args: Args) => void) => {
   const timeoutRef = useRef<NodeJS.Timeout>();
 
   return useCallback(
-    ((...args: Parameters<T>) => {
+    (...args: Args) => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      
+
       timeoutRef.current = setTimeout(() => {
         callback(...args);
       }, delay);
-    }) as T,
+    },
     [callback, delay]
   );
 };
@@ -30,17 +36,17 @@ export const useDebounce = <T extends (...args: any[]) => any>(
 /**
  * Хук для троттлинга функций
  */
-export const useThrottle = <T extends (...args: any[]) => any>(
-  callback: T,
+export const useThrottle = <Args extends unknown[]>(
+  callback: (...args: Args) => void,
   delay: number
-): T => {
+): ((...args: Args) => void) => {
   const lastCallRef = useRef<number>(0);
   const timeoutRef = useRef<NodeJS.Timeout>();
 
   return useCallback(
-    ((...args: Parameters<T>) => {
+    (...args: Args) => {
       const now = Date.now();
-      
+
       if (now - lastCallRef.current >= delay) {
         lastCallRef.current = now;
         callback(...args);
@@ -54,7 +60,7 @@ export const useThrottle = <T extends (...args: any[]) => any>(
           callback(...args);
         }, delay - (now - lastCallRef.current));
       }
-    }) as T,
+    },
     [callback, delay]
   );
 };
@@ -172,7 +178,7 @@ export const useLazyImage = (src: string, placeholder?: string) => {
  */
 export const useOptimizedAnimation = (
   animationCallback: () => void,
-  dependencies: any[] = []
+  dependencies: DependencyList = []
 ) => {
   const rafRef = useRef<number>();
 
@@ -202,7 +208,7 @@ export const useOptimizedAnimation = (
  */
 export const useExpensiveComputation = <T>(
   computeFn: () => T,
-  dependencies: any[]
+  dependencies: DependencyList
 ): T => {
   return useMemo(computeFn, dependencies);
 };
@@ -220,7 +226,7 @@ export const browserSupports = {
       return false;
     }
   })(),
-  webAudio: typeof AudioContext !== 'undefined' || typeof (window as any).webkitAudioContext !== 'undefined',
+  webAudio: typeof AudioContext !== 'undefined' || typeof window.webkitAudioContext !== 'undefined',
   requestIdleCallback: typeof requestIdleCallback !== 'undefined'
 };
 

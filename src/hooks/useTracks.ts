@@ -5,9 +5,13 @@
 
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ApiService, Track } from "@/services/api.service";
+import { ApiService, Track, mapTrackRowToTrack } from "@/services/api.service";
 import { supabase } from "@/integrations/supabase/client";
 import { trackCache, CachedTrack } from "@/utils/trackCache";
+import type { Database } from "@/integrations/supabase/types";
+import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
+
+type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
 
 export const useTracks = (refreshTrigger?: number) => {
   const [tracks, setTracks] = useState<Track[]>([]);
@@ -86,32 +90,29 @@ export const useTracks = (refreshTrigger?: number) => {
   // Realtime updates: reflect INSERT/UPDATE/DELETE immediately
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
-    let userId: string | null = null;
+
+    const handlePayload = (payload: RealtimePostgresChangesPayload<TrackRow>) => {
+      if (payload.eventType === 'INSERT' && payload.new) {
+        const newTrack = mapTrackRowToTrack(payload.new);
+        setTracks((prev) => [newTrack, ...prev]);
+      } else if (payload.eventType === 'UPDATE' && payload.new) {
+        const updated = mapTrackRowToTrack(payload.new);
+        setTracks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+      } else if (payload.eventType === 'DELETE' && payload.old) {
+        const removedId = payload.old.id;
+        setTracks((prev) => prev.filter((t) => t.id !== removedId));
+      }
+    };
 
     const setup = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      userId = user.id;
-
       channel = supabase
         .channel(`tracks-user-${user.id}`)
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'tracks', filter: `user_id=eq.${user.id}` },
-          (payload) => {
-            if (payload.eventType === 'INSERT') {
-              // @ts-ignore payload.new typed as any
-              setTracks((prev) => [payload.new as Track, ...prev]);
-            } else if (payload.eventType === 'UPDATE') {
-              // @ts-ignore
-              const updated = payload.new as Track;
-              setTracks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
-            } else if (payload.eventType === 'DELETE') {
-              // @ts-ignore
-              const removed = payload.old as { id: string };
-              setTracks((prev) => prev.filter((t) => t.id !== removed.id));
-            }
-          }
+          handlePayload
         )
         .subscribe();
     };

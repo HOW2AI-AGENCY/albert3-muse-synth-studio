@@ -22,11 +22,12 @@ import { useTrackRecovery } from "@/hooks/useTrackRecovery";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { supabase } from "@/integrations/supabase/client";
 import { logInfo } from "@/utils/logger";
+import type { Track } from "@/services/api.service";
 
 const Generate = () => {
   const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks();
   const { currentTrack } = useAudioPlayer();
-  const [selectedTrack, setSelectedTrack] = useState<any>(null);
+  const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showGenerator, setShowGenerator] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
@@ -106,7 +107,7 @@ const Generate = () => {
     };
   }, [tracks, isPolling, initialTrackCount]);
 
-  const handleTrackSelect = (track: any) => {
+  const handleTrackSelect = (track: Track) => {
     setSelectedTrack(track);
   };
 

@@ -4,8 +4,29 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { trackCache, CachedTrack } from "@/utils/trackCache";
 import { logInfo, logError, logDebug } from "@/utils/logger";
+
+type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
+
+export type TrackStatus = "pending" | "processing" | "completed" | "failed";
+
+export type Track = TrackRow & {
+  status: TrackStatus;
+  style?: string | null;
+};
+
+const isTrackStatus = (status: TrackRow["status"]): status is TrackStatus =>
+  status === "pending" ||
+  status === "processing" ||
+  status === "completed" ||
+  status === "failed";
+
+export const mapTrackRowToTrack = (track: TrackRow): Track => ({
+  ...track,
+  status: isTrackStatus(track.status) ? track.status : "pending",
+});
 
 export interface ImprovePromptRequest {
   prompt: string;
@@ -53,32 +74,10 @@ export interface GenerateLyricsResponse {
   };
 }
 
-export interface Track {
-  id: string;
-  title: string;
-  audio_url: string | null;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  created_at: string;
-  prompt: string;
-  improved_prompt: string | null;
-  duration: number | null;
-  duration_seconds: number | null;
-  error_message: string | null;
-  cover_url: string | null;
-  video_url: string | null;
-  suno_id: string | null;
-  model_name: string | null;
-  created_at_suno: string | null;
-  lyrics: string | null;
-  style_tags: string[] | null;
-  has_vocals: boolean | null;
-  provider: string | null;
-  has_stems?: boolean;
-  like_count?: number;
-  view_count?: number;
-  play_count?: number;
-  style?: string;
-}
+export type ProviderBalanceResponse = {
+  balance: number | null;
+  error?: string | null;
+} & Record<string, unknown>;
 
 /**
  * API Service - handles all backend communication
@@ -247,7 +246,11 @@ export class ApiService {
       throw new Error(error.message || "Failed to create track");
     }
 
-    return data as Track;
+    if (!data) {
+      throw new Error("Failed to create track");
+    }
+
+    return mapTrackRowToTrack(data);
   }
 
   /**
@@ -299,16 +302,16 @@ export class ApiService {
         throw new Error(error.message || "Failed to fetch tracks");
       }
 
-      const tracks = (data as Track[]) || [];
+      const tracks = (data ?? []).map(mapTrackRowToTrack);
 
       // Кэшируем треки с аудио
       const tracksToCache: Omit<CachedTrack, 'cached_at'>[] = tracks
-        .filter(track => track.audio_url && track.status === 'completed')
-        .map(track => ({
+        .filter((track): track is Track & { audio_url: string } => Boolean(track.audio_url) && track.status === 'completed')
+        .map((track) => ({
           id: track.id,
           title: track.title,
           artist: 'AI Generated',
-          audio_url: track.audio_url!,
+          audio_url: track.audio_url,
           image_url: track.cover_url || undefined,
           duration: track.duration_seconds || undefined,
           genre: track.style_tags?.join(', ') || undefined,
@@ -330,7 +333,8 @@ export class ApiService {
         
         // Получаем все треки из кэша и преобразуем их в формат Track
         // Это упрощенная версия, в реальности нужно было бы сохранять больше данных
-        return [];
+        const cachedTracks: Track[] = [];
+        return cachedTracks;
       }
       
       throw error;
@@ -353,7 +357,7 @@ export class ApiService {
       return null;
     }
 
-    return data as Track | null;
+    return data ? mapTrackRowToTrack(data) : null;
   }
 
   /**
@@ -406,11 +410,11 @@ export class ApiService {
    */
   static async updateTrackStatus(
     trackId: string,
-    status: string,
+    status: TrackStatus,
     audioUrl?: string,
     errorMessage?: string
   ): Promise<void> {
-    const updates: any = { status };
+    const updates: Partial<TrackRow> = { status };
     if (audioUrl) updates.audio_url = audioUrl;
     if (errorMessage) updates.error_message = errorMessage;
 
@@ -427,7 +431,10 @@ export class ApiService {
   /**
    * Get public tracks (featured/popular)
    */
-  static async getPublicTracks(limit: number = 9, orderBy: 'created_at' | 'like_count' | 'view_count' = 'like_count'): Promise<Track[]> {
+  static async getPublicTracks(
+    limit: number = 9,
+    orderBy: 'created_at' | 'like_count' | 'view_count' = 'like_count'
+  ): Promise<Track[]> {
     const { data, error } = await supabase
       .from("tracks")
       .select("*")
@@ -441,7 +448,7 @@ export class ApiService {
       throw new Error(error.message || "Failed to fetch public tracks");
     }
 
-    return (data as Track[]) || [];
+    return (data ?? []).map(mapTrackRowToTrack);
   }
 
   /**
@@ -460,7 +467,7 @@ export class ApiService {
   /**
    * Get provider balance
    */
-  static async getProviderBalance(provider: 'suno' | 'replicate'): Promise<any> {
+  static async getProviderBalance(provider: 'suno' | 'replicate'): Promise<ProviderBalanceResponse> {
     const { data, error } = await supabase.functions.invoke('get-balance', {
       body: { provider },
     });
@@ -474,6 +481,6 @@ export class ApiService {
       throw new Error('No response from server when fetching balance');
     }
 
-    return data;
+    return data as ProviderBalanceResponse;
   }
 }

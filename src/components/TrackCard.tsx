@@ -23,7 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 interface Track {
   id: string;
   title: string;
-  prompt: string;
+  prompt?: string;
   audio_url?: string;
   image_url?: string;
   cover_url?: string;

@@ -1,6 +1,12 @@
 import React, { ReactNode, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
+declare global {
+  interface Window {
+    resizeTimeout?: ReturnType<typeof setTimeout>;
+  }
+}
+
 interface ResponsiveLayoutProps {
   children: ReactNode;
   className?: string;
@@ -91,8 +97,10 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
 
     const handleResize = () => {
       // Дебаунс для оптимизации производительности
-      clearTimeout((window as any).resizeTimeout);
-      (window as any).resizeTimeout = setTimeout(updateViewport, 100);
+      if (window.resizeTimeout) {
+        clearTimeout(window.resizeTimeout);
+      }
+      window.resizeTimeout = setTimeout(updateViewport, 100);
     };
 
     const handleOrientationChange = () => {
@@ -106,7 +114,9 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleOrientationChange);
-      clearTimeout((window as any).resizeTimeout);
+      if (window.resizeTimeout) {
+        clearTimeout(window.resizeTimeout);
+      }
     };
   }, []);
 
@@ -416,8 +426,10 @@ export const useViewport = () => {
     updateViewport();
 
     const handleResize = () => {
-      clearTimeout((window as any).resizeTimeout);
-      (window as any).resizeTimeout = setTimeout(updateViewport, 100);
+      if (window.resizeTimeout) {
+        clearTimeout(window.resizeTimeout);
+      }
+      window.resizeTimeout = setTimeout(updateViewport, 100);
     };
 
     window.addEventListener('resize', handleResize);
@@ -425,7 +437,9 @@ export const useViewport = () => {
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      clearTimeout((window as any).resizeTimeout);
+      if (window.resizeTimeout) {
+        clearTimeout(window.resizeTimeout);
+      }
     };
   }, []);
 
