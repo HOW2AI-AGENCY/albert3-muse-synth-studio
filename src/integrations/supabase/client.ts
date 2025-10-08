@@ -17,6 +17,28 @@ const resolveStorage = (): Storage | undefined => {
   }
 };
 
+const resolveGlobalHeaders = (): Record<string, string> => {
+  if (typeof window === "undefined") {
+    return { "x-app-environment": appEnv.appEnv };
+  }
+
+  try {
+    const supabaseHost = new URL(appEnv.supabaseUrl).host;
+
+    if (window.location.host === supabaseHost) {
+      return { "x-app-environment": appEnv.appEnv };
+    }
+  } catch (error) {
+    logError(
+      "Failed to resolve Supabase URL when building headers",
+      error instanceof Error ? error : new Error(String(error)),
+      "SupabaseClient",
+    );
+  }
+
+  return {};
+};
+
 const clientOptions: SupabaseClientOptions<"public"> = {
   auth: {
     storage: resolveStorage(),
@@ -25,9 +47,7 @@ const clientOptions: SupabaseClientOptions<"public"> = {
     detectSessionInUrl: true,
   },
   global: {
-    headers: {
-      "x-app-environment": appEnv.appEnv,
-    },
+    headers: resolveGlobalHeaders(),
   },
 };
 
