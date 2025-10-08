@@ -85,6 +85,9 @@ class Logger {
     // Выводим в консоль
     this.consoleLog(logEntry);
 
+    // Отправляем в Sentry при необходимости
+    this.captureWithSentry(logEntry);
+
     // В production отправляем критические ошибки на сервер
     if (!this.isDevelopment && this.isBrowser && level === LogLevel.ERROR) {
       void this.sendToServer(logEntry);
@@ -116,6 +119,34 @@ class Logger {
     }
   }
 
+  private captureWithSentry(entry: LogEntry) {
+    if (this.isDevelopment || entry.level !== LogLevel.ERROR || !this.isBrowser) {
+      return;
+    }
+
+    const client = Sentry.getCurrentHub()?.getClient();
+
+    if (!client) {
+      return;
+    }
+
+    const maskedData = this.maskSensitiveData(entry.data);
+
+    Sentry.captureException(entry.error ?? new Error(entry.message), (scope) => {
+      scope.setLevel("error");
+      scope.setTag("logger.context", entry.context ?? "global");
+      scope.setContext("logger", {
+        message: entry.message,
+        timestamp: entry.timestamp.toISOString(),
+        data: maskedData,
+      });
+      if (maskedData) {
+        scope.setExtras(maskedData);
+      }
+      return scope;
+    });
+  }
+
   /**
    * Отправка критических ошибок на сервер (в production)
    */
@@ -129,6 +160,8 @@ class Logger {
       // например, Sentry, LogRocket, или собственный API
 
       // Пример отправки в Supabase Edge Function
+      const maskedData = this.maskSensitiveData(entry.data);
+
       const response = await fetch('/functions/v1/log-error', {
         method: 'POST',
         headers: {
@@ -139,7 +172,7 @@ class Logger {
           message: entry.message,
           timestamp: entry.timestamp.toISOString(),
           context: entry.context,
-          data: entry.data,
+          data: maskedData,
           error: entry.error ? {
             name: entry.error.name,
             message: entry.error.message,
@@ -177,6 +210,63 @@ class Logger {
    */
   clearLogs() {
     this.logs = [];
+  }
+
+  /**
+   * Маскируем чувствительные данные перед отправкой
+   */
+  private maskSensitiveData(data?: Record<string, unknown>): Record<string, unknown> | undefined {
+    if (!data) {
+      return undefined;
+    }
+
+    const sensitiveKeywords = ["token", "key", "secret", "password", "authorization", "cookie", "credential"];
+
+    const maskValue = (value: unknown, keyPath: string[]): unknown => {
+      if (Array.isArray(value)) {
+        return value.map((item, index) => maskValue(item, [...keyPath, String(index)]));
+      }
+
+      if (value && typeof value === "object") {
+        return Object.entries(value as Record<string, unknown>).reduce<Record<string, unknown>>((acc, [nestedKey, nestedValue]) => {
+          acc[nestedKey] = maskValue(nestedValue, [...keyPath, nestedKey]);
+          return acc;
+        }, {});
+      }
+
+      const lastKey = keyPath[keyPath.length - 1]?.toLowerCase() ?? "";
+      const shouldMask = sensitiveKeywords.some((keyword) => lastKey.includes(keyword));
+
+      if (shouldMask) {
+        if (typeof value === "string") {
+          return this.maskString(value);
+        }
+
+        if (typeof value === "number") {
+          return "***";
+        }
+
+        if (typeof value === "boolean") {
+          return value;
+        }
+
+        return value === null || value === undefined ? value : "***";
+      }
+
+      return value;
+    };
+
+    return maskValue({ ...data }, []) as Record<string, unknown>;
+  }
+
+  private maskString(value: string): string {
+    if (value.length <= 6) {
+      return `${value[0] ?? "*"}***${value[value.length - 1] ?? "*"}`;
+    }
+
+    const start = value.slice(0, 3);
+    const end = value.slice(-2);
+    return `${start}***${end}`;
   }
 
   /**
@@ -230,3 +320,5 @@ export const logInfo = (message: string, context?: string, data?: Record<string,
 
 export const logDebug = (message: string, context?: string, data?: Record<string, unknown>) =>
   logger.debug(message, context, data);
+import * as Sentry from "@sentry/react";
+

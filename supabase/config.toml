@@ -10,10 +10,15 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.generate-suno]
-verify_jwt = true
+  verify_jwt = true
+  [functions.generate-suno.environment]
+    SENTRY_DSN = ""
+    SENTRY_ENVIRONMENT = "development"
+    SENTRY_RELEASE = "local"
+    SENTRY_TRACES_SAMPLE_RATE = "0.0"
 
 [functions.sync-lyrics-job]
-verify_jwt = true
+  verify_jwt = true
 
 [functions.lyrics-callback]
 verify_jwt = false
@@ -22,7 +27,12 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.separate-stems]
-verify_jwt = true
+  verify_jwt = true
+  [functions.separate-stems.environment]
+    SENTRY_DSN = ""
+    SENTRY_ENVIRONMENT = "development"
+    SENTRY_RELEASE = "local"
+    SENTRY_TRACES_SAMPLE_RATE = "0.0"
 
 [functions.stems-callback]
 verify_jwt = false
@@ -34,4 +44,12 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.get-balance]
-verify_jwt = true
+  verify_jwt = true
+
+[functions.suggest-styles]
+  verify_jwt = true
+  [functions.suggest-styles.environment]
+    SENTRY_DSN = ""
+    SENTRY_ENVIRONMENT = "development"
+    SENTRY_RELEASE = "local"
+    SENTRY_TRACES_SAMPLE_RATE = "0.0"

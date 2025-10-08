@@ -66,3 +66,16 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Sentry health check
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+        run: |
+          if [ -z "${SENTRY_AUTH_TOKEN}" ] || [ -z "${SENTRY_ORG}" ] || [ -z "${SENTRY_PROJECT}" ]; then
+            echo "Sentry credentials not provided. Skipping health check."
+            exit 0
+          fi
+
+          npx sentry-cli info

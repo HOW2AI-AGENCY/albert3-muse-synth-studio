@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { logger, withSentry } from "../_shared/logger.ts";
 
 const corsHeaders = {
   ...createCorsHeaders(),
@@ -105,7 +106,10 @@ ${currentTags ? `Current Tags: ${currentTags.join(', ')}` : ''}`
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Lovable AI error:', response.status, errorText);
+      logger.error('Lovable AI error', {
+        status: response.status,
+        response: errorText,
+      });
       throw new Error(`AI service error: ${response.status}`);
     }
 
@@ -119,7 +123,10 @@ ${currentTags ? `Current Tags: ${currentTags.join(', ')}` : ''}`
       try {
         suggestions = JSON.parse(toolCall.function.arguments);
       } catch (e) {
-        console.error('Failed to parse tool call arguments:', toolCall.function.arguments);
+        logger.error('Failed to parse tool call arguments', {
+          response: toolCall.function.arguments,
+          error: e instanceof Error ? e : new Error(String(e)),
+        });
         throw new Error('Invalid AI response format');
       }
     } else {
@@ -132,7 +139,7 @@ ${currentTags ? `Current Tags: ${currentTags.join(', ')}` : ''}`
     );
 
   } catch (error) {
-    console.error('Error in suggest-styles:', error);
+    logger.error('Error in suggest-styles', { error: error instanceof Error ? error : new Error(String(error)) });
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -140,10 +147,12 @@ ${currentTags ? `Current Tags: ${currentTags.join(', ')}` : ''}`
   }
 };
 
-const handler = withRateLimit(mainHandler, {
+const rateLimitedHandler = withRateLimit(mainHandler, {
   maxRequests: 30,
   windowMinutes: 1,
   endpoint: 'suggest-styles'
 });
+
+const handler = withSentry(rateLimitedHandler, { transaction: 'suggest-styles' });
 
 serve(handler);
