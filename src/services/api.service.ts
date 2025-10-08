@@ -223,9 +223,42 @@ export class ApiService {
   static async getUserTracks(userId: string): Promise<Track[]> {
     try {
       // Сначала пытаемся получить треки из API
+      // КРИТИЧЕСКИ ВАЖНО: Явно указываем все поля, чтобы избежать undefined значений
       const { data, error } = await supabase
         .from("tracks")
-        .select("*")
+        .select(`
+          id,
+          user_id,
+          title,
+          prompt,
+          improved_prompt,
+          audio_url,
+          cover_url,
+          video_url,
+          status,
+          error_message,
+          provider,
+          lyrics,
+          style_tags,
+          genre,
+          mood,
+          duration,
+          duration_seconds,
+          has_vocals,
+          is_public,
+          metadata,
+          suno_id,
+          model_name,
+          created_at,
+          updated_at,
+          created_at_suno,
+          has_stems,
+          like_count,
+          play_count,
+          download_count,
+          view_count,
+          reference_audio_url
+        `)
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
