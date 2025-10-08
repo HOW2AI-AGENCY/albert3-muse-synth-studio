@@ -1,6 +1,6 @@
 # 🔌 API Документация Albert3 Muse Synth Studio
 
-[![API Version](https://img.shields.io/badge/API-v1.2.0-blue.svg)](https://github.com/your-repo/albert3-muse-synth-studio)
+[![API Version](https://img.shields.io/badge/API-v1.3.0-blue.svg)](https://github.com/your-repo/albert3-muse-synth-studio)
 [![Last Updated](https://img.shields.io/badge/Updated-January%202025-green.svg)](https://github.com/your-repo/albert3-muse-synth-studio)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)](https://github.com/your-repo/albert3-muse-synth-studio)
 
@@ -34,22 +34,22 @@ Content-Type: application/json
 
 **Эндпоинт:** `POST /generate-music-suno`
 
-Создает музыкальную композицию с помощью Suno AI на основе текстового описания.
+Создает задачу генерации музыки в Suno AI. Edge Function вызывает прокси `sunoapi.org` (с fallback на официальные Suno endpoints), автоматически создаёт запись в `tracks`/`ai_jobs` и инициирует асинхронный поллинг результата.
 
 #### Параметры запроса
 
 ```typescript
 interface SunoGenerationRequest {
   prompt: string;                    // Описание желаемой музыки (обязательно)
+  tags?: string[];                   // Теги/жанры (массив)
+  title?: string;                    // Название композиции
   make_instrumental?: boolean;       // Инструментальная версия (по умолчанию: false)
-  wait_audio?: boolean;             // Ожидать готовый аудиофайл (по умолчанию: false)
-  model_version?: string;           // Версия модели (по умолчанию: "chirp-v3-5")
-  tags?: string;                    // Музыкальные теги/жанры
-  title?: string;                   // Название композиции
-  continue_at?: number;             // Продолжить с определенной секунды
-  continue_clip_id?: string;        // ID клипа для продолжения
-  add_to_playlist?: boolean;        // Добавить в плейлист (по умолчанию: false)
-  user_id?: string;                 // ID пользователя
+  wait_audio?: boolean;              // Ждать готовый аудиофайл (по умолчанию: false)
+  model_version?: string;            // Версия модели (по умолчанию: "chirp-v3-5")
+  idempotencyKey?: string;           // Опциональный ключ идемпотентности
+  trackId?: string;                  // Существующий трек для перегенерации
+  continue_clip_id?: string | null;  // ID клипа для продолжения (опционально)
+  audio_prompt_id?: string | null;   // ID аудиоподсказки (опционально)
 }
 ```
 
@@ -61,11 +61,12 @@ curl -X POST "https://your-project.supabase.co/functions/v1/generate-music-suno"
   -H "Content-Type: application/json" \
   -d '{
     "prompt": "Энергичная рок-композиция с гитарными соло и мощными барабанами",
-    "tags": "rock, energetic, guitar solo",
+    "tags": ["rock", "energetic", "guitar solo"],
     "title": "Электрический шторм",
     "make_instrumental": false,
-    "wait_audio": true,
-    "model_version": "chirp-v3-5"
+    "wait_audio": false,
+    "model_version": "chirp-v3-5",
+    "idempotencyKey": "f4d58b3b-7b7d-4f75-a0f2-123456789abc"
   }'
 ```
 
@@ -74,31 +75,26 @@ curl -X POST "https://your-project.supabase.co/functions/v1/generate-music-suno"
 ```typescript
 interface SunoGenerationResponse {
   success: boolean;
-  data?: {
-    id: string;                     // Уникальный ID генерации
-    title: string;                  // Название композиции
-    image_url?: string;             // URL обложки
-    lyric?: string;                 // Текст песни
-    audio_url?: string;             // URL аудиофайла (если wait_audio: true)
-    video_url?: string;             // URL видео
-    created_at: string;             // Время создания
-    model_name: string;             // Используемая модель
-    status: "submitted" | "queued" | "streaming" | "complete" | "error";
-    gpt_description_prompt?: string; // Улучшенное описание от GPT
-    prompt: string;                 // Исходный промпт
-    type: string;                   // Тип генерации
-    tags: string;                   // Теги композиции
-  }[];
-  error?: string;                   // Сообщение об ошибке
-  request_id?: string;              // ID запроса для отслеживания
+  trackId: string;                  // ID трека в таблице tracks
+  taskId: string;                   // Task ID из Suno API
+  jobId?: string | null;            // Ссылка на запись в таблице ai_jobs
+  message: string;                  // Текстовое описание статуса
+  error?: string;                   // Сообщение об ошибке (если success = false)
+  details?: {
+    endpoint?: string | null;       // Endpoint Suno, вернувший ошибку
+    status?: number | null;         // HTTP статус Suno API
+    body?: string | null;           // Тело ответа Suno (для отладки)
+  } | string;                        // Либо строка с описанием ошибки
 }
 ```
 
 #### Коды ответов
-- `200` - Успешное создание задачи генерации
-- `400` - Неверные параметры запроса
-- `401` - Неавторизованный доступ
-- `500` - Внутренняя ошибка сервера
+- `200` — задача успешно создана или возобновлена (идемпотентный ответ)
+- `401` — неавторизованный доступ или ошибка токена Suno
+- `402` — недостаточно средств на аккаунте Suno
+- `404` — указанный трек не найден или недоступен
+- `429` — Suno вернул превышение лимита (повторите позже)
+- `5xx` — внутренняя ошибка Suno или нашей функции (см. `details`)
 
 ---
 

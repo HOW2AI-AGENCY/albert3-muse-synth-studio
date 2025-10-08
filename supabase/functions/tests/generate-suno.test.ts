@@ -87,7 +87,7 @@ Deno.test({
         const { userId, accessToken } = await createTestUser();
 
         installFetchMock({
-          "https://api.suno.ai/generate": () =>
+          "https://api.sunoapi.org/api/v1/generate": () =>
             new Response(JSON.stringify({ id: "task-123" }), {
               status: 200,
               headers: { "Content-Type": "application/json" },
@@ -138,7 +138,7 @@ Deno.test({
 
         // Second call should reuse existing job and skip Suno API
         installFetchMock({
-          "https://api.suno.ai/generate": () => {
+          "https://api.sunoapi.org/api/v1/generate": () => {
             throw new Error("Idempotent request should not trigger Suno API");
           },
         });
@@ -183,7 +183,7 @@ Deno.test({
         setPollSunoCompletionOverride(mockPoller(pollCalls));
 
         installFetchMock({
-          "https://api.suno.ai/generate": () => {
+          "https://api.sunoapi.org/api/v1/generate": () => {
             throw new Error("Resume flow should not hit Suno API");
           },
         });
@@ -231,7 +231,7 @@ Deno.test({
         setPollSunoCompletionOverride(() => Promise.resolve());
 
         installFetchMock({
-          "https://api.suno.ai/generate": () =>
+          "https://api.sunoapi.org/api/v1/generate": () =>
             new Response("Internal error", { status: 500, headers: { "Content-Type": "text/plain" } }),
         });
 
@@ -251,12 +251,13 @@ Deno.test({
         const response = await handler(request);
         assertEquals(response.status, 500);
         const payload = await response.json();
-        assertStringIncludes(payload.error, "Suno API error");
+        assertStringIncludes(payload.error, "Suno API");
+        assertEquals(payload.details?.status ?? 0, 500);
 
         const { data: jobs } = await adminClient.from("ai_jobs").select("*");
         assertEquals(jobs?.length, 1);
         assertEquals(jobs?.[0].status, "failed");
-        assertStringIncludes(jobs?.[0].error_message ?? "", "Suno API error");
+        assertStringIncludes(jobs?.[0].error_message ?? "", "Suno generation failed");
 
         const { data: tracks } = await adminClient.from("tracks").select("*");
         assertEquals(tracks?.length, 1);

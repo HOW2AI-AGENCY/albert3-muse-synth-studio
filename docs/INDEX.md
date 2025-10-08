@@ -15,8 +15,8 @@
 
 ### Для менеджеров
 - [🚀 Roadmap](ROADMAP.md) - Планы развития
-- [📋 Текущий спринт](../project-management/tasks/current-sprint.md) - Sprint 18 статус
-- [📋 План Sprint 19](../project-management/tasks/sprint-19-plan.md) - Детальный план
+- [📋 Текущий спринт](../project-management/tasks/current-sprint.md) - Sprint 23 статус
+- [📋 План Sprint 23](../project-management/tasks/sprint-23-plan.md) - Детальный план
 - [📊 Бэклог](../project-management/tasks/backlog.md) - Все задачи
 
 ## 📑 Полный список документов
@@ -50,9 +50,10 @@
 - PERFORMANCE_OPTIMIZATIONS.md - Оптимизация
 - MOBILE_OPTIMIZATION.md - Мобильная оптимизация
 - STEMS_SYSTEM.md - Система стемов
+- integrations/SUNO_API_AUDIT.md ⭐ NEW - Полный аудит интеграции Suno API (Sprint 23)
 
 ---
 
-⭐ **NEW** - Созданы в Sprint 18
+⭐ **NEW** - Обновлено в Sprint 23
 
-*Обновлено: Sprint 18*
+*Обновлено: Sprint 23*

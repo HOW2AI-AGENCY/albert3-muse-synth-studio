@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
-import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { createCorsHeaders } from "../_shared/cors.ts";
+import { createSunoClient, SunoApiError } from "../_shared/suno.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,6 +26,8 @@ const mainHandler = async (req: Request) => {
     if (!SUNO_API_KEY) {
       throw new Error("SUNO_API_KEY is not configured");
     }
+
+    const sunoClient = createSunoClient({ apiKey: SUNO_API_KEY });
 
     // Extract and validate Authorization header
     const authHeader = req.headers.get('Authorization') || '';
@@ -111,34 +114,16 @@ const mainHandler = async (req: Request) => {
     console.log('Starting stem separation:', { trackId, versionId, audioId, taskId, separationMode });
 
     // Call Suno API for stem separation
-    const response = await fetch('https://api.sunoapi.org/api/v1/vocal-removal/generate', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${SUNO_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        taskId: taskId,
-        audioId: audioId,
-        type: separationMode, // 'separate_vocal' or 'split_stem'
-        callBackUrl: `${SUPABASE_URL}/functions/v1/stems-callback`
-      }),
+    const stemResult = await sunoClient.requestStemSeparation({
+      taskId,
+      audioId,
+      separationMode,
+      callbackUrl: `${SUPABASE_URL}/functions/v1/stems-callback`,
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Suno stem separation API error:', response.status, errorText);
-      throw new Error(`Suno API failed: ${response.status}`);
-    }
+    console.log('Suno stem separation response:', stemResult.rawResponse);
 
-    const data = await response.json();
-    console.log('Suno stem separation response:', data);
-
-    if (data.code !== 200 || !data.data?.taskId) {
-      throw new Error(`Suno API error: ${data.msg || 'Unknown error'}`);
-    }
-
-    const stemTaskId = data.data.taskId;
+    const stemTaskId = stemResult.taskId;
 
     // Store stem separation task info
     await supabase
@@ -148,7 +133,9 @@ const mainHandler = async (req: Request) => {
         metadata: {
           ...((await supabase.from('tracks').select('metadata').eq('id', trackId).single()).data?.metadata || {}),
           stem_task_id: stemTaskId,
-          stem_separation_mode: separationMode
+          stem_separation_mode: separationMode,
+          suno_last_stem_endpoint: stemResult.endpoint,
+          suno_last_stem_snapshot: stemResult.rawResponse,
         }
       })
       .eq('id', trackId);
@@ -156,22 +143,44 @@ const mainHandler = async (req: Request) => {
     console.log('Stem separation started:', { trackId, stemTaskId, separationMode });
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         success: true,
         taskId: stemTaskId,
-        separationMode
+        separationMode,
+        endpoint: stemResult.endpoint,
       }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
+        status: 200
       }
     );
 
   } catch (error) {
     console.error('Error in separate-stems function:', error);
+
+    if (error instanceof SunoApiError) {
+      const status = error.details.status ?? 500;
+      return new Response(
+        JSON.stringify({
+          error: status === 429
+            ? 'Suno API rate limit reached. Please retry later.'
+            : error.message,
+          details: {
+            endpoint: error.details.endpoint,
+            status: error.details.status ?? null,
+            body: error.details.body ?? null,
+          }
+        }),
+        {
+          status: status === 0 ? 502 : status,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
-      { 
+      {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
