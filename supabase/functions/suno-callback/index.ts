@@ -1,7 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { createSupabaseAdminClient } from "../_shared/supabase.ts";
+import {
+  downloadAndUploadAudio,
+  downloadAndUploadCover,
+  downloadAndUploadVideo,
+} from "../_shared/storage.ts";
 
 const corsHeaders = {
   ...createCorsHeaders(),
@@ -25,9 +30,7 @@ const mainHandler = async (req: Request) => {
   }
 
   try {
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const supabase = createSupabaseAdminClient();
 
     // Check content length before reading
     const contentLength = req.headers.get('content-length');
@@ -77,12 +80,12 @@ const mainHandler = async (req: Request) => {
     }
 
     // Extract taskId with support for both taskId and task_id
-    const taskId = 
+    const taskId =
       payload?.data?.task_id ||  // New Suno format
       payload?.data?.taskId ||
-      payload?.taskId || 
+      payload?.taskId ||
       payload?.task_id ||
-      tasks?.[0]?.taskId || 
+      tasks?.[0]?.taskId ||
       tasks?.[0]?.task_id ||
       payload?.id;
 
@@ -96,10 +99,29 @@ const mainHandler = async (req: Request) => {
 
     console.log("Extracted taskId:", taskId, "Tasks count:", tasks.length);
 
+    const updateJobStatus = async (
+      status: "completed" | "failed",
+      errorMessage?: string | null,
+    ) => {
+      try {
+        const jobUpdate: Record<string, unknown> = { status };
+        jobUpdate.error_message = errorMessage ?? null;
+        const { error } = await supabase
+          .from("ai_jobs")
+          .update(jobUpdate)
+          .eq("external_id", taskId);
+        if (error) {
+          console.error("Suno callback: failed to update ai_jobs", error);
+        }
+      } catch (jobError) {
+        console.error("Suno callback: unexpected error updating ai_jobs", jobError);
+      }
+    };
+
     // Find the track by metadata.suno_task_id
     const { data: track, error: findErr } = await supabase
       .from("tracks")
-      .select("id, status, user_id")
+      .select("id, status, user_id, metadata")
       .contains("metadata", { suno_task_id: taskId })
       .maybeSingle();
 
@@ -134,6 +156,8 @@ const mainHandler = async (req: Request) => {
         .update({ status: "failed", error_message: reason })
         .contains("metadata", { suno_task_id: taskId });
 
+      await updateJobStatus("failed", reason);
+
       console.log("Suno callback: track marked failed", { taskId, reason });
       return new Response(JSON.stringify({ ok: true }), {
         status: 200,
@@ -141,94 +165,208 @@ const mainHandler = async (req: Request) => {
       });
     }
 
-    // Process successful tasks - save versions using track_versions table
+    // Process successful tasks - persist assets and versions
     if (successTask && tasks.length > 0) {
-      // Extract metadata from first task
-      const firstTask = tasks[0];
-      const firstAudioUrl = firstTask.audioUrl || firstTask.audio_url || 
-                           firstTask.stream_audio_url || firstTask.source_stream_audio_url;
-      const firstDuration = firstTask.duration || firstTask.duration_seconds || 0;
-      const actualLyrics = sanitizeText(firstTask.prompt || firstTask.lyric || firstTask.lyrics);
-      const title = sanitizeText(firstTask.title) || "Generated Track";
-      const coverUrl = firstTask.image_url || firstTask.image_large_url || firstTask.imageUrl;
-      const videoUrl = firstTask.video_url || firstTask.videoUrl;
-      const sunoId = sanitizeText(firstTask.id);
-      const modelName = sanitizeText(firstTask.model || firstTask.model_name);
-      const createdAtSuno = firstTask.created_at || firstTask.createdAt;
-      const tagsString = firstTask.tags || '';
-      const styleTags = tagsString ? tagsString.split(/[,;]/).map((t: string) => sanitizeText(t)).filter(Boolean) : null;
-      
-      console.log("Suno callback: Full metadata", { 
-        audioUrl: firstAudioUrl?.substring(0, 50),
-        coverUrl: coverUrl?.substring(0, 50),
-        videoUrl: videoUrl?.substring(0, 50),
-        sunoId,
-        modelName,
-        title,
-        lyrics: actualLyrics?.substring(0, 50)
+      const successfulTracks = tasks.filter((t: any) =>
+        t?.audioUrl || t?.audio_url || t?.stream_audio_url || t?.source_stream_audio_url
+      );
+
+      if (successfulTracks.length === 0) {
+        const message = "Completed without audio URL in callback";
+        await supabase
+          .from("tracks")
+          .update({ status: "failed", error_message: message })
+          .contains("metadata", { suno_task_id: taskId });
+        await updateJobStatus("failed", message);
+        console.error("Suno callback: no successful tracks with audio", { taskId });
+        return new Response(JSON.stringify({ ok: false, error: message }), {
+          status: 422,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (!track.user_id) {
+        const message = "Track missing user reference";
+        console.error("Suno callback: unable to determine user for track", { taskId, trackId: track.id });
+        await updateJobStatus("failed", message);
+        return new Response(JSON.stringify({ ok: false, error: message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const callbackType = payload?.data?.callbackType || payload?.data?.callback_type || null;
+      const callbackCode = typeof payload?.code === "number" ? payload.code : null;
+      const existingMetadata = (track.metadata && typeof track.metadata === "object")
+        ? track.metadata as Record<string, unknown>
+        : {};
+
+      const mainTrack = successfulTracks[0];
+      const externalAudioUrl = mainTrack.audioUrl || mainTrack.audio_url
+        || mainTrack.stream_audio_url || mainTrack.source_stream_audio_url;
+      const externalCoverUrl = mainTrack.image_url || mainTrack.image_large_url || mainTrack.imageUrl;
+      const externalVideoUrl = mainTrack.video_url || mainTrack.videoUrl;
+      const duration = Math.round(mainTrack.duration || mainTrack.duration_seconds || 0);
+      const sanitizedTitle = sanitizeText(mainTrack.title) || "Generated Track";
+      const sanitizedLyrics = sanitizeText(mainTrack.prompt || mainTrack.lyric || mainTrack.lyrics);
+      const sanitizedModelName = sanitizeText(mainTrack.model || mainTrack.model_name);
+      const sanitizedSunoId = sanitizeText(mainTrack.id);
+      const createdAtSuno = mainTrack.created_at || mainTrack.createTime || mainTrack.createdAt;
+
+      console.log("Suno callback: processing main track", {
+        trackId: track.id,
+        taskId,
+        audioPreview: externalAudioUrl?.substring(0, 60),
+        coverPreview: externalCoverUrl?.substring(0, 60),
+        videoPreview: externalVideoUrl?.substring(0, 60),
+        sanitizedTitle,
+        callbackType,
       });
 
-      // Update the parent track with first version metadata
-      await supabase
+      let uploadedAudioUrl = externalAudioUrl || null;
+      if (externalAudioUrl) {
+        uploadedAudioUrl = await downloadAndUploadAudio(externalAudioUrl, track.id, track.user_id, "main.mp3", supabase);
+      }
+
+      let uploadedCoverUrl = externalCoverUrl || null;
+      if (externalCoverUrl) {
+        uploadedCoverUrl = await downloadAndUploadCover(externalCoverUrl, track.id, track.user_id, "cover.jpg", supabase);
+      }
+
+      let uploadedVideoUrl = externalVideoUrl || null;
+      if (externalVideoUrl) {
+        uploadedVideoUrl = await downloadAndUploadVideo(externalVideoUrl, track.id, track.user_id, "video.mp4", supabase);
+      }
+
+      const rawTags = Array.isArray(mainTrack.tags)
+        ? mainTrack.tags.join(",")
+        : typeof mainTrack.tags === "string"
+          ? mainTrack.tags
+          : "";
+      const styleTags = rawTags
+        ? rawTags
+            .split(/[,;]/)
+            .map((tag: string) => sanitizeText(tag) || undefined)
+            .filter((tag): tag is string => Boolean(tag))
+        : null;
+
+      const metadataUpdate = {
+        ...existingMetadata,
+        suno_task_id: taskId,
+        suno_callback_received_at: new Date().toISOString(),
+        suno_callback_type: callbackType,
+        suno_callback_code: callbackCode,
+        suno_data: successfulTracks,
+      };
+
+      const { error: updateTrackError } = await supabase
         .from("tracks")
         .update({
           status: "completed",
-          audio_url: firstAudioUrl,
-          duration: Math.round(firstDuration),
-          duration_seconds: Math.round(firstDuration),
-          lyrics: actualLyrics,
-          title: title,
-          cover_url: coverUrl,
-          video_url: videoUrl,
-          suno_id: sunoId,
-          model_name: modelName,
+          audio_url: uploadedAudioUrl,
+          duration,
+          duration_seconds: duration,
+          lyrics: sanitizedLyrics,
+          title: sanitizedTitle,
+          cover_url: uploadedCoverUrl,
+          video_url: uploadedVideoUrl,
+          suno_id: sanitizedSunoId,
+          model_name: sanitizedModelName,
           created_at_suno: createdAtSuno,
           style_tags: styleTags,
-          metadata: { suno_data: tasks, suno_task_id: taskId },
+          metadata: metadataUpdate,
         })
         .eq("id", track.id);
 
-      // Save all versions to track_versions table
-      for (let i = 0; i < tasks.length; i++) {
-        const versionTask = tasks[i];
-        const versionAudioUrl = versionTask.audioUrl || versionTask.audio_url || 
-                               versionTask.stream_audio_url || versionTask.source_stream_audio_url;
-        
-        if (!versionAudioUrl) continue;
-
-        console.log(`[suno-callback] Saving version ${i + 1}:`, {
-          parent_track_id: track.id,
-          version_number: i + 1,
-          audio_url: versionAudioUrl?.substring(0, 50)
+      if (updateTrackError) {
+        console.error("Suno callback: failed to update main track", updateTrackError);
+        await updateJobStatus("failed", updateTrackError.message);
+        return new Response(JSON.stringify({ ok: false, error: "update_failed" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
+      }
 
-        const { data: insertedVersion, error: versionError } = await supabase
-          .from("track_versions")
-          .insert({
-            parent_track_id: track.id,
-            version_number: i + 1,
-            is_master: i === 0,
-            suno_id: sanitizeText(versionTask.id),
-            audio_url: versionAudioUrl,
-            video_url: versionTask.video_url || versionTask.videoUrl,
-            cover_url: versionTask.image_url || versionTask.image_large_url || versionTask.imageUrl,
-            lyrics: sanitizeText(versionTask.prompt || versionTask.lyric || versionTask.lyrics),
-            duration: Math.round(versionTask.duration || versionTask.duration_seconds || 0),
-            metadata: { suno_data: versionTask }
-          })
-          .select()
-          .single();
+      console.log("Suno callback: main track updated successfully", { trackId: track.id, taskId });
 
-        if (versionError) {
-          console.error(`[suno-callback] Error saving version ${i + 1}:`, versionError);
-        } else {
-          console.log(`[suno-callback] Version ${i + 1} saved with ID:`, insertedVersion?.id);
+      if (successfulTracks.length > 1) {
+        for (let i = 1; i < successfulTracks.length; i++) {
+          const versionTrack = successfulTracks[i];
+          const versionExternalAudioUrl = versionTrack.audioUrl || versionTrack.audio_url
+            || versionTrack.stream_audio_url || versionTrack.source_stream_audio_url;
+          if (!versionExternalAudioUrl) {
+            console.warn(`[suno-callback] Version ${i} missing audio URL, skipping`);
+            continue;
+          }
+
+          const versionAudioUrl = await downloadAndUploadAudio(
+            versionExternalAudioUrl,
+            track.id,
+            track.user_id,
+            `version-${i}.mp3`,
+            supabase,
+          );
+
+          let versionCoverUrl = versionTrack.image_url || versionTrack.image_large_url || versionTrack.imageUrl || null;
+          if (versionCoverUrl) {
+            versionCoverUrl = await downloadAndUploadCover(
+              versionCoverUrl,
+              track.id,
+              track.user_id,
+              `version-${i}-cover.jpg`,
+              supabase,
+            );
+          }
+
+          let versionVideoUrl = versionTrack.video_url || versionTrack.videoUrl || null;
+          if (versionVideoUrl) {
+            versionVideoUrl = await downloadAndUploadVideo(
+              versionVideoUrl,
+              track.id,
+              track.user_id,
+              `version-${i}-video.mp4`,
+              supabase,
+            );
+          }
+
+          const versionMetadata = {
+            suno_track_data: versionTrack,
+            generated_via: "callback",
+            suno_task_id: taskId,
+          };
+
+          const { error: versionError } = await supabase
+            .from("track_versions")
+            .upsert({
+              parent_track_id: track.id,
+              version_number: i,
+              is_master: false,
+              suno_id: sanitizeText(versionTrack.id),
+              audio_url: versionAudioUrl,
+              video_url: versionVideoUrl,
+              cover_url: versionCoverUrl,
+              lyrics: sanitizeText(versionTrack.prompt || versionTrack.lyric || versionTrack.lyrics),
+              duration: Math.round(versionTrack.duration || versionTrack.duration_seconds || 0),
+              metadata: versionMetadata,
+            }, { onConflict: "parent_track_id,version_number" });
+
+          if (versionError) {
+            console.error(`[suno-callback] Error saving version ${i}:`, versionError);
+          } else {
+            console.log(`[suno-callback] Version ${i} saved/updated successfully`);
+          }
         }
       }
 
-      console.log("Suno callback: track completed", { taskId, audioUrl: firstAudioUrl, versionsCount: tasks.length });
+      await updateJobStatus("completed", null);
 
-      return new Response(JSON.stringify({ ok: true, versionsCreated: tasks.length }), {
+      console.log("Suno callback: track completed", {
+        taskId,
+        trackId: track.id,
+        versionsCount: successfulTracks.length,
+      });
+
+      return new Response(JSON.stringify({ ok: true, versionsCreated: successfulTracks.length }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

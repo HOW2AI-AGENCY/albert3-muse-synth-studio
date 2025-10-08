@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ProviderBalance {
@@ -9,79 +9,74 @@ interface ProviderBalance {
   monthly_limit?: number;
   monthly_usage?: number;
   error?: string;
+  [key: string]: unknown;
 }
+
+const PROVIDER_PRIORITY: readonly string[] = ['suno', 'replicate'];
 
 export const useProviderBalance = () => {
   const [balance, setBalance] = useState<ProviderBalance | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchBalance = async () => {
+  const fetchBalance = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
-    // Define providers in order of priority
-    const providers = ['replicate', 'suno'];
-    let finalBalance: ProviderBalance | null = null;
+    const providerErrors: string[] = [];
+    let fetchedBalance: ProviderBalance | null = null;
 
-    for (const provider of providers) {
+    for (const provider of PROVIDER_PRIORITY) {
       try {
-        console.log(`Fetching balance for provider: ${provider}`);
-
-        // Call Edge Function via supabase SDK (handles auth & CORS)
-        const { data, error } = await supabase.functions.invoke<ProviderBalance>('get-balance', {
+        const { data, error: invokeError } = await supabase.functions.invoke<ProviderBalance>('get-balance', {
           body: { provider }
         });
 
-        if (error) {
-          console.warn(`Failed to invoke get-balance for ${provider}:`, error.message);
-          continue; // Try next provider
+        if (invokeError) {
+          providerErrors.push(`[${provider}] ${invokeError.message}`);
+          continue;
         }
 
-        const providerBalance: ProviderBalance = data as ProviderBalance;
-
-        // If the provider returns its own error field (e.g. Suno is down),
-        // we log it and try the next provider.
-        if (providerBalance.error) {
-          console.warn(`Provider ${provider} returned an error:`, providerBalance.error);
-          continue; // Try next provider
+        if (!data) {
+          providerErrors.push(`[${provider}] пустой ответ от функции get-balance`);
+          continue;
         }
 
-        // Success! We found a working provider.
-        finalBalance = providerBalance;
-        break; // Exit loop
+        if (data.error) {
+          providerErrors.push(`[${provider}] ${data.error}`);
+          continue;
+        }
 
-      } catch (e) {
-        console.error(`Unexpected error fetching balance for ${provider}:`, e);
-        // This is a network or unexpected error, try next provider
+        fetchedBalance = data;
+        break;
+      } catch (fetchError) {
+        providerErrors.push(`[${provider}] ${(fetchError as Error).message}`);
       }
     }
 
-    if (finalBalance) {
-      setBalance(finalBalance);
+    if (fetchedBalance) {
+      setBalance(fetchedBalance);
+      setError(null);
     } else {
-      // If all providers failed
-      const errorMessage = 'Could not fetch balance from any provider.';
-      setError(errorMessage);
+      const combinedError = providerErrors.join('; ') || 'Не удалось получить баланс провайдеров.';
+      setError(combinedError);
       setBalance({
         provider: 'unknown',
         balance: 0,
         currency: 'credits',
-        error: errorMessage,
+        error: combinedError,
       });
     }
 
     setIsLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchBalance();
-    
-    // Refresh balance every 5 minutes
+
     const interval = setInterval(fetchBalance, 5 * 60 * 1000);
-    
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchBalance]);
 
   return { balance, isLoading, error, refetch: fetchBalance };
 };

@@ -4,12 +4,11 @@
  * Optimized with memoization and debouncing
  */
 
-import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ApiService, GenerateMusicRequest } from "@/services/api.service";
+import { ApiService } from "@/services/api.service";
 import { supabase } from "@/integrations/supabase/client";
 import { logError, logInfo, logDebug, logWarn } from "@/utils/logger";
-import { useDebounce } from "@/utils/performance";
 
 interface GenerateMusicOptions {
   prompt?: string;
@@ -22,48 +21,25 @@ interface GenerateMusicOptions {
   modelVersion?: string;
 }
 
+const DEFAULT_PROVIDER: "replicate" | "suno" = "suno";
+
 export const useMusicGeneration = (onSuccess?: () => void) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
-  const [provider, setProvider] = useState<'replicate' | 'suno'>('suno');
-  const [hasVocals, setHasVocals] = useState(false);
-  const [lyrics, setLyrics] = useState("");
-  const [styleTags, setStyleTags] = useState<string[]>([]);
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
-  // Memoized validation functions
-  const isValidPrompt = useMemo(() => {
-    const safePrompt = typeof prompt === "string" ? prompt : "";
-    return safePrompt.trim().length > 0;
-  }, [prompt]);
-
-  const canGenerate = useMemo(() => {
-    return isValidPrompt && !isGenerating && !isImproving;
-  }, [isValidPrompt, isGenerating, isImproving]);
-
-  // Debounced prompt validation
-  const debouncedValidatePrompt = useDebounce((promptValue: string) => {
-    const safePrompt = typeof promptValue === "string" ? promptValue : "";
-    if (safePrompt.trim().length > 0 && safePrompt.trim().length < 10) {
-      logWarn("Короткий промпт может дать неточные результаты", "useMusicGeneration");
+  const clearPollingTimer = useCallback(() => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
     }
-  }, 500);
+  }, []);
 
-  // Optimized prompt setter with validation
-  const setPromptOptimized = useCallback((value: string | null | undefined) => {
-    const nextValue = typeof value === "string" ? value : value == null ? "" : String(value);
-    setPrompt(nextValue);
-    debouncedValidatePrompt(nextValue);
-  }, [debouncedValidatePrompt]);
+  const improvePrompt = useCallback(async (rawPrompt?: string) => {
+    const promptToImprove = typeof rawPrompt === "string" ? rawPrompt.trim() : "";
 
-  // Memoized improve prompt function
-  const improvePrompt = useCallback(async (overridePrompt?: string) => {
-    const promptToImprove = typeof (overridePrompt ?? prompt) === "string"
-      ? (overridePrompt ?? prompt)
-      : "";
-
-    if (!promptToImprove.trim()) {
+    if (!promptToImprove) {
       toast({
         title: "Ошибка",
         description: "Пожалуйста, введите описание музыки для улучшения.",
@@ -72,7 +48,9 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
       return null;
     }
 
-    if (isImproving) return null;
+    if (isImproving) {
+      return null;
+    }
 
     setIsImproving(true);
     logInfo("Начало улучшения промпта", "useMusicGeneration", {
@@ -81,7 +59,6 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
 
     try {
       const response = await ApiService.improvePrompt({ prompt: promptToImprove });
-      setPrompt(response.improvedPrompt);
 
       logInfo("Промпт успешно улучшен", "useMusicGeneration", {
         originalLength: promptToImprove.length,
@@ -108,41 +85,46 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
     } finally {
       setIsImproving(false);
     }
-  }, [prompt, isImproving, toast]);
+  }, [isImproving, toast]);
 
-  // Memoized generate music function
   const generateMusic = useCallback(async (options?: GenerateMusicOptions): Promise<boolean> => {
-    const rawPrompt = options?.prompt ?? prompt;
-    const effectivePrompt = typeof rawPrompt === "string" ? rawPrompt.trim() : "";
-    const effectiveProvider = options?.provider ?? provider;
-    const effectiveLyrics = options?.lyrics ?? lyrics;
-    const effectiveHasVocals = options?.hasVocals ?? hasVocals;
-    const effectiveStyleTags = options?.styleTags ?? styleTags;
-    const effectiveTitle = options?.title ?? (effectivePrompt.substring(0, 50) || "Untitled Track");
-    const effectiveCustomMode = options?.customMode ?? !!effectiveLyrics;
-    const effectiveModelVersion = options?.modelVersion;
+    const effectivePrompt = typeof options?.prompt === "string" ? options.prompt.trim() : "";
 
-    const promptIsValid = effectivePrompt.length > 0;
-    const canGenerateNow = promptIsValid && !isGenerating && !isImproving;
-
-    if (!canGenerateNow) {
-      if (!promptIsValid) {
-        logWarn("Попытка генерации музыки с пустым промптом", "useMusicGeneration");
-        toast({
-          title: "Ошибка",
-          description: "Пожалуйста, введите описание музыки",
-          variant: "destructive",
-        });
-      }
+    if (!effectivePrompt) {
+      logWarn("Попытка генерации музыки с пустым промптом", "useMusicGeneration");
+      toast({
+        title: "Ошибка",
+        description: "Пожалуйста, введите описание музыки",
+        variant: "destructive",
+      });
       return false;
     }
 
-    setIsGenerating(true);
-    if (pollIntervalRef.current) {
-      clearInterval(pollIntervalRef.current);
-      pollIntervalRef.current = null;
+    if (isGenerating || isImproving) {
+      logWarn("Попытка запуска генерации во время активного процесса", "useMusicGeneration");
+      toast({
+        title: "Подождите",
+        description: "Предыдущая генерация ещё выполняется",
+        variant: "destructive",
+      });
+      return false;
     }
+
+    if (pollIntervalRef.current) {
+      clearPollingTimer();
+    }
+
+    setIsGenerating(true);
+
+    const effectiveProvider = options?.provider ?? DEFAULT_PROVIDER;
+    const effectiveLyrics = typeof options?.lyrics === "string" ? options.lyrics : "";
+    const effectiveHasVocals = options?.hasVocals ?? false;
+    const effectiveStyleTags = options?.styleTags ?? [];
+    const effectiveTitle = options?.title ?? (effectivePrompt.substring(0, 50) || "Untitled Track");
+    const effectiveCustomMode = options?.customMode ?? Boolean(effectiveLyrics.trim());
+    const effectiveModelVersion = options?.modelVersion;
     const requestTimestamp = new Date().toISOString();
+
     logInfo("🎵 [useMusicGeneration] Начало генерации музыки", "useMusicGeneration", {
       timestamp: requestTimestamp,
       prompt: effectivePrompt.substring(0, 100),
@@ -174,12 +156,8 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
         return false;
       }
 
-      // Step 1: Create track record first
-      const trackTitle = effectiveTitle;
-      const trackPrompt = effectivePrompt;
-
       logDebug("📝 [useMusicGeneration] Creating track record", "useMusicGeneration", {
-        title: trackTitle,
+        title: effectiveTitle,
         provider: effectiveProvider,
         hasVocals: effectiveHasVocals,
         timestamp: new Date().toISOString()
@@ -187,22 +165,21 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
 
       const newTrack = await ApiService.createTrack(
         user.id,
-        trackTitle,
-        trackPrompt,
+        effectiveTitle,
+        effectivePrompt,
         effectiveProvider,
-        effectiveHasVocals ? effectiveLyrics : undefined,
+        effectiveHasVocals && effectiveLyrics ? effectiveLyrics : undefined,
         effectiveHasVocals,
         effectiveStyleTags
       );
 
       logInfo("✅ [useMusicGeneration] Track record created successfully", "useMusicGeneration", {
         trackId: newTrack.id,
-        title: trackTitle,
+        title: effectiveTitle,
         status: newTrack.status,
         timestamp: new Date().toISOString()
       });
 
-      // Step 2: Trigger generation with trackId
       logInfo("🚀 [useMusicGeneration] Triggering music generation", "useMusicGeneration", {
         trackId: newTrack.id,
         provider: effectiveProvider,
@@ -210,13 +187,12 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
       });
 
       await ApiService.generateMusic({
-        ...params,
         trackId: newTrack.id,
         userId: user.id,
-        title: trackTitle,
-        prompt: trackPrompt,
+        title: effectiveTitle,
+        prompt: effectivePrompt,
         provider: effectiveProvider,
-        lyrics: effectiveLyrics || undefined,
+        lyrics: effectiveHasVocals ? effectiveLyrics : undefined,
         hasVocals: effectiveHasVocals,
         styleTags: effectiveStyleTags,
         customMode: effectiveCustomMode,
@@ -227,8 +203,8 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
         userId: user.id,
         trackId: newTrack.id,
         provider: effectiveProvider,
-        title: trackTitle,
-        hasCustomLyrics: !!effectiveLyrics,
+        title: effectiveTitle,
+        hasCustomLyrics: Boolean(effectiveLyrics),
         requestDuration: Date.now() - new Date(requestTimestamp).getTime(),
         timestamp: new Date().toISOString()
       });
@@ -238,33 +214,21 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
         description: "Ваш трек создаётся. Это может занять около минуты...",
       });
 
-      // Clear form after successful submission
-      setPrompt("");
-      setLyrics("");
-      setStyleTags([]);
-
       onSuccess?.();
 
-      // Start polling for track status
       pollIntervalRef.current = setInterval(async () => {
         try {
           const track = await ApiService.getTrackById(newTrack.id);
           if (track) {
             if (track.status === 'completed') {
-              if (pollIntervalRef.current) {
-                clearInterval(pollIntervalRef.current);
-                pollIntervalRef.current = null;
-              }
+              clearPollingTimer();
               toast({
                 title: "✅ Трек готов!",
                 description: `Ваш трек "${track.title}" успешно сгенерирован.`,
               });
               onSuccess?.();
             } else if (track.status === 'failed') {
-              if (pollIntervalRef.current) {
-                clearInterval(pollIntervalRef.current);
-                pollIntervalRef.current = null;
-              }
+              clearPollingTimer();
               logError('🔴 [useMusicGeneration] Генерация трека не удалась', new Error(track.error_message || 'Unknown error'), 'useMusicGeneration', { trackId: newTrack.id });
               toast({
                 title: "❌ Ошибка генерации",
@@ -274,10 +238,7 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
             }
           }
         } catch (pollError) {
-          if (pollIntervalRef.current) {
-            clearInterval(pollIntervalRef.current);
-            pollIntervalRef.current = null;
-          }
+          clearPollingTimer();
           logError('🔴 [useMusicGeneration] Ошибка при опросе статуса трека', pollError as Error, 'useMusicGeneration', { trackId: newTrack.id });
         }
       }, 5000);
@@ -300,39 +261,17 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
         variant: "destructive",
       });
 
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-        pollIntervalRef.current = null;
-      }
-
+      clearPollingTimer();
       return false;
     } finally {
       setIsGenerating(false);
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-        pollIntervalRef.current = null;
-      }
     }
-  }, [prompt, provider, hasVocals, lyrics, styleTags, isGenerating, isImproving, toast, onSuccess]);
-
-  // Memoized style tags handlers
-  const addStyleTag = useCallback((tag: string) => {
-    if (!styleTags.includes(tag) && styleTags.length < 5) {
-      setStyleTags(prev => [...prev, tag]);
-    }
-  }, [styleTags]);
-
-  const removeStyleTag = useCallback((tag: string) => {
-    setStyleTags(prev => prev.filter(t => t !== tag));
-  }, []);
+  }, [isGenerating, isImproving, toast, onSuccess, clearPollingTimer]);
 
   useEffect(() => () => {
-    if (pollIntervalRef.current) {
-      clearInterval(pollIntervalRef.current);
-    }
-  }, []);
+    clearPollingTimer();
+  }, [clearPollingTimer]);
 
-  // Memoized return object to prevent unnecessary re-renders
   return useMemo(() => ({
     isGenerating,
     isImproving,

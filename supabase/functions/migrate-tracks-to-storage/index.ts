@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { downloadAndUploadAudio, downloadAndUploadCover, downloadAndUploadVideo } from "../_shared/storage.ts";
+import { createSupabaseAdminClient } from "../_shared/supabase.ts";
 
 const corsHeaders = createCorsHeaders();
 
@@ -13,10 +13,7 @@ serve(async (req: Request) => {
   try {
     console.log('🔄 [MIGRATE] Starting migration of old tracks to Storage...');
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createSupabaseAdminClient();
 
     // Statistics
     let totalTracks = 0;
