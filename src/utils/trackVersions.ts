@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { logError } from '@/utils/logger';
+import { logError, logInfo } from '@/utils/logger';
 
 export interface TrackWithVersions {
   id: string;
@@ -16,6 +16,7 @@ export interface TrackWithVersions {
   artist?: string;
   status?: string;
   user_id?: string;
+  metadata?: any; // Add metadata to the interface
 }
 
 /**
@@ -24,17 +25,17 @@ export interface TrackWithVersions {
  */
 export async function getTrackWithVersions(trackId: string): Promise<TrackWithVersions[]> {
   try {
-    // Load the main track
+    // Load the main track, including its metadata
     const { data: mainTrack, error: trackError } = await supabase
       .from('tracks')
-      .select('*')
+      .select('*, metadata')
       .eq('id', trackId)
       .single();
 
     if (trackError) throw trackError;
     if (!mainTrack) return [];
 
-    // Load all versions of this track
+    // Load all versions of this track from the dedicated versions table
     const { data: versions, error: versionsError } = await supabase
       .from('track_versions')
       .select('*')
@@ -63,7 +64,7 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       user_id: mainTrack.user_id,
     });
 
-    // Add all versions
+    // Add all versions from the dedicated table
     if (versions && versions.length > 0) {
       versions.forEach(version => {
         result.push({
@@ -79,6 +80,28 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
           lyrics: version.lyrics,
           style_tags: mainTrack.style_tags,
           user_id: mainTrack.user_id,
+        });
+      });
+    }
+    // Fallback for older tracks that store versions in metadata
+    else if (mainTrack.metadata?.suno_data && Array.isArray(mainTrack.metadata.suno_data) && mainTrack.metadata.suno_data.length > 1) {
+      logInfo('Using fallback to extract versions from metadata', 'trackVersions', { trackId });
+      // The first item in suno_data is the main track, so we slice from the second item
+      mainTrack.metadata.suno_data.slice(1).forEach((versionData: any, index: number) => {
+        result.push({
+          id: versionData.id, // Use the ID from the metadata version
+          parentTrackId: mainTrack.id,
+          versionNumber: index + 1, // Version numbers start from 1
+          isMasterVersion: false, // Cannot determine master status from metadata
+          title: `${mainTrack.title} (V${index + 1})`,
+          audio_url: versionData.audio_url || versionData.stream_audio_url || '',
+          cover_url: versionData.image_url || mainTrack.cover_url,
+          video_url: versionData.video_url,
+          duration: versionData.duration,
+          lyrics: mainTrack.lyrics, // Lyrics are likely for the main track
+          style_tags: mainTrack.style_tags,
+          user_id: mainTrack.user_id,
+          status: 'completed' // Assume completed if it's in metadata
         });
       });
     }

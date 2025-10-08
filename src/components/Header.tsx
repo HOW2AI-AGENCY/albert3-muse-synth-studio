@@ -4,6 +4,7 @@ import { Music2, LogOut, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
+import ProviderBalance from "./layout/ProviderBalance";
 
 interface HeaderProps {
   user?: {
@@ -53,6 +54,7 @@ export const Header = ({ user, onAuthClick }: HeaderProps) => {
         <div className="flex items-center gap-2 sm:gap-3">
           {user ? (
             <>
+              <ProviderBalance />
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
                 <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center">
                   <User className="h-4 w-4 text-white" />

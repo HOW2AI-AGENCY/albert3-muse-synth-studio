@@ -219,6 +219,36 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
       setStyleTags([]);
       
       onSuccess?.();
+
+      // Start polling for track status
+      const pollInterval = setInterval(async () => {
+        try {
+          const track = await ApiService.getTrackById(newTrack.id);
+          if (track) {
+            if (track.status === 'completed') {
+              clearInterval(pollInterval);
+              toast({
+                title: "✅ Трек готов!",
+                description: `Ваш трек "${track.title}" успешно сгенерирован.`,
+              });
+              onSuccess?.(); // Optional: another callback for completion
+            } else if (track.status === 'failed') {
+              clearInterval(pollInterval);
+              logError('🔴 [useMusicGeneration] Генерация трека не удалась', new Error(track.error_message || 'Unknown error'), 'useMusicGeneration', { trackId: newTrack.id });
+              toast({
+                title: "❌ Ошибка генерации",
+                description: track.error_message || "Произошла ошибка при обработке вашего трека.",
+                variant: "destructive",
+              });
+            }
+            // If status is 'pending' or 'processing', do nothing and let it poll again.
+          }
+        } catch (pollError) {
+          clearInterval(pollInterval);
+          logError('🔴 [useMusicGeneration] Ошибка при опросе статуса трека', pollError as Error, 'useMusicGeneration', { trackId: newTrack.id });
+        }
+      }, 5000); // Poll every 5 seconds
+
     } catch (error) {
       logError("🔴 [useMusicGeneration] Ошибка при генерации музыки", error as Error, "useMusicGeneration", {
         prompt: prompt.substring(0, 100),
