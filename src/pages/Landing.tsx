@@ -12,6 +12,19 @@ const Landing = () => {
   const navigate = useNavigate();
   const { playTrack } = useAudioPlayer();
   const [featuredTracks, setFeaturedTracks] = useState<Track[]>([]);
+
+  useEffect(() => {
+    const fetchFeaturedTracks = async () => {
+      try {
+        const tracks = await ApiService.getPublicTracks(6, 'like_count');
+        setFeaturedTracks(tracks);
+      } catch (error) {
+        console.error('Failed to fetch featured tracks:', error);
+      }
+    };
+    fetchFeaturedTracks();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -133,6 +146,83 @@ const Landing = () => {
           </div>
         </div>
       </section>
+
+      {/* Featured Tracks Section */}
+      {featuredTracks.length > 0 && (
+        <section className="py-24 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-background via-surface/20 to-background" />
+          
+          <div className="container px-4 relative z-10">
+            <div className="text-center mb-16 animate-slide-up">
+              <h2 className="text-4xl md:text-6xl font-black mb-4 text-gradient-primary">
+                Популярные треки
+              </h2>
+              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+                Послушайте, что создают наши пользователи
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto mb-12">
+              {featuredTracks.map((track, index) => (
+                <Card 
+                  key={track.id} 
+                  className="group hover:shadow-glow-primary transition-all duration-300 overflow-hidden border-primary/20 bg-card/50 backdrop-blur-xl hover-lift animate-scale-in"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-lg mb-2 truncate text-gradient-primary">{track.title}</h3>
+                        {track.style && (
+                          <Badge variant="secondary" className="text-xs">
+                            {track.style}
+                          </Badge>
+                        )}
+                      </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="shrink-0 hover:bg-primary/20 hover:text-primary transition-all hover:scale-110"
+                        onClick={() => playTrack(track)}
+                      >
+                        <Play className="h-5 w-5" />
+                      </Button>
+                    </div>
+
+                    {track.prompt && (
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                        {track.prompt}
+                      </p>
+                    )}
+
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1.5">
+                        <Heart className="h-4 w-4 text-primary" />
+                        <span>{track.like_count || 0}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Play className="h-4 w-4 text-secondary" />
+                        <span>{track.play_count || 0}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <div className="text-center">
+              <Button
+                size="xl"
+                variant="hero"
+                onClick={() => navigate("/auth")}
+              >
+                <Sparkles className="mr-2 h-6 w-6" />
+                Создайте свою музыку
+              </Button>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA Section */}
       <section className="py-32 relative overflow-hidden">

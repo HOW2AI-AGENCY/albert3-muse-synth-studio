@@ -73,6 +73,8 @@ export interface Track {
   has_stems?: boolean;
   like_count?: number;
   view_count?: number;
+  play_count?: number;
+  style?: string;
 }
 
 /**
