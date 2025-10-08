@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.migrate-tracks-to-storage]
 verify_jwt = true
+
+[functions.get-provider-balance]
+verify_jwt = true

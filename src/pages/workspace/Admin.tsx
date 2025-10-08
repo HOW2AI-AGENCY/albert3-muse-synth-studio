@@ -5,9 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Music, Shield, TrendingUp, Trash2 } from 'lucide-react';
+import { Users, Music, Shield, TrendingUp, Trash2, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface AdminStats {
   totalUsers: number;
@@ -33,13 +35,70 @@ export default function Admin() {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [tracks, setTracks] = useState<TrackForModeration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [creditMode, setCreditMode] = useState<'test' | 'production'>('test');
+  const [modeLoading, setModeLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     if (!roleLoading && isAdmin) {
       fetchAdminData();
+      fetchCreditMode();
     }
   }, [roleLoading, isAdmin]);
+
+  const fetchCreditMode = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'credit_mode')
+        .single();
+
+      if (error) throw error;
+
+      if (data?.value && typeof data.value === 'object' && 'mode' in data.value) {
+        setCreditMode(data.value.mode as 'test' | 'production');
+      }
+    } catch (error) {
+      console.error('Error fetching credit mode:', error);
+    }
+  };
+
+  const handleCreditModeChange = async (checked: boolean) => {
+    const newMode = checked ? 'production' : 'test';
+    setModeLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('app_settings')
+        .update({ 
+          value: { 
+            mode: newMode, 
+            description: newMode === 'test' 
+              ? 'Test mode - shared provider balance' 
+              : 'Production mode - internal platform credits'
+          } 
+        })
+        .eq('key', 'credit_mode');
+
+      if (error) throw error;
+
+      setCreditMode(newMode);
+      toast({
+        title: 'Успешно',
+        description: `Режим кредитов изменен на ${newMode === 'test' ? 'тестовый' : 'продакшн'}`,
+      });
+    } catch (error) {
+      console.error('Error updating credit mode:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось изменить режим кредитов',
+        variant: 'destructive',
+      });
+    } finally {
+      setModeLoading(false);
+    }
+  };
 
   const fetchAdminData = async () => {
     setIsLoading(true);
@@ -175,6 +234,53 @@ export default function Admin() {
           Администратор
         </Badge>
       </div>
+
+      {/* Credit Mode Settings */}
+      <Card className="border-primary/20">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Settings className="h-5 w-5 text-primary" />
+            <CardTitle>Настройки кредитов</CardTitle>
+          </div>
+          <CardDescription>
+            Управление режимом работы системы кредитов
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between space-x-4">
+            <div className="flex-1 space-y-1">
+              <Label htmlFor="credit-mode" className="text-base">
+                Режим работы
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {creditMode === 'test' 
+                  ? 'Тестовый режим: общий баланс провайдера для всех пользователей' 
+                  : 'Продакшн режим: внутренние кредиты платформы (требует настройки оплаты)'}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className={`text-sm font-medium ${creditMode === 'test' ? 'text-primary' : 'text-muted-foreground'}`}>
+                Тест
+              </span>
+              <Switch
+                id="credit-mode"
+                checked={creditMode === 'production'}
+                onCheckedChange={handleCreditModeChange}
+                disabled={modeLoading}
+              />
+              <span className={`text-sm font-medium ${creditMode === 'production' ? 'text-primary' : 'text-muted-foreground'}`}>
+                Продакшн
+              </span>
+            </div>
+          </div>
+          <div className="mt-4 p-4 rounded-lg bg-accent/50">
+            <p className="text-sm text-muted-foreground">
+              <strong>Внимание:</strong> В тестовом режиме все пользователи используют общий баланс API провайдера. 
+              В продакшн режиме будут использоваться внутренние кредиты платформы (требует дополнительной настройки системы оплаты).
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Статистика */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

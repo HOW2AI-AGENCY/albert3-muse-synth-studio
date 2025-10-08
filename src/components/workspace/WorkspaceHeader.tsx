@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Search, Coins } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -6,6 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { NotificationsDropdown } from "./NotificationsDropdown";
 import { UserProfileDropdown } from "./UserProfileDropdown";
 import { Button } from "@/components/ui/button";
+import { useProviderBalance } from "@/hooks/useProviderBalance";
+import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface WorkspaceHeaderProps {
   className?: string;
@@ -13,6 +21,7 @@ interface WorkspaceHeaderProps {
 
 const WorkspaceHeader = ({ className }: WorkspaceHeaderProps) => {
   const [userEmail, setUserEmail] = useState<string>("");
+  const { balance, isLoading: balanceLoading } = useProviderBalance();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -48,6 +57,34 @@ const WorkspaceHeader = ({ className }: WorkspaceHeaderProps) => {
         >
           <Search className="w-5 h-5" />
         </Button>
+
+        {/* Credits Display */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-2 px-3 py-2 bg-accent/10 rounded-xl border border-border/50 hover:bg-accent/20 transition-all duration-300">
+                <Coins className="w-4 h-4 text-primary" />
+                {balanceLoading ? (
+                  <Skeleton className="h-4 w-12" />
+                ) : (
+                  <span className="text-sm font-semibold text-foreground">
+                    {balance?.balance ?? 0}
+                  </span>
+                )}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div className="space-y-1">
+                <p className="font-semibold">Баланс провайдера: {balance?.provider}</p>
+                <p className="text-xs">Кредитов: {balance?.balance ?? 0}</p>
+                {balance?.plan && <p className="text-xs">План: {balance.plan}</p>}
+                {balance?.monthly_limit && (
+                  <p className="text-xs">Лимит: {balance.monthly_usage ?? 0}/{balance.monthly_limit}</p>
+                )}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         {/* Notifications Dropdown */}
         <NotificationsDropdown />
