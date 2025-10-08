@@ -108,6 +108,31 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       });
       return;
     }
+
+    // ============= ПРОВЕРКА ДОСТУПНОСТИ URL =============
+    // Проверяем, доступен ли аудиофайл перед воспроизведением
+    try {
+      logInfo('Checking audio URL availability...', 'AudioPlayerContext', { url: track.audio_url.substring(0, 50) + '...' });
+      
+      const response = await fetch(track.audio_url, { 
+        method: 'HEAD',
+        mode: 'no-cors' // Избегаем CORS ошибок при проверке
+      });
+      
+      // Note: с mode: 'no-cors' response.ok всегда будет false, но мы можем проверить type
+      // Если fetch не выбросил ошибку, URL скорее всего доступен
+      logInfo('Audio URL check completed', 'AudioPlayerContext');
+      
+    } catch (error) {
+      logError('Audio URL is not accessible', error as Error, 'AudioPlayerContext', { trackId: track.id });
+      toast({
+        title: "Аудио недоступно",
+        description: "Файл устарел или удалён. Попробуйте регенерировать трек.",
+        variant: "destructive",
+        duration: 5000,
+      });
+      return;
+    }
     
     try {
       if (audioRef.current) {
@@ -140,6 +165,11 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
           // Аналитика воспроизведения обрабатывается автоматически хуком usePlayAnalytics
         } catch (error) {
           logError('Failed to play track', error as Error, 'AudioPlayerContext', { trackId: track.id });
+          toast({
+            title: "Ошибка воспроизведения",
+            description: "Не удалось загрузить аудиофайл. Попробуйте ещё раз.",
+            variant: "destructive",
+          });
         }
       }
     } catch (error) {

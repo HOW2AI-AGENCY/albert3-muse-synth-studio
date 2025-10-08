@@ -314,15 +314,26 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {track.status && (
             <Badge
-              variant={track.status === 'complete' ? 'default' : 'secondary'}
+              variant={
+                track.status === 'completed' ? 'default' : 
+                track.status === 'failed' ? 'destructive' : 
+                'secondary'
+              }
               className={cn(
                 "text-xs px-2 py-0.5 transition-all duration-300",
-                track.status === 'complete' 
+                track.status === 'completed'
                   ? "bg-green-500/10 text-green-600 border-green-500/20" 
+                  : track.status === 'failed'
+                  ? "bg-red-500/10 text-red-600 border-red-500/20"
+                  : track.status === 'processing'
+                  ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
                   : "bg-yellow-500/10 text-yellow-600 border-yellow-500/20"
               )}
             >
-              {track.status === 'complete' ? 'Готово' : 'В процессе'}
+              {track.status === 'completed' ? 'Готово' : 
+               track.status === 'failed' ? 'Ошибка' :
+               track.status === 'processing' ? 'Генерация' : 
+               'В ожидании'}
             </Badge>
           )}
           
