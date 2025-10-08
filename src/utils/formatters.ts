@@ -31,8 +31,14 @@ export const formatTime = (seconds: number): string => {
  * @param date - Дата в виде строки или объекта Date
  * @returns Отформатированная дата
  */
-export const formatDate = (date: string | Date): string => {
+export const formatDate = (date: string | Date | null | undefined): string => {
+  if (!date) {
+    return "";
+  }
   const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(dateObj.getTime())) {
+    return "";
+  }
   return dateObj.toLocaleDateString("ru-RU", {
     day: "numeric",
     month: "short",

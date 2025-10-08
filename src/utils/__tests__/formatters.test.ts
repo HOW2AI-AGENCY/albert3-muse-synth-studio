@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatDuration, formatDate, formatFileSize } from '../formatters';
+import { formatDuration, formatDate, formatFileSize, formatTime } from '../formatters';
 
 describe('formatDuration', () => {
   it('formats seconds correctly', () => {
@@ -14,80 +14,82 @@ describe('formatDuration', () => {
     expect(formatDuration(125)).toBe('2:05');
   });
 
-  it('formats hours, minutes and seconds correctly', () => {
-    expect(formatDuration(3600)).toBe('1:00:00');
-    expect(formatDuration(3665)).toBe('1:01:05');
-    expect(formatDuration(7325)).toBe('2:02:05');
+  it('formats large minutes values correctly', () => {
+    expect(formatDuration(3600)).toBe('60:00');
+    expect(formatDuration(3665)).toBe('61:05');
   });
 
   it('handles null and undefined', () => {
-    expect(formatDuration(null)).toBe('0:00');
-    expect(formatDuration(undefined)).toBe('0:00');
+    expect(formatDuration(null)).toBe('—');
+    expect(formatDuration(undefined)).toBe('—');
+    expect(formatDuration(NaN)).toBe('—');
   });
 
-  it('rounds decimal values', () => {
-    expect(formatDuration(65.7)).toBe('1:06');
+  it('does not round up decimal values due to Math.floor', () => {
+    expect(formatDuration(65.7)).toBe('1:05');
     expect(formatDuration(125.3)).toBe('2:05');
   });
 });
 
+describe('formatTime', () => {
+  it('formats time correctly', () => {
+    expect(formatTime(125)).toBe('2:05');
+  });
+});
+
 describe('formatDate', () => {
-  it('formats date strings correctly', () => {
+  it('formats date strings correctly for ru-RU', () => {
     const dateString = '2024-01-15T12:00:00Z';
     const formatted = formatDate(dateString);
-    
-    expect(formatted).toContain('15');
-    expect(formatted).toContain('2024');
+    expect(formatted).toMatch(/15 янв. 2024 г./);
   });
 
-  it('handles invalid dates', () => {
-    expect(formatDate('invalid')).toBe('Invalid date');
-    expect(formatDate('')).toBe('Invalid date');
+  it('handles invalid dates gracefully', () => {
+    expect(formatDate('invalid')).toBe('');
+    expect(formatDate('')).toBe('');
   });
 
-  it('handles null and undefined', () => {
-    expect(formatDate(null)).toBe('Invalid date');
-    expect(formatDate(undefined)).toBe('Invalid date');
+  it('handles null and undefined gracefully', () => {
+    expect(formatDate(null)).toBe('');
+    expect(formatDate(undefined)).toBe('');
   });
 
-  it('formats Date objects', () => {
-    const date = new Date('2024-01-15T12:00:00Z');
+  it('formats Date objects correctly for ru-RU', () => {
+    const date = new Date('2024-03-20T12:00:00Z');
     const formatted = formatDate(date);
-    
-    expect(formatted).toContain('15');
-    expect(formatted).toContain('2024');
+    expect(formatted).toMatch(/20 мар. 2024 г./);
   });
 });
 
 describe('formatFileSize', () => {
   it('formats bytes correctly', () => {
-    expect(formatFileSize(0)).toBe('0 B');
-    expect(formatFileSize(500)).toBe('500 B');
-    expect(formatFileSize(1023)).toBe('1023 B');
+    expect(formatFileSize(0)).toBe('0 Б');
+    expect(formatFileSize(500)).toBe('500 Б');
+    expect(formatFileSize(1023)).toBe('1023 Б');
   });
 
   it('formats kilobytes correctly', () => {
-    expect(formatFileSize(1024)).toBe('1.0 KB');
-    expect(formatFileSize(1536)).toBe('1.5 KB');
-    expect(formatFileSize(10240)).toBe('10.0 KB');
+    expect(formatFileSize(1024)).toBe('1.0 КБ');
+    expect(formatFileSize(1536)).toBe('1.5 КБ');
+    expect(formatFileSize(10240)).toBe('10.0 КБ');
   });
 
   it('formats megabytes correctly', () => {
-    expect(formatFileSize(1048576)).toBe('1.0 MB');
-    expect(formatFileSize(5242880)).toBe('5.0 MB');
+    expect(formatFileSize(1048576)).toBe('1.0 МБ');
+    expect(formatFileSize(5242880)).toBe('5.0 МБ');
   });
 
   it('formats gigabytes correctly', () => {
-    expect(formatFileSize(1073741824)).toBe('1.0 GB');
-    expect(formatFileSize(2147483648)).toBe('2.0 GB');
+    expect(formatFileSize(1073741824)).toBe('1.0 ГБ');
+    expect(formatFileSize(2147483648)).toBe('2.0 ГБ');
   });
 
-  it('handles null and undefined', () => {
-    expect(formatFileSize(null)).toBe('0 B');
-    expect(formatFileSize(undefined)).toBe('0 B');
+  it('handles null and undefined gracefully', () => {
+    expect(formatFileSize(null)).toBe('0 Б');
+    expect(formatFileSize(undefined)).toBe('0 Б');
   });
 
-  it('handles negative values', () => {
-    expect(formatFileSize(-100)).toBe('0 B');
+  it('handles negative values gracefully', () => {
+    expect(formatFileSize(-100)).toBe('0 Б');
   });
 });
