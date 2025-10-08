@@ -6,7 +6,7 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { ApiService } from "@/services/api.service";
+import { ApiService, GenerateMusicRequest } from "@/services/api.service";
 import { supabase } from "@/integrations/supabase/client";
 import { logError, logInfo, logDebug, logWarn } from "@/utils/logger";
 import { useDebounce } from "@/utils/performance";
@@ -22,13 +22,8 @@ interface GenerateMusicOptions {
 }
 
 export const useMusicGeneration = (onSuccess?: () => void) => {
-  const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
-  const [provider, setProvider] = useState<'replicate' | 'suno'>('suno');
-  const [hasVocals, setHasVocals] = useState(false);
-  const [lyrics, setLyrics] = useState("");
-  const [styleTags, setStyleTags] = useState<string[]>([]);
   const { toast } = useToast();
 
   // Memoized validation functions
@@ -65,13 +60,13 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
     if (!promptToImprove.trim()) {
       toast({
         title: "Ошибка",
-        description: "Пожалуйста, введите описание музыки",
+        description: "Пожалуйста, введите описание музыки для улучшения.",
         variant: "destructive",
       });
-      return;
+      return null;
     }
 
-    if (isImproving) return; // Prevent double calls
+    if (isImproving) return null;
 
     setIsImproving(true);
     logInfo("Начало улучшения промпта", "useMusicGeneration", {
@@ -89,7 +84,7 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
 
       toast({
         title: "✨ Промпт улучшен!",
-        description: "Ваше описание было улучшено с помощью AI",
+        description: "Ваше описание было оптимизировано с помощью AI.",
       });
 
       return response.improvedPrompt;
@@ -100,9 +95,10 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
 
       toast({
         title: "Ошибка",
-        description: error instanceof Error ? error.message : "Не удалось улучшить промпт",
+        description: error instanceof Error ? error.message : "Не удалось улучшить промпт.",
         variant: "destructive",
       });
+      return null;
     } finally {
       setIsImproving(false);
     }
@@ -157,13 +153,7 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
-        logWarn("Попытка генерации музыки без авторизации", "useMusicGeneration");
-        toast({
-          title: "Требуется авторизация",
-          description: "Войдите в систему для генерации музыки",
-          variant: "destructive",
-        });
-        return;
+        throw new Error("Требуется авторизация для генерации музыки.");
       }
 
       // Step 1: Create track record first
@@ -203,6 +193,7 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
 
       // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Явно передаём provider в запросе
       await ApiService.generateMusic({
+        ...params,
         trackId: newTrack.id,
         userId: user.id,
         title: trackTitle,
@@ -236,34 +227,7 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
 
       onSuccess?.();
 
-      // Start polling for track status
-      const pollInterval = setInterval(async () => {
-        try {
-          const track = await ApiService.getTrackById(newTrack.id);
-          if (track) {
-            if (track.status === 'completed') {
-              clearInterval(pollInterval);
-              toast({
-                title: "✅ Трек готов!",
-                description: `Ваш трек "${track.title}" успешно сгенерирован.`,
-              });
-              onSuccess?.(); // Optional: another callback for completion
-            } else if (track.status === 'failed') {
-              clearInterval(pollInterval);
-              logError('🔴 [useMusicGeneration] Генерация трека не удалась', new Error(track.error_message || 'Unknown error'), 'useMusicGeneration', { trackId: newTrack.id });
-              toast({
-                title: "❌ Ошибка генерации",
-                description: track.error_message || "Произошла ошибка при обработке вашего трека.",
-                variant: "destructive",
-              });
-            }
-            // If status is 'pending' or 'processing', do nothing and let it poll again.
-          }
-        } catch (pollError) {
-          clearInterval(pollInterval);
-          logError('🔴 [useMusicGeneration] Ошибка при опросе статуса трека', pollError as Error, 'useMusicGeneration', { trackId: newTrack.id });
-        }
-      }, 5000); // Poll every 5 seconds
+      onSuccess?.();
 
     } catch (error) {
       logError("🔴 [useMusicGeneration] Ошибка при генерации музыки", error as Error, "useMusicGeneration", {
@@ -278,7 +242,7 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
       
       toast({
         title: "Ошибка генерации",
-        description: error instanceof Error ? error.message : "Не удалось сгенерировать музыку",
+        description: error instanceof Error ? error.message : "Не удалось сгенерировать музыку.",
         variant: "destructive",
       });
     } finally {
@@ -293,44 +257,10 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
     }
   }, [styleTags]);
 
-  const removeStyleTag = useCallback((tag: string) => {
-    setStyleTags(prev => prev.filter(t => t !== tag));
-  }, []);
-
-  // Memoized return object to prevent unnecessary re-renders
   return useMemo(() => ({
-    prompt,
-    setPrompt: setPromptOptimized,
     isGenerating,
     isImproving,
-    improvePrompt,
     generateMusic,
-    provider,
-    setProvider,
-    hasVocals,
-    setHasVocals,
-    lyrics,
-    setLyrics,
-    styleTags,
-    setStyleTags,
-    addStyleTag,
-    removeStyleTag,
-    canGenerate,
-    isValidPrompt,
-  }), [
-    prompt,
-    setPromptOptimized,
-    isGenerating,
-    isImproving,
     improvePrompt,
-    generateMusic,
-    provider,
-    hasVocals,
-    lyrics,
-    styleTags,
-    addStyleTag,
-    removeStyleTag,
-    canGenerate,
-    isValidPrompt,
-  ]);
+  }), [isGenerating, isImproving, generateMusic, improvePrompt]);
 };
