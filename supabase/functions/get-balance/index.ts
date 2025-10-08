@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { createSecurityHeaders } from "../_shared/security.ts";
+import { createSupabaseUserClient } from "../_shared/supabase.ts";
 
 const handler = async (req: Request): Promise<Response> => {
   const corsHeaders = createCorsHeaders();
@@ -12,10 +12,6 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
     // 1. Authenticate user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -25,7 +21,19 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
     const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+    let supabase;
+    try {
+      supabase = createSupabaseUserClient(token);
+    } catch (configError) {
+      console.error('Supabase configuration error while creating auth client:', configError);
+      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
+        status: 500,
+        headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
