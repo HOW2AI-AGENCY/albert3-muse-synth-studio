@@ -21,6 +21,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
@@ -33,6 +41,16 @@ jobs:
 
       - name: Start Supabase stack
         run: npx supabase start
+
+      - name: Reset database
+        run: npx supabase db reset --force
+
+      - name: Seed database
+        run: |
+          set -a
+          source supabase/.env
+          set +a
+          npm run db:seed
 
       - name: Run generate-suno tests
         run: |
