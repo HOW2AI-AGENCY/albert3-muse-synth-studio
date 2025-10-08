@@ -126,12 +126,15 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
     }
 
     setIsGenerating(true);
-    logInfo("Начало генерации музыки", "useMusicGeneration", { 
+    const requestTimestamp = new Date().toISOString();
+    logInfo("🎵 [useMusicGeneration] Начало генерации музыки", "useMusicGeneration", { 
+      timestamp: requestTimestamp,
       prompt: prompt.substring(0, 100), 
       provider, 
       hasVocals,
       lyricsLength: lyrics.length,
-      styleTagsCount: styleTags.length
+      styleTagsCount: styleTags.length,
+      generationParams
     });
 
     try {
@@ -151,10 +154,11 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
       const trackTitle = generationParams.title;
       const trackPrompt = generationParams.prompt;
       
-      logDebug("Creating track record", "useMusicGeneration", {
+      logDebug("📝 [useMusicGeneration] Creating track record", "useMusicGeneration", {
         title: trackTitle,
         provider,
-        hasVocals
+        hasVocals,
+        timestamp: new Date().toISOString()
       });
 
       const newTrack = await ApiService.createTrack(
@@ -167,24 +171,34 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
         styleTags
       );
 
-      logInfo("Track record created", "useMusicGeneration", {
+      logInfo("✅ [useMusicGeneration] Track record created successfully", "useMusicGeneration", {
         trackId: newTrack.id,
-        title: trackTitle
+        title: trackTitle,
+        status: newTrack.status,
+        timestamp: new Date().toISOString()
       });
 
       // Step 2: Trigger generation with trackId
+      logInfo("🚀 [useMusicGeneration] Triggering music generation", "useMusicGeneration", {
+        trackId: newTrack.id,
+        provider,
+        timestamp: new Date().toISOString()
+      });
+
       await ApiService.generateMusic({
         ...generationParams,
         trackId: newTrack.id,
         userId: user.id
       });
 
-      logInfo("Генерация музыки успешно запущена", "useMusicGeneration", {
+      logInfo("✅ [useMusicGeneration] Генерация музыки успешно запущена", "useMusicGeneration", {
         userId: user.id,
         trackId: newTrack.id,
         provider,
         title: trackTitle,
-        hasCustomLyrics: !!lyrics
+        hasCustomLyrics: !!lyrics,
+        requestDuration: Date.now() - new Date(requestTimestamp).getTime(),
+        timestamp: new Date().toISOString()
       });
 
       toast({
@@ -199,11 +213,14 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
       
       onSuccess?.();
     } catch (error) {
-      logError("Ошибка при генерации музыки", error as Error, "useMusicGeneration", {
+      logError("🔴 [useMusicGeneration] Ошибка при генерации музыки", error as Error, "useMusicGeneration", {
         prompt: prompt.substring(0, 100),
         provider,
         hasVocals,
-        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+        requestDuration: Date.now() - new Date(requestTimestamp).getTime(),
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        errorStack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString()
       });
       
       toast({

@@ -17,7 +17,10 @@ import {
   ResizableHandle,
 } from "@/components/ui/resizable";
 import { useTracks } from "@/hooks/useTracks";
+import { useTrackSync } from "@/hooks/useTrackSync";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { supabase } from "@/integrations/supabase/client";
+import { logInfo } from "@/utils/logger";
 
 const Generate = () => {
   const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks();
@@ -27,9 +30,36 @@ const Generate = () => {
   const [isPolling, setIsPolling] = useState(false);
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const initialTrackCount = useRef(tracks.length);
+  const [userId, setUserId] = useState<string | undefined>();
 
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const isMobile = useIsMobile();
+
+  // Get current user for track sync
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id);
+    };
+    getUser();
+  }, []);
+
+  // Auto-sync tracks in real-time
+  useTrackSync(userId, {
+    onTrackCompleted: (trackId) => {
+      logInfo('Track completed - refreshing list', 'Generate', { trackId });
+      refreshTracks();
+      setIsPolling(false);
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    },
+    onTrackFailed: (trackId, error) => {
+      logInfo('Track failed - refreshing list', 'Generate', { trackId, error });
+      refreshTracks();
+      setIsPolling(false);
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    },
+    enabled: true,
+  });
 
   const handleTrackGenerated = () => {
     setShowGenerator(false);
