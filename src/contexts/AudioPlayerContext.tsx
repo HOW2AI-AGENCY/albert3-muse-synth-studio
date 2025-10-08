@@ -6,6 +6,13 @@ import { AudioPlayerTrack } from '@/types/track';
 import { useToast } from '@/hooks/use-toast';
 import { getTrackWithVersions, TrackWithVersions } from '@/utils/trackVersions';
 
+// Константы высот плеера для разных устройств
+export const PLAYER_HEIGHTS = {
+  mobile: 72, // MiniPlayer высота
+  desktop: 88, // GlobalAudioPlayer высота
+  safeAreaOffset: 16, // Дополнительный отступ
+} as const;
+
 interface AudioPlayerContextType {
   currentTrack: AudioPlayerTrack | null;
   isPlaying: boolean;

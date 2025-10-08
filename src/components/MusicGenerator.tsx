@@ -171,7 +171,8 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       ref={cardRef}
       variant="gradient" 
       className={`
-        relative overflow-hidden min-w-0 w-full h-full p-4 sm:p-6 space-y-6
+        relative overflow-hidden min-w-0 w-full max-h-full overflow-y-auto scrollbar-styled
+        p-5 sm:p-6 md:p-8 space-y-6
         transition-all duration-700 ease-out
         ${isVisible ? 'animate-fade-in opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
       `}
@@ -181,16 +182,16 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       <div className="absolute top-0 right-0 w-20 h-20 sm:w-32 sm:h-32 bg-gradient-to-bl from-primary/10 to-transparent rounded-full blur-3xl pointer-events-none" />
       
       <div className="relative z-10">
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex items-center gap-3">
           <div className="p-3 rounded-xl bg-gradient-primary shadow-glow shrink-0">
             <Music className="h-6 w-6 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-2xl sm:text-3xl font-bold text-gradient-primary">
+            <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-gradient-primary">
               Создайте свою музыку с AI
             </h3>
-            <p className="text-muted-foreground/80 text-sm mt-1">
+            <p className="text-muted-foreground/80 text-xs sm:text-sm mt-1">
               Профессиональная генерация музыки с вокалом и лирикой
             </p>
           </div>
@@ -242,7 +243,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                 setPrompt(newValue);
                 adjustTextareaHeight();
               }}
-              className="min-h-[120px] sm:min-h-[100px] resize-none bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300 hover:border-primary/30 text-base sm:text-sm leading-relaxed"
+              className="min-h-[140px] sm:min-h-[120px] md:min-h-[100px] resize-none bg-background/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary/50 focus-visible:border-primary/50 transition-all duration-300 hover:border-primary/30 text-base leading-relaxed touch-action-manipulation"
               disabled={isGenerating || isImproving}
             />
           </div>
@@ -288,22 +289,22 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
           </div>
 
           {/* Настроение и темп */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-            <div className="space-y-2 sm:space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-5">
+            <div className="space-y-3">
               <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
-                <Volume2 className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                <Volume2 className="h-4 w-4 text-primary" />
                 Настроение
               </Label>
               <Select value={mood} onValueChange={setMood} disabled={isGenerating}>
-                <SelectTrigger className="bg-background/50 backdrop-blur-sm border-primary/20 focus:ring-primary/50 focus:border-primary/50 transition-all duration-300 hover:border-primary/30 h-9 sm:h-10 text-sm">
+                <SelectTrigger className="bg-background/50 backdrop-blur-sm border-primary/20 focus:ring-primary/50 focus:border-primary/50 transition-all duration-300 hover:border-primary/30 h-11 sm:h-10 text-sm touch-action-manipulation min-h-[44px]">
                   <SelectValue placeholder="Выберите" />
                 </SelectTrigger>
-                <SelectContent className="bg-background/95 backdrop-blur-sm border-primary/20">
+                <SelectContent className="bg-background/95 backdrop-blur-sm border-primary/20 z-[70]">
                   {moodOptions.map((option) => (
                     <SelectItem 
                       key={option.value} 
                       value={option.value} 
-                      className="hover:bg-primary/10 transition-colors duration-200 text-sm"
+                      className="hover:bg-primary/10 transition-colors duration-200 text-sm min-h-[44px]"
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-base">{option.icon}</span>
@@ -315,21 +316,21 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
               </Select>
             </div>
 
-            <div className="space-y-2 sm:space-y-3">
+            <div className="space-y-3">
               <Label className="text-xs sm:text-sm font-medium flex items-center gap-2">
-                <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                <Clock className="h-4 w-4 text-primary" />
                 Темп
               </Label>
               <Select value={tempo} onValueChange={setTempo} disabled={isGenerating}>
-                <SelectTrigger className="bg-background/50 backdrop-blur-sm border-primary/20 focus:ring-primary/50 focus:border-primary/50 transition-all duration-300 hover:border-primary/30 h-9 sm:h-10 text-sm">
+                <SelectTrigger className="bg-background/50 backdrop-blur-sm border-primary/20 focus:ring-primary/50 focus:border-primary/50 transition-all duration-300 hover:border-primary/30 h-11 sm:h-10 text-sm touch-action-manipulation min-h-[44px]">
                   <SelectValue placeholder="Выберите" />
                 </SelectTrigger>
-                <SelectContent className="bg-background/95 backdrop-blur-sm border-primary/20">
+                <SelectContent className="bg-background/95 backdrop-blur-sm border-primary/20 z-[70]">
                   {tempoOptions.map((option) => (
                     <SelectItem 
                       key={option.value} 
                       value={option.value} 
-                      className="hover:bg-primary/10 transition-colors duration-200 text-sm"
+                      className="hover:bg-primary/10 transition-colors duration-200 text-sm min-h-[44px]"
                     >
                       <div className="flex items-center justify-between w-full gap-2">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -373,19 +374,19 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
           </div>
 
           {/* Кнопки действий */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="glass"
                   onClick={handleImprovePrompt}
                   disabled={isImproving || isGenerating || !prompt.trim()}
-                  className="flex-1 h-10 sm:h-12 group hover:scale-105 transition-all duration-300 text-xs sm:text-sm"
+                  className="flex-1 h-12 group hover:scale-105 transition-all duration-300 text-sm sm:text-base touch-action-manipulation min-h-[48px]"
                 >
-                  <Wand2 className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5 group-hover:animate-spin transition-transform duration-500" />
+                  <Wand2 className="mr-2 h-5 w-5 group-hover:animate-spin transition-transform duration-500" />
                   {isImproving ? (
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                       <span className="hidden xs:inline">Улучшение...</span>
                       <span className="xs:hidden">...</span>
                     </div>
@@ -403,13 +404,13 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                   variant="hero"
                   onClick={handleGenerateMusic}
                   disabled={isGenerating || isImproving || !prompt.trim()}
-                  className="flex-1 h-10 sm:h-12 text-xs sm:text-base shadow-glow hover:scale-105 transition-all duration-300 relative overflow-hidden"
+                  className="flex-1 h-12 text-sm sm:text-base shadow-glow hover:scale-105 transition-all duration-300 relative overflow-hidden touch-action-manipulation min-h-[48px]"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                  <Sparkles className="mr-1.5 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-pulse" />
+                  <Sparkles className="mr-2 h-5 w-5 animate-pulse" />
                   {isGenerating ? (
-                    <div className="flex items-center gap-1.5 sm:gap-2">
-                      <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                       <span className="hidden xs:inline">Генерация...</span>
                       <span className="xs:hidden">...</span>
                     </div>
