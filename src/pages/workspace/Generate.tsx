@@ -41,8 +41,6 @@ const Generate = () => {
   const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1023px)");
   const isMobile = useIsMobile();
   
-  console.log('Viewport:', { isDesktop, isTablet, isMobile }); // Debug responsive behavior
-
   // Get current user for track sync
   useEffect(() => {
     const getUser = async () => {

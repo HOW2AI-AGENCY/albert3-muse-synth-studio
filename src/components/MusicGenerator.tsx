@@ -28,6 +28,19 @@ const quickStyleChips = [
   'reggae', 'rock', 'sad', 'trap', 'upbeat'
 ];
 
+// Model versions
+const modelVersions = [
+  { value: 'chirp-v3-5', label: 'Suno v5 (chirp-v3-5)' },
+  { value: 'chirp-v3-0', label: 'Suno v4.5 (chirp-v3-0)' },
+  { value: 'chirp-v2-5', label: 'Suno v4 (chirp-v2-5)' },
+];
+
+// Vocal options
+const vocalTypes = ['Lead Vocal', 'Backing Vocals', 'Duet', 'Choir', 'Rap Verse', 'Spoken Word'];
+
+// Musical keys
+const musicalKeys = ['C major', 'C minor', 'D major', 'D minor', 'E major', 'E minor', 'F major', 'F minor', 'G major', 'G minor', 'A major', 'A minor', 'B major', 'B minor'];
+
 const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   const {
     generateMusic,
@@ -40,9 +53,16 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   const { vibrate } = useHapticFeedback();
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Unified State for Generation
-  const [prompt, setPrompt] = useState('');
-  const [styleTags, setStyleTags] = useState<string[]>([]);
+  // Mode & UI State
+  const [generationMode, setGenerationMode] = useState<'simple' | 'custom'>('simple');
+  const [selectedModel, setSelectedModel] = useState('chirp-v3-5');
+  
+  // Simple Mode State
+  const [songDescription, setSongDescription] = useState('');
+  const [selectedInspirations, setSelectedInspirations] = useState<string[]>([]);
+  const [isInstrumental, setIsInstrumental] = useState(false);
+  
+  // Custom Mode State
   const [lyrics, setLyrics] = useState('');
   const [isInstrumental, setIsInstrumental] = useState(false);
   
@@ -60,7 +80,9 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   
   // Enhance prompt with AI
   const handleEnhancePrompt = useCallback(async () => {
-    if (!prompt.trim()) {
+    const currentPrompt = generationMode === 'simple' ? songDescription : lyrics;
+    
+    if (!currentPrompt.trim()) {
       toast({
         title: "❌ Ошибка",
         description: "Введите описание для улучшения",
@@ -79,7 +101,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       const improved = await hookImprovePrompt(currentPrompt);
 
       if (improved) {
-        if (mode === 'simple') {
+        if (generationMode === 'simple') {
           setSongDescription(improved);
         } else {
           setLyrics(improved);
@@ -100,15 +122,25 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     } finally {
       setIsImproving(false);
     }
-  }, [mode, songDescription, lyrics, setHookPrompt, hookImprovePrompt, vibrate, toast]);
+  }, [generationMode, songDescription, lyrics, setHookPrompt, hookImprovePrompt, vibrate, toast]);
 
   // Validation
   const validateForm = useCallback(() => {
-    if (!prompt.trim() && styleTags.length === 0) {
-      return { valid: false, error: 'Введите описание или выберите стиль музыки' };
+    if (generationMode === 'simple') {
+      if (!songDescription.trim() && selectedInspirations.length === 0) {
+        return { valid: false, error: 'Введите описание или выберите вдохновение' };
+      }
+      
+      if (!isInstrumental && !lyrics.trim()) {
+        return { valid: true, warning: 'Вокал включён, но текстов нет. Продолжить?' };
+      }
+    } else {
+      if (!songDescription.trim() && customStyles.length === 0 && !lyrics.trim()) {
+        return { valid: false, error: 'Заполните хотя бы одно поле' };
+      }
     }
     return { valid: true };
-  }, [prompt, styleTags]);
+  }, [generationMode, songDescription, selectedInspirations, isInstrumental, lyrics, customStyles]);
 
   // Generate music
   const handleGenerate = useCallback(async () => {
@@ -126,14 +158,15 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     vibrate('heavy');
 
     try {
-      let finalPrompt = songDescription;
-      const tags = mode === 'simple' ? selectedInspirations : customStyles;
-      
+      let finalPrompt = songDescription.trim();
+      const tags = generationMode === 'simple' ? selectedInspirations : customStyles;
+
       if (tags.length > 0) {
-        finalPrompt = `${finalPrompt}\n\nStyles: ${tags.join(', ')}`;
+        const prefix = finalPrompt.length > 0 ? `${finalPrompt}\n\n` : '';
+        finalPrompt = `${prefix}Styles: ${tags.join(', ')}`;
       }
-      
-      if (mode === 'custom') {
+
+      if (generationMode === 'custom') {
         const options: string[] = [];
         if (tempo[0] !== 120) options.push(`Tempo: ${tempo[0]} BPM`);
         if (musicalKey) options.push(`Key: ${musicalKey}`);
@@ -144,27 +177,39 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
         }
       }
 
-      const shouldIncludeVocals = mode === 'simple' ? !isInstrumental : hasVocals;
+      const shouldIncludeVocals = generationMode === 'simple' ? !isInstrumental : hasVocals;
       const sanitizedLyrics = lyrics.trim();
 
       // Keep hook state in sync for other consumers
       setHookPrompt(finalPrompt);
 
       // Call generate with explicit parameters to avoid stale state
-      await generateMusic({
+      const started = await generateMusic({
         prompt: finalPrompt,
         title: songTitle.trim() || undefined,
         lyrics: shouldIncludeVocals && sanitizedLyrics ? sanitizedLyrics : undefined,
         hasVocals: shouldIncludeVocals,
         styleTags: tags,
-        customMode: mode === 'custom'
+        customMode: generationMode === 'custom',
+        modelVersion: selectedModel,
       });
 
-      toast({
-        title: "🎵 Генерация началась!",
-        description: "Создаём вашу музыку..."
-      });
-      
+      if (!started) {
+        return;
+      }
+
+      setSongDescription('');
+      setSelectedInspirations([]);
+      setCustomStyles([]);
+      setLyrics('');
+      setSongTitle('');
+      setTempo([120]);
+      setMusicalKey('');
+      setHasVocals(true);
+      setVocalType('');
+      setIsInstrumental(false);
+      setIsLyricsDialogOpen(false);
+
       if (onTrackGenerated) {
         onTrackGenerated();
       }
@@ -177,9 +222,10 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       });
     }
   }, [
-    mode, songDescription, selectedInspirations, customStyles, isInstrumental,
-    hasVocals, lyrics, tempo, musicalKey, vocalType, songTitle, setHookPrompt,
-    generateMusic, vibrate, validateForm, toast, onTrackGenerated
+    generationMode, songDescription, selectedInspirations, customStyles, isInstrumental,
+    hasVocals, lyrics, tempo, musicalKey, vocalType, songTitle, selectedModel,
+    setHookPrompt, generateMusic, vibrate, validateForm, toast, onTrackGenerated,
+    setIsLyricsDialogOpen
   ]);
 
   // Keyboard shortcuts
@@ -200,46 +246,68 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       <Card className="h-full border-border/40 bg-background/95 backdrop-blur-sm shadow-lg flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-border/40 bg-muted/20">
-          <h3 className="font-semibold text-lg flex items-center gap-2">
-            <Music className="h-5 w-5" />
-            Создайте свою музыку с AI
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Опишите желаемую музыку, и наш AI создаст уникальный трек.
-          </p>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Badge variant="secondary" className="text-xs px-2 py-1">
+                <Music className="h-3 w-3 mr-1" />
+                10k Credits
+              </Badge>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Tabs value={generationMode} onValueChange={(v) => setGenerationMode(v as 'simple' | 'custom')} className="w-auto">
+                <TabsList className="h-9 p-1 bg-background/50">
+                  <TabsTrigger value="simple" className="text-xs px-3">Simple</TabsTrigger>
+                  <TabsTrigger value="custom" className="text-xs px-3">Custom</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              
+              <Select value={selectedModel} onValueChange={setSelectedModel}>
+                <SelectTrigger className="h-9 w-[80px] text-xs bg-background/50">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {modelVersions.map(m => (
+                    <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
 
-        <ScrollArea ref={scrollRef} className="flex-1">
-          <div className="p-4 space-y-6">
-            {/* Main Prompt */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="main-prompt" className="text-base font-medium">Опишите вашу музыку</Label>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleEnhancePrompt}
-                  disabled={isImproving || !prompt}
-                  className="h-8 text-xs gap-1.5"
-                >
-                  {isImproving ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Wand2 className="h-4 w-4" />
-                  )}
-                  Улучшить с AI
-                </Button>
-              </div>
-              <Textarea
-                id="main-prompt"
-                placeholder="Пример: Энергичный электронный трек в стиле 80-х, с мощной басовой линией и меланхоличной мелодией синтезатора..."
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                className="min-h-[120px] resize-none bg-background/50 text-base"
-                disabled={isGenerating}
-                rows={5}
-              />
-            </div>
+        <ScrollArea ref={scrollRef} className="h-[calc(100%-80px)]">
+          <div className="p-4 space-y-4">
+            {/* Simple Mode */}
+            {generationMode === 'simple' && (
+              <div className="space-y-4 animate-fade-in">
+                {/* Song Description */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Song Description</Label>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleEnhancePrompt}
+                      disabled={isImproving || !songDescription}
+                      className="h-7 text-xs gap-1"
+                    >
+                      {isImproving ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Wand2 className="h-3 w-3" />
+                      )}
+                      Enhance
+                    </Button>
+                  </div>
+                  <Textarea
+                    placeholder="Hip-hop, R&B, upbeat"
+                    value={songDescription}
+                    onChange={(e) => setSongDescription(e.target.value)}
+                    className="min-h-[80px] resize-none bg-background/50 text-sm"
+                    disabled={isGenerating}
+                  />
+                </div>
 
             {/* Quick Styles */}
             <div className="space-y-3">
@@ -258,7 +326,33 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                   </Button>
                 ))}
               </div>
-            </div>
+            )}
+
+            {/* Custom Mode */}
+            {generationMode === 'custom' && (
+              <div className="space-y-4 animate-fade-in">
+                {/* Tabs: Audio / Persona / Inspo */}
+                <Tabs defaultValue="lyrics" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 h-9 p-1">
+                    <TabsTrigger value="audio" className="text-xs">
+                      <Plus className="h-3 w-3 mr-1" />
+                      Audio
+                    </TabsTrigger>
+                    <TabsTrigger value="persona" className="text-xs">
+                      <Plus className="h-3 w-3 mr-1" />
+                      Persona
+                    </TabsTrigger>
+                    <TabsTrigger value="lyrics" className="text-xs">
+                      <Plus className="h-3 w-3 mr-1" />
+                      Inspo
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="audio" className="mt-4">
+                    <div className="text-sm text-muted-foreground text-center py-8">
+                      Upload audio reference (coming soon)
+                    </div>
+                  </TabsContent>
 
             {/* Advanced Options Accordion */}
             <Accordion type="single" collapsible className="w-full">

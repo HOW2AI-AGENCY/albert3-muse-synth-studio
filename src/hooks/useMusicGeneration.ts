@@ -19,6 +19,7 @@ interface GenerateMusicOptions {
   styleTags?: string[];
   provider?: "replicate" | "suno";
   customMode?: boolean;
+  modelVersion?: string;
 }
 
 export const useMusicGeneration = (onSuccess?: () => void) => {
@@ -110,7 +111,7 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
   }, [prompt, isImproving, toast]);
 
   // Memoized generate music function
-  const generateMusic = useCallback(async (options?: GenerateMusicOptions) => {
+  const generateMusic = useCallback(async (options?: GenerateMusicOptions): Promise<boolean> => {
     const rawPrompt = options?.prompt ?? prompt;
     const effectivePrompt = typeof rawPrompt === "string" ? rawPrompt.trim() : "";
     const effectiveProvider = options?.provider ?? provider;
@@ -119,6 +120,7 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
     const effectiveStyleTags = options?.styleTags ?? styleTags;
     const effectiveTitle = options?.title ?? (effectivePrompt.substring(0, 50) || "Untitled Track");
     const effectiveCustomMode = options?.customMode ?? !!effectiveLyrics;
+    const effectiveModelVersion = options?.modelVersion;
 
     const promptIsValid = effectivePrompt.length > 0;
     const canGenerateNow = promptIsValid && !isGenerating && !isImproving;
@@ -132,12 +134,13 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
           variant: "destructive",
         });
       }
-      return;
+      return false;
     }
 
     setIsGenerating(true);
     if (pollIntervalRef.current) {
       clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
     }
     const requestTimestamp = new Date().toISOString();
     logInfo("🎵 [useMusicGeneration] Начало генерации музыки", "useMusicGeneration", {
@@ -154,6 +157,7 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
         hasVocals: effectiveHasVocals,
         styleTags: effectiveStyleTags,
         customMode: effectiveCustomMode,
+        modelVersion: effectiveModelVersion,
       }
     });
 
@@ -161,7 +165,13 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
-        throw new Error("Требуется авторизация для генерации музыки.");
+        logWarn("Попытка генерации музыки без авторизации", "useMusicGeneration");
+        toast({
+          title: "Требуется авторизация",
+          description: "Войдите в систему для генерации музыки",
+          variant: "destructive",
+        });
+        return false;
       }
 
       // Step 1: Create track record first
@@ -199,18 +209,18 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
         timestamp: new Date().toISOString()
       });
 
-      // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Явно передаём provider в запросе
       await ApiService.generateMusic({
         ...params,
         trackId: newTrack.id,
         userId: user.id,
         title: trackTitle,
         prompt: trackPrompt,
-        provider: effectiveProvider, // Явно передаём provider
+        provider: effectiveProvider,
         lyrics: effectiveLyrics || undefined,
         hasVocals: effectiveHasVocals,
         styleTags: effectiveStyleTags,
         customMode: effectiveCustomMode,
+        modelVersion: effectiveModelVersion,
       });
 
       logInfo("✅ [useMusicGeneration] Генерация музыки успешно запущена", "useMusicGeneration", {
@@ -249,7 +259,7 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
                 title: "✅ Трек готов!",
                 description: `Ваш трек "${track.title}" успешно сгенерирован.`,
               });
-              onSuccess?.(); // Optional: another callback for completion
+              onSuccess?.();
             } else if (track.status === 'failed') {
               if (pollIntervalRef.current) {
                 clearInterval(pollIntervalRef.current);
@@ -262,7 +272,6 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
                 variant: "destructive",
               });
             }
-            // If status is 'pending' or 'processing', do nothing and let it poll again.
           }
         } catch (pollError) {
           if (pollIntervalRef.current) {
@@ -271,8 +280,9 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
           }
           logError('🔴 [useMusicGeneration] Ошибка при опросе статуса трека', pollError as Error, 'useMusicGeneration', { trackId: newTrack.id });
         }
-      }, 5000); // Poll every 5 seconds
+      }, 5000);
 
+      return true;
     } catch (error) {
       logError("🔴 [useMusicGeneration] Ошибка при генерации музыки", error as Error, "useMusicGeneration", {
         prompt: effectivePrompt.substring(0, 100),
@@ -283,12 +293,19 @@ export const useMusicGeneration = (onSuccess?: () => void) => {
         errorStack: error instanceof Error ? error.stack : undefined,
         timestamp: new Date().toISOString()
       });
-      
+
       toast({
         title: "Ошибка генерации",
         description: error instanceof Error ? error.message : "Не удалось сгенерировать музыку.",
         variant: "destructive",
       });
+
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+
+      return false;
     } finally {
       setIsGenerating(false);
       if (pollIntervalRef.current) {
