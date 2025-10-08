@@ -37,6 +37,8 @@ export interface GenerateLyricsRequest {
   genre: string;
   language?: 'ru' | 'en';
   structure?: string;
+  vocalStyle?: string;
+  references?: string;
 }
 
 export interface GenerateLyricsResponse {

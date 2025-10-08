@@ -1,0 +1,114 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
+import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+
+const corsHeaders = {
+  ...createCorsHeaders(),
+  ...createSecurityHeaders()
+};
+
+const mainHandler = async (req: Request) => {
+  if (req.method === 'OPTIONS') {
+    return handleCorsPreflightRequest(req);
+  }
+
+  try {
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { currentLyrics, language, style, instructions } = await req.json();
+
+    if (!currentLyrics) {
+      return new Response(
+        JSON.stringify({ error: 'Current lyrics are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY is not configured');
+    }
+
+    // Construct improvement prompt based on language
+    const languageContext = language === 'ru' 
+      ? 'на русском языке с учетом поэтичности и рифмы'
+      : 'in English with focus on rhyme and rhythm';
+
+    const styleContext = style ? `в стиле ${style}` : '';
+    const customInstructions = instructions ? `\n\nДополнительные требования: ${instructions}` : '';
+
+    const systemPrompt = `Вы — профессиональный автор песен и поэт. Улучшите предоставленный текст песни ${languageContext} ${styleContext}.
+
+ПРАВИЛА УЛУЧШЕНИЯ:
+- Сохраняйте общий смысл и настроение оригинала
+- Улучшайте рифму и ритм
+- Делайте текст более поэтичным и запоминающимся
+- Используйте яркие образы и метафоры
+- Соблюдайте структуру песни (куплеты, припевы)
+- Каждая строка должна быть естественной для пения
+- Избегайте банальных клише${customInstructions}
+
+Верните ТОЛЬКО улучшенный текст без комментариев и пояснений.`;
+
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt
+          },
+          {
+            role: 'user',
+            content: `Улучши эти тексты песни:\n\n${currentLyrics}`
+          }
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Lovable AI error:', response.status, errorText);
+      throw new Error(`AI service error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const improvedLyrics = data.choices?.[0]?.message?.content;
+
+    if (!improvedLyrics) {
+      throw new Error('No response from AI');
+    }
+
+    return new Response(
+      JSON.stringify({ improvedLyrics }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Error in improve-lyrics:', error);
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+};
+
+const handler = withRateLimit(mainHandler, {
+  maxRequests: 20,
+  windowMinutes: 1,
+  endpoint: 'improve-lyrics'
+});
+
+serve(handler);
