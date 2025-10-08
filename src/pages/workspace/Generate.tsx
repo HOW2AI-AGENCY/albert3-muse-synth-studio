@@ -85,20 +85,20 @@ const Generate = () => {
   // Desktop: 3-panel resizable layout
   if (isDesktop) {
     return (
-      <div className="h-[calc(100vh-4rem)]">
-        <ResizablePanelGroup direction="horizontal">
+      <div className="h-[calc(100vh-4rem)] p-4">
+        <ResizablePanelGroup direction="horizontal" className="rounded-lg border border-border overflow-hidden">
           {/* Create Panel */}
           <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
-            <div className="h-full overflow-auto p-4">
+            <div className="h-full overflow-auto">
               <MusicGenerator onTrackGenerated={handleTrackGenerated} />
             </div>
           </ResizablePanel>
 
-          <ResizableHandle withHandle />
+          <ResizableHandle withHandle className="hover:bg-primary/20 transition-colors" />
 
           {/* Track List */}
           <ResizablePanel defaultSize={selectedTrack ? 50 : 80} minSize={40}>
-            <div className="h-full overflow-auto p-4">
+            <div className="h-full overflow-auto">
               <TracksList
                 tracks={tracks}
                 isLoading={isLoading}
@@ -113,7 +113,7 @@ const Generate = () => {
           {/* Detail Panel */}
           {selectedTrack && (
             <>
-              <ResizableHandle withHandle />
+              <ResizableHandle withHandle className="hover:bg-primary/20 transition-colors" />
               <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
                 <DetailPanel
                   track={selectedTrack}

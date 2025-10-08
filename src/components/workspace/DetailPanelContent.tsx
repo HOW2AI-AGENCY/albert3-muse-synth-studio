@@ -113,37 +113,38 @@ export const DetailPanelContent = ({
   const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count || 0);
 
   return (
-    <div className="p-3 space-y-3">
+    <div className="p-4 space-y-4">
       {/* Quick Actions */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-3">
         <Button 
           variant={isLiked ? "default" : "outline"} 
-          size="sm" 
+          size="default"
           onClick={() => toggleLike()}
           className={isLiked ? "bg-red-500 hover:bg-red-600" : ""}
         >
-          <Heart className={`h-3.5 w-3.5 mr-1.5 ${isLiked ? 'fill-current' : ''}`} />
-          {likeCount > 0 ? likeCount : 'Лайк'}
+          <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
+          <span className="hidden sm:inline">{likeCount > 0 ? likeCount : 'Лайк'}</span>
+          <span className="sm:hidden">{likeCount || 0}</span>
         </Button>
-        <Button variant="outline" size="sm" onClick={onDownload} disabled={!track.audio_url}>
-          <Download className="h-3.5 w-3.5 mr-1.5" />
-          Скачать
+        <Button variant="outline" size="default" onClick={onDownload} disabled={!track.audio_url}>
+          <Download className="h-4 w-4 mr-2" />
+          <span className="hidden sm:inline">Скачать</span>
         </Button>
-        <Button variant="outline" size="sm" onClick={onShare}>
-          <Share2 className="h-3.5 w-3.5 mr-1.5" />
-          Поделиться
+        <Button variant="outline" size="default" onClick={onShare}>
+          <Share2 className="h-4 w-4 mr-2" />
+          <span className="hidden sm:inline">Поделиться</span>
         </Button>
       </div>
 
       {/* Collapsible Sections */}
-      <Accordion type="multiple" defaultValue={["versions", "metadata"]} className="space-y-2">
+      <Accordion type="multiple" defaultValue={["metadata"]} className="space-y-3">
         {/* Versions */}
         {versions.length > 0 && (
-          <AccordionItem value="versions" className="border rounded-lg px-3">
-            <AccordionTrigger className="text-sm py-2 hover:no-underline">
+          <AccordionItem value="versions" className="border rounded-lg px-4">
+            <AccordionTrigger className="text-sm py-3 hover:no-underline">
               Версии ({versions.length})
             </AccordionTrigger>
-            <AccordionContent className="pb-2">
+            <AccordionContent className="pb-3">
               <TrackVersions 
                 trackId={track.id}
                 versions={versions}
@@ -155,11 +156,11 @@ export const DetailPanelContent = ({
 
         {/* Stems */}
         {track.status === 'completed' && track.audio_url && (
-          <AccordionItem value="stems" className="border rounded-lg px-3">
-            <AccordionTrigger className="text-sm py-2 hover:no-underline">
+          <AccordionItem value="stems" className="border rounded-lg px-4">
+            <AccordionTrigger className="text-sm py-3 hover:no-underline">
               Стемы {stems.length > 0 && `(${stems.length})`}
             </AccordionTrigger>
-            <AccordionContent className="pb-2">
+            <AccordionContent className="pb-3">
               <TrackStemsPanel
                 trackId={track.id}
                 stems={stems}
@@ -170,55 +171,55 @@ export const DetailPanelContent = ({
         )}
 
         {/* Metadata */}
-        <AccordionItem value="metadata" className="border rounded-lg px-3">
-          <AccordionTrigger className="text-sm py-2 hover:no-underline">
+        <AccordionItem value="metadata" className="border rounded-lg px-4">
+          <AccordionTrigger className="text-sm py-3 hover:no-underline">
             Метаданные
           </AccordionTrigger>
-          <AccordionContent className="space-y-3 pb-2">
+          <AccordionContent className="space-y-3 pb-3">
             <div className="space-y-2">
-              <Label htmlFor="title" className="text-xs">Название</Label>
+              <Label htmlFor="title" className="text-sm">Название</Label>
               <Input
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Название трека"
-                className="h-8 text-sm"
+                className="h-10 text-sm"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="genre" className="text-xs">Жанр</Label>
+                <Label htmlFor="genre" className="text-sm">Жанр</Label>
                 <Input
                   id="genre"
                   value={genre}
                   onChange={(e) => setGenre(e.target.value)}
                   placeholder="Electronic"
-                  className="h-8 text-sm"
+                  className="h-10 text-sm"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="mood" className="text-xs">Настроение</Label>
+                <Label htmlFor="mood" className="text-sm">Настроение</Label>
                 <Input
                   id="mood"
                   value={mood}
                   onChange={(e) => setMood(e.target.value)}
                   placeholder="Energetic"
-                  className="h-8 text-sm"
+                  className="h-10 text-sm"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-between py-1">
+            <div className="flex items-center justify-between py-2">
               <div className="space-y-0.5">
-                <Label className="text-xs">Публичный</Label>
-                <p className="text-[10px] text-muted-foreground">Доступен всем</p>
+                <Label className="text-sm">Публичный</Label>
+                <p className="text-xs text-muted-foreground">Доступен всем</p>
               </div>
               <Switch checked={isPublic} onCheckedChange={setIsPublic} />
             </div>
 
-            <Button size="sm" className="w-full" onClick={onSave} disabled={isSaving}>
+            <Button size="default" className="w-full" onClick={onSave} disabled={isSaving}>
               {isSaving ? "Сохранение..." : "Сохранить"}
             </Button>
           </AccordionContent>
@@ -226,18 +227,18 @@ export const DetailPanelContent = ({
 
         {/* Tags & Details */}
         {(track.style_tags?.length > 0 || track.suno_id || track.model_name || track.lyrics) && (
-          <AccordionItem value="details" className="border rounded-lg px-3">
-            <AccordionTrigger className="text-sm py-2 hover:no-underline">
+          <AccordionItem value="details" className="border rounded-lg px-4">
+            <AccordionTrigger className="text-sm py-3 hover:no-underline">
               Детали
             </AccordionTrigger>
-            <AccordionContent className="space-y-3 pb-2">
+            <AccordionContent className="space-y-3 pb-3">
               {/* Style Tags */}
               {track.style_tags && track.style_tags.length > 0 && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Теги стиля</Label>
-                  <div className="flex flex-wrap gap-1">
+                <div className="space-y-2">
+                  <Label className="text-sm">Теги стиля</Label>
+                  <div className="flex flex-wrap gap-1.5">
                     {track.style_tags.map((tag: string, i: number) => (
-                      <Badge key={i} variant="secondary" className="text-xs px-1.5 py-0">
+                      <Badge key={i} variant="secondary" className="text-xs px-2 py-0.5">
                         {tag}
                       </Badge>
                     ))}
@@ -247,21 +248,21 @@ export const DetailPanelContent = ({
 
               {/* Suno Details */}
               {(track.suno_id || track.model_name) && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Генерация</Label>
-                  <div className="space-y-0.5 text-xs text-muted-foreground">
+                <div className="space-y-2">
+                  <Label className="text-sm">Генерация</Label>
+                  <div className="space-y-1 text-sm text-muted-foreground">
                     {track.model_name && <p>Модель: {track.model_name}</p>}
-                    {track.suno_id && <p className="font-mono text-[10px]">ID: {track.suno_id}</p>}
+                    {track.suno_id && <p className="font-mono text-xs">ID: {track.suno_id}</p>}
                   </div>
                   
                   {track.suno_id && (
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full justify-start h-7 text-xs"
+                      className="w-full justify-start h-9 text-sm"
                       onClick={() => window.open(`https://suno.com/song/${track.suno_id}`, "_blank")}
                     >
-                      <ExternalLink className="h-3 w-3 mr-1.5" />
+                      <ExternalLink className="h-4 w-4 mr-2" />
                       Открыть в Suno
                     </Button>
                   )}
@@ -270,10 +271,10 @@ export const DetailPanelContent = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full justify-start h-7 text-xs"
+                      className="w-full justify-start h-9 text-sm"
                       onClick={() => window.open(track.video_url, "_blank")}
                     >
-                      <Play className="h-3 w-3 mr-1.5" />
+                      <Play className="h-4 w-4 mr-2" />
                       Видео
                     </Button>
                   )}
@@ -282,12 +283,12 @@ export const DetailPanelContent = ({
 
               {/* Lyrics */}
               {track.lyrics && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Текст</Label>
+                <div className="space-y-2">
+                  <Label className="text-sm">Текст</Label>
                   <Textarea
                     value={track.lyrics}
                     readOnly
-                    className="min-h-[80px] resize-none text-xs"
+                    className="min-h-[100px] resize-none text-sm"
                   />
                 </div>
               )}

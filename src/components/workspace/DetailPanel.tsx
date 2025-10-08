@@ -289,47 +289,46 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
 
   return (
     <div className="h-full flex flex-col bg-card border-l border-border" role="complementary" aria-label="Панель деталей трека">
-      {/* Compact Header */}
-      <div className="flex items-center justify-between p-3 border-b border-border">
-        <h3 className="font-semibold text-sm">Детали</h3>
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-10">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <Badge 
+            variant={track.status === "completed" ? "default" : "secondary"} 
+            className="text-xs shrink-0"
+          >
+            {track.status === "completed" ? "✅ Готов" : "⏳ В процессе"}
+          </Badge>
+          <h3 className="font-semibold text-base truncate" title={track.title}>
+            {track.title}
+          </h3>
+        </div>
         {onClose && (
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-7 w-7" 
             onClick={onClose}
+            className="shrink-0"
             aria-label="Закрыть панель деталей"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </Button>
         )}
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto p-4">
-        {/* Cover Art Preview - Compact */}
-        <div className="aspect-square max-h-64 overflow-hidden border border-border rounded-lg mb-4">
-          {track.cover_url ? (
-            <img
-              src={track.cover_url}
-              alt={`Обложка трека ${track.title}`}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-primary/20 via-accent/20 to-primary/10 flex items-center justify-center">
-              <div className="text-center space-y-1">
-                <div className="text-4xl" role="img" aria-label="Музыкальная нота">🎵</div>
-                <Badge 
-                  variant={track.status === "completed" ? "default" : "secondary"} 
-                  className="text-xs"
-                  aria-label={`Статус трека: ${track.status}`}
-                >
-                  {track.status}
-                </Badge>
-              </div>
+      <div className="flex-1 overflow-auto">
+        {/* Cover Art Preview */}
+        {track.cover_url && (
+          <div className="p-4">
+            <div className="aspect-square max-h-48 overflow-hidden border border-border rounded-xl shadow-lg">
+              <img
+                src={track.cover_url}
+                alt={`Обложка трека ${track.title}`}
+                className="w-full h-full object-cover"
+              />
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         <DetailPanelContent
           track={track}

@@ -170,7 +170,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       ref={cardRef}
       variant="gradient" 
       className={`
-        w-full max-w-4xl mx-auto p-4 sm:p-6 space-y-6
+        w-full h-full p-6 space-y-6
         transition-all duration-700 ease-out
         ${isVisible ? 'animate-fade-in opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
       `}

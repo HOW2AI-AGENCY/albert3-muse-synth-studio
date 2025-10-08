@@ -18,13 +18,14 @@ const WorkspaceLayout = () => {
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 ml-0 lg:ml-16">
+      <div className={cn(
+        "flex-1 flex flex-col min-w-0 transition-all duration-300",
+        isSidebarExpanded ? "ml-0 lg:ml-64" : "ml-0 lg:ml-16"
+      )}>
         <WorkspaceHeader className="safe-area-inset lg:block hidden" />
         
         <main className="flex-1 overflow-y-auto pb-[72px] lg:pb-0 bg-gradient-to-br from-background via-background to-accent/5 scrollbar-styled">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 max-w-7xl">
-            <Outlet />
-          </div>
+          <Outlet />
         </main>
 
         {/* Bottom Tab Bar - Mobile only */}
