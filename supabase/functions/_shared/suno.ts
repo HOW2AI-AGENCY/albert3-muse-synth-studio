@@ -8,6 +8,7 @@ export interface SunoGenerationPayload {
   continue_clip_id?: string | null;
   audio_prompt_id?: string | null;
   style?: string | null;
+  callBackUrl?: string;
 }
 
 export interface SunoTaskStatus {

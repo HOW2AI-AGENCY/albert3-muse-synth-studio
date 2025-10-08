@@ -34,6 +34,13 @@ export const mainHandler = async (req: Request): Promise<Response> => {
   let supabaseAdmin: SupabaseClient | null = null;
   const supabaseUrl = getSupabaseUrl();
   const serviceRoleKey = getSupabaseServiceRoleKey();
+  const normalisedSupabaseUrl = supabaseUrl ? supabaseUrl.replace(/\/$/, "") : null;
+  const callbackUrlEnv = Deno.env.get('SUNO_CALLBACK_URL')?.trim();
+  const callbackUrl = callbackUrlEnv && callbackUrlEnv.length > 0
+    ? callbackUrlEnv
+    : normalisedSupabaseUrl
+      ? `${normalisedSupabaseUrl}/functions/v1/suno-callback`
+      : null;
 
   if (!supabaseUrl || !serviceRoleKey) {
     console.error('🔴 [GENERATE-SUNO] Supabase credentials are not configured');
@@ -192,7 +199,15 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       });
     }
 
-    const sunoPayload = { prompt, tags, title: title || 'Generated Track', make_instrumental: make_instrumental || false, model_version: model_version || 'chirp-v3-5', wait_audio: wait_audio || false };
+    const sunoPayload = {
+      prompt,
+      tags,
+      title: title || 'Generated Track',
+      make_instrumental: make_instrumental || false,
+      model_version: model_version || 'chirp-v3-5',
+      wait_audio: wait_audio || false,
+      callBackUrl: callbackUrl ?? undefined,
+    };
     console.log('📤 [GENERATE-SUNO] Sending request to Suno API:', JSON.stringify(sunoPayload, null, 2));
 
     const generationResult = await sunoClient.generateTrack(sunoPayload);
@@ -211,6 +226,8 @@ export const mainHandler = async (req: Request): Promise<Response> => {
           job_id: jobId,
           suno_generate_endpoint: generationResult.endpoint,
           ...(generationResult.jobId ? { suno_job_id: generationResult.jobId } : {}),
+          suno_completion_strategy: callbackUrl ? 'callback' : 'polling',
+          suno_callback_url: callbackUrl ?? null,
         },
       })
       .eq('id', finalTrackId);
@@ -220,10 +237,31 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       throw updateError;
     }
 
-    console.log('✅ [GENERATE-SUNO] Track updated with task ID, starting background polling');
-    pollSunoCompletion(finalTrackId, taskId, supabaseAdmin, SUNO_API_KEY, jobId).catch(err => {
-      console.error('🔴 [GENERATE-SUNO] Polling error:', err);
-    });
+    if (callbackUrl) {
+      console.log('✅ [GENERATE-SUNO] Callback URL registered:', callbackUrl);
+      console.log('⏳ [GENERATE-SUNO] Waiting for Suno callback to finalize track');
+      // Schedule a defensive fallback poll in case the callback never arrives
+      try {
+        const adminForFallback = supabaseAdmin;
+        if (adminForFallback) {
+          setTimeout(() => {
+            console.log('⏱️ [GENERATE-SUNO] Callback fallback poll triggered');
+            pollSunoCompletion(finalTrackId, taskId, adminForFallback, SUNO_API_KEY, jobId).catch(err => {
+              console.error('🔴 [GENERATE-SUNO] Fallback polling error:', err);
+            });
+          }, 3 * 60 * 1000); // 3 minutes
+        } else {
+          console.error('🔴 [GENERATE-SUNO] Supabase admin client unavailable for fallback polling');
+        }
+      } catch (timeoutError) {
+        console.error('🔴 [GENERATE-SUNO] Failed to schedule fallback poll:', timeoutError);
+      }
+    } else {
+      console.log('⚠️ [GENERATE-SUNO] Callback URL unavailable, falling back to polling');
+      pollSunoCompletion(finalTrackId, taskId, supabaseAdmin, SUNO_API_KEY, jobId).catch(err => {
+        console.error('🔴 [GENERATE-SUNO] Polling error:', err);
+      });
+    }
 
     console.log('✅ [GENERATE-SUNO] Generation started successfully');
     return new Response(JSON.stringify({ success: true, trackId: finalTrackId, taskId: taskId, message: 'Generation started, polling for completion' }), {
