@@ -124,9 +124,7 @@ class Logger {
       return;
     }
 
-    const client = Sentry.getCurrentHub()?.getClient();
-
-    if (!client) {
+    if (!isSentryEnabled) {
       return;
     }
 
@@ -321,4 +319,10 @@ export const logInfo = (message: string, context?: string, data?: Record<string,
 export const logDebug = (message: string, context?: string, data?: Record<string, unknown>) =>
   logger.debug(message, context, data);
 import * as Sentry from "@sentry/react";
+
+const sentryEnv = typeof import.meta !== "undefined"
+  ? (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env ?? {}
+  : {};
+
+const isSentryEnabled = Boolean(sentryEnv.VITE_SENTRY_DSN);
 
