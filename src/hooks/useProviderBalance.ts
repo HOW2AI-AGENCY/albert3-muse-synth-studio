@@ -27,16 +27,26 @@ export const useProviderBalance = () => {
     for (const provider of providers) {
       try {
         console.log(`Fetching balance for provider: ${provider}`);
-        const { data, error: invokeError } = await supabase.functions.invoke('get-balance', {
-          queryString: { provider }
-        });
+        
+        // Используем fetch напрямую с query параметром
+        const session = await supabase.auth.getSession();
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-balance?provider=${provider}`,
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${session.data.session?.access_token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
 
-        if (invokeError) {
-          console.warn(`Failed to invoke balance function for ${provider}:`, invokeError.message);
+        if (!response.ok) {
+          console.warn(`Failed to fetch balance for ${provider}:`, response.status);
           continue; // Try next provider
         }
 
-        // The function returns a data object that is the balance response
+        const data = await response.json();
         const providerBalance: ProviderBalance = data;
 
         // If the provider returns its own error field (e.g. Suno is down),

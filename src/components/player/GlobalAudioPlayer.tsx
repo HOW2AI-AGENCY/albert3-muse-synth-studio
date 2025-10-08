@@ -6,19 +6,13 @@ import { LoadingSkeleton } from "../ui/LoadingSkeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMediaSession } from "@/hooks/useMediaSession";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1, Music, Repeat, Star } from "lucide-react";
+import { formatTime } from "@/utils/formatters";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1, Music, X, Star, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-
-const formatTime = (seconds: number): string => {
-  if (!seconds || isNaN(seconds)) return "0:00";
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-};
 
 export const GlobalAudioPlayer = () => {
   const {
@@ -35,6 +29,7 @@ export const GlobalAudioPlayer = () => {
     switchToVersion,
     getAvailableVersions,
     currentVersionIndex,
+    clearCurrentTrack,
   } = useAudioPlayer();
   
   // ============= ВЕРСИИ ТРЕКОВ =============
@@ -272,7 +267,7 @@ export const GlobalAudioPlayer = () => {
                           className="relative h-10 w-10 hover:bg-primary/10 hover:scale-110 transition-all duration-200"
                           title={`${availableVersions.length} версий`}
                         >
-                          <Repeat className="h-5 w-5" />
+                          <List className="h-5 w-5" />
                           <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-gradient-primary">
                             {availableVersions.length}
                           </Badge>
@@ -364,7 +359,22 @@ export const GlobalAudioPlayer = () => {
                 className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-primary/60 to-primary rounded-full -translate-y-1/2 transition-all duration-100"
                 style={{ width: `${(isMuted ? 0 : volume) * 100}%` }}
               />
-            </div>
+            
+            {/* Close Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={clearCurrentTrack}
+                  className="h-10 w-10 hover:bg-destructive/10 hover:text-destructive hover:scale-110 transition-all duration-200 ml-2"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Закрыть плеер</TooltipContent>
+            </Tooltip>
+          </div>
             <span className="text-xs font-medium text-muted-foreground/80 tabular-nums w-10 text-right">
               {Math.round((isMuted ? 0 : volume) * 100)}%
             </span>
