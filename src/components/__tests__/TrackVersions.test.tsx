@@ -57,8 +57,22 @@ vi.mock('@/utils/logger', () => ({
 
 describe('TrackVersions component', () => {
   const baseVersions = [
-    { id: 'track-main', version_number: 0, is_master: true, audio_url: 'main.mp3', duration: 120 },
-    { id: 'track-alt', version_number: 1, is_master: false, audio_url: 'alt.mp3', duration: 100 },
+    {
+      id: 'track-main',
+      suno_id: 'track-main-suno',
+      version_number: 0,
+      is_master: true,
+      audio_url: 'main.mp3',
+      duration: 120,
+    },
+    {
+      id: 'track-alt',
+      suno_id: 'track-alt-suno',
+      version_number: 1,
+      is_master: false,
+      audio_url: 'alt.mp3',
+      duration: 100,
+    },
   ];
 
   beforeEach(() => {
@@ -136,9 +150,30 @@ describe('TrackVersions component', () => {
       <TrackVersions
         trackId="track-1"
         versions={[
-          { id: 'track-main', version_number: 0, is_master: true, audio_url: 'main.mp3', duration: 120 },
-          { id: 'track-alt', version_number: 1, is_master: false, audio_url: 'alt.mp3', duration: 100 },
-          { id: 'track-extra', version_number: 2, is_master: false, audio_url: 'extra.mp3', duration: 90 },
+          {
+            id: 'track-main',
+            suno_id: 'track-main-suno',
+            version_number: 0,
+            is_master: true,
+            audio_url: 'main.mp3',
+            duration: 120,
+          },
+          {
+            id: 'track-alt',
+            suno_id: 'track-alt-suno',
+            version_number: 1,
+            is_master: false,
+            audio_url: 'alt.mp3',
+            duration: 100,
+          },
+          {
+            id: 'track-extra',
+            suno_id: 'track-extra-suno',
+            version_number: 2,
+            is_master: false,
+            audio_url: 'extra.mp3',
+            duration: 90,
+          },
         ]}
       />
     );
