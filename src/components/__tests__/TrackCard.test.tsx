@@ -35,7 +35,7 @@ vi.mock('@/hooks/useTrackLike', () => ({
 vi.mock('@sentry/react', () => ({
   withErrorBoundary: (component: unknown) => component,
   captureException: vi.fn(),
-}), { virtual: true });
+}));
 
 vi.mock('@/utils/logger', () => ({
   logError: vi.fn(),
