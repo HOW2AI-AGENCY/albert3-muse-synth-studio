@@ -37,7 +37,7 @@ export type PollSunoCompletionFn = (
 
 export const mainHandler = async (req: Request): Promise<Response> => {
   const corsHeaders = {
-    ...createCorsHeaders(),
+    ...createCorsHeaders(req),
     ...createSecurityHeaders()
   };
 
