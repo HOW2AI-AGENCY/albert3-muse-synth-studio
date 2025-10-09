@@ -26,6 +26,21 @@ const wildcardToRegExp = (pattern: string): RegExp => {
   return new RegExp(`^${escaped}$`);
 };
 
+const getEffectivePort = (url: URL): string => {
+  if (url.port) {
+    return url.port;
+  }
+
+  switch (url.protocol) {
+    case 'http:':
+      return '80';
+    case 'https:':
+      return '443';
+    default:
+      return '';
+  }
+};
+
 const isSubdomainMatch = (requestedOrigin: string, allowedOrigin: string): boolean => {
   try {
     const requestedUrl = new URL(requestedOrigin);
@@ -35,10 +50,20 @@ const isSubdomainMatch = (requestedOrigin: string, allowedOrigin: string): boole
       return false;
     }
 
-    const requestedHost = requestedUrl.hostname;
-    const allowedHost = allowedUrl.hostname;
+    const requestedHostname = requestedUrl.hostname;
+    const allowedHostname = allowedUrl.hostname;
+    const requestedPort = getEffectivePort(requestedUrl);
+    const allowedPort = getEffectivePort(allowedUrl);
 
-    return requestedHost === allowedHost || requestedHost.endsWith(`.${allowedHost}`);
+    if (requestedHostname === allowedHostname && requestedPort === allowedPort) {
+      return true;
+    }
+
+    if (requestedPort !== allowedPort) {
+      return false;
+    }
+
+    return requestedHostname.endsWith(`.${allowedHostname}`);
   } catch {
     return false;
   }
