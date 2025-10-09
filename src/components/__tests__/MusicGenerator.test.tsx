@@ -1,203 +1,102 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { MusicGenerator } from '../MusicGenerator';
-import * as musicGenerationHook from '@/hooks/useMusicGeneration';
 
-// Mock hooks
-const mockUseMusicGeneration = {
-  prompt: '',
-  setPrompt: vi.fn(),
-  isGenerating: false,
-  isImproving: false,
-  provider: 'replicate',
-  setProvider: vi.fn(),
-  hasVocals: false,
-  setHasVocals: vi.fn(),
-  lyrics: '',
-  setLyrics: vi.fn(),
-  styleTags: [],
-  setStyleTags: vi.fn(),
-  generateMusic: vi.fn(),
-  improvePrompt: vi.fn(),
-  addStyleTag: vi.fn(),
-  removeStyleTag: vi.fn(),
-  canGenerate: true,
-  isValidPrompt: true,
-};
-
-vi.mock('@/hooks/useMusicGeneration', () => ({
-  useMusicGeneration: () => mockUseMusicGeneration,
+const toastMock = vi.hoisted(() => vi.fn());
+vi.mock('@/hooks/use-toast', () => ({
+  useToast: () => ({ toast: toastMock }),
 }));
 
-vi.mock('@/hooks/useAudioPlayer', () => ({
-  useAudioPlayer: () => ({
-    currentTrack: null,
-    isPlaying: false,
-  }),
+const musicGenerationMocks = vi.hoisted(() => ({
+  hook: vi.fn(),
+  generateMusic: vi.fn(),
+  improvePrompt: vi.fn(),
+}));
+vi.mock('@/hooks/useMusicGeneration', () => ({
+  useMusicGeneration: (...args: unknown[]) => musicGenerationMocks.hook(...args),
 }));
 
 vi.mock('@/hooks/useHapticFeedback', () => ({
-  useHapticFeedback: () => ({
-    vibrate: vi.fn(),
+  useHapticFeedback: () => ({ vibrate: vi.fn() }),
+}));
+
+vi.mock('@/hooks/useProviderBalance', () => ({
+  useProviderBalance: () => ({
+    balance: { balance: 12, currency: 'credits', provider: 'suno' },
+    isLoading: false,
+    error: null,
   }),
 }));
 
-vi.mock('@/hooks/use-toast', () => ({
-  useToast: () => ({
-    toast: vi.fn(),
-  }),
-}));
-
-describe('MusicGenerator', () => {
+describe('MusicGenerator component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUseMusicGeneration.prompt = '';
-    mockUseMusicGeneration.isGenerating = false;
-    mockUseMusicGeneration.isImproving = false;
-    mockUseMusicGeneration.styleTags = [];
-  });
-
-  describe('Rendering', () => {
-    it('renders the component with heading', () => {
-      render(<MusicGenerator />);
-      
-      expect(screen.getByText(/создайте свою музыку с ai/i)).toBeInTheDocument();
-    });
-
-    it('renders simple and advanced mode tabs', () => {
-      render(<MusicGenerator />);
-      
-      expect(screen.getByRole('tab', { name: /простой режим/i })).toBeInTheDocument();
-      expect(screen.getByRole('tab', { name: /расширенный/i })).toBeInTheDocument();
-    });
-
-    it('renders prompt textarea', () => {
-      render(<MusicGenerator />);
-      const textarea = screen.getByPlaceholderText(/Пример: Энергичный электронный трек/i);
-      expect(textarea).toBeInTheDocument();
-    });
-
-    it('renders popular genre buttons', () => {
-      render(<MusicGenerator />);
-      expect(screen.getByText(/Поп/i)).toBeInTheDocument();
-      expect(screen.getByText(/Рок/i)).toBeInTheDocument();
-      expect(screen.getByText(/Электроника/i)).toBeInTheDocument();
+    toastMock.mockClear();
+    musicGenerationMocks.generateMusic.mockResolvedValue(true);
+    musicGenerationMocks.improvePrompt.mockResolvedValue('Better prompt');
+    musicGenerationMocks.hook.mockReturnValue({
+      generateMusic: musicGenerationMocks.generateMusic,
+      improvePrompt: musicGenerationMocks.improvePrompt,
+      isGenerating: false,
+      isImproving: false,
     });
   });
 
-  describe('User Interactions', () => {
-    afterEach(() => {
-      vi.restoreAllMocks();
-    });
+  it('validates empty form before generation', async () => {
+    const user = userEvent.setup();
+    render(<MusicGenerator />);
 
-    it.skip('updates prompt value when controlled prop changes', () => {
-      // This test is skipped because of a stubborn issue with JSDOM, React.memo, and vi.spyOn.
-      // The component does not reliably re-render with the updated mock value in the test environment,
-      // even though the other tests for user interaction and state changes pass.
-      const spy = vi.spyOn(musicGenerationHook, 'useMusicGeneration');
-      spy.mockReturnValue({ ...mockUseMusicGeneration, prompt: 'initial value' });
+    const createButton = screen.getByRole('button', { name: 'Create' });
+    await user.click(createButton);
 
-      const { rerender } = render(<MusicGenerator />);
-      const textarea = screen.getByPlaceholderText(/Пример: Энергичный электронный трек/i);
-      expect(textarea).toHaveValue('initial value');
-
-      spy.mockReturnValue({ ...mockUseMusicGeneration, prompt: 'updated value' });
-      rerender(<MusicGenerator />);
-      expect(textarea).toHaveValue('updated value');
-    });
-
-    it('switches between simple and advanced modes', async () => {
-      const user = userEvent.setup();
-      render(<MusicGenerator />);
-      
-      const advancedTab = screen.getByRole('tab', { name: /расширенный/i });
-      await user.click(advancedTab);
-      
-      const advancedContent = await screen.findByText(/Провайдер AI/i);
-      expect(advancedContent).toBeInTheDocument();
-    });
-
-    it('toggles genre tag selection', async () => {
-      const setStyleTagsMock = vi.fn();
-      const spy = vi.spyOn(musicGenerationHook, 'useMusicGeneration');
-      spy.mockReturnValue({ ...mockUseMusicGeneration, setStyleTags: setStyleTagsMock });
-
-      render(<MusicGenerator />);
-      const rockButton = screen.getByText(/Рок/i);
-      await userEvent.click(rockButton);
-      expect(setStyleTagsMock).toHaveBeenCalled();
-    });
+    expect(toastMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        description: 'Введите описание или выберите вдохновение',
+      }),
+    );
   });
 
-  describe('Generation Actions', () => {
-    afterEach(() => {
-      vi.restoreAllMocks();
-    });
+  it('shows warning when vocals enabled without lyrics and proceeds after confirmation', async () => {
+    const user = userEvent.setup();
+    const onTrackGenerated = vi.fn();
 
-    it('calls generateMusic when generate button is clicked', async () => {
-      const generateMusicMock = vi.fn().mockResolvedValue(undefined);
-      const spy = vi.spyOn(musicGenerationHook, 'useMusicGeneration');
-      spy.mockReturnValue({
-        ...mockUseMusicGeneration,
-        prompt: 'Test prompt',
-        generateMusic: generateMusicMock,
-      });
+    render(<MusicGenerator onTrackGenerated={onTrackGenerated} />);
 
-      render(<MusicGenerator />);
-      const generateButton = screen.getByRole('button', { name: /Сгенерировать музыку/i });
-      await userEvent.click(generateButton);
-      
-      await waitFor(() => {
-        expect(generateMusicMock).toHaveBeenCalled();
-      });
-    });
+    const textarea = screen.getByPlaceholderText('Hip-hop, R&B, upbeat');
+    await user.type(textarea, 'Test melody');
 
-    it('disables inputs during generation', () => {
-      const spy = vi.spyOn(musicGenerationHook, 'useMusicGeneration');
-      spy.mockReturnValue({ ...mockUseMusicGeneration, isGenerating: true });
+    const createButton = screen.getByRole('button', { name: 'Create' });
+    await user.click(createButton);
 
-      render(<MusicGenerator />);
-      const textarea = screen.getByPlaceholderText(/Пример: Энергичный электронный трек/i);
-      expect(textarea).toBeDisabled();
-    });
+    expect(await screen.findByText('Confirm generation')).toBeInTheDocument();
 
-    it('calls improvePrompt when improve button is clicked', async () => {
-      const improvePromptMock = vi.fn().mockResolvedValue(undefined);
-      const spy = vi.spyOn(musicGenerationHook, 'useMusicGeneration');
-      spy.mockReturnValue({
-        ...mockUseMusicGeneration,
-        prompt: 'Test prompt',
-        improvePrompt: improvePromptMock,
-      });
+    const continueButton = screen.getByRole('button', { name: 'Continue' });
+    await user.click(continueButton);
 
-      render(<MusicGenerator />);
-      const improveButton = screen.getByRole('button', { name: /Улучшить с AI/i });
-      await userEvent.click(improveButton);
-      
-      await waitFor(() => {
-        expect(improvePromptMock).toHaveBeenCalled();
-      });
-    });
+    await waitFor(() => expect(musicGenerationMocks.generateMusic).toHaveBeenCalled());
+    await waitFor(() => expect(onTrackGenerated).toHaveBeenCalled());
+    await waitFor(() => expect(textarea).toHaveValue(''));
+
+    expect(musicGenerationMocks.generateMusic).toHaveBeenCalledWith(
+      expect.objectContaining({
+        prompt: expect.stringContaining('Test melody'),
+      }),
+    );
   });
 
-  describe('Callback Handling', () => {
-    it('calls onTrackGenerated callback after successful generation', async () => {
-      const onTrackGeneratedMock = vi.fn();
-      mockUseMusicGeneration.prompt = 'Test';
-      mockUseMusicGeneration.generateMusic.mockResolvedValue(undefined);
+  it('enhances prompt using AI helper', async () => {
+    const user = userEvent.setup();
+    render(<MusicGenerator />);
 
-      render(<MusicGenerator onTrackGenerated={onTrackGeneratedMock} />);
-      const generateButton = screen.getByRole('button', { name: /Сгенерировать музыку/i });
-      await userEvent.click(generateButton);
-      
-      await waitFor(() => {
-        expect(mockUseMusicGeneration.generateMusic).toHaveBeenCalled();
-      });
-      
-      await waitFor(() => {
-        expect(onTrackGeneratedMock).toHaveBeenCalled();
-      });
-    });
+    const textarea = screen.getByPlaceholderText('Hip-hop, R&B, upbeat');
+    await user.type(textarea, 'Initial idea');
+
+    const enhanceButton = screen.getByRole('button', { name: 'Enhance' });
+    await user.click(enhanceButton);
+
+    expect(musicGenerationMocks.improvePrompt).toHaveBeenCalledWith('Initial idea');
+    expect(await screen.findByDisplayValue('Better prompt')).toBeInTheDocument();
   });
 });

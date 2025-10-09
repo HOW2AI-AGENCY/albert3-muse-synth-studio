@@ -57,7 +57,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Test
-        run: npx vitest run --coverage
+        run: npx vitest run --coverage --coverage.reporter=text-summary --coverage.reporter=lcov --coverage.reporter=html
 
       - name: Upload coverage report
         if: always()
