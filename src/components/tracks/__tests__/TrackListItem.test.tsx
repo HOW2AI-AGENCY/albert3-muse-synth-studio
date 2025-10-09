@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import type { ComponentProps, RefObject } from 'react';
 import { TrackListItem } from '../TrackListItem';
 import { useAudioPlayer, useAudioPlayerSafe } from '@/hooks/useAudioPlayer';
 import { useToast } from '@/hooks/use-toast';
@@ -32,9 +33,26 @@ describe('TrackListItem', () => {
     like_count: 5,
   };
 
+  type AudioPlayerContextValue = ReturnType<typeof useAudioPlayer>;
+
   const playTrackMock = vi.fn();
   const pauseTrackMock = vi.fn();
+  const playTrackWithQueueMock = vi.fn();
+  const togglePlayPauseMock = vi.fn();
+  const seekToMock = vi.fn();
+  const setVolumeMock = vi.fn();
+  const playNextMock = vi.fn();
+  const playPreviousMock = vi.fn();
+  const addToQueueMock = vi.fn();
+  const removeFromQueueMock = vi.fn();
+  const clearQueueMock = vi.fn();
+  const reorderQueueMock = vi.fn();
+  const switchToVersionMock = vi.fn();
+  const getAvailableVersionsMock = vi.fn().mockReturnValue([] as AudioPlayerContextValue['queue']);
+  const clearCurrentTrackMock = vi.fn();
+  const audioRefMock = { current: null } as RefObject<HTMLAudioElement>;
   const toastMock = vi.fn();
+  const dismissToastMock = vi.fn();
   const toggleLikeMock = vi.fn();
 
   const mockedUseAudioPlayer = vi.mocked(useAudioPlayer);
@@ -68,6 +86,36 @@ describe('TrackListItem', () => {
     clearCurrentTrack: vi.fn(),
   });
 
+  const createAudioPlayerValue = (
+    overrides: Partial<AudioPlayerContextValue> = {}
+  ): AudioPlayerContextValue => ({
+    currentTrack: null,
+    isPlaying: false,
+    currentTime: 0,
+    duration: 0,
+    volume: 1,
+    queue: [],
+    currentQueueIndex: -1,
+    playTrack: playTrackMock,
+    playTrackWithQueue: playTrackWithQueueMock,
+    togglePlayPause: togglePlayPauseMock,
+    pauseTrack: pauseTrackMock,
+    seekTo: seekToMock,
+    setVolume: setVolumeMock,
+    playNext: playNextMock,
+    playPrevious: playPreviousMock,
+    addToQueue: addToQueueMock,
+    removeFromQueue: removeFromQueueMock,
+    clearQueue: clearQueueMock,
+    reorderQueue: reorderQueueMock,
+    switchToVersion: switchToVersionMock,
+    getAvailableVersions: getAvailableVersionsMock,
+    currentVersionIndex: 0,
+    audioRef: audioRefMock,
+    clearCurrentTrack: clearCurrentTrackMock,
+    ...overrides,
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     const contextValue = createAudioPlayerContextValue();
@@ -86,7 +134,7 @@ describe('TrackListItem', () => {
     });
   });
 
-  const setup = (props: Partial<React.ComponentProps<typeof TrackListItem>> = {}) => {
+  const setup = (props: Partial<ComponentProps<typeof TrackListItem>> = {}) => {
     return render(<TrackListItem track={mockTrack} {...props} />);
   };
 
