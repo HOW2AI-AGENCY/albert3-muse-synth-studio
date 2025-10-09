@@ -57,6 +57,7 @@ export interface DisplayTrack {
   prompt?: string;
   created_at?: string;
   duration?: number;
+  error_message?: string;
 }
 
 // Упрощенный трек для оптимизированных списков

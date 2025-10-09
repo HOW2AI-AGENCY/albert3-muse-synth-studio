@@ -48,7 +48,7 @@ export interface TrackWithVersions {
   versionNumber?: number;
   isMasterVersion?: boolean;
   title: string;
-  audio_url: string;
+  audio_url?: string;
   cover_url?: string;
   video_url?: string;
   duration?: number;
@@ -59,9 +59,6 @@ export interface TrackWithVersions {
   user_id?: string;
   metadata?: TrackMetadata | null;
 }
-
-const isTrackMetadata = (metadata: unknown): metadata is TrackMetadata =>
-  typeof metadata === 'object' && metadata !== null;
 
 /**
  * Loads a track and all its versions from the database
@@ -101,7 +98,7 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       versionNumber: 0, // Main track is version 0
       isMasterVersion: !versions?.some(v => v.is_master), // Master if no versions marked as master
       title: mainTrack.title,
-      audio_url: mainTrack.audio_url || '',
+      audio_url: mainTrack.audio_url ?? undefined,
       cover_url: mainTrack.cover_url ?? undefined,
       video_url: mainTrack.video_url ?? undefined,
       duration: mainTrack.duration ?? undefined,
@@ -111,8 +108,6 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       user_id: mainTrack.user_id,
     });
 
-    const metadata = isTrackMetadata(mainTrack.metadata) ? mainTrack.metadata : null;
-
     if (versions && versions.length > 0) {
       versions.forEach((version: TrackVersionRow) => {
         result.push({
@@ -121,38 +116,44 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
           versionNumber: version.version_number,
           isMasterVersion: version.is_master || false,
           title: `${mainTrack.title} (V${version.version_number})`,
-          audio_url: version.audio_url || '',
-          cover_url: version.cover_url || mainTrack.cover_url,
-          video_url: version.video_url,
-          duration: version.duration,
-          lyrics: version.lyrics,
-          style_tags: mainTrack.style_tags,
+          audio_url: version.audio_url ?? undefined,
+          cover_url: version.cover_url ?? mainTrack.cover_url ?? undefined,
+          video_url: version.video_url ?? undefined,
+          duration: version.duration ?? undefined,
+          lyrics: version.lyrics ?? undefined,
+          style_tags: mainTrack.style_tags ?? undefined,
           user_id: mainTrack.user_id,
         });
       });
     }
     // FALLBACK LOGIC: If no versions are in the dedicated table, try to extract them from metadata.
     // This is for older tracks that stored version data in a JSONB field.
-    else if (mainTrack.metadata && 'suno_data' in mainTrack.metadata && isSunoDataArray(mainTrack.metadata.suno_data)) {
-      if (mainTrack.metadata.suno_data.length > 1) {
+    else if (
+      mainTrack.metadata && 
+      typeof mainTrack.metadata === 'object' && 
+      'suno_data' in mainTrack.metadata &&
+      isSunoDataArray(mainTrack.metadata.suno_data)
+    ) {
+      const sunoData = mainTrack.metadata.suno_data as SunoTrackData[];
+      if (sunoData.length > 1) {
         logInfo('Using fallback to extract versions from metadata', 'trackVersions', { trackId });
         
         // The first item in suno_data is the main track, so we slice from the second item.
-        mainTrack.metadata.suno_data.slice(1).forEach((versionData: SunoTrackData, index: number) => {
+        sunoData.slice(1).forEach((versionData: SunoTrackData, index: number) => {
           result.push({
-            id: versionData.id, // Use the ID from the metadata version
+            id: versionData.id,
             parentTrackId: mainTrack.id,
-            versionNumber: index + 1, // Version numbers start from 1
-            isMasterVersion: false, // This info is not available in the old metadata format
+            versionNumber: index + 1,
+            isMasterVersion: false,
             title: `${mainTrack.title} (V${index + 1})`,
-            audio_url: versionData.audio_url || versionData.stream_audio_url || '',
-            cover_url: versionData.image_url || mainTrack.cover_url,
-            video_url: versionData.video_url,
-            duration: versionData.duration,
-            lyrics: mainTrack.lyrics, // Lyrics are likely for the main track only
-            style_tags: mainTrack.style_tags,
+            audio_url: versionData.audio_url ?? versionData.stream_audio_url ?? undefined,
+            cover_url: versionData.image_url ?? mainTrack.cover_url ?? undefined,
+            video_url: versionData.video_url ?? undefined,
+            duration: versionData.duration ?? undefined,
+            lyrics: mainTrack.lyrics ?? undefined,
+            style_tags: mainTrack.style_tags ?? undefined,
             user_id: mainTrack.user_id,
-            status: 'completed' // Assume 'completed' if it's in metadata
+            status: 'completed'
           });
         });
       }

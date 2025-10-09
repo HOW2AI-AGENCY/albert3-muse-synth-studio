@@ -169,7 +169,6 @@ export const useDashboardData = () => {
     queryFn: fetchDashboardData,
     enabled: Boolean(userId),
     initialData: getDefaultDashboardData,
-    suspense: false,
   });
 };
 

@@ -112,7 +112,7 @@ export const fetchStyleRecommendations = async (
 
 export const useStyleRecommendations = (
   payload: StyleRecommendationRequest,
-  options: UseQueryOptions<StyleRecommendationResult, Error> = {},
+  options?: Omit<UseQueryOptions<StyleRecommendationResult, Error>, 'queryKey' | 'queryFn'>,
 ): UseQueryResult<StyleRecommendationResult, Error> => {
   const sanitisedPayload = sanitiseRequestPayload(payload);
   const enabled = hasRequestPayload(sanitisedPayload);
@@ -120,9 +120,9 @@ export const useStyleRecommendations = (
   return useQuery({
     queryKey: createStyleRecommendationsQueryKey(sanitisedPayload),
     queryFn: () => fetchStyleRecommendations(sanitisedPayload),
-    enabled: options.enabled ?? enabled,
-    staleTime: options.staleTime ?? 1000 * 60 * 5,
-    gcTime: options.gcTime ?? 1000 * 60 * 30,
+    enabled: options?.enabled ?? enabled,
+    staleTime: options?.staleTime ?? 1000 * 60 * 5,
+    gcTime: options?.gcTime ?? 1000 * 60 * 30,
     ...options,
   });
 };

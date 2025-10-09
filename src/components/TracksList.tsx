@@ -209,15 +209,16 @@ const TracksListComponent = ({
                   <TrackCard
                     track={{
                       ...track,
-                      audio_url: track.audio_url || undefined,
-                      cover_url: track.cover_url || undefined,
-                      duration: track.duration || undefined,
-                      style_tags: track.style_tags || undefined,
-                      lyrics: track.lyrics || undefined,
-                      has_vocals: track.has_vocals || undefined,
-                      genre: track.genre || undefined,
-                      like_count: track.like_count || undefined,
-                      view_count: track.view_count || undefined,
+                      audio_url: track.audio_url ?? undefined,
+                      cover_url: track.cover_url ?? undefined,
+                      duration: track.duration ?? undefined,
+                      style_tags: track.style_tags ?? undefined,
+                      lyrics: track.lyrics ?? undefined,
+                      has_vocals: track.has_vocals ?? undefined,
+                      genre: track.genre ?? undefined,
+                      like_count: track.like_count ?? undefined,
+                      view_count: track.view_count ?? undefined,
+                      error_message: track.error_message ?? undefined,
                     }}
                     onDownload={() => handleDownload(typedTrack)}
                     onShare={() => handleShare(track.id)}
@@ -279,13 +280,14 @@ const TracksListComponent = ({
                   <TrackListItem
                     track={{
                       ...track,
-                      audio_url: track.audio_url || undefined,
-                      cover_url: track.cover_url || undefined,
-                      duration: track.duration || undefined,
-                      duration_seconds: track.duration_seconds || undefined,
-                      style_tags: track.style_tags || undefined,
-                      like_count: track.like_count || undefined,
-                      has_stems: track.has_stems || undefined,
+                      audio_url: track.audio_url ?? undefined,
+                      cover_url: track.cover_url ?? undefined,
+                      duration: track.duration ?? undefined,
+                      duration_seconds: track.duration_seconds ?? undefined,
+                      style_tags: track.style_tags ?? undefined,
+                      like_count: track.like_count ?? undefined,
+                      has_stems: track.has_stems ?? undefined,
+                      error_message: track.error_message ?? undefined,
                     }}
                     onDownload={() => handleDownload(typedTrack)}
                     onShare={() => handleShare(track.id)}
