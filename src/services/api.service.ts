@@ -664,6 +664,27 @@ export class ApiService {
    */
   static async getProviderBalance(provider: 'suno' | 'replicate'): Promise<ProviderBalanceResponse> {
     const context = "ApiService.getProviderBalance";
+    // Guard: avoid invoking edge function without user session
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !session.access_token) {
+        logWarn("⚠️ [API Service] Skipping get-balance invoke: no user session", context, { provider });
+        return {
+          provider,
+          balance: 0,
+          currency: 'credits',
+          error: 'Unauthorized: sign in to view balance',
+        } as ProviderBalanceResponse;
+      }
+    } catch (sessionError) {
+      logWarn("⚠️ [API Service] Failed to read session; returning fallback balance", context, { provider, sessionError: sessionError instanceof Error ? sessionError.message : String(sessionError) });
+      return {
+        provider,
+        balance: 0,
+        currency: 'credits',
+        error: 'Session check failed',
+      } as ProviderBalanceResponse;
+    }
     const { data, error } = await supabase.functions.invoke('get-balance', {
       body: { provider },
     });

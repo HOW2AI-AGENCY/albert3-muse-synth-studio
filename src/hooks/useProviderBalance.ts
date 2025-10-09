@@ -24,6 +24,20 @@ export const useProviderBalance = () => {
     setError(null);
 
     try {
+      // Skip invoking edge function if user is not authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !session.access_token) {
+        const unauthorizedMessage = 'Unauthorized: sign in to view balance';
+        setError(unauthorizedMessage);
+        setBalance({
+          provider: PRIMARY_PROVIDER,
+          balance: 0,
+          currency: 'credits',
+          error: unauthorizedMessage,
+        });
+        return;
+      }
+
       const { data, error: invokeError } = await supabase.functions.invoke<ProviderBalance>('get-balance', {
         body: { provider: PRIMARY_PROVIDER }
       });
