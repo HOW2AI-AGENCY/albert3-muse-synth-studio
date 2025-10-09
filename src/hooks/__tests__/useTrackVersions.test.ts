@@ -36,9 +36,13 @@ describe('useTrackVersions', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(trackVersionMocks.getTrackWithVersions).toHaveBeenCalledWith('track-1');
-    expect(result.current.versions).toEqual(sampleVersions);
+    expect(result.current.allVersions).toEqual(sampleVersions);
+    expect(result.current.versions).toEqual([sampleVersions[1]]);
     expect(result.current.masterVersion).toEqual(sampleVersions[0]);
+    expect(result.current.mainVersion).toEqual(sampleVersions[0]);
+    expect(result.current.totalVersionCount).toBe(2);
     expect(result.current.hasVersions).toBe(true);
+    expect(result.current.versionCount).toBe(1);
     expect(result.current.additionalVersionCount).toBe(1);
   });
 

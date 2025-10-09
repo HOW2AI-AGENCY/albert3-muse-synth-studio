@@ -6,33 +6,48 @@
  * 
  * Использование:
  * ```tsx
- * const { versions, isLoading, versionCount, loadVersions } = useTrackVersions(trackId);
+ * const {
+ *   versions,
+ *   allVersions,
+ *   isLoading,
+ *   versionCount,
+ *   loadVersions
+ * } = useTrackVersions(trackId);
  * ```
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { getTrackWithVersions, TrackWithVersions, getMasterVersion, hasMultipleVersions } from '../api/trackVersions';
+import { getTrackWithVersions, TrackWithVersions, getMasterVersion } from '../api/trackVersions';
 import { logInfo, logError } from '@/utils/logger';
 
 /**
  * Интерфейс возвращаемого значения хука
  */
 interface UseTrackVersionsReturn {
-  /** Массив всех версий трека (включая основную) */
+  /** Массив дополнительных версий (без основной) */
   versions: TrackWithVersions[];
-  
+
+  /** Массив всех версий (с учётом оригинала) */
+  allVersions: TrackWithVersions[];
+
   /** Индикатор загрузки */
   isLoading: boolean;
-  
-  /** Количество версий (включая основную) */
+
+  /** Количество дополнительных версий */
   versionCount: number;
-  
+
   /** Количество дополнительных версий (без основной) */
   additionalVersionCount: number;
-  
+
+  /** Общее количество версий (включая основную) */
+  totalVersionCount: number;
+
+  /** Основной трек (оригинальная версия) */
+  mainVersion: TrackWithVersions | null;
+
   /** Мастер-версия трека (или основная если мастер не задан) */
   masterVersion: TrackWithVersions | null;
-  
+
   /** Есть ли несколько версий */
   hasVersions: boolean;
   
@@ -58,7 +73,7 @@ export function useTrackVersions(
   autoLoad: boolean = true
 ): UseTrackVersionsReturn {
   // ===== Состояние =====
-  const [versions, setVersions] = useState<TrackWithVersions[]>([]);
+  const [allVersions, setAllVersions] = useState<TrackWithVersions[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   
@@ -74,7 +89,7 @@ export function useTrackVersions(
   const loadVersions = useCallback(async () => {
     // Проверка валидности ID
     if (!trackId) {
-      setVersions([]);
+      setAllVersions([]);
       setError(null);
       return;
     }
@@ -87,13 +102,21 @@ export function useTrackVersions(
       
       // Загрузка версий из БД
       const loadedVersions = await getTrackWithVersions(trackId);
-      
-      setVersions(loadedVersions);
-      
+
+      setAllVersions(loadedVersions);
+
+      const additionalVersions = loadedVersions.filter(version =>
+        !(version.versionNumber === 0 || version.id === trackId)
+      );
+
       logInfo(
-        `Loaded ${loadedVersions.length} version(s) for track`,
+        `Loaded ${additionalVersions.length} version(s) for track`,
         'useTrackVersions',
-        { trackId, versionCount: loadedVersions.length }
+        {
+          trackId,
+          versionCount: additionalVersions.length,
+          totalVersionCount: loadedVersions.length,
+        }
       );
     } catch (err) {
       const error = err as Error;
@@ -120,23 +143,35 @@ export function useTrackVersions(
   
   // ===== Вычисляемые свойства =====
   
-  /** Количество версий (включая основную) */
+  /** Определяем основную версию трека */
+  const mainVersion = allVersions.find(
+    version => version.id === trackId || version.versionNumber === 0
+  ) ?? null;
+
+  /** Дополнительные версии без основной */
+  const versions = allVersions.filter(version => version.id !== mainVersion?.id);
+
   const versionCount = versions.length;
-  
+
+  const totalVersionCount = allVersions.length;
+
   /** Мастер-версия трека */
-  const masterVersion = getMasterVersion(versions);
-  
+  const masterVersion = getMasterVersion(allVersions);
+
   /** Есть ли несколько версий */
-  const hasVersions = hasMultipleVersions(versions);
-  
+  const hasVersions = versionCount > 0;
+
   /** Количество дополнительных версий (без учёта оригинала) */
-  const additionalVersionCount = Math.max(versionCount - 1, 0);
-  
+  const additionalVersionCount = versionCount;
+
   return {
     versions,
+    allVersions,
     isLoading,
     versionCount,
-    additionalVersionCount, // Добавляем новое поле
+    additionalVersionCount,
+    totalVersionCount,
+    mainVersion,
     masterVersion,
     hasVersions,
     loadVersions,
