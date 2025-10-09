@@ -72,11 +72,11 @@ export const createCorsHeaders = (requestOrOrigin?: Request | string | null) => 
     'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-app-environment',
     'Access-Control-Max-Age': '86400',
-    'Access-Control-Allow-Credentials': 'true',
   };
 
   if (allowOrigin !== '*') {
     headers['Vary'] = 'Origin';
+    headers['Access-Control-Allow-Credentials'] = 'true';
   }
 
   return headers;

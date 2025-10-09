@@ -36,3 +36,16 @@ Deno.test("rejects unrelated origins", async () => {
     Deno.env.delete("CORS_ALLOWED_ORIGINS");
   }
 });
+
+Deno.test("omits credentials header when default wildcard origin is used", async () => {
+  try {
+    const { createCorsHeaders } = await importWithOrigins("");
+
+    const headers = createCorsHeaders();
+
+    assertEquals(headers["Access-Control-Allow-Origin"], "*");
+    assertEquals(headers["Access-Control-Allow-Credentials"], undefined);
+  } finally {
+    Deno.env.delete("CORS_ALLOWED_ORIGINS");
+  }
+});
