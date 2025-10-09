@@ -26,6 +26,24 @@ const wildcardToRegExp = (pattern: string): RegExp => {
   return new RegExp(`^${escaped}$`);
 };
 
+const isSubdomainMatch = (requestedOrigin: string, allowedOrigin: string): boolean => {
+  try {
+    const requestedUrl = new URL(requestedOrigin);
+    const allowedUrl = new URL(allowedOrigin);
+
+    if (requestedUrl.protocol !== allowedUrl.protocol) {
+      return false;
+    }
+
+    const requestedHost = requestedUrl.hostname;
+    const allowedHost = allowedUrl.hostname;
+
+    return requestedHost === allowedHost || requestedHost.endsWith(`.${allowedHost}`);
+  } catch {
+    return false;
+  }
+};
+
 const resolveAllowedOrigin = (requestOrOrigin?: Request | string | null): string => {
   const requestedOrigin = typeof requestOrOrigin === 'string'
     ? requestOrOrigin
@@ -46,6 +64,10 @@ const resolveAllowedOrigin = (requestOrOrigin?: Request | string | null): string
         if (regex.test(requestedOrigin)) {
           return requestedOrigin;
         }
+      }
+
+      if (isSubdomainMatch(requestedOrigin, origin)) {
+        return requestedOrigin;
       }
     }
   }
