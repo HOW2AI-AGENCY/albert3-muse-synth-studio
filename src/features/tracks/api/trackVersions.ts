@@ -1,9 +1,144 @@
+import type { PostgrestError } from '@supabase/supabase-js';
+
 import { supabase } from '@/integrations/supabase/client';
 import { logError, logInfo } from '@/utils/logger';
 import type { Database } from '@/integrations/supabase/types';
 
 type TrackRow = Database['public']['Tables']['tracks']['Row'];
 type TrackVersionRow = Database['public']['Tables']['track_versions']['Row'];
+type TrackVersionInsert = Database['public']['Tables']['track_versions']['Insert'];
+type TrackVersionUpdate = Database['public']['Tables']['track_versions']['Update'];
+
+const TRACK_VERSIONS_CONTEXT = 'trackVersionsApi';
+
+export type Result<T, E extends Error = TrackVersionError> =
+  | { ok: true; data: T }
+  | { ok: false; error: E };
+
+export class TrackVersionError extends Error {
+  constructor(
+    message: string,
+    public readonly context: string,
+    public readonly cause?: unknown,
+  ) {
+    super(message);
+    this.name = 'TrackVersionError';
+  }
+}
+
+export class TrackVersionNotFoundError extends TrackVersionError {
+  constructor(context: string, public readonly versionId: string) {
+    super(`Track version with id "${versionId}" not found`, context);
+    this.name = 'TrackVersionNotFoundError';
+  }
+}
+
+interface OperationOptions {
+  action: string;
+  errorMessage: string;
+  payload?: Record<string, unknown>;
+  notFoundError?: () => TrackVersionError;
+}
+
+async function handleTrackVersionOperation<T>(
+  operation: () => Promise<{ data: T | null; error: PostgrestError | null }>,
+  { action, errorMessage, payload, notFoundError }: OperationOptions,
+): Promise<Result<T>> {
+  const context = `${TRACK_VERSIONS_CONTEXT}.${action}`;
+
+  const { data, error } = await operation();
+
+  if (error) {
+    const operationError = new TrackVersionError(errorMessage, context, error);
+    logError(errorMessage, operationError, context, {
+      ...payload,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+    });
+    return { ok: false, error: operationError };
+  }
+
+  if (!data) {
+    const missingError = notFoundError?.() ?? new TrackVersionError(errorMessage, context);
+    logError(errorMessage, missingError, context, payload);
+    throw missingError;
+  }
+
+  return { ok: true, data };
+}
+
+export function unwrapResult<T, E extends Error = TrackVersionError>(result: Result<T, E>): T {
+  if (!result.ok) {
+    throw result.error;
+  }
+
+  return result.data;
+}
+
+export async function createTrackVersion(payload: TrackVersionInsert): Promise<Result<TrackVersionRow>> {
+  return handleTrackVersionOperation(
+    () =>
+      supabase
+        .from('track_versions')
+        .insert(payload)
+        .select()
+        .single<TrackVersionRow>(),
+    {
+      action: 'create',
+      errorMessage: 'Failed to create track version',
+      payload: {
+        parentTrackId: payload.parent_track_id,
+        versionNumber: payload.version_number,
+        hasAudioUrl: Boolean(payload.audio_url),
+      },
+    },
+  );
+}
+
+export async function updateTrackVersion(
+  versionId: string,
+  updates: TrackVersionUpdate,
+): Promise<Result<TrackVersionRow>> {
+  return handleTrackVersionOperation(
+    () =>
+      supabase
+        .from('track_versions')
+        .update(updates)
+        .eq('id', versionId)
+        .select()
+        .single<TrackVersionRow>(),
+    {
+      action: 'update',
+      errorMessage: 'Failed to update track version',
+      payload: {
+        versionId,
+        updates,
+      },
+      notFoundError: () => new TrackVersionNotFoundError(`${TRACK_VERSIONS_CONTEXT}.update`, versionId),
+    },
+  );
+}
+
+export async function deleteTrackVersion(versionId: string): Promise<Result<TrackVersionRow>> {
+  return handleTrackVersionOperation(
+    () =>
+      supabase
+        .from('track_versions')
+        .delete()
+        .eq('id', versionId)
+        .select()
+        .single<TrackVersionRow>(),
+    {
+      action: 'delete',
+      errorMessage: 'Failed to delete track version',
+      payload: {
+        versionId,
+      },
+      notFoundError: () => new TrackVersionNotFoundError(`${TRACK_VERSIONS_CONTEXT}.delete`, versionId),
+    },
+  );
+}
 
 interface SunoMetadataEntry {
   id?: string;
@@ -58,6 +193,8 @@ export interface TrackWithVersions {
   status?: string;
   user_id?: string;
   metadata?: TrackMetadata | null;
+  suno_id?: string;
+  created_at?: string;
 }
 
 /**
@@ -106,6 +243,9 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       style_tags: mainTrack.style_tags ?? undefined,
       status: mainTrack.status,
       user_id: mainTrack.user_id,
+      suno_id: mainTrack.suno_id ?? undefined,
+      created_at: mainTrack.created_at ?? undefined,
+      metadata: (mainTrack.metadata as TrackMetadata | null) ?? null,
     });
 
     if (versions && versions.length > 0) {
@@ -123,6 +263,9 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
           lyrics: version.lyrics ?? undefined,
           style_tags: mainTrack.style_tags ?? undefined,
           user_id: mainTrack.user_id,
+          suno_id: version.suno_id ?? undefined,
+          created_at: version.created_at ?? undefined,
+          metadata: (version.metadata as TrackMetadata | null) ?? null,
         });
       });
     }
@@ -153,7 +296,8 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
             lyrics: mainTrack.lyrics ?? undefined,
             style_tags: mainTrack.style_tags ?? undefined,
             user_id: mainTrack.user_id,
-            status: 'completed'
+            status: 'completed',
+            metadata: (mainTrack.metadata as TrackMetadata | null) ?? null,
           });
         });
       }
