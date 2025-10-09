@@ -68,13 +68,55 @@ export const supabase = createSupabaseClient();
 
 const originalInvoke = supabase.functions.invoke.bind(supabase.functions);
 
-supabase.functions.invoke = (async (functionName, options = {}) =>
-  originalInvoke(functionName, {
+const ensureAuthHeader = async (
+  headers: Record<string, string>
+): Promise<Record<string, string>> => {
+  if (typeof window === "undefined") {
+    return headers;
+  }
+
+  const hasAuthHeader = Object.keys(headers).some(
+    (key) => key.toLowerCase() === "authorization"
+  );
+
+  if (hasAuthHeader) {
+    return headers;
+  }
+
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (session?.access_token) {
+      return {
+        ...headers,
+        Authorization: `Bearer ${session.access_token}`,
+      };
+    }
+  } catch (error) {
+    console.warn(
+      "Failed to attach Supabase auth header for edge function invoke",
+      error
+    );
+  }
+
+  return headers;
+};
+
+supabase.functions.invoke = (async (functionName, options = {}) => {
+  const normalizedHeaders = normalizeHeaders(options.headers);
+  const headersWithAuth = await ensureAuthHeader(normalizedHeaders);
+
+  const headers =
+    typeof window === "undefined"
+      ? { ...headersWithAuth, "x-app-environment": appEnv.appEnv }
+      : headersWithAuth;
+
+  return originalInvoke(functionName, {
     ...options,
     // Avoid adding custom headers in the browser to prevent CORS/preflight failures.
     // On server-side (SSR) we can include environment hint header if needed.
-    headers:
-      typeof window === "undefined"
-        ? { ...normalizeHeaders(options.headers), "x-app-environment": appEnv.appEnv }
-        : normalizeHeaders(options.headers),
-  })) as typeof supabase.functions.invoke;
+    headers,
+  });
+}) as typeof supabase.functions.invoke;
