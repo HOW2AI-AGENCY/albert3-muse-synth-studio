@@ -25,6 +25,8 @@ import {
 
 // Ленивая загрузка админ-панели (защищенный роут)
 const LazyAdmin = lazy(() => import('./pages/workspace/Admin'));
+// Ленивая загрузка страницы диагностики Edge Functions
+const LazyEdgeFunctionsDebug = lazy(() => import('./pages/debug/EdgeFunctionsDebug'));
 
 // Компонент загрузки
 const LoadingSpinner = () => (
@@ -68,6 +70,15 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
+              {/* Debug route for Edge Functions connectivity */}
+              <Route 
+                path="/debug/edge-functions" 
+                element={
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <LazyEdgeFunctionsDebug />
+                  </Suspense>
+                } 
+              />
               
               {/* Protected Workspace Routes */}
               <Route
