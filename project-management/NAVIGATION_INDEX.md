@@ -1,8 +1,8 @@
 # 🧭 Навигация по проекту Albert3 Muse Synth Studio
 
-**Последнее обновление**: 10 октября 2025
+**Последнее обновление**: 13 октября 2025
 **Версия**: 2.6.2
-**Текущий Sprint**: Sprint 24 (ПЛАНИРОВАНИЕ)
+**Текущий Sprint**: Sprint 24 (В РАБОТЕ · НЕДЕЛЯ 0)
 **Следующий Sprint**: Sprint 25 (ПОДГОТОВКА)
 
 Этот документ поможет быстро найти нужную информацию в проекте.
@@ -15,6 +15,7 @@
 - 🚀 [Начало работы](../SETUP-GUIDE.md) - установка и настройка
 - ✅ [Sprint 23 Отчет](reports/sprint-23-report.md) - результаты завершённого спринта
 - 📋 [Sprint 24 План](tasks/sprint-24-plan.md) - текущий спринт
+- 🧱 [UI Components Registry](../docs/interface/COMPONENT_SYSTEM.md) - правила и покрытие компонентов
 - 🐛 [Troubleshooting](../docs/TROUBLESHOOTING_TRACKS.md) - решение проблем
 - 📋 [Быстрый справочник](QUICK-REFERENCE.md) - команды и shortcuts
 
@@ -24,6 +25,7 @@
 - 📈 [Technical Debt Plan](TECHNICAL_DEBT_PLAN.md) - план оптимизации
 - 📝 [История изменений](../CHANGELOG.md) - что было сделано
 - 🎯 [Roadmap](DEVELOPMENT_ROADMAP.md) - план развития
+- 📅 [Development Plan](../docs/DEVELOPMENT_PLAN.md) - детализация спринтов и недель
 
 ### Для аналитиков
 - 📊 [Team Dashboard](reports/team-dashboard.md) - метрики команды
@@ -31,6 +33,7 @@
 - 🕵️ [Repo Audit 10.10.2025](reports/2025-10-10-repo-audit.md) - сводка аудита
 - 🔒 [Security Report](../reports/security/SECURITY.md) - безопасность
 - ⚡ [Performance Report](../reports/performance/PERFORMANCE.md) - производительность
+- 🧾 [Sprint Journals](reports/sprint-logs.md) - оперативные заметки (новый раздел)
 
 ---
 
@@ -67,14 +70,15 @@ project-management/
 ├── NAVIGATION_INDEX.md          # Этот файл
 │
 ├── tasks/                       # Задачи и спринты
-│   ├── current-sprint.md        # Текущий Sprint 24
+│   ├── current-sprint.md        # Текущий Sprint 24 (неделя 0)
 │   ├── TASKS_STATUS.md          # Все задачи проекта
 │   └── backlog.md               # Бэклог
 │
 ├── reports/                     # Отчеты
 │   ├── team-dashboard.md        # Дашборд команды
 │   ├── automated-reports.md     # Автоматические отчеты
-│   └── sprint-*/                # Отчеты по спринтам
+│   ├── sprint-*/                # Отчеты по спринтам
+│   └── sprint-logs.md           # Журнал заметок (неделя 0 добавлена)
 │
 └── workflows/                   # Процессы разработки
     └── development.md           # Workflow разработки
@@ -135,13 +139,14 @@ archive/
 
 ### Воспроизведение треков
 - [Audio Player Context](../src/contexts/AudioPlayerContext.tsx)
-- [Track Versions](../src/components/tracks/TrackVersions.tsx)
+- [Track Versions UI](../src/features/tracks/components/TrackVersions.tsx)
 - [Player Components](../src/components/player/)
 
 ### Управление треками
 - [Tracks Hook](../src/hooks/useTracks.ts)
 - [Track Recovery Hook](../src/hooks/useTrackRecovery.ts)
 - [Track Sync Hook](../src/hooks/useTrackSync.ts)
+- [Track Versions](../src/features/tracks/components/TrackVersions.tsx)
 
 ### База данных
 - [Database Schema](../supabase/migrations/)

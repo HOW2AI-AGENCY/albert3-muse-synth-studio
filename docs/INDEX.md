@@ -10,8 +10,9 @@
 ### Для разработчиков
 - [👨‍💻 Руководство разработчика](DEVELOPER_GUIDE.md) - Настройка и разработка
 - [🏗️ Архитектура](ARCHITECTURE_DIAGRAMS.md) - 10+ диаграмм системы
-- [🧩 Компоненты](COMPONENT_GUIDE.md) - Документация компонентов
-- [🚀 План разработки](DEVELOPMENT_PLAN.md) - Sprint 19 детали
+- [🧩 Компоненты](COMPONENT_GUIDE.md) - Примеры и best practices
+- [🧱 Реестр UI-компонентов](interface/COMPONENT_SYSTEM.md) - Каталог и правила использования
+- [🚀 План разработки](DEVELOPMENT_PLAN.md) - Sprint 24 и подготовка Sprint 25
 
 ### Для менеджеров
 - [🚀 Roadmap](ROADMAP.md) - Планы развития
@@ -45,8 +46,8 @@
 - COMPONENT_GUIDE.md - Компоненты
 
 ### Планирование
-- DEVELOPMENT_PLAN.md ⭐ NEW - План развития
-- ROADMAP.md ⭐ NEW - Долгосрочные планы
+- DEVELOPMENT_PLAN.md ⭐ UPDATED - Sprint 24, readiness review
+- ROADMAP.md ⭐ UPDATED - Обновлённая дорожная карта v2.6.x
 
 ### Специальные темы
 - PERFORMANCE_OPTIMIZATIONS.md - Оптимизация
@@ -59,11 +60,12 @@
 ### Важные темы Sprint 24
 - Service Worker & Caching Policy — см. `public/sw.js`, а также разделы в `architecture/ARCHITECTURE.md` и `performance/PERFORMANCE.md`
 - Supabase Integration Notes — см. `storage/STORAGE_GUIDE.md` и `api/API.md`
-- Logger & Logs — см. `DEVELOPER_GUIDE.md` и `src/utils/logger.ts`
-- Dev Server — см. корневой `SETUP-GUIDE.md` и раздел «Быстрый старт» в `README.md`
+- Logger & Logs — см. `DEVELOPER_GUIDE.md`, `src/utils/logger.ts` и `project-management/TECHNICAL_DEBT_PLAN.md`
+- UI Component Registry — см. `interface/COMPONENT_SYSTEM.md` и `COMPONENT_GUIDE.md`
+- Dev Server & Docs validation — см. `SETUP-GUIDE.md` и `scripts/docs/validate.ts`
 
 ---
 
-⭐ **NEW** - Обновлено в Sprint 24
+⭐ **UPDATED** - Актуализировано в Sprint 24 (неделя 0)
 
-*Обновлено: Sprint 24*
+*Обновлено: 13 октября 2025*
