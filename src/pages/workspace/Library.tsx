@@ -14,8 +14,7 @@ import {
   SortDesc,
   Loader2,
 } from "lucide-react";
-import { TrackCard } from "@/components/TrackCard";
-import { TrackListItem } from "@/components/tracks/TrackListItem";
+import { TrackCard, TrackListItem } from "@/features/tracks";
 import { OptimizedTrackList } from "@/components/OptimizedTrackList";
 import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
 import { useTracks } from "@/hooks/useTracks";

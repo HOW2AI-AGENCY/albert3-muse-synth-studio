@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Music, Library, Settings, Sparkles, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useMemo } from "react";
-import { TrackCard } from "@/components/TrackCard";
+import { TrackCard } from "@/features/tracks";
 import { useToast } from "@/hooks/use-toast";
 import { normalizeTracks } from "@/utils/trackNormalizer";
 import { useDashboardData, DEFAULT_DASHBOARD_STATS } from "@/hooks/useDashboardData";

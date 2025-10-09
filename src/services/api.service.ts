@@ -6,7 +6,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError, handlePostgrestError, ensureData, handleSupabaseFunctionError } from "@/services/api/errors";
-import { trackCache, CachedTrack, getCachedTracks } from "@/utils/trackCache";
+import { trackCache, CachedTrack, getCachedTracks } from "@/features/tracks";
 import { logInfo, logError, logDebug, logWarn } from "@/utils/logger";
 
 type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];

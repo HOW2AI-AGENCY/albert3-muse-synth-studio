@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useTrackVersions } from '../useTrackVersions';
+import { useTrackVersions } from '@/features/tracks/hooks';
 
 const loggerMocks = vi.hoisted(() => ({ logInfo: vi.fn(), logError: vi.fn() }));
 vi.mock('@/utils/logger', () => ({
@@ -15,7 +15,7 @@ const trackVersionMocks = vi.hoisted(() => ({
   hasMultipleVersions: vi.fn(),
 }));
 
-vi.mock('@/utils/trackVersions', () => trackVersionMocks);
+vi.mock('@/features/tracks/api/trackVersions', () => trackVersionMocks);
 
 describe('useTrackVersions', () => {
   const sampleVersions = [

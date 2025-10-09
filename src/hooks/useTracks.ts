@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ApiService, Track, mapTrackRowToTrack } from "@/services/api.service";
 import { supabase } from "@/integrations/supabase/client";
-import { trackCache, CachedTrack } from "@/utils/trackCache";
+import { trackCache, CachedTrack } from "@/features/tracks";
 import type { Database } from "@/integrations/supabase/types";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 

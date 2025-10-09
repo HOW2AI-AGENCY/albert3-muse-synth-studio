@@ -6,7 +6,7 @@ import { PlayerQueue } from "./PlayerQueue";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
-import { useTrackLike } from "@/hooks/useTrackLike";
+import { useTrackLike } from "@/features/tracks";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";

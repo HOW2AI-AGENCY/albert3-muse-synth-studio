@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { DetailPanelContent } from "./DetailPanelContent";
+import { DetailPanelContent } from "@/components/workspace/DetailPanelContent";
 import { TrackDeleteDialog } from "@/components/tracks/TrackDeleteDialog";
 import { ApiService } from "@/services/api.service";
 

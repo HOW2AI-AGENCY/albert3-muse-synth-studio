@@ -4,7 +4,7 @@ import { logError, logInfo } from '@/utils/logger';
 import { cacheAudioFile } from '../utils/serviceWorker';
 import { AudioPlayerTrack } from '@/types/track';
 import { useToast } from '@/hooks/use-toast';
-import { getTrackWithVersions, TrackWithVersions } from '@/utils/trackVersions';
+import { getTrackWithVersions, TrackWithVersions } from '@/features/tracks';
 
 const AUDIO_EXTENSIONS = ['.mp3', '.wav', '.m4a', '.aac', '.flac', '.ogg', '.opus', '.webm'] as const;
 

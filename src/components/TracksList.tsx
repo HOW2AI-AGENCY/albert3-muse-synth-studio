@@ -1,6 +1,5 @@
 import { useEffect, useState, memo, useCallback } from "react";
-import { TrackCard } from "./TrackCard";
-import { TrackListItem } from "./tracks/TrackListItem";
+import { TrackCard, TrackListItem } from "@/features/tracks";
 import { ViewSwitcher } from "./tracks/ViewSwitcher";
 import { LoadingSkeleton } from "./ui/LoadingSkeleton";
 import { ApiService, Track as ApiTrack } from "@/services/api.service";

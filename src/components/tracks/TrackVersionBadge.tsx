@@ -11,7 +11,7 @@
  */
 
 import { Badge } from "@/components/ui/badge";
-import { useTrackVersionCount } from "@/hooks/useTrackVersions";
+import { useTrackVersionCount } from "@/features/tracks";
 import { Layers } from "lucide-react";
 
 interface TrackVersionBadgeProps {

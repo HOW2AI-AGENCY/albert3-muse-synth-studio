@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RefObject } from 'react';
 import type { AudioPlayerTrack } from '@/types/track';
 
-import { TrackVersions } from '../tracks/TrackVersions';
+import { TrackVersions } from '@/features/tracks';
 
 const audioPlayerMocks = vi.hoisted(() => ({
   useAudioPlayerMock: vi.fn(),

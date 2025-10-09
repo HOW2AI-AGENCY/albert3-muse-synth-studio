@@ -102,7 +102,7 @@ export const usePreloadComponent = <P extends object>(
 export const LazyMusicGenerator = createLazyComponent(
   async () => {
     const module = await import('./MusicGenerator');
-    return { default: module.MusicGenerator as ComponentType<any> };
+    return { default: module.MusicGenerator as ComponentType<unknown> };
   },
   <div className="animate-pulse bg-card/50 rounded-xl h-96" />,
   <div className="text-center p-8 text-muted-foreground">
@@ -121,7 +121,7 @@ export const LazyGlobalAudioPlayer = createLazyComponent(
 );
 
 export const LazyTrackCard = createLazyComponent(
-  () => import('./TrackCard'),
+  () => import('@/features/tracks/components/TrackCard'),
   <div className="animate-pulse bg-card/50 rounded-xl h-64" />,
   <div className="text-center p-4 text-muted-foreground">
     Ошибка загрузки карточки трека

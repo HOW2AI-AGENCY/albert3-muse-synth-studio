@@ -39,7 +39,7 @@ const localStorageMock = (() => {
 vi.stubGlobal("localStorage", localStorageMock as unknown as Storage);
 
 const { ApiService } = await vi.importActual<typeof import("../api.service")>("../api.service");
-const { trackCache } = await vi.importActual<typeof import("@/utils/trackCache")>("@/utils/trackCache");
+const { trackCache } = await vi.importActual<typeof import("@/features/tracks/api/trackCache")>("@/features/tracks/api/trackCache");
 
 describe("ApiService.generateMusic", () => {
   beforeEach(() => {
