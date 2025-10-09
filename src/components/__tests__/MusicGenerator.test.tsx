@@ -48,40 +48,36 @@ describe('MusicGenerator component', () => {
     const user = userEvent.setup();
     render(<MusicGenerator />);
 
-    const createButton = screen.getByRole('button', { name: 'Create' });
+    const createButton = screen.getByRole('button', { name: 'Создать трек' });
     await user.click(createButton);
 
     expect(toastMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        description: 'Введите описание или выберите вдохновение',
+        description: 'Введите описание трека',
       }),
     );
   });
 
-  it('shows warning when vocals enabled without lyrics and proceeds after confirmation', async () => {
+  it('starts generation with filled prompt and resets the form', async () => {
     const user = userEvent.setup();
     const onTrackGenerated = vi.fn();
 
     render(<MusicGenerator onTrackGenerated={onTrackGenerated} />);
 
-    const textarea = screen.getByPlaceholderText('Hip-hop, R&B, upbeat');
+    const textarea = screen.getByPlaceholderText('Опишите желаемую музыку, настроение и ключевые инструменты');
     await user.type(textarea, 'Test melody');
 
-    const createButton = screen.getByRole('button', { name: 'Create' });
+    const createButton = screen.getByRole('button', { name: 'Создать трек' });
     await user.click(createButton);
 
-    expect(await screen.findByText('Confirm generation')).toBeInTheDocument();
-
-    const continueButton = screen.getByRole('button', { name: 'Continue' });
-    await user.click(continueButton);
-
-    await waitFor(() => expect(musicGenerationMocks.generateMusic).toHaveBeenCalled());
+    await waitFor(() => expect(musicGenerationMocks.generateMusic).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(onTrackGenerated).toHaveBeenCalled());
     await waitFor(() => expect(textarea).toHaveValue(''));
 
     expect(musicGenerationMocks.generateMusic).toHaveBeenCalledWith(
       expect.objectContaining({
         prompt: expect.stringContaining('Test melody'),
+        hasVocals: true,
       }),
     );
   });
@@ -90,10 +86,10 @@ describe('MusicGenerator component', () => {
     const user = userEvent.setup();
     render(<MusicGenerator />);
 
-    const textarea = screen.getByPlaceholderText('Hip-hop, R&B, upbeat');
+    const textarea = screen.getByPlaceholderText('Опишите желаемую музыку, настроение и ключевые инструменты');
     await user.type(textarea, 'Initial idea');
 
-    const enhanceButton = screen.getByRole('button', { name: 'Enhance' });
+    const enhanceButton = screen.getAllByRole('button', { name: 'Улучшить' })[0];
     await user.click(enhanceButton);
 
     expect(musicGenerationMocks.improvePrompt).toHaveBeenCalledWith('Initial idea');

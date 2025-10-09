@@ -1,128 +1,90 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+
 import { MusicGenerator } from '../MusicGenerator';
 
-type MockGenerateOptions = {
-  prompt?: string;
-  [key: string]: unknown;
-};
+const toastMock = vi.hoisted(() => vi.fn());
 
-const generateMusicMock = vi.fn<(options?: MockGenerateOptions) => Promise<boolean>>();
-const improvePromptMock = vi.fn();
-const vibrateMock = vi.fn();
-const toastMock = vi.fn();
-
-const musicGenerationState = {
-  isGenerating: false,
-  isImproving: false,
-};
+const musicGenerationMocks = vi.hoisted(() => ({
+  hook: vi.fn(),
+  generateMusic: vi.fn(),
+  improvePrompt: vi.fn(),
+}));
 
 vi.mock('@/hooks/useMusicGeneration', () => ({
-  useMusicGeneration: () => ({
-    generateMusic: generateMusicMock,
-    isGenerating: musicGenerationState.isGenerating,
-    isImproving: musicGenerationState.isImproving,
-    improvePrompt: improvePromptMock,
-  }),
+  useMusicGeneration: (...args: unknown[]) => musicGenerationMocks.hook(...args),
 }));
 
 vi.mock('@/hooks/useHapticFeedback', () => ({
-  useHapticFeedback: () => ({
-    vibrate: vibrateMock,
-  }),
+  useHapticFeedback: () => ({ vibrate: vi.fn() }),
 }));
 
 vi.mock('@/hooks/use-toast', () => ({
-  useToast: () => ({
-    toast: toastMock,
-  }),
+  useToast: () => ({ toast: toastMock }),
 }));
 
 vi.mock('@/hooks/useProviderBalance', () => ({
   useProviderBalance: () => ({
-    balance: { balance: 5, currency: 'credits', provider: 'suno' },
+    balance: { balance: 7, currency: 'credits', provider: 'suno' },
     isLoading: false,
     error: null,
-    refetch: vi.fn(),
   }),
 }));
 
-describe('MusicGenerator vocal warning flow', () => {
+describe('MusicGenerator advanced interactions', () => {
   beforeEach(() => {
-    musicGenerationState.isGenerating = false;
-    musicGenerationState.isImproving = false;
-    generateMusicMock.mockReset();
-    generateMusicMock.mockResolvedValue(true);
-    vibrateMock.mockReset();
     toastMock.mockReset();
-  });
-
-  it('shows a confirmation dialog and uses stored parameters when confirmed', async () => {
-    const user = userEvent.setup();
-    render(<MusicGenerator />);
-
-    const descriptionField = screen.getByPlaceholderText('Hip-hop, R&B, upbeat');
-    await user.type(descriptionField, 'First idea');
-
-    const generateButton = screen.getByRole('button', { name: /Create/i });
-    await user.click(generateButton);
-
-    const warningText = await screen.findByText('Вокал включён, но текстов нет. Продолжить?');
-    expect(warningText).toBeInTheDocument();
-    expect(generateMusicMock).not.toHaveBeenCalled();
-
-    fireEvent.change(descriptionField, { target: { value: 'Second idea' } });
-
-    const continueButton = screen.getByRole('button', { name: /Continue/i });
-    await user.click(continueButton);
-
-    await waitFor(() => {
-      expect(generateMusicMock).toHaveBeenCalledTimes(1);
+    musicGenerationMocks.generateMusic.mockReset();
+    musicGenerationMocks.generateMusic.mockResolvedValue(true);
+    musicGenerationMocks.hook.mockReturnValue({
+      generateMusic: musicGenerationMocks.generateMusic,
+      improvePrompt: musicGenerationMocks.improvePrompt,
+      isGenerating: false,
+      isImproving: false,
     });
-
-    const callArgs = generateMusicMock.mock.calls[0]?.[0];
-    expect(callArgs?.prompt).toContain('First idea');
   });
 
-  it('cancels generation when dialog is dismissed', async () => {
+  it('switches to custom mode when adding lyrics from simple mode', async () => {
     const user = userEvent.setup();
     render(<MusicGenerator />);
 
-    const descriptionField = screen.getByPlaceholderText('Hip-hop, R&B, upbeat');
-    await user.type(descriptionField, 'Warning case');
+    const addLyricsButton = screen.getByRole('button', { name: 'Добавить лирику' });
+    await user.click(addLyricsButton);
 
-    const generateButton = screen.getByRole('button', { name: /Create/i });
-    await user.click(generateButton);
-
-    const warningText = await screen.findByText('Вокал включён, но текстов нет. Продолжить?');
-    expect(warningText).toBeInTheDocument();
-
-    const cancelButton = screen.getByRole('button', { name: /Cancel/i });
-    await user.click(cancelButton);
-
-    await waitFor(() => {
-      expect(screen.queryByText('Вокал включён, но текстов нет. Продолжить?')).not.toBeInTheDocument();
-    });
-
-    expect(generateMusicMock).not.toHaveBeenCalled();
+    expect(screen.getByPlaceholderText('Напишите или вставьте текст песни')).toBeInTheDocument();
   });
 
-  it('disables confirmation when generation improvements are active', async () => {
-    musicGenerationState.isImproving = true;
-
+  it('validates custom mode when no content is provided', async () => {
     const user = userEvent.setup();
     render(<MusicGenerator />);
 
-    const descriptionField = screen.getByPlaceholderText('Hip-hop, R&B, upbeat');
-    await user.type(descriptionField, 'Busy state');
+    const customTab = screen.getByRole('tab', { name: 'Custom' });
+    await user.click(customTab);
 
-    const generateButton = screen.getByRole('button', { name: /Create/i });
-    await user.click(generateButton);
+    const createButton = screen.getByRole('button', { name: 'Создать трек' });
+    await user.click(createButton);
 
-    const continueButton = await screen.findByRole('button', { name: /Continue/i });
-    expect(continueButton).toBeDisabled();
+    expect(toastMock).toHaveBeenCalledWith(
+      expect.objectContaining({ description: 'Заполните стиль или добавьте лирику' }),
+    );
+  });
 
-    musicGenerationState.isImproving = false;
+  it('shows audio influence controls after uploading an audio reference', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<MusicGenerator />);
+
+    const customTab = screen.getByRole('tab', { name: 'Custom' });
+    await user.click(customTab);
+
+    const advancedToggle = screen.getByText('Продвинутые настройки');
+    await user.click(advancedToggle);
+
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(['test'], 'reference.mp3', { type: 'audio/mpeg' });
+    fireEvent.change(fileInput, { target: { files: [file] } });
+
+    expect(await screen.findByText('reference.mp3')).toBeInTheDocument();
+    expect(screen.getByText('Audio influence')).toBeInTheDocument();
   });
 });
