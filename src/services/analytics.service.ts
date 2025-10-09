@@ -7,9 +7,9 @@ type SerializableMetric = Pick<Metric, 'id' | 'name' | 'delta' | 'value' | 'rati
   entries?: Array<Record<string, unknown>>;
 };
 
-const env = typeof import.meta !== 'undefined'
-  ? (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env ?? {}
-  : {};
+const env = typeof import.meta !== 'undefined' && import.meta.env
+  ? (import.meta.env as Record<string, string | undefined>)
+  : ({} as Record<string, string | undefined>);
 
 const analyticsEndpoint = env.VITE_ANALYTICS_ENDPOINT;
 const isSentryEnabled = Boolean(env.VITE_SENTRY_DSN);

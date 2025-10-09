@@ -93,7 +93,8 @@ const getSunoBalance = async () => {
     return { provider: 'suno', balance: 0, error: 'API key not configured' };
   }
 
-  const response = await fetch('https://studio-api.suno.ai/api/billing/info/', {
+  // Используем SunoAPI.org вместо официального API
+  const response = await fetch('https://api.sunoapi.org/api/v1/account/balance', {
     method: 'GET',
     headers: { 'Authorization': `Bearer ${SUNO_API_KEY}` },
   });
@@ -106,14 +107,22 @@ const getSunoBalance = async () => {
   }
 
   const data = await response.json();
-  return {
-    provider: 'suno',
-    balance: data.total_credits_left || 0,
-    currency: 'credits',
-    plan: data.plan_type || 'unknown',
-    monthly_limit: data.monthly_limit || 0,
-    monthly_usage: data.monthly_usage || 0,
-  };
+  // SunoAPI.org возвращает данные в формате { code, msg, data: { balance, currency } }
+  if (data.code === 200 && data.data) {
+    return {
+      provider: 'suno',
+      balance: data.data.balance || 0,
+      currency: data.data.currency || 'credits',
+      plan: data.data.plan || 'unknown',
+    };
+  } else {
+    return {
+      provider: 'suno',
+      balance: 0,
+      error: data.msg || 'Unknown error',
+      currency: 'credits',
+    };
+  }
 };
 
 const getReplicateBalance = async () => {

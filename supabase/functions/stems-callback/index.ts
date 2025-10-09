@@ -97,7 +97,8 @@ const mainHandler = async (req: Request) => {
     const versionMetadata = versionRecord ? getRecord(versionRecord.metadata) : null;
 
     const stemAssets = extractStemAssetsFromPayload(root);
-    const separationMode = determineSeparationMode(currentMode, stemAssets.length);
+    const derivedMode = stemAssets.length > 2 ? "split_stem" : "separate_vocal";
+    const separationMode = currentMode ?? derivedMode;
 
     const isSuccess = (code === 200 || code === undefined) && stemAssets.length > 0;
 
@@ -113,10 +114,6 @@ const mainHandler = async (req: Request) => {
       } else {
         deleteQuery.is("version_id", null);
       }
-    }
-
-    const derivedMode = stemAssets.length > 2 ? "split_stem" : "separate_vocal";
-    const separationMode = currentMode ?? derivedMode;
 
       const { error: deleteError } = await deleteQuery;
       if (deleteError) {

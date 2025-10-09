@@ -14,7 +14,7 @@ export interface BaseTrack {
   improved_prompt: string | null;
   duration: number | null;
   duration_seconds: number | null;
-  error_message: string | null;
+  error_message?: string | null;
   cover_url: string | null;
   video_url: string | null;
   suno_id: string | null;

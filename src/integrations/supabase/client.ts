@@ -11,7 +11,7 @@ const resolveStorage = (): Storage | undefined => {
   try {
     return window.localStorage;
   } catch (error) {
-    logError("Failed to access localStorage for Supabase auth", error instanceof Error ? error : new Error(String(error)), "SupabaseClient");
+    console.error("Failed to access localStorage for Supabase auth", error);
     return undefined;
   }
 };

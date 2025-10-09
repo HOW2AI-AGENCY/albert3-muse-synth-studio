@@ -64,7 +64,7 @@ const getGradientByTrackId = (trackId: string) => {
   return gradients[index];
 };
 
-const GenerationProgress: React.FC<{ track: Track }> = ({ track }) => {
+const GenerationProgress: React.FC<{ track: Track }> = () => {
   const [progress, setProgress] = useState(5);
   const [stage, setStage] = useState("Анализ промпта...");
 

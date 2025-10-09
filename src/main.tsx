@@ -3,7 +3,7 @@ import App from './App.tsx';
 import './index.css';
 import { initServiceWorker } from './utils/serviceWorker';
 import * as Sentry from '@sentry/react';
-import { BrowserTracing } from '@sentry/tracing';
+import { browserTracingIntegration } from '@sentry/react';
 import { AnalyticsService } from './services/analytics.service';
 import type { Metric } from 'web-vitals';
 
@@ -17,7 +17,7 @@ if (sentryDsn) {
 
   Sentry.init({
     dsn: sentryDsn,
-    integrations: [new BrowserTracing()],
+    integrations: [browserTracingIntegration()],
     tracesSampleRate,
     release: import.meta.env.VITE_SENTRY_RELEASE,
     environment: import.meta.env.VITE_SENTRY_ENVIRONMENT ?? import.meta.env.MODE,
@@ -50,7 +50,7 @@ if (typeof window !== 'undefined') {
   if ('requestIdleCallback' in window) {
     window.requestIdleCallback(() => scheduleRegistration());
   } else {
-    window.setTimeout(scheduleRegistration, 0);
+    setTimeout(scheduleRegistration, 0);
   }
 }
 
