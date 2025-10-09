@@ -16,6 +16,11 @@ import { cn } from "@/lib/utils";
 import { StyleRecommendationsPanel } from "./StyleRecommendationsPanel";
 import type { StylePreset } from "@/types/styles";
 import { getStyleById } from "@/data/music-styles";
+import {
+  createTrackDensityVars,
+  getTrackDensityClasses,
+  type TrackDensityMode,
+} from "@/features/tracks/ui/density";
 
 interface Track {
   id: string;
@@ -79,6 +84,7 @@ interface DetailPanelContentProps {
   onShare: () => void;
   onDelete: () => void;
   loadVersionsAndStems: () => void;
+  densityMode?: TrackDensityMode;
 }
 
 const formatDate = (date: string) => {
@@ -114,8 +120,11 @@ export const DetailPanelContent = ({
   onShare,
   onDelete,
   loadVersionsAndStems,
+  densityMode = "compact",
 }: DetailPanelContentProps) => {
   const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count || 0);
+  const densityVars = createTrackDensityVars(densityMode);
+  const densityClasses = getTrackDensityClasses(densityMode);
 
   const handlePresetApply = (preset: StylePreset) => {
     const presetGenre = preset.styleIds
@@ -136,65 +145,122 @@ export const DetailPanelContent = ({
   };
 
   return (
-    <TooltipProvider delayDuration={500}>
-    <div className="p-4 space-y-4">
-      {/* Quick Actions - только иконки */}
-      <div className="flex items-center justify-center gap-2">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className={cn(
-                "relative",
-                isLiked && "text-red-500"
-              )}
-              onClick={() => toggleLike()}
-            >
-              <Heart className={cn("h-5 w-5", isLiked && "fill-current")} />
-              {likeCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
-                  {likeCount}
-                </Badge>
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Избранное</TooltipContent>
-        </Tooltip>
+    <TooltipProvider delayDuration={200}>
+      <div
+        className={cn(
+          "p-[var(--track-density-panel-padding)]",
+          "space-y-[var(--track-density-section-gap)]",
+          densityClasses.fontSizeClass
+        )}
+        style={densityVars}
+      >
+        {/* Quick Actions - только иконки */}
+        <div className="flex items-center justify-center gap-[var(--track-density-action-gap)]">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className={cn(
+                  "relative",
+                  "rounded-full",
+                  isLiked && "text-red-500"
+                )}
+                style={{
+                  width: "var(--track-density-icon-button-size)",
+                  height: "var(--track-density-icon-button-size)",
+                }}
+                onClick={() => toggleLike()}
+                aria-label={isLiked ? "Убрать из избранного" : "Добавить в избранное"}
+              >
+                <Heart
+                  className={cn(
+                    "transition-colors",
+                    isLiked && "fill-current",
+                    "h-[var(--track-density-icon-size)] w-[var(--track-density-icon-size)]"
+                  )}
+                />
+                {likeCount > 0 && (
+                  <Badge
+                    className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px]"
+                    style={{ padding: "0" }}
+                  >
+                    {likeCount}
+                  </Badge>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent sideOffset={6} className="text-xs">
+              Избранное
+            </TooltipContent>
+          </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={onDownload} 
-              disabled={!track.audio_url}
-            >
-              <Download className="h-5 w-5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Скачать MP3</TooltipContent>
-        </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                style={{
+                  width: "var(--track-density-icon-button-size)",
+                  height: "var(--track-density-icon-button-size)",
+                }}
+                onClick={onDownload}
+                disabled={!track.audio_url}
+                aria-label="Скачать MP3"
+              >
+                <Download className="h-[var(--track-density-icon-size)] w-[var(--track-density-icon-size)]" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent sideOffset={6} className="text-xs">
+              Скачать MP3
+            </TooltipContent>
+          </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={onShare}>
-              <Share2 className="h-5 w-5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Поделиться</TooltipContent>
-        </Tooltip>
-      </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                style={{
+                  width: "var(--track-density-icon-button-size)",
+                  height: "var(--track-density-icon-button-size)",
+                }}
+                onClick={onShare}
+                aria-label="Поделиться"
+              >
+                <Share2 className="h-[var(--track-density-icon-size)] w-[var(--track-density-icon-size)]" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent sideOffset={6} className="text-xs">
+              Поделиться
+            </TooltipContent>
+          </Tooltip>
+        </div>
 
-      {/* Collapsible Sections */}
-      <Accordion type="multiple" defaultValue={["metadata"]} className="space-y-3">
+        {/* Collapsible Sections */}
+        <Accordion
+          type="multiple"
+          defaultValue={["metadata"]}
+          className="space-y-[var(--track-density-section-gap)]"
+        >
         {/* Versions */}
         {versions.length > 0 && (
-          <AccordionItem value="versions" className="border rounded-lg px-4">
-            <AccordionTrigger className="text-sm py-3 hover:no-underline">
+          <AccordionItem
+            value="versions"
+            className="overflow-hidden rounded-[var(--track-density-section-radius)] border border-border/40 bg-card/50 backdrop-blur"
+          >
+            <AccordionTrigger
+              className={cn(
+                "hover:no-underline font-medium",
+                densityClasses.fontSizeClass,
+                "px-[var(--track-density-section-padding-inline)] py-[var(--track-density-section-padding-block)]"
+              )}
+            >
               Версии ({versions.length})
             </AccordionTrigger>
-            <AccordionContent className="pb-3">
+            <AccordionContent
+              className="px-[var(--track-density-section-padding-inline)] pb-[var(--track-density-section-padding-block)]"
+            >
               <TrackVersions
                 trackId={track.id}
                 versions={versions}
@@ -206,11 +272,22 @@ export const DetailPanelContent = ({
 
         {/* Stems */}
         {track.status === 'completed' && track.audio_url && (
-          <AccordionItem value="stems" className="border rounded-lg px-4">
-            <AccordionTrigger className="text-sm py-3 hover:no-underline">
+          <AccordionItem
+            value="stems"
+            className="overflow-hidden rounded-[var(--track-density-section-radius)] border border-border/40 bg-card/50 backdrop-blur"
+          >
+            <AccordionTrigger
+              className={cn(
+                "hover:no-underline font-medium",
+                densityClasses.fontSizeClass,
+                "px-[var(--track-density-section-padding-inline)] py-[var(--track-density-section-padding-block)]"
+              )}
+            >
               Стемы {stems.length > 0 && `(${stems.length})`}
             </AccordionTrigger>
-            <AccordionContent className="pb-3">
+            <AccordionContent
+              className="px-[var(--track-density-section-padding-inline)] pb-[var(--track-density-section-padding-block)]"
+            >
               <TrackStemsPanel
                 trackId={track.id}
                 stems={stems}
@@ -221,11 +298,22 @@ export const DetailPanelContent = ({
         )}
 
         {/* Metadata */}
-        <AccordionItem value="metadata" className="border rounded-lg px-4">
-          <AccordionTrigger className="text-sm py-3 hover:no-underline">
+        <AccordionItem
+          value="metadata"
+          className="overflow-hidden rounded-[var(--track-density-section-radius)] border border-border/40 bg-card/50 backdrop-blur"
+        >
+          <AccordionTrigger
+            className={cn(
+              "hover:no-underline font-medium",
+              densityClasses.fontSizeClass,
+              "px-[var(--track-density-section-padding-inline)] py-[var(--track-density-section-padding-block)]"
+            )}
+          >
             Метаданные
           </AccordionTrigger>
-          <AccordionContent className="space-y-3 pb-3">
+          <AccordionContent
+            className="space-y-[var(--track-density-field-gap)] px-[var(--track-density-section-padding-inline)] pb-[var(--track-density-section-padding-block)]"
+          >
             {/* Название без лейбла */}
             <div className="relative">
               <Input
@@ -233,19 +321,21 @@ export const DetailPanelContent = ({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Название трека"
-                className="h-10 text-sm"
+                className={cn("px-3", densityClasses.fontSizeClass)}
+                style={{ height: "var(--track-density-control-height)" }}
               />
             </div>
 
             {/* Жанр и Настроение в одной строке без лейблов */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-[var(--track-density-field-gap)]">
               <div className="relative">
                 <Input
                   id="genre"
                   value={genre}
                   onChange={(e) => setGenre(e.target.value)}
                   placeholder="Жанр"
-                  className="h-10 text-sm"
+                  className={cn("px-3", densityClasses.fontSizeClass)}
+                  style={{ height: "var(--track-density-control-height)" }}
                 />
               </div>
 
@@ -255,30 +345,48 @@ export const DetailPanelContent = ({
                   value={mood}
                   onChange={(e) => setMood(e.target.value)}
                   placeholder="Настроение"
-                  className="h-10 text-sm"
+                  className={cn("px-3", densityClasses.fontSizeClass)}
+                  style={{ height: "var(--track-density-control-height)" }}
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-between py-2">
+            <div className="flex items-center justify-between py-[var(--track-density-section-padding-block)]">
               <div className="space-y-0.5">
-                <Label className="text-sm">Публичный</Label>
-                <p className="text-xs text-muted-foreground">Доступен всем</p>
+                <Label className={cn("font-medium", densityClasses.labelSizeClass)}>Публичный</Label>
+                <p className="text-[0.7rem] text-muted-foreground">Доступен всем</p>
               </div>
               <Switch checked={isPublic} onCheckedChange={setIsPublic} />
             </div>
 
-            <Button size="default" className="w-full" onClick={onSave} disabled={isSaving}>
+            <Button
+              size="sm"
+              className="w-full"
+              style={{ height: "var(--track-density-control-height)" }}
+              onClick={onSave}
+              disabled={isSaving}
+            >
               {isSaving ? "Сохранение..." : "Сохранить"}
             </Button>
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="ai-style" className="border rounded-lg px-4">
-          <AccordionTrigger className="text-sm py-3 hover:no-underline">
+        <AccordionItem
+          value="ai-style"
+          className="overflow-hidden rounded-[var(--track-density-section-radius)] border border-border/40 bg-card/50 backdrop-blur"
+        >
+          <AccordionTrigger
+            className={cn(
+              "hover:no-underline font-medium",
+              densityClasses.fontSizeClass,
+              "px-[var(--track-density-section-padding-inline)] py-[var(--track-density-section-padding-block)]"
+            )}
+          >
             AI рекомендации по стилю
           </AccordionTrigger>
-          <AccordionContent className="pb-3">
+          <AccordionContent
+            className="px-[var(--track-density-section-padding-inline)] pb-[var(--track-density-section-padding-block)]"
+          >
             <StyleRecommendationsPanel
               mood={mood}
               genre={genre}
@@ -292,15 +400,26 @@ export const DetailPanelContent = ({
 
         {/* Tags & Details */}
         {(track.style_tags && track.style_tags.length > 0 || track.suno_id || track.model_name || track.lyrics) && (
-          <AccordionItem value="details" className="border rounded-lg px-4">
-            <AccordionTrigger className="text-sm py-3 hover:no-underline">
+          <AccordionItem
+            value="details"
+            className="overflow-hidden rounded-[var(--track-density-section-radius)] border border-border/40 bg-card/50 backdrop-blur"
+          >
+            <AccordionTrigger
+              className={cn(
+                "hover:no-underline font-medium",
+                densityClasses.fontSizeClass,
+                "px-[var(--track-density-section-padding-inline)] py-[var(--track-density-section-padding-block)]"
+              )}
+            >
               Детали
             </AccordionTrigger>
-            <AccordionContent className="space-y-3 pb-3">
+            <AccordionContent
+              className="space-y-[var(--track-density-field-gap)] px-[var(--track-density-section-padding-inline)] pb-[var(--track-density-section-padding-block)]"
+            >
               {/* Style Tags */}
               {track.style_tags && track.style_tags.length > 0 && (
                 <div className="space-y-2">
-                  <Label className="text-sm">Теги стиля</Label>
+                  <Label className={cn("font-medium", densityClasses.labelSizeClass)}>Теги стиля</Label>
                   <div className="flex flex-wrap gap-1.5">
                     {track.style_tags.map((tag: string, i: number) => (
                       <Badge key={i} variant="secondary" className="text-xs px-2 py-0.5">
@@ -314,17 +433,18 @@ export const DetailPanelContent = ({
               {/* Suno Details */}
               {(track.suno_id || track.model_name) && (
                 <div className="space-y-2">
-                  <Label className="text-sm">Генерация</Label>
+                  <Label className={cn("font-medium", densityClasses.labelSizeClass)}>Генерация</Label>
                   <div className="space-y-1 text-sm text-muted-foreground">
                     {track.model_name && <p>Модель: {track.model_name}</p>}
                     {track.suno_id && <p className="font-mono text-xs">ID: {track.suno_id}</p>}
                   </div>
-                  
+
                   {track.suno_id && (
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full justify-start h-9 text-sm"
+                      className={cn("w-full justify-start", densityClasses.fontSizeClass)}
+                      style={{ height: "var(--track-density-control-height)" }}
                       onClick={() => window.open(`https://suno.com/song/${track.suno_id}`, "_blank")}
                     >
                       <ExternalLink className="h-4 w-4 mr-2" />
@@ -336,7 +456,8 @@ export const DetailPanelContent = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full justify-start h-9 text-sm"
+                      className={cn("w-full justify-start", densityClasses.fontSizeClass)}
+                      style={{ height: "var(--track-density-control-height)" }}
                       onClick={() => window.open(track.video_url, "_blank")}
                     >
                       <Play className="h-4 w-4 mr-2" />
@@ -349,11 +470,11 @@ export const DetailPanelContent = ({
               {/* Lyrics */}
               {track.lyrics && (
                 <div className="space-y-2">
-                  <Label className="text-sm">Текст</Label>
+                  <Label className={cn("font-medium", densityClasses.labelSizeClass)}>Текст</Label>
                   <Textarea
                     value={track.lyrics}
                     readOnly
-                    className="min-h-[100px] resize-none text-sm"
+                    className={cn("min-h-[100px] resize-none", densityClasses.fontSizeClass)}
                   />
                 </div>
               )}
@@ -362,62 +483,90 @@ export const DetailPanelContent = ({
         )}
 
         {/* Statistics - только иконки и цифры */}
-        <AccordionItem value="stats" className="border rounded-lg px-3">
-          <AccordionTrigger className="text-sm py-2 hover:no-underline">
+        <AccordionItem
+          value="stats"
+          className="overflow-hidden rounded-[var(--track-density-section-radius)] border border-border/40 bg-card/50 backdrop-blur"
+        >
+          <AccordionTrigger
+            className={cn(
+              "hover:no-underline font-medium",
+              densityClasses.fontSizeClass,
+              "px-[var(--track-density-section-padding-inline)] py-[var(--track-density-section-padding-block)]"
+            )}
+          >
             Статистика
           </AccordionTrigger>
-          <AccordionContent className="pb-2">
-            <div className="grid grid-cols-2 gap-3">
+          <AccordionContent
+            className="px-[var(--track-density-section-padding-inline)] pb-[var(--track-density-section-padding-block)]"
+          >
+            <div className="grid grid-cols-2 gap-[var(--track-density-field-gap)]">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1.5 text-sm">
-                    <Eye className="h-4 w-4 text-muted-foreground" />
+                    <Eye className="text-muted-foreground h-[calc(var(--track-density-icon-size)*0.85)] w-[calc(var(--track-density-icon-size)*0.85)]" />
                     <span className="font-medium">{track.view_count || 0}</span>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent>Просмотры</TooltipContent>
+                <TooltipContent className="text-xs">Просмотры</TooltipContent>
               </Tooltip>
 
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1.5 text-sm">
-                    <Heart className="h-4 w-4 text-muted-foreground" />
+                    <Heart className="text-muted-foreground h-[calc(var(--track-density-icon-size)*0.85)] w-[calc(var(--track-density-icon-size)*0.85)]" />
                     <span className="font-medium">{track.like_count || 0}</span>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent>Лайки</TooltipContent>
+                <TooltipContent className="text-xs">Лайки</TooltipContent>
               </Tooltip>
 
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1.5 text-sm">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <Calendar className="text-muted-foreground h-[calc(var(--track-density-icon-size)*0.85)] w-[calc(var(--track-density-icon-size)*0.85)]" />
                     <span className="font-medium text-xs">{track.created_at ? formatDate(track.created_at) : '—'}</span>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent>Дата создания</TooltipContent>
+                <TooltipContent className="text-xs">Дата создания</TooltipContent>
               </Tooltip>
 
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1.5 text-sm">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <Clock className="text-muted-foreground h-[calc(var(--track-density-icon-size)*0.85)] w-[calc(var(--track-density-icon-size)*0.85)]" />
                     <span className="font-medium">{formatDuration(track.duration_seconds)}</span>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent>Длительность</TooltipContent>
+                <TooltipContent className="text-xs">Длительность</TooltipContent>
               </Tooltip>
             </div>
           </AccordionContent>
         </AccordionItem>
 
         {/* Prompt */}
-        <AccordionItem value="prompt" className="border rounded-lg px-3">
-          <AccordionTrigger className="text-sm py-2 hover:no-underline">
+        <AccordionItem
+          value="prompt"
+          className="overflow-hidden rounded-[var(--track-density-section-radius)] border border-border/40 bg-card/50 backdrop-blur"
+        >
+          <AccordionTrigger
+            className={cn(
+              "hover:no-underline font-medium",
+              densityClasses.fontSizeClass,
+              "px-[var(--track-density-section-padding-inline)] py-[var(--track-density-section-padding-block)]"
+            )}
+          >
             Промпт
           </AccordionTrigger>
-          <AccordionContent className="pb-2">
-            <div className="p-2 rounded-md bg-muted text-xs text-muted-foreground">
+          <AccordionContent
+            className="px-[var(--track-density-section-padding-inline)] pb-[var(--track-density-section-padding-block)]"
+          >
+            <div
+              className={cn(
+                "rounded-md bg-muted/70 text-muted-foreground",
+                densityClasses.fontSizeClass,
+                "p-3"
+              )}
+            >
               {track.prompt}
             </div>
           </AccordionContent>
@@ -425,15 +574,21 @@ export const DetailPanelContent = ({
       </Accordion>
 
       {/* Danger Zone */}
-      <div className="pt-2 space-y-2">
+      <div className="space-y-2 pt-[var(--track-density-section-gap)]">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="destructive" size="sm" className="w-full" onClick={onDelete}>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="w-full"
+              style={{ height: "var(--track-density-control-height)" }}
+              onClick={onDelete}
+            >
               <Trash2 className="h-3.5 w-3.5 mr-1.5" />
               Удалить трек
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Удалить трек безвозвратно</TooltipContent>
+          <TooltipContent className="text-xs">Удалить трек безвозвратно</TooltipContent>
         </Tooltip>
       </div>
     </div>

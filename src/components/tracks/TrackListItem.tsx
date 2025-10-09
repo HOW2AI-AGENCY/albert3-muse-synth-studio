@@ -267,7 +267,20 @@ export const TrackListItem: React.FC<TrackListItemProps> = memo(({
           )}>
             {track.title}
           </h3>
-          
+
+          {track.is_public && (
+            <Badge
+              variant="outline"
+              className={cn(
+                "flex items-center gap-1 rounded-full border-border/40 bg-[hsl(var(--surface-variant))]/70 text-[hsl(var(--foreground))]/80 backdrop-blur supports-[backdrop-filter]:bg-[hsl(var(--surface-variant))]/55",
+                compact ? "px-1.5 py-0 text-[0.6rem]" : "px-2 py-0.5 text-[0.65rem]"
+              )}
+            >
+              <span className="block h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+              Публичный
+            </Badge>
+          )}
+
           {/* Индикатор воспроизведения */}
           {isCurrentlyPlaying && (
             <div className="flex items-center gap-1">

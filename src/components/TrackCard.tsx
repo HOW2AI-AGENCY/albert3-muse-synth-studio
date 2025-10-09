@@ -39,6 +39,7 @@ interface Track {
   lyrics?: string;
   like_count?: number;
   view_count?: number;
+  is_public?: boolean;
 }
 
 interface TrackCardProps {
@@ -243,6 +244,15 @@ const DefaultTrackCard: React.FC<
       tabIndex={0}
     >
       <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
+        {track.is_public && (
+          <Badge
+            variant="outline"
+            className="absolute left-3 top-3 flex items-center gap-1 rounded-full border-border/40 bg-[hsl(var(--surface-variant))]/80 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-[hsl(var(--foreground))]/80 backdrop-blur supports-[backdrop-filter]:bg-[hsl(var(--surface-variant))]/60"
+          >
+            <span className="block h-1.5 w-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
+            Публичный
+          </Badge>
+        )}
         {track.status === 'processing' && <GenerationProgress track={track} />}
         {track.status === 'failed' && <FailedState track={track} />}
         {track.status === 'completed' && (

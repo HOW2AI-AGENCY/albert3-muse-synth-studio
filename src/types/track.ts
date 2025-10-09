@@ -26,6 +26,7 @@ export interface BaseTrack {
   has_stems?: boolean | null;
   like_count?: number | null;
   view_count?: number | null;
+  is_public?: boolean | null;
 }
 
 // Трек для аудиоплеера (требует обязательный audio_url)
@@ -58,6 +59,7 @@ export interface DisplayTrack {
   created_at?: string;
   duration?: number;
   error_message?: string;
+  is_public?: boolean;
 }
 
 // Упрощенный трек для оптимизированных списков
@@ -178,6 +180,7 @@ export const convertToDisplayTrack = (track: BaseTrack): DisplayTrack => {
     prompt: track.prompt,
     created_at: track.created_at,
     duration: track.duration || undefined,
+    is_public: track.is_public ?? undefined,
   };
 };
 

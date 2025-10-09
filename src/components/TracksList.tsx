@@ -218,6 +218,7 @@ const TracksListComponent = ({
                       genre: track.genre ?? undefined,
                       like_count: track.like_count ?? undefined,
                       view_count: track.view_count ?? undefined,
+                      is_public: track.is_public ?? undefined,
                       error_message: track.error_message ?? undefined,
                     }}
                     onDownload={() => handleDownload(typedTrack)}
@@ -287,6 +288,7 @@ const TracksListComponent = ({
                       style_tags: track.style_tags ?? undefined,
                       like_count: track.like_count ?? undefined,
                       has_stems: track.has_stems ?? undefined,
+                      is_public: track.is_public ?? undefined,
                       error_message: track.error_message ?? undefined,
                     }}
                     onDownload={() => handleDownload(typedTrack)}

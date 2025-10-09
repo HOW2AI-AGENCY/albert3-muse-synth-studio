@@ -1,0 +1,27 @@
+<svg width="480" height="260" viewBox="0 0 480 260" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .label { font: 700 16px 'Inter', system-ui; fill: #111827; }
+    .subtitle { font: 400 12px 'Inter', system-ui; fill: #6b7280; }
+    .chip { fill: #ede9fe; stroke: #7c3aed; stroke-width: 1; rx: 14; }
+    .chip-text { font: 500 12px 'Inter', system-ui; fill: #5b21b6; }
+  </style>
+  <rect width="480" height="260" fill="#f8fafc" rx="24" />
+  <text x="24" y="34" class="label">Cozy density</text>
+  <text x="24" y="54" class="subtitle">Generous padding, 56px controls, 20px body text</text>
+  <g transform="translate(24,76)">
+    <rect width="432" height="68" fill="#ede9fe" rx="24" />
+    <rect x="20" y="18" width="32" height="32" fill="#ddd6fe" rx="16" />
+    <rect x="68" y="18" width="32" height="32" fill="#ddd6fe" rx="16" />
+    <rect x="116" y="18" width="32" height="32" fill="#ddd6fe" rx="16" />
+  </g>
+  <g transform="translate(24,152)">
+    <rect width="432" height="112" fill="#ede9fe" rx="28" />
+    <rect x="24" y="24" width="188" height="26" fill="#ddd6fe" rx="13" />
+    <rect x="232" y="24" width="188" height="26" fill="#ddd6fe" rx="13" />
+    <rect x="24" y="70" width="344" height="24" fill="#ddd6fe" rx="12" />
+  </g>
+  <g transform="translate(24,228)">
+    <rect width="236" height="36" class="chip" />
+    <text x="30" y="24" class="chip-text">Storytelling / presentation focus</text>
+  </g>
+</svg>
