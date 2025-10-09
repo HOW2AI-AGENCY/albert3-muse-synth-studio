@@ -4,3 +4,4 @@ export { TrackVersions } from './TrackVersions';
 export { TrackStemsPanel } from './TrackStemsPanel';
 export { TrackVersionMetadataPanel } from './TrackVersionMetadataPanel';
 export type { TrackVersionMetadata } from './TrackVersionMetadataPanel';
+export { TrackVersionComparison } from './TrackVersionComparison';
