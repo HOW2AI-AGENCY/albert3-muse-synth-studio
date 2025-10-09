@@ -3,7 +3,18 @@
 This document explains several runtime errors observed when loading the Lovable
 application so that they can be triaged quickly.
 
-## 1. `Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received`
+## 1. `Uncaught SyntaxError: Unexpected token 'export'` in `chrome-extension://…/settings.js`
+
+The Lovable browser extension ships its code as ES modules, but the
+`settings.js` bundle is injected into the page without `type="module"`.
+When Chrome parses that file as a classic script the first `export`
+statement throws a syntax error. Update the extension so that the injected
+`<script>` tag (or the background/content script declaration in the manifest)
+uses module semantics, or transpile the bundle to remove ESM syntax before it
+is injected. Until that change lands the error will appear on every page load,
+but it does not block the main React application from booting.
+
+## 2. `Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received`
 
 This message originates from the Chrome Extensions messaging API. A content or
 background script called `sendMessage` and returned `true` to indicate that it
@@ -13,7 +24,7 @@ never finished the async work. Review the extension logs and make sure every
 code path calls `sendResponse` or removes the `return true` when no async work
 is required.
 
-## 2. CORS error when calling `https://lovable-api.com/...`
+## 3. CORS error when calling `https://lovable-api.com/...`
 
 ```
 Access to fetch at 'https://lovable-api.com/...'
@@ -28,14 +39,14 @@ or proxy the request through infrastructure that performs the necessary CORS
 negotiation. Until the header is present the browser will prevent the client
 from reading the response, leading to `net::ERR_FAILED` in the console.
 
-## 3. `Resource::kQuotaBytesPerItem quota exceeded`
+## 4. `Resource::kQuotaBytesPerItem quota exceeded`
 
 Chrome imposes storage quotas on the `chrome.storage` API (and some other web
 storage surfaces). This error indicates that the payload being written exceeds
 the per-item quota (typically 8 KB). Reduce the size of the value being stored
 or switch to a storage mechanism with higher limits such as IndexedDB.
 
-## 4. `SES_UNCAUGHT_EXCEPTION: null`
+## 5. `SES_UNCAUGHT_EXCEPTION: null`
 
 The Secure ECMAScript (SES) runtime threw an unhandled exception while
 initialising the lockdown shim (`lockdown-install.js`). This usually means
@@ -43,7 +54,7 @@ another error occurred earlier and was swallowed. Check the stack trace for the
 original exception and ensure the SES lockdown script runs before any other
 third-party scripts that might violate its constraints.
 
-## 5. `401` from Supabase Edge Function `get-balance`
+## 6. `401` from Supabase Edge Function `get-balance`
 
 A 401 indicates the request lacked valid authentication. Confirm that the
 browser session has a valid Supabase access token and that the request includes
