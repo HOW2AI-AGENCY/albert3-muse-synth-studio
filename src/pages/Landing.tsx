@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { Music, Sparkles, Zap, Headphones, Wand2, Play, Heart } from "lucide-react";
 import { ApiService, Track } from "@/services/api.service";
+import { AnalyticsService } from "@/services/analytics.service";
 import { useAudioPlayerSafe } from "@/contexts/AudioPlayerContext";
 import heroBg from "@/assets/hero-bg.jpg";
 
@@ -24,6 +25,20 @@ const Landing = () => {
     };
     fetchFeaturedTracks();
   }, []);
+
+  useEffect(() => {
+    if (!featuredTracks.length) {
+      return;
+    }
+
+    featuredTracks.forEach((track) => {
+      if (track.id) {
+        AnalyticsService.recordView(track.id).catch((error) => {
+          console.error('Failed to record landing track view', error);
+        });
+      }
+    });
+  }, [featuredTracks]);
 
   return (
     <div className="min-h-screen bg-background">

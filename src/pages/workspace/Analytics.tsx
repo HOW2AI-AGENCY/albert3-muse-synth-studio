@@ -139,7 +139,10 @@ const Analytics = () => {
             <Eye className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gradient-primary">
+            <div
+              data-testid="analytics-total-views"
+              className="text-2xl font-bold text-gradient-primary"
+            >
               {overallStats?.totalViews || 0}
             </div>
           </CardContent>
@@ -151,7 +154,10 @@ const Analytics = () => {
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gradient-primary">
+            <div
+              data-testid="analytics-total-plays"
+              className="text-2xl font-bold text-gradient-primary"
+            >
               {overallStats?.totalPlays || 0}
             </div>
           </CardContent>
