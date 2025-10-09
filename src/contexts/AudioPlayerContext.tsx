@@ -6,6 +6,20 @@ import { AudioPlayerTrack } from '@/types/track';
 import { useToast } from '@/hooks/use-toast';
 import { getTrackWithVersions, TrackWithVersions } from '@/utils/trackVersions';
 
+const AUDIO_EXTENSIONS = ['.mp3', '.wav', '.m4a', '.aac', '.flac', '.ogg', '.opus', '.webm'] as const;
+
+export const hasKnownAudioExtension = (url: string): boolean => {
+  try {
+    const parsedUrl = new URL(url);
+    const pathname = parsedUrl.pathname.toLowerCase();
+    return AUDIO_EXTENSIONS.some(extension => pathname.endsWith(extension));
+  } catch {
+    const sanitized = url.split('?')[0]?.toLowerCase() ?? '';
+    const lastSegment = sanitized.split('/').pop() ?? '';
+    return AUDIO_EXTENSIONS.some(extension => lastSegment.endsWith(extension));
+  }
+};
+
 // Константы высот плеера для разных устройств
 export const PLAYER_HEIGHTS = {
   mobile: 72, // MiniPlayer высота
@@ -124,15 +138,17 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [autoPlayVersions, currentQueueIndex]);
 
+  const isKnownAudioExtension = useCallback((url: string) => hasKnownAudioExtension(url), []);
+
   // Мемоизированная функция воспроизведения трека
   const playTrack = useCallback(async (track: AudioPlayerTrack) => {
     // Нормализация URL - добавить .mp3 если отсутствует
     let audioUrl = track.audio_url;
-    if (audioUrl && !audioUrl.endsWith('.mp3') && !audioUrl.includes('?')) {
+    if (audioUrl && !isKnownAudioExtension(audioUrl) && !audioUrl.includes('?')) {
       audioUrl = audioUrl + '.mp3';
-      logInfo('Normalized audio URL', 'AudioPlayerContext', { 
-        original: track.audio_url, 
-        normalized: audioUrl 
+      logInfo('Normalized audio URL', 'AudioPlayerContext', {
+        original: track.audio_url,
+        normalized: audioUrl
       });
     }
     
@@ -256,7 +272,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       logError('Error in playTrack', error as Error, 'AudioPlayerContext', { trackId: normalizedTrack.id });
     }
-  }, [toast, loadVersions]);
+  }, [toast, loadVersions, isKnownAudioExtension]);
 
   // Мемоизированная функция воспроизведения трека с очередью
   const playTrackWithQueue = useCallback((track: AudioPlayerTrack, allTracks: AudioPlayerTrack[]) => {
