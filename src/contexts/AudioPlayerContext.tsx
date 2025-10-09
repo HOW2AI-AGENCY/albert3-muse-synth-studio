@@ -357,7 +357,9 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     setIsPlaying(false);
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.src = '';
+      audioRef.current.currentTime = 0;
+      audioRef.current.removeAttribute('src');
+      audioRef.current.load();
     }
   }, []);
 

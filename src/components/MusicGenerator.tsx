@@ -24,7 +24,7 @@ import {
   SlidersHorizontal,
   Upload,
 } from 'lucide-react';
-import { useMusicGeneration } from '@/hooks/useMusicGeneration';
+import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
 import { useProviderBalance } from '@/hooks/useProviderBalance';
@@ -71,7 +71,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     isGenerating,
     isImproving,
     improvePrompt,
-  } = useMusicGeneration();
+  } = useMusicGenerationStore();
 
   const { toast } = useToast();
   const { vibrate } = useHapticFeedback();
@@ -205,7 +205,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     }
 
     vibrate('medium');
-    const improved = await improvePrompt(trimmed);
+    const improved = await improvePrompt(trimmed, toast);
 
     if (!improved) {
       return;
@@ -330,22 +330,11 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     const params = prepareGenerationParams();
     vibrate('heavy');
 
-    try {
-      const started = await generateMusic(params);
-      if (!started) {
-        return;
-      }
+    const started = await generateMusic(params, toast, onTrackGenerated);
 
+    if (started) {
       resetFormState();
       setGenerationMode('simple');
-      onTrackGenerated?.();
-    } catch (error) {
-      console.error('Error generating music', error);
-      toast({
-        title: '❌ Ошибка',
-        description: 'Не удалось запустить генерацию.',
-        variant: 'destructive',
-      });
     }
   }, [
     generateMusic,

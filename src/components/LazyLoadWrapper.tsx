@@ -58,7 +58,10 @@ export const createLazyComponent = <P extends object>(
 
   const MemoizedLazyComponent = memo(React.forwardRef<unknown, P>((props, ref) => (
     <LazyLoadWrapper fallback={fallback} errorFallback={errorFallback}>
-      <LazyComponent {...props} ref={ref} />
+      {/* Attach ref to a container to avoid passing it to non-forwardRef children */}
+      <div ref={ref as React.RefObject<HTMLDivElement>}>
+        <LazyComponent {...props} />
+      </div>
     </LazyLoadWrapper>
   )));
 
