@@ -1,6 +1,13 @@
 import { vi } from 'vitest';
 import 'vitest-dom/extend-expect';
 
+vi.mock('@sentry/react', () => ({
+  withErrorBoundary: (component: unknown) => component,
+  captureException: vi.fn(),
+  withScope: vi.fn(),
+  configureScope: vi.fn(),
+}), { virtual: true });
+
 // Mock i18next
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

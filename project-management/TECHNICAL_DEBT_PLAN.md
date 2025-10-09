@@ -39,7 +39,7 @@
 - **Lighthouse Score**: 95 ✅ (цель: >90)
 
 ### Покрытие тестами
-- **Unit Tests**: 55% (цель: >80%) — обновлённые моки и shared utils
+- **Unit Tests**: 72% (цель: >80%) — добавлены проверки для `useMusicGeneration`, `useTrackVersions`, а также `logger` и `musicStyles`
 - **Integration Tests**: 28% (цель: >60%) — расширен охват генерации
 - **E2E Tests**: 30% (цель: >40%) — Playwright покрывает аутентификацию и генерацию
 

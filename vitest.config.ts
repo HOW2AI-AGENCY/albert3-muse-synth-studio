@@ -5,6 +5,11 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
+  resolve: {
+    alias: {
+      '@sentry/react': path.resolve(__dirname, 'src/test/mocks/sentry-react.ts'),
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',
