@@ -20,20 +20,6 @@ export const hasKnownAudioExtension = (url: string): boolean => {
   }
 };
 
-const AUDIO_EXTENSIONS = ['.mp3', '.wav', '.m4a', '.aac', '.flac', '.ogg', '.opus', '.webm'] as const;
-
-export const hasKnownAudioExtension = (url: string): boolean => {
-  try {
-    const parsedUrl = new URL(url);
-    const pathname = parsedUrl.pathname.toLowerCase();
-    return AUDIO_EXTENSIONS.some(extension => pathname.endsWith(extension));
-  } catch {
-    const sanitized = url.split('?')[0]?.toLowerCase() ?? '';
-    const lastSegment = sanitized.split('/').pop() ?? '';
-    return AUDIO_EXTENSIONS.some(extension => lastSegment.endsWith(extension));
-  }
-};
-
 // Константы высот плеера для разных устройств
 export const PLAYER_HEIGHTS = {
   mobile: 72, // MiniPlayer высота
