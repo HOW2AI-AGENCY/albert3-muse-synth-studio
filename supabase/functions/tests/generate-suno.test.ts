@@ -61,8 +61,8 @@ function mockPoller(recorder: string[]): PollSunoCompletionFn {
 }
 
 function installFetchMock(responders: Record<string, () => Response>) {
-  globalThis.fetch = async (input: Request | string, init?: RequestInit) => {
-    const url = typeof input === "string" ? input : input.url;
+  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === "string" ? input : (input instanceof URL ? input.href : input.url);
     for (const [prefix, handler] of Object.entries(responders)) {
       if (url.startsWith(prefix)) {
         return handler();

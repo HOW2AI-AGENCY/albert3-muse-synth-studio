@@ -54,9 +54,12 @@ export const createSecurityHeaders = () => {
 };
 
 export class RateLimitUnavailableError extends Error {
-  constructor(message: string, public cause?: unknown) {
+  override cause?: unknown;
+  
+  constructor(message: string, cause?: unknown) {
     super(message);
     this.name = "RateLimitUnavailableError";
+    this.cause = cause;
   }
 }
 

@@ -1,28 +1,8 @@
-import * as Sentry from "@sentry/deno";
-
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 interface LogContext {
   [key: string]: unknown;
   error?: unknown;
-}
-
-const SENTRY_DSN = Deno.env.get("SENTRY_DSN");
-const SENTRY_ENVIRONMENT = Deno.env.get("SENTRY_ENVIRONMENT") ?? Deno.env.get("SUPABASE_ENVIRONMENT") ?? "development";
-const SENTRY_RELEASE = Deno.env.get("SENTRY_RELEASE");
-const configuredSampleRate = Number(Deno.env.get("SENTRY_TRACES_SAMPLE_RATE") ?? "0");
-const tracesSampleRate = Number.isFinite(configuredSampleRate)
-  ? Math.min(Math.max(configuredSampleRate, 0), 1)
-  : 0;
-const isSentryEnabled = Boolean(SENTRY_DSN);
-
-if (isSentryEnabled) {
-  Sentry.init({
-    dsn: SENTRY_DSN!,
-    environment: SENTRY_ENVIRONMENT,
-    release: SENTRY_RELEASE,
-    tracesSampleRate,
-  });
 }
 
 const sensitiveKeywords = ["token", "key", "secret", "password", "authorization", "cookie", "credential"];
@@ -93,44 +73,12 @@ const errorReplacer = (_key: string, value: unknown) => {
   return value;
 };
 
-const captureSentryException = (message: string, context?: LogContext) => {
-  if (!isSentryEnabled) {
-    return;
-  }
-
-  const errorCandidate = context?.error instanceof Error
-    ? context.error
-    : new Error(message);
-
-  const maskedContext = maskContext(context);
-
-  Sentry.captureException(errorCandidate, (scope) => {
-    scope.setLevel("error");
-    scope.setContext("logger", {
-      message,
-      context: maskedContext,
-      timestamp: new Date().toISOString(),
-    });
-
-    if (maskedContext) {
-      scope.setExtras(maskedContext);
-    }
-
-    return scope;
-  });
-};
-
 export const withSentry = <Args extends unknown[], Result>(
   handler: (...args: Args) => Result | Promise<Result>,
-  options?: { transaction?: string },
+  _options?: { transaction?: string },
 ) => {
   return async (...args: Args): Promise<Result> => {
-    try {
-      return await handler(...args);
-    } catch (error) {
-      captureSentryException(`Unhandled exception in ${options?.transaction ?? "edge-function"}`, { error });
-      throw error;
-    }
+    return await handler(...args);
   };
 };
 
@@ -151,7 +99,6 @@ const log = (level: LogLevel, message: string, context?: LogContext) => {
   switch (level) {
     case 'error':
       console.error(text);
-      captureSentryException(message, context);
       break;
     case 'warn':
       console.warn(text);

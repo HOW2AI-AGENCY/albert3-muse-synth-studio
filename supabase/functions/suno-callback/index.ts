@@ -247,7 +247,7 @@ const mainHandler = async (req: Request) => {
         ? rawTags
             .split(/[,;]/)
             .map((tag: string) => sanitizeText(tag) || undefined)
-            .filter((tag): tag is string => Boolean(tag))
+            .filter((tag: string | undefined): tag is string => Boolean(tag))
         : null;
 
       const metadataUpdate = {

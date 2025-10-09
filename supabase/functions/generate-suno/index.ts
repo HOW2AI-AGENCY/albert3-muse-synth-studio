@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { v4 as uuidv4 } from "https://deno.land/std@0.168.0/uuid/mod.ts";
+import { v4 } from "https://deno.land/std@0.168.0/uuid/mod.ts";
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { downloadAndUploadAudio, downloadAndUploadCover, downloadAndUploadVideo } from "../_shared/storage.ts";
@@ -90,7 +90,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     console.log('✅ [GENERATE-SUNO] User authenticated:', user.id);
 
     const { trackId, prompt, tags, title, make_instrumental, model_version, wait_audio } = body;
-    const idempotencyKey = body.idempotencyKey || uuidv4();
+    const idempotencyKey = body.idempotencyKey || crypto.randomUUID();
 
     const { data: existingJob } = await supabaseAdmin
       .from('ai_jobs')
@@ -446,6 +446,9 @@ const defaultPollSunoCompletion: PollSunoCompletionFn = async (
         const existingMetadata = (trackData?.metadata && typeof trackData.metadata === 'object') ? trackData.metadata as Record<string, unknown> : {};
 
         console.log('📦 [STORAGE] Starting file uploads to Supabase Storage...');
+        if (!externalAudioUrl) {
+          throw new Error('Missing audio URL from Suno API');
+        }
         const audioUrl = await downloadAndUploadAudio(externalAudioUrl, trackId, userId, 'main.mp3', supabaseAdmin);
         let coverUrl = externalCoverUrl;
         if (externalCoverUrl) {
@@ -517,6 +520,10 @@ const defaultPollSunoCompletion: PollSunoCompletionFn = async (
             const versionSunoId = versionTrack.id;
             
             console.log(`📦 [VERSION ${i}] Uploading to Storage...`);
+            if (!externalVersionAudioUrl) {
+              logger.warn(`Missing audio URL for version ${i}`, { trackId, versionIndex: i });
+              continue;
+            }
             const versionAudioUrl = await downloadAndUploadAudio(externalVersionAudioUrl, trackId, userId, `version-${i}.mp3`, supabaseAdmin);
             let versionCoverUrl = externalVersionCoverUrl;
             if (externalVersionCoverUrl) {

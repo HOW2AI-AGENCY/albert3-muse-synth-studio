@@ -252,7 +252,7 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
     }
   }
 
-  const arrayCandidate = fromArray(data as unknown[]);
+  const arrayCandidate = Array.isArray(data) ? fromArray(data) : null;
   if (arrayCandidate) {
     return { taskId: arrayCandidate, jobId: null };
   }
