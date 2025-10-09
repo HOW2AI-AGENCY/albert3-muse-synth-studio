@@ -4,7 +4,21 @@ import { v4 } from "https://deno.land/std@0.168.0/uuid/mod.ts";
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { downloadAndUploadAudio, downloadAndUploadCover, downloadAndUploadVideo } from "../_shared/storage.ts";
-import { createSunoClient, SunoApiError } from "../_shared/suno.ts";
+import { createSunoClient, SunoApiError, type SunoGenerationPayload } from "../_shared/suno.ts";
+
+interface GenerateSunoRequestBody {
+  trackId?: string;
+  prompt?: string;
+  tags?: string[];
+  title?: string;
+  make_instrumental?: boolean;
+  model_version?: string;
+  wait_audio?: boolean;
+  idempotencyKey?: string;
+  lyrics?: string;
+  hasVocals?: boolean;
+  customMode?: boolean;
+}
 import {
   createSupabaseAdminClient,
   createSupabaseUserClient,
@@ -54,15 +68,59 @@ export const mainHandler = async (req: Request): Promise<Response> => {
 
     supabaseAdmin = createSupabaseAdminClient();
 
-    const body = await req.json();
+    const body = (await req.json()) as GenerateSunoRequestBody;
+    const hasLyricsInput = typeof body.lyrics === 'string';
+    const trimmedLyrics = hasLyricsInput ? body.lyrics.trim() : '';
+    const normalizedLyrics = hasLyricsInput
+      ? (trimmedLyrics.length > 0 ? body.lyrics : null)
+      : undefined;
+    const hasVocalsInput = typeof body.hasVocals === 'boolean';
+    const effectiveHasVocals = hasVocalsInput
+      ? body.hasVocals
+      : typeof body.make_instrumental === 'boolean'
+        ? !body.make_instrumental
+        : undefined;
+    const customModeInput = typeof body.customMode === 'boolean' ? body.customMode : undefined;
+    const customModeValue = customModeInput ?? (hasLyricsInput && trimmedLyrics.length > 0 ? true : undefined);
+    const tagsProvided = Array.isArray(body.tags);
+    const tags = tagsProvided ? body.tags! : [];
+    const effectiveMakeInstrumental = typeof body.make_instrumental === 'boolean'
+      ? body.make_instrumental
+      : effectiveHasVocals === false;
+    const effectiveWaitAudio = typeof body.wait_audio === 'boolean' ? body.wait_audio : false;
+
+    const requestMetadata: Record<string, unknown> = {
+      prompt: body.prompt ?? null,
+      make_instrumental: effectiveMakeInstrumental ?? false,
+      model_version: body.model_version || 'chirp-v3-5',
+      wait_audio: effectiveWaitAudio,
+    };
+
+    if (tagsProvided) {
+      requestMetadata.tags = tags;
+    }
+
+    if (effectiveHasVocals !== undefined) {
+      requestMetadata.has_vocals = effectiveHasVocals;
+    }
+    if (customModeValue !== undefined) {
+      requestMetadata.custom_mode = customModeValue;
+    }
+    if (normalizedLyrics !== undefined) {
+      requestMetadata.lyrics = normalizedLyrics;
+    }
+
     console.log('🎵 [GENERATE-SUNO] Request received:', JSON.stringify({
       trackId: body.trackId,
       title: body.title,
       prompt: body.prompt?.substring(0, 100),
-      tags: body.tags,
-      make_instrumental: body.make_instrumental,
+      tags,
+      make_instrumental: effectiveMakeInstrumental,
       model_version: body.model_version,
-      wait_audio: body.wait_audio,
+      wait_audio: effectiveWaitAudio,
+      hasVocals: effectiveHasVocals,
+      customMode: customModeValue,
+      lyricsLength: hasLyricsInput ? body.lyrics.length : 0,
       idempotencyKey: body.idempotencyKey,
       timestamp: new Date().toISOString()
     }, null, 2));
@@ -89,7 +147,10 @@ export const mainHandler = async (req: Request): Promise<Response> => {
 
     console.log('✅ [GENERATE-SUNO] User authenticated:', user.id);
 
-    const { trackId, prompt, tags, title, make_instrumental, model_version, wait_audio } = body;
+    const trackId = body.trackId;
+    const prompt = body.prompt;
+    const title = body.title;
+    const modelVersion = body.model_version;
     const idempotencyKey = body.idempotencyKey || crypto.randomUUID();
 
     const { data: existingJob } = await supabaseAdmin
@@ -140,7 +201,10 @@ export const mainHandler = async (req: Request): Promise<Response> => {
           prompt: prompt || 'Untitled Track',
           provider: 'suno',
           status: 'processing',
-          metadata: { prompt, tags, make_instrumental, model_version, wait_audio }
+          lyrics: normalizedLyrics ?? null,
+          has_vocals: effectiveHasVocals ?? null,
+          style_tags: tagsProvided ? tags : null,
+          metadata: requestMetadata
         })
         .select()
         .single();
@@ -170,7 +234,22 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       }
       
       console.log('✅ [GENERATE-SUNO] Track ownership verified');
-      await supabaseAdmin.from('tracks').update({ status: 'processing', provider: 'suno' }).eq('id', trackId);
+      const trackUpdatePayload: Record<string, unknown> = {
+        status: 'processing',
+        provider: 'suno',
+      };
+
+      if (normalizedLyrics !== undefined) {
+        trackUpdatePayload.lyrics = normalizedLyrics;
+      }
+      if (effectiveHasVocals !== undefined) {
+        trackUpdatePayload.has_vocals = effectiveHasVocals;
+      }
+      if (tagsProvided) {
+        trackUpdatePayload.style_tags = tags;
+      }
+
+      await supabaseAdmin.from('tracks').update(trackUpdatePayload).eq('id', trackId);
     }
 
     if (!finalTrackId) {
@@ -181,7 +260,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
 
     const { data: existingTrack, error: loadErr } = await supabaseAdmin
       .from('tracks')
-      .select('metadata,status')
+      .select('metadata,status,lyrics,has_vocals,style_tags')
       .eq('id', finalTrackId)
       .maybeSingle();
     if (loadErr) {
@@ -200,14 +279,17 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       });
     }
 
-    const sunoPayload = {
+    const sunoPayload: SunoGenerationPayload = {
       prompt,
       tags,
       title: title || 'Generated Track',
-      make_instrumental: make_instrumental || false,
-      model_version: model_version || 'chirp-v3-5',
-      wait_audio: wait_audio || false,
+      make_instrumental: effectiveMakeInstrumental ?? false,
+      model_version: modelVersion || 'chirp-v3-5',
+      wait_audio: effectiveWaitAudio,
       callBackUrl: callbackUrl ?? undefined,
+      ...(typeof normalizedLyrics === 'string' ? { lyrics: normalizedLyrics } : {}),
+      ...(effectiveHasVocals !== undefined ? { has_vocals: effectiveHasVocals } : {}),
+      ...(customModeValue !== undefined ? { custom_mode: customModeValue } : {}),
     };
     console.log('📤 [GENERATE-SUNO] Sending request to Suno API:', JSON.stringify(sunoPayload, null, 2));
 
@@ -216,21 +298,40 @@ export const mainHandler = async (req: Request): Promise<Response> => {
 
     const taskId = generationResult.taskId;
     await supabaseAdmin.from('ai_jobs').update({ external_id: taskId, status: 'processing' }).eq('id', jobId);
+    const existingMetadata = existingTrack?.metadata && typeof existingTrack.metadata === 'object' && !Array.isArray(existingTrack.metadata)
+      ? { ...(existingTrack.metadata as Record<string, unknown>) }
+      : {};
+
+    const updatedMetadata: Record<string, unknown> = {
+      ...existingMetadata,
+      ...requestMetadata,
+      suno_task_id: taskId,
+      suno_response: generationResult.rawResponse,
+      job_id: jobId,
+      suno_generate_endpoint: generationResult.endpoint,
+      ...(generationResult.jobId ? { suno_job_id: generationResult.jobId } : {}),
+      suno_completion_strategy: callbackUrl ? 'callback' : 'polling',
+      suno_callback_url: callbackUrl ?? null,
+    };
+
+    const trackUpdateAfterGeneration: Record<string, unknown> = {
+      status: 'processing',
+      metadata: updatedMetadata,
+    };
+
+    if (normalizedLyrics !== undefined) {
+      trackUpdateAfterGeneration.lyrics = normalizedLyrics;
+    }
+    if (effectiveHasVocals !== undefined) {
+      trackUpdateAfterGeneration.has_vocals = effectiveHasVocals;
+    }
+    if (tagsProvided) {
+      trackUpdateAfterGeneration.style_tags = tags;
+    }
+
     const { error: updateError } = await supabaseAdmin
       .from('tracks')
-      .update({
-        status: 'processing',
-        metadata: {
-          ...(existingTrack?.metadata ?? {}),
-          suno_task_id: taskId,
-          suno_response: generationResult.rawResponse,
-          job_id: jobId,
-          suno_generate_endpoint: generationResult.endpoint,
-          ...(generationResult.jobId ? { suno_job_id: generationResult.jobId } : {}),
-          suno_completion_strategy: callbackUrl ? 'callback' : 'polling',
-          suno_callback_url: callbackUrl ?? null,
-        },
-      })
+      .update(trackUpdateAfterGeneration)
       .eq('id', finalTrackId);
 
     if (updateError) {

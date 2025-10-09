@@ -9,6 +9,9 @@ export interface SunoGenerationPayload {
   audio_prompt_id?: string | null;
   style?: string | null;
   callBackUrl?: string;
+  lyrics?: string;
+  has_vocals?: boolean;
+  custom_mode?: boolean;
 }
 
 export interface SunoLyricsPayload {
