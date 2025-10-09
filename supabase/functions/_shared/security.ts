@@ -18,7 +18,7 @@ export const createSecurityHeaders = () => {
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: https:",
       "media-src 'self' blob: https:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.suno.ai https://api.sunoapi.org",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.sunoapi.org",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'"

@@ -22,7 +22,7 @@
 ## 2. Точки интеграции и покрытия
 
 ### 2.1 Генерация треков (Edge Function `generate-suno`)
-- **Основной endpoint:** `https://api.sunoapi.org/api/v1/generate` с fallback на `https://api.suno.ai/generate/v2`.
+- **Основной endpoint:** `https://api.sunoapi.org/api/v1/generate` (настраивается через `SUNO_GENERATE_URL`).
 - **Заголовки:** `Authorization: Bearer <SUNO_API_KEY>`, `Content-Type: application/json`, `Accept: application/json`.
 - **Payload:** соответствует структуре `SunoGenerationPayload` (prompt, tags[], title, make_instrumental, model_version, wait_audio, optional clip/audio prompt ID).
 - **Ответ:** могут возвращаться различные структуры (`{ id }`, `{ data: { taskId } }`, массивы). Унифицированный парсер извлекает `taskId` и необязательный `jobId`.
@@ -31,7 +31,7 @@
   - `ai_jobs`: заполняется `external_id` (taskId) и статус `processing`.
 
 ### 2.2 Поллинг задач Suno
-- **Основной endpoint:** `https://api.sunoapi.org/api/v1/query?taskId=<id>` с fallback на `https://api.suno.ai/generate/v2`.
+- **Основной endpoint:** `https://api.sunoapi.org/api/v1/query?taskId=<id>` (настраивается через `SUNO_QUERY_URL`).
 - **Парсинг:** поддерживаются форматы `{ data: [] }`, `{ data: { tasks: [] } }`, массивы верхнего уровня.
 - **Поведение:**
   - До 60 попыток с интервалом 5 секунд.
@@ -43,15 +43,14 @@
     - `suno_last_poll_endpoint`, `suno_last_poll_code`, `suno_last_poll_at`, `suno_poll_snapshot` (полный JSON).
   - `track_versions` → каждая версия получает `metadata.suno_last_poll_endpoint` и `suno_track_data`.
 
-### 2.3 Разделение стемов
-- **Endpoint:** `https://api.sunoapi.org/api/v1/vocal-removal/generate` (fallback через `SUNO_STEM_URL`).
+- **Endpoint:** `https://api.sunoapi.org/api/v1/vocal-removal/generate` (настраивается через `SUNO_STEM_URL`).
 - **Payload:** `{ taskId, audioId, type: separationMode, callBackUrl }`.
 - **Ответ:** стандартизирован через общий парсер `parseTaskId`.
 - **Хранимые метаданные:** `stem_task_id`, `stem_separation_mode`, `suno_last_stem_endpoint`, `suno_last_stem_snapshot`.
 - **Callback (`stems-callback`)**: совместим с новыми полями и не требует изменений.
 
 ### 2.4 Баланс провайдера
-- **Edge Function `get-balance`** остаётся без изменений; использует официальный `https://studio-api.suno.ai/api/billing/info/`.
+- **Edge Function `get-balance`** теперь запрашивает баланс у `https://api.sunoapi.org/api/v1/account/balance` (с возможностью переопределить URL через `SUNO_BALANCE_URL`), нормализуя ответы и логируя причину отказа.
 
 ---
 
@@ -59,7 +58,7 @@
 
 | Область | Изменение | Эффект |
 | ------- | --------- | ------ |
-| Драйвер Suno | Новый модуль `supabase/functions/_shared/suno.ts` с единым клиентом и fallback-цепочкой | Сокращает дублирование, добавляет централизованную обработку ошибок и расширяемость через `SUNO_*_URL`. |
+| Драйвер Suno | Новый модуль `supabase/functions/_shared/suno.ts` с единым клиентом и конфигурируемыми endpoints | Сокращает дублирование, добавляет централизованную обработку ошибок и расширяемость через `SUNO_*_URL`. |
 | Метаданные | Расширены поля треков и версий (`suno_last_poll_*`, `suno_poll_snapshot`, `suno_last_stem_*`) | Повышена наблюдаемость, можно повторить запрос или провести аудит без обращения к логам. |
 | Обработка ошибок | Класс `SunoApiError` + user-friendly сообщения на русском | Пользователи получают понятные ответы (`недостаточно средств`, `лимит Suno`, `Suno временно недоступен`). |
 | Ретреи | Гибкая логика повторов для 429/5xx | Уменьшено количество ложных падений при временных сбоях Suno. |
@@ -83,4 +82,4 @@
 - ✅ Ручная проверка конфигурации (`curl -I https://api.sunoapi.org/`) — подтверждает доступность прокси (см. лог команды). 
 - ✅ Линтер/тайпчеки: `npm run typecheck` (см. раздел Testing в итоговом отчёте PR).
 
-> **Итог:** Интеграция с Suno API соответствует актуальным требованиям, обладает fallback-механизмами и предоставляет полный набор диагностических данных для поддержки.
+> **Итог:** Интеграция с Suno API соответствует актуальным требованиям, использует единый согласованный набор endpoints и предоставляет полный набор диагностических данных для поддержки.
