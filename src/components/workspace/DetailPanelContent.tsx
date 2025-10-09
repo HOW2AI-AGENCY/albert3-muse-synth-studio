@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrackVersions, TrackStemsPanel, useTrackLike } from "@/features/tracks";
+import type { TrackVersionMetadata } from "@/features/tracks/components/TrackVersionMetadataPanel";
 import { TrackDetailsPanel } from "@/features/tracks/ui/TrackDetailsPanel";
 import { TrackVersionSelector } from "@/features/tracks/ui/TrackVersionSelector";
 import { cn } from "@/lib/utils";
@@ -34,7 +35,7 @@ interface Track {
   user_id?: string;
   duration?: number;
   lyrics?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: TrackVersionMetadata | null;
   like_count?: number;
   view_count?: number;
   duration_seconds?: number;
@@ -52,7 +53,7 @@ interface TrackVersion {
   cover_url?: string;
   lyrics?: string;
   duration?: number;
-  metadata?: Record<string, unknown>;
+  metadata?: TrackVersionMetadata | null;
   created_at?: string;
 }
 
@@ -352,6 +353,7 @@ export const DetailPanelContent = ({
                 <TrackVersions
                   trackId={track.id}
                   versions={versions}
+                  trackMetadata={track.metadata ?? null}
                   onVersionUpdate={loadVersionsAndStems}
                 />
               </CardContent>

@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { logError, logInfo } from "@/utils/logger";
+import { TrackVersionMetadataPanel, type TrackVersionMetadata } from "./TrackVersionMetadataPanel";
 
 interface TrackVersion {
   id: string;
@@ -29,16 +30,17 @@ interface TrackVersion {
   cover_url?: string;
   lyrics?: string;
   duration?: number;
-  metadata?: Record<string, unknown>;
+  metadata?: TrackVersionMetadata | null;
 }
 
 interface TrackVersionsProps {
   trackId: string;
   versions: TrackVersion[];
+  trackMetadata?: TrackVersionMetadata | null;
   onVersionUpdate?: () => void;
 }
 
-const TrackVersionsComponent = ({ trackId, versions, onVersionUpdate }: TrackVersionsProps) => {
+const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpdate }: TrackVersionsProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [versionToDelete, setVersionToDelete] = useState<TrackVersion | null>(null);
@@ -211,68 +213,87 @@ const TrackVersionsComponent = ({ trackId, versions, onVersionUpdate }: TrackVer
             const isVersionPlaying = isCurrentVersion && isPlaying;
 
             return (
-              <Card 
+              <Card
                 key={version.id}
                 className={`p-3 transition-all hover:bg-muted/50 ${
                   version.is_master ? 'ring-2 ring-primary bg-primary/5' : ''
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <Button
-                    size="icon"
-                    variant={isVersionPlaying ? "default" : "outline"}
-                    onClick={() => handlePlayVersion(version)}
-                    className="h-10 w-10 flex-shrink-0 transition-transform active:scale-95"
-                  >
-                    {isVersionPlaying ? (
-                      <Pause className="w-4 h-4" />
-                    ) : (
-                      <Play className="w-4 h-4" />
-                    )}
-                  </Button>
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-4">
+                  <div className="flex flex-1 flex-col gap-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                      <div className="flex items-center gap-3">
+                        <Button
+                          size="icon"
+                          variant={isVersionPlaying ? "default" : "outline"}
+                          onClick={() => handlePlayVersion(version)}
+                          aria-label={
+                            isVersionPlaying
+                              ? `Пауза версии ${version.version_number}`
+                              : `Воспроизвести версию ${version.version_number}`
+                          }
+                          className="h-10 w-10 flex-shrink-0 transition-transform active:scale-95"
+                        >
+                          {isVersionPlaying ? (
+                            <Pause className="w-4 h-4" />
+                          ) : (
+                            <Play className="w-4 h-4" />
+                          )}
+                        </Button>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">
-                        Версия {version.version_number}
-                      </span>
-                      {version.is_master && (
-                        <Badge variant="default" className="gap-1 text-xs">
-                          <Star className="w-3 h-3 fill-current" />
-                          Главная
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {formatDuration(version.duration)}
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-medium text-sm">
+                              Версия {version.version_number}
+                            </span>
+                            {version.is_master && (
+                              <Badge variant="default" className="gap-1 text-xs">
+                                <Star className="w-3 h-3 fill-current" />
+                                Главная
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {formatDuration(version.duration)}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-1 sm:ml-auto">
+                        {!version.is_master && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSetMaster(version.id, version.version_number)}
+                            aria-label={`Сделать версию ${version.version_number} главной`}
+                            className="text-xs h-8 transition-transform active:scale-95"
+                          >
+                            <Star className="w-3 h-3 mr-1" />
+                            <span className="hidden sm:inline">Сделать главной</span>
+                            <span className="sm:hidden">Главная</span>
+                          </Button>
+                        )}
+
+                        {versions.length > 1 && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDeleteVersion(version)}
+                            aria-label={`Удалить версию ${version.version_number}`}
+                            className="text-xs h-8 text-destructive hover:text-destructive transition-transform active:scale-95"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex gap-1">
-                    {!version.is_master && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleSetMaster(version.id, version.version_number)}
-                        className="text-xs h-8 transition-transform active:scale-95"
-                      >
-                        <Star className="w-3 h-3 mr-1" />
-                        <span className="hidden sm:inline">Сделать главной</span>
-                        <span className="sm:hidden">Главная</span>
-                      </Button>
-                    )}
-                    
-                    {versions.length > 1 && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDeleteVersion(version)}
-                        className="text-xs h-8 text-destructive hover:text-destructive transition-transform active:scale-95"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    )}
-                  </div>
+                  <TrackVersionMetadataPanel
+                    metadata={version.metadata}
+                    fallbackMetadata={trackMetadata}
+                    className="w-full lg:max-w-md"
+                  />
                 </div>
               </Card>
             );
