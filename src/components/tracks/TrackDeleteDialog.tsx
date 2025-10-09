@@ -12,6 +12,8 @@ import {
 // import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getTrackWithVersions } from "@/features/tracks";
+import { logError } from "@/utils/logger";
 
 interface TrackDeleteDialogProps {
   open: boolean;
@@ -37,11 +39,8 @@ export const TrackDeleteDialog = ({
   const loadRelatedData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Load versions count
-      const { count: vCount } = await supabase
-        .from('track_versions')
-        .select('*', { count: 'exact', head: true })
-        .eq('parent_track_id', trackId);
+      const versions = await getTrackWithVersions(trackId);
+      const vCount = Math.max((versions?.length ?? 0) - 1, 0);
 
       // Load stems count
       const { count: sCount } = await supabase
@@ -52,7 +51,9 @@ export const TrackDeleteDialog = ({
       setVersionsCount(vCount || 0);
       setStemsCount(sCount || 0);
     } catch (error) {
-      console.error('Error loading related data:', error);
+      logError('Error loading related data before track deletion', error as Error, 'TrackDeleteDialog', {
+        trackId,
+      });
     } finally {
       setIsLoading(false);
     }

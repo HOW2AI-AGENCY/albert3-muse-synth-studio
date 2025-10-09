@@ -3,7 +3,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Play, Pause, Star, Music2, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
@@ -19,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { logError, logInfo } from "@/utils/logger";
 import { TrackVersionMetadataPanel, type TrackVersionMetadata } from "./TrackVersionMetadataPanel";
+import { deleteTrackVersion, updateTrackVersion } from "../api/trackVersions";
 
 interface TrackVersion {
   id: string;
@@ -52,19 +52,23 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
     try {
       vibrate('medium');
       
-      // Unset all other masters
-      await supabase
-        .from('track_versions')
-        .update({ is_master: false })
-        .eq('parent_track_id', trackId);
+      // Unset all other masters for this track
+      await Promise.all(
+        versions
+          .filter(version => version.id !== versionId && version.is_master)
+          .map(async version => {
+            const updateResult = await updateTrackVersion(version.id, { is_master: false });
+            if (!updateResult.ok) {
+              throw updateResult.error;
+            }
+          }),
+      );
 
       // Set new master
-      const { error } = await supabase
-        .from('track_versions')
-        .update({ is_master: true })
-        .eq('id', versionId);
-
-      if (error) throw error;
+      const updateResult = await updateTrackVersion(versionId, { is_master: true });
+      if (!updateResult.ok) {
+        throw updateResult.error;
+      }
 
       vibrate('success');
       toast.success(`Версия ${versionNumber} установлена как главная`);
@@ -78,7 +82,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
       vibrate('error');
       toast.error('Ошибка при установке главной версии');
     }
-  }, [trackId, vibrate, onVersionUpdate]);
+  }, [trackId, versions, vibrate, onVersionUpdate]);
 
   // Мемоизируем функцию воспроизведения версии
   const handlePlayVersion = useCallback((version: TrackVersion) => {
@@ -135,20 +139,18 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
       if (versionToDelete.is_master && versions.length > 1) {
         const nextVersion = versions.find(v => v.id !== versionToDelete.id);
         if (nextVersion) {
-          await supabase
-            .from('track_versions')
-            .update({ is_master: true })
-            .eq('id', nextVersion.id);
+          const updateResult = await updateTrackVersion(nextVersion.id, { is_master: true });
+          if (!updateResult.ok) {
+            throw updateResult.error;
+          }
         }
       }
 
       // Delete the version
-      const { error } = await supabase
-        .from('track_versions')
-        .delete()
-        .eq('id', versionToDelete.id);
-
-      if (error) throw error;
+      const deletionResult = await deleteTrackVersion(versionToDelete.id);
+      if (!deletionResult.ok) {
+        throw deletionResult.error;
+      }
 
       vibrate('success');
       toast.success(`Версия ${versionToDelete.version_number} удалена`);
