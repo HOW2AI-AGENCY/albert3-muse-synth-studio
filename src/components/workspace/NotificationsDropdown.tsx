@@ -69,7 +69,7 @@ export const NotificationsDropdown = () => {
         <Button
           variant="ghost"
           size="sm"
-          className="relative w-10 h-10 p-0 hover:bg-accent/10 rounded-xl transition-all duration-300 hover:scale-105"
+          className="relative w-11 h-11 sm:w-10 sm:h-10 p-0 hover:bg-accent/10 rounded-xl transition-all duration-300 hover:scale-105"
         >
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (

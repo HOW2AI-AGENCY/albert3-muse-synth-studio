@@ -52,9 +52,9 @@ export const UserProfileDropdown = ({ userEmail }: UserProfileDropdownProps) => 
         <Button
           variant="ghost"
           size="sm"
-          className="w-10 h-10 p-0 rounded-full hover:scale-105 transition-all duration-300"
+          className="w-11 h-11 sm:w-10 sm:h-10 p-0 rounded-full hover:scale-105 transition-all duration-300"
         >
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 backdrop-blur-xl border border-primary/20 flex items-center justify-center hover:border-primary/40 transition-all duration-300">
+          <div className="w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 backdrop-blur-xl border border-primary/20 flex items-center justify-center hover:border-primary/40 transition-all duration-300">
             <User className="h-5 w-5 text-primary" />
           </div>
         </Button>
