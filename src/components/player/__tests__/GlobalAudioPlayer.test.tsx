@@ -4,6 +4,7 @@ import { GlobalAudioPlayer } from '../GlobalAudioPlayer';
 import { useAudioPlayer, useAudioPlayerSafe } from '@/contexts/AudioPlayerContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AudioPlayerTrack } from '@/types/track';
+import { createRef } from 'react';
 
 // Mock the hooks
 vi.mock('@/contexts/AudioPlayerContext');
@@ -30,6 +31,7 @@ const defaultMockData = {
   volume: 0.7,
   queue: [],
   togglePlayPause: vi.fn(),
+  pauseTrack: vi.fn(),
   seekTo: vi.fn(),
   setVolume: vi.fn(),
   playNext: vi.fn(),
@@ -43,6 +45,11 @@ const defaultMockData = {
   clearCurrentTrack: vi.fn(),
   removeFromQueue: vi.fn(),
   playTrack: vi.fn(),
+  playTrackWithQueue: vi.fn(),
+  addToQueue: vi.fn(),
+  clearQueue: vi.fn(),
+  reorderQueue: vi.fn(),
+  audioRef: createRef<HTMLAudioElement>(),
   currentQueueIndex: 0,
 };
 
@@ -50,8 +57,8 @@ describe('GlobalAudioPlayer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default mock for both hooks
-    mockUseAudioPlayer.mockReturnValue(defaultMockData);
-    mockUseAudioPlayerSafe.mockReturnValue(defaultMockData);
+    mockUseAudioPlayer.mockReturnValue({ ...defaultMockData });
+    mockUseAudioPlayerSafe.mockReturnValue({ ...defaultMockData });
     mockUseIsMobile.mockReturnValue(false);
   });
 
