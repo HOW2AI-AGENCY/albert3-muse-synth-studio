@@ -223,18 +223,14 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       if (!songDescription.trim() && selectedInspirations.length === 0) {
         return { valid: false, error: 'Введите описание или выберите вдохновение' };
       }
-      
-      if (!isInstrumental && !lyrics.trim()) {
-        return { valid: true, warning: 'Вокал включён, но текстов нет. Продолжить?' };
-      }
     } else {
       if (!songDescription.trim() && customStyles.length === 0 && !lyrics.trim()) {
         return { valid: false, error: 'Заполните хотя бы одно поле' };
       }
     }
-    
+
     return { valid: true };
-  }, [generationMode, songDescription, selectedInspirations, isInstrumental, lyrics, customStyles]);
+  }, [generationMode, songDescription, selectedInspirations, lyrics, customStyles]);
 
   const prepareGenerationParams = useCallback((): GenerateMusicParams => {
     let finalPrompt = songDescription.trim();
@@ -508,29 +504,48 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                         настройки промпта.
                       </TooltipContent>
                     </Tooltip>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs gap-1"
-                      onClick={() => setIsLyricsDialogOpen(true)}
-                    >
-                      <Plus className="h-3 w-3" />
-                      Lyrics
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs gap-1"
+                          onClick={() => setIsLyricsDialogOpen(true)}
+                        >
+                          <Plus className="h-3 w-3" />
+                          Lyrics
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-[220px] text-xs">
+                        Добавьте собственные слова, если хотите перезаписать авто-сгенерированные вокальные партии.
+                      </TooltipContent>
+                    </Tooltip>
 
                     <div className="flex-1" />
 
-                    <Button
-                      variant={isInstrumental ? "default" : "outline"}
-                      size="sm"
-                      className="h-8 text-xs gap-1"
-                      onClick={() => setIsInstrumental(!isInstrumental)}
-                    >
-                      {isInstrumental && <Music className="h-3 w-3" />}
-                      Instrumental
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={isInstrumental ? "default" : "outline"}
+                          size="sm"
+                          className="h-8 text-xs gap-1"
+                          onClick={() => setIsInstrumental(!isInstrumental)}
+                        >
+                          {isInstrumental && <Music className="h-3 w-3" />}
+                          Без вокала
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-[240px] text-xs">
+                        Оставьте выключенным, если хотите, чтобы модель сама придумала вокал и текст. Включите, чтобы получить
+                        чистый инструментал.
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 </TooltipProvider>
+                <p className="text-xs text-muted-foreground">
+                  Не обязательно писать текст заранее — модель сгенерирует вокал сама. Используйте кнопку Lyrics, чтобы
+                  добавить собственные строки при необходимости или включите «Без вокала» для инструментала.
+                </p>
 
                 {/* Inspiration */}
                 <div className="space-y-2">
