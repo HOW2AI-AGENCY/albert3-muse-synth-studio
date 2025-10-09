@@ -46,10 +46,15 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
   const { vibrate } = useHapticFeedback();
 
   // Мемоизируем функцию установки мастер-версии
-  const handleSetMaster = useCallback(async (versionId: string, versionNumber: number) => {
+  const handleSetMaster = useCallback(async (versionId: string, versionNumber: number, isOriginal?: boolean) => {
+    if (isOriginal) {
+      toast.info('Оригинальную версию нельзя назначить напрямую. Сделайте мастер-версией одну из альтернатив.');
+      return;
+    }
+
     try {
       vibrate('medium');
-      
+
       // Unset all other masters for this track
       await Promise.all(
         versions
@@ -104,8 +109,14 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
 
   // Мемоизируем функцию удаления версии
   const handleDeleteVersion = useCallback(async (version: TrackVersion) => {
+    if (version.is_original) {
+      toast.error('Невозможно удалить оригинальную версию трека');
+      return;
+    }
+
     // Check if this is the last version
-    if (versions.length === 1) {
+    const nonOriginalVersions = versions.filter(v => !v.is_original);
+    if (nonOriginalVersions.length === 1) {
       toast.error('Невозможно удалить единственную версию');
       return;
     }
@@ -123,7 +134,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
       
       // If deleting master version, reassign to first remaining
       if (versionToDelete.is_master && versions.length > 1) {
-        const nextVersion = versions.find(v => v.id !== versionToDelete.id);
+        const nextVersion = versions.find(v => v.id !== versionToDelete.id && !v.is_original);
         if (nextVersion) {
           const updateResult = await updateTrackVersion(nextVersion.id, { is_master: true });
           if (!updateResult.ok) {
@@ -155,7 +166,10 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
     }
   }, [versionToDelete, versions, trackId, vibrate, onVersionUpdate]);
 
-  if (!versions || versions.length <= 1) {
+  const additionalVersions = versions.filter(version => !version.is_original);
+  const additionalCount = additionalVersions.length;
+
+  if (!versions || additionalCount === 0) {
     return null;
   }
 
@@ -165,7 +179,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
         <div className="flex items-center gap-2">
           <Music2 className="w-4 h-4 text-muted-foreground" />
           <span className="text-sm font-medium">
-            Версии ({Math.max(versions.length - 1, 0)})
+            Версии ({additionalCount})
           </span>
         </div>
         <Button
@@ -224,7 +238,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                         <div className="min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-medium text-sm">
-                              Версия {version.version_number}
+                              {version.is_original ? 'Оригинал' : `Версия ${version.version_number}`}
                             </span>
                             {version.is_master && (
                               <Badge variant="default" className="gap-1 text-xs">
@@ -240,11 +254,11 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                       </div>
 
                       <div className="flex gap-1 sm:ml-auto">
-                        {!version.is_master && (
+                        {!version.is_master && !version.is_original && (
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleSetMaster(version.id, version.version_number)}
+                            onClick={() => handleSetMaster(version.id, version.version_number, version.is_original)}
                             aria-label={`Сделать версию ${version.version_number} главной`}
                             className="text-xs h-8 transition-transform active:scale-95"
                           >
@@ -254,7 +268,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                           </Button>
                         )}
 
-                        {versions.length > 1 && (
+                        {additionalCount > 1 && !version.is_original && (
                           <Button
                             size="sm"
                             variant="ghost"
@@ -287,8 +301,8 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
           <AlertDialogHeader>
             <AlertDialogTitle>Удалить версию?</AlertDialogTitle>
             <AlertDialogDescription>
-              Вы собираетесь удалить версию {versionToDelete?.version_number}.
-              {versionToDelete?.is_master && (
+              Вы собираетесь удалить {versionToDelete?.is_original ? 'оригинальную версию' : `версию ${versionToDelete?.version_number}`}.
+              {versionToDelete?.is_master && !versionToDelete?.is_original && (
                 <span className="block mt-2 text-orange-500 font-medium">
                   ⚠️ Это главная версия. Статус главной будет присвоен другой версии.
                 </span>

@@ -146,7 +146,7 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
                       >
                         <div className="flex items-center gap-2 w-full">
                           <span className="flex-1">
-                            {version.versionNumber === 0 ? 'Оригинал' : `Версия ${version.versionNumber}`}
+                            {version.isOriginalVersion ? 'Оригинал' : `Версия ${version.versionNumber}`}
                           </span>
                           {version.isMasterVersion && (
                             <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />

@@ -47,6 +47,8 @@ interface TrackVersion {
   id: string;
   version_number: number;
   is_master: boolean;
+  is_original?: boolean;
+  source_version_number?: number | null;
   suno_id: string;
   audio_url: string;
   video_url?: string;
@@ -334,219 +336,216 @@ export const DetailPanelContent = ({
 
         <TrackDetailsPanel track={track} activeVersion={activeVersion ?? null} />
 
-        <div className="grid gap-4 lg:gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-          <div className="space-y-4 lg:space-y-6">
-            <Card className="border-border/70">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Метаданные</CardTitle>
-                <CardDescription>Обновите ключевую информацию и видимость трека.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+        <div className="space-y-6 lg:space-y-8">
+          <Card className="border-border/70">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Метаданные</CardTitle>
+              <CardDescription>Обновите ключевую информацию и видимость трека.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Название трека"
+                className="h-10 text-sm"
+              />
+
+              <div className="grid gap-3 sm:grid-cols-2">
                 <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Название трека"
+                  id="genre"
+                  value={genre}
+                  onChange={(e) => setGenre(e.target.value)}
+                  placeholder="Жанр"
                   className="h-10 text-sm"
                 />
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Input
-                    id="genre"
-                    value={genre}
-                    onChange={(e) => setGenre(e.target.value)}
-                    placeholder="Жанр"
-                    className="h-10 text-sm"
-                  />
+                <Input
+                  id="mood"
+                  value={mood}
+                  onChange={(e) => setMood(e.target.value)}
+                  placeholder="Настроение"
+                  className="h-10 text-sm"
+                />
+              </div>
 
-                  <Input
-                    id="mood"
-                    value={mood}
-                    onChange={(e) => setMood(e.target.value)}
-                    placeholder="Настроение"
-                    className="h-10 text-sm"
-                  />
+              <div className="flex items-center justify-between gap-4 rounded-md border border-border/60 bg-background/60 p-3">
+                <div className="space-y-0.5">
+                  <Label className="text-sm">Публичный доступ</Label>
+                  <p className="text-xs text-muted-foreground">Трек будет доступен всем пользователям.</p>
                 </div>
+                <Switch checked={isPublic} onCheckedChange={setIsPublic} />
+              </div>
 
-                <div className="flex items-center justify-between gap-4 rounded-md border border-border/60 bg-background/60 p-3">
-                  <div className="space-y-0.5">
-                    <Label className="text-sm">Публичный доступ</Label>
-                    <p className="text-xs text-muted-foreground">Трек будет доступен всем пользователям.</p>
+              <Button size="default" className="w-full" onClick={onSave} disabled={isSaving}>
+                {isSaving ? "Сохранение..." : "Сохранить изменения"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/70">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">AI рекомендации по стилю</CardTitle>
+              <CardDescription>Подберите подходящие жанры и теги с помощью ассистента.</CardDescription>
+            </CardHeader>
+            <CardContent className="pb-4">
+              <StyleRecommendationsPanel
+                mood={mood}
+                genre={genre}
+                context={track.prompt}
+                currentTags={track.style_tags ?? []}
+                onApplyPreset={handlePresetApply}
+                onApplyTags={handleTagsApply}
+              />
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/70">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Версии трека</CardTitle>
+              <CardDescription>Переключайтесь между версиями и управляйте статусом.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <TrackVersionSelector
+                versions={versions.map((version) => ({
+                  id: version.id,
+                  version_number: version.version_number,
+                  created_at: version.created_at,
+                  is_master: version.is_master,
+                  is_original: version.is_original,
+                }))}
+                selectedVersionId={selectedVersionId}
+                onSelect={handleVersionSelect}
+              />
+              <TrackVersionComparison
+                trackId={track.id}
+                versions={versions}
+                trackMetadata={track.metadata ?? null}
+                leftVersionId={comparisonLeftId}
+                rightVersionId={comparisonRightId}
+                onLeftVersionChange={handleComparisonLeftChange}
+                onRightVersionChange={handleComparisonRightChange}
+                onSwapSides={handleComparisonSwap}
+              />
+              <TrackVersions
+                trackId={track.id}
+                versions={versions}
+                trackMetadata={track.metadata ?? null}
+                onVersionUpdate={loadVersionsAndStems}
+              />
+            </CardContent>
+          </Card>
+
+          {track.status === 'completed' && track.audio_url && (
+            <Card className="border-border/70">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Стемы</CardTitle>
+                <CardDescription>Создавайте и управляйте стемами выбранной версии.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <TrackStemsPanel
+                  trackId={track.id}
+                  versionId={selectedVersionId}
+                  stems={filteredStems}
+                  onStemsGenerated={loadVersionsAndStems}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          <Card className="border-border/70">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Статистика</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3 sm:grid-cols-2">
+              <StatsItem icon={Eye} label="Просмотры" value={`${track.view_count || 0}`} />
+              <StatsItem icon={Heart} label="Лайки" value={`${track.like_count || 0}`} />
+              <StatsItem icon={Calendar} label="Создан" value={formatDate(createdAtToDisplay)} />
+              <StatsItem icon={Clock} label="Длительность" value={formatDuration(durationToDisplay)} />
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/70">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Промпт</CardTitle>
+              <CardDescription>Исходный запрос, использованный при генерации трека.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="p-3 rounded-md bg-muted text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-words">
+                {track.prompt}
+              </div>
+            </CardContent>
+          </Card>
+
+          {(track.suno_id || track.model_name || track.lyrics) && (
+            <Card className="border-border/70">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Детали генерации</CardTitle>
+                <CardDescription>Дополнительные сведения о создании трека.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 text-sm text-muted-foreground">
+                {(track.model_name || track.suno_id) && (
+                  <div className="space-y-2">
+                    {track.model_name && <p>Модель: {track.model_name}</p>}
+                    {track.suno_id && <p className="font-mono text-xs">ID: {track.suno_id}</p>}
+
+                    {track.suno_id && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start h-9 text-sm"
+                        onClick={() => window.open(`https://suno.com/song/${track.suno_id}`, "_blank")}
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        Открыть в Suno
+                      </Button>
+                    )}
+
+                    {track.video_url && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start h-9 text-sm"
+                        onClick={() => window.open(track.video_url, "_blank")}
+                      >
+                        <Play className="h-4 w-4 mr-2" />
+                        Видео
+                      </Button>
+                    )}
                   </div>
-                  <Switch checked={isPublic} onCheckedChange={setIsPublic} />
-                </div>
+                )}
 
-                <Button size="default" className="w-full" onClick={onSave} disabled={isSaving}>
-                  {isSaving ? "Сохранение..." : "Сохранить изменения"}
-                </Button>
+                {track.lyrics && (
+                  <div className="space-y-2">
+                    <Label className="text-sm">Текст</Label>
+                    <Textarea
+                      value={track.lyrics}
+                      readOnly
+                      className="min-h-[120px] resize-none text-sm"
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
+          )}
 
-            <Card className="border-border/70">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">AI рекомендации по стилю</CardTitle>
-                <CardDescription>Подберите подходящие жанры и теги с помощью ассистента.</CardDescription>
-              </CardHeader>
-              <CardContent className="pb-4">
-                <StyleRecommendationsPanel
-                  mood={mood}
-                  genre={genre}
-                  context={track.prompt}
-                  currentTags={track.style_tags ?? []}
-                  onApplyPreset={handlePresetApply}
-                  onApplyTags={handleTagsApply}
-                />
-              </CardContent>
-            </Card>
-
-            <Card className="border border-destructive/40 bg-destructive/5">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg text-destructive">Опасная зона</CardTitle>
-                <CardDescription>Удалите трек и все связанные данные без возможности восстановления.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="destructive" size="sm" className="w-full" onClick={onDelete}>
-                      <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                      Удалить трек
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Удалить трек безвозвратно</TooltipContent>
-                </Tooltip>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="space-y-4 lg:space-y-6">
-            <Card className="border-border/70">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Версии трека</CardTitle>
-                <CardDescription>Переключайтесь между версиями и управляйте статусом.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <TrackVersionSelector
-                  versions={versions.map((version) => ({
-                    id: version.id,
-                    version_number: version.version_number,
-                    created_at: version.created_at,
-                    is_master: version.is_master,
-                  }))}
-                  selectedVersionId={selectedVersionId}
-                  onSelect={handleVersionSelect}
-                />
-                <TrackVersionComparison
-                  trackId={track.id}
-                  versions={versions}
-                  trackMetadata={track.metadata ?? null}
-                  leftVersionId={comparisonLeftId}
-                  rightVersionId={comparisonRightId}
-                  onLeftVersionChange={handleComparisonLeftChange}
-                  onRightVersionChange={handleComparisonRightChange}
-                  onSwapSides={handleComparisonSwap}
-                />
-                <TrackVersions
-                  trackId={track.id}
-                  versions={versions}
-                  trackMetadata={track.metadata ?? null}
-                  onVersionUpdate={loadVersionsAndStems}
-                />
-              </CardContent>
-            </Card>
-
-            {track.status === 'completed' && track.audio_url && (
-              <Card className="border-border/70">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Стемы</CardTitle>
-                  <CardDescription>Создавайте и управляйте стемами выбранной версии.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <TrackStemsPanel
-                    trackId={track.id}
-                    versionId={selectedVersionId}
-                    stems={filteredStems}
-                    onStemsGenerated={loadVersionsAndStems}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            <Card className="border-border/70">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Статистика</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-3 sm:grid-cols-2">
-                <StatsItem icon={Eye} label="Просмотры" value={`${track.view_count || 0}`} />
-                <StatsItem icon={Heart} label="Лайки" value={`${track.like_count || 0}`} />
-                <StatsItem icon={Calendar} label="Создан" value={formatDate(createdAtToDisplay)} />
-                <StatsItem icon={Clock} label="Длительность" value={formatDuration(durationToDisplay)} />
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/70">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Промпт</CardTitle>
-                <CardDescription>Исходный запрос, использованный при генерации трека.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="p-3 rounded-md bg-muted text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-words">
-                  {track.prompt}
-                </div>
-              </CardContent>
-            </Card>
-
-            {(track.suno_id || track.model_name || track.lyrics) && (
-              <Card className="border-border/70">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Детали генерации</CardTitle>
-                  <CardDescription>Дополнительные сведения о создании трека.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 text-sm text-muted-foreground">
-                  {(track.model_name || track.suno_id) && (
-                    <div className="space-y-2">
-                      {track.model_name && <p>Модель: {track.model_name}</p>}
-                      {track.suno_id && <p className="font-mono text-xs">ID: {track.suno_id}</p>}
-
-                      {track.suno_id && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-start h-9 text-sm"
-                          onClick={() => window.open(`https://suno.com/song/${track.suno_id}`, "_blank")}
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Открыть в Suno
-                        </Button>
-                      )}
-
-                      {track.video_url && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-start h-9 text-sm"
-                          onClick={() => window.open(track.video_url, "_blank")}
-                        >
-                          <Play className="h-4 w-4 mr-2" />
-                          Видео
-                        </Button>
-                      )}
-                    </div>
-                  )}
-
-                  {track.lyrics && (
-                    <div className="space-y-2">
-                      <Label className="text-sm">Текст</Label>
-                      <Textarea
-                        value={track.lyrics}
-                        readOnly
-                        className="min-h-[120px] resize-none text-sm"
-                      />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          <Card className="border border-destructive/40 bg-destructive/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-destructive">Опасная зона</CardTitle>
+              <CardDescription>Удалите трек и все связанные данные без возможности восстановления.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="destructive" size="sm" className="w-full" onClick={onDelete}>
+                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                    Удалить трек
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Удалить трек безвозвратно</TooltipContent>
+              </Tooltip>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </TooltipProvider>

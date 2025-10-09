@@ -5,6 +5,8 @@ export interface TrackVersionLike {
   id: string;
   version_number: number;
   is_master: boolean;
+  is_original?: boolean;
+  source_version_number?: number | null;
   audio_url: string;
   cover_url?: string;
   duration?: number;
@@ -31,7 +33,7 @@ export const buildAudioPlayerTrack = (
   trackId: string
 ): AudioPlayerTrack => ({
   id: version.id,
-  title: `Версия ${version.version_number}`,
+  title: version.is_original ? 'Оригинал' : `Версия ${version.version_number}`,
   audio_url: version.audio_url,
   cover_url: version.cover_url,
   duration: version.duration,
@@ -41,4 +43,6 @@ export const buildAudioPlayerTrack = (
   parentTrackId: trackId,
   versionNumber: version.version_number,
   isMasterVersion: version.is_master,
+  isOriginalVersion: Boolean(version.is_original),
+  sourceVersionNumber: version.source_version_number ?? null,
 });
