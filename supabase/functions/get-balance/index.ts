@@ -4,7 +4,7 @@ import { createSecurityHeaders } from "../_shared/security.ts";
 import { createSupabaseUserClient } from "../_shared/supabase.ts";
 
 const handler = async (req: Request): Promise<Response> => {
-  const corsHeaders = createCorsHeaders();
+  const corsHeaders = createCorsHeaders(req);
   const securityHeaders = createSecurityHeaders();
 
   if (req.method === 'OPTIONS') {
