@@ -10,11 +10,17 @@ Deno.test({
     const { accessToken } = await createTestUser();
 
     const restoreFetch = installFetchMock({
-      "https://api.sunoapi.org/api/v1/account/balance": () =>
+      "https://studio-api.suno.ai/api/billing/info/": () =>
+        new Response(JSON.stringify({ code: 503, msg: "legacy endpoint disabled" }), {
+          status: 503,
+          headers: { "Content-Type": "application/json" },
+        }),
+      "https://api.sunoapi.org/api/v1/generate/credit": () =>
         new Response(
           JSON.stringify({
-            subscription: { plan: "pro" },
-            credits: { monthly: { limit: 50, used: 12 } },
+            code: 200,
+            msg: "success",
+            data: 38,
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },
         ),
@@ -36,9 +42,9 @@ Deno.test({
       assertEquals(payload.provider, "suno");
       assertEquals(payload.balance, 38);
       assertEquals(payload.currency, "credits");
-      assertEquals(payload.plan, "pro");
-      assertEquals(payload.monthly_limit, 50);
-      assertEquals(payload.monthly_usage, 12);
+      assertEquals(payload.plan, undefined);
+      assertEquals(payload.monthly_limit, undefined);
+      assertEquals(payload.monthly_usage, undefined);
     } finally {
       restoreFetch();
     }
@@ -53,6 +59,16 @@ Deno.test({
     const { accessToken } = await createTestUser();
 
     const restoreFetch = installFetchMock({
+      "https://studio-api.suno.ai/api/billing/info/": () =>
+        new Response(JSON.stringify({ code: 503, msg: "legacy endpoint disabled" }), {
+          status: 503,
+          headers: { "Content-Type": "application/json" },
+        }),
+      "https://api.sunoapi.org/api/v1/generate/credit": () =>
+        new Response(JSON.stringify({ code: 455, msg: "maintenance" }), {
+          status: 455,
+          headers: { "Content-Type": "application/json" },
+        }),
       "https://api.sunoapi.org/api/v1/account/balance": () =>
         new Response(JSON.stringify({ code: 503, msg: "Maintenance" }), {
           status: 503,
@@ -79,7 +95,7 @@ Deno.test({
       assertExists(payload.error);
       assertStringIncludes(payload.error, "All Suno balance endpoints failed");
       assert(Array.isArray(payload.details?.attempts));
-      assertEquals(payload.details.attempts.length, 1);
+      assertEquals(payload.details.attempts.length, 3);
     } finally {
       restoreFetch();
     }
