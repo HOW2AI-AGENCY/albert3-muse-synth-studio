@@ -26,7 +26,7 @@ import { DisplayTrack, convertToAudioPlayerTrack, convertToDisplayTrack, convert
 import { cn } from "@/lib/utils";
 import { logger } from "@/utils/logger";
 import { normalizeTrack } from "@/utils/trackNormalizer";
-import { getTrackWithVersions, type TrackWithVersions } from "@/utils/trackVersions";
+import { getTrackWithVersions, type TrackWithVersions } from "@/features/tracks/api/trackVersions";
 import type { AudioPlayerTrack } from "@/types/track";
 
 type ViewMode = 'grid' | 'list' | 'optimized';
