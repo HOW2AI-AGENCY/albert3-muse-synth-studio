@@ -2,6 +2,12 @@ import type { CSSProperties } from "react";
 
 export type TrackDensityMode = "compact" | "regular" | "cozy";
 
+export const TRACK_DENSITY_MODES: readonly TrackDensityMode[] = [
+  "compact",
+  "regular",
+  "cozy",
+] as const;
+
 interface TrackDensityTokens {
   panelPadding: string;
   sectionGap: string;

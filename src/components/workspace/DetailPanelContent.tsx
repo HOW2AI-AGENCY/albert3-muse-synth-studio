@@ -147,6 +147,7 @@ export const DetailPanelContent = ({
   return (
     <TooltipProvider delayDuration={200}>
       <div
+        data-testid="detail-panel-content"
         className={cn(
           "p-[var(--track-density-panel-padding)]",
           "space-y-[var(--track-density-section-gap)]",
@@ -183,7 +184,7 @@ export const DetailPanelContent = ({
                 {likeCount > 0 && (
                   <Badge
                     className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px]"
-                    style={{ padding: "0" }}
+                    style={{ padding: "var(--track-density-badge-padding, 0)" }}
                   >
                     {likeCount}
                   </Badge>
@@ -422,7 +423,12 @@ export const DetailPanelContent = ({
                   <Label className={cn("font-medium", densityClasses.labelSizeClass)}>Теги стиля</Label>
                   <div className="flex flex-wrap gap-1.5">
                     {track.style_tags.map((tag: string, i: number) => (
-                      <Badge key={i} variant="secondary" className="text-xs px-2 py-0.5">
+                      <Badge
+                        key={i}
+                        variant="secondary"
+                        className="text-xs"
+                        style={{ padding: "var(--track-density-badge-padding)" }}
+                      >
                         {tag}
                       </Badge>
                     ))}

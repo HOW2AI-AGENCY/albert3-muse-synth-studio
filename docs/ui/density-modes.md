@@ -32,4 +32,7 @@ A lightweight visual check can be performed by toggling the `densityMode` prop o
 - Icon-only quick actions remain accessible with tooltip labels (hover/focus).
 - Publish badges display when `is_public` is `true` for both cards and list tiles.
 
-If Storybook is unavailable, the generated images above can serve as documentation for design reviews.
+If Storybook is unavailable, the generated images above can serve as documentation for design reviews. Automated coverage exists
+in `src/components/workspace/__tests__/DetailPanelContent.density.test.tsx`, which asserts that each preset wires the correct
+spacing tokens, and `src/components/__tests__/TrackVisibilityBadges.test.tsx`, which guards the public badge behaviour on cards
+and list rows.
