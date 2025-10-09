@@ -60,12 +60,12 @@ function mockPoller(recorder: string[]): PollSunoCompletionFn {
   };
 }
 
-function installFetchMock(responders: Record<string, () => Response>) {
+function installFetchMock(responders: Record<string, (input: RequestInfo | URL, init?: RequestInit) => Response | Promise<Response>>) {
   globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : (input instanceof URL ? input.href : input.url);
     for (const [prefix, handler] of Object.entries(responders)) {
       if (url.startsWith(prefix)) {
-        return handler();
+        return handler(input, init);
       }
     }
     return realFetch(input as Request, init);
@@ -86,21 +86,33 @@ Deno.test({
         await clearTables();
         const { userId, accessToken } = await createTestUser();
 
-        installFetchMock({
-          "https://api.sunoapi.org/api/v1/generate": () =>
-            new Response(JSON.stringify({ id: "task-123" }), {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
-            }),
-        });
-
         const body = {
           title: "Test track",
           prompt: "Make something cool",
           tags: ["synth"],
           wait_audio: false,
+          lyrics: "Custom lyrics",
+          hasVocals: true,
+          customMode: true,
           idempotencyKey: crypto.randomUUID(),
         };
+
+        const observedSunoRequests: unknown[] = [];
+        installFetchMock({
+          "https://api.sunoapi.org/api/v1/generate": (_input, init) => {
+            if (init?.body) {
+              if (typeof init.body === "string") {
+                observedSunoRequests.push(JSON.parse(init.body));
+              } else if (init.body instanceof Uint8Array) {
+                observedSunoRequests.push(JSON.parse(new TextDecoder().decode(init.body)));
+              }
+            }
+            return new Response(JSON.stringify({ id: "task-123" }), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            });
+          },
+        });
 
         const requestInit: RequestInit = {
           method: "POST",
@@ -128,6 +140,21 @@ Deno.test({
         assertEquals(tracks?.length, 1);
         assertEquals(tracks?.[0].status, "processing");
         assertEquals(tracks?.[0].user_id, userId);
+        assertEquals(tracks?.[0].lyrics, body.lyrics);
+        assertEquals(tracks?.[0].has_vocals, body.hasVocals);
+        assertEquals(tracks?.[0].style_tags, body.tags);
+
+        assertEquals(observedSunoRequests.length, 1);
+        const sunoRequestPayload = observedSunoRequests[0] as Record<string, unknown>;
+        assertEquals(sunoRequestPayload.lyrics, body.lyrics);
+        assertEquals(sunoRequestPayload.has_vocals, body.hasVocals);
+        assertEquals(sunoRequestPayload.custom_mode, body.customMode);
+
+        const trackMetadata = tracks?.[0].metadata as Record<string, unknown> | null;
+        assert(trackMetadata);
+        assertEquals(trackMetadata?.lyrics, body.lyrics);
+        assertEquals(trackMetadata?.has_vocals, body.hasVocals);
+        assertEquals(trackMetadata?.custom_mode, body.customMode);
 
         const { data: rateEntries } = await adminClient
           .from("rate_limits")
@@ -183,7 +210,7 @@ Deno.test({
         setPollSunoCompletionOverride(mockPoller(pollCalls));
 
         installFetchMock({
-          "https://api.sunoapi.org/api/v1/generate": () => {
+          "https://api.sunoapi.org/api/v1/generate": (_input, _init) => {
             throw new Error("Resume flow should not hit Suno API");
           },
         });
@@ -231,7 +258,7 @@ Deno.test({
         setPollSunoCompletionOverride(() => Promise.resolve());
 
         installFetchMock({
-          "https://api.sunoapi.org/api/v1/generate": () =>
+          "https://api.sunoapi.org/api/v1/generate": (_input, _init) =>
             new Response("Internal error", { status: 500, headers: { "Content-Type": "text/plain" } }),
         });
 

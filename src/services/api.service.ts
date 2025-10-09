@@ -190,6 +190,9 @@ export class ApiService {
       make_instrumental: request.hasVocals === false,
       model_version: request.modelVersion || 'chirp-v3-5',
       wait_audio: false,
+      lyrics: request.lyrics,
+      hasVocals: request.hasVocals,
+      customMode: request.customMode,
     };
 
     logInfo('🎵 [API Service] Selected provider', context, { provider, functionName });
@@ -198,6 +201,8 @@ export class ApiService {
       promptLength: request.prompt.length,
       tagsCount: request.styleTags?.length ?? 0,
       hasVocals: request.hasVocals ?? false,
+      lyricsLength: request.lyrics?.length ?? 0,
+      customMode: request.customMode ?? null,
     });
 
     logInfo('⏳ [API Service] Invoking edge function...', context);
