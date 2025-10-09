@@ -1,4 +1,5 @@
 // import { useState } from "react";
+import { useEffect } from "react";
 import { Download, Share2, Trash2, Eye, Heart, Calendar, Clock, ExternalLink, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { StyleRecommendationsPanel } from "./StyleRecommendationsPanel";
 import type { StylePreset } from "@/types/styles";
 import { getStyleById } from "@/data/music-styles";
+import { AnalyticsService, viewSessionGuard } from "@/services/analytics.service";
 
 interface Track {
   id: string;
@@ -116,6 +118,24 @@ export const DetailPanelContent = ({
   loadVersionsAndStems,
 }: DetailPanelContentProps) => {
   const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count || 0);
+
+  useEffect(() => {
+    if (!track?.id) {
+      return;
+    }
+
+    const hasView = viewSessionGuard.has(track.id);
+
+    AnalyticsService.recordView(track.id).catch((error) => {
+      console.error('Failed to record track view', error);
+    });
+
+    if (track.status === 'completed' && !hasView) {
+      AnalyticsService.recordPlay(track.id).catch((error) => {
+        console.error('Failed to record track play', error);
+      });
+    }
+  }, [track?.id, track.status]);
 
   const handlePresetApply = (preset: StylePreset) => {
     const presetGenre = preset.styleIds

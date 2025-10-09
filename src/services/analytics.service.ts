@@ -14,10 +14,66 @@ const env = typeof import.meta !== 'undefined' && import.meta.env
 const analyticsEndpoint = env.VITE_ANALYTICS_ENDPOINT;
 const isSentryEnabled = Boolean(env.VITE_SENTRY_DSN);
 
+const VIEW_GUARD_SESSION_KEY = 'analytics:viewedTracks';
+
+const initialiseViewGuard = () => {
+  const guard = new Set<string>();
+
+  if (typeof window === 'undefined') {
+    return guard;
+  }
+
+  try {
+    const stored = window.sessionStorage?.getItem(VIEW_GUARD_SESSION_KEY);
+    if (!stored) {
+      return guard;
+    }
+
+    const parsed = JSON.parse(stored);
+    if (Array.isArray(parsed)) {
+      parsed.forEach((value) => {
+        if (typeof value === 'string' && value) {
+          guard.add(value);
+        }
+      });
+    }
+  } catch (error) {
+    console.warn('Failed to restore view guard state', error);
+  }
+
+  return guard;
+};
+
+const persistViewGuard = (guard: Set<string>) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.sessionStorage?.setItem(
+      VIEW_GUARD_SESSION_KEY,
+      JSON.stringify(Array.from(guard))
+    );
+  } catch (error) {
+    console.warn('Failed to persist view guard state', error);
+  }
+};
+
+export const viewSessionGuard = initialiseViewGuard();
+
+const registerViewGuardHit = (trackId: string) => {
+  if (!trackId) {
+    return;
+  }
+
+  viewSessionGuard.add(trackId);
+  persistViewGuard(viewSessionGuard);
+};
+
 export class AnalyticsService {
   /**
    * Record a play event for a track
-   * Increments the view_count in the tracks table
+   * Increments the play_count in the tracks table
    */
   static async recordPlay(trackId: string): Promise<void> {
     try {
@@ -35,6 +91,38 @@ export class AnalyticsService {
     }
   }
 
+  static hasRecordedView(trackId: string): boolean {
+    return viewSessionGuard.has(trackId);
+  }
+
+  static markViewRecorded(trackId: string): void {
+    registerViewGuardHit(trackId);
+  }
+
+  static async recordView(trackId: string): Promise<void> {
+    if (!trackId) {
+      return;
+    }
+
+    if (viewSessionGuard.has(trackId)) {
+      return;
+    }
+
+    registerViewGuardHit(trackId);
+
+    try {
+      const { error } = await supabase.rpc('increment_view_count', {
+        track_id: trackId
+      });
+
+      if (error) {
+        console.error('Error in recordView:', error);
+      }
+    } catch (error) {
+      console.error('Error recording view:', error);
+    }
+  }
+
   /**
    * Get analytics for a specific track
    */
@@ -42,14 +130,15 @@ export class AnalyticsService {
     try {
       const { data, error } = await supabase
         .from('tracks')
-        .select('view_count, like_count, created_at')
+        .select('view_count, play_count, like_count, created_at')
         .eq('id', trackId)
         .maybeSingle();
 
       if (error) throw error;
 
       return {
-        plays: data?.view_count || 0,
+        plays: data?.play_count || 0,
+        views: data?.view_count || 0,
         likes: data?.like_count || 0,
         createdAt: data?.created_at,
       };
@@ -57,6 +146,7 @@ export class AnalyticsService {
       console.error('Error fetching track analytics:', error);
       return {
         plays: 0,
+        views: 0,
         likes: 0,
         createdAt: null,
       };
@@ -70,9 +160,9 @@ export class AnalyticsService {
     try {
       const { data, error } = await supabase
         .from('tracks')
-        .select('id, title, view_count, like_count, cover_url, style_tags')
+        .select('id, title, view_count, play_count, like_count, cover_url, style_tags')
         .eq('user_id', userId)
-        .order('view_count', { ascending: false })
+        .order('play_count', { ascending: false })
         .limit(limit);
 
       if (error) throw error;
@@ -90,16 +180,18 @@ export class AnalyticsService {
     try {
       const { data, error } = await supabase
         .from('tracks')
-        .select('view_count, like_count')
+        .select('view_count, play_count, like_count')
         .eq('user_id', userId);
 
       if (error) throw error;
 
-      const totalPlays = data?.reduce((sum, track) => sum + (track.view_count || 0), 0) || 0;
+      const totalViews = data?.reduce((sum, track) => sum + (track.view_count || 0), 0) || 0;
+      const totalPlays = data?.reduce((sum, track) => sum + (track.play_count || 0), 0) || 0;
       const totalLikes = data?.reduce((sum, track) => sum + (track.like_count || 0), 0) || 0;
 
       return {
         totalTracks: data?.length || 0,
+        totalViews,
         totalPlays,
         totalLikes,
       };
@@ -107,6 +199,7 @@ export class AnalyticsService {
       console.error('Error fetching user stats:', error);
       return {
         totalTracks: 0,
+        totalViews: 0,
         totalPlays: 0,
         totalLikes: 0,
       };

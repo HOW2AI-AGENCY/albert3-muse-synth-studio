@@ -7,6 +7,7 @@ import { TrackCard } from "@/components/TrackCard";
 import { useToast } from "@/hooks/use-toast";
 import { normalizeTracks } from "@/utils/trackNormalizer";
 import { useDashboardData, DEFAULT_DASHBOARD_STATS } from "@/hooks/useDashboardData";
+import { AnalyticsService } from "@/services/analytics.service";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -14,6 +15,20 @@ const Dashboard = () => {
   const { data, isLoading, error } = useDashboardData();
   const stats = data?.stats ?? DEFAULT_DASHBOARD_STATS;
   const publicTracks = useMemo(() => normalizeTracks(data?.publicTracks ?? []), [data?.publicTracks]);
+
+  useEffect(() => {
+    if (!publicTracks.length) {
+      return;
+    }
+
+    publicTracks.forEach((track) => {
+      if (track.id) {
+        AnalyticsService.recordView(track.id).catch((error) => {
+          console.error('Failed to record dashboard track view', error);
+        });
+      }
+    });
+  }, [publicTracks]);
 
   useEffect(() => {
     if (!error) {
