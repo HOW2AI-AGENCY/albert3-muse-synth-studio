@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
 import 'vitest-dom/extend-expect';
+import type { AudioPlayerTrack } from '@/types/track';
 
 vi.mock('@sentry/react', () => ({
   withErrorBoundary: (component: unknown) => component,
@@ -62,28 +63,50 @@ vi.mock('@/hooks/use-mobile', () => ({
 
 vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({
+    toasts: [],
     toast: vi.fn(),
+    dismiss: vi.fn(),
   }),
 }));
 
-vi.mock('@/contexts/AudioPlayerContext', () => ({
-  useAudioPlayer: vi.fn(() => ({
+vi.mock('@/contexts/AudioPlayerContext', async () => {
+  const actual = await vi.importActual<typeof import('@/contexts/AudioPlayerContext')>(
+    '@/contexts/AudioPlayerContext'
+  );
+
+  const createAudioPlayerValue = () => ({
     currentTrack: null,
     isPlaying: false,
+    currentTime: 0,
+    duration: 0,
+    volume: 1,
+    queue: [] as AudioPlayerTrack[],
+    currentQueueIndex: -1,
     togglePlayPause: vi.fn(),
     playTrack: vi.fn(),
+    playTrackWithQueue: vi.fn(),
+    pauseTrack: vi.fn(),
     playNext: vi.fn(),
     playPrevious: vi.fn(),
     seekTo: vi.fn(),
     setVolume: vi.fn(),
-    volume: 1,
-    duration: 0,
-    currentTime: 0,
-    queue: [],
-    setQueue: vi.fn(),
+    addToQueue: vi.fn(),
+    removeFromQueue: vi.fn(),
+    clearQueue: vi.fn(),
+    reorderQueue: vi.fn(),
+    switchToVersion: vi.fn(),
+    getAvailableVersions: vi.fn<() => AudioPlayerTrack[]>(() => []),
+    currentVersionIndex: 0,
+    audioRef: { current: null },
     clearCurrentTrack: vi.fn(),
-  })),
-}));
+  });
+
+  return {
+    ...actual,
+    useAudioPlayer: vi.fn(() => createAudioPlayerValue()),
+    useAudioPlayerSafe: vi.fn(() => createAudioPlayerValue()),
+  };
+});
 
 vi.mock('@/hooks/useMusicGeneration', () => ({
   useMusicGeneration: vi.fn(() => ({

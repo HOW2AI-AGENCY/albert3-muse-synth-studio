@@ -5,12 +5,11 @@ import { useAudioPlayer, useAudioPlayerSafe } from '@/hooks/useAudioPlayer';
 import { useToast } from '@/hooks/use-toast';
 import { useTrackLike } from '@/hooks/useTrackLike';
 import { DisplayTrack } from '@/types/track';
+import type { AudioPlayerTrack } from '@/types/track';
+import type { RefObject } from 'react';
 
 // Mock the source of the hooks
-vi.mock('@/contexts/AudioPlayerContext', () => ({
-  useAudioPlayer: vi.fn(),
-  useAudioPlayerSafe: vi.fn(),
-}));
+vi.mock('@/hooks/useAudioPlayer');
 vi.mock('@/hooks/use-toast');
 vi.mock('@/hooks/useTrackLike');
 vi.mock('@/integrations/supabase/client', () => ({
@@ -42,23 +41,42 @@ describe('TrackListItem', () => {
   const mockedUseAudioPlayerSafe = vi.mocked(useAudioPlayerSafe);
   const mockedUseToast = vi.mocked(useToast);
   const mockedUseTrackLike = vi.mocked(useTrackLike);
+  const createAudioPlayerContextValue = () => ({
+    currentTrack: null as AudioPlayerTrack | null,
+    isPlaying: false,
+    currentTime: 0,
+    duration: 0,
+    volume: 1,
+    queue: [] as AudioPlayerTrack[],
+    currentQueueIndex: -1,
+    playTrack: playTrackMock,
+    playTrackWithQueue: vi.fn(),
+    togglePlayPause: vi.fn(),
+    pauseTrack: pauseTrackMock,
+    seekTo: vi.fn(),
+    setVolume: vi.fn(),
+    playNext: vi.fn(),
+    playPrevious: vi.fn(),
+    addToQueue: vi.fn(),
+    removeFromQueue: vi.fn(),
+    clearQueue: vi.fn(),
+    reorderQueue: vi.fn(),
+    switchToVersion: vi.fn(),
+    getAvailableVersions: vi.fn<() => AudioPlayerTrack[]>(() => []),
+    currentVersionIndex: 0,
+    audioRef: { current: null } as RefObject<HTMLAudioElement>,
+    clearCurrentTrack: vi.fn(),
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedUseAudioPlayer.mockReturnValue({
-      currentTrack: null,
-      isPlaying: false,
-      playTrack: playTrackMock,
-      pauseTrack: pauseTrackMock,
-    });
-    mockedUseAudioPlayerSafe.mockReturnValue({
-      currentTrack: null,
-      isPlaying: false,
-      playTrack: playTrackMock,
-      pauseTrack: pauseTrackMock,
-    });
+    const contextValue = createAudioPlayerContextValue();
+    mockedUseAudioPlayer.mockReturnValue(contextValue);
+    mockedUseAudioPlayerSafe.mockReturnValue(createAudioPlayerContextValue());
     mockedUseToast.mockReturnValue({
+      toasts: [],
       toast: toastMock,
+      dismiss: vi.fn(),
     });
     mockedUseTrackLike.mockReturnValue({
       isLiked: false,
@@ -125,10 +143,13 @@ describe('TrackListItem', () => {
 
     it('shows pause button for currently playing track', async () => {
       mockedUseAudioPlayerSafe.mockReturnValue({
-        currentTrack: { id: 'track-1' },
+        ...createAudioPlayerContextValue(),
+        currentTrack: {
+          id: 'track-1',
+          title: 'Test Track',
+          audio_url: 'https://example.com/audio.mp3',
+        },
         isPlaying: true,
-        playTrack: playTrackMock,
-        pauseTrack: pauseTrackMock,
       });
       const { getByTestId } = setup();
       fireEvent.mouseEnter(getByTestId(`track-list-item-${mockTrack.id}`));
