@@ -1,16 +1,30 @@
-import { Play, Pause, SkipBack, SkipForward, X, ListMusic } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, X, ListMusic, List, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ResponsiveStack } from "@/components/ui/ResponsiveLayout";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 
 interface MiniPlayerProps {
   onExpand: () => void;
 }
 
 export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
-  const { currentTrack, isPlaying, togglePlayPause, playNext, playPrevious, queue, currentQueueIndex, clearCurrentTrack } = useAudioPlayer();
+  const { 
+    currentTrack, 
+    isPlaying, 
+    togglePlayPause, 
+    playNext, 
+    playPrevious, 
+    queue, 
+    currentQueueIndex, 
+    clearCurrentTrack,
+    switchToVersion,
+    getAvailableVersions,
+    currentVersionIndex,
+  } = useAudioPlayer();
   const { vibrate } = useHapticFeedback();
 
   if (!currentTrack) return null;
@@ -43,6 +57,10 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
     vibrate('medium');
     clearCurrentTrack();
   };
+
+  // Versions
+  const availableVersions = getAvailableVersions();
+  const hasVersions = availableVersions.length > 1;
 
   return (
     <TooltipProvider delayDuration={500}>
@@ -98,6 +116,52 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
 
         {/* Playback Controls */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Версии трека (мини) */}
+          {hasVersions && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="relative h-8 w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+                      title={`${availableVersions.length} версий`}
+                    >
+                      <List className="h-4 w-4" />
+                      <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-gradient-primary">
+                        {availableVersions.length}
+                      </Badge>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-xl border-primary/20 shadow-glow z-[100]">
+                    {availableVersions.map((version, idx) => (
+                      <DropdownMenuItem
+                        key={version.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          switchToVersion(version.id);
+                        }}
+                        className={`hover:bg-primary/10 transition-colors ${currentVersionIndex === idx ? 'bg-primary/20' : ''}`}
+                      >
+                        <div className="flex items-center gap-2 w-full">
+                          <span className="flex-1">
+                            {version.versionNumber === 0 ? 'Оригинал' : `Версия ${version.versionNumber}`}
+                          </span>
+                          {version.isMasterVersion && (
+                            <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+                          )}
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Версии трека ({availableVersions.length})</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
