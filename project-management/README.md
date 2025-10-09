@@ -209,7 +209,7 @@ project-management/
 ├── ⚡ QUICK-REFERENCE.md           # Быстрый справочник
 │
 ├── 📋 tasks/                       # Управление задачами
-│   ├── current-sprint.md          # Текущий Sprint 20
+│   ├── current-sprint.md          # Текущий Sprint 24
 │   ├── TASKS_STATUS.md            # Статус всех задач (НОВОЕ!)
 │   └── backlog.md                 # Бэклог проекта
 │
@@ -228,7 +228,7 @@ project-management/
 ### 1. 📋 Планирование задач
 См. [NAVIGATION_INDEX.md](NAVIGATION_INDEX.md) для полной навигации по проекту.
 
-**Текущий Sprint**: [Sprint 20](tasks/current-sprint.md)
+**Текущий Sprint**: [Sprint 24](tasks/current-sprint.md)
 **Все задачи**: [TASKS_STATUS.md](tasks/TASKS_STATUS.md)
 **Technical Debt**: [TECHNICAL_DEBT_PLAN.md](TECHNICAL_DEBT_PLAN.md)
 **Отчеты проекта**: [reports/README.md](reports/README.md)
