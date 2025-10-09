@@ -17,8 +17,128 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { getTrackWithVersions, TrackWithVersions, getMasterVersion } from '../api/trackVersions';
+import {
+  getTrackWithVersions,
+  TrackWithVersions,
+  getMasterVersion,
+} from '../api/trackVersions';
 import { logInfo, logError } from '@/utils/logger';
+
+type VersionsListener = (versions: TrackWithVersions[]) => void;
+
+const versionsCache = new Map<string, TrackWithVersions[]>();
+const listeners = new Map<string, Set<VersionsListener>>();
+const inFlightRequests = new Map<string, Promise<TrackWithVersions[]>>();
+
+const getCacheKey = (trackId: string) => trackId;
+
+const getAdditionalVersionsCount = (versions: TrackWithVersions[] | undefined): number => {
+  if (!versions) {
+    return 0;
+  }
+
+  return versions.filter(version => !version.isOriginal).length;
+};
+
+const notifyListeners = (trackId: string, versions: TrackWithVersions[]) => {
+  const cacheKey = getCacheKey(trackId);
+  const trackListeners = listeners.get(cacheKey);
+  if (!trackListeners) {
+    return;
+  }
+
+  trackListeners.forEach(listener => {
+    try {
+      listener(versions);
+    } catch (error) {
+      logError('Track versions listener failed', error as Error, 'useTrackVersions', { trackId });
+    }
+  });
+};
+
+const setCache = (trackId: string, versions: TrackWithVersions[]) => {
+  const cacheKey = getCacheKey(trackId);
+  versionsCache.set(cacheKey, versions);
+  notifyListeners(trackId, versions);
+};
+
+const subscribeToTrackVersions = (trackId: string, listener: VersionsListener) => {
+  if (!trackId) {
+    return () => {};
+  }
+
+  const cacheKey = getCacheKey(trackId);
+  const subscribers = listeners.get(cacheKey) ?? new Set<VersionsListener>();
+  subscribers.add(listener);
+  listeners.set(cacheKey, subscribers);
+
+  return () => {
+    const currentSubscribers = listeners.get(cacheKey);
+    if (!currentSubscribers) {
+      return;
+    }
+    currentSubscribers.delete(listener);
+    if (currentSubscribers.size === 0) {
+      listeners.delete(cacheKey);
+    }
+  };
+};
+
+interface FetchOptions {
+  force?: boolean;
+}
+
+const fetchTrackVersions = async (trackId: string, options: FetchOptions = {}) => {
+  if (!trackId) {
+    return [];
+  }
+
+  const cacheKey = getCacheKey(trackId);
+
+  if (!options.force) {
+    const cached = versionsCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const pending = inFlightRequests.get(cacheKey);
+    if (pending) {
+      return pending;
+    }
+  }
+
+  const request = getTrackWithVersions(trackId)
+    .then(versions => {
+      inFlightRequests.delete(cacheKey);
+      setCache(trackId, versions);
+      return versions;
+    })
+    .catch(error => {
+      inFlightRequests.delete(cacheKey);
+      throw error;
+    });
+
+  inFlightRequests.set(cacheKey, request);
+  return request;
+};
+
+export const primeTrackVersionsCache = (trackId: string, versions: TrackWithVersions[]) => {
+  if (!trackId) {
+    return;
+  }
+
+  setCache(trackId, versions);
+};
+
+export const invalidateTrackVersionsCache = (trackId: string) => {
+  if (!trackId) {
+    return;
+  }
+
+  const cacheKey = getCacheKey(trackId);
+  versionsCache.delete(cacheKey);
+  notifyListeners(trackId, []);
+};
 
 /**
  * Интерфейс возвращаемого значения хука
@@ -52,7 +172,7 @@ interface UseTrackVersionsReturn {
   hasVersions: boolean;
   
   /** Функция для ручной перезагрузки версий */
-  loadVersions: () => Promise<void>;
+  loadVersions: (options?: FetchOptions) => Promise<void>;
   
   /** Ошибка загрузки (если есть) */
   error: Error | null;
@@ -86,35 +206,34 @@ export function useTrackVersions(
    * 3. Обновить состояние
    * 4. Логировать результат
    */
-  const loadVersions = useCallback(async () => {
+  const loadVersions = useCallback(async (options: FetchOptions = {}) => {
     // Проверка валидности ID
     if (!trackId) {
       setAllVersions([]);
       setError(null);
       return;
     }
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
-      logInfo('Loading track versions', 'useTrackVersions', { trackId });
-      
-      // Загрузка версий из БД
-      const loadedVersions = await getTrackWithVersions(trackId);
+      logInfo('Loading track versions', 'useTrackVersions', {
+        trackId,
+        force: options.force ?? false,
+      });
+
+      // Загрузка версий из БД с учётом кэша
+      const loadedVersions = await fetchTrackVersions(trackId, options);
 
       setAllVersions(loadedVersions);
 
-      const additionalVersions = loadedVersions.filter(version =>
-        !(version.versionNumber === 0 || version.id === trackId)
-      );
-
       logInfo(
-        `Loaded ${additionalVersions.length} version(s) for track`,
+        `Loaded ${getAdditionalVersionsCount(loadedVersions)} version(s) for track`,
         'useTrackVersions',
         {
           trackId,
-          versionCount: additionalVersions.length,
+          versionCount: getAdditionalVersionsCount(loadedVersions),
           totalVersionCount: loadedVersions.length,
         }
       );
@@ -136,20 +255,39 @@ export function useTrackVersions(
    * Автоматическая загрузка версий при изменении trackId
    */
   useEffect(() => {
-    if (autoLoad) {
-      loadVersions();
+    if (!trackId) {
+      setAllVersions([]);
+      return;
     }
-  }, [loadVersions, autoLoad]);
+
+    const cached = versionsCache.get(getCacheKey(trackId));
+    if (cached) {
+      setAllVersions(cached);
+    }
+
+    const unsubscribe = subscribeToTrackVersions(trackId, setAllVersions);
+
+    if (autoLoad) {
+      loadVersions({ force: false }).catch(error => {
+        logError('Failed to auto-load track versions', error as Error, 'useTrackVersions', { trackId });
+      });
+    }
+
+    return () => {
+      unsubscribe();
+    };
+  }, [trackId, autoLoad, loadVersions]);
   
   // ===== Вычисляемые свойства =====
   
   /** Определяем основную версию трека */
-  const mainVersion = allVersions.find(
-    version => version.id === trackId || version.versionNumber === 0
-  ) ?? null;
+  const mainVersion =
+    allVersions.find(version => version.isOriginal) ??
+    allVersions.find(version => version.id === trackId) ??
+    null;
 
   /** Дополнительные версии без основной */
-  const versions = allVersions.filter(version => version.id !== mainVersion?.id);
+  const versions = allVersions.filter(version => !version.isOriginal);
 
   const versionCount = versions.length;
 
@@ -189,6 +327,34 @@ export function useTrackVersions(
  * @returns Количество версий
  */
 export function useTrackVersionCount(trackId: string | null | undefined): number {
-  const { versionCount } = useTrackVersions(trackId, true);
-  return versionCount;
+  const [count, setCount] = useState(() =>
+    trackId ? getAdditionalVersionsCount(versionsCache.get(getCacheKey(trackId))) : 0,
+  );
+
+  useEffect(() => {
+    if (!trackId) {
+      setCount(0);
+      return;
+    }
+
+    const cacheKey = getCacheKey(trackId);
+    const cached = versionsCache.get(cacheKey);
+    if (cached) {
+      setCount(getAdditionalVersionsCount(cached));
+    }
+
+    const unsubscribe = subscribeToTrackVersions(trackId, (versions) => {
+      setCount(getAdditionalVersionsCount(versions));
+    });
+
+    fetchTrackVersions(trackId).catch(error => {
+      logError('Failed to load track version count', error as Error, 'useTrackVersions', { trackId });
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [trackId]);
+
+  return count;
 }

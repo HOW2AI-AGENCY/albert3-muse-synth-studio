@@ -178,7 +178,9 @@ const TrackVersionComparisonComponent = ({
           <div className="space-y-1">
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
             <div className="flex items-center gap-2">
-              <span className="text-base font-semibold">Версия {version.version_number}</span>
+              <span className="text-base font-semibold">
+                {version.is_original ? 'Оригинал' : `Версия ${version.version_number}`}
+              </span>
               {version.is_master && (
                 <Badge variant="secondary" className="gap-1 text-[11px]">
                   <Star className="h-3 w-3" />
@@ -198,8 +200,12 @@ const TrackVersionComparisonComponent = ({
             onClick={() => handlePlay(version)}
             aria-label={
               isVersionPlaying
-                ? `Пауза версии ${version.version_number}`
-                : `Воспроизвести версию ${version.version_number}`
+                ? version.is_original
+                  ? "Пауза оригинала"
+                  : `Пауза версии ${version.version_number}`
+                : version.is_original
+                  ? "Воспроизвести оригинал"
+                  : `Воспроизвести версию ${version.version_number}`
             }
           >
             {isVersionPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
@@ -220,7 +226,9 @@ const TrackVersionComparisonComponent = ({
             {versionOptions.map(option => (
               <SelectItem key={option.id} value={option.id} className="flex items-center gap-2 text-sm">
                 <div className="flex flex-col">
-                  <span className="font-medium">Версия {option.version_number}</span>
+                  <span className="font-medium">
+                    {option.is_original ? 'Оригинал' : `Версия ${option.version_number}`}
+                  </span>
                   <span className="text-xs text-muted-foreground">
                     {formatTrackVersionDuration(option.duration)}
                   </span>

@@ -17,6 +17,7 @@ export interface TrackVersionSelectorOption {
   version_number: number;
   created_at?: string | null;
   is_master?: boolean;
+  is_original?: boolean;
 }
 
 interface TrackVersionSelectorProps {
@@ -40,20 +41,20 @@ const formatDate = (value?: string | null) => {
 };
 
 export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: TrackVersionSelectorProps) => {
-  if (!versions?.length) {
-    return null;
-  }
-
   const { currentTrack, isPlaying, switchToVersion, togglePlayPause } = useAudioPlayer();
   const currentTrackId = currentTrack?.id;
 
   const [primarySelection, setPrimarySelection] = useState<string | undefined>(
-    selectedVersionId ?? versions[0]?.id,
+    selectedVersionId ?? versions?.[0]?.id,
   );
   const [secondarySelection, setSecondarySelection] = useState<string | undefined>(() =>
-    versions.find((version) => version.id !== (selectedVersionId ?? versions[0]?.id))?.id,
+    versions?.find((version) => version.id !== (selectedVersionId ?? versions?.[0]?.id))?.id,
   );
   const [activeSlot, setActiveSlot] = useState<"primary" | "secondary">("primary");
+
+  if (!versions?.length) {
+    return null;
+  }
 
   const primaryVersion = useMemo(
     () => versions.find((version) => version.id === primarySelection),
@@ -170,8 +171,17 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
   );
 
   const getVersionLabel = useCallback(
-    (version?: TrackVersionSelectorOption) =>
-      version ? `Версия ${version.version_number}` : "Версия не выбрана",
+    (version?: TrackVersionSelectorOption) => {
+      if (!version) {
+        return "Версия не выбрана";
+      }
+
+      if (version.is_original) {
+        return "Оригинал";
+      }
+
+      return `Версия ${version.version_number}`;
+    },
     [],
   );
 
@@ -199,7 +209,9 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
               className="flex items-center justify-between gap-2"
             >
               <div className="flex flex-col">
-                <span className="font-medium">Версия {version.version_number}</span>
+                <span className="font-medium">
+                  {version.is_original ? "Оригинал" : `Версия ${version.version_number}`}
+                </span>
                 <span className="text-xs text-muted-foreground">{formatDate(version.created_at)}</span>
               </div>
               {version.is_master && (
@@ -288,9 +300,15 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
                 aria-label={
                   isCurrent
                     ? isPlayingCurrent
-                      ? `Пауза версии ${version.version_number}`
-                      : `Продолжить версию ${version.version_number}`
-                    : `Воспроизвести версию ${version.version_number}`
+                      ? version.is_original
+                        ? "Пауза оригинала"
+                        : `Пауза версии ${version.version_number}`
+                      : version.is_original
+                        ? "Продолжить оригинал"
+                        : `Продолжить версию ${version.version_number}`
+                    : version.is_original
+                      ? "Воспроизвести оригинал"
+                      : `Воспроизвести версию ${version.version_number}`
                 }
                 aria-pressed={isPlayingCurrent}
                 onClick={() => handlePlayPause(version.id)}
@@ -298,7 +316,9 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
                 {isPlayingCurrent ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               </Button>
               <div className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate font-medium">Версия {version.version_number}</span>
+                <span className="truncate font-medium">
+                  {version.is_original ? "Оригинал" : `Версия ${version.version_number}`}
+                </span>
                 <span className="text-xs text-muted-foreground">{formatDate(version.created_at)}</span>
               </div>
               <div className="flex items-center gap-2">

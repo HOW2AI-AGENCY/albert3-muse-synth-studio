@@ -9,6 +9,7 @@ import { TrackDeleteDialog } from "@/components/tracks/TrackDeleteDialog";
 import { ApiService } from "@/services/api.service";
 import { logError } from "@/utils/logger";
 import { getTrackWithVersions } from "../api/trackVersions";
+import { primeTrackVersionsCache } from "../hooks/useTrackVersions";
 
 interface TrackVersion {
   id: string;
@@ -174,15 +175,18 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
   const loadVersionsAndStems = useCallback(async () => {
     try {
       const versions = await getTrackWithVersions(track.id);
+      primeTrackVersionsCache(track.id, versions);
 
       if (versions) {
         const mappedVersions = versions
-          .filter(version => (version.versionNumber ?? 0) > 0 && version.suno_id && version.audio_url)
+          .filter(version => Boolean(version.audio_url))
           .map(version => ({
             id: version.id,
-            version_number: version.versionNumber ?? 0,
+            version_number: version.versionNumber,
+            source_version_number: version.sourceVersionNumber,
             is_master: Boolean(version.isMasterVersion),
-            suno_id: version.suno_id!,
+            is_original: version.isOriginal,
+            suno_id: version.suno_id ?? track.suno_id ?? "",
             audio_url: version.audio_url!,
             video_url: version.video_url ?? undefined,
             cover_url: version.cover_url ?? undefined,

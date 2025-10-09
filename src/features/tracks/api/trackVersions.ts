@@ -179,9 +179,15 @@ function isSunoDataArray(data: unknown): data is SunoTrackData[] {
 
 export interface TrackWithVersions {
   id: string;
-  parentTrackId?: string;
-  versionNumber?: number;
-  isMasterVersion?: boolean;
+  parentTrackId: string;
+  /** Порядковый номер версии в интерфейсе (начиная с 1 для оригинала) */
+  versionNumber: number;
+  /** Исходный номер версии из БД (может начинаться с 0 или 1 в зависимости от источника) */
+  sourceVersionNumber: number | null;
+  /** Признак того, что запись описывает оригинальный трек */
+  isOriginal: boolean;
+  /** Признак мастер-версии */
+  isMasterVersion: boolean;
   title: string;
   audio_url?: string;
   cover_url?: string;
@@ -225,85 +231,117 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
 
     if (versionsError) throw versionsError;
 
-    // Build result array
-    const result: TrackWithVersions[] = [];
+    const normalizedVersions: TrackWithVersions[] = [];
 
-    // Add main track (original)
-    result.push({
+    const hasExplicitMaster = versions?.some(version => version.is_master) ?? false;
+
+    const pushVersion = (payload: {
+      id: string;
+      sourceVersionNumber: number | null;
+      isMasterVersion: boolean;
+      isOriginal: boolean;
+      title: string;
+      audio_url?: string | null;
+      cover_url?: string | null;
+      video_url?: string | null;
+      duration?: number | null;
+      lyrics?: string | null;
+      metadata?: TrackMetadata | null;
+      created_at?: string | null;
+      suno_id?: string | null;
+      status?: string | null;
+    }) => {
+      normalizedVersions.push({
+        id: payload.id,
+        parentTrackId: mainTrack.id,
+        versionNumber: normalizedVersions.length + 1,
+        sourceVersionNumber: payload.sourceVersionNumber,
+        isOriginal: payload.isOriginal,
+        isMasterVersion: payload.isMasterVersion,
+        title: payload.title,
+        audio_url: payload.audio_url ?? undefined,
+        cover_url: payload.cover_url ?? undefined,
+        video_url: payload.video_url ?? undefined,
+        duration: payload.duration ?? undefined,
+        lyrics: payload.lyrics ?? undefined,
+        style_tags: mainTrack.style_tags ?? undefined,
+        artist: undefined,
+        status: payload.status ?? mainTrack.status ?? undefined,
+        user_id: mainTrack.user_id,
+        metadata: payload.metadata ?? ((mainTrack.metadata as TrackMetadata | null) ?? null),
+        suno_id: payload.suno_id ?? mainTrack.suno_id ?? undefined,
+        created_at: payload.created_at ?? mainTrack.created_at ?? undefined,
+      });
+    };
+
+    pushVersion({
       id: mainTrack.id,
-      parentTrackId: mainTrack.id,
-      versionNumber: 0, // Main track is version 0
-      isMasterVersion: !versions?.some(v => v.is_master), // Master if no versions marked as master
+      sourceVersionNumber: 0,
+      isMasterVersion: hasExplicitMaster ? false : true,
+      isOriginal: true,
       title: mainTrack.title,
-      audio_url: mainTrack.audio_url ?? undefined,
-      cover_url: mainTrack.cover_url ?? undefined,
-      video_url: mainTrack.video_url ?? undefined,
-      duration: mainTrack.duration ?? undefined,
-      lyrics: mainTrack.lyrics ?? undefined,
-      style_tags: mainTrack.style_tags ?? undefined,
-      status: mainTrack.status,
-      user_id: mainTrack.user_id,
-      suno_id: mainTrack.suno_id ?? undefined,
-      created_at: mainTrack.created_at ?? undefined,
+      audio_url: mainTrack.audio_url,
+      cover_url: mainTrack.cover_url,
+      video_url: mainTrack.video_url,
+      duration: mainTrack.duration ?? mainTrack.duration_seconds ?? null,
+      lyrics: mainTrack.lyrics,
       metadata: (mainTrack.metadata as TrackMetadata | null) ?? null,
+      created_at: mainTrack.created_at,
+      suno_id: mainTrack.suno_id,
+      status: mainTrack.status,
     });
 
     if (versions && versions.length > 0) {
       versions.forEach((version: TrackVersionRow) => {
-        result.push({
+        pushVersion({
           id: version.id,
-          parentTrackId: mainTrack.id,
-          versionNumber: version.version_number,
-          isMasterVersion: version.is_master || false,
-          title: `${mainTrack.title} (V${version.version_number})`,
-          audio_url: version.audio_url ?? undefined,
-          cover_url: version.cover_url ?? mainTrack.cover_url ?? undefined,
-          video_url: version.video_url ?? undefined,
-          duration: version.duration ?? undefined,
-          lyrics: version.lyrics ?? undefined,
-          style_tags: mainTrack.style_tags ?? undefined,
-          user_id: mainTrack.user_id,
-          suno_id: version.suno_id ?? undefined,
-          created_at: version.created_at ?? undefined,
+          sourceVersionNumber: version.version_number ?? null,
+          isMasterVersion: Boolean(version.is_master),
+          isOriginal: false,
+          title: `${mainTrack.title} (V${version.version_number ?? normalizedVersions.length + 1})`,
+          audio_url: version.audio_url ?? null,
+          cover_url: version.cover_url ?? mainTrack.cover_url ?? null,
+          video_url: version.video_url ?? null,
+          duration: version.duration ?? null,
+          lyrics: version.lyrics ?? null,
           metadata: (version.metadata as TrackMetadata | null) ?? null,
+          created_at: version.created_at ?? null,
+          suno_id: version.suno_id ?? null,
+          status: version.status ?? 'completed',
         });
       });
-    }
-    // FALLBACK LOGIC: If no versions are in the dedicated table, try to extract them from metadata.
-    // This is for older tracks that stored version data in a JSONB field.
-    else if (
-      mainTrack.metadata && 
-      typeof mainTrack.metadata === 'object' && 
+    } else if (
+      mainTrack.metadata &&
+      typeof mainTrack.metadata === 'object' &&
       'suno_data' in mainTrack.metadata &&
       isSunoDataArray(mainTrack.metadata.suno_data)
     ) {
       const sunoData = mainTrack.metadata.suno_data as SunoTrackData[];
       if (sunoData.length > 1) {
         logInfo('Using fallback to extract versions from metadata', 'trackVersions', { trackId });
-        
-        // The first item in suno_data is the main track, so we slice from the second item.
+
         sunoData.slice(1).forEach((versionData: SunoTrackData, index: number) => {
-          result.push({
+          pushVersion({
             id: versionData.id,
-            parentTrackId: mainTrack.id,
-            versionNumber: index + 1,
+            sourceVersionNumber: index + 1,
             isMasterVersion: false,
+            isOriginal: false,
             title: `${mainTrack.title} (V${index + 1})`,
-            audio_url: versionData.audio_url ?? versionData.stream_audio_url ?? undefined,
-            cover_url: versionData.image_url ?? mainTrack.cover_url ?? undefined,
-            video_url: versionData.video_url ?? undefined,
-            duration: versionData.duration ?? undefined,
-            lyrics: mainTrack.lyrics ?? undefined,
-            style_tags: mainTrack.style_tags ?? undefined,
-            user_id: mainTrack.user_id,
-            status: 'completed',
+            audio_url: versionData.audio_url ?? versionData.stream_audio_url ?? null,
+            cover_url: versionData.image_url ?? mainTrack.cover_url ?? null,
+            video_url: versionData.video_url ?? null,
+            duration: versionData.duration ?? null,
+            lyrics: mainTrack.lyrics ?? null,
             metadata: (mainTrack.metadata as TrackMetadata | null) ?? null,
+            created_at: null,
+            suno_id: null,
+            status: 'completed',
           });
         });
       }
     }
 
-    return result;
+    return normalizedVersions;
   } catch (error) {
     logError('Ошибка получения треков с версиями', error as Error, 'trackVersions', {
       trackId
@@ -317,17 +355,26 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
  */
 export function getMasterVersion(tracks: TrackWithVersions[]): TrackWithVersions | null {
   if (!tracks || tracks.length === 0) return null;
-  
+
   // Find the version marked as master
   const master = tracks.find(t => t.isMasterVersion);
-  
-  // Return master or first track (main track)
-  return master || tracks[0];
+
+  // Return master or оригинал
+  if (master) {
+    return master;
+  }
+
+  const original = tracks.find(track => track.isOriginal);
+  return original ?? tracks[0];
 }
 
 /**
  * Checks if a track has multiple versions
  */
 export function hasMultipleVersions(tracks: TrackWithVersions[]): boolean {
-  return tracks.length > 1;
+  if (!tracks) {
+    return false;
+  }
+
+  return tracks.some(track => !track.isOriginal);
 }

@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { logger } from "@/utils/logger";
 import { normalizeTrack } from "@/utils/trackNormalizer";
 import { getTrackWithVersions, type TrackWithVersions } from "@/features/tracks/api/trackVersions";
+import { primeTrackVersionsCache } from "@/features/tracks/hooks/useTrackVersions";
 import type { AudioPlayerTrack } from "@/types/track";
 
 type ViewMode = 'grid' | 'list' | 'optimized';
@@ -141,6 +142,7 @@ const Library: React.FC = () => {
 
     try {
       const tracksWithVersions = await getTrackWithVersions(track.id);
+      primeTrackVersionsCache(track.id, tracksWithVersions);
       const playableVersionEntries = tracksWithVersions
         .map(version => {
           const audio = convertToAudioPlayerTrack({
@@ -166,13 +168,15 @@ const Library: React.FC = () => {
               parentTrackId: version.parentTrackId ?? track.id,
               versionNumber: version.versionNumber,
               isMasterVersion: version.isMasterVersion,
+              isOriginalVersion: version.isOriginal,
+              sourceVersionNumber: version.sourceVersionNumber,
             },
           };
         })
         .filter((entry): entry is { version: TrackWithVersions; audio: AudioPlayerTrack } => entry !== null);
 
       const masterEntry = playableVersionEntries.find(entry => entry.version.isMasterVersion) ??
-        playableVersionEntries.find(entry => entry.version.versionNumber === 0) ??
+        playableVersionEntries.find(entry => entry.version.isOriginal) ??
         null;
 
       const otherVersionTracks = playableVersionEntries

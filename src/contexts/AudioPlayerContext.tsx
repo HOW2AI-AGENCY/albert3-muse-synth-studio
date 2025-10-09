@@ -111,6 +111,8 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
             parentTrackId: v.parentTrackId,
             versionNumber: v.versionNumber,
             isMasterVersion: v.isMasterVersion,
+            isOriginalVersion: v.isOriginal,
+            sourceVersionNumber: v.sourceVersionNumber,
           }));
           
           setQueue(prev => {
@@ -178,7 +180,12 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     }
     
     // Используем нормализованный URL
-    const normalizedTrack = { ...track, audio_url: audioUrl };
+    const normalizedTrack = {
+      ...track,
+      audio_url: audioUrl,
+      isOriginalVersion: track.isOriginalVersion ?? (track.versionNumber ? track.versionNumber <= 1 : undefined),
+      sourceVersionNumber: track.sourceVersionNumber ?? null,
+    };
     
     // Детальное логирование трека
     logInfo('Preparing to play track', 'AudioPlayerContext', {
@@ -245,13 +252,15 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
           await audioRef.current.play();
           setIsPlaying(true);
           
-          logInfo(`Now playing: ${normalizedTrack.title}`, 'AudioPlayerContext', { 
+          logInfo(`Now playing: ${normalizedTrack.title}`, 'AudioPlayerContext', {
             trackId: normalizedTrack.id,
-            versionNumber: normalizedTrack.versionNumber || 0 
+            versionNumber: normalizedTrack.versionNumber,
+            sourceVersionNumber: normalizedTrack.sourceVersionNumber,
+            isOriginal: normalizedTrack.isOriginalVersion,
           });
-          
+
           // Показываем тост при переключении версии
-          if (normalizedTrack.versionNumber && normalizedTrack.versionNumber > 0) {
+          if (!normalizedTrack.isOriginalVersion && normalizedTrack.versionNumber) {
             toast({
               title: `Версия ${normalizedTrack.versionNumber}`,
               description: `Переключено на ${normalizedTrack.title}`,
