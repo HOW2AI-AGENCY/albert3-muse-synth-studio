@@ -53,7 +53,7 @@ const WorkspaceHeader = ({ className }: WorkspaceHeaderProps) => {
         <Button
           variant="ghost"
           size="sm"
-          className="sm:hidden w-10 h-10 p-0 hover:bg-accent/10 rounded-xl transition-all duration-300"
+          className="sm:hidden w-11 h-11 p-0 hover:bg-accent/10 rounded-xl transition-all duration-300"
         >
           <Search className="w-5 h-5" />
         </Button>

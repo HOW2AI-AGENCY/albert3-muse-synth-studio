@@ -41,9 +41,9 @@ const Landing = () => {
   }, [featuredTracks]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen min-h-[100dvh] bg-background">
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-screen min-h-[100dvh] flex items-center justify-center overflow-hidden">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0">
           <img 
@@ -66,11 +66,11 @@ const Landing = () => {
             </div>
           </div>
           
-          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-6 text-gradient-primary animate-slide-up leading-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black mb-6 text-gradient-primary animate-slide-up leading-tight">
             MusicAI Pro
           </h1>
-          
-          <p className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto mb-4 animate-fade-in font-medium" style={{ animationDelay: '0.2s' }}>
+
+          <p className="text-lg sm:text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto mb-4 animate-fade-in font-medium" style={{ animationDelay: '0.2s' }}>
             Создавайте профессиональную музыку с помощью AI за минуты
           </p>
           
@@ -128,7 +128,7 @@ const Landing = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-6 lg:gap-8 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 lg:gap-8 gap-y-10 max-w-6xl mx-auto">
             <div className="group p-8 rounded-3xl border-2 border-border/50 bg-gradient-to-br from-card/90 to-card/40 backdrop-blur-xl hover:border-primary/50 hover-lift transition-all duration-300 hover:shadow-glow-primary animate-scale-in">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform glow-primary">
                 <Zap className="w-8 h-8 text-primary" />
@@ -177,7 +177,7 @@ const Landing = () => {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto mb-12">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 gap-y-8 max-w-6xl mx-auto mb-12">
               {featuredTracks.map((track, index) => (
                 <Card 
                   key={track.id} 
