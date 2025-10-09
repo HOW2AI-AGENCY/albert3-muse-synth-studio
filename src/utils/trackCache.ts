@@ -120,6 +120,37 @@ class TrackCacheManager {
   }
 
   /**
+   * Получить все актуальные треки из кэша
+   */
+  getValidTracks(): CachedTrack[] {
+    try {
+      const cache = this.getCache();
+      const validTracks: CachedTrack[] = [];
+      let hasExpiredTracks = false;
+
+      for (const [trackId, track] of Object.entries(cache)) {
+        if (this.isExpired(track.cached_at)) {
+          delete cache[trackId];
+          hasExpiredTracks = true;
+          continue;
+        }
+
+        validTracks.push(track);
+      }
+
+      if (hasExpiredTracks) {
+        this.saveCache(cache);
+        this.updateMetadata();
+      }
+
+      return validTracks.sort((a, b) => b.cached_at - a.cached_at);
+    } catch (error) {
+      console.warn('Ошибка при получении треков из кэша:', error);
+      return [];
+    }
+  }
+
+  /**
    * Сохранить несколько треков в кэш
    */
   setTracks(tracks: Omit<CachedTrack, 'cached_at'>[]): void {
@@ -283,6 +314,7 @@ export const useTrackCache = () => {
     getTrack: trackCache.getTrack.bind(trackCache),
     setTrack: trackCache.setTrack.bind(trackCache),
     getTracks: trackCache.getTracks.bind(trackCache),
+    getValidTracks: trackCache.getValidTracks.bind(trackCache),
     setTracks: trackCache.setTracks.bind(trackCache),
     removeTrack: trackCache.removeTrack.bind(trackCache),
     clearCache: trackCache.clearCache.bind(trackCache),
@@ -290,3 +322,5 @@ export const useTrackCache = () => {
     cleanExpiredTracks: trackCache.cleanExpiredTracks.bind(trackCache),
   };
 };
+
+export const getCachedTracks = () => trackCache.getValidTracks();

@@ -6,7 +6,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError, handlePostgrestError, ensureData, handleSupabaseFunctionError } from "@/services/api/errors";
-import { trackCache, CachedTrack } from "@/utils/trackCache";
+import { trackCache, CachedTrack, getCachedTracks } from "@/utils/trackCache";
 import { logInfo, logError, logDebug, logWarn } from "@/utils/logger";
 
 type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
@@ -515,10 +515,55 @@ export class ApiService {
       if (cacheStats.totalTracks > 0) {
         logInfo(`Используем кэшированные треки: ${cacheStats.totalTracks} треков`, context);
 
-        // Получаем все треки из кэша и преобразуем их в формат Track
-        // Это упрощенная версия, в реальности нужно было бы сохранять больше данных
-        const cachedTracks: Track[] = [];
-        return cachedTracks;
+        const cachedEntries = getCachedTracks();
+        if (cachedEntries.length > 0) {
+          const cachedTracks: Track[] = cachedEntries.map((cachedTrack) => {
+            const styleTags = cachedTrack.genre
+              ? cachedTrack.genre
+                  .split(',')
+                  .map((tag) => tag.trim())
+                  .filter(Boolean)
+              : null;
+
+            return {
+              id: cachedTrack.id,
+              user_id: userId,
+              title: cachedTrack.title,
+              prompt: null,
+              improved_prompt: null,
+              audio_url: cachedTrack.audio_url,
+              cover_url: cachedTrack.image_url ?? null,
+              video_url: null,
+              status: 'completed' as TrackStatus,
+              error_message: null,
+              provider: null,
+              lyrics: null,
+              style_tags: styleTags,
+              genre: cachedTrack.genre ?? null,
+              mood: null,
+              duration: cachedTrack.duration ?? null,
+              duration_seconds: cachedTrack.duration ?? null,
+              has_vocals: null,
+              is_public: false,
+              metadata: null,
+              suno_id: null,
+              model_name: null,
+              created_at: cachedTrack.created_at,
+              updated_at: cachedTrack.created_at,
+              created_at_suno: null,
+              has_stems: false,
+              like_count: 0,
+              play_count: 0,
+              download_count: 0,
+              view_count: 0,
+              reference_audio_url: null,
+              artist: cachedTrack.artist,
+              style: null,
+            } as Track;
+          });
+
+          return cachedTracks;
+        }
       }
 
       throw error;
