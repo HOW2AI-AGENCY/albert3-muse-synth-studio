@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { DetailPanelContent } from "@/components/workspace/DetailPanelContent";
 import { TrackDeleteDialog } from "@/components/tracks/TrackDeleteDialog";
 import { ApiService } from "@/services/api.service";
+import { logError } from "@/utils/logger";
+import { getTrackWithVersions } from "../api/trackVersions";
 
 interface TrackVersion {
   id: string;
@@ -18,7 +20,7 @@ interface TrackVersion {
   cover_url?: string;
   lyrics?: string;
   duration?: number;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, unknown> | null;
   created_at?: string;
 }
 
@@ -171,30 +173,28 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
 
   const loadVersionsAndStems = useCallback(async () => {
     try {
-      // Load versions
-      const { data: versionsData } = await supabase
-        .from('track_versions')
-        .select('*')
-        .eq('parent_track_id', track.id)
-        .order('version_number');
-      
-      if (versionsData) {
+      const versions = await getTrackWithVersions(track.id);
+
+      if (versions) {
+        const mappedVersions = versions
+          .filter(version => (version.versionNumber ?? 0) > 0 && version.suno_id && version.audio_url)
+          .map(version => ({
+            id: version.id,
+            version_number: version.versionNumber ?? 0,
+            is_master: Boolean(version.isMasterVersion),
+            suno_id: version.suno_id!,
+            audio_url: version.audio_url!,
+            video_url: version.video_url ?? undefined,
+            cover_url: version.cover_url ?? undefined,
+            lyrics: version.lyrics ?? undefined,
+            duration: version.duration ?? undefined,
+            metadata: (version.metadata as Record<string, unknown>) ?? null,
+            created_at: version.created_at ?? undefined,
+          }));
+
         dispatch({
           type: 'SET_VERSIONS',
-          value: versionsData
-            .filter(v => v.suno_id && v.audio_url)
-            .map(v => ({
-              ...v,
-              is_master: v.is_master ?? false,
-              suno_id: v.suno_id!,
-              audio_url: v.audio_url!,
-              video_url: v.video_url ?? undefined,
-              cover_url: v.cover_url ?? undefined,
-              lyrics: v.lyrics ?? undefined,
-              duration: v.duration ?? undefined,
-              metadata: v.metadata as Record<string, unknown>,
-              created_at: v.created_at ?? undefined
-            }))
+          value: mappedVersions,
         });
       }
 
@@ -215,7 +215,9 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
         });
       }
     } catch (error) {
-      console.error('Error loading versions and stems:', error);
+      logError('Error loading versions and stems', error as Error, 'TrackDetailPanel', {
+        trackId: track.id,
+      });
       toast({
         title: "Ошибка",
         description: "Не удалось загрузить данные трека",
