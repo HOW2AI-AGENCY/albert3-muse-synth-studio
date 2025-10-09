@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { Heart, Loader2 } from "lucide-react";
-import { TrackCard } from "@/components/TrackCard";
 import { LikesService } from "@/services/likes.service";
 import { supabase } from "@/integrations/supabase/client";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { getTrackWithVersions } from "@/utils/trackVersions";
+import { TrackCard, getTrackWithVersions } from "@/features/tracks";
 import { toast } from "sonner";
 import { convertToAudioPlayerTrack } from "@/types/track";
 import type { TrackStatus } from "@/services/api.service";

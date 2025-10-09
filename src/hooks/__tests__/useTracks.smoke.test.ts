@@ -43,7 +43,7 @@ vi.mock('@/services/api.service', () => ({
   },
 }));
 
-vi.mock('@/utils/trackCache', () => ({
+vi.mock('@/features/tracks/api/trackCache', () => ({
   trackCache: {
     setTracks: setTracksMock,
     removeTrack: removeTrackMock,

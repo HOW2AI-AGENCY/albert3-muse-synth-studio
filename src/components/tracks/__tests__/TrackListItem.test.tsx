@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { ComponentProps, RefObject } from 'react';
-import { TrackListItem } from '../TrackListItem';
+import { TrackListItem } from '@/features/tracks';
 import { useAudioPlayer, useAudioPlayerSafe } from '@/hooks/useAudioPlayer';
 import { useToast } from '@/hooks/use-toast';
-import { useTrackLike } from '@/hooks/useTrackLike';
+import { useTrackLike } from '@/features/tracks/hooks';
 import { DisplayTrack } from '@/types/track';
 import type { AudioPlayerTrack } from '@/types/track';
 import type { RefObject } from 'react';
@@ -12,7 +12,7 @@ import type { RefObject } from 'react';
 // Mock the source of the hooks
 vi.mock('@/hooks/useAudioPlayer');
 vi.mock('@/hooks/use-toast');
-vi.mock('@/hooks/useTrackLike');
+vi.mock('@/features/tracks/hooks');
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     rpc: vi.fn().mockResolvedValue({ error: null }),

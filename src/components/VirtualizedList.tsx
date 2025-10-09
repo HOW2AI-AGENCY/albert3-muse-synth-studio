@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { Track } from '@/services/api.service';
-import { TrackCard } from './TrackCard';
+import { TrackCard } from '@/features/tracks';
 import { normalizeTrack } from '@/utils/trackNormalizer';
 
 interface VirtualizedListProps {

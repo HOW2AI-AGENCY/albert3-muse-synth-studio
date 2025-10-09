@@ -36,7 +36,7 @@ interface SunoTrackData {
 }
 
 // Type guard to check if data is an array of SunoTrackData
-function isSunoDataArray(data: any): data is SunoTrackData[] {
+function isSunoDataArray(data: unknown): data is SunoTrackData[] {
   return Array.isArray(data) && data.every(item =>
     typeof item === 'object' && item !== null && 'id' in item
   );

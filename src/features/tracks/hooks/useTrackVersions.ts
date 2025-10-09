@@ -11,7 +11,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { getTrackWithVersions, TrackWithVersions, getMasterVersion, hasMultipleVersions } from '@/utils/trackVersions';
+import { getTrackWithVersions, TrackWithVersions, getMasterVersion, hasMultipleVersions } from '../api/trackVersions';
 import { logInfo, logError } from '@/utils/logger';
 
 /**

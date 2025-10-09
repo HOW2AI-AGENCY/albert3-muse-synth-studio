@@ -4,7 +4,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 // Ленивая загрузка компонентов
 const MusicGenerator = lazy(() => import('./MusicGenerator').then(module => ({ default: module.MusicGenerator })));
 const TracksList = lazy(() => import('./TracksList').then(module => ({ default: module.TracksList })));
-const DetailPanel = lazy(() => import('./workspace/DetailPanel').then(module => ({ default: module.DetailPanel })));
+const DetailPanel = lazy(() =>
+  import('@/features/tracks/ui/DetailPanel').then(module => ({ default: module.DetailPanel }))
+);
 const FullScreenPlayer = lazy(() => import('./player/FullScreenPlayer').then(module => ({ default: module.FullScreenPlayer })));
 
 // Скелетоны загрузки

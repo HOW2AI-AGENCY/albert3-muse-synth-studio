@@ -13,8 +13,7 @@ import {
   SortAsc,
   SortDesc
 } from "lucide-react";
-import { TrackCard } from "@/components/TrackCard";
-import { TrackListItem } from "@/components/tracks/TrackListItem";
+import { TrackCard, TrackListItem } from "@/features/tracks";
 import { OptimizedTrackList } from "@/components/OptimizedTrackList";
 import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
 import { useTracks } from "@/hooks/useTracks";
@@ -54,7 +53,7 @@ const Library: React.FC = () => {
 
   // Мемоизированная фильтрация и сортировка треков
   const filteredAndSortedTracks = useMemo(() => {
-    let filtered = tracks.filter(track => {
+    const filtered = tracks.filter(track => {
       const matchesSearch = !searchQuery || 
         track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (track.style_tags && track.style_tags.some(tag => 

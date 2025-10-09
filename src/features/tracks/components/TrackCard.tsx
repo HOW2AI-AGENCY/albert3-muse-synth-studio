@@ -15,7 +15,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { useTrackLike } from "@/hooks/useTrackLike";
+import { useTrackLike } from "@/features/tracks/hooks";
 import { withErrorBoundary } from "@/components/ErrorBoundary";
 import { logError } from "@/utils/logger";
 import { cn } from "@/lib/utils";

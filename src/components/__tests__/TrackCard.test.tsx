@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RefObject } from 'react';
 import type { AudioPlayerTrack } from '@/types/track';
 
-import { TrackCard } from '../TrackCard';
+import { TrackCard } from '@/features/tracks';
 
 const toastMock = vi.hoisted(() => vi.fn());
 vi.mock('@/hooks/use-toast', () => ({
@@ -47,7 +47,7 @@ const trackLikeMocks = vi.hoisted(() => ({
   useTrackLikeMock: vi.fn(),
   toggleLike: vi.fn(),
 }));
-vi.mock('@/hooks/useTrackLike', () => ({
+vi.mock('@/features/tracks/hooks', () => ({
   useTrackLike: (...args: unknown[]) => trackLikeMocks.useTrackLikeMock(...args),
 }));
 
