@@ -17,14 +17,36 @@ const parseAllowedOrigins = (): string[] => {
 
 const ALLOWED_ORIGINS = parseAllowedOrigins();
 
+const wildcardToRegExp = (pattern: string): RegExp => {
+  const escaped = pattern
+    .replaceAll('.', '\\.')
+    .replaceAll('-', '\\-')
+    .replaceAll('*', '.*');
+
+  return new RegExp(`^${escaped}$`);
+};
+
 const resolveAllowedOrigin = (requestOrOrigin?: Request | string | null): string => {
   const requestedOrigin = typeof requestOrOrigin === 'string'
     ? requestOrOrigin
     : requestOrOrigin?.headers?.get?.('Origin') ?? '';
 
   if (requestedOrigin && requestedOrigin !== 'null') {
-    if (ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(requestedOrigin)) {
-      return requestedOrigin;
+    for (const origin of ALLOWED_ORIGINS) {
+      if (origin === '*') {
+        return requestedOrigin;
+      }
+
+      if (origin === requestedOrigin) {
+        return requestedOrigin;
+      }
+
+      if (origin.includes('*')) {
+        const regex = wildcardToRegExp(origin);
+        if (regex.test(requestedOrigin)) {
+          return requestedOrigin;
+        }
+      }
     }
   }
 
