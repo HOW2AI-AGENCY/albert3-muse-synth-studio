@@ -51,7 +51,7 @@
 - **Callback (`stems-callback`)**: совместим с новыми полями и не требует изменений.
 
 ### 2.4 Баланс провайдера
-- **Edge Function `get-balance`** остаётся без изменений; использует официальный `https://studio-api.suno.ai/api/billing/info/`.
+- **Edge Function `get-balance`** теперь опрашивает `https://studio-api.suno.ai/api/billing/info/` с резервным переходом на `https://api.sunoapi.org/api/v1/account/balance`, аккумулируя детали неуспешных попыток для диагностики.
 
 ---
 
