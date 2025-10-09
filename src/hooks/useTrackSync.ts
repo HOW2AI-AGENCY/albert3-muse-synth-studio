@@ -22,7 +22,19 @@ interface TrackSyncOptions {
 export const useTrackSync = (userId: string | undefined, options: TrackSyncOptions = {}) => {
   const { toast } = useToast();
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const retryAttemptRef = useRef(0);
+  const onTrackCompletedRef = useRef<TrackSyncOptions['onTrackCompleted']>();
+  const onTrackFailedRef = useRef<TrackSyncOptions['onTrackFailed']>();
   const { onTrackCompleted, onTrackFailed, enabled = true } = options;
+
+  useEffect(() => {
+    onTrackCompletedRef.current = onTrackCompleted;
+  }, [onTrackCompleted]);
+
+  useEffect(() => {
+    onTrackFailedRef.current = onTrackFailed;
+  }, [onTrackFailed]);
 
   useEffect(() => {
     if (!userId || !enabled) {
@@ -31,90 +43,134 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
 
     logInfo('Starting track sync for user', 'useTrackSync', { userId });
 
-    // Subscribe to real-time track updates
-    const channel = supabase
-      .channel('track-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'tracks',
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload: RealtimePostgresChangesPayload<TrackRow>) => {
-          const newTrack = payload.new;
-          const oldTrack = payload.old;
+    const channelName = `track-updates-${userId}`;
 
-          if (!newTrack || !oldTrack) {
-            return;
-          }
+    const clearRetryTimeout = () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+    };
 
-          if (!newTrack || !('id' in newTrack) || !('status' in newTrack)) {
-            return;
-          }
+    const subscribeToChannel = () => {
+      clearRetryTimeout();
 
-          logInfo('Track update received', 'useTrackSync', {
-            trackId: newTrack.id,
-            oldStatus: oldTrack && 'status' in oldTrack ? oldTrack.status : undefined,
-            newStatus: newTrack.status,
-          });
+      const channel = supabase.channel(channelName);
 
-          // Track completed
-          if (oldTrack && 'status' in oldTrack && oldTrack.status !== 'completed' && newTrack.status === 'completed') {
-            logInfo('Track completed', 'useTrackSync', { trackId: newTrack.id });
-            
-            toast({
-              title: '✅ Трек готов!',
-              description: `"${newTrack.title}" успешно сгенерирован`,
-            });
+      channel
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'tracks',
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload: RealtimePostgresChangesPayload<TrackRow>) => {
+            const newTrack = payload.new;
+            const oldTrack = payload.old;
 
-            onTrackCompleted?.(newTrack.id);
-          }
+            if (!newTrack || !oldTrack) {
+              return;
+            }
 
-          // Track failed
-          if (oldTrack && 'status' in oldTrack && oldTrack.status !== 'failed' && newTrack.status === 'failed') {
-            logWarn('Track failed', 'useTrackSync', {
+            if (!newTrack || !('id' in newTrack) || !('status' in newTrack)) {
+              return;
+            }
+
+            logInfo('Track update received', 'useTrackSync', {
               trackId: newTrack.id,
-              error: newTrack.error_message,
+              oldStatus: oldTrack && 'status' in oldTrack ? oldTrack.status : undefined,
+              newStatus: newTrack.status,
             });
 
-            toast({
-              title: '❌ Ошибка генерации',
-              description: newTrack.error_message || 'Не удалось создать трек',
-              variant: 'destructive',
-            });
+            // Track completed
+            if (oldTrack && 'status' in oldTrack && oldTrack.status !== 'completed' && newTrack.status === 'completed') {
+              logInfo('Track completed', 'useTrackSync', { trackId: newTrack.id });
 
-            onTrackFailed?.(newTrack.id, newTrack.error_message ?? null);
+              toast({
+                title: '✅ Трек готов!',
+                description: `"${newTrack.title}" успешно сгенерирован`,
+              });
+
+              onTrackCompletedRef.current?.(newTrack.id);
+            }
+
+            // Track failed
+            if (oldTrack && 'status' in oldTrack && oldTrack.status !== 'failed' && newTrack.status === 'failed') {
+              logWarn('Track failed', 'useTrackSync', {
+                trackId: newTrack.id,
+                error: newTrack.error_message,
+              });
+
+              toast({
+                title: '❌ Ошибка генерации',
+                description: newTrack.error_message || 'Не удалось создать трек',
+                variant: 'destructive',
+              });
+
+              onTrackFailedRef.current?.(newTrack.id, newTrack.error_message ?? null);
+            }
+
+            // Track processing (from pending)
+            if (oldTrack && 'status' in oldTrack && oldTrack.status === 'pending' && newTrack.status === 'processing') {
+              logInfo('Track processing started', 'useTrackSync', { trackId: newTrack.id });
+            }
           }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            logInfo('Track sync subscribed', 'useTrackSync');
+            retryAttemptRef.current = 0;
+            channelRef.current = channel;
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            const attempt = retryAttemptRef.current;
+            const delay = Math.min(2 ** attempt * 1000, 30000);
 
-          // Track processing (from pending)
-          if (oldTrack && 'status' in oldTrack && oldTrack.status === 'pending' && newTrack.status === 'processing') {
-            logInfo('Track processing started', 'useTrackSync', { trackId: newTrack.id });
+            if (status === 'CHANNEL_ERROR') {
+              logError('Track sync channel error', new Error('Channel error'), 'useTrackSync');
+            } else if (status === 'TIMED_OUT') {
+              logWarn('Track sync timed out', 'useTrackSync');
+            } else {
+              logWarn('Track sync closed unexpectedly', 'useTrackSync');
+            }
+
+            if (channelRef.current) {
+              supabase.removeChannel(channelRef.current);
+              channelRef.current = null;
+            }
+
+            if (attempt >= 5) {
+              logError('Track sync retry limit reached', new Error('Realtime connection failed'), 'useTrackSync');
+              return;
+            }
+
+            retryAttemptRef.current = attempt + 1;
+
+            clearRetryTimeout();
+            retryTimeoutRef.current = setTimeout(() => {
+              subscribeToChannel();
+            }, delay);
           }
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          logInfo('Track sync subscribed', 'useTrackSync');
-        } else if (status === 'CHANNEL_ERROR') {
-          logError('Track sync channel error', new Error('Channel error'), 'useTrackSync');
-        } else if (status === 'TIMED_OUT') {
-          logWarn('Track sync timed out', 'useTrackSync');
-        }
-      });
+        });
 
-    channelRef.current = channel;
+      channelRef.current = channel;
+    };
 
-    // Cleanup
+    subscribeToChannel();
+
     return () => {
+      clearRetryTimeout();
+
       if (channelRef.current) {
         logInfo('Unsubscribing from track sync', 'useTrackSync');
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
+
+      retryAttemptRef.current = 0;
     };
-  }, [userId, enabled, onTrackCompleted, onTrackFailed, toast]);
+  }, [userId, enabled, toast]);
 
   // Check for stale processing tracks on mount
   useEffect(() => {
