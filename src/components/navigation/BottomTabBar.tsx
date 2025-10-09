@@ -10,7 +10,7 @@ interface BottomTabBarProps {
 }
 
 export const BottomTabBar: React.FC<BottomTabBarProps> = ({
-  items,
+  items = [],
   className,
 }) => {
   const location = useLocation();
