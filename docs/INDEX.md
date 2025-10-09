@@ -29,6 +29,8 @@
 ### Архитектура
 - architecture/ARCHITECTURE.md - Общая архитектура
 - ARCHITECTURE_DIAGRAMS.md ⭐ NEW - Диаграммы (Mermaid)
+ - architecture/PROJECT_MAP.md ⭐ NEW - Карта проекта (структура и потоки)
+ - architecture/KNOWLEDGE_GRAPH.md ⭐ NEW - Граф знаний (сущности и связи)
 
 ### API
 - api/API.md - API документация
@@ -51,7 +53,8 @@
 - MOBILE_OPTIMIZATION.md - Мобильная оптимизация
 - STEMS_SYSTEM.md - Система стемов
 - integrations/SUNO_API_AUDIT.md - Полный аудит интеграции Suno API (обновлено 10.10.2025)
-- ../project-management/reports/2025-10-10-repo-audit.md ⭐ NEW - Комплексный аудит репозитория (10.10.2025)
+ - ../project-management/reports/2025-10-10-repo-audit.md ⭐ NEW - Комплексный аудит репозитория (10.10.2025)
+ - ../project-management/reports/2025-10-09-workspace-audit.md ⭐ NEW - Полный аудит Workspace (09.10.2025)
 
 ---
 
