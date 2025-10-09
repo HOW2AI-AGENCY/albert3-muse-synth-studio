@@ -1,27 +1,7 @@
 import { assert, assertEquals, assertExists, assertStringIncludes } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { handler, setPollSunoCompletionOverride } from "../generate-suno/index.ts";
 import type { PollSunoCompletionFn } from "../generate-suno/index.ts";
-
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE");
-const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
-
-if (!SUPABASE_URL || !SERVICE_ROLE || !ANON_KEY) {
-  throw new Error("Supabase test environment variables are not configured. Ensure 'supabase test' is running.");
-}
-
-// Normalise environment variables for the function runtime
-Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", SERVICE_ROLE);
-Deno.env.set("SUPABASE_SERVICE_ROLE", SERVICE_ROLE);
-if (!Deno.env.get("SUNO_API_KEY")) {
-  Deno.env.set("SUNO_API_KEY", "test-suno-key");
-}
-
-const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE);
-const anonClient = createClient(SUPABASE_URL, ANON_KEY);
-
-const realFetch = globalThis.fetch;
+import { adminClient, createTestUser, installFetchMock } from "./_testUtils.ts";
 
 async function clearTables() {
   await adminClient.from("track_versions").delete().neq("id", "00000000-0000-0000-0000-000000000000");
@@ -30,45 +10,9 @@ async function clearTables() {
   await adminClient.from("rate_limits").delete().neq("user_id", "00000000-0000-0000-0000-000000000000");
 }
 
-async function createTestUser() {
-  const email = `test-${crypto.randomUUID()}@example.com`;
-  const password = `Test-${crypto.randomUUID()}`;
-
-  const { data: created, error: createError } = await adminClient.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-  });
-  if (createError || !created?.user) {
-    throw new Error(`Failed to create test user: ${createError?.message}`);
-  }
-
-  const { data: sessionData, error: signInError } = await anonClient.auth.signInWithPassword({ email, password });
-  if (signInError || !sessionData.session?.access_token) {
-    throw new Error(`Failed to sign in test user: ${signInError?.message}`);
-  }
-
-  return {
-    userId: created.user.id,
-    accessToken: sessionData.session.access_token,
-  };
-}
-
 function mockPoller(recorder: string[]): PollSunoCompletionFn {
   return async (_trackId, taskId) => {
     recorder.push(taskId);
-  };
-}
-
-function installFetchMock(responders: Record<string, (input: RequestInfo | URL, init?: RequestInit) => Response | Promise<Response>>) {
-  globalThis.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = typeof input === "string" ? input : (input instanceof URL ? input.href : input.url);
-    for (const [prefix, handler] of Object.entries(responders)) {
-      if (url.startsWith(prefix)) {
-        return handler(input, init);
-      }
-    }
-    return realFetch(input as Request, init);
   };
 }
 
@@ -98,7 +42,7 @@ Deno.test({
         };
 
         const observedSunoRequests: unknown[] = [];
-        installFetchMock({
+        const restorePrimaryFetch = installFetchMock({
           "https://api.sunoapi.org/api/v1/generate": (_input, init) => {
             if (init?.body) {
               if (typeof init.body === "string") {
@@ -123,58 +67,68 @@ Deno.test({
           body: JSON.stringify(body),
         };
 
-        const response = await handler(new Request("http://localhost/generate-suno", requestInit));
-        assertEquals(response.status, 200);
-        const payload = await response.json();
-        assert(payload.success);
-        assertExists(payload.trackId);
-        assertEquals(payload.taskId, "task-123");
-        assertEquals(pollCalls, ["task-123"]);
+        let createdJobId: string | null = null;
 
-        const { data: jobs } = await adminClient.from("ai_jobs").select("*");
-        assertEquals(jobs?.length, 1);
-        assertEquals(jobs?.[0].status, "processing");
-        assertEquals(jobs?.[0].idempotency_key, body.idempotencyKey);
+        try {
+          const response = await handler(new Request("http://localhost/generate-suno", requestInit));
+          assertEquals(response.status, 200);
+          const payload = await response.json();
+          assert(payload.success);
+          assertExists(payload.trackId);
+          assertEquals(payload.taskId, "task-123");
+          assertEquals(pollCalls, ["task-123"]);
 
-        const { data: tracks } = await adminClient.from("tracks").select("*");
-        assertEquals(tracks?.length, 1);
-        assertEquals(tracks?.[0].status, "processing");
-        assertEquals(tracks?.[0].user_id, userId);
-        assertEquals(tracks?.[0].lyrics, body.lyrics);
-        assertEquals(tracks?.[0].has_vocals, body.hasVocals);
-        assertEquals(tracks?.[0].style_tags, body.tags);
+          const { data: jobs } = await adminClient.from("ai_jobs").select("*");
+          assertEquals(jobs?.length, 1);
+          assertEquals(jobs?.[0].status, "processing");
+          assertEquals(jobs?.[0].idempotency_key, body.idempotencyKey);
+          createdJobId = jobs?.[0]?.id ?? null;
 
-        assertEquals(observedSunoRequests.length, 1);
-        const sunoRequestPayload = observedSunoRequests[0] as Record<string, unknown>;
-        assertEquals(sunoRequestPayload.lyrics, body.lyrics);
-        assertEquals(sunoRequestPayload.has_vocals, body.hasVocals);
-        assertEquals(sunoRequestPayload.custom_mode, body.customMode);
+          const { data: tracks } = await adminClient.from("tracks").select("*");
+          assertEquals(tracks?.length, 1);
+          assertEquals(tracks?.[0].status, "processing");
+          assertEquals(tracks?.[0].user_id, userId);
+          assertEquals(tracks?.[0].lyrics, body.lyrics);
+          assertEquals(tracks?.[0].has_vocals, body.hasVocals);
+          assertEquals(tracks?.[0].style_tags, body.tags);
 
-        const trackMetadata = tracks?.[0].metadata as Record<string, unknown> | null;
-        assert(trackMetadata);
-        assertEquals(trackMetadata?.lyrics, body.lyrics);
-        assertEquals(trackMetadata?.has_vocals, body.hasVocals);
-        assertEquals(trackMetadata?.custom_mode, body.customMode);
+          assertEquals(observedSunoRequests.length, 1);
+          const sunoRequestPayload = observedSunoRequests[0] as Record<string, unknown>;
+          assertEquals(sunoRequestPayload.lyrics, body.lyrics);
+          assertEquals(sunoRequestPayload.has_vocals, body.hasVocals);
+          assertEquals(sunoRequestPayload.custom_mode, body.customMode);
 
-        const { data: rateEntries } = await adminClient
-          .from("rate_limits")
-          .select("*")
-          .eq("user_id", userId)
-          .eq("endpoint", "generate-suno");
-        assertEquals(rateEntries?.length, 1);
+          const trackMetadata = tracks?.[0].metadata as Record<string, unknown> | null;
+          assert(trackMetadata);
+          assertEquals(trackMetadata?.lyrics, body.lyrics);
+          assertEquals(trackMetadata?.has_vocals, body.hasVocals);
+          assertEquals(trackMetadata?.custom_mode, body.customMode);
 
-        // Second call should reuse existing job and skip Suno API
-        installFetchMock({
+          const { data: rateEntries } = await adminClient
+            .from("rate_limits")
+            .select("*")
+            .eq("user_id", userId)
+            .eq("endpoint", "generate-suno");
+          assertEquals(rateEntries?.length, 1);
+        } finally {
+          restorePrimaryFetch();
+        }
+
+        const restoreIdempotentFetch = installFetchMock({
           "https://api.sunoapi.org/api/v1/generate": () => {
             throw new Error("Idempotent request should not trigger Suno API");
           },
         });
 
-        const secondResponse = await handler(new Request("http://localhost/generate-suno", requestInit));
-        assertEquals(secondResponse.status, 200);
-        const secondPayload = await secondResponse.json();
-        assertEquals(secondPayload.jobId, jobs?.[0].id);
-        assertStringIncludes(secondPayload.message, "already processed");
+        try {
+          const secondResponse = await handler(new Request("http://localhost/generate-suno", requestInit));
+          assertEquals(secondResponse.status, 200);
+          const secondPayload = await secondResponse.json();
+          assertEquals(secondPayload.jobId, createdJobId);
+          assertStringIncludes(secondPayload.message, "already processed");
+        } finally {
+          restoreIdempotentFetch();
+        }
 
         const { data: jobsAfter } = await adminClient.from("ai_jobs").select("*");
         assertEquals(jobsAfter?.length, 1);
@@ -209,7 +163,7 @@ Deno.test({
         const pollCalls: string[] = [];
         setPollSunoCompletionOverride(mockPoller(pollCalls));
 
-        installFetchMock({
+        const restoreResumeFetch = installFetchMock({
           "https://api.sunoapi.org/api/v1/generate": (_input, _init) => {
             throw new Error("Resume flow should not hit Suno API");
           },
@@ -229,12 +183,16 @@ Deno.test({
           }),
         });
 
-        const resumeResponse = await handler(resumeRequest);
-        assertEquals(resumeResponse.status, 200);
-        const resumePayload = await resumeResponse.json();
-        assertEquals(resumePayload.trackId, existingTrack.id);
-        assertEquals(resumePayload.taskId, "resume-task");
-        assertEquals(pollCalls, ["resume-task"]);
+        try {
+          const resumeResponse = await handler(resumeRequest);
+          assertEquals(resumeResponse.status, 200);
+          const resumePayload = await resumeResponse.json();
+          assertEquals(resumePayload.trackId, existingTrack.id);
+          assertEquals(resumePayload.taskId, "resume-task");
+          assertEquals(pollCalls, ["resume-task"]);
+        } finally {
+          restoreResumeFetch();
+        }
 
         const { data: jobs } = await adminClient.from("ai_jobs").select("*");
         assertEquals(jobs?.length, 1);
@@ -257,7 +215,7 @@ Deno.test({
         const { userId, accessToken } = await createTestUser();
         setPollSunoCompletionOverride(() => Promise.resolve());
 
-        installFetchMock({
+        const restoreErrorFetch = installFetchMock({
           "https://api.sunoapi.org/api/v1/generate": (_input, _init) =>
             new Response("Internal error", { status: 500, headers: { "Content-Type": "text/plain" } }),
         });
@@ -275,11 +233,15 @@ Deno.test({
           }),
         });
 
-        const response = await handler(request);
-        assertEquals(response.status, 500);
-        const payload = await response.json();
-        assertStringIncludes(payload.error, "Suno API");
-        assertEquals(payload.details?.status ?? 0, 500);
+        try {
+          const response = await handler(request);
+          assertEquals(response.status, 500);
+          const payload = await response.json();
+          assertStringIncludes(payload.error, "Suno API");
+          assertEquals(payload.details?.status ?? 0, 500);
+        } finally {
+          restoreErrorFetch();
+        }
 
         const { data: jobs } = await adminClient.from("ai_jobs").select("*");
         assertEquals(jobs?.length, 1);
@@ -298,7 +260,6 @@ Deno.test({
         assertEquals(rateEntries?.length, 1);
       });
     } finally {
-      globalThis.fetch = realFetch;
       setPollSunoCompletionOverride();
       await clearTables();
     }

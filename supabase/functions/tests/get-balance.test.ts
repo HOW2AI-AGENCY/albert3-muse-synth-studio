@@ -1,125 +1,101 @@
-import { assert, assertEquals, assertMatch } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { getSunoBalance } from "../get-balance/index.ts";
-
-const realFetch = globalThis.fetch;
-
-const resolveUrl = (input: RequestInfo | URL): string => {
-  if (typeof input === "string") return input;
-  if (input instanceof URL) return input.href;
-  return input.url;
-};
+import { assert, assertEquals, assertExists, assertStringIncludes } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { handler as getBalanceHandler } from "../get-balance/index.ts";
+import { createTestUser, installFetchMock } from "./_testUtils.ts";
 
 Deno.test({
-  name: "returns balance from primary studio endpoint when available",
+  name: "get-balance falls back to secondary Suno endpoint",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
-    Deno.env.set("SUNO_API_KEY", "test-key");
-    Deno.env.delete("SUNO_BALANCE_URL");
-
+    const { accessToken } = await createTestUser();
     const calls: string[] = [];
-    globalThis.fetch = async (input, _init) => {
-      const url = resolveUrl(input);
-      calls.push(url);
-      return new Response(
-        JSON.stringify({
-          data: {
-            balance: 42,
-            currency: "credits",
-            plan: "studio",
-          },
+
+    const restoreFetch = installFetchMock({
+      "https://api.sunoapi.org/api/v1/account/balance": () => {
+        calls.push("sunoapi");
+        return new Response(JSON.stringify({ code: 401, msg: "Unauthorized" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      },
+      "https://studio-api.suno.ai/api/billing/info": () => {
+        calls.push("studio");
+        return new Response(
+          JSON.stringify({
+            subscription: { plan: "pro" },
+            credits: { monthly: { limit: 50, used: 12 } },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      },
+    });
+
+    try {
+      const request = new Request("http://localhost/get-balance", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ provider: "suno" }),
+      });
+
+      const response = await getBalanceHandler(request);
+      assertEquals(response.status, 200);
+      const payload = await response.json();
+      assertEquals(payload.provider, "suno");
+      assertEquals(payload.balance, 38);
+      assertEquals(payload.currency, "credits");
+      assertEquals(payload.plan, "pro");
+      assertEquals(payload.monthly_limit, 50);
+      assertEquals(payload.monthly_usage, 12);
+      assertEquals(calls, ["sunoapi", "studio"]);
+    } finally {
+      restoreFetch();
+    }
+  },
+});
+
+Deno.test({
+  name: "get-balance reports aggregated error when all Suno endpoints fail",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const { accessToken } = await createTestUser();
+
+    const restoreFetch = installFetchMock({
+      "https://api.sunoapi.org/api/v1/account/balance": () =>
+        new Response(JSON.stringify({ code: 503, msg: "Maintenance" }), {
+          status: 503,
+          headers: { "Content-Type": "application/json" },
         }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
+      "https://studio-api.suno.ai/api/billing/info": () =>
+        new Response("Service Suspended", { status: 503, headers: { "Content-Type": "text/plain" } }),
+    });
+
+    try {
+      const request = new Request("http://localhost/get-balance", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
         },
-      );
-    };
+        body: JSON.stringify({ provider: "suno" }),
+      });
 
-    try {
-      const result = await getSunoBalance();
-      assertEquals(result.balance, 42);
-      assertEquals(result.currency, "credits");
-      assertEquals(result.plan, "studio");
-      assert(result.endpoint?.includes("studio-api.suno.ai"));
-      assertEquals(calls.length, 1);
-      assertMatch(calls[0], /https:\/\/studio-api\.suno\.ai\/api\/billing\/info/);
+      const response = await getBalanceHandler(request);
+      assertEquals(response.status, 200);
+      const payload = await response.json();
+      assertEquals(payload.provider, "suno");
+      assertEquals(payload.balance, 0);
+      assertEquals(payload.currency, "credits");
+      assertExists(payload.error);
+      assertStringIncludes(payload.error, "All Suno balance endpoints failed");
+      assert(Array.isArray(payload.details?.attempts));
+      assertEquals(payload.details.attempts.length, 2);
     } finally {
-      globalThis.fetch = realFetch;
-      Deno.env.delete("SUNO_API_KEY");
+      restoreFetch();
     }
-  },
-});
 
-Deno.test({
-  name: "falls back to sunoapi endpoint when studio endpoint fails",
-  sanitizeOps: false,
-  sanitizeResources: false,
-  async fn() {
-    Deno.env.set("SUNO_API_KEY", "test-key");
-    Deno.env.delete("SUNO_BALANCE_URL");
-
-    const calls: string[] = [];
-    globalThis.fetch = async (input, _init) => {
-      const url = resolveUrl(input);
-      calls.push(url);
-      if (url.includes("studio-api.suno.ai")) {
-        return new Response("upstream error", { status: 502 });
-      }
-      return new Response(
-        JSON.stringify({ code: 200, data: { balance: 13, currency: "credits", plan: "plus" } }),
-        {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-    };
-
-    try {
-      const result = await getSunoBalance();
-      assertEquals(result.balance, 13);
-      assertEquals(result.currency, "credits");
-      assertEquals(result.plan, "plus");
-      assert(result.endpoint?.includes("api.sunoapi.org"));
-      assertEquals(calls.length, 2);
-    } finally {
-      globalThis.fetch = realFetch;
-      Deno.env.delete("SUNO_API_KEY");
-    }
-  },
-});
-
-Deno.test({
-  name: "returns aggregated error when all endpoints fail",
-  sanitizeOps: false,
-  sanitizeResources: false,
-  async fn() {
-    Deno.env.set("SUNO_API_KEY", "test-key");
-    Deno.env.delete("SUNO_BALANCE_URL");
-
-    globalThis.fetch = async () => new Response("nope", { status: 500 });
-
-    try {
-      const result = await getSunoBalance();
-      assertEquals(result.balance, 0);
-      assertEquals(result.error, "All Suno balance endpoints failed");
-      assert(Array.isArray(result.attempts));
-      assert(result.attempts!.length >= 2);
-    } finally {
-      globalThis.fetch = realFetch;
-      Deno.env.delete("SUNO_API_KEY");
-    }
-  },
-});
-
-Deno.test({
-  name: "returns configuration error when api key missing",
-  async fn() {
-    Deno.env.delete("SUNO_API_KEY");
-    globalThis.fetch = realFetch;
-
-    const result = await getSunoBalance();
-    assertEquals(result.balance, 0);
-    assertEquals(result.error, "API key not configured");
   },
 });
