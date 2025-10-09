@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download, Share2, Trash2, Eye, Heart, Calendar, Clock, ExternalLink, Play } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrackVersions, TrackStemsPanel, useTrackLike } from "@/features/tracks";
+import { TrackVersions, TrackVersionComparison, TrackStemsPanel, useTrackLike } from "@/features/tracks";
 import type { TrackVersionMetadata } from "@/features/tracks/components/TrackVersionMetadataPanel";
 import { TrackDetailsPanel } from "@/features/tracks/ui/TrackDetailsPanel";
 import { TrackVersionSelector } from "@/features/tracks/ui/TrackVersionSelector";
@@ -128,6 +128,8 @@ export const DetailPanelContent = ({
 }: DetailPanelContentProps) => {
   const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count || 0);
   const [selectedVersionId, setSelectedVersionId] = useState<string | undefined>();
+  const [comparisonLeftId, setComparisonLeftId] = useState<string | undefined>();
+  const [comparisonRightId, setComparisonRightId] = useState<string | undefined>();
 
   useEffect(() => {
     if (!track?.id) {
@@ -150,6 +152,8 @@ export const DetailPanelContent = ({
   useEffect(() => {
     if (!versions?.length) {
       setSelectedVersionId(undefined);
+      setComparisonLeftId(undefined);
+      setComparisonRightId(undefined);
       return;
     }
 
@@ -163,6 +167,41 @@ export const DetailPanelContent = ({
     });
   }, [versions]);
 
+  useEffect(() => {
+    if (!versions?.length) {
+      return;
+    }
+
+    setComparisonLeftId((current) => {
+      if (current && versions.some((version) => version.id === current)) {
+        return current;
+      }
+
+      const masterVersion = versions.find((version) => version.is_master);
+      return masterVersion?.id ?? versions[0].id;
+    });
+  }, [versions]);
+
+  useEffect(() => {
+    if (!versions?.length) {
+      setComparisonRightId(undefined);
+      return;
+    }
+
+    setComparisonRightId((current) => {
+      if (current && current !== comparisonLeftId && versions.some((version) => version.id === current)) {
+        return current;
+      }
+
+      const alternative = versions.find((version) => version.id !== comparisonLeftId);
+      if (alternative) {
+        return alternative.id;
+      }
+
+      return versions.length > 1 ? versions[1].id : undefined;
+    });
+  }, [versions, comparisonLeftId]);
+
   const activeVersion = useMemo(
     () => versions.find((version) => version.id === selectedVersionId),
     [versions, selectedVersionId]
@@ -175,6 +214,52 @@ export const DetailPanelContent = ({
 
     return stems.filter((stem) => !stem.version_id || stem.version_id === selectedVersionId);
   }, [stems, selectedVersionId]);
+
+  const handleVersionSelect = useCallback((versionId: string) => {
+    setSelectedVersionId(versionId);
+    setComparisonLeftId(versionId);
+
+    setComparisonRightId((current) => {
+      if (current && current !== versionId && versions.some((version) => version.id === current)) {
+        return current;
+      }
+
+      const alternative = versions.find((version) => version.id !== versionId);
+      return alternative?.id ?? current;
+    });
+  }, [versions]);
+
+  const handleComparisonLeftChange = useCallback((versionId: string) => {
+    setComparisonLeftId(versionId);
+    setSelectedVersionId(versionId);
+
+    setComparisonRightId((current) => {
+      if (current && current !== versionId && versions.some((version) => version.id === current)) {
+        return current;
+      }
+
+      const alternative = versions.find((version) => version.id !== versionId);
+      return alternative?.id ?? current;
+    });
+  }, [versions]);
+
+  const handleComparisonRightChange = useCallback((versionId: string) => {
+    if (versionId === comparisonLeftId) {
+      const alternative = versions.find((version) => version.id !== versionId);
+      if (alternative) {
+        setComparisonLeftId(alternative.id);
+        setSelectedVersionId(alternative.id);
+      }
+    }
+
+    setComparisonRightId(versionId);
+  }, [comparisonLeftId, versions]);
+
+  const handleComparisonSwap = useCallback((leftId: string, rightId: string) => {
+    setComparisonLeftId(rightId);
+    setSelectedVersionId(rightId);
+    setComparisonRightId(leftId);
+  }, []);
 
   const handlePresetApply = (preset: StylePreset) => {
     const presetGenre = preset.styleIds
@@ -348,7 +433,17 @@ export const DetailPanelContent = ({
                     is_master: version.is_master,
                   }))}
                   selectedVersionId={selectedVersionId}
-                  onSelect={setSelectedVersionId}
+                  onSelect={handleVersionSelect}
+                />
+                <TrackVersionComparison
+                  trackId={track.id}
+                  versions={versions}
+                  trackMetadata={track.metadata ?? null}
+                  leftVersionId={comparisonLeftId}
+                  rightVersionId={comparisonRightId}
+                  onLeftVersionChange={handleComparisonLeftChange}
+                  onRightVersionChange={handleComparisonRightChange}
+                  onSwapSides={handleComparisonSwap}
                 />
                 <TrackVersions
                   trackId={track.id}

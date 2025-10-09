@@ -18,19 +18,17 @@ import {
 } from "@/components/ui/alert-dialog";
 import { logError, logInfo } from "@/utils/logger";
 import { TrackVersionMetadataPanel, type TrackVersionMetadata } from "./TrackVersionMetadataPanel";
+import {
+  buildAudioPlayerTrack,
+  formatTrackVersionDuration,
+  getVersionMetadata,
+  type TrackVersionLike,
+} from "./trackVersionUtils";
 import { deleteTrackVersion, updateTrackVersion } from "../api/trackVersions";
 
-interface TrackVersion {
-  id: string;
-  version_number: number;
-  is_master: boolean;
+interface TrackVersion extends TrackVersionLike {
   suno_id: string;
-  audio_url: string;
   video_url?: string;
-  cover_url?: string;
-  lyrics?: string;
-  duration?: number;
-  metadata?: TrackVersionMetadata | null;
 }
 
 interface TrackVersionsProps {
@@ -87,32 +85,20 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
   // Мемоизируем функцию воспроизведения версии
   const handlePlayVersion = useCallback((version: TrackVersion) => {
     vibrate('light');
-    
-    logInfo(`Playing version ${version.version_number}`, 'TrackVersions', { 
-      versionId: version.id, 
+
+    logInfo(`Playing version ${version.version_number}`, 'TrackVersions', {
+      versionId: version.id,
       versionNumber: version.version_number,
-      trackId 
+      trackId
     });
-    
+
     // Используем реальный ID версии вместо синтетического
     const isCurrentVersion = currentTrack?.id === version.id;
 
     if (isCurrentVersion && isPlaying) {
       togglePlayPause();
     } else {
-      playTrack({
-        id: version.id, // Реальный UUID версии
-        title: `Версия ${version.version_number}`,
-        audio_url: version.audio_url,
-        cover_url: version.cover_url,
-        duration: version.duration,
-        status: 'completed',
-        style_tags: [],
-        lyrics: version.lyrics,
-        parentTrackId: trackId, // ID основного трека
-        versionNumber: version.version_number, // Номер версии
-        isMasterVersion: version.is_master, // Является ли мастер-версией
-      });
+      playTrack(buildAudioPlayerTrack(version, trackId));
     }
   }, [trackId, currentTrack, isPlaying, vibrate, togglePlayPause, playTrack]);
 
@@ -168,14 +154,6 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
       setVersionToDelete(null);
     }
   }, [versionToDelete, versions, trackId, vibrate, onVersionUpdate]);
-
-  // Мемоизируем функцию форматирования длительности
-  const formatDuration = useCallback((seconds?: number) => {
-    if (!seconds) return '--:--';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  }, []);
 
   if (!versions || versions.length <= 1) {
     return null;
@@ -256,7 +234,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                             )}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {formatDuration(version.duration)}
+                            {formatTrackVersionDuration(version.duration)}
                           </div>
                         </div>
                       </div>
@@ -292,7 +270,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                   </div>
 
                   <TrackVersionMetadataPanel
-                    metadata={version.metadata}
+                    metadata={getVersionMetadata(version.metadata, trackMetadata)}
                     fallbackMetadata={trackMetadata}
                     className="w-full lg:max-w-md"
                   />
