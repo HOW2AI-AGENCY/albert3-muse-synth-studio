@@ -3,31 +3,21 @@ import { handler as getBalanceHandler } from "../get-balance/index.ts";
 import { createTestUser, installFetchMock } from "./_testUtils.ts";
 
 Deno.test({
-  name: "get-balance falls back to secondary Suno endpoint",
+  name: "get-balance returns balance from Suno endpoint",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
     const { accessToken } = await createTestUser();
-    const calls: string[] = [];
 
     const restoreFetch = installFetchMock({
-      "https://api.sunoapi.org/api/v1/account/balance": () => {
-        calls.push("sunoapi");
-        return new Response(JSON.stringify({ code: 401, msg: "Unauthorized" }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        });
-      },
-      "https://studio-api.suno.ai/api/billing/info": () => {
-        calls.push("studio");
-        return new Response(
+      "https://api.sunoapi.org/api/v1/account/balance": () =>
+        new Response(
           JSON.stringify({
             subscription: { plan: "pro" },
             credits: { monthly: { limit: 50, used: 12 } },
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },
-        );
-      },
+        ),
     });
 
     try {
@@ -49,7 +39,6 @@ Deno.test({
       assertEquals(payload.plan, "pro");
       assertEquals(payload.monthly_limit, 50);
       assertEquals(payload.monthly_usage, 12);
-      assertEquals(calls, ["sunoapi", "studio"]);
     } finally {
       restoreFetch();
     }
@@ -69,8 +58,6 @@ Deno.test({
           status: 503,
           headers: { "Content-Type": "application/json" },
         }),
-      "https://studio-api.suno.ai/api/billing/info": () =>
-        new Response("Service Suspended", { status: 503, headers: { "Content-Type": "text/plain" } }),
     });
 
     try {
@@ -92,7 +79,7 @@ Deno.test({
       assertExists(payload.error);
       assertStringIncludes(payload.error, "All Suno balance endpoints failed");
       assert(Array.isArray(payload.details?.attempts));
-      assertEquals(payload.details.attempts.length, 2);
+      assertEquals(payload.details.attempts.length, 1);
     } finally {
       restoreFetch();
     }

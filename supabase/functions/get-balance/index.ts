@@ -343,7 +343,6 @@ const unique = (values: Array<string | null | undefined>): string[] => {
 const DEFAULT_SUNO_BALANCE_ENDPOINTS = unique([
   Deno.env.get('SUNO_BALANCE_URL'),
   'https://api.sunoapi.org/api/v1/account/balance',
-  'https://studio-api.suno.ai/api/billing/info/',
 ]);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

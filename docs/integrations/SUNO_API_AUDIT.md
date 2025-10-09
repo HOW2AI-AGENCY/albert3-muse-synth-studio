@@ -51,7 +51,7 @@
 - **Callback (`stems-callback`)**: совместим с новыми полями и не требует изменений.
 
 ### 2.4 Баланс провайдера
-- **Edge Function `get-balance`** теперь запрашивает баланс по цепочке endpoints: кастомный `SUNO_BALANCE_URL` → `https://api.sunoapi.org/api/v1/account/balance` → официальный `https://studio-api.suno.ai/api/billing/info/`, нормализуя ответы и логируя причину отказа для каждого шага.
+- **Edge Function `get-balance`** теперь запрашивает баланс у `https://api.sunoapi.org/api/v1/account/balance` (с возможностью переопределить URL через `SUNO_BALANCE_URL`), нормализуя ответы и логируя причину отказа.
 
 ---
 
