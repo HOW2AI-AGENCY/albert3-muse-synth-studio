@@ -1,6 +1,8 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { RefObject } from 'react';
+import type { AudioPlayerTrack } from '@/types/track';
 
 import { TrackVersions } from '../tracks/TrackVersions';
 
@@ -8,6 +10,19 @@ const audioPlayerMocks = vi.hoisted(() => ({
   useAudioPlayerMock: vi.fn(),
   playTrack: vi.fn(),
   togglePlayPause: vi.fn(),
+  playTrackWithQueue: vi.fn(),
+  pauseTrack: vi.fn(),
+  seekTo: vi.fn(),
+  setVolume: vi.fn(),
+  playNext: vi.fn(),
+  playPrevious: vi.fn(),
+  addToQueue: vi.fn(),
+  removeFromQueue: vi.fn(),
+  clearQueue: vi.fn(),
+  reorderQueue: vi.fn(),
+  switchToVersion: vi.fn(),
+  getAvailableVersions: vi.fn<() => AudioPlayerTrack[]>(() => []),
+  clearCurrentTrack: vi.fn(),
 }));
 vi.mock('@/contexts/AudioPlayerContext', async () => {
   const actual = await vi.importActual<typeof import('@/contexts/AudioPlayerContext')>(
@@ -91,8 +106,28 @@ describe('TrackVersions component', () => {
     audioPlayerMocks.useAudioPlayerMock.mockReturnValue({
       currentTrack: null,
       isPlaying: false,
+      currentTime: 0,
+      duration: 0,
+      volume: 1,
+      queue: [],
+      currentQueueIndex: 0,
       playTrack: audioPlayerMocks.playTrack,
+      playTrackWithQueue: audioPlayerMocks.playTrackWithQueue,
       togglePlayPause: audioPlayerMocks.togglePlayPause,
+      pauseTrack: audioPlayerMocks.pauseTrack,
+      seekTo: audioPlayerMocks.seekTo,
+      setVolume: audioPlayerMocks.setVolume,
+      playNext: audioPlayerMocks.playNext,
+      playPrevious: audioPlayerMocks.playPrevious,
+      addToQueue: audioPlayerMocks.addToQueue,
+      removeFromQueue: audioPlayerMocks.removeFromQueue,
+      clearQueue: audioPlayerMocks.clearQueue,
+      reorderQueue: audioPlayerMocks.reorderQueue,
+      switchToVersion: audioPlayerMocks.switchToVersion,
+      getAvailableVersions: audioPlayerMocks.getAvailableVersions,
+      currentVersionIndex: 0,
+      audioRef: { current: null } as RefObject<HTMLAudioElement>,
+      clearCurrentTrack: audioPlayerMocks.clearCurrentTrack,
     });
     supabaseMocks.updateEq.mockResolvedValue({ error: null });
     supabaseMocks.deleteEq.mockResolvedValue({ error: null });
