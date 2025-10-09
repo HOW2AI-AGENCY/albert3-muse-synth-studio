@@ -1,28 +1,15 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+
 import { MusicGenerator } from '../MusicGenerator';
 
 vi.mock('@/hooks/useMusicGeneration', () => ({
   useMusicGeneration: () => ({
-    prompt: 'Test prompt',
-    setPrompt: vi.fn(),
-    isGenerating: false,
-    isImproving: false,
-    provider: 'suno',
-    setProvider: vi.fn(),
-    hasVocals: false,
-    setHasVocals: vi.fn(),
-    lyrics: '',
-    setLyrics: vi.fn(),
-    styleTags: [],
-    setStyleTags: vi.fn(),
     generateMusic: vi.fn(),
     improvePrompt: vi.fn(),
+    isGenerating: false,
+    isImproving: false,
   }),
-}));
-
-vi.mock('@/hooks/useAudioPlayer', () => ({
-  useAudioPlayer: () => ({ currentTrack: null, isPlaying: false }),
 }));
 
 vi.mock('@/hooks/useHapticFeedback', () => ({
@@ -33,16 +20,21 @@ vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
 
-vi.mock('@/components/LyricsEditor', () => ({
-  LyricsEditor: () => <div data-testid="lyrics-editor">Lyrics editor</div>,
+vi.mock('@/hooks/useProviderBalance', () => ({
+  useProviderBalance: () => ({
+    balance: { balance: 3, currency: 'credits', provider: 'suno' },
+    isLoading: false,
+    error: null,
+  }),
 }));
 
 describe('MusicGenerator smoke test', () => {
-  it('renders core UI elements', () => {
+  it('renders core UI elements of redesigned form', () => {
     render(<MusicGenerator />);
 
-    expect(screen.getByText(/создайте свою музыку с ai/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/опишите желаемую музыку/i)).toBeInTheDocument();
-    expect(screen.getByTestId('lyrics-editor')).toBeInTheDocument();
+    expect(screen.getByText('Заголовок (опционально)')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Опишите желаемую музыку, настроение и ключевые инструменты')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Рандом' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Добавить лирику' })).toBeInTheDocument();
   });
 });
