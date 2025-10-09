@@ -24,11 +24,15 @@ const resolveGlobalHeaders = (): Record<string, string> => {
   return {};
 };
 
-const withAppEnvironmentHeader = (init?: HeadersInit): HeadersInit => {
-  if (typeof Headers !== "undefined") {
-    const headers = new Headers(init ?? {});
+const withAppEnvironmentHeader = (init?: HeadersInit): Record<string, string> => {
+  if (typeof Headers !== "undefined" && init instanceof Headers) {
+    const headers = new Headers(init);
     headers.set("x-app-environment", appEnv.appEnv);
-    return headers;
+    const result: Record<string, string> = {};
+    headers.forEach((value, key) => {
+      result[key] = value;
+    });
+    return result;
   }
 
   if (!init) {
@@ -36,7 +40,12 @@ const withAppEnvironmentHeader = (init?: HeadersInit): HeadersInit => {
   }
 
   if (Array.isArray(init)) {
-    return [...init, ["x-app-environment", appEnv.appEnv]] as HeadersInit;
+    const result: Record<string, string> = {};
+    init.forEach(([key, value]) => {
+      result[key] = value;
+    });
+    result["x-app-environment"] = appEnv.appEnv;
+    return result;
   }
 
   return {

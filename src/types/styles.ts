@@ -1,6 +1,6 @@
-import type { StyleCategory, MusicStyle } from "@/data/music-styles";
-
-export type { StyleCategory, MusicStyle } from "@/data/music-styles";
+import type { MusicStyle } from "@/data/music-styles";
+export { StyleCategory } from "@/data/music-styles";
+export type { MusicStyle } from "@/data/music-styles";
 
 export interface StyleRecommendationRequest {
   mood?: string;

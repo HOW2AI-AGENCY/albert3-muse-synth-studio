@@ -82,12 +82,15 @@ export const handleSupabaseFunctionError = (
   payload?: Record<string, unknown>
 ): never => {
   if (error) {
-    logError(fallbackMessage, error instanceof Error ? error : new Error(error.message), context, {
+    const errorMessage = 'message' in error ? error.message : fallbackMessage;
+    const errorObj = error instanceof Error ? error : new Error(errorMessage);
+    
+    logError(fallbackMessage, errorObj, context, {
       ...payload,
       status: "status" in error ? error.status : undefined,
     });
 
-    throw new ApiError(error.message || fallbackMessage, {
+    throw new ApiError(errorMessage || fallbackMessage, {
       context,
       payload: {
         ...payload,

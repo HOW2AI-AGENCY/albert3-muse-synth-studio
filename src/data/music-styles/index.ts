@@ -12,10 +12,13 @@ import {
   StyleCategory
 } from './types';
 
+export {
+  StyleCategory
+} from './types';
+
 export type {
   MusicStyle,
-  MusicStyleRegistry,
-  StyleCategory
+  MusicStyleRegistry
 } from './types';
 
 export {

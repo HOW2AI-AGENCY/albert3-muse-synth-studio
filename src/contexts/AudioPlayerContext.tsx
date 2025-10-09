@@ -83,10 +83,12 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
         
         // Если включено автовоспроизведение версий, добавить их в очередь
         if (autoPlayVersions && versions.length > 1) {
-          const versionTracks = versions.map(v => ({
+          // Фильтруем только версии с audio_url
+          const versionsWithAudio = versions.filter(v => v.audio_url);
+          const versionTracks = versionsWithAudio.map(v => ({
             id: v.id,
             title: v.title,
-            audio_url: v.audio_url,
+            audio_url: v.audio_url!,
             cover_url: v.cover_url,
             duration: v.duration,
             style_tags: v.style_tags,
@@ -366,20 +368,22 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   const getAvailableVersions = useCallback((): AudioPlayerTrack[] => {
     if (availableVersions.length === 0) return [];
     
-    // Преобразуем TrackWithVersions в AudioPlayerTrack
-    return availableVersions.map(v => ({
-      id: v.id,
-      title: v.title,
-      audio_url: v.audio_url,
-      cover_url: v.cover_url,
-      duration: v.duration,
-      style_tags: v.style_tags,
-      lyrics: v.lyrics,
-      status: 'completed' as const,
-      parentTrackId: v.parentTrackId,
-      versionNumber: v.versionNumber,
-      isMasterVersion: v.isMasterVersion,
-    }));
+    // Преобразуем TrackWithVersions в AudioPlayerTrack, фильтруя только те, у которых есть audio_url
+    return availableVersions
+      .filter(v => v.audio_url)
+      .map(v => ({
+        id: v.id,
+        title: v.title,
+        audio_url: v.audio_url!,
+        cover_url: v.cover_url,
+        duration: v.duration,
+        style_tags: v.style_tags,
+        lyrics: v.lyrics,
+        status: 'completed' as const,
+        parentTrackId: v.parentTrackId,
+        versionNumber: v.versionNumber,
+        isMasterVersion: v.isMasterVersion,
+      }));
   }, [availableVersions]);
 
   /**
@@ -391,6 +395,11 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     
     if (!version) {
       logError('Version not found', new Error(`Version ${versionId} not found`), 'AudioPlayerContext', { versionId, availableCount: availableVersions.length });
+      return;
+    }
+    
+    if (!version.audio_url) {
+      logError('Version has no audio URL', new Error(`Version ${versionId} has no audio_url`), 'AudioPlayerContext', { versionId });
       return;
     }
     
