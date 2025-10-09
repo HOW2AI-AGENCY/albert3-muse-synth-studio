@@ -74,4 +74,103 @@ test.describe('Library interactions', () => {
     await page.getByRole('button', { name: 'Оптимизированный список' }).click();
     await expect(listItems.first()).toBeVisible();
   });
+
+  test('starts playback from the master version selected in the detail panel', async ({ page }) => {
+    const cards = libraryTrackCards(page);
+    const totalCards = await cards.count();
+    let targetTitle: string | null = null;
+
+    for (let index = 0; index < totalCards; index += 1) {
+      const card = cards.nth(index);
+      await card.scrollIntoViewIfNeeded();
+      await card.click();
+      await expect(page.getByTitle(/Пауза/)).toBeVisible();
+
+      const versionsButton = page.getByTitle(/версий$/);
+      if (!(await versionsButton.isVisible())) {
+        continue;
+      }
+
+      await versionsButton.click();
+      const menuItems = page.locator('[role="menuitem"]');
+      const optionCount = await menuItems.count();
+      await page.keyboard.press('Escape');
+
+      if (optionCount > 1) {
+        targetTitle = (await card.locator('h3').first().innerText()).trim();
+        break;
+      }
+    }
+
+    expect(targetTitle).not.toBeNull();
+
+    await page.getByRole('button', { name: 'Генерация' }).first().click();
+    await page.waitForURL('**/workspace/generate', { timeout: 15000 });
+
+    const targetListItem = page
+      .locator('[data-testid^="track-list-item-"]')
+      .filter({ hasText: targetTitle! })
+      .first();
+    await targetListItem.scrollIntoViewIfNeeded();
+    await targetListItem.click();
+
+    const detailPanel = page.getByRole('complementary', { name: 'Панель деталей трека' });
+    await expect(detailPanel).toBeVisible();
+
+    const versionsTrigger = detailPanel.getByRole('button', { name: /Версии/ });
+    await versionsTrigger.click();
+
+    const makeMasterButtons = detailPanel.locator('button', { hasText: 'Сделать главной' });
+    await expect(makeMasterButtons.first()).toBeVisible({ timeout: 15000 });
+    const buttonsCount = await makeMasterButtons.count();
+
+    let selectedVersionNumber: number | null = null;
+    for (let index = 0; index < buttonsCount; index += 1) {
+      const button = makeMasterButtons.nth(index);
+      const versionLabel = await button.evaluate((el) => {
+        const container = el.closest('div.flex');
+        const label = container?.querySelector('span.font-medium');
+        return label?.textContent ?? '';
+      });
+      const match = versionLabel?.match(/Версия\s+(\d+)/);
+      if (!match) {
+        continue;
+      }
+
+      selectedVersionNumber = Number(match[1]);
+      await button.click();
+
+      await expect(
+        detailPanel.locator('div').filter({ hasText: `Версия ${selectedVersionNumber}` }).locator('text=Главная')
+      ).toBeVisible({ timeout: 15000 });
+      break;
+    }
+
+    expect(selectedVersionNumber).not.toBeNull();
+
+    await page.getByRole('button', { name: 'Библиотека' }).first().click();
+    await page.waitForURL('**/workspace/library', { timeout: 15000 });
+    await ensureLibraryReady(page);
+
+    const refreshButton = page.getByRole('button', { name: 'Обновить список треков' });
+    await refreshButton.click();
+
+    const targetCard = libraryTrackCards(page).filter({ hasText: targetTitle! }).first();
+    await targetCard.scrollIntoViewIfNeeded();
+    await targetCard.click();
+    await expect(page.getByTitle(/Пауза/)).toBeVisible();
+
+    const queueButton = page.locator('button').filter({ has: page.locator('svg[data-lucide="list-music"]') }).first();
+    await queueButton.click();
+
+    const queuePanel = page.locator('[role="dialog"]').filter({ hasText: 'Очередь' });
+    await expect(queuePanel).toBeVisible();
+
+    const queueItems = queuePanel.locator('div').filter({ has: page.locator('svg[data-lucide="x"]') });
+    const firstQueueItem = queueItems.first();
+    await expect(firstQueueItem).toContainText(`V${selectedVersionNumber}`);
+    await expect(firstQueueItem.locator('svg[data-lucide="star"]')).toBeVisible();
+
+    await page.keyboard.press('Escape');
+  });
 });

@@ -3,15 +3,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 // import { Badge } from "@/components/ui/badge";
-import { 
-  Search, 
+import {
+  Search,
   // Filter,
-  Music, 
-  RefreshCcw, 
-  Grid3X3, 
+  Music,
+  RefreshCcw,
+  Grid3X3,
   List,
   SortAsc,
-  SortDesc
+  SortDesc,
+  Loader2,
 } from "lucide-react";
 import { TrackCard } from "@/components/TrackCard";
 import { TrackListItem } from "@/components/tracks/TrackListItem";
@@ -22,10 +23,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 // import { LikesService } from "@/services/likes.service"; // Now handled in TrackCard
 import { supabase } from "@/integrations/supabase/client";
-import { DisplayTrack, convertToDisplayTrack, convertToOptimizedTrack } from "@/types/track";
+import { DisplayTrack, convertToAudioPlayerTrack, convertToDisplayTrack, convertToOptimizedTrack } from "@/types/track";
 import { cn } from "@/lib/utils";
 import { logger } from "@/utils/logger";
 import { normalizeTrack } from "@/utils/trackNormalizer";
+import { getTrackWithVersions, type TrackWithVersions } from "@/utils/trackVersions";
+import type { AudioPlayerTrack } from "@/types/track";
 
 type ViewMode = 'grid' | 'list' | 'optimized';
 type SortBy = 'created_at' | 'title' | 'duration' | 'like_count';
@@ -46,6 +49,7 @@ const Library: React.FC = () => {
   const [sortBy, setSortBy] = useState<SortBy>('created_at');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [loadingTrackId, setLoadingTrackId] = useState<string | null>(null);
   
   // Сохранение настроек просмотра
   useEffect(() => {
@@ -54,7 +58,7 @@ const Library: React.FC = () => {
 
   // Мемоизированная фильтрация и сортировка треков
   const filteredAndSortedTracks = useMemo(() => {
-    let filtered = tracks.filter(track => {
+    const filtered = tracks.filter(track => {
       const matchesSearch = !searchQuery || 
         track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (track.style_tags && track.style_tags.some(tag => 
@@ -115,27 +119,101 @@ const Library: React.FC = () => {
     }
   }, [sortBy]);
 
-  const handleTrackPlay = useCallback((track: DisplayTrack) => {
-    if (track.audio_url && track.status === 'completed') {
-      playTrackWithQueue({
-        id: track.id,
-        title: track.title,
-        audio_url: track.audio_url!,
-        cover_url: track.cover_url ?? undefined,
-        duration: track.duration ?? undefined,
-        style_tags: track.style_tags ?? undefined,
-      }, filteredAndSortedTracks
-        .filter(t => t.audio_url)
-        .map(t => ({
-          id: t.id,
-          title: t.title,
-          audio_url: t.audio_url!,
-          cover_url: t.cover_url ?? undefined,
-          duration: t.duration ?? undefined,
-          style_tags: t.style_tags ?? undefined,
-        })));
+  const mapDisplayTrackToAudio = useCallback((item: DisplayTrack): AudioPlayerTrack | null => {
+    return convertToAudioPlayerTrack({
+      id: item.id,
+      title: item.title,
+      audio_url: item.audio_url ?? null,
+      cover_url: item.cover_url ?? null,
+      duration: item.duration ?? item.duration_seconds ?? null,
+      duration_seconds: item.duration_seconds ?? null,
+      style_tags: item.style_tags ?? null,
+      status: item.status ?? null,
+    }) as AudioPlayerTrack | null;
+  }, []);
+
+  const handleTrackPlay = useCallback(async (track: DisplayTrack) => {
+    if (!track.audio_url || track.status !== 'completed') {
+      return;
     }
-  }, [playTrackWithQueue, filteredAndSortedTracks]);
+
+    const currentTrackId = track.id;
+    setLoadingTrackId(currentTrackId);
+
+    try {
+      const tracksWithVersions = await getTrackWithVersions(track.id);
+      const playableVersionEntries = tracksWithVersions
+        .map(version => {
+          const audio = convertToAudioPlayerTrack({
+            id: version.id,
+            title: version.title,
+            audio_url: version.audio_url ?? null,
+            cover_url: version.cover_url ?? null,
+            duration: version.duration ?? null,
+            duration_seconds: version.duration ?? null,
+            style_tags: version.style_tags ?? null,
+            lyrics: version.lyrics ?? null,
+            status: version.status ?? 'completed',
+          });
+
+          if (!audio) {
+            return null;
+          }
+
+          return {
+            version,
+            audio: {
+              ...audio,
+              parentTrackId: version.parentTrackId ?? track.id,
+              versionNumber: version.versionNumber,
+              isMasterVersion: version.isMasterVersion,
+            },
+          };
+        })
+        .filter((entry): entry is { version: TrackWithVersions; audio: AudioPlayerTrack } => entry !== null);
+
+      const masterEntry = playableVersionEntries.find(entry => entry.version.isMasterVersion) ??
+        playableVersionEntries.find(entry => entry.version.versionNumber === 0) ??
+        null;
+
+      const otherVersionTracks = playableVersionEntries
+        .filter(entry => masterEntry ? entry.version.id !== masterEntry.version.id : true)
+        .map(entry => entry.audio);
+
+      const remainingTracks = filteredAndSortedTracks
+        .filter(t => t.id !== track.id && t.audio_url)
+        .map(displayTrack => mapDisplayTrackToAudio(convertToDisplayTrack(displayTrack)))
+        .filter((audioTrack): audioTrack is AudioPlayerTrack => Boolean(audioTrack));
+
+      if (masterEntry) {
+        const queue = [masterEntry.audio, ...otherVersionTracks, ...remainingTracks];
+        playTrackWithQueue(masterEntry.audio, queue);
+        return;
+      }
+
+      const fallbackAudio = mapDisplayTrackToAudio(track);
+      if (fallbackAudio) {
+        const queue = [fallbackAudio, ...otherVersionTracks, ...remainingTracks];
+        playTrackWithQueue(fallbackAudio, queue);
+        return;
+      }
+
+      toast({
+        title: "Невозможно воспроизвести",
+        description: "Не удалось найти доступные версии трека",
+        variant: "destructive",
+      });
+    } catch (error) {
+      logger.error('Failed to load track versions', error instanceof Error ? error : new Error(`trackId: ${track.id}`));
+      toast({
+        title: "Ошибка воспроизведения",
+        description: "Не удалось загрузить версии трека",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingTrackId(prev => (prev === currentTrackId ? null : prev));
+    }
+  }, [filteredAndSortedTracks, mapDisplayTrackToAudio, playTrackWithQueue, toast]);
 
   // handleLike is now handled by useTrackLike hook in TrackCard
   // const handleLike = useCallback(async (trackId: string) => {
@@ -470,13 +548,20 @@ const Library: React.FC = () => {
           {viewMode === 'grid' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredAndSortedTracks.map((track) => (
-                <TrackCard
-                  key={track.id}
-                  track={normalizeTrack(track)}
-                  onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
-                  onDownload={() => handleDownload(track.id)}
-                  onShare={() => handleShare(track.id)}
-                />
+                <div key={track.id} className="relative" aria-busy={loadingTrackId === track.id}>
+                  <TrackCard
+                    track={normalizeTrack(track)}
+                    onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
+                    onDownload={() => handleDownload(track.id)}
+                    onShare={() => handleShare(track.id)}
+                  />
+                  {loadingTrackId === track.id && (
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-3xl bg-background/80 backdrop-blur-sm">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      <span className="text-xs font-medium text-muted-foreground">Загрузка версий…</span>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           )}
@@ -484,14 +569,21 @@ const Library: React.FC = () => {
           {viewMode === 'list' && (
             <div className="space-y-2">
               {filteredAndSortedTracks.map((track, index) => (
-                <TrackListItem
-                  key={track.id}
-                  track={convertToDisplayTrack(track)}
-                  index={index}
-                  onDownload={() => handleDownload(track.id)}
-                  onShare={() => handleShare(track.id)}
-                  onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
-                />
+                <div key={track.id} className="relative" aria-busy={loadingTrackId === track.id}>
+                  <TrackListItem
+                    track={convertToDisplayTrack(track)}
+                    index={index}
+                    onDownload={() => handleDownload(track.id)}
+                    onShare={() => handleShare(track.id)}
+                    onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
+                  />
+                  {loadingTrackId === track.id && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-xl bg-background/80 backdrop-blur-sm">
+                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                      <span className="text-xs font-medium text-muted-foreground">Загрузка версий…</span>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           )}
