@@ -24,10 +24,9 @@ const resolveGlobalHeaders = (): Record<string, string> => {
   return {};
 };
 
-const withAppEnvironmentHeader = (init?: HeadersInit): Record<string, string> => {
+const normalizeHeaders = (init?: HeadersInit): Record<string, string> => {
   if (typeof Headers !== "undefined" && init instanceof Headers) {
     const headers = new Headers(init);
-    headers.set("x-app-environment", appEnv.appEnv);
     const result: Record<string, string> = {};
     headers.forEach((value, key) => {
       result[key] = value;
@@ -36,7 +35,7 @@ const withAppEnvironmentHeader = (init?: HeadersInit): Record<string, string> =>
   }
 
   if (!init) {
-    return { "x-app-environment": appEnv.appEnv };
+    return {};
   }
 
   if (Array.isArray(init)) {
@@ -44,14 +43,10 @@ const withAppEnvironmentHeader = (init?: HeadersInit): Record<string, string> =>
     init.forEach(([key, value]) => {
       result[key] = value;
     });
-    result["x-app-environment"] = appEnv.appEnv;
     return result;
   }
 
-  return {
-    ...(init as Record<string, string>),
-    "x-app-environment": appEnv.appEnv,
-  };
+  return init as Record<string, string>;
 };
 
 const clientOptions: SupabaseClientOptions<"public"> = {
@@ -76,5 +71,10 @@ const originalInvoke = supabase.functions.invoke.bind(supabase.functions);
 supabase.functions.invoke = (async (functionName, options = {}) =>
   originalInvoke(functionName, {
     ...options,
-    headers: withAppEnvironmentHeader(options.headers),
+    // Avoid adding custom headers in the browser to prevent CORS/preflight failures.
+    // On server-side (SSR) we can include environment hint header if needed.
+    headers:
+      typeof window === "undefined"
+        ? { ...normalizeHeaders(options.headers), "x-app-environment": appEnv.appEnv }
+        : normalizeHeaders(options.headers),
   })) as typeof supabase.functions.invoke;

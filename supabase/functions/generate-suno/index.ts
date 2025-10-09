@@ -26,6 +26,7 @@ import {
   getSupabaseUrl,
 } from "../_shared/supabase.ts";
 import { logger, withSentry } from "../_shared/logger.ts";
+import { findOrCreateTrack } from "../_shared/track-helpers.ts";
 
 export type PollSunoCompletionFn = (
   trackId: string,
@@ -189,74 +190,17 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     const sunoClient = createSunoClient({ apiKey: SUNO_API_KEY });
     console.log('✅ [GENERATE-SUNO] API key configured');
 
-    let finalTrackId = trackId;
+    const finalTrackId = await findOrCreateTrack(supabaseAdmin, user.id, {
+      trackId,
+      title,
+      prompt,
+      lyrics: normalizedLyrics,
+      hasVocals: effectiveHasVocals,
+      styleTags: tags,
+      requestMetadata,
+    });
 
-    if (!trackId) {
-      console.log('⚠️ [GENERATE-SUNO] No trackId provided, creating new track');
-      const { data: newTrack, error: createError } = await supabaseAdmin
-        .from('tracks')
-        .insert({
-          user_id: user.id,
-          title: title || 'Untitled Track',
-          prompt: prompt || 'Untitled Track',
-          provider: 'suno',
-          status: 'processing',
-          lyrics: normalizedLyrics ?? null,
-          has_vocals: effectiveHasVocals ?? null,
-          style_tags: tagsProvided ? tags : null,
-          metadata: requestMetadata
-        })
-        .select()
-        .single();
-      
-      if (createError) {
-        logger.error('🔴 [GENERATE-SUNO] Error creating track', { error: createError });
-        throw createError;
-      }
-      
-      finalTrackId = newTrack.id;
-      console.log('✅ [GENERATE-SUNO] Created new track:', finalTrackId);
-    } else {
-      console.log('🔍 [GENERATE-SUNO] Verifying track ownership for trackId:', trackId);
-      const { data: existingTrackCheck, error: verifyError } = await supabase
-        .from('tracks')
-        .select('id, user_id')
-        .eq('id', trackId)
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (verifyError || !existingTrackCheck) {
-        logger.error('🔴 [GENERATE-SUNO] Track not found or unauthorized', { error: verifyError ?? undefined });
-        return new Response(JSON.stringify({ error: 'Track not found or unauthorized' }), {
-          status: 404,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-      
-      console.log('✅ [GENERATE-SUNO] Track ownership verified');
-      const trackUpdatePayload: Record<string, unknown> = {
-        status: 'processing',
-        provider: 'suno',
-      };
-
-      if (normalizedLyrics !== undefined) {
-        trackUpdatePayload.lyrics = normalizedLyrics;
-      }
-      if (effectiveHasVocals !== undefined) {
-        trackUpdatePayload.has_vocals = effectiveHasVocals;
-      }
-      if (tagsProvided) {
-        trackUpdatePayload.style_tags = tags;
-      }
-
-      await supabaseAdmin.from('tracks').update(trackUpdatePayload).eq('id', trackId);
-    }
-
-    if (!finalTrackId) {
-      throw new Error('No trackId provided and failed to create track');
-    }
-
-    console.log('🚀 [GENERATE-SUNO] Starting Suno generation for track:', finalTrackId);
+    console.log(' [GENERATE-SUNO] Starting Suno generation for track:', finalTrackId);
 
     const { data: existingTrack, error: loadErr } = await supabaseAdmin
       .from('tracks')

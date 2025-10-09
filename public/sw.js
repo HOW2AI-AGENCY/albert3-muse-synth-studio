@@ -63,9 +63,21 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
-  
-  // Кэшируем только аудио файлы
-  if (isAudioFile(request.url)) {
+
+  // Пропускаем не-GET и префлайт запросы
+  if (request.method !== 'GET') {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // Явно пропускаем Supabase API-запросы (кроме явных аудио по расширению)
+  if (url.hostname.endsWith('supabase.co') && !isAudioFileByExtension(request.url)) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  // Кэшируем только аудио файлы по расширению
+  if (isAudioFileByExtension(request.url)) {
     event.respondWith(handleAudioRequest(request));
   }
   // Кэшируем статические файлы
@@ -79,19 +91,10 @@ self.addEventListener('fetch', (event) => {
 });
 
 // Проверка, является ли файл аудио
-function isAudioFile(url) {
+function isAudioFileByExtension(url) {
   const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac'];
-  const audioMimeTypes = ['audio/', 'application/octet-stream'];
-  
-  // Проверяем расширение файла
-  const hasAudioExtension = audioExtensions.some(ext => url.includes(ext));
-  
-  // Проверяем домены аудио сервисов
-  const isAudioService = url.includes('suno.ai') || 
-                        url.includes('supabase.co') ||
-                        url.includes('amazonaws.com');
-  
-  return hasAudioExtension || isAudioService;
+  const u = url.toLowerCase();
+  return audioExtensions.some(ext => u.includes(ext));
 }
 
 // Проверка, является ли файл статическим
@@ -112,19 +115,19 @@ async function handleAudioRequest(request) {
   
   try {
     console.log('[SW] Загрузка аудио файла:', request.url);
-    const response = await fetch(request);
-    
+    const response = await fetch(request, { cache: 'no-store' });
+
     if (response.ok) {
-      // Проверяем размер кэша перед добавлением
-      await manageCacheSize();
-      
-      // Клонируем ответ для кэширования
-      const responseToCache = response.clone();
-      await cache.put(request, responseToCache);
-      
-      console.log('[SW] Аудио файл добавлен в кэш:', request.url);
+      const contentType = (response.headers.get('content-type') || '').toLowerCase();
+      if (contentType.startsWith('audio/')) {
+        // Проверяем размер кэша перед добавлением
+        await manageCacheSize();
+        // Кэшируем только аудио контент
+        await cache.put(request, response.clone());
+        console.log('[SW] Аудио файл добавлен в кэш:', request.url);
+      }
     }
-    
+
     return response;
   } catch (error) {
     console.error('[SW] Ошибка загрузки аудио файла:', error);
@@ -228,12 +231,17 @@ self.addEventListener('message', (event) => {
 async function cacheAudioFile(url) {
   try {
     const cache = await caches.open(AUDIO_CACHE_NAME);
-    const response = await fetch(url);
-    
+    const response = await fetch(url, { cache: 'no-store' });
+
     if (response.ok) {
-      await manageCacheSize();
-      await cache.put(url, response);
-      console.log('[SW] Файл принудительно добавлен в кэш:', url);
+      const contentType = (response.headers.get('content-type') || '').toLowerCase();
+      if (contentType.startsWith('audio/')) {
+        await manageCacheSize();
+        await cache.put(url, response);
+        console.log('[SW] Файл принудительно добавлен в кэш:', url);
+      } else {
+        console.log('[SW] Принудительное кэширование пропущено: не аудио', url);
+      }
     }
   } catch (error) {
     console.error('[SW] Ошибка принудительного кэширования:', error);
