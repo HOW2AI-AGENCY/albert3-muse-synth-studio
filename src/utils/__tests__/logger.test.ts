@@ -2,7 +2,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@sentry/react', () => ({
   captureException: vi.fn(),
-}), { virtual: true });
+}));
 
 const originalFetch = global.fetch;
 

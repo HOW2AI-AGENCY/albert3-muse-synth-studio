@@ -6,7 +6,7 @@ vi.mock('@sentry/react', () => ({
   captureException: vi.fn(),
   withScope: vi.fn(),
   configureScope: vi.fn(),
-}), { virtual: true });
+}));
 
 // Mock i18next
 vi.mock('react-i18next', () => ({

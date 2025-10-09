@@ -26,7 +26,7 @@ vi.mock('@/hooks/useHapticFeedback', () => ({
 vi.mock('@sentry/react', () => ({
   withScope: vi.fn(),
   captureException: vi.fn(),
-}), { virtual: true });
+}));
 
 const toastMocks = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
 vi.mock('sonner', () => ({
