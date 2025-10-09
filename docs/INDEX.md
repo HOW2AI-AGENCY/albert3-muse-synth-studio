@@ -56,6 +56,12 @@
  - ../project-management/reports/2025-10-10-repo-audit.md ⭐ NEW - Комплексный аудит репозитория (10.10.2025)
  - ../project-management/reports/2025-10-09-workspace-audit.md ⭐ NEW - Полный аудит Workspace (09.10.2025)
 
+### Важные темы Sprint 24
+- Service Worker & Caching Policy — см. `public/sw.js`, а также разделы в `architecture/ARCHITECTURE.md` и `performance/PERFORMANCE.md`
+- Supabase Integration Notes — см. `storage/STORAGE_GUIDE.md` и `api/API.md`
+- Logger & Logs — см. `DEVELOPER_GUIDE.md` и `src/utils/logger.ts`
+- Dev Server — см. корневой `SETUP-GUIDE.md` и раздел «Быстрый старт» в `README.md`
+
 ---
 
 ⭐ **NEW** - Обновлено в Sprint 24

@@ -7,12 +7,14 @@ import { DollarSign, Zap } from 'lucide-react';
 const ProviderBalance = () => {
   const [balance, setBalance] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchBalance = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         logInfo('Fetching provider balance...', 'ProviderBalance');
         const sunoBalance = await ApiService.getProviderBalance('suno');
 
@@ -30,8 +32,10 @@ const ProviderBalance = () => {
             throw new Error('Could not fetch balance from any provider.');
           }
         }
-      } catch (error) {
-        logError('Failed to fetch provider balance', error as Error, 'ProviderBalance');
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        setError(errorMessage);
+        logError('Failed to fetch provider balance', err as Error, 'ProviderBalance');
         toast({
           title: 'Ошибка загрузки баланса',
           description: 'Не удалось получить информацию о балансе провайдера.',
@@ -60,17 +64,42 @@ const ProviderBalance = () => {
     );
   }
 
-  if (balance === null) {
-    return null; // Don't render anything if balance fetch failed
+  // Show error state instead of hiding completely
+  if (error || balance === null) {
+    return (
+      <div 
+        className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/20 cursor-help" 
+        title={error || 'Не удалось загрузить баланс'}
+      >
+        <DollarSign className="h-4 w-4 text-destructive" />
+        <span className="text-xs text-destructive font-medium">
+          Ошибка
+        </span>
+      </div>
+    );
   }
 
+  // Desktop version - full display
   return (
-    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20" title={`Кредитов на балансе: ${balance}`}>
-      <Zap className="h-4 w-4 text-primary" />
-      <span className="text-sm font-bold text-gradient-primary">
-        {balance.toLocaleString()}
-      </span>
-    </div>
+    <>
+      <div 
+        className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20" 
+        title={`Кредитов на балансе: ${balance.toLocaleString()}`}
+      >
+        <Zap className="h-4 w-4 text-primary" />
+        <span className="text-sm font-bold text-gradient-primary">
+          {balance.toLocaleString()}
+        </span>
+      </div>
+      
+      {/* Mobile version - icon only with tooltip */}
+      <div 
+        className="sm:hidden flex items-center gap-2 px-2 py-1.5 rounded-full bg-primary/10 border border-primary/20" 
+        title={`${balance.toLocaleString()} кредитов`}
+      >
+        <Zap className="h-4 w-4 text-primary" />
+      </div>
+    </>
   );
 };
 

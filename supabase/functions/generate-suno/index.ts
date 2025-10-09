@@ -414,14 +414,21 @@ const defaultPollSunoCompletion: PollSunoCompletionFn = async (
       }
 
       const tasks = queryResult.tasks;
-      const statusesLog = tasks.map((t: any) => ({
+      
+      // ДИАГНОСТИКА: Детальное логирование всех треков
+      console.log(`📊 [DIAGNOSTIC] Total tasks returned: ${tasks.length}`);
+      const statusesLog = tasks.map((t: any, idx: number) => ({
+        index: idx,
         id: t.id || t.taskId,
         status: t.status,
         hasAudio: Boolean(t.audioUrl || t.audio_url || t.stream_audio_url || t.source_stream_audio_url),
+        audioUrl: (t.audioUrl || t.audio_url || t.stream_audio_url || t.source_stream_audio_url)?.substring(0, 60),
         hasCover: Boolean(t.image_url || t.image_large_url || t.imageUrl),
-        hasVideo: Boolean(t.video_url || t.videoUrl)
+        hasVideo: Boolean(t.video_url || t.videoUrl),
+        title: t.title,
+        model: t.model || t.model_name
       }));
-      console.log('Suno poll statuses:', statusesLog);
+      console.log('🔍 [DIAGNOSTIC] Suno poll statuses:', JSON.stringify(statusesLog, null, 2));
       
       // Check if all tasks are complete
       const allComplete = tasks.every((t: any) => t.status === 'success' || t.status === 'complete');
@@ -465,6 +472,18 @@ const defaultPollSunoCompletion: PollSunoCompletionFn = async (
         }
         
         console.log(`✅ [COMPLETION] Found ${successfulTracks.length} successful tracks with audio`);
+        
+        // ДИАГНОСТИКА: Логируем детали всех успешных треков
+        successfulTracks.forEach((track: any, idx: number) => {
+          console.log(`📋 [TRACK ${idx}] Details:`, {
+            id: track.id,
+            title: track.title,
+            status: track.status,
+            audioUrl: (track.audioUrl || track.audio_url)?.substring(0, 60) + '...',
+            hasLyrics: Boolean(track.lyric || track.lyrics),
+            duration: track.duration || track.duration_seconds
+          });
+        });
         
         // ========================================
         // ШАГ 1: Обработка первого трека (основной)
@@ -586,7 +605,7 @@ const defaultPollSunoCompletion: PollSunoCompletionFn = async (
               duration: `${Math.round(versionDuration)}s`
             });
             
-            const { error: insertVersionError } = await supabaseAdmin.from('track_versions').insert({
+            const versionData = {
               parent_track_id: trackId,
               version_number: i,
               is_master: false,
@@ -602,10 +621,32 @@ const defaultPollSunoCompletion: PollSunoCompletionFn = async (
                 generation_task_id: taskId,
                 suno_last_poll_endpoint: queryResult.endpoint,
               }
+            };
+            
+            console.log(`📝 [VERSION ${i}] Attempting to insert version data:`, {
+              parent_track_id: trackId,
+              version_number: i,
+              has_audio: Boolean(versionAudioUrl),
+              has_cover: Boolean(versionCoverUrl),
+              suno_id: versionSunoId
             });
             
+            const { error: insertVersionError } = await supabaseAdmin.from('track_versions').insert(versionData);
+            
             if (insertVersionError) {
-              logger.error(`🔴 [VERSION ${i}] Failed to insert`, { error: insertVersionError });
+              logger.error(`🔴 [VERSION ${i}] Failed to insert`, { 
+                error: insertVersionError,
+                code: insertVersionError.code,
+                message: insertVersionError.message,
+                details: insertVersionError.details,
+                hint: insertVersionError.hint
+              });
+              console.error(`🔴 [VERSION ${i}] Database error details:`, {
+                errorCode: insertVersionError.code,
+                errorMessage: insertVersionError.message,
+                parentTrackId: trackId,
+                versionNumber: i
+              });
             } else {
               console.log(`✅ [VERSION ${i}] Successfully created version for track ${trackId}`);
             }
