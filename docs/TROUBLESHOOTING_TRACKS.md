@@ -184,8 +184,10 @@ Set current version index: 1
 ### Решение
 1. В Supabase → **Project Settings → API** добавьте/обновите секрет `CORS_ALLOWED_ORIGINS`:
    ```
-   https://lovable.dev,https://lovable.app,https://id-preview--*.lovable.app
+   https://lovable.dev,https://lovable.app,https://id-preview--*.lovable.app,https://*.lovableproject.com
    ```
+   > ⚠️ Новый превью-домен Lovable использует зону `lovableproject.com`. Без этого значения браузер блокирует CORS-префлайт, даже
+   > если другие домены уже перечислены.
    Секрет читается Edge-функциями во время старта, поэтому требуется деплой (`supabase functions deploy ...`).
 2. После деплоя убедитесь, что ответ содержит заголовки `Access-Control-Allow-Origin: https://id-preview--…` и `Access-Control-Allow-Credentials: true`.
 3. Для `get-balance` передавайте пользовательский токен Supabase (см. `createSupabaseUserClient`) — без него функция возвращает `401 Unauthorized`.
