@@ -44,25 +44,22 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
   const { currentTrack, isPlaying, switchToVersion, togglePlayPause } = useAudioPlayer();
   const currentTrackId = currentTrack?.id;
 
-  const [primarySelection, setPrimarySelection] = useState<string | undefined>(
-    selectedVersionId ?? versions?.[0]?.id,
-  );
+  const versionList = useMemo(() => versions ?? [], [versions]);
+  const defaultPrimaryId = selectedVersionId ?? versionList[0]?.id;
+
+  const [primarySelection, setPrimarySelection] = useState<string | undefined>(() => defaultPrimaryId);
   const [secondarySelection, setSecondarySelection] = useState<string | undefined>(() =>
-    versions?.find((version) => version.id !== (selectedVersionId ?? versions?.[0]?.id))?.id,
+    versionList.find((version) => version.id !== defaultPrimaryId)?.id,
   );
   const [activeSlot, setActiveSlot] = useState<"primary" | "secondary">("primary");
 
-  if (!versions?.length) {
-    return null;
-  }
-
   const primaryVersion = useMemo(
-    () => versions.find((version) => version.id === primarySelection),
-    [primarySelection, versions],
+    () => versionList.find((version) => version.id === primarySelection),
+    [primarySelection, versionList],
   );
   const secondaryVersion = useMemo(
-    () => versions.find((version) => version.id === secondarySelection),
-    [secondarySelection, versions],
+    () => versionList.find((version) => version.id === secondarySelection),
+    [secondarySelection, versionList],
   );
 
   const activeVersionId = activeSlot === "primary" ? primarySelection : secondarySelection;
@@ -75,22 +72,22 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
   }, [selectedVersionId, primarySelection]);
 
   useEffect(() => {
-    if (primarySelection && !versions.some((version) => version.id === primarySelection)) {
-      const fallbackPrimary = versions[0]?.id;
+    if (primarySelection && !versionList.some((version) => version.id === primarySelection)) {
+      const fallbackPrimary = versionList[0]?.id;
       if (fallbackPrimary !== primarySelection) {
         setPrimarySelection(fallbackPrimary);
       }
     }
-  }, [primarySelection, versions]);
+  }, [primarySelection, versionList]);
 
   useEffect(() => {
     if (!secondarySelection || secondarySelection === primarySelection) {
-      const fallbackSecondary = versions.find((version) => version.id !== primarySelection)?.id;
+      const fallbackSecondary = versionList.find((version) => version.id !== primarySelection)?.id;
       if (fallbackSecondary !== secondarySelection) {
         setSecondarySelection(fallbackSecondary);
       }
     }
-  }, [primarySelection, secondarySelection, versions]);
+  }, [primarySelection, secondarySelection, versionList]);
 
   const handleSelectVersion = useCallback(
     (versionId: string) => {
@@ -185,12 +182,16 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
     [],
   );
 
+  if (!versionList.length) {
+    return null;
+  }
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 text-sm font-medium">
         <CalendarClock className="h-4 w-4 text-muted-foreground" />
         <span>Выбрать версию</span>
-        {versions.some((version) => version.is_master) && (
+        {versionList.some((version) => version.is_master) && (
           <Badge variant="outline" className="gap-1 text-xs">
             <Star className="h-3 w-3" />
             Главная
@@ -202,7 +203,7 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
           <SelectValue placeholder="Выберите версию трека" />
         </SelectTrigger>
         <SelectContent className="max-h-64">
-          {versions.map((version) => (
+          {versionList.map((version) => (
             <SelectItem
               key={version.id}
               value={version.id}
@@ -275,7 +276,7 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
         </div>
       </div>
       <div className="space-y-2" role="list" aria-label="Список версий трека">
-        {versions.map((version) => {
+        {versionList.map((version) => {
           const isCurrent = currentTrackId === version.id;
           const isPlayingCurrent = isCurrent && isPlaying;
           const isAssignedToPrimary = primarySelection === version.id;
