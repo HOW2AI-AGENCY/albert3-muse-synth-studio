@@ -146,7 +146,7 @@ archive/
 ### База данных
 - [Database Schema](../supabase/migrations/)
 - [RLS Policies](../docs/architecture/ARCHITECTURE.md)
-- [Track Versions](../src/utils/trackVersions.ts)
+- [Track Versions](../src/features/tracks/api/trackVersions.ts)
 
 ### Тестирование
 - [Test Setup](../src/test/setup.ts)
