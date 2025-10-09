@@ -195,3 +195,35 @@ export const convertToOptimizedTrack = (track: BaseTrack | DisplayTrack): Optimi
     has_stems: track.has_stems || false,
   };
 };
+
+export type DetailPanelTrack = DisplayTrack & {
+  prompt: string;
+  status: string;
+  audio_url?: string | null;
+  cover_url?: string | null;
+  video_url?: string | null;
+  suno_id?: string | null;
+  model_name?: string | null;
+  lyrics?: string | null;
+  genre?: string | null;
+  mood?: string | null;
+  is_public?: boolean | null;
+  view_count?: number | null;
+  like_count?: number | null;
+  has_stems?: boolean | null;
+  metadata?: Record<string, unknown> | null;
+  user_id?: string | null;
+};
+
+export type DetailPanelTrackVersion = TrackVersion & {
+  created_at?: string | null;
+  metadata?: Record<string, unknown> | null;
+  duration?: number | null;
+  audio_url: string;
+  suno_id: string | null;
+};
+
+export type DetailPanelTrackStem = TrackStem & {
+  version_id?: string | null;
+  created_at?: string | null;
+};

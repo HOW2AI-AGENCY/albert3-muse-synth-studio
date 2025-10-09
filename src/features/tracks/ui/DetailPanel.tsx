@@ -7,49 +7,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { DetailPanelContent } from "@/components/workspace/DetailPanelContent";
 import { TrackDeleteDialog } from "@/components/tracks/TrackDeleteDialog";
 import { ApiService } from "@/services/api.service";
-
-interface TrackVersion {
-  id: string;
-  version_number: number;
-  is_master: boolean;
-  suno_id: string;
-  audio_url: string;
-  video_url?: string;
-  cover_url?: string;
-  lyrics?: string;
-  duration?: number;
-  metadata?: Record<string, unknown>;
-}
-
-interface TrackStem {
-  id: string;
-  stem_type: string;
-  audio_url: string;
-  separation_mode: string;
-}
+import type {
+  DetailPanelTrack,
+  DetailPanelTrackVersion,
+  DetailPanelTrackStem,
+} from "@/types/track";
 
 interface DetailPanelProps {
-  track: {
-    id: string;
-    title: string;
-    prompt: string;
-    status: string;
-    audio_url?: string;
-    cover_url?: string;
-    video_url?: string;
-    suno_id?: string;
-    model_name?: string;
-    lyrics?: string;
-    style_tags?: string[];
-    genre?: string;
-    mood?: string;
-    is_public?: boolean;
-    view_count?: number;
-    like_count?: number;
-    created_at: string;
-    duration_seconds?: number;
-    has_stems?: boolean;
-  };
+  track: DetailPanelTrack & { created_at: string };
   onClose?: () => void;
   onUpdate?: () => void;
   onDelete?: () => void;
@@ -68,8 +33,8 @@ interface DetailPanelState {
     deleteDialogOpen: boolean;
   };
   data: {
-    versions: TrackVersion[];
-    stems: TrackStem[];
+    versions: DetailPanelTrackVersion[];
+    stems: DetailPanelTrackStem[];
   };
 }
 
@@ -77,8 +42,8 @@ type DetailPanelAction =
   | { type: 'SET_FORM_FIELD'; field: keyof DetailPanelState['formData']; value: string | boolean }
   | { type: 'SET_SAVING'; value: boolean }
   | { type: 'SET_DELETE_DIALOG'; value: boolean }
-  | { type: 'SET_VERSIONS'; value: TrackVersion[] }
-  | { type: 'SET_STEMS'; value: TrackStem[] }
+  | { type: 'SET_VERSIONS'; value: DetailPanelTrackVersion[] }
+  | { type: 'SET_STEMS'; value: DetailPanelTrackStem[] }
   | { type: 'RESET_FORM'; track: DetailPanelProps['track'] };
 
 // Reducer для управления состоянием
@@ -174,22 +139,24 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
         .select('*')
         .eq('parent_track_id', track.id)
         .order('version_number');
-      
+
       if (versionsData) {
-        dispatch({ 
-          type: 'SET_VERSIONS', 
+        dispatch({
+          type: 'SET_VERSIONS',
           value: versionsData
-            .filter(v => v.suno_id && v.audio_url)
-            .map(v => ({
-              ...v,
-              is_master: v.is_master ?? false,
-              suno_id: v.suno_id!,
-              audio_url: v.audio_url!,
-              video_url: v.video_url ?? undefined,
-              cover_url: v.cover_url ?? undefined,
-              lyrics: v.lyrics ?? undefined,
-              duration: v.duration ?? undefined,
-              metadata: v.metadata as Record<string, unknown>
+            .filter((version): version is typeof version & { audio_url: string } => Boolean(version?.audio_url))
+            .map((version) => ({
+              id: version.id as string,
+              version_number: Number(version.version_number) || 0,
+              is_master: Boolean(version.is_master),
+              suno_id: (version.suno_id as string | null) ?? null,
+              audio_url: version.audio_url as string,
+              video_url: (version.video_url as string | null) ?? undefined,
+              cover_url: (version.cover_url as string | null) ?? undefined,
+              lyrics: (version.lyrics as string | null) ?? undefined,
+              duration: (version.duration as number | null) ?? null,
+              metadata: (version.metadata as Record<string, unknown> | null) ?? null,
+              created_at: (version.created_at as string | null) ?? null,
             }))
         });
       }
@@ -201,7 +168,17 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
         .eq('track_id', track.id);
       
       if (stemsData) {
-        dispatch({ type: 'SET_STEMS', value: stemsData });
+        dispatch({
+          type: 'SET_STEMS',
+          value: stemsData.map(stem => ({
+            id: stem.id as string,
+            stem_type: stem.stem_type as string,
+            audio_url: stem.audio_url as string,
+            separation_mode: stem.separation_mode as string,
+            version_id: 'version_id' in stem ? (stem as { version_id?: string | null }).version_id ?? null : undefined,
+            created_at: 'created_at' in stem ? (stem as { created_at?: string | null }).created_at ?? null : undefined,
+          })),
+        });
       }
     } catch (error) {
       console.error('Error loading versions and stems:', error);
@@ -221,7 +198,7 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
   // Сброс формы при изменении трека
   useEffect(() => {
     dispatch({ type: 'RESET_FORM', track });
-  }, [track.id, track.title, track.genre, track.mood, track.is_public]);
+  }, [track]);
 
   const handleSave = useCallback(async () => {
     dispatch({ type: 'SET_SAVING', value: true });
@@ -262,13 +239,33 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
     }
   }, [track.audio_url]);
 
-  const handleShare = useCallback(() => {
+  const handleShare = useCallback(async () => {
     const shareUrl = `${window.location.origin}/track/${track.id}`;
-    navigator.clipboard.writeText(shareUrl);
-    toast({
-      title: "🔗 Ссылка скопирована",
-      description: "Поделитесь ссылкой с друзьями",
-    });
+
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        const tempInput = document.createElement('input');
+        tempInput.value = shareUrl;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+      }
+
+      toast({
+        title: "🔗 Ссылка скопирована",
+        description: "Поделитесь ссылкой с друзьями",
+      });
+    } catch (error) {
+      console.error("Failed to copy share link", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось скопировать ссылку",
+        variant: "destructive",
+      });
+    }
   }, [track.id, toast]);
 
   const handleDelete = useCallback(async () => {
@@ -297,12 +294,16 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
   }, []);
 
   return (
-    <div className="h-full flex flex-col bg-card border-l border-border" role="complementary" aria-label="Панель деталей трека">
+    <div
+      className="h-full flex flex-col bg-card border-l border-border w-full max-w-full sm:max-w-md lg:max-w-xl xl:max-w-2xl"
+      role="complementary"
+      aria-label="Панель деталей трека"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-10">
+      <div className="flex flex-wrap items-start gap-3 justify-between p-3 sm:p-4 border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <Badge 
-            variant={track.status === "completed" ? "default" : "secondary"} 
+          <Badge
+            variant={track.status === "completed" ? "default" : "secondary"}
             className="text-xs shrink-0"
           >
             {track.status === "completed" ? "✅ Готов" : "⏳ В процессе"}
