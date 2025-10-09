@@ -58,7 +58,7 @@
 - **Время**: 6 часов
 - **Статус**: ✅ Завершено
 - **Результаты**:
-  - Внедрён единый Suno API клиент с fallback на `sunoapi.org` и `api.suno.ai`.
+  - Внедрён единый Suno API клиент с конфигурируемыми endpoints (`sunoapi.org` по умолчанию).
   - Edge-функции (`generate-suno`, `separate-stems`) и тесты обновлены под новую архитектуру.
   - Подготовлен отчёт `docs/integrations/SUNO_API_AUDIT.md`, обновлён `docs/api/API.md`, синхронизированы sprint-документы.
 

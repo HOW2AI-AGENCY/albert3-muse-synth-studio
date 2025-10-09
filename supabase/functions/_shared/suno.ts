@@ -156,13 +156,11 @@ const unique = (values: (string | undefined | null)[]): string[] => {
 const DEFAULT_GENERATE_ENDPOINTS = unique([
   Deno.env.get("SUNO_GENERATE_URL"),
   "https://api.sunoapi.org/api/v1/generate",
-  "https://api.suno.ai/generate/v2",
 ]);
 
 const DEFAULT_QUERY_ENDPOINTS = unique([
   Deno.env.get("SUNO_QUERY_URL"),
   "https://api.sunoapi.org/api/v1/query",
-  "https://api.suno.ai/generate/v2",
 ]);
 
 const DEFAULT_STEM_ENDPOINTS = unique([

@@ -34,7 +34,7 @@ Content-Type: application/json
 
 **Эндпоинт:** `POST /generate-music-suno`
 
-Создает задачу генерации музыки в Suno AI. Edge Function вызывает прокси `sunoapi.org` (с fallback на официальные Suno endpoints), автоматически создаёт запись в `tracks`/`ai_jobs` и инициирует асинхронный поллинг результата.
+Создает задачу генерации музыки в Suno AI. Edge Function вызывает прокси `sunoapi.org` (endpoint конфигурируется переменными `SUNO_*_URL`), автоматически создаёт запись в `tracks`/`ai_jobs` и инициирует асинхронный поллинг результата.
 
 #### Параметры запроса
 
