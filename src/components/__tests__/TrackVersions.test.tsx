@@ -39,14 +39,14 @@ const supabaseMocks = vi.hoisted(() => {
     deleteEq: vi.fn(),
     update: vi.fn(() => ({ eq: obj.updateEq } as const)),
     delete: vi.fn(() => ({ eq: obj.deleteEq } as const)),
-    from: vi.fn(() => ({ update: obj.update, delete: obj.delete })),
+    from: vi.fn((table: string) => ({ update: obj.update, delete: obj.delete })),
   };
   return obj;
 });
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    from: (...args: unknown[]) => supabaseMocks.from(...args),
+    from: supabaseMocks.from,
   },
 }));
 
