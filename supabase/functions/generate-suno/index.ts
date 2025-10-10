@@ -176,9 +176,9 @@ export const mainHandler = async (req: Request): Promise<Response> => {
 
     const token = authHeader.replace('Bearer ', '');
     
-    // Создаем user-scoped client для получения данных пользователя
+    // Создаем user-scoped client и получаем данные пользователя из проверенного токена
     const userClient = createSupabaseUserClient(token);
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    const { data: { user }, error: userError } = await userClient.auth.getUser(token);
 
     if (userError || !user) {
       logger.error('🔴 [GENERATE-SUNO] Failed to get user from verified token', { 
@@ -201,6 +201,9 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       provider: 'suno',
       modelVersion: body.model_version || 'chirp-v3-5'
     });
+
+    // Используем admin client для операций с БД
+    const supabase = createSupabaseAdminClient();
 
     const trackId = body.trackId;
     const prompt = body.prompt;
