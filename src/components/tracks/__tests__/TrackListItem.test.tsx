@@ -7,7 +7,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useTrackLike } from '@/features/tracks/hooks';
 import { DisplayTrack } from '@/types/track';
 import type { AudioPlayerTrack } from '@/types/track';
-import type { RefObject } from 'react';
 
 // Mock the source of the hooks
 vi.mock('@/hooks/useAudioPlayer');
@@ -52,7 +51,6 @@ describe('TrackListItem', () => {
   const clearCurrentTrackMock = vi.fn();
   const audioRefMock = { current: null } as RefObject<HTMLAudioElement>;
   const toastMock = vi.fn();
-  const dismissToastMock = vi.fn();
   const toggleLikeMock = vi.fn();
 
   const mockedUseAudioPlayer = vi.mocked(useAudioPlayer);
@@ -84,36 +82,6 @@ describe('TrackListItem', () => {
     currentVersionIndex: 0,
     audioRef: { current: null } as RefObject<HTMLAudioElement>,
     clearCurrentTrack: vi.fn(),
-  });
-
-  const createAudioPlayerValue = (
-    overrides: Partial<AudioPlayerContextValue> = {}
-  ): AudioPlayerContextValue => ({
-    currentTrack: null,
-    isPlaying: false,
-    currentTime: 0,
-    duration: 0,
-    volume: 1,
-    queue: [],
-    currentQueueIndex: -1,
-    playTrack: playTrackMock,
-    playTrackWithQueue: playTrackWithQueueMock,
-    togglePlayPause: togglePlayPauseMock,
-    pauseTrack: pauseTrackMock,
-    seekTo: seekToMock,
-    setVolume: setVolumeMock,
-    playNext: playNextMock,
-    playPrevious: playPreviousMock,
-    addToQueue: addToQueueMock,
-    removeFromQueue: removeFromQueueMock,
-    clearQueue: clearQueueMock,
-    reorderQueue: reorderQueueMock,
-    switchToVersion: switchToVersionMock,
-    getAvailableVersions: getAvailableVersionsMock,
-    currentVersionIndex: 0,
-    audioRef: audioRefMock,
-    clearCurrentTrack: clearCurrentTrackMock,
-    ...overrides,
   });
 
   beforeEach(() => {

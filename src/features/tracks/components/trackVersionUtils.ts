@@ -34,7 +34,7 @@ export const buildAudioPlayerTrack = (
 ): AudioPlayerTrack => ({
   id: version.id,
   title: version.is_original ? 'Оригинал' : `Версия ${version.version_number}`,
-  audio_url: version.audio_url,
+  audio_url: version.audio_url || '',
   cover_url: version.cover_url,
   duration: version.duration,
   status: "completed",
