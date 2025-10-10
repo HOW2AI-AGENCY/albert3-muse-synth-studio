@@ -106,7 +106,7 @@ const mainHandler = async (req: Request) => {
     // Find the track by metadata.suno_task_id
     const { data: track, error: findErr } = await supabase
       .from("tracks")
-      .select("id, status, user_id, metadata")
+      .select("id, title, prompt, status, user_id, metadata")
       .contains("metadata", { suno_task_id: taskId })
       .maybeSingle();
 
@@ -193,6 +193,13 @@ const mainHandler = async (req: Request) => {
       const sanitizedModelName = sanitizeText(mainTrack.model || mainTrack.model_name);
       const sanitizedSunoId = sanitizeText(mainTrack.id);
       const createdAtSuno = mainTrack.created_at || mainTrack.createTime || mainTrack.createdAt;
+      
+      // Only update title if it's empty or default
+      const currentTitle = track.title || '';
+      const shouldUpdateTitle = !currentTitle || 
+        currentTitle === 'Untitled Track' || 
+        currentTitle === 'Generated Track' ||
+        currentTitle === track.prompt;
 
       console.log("Suno callback: processing main track", {
         trackId: track.id,
@@ -240,23 +247,29 @@ const mainHandler = async (req: Request) => {
         suno_data: successfulTracks,
       };
 
+      const updateData: any = {
+        status: "completed",
+        audio_url: uploadedAudioUrl,
+        duration,
+        duration_seconds: duration,
+        lyrics: sanitizedLyrics,
+        cover_url: uploadedCoverUrl,
+        video_url: uploadedVideoUrl,
+        suno_id: sanitizedSunoId,
+        model_name: sanitizedModelName,
+        created_at_suno: createdAtSuno,
+        style_tags: styleTags,
+        metadata: metadataUpdate,
+      };
+      
+      // Only update title if appropriate
+      if (shouldUpdateTitle) {
+        updateData.title = sanitizedTitle;
+      }
+      
       const { error: updateTrackError } = await supabase
         .from("tracks")
-        .update({
-          status: "completed",
-          audio_url: uploadedAudioUrl,
-          duration,
-          duration_seconds: duration,
-          lyrics: sanitizedLyrics,
-          title: sanitizedTitle,
-          cover_url: uploadedCoverUrl,
-          video_url: uploadedVideoUrl,
-          suno_id: sanitizedSunoId,
-          model_name: sanitizedModelName,
-          created_at_suno: createdAtSuno,
-          style_tags: styleTags,
-          metadata: metadataUpdate,
-        })
+        .update(updateData)
         .eq("id", track.id);
 
       if (updateTrackError) {

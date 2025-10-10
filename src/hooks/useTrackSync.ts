@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { logInfo, logWarn, logError } from '@/utils/logger';
+import { invalidateTrackVersionsCache } from '@/features/tracks/hooks/useTrackVersions';
 import type { Database } from '@/integrations/supabase/types';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
@@ -120,6 +121,10 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
                 title: '✅ Трек готов!',
                 description: `"${newTrack.title}" успешно сгенерирован`,
               });
+
+              // Invalidate version cache to force reload
+              invalidateTrackVersionsCache(newTrack.id);
+              logInfo('Invalidated version cache for completed track', 'useTrackSync', { trackId: newTrack.id });
 
               onTrackCompletedRef.current?.(newTrack.id);
             }

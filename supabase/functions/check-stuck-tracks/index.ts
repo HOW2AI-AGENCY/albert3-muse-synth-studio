@@ -39,7 +39,7 @@ serve(async (req: Request): Promise<Response> => {
 
     let query = supabaseAdmin
       .from('tracks')
-      .select('id, title, user_id, created_at, metadata, status');
+      .select('id, title, prompt, user_id, created_at, metadata, status');
 
     if (trackIds.length > 0) {
       query = query.in('id', trackIds);
@@ -110,48 +110,183 @@ serve(async (req: Request): Promise<Response> => {
           const successfulTracks = queryResult.tasks.filter(t => t.audioUrl);
           
           if (successfulTracks.length > 0) {
-            const sunoTrack = successfulTracks[0];
+            const mainTrack = successfulTracks[0];
             logger.info('✅ Found completed track', { 
               trackId: track.id, 
-              audioUrl: sunoTrack.audioUrl?.substring(0, 50) 
+              audioUrl: mainTrack.audioUrl?.substring(0, 50),
+              versionsCount: successfulTracks.length
             });
             
-            // Полная синхронизация трека со всеми метаданными
+            // Import storage helpers dynamically
+            const { downloadAndUploadAudio, downloadAndUploadCover, downloadAndUploadVideo } = 
+              await import('../_shared/storage.ts');
+            
+            // Download and upload main track assets to storage
+            let uploadedAudioUrl = mainTrack.audioUrl || null;
+            if (mainTrack.audioUrl) {
+              uploadedAudioUrl = await downloadAndUploadAudio(
+                mainTrack.audioUrl, 
+                track.id, 
+                track.user_id, 
+                'main.mp3', 
+                supabaseAdmin
+              );
+              logger.info('📥 Main audio uploaded', { trackId: track.id, url: uploadedAudioUrl?.substring(0, 50) });
+            }
+            
+            let uploadedCoverUrl = mainTrack.imageUrl || null;
+            if (uploadedCoverUrl) {
+              uploadedCoverUrl = await downloadAndUploadCover(
+                uploadedCoverUrl, 
+                track.id, 
+                track.user_id, 
+                'cover.jpg', 
+                supabaseAdmin
+              );
+              logger.info('📥 Cover uploaded', { trackId: track.id });
+            }
+            
+            let uploadedVideoUrl = mainTrack.streamAudioUrl || null;
+            if (uploadedVideoUrl) {
+              uploadedVideoUrl = await downloadAndUploadVideo(
+                uploadedVideoUrl, 
+                track.id, 
+                track.user_id, 
+                'video.mp4', 
+                supabaseAdmin
+              );
+              logger.info('📥 Video uploaded', { trackId: track.id });
+            }
+            
+            // Normalize tags
+            const rawTags = Array.isArray(mainTrack.tags)
+              ? mainTrack.tags.join(',')
+              : typeof mainTrack.tags === 'string'
+                ? mainTrack.tags
+                : '';
+            const styleTags = rawTags
+              ? [...new Set(rawTags.split(/[,;]/).map((tag: string) => tag.trim()).filter(Boolean))]
+              : null;
+            
+            // Only update title if it's empty or default
+            const shouldUpdateTitle = !track.title || 
+              track.title === 'Untitled Track' || 
+              track.title === 'Generated Track' ||
+              (track.prompt && track.title === track.prompt);
+            
+            const updateData: any = {
+              status: 'completed',
+              audio_url: uploadedAudioUrl,
+              video_url: uploadedVideoUrl,
+              cover_url: uploadedCoverUrl,
+              lyrics: mainTrack.prompt || null,
+              duration: mainTrack.duration ? Math.round(mainTrack.duration) : null,
+              duration_seconds: mainTrack.duration ? Math.round(mainTrack.duration) : null,
+              model_name: mainTrack.modelName || null,
+              style_tags: styleTags,
+              suno_id: mainTrack.id || null,
+              created_at_suno: mainTrack.createTime || null,
+              metadata: {
+                ...metadata,
+                sync_check_at: new Date().toISOString(),
+                sync_found_completed: true,
+                suno_data: queryResult.tasks,
+                source: 'stuck-sync'
+              }
+            };
+            
+            if (shouldUpdateTitle && mainTrack.title) {
+              updateData.title = mainTrack.title;
+            }
+            
+            // Full sync of main track with all metadata
             await supabaseAdmin
               .from('tracks')
-              .update({
-                status: 'completed',
-                audio_url: sunoTrack.audioUrl,
-                video_url: sunoTrack.streamAudioUrl || null,
-                cover_url: sunoTrack.imageUrl || null,
-                lyrics: sunoTrack.prompt || null,
-                duration: sunoTrack.duration ? Math.round(sunoTrack.duration) : null,
-                model_name: sunoTrack.modelName || null,
-                genre: sunoTrack.tags || null,
-                style_tags: sunoTrack.tags ? sunoTrack.tags.split(',').map((t: string) => t.trim()) : null,
-                suno_id: sunoTrack.id || null,
-                created_at_suno: sunoTrack.createTime ? new Date(sunoTrack.createTime).toISOString() : null,
-                metadata: {
-                  ...metadata,
-                  sync_check_at: new Date().toISOString(),
-                  sync_found_completed: true,
-                  suno_data: queryResult.tasks,
-                }
-              })
+              .update(updateData)
               .eq('id', track.id);
             
-            logger.info('✅ Track fully synced', { 
+            logger.info('✅ Main track fully synced', { 
               trackId: track.id,
-              title: sunoTrack.title || track.title,
-              duration: sunoTrack.duration,
-              hasPrompt: !!sunoTrack.prompt
+              title: mainTrack.title || track.title,
+              duration: mainTrack.duration,
+              hasLyrics: !!mainTrack.prompt,
+              tagsCount: styleTags?.length || 0,
+              titleUpdated: shouldUpdateTitle
             });
+            
+            // Create/update track versions for additional variants
+            if (successfulTracks.length > 1) {
+              for (let i = 1; i < successfulTracks.length; i++) {
+                const versionTrack = successfulTracks[i];
+                if (!versionTrack.audioUrl) {
+                  logger.warn(`Version ${i} missing audio URL, skipping`, { trackId: track.id });
+                  continue;
+                }
+                
+                const versionAudioUrl = await downloadAndUploadAudio(
+                  versionTrack.audioUrl,
+                  track.id,
+                  track.user_id,
+                  `version-${i}.mp3`,
+                  supabaseAdmin
+                );
+                
+                let versionCoverUrl = versionTrack.imageUrl || null;
+                if (versionCoverUrl) {
+                  versionCoverUrl = await downloadAndUploadCover(
+                    versionCoverUrl,
+                    track.id,
+                    track.user_id,
+                    `version-${i}-cover.jpg`,
+                    supabaseAdmin
+                  );
+                }
+                
+                let versionVideoUrl = versionTrack.streamAudioUrl || null;
+                if (versionVideoUrl) {
+                  versionVideoUrl = await downloadAndUploadVideo(
+                    versionVideoUrl,
+                    track.id,
+                    track.user_id,
+                    `version-${i}-video.mp4`,
+                    supabaseAdmin
+                  );
+                }
+                
+                const { error: versionError } = await supabaseAdmin
+                  .from('track_versions')
+                  .upsert({
+                    parent_track_id: track.id,
+                    version_number: i,
+                    is_master: false,
+                    suno_id: versionTrack.id || null,
+                    audio_url: versionAudioUrl,
+                    video_url: versionVideoUrl,
+                    cover_url: versionCoverUrl,
+                    lyrics: versionTrack.prompt || null,
+                    duration: versionTrack.duration ? Math.round(versionTrack.duration) : null,
+                    metadata: {
+                      suno_track_data: versionTrack,
+                      generated_via: 'stuck-sync',
+                      suno_task_id: taskId,
+                    }
+                  }, { onConflict: 'parent_track_id,version_number' });
+                
+                if (versionError) {
+                  logger.error(`Error saving version ${i}`, { error: versionError, trackId: track.id });
+                } else {
+                  logger.info(`✅ Version ${i} saved/updated`, { trackId: track.id });
+                }
+              }
+            }
             
             results.push({ 
               trackId: track.id, 
               action: 'synced_completed',
-              audioUrl: sunoTrack.audioUrl,
-              hasPrompt: !!sunoTrack.prompt
+              audioUrl: uploadedAudioUrl,
+              versionsCreated: successfulTracks.length - 1,
+              hasLyrics: !!mainTrack.prompt,
+              tagsCount: styleTags?.length || 0
             });
           } else {
             // Завершен но без audio

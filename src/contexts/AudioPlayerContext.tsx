@@ -85,9 +85,16 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   /**
    * Загрузка всех версий для трека и добавление их в очередь
    */
-  const loadVersions = useCallback(async (trackId: string): Promise<TrackWithVersions[]> => {
+  const loadVersions = useCallback(async (trackId: string, force = false): Promise<TrackWithVersions[]> => {
     try {
-      logInfo(`Loading versions for track: ${trackId}`, 'AudioPlayerContext');
+      logInfo(`Loading versions for track: ${trackId}${force ? ' (forced)' : ''}`, 'AudioPlayerContext');
+      
+      // Force cache invalidation if requested
+      if (force) {
+        const { invalidateTrackVersionsCache } = await import('@/features/tracks/hooks/useTrackVersions');
+        invalidateTrackVersionsCache(trackId);
+      }
+      
       const versions = await getTrackWithVersions(trackId);
       
       if (versions.length > 0) {
@@ -210,13 +217,17 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
       // ============= ЗАГРУЗКА ВЕРСИЙ ТРЕКА =============
       // Загружаем версии используя parentTrackId или id основного трека
       const baseTrackId = normalizedTrack.parentTrackId || normalizedTrack.id;
+      const wasEmpty = availableVersions.length === 0;
+      
       logInfo('Loading versions', 'AudioPlayerContext', { 
         trackId: normalizedTrack.id, 
         baseTrackId,
-        hasParent: !!normalizedTrack.parentTrackId
+        hasParent: !!normalizedTrack.parentTrackId,
+        wasEmpty
       });
       
-      const versions = await loadVersions(baseTrackId);
+      // Force reload if versions were previously empty (track just completed)
+      const versions = await loadVersions(baseTrackId, wasEmpty);
       
       // Определяем индекс текущей версии
       if (versions.length > 0) {
@@ -418,16 +429,34 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
    * Переключение на конкретную версию трека
    * @param versionId - ID версии для переключения
    */
-  const switchToVersion = useCallback((versionId: string) => {
-    const version = availableVersions.find(v => v.id === versionId);
+  const switchToVersion = useCallback(async (versionId: string) => {
+    let version = availableVersions.find(v => v.id === versionId);
+    
+    if (!version && currentTrack) {
+      // Try force reload if version not found
+      logInfo('Version not found, force reloading', 'AudioPlayerContext', { versionId });
+      const baseTrackId = currentTrack.parentTrackId || currentTrack.id;
+      const reloadedVersions = await loadVersions(baseTrackId, true);
+      version = reloadedVersions.find(v => v.id === versionId);
+    }
     
     if (!version) {
-      logError('Version not found', new Error(`Version ${versionId} not found`), 'AudioPlayerContext', { versionId, availableCount: availableVersions.length });
+      logError('Version not found after reload', new Error(`Version ${versionId} not found`), 'AudioPlayerContext', { versionId, availableCount: availableVersions.length });
+      toast({
+        title: "Версия не найдена",
+        description: "Попробуйте обновить список треков",
+        variant: "destructive",
+      });
       return;
     }
     
     if (!version.audio_url) {
       logError('Version has no audio URL', new Error(`Version ${versionId} has no audio_url`), 'AudioPlayerContext', { versionId });
+      toast({
+        title: "Версия недоступна",
+        description: "Аудио не найдено для этой версии",
+        variant: "destructive",
+      });
       return;
     }
     
