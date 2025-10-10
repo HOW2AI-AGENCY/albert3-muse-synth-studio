@@ -30,7 +30,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.separate-stems]
-  verify_jwt = true
+  verify_jwt = false
   [functions.separate-stems.env]
     SENTRY_DSN = ""
     SENTRY_ENVIRONMENT = "development"
@@ -41,7 +41,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.sync-stem-job]
-verify_jwt = true
+verify_jwt = false
 
 [functions.migrate-tracks-to-storage]
 verify_jwt = true
@@ -68,4 +68,3 @@ verify_jwt = true
 
 [functions.check-stuck-tracks]
 verify_jwt = true
-
