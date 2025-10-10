@@ -51,6 +51,7 @@ const defaultMockData = {
   reorderQueue: vi.fn(),
   audioRef: createRef<HTMLAudioElement>(),
   currentQueueIndex: 0,
+  isPlayerVisible: true,
 };
 
 describe('GlobalAudioPlayer', () => {

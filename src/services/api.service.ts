@@ -293,7 +293,7 @@ export class ApiService {
       logInfo('✅ [API Service] Edge function returned successfully', context, {
         provider,
         functionName,
-        ...maskObject(data),
+        data: data ? { success: true } : undefined,
       });
 
       return data;

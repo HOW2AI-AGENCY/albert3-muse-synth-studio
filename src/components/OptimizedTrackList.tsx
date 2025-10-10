@@ -31,7 +31,7 @@ export const OptimizedTrackList: React.FC<OptimizedTrackListProps> = memo(({
       {tracks.map((track) => (
         <TrackListItem
           key={track.id}
-          track={track}
+          track={{ ...track, status: track.status ?? 'completed' }}
           onDownload={() => handleDownload(track.id)}
           onShare={() => handleShare(track.id)}
         />

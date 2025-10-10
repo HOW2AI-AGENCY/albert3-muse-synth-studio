@@ -572,11 +572,10 @@ const Library: React.FC = () => {
           
           {viewMode === 'list' && (
             <div className="space-y-2">
-              {filteredAndSortedTracks.map((track, index) => (
+              {filteredAndSortedTracks.map((track) => (
                 <div key={track.id} className="relative" aria-busy={loadingTrackId === track.id}>
                   <TrackListItem
-                    track={convertToDisplayTrack(track)}
-                    index={index}
+                    track={convertToDisplayTrack(track) as any}
                     onDownload={() => handleDownload(track.id)}
                     onShare={() => handleShare(track.id)}
                     onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
