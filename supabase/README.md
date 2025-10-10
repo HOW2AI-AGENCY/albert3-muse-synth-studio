@@ -4,6 +4,33 @@
 
 Интеграционные тесты для `generate-suno` находятся в каталоге `supabase/functions/tests` и запускаются в среде Deno. Они используют локальный Supabase, поднятый через Supabase CLI, и полностью мокируют вызовы Suno API.
 
+## Обновление секретов Edge Functions
+
+Перед деплоем функций убедитесь, что сервисный ключ Supabase доступен в Edge Functions через секрет `SUPABASE_SERVICE_ROLE_KEY` (при необходимости добавьте алиас `SUPABASE_SERVICE_ROLE`). Это гарантирует корректную запись в таблицах `ai_jobs` и `rate_limits`, а также работу rate limiting.
+
+1. Получите сервисный ключ в **Project Settings → API → Project API keys** (значение `service_role`).
+2. Установите или обновите секреты в Supabase CLI:
+
+   ```bash
+   supabase secrets set --env-file <(cat <<'EOF'
+   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+   SUPABASE_SERVICE_ROLE=your-service-role-key
+   EOF
+   )
+   ```
+
+   > ℹ️ Алиас `SUPABASE_SERVICE_ROLE` необязателен, но позволяет Edge Functions продолжить работу, если старое имя переменной используется в конфигурации.
+
+3. После обновления секретов разверните функции, чтобы окружение получило новые значения:
+
+   ```bash
+   supabase functions deploy generate-suno
+   # или общий деплой всех функций
+   supabase functions deploy --all
+   ```
+
+4. Проверьте, что вызовы `supabase.functions.invoke('generate-suno')` возвращают код `200` и создают записи в `ai_jobs`/`rate_limits` (через Supabase Studio или CLI).
+
 ### Предварительные требования
 
 - [Docker Desktop](https://docs.docker.com/desktop/) (для запуска контейнеров Supabase)
