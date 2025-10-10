@@ -1,8 +1,7 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from './logger.ts';
 
 export async function findOrCreateTrack(
-  supabaseAdmin: SupabaseClient,
+  supabaseAdmin: any,
   userId: string,
   { trackId, title, prompt, lyrics, hasVocals, styleTags, requestMetadata }: {
     trackId?: string;

@@ -60,7 +60,7 @@ Deno.test({
   async fn() {
     const { accessToken } = await createTestUser();
 
-    let capturedHeaders: Headers | null = null;
+    let capturedHeaders: Headers | undefined;
 
     const restoreFetch = installFetchMock({
       "https://api.sunoapi.org/api/v1/generate/credit": (_input, init) => {
