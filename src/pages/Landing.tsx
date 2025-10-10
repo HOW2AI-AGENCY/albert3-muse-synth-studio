@@ -15,6 +15,7 @@ const Landing = () => {
   const [featuredTracks, setFeaturedTracks] = useState<Track[]>([]);
 
   useEffect(() => {
+    console.log('[Landing] mounted');
     const fetchFeaturedTracks = async () => {
       try {
         const tracks = await ApiService.getPublicTracks(6, 'like_count');

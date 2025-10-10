@@ -37,6 +37,7 @@ const queryClient = new QueryClient({
 const App = () => {
   useEffect(() => {
     if (typeof window === "undefined") return;
+    console.log('[App] mounted');
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail as { url?: string; method?: string; status?: number } | undefined;
       if (detail && import.meta.env.DEV) {

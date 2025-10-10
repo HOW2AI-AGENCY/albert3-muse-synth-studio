@@ -102,4 +102,5 @@ if (typeof window !== 'undefined') {
   }
 }
 
+console.log('[bootstrap] Mounting App');
 createRoot(document.getElementById('root')!).render(<App />);
