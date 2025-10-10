@@ -202,11 +202,24 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       modelVersion: body.model_version || 'chirp-v3-5'
     });
 
-    // Используем admin client для операций с БД
-    const supabase = createSupabaseAdminClient();
-
     const trackId = body.trackId;
     const prompt = body.prompt;
+    
+    // Защитная проверка: убедимся что таблица ai_jobs существует
+    try {
+      await supabaseAdmin.from('ai_jobs').select('id').limit(1);
+    } catch (tableCheckError: any) {
+      logger.error('🔴 [GENERATE-SUNO] ai_jobs table check failed', { error: tableCheckError });
+      if (tableCheckError?.code === 'PGRST205') {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Missing database table: ai_jobs',
+            details: 'Apply migrations to create ai_jobs table'
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
     const title = body.title;
     const modelVersion = body.model_version;
     const idempotencyKey = body.idempotencyKey || crypto.randomUUID();
