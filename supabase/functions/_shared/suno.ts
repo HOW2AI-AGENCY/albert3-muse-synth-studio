@@ -234,6 +234,20 @@ const dropUndefined = (input: Record<string, unknown>): Record<string, unknown> 
   return output;
 };
 
+const safeParseJson = (
+  rawText: string,
+): { json: unknown; parseError?: Error } => {
+  if (!rawText) {
+    return { json: null };
+  }
+
+  try {
+    return { json: JSON.parse(rawText) };
+  } catch (error) {
+    return { json: null, parseError: error instanceof Error ? error : new Error(String(error)) };
+  }
+};
+
 export const buildSunoHeaders = (
   apiKey: string,
   extraHeaders: Record<string, string | undefined> = {},
@@ -470,23 +484,22 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
         });
 
         const rawText = await response.text();
-        let json: unknown = null;
-        try {
-          json = rawText ? JSON.parse(rawText) : null;
-        } catch (parseError) {
-          throw new SunoApiError("Unable to parse Suno generation response", {
-            endpoint,
-            status: response.status,
-            body: rawText,
-            cause: parseError,
-          });
-        }
+        const { json, parseError } = safeParseJson(rawText);
 
         if (!response.ok) {
           throw new SunoApiError(`Suno generation failed with status ${response.status}`, {
             endpoint,
             status: response.status,
             body: rawText,
+          });
+        }
+
+        if (parseError) {
+          throw new SunoApiError("Unable to parse Suno generation response", {
+            endpoint,
+            status: response.status,
+            body: rawText,
+            cause: parseError,
           });
         }
 
@@ -541,23 +554,22 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
         });
 
         const rawText = await response.text();
-        let json: unknown = null;
-        try {
-          json = rawText ? JSON.parse(rawText) : null;
-        } catch (parseError) {
-          throw new SunoApiError("Unable to parse Suno lyrics response", {
-            endpoint,
-            status: response.status,
-            body: rawText,
-            cause: parseError,
-          });
-        }
+        const { json, parseError } = safeParseJson(rawText);
 
         if (!response.ok) {
           throw new SunoApiError(`Suno lyrics generation failed with status ${response.status}`, {
             endpoint,
             status: response.status,
             body: rawText,
+          });
+        }
+
+        if (parseError) {
+          throw new SunoApiError("Unable to parse Suno lyrics response", {
+            endpoint,
+            status: response.status,
+            body: rawText,
+            cause: parseError,
           });
         }
 
@@ -603,23 +615,22 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
         });
 
         const rawText = await response.text();
-        let json: unknown = null;
-        try {
-          json = rawText ? JSON.parse(rawText) : null;
-        } catch (parseError) {
-          throw new SunoApiError("Unable to parse Suno task response", {
-            endpoint: url,
-            status: response.status,
-            body: rawText,
-            cause: parseError,
-          });
-        }
+        const { json, parseError } = safeParseJson(rawText);
 
         if (!response.ok) {
           throw new SunoApiError(`Suno query failed with status ${response.status}`, {
             endpoint: url,
             status: response.status,
             body: rawText,
+          });
+        }
+
+        if (parseError) {
+          throw new SunoApiError("Unable to parse Suno task response", {
+            endpoint: url,
+            status: response.status,
+            body: rawText,
+            cause: parseError,
           });
         }
 
@@ -668,23 +679,22 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
         });
 
         const rawText = await response.text();
-        let json: unknown = null;
-        try {
-          json = rawText ? JSON.parse(rawText) : null;
-        } catch (parseError) {
-          throw new SunoApiError("Unable to parse Suno lyrics query response", {
-            endpoint: url,
-            status: response.status,
-            body: rawText,
-            cause: parseError,
-          });
-        }
+        const { json, parseError } = safeParseJson(rawText);
 
         if (!response.ok) {
           throw new SunoApiError(`Suno lyrics query failed with status ${response.status}`, {
             endpoint: url,
             status: response.status,
             body: rawText,
+          });
+        }
+
+        if (parseError) {
+          throw new SunoApiError("Unable to parse Suno lyrics query response", {
+            endpoint: url,
+            status: response.status,
+            body: rawText,
+            cause: parseError,
           });
         }
 
@@ -764,23 +774,22 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
         });
 
         const rawText = await response.text();
-        let json: unknown = null;
-        try {
-          json = rawText ? JSON.parse(rawText) : null;
-        } catch (parseError) {
-          throw new SunoApiError("Unable to parse Suno stem response", {
-            endpoint,
-            status: response.status,
-            body: rawText,
-            cause: parseError,
-          });
-        }
+        const { json, parseError } = safeParseJson(rawText);
 
         if (!response.ok) {
           throw new SunoApiError(`Suno stem request failed with status ${response.status}`, {
             endpoint,
             status: response.status,
             body: rawText,
+          });
+        }
+
+        if (parseError) {
+          throw new SunoApiError("Unable to parse Suno stem response", {
+            endpoint,
+            status: response.status,
+            body: rawText,
+            cause: parseError,
           });
         }
 
@@ -828,23 +837,22 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
         });
 
         const rawText = await response.text();
-        let json: unknown = null;
-        try {
-          json = rawText ? JSON.parse(rawText) : null;
-        } catch (parseError) {
-          throw new SunoApiError("Unable to parse Suno stem query response", {
-            endpoint: url,
-            status: response.status,
-            body: rawText,
-            cause: parseError,
-          });
-        }
+        const { json, parseError } = safeParseJson(rawText);
 
         if (!response.ok) {
           throw new SunoApiError(`Suno stem query failed with status ${response.status}`, {
             endpoint: url,
             status: response.status,
             body: rawText,
+          });
+        }
+
+        if (parseError) {
+          throw new SunoApiError("Unable to parse Suno stem query response", {
+            endpoint: url,
+            status: response.status,
+            body: rawText,
+            cause: parseError,
           });
         }
 

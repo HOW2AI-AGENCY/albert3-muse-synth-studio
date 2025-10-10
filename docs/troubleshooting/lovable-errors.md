@@ -1,74 +1,105 @@
 # Lovable Dev Console Errors Explained
 
-This document explains several runtime errors observed when loading the Lovable
-application so that they can be triaged quickly.
+This guide documents the most common console messages captured while loading the
+Lovable preview environment (for example from `https://lovable.dev`). Many
+screenshots show the suffix *"Understand this error"* because the browser
+extension that produced the capture adds that text; it has no bearing on the
+underlying issue.
 
-## 1. `Uncaught SyntaxError: Unexpected token 'export'` in `chrome-extension://…/settings.js`
+## Quick Reference
 
-The Lovable browser extension ships its code as ES modules, but the
-`settings.js` bundle is injected into the page without `type="module"`.
-When Chrome parses that file as a classic script the first `export`
-statement throws a syntax error. Update the extension so that the injected
-`<script>` tag (or the background/content script declaration in the manifest)
-uses module semantics, or transpile the bundle to remove ESM syntax before it
-is injected. Until that change lands the error will appear on every page load,
-but it does not block the main React application from booting.
+| Symptom (console message) | What it means | Immediate actions |
+| --- | --- | --- |
+| `Access to fetch at 'https://lovable-api.com/...latest-message' has been blocked by CORS policy` | The Lovable API response omitted the `Access-Control-Allow-Origin` header, so the browser blocked the cross-origin fetch. | Allow the `https://lovable.dev` origin (or `*` for testing) in the API's CORS configuration, or proxy the call through infrastructure that injects the header. |
+| `Failed to load resource: net::ERR_FAILED` (same request as above) | Follow-on error raised when the blocked fetch rejects. | Fix the underlying CORS configuration; no client-side workaround exists. |
+| `qycfsepwguaiwcquwwbw.supabase.co/.../get-balance:1 Failed to load resource: the server responded with a status of 401 ()` | The Supabase Edge Function rejected the request because it lacked valid authentication/authorization headers. | Ensure the session has a fresh Supabase access token and send it in the `Authorization: Bearer <token>` header (plus any required `apikey`). |
+| `Uncaught (in promise) Error: Resource::kQuotaBytesPerItem quota exceeded` | A payload written to `chrome.storage` (or another quota-limited storage surface) exceeded the per-item byte quota (≈8 KB in Chrome). | Reduce the payload size, split the data into multiple keys, or migrate to a storage option with larger quotas such as IndexedDB. |
+| `Node cannot be found in the current page.` | Automation tooling (e.g., Playwright or the Lovable test harness) attempted to interact with a DOM node that no longer exists, usually because the page re-rendered. | Re-run the interaction after the DOM settles, or update the selector to handle re-renders. |
 
-## 2. `Uncaught (in promise) Error: A listener indicated an asynchronous response by returning true, but the message channel closed before a response was received`
+## Detailed Notes
 
-This message originates from the Chrome Extensions messaging API. A content or
-background script called `sendMessage` and returned `true` to indicate that it
-would reply asynchronously, but the channel was closed before `sendResponse`
-was invoked. In practice this means the extension code hit an exception or
-never finished the async work. Review the extension logs and make sure every
-code path calls `sendResponse` or removes the `return true` when no async work
-is required.
-
-## 3. CORS error when calling `https://lovable-api.com/...`
+### 1. CORS error when calling `https://lovable-api.com/.../latest-message`
 
 ```
-Access to fetch at 'https://lovable-api.com/...'
-from origin 'https://lovable.dev' has been blocked by CORS policy: No
-'Access-Control-Allow-Origin' header is present on the requested resource.
+Access to fetch at 'https://lovable-api.com/projects/…/latest-message' from origin
+'https://lovable.dev' has been blocked by CORS policy: No 'Access-Control-Allow-Origin'
+header is present on the requested resource.
 ```
 
-The browser blocked the `fetch` call because the API response did not include a
-permissive `Access-Control-Allow-Origin` header. Either configure the Lovable
-API server to add the header (for example `Access-Control-Allow-Origin: https://lovable.dev`)
-or proxy the request through infrastructure that performs the necessary CORS
-negotiation. Until the header is present the browser will prevent the client
-from reading the response, leading to `net::ERR_FAILED` in the console.
+The Lovable client is hosted on `lovable.dev`, while the API lives on
+`lovable-api.com`. Browsers refuse to expose responses from a different origin
+unless the server explicitly allows it via CORS headers. Add at least the
+following headers to the API response (adjust origin/methods as needed):
 
-## 4. `Resource::kQuotaBytesPerItem quota exceeded`
+```
+Access-Control-Allow-Origin: https://lovable.dev
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Methods: GET, OPTIONS
+```
 
-Chrome imposes storage quotas on the `chrome.storage` API (and some other web
-storage surfaces). This error indicates that the payload being written exceeds
-the per-item quota (typically 8 KB). Reduce the size of the value being stored
-or switch to a storage mechanism with higher limits such as IndexedDB.
+Until the header is present, the browser will block the response, and the
+associated `fetch` promise will reject.
 
-## 5. `SES_UNCAUGHT_EXCEPTION: null`
+### 2. `net::ERR_FAILED` on the same request
 
-The Secure ECMAScript (SES) runtime threw an unhandled exception while
-initialising the lockdown shim (`lockdown-install.js`). This usually means
-another error occurred earlier and was swallowed. Check the stack trace for the
-original exception and ensure the SES lockdown script runs before any other
-third-party scripts that might violate its constraints.
+`net::ERR_FAILED` is Chrome's generic network failure. In this scenario it is a
+consequence of the blocked CORS request above. Fixing the API's CORS headers
+will eliminate both messages at once.
 
-## 6. `401` from Supabase Edge Function `get-balance`
+### 3. `401` from Supabase Edge Function `get-balance`
 
-A 401 indicates the request lacked valid authentication. Confirm that the
-browser session has a valid Supabase access token and that the request includes
-it (usually via the `Authorization: Bearer <token>` header). If the edge
-function expects additional headers (such as `apikey`) make sure they are
-present.
+```
+https://…supabase.co/functions/v1/get-balance:1  Failed to load resource: the server responded with a status of 401 ()
+```
 
-## Suggested Next Steps
+The edge function runs server-side authorization checks. When it receives a
+request without the expected JWT access token (or with an expired/invalid one),
+it returns HTTP 401. Validate that:
 
-1. Reproduce the errors with DevTools open and capture stack traces.
-2. Audit extension messaging code paths to guarantee `sendResponse` is called.
-3. Update the Lovable API server to include the required CORS headers.
-4. Reduce storage payload sizes or migrate to a larger storage mechanism.
-5. Verify Supabase authentication tokens are refreshed and attached to each
-   request.
-6. After applying fixes, reload the page with `Disable cache` enabled to ensure
-   the latest assets are in use.
+1. The browser session has an active Supabase auth session.
+2. Requests include `Authorization: Bearer <access_token>` and, if required,
+   the Supabase `apikey` header.
+3. Any service role keys are **not** exposed in the browser; instead, the UI
+   should call a backend proxy if elevated privileges are needed.
+
+### 4. `Resource::kQuotaBytesPerItem quota exceeded`
+
+Chrome enforces an 8 KB limit per item in `chrome.storage.sync` and similar
+quotas in `chrome.storage.local`. This error is thrown when code attempts to
+persist a value larger than the limit. Mitigations include compressing data,
+chunking it into multiple entries, or using IndexedDB/local file storage for
+large blobs.
+
+### 5. `Node cannot be found in the current page.`
+
+This message typically originates from automated testing frameworks (Playwright,
+Puppeteer) that interact with the Lovable preview via a remote driver. The
+selector targets an element that was removed or replaced after a re-render.
+Introduce explicit waits for the desired selector, prefer resilient selectors
+(data-testid), or wrap DOM queries with retry logic so they can tolerate UI
+transitions.
+
+### 6. Service Worker informational logs
+
+Messages such as:
+
+```
+[SW Manager] Регистрация Service Worker...
+[SW Manager] Service Worker зарегистрирован: …
+[SW Manager] Service Worker успешно инициализирован
+```
+
+are purely informational and indicate the service worker booted successfully.
+They do not require any action.
+
+## Checklist for Remediation
+
+1. Update the Lovable API gateway to emit the correct CORS headers and verify
+   with `curl -I https://lovable-api.com/.../latest-message`.
+2. Confirm Supabase authentication flows refresh and attach access tokens before
+   calling edge functions.
+3. Audit extension or client storage writes to stay under the per-item quotas or
+   migrate large payloads to IndexedDB.
+4. Harden automation/test selectors so they survive React re-renders.
+5. Reload the page with DevTools' **Disable cache** option to ensure the latest
+   assets and service worker are in use after applying fixes.
