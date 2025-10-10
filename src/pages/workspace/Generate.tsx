@@ -24,7 +24,8 @@ import type { Track } from "@/services/api.service";
 
 const Generate = () => {
   const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks();
-  const { isPlayerVisible } = useAudioPlayer();
+  const { currentTrack } = useAudioPlayer();
+  const isPlayerVisible = !!currentTrack;
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showGenerator, setShowGenerator] = useState(false);
   const [userId, setUserId] = useState<string | undefined>();

@@ -3,13 +3,10 @@ import { TrackCard } from "@/features/tracks/components/TrackCard";
 import { TrackListItem } from "@/features/tracks/components/TrackListItem";
 import { ViewSwitcher } from "./tracks/ViewSwitcher";
 import { LoadingSkeleton as Skeleton } from "./ui/LoadingSkeleton";
-import { Track as ApiTrack } from "@/services/api.service";
+import { Track } from "@/services/api.service";
 import { Music } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-
-// Используем прямой тип без расширения
-type Track = ApiTrack;
 
 interface TracksListProps {
   tracks: Track[];

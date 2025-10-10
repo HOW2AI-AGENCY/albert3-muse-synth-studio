@@ -52,6 +52,7 @@ interface AudioPlayerContextType {
   currentVersionIndex: number;
   audioRef: React.RefObject<HTMLAudioElement>;
   clearCurrentTrack: () => void;
+  isPlayerVisible: boolean;
 }
 
 const AudioPlayerContext = createContext<AudioPlayerContextType | undefined>(undefined);
@@ -567,6 +568,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     currentVersionIndex,
     audioRef,
     clearCurrentTrack,
+    isPlayerVisible: !!currentTrack,
   }), [
     currentTrack,
     isPlaying,
