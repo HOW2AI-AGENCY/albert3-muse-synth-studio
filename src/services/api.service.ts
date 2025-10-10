@@ -48,6 +48,11 @@ export interface GenerateMusicRequest {
   styleTags?: string[];
   customMode?: boolean;
   modelVersion?: string;
+  negativeTags?: string;
+  vocalGender?: 'm' | 'f';
+  styleWeight?: number;
+  weirdnessConstraint?: number;
+  audioWeight?: number;
 }
 
 export interface GenerateMusicResponse {
@@ -182,31 +187,70 @@ export class ApiService {
     const provider = request.provider || 'suno';
     const functionName = provider === 'suno' ? 'generate-suno' : 'generate-music';
 
-    // Logic to determine the final prompt based on the new API contract.
-    // In custom mode, lyrics are sent as the main prompt.
-    const promptForSuno = request.customMode ? (request.lyrics || '') : (request.prompt || '');
+    // Normalise user input to match the generate-suno edge function contract.
+    // Custom mode sends lyrics as the main prompt while still providing the
+    // original prompt metadata through Supabase.
+    const normalizedPrompt = request.prompt?.trim() ?? '';
+    const lyrics = request.lyrics;
+    const styleTags = request.styleTags?.filter((tag) => Boolean(tag?.trim())) ?? [];
+    const promptForSuno = request.customMode
+      ? (lyrics ?? normalizedPrompt)
+      : normalizedPrompt;
+    const resolvedTitle = (() => {
+      const explicitTitle = request.title?.trim();
+      if (explicitTitle && explicitTitle.length > 0) {
+        return explicitTitle;
+      }
+      const fallbackSource = normalizedPrompt || lyrics || '';
+      if (fallbackSource) {
+        return fallbackSource.substring(0, 50);
+      }
+      return 'Generated Track';
+    })();
+    const makeInstrumental = request.hasVocals === false;
+    const clamp01 = (value?: number) => {
+      if (typeof value !== 'number' || Number.isNaN(value)) {
+        return undefined;
+      }
+      return Math.min(Math.max(value, 0), 1);
+    };
+    const negativeTags = request.negativeTags?.trim();
+    const sanitizedNegativeTags = negativeTags && negativeTags.length > 0 ? negativeTags : undefined;
+    const vocalGender = request.vocalGender === 'm' || request.vocalGender === 'f' ? request.vocalGender : undefined;
+    const styleWeight = clamp01(request.styleWeight);
+    const weirdnessConstraint = clamp01(request.weirdnessConstraint);
+    const audioWeight = clamp01(request.audioWeight);
 
     const payload = {
       trackId: request.trackId,
-      title: request.title || request.prompt.substring(0, 50),
+      title: resolvedTitle,
       prompt: promptForSuno,
-      // The 'tags' array is now a single 'style' string.
-      style: (request.styleTags ?? []).join(', '),
-      // The `instrumental` flag replaces `make_instrumental` and `hasVocals`.
-      instrumental: request.hasVocals === false,
-      // The `model` field replaces `model_version`.
-      model: request.modelVersion || 'V5',
+      tags: styleTags,
+      lyrics,
+      hasVocals: request.hasVocals,
+      make_instrumental: makeInstrumental,
+      model_version: request.modelVersion || 'V5',
       customMode: request.customMode,
+      ...(sanitizedNegativeTags ? { negativeTags: sanitizedNegativeTags } : {}),
+      ...(vocalGender ? { vocalGender } : {}),
+      ...(styleWeight !== undefined ? { styleWeight } : {}),
+      ...(weirdnessConstraint !== undefined ? { weirdnessConstraint } : {}),
+      ...(audioWeight !== undefined ? { audioWeight } : {}),
     };
 
     logInfo('🎵 [API Service] Selected provider', context, { provider, functionName });
     logDebug('📤 [API Service] Payload summary', context, {
       hasTrackId: Boolean(request.trackId),
-      promptLength: request.prompt.length,
-      tagsCount: request.styleTags?.length ?? 0,
-      hasVocals: request.hasVocals ?? false,
-      lyricsLength: request.lyrics?.length ?? 0,
+      promptLength: normalizedPrompt.length,
+      tagsCount: styleTags.length,
+      hasVocals: typeof request.hasVocals === 'boolean' ? request.hasVocals : null,
+      lyricsLength: lyrics?.length ?? 0,
       customMode: request.customMode ?? null,
+      hasNegativeTags: Boolean(sanitizedNegativeTags),
+      styleWeight,
+      weirdnessConstraint,
+      audioWeight,
+      vocalGender,
     });
 
     logInfo('⏳ [API Service] Invoking edge function...', context);

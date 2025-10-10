@@ -19,6 +19,11 @@ interface GenerateSunoRequestBody {
   lyrics?: string;
   hasVocals?: boolean;
   customMode?: boolean;
+  negativeTags?: string;
+  vocalGender?: 'm' | 'f';
+  styleWeight?: number;
+  weirdnessConstraint?: number;
+  audioWeight?: number;
 }
 import {
   createSupabaseAdminClient,
@@ -90,6 +95,18 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       ? body.make_instrumental
       : effectiveHasVocals === false;
     const effectiveWaitAudio = typeof body.wait_audio === 'boolean' ? body.wait_audio : false;
+    const clampRatio = (value?: number) => {
+      if (typeof value !== 'number' || Number.isNaN(value)) {
+        return undefined;
+      }
+      return Math.min(Math.max(value, 0), 1);
+    };
+    const rawNegativeTags = typeof body.negativeTags === 'string' ? body.negativeTags.trim() : '';
+    const negativeTags = rawNegativeTags.length > 0 ? rawNegativeTags : undefined;
+    const styleWeight = clampRatio(body.styleWeight);
+    const weirdnessConstraint = clampRatio(body.weirdnessConstraint);
+    const audioWeight = clampRatio(body.audioWeight);
+    const vocalGender = body.vocalGender === 'm' || body.vocalGender === 'f' ? body.vocalGender : undefined;
 
     const requestMetadata: Record<string, unknown> = {
       prompt: body.prompt ?? null,
@@ -111,6 +128,21 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     if (normalizedLyrics !== undefined) {
       requestMetadata.lyrics = normalizedLyrics;
     }
+    if (negativeTags) {
+      requestMetadata.negative_tags = negativeTags;
+    }
+    if (vocalGender) {
+      requestMetadata.vocal_gender = vocalGender;
+    }
+    if (styleWeight !== undefined) {
+      requestMetadata.style_weight = styleWeight;
+    }
+    if (weirdnessConstraint !== undefined) {
+      requestMetadata.weirdness_constraint = weirdnessConstraint;
+    }
+    if (audioWeight !== undefined) {
+      requestMetadata.audio_weight = audioWeight;
+    }
 
     console.log('🎵 [GENERATE-SUNO] Request received:', JSON.stringify({
       trackId: body.trackId,
@@ -124,6 +156,11 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       customMode: customModeValue,
       lyricsLength: hasLyricsInput ? body.lyrics.length : 0,
       idempotencyKey: body.idempotencyKey,
+      negativeTags: negativeTags ?? null,
+      vocalGender,
+      styleWeight,
+      weirdnessConstraint,
+      audioWeight,
       timestamp: new Date().toISOString()
     }, null, 2));
 
@@ -280,6 +317,11 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       model: (modelVersion as SunoGenerationPayload['model']) || 'V5',
       customMode: customModeValue ?? false,
       callBackUrl: callbackUrl ?? undefined,
+      ...(negativeTags ? { negativeTags } : {}),
+      ...(vocalGender ? { vocalGender } : {}),
+      ...(styleWeight !== undefined ? { styleWeight: Number(styleWeight.toFixed(2)) } : {}),
+      ...(weirdnessConstraint !== undefined ? { weirdnessConstraint: Number(weirdnessConstraint.toFixed(2)) } : {}),
+      ...(audioWeight !== undefined ? { audioWeight: Number(audioWeight.toFixed(2)) } : {}),
     };
     console.log('📤 [GENERATE-SUNO] Sending request to Suno API:', JSON.stringify(sunoPayload, null, 2));
 

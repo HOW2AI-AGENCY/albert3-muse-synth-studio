@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,6 +23,8 @@ import {
   ListMinus,
   SlidersHorizontal,
   Upload,
+  Tag,
+  X,
 } from 'lucide-react';
 import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
@@ -48,6 +50,27 @@ const customPromptExamples = [
   'Экспериментальный поп с блеском глитча и плавным грувом',
   'Кинематографичный эмбиент с органическими текстурами и ростом напряжения',
 ];
+
+const DEFAULT_STYLE_TAGS = [
+  'synthwave',
+  'dream pop',
+  'cinematic',
+  'indie rock',
+  'lofi',
+  'house',
+];
+
+const MAX_STYLE_TAGS = 6;
+
+const normaliseStyleTag = (value: string) => value.trim().replace(/\s+/g, ' ');
+
+const parseStyleTagInput = (value: string) =>
+  value
+    .split(/[\n,]/)
+    .map(normaliseStyleTag)
+    .filter((tag, index, array) => Boolean(tag) && array.findIndex((candidate) => candidate.toLowerCase() === tag.toLowerCase()) === index);
+
+const toRatio = (value: number) => Number((Math.min(Math.max(value, 0), 100) / 100).toFixed(2));
 
 const modelVersions = [
   { value: 'chirp-v3-5', label: 'Suno v5 (chirp-v3-5)' },
@@ -88,6 +111,8 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   const [songTitle, setSongTitle] = useState('');
   const [customStylePrompt, setCustomStylePrompt] = useState('');
   const [lyrics, setLyrics] = useState('');
+  const [styleTags, setStyleTags] = useState<string[]>([]);
+  const [styleTagInput, setStyleTagInput] = useState('');
   const [excludeStyles, setExcludeStyles] = useState('');
   const [vocalGender, setVocalGender] = useState<'any' | 'female' | 'male' | 'duet' | 'instrumental'>('any');
   const [weirdness, setWeirdness] = useState(40);
@@ -218,6 +243,60 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     }
   }, [customStylePrompt, improvePrompt, simplePrompt, toast, vibrate]);
 
+  const handleAddStyleTag = useCallback((value?: string) => {
+    const source = typeof value === 'string' ? value : styleTagInput;
+    const parsed = parseStyleTagInput(source);
+
+    if (parsed.length === 0) {
+      if (typeof value !== 'string') {
+        setStyleTagInput('');
+      }
+      return;
+    }
+
+    setStyleTags((previous) => {
+      if (previous.length >= MAX_STYLE_TAGS) {
+        return previous;
+      }
+
+      const next = [...previous];
+
+      for (const tag of parsed) {
+        if (next.length >= MAX_STYLE_TAGS) {
+          break;
+        }
+
+        const exists = next.some((existing) => existing.toLowerCase() === tag.toLowerCase());
+        if (!exists) {
+          next.push(tag);
+        }
+      }
+
+      return next;
+    });
+
+    if (typeof value !== 'string') {
+      setStyleTagInput('');
+    }
+  }, [styleTagInput]);
+
+  const handleRemoveStyleTag = useCallback((tag: string) => {
+    setStyleTags((previous) => previous.filter((candidate) => candidate !== tag));
+  }, []);
+
+  const handleStyleTagKeyDown = useCallback((event: KeyboardEvent<HTMLInputElement>) => {
+    if ((event.key === 'Enter' || event.key === ',') && !event.shiftKey) {
+      event.preventDefault();
+      handleAddStyleTag();
+      return;
+    }
+
+    if (event.key === 'Backspace' && !styleTagInput && styleTags.length > 0) {
+      event.preventDefault();
+      setStyleTags((previous) => previous.slice(0, -1));
+    }
+  }, [handleAddStyleTag, styleTagInput, styleTags.length]);
+
   const validateForm = useCallback(() => {
     if (generationMode === 'simple') {
       if (!simplePrompt.trim()) {
@@ -230,8 +309,13 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       return 'Заполните стиль или добавьте лирику';
     }
 
+    const hasStyleTags = styleTags.some((tag) => tag.trim().length > 0);
+    if (!hasStyleTags) {
+      return 'Добавьте хотя бы один тег стиля для кастомного режима';
+    }
+
     return null;
-  }, [customStylePrompt, generationMode, lyrics, simplePrompt]);
+  }, [customStylePrompt, generationMode, lyrics, simplePrompt, styleTags]);
 
   const prepareGenerationParams = useCallback((): GenerateMusicParams => {
     const basePrompt = generationMode === 'simple'
@@ -272,13 +356,35 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       ? vocalGender !== 'instrumental'
       : !simpleInstrumental;
     const preparedLyrics = lyrics.trim();
+    const sanitisedStyleTags = generationMode === 'custom'
+      ? styleTags
+          .map(normaliseStyleTag)
+          .filter(Boolean)
+      : [];
+    const negativeTagsValue = generationMode === 'custom' ? excludeStyles.trim() : '';
+    const styleWeightValue = generationMode === 'custom' ? toRatio(styleInfluence) : undefined;
+    const weirdnessValue = generationMode === 'custom' ? toRatio(weirdness) : undefined;
+    const audioWeightValue = audioReference ? toRatio(audioInfluence) : undefined;
+    const resolvedVocalGender = generationMode === 'custom'
+      ? vocalGender === 'female'
+        ? 'f'
+        : vocalGender === 'male'
+          ? 'm'
+          : undefined
+      : undefined;
+    const effectiveVocalGender = hasVocals ? resolvedVocalGender : undefined;
 
     return {
       prompt: finalPrompt,
       title: songTitle.trim() || undefined,
       lyrics: hasVocals && preparedLyrics ? preparedLyrics : undefined,
       hasVocals,
-      styleTags: [],
+      styleTags: sanitisedStyleTags,
+      negativeTags: negativeTagsValue || undefined,
+      styleWeight: styleWeightValue,
+      weirdnessConstraint: weirdnessValue,
+      audioWeight: audioWeightValue,
+      vocalGender: effectiveVocalGender,
       customMode: generationMode === 'custom',
       modelVersion: selectedModel,
     };
@@ -294,6 +400,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     simplePrompt,
     songTitle,
     styleInfluence,
+    styleTags,
     vocalGender,
     weirdness,
   ]);
@@ -304,6 +411,8 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     setSongTitle('');
     setCustomStylePrompt('');
     setLyrics('');
+    setStyleTags([]);
+    setStyleTagInput('');
     setExcludeStyles('');
     setVocalGender('any');
     setWeirdness(40);
@@ -562,6 +671,77 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                         className="min-h-[160px] resize-none bg-background/50 text-sm"
                         disabled={isGenerating}
                       />
+
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium flex items-center gap-2">
+                          <Tag className="h-4 w-4" />
+                          Жанры и теги
+                        </Label>
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          <Input
+                            placeholder="Например: synthwave, dream pop"
+                            value={styleTagInput}
+                            onChange={(event) => setStyleTagInput(event.target.value)}
+                            onKeyDown={handleStyleTagKeyDown}
+                            className="h-9 bg-background/50 text-sm"
+                            disabled={isGenerating}
+                          />
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="sm:w-auto"
+                            onClick={() => handleAddStyleTag()}
+                            disabled={isGenerating || !styleTagInput.trim() || styleTags.length >= MAX_STYLE_TAGS}
+                          >
+                            <Plus className="h-3 w-3" />
+                            Добавить
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Добавьте жанры и ключевые теги, чтобы Suno точнее понял стиль. Максимум {MAX_STYLE_TAGS} тегов.
+                        </p>
+
+                        {styleTags.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {styleTags.map((tag) => (
+                              <Badge key={tag} variant="secondary" className="gap-1 px-2 py-1 text-xs">
+                                <Tag className="h-3 w-3" />
+                                {tag}
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveStyleTag(tag)}
+                                  className="rounded-full bg-secondary-foreground/10 p-0.5 hover:bg-secondary-foreground/20 focus:outline-none focus:ring-1 focus:ring-ring"
+                                  aria-label={`Удалить тег ${tag}`}
+                                  disabled={isGenerating}
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">
+                            Пока теги не выбраны — добавьте хотя бы один, чтобы запустить генерацию.
+                          </p>
+                        )}
+
+                        <div className="flex flex-wrap gap-1.5">
+                          {DEFAULT_STYLE_TAGS.map((tag) => (
+                            <Button
+                              key={tag}
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="text-xs"
+                              onClick={() => handleAddStyleTag(tag)}
+                              disabled={isGenerating || styleTags.length >= MAX_STYLE_TAGS}
+                            >
+                              {tag}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
                     </AccordionContent>
                   </AccordionItem>
 

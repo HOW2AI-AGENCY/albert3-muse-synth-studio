@@ -59,6 +59,11 @@ describe("ApiService.generateMusic", () => {
       customMode: true,
       styleTags: ["synth"],
       modelVersion: "chirp-v3-5",
+      negativeTags: "metal, trap",
+      vocalGender: "f" as const,
+      styleWeight: 0.72,
+      weirdnessConstraint: 0.33,
+      audioWeight: 0.5,
     };
 
     await ApiService.generateMusic(request);
@@ -71,11 +76,47 @@ describe("ApiService.generateMusic", () => {
     expect(payload.trackId).toBe(request.trackId);
     // In custom mode, the lyrics are now sent in the 'prompt' field.
     expect(payload.prompt).toBe(request.lyrics);
-    // The 'hasVocals' field is replaced by 'instrumental'.
-    expect(payload.instrumental).toBe(false);
+    expect(payload.lyrics).toBe(request.lyrics);
     expect(payload.customMode).toBe(true);
-    // The 'tags' array is converted to a comma-separated 'style' string.
-    expect(payload.style).toBe(request.styleTags.join(', '));
+    expect(payload.hasVocals).toBe(true);
+    expect(payload.make_instrumental).toBe(false);
+    expect(payload.tags).toEqual(request.styleTags);
+    expect(payload.model_version).toBe(request.modelVersion);
+    expect(payload.negativeTags).toBe(request.negativeTags);
+    expect(payload.vocalGender).toBe(request.vocalGender);
+    expect(payload.styleWeight).toBe(request.styleWeight);
+    expect(payload.weirdnessConstraint).toBe(request.weirdnessConstraint);
+    expect(payload.audioWeight).toBe(request.audioWeight);
+  });
+
+  it("normalises numeric weights and ignores invalid vocal gender", async () => {
+    invokeMock.mockResolvedValue({ data: { success: true, trackId: "track-456" }, error: null });
+
+    const request = {
+      trackId: "track-456",
+      prompt: "Lo-fi beat",
+      provider: "suno" as const,
+      hasVocals: true,
+      styleTags: ["lofi"],
+      customMode: false,
+      styleWeight: 1.8,
+      weirdnessConstraint: -0.4,
+      audioWeight: Number.NaN,
+      vocalGender: "x" as unknown as "m",
+      negativeTags: "   ",
+    };
+
+    await ApiService.generateMusic(request);
+
+    expect(invokeMock).toHaveBeenCalledTimes(1);
+    const [, options] = invokeMock.mock.calls[0];
+    const payload = (options?.body ?? {}) as Record<string, unknown>;
+
+    expect(payload.styleWeight).toBe(1);
+    expect(payload.weirdnessConstraint).toBe(0);
+    expect(payload.audioWeight).toBeUndefined();
+    expect(payload.vocalGender).toBeUndefined();
+    expect(payload.negativeTags).toBeUndefined();
   });
 });
 
