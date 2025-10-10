@@ -71,11 +71,12 @@ describe("ApiService.generateMusic", () => {
     expect(payload.trackId).toBe(request.trackId);
     // In custom mode, the lyrics are now sent in the 'prompt' field.
     expect(payload.prompt).toBe(request.lyrics);
-    // The 'hasVocals' field is replaced by 'instrumental'.
-    expect(payload.instrumental).toBe(false);
+    expect(payload.lyrics).toBe(request.lyrics);
     expect(payload.customMode).toBe(true);
-    // The 'tags' array is converted to a comma-separated 'style' string.
-    expect(payload.style).toBe(request.styleTags.join(', '));
+    expect(payload.hasVocals).toBe(true);
+    expect(payload.make_instrumental).toBe(false);
+    expect(payload.tags).toEqual(request.styleTags);
+    expect(payload.model_version).toBe(request.modelVersion);
   });
 });
 
