@@ -53,3 +53,6 @@ verify_jwt = true
     SENTRY_ENVIRONMENT = "development"
     SENTRY_RELEASE = "local"
     SENTRY_TRACES_SAMPLE_RATE = "0.0"
+
+[functions.log-error]
+verify_jwt = false

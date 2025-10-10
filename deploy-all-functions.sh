@@ -47,6 +47,7 @@ functions=(
   "sync-stem-job"
   "get-balance"
   "suggest-styles"
+  "log-error"
 )
 
 # Track deployment results

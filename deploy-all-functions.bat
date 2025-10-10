@@ -59,6 +59,7 @@ FOR %%F IN (
     sync-stem-job
     get-balance
     suggest-styles
+    log-error
 ) DO (
     echo ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     echo Deploying: %%F
