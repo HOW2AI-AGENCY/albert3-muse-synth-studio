@@ -65,7 +65,7 @@ export const useNotifications = () => {
           filter: `user_id=eq.${userId}`,
         },
         (payload: any) => {
-          logger.info('Notification realtime update', { event: payload.eventType });
+          logger.info('Notification realtime update', 'useNotifications', { eventType: payload.eventType });
           
           if (payload.eventType === 'INSERT' && payload.new) {
             const notification = payload.new as Notification;
