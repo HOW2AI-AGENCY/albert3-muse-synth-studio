@@ -86,8 +86,9 @@ export class RateLimiter {
     windowMinutes: number = 1
   ): Promise<{ allowed: boolean; remaining: number; resetTime: Date }> {
     if (!this.supabaseUrl || !this.supabaseKey) {
-      logger.error("Rate limiter configuration missing", { endpoint, userId });
-      throw new RateLimitUnavailableError("Rate limiter secrets are not configured");
+      logger.warn("Rate limiter disabled due to missing secrets", { endpoint, userId });
+      const resetTime = new Date(Date.now() + windowMinutes * 60 * 1000);
+      return { allowed: true, remaining: maxRequests, resetTime };
     }
 
     const now = new Date();
@@ -208,10 +209,10 @@ export const withRateLimit = (
   return async (req: Request): Promise<Response> => {
     const { maxRequests = 10, windowMinutes = 1, endpoint } = options;
 
-    try {
-      const corsHeaders = createCorsHeaders(req);
-      const securityHeaders = createSecurityHeaders();
+    const corsHeaders = createCorsHeaders(req);
+    const securityHeaders = createSecurityHeaders();
 
+    try {
       if (req.method === 'OPTIONS') {
         return handleCorsPreflightRequest(req);
       }
@@ -227,24 +228,22 @@ export const withRateLimit = (
         );
       }
 
-      const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-      const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE");
+      const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+      const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
+      const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE');
 
-      if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-        logger.error("Rate limiter secrets missing", { endpoint });
+      if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+        logger.error('Supabase URL or anon key missing', { endpoint });
         return new Response(
-          JSON.stringify({
-            error: 'Service Unavailable',
-            message: 'Rate limiter configuration missing',
-          }),
+          JSON.stringify({ error: 'Service Unavailable', message: 'Supabase credentials are not configured' }),
           { status: 503, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...securityHeaders } }
         );
       }
 
       const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.39.3');
-      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      const { data: { user }, error: authError } = await authClient.auth.getUser(token);
       if (authError || !user) {
         return new Response(
           JSON.stringify({ error: 'Unauthorized' }),
@@ -252,29 +251,47 @@ export const withRateLimit = (
         );
       }
 
-      // Проверяем rate limit
-      const rateLimiter = new RateLimiter(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-      const { allowed, remaining, resetTime } = await rateLimiter.checkRateLimit(
-        user.id,
-        endpoint,
-        maxRequests,
-        windowMinutes
-      );
+      let rateLimitInfo:
+        | { allowed: boolean; remaining: number; resetTime: Date }
+        | null = null;
+      let rateLimitApplied = false;
 
-      if (!allowed) {
-        return createRateLimitResponse(resetTime, { corsHeaders, securityHeaders });
+      if (!SUPABASE_SERVICE_ROLE_KEY) {
+        logger.warn('Rate limiter disabled: service role key missing', { endpoint });
+      } else {
+        const rateLimiter = new RateLimiter(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        try {
+          rateLimitInfo = await rateLimiter.checkRateLimit(
+            user.id,
+            endpoint,
+            maxRequests,
+            windowMinutes
+          );
+          rateLimitApplied = true;
+        } catch (error) {
+          if (error instanceof RateLimitUnavailableError) {
+            logger.warn('Rate limiter unavailable, allowing request', { endpoint, error: error.message });
+          } else {
+            throw error;
+          }
+        }
       }
 
-      // Выполняем основной обработчик
+      if (rateLimitApplied && rateLimitInfo && !rateLimitInfo.allowed) {
+        return createRateLimitResponse(rateLimitInfo.resetTime, { corsHeaders, securityHeaders });
+      }
+
       const response = await handler(req);
-
-      // Добавляем заголовки rate limit в ответ
       const headers = new Headers(response.headers);
-      headers.set('X-RateLimit-Limit', maxRequests.toString());
-      headers.set('X-RateLimit-Remaining', remaining.toString());
-      headers.set('X-RateLimit-Reset', Math.ceil(resetTime.getTime() / 1000).toString());
 
-      // Добавляем заголовки безопасности
+      if (rateLimitApplied && rateLimitInfo) {
+        headers.set('X-RateLimit-Limit', maxRequests.toString());
+        headers.set('X-RateLimit-Remaining', rateLimitInfo.remaining.toString());
+        headers.set('X-RateLimit-Reset', Math.ceil(rateLimitInfo.resetTime.getTime() / 1000).toString());
+      } else {
+        headers.set('X-RateLimit-Policy', 'disabled');
+      }
+
       Object.entries(corsHeaders).forEach(([key, value]) => {
         headers.set(key, value);
       });
@@ -288,20 +305,26 @@ export const withRateLimit = (
         statusText: response.statusText,
         headers
       });
-
     } catch (error) {
-      const corsHeaders = createCorsHeaders(req);
-      const securityHeaders = createSecurityHeaders();
-
       if (error instanceof RateLimitUnavailableError) {
-        logger.error('Rate limiter unavailable', { endpoint, error: error.message });
-        return new Response(
-          JSON.stringify({
-            error: 'Service Unavailable',
-            message: 'Rate limiting temporarily unavailable',
-          }),
-          { status: 503, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...securityHeaders } }
-        );
+        logger.warn('Rate limiter unavailable after check, allowing request', { endpoint, error: error.message });
+        const response = await handler(req);
+        const headers = new Headers(response.headers);
+        headers.set('X-RateLimit-Policy', 'disabled');
+
+        Object.entries(corsHeaders).forEach(([key, value]) => {
+          headers.set(key, value);
+        });
+
+        Object.entries(securityHeaders).forEach(([key, value]) => {
+          headers.set(key, value);
+        });
+
+        return new Response(response.body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers
+        });
       }
 
       logger.error('Rate limit middleware error', { endpoint, error });
