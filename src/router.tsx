@@ -15,7 +15,7 @@ import {
   LazyFavorites,
   LazyAnalytics,
   LazySettings,
-} from './utils/lazyImports.tsx';
+} from './utils/lazyImports';
 
 const LazyAdmin = lazy(() => import("./pages/workspace/Admin"));
 const LazyProfile = lazy(() => import("./pages/workspace/Profile"));
