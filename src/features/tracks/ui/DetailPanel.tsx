@@ -315,20 +315,20 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
 
   return (
     <div
-      className="h-full flex flex-col bg-card border-l border-border w-full max-w-full sm:max-w-md lg:max-w-xl xl:max-w-2xl"
+      className="app-panel h-full w-full max-w-full sm:max-w-md lg:max-w-xl xl:max-w-2xl border-l border-border/20"
       role="complementary"
       aria-label="Панель деталей трека"
     >
       {/* Header */}
-      <div className="flex flex-wrap items-start gap-3 justify-between p-3 sm:p-4 border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-10">
+      <div className="app-panel__header sticky top-0 z-10 bg-background/95 backdrop-blur">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <Badge
             variant={track.status === "completed" ? "default" : "secondary"}
-            className="text-xs shrink-0"
+            className="app-chip text-[11px] shrink-0"
           >
             {track.status === "completed" ? "✅ Готов" : "⏳ В процессе"}
           </Badge>
-          <h3 className="font-semibold text-base truncate" title={track.title}>
+          <h3 className="text-base font-semibold truncate" title={track.title}>
             {track.title}
           </h3>
         </div>
@@ -346,10 +346,10 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-auto overscroll-contain pb-[env(safe-area-inset-bottom)]">
+      <div className="flex-1 overflow-auto overscroll-contain pb-[env(safe-area-inset-bottom)] padding-inline-app padding-block-app">
         {/* Cover Art Preview */}
         {track.cover_url && (
-          <div className="p-4">
+          <div className="padding-app-tight">
             <div className="aspect-square max-h-32 sm:max-h-48 overflow-hidden border border-border rounded-xl shadow-lg">
               <img
                 src={track.cover_url}

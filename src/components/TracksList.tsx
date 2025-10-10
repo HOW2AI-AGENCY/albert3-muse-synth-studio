@@ -144,23 +144,23 @@ const TracksListComponent = ({
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <LoadingSkeleton width="120px" height="32px" />
-            <LoadingSkeleton width="60px" height="24px" />
+      <div className="app-stack">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <LoadingSkeleton width="96px" height="28px" />
+            <LoadingSkeleton width="56px" height="24px" />
           </div>
-          <LoadingSkeleton width="100px" height="32px" />
+          <LoadingSkeleton width="88px" height="28px" />
         </div>
-        
+
         {viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="app-grid app-grid--cards">
             {Array.from({ length: 6 }).map((_, i) => (
-              <LoadingSkeleton key={i} variant="rectangular" height="300px" />
+              <LoadingSkeleton key={i} variant="rectangular" height="260px" />
             ))}
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="app-stack app-stack--tight">
             {Array.from({ length: 8 }).map((_, i) => (
               <LoadingSkeleton key={i} variant="track-item" />
             ))}
@@ -172,24 +172,24 @@ const TracksListComponent = ({
 
   if (tracks.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="p-6 rounded-full bg-gradient-primary/10 mb-6">
-          <Music className="h-16 w-16 text-primary" />
+      <div className="flex flex-col items-center justify-center py-12 text-center gap-4">
+        <div className="p-4 rounded-full bg-gradient-primary/10">
+          <Music className="h-12 w-12 text-primary" />
         </div>
-        <h3 className="text-2xl font-semibold mb-2">Треков пока нет</h3>
-        <p className="text-muted-foreground max-w-md">
-          Создайте свой первый AI-трек прямо сейчас! Опишите желаемую музыку и получите уникальную композицию.
+        <h3 className="text-lg font-semibold">Треков пока нет</h3>
+        <p className="text-sm text-muted-foreground max-w-md">
+          Создайте свой первый AI-трек: опишите настроение и получите готовую композицию через пару минут.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h2 className="text-2xl font-bold">Ваши треки</h2>
-          <Badge variant="outline">
+    <div className="app-stack">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-lg font-semibold tracking-tight">Ваши треки</h2>
+          <Badge variant="outline" className="app-chip text-[11px]">
             {tracks.length} {tracks.length === 1 ? "трек" : "треков"}
           </Badge>
         </div>
@@ -197,11 +197,11 @@ const TracksListComponent = ({
       </div>
 
       {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="app-grid app-grid--cards">
           {tracks.map((track) => {
             const typedTrack = track as Track;
             const isStaleTrack = isStale(typedTrack);
-            
+
             return (
               <div key={track.id} className="space-y-3">
                 <div className="relative">
@@ -268,7 +268,7 @@ const TracksListComponent = ({
           })}
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="app-stack app-stack--tight">
           {tracks.map((track) => {
             const typedTrack = track as Track;
             const isStaleTrack = isStale(typedTrack);

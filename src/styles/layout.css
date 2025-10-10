@@ -1,0 +1,180 @@
+/*
+ * Layout primitives and density utilities for Albert3 Muse Synth Studio
+ * Provides a compact, adaptive spacing system shared across workspace screens.
+ */
+
+:root {
+  --app-page-padding: clamp(0.75rem, 1.5vw, 1.5rem);
+  --app-panel-padding-x: clamp(0.9rem, 1.4vw, 1.5rem);
+  --app-panel-padding-y: clamp(0.75rem, 1.2vw, 1.25rem);
+  --app-stack-gap: clamp(0.75rem, 1vw, 1.25rem);
+  --app-stack-gap-tight: clamp(0.5rem, 0.8vw, 1rem);
+  --app-stack-gap-wide: clamp(1rem, 1.4vw, 1.75rem);
+  --app-grid-gap: clamp(0.75rem, 1.2vw, 1.5rem);
+}
+
+@media (max-width: 768px) {
+  :root {
+    --app-page-padding: clamp(0.75rem, 2vw, 1.25rem);
+    --app-panel-padding-x: clamp(0.75rem, 2.2vw, 1.25rem);
+    --app-panel-padding-y: clamp(0.65rem, 1.8vw, 1rem);
+    --app-stack-gap: clamp(0.65rem, 1.4vw, 1rem);
+    --app-stack-gap-tight: clamp(0.45rem, 1vw, 0.85rem);
+    --app-grid-gap: clamp(0.65rem, 1.6vw, 1.25rem);
+  }
+}
+
+@layer components {
+  .app-page {
+    @apply w-full h-full box-border;
+    padding: var(--app-page-padding);
+  }
+
+  .app-panel {
+    @apply flex flex-col rounded-xl border border-border/25 bg-background/90 shadow-md;
+    backdrop-filter: saturate(180%) blur(14px);
+  }
+
+  .app-panel__header {
+    @apply border-b border-border/20;
+    padding: var(--app-panel-padding-y) var(--app-panel-padding-x);
+    display: flex;
+    flex-direction: column;
+    gap: var(--app-stack-gap-tight);
+  }
+
+  .app-panel__body {
+    padding: var(--app-panel-padding-y) var(--app-panel-padding-x);
+  }
+
+  .app-panel__scroll {
+    @apply flex-1;
+  }
+
+  .app-panel__footer {
+    @apply border-t border-border/20;
+    padding: var(--app-panel-padding-y) var(--app-panel-padding-x);
+  }
+
+  .app-panel__heading {
+    @apply text-base font-semibold tracking-tight text-foreground;
+  }
+
+  .app-panel__description {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .app-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--app-stack-gap);
+  }
+
+  .app-stack--tight {
+    gap: var(--app-stack-gap-tight);
+  }
+
+  .app-stack--loose {
+    gap: var(--app-stack-gap-wide);
+  }
+
+  .app-inline {
+    @apply flex flex-wrap items-center;
+    gap: var(--app-stack-gap-tight);
+  }
+
+  .app-inline--between {
+    @apply justify-between;
+  }
+
+  .app-grid {
+    display: grid;
+    gap: var(--app-grid-gap);
+  }
+
+  .app-grid--cards {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+
+  .app-grid--two {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .app-mode-toggle {
+    @apply inline-flex items-center rounded-full border border-border/30 bg-background/60 p-1 shadow-inner;
+  }
+
+  .app-mode-toggle__item {
+    @apply rounded-full px-3 py-1 text-xs font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground;
+  }
+
+  .app-fieldset {
+    @apply flex flex-col gap-2;
+  }
+
+  .app-fieldset__label {
+    @apply text-sm font-medium flex items-center gap-2 text-foreground;
+  }
+
+  .app-fieldset__description {
+    @apply text-xs text-muted-foreground;
+  }
+
+  .app-inline-card {
+    @apply flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/30 bg-background/70 px-3 py-2;
+  }
+
+  .app-chip {
+    @apply inline-flex items-center gap-1 rounded-full border border-border/40 bg-background/70 px-2 py-1 text-xs font-medium text-muted-foreground transition-colors;
+  }
+
+  .app-chip--action {
+    @apply cursor-pointer hover:border-primary/40 hover:bg-primary/10 hover:text-primary;
+  }
+
+  .app-chip--removable button {
+    @apply inline-flex h-4 w-4 items-center justify-center rounded-full bg-secondary-foreground/10 text-secondary-foreground/80 transition-colors hover:bg-secondary-foreground/20;
+  }
+
+  .app-subsection {
+    @apply rounded-lg border border-border/25 bg-background/80;
+  }
+
+  .app-subsection__header {
+    @apply flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-foreground;
+  }
+
+  .app-subsection__body {
+    @apply flex flex-col gap-3 px-4 pb-4 pt-1;
+  }
+
+  .app-section-title {
+    @apply text-sm font-semibold text-foreground;
+  }
+}
+
+@layer utilities {
+  .gap-app {
+    gap: var(--app-stack-gap);
+  }
+
+  .gap-app-tight {
+    gap: var(--app-stack-gap-tight);
+  }
+
+  .padding-app {
+    padding: var(--app-panel-padding-y) var(--app-panel-padding-x);
+  }
+
+  .padding-app-tight {
+    padding: calc(var(--app-panel-padding-y) * 0.75) var(--app-panel-padding-x);
+  }
+
+  .padding-inline-app {
+    padding-inline: var(--app-panel-padding-x);
+  }
+
+  .padding-block-app {
+    padding-block: var(--app-panel-padding-y);
+  }
+}

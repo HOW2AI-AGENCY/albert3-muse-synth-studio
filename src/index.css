@@ -1,5 +1,7 @@
 /* Импорт системы дизайн-токенов */
 @import './styles/design-tokens.css';
+/* Компактные layout-примитивы */
+@import './styles/layout.css';
 
 @tailwind base;
 @tailwind components;

@@ -150,11 +150,14 @@ const Generate = () => {
       : 'calc(100vh - 4rem)';
     
     return (
-      <div className="p-4" style={{ height: pageHeight }}>
-        <ResizablePanelGroup direction="horizontal" className="rounded-lg border border-border overflow-hidden h-full">
+      <div className="app-page" style={{ height: pageHeight }}>
+        <ResizablePanelGroup
+          direction="horizontal"
+          className="h-full overflow-hidden rounded-2xl border border-border/15 bg-background/70 backdrop-blur"
+        >
           {/* Create Panel */}
           <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
-            <div className="h-full overflow-y-auto scrollbar-styled">
+            <div className="h-full overflow-y-auto scrollbar-styled padding-app-tight">
               <MusicGenerator onTrackGenerated={handleTrackGenerated} />
             </div>
           </ResizablePanel>
@@ -163,7 +166,7 @@ const Generate = () => {
 
           {/* Track List */}
           <ResizablePanel defaultSize={selectedTrack ? 50 : 80} minSize={40}>
-            <div className="h-full overflow-y-auto scrollbar-styled">
+            <div className="h-full overflow-y-auto scrollbar-styled padding-app-tight">
               <TracksList
                 tracks={tracks}
                 isLoading={isLoading}
@@ -201,10 +204,13 @@ const Generate = () => {
       : 'calc(100vh - 4rem)';
     
     return (
-      <div className="p-4" style={{ height: pageHeight }}>
-        <ResizablePanelGroup direction="horizontal" className="rounded-lg border border-border overflow-hidden h-full">
+      <div className="app-page" style={{ height: pageHeight }}>
+        <ResizablePanelGroup
+          direction="horizontal"
+          className="h-full overflow-hidden rounded-2xl border border-border/15 bg-background/70 backdrop-blur"
+        >
           <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
-            <div className="h-full overflow-y-auto scrollbar-styled">
+            <div className="h-full overflow-y-auto scrollbar-styled padding-app-tight">
               <MusicGenerator onTrackGenerated={handleTrackGenerated} />
             </div>
           </ResizablePanel>
@@ -212,7 +218,7 @@ const Generate = () => {
           <ResizableHandle withHandle className="hover:bg-primary/20 transition-colors" />
 
           <ResizablePanel defaultSize={70} minSize={60}>
-            <div className="h-full overflow-y-auto scrollbar-styled">
+            <div className="h-full overflow-y-auto scrollbar-styled padding-app-tight">
               <TracksList
                 tracks={tracks}
                 isLoading={isLoading}
@@ -247,14 +253,14 @@ const Generate = () => {
     : 'calc(env(safe-area-inset-bottom, 0px) + 1rem)';
   
   return (
-    <div className="flex flex-col h-full relative">
+    <div className="app-page flex flex-col h-full relative">
       {/* Track List - Full Screen */}
-      <div 
-        className="flex-1 overflow-y-auto scrollbar-styled p-4 sm:p-5 transition-all duration-300"
+      <div
+        className="flex-1 overflow-y-auto scrollbar-styled padding-inline-app padding-block-app transition-all duration-300"
         style={{ paddingBottom: `calc(${mobilePaddingBottom} + 4rem)` }} // Add extra space for FAB
       >
         {isPolling && (
-          <div className="space-y-4 mb-4">
+          <div className="app-stack app-stack--tight mb-3">
             <Skeleton className="h-24 w-full rounded-lg" />
           </div>
         )}
@@ -284,15 +290,15 @@ const Generate = () => {
             <Plus className="h-6 w-6" />
           </Button>
         </DrawerTrigger>
-        <DrawerContent 
+        <DrawerContent
           className="p-0 z-[55]"
-          style={{ 
-            maxHeight: currentTrack 
-              ? `calc(90vh - ${PLAYER_HEIGHTS.mobile}px - env(safe-area-inset-bottom))` 
+          style={{
+            maxHeight: currentTrack
+              ? `calc(90vh - ${PLAYER_HEIGHTS.mobile}px - env(safe-area-inset-bottom))`
               : '90vh'
           }}
         >
-          <div className="overflow-y-auto scrollbar-styled p-5 sm:p-6 max-w-2xl mx-auto w-full">
+          <div className="overflow-y-auto scrollbar-styled padding-app max-w-2xl mx-auto w-full">
             <MusicGenerator onTrackGenerated={handleTrackGenerated} />
           </div>
         </DrawerContent>
