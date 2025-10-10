@@ -11,6 +11,7 @@ interface CreateCoverRequest {
   referenceAudioUrl?: string; // URL to reference audio (uploaded file or existing track)
   referenceTrackId?: string; // Alternative: ID of existing track to use as reference
   make_instrumental?: boolean;
+  model?: "V3_5" | "V4" | "V4_5" | "V4_5PLUS" | "V5";
 }
 
 const corsHeaders = createCorsHeaders();
@@ -45,7 +46,7 @@ serve(async (req: Request) => {
     }
 
     const body: CreateCoverRequest = await req.json();
-    const { prompt, tags, title, referenceAudioUrl, referenceTrackId, make_instrumental } = body;
+    const { prompt, tags, title, referenceAudioUrl, referenceTrackId, make_instrumental, model } = body;
 
     if (!prompt) {
       return new Response(
@@ -93,10 +94,13 @@ serve(async (req: Request) => {
         provider: 'suno',
         style_tags: tags,
         reference_audio_url: audioReference,
+        model_name: model || 'V4',
         metadata: {
           is_cover: true,
+          cover_of: referenceTrackId,
           reference_track_id: referenceTrackId,
-          make_instrumental
+          make_instrumental,
+          model: model || 'V4'
         }
       })
       .select()
@@ -120,26 +124,26 @@ serve(async (req: Request) => {
 
     const sunoPayload: any = {
       prompt,
-      tags: tags || [],
+      style: tags?.join(', ') || '',
       title: title || newTrack.title,
       make_instrumental: make_instrumental || false,
+      model: model || 'V4',
       callBackUrl: callbackUrl
     };
 
     // Добавляем reference audio, если есть
     if (audioReference) {
-      sunoPayload.referenceAudioUrl = audioReference;
+      sunoPayload.audioUrl = audioReference;
     }
 
     logger.info('📤 [COVER] Calling Suno cover API', { 
       hasReference: !!audioReference,
-      payload: { ...sunoPayload, referenceAudioUrl: audioReference ? '[HIDDEN]' : undefined }
+      model: model || 'V4',
+      payload: { ...sunoPayload, audioUrl: audioReference ? '[HIDDEN]' : undefined }
     });
 
-    // Используем специальный endpoint для кавера с аудио-референсом
-    const endpoint = audioReference 
-      ? 'https://api.sunoapi.org/api/v1/upload-and-cover'
-      : 'https://api.sunoapi.org/api/v1/generate';
+    // Используем endpoint для кавера с аудио-референсом
+    const endpoint = 'https://api.sunoapi.org/api/v1/upload-cover';
 
     const sunoResponse = await fetch(endpoint, {
       method: 'POST',

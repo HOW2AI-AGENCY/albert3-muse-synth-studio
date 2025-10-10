@@ -10,6 +10,7 @@ interface CreateCoverParams {
   referenceAudioUrl?: string;
   referenceTrackId?: string;
   make_instrumental?: boolean;
+  model?: "V3_5" | "V4" | "V4_5" | "V4_5PLUS" | "V5";
 }
 
 export const useCreateCover = () => {

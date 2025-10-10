@@ -63,6 +63,9 @@ verify_jwt = true
 [functions.create-cover]
 verify_jwt = true
 
+[functions.create-cover]
+verify_jwt = true
+
 [functions.check-stuck-tracks]
 verify_jwt = true
 

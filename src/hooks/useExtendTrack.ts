@@ -8,6 +8,8 @@ interface ExtendTrackParams {
   continueAt?: number;
   prompt?: string;
   tags?: string[];
+  model?: "V3_5" | "V4" | "V4_5" | "V4_5PLUS" | "V5";
+  defaultParamFlag?: boolean;
 }
 
 export const useExtendTrack = () => {
