@@ -2,6 +2,7 @@ import { assert, assertEquals, assertExists, assertStringIncludes } from "https:
 import { handler, setPollSunoCompletionOverride } from "../generate-suno/index.ts";
 import type { PollSunoCompletionFn } from "../generate-suno/index.ts";
 import { adminClient, createTestUser, installFetchMock } from "./_testUtils.ts";
+import { createSunoClient } from "../_shared/suno.ts";
 
 async function clearTables() {
   await adminClient.from("track_versions").delete().neq("id", "00000000-0000-0000-0000-000000000000");
@@ -56,7 +57,11 @@ Deno.test({
                 observedSunoRequests.push(JSON.parse(new TextDecoder().decode(init.body)));
               }
             }
-            return new Response(JSON.stringify({ id: "task-123" }), {
+            return new Response(JSON.stringify({
+              code: 200,
+              msg: "ok",
+              data: { taskId: "task-123", jobId: "job-789" },
+            }), {
               status: 200,
               headers: { "Content-Type": "application/json" },
             });
@@ -108,6 +113,7 @@ Deno.test({
           assertEquals(trackMetadata?.lyrics, body.lyrics);
           assertEquals(trackMetadata?.has_vocals, body.hasVocals);
           assertEquals(trackMetadata?.custom_mode, body.customMode);
+          assertEquals(trackMetadata?.suno_job_id, "job-789");
 
           const { data: rateEntries } = await adminClient
             .from("rate_limits")
@@ -327,4 +333,97 @@ Deno.test({
       await clearTables();
     }
   },
+});
+
+Deno.test("createSunoClient parses varied task identifiers", async () => {
+  const trackScenarios = [
+    { payload: { data: { taskId: "alpha", jobId: "job-alpha" } }, expectedTaskId: "alpha", expectedJobId: "job-alpha" },
+    { payload: { data: { task_id: "beta", job_id: "job-beta" } }, expectedTaskId: "beta", expectedJobId: "job-beta" },
+    { payload: { id: "gamma", jobId: "job-gamma" }, expectedTaskId: "gamma", expectedJobId: "job-gamma" },
+    { payload: { data: [{ taskId: "delta" }] }, expectedTaskId: "delta" },
+    { payload: { data: [{ data: { id: "epsilon" } }] }, expectedTaskId: "epsilon" },
+    {
+      payload: {
+        result: [
+          {
+            response: {
+              tasks: [
+                {
+                  metadata: { task_id: "zeta" },
+                },
+              ],
+            },
+          },
+        ],
+        job_id: "job-zeta",
+      },
+      expectedTaskId: "zeta",
+      expectedJobId: "job-zeta",
+    },
+  ];
+
+  const lyricScenarios = [
+    { payload: { data: { taskId: "lyric-alpha" } }, expectedTaskId: "lyric-alpha" },
+    { payload: { data: { data: [{ task_id: "lyric-beta" }] } }, expectedTaskId: "lyric-beta" },
+    { payload: [{ id: "lyric-gamma" }], expectedTaskId: "lyric-gamma" },
+    {
+      payload: {
+        jobId: "lyric-job",
+        data: {
+          variants: [
+            {
+              response: {
+                choices: [
+                  {
+                    details: { task_id: "lyric-delta" },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      expectedTaskId: "lyric-delta",
+      expectedJobId: "lyric-job",
+    },
+  ];
+
+  const combined = [...trackScenarios, ...lyricScenarios];
+  let callIndex = 0;
+
+  const fetchMock: typeof fetch = async () => {
+    const scenario = combined[callIndex++];
+    assertExists(scenario, "Unexpected fetch invocation in Suno client test");
+    return new Response(JSON.stringify(scenario.payload), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+
+  const client = createSunoClient({
+    apiKey: "test-key",
+    fetchImpl: fetchMock,
+    generateEndpoints: ["https://example.com/generate"],
+    queryEndpoints: ["https://example.com/query"],
+    stemEndpoints: ["https://example.com/stem"],
+    stemQueryEndpoints: ["https://example.com/stem-query"],
+    lyricsGenerateEndpoints: ["https://example.com/lyrics"],
+    lyricsQueryEndpoints: ["https://example.com/lyrics-query"],
+  });
+
+  for (const scenario of trackScenarios) {
+    const result = await client.generateTrack({ prompt: "Test" });
+    assertEquals(result.taskId, scenario.expectedTaskId);
+    assertEquals(result.jobId ?? null, scenario.expectedJobId ?? null);
+  }
+
+  for (const scenario of lyricScenarios) {
+    const result = await client.generateLyrics({ prompt: "Test", callBackUrl: "https://callback.test" });
+    assertEquals(result.taskId, scenario.expectedTaskId);
+    if (scenario.expectedJobId !== undefined) {
+      assertEquals(result.jobId ?? null, scenario.expectedJobId ?? null);
+    }
+  }
+
+  assertEquals(callIndex, combined.length);
 });
