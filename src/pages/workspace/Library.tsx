@@ -17,6 +17,7 @@ import {
 import { TrackCard, TrackListItem } from "@/features/tracks";
 import { OptimizedTrackList } from "@/components/OptimizedTrackList";
 import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
+import { TrackStatusMonitor } from "@/components/TrackStatusMonitor";
 import { useTracks } from "@/hooks/useTracks";
 import { useToast } from "@/hooks/use-toast";
 import { useTrackCleanup } from "@/hooks/useTrackCleanup";
@@ -419,6 +420,9 @@ const Library: React.FC = () => {
 
   return (
     <div className="space-y-6 p-4 md:p-6 animate-fade-in" role="main" aria-label="Библиотека треков">
+      {/* Монитор застрявших треков */}
+      {userId && <TrackStatusMonitor userId={userId} />}
+      
       {/* Заголовок и статистика */}
       <div className="flex items-center justify-between animate-slide-up">
         <div className="flex items-center gap-3">

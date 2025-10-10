@@ -45,6 +45,44 @@ export const useTrackRecovery = (
     try {
       logInfo('Checking for stuck tracks...', 'useTrackRecovery');
 
+      // 🔄 НОВОЕ: Проверка processing треков старше 5 минут
+      const { data: processingTracks, error: processingError } = await supabase
+        .from('tracks')
+        .select('id, title, created_at, metadata')
+        .eq('user_id', userId)
+        .eq('status', 'processing')
+        .order('created_at', { ascending: true });
+
+      if (processingError) {
+        logError('Failed to fetch processing tracks', processingError, 'useTrackRecovery');
+      } else if (processingTracks && processingTracks.length > 0) {
+        const fiveMinutesAgo = now - 5 * 60 * 1000;
+        const stuckProcessing = processingTracks.filter(track => {
+          const trackAge = new Date(track.created_at).getTime();
+          return trackAge < fiveMinutesAgo;
+        });
+
+        if (stuckProcessing.length > 0) {
+          logInfo(`Found ${stuckProcessing.length} stuck processing tracks`, 'useTrackRecovery');
+          
+          // Вызвать edge function для проверки
+          try {
+            const { data, error } = await supabase.functions.invoke('check-stuck-tracks', {
+              body: { trackIds: stuckProcessing.map(t => t.id) }
+            });
+            
+            if (error) {
+              logError('Failed to invoke check-stuck-tracks', error, 'useTrackRecovery');
+            } else {
+              logInfo('Stuck tracks check completed', 'useTrackRecovery', data);
+              refreshTracks(); // Обновить список после проверки
+            }
+          } catch (err) {
+            logError('Error invoking check-stuck-tracks', err as Error, 'useTrackRecovery');
+          }
+        }
+      }
+
       // Получаем все треки в статусе pending
       const { data: pendingTracks, error: pendingError } = await supabase
         .from('tracks')
