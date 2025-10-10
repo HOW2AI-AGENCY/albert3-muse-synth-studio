@@ -1,7 +1,6 @@
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { NotificationsDropdown } from "./NotificationsDropdown";
 import { Button } from "@/components/ui/button";
 
 interface WorkspaceHeaderProps {
@@ -35,8 +34,6 @@ const WorkspaceHeader = ({ className }: WorkspaceHeaderProps) => {
         >
           <Search className="h-5 w-5" />
         </Button>
-
-        <NotificationsDropdown />
       </div>
     </header>
   );

@@ -14,122 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      lyrics_jobs: {
-        Row: {
-          callback_url: string | null
-          call_strategy: string
-          created_at: string
-          error_message: string | null
-          last_poll_response: Json | null
-          id: string
-          initial_response: Json | null
-          last_callback: Json | null
-          metadata: Json | null
-          prompt: string
-          request_payload: Json | null
-          status: string
-          suno_task_id: string | null
-          track_id: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          callback_url?: string | null
-          call_strategy?: string
-          created_at?: string
-          error_message?: string | null
-          last_poll_response?: Json | null
-          id?: string
-          initial_response?: Json | null
-          last_callback?: Json | null
-          metadata?: Json | null
-          prompt: string
-          request_payload?: Json | null
-          status?: string
-          suno_task_id?: string | null
-          track_id?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          callback_url?: string | null
-          call_strategy?: string
-          created_at?: string
-          error_message?: string | null
-          last_poll_response?: Json | null
-          id?: string
-          initial_response?: Json | null
-          last_callback?: Json | null
-          metadata?: Json | null
-          prompt?: string
-          request_payload?: Json | null
-          status?: string
-          suno_task_id?: string | null
-          track_id?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "lyrics_jobs_track_id_fkey"
-            columns: ["track_id"]
-            isOneToOne: false
-            referencedRelation: "tracks"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lyrics_jobs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      lyrics_variants: {
-        Row: {
-          content: string | null
-          created_at: string
-          error_message: string | null
-          id: string
-          job_id: string
-          status: string | null
-          title: string | null
-          updated_at: string
-          variant_index: number
-        }
-        Insert: {
-          content?: string | null
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          job_id: string
-          status?: string | null
-          title?: string | null
-          updated_at?: string
-          variant_index: number
-        }
-        Update: {
-          content?: string | null
-          created_at?: string
-          error_message?: string | null
-          id?: string
-          job_id?: string
-          status?: string | null
-          title?: string | null
-          updated_at?: string
-          variant_index?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "lyrics_variants_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "lyrics_jobs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       app_settings: {
         Row: {
           created_at: string
@@ -151,6 +35,42 @@ export type Database = {
           key?: string
           updated_at?: string
           value?: Json
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          link: string | null
+          message: string
+          read: boolean
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message: string
+          read?: boolean
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message?: string
+          read?: boolean
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

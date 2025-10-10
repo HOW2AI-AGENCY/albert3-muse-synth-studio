@@ -114,8 +114,8 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
 
       if (job.status === "completed") {
         const variants = job.variants || [];
-        const completedVariant = variants.find((variant) => (variant.status ?? "").toLowerCase() === "complete" && variant.content);
-        const fallbackVariant = variants.find((variant) => variant.content);
+        const completedVariant = variants.find((variant: any) => (variant.status ?? "").toLowerCase() === "complete" && variant.content);
+        const fallbackVariant = variants.find((variant: any) => variant.content);
         const chosen = completedVariant ?? fallbackVariant;
         if (chosen?.content) {
           return chosen.content;
@@ -138,8 +138,8 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
 
           if (job.status === "completed") {
             const variants = job.variants || [];
-            const completedVariant = variants.find((variant) => (variant.status ?? "").toLowerCase() === "complete" && variant.content);
-            const fallbackVariant = variants.find((variant) => variant.content);
+            const completedVariant = variants.find((variant: any) => (variant.status ?? "").toLowerCase() === "complete" && variant.content);
+            const fallbackVariant = variants.find((variant: any) => variant.content);
             const chosen = completedVariant ?? fallbackVariant;
             if (chosen?.content) {
               return chosen.content;

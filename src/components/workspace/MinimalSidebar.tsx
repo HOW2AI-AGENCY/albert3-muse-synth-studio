@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import type { WorkspaceNavItem } from "@/config/workspace-navigation";
 import { useProviderBalance } from "@/hooks/useProviderBalance";
 import { UserProfileDropdown } from "./UserProfileDropdown";
+import { NotificationsDropdown } from "./NotificationsDropdown";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -101,22 +102,36 @@ const MinimalSidebar = ({
         </nav>
 
         <div className="mt-auto space-y-2">
-          {/* Credits Display */}
-          <div 
-            className={cn(
-              "flex items-center gap-2 rounded-md border border-border/60 bg-muted/50 p-2 text-sm",
-              !isExpanded && "justify-center"
-            )}
-            title={isExpanded ? undefined : `Кредиты: ${balance?.balance ?? 0}`}
-          >
-            <Coins className="h-4 w-4 text-primary flex-shrink-0" aria-hidden="true" />
-            {isExpanded && (
-              balanceLoading ? (
-                <Skeleton className="h-4 w-10" />
-              ) : (
-                <span className="font-medium">{balance?.balance ?? 0}</span>
-              )
-            )}
+          {/* Notifications & Credits */}
+          <div className={cn(
+            "flex items-center gap-2",
+            !isExpanded && "flex-col"
+          )}>
+            {/* Notifications */}
+            <div className={cn(
+              "flex-shrink-0",
+              !isExpanded && "w-full flex justify-center"
+            )}>
+              <NotificationsDropdown />
+            </div>
+
+            {/* Credits Display */}
+            <div 
+              className={cn(
+                "flex items-center gap-2 rounded-md border border-border/60 bg-muted/50 p-2 text-sm flex-1",
+                !isExpanded && "justify-center w-full"
+              )}
+              title={isExpanded ? undefined : `Кредиты: ${balance?.balance ?? 0}`}
+            >
+              <Coins className="h-4 w-4 text-primary flex-shrink-0" aria-hidden="true" />
+              {isExpanded && (
+                balanceLoading ? (
+                  <Skeleton className="h-4 w-10" />
+                ) : (
+                  <span className="font-medium">{balance?.balance ?? 0}</span>
+                )
+              )}
+            </div>
           </div>
 
           {/* Profile Button */}

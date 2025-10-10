@@ -99,76 +99,8 @@ export interface GenerateLyricsResponse {
   status: string;
 }
 
-export interface LyricsVariant {
-  id: string;
-  jobId: string;
-  index: number;
-  title: string | null;
-  status: string | null;
-  content: string | null;
-  errorMessage: string | null;
-  updatedAt: string;
-}
-
-export interface LyricsGenerationJob {
-  id: string;
-  trackId: string | null;
-  prompt: string;
-  status: string;
-  sunoTaskId: string | null;
-  errorMessage: string | null;
-  metadata: Record<string, unknown> | null;
-  callStrategy: string;
-  callbackUrl: string | null;
-  createdAt: string;
-  updatedAt: string;
-  lastCallback: Record<string, unknown> | null;
-  lastPollResponse: Record<string, unknown> | null;
-  variants: LyricsVariant[];
-}
-
-type LyricsJobRow = Database["public"]["Tables"]["lyrics_jobs"]["Row"];
-type LyricsVariantRow = Database["public"]["Tables"]["lyrics_variants"]["Row"];
-
-interface LyricsJobRecord extends LyricsJobRow {
-  variants?: LyricsVariantRow[] | null;
-}
-
-const mapLyricsVariant = (variant: LyricsVariantRow): LyricsVariant => ({
-  id: variant.id,
-  jobId: variant.job_id,
-  index: variant.variant_index,
-  title: variant.title,
-  status: variant.status,
-  content: variant.content,
-  errorMessage: variant.error_message,
-  updatedAt: variant.updated_at,
-});
-
-const mapLyricsJobRecord = (record: LyricsJobRecord): LyricsGenerationJob => {
-  const variants = Array.isArray(record.variants)
-    ? record.variants
-        .map(mapLyricsVariant)
-        .sort((a, b) => a.index - b.index)
-    : [];
-
-  return {
-    id: record.id,
-    trackId: record.track_id,
-    prompt: record.prompt,
-    status: record.status,
-    sunoTaskId: record.suno_task_id,
-    errorMessage: record.error_message,
-    metadata: (record.metadata ?? null) as Record<string, unknown> | null,
-    callStrategy: record.call_strategy,
-    callbackUrl: record.callback_url,
-    createdAt: record.created_at,
-    updatedAt: record.updated_at,
-    lastCallback: (record.last_callback ?? null) as Record<string, unknown> | null,
-    lastPollResponse: (record.last_poll_response ?? null) as Record<string, unknown> | null,
-    variants,
-  };
-};
+// NOTE: Legacy lyrics_jobs system removed - functionality now integrated into tracks table
+// Keeping types for backward compatibility but they should not be used
 
 export type ProviderBalanceResponse = {
   balance: number | null;
@@ -368,75 +300,21 @@ export class ApiService {
 
   /**
    * Fetch lyrics generation job with variants
+   * NOTE: Legacy method - lyrics system removed
    */
-  static async getLyricsJob(jobId: string): Promise<LyricsGenerationJob | null> {
-    const context = "ApiService.getLyricsJob";
-    const { data, error } = await supabase
-      .from("lyrics_jobs")
-      .select(`
-        id,
-        track_id,
-        prompt,
-        status,
-        suno_task_id,
-        error_message,
-        metadata,
-        call_strategy,
-        callback_url,
-        created_at,
-        updated_at,
-        last_callback,
-        last_poll_response,
-        variants:lyrics_variants (
-          id,
-          job_id,
-          variant_index,
-          title,
-          status,
-          content,
-          error_message,
-          updated_at
-        )
-      `)
-      .eq("id", jobId)
-      .maybeSingle();
-
-    if (error) {
-      handlePostgrestError(error, "Failed to fetch lyrics job", context, { jobId });
-      return null;
-    }
-
-    if (!data) {
-      return null;
-    }
-
-    return mapLyricsJobRecord(data as LyricsJobRecord);
+  static async getLyricsJob(_jobId: string): Promise<any | null> {
+    return null;
   }
 
   /**
    * Request a fresh sync with Suno for a lyrics job
+   * NOTE: Legacy method - lyrics system removed
    */
-  static async syncLyricsJob(jobId: string): Promise<LyricsGenerationJob | null> {
-    const context = "ApiService.syncLyricsJob";
-    const { data, error } = await supabase.functions.invoke<{
-      success: boolean;
-      job: LyricsJobRecord | null;
-    }>("sync-lyrics-job", {
-      body: { jobId },
-    });
-
-    if (error) {
-      handleSupabaseFunctionError(error, "Failed to synchronise lyrics job", context, { jobId });
-      return null;
-    }
-
-    if (!data?.success || !data.job) {
-      logWarn("⚠️ [API Service] Sync lyrics job returned no data", context, { jobId, success: data?.success ?? false });
-      return null;
-    }
-
-    return mapLyricsJobRecord(data.job);
+  static async syncLyricsJob(_jobId: string): Promise<any | null> {
+    return null;
   }
+
+  // Legacy methods removed - lyrics_jobs table no longer exists
 
   /**
    * Request Suno stem job synchronisation (fallback polling)
