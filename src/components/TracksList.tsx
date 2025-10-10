@@ -8,6 +8,9 @@ import { Music } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { supabase } from "@/integrations/supabase/client";
+import { SeparateStemsDialog } from "@/components/tracks/SeparateStemsDialog";
+import { ExtendTrackDialog } from "@/components/tracks/ExtendTrackDialog";
+import { CreateCoverDialog } from "@/components/tracks/CreateCoverDialog";
 
 interface TracksListProps {
   tracks: Track[];
@@ -32,6 +35,16 @@ const TracksListComponent = ({
       return 'grid';
     }
   });
+
+  // Dialog states
+  const [separateStemsOpen, setSeparateStemsOpen] = useState(false);
+  const [selectedTrackForStems, setSelectedTrackForStems] = useState<{ id: string; title: string } | null>(null);
+
+  const [extendOpen, setExtendOpen] = useState(false);
+  const [selectedTrackForExtend, setSelectedTrackForExtend] = useState<Track | null>(null);
+
+  const [coverOpen, setCoverOpen] = useState(false);
+  const [selectedTrackForCover, setSelectedTrackForCover] = useState<{ id: string; title: string } | null>(null);
 
   const handleViewChange = useCallback((view: 'grid' | 'list') => {
     setViewMode(view);
@@ -122,6 +135,27 @@ const TracksListComponent = ({
     }
   }, [deleteTrack, toast]);
 
+  const handleSeparateStems = useCallback((trackId: string) => {
+    const t = tracks.find(tr => tr.id === trackId);
+    if (!t) return;
+    setSelectedTrackForStems({ id: t.id, title: t.title });
+    setSeparateStemsOpen(true);
+  }, [tracks]);
+
+  const handleExtend = useCallback((trackId: string) => {
+    const t = tracks.find(tr => tr.id === trackId);
+    if (!t) return;
+    setSelectedTrackForExtend(t);
+    setExtendOpen(true);
+  }, [tracks]);
+
+  const handleCover = useCallback((trackId: string) => {
+    const t = tracks.find(tr => tr.id === trackId);
+    if (!t) return;
+    setSelectedTrackForCover({ id: t.id, title: t.title });
+    setCoverOpen(true);
+  }, [tracks]);
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -176,6 +210,9 @@ const TracksListComponent = ({
               onShare={() => handleShare(track.id)}
               onRetry={handleRetry}
               onDelete={handleDelete}
+              onSeparateStems={() => handleSeparateStems(track.id)}
+              onExtend={() => handleExtend(track.id)}
+              onCover={() => handleCover(track.id)}
             />
           ))}
         </div>
@@ -190,9 +227,49 @@ const TracksListComponent = ({
               onShare={() => handleShare(track.id)}
               onRetry={handleRetry}
               onDelete={handleDelete}
+              onSeparateStems={() => handleSeparateStems(track.id)}
             />
           ))}
         </div>
+      )}
+
+      {/* Dialogs */}
+      {selectedTrackForStems && (
+        <SeparateStemsDialog
+          open={separateStemsOpen}
+          onOpenChange={setSeparateStemsOpen}
+          trackId={selectedTrackForStems.id}
+          trackTitle={selectedTrackForStems.title}
+          onSuccess={() => {
+            refreshTracks();
+            setSelectedTrackForStems(null);
+          }}
+        />
+      )}
+
+      {selectedTrackForExtend && (
+        <ExtendTrackDialog
+          open={extendOpen}
+          onOpenChange={setExtendOpen}
+          track={{
+            id: selectedTrackForExtend.id,
+            title: selectedTrackForExtend.title,
+            duration: selectedTrackForExtend.duration ?? undefined,
+            prompt: selectedTrackForExtend.prompt,
+            style_tags: selectedTrackForExtend.style_tags as any,
+          }}
+        />
+      )}
+
+      {selectedTrackForCover && (
+        <CreateCoverDialog
+          open={coverOpen}
+          onOpenChange={setCoverOpen}
+          track={{
+            id: selectedTrackForCover.id,
+            title: selectedTrackForCover.title,
+          }}
+        />
       )}
     </div>
   );
