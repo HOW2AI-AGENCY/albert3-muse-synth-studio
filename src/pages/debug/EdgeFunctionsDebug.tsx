@@ -13,13 +13,16 @@ type LogEntry = {
   context?: Record<string, unknown>;
 };
 
+// Accept log entries without time; time is added when pushing.
+type NewLogEntry = Omit<LogEntry, "time">;
+
 const now = () => new Date().toISOString();
 
 export default function EdgeFunctionsDebug() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [provider, setProvider] = useState<"suno" | "replicate">("suno");
 
-  const pushLog = (entry: LogEntry) => setLogs((prev) => [{ ...entry, time: now() }, ...prev].slice(0, 200));
+  const pushLog = (entry: NewLogEntry) => setLogs((prev) => [{ ...entry, time: now() }, ...prev].slice(0, 200));
 
   const getNetworkEndpoint = (fn: string) => `${appEnv.supabaseUrl}/functions/v1/${fn}`;
 

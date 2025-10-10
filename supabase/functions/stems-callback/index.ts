@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
+import { createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { createSupabaseAdminClient } from "../_shared/supabase.ts";
 import {
@@ -228,10 +228,4 @@ const mainHandler = async (req: Request) => {
   }
 };
 
-const handler = withRateLimit(mainHandler, {
-  maxRequests: 50,
-  windowMinutes: 1,
-  endpoint: "stems-callback",
-});
-
-serve(handler);
+serve(mainHandler);
