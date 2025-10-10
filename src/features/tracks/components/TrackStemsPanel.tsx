@@ -86,7 +86,7 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
   const [viewMode, setViewMode] = useState<'simple' | 'mixer'>('simple');
   const { currentTrack, isPlaying, playTrack, togglePlayPause } = useAudioPlayer();
 
-  const { isGenerating, generateStems } = useStemSeparation({
+  const { isGenerating, generateStems: handleGenerateStems } = useStemSeparation({
     trackId,
     versionId,
     onStemsReady: () => {
