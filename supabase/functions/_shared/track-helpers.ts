@@ -3,7 +3,7 @@ import { logger } from './logger.ts';
 export async function findOrCreateTrack(
   supabaseAdmin: any,
   userId: string,
-  { trackId, title, prompt, lyrics, hasVocals, styleTags, requestMetadata }: {
+  { trackId, title, prompt, lyrics, hasVocals, styleTags, requestMetadata, idempotencyKey }: {
     trackId?: string;
     title?: string;
     prompt?: string;
@@ -11,12 +11,13 @@ export async function findOrCreateTrack(
     hasVocals?: boolean;
     styleTags?: string[];
     requestMetadata: Record<string, unknown>;
+    idempotencyKey?: string;
   }
-): Promise<string> {
+): Promise<{ trackId: string; track: any }> {
   if (trackId) {
     const { data: existingTrack, error } = await supabaseAdmin
       .from('tracks')
-      .select('id, user_id')
+      .select('*')
       .eq('id', trackId)
       .eq('user_id', userId)
       .maybeSingle();
@@ -27,7 +28,7 @@ export async function findOrCreateTrack(
     }
     
     await supabaseAdmin.from('tracks').update({ status: 'processing', provider: 'suno' }).eq('id', trackId);
-    return trackId;
+    return { trackId, track: existingTrack };
   }
 
   const { data: newTrack, error: createError } = await supabaseAdmin
@@ -42,8 +43,9 @@ export async function findOrCreateTrack(
       has_vocals: hasVocals ?? null,
       style_tags: styleTags ?? null,
       metadata: requestMetadata,
+      idempotency_key: idempotencyKey,
     })
-    .select('id')
+    .select('*')
     .single();
 
   if (createError) {
@@ -51,5 +53,5 @@ export async function findOrCreateTrack(
     throw createError;
   }
 
-  return newTrack.id;
+  return { trackId: newTrack.id, track: newTrack };
 }

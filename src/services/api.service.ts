@@ -26,6 +26,7 @@ const isTrackStatus = (status: TrackRow["status"]): status is TrackStatus =>
 export const mapTrackRowToTrack = (track: TrackRow): Track => ({
   ...track,
   status: isTrackStatus(track.status) ? track.status : "pending",
+  idempotency_key: track.idempotency_key ?? null,
 });
 
 export interface ImprovePromptRequest {
@@ -420,7 +421,8 @@ export class ApiService {
           download_count,
           view_count,
           reference_audio_url,
-          progress_percent
+          progress_percent,
+          idempotency_key
         `)
         .eq("user_id", userId)
         .order("created_at", { ascending: false });

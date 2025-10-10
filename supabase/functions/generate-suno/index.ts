@@ -204,22 +204,6 @@ export const mainHandler = async (req: Request): Promise<Response> => {
 
     const trackId = body.trackId;
     const prompt = body.prompt;
-    
-    // Защитная проверка: убедимся что таблица ai_jobs существует
-    try {
-      await supabaseAdmin.from('ai_jobs').select('id').limit(1);
-    } catch (tableCheckError: any) {
-      logger.error('🔴 [GENERATE-SUNO] ai_jobs table check failed', { error: tableCheckError });
-      if (tableCheckError?.code === 'PGRST205') {
-        return new Response(
-          JSON.stringify({ 
-            error: 'Missing database table: ai_jobs',
-            details: 'Apply migrations to create ai_jobs table'
-          }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    }
     const title = body.title;
     const modelVersion = body.model_version;
     const idempotencyKey = body.idempotencyKey || crypto.randomUUID();
@@ -324,7 +308,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     const existingTaskId = existingTrack?.metadata?.suno_task_id;
     if (existingTaskId && existingTrack?.status === 'processing') {
       console.log('♻️ [GENERATE-SUNO] Resuming existing Suno task:', existingTaskId);
-      pollSunoCompletion(finalTrackId, existingTaskId, supabaseAdmin, SUNO_API_KEY, jobId).catch(err => {
+      pollSunoCompletion(String(finalTrackId), existingTaskId, supabaseAdmin, SUNO_API_KEY, jobId).catch(err => {
         logger.error('🔴 [GENERATE-SUNO] Resume polling error', { error: err instanceof Error ? err : new Error(String(err)) });
       });
       return new Response(JSON.stringify({ success: true, trackId: finalTrackId, taskId: existingTaskId, message: 'Resumed polling for existing task' }), {
@@ -360,7 +344,6 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     console.log('📥 [GENERATE-SUNO] Suno API response:', JSON.stringify(generationResult.rawResponse, null, 2));
 
     const taskId = generationResult.taskId;
-    await supabaseAdmin.from('ai_jobs').update({ external_id: taskId, status: 'processing' }).eq('id', jobId);
     const existingMetadata = existingTrack?.metadata && typeof existingTrack.metadata === 'object' && !Array.isArray(existingTrack.metadata)
       ? { ...(existingTrack.metadata as Record<string, unknown>) }
       : {};
@@ -411,7 +394,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
         if (adminForFallback) {
           setTimeout(() => {
             console.log('⏱️ [GENERATE-SUNO] Callback fallback poll triggered');
-            pollSunoCompletion(finalTrackId, taskId, adminForFallback, SUNO_API_KEY, jobId).catch(err => {
+            pollSunoCompletion(String(finalTrackId), taskId, adminForFallback, SUNO_API_KEY, jobId).catch(err => {
               logger.error('🔴 [GENERATE-SUNO] Fallback polling error', { error: err instanceof Error ? err : new Error(String(err)) });
             });
           }, 3 * 60 * 1000); // 3 minutes
@@ -423,7 +406,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       }
     } else {
       console.log('⚠️ [GENERATE-SUNO] Callback URL unavailable, falling back to polling');
-      pollSunoCompletion(finalTrackId, taskId, supabaseAdmin, SUNO_API_KEY, jobId).catch(err => {
+      pollSunoCompletion(String(finalTrackId), taskId, supabaseAdmin, SUNO_API_KEY, jobId).catch(err => {
         logger.error('🔴 [GENERATE-SUNO] Polling error', { error: err instanceof Error ? err : new Error(String(err)) });
       });
     }

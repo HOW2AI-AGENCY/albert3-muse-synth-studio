@@ -68,6 +68,7 @@ describe('useTracks', () => {
     duration: null,
     duration_seconds: null,
     error_message: null,
+    idempotency_key: null,
     cover_url: null,
     video_url: null,
     suno_id: null,

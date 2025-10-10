@@ -14,56 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      ai_jobs: {
-        Row: {
-          created_at: string
-          error_message: string | null
-          external_id: string | null
-          id: string
-          idempotency_key: string
-          prompt: string
-          provider: string
-          provider_payload: Json
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          error_message?: string | null
-          external_id?: string | null
-          id?: string
-          idempotency_key: string
-          prompt: string
-          provider?: string
-          provider_payload?: Json
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          error_message?: string | null
-          external_id?: string | null
-          id?: string
-          idempotency_key?: string
-          prompt?: string
-          provider?: string
-          provider_payload?: Json
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ai_jobs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       app_settings: {
         Row: {
           created_at: string
@@ -378,6 +328,7 @@ export type Database = {
           has_stems: boolean | null
           has_vocals: boolean | null
           id: string
+          idempotency_key: string | null
           improved_prompt: string | null
           is_public: boolean | null
           like_count: number | null
@@ -412,6 +363,7 @@ export type Database = {
           has_stems?: boolean | null
           has_vocals?: boolean | null
           id?: string
+          idempotency_key?: string | null
           improved_prompt?: string | null
           is_public?: boolean | null
           like_count?: number | null
@@ -446,6 +398,7 @@ export type Database = {
           has_stems?: boolean | null
           has_vocals?: boolean | null
           id?: string
+          idempotency_key?: string | null
           improved_prompt?: string | null
           is_public?: boolean | null
           like_count?: number | null
