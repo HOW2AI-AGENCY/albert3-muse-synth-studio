@@ -164,16 +164,10 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       timestamp: new Date().toISOString()
     }, null, 2));
 
+    // ✅ JWT проверяется автоматически через verify_jwt=true в config.toml
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Authorization header required' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const supabase = createSupabaseUserClient(token);
+    const token = authHeader?.replace('Bearer ', '');
+    const supabase = token ? createSupabaseUserClient(token) : createSupabaseAdminClient();
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {

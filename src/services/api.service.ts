@@ -126,14 +126,6 @@ export class ApiService {
     const functionName = provider === 'suno' ? 'generate-suno' : 'generate-music';
 
     try {
-      // ✅ ИСПРАВЛЕНИЕ 1: Проверка аутентификации перед вызовом edge function
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        throw new ApiError('Требуется авторизация для генерации музыки', { 
-          context, 
-          payload: { provider, functionName } 
-        });
-      }
       const normalizedPrompt = request.prompt?.trim() ?? '';
       const lyrics = request.lyrics;
       const styleTags = request.styleTags?.filter((tag) => Boolean(tag?.trim())) ?? [];
@@ -195,12 +187,7 @@ export class ApiService {
       logInfo('⏳ [API Service] Invoking edge function...', context);
       const { data, error } = await supabase.functions.invoke<GenerateMusicResponse>(
         functionName,
-        { 
-          body: payload,
-          headers: {
-            Authorization: `Bearer ${session.access_token}` // ✅ ИСПРАВЛЕНИЕ 1: Явная передача JWT токена
-          }
-        }
+        { body: payload }
       );
 
       // --- Обработка ошибок ---
