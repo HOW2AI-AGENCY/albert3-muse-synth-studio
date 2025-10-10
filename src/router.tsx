@@ -18,6 +18,7 @@ import {
 } from './utils/lazyImports.tsx';
 
 const LazyAdmin = lazy(() => import("./pages/workspace/Admin"));
+const LazyProfile = lazy(() => import("./pages/workspace/Profile"));
 const LazyEdgeFunctionsDebug = lazy(() => import("./pages/debug/EdgeFunctionsDebug"));
 
 const LoadingSpinner = () => (
@@ -91,6 +92,14 @@ export const router = createBrowserRouter(
           element: (
             <Suspense fallback={<LoadingSpinner />}>
               <LazySettings />
+            </Suspense>
+          ),
+        },
+        {
+          path: "profile",
+          element: (
+            <Suspense fallback={<LoadingSpinner />}>
+              <LazyProfile />
             </Suspense>
           ),
         },

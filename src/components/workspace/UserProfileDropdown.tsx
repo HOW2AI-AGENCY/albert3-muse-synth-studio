@@ -78,6 +78,14 @@ export const UserProfileDropdown = ({ userEmail }: UserProfileDropdownProps) => 
         <DropdownMenuSeparator />
 
         <DropdownMenuItem
+          onClick={() => navigate("/workspace/profile")}
+          className="cursor-pointer gap-2"
+        >
+          <User className="h-4 w-4" />
+          <span>Профиль</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
           onClick={() => navigate("/workspace/settings")}
           className="cursor-pointer gap-2"
         >

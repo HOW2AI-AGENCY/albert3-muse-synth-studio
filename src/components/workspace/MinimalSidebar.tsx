@@ -1,8 +1,13 @@
-import { X, User, Sparkles } from "lucide-react";
+import { X, Sparkles, Coins } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { WorkspaceNavItem } from "@/config/workspace-navigation";
+import { useProviderBalance } from "@/hooks/useProviderBalance";
+import { UserProfileDropdown } from "./UserProfileDropdown";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MinimalSidebarProps {
   isExpanded: boolean;
@@ -23,6 +28,14 @@ const MinimalSidebar = ({
   items,
 }: MinimalSidebarProps) => {
   const location = useLocation();
+  const { balance, isLoading: balanceLoading } = useProviderBalance();
+  const [userEmail, setUserEmail] = useState<string>("");
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.email) setUserEmail(user.email);
+    });
+  }, []);
 
   return (
     <aside
@@ -87,20 +100,42 @@ const MinimalSidebar = ({
           })}
         </nav>
 
-        <div className="mt-auto">
-          <button
-            type="button"
+        <div className="mt-auto space-y-2">
+          {/* Credits Display */}
+          <div 
             className={cn(
-              baseLinkClasses,
-              "w-full justify-center border border-border/60 bg-card text-muted-foreground hover:border-border"
+              "flex items-center gap-2 rounded-md border border-border/60 bg-muted/50 p-2 text-sm",
+              !isExpanded && "justify-center"
             )}
-            onClick={onClose}
-            aria-label="Открыть профиль"
-            title={isExpanded ? undefined : "Профиль"}
+            title={isExpanded ? undefined : `Кредиты: ${balance?.balance ?? 0}`}
           >
-            <User className="h-5 w-5" aria-hidden="true" />
-            {isExpanded && <span>Профиль</span>}
-          </button>
+            <Coins className="h-4 w-4 text-primary flex-shrink-0" aria-hidden="true" />
+            {isExpanded && (
+              balanceLoading ? (
+                <Skeleton className="h-4 w-10" />
+              ) : (
+                <span className="font-medium">{balance?.balance ?? 0}</span>
+              )
+            )}
+          </div>
+
+          {/* Profile Button */}
+          <div className={cn(
+            "flex items-center gap-2",
+            !isExpanded && "justify-center"
+          )}>
+            {isExpanded && (
+              <div className="hidden min-w-0 flex-col items-start lg:flex flex-1">
+                <span className="truncate text-sm font-medium w-full">
+                  {userEmail.split("@")[0] || "Пользователь"}
+                </span>
+                <span className="truncate text-xs text-muted-foreground w-full" title={userEmail}>
+                  {userEmail}
+                </span>
+              </div>
+            )}
+            <UserProfileDropdown userEmail={userEmail} />
+          </div>
         </div>
       </div>
     </aside>
