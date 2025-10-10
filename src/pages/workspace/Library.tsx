@@ -19,6 +19,7 @@ import { OptimizedTrackList } from "@/components/OptimizedTrackList";
 import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
 import { useTracks } from "@/hooks/useTracks";
 import { useToast } from "@/hooks/use-toast";
+import { useTrackCleanup } from "@/hooks/useTrackCleanup";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 // import { LikesService } from "@/services/likes.service"; // Now handled in TrackCard
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +39,18 @@ const Library: React.FC = () => {
   const { tracks, isLoading, refreshTracks } = useTracks();
   const { toast } = useToast();
   const { playTrackWithQueue } = useAudioPlayer();
+  
+  // Get current user
+  const [userId, setUserId] = useState<string | undefined>(undefined);
+  
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user?.id);
+    });
+  }, []);
+  
+  // Automatic cleanup of failed tracks
+  useTrackCleanup(userId, refreshTracks);
   
   // Состояние UI
   const [viewMode, setViewMode] = useState<ViewMode>(() => {

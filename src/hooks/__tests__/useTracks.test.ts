@@ -63,6 +63,7 @@ describe('useTracks', () => {
     audio_url: 'https://example.com/audio.mp3',
     status: 'completed',
     created_at: '2024-01-15T12:00:00Z',
+    progress_percent: 0,
     improved_prompt: null,
     duration: null,
     duration_seconds: null,

@@ -432,7 +432,8 @@ export class ApiService {
           play_count,
           download_count,
           view_count,
-          reference_audio_url
+          reference_audio_url,
+          progress_percent
         `)
         .eq("user_id", userId)
         .order("created_at", { ascending: false });

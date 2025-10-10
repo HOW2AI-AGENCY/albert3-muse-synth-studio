@@ -38,6 +38,41 @@ export type Database = {
         }
         Relationships: []
       }
+      callback_logs: {
+        Row: {
+          callback_type: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          payload: Json | null
+          track_id: string | null
+        }
+        Insert: {
+          callback_type: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          track_id?: string | null
+        }
+        Update: {
+          callback_type?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          track_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "callback_logs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -136,6 +171,41 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      track_retry_attempts: {
+        Row: {
+          attempt_number: number
+          attempted_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          track_id: string
+        }
+        Insert: {
+          attempt_number: number
+          attempted_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          track_id: string
+        }
+        Update: {
+          attempt_number?: number
+          attempted_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          track_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_retry_attempts_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
         ]
@@ -266,6 +336,7 @@ export type Database = {
           model_name: string | null
           mood: string | null
           play_count: number | null
+          progress_percent: number | null
           prompt: string
           provider: string | null
           reference_audio_url: string | null
@@ -299,6 +370,7 @@ export type Database = {
           model_name?: string | null
           mood?: string | null
           play_count?: number | null
+          progress_percent?: number | null
           prompt: string
           provider?: string | null
           reference_audio_url?: string | null
@@ -332,6 +404,7 @@ export type Database = {
           model_name?: string | null
           mood?: string | null
           play_count?: number | null
+          progress_percent?: number | null
           prompt?: string
           provider?: string | null
           reference_audio_url?: string | null

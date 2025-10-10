@@ -18,6 +18,7 @@ import { withErrorBoundary } from "@/components/ErrorBoundary";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { formatDuration } from "@/utils/formatters";
+import { TrackProgressBar } from "@/components/tracks/TrackProgressBar";
 
 // Сокращенный интерфейс для карточки
 interface Track {
@@ -28,11 +29,12 @@ interface Track {
   duration?: number;
   status: "pending" | "processing" | "completed" | "failed";
   error_message?: string;
-  created_at: string; // Оставляем для вычисления "зависших" треков
+  created_at: string;
   style_tags?: string[];
   like_count?: number;
   view_count?: number;
   prompt?: string;
+  progress_percent?: number | null;
 }
 
 interface TrackCardProps {
@@ -148,7 +150,7 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className }: 
       tabIndex={0}
     >
       <div className="relative aspect-square bg-gradient-to-br from-gray-800 to-gray-900">
-        {track.status === 'processing' && <GenerationProgress />}
+        {(track.status === 'processing' || track.status === 'pending') && <GenerationProgress />}
         {track.status === 'failed' && <FailedState message={track.error_message} />}
 
         {track.cover_url ? (
@@ -191,6 +193,16 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className }: 
           </h3>
           <p className="text-xs text-muted-foreground mb-1.5 line-clamp-1">{track.prompt}</p>
         </div>
+
+        {(track.status === 'processing' || track.status === 'pending') && (
+          <div className="mb-2">
+            <TrackProgressBar
+              progress={track.progress_percent || 0}
+              status={track.status}
+              createdAt={track.created_at}
+            />
+          </div>
+        )}
 
         <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto">
           <div className="flex items-center gap-2">

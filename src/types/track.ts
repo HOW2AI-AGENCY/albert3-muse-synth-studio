@@ -26,6 +26,7 @@ export interface BaseTrack {
   has_stems?: boolean | null;
   like_count?: number | null;
   view_count?: number | null;
+  progress_percent?: number | null;
 }
 
 // Трек для аудиоплеера (требует обязательный audio_url)

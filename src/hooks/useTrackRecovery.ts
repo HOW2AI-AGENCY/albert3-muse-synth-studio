@@ -8,6 +8,7 @@ interface UseTrackRecoveryOptions {
   enabled?: boolean;
   checkIntervalMs?: number;
   pendingThresholdMs?: number;
+  maxRetryAttempts?: number;
 }
 
 /**
@@ -23,6 +24,7 @@ export const useTrackRecovery = (
     enabled = true,
     checkIntervalMs = 60000, // Проверять каждую минуту
     pendingThresholdMs = 120000, // Считать "застрявшими" треки старше 2 минут
+    maxRetryAttempts = 3,
   } = options;
 
   const processingTracksRef = useRef<Set<string>>(new Set());
@@ -44,55 +46,99 @@ export const useTrackRecovery = (
       logInfo('Checking for stuck tracks...', 'useTrackRecovery');
 
       // Получаем все треки в статусе pending
-      const { data: pendingTracks, error } = await supabase
+      const { data: pendingTracks, error: pendingError } = await supabase
         .from('tracks')
         .select('id, title, created_at, prompt, provider, lyrics, has_vocals, style_tags')
         .eq('user_id', userId)
         .eq('status', 'pending')
-        .is('suno_id', null) // Треки без suno_id точно не были отправлены
+        .is('suno_id', null)
         .order('created_at', { ascending: true });
 
-      if (error) {
-        logError('Failed to fetch pending tracks', error, 'useTrackRecovery');
+      if (pendingError) {
+        logError('Failed to fetch pending tracks', pendingError, 'useTrackRecovery');
         return;
       }
 
-      if (!pendingTracks || pendingTracks.length === 0) {
-        logInfo('No stuck tracks found', 'useTrackRecovery');
+      // Получаем failed треки с количеством попыток
+      const { data: failedTracksData, error: failedError } = await supabase
+        .from('tracks')
+        .select(`
+          id, title, created_at, updated_at, prompt, provider, lyrics, has_vocals, style_tags, error_message,
+          track_retry_attempts:track_retry_attempts(count)
+        `)
+        .eq('user_id', userId)
+        .eq('status', 'failed')
+        .order('updated_at', { ascending: true });
+
+      if (failedError) {
+        logError('Failed to fetch failed tracks', failedError, 'useTrackRecovery');
         return;
       }
 
-      // Фильтруем треки старше порога и не находящиеся в процессе восстановления
-      const stuckTracks = pendingTracks.filter(track => {
+      // Преобразуем failed треки с подсчетом попыток
+      const failedTracks = (failedTracksData || []).map(track => ({
+        ...track,
+        retry_count: (track.track_retry_attempts as any)?.[0]?.count || 0
+      }));
+
+      // Фильтруем pending треки старше порога
+      const stuckPendingTracks = (pendingTracks || []).filter(track => {
         const trackAge = now - new Date(track.created_at).getTime();
         const isStuck = trackAge > pendingThresholdMs;
         const isNotProcessing = !processingTracksRef.current.has(track.id);
-        
         return isStuck && isNotProcessing;
       });
 
-      if (stuckTracks.length === 0) {
+      // Фильтруем failed треки для retry (с exponential backoff)
+      const retriableFailedTracks = failedTracks.filter(track => {
+        if (track.retry_count >= maxRetryAttempts) return false;
+        if (processingTracksRef.current.has(track.id)) return false;
+
+        // Exponential backoff: 1min, 2min, 4min
+        const retryDelay = Math.pow(2, track.retry_count) * 60000;
+        const timeSinceFailure = now - new Date(track.updated_at).getTime();
+        
+        return timeSinceFailure >= retryDelay;
+      });
+
+      const allRecoverableTracks = [...stuckPendingTracks, ...retriableFailedTracks];
+
+      if (allRecoverableTracks.length === 0) {
         logInfo('No tracks need recovery', 'useTrackRecovery', {
-          pendingCount: pendingTracks.length,
+          pendingCount: pendingTracks?.length || 0,
+          failedCount: failedTracks.length,
           processingCount: processingTracksRef.current.size
         });
         return;
       }
 
-      logInfo(`Found ${stuckTracks.length} stuck track(s), attempting recovery`, 'useTrackRecovery', {
-        trackIds: stuckTracks.map(t => t.id)
+      logInfo(`Found ${allRecoverableTracks.length} track(s) for recovery`, 'useTrackRecovery', {
+        pending: stuckPendingTracks.length,
+        failed: retriableFailedTracks.length
       });
 
       // Восстанавливаем каждый трек
-      for (const track of stuckTracks) {
+      for (const track of allRecoverableTracks) {
         try {
-          // Отмечаем трек как обрабатываемый
           processingTracksRef.current.add(track.id);
 
-          logInfo(`Recovering track: ${track.title}`, 'useTrackRecovery', {
+          const retryCount = (track as any).retry_count as number || 0;
+          const isRetry = retryCount > 0;
+
+          logInfo(`${isRetry ? 'Retrying' : 'Recovering'} track: ${track.title}`, 'useTrackRecovery', {
             trackId: track.id,
-            age: Math.round((now - new Date(track.created_at).getTime()) / 1000) + 's'
+            retryAttempt: retryCount + 1,
+            maxAttempts: maxRetryAttempts
           });
+
+          // Записываем попытку retry для failed треков
+          if (isRetry) {
+            await supabase.from('track_retry_attempts').insert({
+              track_id: track.id,
+              attempt_number: retryCount + 1,
+              error_message: (track as any).error_message || null
+            });
+          }
 
           // Повторно отправляем запрос на генерацию
           await ApiService.generateMusic({
@@ -106,13 +152,19 @@ export const useTrackRecovery = (
             styleTags: track.style_tags || undefined,
           });
 
-          toast.success(`Восстановление: ${track.title}`, {
-            description: 'Запрос на генерацию отправлен повторно',
-            duration: 3000,
-          });
+          toast.success(
+            isRetry 
+              ? `Повторная попытка ${retryCount + 1}/${maxRetryAttempts}: ${track.title}`
+              : `Восстановление: ${track.title}`,
+            {
+              description: 'Запрос на генерацию отправлен',
+              duration: 3000,
+            }
+          );
 
-          logInfo(`Successfully recovered track: ${track.title}`, 'useTrackRecovery', {
-            trackId: track.id
+          logInfo(`Successfully ${isRetry ? 'retried' : 'recovered'} track`, 'useTrackRecovery', {
+            trackId: track.id,
+            retryAttempt: retryCount + 1
           });
 
         } catch (error) {
@@ -125,7 +177,6 @@ export const useTrackRecovery = (
             duration: 5000,
           });
         } finally {
-          // Убираем трек из списка обрабатываемых через 30 секунд
           setTimeout(() => {
             processingTracksRef.current.delete(track.id);
           }, 30000);
@@ -138,7 +189,7 @@ export const useTrackRecovery = (
     } catch (error) {
       logError('Error in track recovery process', error as Error, 'useTrackRecovery');
     }
-  }, [userId, enabled, checkIntervalMs, pendingThresholdMs, refreshTracks]);
+  }, [userId, enabled, checkIntervalMs, pendingThresholdMs, maxRetryAttempts, refreshTracks]);
 
   // Запускаем проверку при монтировании и при изменении userId
   useEffect(() => {
