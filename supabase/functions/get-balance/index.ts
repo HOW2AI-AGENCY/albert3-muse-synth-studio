@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { createSecurityHeaders } from "../_shared/security.ts";
-import { createSupabaseUserClient } from "../_shared/supabase.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { buildSunoHeaders } from "../_shared/suno.ts";
 
 type SunoBalanceAttempt = {
@@ -322,18 +322,12 @@ export const handler = async (req: Request): Promise<Response> => {
     }
     const token = authHeader.replace('Bearer ', '');
 
-    let supabase;
-    try {
-      supabase = createSupabaseUserClient(token);
-    } catch (configError) {
-      console.error('Supabase configuration error while creating auth client:', configError);
-      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
-        status: 500,
-        headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    );
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
 
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
