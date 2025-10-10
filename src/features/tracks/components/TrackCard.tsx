@@ -79,22 +79,16 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className }: 
   const { currentTrack, isPlaying, playTrack } = useAudioPlayer();
   const { isLiked, toggleLike } = useTrackLike(track.id, track.like_count || 0);
   const [isHovered, setIsHovered] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const element = cardRef.current;
-    if (!element) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          element.classList.add('animate-fade-in');
-          observer.unobserve(element);
-        }
-      }, { threshold: 0.1 }
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
+    if (element) {
+      element.classList.add('animate-fade-in');
+    }
+    setIsVisible(true);
   }, []);
 
   const isCurrentTrack = currentTrack?.id === track.id;
@@ -139,13 +133,13 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className }: 
   return (
     <Card
       ref={cardRef}
-      className={cn(
-        "group relative overflow-hidden cursor-pointer transition-all duration-300",
-        "border-border/50 bg-card hover:bg-muted/30",
-        "h-full flex flex-col opacity-0", // Start with opacity 0 for fade-in
-        isCurrentTrack && "ring-2 ring-primary/80",
-        className,
-      )}
+    className={cn(
+      "group relative overflow-hidden cursor-pointer transition-all duration-300",
+      "border-border/50 bg-card hover:bg-muted/30",
+      isVisible ? "h-full flex flex-col opacity-100 animate-fade-in" : "h-full flex flex-col opacity-0",
+      isCurrentTrack && "ring-2 ring-primary/80",
+      className,
+    )}
       onClick={onClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

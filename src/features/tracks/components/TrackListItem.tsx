@@ -41,22 +41,16 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, className
   const { currentTrack, isPlaying, playTrack } = useAudioPlayer();
   const { isLiked, toggleLike } = useTrackLike(track.id, track.like_count || 0);
   const [isHovered, setIsHovered] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   
   const itemRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const element = itemRef.current;
-    if (!element) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          element.classList.add('animate-fade-in');
-          observer.unobserve(element);
-        }
-      }, { threshold: 0.1 }
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
+    if (element) {
+      element.classList.add('animate-fade-in');
+    }
+    setIsVisible(true);
   }, []);
 
   const isCurrentTrack = currentTrack?.id === track.id;
@@ -97,7 +91,7 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, className
       ref={itemRef}
       data-testid={`track-list-item-${track.id}`}
       className={cn(
-        "group flex items-center gap-3 p-2 rounded-lg transition-colors duration-200 opacity-0",
+        isVisible ? "group flex items-center gap-3 p-2 rounded-lg transition-colors duration-200 opacity-100 animate-fade-in" : "group flex items-center gap-3 p-2 rounded-lg transition-colors duration-200 opacity-0",
         "hover:bg-muted/50",
         isCurrentTrack && "bg-primary/10",
         className
