@@ -65,18 +65,6 @@ export const useStemSeparation = ({
       try {
         setIsGenerating(true);
 
-        // Get session and add Authorization header explicitly
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
-
-        if (sessionError || !session?.access_token) {
-          toast.error("Ваша сессия истекла. Пожалуйста, войдите снова.");
-          navigate("/auth");
-          return;
-        }
-
         const requestBody: Record<string, unknown> = {
           trackId,
           separationMode: mode,
@@ -92,9 +80,6 @@ export const useStemSeparation = ({
           error?: string;
         }>("separate-stems", {
           body: requestBody,
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
         });
 
         if (error) {
