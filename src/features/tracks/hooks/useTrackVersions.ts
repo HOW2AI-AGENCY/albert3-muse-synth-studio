@@ -140,6 +140,12 @@ export const invalidateTrackVersionsCache = (trackId: string) => {
   notifyListeners(trackId, []);
 };
 
+export const resetTrackVersionsCache = () => {
+  versionsCache.clear();
+  listeners.clear();
+  inFlightRequests.clear();
+};
+
 /**
  * Интерфейс возвращаемого значения хука
  */
