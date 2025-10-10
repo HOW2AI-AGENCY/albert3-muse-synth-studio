@@ -1,7 +1,6 @@
 import React, { useState, useCallback, memo, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Play,
   Pause,
@@ -10,14 +9,12 @@ import {
   Share2,
   Clock,
   Music,
-  Eye,
   AlertTriangle,
   Loader2,
 } from "lucide-react";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useTrackLike } from "@/features/tracks/hooks";
 import { withErrorBoundary } from "@/components/ErrorBoundary";
-import { logError } from "@/utils/logger";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { formatDuration } from "@/utils/formatters";
@@ -80,7 +77,7 @@ const FailedState: React.FC<{ message?: string }> = ({ message }) => (
 const TrackCardComponent = ({ track, onDownload, onShare, onClick, className }: TrackCardProps) => {
   const { toast } = useToast();
   const { currentTrack, isPlaying, playTrack } = useAudioPlayer();
-  const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count || 0);
+  const { isLiked, toggleLike } = useTrackLike(track.id, track.like_count || 0);
   const [isHovered, setIsHovered] = useState(false);
 
   const cardRef = useRef<HTMLDivElement>(null);

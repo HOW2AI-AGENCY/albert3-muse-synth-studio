@@ -3,7 +3,6 @@ import { render, screen } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { TrackListItem } from '@/features/tracks/components/TrackListItem';
 import { Toaster } from '@/components/ui/toaster';
-import type { Track } from '@/services/api.service';
 
 // --- Mocks ---
 
@@ -26,13 +25,13 @@ vi.mock('@/hooks/use-toast', () => ({
 
 // --- Test Setup ---
 
-const mockTrack: Track = {
+const mockTrack = {
   id: 'track-1',
   title: 'Test Track',
   audio_url: 'https://example.com/audio.mp3',
   cover_url: 'https://example.com/cover.jpg',
   duration: 180,
-  status: 'completed',
+  status: 'completed' as const,
   created_at: new Date().toISOString(),
   style_tags: ['rock', 'indie'],
   like_count: 5,
@@ -109,7 +108,7 @@ describe('TrackListItem', () => {
   });
 
   it('disables download button when status is not completed', async () => {
-    const processingTrack = { ...mockTrack, status: 'processing' as const, audio_url: undefined };
+    const processingTrack = { ...mockTrack, status: 'processing' as const, audio_url: '' };
     renderComponent(<TrackListItem track={processingTrack} />);
 
     await userEvent.hover(screen.getByRole('button', { name: /Трек Test Track/i }));

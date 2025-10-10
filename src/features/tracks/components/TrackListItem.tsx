@@ -1,14 +1,11 @@
 import React, { useState, useCallback, memo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Play,
   Pause,
   Heart,
   Download,
   Share2,
-  MoreHorizontal,
-  Clock,
   Music,
   Headphones,
   AlertTriangle,
@@ -42,7 +39,7 @@ interface TrackListItemProps {
 
 const TrackListItemComponent = ({ track, onClick, onDownload, onShare, className }: TrackListItemProps) => {
   const { currentTrack, isPlaying, playTrack } = useAudioPlayer();
-  const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count || 0);
+  const { isLiked, toggleLike } = useTrackLike(track.id, track.like_count || 0);
   const [isHovered, setIsHovered] = useState(false);
   
   const itemRef = useRef<HTMLDivElement>(null);

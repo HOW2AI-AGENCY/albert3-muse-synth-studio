@@ -59,8 +59,6 @@ const vocalGenderOptions: { value: VocalGender; label: string }[] = [
   { value: 'instrumental', label: 'Без вокала' },
 ];
 
-const pickRandom = (values: string[]) => values[Math.floor(Math.random() * values.length)];
-
 // --- REUSABLE SUB-COMPONENTS ---
 
 const FormField: React.FC<FormFieldProps> = ({ label, children, description, tooltip, htmlFor }) => (

@@ -29,7 +29,7 @@ describe('MusicGenerator (Redesigned)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    generateMusicFn.mockImplementation(async (params, toast, onSuccess) => {
+    generateMusicFn.mockImplementation(async (_params, _toast, onSuccess) => {
       onSuccess?.();
       return Promise.resolve(true);
     });
