@@ -7,7 +7,6 @@ import { createSunoClient } from "../_shared/suno.ts";
 async function clearTables() {
   await adminClient.from("track_versions").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   await adminClient.from("tracks").delete().neq("id", "00000000-0000-0000-0000-000000000000");
-  await adminClient.from("ai_jobs").delete().neq("id", "00000000-0000-0000-0000-000000000000");
   await adminClient.from("rate_limits").delete().neq("user_id", "00000000-0000-0000-0000-000000000000");
 }
 
@@ -88,12 +87,6 @@ Deno.test({
           assertEquals(payload.taskId, "task-123");
           assertEquals(pollCalls, ["task-123"]);
 
-          const { data: jobs } = await adminClient.from("ai_jobs").select("*");
-          assertEquals(jobs?.length, 1);
-          assertEquals(jobs?.[0].status, "processing");
-          assertEquals(jobs?.[0].idempotency_key, body.idempotencyKey);
-          createdJobId = jobs?.[0]?.id ?? null;
-
           const { data: tracks } = await adminClient.from("tracks").select("*");
           assertEquals(tracks?.length, 1);
           assertEquals(tracks?.[0].status, "processing");
@@ -140,14 +133,10 @@ Deno.test({
           const secondResponse = await handler(new Request("http://localhost/generate-suno", requestInit));
           assertEquals(secondResponse.status, 200);
           const secondPayload = await secondResponse.json();
-          assertEquals(secondPayload.jobId, createdJobId);
           assertStringIncludes(secondPayload.message, "already processed");
         } finally {
           restoreIdempotentFetch();
         }
-
-        const { data: jobsAfter } = await adminClient.from("ai_jobs").select("*");
-        assertEquals(jobsAfter?.length, 1);
 
         const { data: rateAfter } = await adminClient
           .from("rate_limits")
@@ -195,14 +184,6 @@ Deno.test({
         } finally {
           restoreBalanceFetch();
         }
-
-        const { data: jobs } = await adminClient.from("ai_jobs").select("*");
-        assertEquals(jobs?.length, 1);
-        assertEquals(jobs?.[0].status, "failed");
-        assertStringIncludes(jobs?.[0].error_message ?? "", "Недостаточно кредитов");
-
-        const { data: tracks } = await adminClient.from("tracks").select("*");
-        assertEquals(tracks?.length, 0);
       });
 
       await t.step("resumes existing suno task without new API call", async () => {
@@ -263,10 +244,6 @@ Deno.test({
           restoreResumeFetch();
         }
 
-        const { data: jobs } = await adminClient.from("ai_jobs").select("*");
-        assertEquals(jobs?.length, 1);
-        assertEquals(jobs?.[0].status, "processing");
-
         const { data: tracks } = await adminClient.from("tracks").select("*");
         assertEquals(tracks?.length, 1);
         assertEquals(tracks?.[0].status, "processing");
@@ -311,11 +288,6 @@ Deno.test({
         } finally {
           restoreErrorFetch();
         }
-
-        const { data: jobs } = await adminClient.from("ai_jobs").select("*");
-        assertEquals(jobs?.length, 1);
-        assertEquals(jobs?.[0].status, "failed");
-        assertStringIncludes(jobs?.[0].error_message ?? "", "Suno generation failed");
 
         const { data: tracks } = await adminClient.from("tracks").select("*");
         assertEquals(tracks?.length, 1);

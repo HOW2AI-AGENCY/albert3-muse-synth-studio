@@ -101,24 +101,7 @@ const mainHandler = async (req: Request) => {
 
     console.log("Extracted taskId:", taskId, "Tasks count:", tasks.length, "Callback type:", callbackType);
 
-    const updateJobStatus = async (
-      status: "completed" | "failed",
-      errorMessage?: string | null,
-    ) => {
-      try {
-        const jobUpdate: Record<string, unknown> = { status };
-        jobUpdate.error_message = errorMessage ?? null;
-        const { error } = await supabase
-          .from("ai_jobs")
-          .update(jobUpdate)
-          .eq("external_id", taskId);
-        if (error) {
-          console.error("Suno callback: failed to update ai_jobs", error);
-        }
-      } catch (jobError) {
-        console.error("Suno callback: unexpected error updating ai_jobs", jobError);
-      }
-    };
+    // ✅ Removed ai_jobs status update - using tracks table only
 
     // Find the track by metadata.suno_task_id
     const { data: track, error: findErr } = await supabase
@@ -158,8 +141,6 @@ const mainHandler = async (req: Request) => {
         .update({ status: "failed", error_message: reason })
         .contains("metadata", { suno_task_id: taskId });
 
-      await updateJobStatus("failed", reason);
-
       console.log("Suno callback: track marked failed", { taskId, reason });
       return new Response(JSON.stringify({ ok: true }), {
         status: 200,
@@ -179,7 +160,6 @@ const mainHandler = async (req: Request) => {
           .from("tracks")
           .update({ status: "failed", error_message: message })
           .contains("metadata", { suno_task_id: taskId });
-        await updateJobStatus("failed", message);
         console.error("Suno callback: no successful tracks with audio", { taskId });
         return new Response(JSON.stringify({ ok: false, error: message }), {
           status: 422,
@@ -190,7 +170,6 @@ const mainHandler = async (req: Request) => {
       if (!track.user_id) {
         const message = "Track missing user reference";
         console.error("Suno callback: unable to determine user for track", { taskId, trackId: track.id });
-        await updateJobStatus("failed", message);
         return new Response(JSON.stringify({ ok: false, error: message }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -282,7 +261,6 @@ const mainHandler = async (req: Request) => {
 
       if (updateTrackError) {
         console.error("Suno callback: failed to update main track", updateTrackError);
-        await updateJobStatus("failed", updateTrackError.message);
         return new Response(JSON.stringify({ ok: false, error: "update_failed" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -359,8 +337,6 @@ const mainHandler = async (req: Request) => {
           }
         }
       }
-
-      await updateJobStatus("completed", null);
 
       console.log("Suno callback: track completed", {
         taskId,
