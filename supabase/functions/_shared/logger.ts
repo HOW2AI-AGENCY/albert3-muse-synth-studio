@@ -1,3 +1,5 @@
+import * as Sentry from "https://deno.land/x/sentry@8.25.0/mod.ts";
+
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 interface LogContext {
@@ -73,12 +75,125 @@ const errorReplacer = (_key: string, value: unknown) => {
   return value;
 };
 
+const sentryDsn = Deno.env.get("SENTRY_EDGE_DSN") ?? Deno.env.get("SENTRY_DSN") ?? "";
+const sentryEnvironment = Deno.env.get("SENTRY_ENVIRONMENT") ?? Deno.env.get("ENVIRONMENT") ?? "production";
+const sentryRelease = Deno.env.get("SENTRY_RELEASE");
+const sentryDebug = Deno.env.get("SENTRY_DEBUG") === "true";
+const rawTracesSampleRate = Number(Deno.env.get("SENTRY_TRACES_SAMPLE_RATE") ?? "0");
+const sentryFlushTimeoutMs = Number(Deno.env.get("SENTRY_FLUSH_TIMEOUT_MS") ?? "2000");
+
+const isSentryConfigured = sentryDsn.trim().length > 0;
+let isSentryInitialised = false;
+
+const initialiseSentry = () => {
+  if (isSentryInitialised || !isSentryConfigured) {
+    return;
+  }
+
+  const tracesSampleRate = Number.isFinite(rawTracesSampleRate)
+    ? Math.min(Math.max(rawTracesSampleRate, 0), 1)
+    : 0;
+
+  Sentry.init({
+    dsn: sentryDsn,
+    environment: sentryEnvironment,
+    release: sentryRelease,
+    tracesSampleRate,
+    debug: sentryDebug,
+  });
+
+  Sentry.setTag("runtime", "supabase-edge");
+
+  isSentryInitialised = true;
+};
+
+const ensureSentry = (): boolean => {
+  if (!isSentryConfigured) {
+    return false;
+  }
+
+  if (!isSentryInitialised) {
+    initialiseSentry();
+  }
+
+  return isSentryInitialised;
+};
+
+const captureLogWithSentry = (level: LogLevel, message: string, context?: LogContext, maskedContext?: LogContext) => {
+  if (level !== "error") {
+    return;
+  }
+
+  if (!ensureSentry()) {
+    return;
+  }
+
+  const errorCandidate = context?.error;
+  const error = errorCandidate instanceof Error ? errorCandidate : new Error(message);
+
+  Sentry.captureException(error, (scope) => {
+    scope.setLevel("error");
+    scope.setTag("edge.logger", "supabase");
+    scope.setExtras({
+      ...maskedContext,
+    });
+
+    if (errorCandidate && !(errorCandidate instanceof Error)) {
+      scope.setContext("logger.rawError", { value: errorCandidate });
+    }
+
+    if (context) {
+      scope.setContext("logger.context", context);
+    }
+
+    return scope;
+  });
+};
+
 export const withSentry = <Args extends unknown[], Result>(
   handler: (...args: Args) => Result | Promise<Result>,
   _options?: { transaction?: string },
 ) => {
   return async (...args: Args): Promise<Result> => {
-    return await handler(...args);
+    if (!ensureSentry()) {
+      return await handler(...args);
+    }
+
+    return await Sentry.runWithAsyncContext(async () => {
+      const transactionName = _options?.transaction ?? handler.name ?? "edge.function";
+      const transaction = Sentry.startTransaction({ name: transactionName, op: "edge.function" });
+
+      Sentry.configureScope((scope) => {
+        scope.setTransactionName(transactionName);
+        scope.setTag("edge.function", transactionName);
+        if (transaction) {
+          scope.setSpan(transaction);
+        }
+      });
+
+      try {
+        const result = await handler(...args);
+        if (transaction) {
+          transaction.setStatus("ok");
+        }
+        return result;
+      } catch (error) {
+        Sentry.captureException(error, (scope) => {
+          scope.setLevel("error");
+          scope.setTag("edge.function", transactionName);
+          return scope;
+        });
+        if (transaction) {
+          transaction.setStatus("internal_error");
+        }
+        throw error;
+      } finally {
+        if (transaction) {
+          transaction.finish();
+        }
+        await Sentry.flush(sentryFlushTimeoutMs);
+      }
+    });
   };
 };
 
@@ -109,6 +224,8 @@ const log = (level: LogLevel, message: string, context?: LogContext) => {
     default:
       console.debug(text);
   }
+
+  captureLogWithSentry(level, message, context, maskedContext);
 };
 
 export const logger = {

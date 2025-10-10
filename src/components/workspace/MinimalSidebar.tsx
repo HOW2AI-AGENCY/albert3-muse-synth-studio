@@ -1,191 +1,109 @@
-import { Home, Sparkles, Library, Heart, BarChart3, Settings, User, X, Shield } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { X, User, Sparkles } from "lucide-react";
+import { NavLink, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { preloadDashboard, preloadGenerate, preloadLibrary } from '../../utils/lazyImports';
-import { useUserRole } from '@/hooks/useUserRole';
+import type { WorkspaceNavItem } from "@/config/workspace-navigation";
 
 interface MinimalSidebarProps {
   isExpanded: boolean;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   onClose?: () => void;
+  items: WorkspaceNavItem[];
 }
 
-const MinimalSidebar = ({ isExpanded, onMouseEnter, onMouseLeave, onClose }: MinimalSidebarProps) => {
-  const navigate = useNavigate();
+const baseLinkClasses =
+  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition";
+
+const MinimalSidebar = ({
+  isExpanded,
+  onMouseEnter,
+  onMouseLeave,
+  onClose,
+  items,
+}: MinimalSidebarProps) => {
   const location = useLocation();
-  const { isAdmin } = useUserRole();
-
-  const menuItems = [
-    { 
-      icon: Home, 
-      label: "Главная", 
-      path: "/workspace/dashboard",
-      preload: preloadDashboard
-    },
-    { 
-      icon: Sparkles, 
-      label: "Генерация", 
-      path: "/workspace/generate",
-      preload: preloadGenerate
-    },
-    { 
-      icon: Library, 
-      label: "Библиотека", 
-      path: "/workspace/library",
-      preload: preloadLibrary
-    },
-    { icon: Heart, label: "Избранное", path: "/workspace/favorites" },
-    { icon: BarChart3, label: "Аналитика", path: "/workspace/analytics" },
-    ...(isAdmin ? [{ icon: Shield, label: "Админ-панель", path: "/workspace/admin" }] : []),
-    { icon: Settings, label: "Настройки", path: "/workspace/settings" },
-  ];
-
-  const handleNavigation = (path: string, preload?: () => void) => {
-    navigate(path);
-    preload?.();
-    onClose?.();
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent, path: string, preload?: () => void) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleNavigation(path, preload);
-    }
-  };
 
   return (
-    <TooltipProvider>
-      <aside 
-        className={cn(
-          "fixed left-0 top-0 z-40 h-full bg-card/95 backdrop-blur-2xl border-r border-border/50",
-          "flex flex-col items-center py-6 transition-all duration-300 ease-in-out",
-          isExpanded ? "w-64" : "w-16",
-          "hidden lg:flex"
-        )}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        role="navigation"
-        aria-label="Основная навигация"
-      >
-        {/* Close button for mobile */}
+    <aside
+      className={cn(
+        "fixed left-0 top-0 z-40 hidden h-full border-r border-border/60 bg-background/95 backdrop-blur lg:flex",
+        isExpanded ? "w-56" : "w-16"
+      )}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      aria-label="Навигация по рабочему пространству"
+    >
+      <div className="flex w-full flex-col gap-6 px-3 py-6">
         {onClose && (
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={onClose}
-            className="absolute top-4 right-4 lg:hidden w-8 h-8 p-0 hover:bg-accent/10 rounded-xl transition-all duration-300"
+            className="absolute right-2 top-2 h-8 w-8 rounded-md"
             aria-label="Закрыть меню"
           >
-            <X className="w-4 h-4" />
+            <X className="h-4 w-4" />
           </Button>
         )}
 
-        {/* Logo/Brand */}
-        <div className="mb-8 p-2 relative group">
-          <div className="absolute inset-0 bg-gradient-primary rounded-2xl blur-lg opacity-40 group-hover:opacity-60 transition-opacity animate-pulse-glow" />
-          <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 backdrop-blur-xl border border-primary/20 flex items-center justify-center hover:scale-110 transition-all duration-300">
-            <Sparkles className="w-6 h-6 text-primary" />
+        <div className="flex items-center justify-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-md border border-border/60 bg-card text-primary">
+            <Sparkles className="h-5 w-5" aria-hidden="true" />
           </div>
         </div>
 
-        {/* Navigation Items */}
-        <nav className="flex-1 w-full px-2 space-y-1" role="menubar">
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
+        <nav className="flex flex-1 flex-col gap-1" role="menubar">
+          {items.map((item) => {
             const Icon = item.icon;
-            
+            const isActive =
+              location.pathname === item.path ||
+              location.pathname.startsWith(`${item.path}/`);
+
             return (
-              <Tooltip key={item.path}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleNavigation(item.path, item.preload)}
-                    onKeyDown={(e) => handleKeyDown(e, item.path, item.preload)}
-                    className={cn(
-                      "w-full h-12 justify-start px-3 rounded-xl transition-all duration-300 relative group",
-                      isActive 
-                        ? "bg-gradient-to-r from-primary/20 to-accent/20 text-primary border border-primary/20 shadow-glow-primary" 
-                        : "hover:bg-accent/10 hover:scale-105"
-                    )}
-                    role="menuitem"
-                    aria-label={item.label}
-                    aria-current={isActive ? "page" : undefined}
-                    tabIndex={0}
-                  >
-                    <Icon className={cn(
-                      "w-5 h-5 shrink-0 transition-all duration-300",
-                      isActive && "animate-pulse"
-                    )} />
-                    <span className={cn(
-                      "ml-3 whitespace-nowrap transition-all duration-300 font-medium",
-                      isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2"
-                    )}>
-                      {item.label}
-                    </span>
-                    {isActive && (
-                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-gradient-primary rounded-l-full" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent 
-                  side="right" 
-                  className={cn(
-                    "bg-card/95 backdrop-blur-xl border-border/50",
-                    isExpanded && "hidden"
-                  )}
-                >
-                  <p>{item.label}</p>
-                </TooltipContent>
-              </Tooltip>
+              <NavLink
+                key={item.id}
+                to={item.path}
+                onClick={onClose}
+                onPointerEnter={() => item.preload?.()}
+                onFocus={() => item.preload?.()}
+                title={isExpanded ? undefined : item.label}
+                className={({ isActive: navActive }) =>
+                  cn(
+                    baseLinkClasses,
+                    "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                    !isExpanded && "justify-center px-2",
+                    (isActive || navActive) &&
+                      "bg-primary/10 text-foreground hover:bg-primary/15"
+                  )
+                }
+                role="menuitem"
+                aria-current={isActive ? "page" : undefined}
+              >
+                <Icon className="h-5 w-5" aria-hidden="true" />
+                {isExpanded && <span className="truncate">{item.label}</span>}
+              </NavLink>
             );
           })}
         </nav>
 
-        {/* User Profile */}
-        <div className="mt-auto p-2 w-full">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full h-12 justify-start px-3 rounded-xl hover:bg-accent/10 transition-all duration-300 hover:scale-105"
-                role="menuitem"
-                aria-label="Профиль пользователя"
-                tabIndex={0}
-              >
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0">
-                  <User className="w-4 h-4 text-primary" />
-                </div>
-                <span className={cn(
-                  "ml-3 whitespace-nowrap transition-all duration-300 font-medium",
-                  isExpanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2"
-                )}>
-                  Профиль
-                </span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent 
-              side="right" 
-              className={cn(
-                "bg-card/95 backdrop-blur-xl border-border/50",
-                isExpanded && "hidden"
-              )}
-            >
-              <p>Профиль</p>
-            </TooltipContent>
-          </Tooltip>
+        <div className="mt-auto">
+          <button
+            type="button"
+            className={cn(
+              baseLinkClasses,
+              "w-full justify-center border border-border/60 bg-card text-muted-foreground hover:border-border"
+            )}
+            onClick={onClose}
+            aria-label="Открыть профиль"
+            title={isExpanded ? undefined : "Профиль"}
+          >
+            <User className="h-5 w-5" aria-hidden="true" />
+            {isExpanded && <span>Профиль</span>}
+          </button>
         </div>
-      </aside>
-    </TooltipProvider>
+      </div>
+    </aside>
   );
 };
 

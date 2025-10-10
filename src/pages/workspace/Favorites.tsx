@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { Heart, Loader2 } from "lucide-react";
-import { TrackCard } from "@/components/TrackCard";
 import { LikesService } from "@/services/likes.service";
 import { supabase } from "@/integrations/supabase/client";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { getTrackWithVersions } from "@/utils/trackVersions";
+import { TrackCard, getTrackWithVersions } from "@/features/tracks";
+import { primeTrackVersionsCache } from "@/features/tracks/hooks/useTrackVersions";
 import { toast } from "sonner";
 import { convertToAudioPlayerTrack } from "@/types/track";
 import type { TrackStatus } from "@/services/api.service";
@@ -68,13 +68,42 @@ export default function Favorites() {
 
     // Load track with all versions
     const tracksWithVersions = await getTrackWithVersions(track.id);
+    primeTrackVersionsCache(track.id, tracksWithVersions);
 
     if (tracksWithVersions.length > 0) {
-      const masterOrMain = tracksWithVersions.find(t => t.isMasterVersion) || tracksWithVersions[0];
-      const audioTrack = convertToAudioPlayerTrack(masterOrMain);
-      const audioTracks = tracksWithVersions.map(convertToAudioPlayerTrack).filter((t): t is NonNullable<typeof t> => t !== null);
-      if (audioTrack) {
-        playTrackWithQueue(audioTrack, audioTracks);
+      const toAudioTrack = (version: typeof tracksWithVersions[number]) => {
+        const audio = convertToAudioPlayerTrack({
+          id: version.id,
+          title: version.title,
+          audio_url: version.audio_url ?? null,
+          cover_url: version.cover_url ?? null,
+          duration: version.duration ?? null,
+          duration_seconds: version.duration ?? null,
+          style_tags: version.style_tags ?? null,
+          lyrics: version.lyrics ?? null,
+          status: version.status ?? 'completed',
+        });
+
+        if (!audio) {
+          return null;
+        }
+
+        return {
+          ...audio,
+          parentTrackId: version.parentTrackId ?? track.id,
+          versionNumber: version.versionNumber,
+          isMasterVersion: version.isMasterVersion,
+          isOriginalVersion: version.isOriginal,
+          sourceVersionNumber: version.sourceVersionNumber,
+        };
+      };
+
+      const audioTracks = tracksWithVersions.map(toAudioTrack).filter((t): t is NonNullable<typeof t> => t !== null);
+      const masterOrMain = tracksWithVersions.find(t => t.isMasterVersion) || tracksWithVersions.find(t => t.isOriginal) || tracksWithVersions[0];
+      const masterAudio = masterOrMain ? toAudioTrack(masterOrMain) : null;
+
+      if (masterAudio && audioTracks.length > 0) {
+        playTrackWithQueue(masterAudio, audioTracks);
       }
     } else {
       // Fallback to single track

@@ -393,7 +393,7 @@ docs/TROUBLESHOOTING_TRACKS.md:
 - `src/components/player/FullScreenPlayer.tsx` - Mobile UI
 - `src/hooks/useTrackVersions.ts` - Hook для версий
 - `src/components/tracks/TrackVersionBadge.tsx` - UI компонент
-- `src/utils/trackVersions.ts` - Утилиты версий
+- `src/features/tracks/api/trackVersions.ts` - Утилиты версий
 - `supabase/functions/generate-suno/index.ts` - Сохранение версий
 
 ---

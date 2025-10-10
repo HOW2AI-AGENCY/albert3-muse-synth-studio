@@ -3,13 +3,10 @@ import { describe, it, expect, vi } from 'vitest';
 import type { ReactNode, ButtonHTMLAttributes } from 'react';
 import { TracksList } from '../TracksList';
 
-vi.mock('../TrackCard', () => ({
+vi.mock('@/features/tracks', () => ({
   TrackCard: ({ track }: { track: { title: string } }) => (
     <div data-testid="track-card">{track.title}</div>
   ),
-}));
-
-vi.mock('../tracks/TrackListItem', () => ({
   TrackListItem: ({ track }: { track: { title: string } }) => (
     <div data-testid="track-item">{track.title}</div>
   ),

@@ -14,6 +14,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -209,7 +210,13 @@ export const SectionCard: React.FC<SectionCardProps> = ({
       <Dialog open={showTagPalette} onOpenChange={setShowTagPalette}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Add Tags to {section.title}</DialogTitle>
+            <DialogTitle>
+              Add Tags to {section.title?.trim() ? section.title : 'section'}
+            </DialogTitle>
+            <DialogDescription>
+              Choose tags to annotate this section. Selected tags will be added
+              immediately.
+            </DialogDescription>
           </DialogHeader>
           <TagPalette
             onAddTag={(tag) => {

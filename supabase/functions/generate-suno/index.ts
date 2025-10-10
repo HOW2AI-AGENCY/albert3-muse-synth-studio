@@ -5,6 +5,7 @@ import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { downloadAndUploadAudio, downloadAndUploadCover, downloadAndUploadVideo } from "../_shared/storage.ts";
 import { createSunoClient, SunoApiError, type SunoGenerationPayload } from "../_shared/suno.ts";
+import { fetchSunoBalance } from "../_shared/suno-balance.ts";
 
 interface GenerateSunoRequestBody {
   trackId?: string;
@@ -187,6 +188,46 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       throw new Error('SUNO_API_KEY not configured');
     }
 
+    const balanceResult = await fetchSunoBalance({ apiKey: SUNO_API_KEY });
+    if (balanceResult.success) {
+      const checkedAt = new Date().toISOString();
+      requestMetadata.suno_balance_remaining = balanceResult.balance;
+      requestMetadata.suno_balance_checked_at = checkedAt;
+      requestMetadata.suno_balance_endpoint = balanceResult.endpoint;
+      if (balanceResult.monthly_limit !== undefined) {
+        requestMetadata.suno_balance_monthly_limit = balanceResult.monthly_limit;
+      }
+      if (balanceResult.monthly_usage !== undefined) {
+        requestMetadata.suno_balance_monthly_usage = balanceResult.monthly_usage;
+      }
+
+      console.log(`💳 [GENERATE-SUNO] Suno credits remaining: ${balanceResult.balance}`);
+      if (balanceResult.balance <= 0) {
+        const message = 'Недостаточно кредитов Suno для генерации трека. Пополните баланс и попробуйте снова.';
+        if (jobId) {
+          await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: message }).eq('id', jobId);
+        }
+        return new Response(JSON.stringify({
+          error: message,
+          details: {
+            provider: 'suno',
+            endpoint: balanceResult.endpoint,
+            attempts: balanceResult.attempts,
+          },
+        }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    } else {
+      logger.warn('⚠️ [GENERATE-SUNO] Не удалось проверить баланс Suno перед генерацией', {
+        error: balanceResult.error,
+        attempts: balanceResult.attempts,
+      });
+      requestMetadata.suno_balance_error = balanceResult.error;
+      requestMetadata.suno_balance_attempts = balanceResult.attempts;
+    }
+
     const sunoClient = createSunoClient({ apiKey: SUNO_API_KEY });
     console.log('✅ [GENERATE-SUNO] API key configured');
 
@@ -223,17 +264,22 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       });
     }
 
+    // The logic for what goes into the 'prompt' field has changed based on the API spec.
+    // In custom mode, the lyrics go into the prompt. In non-custom mode, the user's prompt idea goes there.
+    const promptForSuno = customModeValue ? (normalizedLyrics || '') : (prompt || '');
+    if (!promptForSuno) {
+      throw new Error("A prompt or lyrics are required for Suno generation.");
+    }
+
     const sunoPayload: SunoGenerationPayload = {
-      prompt,
-      tags,
+      prompt: promptForSuno,
+      // The 'tags' array is now a single 'style' string.
+      style: tags.join(', '),
       title: title || 'Generated Track',
-      make_instrumental: effectiveMakeInstrumental ?? false,
-      model_version: modelVersion || 'chirp-v3-5',
-      wait_audio: effectiveWaitAudio,
+      instrumental: effectiveMakeInstrumental ?? false,
+      model: (modelVersion as SunoGenerationPayload['model']) || 'V5',
+      customMode: customModeValue ?? false,
       callBackUrl: callbackUrl ?? undefined,
-      ...(typeof normalizedLyrics === 'string' ? { lyrics: normalizedLyrics } : {}),
-      ...(effectiveHasVocals !== undefined ? { has_vocals: effectiveHasVocals } : {}),
-      ...(customModeValue !== undefined ? { custom_mode: customModeValue } : {}),
     };
     console.log('📤 [GENERATE-SUNO] Sending request to Suno API:', JSON.stringify(sunoPayload, null, 2));
 
@@ -392,7 +438,7 @@ const defaultPollSunoCompletion: PollSunoCompletionFn = async (
   jobId,
 ) => {
   const sunoClient = createSunoClient({ apiKey });
-  const maxAttempts = 60; // Максимум 60 попыток = 5 минут (интервал 5 секунд)
+  const maxAttempts = 60; // Max 60 attempts = 5 minutes (5s interval)
   let attempts = 0;
 
   while (attempts < maxAttempts) {
@@ -401,292 +447,123 @@ const defaultPollSunoCompletion: PollSunoCompletionFn = async (
 
     try {
       console.log(`Polling Suno task ${taskId}, attempt ${attempts}`);
-
       const queryResult = await sunoClient.queryTask(taskId);
 
       if (attempts <= 3) {
         console.log(`[Attempt ${attempts}] Suno poll response (${queryResult.endpoint}):`, JSON.stringify(queryResult.rawResponse, null, 2));
       }
-
-      if (typeof queryResult.code === 'number' && queryResult.code !== 200) {
-        logger.error('Unexpected Suno poll code', { code: queryResult.code });
-        continue;
-      }
-
-      const tasks = queryResult.tasks;
       
-      // ДИАГНОСТИКА: Детальное логирование всех треков
-      console.log(`📊 [DIAGNOSTIC] Total tasks returned: ${tasks.length}`);
-      const statusesLog = tasks.map((t: any, idx: number) => ({
-        index: idx,
-        id: t.id || t.taskId,
-        status: t.status,
-        hasAudio: Boolean(t.audioUrl || t.audio_url || t.stream_audio_url || t.source_stream_audio_url),
-        audioUrl: (t.audioUrl || t.audio_url || t.stream_audio_url || t.source_stream_audio_url)?.substring(0, 60),
-        hasCover: Boolean(t.image_url || t.image_large_url || t.imageUrl),
-        hasVideo: Boolean(t.video_url || t.videoUrl),
-        title: t.title,
-        model: t.model || t.model_name
-      }));
-      console.log('🔍 [DIAGNOSTIC] Suno poll statuses:', JSON.stringify(statusesLog, null, 2));
-      
-      // Check if all tasks are complete
-      const allComplete = tasks.every((t: any) => t.status === 'success' || t.status === 'complete');
-      const anyFailed = tasks.some((t: any) => t.status === 'error' || t.status === 'failed');
-
-      if (anyFailed) {
-        const firstErr = tasks.find((t: any) => t.status === 'error' || t.status === 'failed');
-        const reason = firstErr?.msg || firstErr?.error || 'Generation failed';
+      const isFailed = queryResult.status === 'GENERATE_AUDIO_FAILED' || queryResult.status === 'CREATE_TASK_FAILED';
+      if (isFailed) {
+        const reason = (queryResult.rawResponse as any)?.data?.errorMessage || 'Generation failed';
         await supabaseAdmin.from('tracks').update({ status: 'failed', error_message: reason }).eq('id', trackId);
         if (jobId) await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: reason }).eq('id', jobId);
         console.log('Track generation failed:', trackId, reason);
         return;
       }
 
-      if (allComplete && tasks.length > 0) {
-        console.log(`🎉 [COMPLETION] All ${tasks.length} tracks completed. Processing...`);
-        
-        /**
-         * КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: Обработка ВСЕХ треков из ответа Suno
-         * 
-         * Suno API возвращает массив tasks[], обычно с 2 треками:
-         * - tasks[0] - Первая версия (основной трек)
-         * - tasks[1] - Вторая версия (альтернативная версия)
-         * 
-         * Стратегия сохранения:
-         * 1. Первый трек → обновляем запись в таблице `tracks` (основной трек)
-         * 2. Остальные треки → создаем записи в таблице `track_versions`
-         * 3. Первый трек автоматически становится мастер-версией
-         */
-        
-        // Фильтруем только успешные треки с аудио
-        const successfulTracks = tasks.filter((t: any) =>
-          t.audioUrl || t.audio_url || t.stream_audio_url || t.source_stream_audio_url
-        );
+      const isComplete = queryResult.status === 'SUCCESS';
+      if (isComplete) {
+        const successfulTracks = queryResult.tasks.filter(t => t.audioUrl);
+        console.log(`🎉 [COMPLETION] Task is SUCCESS. Processing ${successfulTracks.length} tracks.`);
 
         if (successfulTracks.length === 0) {
-          await supabaseAdmin.from('tracks').update({ status: 'failed', error_message: 'Completed without audio URL in response' }).eq('id', trackId);
-          if (jobId) await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: 'Completed without audio URL' }).eq('id', jobId);
+          const errorMessage = 'Completed without audio URL in response';
+          await supabaseAdmin.from('tracks').update({ status: 'failed', error_message: errorMessage }).eq('id', trackId);
+          if (jobId) await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: errorMessage }).eq('id', jobId);
           logger.error('🔴 [COMPLETION] No tracks with audio URL', { trackId });
           return;
         }
-        
-        console.log(`✅ [COMPLETION] Found ${successfulTracks.length} successful tracks with audio`);
-        
-        // ДИАГНОСТИКА: Логируем детали всех успешных треков
-        successfulTracks.forEach((track: any, idx: number) => {
-          console.log(`📋 [TRACK ${idx}] Details:`, {
-            id: track.id,
-            title: track.title,
-            status: track.status,
-            audioUrl: (track.audioUrl || track.audio_url)?.substring(0, 60) + '...',
-            hasLyrics: Boolean(track.lyric || track.lyrics),
-            duration: track.duration || track.duration_seconds
-          });
-        });
-        
-        // ========================================
-        // ШАГ 1: Обработка первого трека (основной)
-        // ========================================
+
         const mainTrack = successfulTracks[0];
-        
-        // Извлекаем метаданные из первого трека
-        const externalAudioUrl = mainTrack.audioUrl || mainTrack.audio_url || 
-                                mainTrack.stream_audio_url || mainTrack.source_stream_audio_url;
-        const duration = mainTrack.duration || mainTrack.duration_seconds || 0;
-        const actualLyrics = mainTrack.lyric || mainTrack.lyrics || mainTrack.prompt;
-        const externalCoverUrl = mainTrack.image_url || mainTrack.image_large_url || mainTrack.imageUrl;
-        const externalVideoUrl = mainTrack.video_url || mainTrack.videoUrl;
-        const sunoId = mainTrack.id;
-        const modelName = mainTrack.model || mainTrack.model_name;
-        const createdAtSuno = mainTrack.created_at || mainTrack.createdAt;
-        
         const { data: trackData } = await supabaseAdmin.from('tracks').select('user_id, metadata').eq('id', trackId).single();
         const userId = trackData?.user_id;
         if (!userId) {
           throw new Error('User ID not found for track');
         }
 
-        const existingMetadata = (trackData?.metadata && typeof trackData.metadata === 'object') ? trackData.metadata as Record<string, unknown> : {};
-
         console.log('📦 [STORAGE] Starting file uploads to Supabase Storage...');
-        if (!externalAudioUrl) {
-          throw new Error('Missing audio URL from Suno API');
+        const audioUrl = await downloadAndUploadAudio(mainTrack.audioUrl, trackId, userId, 'main.mp3', supabaseAdmin);
+        let coverUrl = mainTrack.imageUrl;
+        if (mainTrack.imageUrl) {
+          coverUrl = await downloadAndUploadCover(mainTrack.imageUrl, trackId, userId, 'cover.jpg', supabaseAdmin);
         }
-        const audioUrl = await downloadAndUploadAudio(externalAudioUrl, trackId, userId, 'main.mp3', supabaseAdmin);
-        let coverUrl = externalCoverUrl;
-        if (externalCoverUrl) {
-          coverUrl = await downloadAndUploadCover(externalCoverUrl, trackId, userId, 'cover.jpg', supabaseAdmin);
-        }
-        let videoUrl = externalVideoUrl;
-        if (externalVideoUrl) {
-          videoUrl = await downloadAndUploadVideo(externalVideoUrl, trackId, userId, 'video.mp4', supabaseAdmin);
-        }
-
-        console.log('📦 [MAIN TRACK] Metadata extracted:', {
-          audioUrl: audioUrl?.substring(0, 50) + '...',
-          coverUrl: coverUrl?.substring(0, 50) + '...',
-          videoUrl: videoUrl?.substring(0, 50) + '...',
-          sunoId,
-          modelName,
-          duration: `${Math.round(duration)}s`,
-          hasLyrics: Boolean(actualLyrics)
-        });
 
         const pollMetadata = {
-          ...existingMetadata,
-          suno_data: tasks,
+          ...(trackData?.metadata as Record<string, unknown> ?? {}),
+          suno_data: queryResult.tasks,
           suno_last_poll_endpoint: queryResult.endpoint,
           suno_last_poll_code: queryResult.code ?? null,
           suno_last_poll_at: new Date().toISOString(),
           suno_poll_snapshot: queryResult.rawResponse,
         };
 
-        const { error: updateMainError } = await supabaseAdmin.from('tracks').update({
+        await supabaseAdmin.from('tracks').update({
           status: 'completed',
           audio_url: audioUrl,
-          duration: Math.round(duration),
-          duration_seconds: Math.round(duration),
-          lyrics: actualLyrics,
+          duration: Math.round(mainTrack.duration),
+          lyrics: mainTrack.prompt,
           cover_url: coverUrl,
-          video_url: videoUrl,
-          suno_id: sunoId,
-          model_name: modelName,
-          created_at_suno: createdAtSuno,
+          suno_id: mainTrack.id,
+          model_name: mainTrack.modelName,
+          created_at_suno: mainTrack.createTime,
           metadata: pollMetadata,
         }).eq('id', trackId);
 
-        if (updateMainError) {
-          logger.error('🔴 [MAIN TRACK] Failed to update', { error: updateMainError });
-          if (jobId) await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: updateMainError.message }).eq('id', jobId);
-          throw updateMainError;
-        }
-
         console.log(`✅ [MAIN TRACK] Successfully updated track ${trackId}`);
 
-        // ========================================
-        // ШАГ 2: Обработка остальных треков (версии)
-        // ========================================
         if (successfulTracks.length > 1) {
-          console.log(`🎵 [VERSIONS] Processing ${successfulTracks.length - 1} additional version(s)...`);
-          
-          // Проходим по всем трекам начиная со второго (индекс 1)
-          for (let i = 1; i < successfulTracks.length; i++) {
-            const versionTrack = successfulTracks[i];
-            
-            // Извлекаем метаданные для версии
-            const externalVersionAudioUrl = versionTrack.audioUrl || versionTrack.audio_url || 
-                                           versionTrack.stream_audio_url || versionTrack.source_stream_audio_url;
-            const versionDuration = versionTrack.duration || versionTrack.duration_seconds || 0;
-            const versionLyrics = versionTrack.lyric || versionTrack.lyrics || versionTrack.prompt;
-            const externalVersionCoverUrl = versionTrack.image_url || versionTrack.image_large_url || versionTrack.imageUrl;
-            const externalVersionVideoUrl = versionTrack.video_url || versionTrack.videoUrl;
-            const versionSunoId = versionTrack.id;
-            
-            console.log(`📦 [VERSION ${i}] Uploading to Storage...`);
-            if (!externalVersionAudioUrl) {
-              logger.warn(`Missing audio URL for version ${i}`, { trackId, versionIndex: i });
-              continue;
-            }
-            const versionAudioUrl = await downloadAndUploadAudio(externalVersionAudioUrl, trackId, userId, `version-${i}.mp3`, supabaseAdmin);
-            let versionCoverUrl = externalVersionCoverUrl;
-            if (externalVersionCoverUrl) {
-              versionCoverUrl = await downloadAndUploadCover(externalVersionCoverUrl, trackId, userId, `version-${i}-cover.jpg`, supabaseAdmin);
-            }
-            let versionVideoUrl = externalVersionVideoUrl;
-            if (externalVersionVideoUrl) {
-              versionVideoUrl = await downloadAndUploadVideo(externalVersionVideoUrl, trackId, userId, `version-${i}-video.mp4`, supabaseAdmin);
-            }
-            
-            console.log(`📦 [VERSION ${i}] Metadata extracted:`, {
-              audioUrl: versionAudioUrl?.substring(0, 50) + '...',
-              coverUrl: versionCoverUrl?.substring(0, 50) + '...',
-              sunoId: versionSunoId,
-              duration: `${Math.round(versionDuration)}s`
-            });
-            
-            const versionData = {
-              parent_track_id: trackId,
-              version_number: i,
-              is_master: false,
-              audio_url: versionAudioUrl,
-              cover_url: versionCoverUrl,
-              video_url: versionVideoUrl,
-              duration: Math.round(versionDuration),
-              lyrics: versionLyrics,
-              suno_id: versionSunoId,
-              metadata: {
-                suno_track_data: versionTrack,
-                created_from_generation: true,
-                generation_task_id: taskId,
-                suno_last_poll_endpoint: queryResult.endpoint,
-              }
-            };
-            
-            console.log(`📝 [VERSION ${i}] Attempting to insert version data:`, {
-              parent_track_id: trackId,
-              version_number: i,
-              has_audio: Boolean(versionAudioUrl),
-              has_cover: Boolean(versionCoverUrl),
-              suno_id: versionSunoId
-            });
-            
-            const { error: insertVersionError } = await supabaseAdmin.from('track_versions').insert(versionData);
-            
-            if (insertVersionError) {
-              logger.error(`🔴 [VERSION ${i}] Failed to insert`, { 
-                error: insertVersionError,
-                code: insertVersionError.code,
-                message: insertVersionError.message,
-                details: insertVersionError.details,
-                hint: insertVersionError.hint
-              });
-              console.error(`🔴 [VERSION ${i}] Database error details:`, {
-                errorCode: insertVersionError.code,
-                errorMessage: insertVersionError.message,
-                parentTrackId: trackId,
-                versionNumber: i
-              });
-            } else {
-              console.log(`✅ [VERSION ${i}] Successfully created version for track ${trackId}`);
-            }
-          }
-          console.log(`✅ [VERSIONS] All versions processed successfully`);
-        } else {
-          console.log('ℹ️ [VERSIONS] Only 1 track returned, no versions to create');
+           console.log(`🎵 [VERSIONS] Processing ${successfulTracks.length - 1} additional version(s)...`);
+           for (let i = 1; i < successfulTracks.length; i++) {
+             const versionTrack = successfulTracks[i];
+             const versionAudioUrl = await downloadAndUploadAudio(versionTrack.audioUrl, trackId, userId, `version-${i}.mp3`, supabaseAdmin);
+             let versionCoverUrl = versionTrack.imageUrl;
+             if (versionTrack.imageUrl) {
+               versionCoverUrl = await downloadAndUploadCover(versionTrack.imageUrl, trackId, userId, `version-${i}-cover.jpg`, supabaseAdmin);
+             }
+
+             await supabaseAdmin.from('track_versions').insert({
+               parent_track_id: trackId,
+               version_number: i,
+               is_master: false,
+               audio_url: versionAudioUrl,
+               cover_url: versionCoverUrl,
+               duration: Math.round(versionTrack.duration),
+               lyrics: versionTrack.prompt,
+               suno_id: versionTrack.id,
+               metadata: { suno_track_data: versionTrack }
+             });
+             console.log(`✅ [VERSION ${i}] Successfully created version for track ${trackId}`);
+           }
         }
 
         if (jobId) await supabaseAdmin.from('ai_jobs').update({ status: 'completed' }).eq('id', jobId);
         console.log(`✅ [COMPLETION] Track ${trackId} completed with ${successfulTracks.length} version(s)`);
-        return;
+        return; // Exit loop on success
       }
-
+      // If status is PENDING or another intermediate state, continue polling.
     } catch (error) {
       logger.error('Polling iteration error', { error: error instanceof Error ? error : new Error(String(error)) });
-
       if (error instanceof SunoApiError) {
+        // Retry on transient errors
         const status = error.details.status ?? 0;
-        if (status === 0 || status === 200 || status === 202 || status === 429 || status >= 500) {
+        if (status === 0 || status === 429 || status >= 500) {
           console.log('Retryable Suno polling error, continuing...');
           continue;
         }
-        const reason = error.message || 'Suno polling error';
-        await supabaseAdmin.from('tracks').update({ status: 'failed', error_message: reason }).eq('id', trackId);
-        if (jobId) await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: reason }).eq('id', jobId);
-        return;
       }
-
+      // For other errors, fail the track
       const message = error instanceof Error ? error.message : 'Unknown polling error';
-      if (jobId) {
-        await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: message }).eq('id', jobId);
-      }
       await supabaseAdmin.from('tracks').update({ status: 'failed', error_message: message }).eq('id', trackId);
-      return;
+      if (jobId) await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: message }).eq('id', jobId);
+      return; // Exit loop on failure
     }
   }
 
-  await supabaseAdmin.from('tracks').update({ status: 'failed', error_message: 'Generation timeout' }).eq('id', trackId);
-  if (jobId) await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: 'Generation timeout' }).eq('id', jobId);
+  // If loop finishes without success
+  const timeoutMessage = 'Generation timeout after ' + maxAttempts * 5 + ' seconds';
+  await supabaseAdmin.from('tracks').update({ status: 'failed', error_message: timeoutMessage }).eq('id', trackId);
+  if (jobId) await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: timeoutMessage }).eq('id', jobId);
   console.log('Track generation timeout:', trackId);
 };
 

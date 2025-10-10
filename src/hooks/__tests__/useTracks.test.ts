@@ -34,7 +34,7 @@ vi.mock('@/hooks/use-toast', () => ({
   }),
 }));
 
-vi.mock('@/utils/trackCache', () => ({
+vi.mock('@/features/tracks/api/trackCache', () => ({
   trackCache: {
     setTracks: vi.fn(),
     removeTrack: vi.fn(),

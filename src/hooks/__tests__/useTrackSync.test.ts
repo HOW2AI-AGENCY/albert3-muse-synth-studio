@@ -1,28 +1,42 @@
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useTrackSync } from '../useTrackSync';
 
-const toastMock = vi.fn();
-const removeChannelMock = vi.fn();
-const channelSubscribeMock = vi.fn();
-const channelOnMock = vi.fn();
-const eqFinalMock = vi.fn().mockResolvedValue({ data: [], error: null });
-const eqChain = vi.fn((column: string) => {
-  if (column === 'status') {
-    return eqFinalMock();
-  }
-  return { eq: eqChain };
-});
-const selectMock = vi.fn(() => ({ eq: eqChain }));
+const {
+  toastMock,
+  removeChannelMock,
+  selectMock,
+  channelInstances,
+  createChannelMock,
+} = vi.hoisted(() => {
+  const toastMock = vi.fn();
+  const removeChannelMock = vi.fn();
+  const eqFinalMock = vi.fn().mockResolvedValue({ data: [], error: null });
+  const eqChain = vi.fn((column: string) => {
+    if (column === 'status') {
+      return eqFinalMock();
+    }
+    return { eq: eqChain };
+  });
+  const selectMock = vi.fn(() => ({ eq: eqChain }));
+  const channelInstances: any[] = [];
+  const createChannelMock = () => {
+    const channel: any = {
+      on: vi.fn((_event, _filter, callback) => {
+        channel.__changeCallback = callback;
+        return channel;
+      }),
+      subscribe: vi.fn((statusCallback?: (status: string) => void) => {
+        channel.__statusCallback = statusCallback;
+        statusCallback?.('SUBSCRIBED');
+        return channel;
+      }),
+    };
 
-const channelMock: any = {};
-channelMock.on = channelOnMock.mockImplementation((_event, _filter, callback) => {
-  channelMock.__callback = callback;
-  return channelMock;
-});
-channelMock.subscribe = channelSubscribeMock.mockImplementation((statusCallback?: (status: string) => void) => {
-  statusCallback?.('SUBSCRIBED');
-  return channelMock;
+    return channel;
+  };
+
+  return { toastMock, removeChannelMock, selectMock, channelInstances, createChannelMock };
 });
 
 vi.mock('@/hooks/use-toast', () => ({
@@ -31,7 +45,11 @@ vi.mock('@/hooks/use-toast', () => ({
 
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
-    channel: vi.fn(() => channelMock),
+    channel: vi.fn(() => {
+      const channel = createChannelMock();
+      channelInstances.push(channel);
+      return channel;
+    }),
     removeChannel: removeChannelMock,
     from: vi.fn(() => ({ select: selectMock })),
   },
@@ -46,34 +64,66 @@ vi.mock('@/utils/logger', () => ({
 describe('useTrackSync', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    channelMock.__callback = undefined;
+    channelInstances.length = 0;
   });
 
   it('subscribes to updates and handles completion events', async () => {
     const onTrackCompleted = vi.fn();
     const onTrackFailed = vi.fn();
 
-    const { result, unmount } = renderHook(() =>
+    const { unmount } = renderHook(() =>
       useTrackSync('user-1', { onTrackCompleted, onTrackFailed })
     );
 
-    await waitFor(() => {
-      expect(channelSubscribeMock).toHaveBeenCalled();
-      expect(result.current.isSubscribed).toBe(true);
+    await act(async () => {
+      await Promise.resolve();
     });
 
+    expect(channelInstances[0]?.subscribe).toHaveBeenCalled();
+
+    const channel = channelInstances[0];
     const payload = {
       new: { id: 'track-1', status: 'completed', title: 'Track 1', error_message: null },
       old: { status: 'processing' },
     } as any;
 
     await act(async () => {
-      channelMock.__callback?.(payload);
+      channel.__changeCallback?.(payload);
     });
 
     expect(onTrackCompleted).toHaveBeenCalledWith('track-1');
 
     unmount();
-    expect(removeChannelMock).toHaveBeenCalledWith(channelMock);
+    expect(removeChannelMock).toHaveBeenCalledWith(channel);
+  });
+
+  it('retries subscription when channel errors', async () => {
+    vi.useFakeTimers();
+
+    const { unmount } = renderHook(() => useTrackSync('user-1'));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(channelInstances[0]?.subscribe).toHaveBeenCalled();
+
+    const firstChannel = channelInstances[0];
+
+    act(() => {
+      firstChannel.__statusCallback?.('CHANNEL_ERROR');
+    });
+
+    expect(removeChannelMock).toHaveBeenCalledWith(firstChannel);
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(channelInstances.length).toBeGreaterThanOrEqual(2);
+
+    unmount();
+
+    vi.useRealTimers();
   });
 });

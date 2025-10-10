@@ -1,350 +1,93 @@
 # 🚀 Roadmap Albert3 Muse Synth Studio
 
+**Последнее обновление:** 10 октября 2025 · **Версия фокуса:** 2.6.x (Stabilization & Delivery)
+
+---
+
 ## 📍 Текущая позиция
 
-**Текущий спринт**: Sprint 18 - Performance & Security (60% завершено)  
-**Следующий спринт**: Sprint 19 - UX Excellence & AI Content Quality
+- **Спринт:** Sprint 24 — Stabilization & Delivery (23.10–05.11)
+- **Состояние:** Week 0 завершается, документация синхронизирована, TypeScript ошибки исправлены, Sentry интегрирован.
+- **Ключевые инициативы:**
+  1. Playwright E2E покрытие плеера и библиотеки (TEST-001) — в работе.
+  2. ✅ Production observability с Sentry завершена (LOG-001).
+  3. AI style recommendations + Supabase migration governance (STYLE-001, DATA-001) — в работе.
 
 ```mermaid
 timeline
-    title Развитие проекта
-    section Завершено
-        Sprint 1-15 : Базовая функциональность
-                    : Аутентификация
-                    : Генерация музыки
-                    : Базовый UI
-        Sprint 16 : AI сервисы
-                  : UI/UX улучшения
-                  : Test coverage
-        Sprint 17 : WorkspaceHeader
-                  : Layout fixes
-                  : DetailPanel
-    section В процессе
-        Sprint 18 : Component Memoization ✅
-                  : Code Splitting 🔄
-                  : Security fixes 🔄
-    section Запланировано
-        Sprint 19 : 50+ Tooltips
-                  : Lyrics Editor 2.0
-                  : 70+ Music Styles
-                  : E2E Testing
-        Sprint 20+ : Mobile PWA
-                   : Real-time features
-                   : Advanced AI
+    title Дорожная карта 2025 Q4
+    section Выполнено
+        Sprint 21-22 : Performance uplift
+                      : Suno API hardening
+                      : Workspace UX refresh
+        Sprint 23 : Repo audit
+                  : Logging refactor
+                  : Playwright setup
+    section Текущий этап
+        Sprint 24 Week 0 : Docs automation ✅
+                         : TypeScript fixes ✅
+                         : Sentry integration ✅
+        Sprint 24 Week 1 : Playwright coverage 🔄
+        Sprint 24 Week 2 : Supabase governance 🔄
+        Sprint 24 Week 3 : Release 2.6.3 📅
+    section Далее
+        Sprint 25 : Real-time UX
+                  : Storybook & dark mode
+                  : Monitoring & analytics
+        Sprint 26+ : Advanced AI tooling
+                    : PWA & mobile
+                    : Collaboration features
 ```
 
 ---
 
-## 🎯 Sprint 19: UX Excellence & AI Content Quality
+## 🛠️ 2025 Q4 Focus (Sprints 24–26)
 
-### Неделя 1: Критические исправления
-**Цель**: Устранить блокирующие проблемы и добавить базовый UX
+### Sprint 24 — Stabilization & Delivery
+- Завершить Playwright сценарии плеера/библиотеки и включить их в CI.
+- Настроить Sentry (frontend + Edge Functions), алёрты и отчёты.
+- Интегрировать AI рекомендации стилей, провести UX-тесты, формализовать миграции Supabase.
+- Выпустить релиз 2.6.3, подготовить ретроспективу и метрики.
 
-- ⚡ **UX-001**: Исправление AI функций (8 часов)
-  - generate-lyrics API endpoint
-  - improve-prompt system prompt
-  - suggest-styles structured output
-  
-- 🎯 **UX-002**: Реализация Library функций (6 часов)
-  - handleLike()
-  - handleDownload()
-  - handleShare()
-  
-- 💡 **UX-003**: Система Tooltips Часть 1 (12 часов)
-  - MusicGenerator: 20 tooltips
-  - DetailPanel: 15 tooltips
-  - Player: 10 tooltips
+### Sprint 25 — Experience Expansion (предварительно)
+- Реализовать real-time уведомления и совместное редактирование (MED-005, MED-006).
+- Подготовить Storybook и тёмную тему (UI-002), стандартизировать дизайн-токены.
+- Возобновить unit-тестирование (TEST-001 Unit, TEST-004) и запустить визуальные регрессии.
+- Включить мониторинг производительности (MON-001) и расширить Sentry Performance.
 
-**Deliverables**: 3 критические функции исправлены, 45+ tooltips добавлено
-
-### Неделя 2: AI контент улучшения
-**Цель**: Значительно улучшить качество AI генерации
-
-- 📝 **AI-001**: Расширенный редактор лирики (16 часов)
-  - Вкладки: AI Генерация / Ручной ввод
-  - Языки: Русский / English
-  - Структура песни
-  - Вокальные стили
-  - Edge Function: improve-lyrics
-  
-- 🎨 **AI-002**: 70+ музыкальных стилей (14 часов)
-  - 8 категорий жанров
-  - Поиск по стилям
-  - История использования
-  - AI рекомендации
-
-**Deliverables**: Полностью переработанный lyrics editor, 70+ стилей доступны
-
-### Неделя 3: Производительность
-**Цель**: Ускорить приложение на 30-40%
-
-- 📊 **PERF-002**: Централизованное логирование (8 часов)
-  - Замена 69+ console.* на logger.*
-  - Structured logging
-  - Error tracking
-  
-- ⚡ **PERF-003**: Мемоизация компонентов (10 часов)
-  - TrackCard, TrackListItem
-  - MiniPlayer, PlayerQueue
-  
-- 🔧 **PERF-004**: Оптимизация API (6 часов)
-  - Exponential backoff
-  - Database indexes
-  - Query optimization
-
-**Deliverables**: FCP < 0.8s, 0 console.* в production, 60%+ меньше re-renders
-
-### Неделя 4: Технический долг и тестирование
-**Цель**: Снизить технический долг и повысить надежность
-
-- 🔧 **TECH-001**: useTrackOperations хук (8 часов)
-  - Централизация логики треков
-  - 60% меньше дублирования
-  
-- 🧪 **TEST-001**: E2E тестирование (12 часов)
-  - Playwright setup
-  - 5 критических flows
-  - CI/CD интеграция
-  
-- 🔍 **AUDIT-001**: Suno API аудит (4 часов)
-  - Проверка endpoints
-  - Обновление типов
-  - Документация
-
-**Deliverables**: Test coverage > 70%, useTrackOperations везде, актуальная документация
+### Sprint 26 — Collaboration & Distribution (черновик)
+- Выпустить публичные профили и социальные шеринги треков.
+- Реализовать экспорт в внешние сервисы (Spotify/Apple Music).
+- Добавить расширенный аналитический дашборд и автоматическую категоризацию треков.
+- Подготовить бета PWA и оффлайн-режим для мобильных устройств.
 
 ---
 
-## 🚀 Sprint 20: Mobile PWA & Real-time
+## 📦 Долгосрочные инициативы (H1 2026)
 
-### Основные задачи
-
-**PWA Capabilities:**
-- 📱 Install prompt для iOS/Android
-- 💾 Offline mode с Service Worker
-- 🔔 Push notifications
-- 📲 Add to Home Screen
-
-**Real-time Features:**
-- ⚡ WebSocket для real-time collaboration
-- 👥 Live collaborative editing
-- 🔄 Real-time track status updates
-- 💬 Live chat для collaboration
-
-**Mobile Optimization:**
-- 📱 Touch gestures enhancement
-- 🎨 Mobile-first UI refinements
-- ⚡ Performance для слабых устройств
-- 📶 Offline-first architecture
-
-**Playlist Management:**
-- 📂 Создание плейлистов
-- 🔄 Drag & drop треков
-- 🔀 Shuffle/Repeat для плейлистов
-- 📊 Playlist analytics
-
-**Целевые метрики:**
-- PWA install rate: >30%
-- Offline usage: >15%
-- Mobile performance score: >85
-- Real-time latency: <100ms
+| Направление | Инициативы |
+|-------------|------------|
+| **AI & Content** | Voice cloning, MIDI export, расширенные AI пресеты, мультиязычные лирики |
+| **Collaboration** | Совместное редактирование проектов, live-комментарии, workflow approvals |
+| **Distribution** | Интеграции с DSP, лицензирование, платёжные шлюзы |
+| **Pro Tools** | Расширенный плеер (стемы, эффекты), плагины VST/AU, модуль мастеринга |
+| **Operations** | Self-service onboarding, billing, расширенные отчёты, SLA мониторинг |
 
 ---
 
-## 🌟 Sprint 21: Advanced AI Features
+## 🧭 Контрольные точки
 
-### AI Voice Cloning
-- 🎤 Клонирование голоса пользователя
-- 🎵 Применение к сгенерированным трекам
-- 🔊 Voice samples management
-- 🎚️ Voice modulation controls
-
-### MIDI Export
-- 🎹 Экспорт треков в MIDI
-- 🎼 Multi-track MIDI support
-- 🎛️ Instrument mapping
-- 📝 MIDI editing interface
-
-### VST Integration
-- 🔌 VST plugin support
-- 🎛️ Effect chain builder
-- 🎚️ Real-time audio processing
-- 💾 Preset management
-
-### Advanced Audio Effects
-- 🎚️ Equalizer (10-band)
-- 🔊 Compressor/Limiter
-- 🌊 Reverb/Delay effects
-- 🎵 Pitch correction
-- 🎤 Vocal enhancement
-
-**Целевые метрики:**
-- Voice cloning accuracy: >90%
-- MIDI export success rate: 100%
-- VST compatibility: Top 50 plugins
-- Effect processing latency: <10ms
+1. **Release 2.6.3 (05.11.2025):** Playwright ≥80% критических flow, Sentry alerts активны, AI пресеты готовы.
+2. **Sprint 25 mid-review:** Storybook и dark mode в бете, WebSocket уведомления покрывают основные события.
+3. **Release 2.7.0 (план):** Mobile-first улучшения, мониторинг, unit/visual regression >80% покрытие.
+4. **2026 Q1 Goal:** Collaboration toolkit (live editing, комментарии) + distribution pipelines.
 
 ---
 
-## 👥 Sprint 22: Social & Community
+## 📋 Синхронизация и отчётность
 
-### Social Features
-- 💬 Система комментариев
-- 👍 Advanced like/reaction system
-- 🔄 Репосты и sharing
-- 📊 Social analytics
+- Обновлять `docs/DEVELOPMENT_PLAN.md`, `project-management/TECHNICAL_DEBT_PLAN.md` и `tasks/TASKS_STATUS.md` после каждой вехи.
+- Публиковать еженедельные журналы в `project-management/reports/sprint-logs.md`.
+- Хранить UX/AI отчёты в `project-management/reports` и ссылаться из README/Index.
+- Проверять `npm run docs:validate` перед релизами и обновлениями roadmap.
 
-### User Profiles
-- 👤 Публичные профили пользователей
-- 🎵 Showcase треков
-- 📈 User statistics
-- 🏆 Achievements и badges
-
-### Community Features
-- 👥 Follow/Followers system
-- 📢 Activity feed
-- 🏅 Trending tracks
-- 🎯 Genre-based communities
-
-### Collaboration
-- 👥 Co-authoring треков
-- 💬 In-app messaging
-- 📁 Shared projects
-- 🔄 Version control для collaboration
-
-**Целевые метрики:**
-- Daily active users: +50%
-- Engagement rate: >40%
-- Shares per track: >5
-- Community retention: >60%
-
----
-
-## 🎯 Long-term Vision (Sprints 23-30)
-
-### Desktop Application
-```mermaid
-graph LR
-    WebApp[Web App] --> Electron[Electron Wrapper]
-    Electron --> Windows[Windows App]
-    Electron --> MacOS[macOS App]
-    Electron --> Linux[Linux App]
-    
-    Electron --> NativeFeatures[Native Features]
-    NativeFeatures --> FileSystem[File System Access]
-    NativeFeatures --> Shortcuts[Global Shortcuts]
-    NativeFeatures --> Tray[System Tray]
-```
-
-**Features:**
-- 🖥️ Native desktop app (Electron)
-- 📁 Local file system access
-- ⌨️ Global keyboard shortcuts
-- 🔔 Native notifications
-- 🎚️ System tray integration
-
-### Mobile Apps
-```mermaid
-graph TB
-    ReactNative[React Native] --> iOS[iOS App]
-    ReactNative --> Android[Android App]
-    
-    iOS --> AppStore[App Store]
-    Android --> PlayStore[Google Play]
-    
-    ReactNative --> SharedCode[Shared Codebase<br/>with Web]
-```
-
-**Features:**
-- 📱 Native iOS/Android apps (React Native)
-- 🎤 Native audio recording
-- 📲 Deep linking
-- 💾 Offline-first storage
-- 🔔 Rich push notifications
-
-### DAW Integration
-- 🎛️ Плагины для Ableton/FL Studio/Logic
-- 🔄 Direct export to DAW
-- 🎹 MIDI routing
-- 🎚️ Parameter automation
-- 🔌 ReWire protocol support
-
-### AI Marketplace
-- 🤖 Custom AI models marketplace
-- 💰 Monetization для создателей моделей
-- 🎯 Specialized genre models
-- 🎨 Style transfer models
-- 🔊 Audio enhancement models
-
-### Advanced Analytics
-- 📊 Comprehensive analytics dashboard
-- 🎯 Audience insights
-- 💰 Earnings tracking (если monetization)
-- 📈 Growth metrics
-- 🎵 Music trends analysis
-
----
-
-## 📈 Roadmap Metrics
-
-### Успех каждого спринта измеряется:
-
-**User Experience:**
-- User satisfaction score
-- Feature adoption rate
-- User retention
-- Session duration
-
-**Technical Quality:**
-- Performance metrics (FCP, TTI)
-- Test coverage
-- Bug count
-- Technical debt reduction
-
-**Business Metrics:**
-- Active users growth
-- Feature usage
-- Community engagement
-- Platform stability
-
----
-
-## 🎯 Milestone Timeline
-
-```mermaid
-gantt
-    title Основные вехи развития
-    dateFormat YYYY-MM-DD
-    section Foundation
-    Базовая функциональность     :done, 2024-01-01, 2024-06-30
-    AI интеграция               :done, 2024-07-01, 2024-09-30
-    section Optimization
-    Performance Sprint 18       :active, 2024-10-01, 2024-10-15
-    UX Excellence Sprint 19     :2024-10-16, 2024-11-15
-    section Expansion
-    Mobile PWA Sprint 20        :2024-11-16, 2024-12-15
-    Advanced AI Sprint 21       :2024-12-16, 2025-01-15
-    section Community
-    Social Features Sprint 22   :2025-01-16, 2025-02-15
-    Desktop App                 :2025-02-16, 2025-04-15
-    section Future
-    Mobile Apps                 :2025-04-16, 2025-06-15
-    AI Marketplace              :2025-06-16, 2025-08-15
-```
-
----
-
-## 🌟 Vision Statement
-
-**К концу 2025 года Albert3 Muse Synth Studio станет:**
-
-1. **Лидирующей платформой** для AI-генерации музыки
-2. **Полноценной экосистемой** с web, desktop и mobile apps
-3. **Сообществом музыкантов** с >100K активных пользователей
-4. **Интегрированным решением** для DAW и производства музыки
-5. **Marketplace платформой** для AI моделей и пресетов
-
----
-
-*Обновлено: Sprint 18*  
-*Roadmap регулярно пересматривается и обновляется*

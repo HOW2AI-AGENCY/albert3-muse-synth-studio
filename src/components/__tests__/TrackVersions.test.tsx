@@ -1,10 +1,10 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RefObject } from 'react';
 import type { AudioPlayerTrack } from '@/types/track';
 
-import { TrackVersions } from '../tracks/TrackVersions';
+import { TrackVersions } from '@/features/tracks';
 
 const audioPlayerMocks = vi.hoisted(() => ({
   useAudioPlayerMock: vi.fn(),
@@ -54,7 +54,7 @@ const supabaseMocks = vi.hoisted(() => {
     deleteEq: vi.fn(),
     update: vi.fn(() => ({ eq: obj.updateEq } as const)),
     delete: vi.fn(() => ({ eq: obj.deleteEq } as const)),
-    from: vi.fn((table: string) => ({ update: obj.update, delete: obj.delete })),
+    from: vi.fn(() => ({ update: obj.update, delete: obj.delete })),
   };
   return obj;
 });
@@ -150,10 +150,9 @@ describe('TrackVersions component', () => {
     await user.click(toggleButton);
 
     const versionCard = await screen.findByText('Версия 1');
-    const cardRoot = versionCard.closest('.flex');
-    expect(cardRoot).not.toBeNull();
+    expect(versionCard).toBeInTheDocument();
 
-    const playButton = within(cardRoot!.parentElement!.parentElement!).getAllByRole('button')[0];
+    const playButton = screen.getByRole('button', { name: 'Воспроизвести версию 1' });
     await user.click(playButton);
 
     expect(audioPlayerMocks.playTrack).toHaveBeenCalledWith(expect.objectContaining({ id: 'track-alt' }));
@@ -168,9 +167,8 @@ describe('TrackVersions component', () => {
     const toggleButton = screen.getAllByRole('button')[0];
     await user.click(toggleButton);
 
-    const versionCard = await screen.findByText('Версия 1');
-    const containerNode = versionCard.closest('div');
-    const masterButton = within(containerNode!.parentElement!.parentElement!).getByRole('button', { name: /Сделать главной|Главная/ });
+    await screen.findByText('Версия 1');
+    const masterButton = screen.getByRole('button', { name: 'Сделать версию 1 главной' });
     await user.click(masterButton);
 
     expect(supabaseMocks.update).toHaveBeenCalled();
@@ -216,9 +214,8 @@ describe('TrackVersions component', () => {
     const toggleButton = screen.getAllByRole('button')[0];
     await user.click(toggleButton);
 
-    const versionCard = await screen.findByText('Версия 2');
-    const cardRoot = versionCard.closest('div');
-    const deleteButton = within(cardRoot!.parentElement!.parentElement!).getAllByRole('button').pop();
+    await screen.findByText('Версия 2');
+    const deleteButton = screen.getByRole('button', { name: 'Удалить версию 2' });
     await user.click(deleteButton!);
 
     expect(await screen.findByText('Удалить версию?')).toBeInTheDocument();

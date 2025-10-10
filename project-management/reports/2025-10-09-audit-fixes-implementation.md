@@ -346,9 +346,9 @@ if (error.message.includes('SUNO_API_KEY not configured')) {
 
 ## 🔗 СВЯЗАННЫЕ ДОКУМЕНТЫ
 
-- [Архитектура проекта](../docs/ARCHITECTURE.md)
-- [Интеграция с Suno API](../docs/integrations/SUNO_API_AUDIT.md)
-- [Руководство по устранению неполадок](../docs/TROUBLESHOOTING_TRACKS.md)
+- [Архитектура проекта](../../docs/ARCHITECTURE.md)
+- [Интеграция с Suno API](../../docs/integrations/SUNO_API_AUDIT.md)
+- [Руководство по устранению неполадок](../../docs/TROUBLESHOOTING_TRACKS.md)
 
 ---
 

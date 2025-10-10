@@ -1,5 +1,5 @@
 import React, { useMemo, useCallback, memo } from 'react';
-import { TrackListItem } from './tracks/TrackListItem';
+import { TrackListItem } from '@/features/tracks';
 import { OptimizedTrack } from '../types/track';
 
 interface OptimizedTrackListProps {

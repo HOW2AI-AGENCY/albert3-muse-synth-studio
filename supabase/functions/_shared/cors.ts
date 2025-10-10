@@ -17,14 +17,83 @@ const parseAllowedOrigins = (): string[] => {
 
 const ALLOWED_ORIGINS = parseAllowedOrigins();
 
+const wildcardToRegExp = (pattern: string): RegExp => {
+  const escaped = pattern
+    .replaceAll('.', '\\.')
+    .replaceAll('-', '\\-')
+    .replaceAll('*', '.*');
+
+  return new RegExp(`^${escaped}$`);
+};
+
+const getEffectivePort = (url: URL): string => {
+  if (url.port) {
+    return url.port;
+  }
+
+  switch (url.protocol) {
+    case 'http:':
+      return '80';
+    case 'https:':
+      return '443';
+    default:
+      return '';
+  }
+};
+
+const isSubdomainMatch = (requestedOrigin: string, allowedOrigin: string): boolean => {
+  try {
+    const requestedUrl = new URL(requestedOrigin);
+    const allowedUrl = new URL(allowedOrigin);
+
+    if (requestedUrl.protocol !== allowedUrl.protocol) {
+      return false;
+    }
+
+    const requestedHostname = requestedUrl.hostname;
+    const allowedHostname = allowedUrl.hostname;
+    const requestedPort = getEffectivePort(requestedUrl);
+    const allowedPort = getEffectivePort(allowedUrl);
+
+    if (requestedHostname === allowedHostname && requestedPort === allowedPort) {
+      return true;
+    }
+
+    if (requestedPort !== allowedPort) {
+      return false;
+    }
+
+    return requestedHostname.endsWith(`.${allowedHostname}`);
+  } catch {
+    return false;
+  }
+};
+
 const resolveAllowedOrigin = (requestOrOrigin?: Request | string | null): string => {
   const requestedOrigin = typeof requestOrOrigin === 'string'
     ? requestOrOrigin
     : requestOrOrigin?.headers?.get?.('Origin') ?? '';
 
   if (requestedOrigin && requestedOrigin !== 'null') {
-    if (ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(requestedOrigin)) {
-      return requestedOrigin;
+    for (const origin of ALLOWED_ORIGINS) {
+      if (origin === '*') {
+        return requestedOrigin;
+      }
+
+      if (origin === requestedOrigin) {
+        return requestedOrigin;
+      }
+
+      if (origin.includes('*')) {
+        const regex = wildcardToRegExp(origin);
+        if (regex.test(requestedOrigin)) {
+          return requestedOrigin;
+        }
+      }
+
+      if (isSubdomainMatch(requestedOrigin, origin)) {
+        return requestedOrigin;
+      }
     }
   }
 
@@ -50,11 +119,11 @@ export const createCorsHeaders = (requestOrOrigin?: Request | string | null) => 
     'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-app-environment',
     'Access-Control-Max-Age': '86400',
-    'Access-Control-Allow-Credentials': 'true',
   };
 
   if (allowOrigin !== '*') {
     headers['Vary'] = 'Origin';
+    headers['Access-Control-Allow-Credentials'] = 'true';
   }
 
   return headers;

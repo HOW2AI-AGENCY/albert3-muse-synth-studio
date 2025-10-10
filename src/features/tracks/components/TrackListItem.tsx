@@ -15,9 +15,9 @@ import {
 } from 'lucide-react';
 import { useAudioPlayerSafe } from '@/hooks/useAudioPlayer';
 import { useToast } from '@/hooks/use-toast';
-import { useTrackLike } from '@/hooks/useTrackLike';
+import { useTrackLike } from '@/features/tracks/hooks';
 import { cn } from '@/lib/utils';
-import { DisplayTrack, convertToAudioPlayerTrack } from '../../types/track';
+import { DisplayTrack, convertToAudioPlayerTrack } from '@/types/track';
 
 interface TrackListItemProps {
   track: DisplayTrack;

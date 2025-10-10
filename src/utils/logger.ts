@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/react";
+
 /**
  * Централизованный логгер для Albert3 Muse Synth Studio
  * Обеспечивает единообразное логирование ошибок, предупреждений и информации
@@ -9,6 +11,23 @@ export enum LogLevel {
   INFO = 'info',
   DEBUG = 'debug'
 }
+
+const enableSentryInDevelopment = import.meta.env?.VITE_SENTRY_ENABLE_IN_DEV === "true";
+
+const hasSentryClient = (): boolean => {
+  try {
+    return Boolean(Sentry.getClient());
+  } catch (_error) {
+    return false;
+  }
+};
+
+const breadcrumbLevelMap: Record<LogLevel, Sentry.SeverityLevel> = {
+  [LogLevel.ERROR]: "error",
+  [LogLevel.WARN]: "warning",
+  [LogLevel.INFO]: "info",
+  [LogLevel.DEBUG]: "debug",
+};
 
 interface LogEntry {
   level: LogLevel;
@@ -85,6 +104,9 @@ class Logger {
     // Выводим в консоль
     this.consoleLog(logEntry);
 
+    // Добавляем хлебные крошки Sentry для более полного контекста
+    this.addSentryBreadcrumb(logEntry);
+
     // Отправляем в Sentry при необходимости
     this.captureWithSentry(logEntry);
 
@@ -120,14 +142,21 @@ class Logger {
   }
 
   private captureWithSentry(entry: LogEntry) {
-    if (this.isDevelopment || entry.level !== LogLevel.ERROR || !this.isBrowser) {
+    if (!this.isBrowser) {
       return;
     }
 
-    if (!isSentryEnabled) {
+    if (entry.level !== LogLevel.ERROR) {
       return;
     }
 
+    if (this.isDevelopment && !enableSentryInDevelopment) {
+      return;
+    }
+
+    if (!hasSentryClient()) {
+      return;
+    }
     const maskedData = this.maskSensitiveData(entry.data);
 
     Sentry.captureException(entry.error ?? new Error(entry.message), (scope) => {
@@ -142,6 +171,30 @@ class Logger {
         scope.setExtras(maskedData);
       }
       return scope;
+    });
+  }
+
+  private addSentryBreadcrumb(entry: LogEntry) {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    if (this.isDevelopment && !enableSentryInDevelopment) {
+      return;
+    }
+
+    if (!hasSentryClient()) {
+      return;
+    }
+
+    const maskedData = this.maskSensitiveData(entry.data);
+
+    Sentry.addBreadcrumb({
+      level: breadcrumbLevelMap[entry.level] ?? "info",
+      category: entry.context ?? "logger",
+      message: entry.message,
+      data: maskedData,
+      timestamp: Math.floor(entry.timestamp.getTime() / 1000),
     });
   }
 
@@ -318,8 +371,4 @@ export const logInfo = (message: string, context?: string, data?: Record<string,
 
 export const logDebug = (message: string, context?: string, data?: Record<string, unknown>) =>
   logger.debug(message, context, data);
-
-import * as Sentry from "@sentry/react";
-
-const isSentryEnabled = false; // Sentry disabled in edge functions
 

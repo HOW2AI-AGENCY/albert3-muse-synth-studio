@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { DetailPanelContent } from "./DetailPanelContent";
+import { DetailPanelContent } from "@/components/workspace/DetailPanelContent";
 import { TrackDeleteDialog } from "@/components/tracks/TrackDeleteDialog";
 import { ApiService } from "@/services/api.service";
+import { logError } from "@/utils/logger";
+import { getTrackWithVersions } from "../api/trackVersions";
+import { primeTrackVersionsCache } from "../hooks/useTrackVersions";
 
 interface TrackVersion {
   id: string;
@@ -18,7 +21,8 @@ interface TrackVersion {
   cover_url?: string;
   lyrics?: string;
   duration?: number;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, unknown> | null;
+  created_at?: string;
 }
 
 interface TrackStem {
@@ -26,6 +30,8 @@ interface TrackStem {
   stem_type: string;
   audio_url: string;
   separation_mode: string;
+  version_id?: string | null;
+  created_at?: string;
 }
 
 interface DetailPanelProps {
@@ -168,29 +174,31 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
 
   const loadVersionsAndStems = useCallback(async () => {
     try {
-      // Load versions
-      const { data: versionsData } = await supabase
-        .from('track_versions')
-        .select('*')
-        .eq('parent_track_id', track.id)
-        .order('version_number');
-      
-      if (versionsData) {
-        dispatch({ 
-          type: 'SET_VERSIONS', 
-          value: versionsData
-            .filter(v => v.suno_id && v.audio_url)
-            .map(v => ({
-              ...v,
-              is_master: v.is_master ?? false,
-              suno_id: v.suno_id!,
-              audio_url: v.audio_url!,
-              video_url: v.video_url ?? undefined,
-              cover_url: v.cover_url ?? undefined,
-              lyrics: v.lyrics ?? undefined,
-              duration: v.duration ?? undefined,
-              metadata: v.metadata as Record<string, unknown>
-            }))
+      const versions = await getTrackWithVersions(track.id);
+      primeTrackVersionsCache(track.id, versions);
+
+      if (versions) {
+        const mappedVersions = versions
+          .filter(version => Boolean(version.audio_url))
+          .map(version => ({
+            id: version.id,
+            version_number: version.versionNumber,
+            source_version_number: version.sourceVersionNumber,
+            is_master: Boolean(version.isMasterVersion),
+            is_original: version.isOriginal,
+            suno_id: version.suno_id ?? track.suno_id ?? "",
+            audio_url: version.audio_url!,
+            video_url: version.video_url ?? undefined,
+            cover_url: version.cover_url ?? undefined,
+            lyrics: version.lyrics ?? undefined,
+            duration: version.duration ?? undefined,
+            metadata: (version.metadata as Record<string, unknown>) ?? null,
+            created_at: version.created_at ?? undefined,
+          }));
+
+        dispatch({
+          type: 'SET_VERSIONS',
+          value: mappedVersions,
         });
       }
 
@@ -201,10 +209,19 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
         .eq('track_id', track.id);
       
       if (stemsData) {
-        dispatch({ type: 'SET_STEMS', value: stemsData });
+        dispatch({
+          type: 'SET_STEMS',
+          value: stemsData.map(stem => ({
+            ...stem,
+            version_id: 'version_id' in stem ? (stem as { version_id?: string | null }).version_id ?? null : undefined,
+            created_at: 'created_at' in stem ? (stem as { created_at?: string }).created_at ?? undefined : undefined,
+          })),
+        });
       }
     } catch (error) {
-      console.error('Error loading versions and stems:', error);
+      logError('Error loading versions and stems', error as Error, 'TrackDetailPanel', {
+        trackId: track.id,
+      });
       toast({
         title: "Ошибка",
         description: "Не удалось загрузить данные трека",
@@ -297,12 +314,16 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
   }, []);
 
   return (
-    <div className="h-full flex flex-col bg-card border-l border-border" role="complementary" aria-label="Панель деталей трека">
+    <div
+      className="h-full flex flex-col bg-card border-l border-border w-full max-w-full sm:max-w-md lg:max-w-xl xl:max-w-2xl"
+      role="complementary"
+      aria-label="Панель деталей трека"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-10">
+      <div className="flex flex-wrap items-start gap-3 justify-between p-3 sm:p-4 border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <Badge 
-            variant={track.status === "completed" ? "default" : "secondary"} 
+          <Badge
+            variant={track.status === "completed" ? "default" : "secondary"}
             className="text-xs shrink-0"
           >
             {track.status === "completed" ? "✅ Готов" : "⏳ В процессе"}

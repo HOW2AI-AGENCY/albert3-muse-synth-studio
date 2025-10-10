@@ -1,19 +1,13 @@
 import { Search, Coins } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { NotificationsDropdown } from "./NotificationsDropdown";
 import { UserProfileDropdown } from "./UserProfileDropdown";
 import { Button } from "@/components/ui/button";
 import { useProviderBalance } from "@/hooks/useProviderBalance";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface WorkspaceHeaderProps {
   className?: string;
@@ -32,77 +26,50 @@ const WorkspaceHeader = ({ className }: WorkspaceHeaderProps) => {
   return (
     <header
       className={cn(
-        "h-16 border-b border-border/30 bg-background/90 backdrop-blur-2xl flex items-center justify-between px-4 sm:px-6 lg:px-8 shadow-lg",
+        "flex h-16 items-center justify-between border-b border-border/60 bg-background/95 px-4 sm:px-6 lg:px-8 backdrop-blur",
         className
       )}
     >
-      {/* Left Section - Search */}
-      <div className="flex items-center gap-4 flex-1 max-w-2xl">
-        <div className="relative w-full hidden sm:block group">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground/70 group-hover:text-primary/70 transition-colors duration-300" />
+      <div className="flex flex-1 items-center gap-3">
+        <div className="relative hidden w-full max-w-md sm:block">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
           <Input
-            placeholder="Поиск треков, исполнителей..."
-            className="pl-10 h-10 bg-background/50 border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all duration-300 rounded-xl hover:bg-background/70"
+            placeholder="Поиск треков и исполнителей"
+            className="h-10 w-full rounded-md border border-border/60 bg-background pl-9"
           />
         </div>
       </div>
 
-      {/* Right Section - Actions */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Mobile Search */}
         <Button
           variant="ghost"
-          size="sm"
-          className="sm:hidden w-10 h-10 p-0 hover:bg-accent/10 rounded-xl transition-all duration-300"
+          size="icon"
+          className="sm:hidden"
+          aria-label="Открыть поиск"
         >
-          <Search className="w-5 h-5" />
+          <Search className="h-5 w-5" />
         </Button>
 
-        {/* Credits Display */}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-2 px-3 py-2 bg-accent/10 rounded-xl border border-border/50 hover:bg-accent/20 transition-all duration-300">
-                <Coins className="w-4 h-4 text-primary" />
-                {balanceLoading ? (
-                  <Skeleton className="h-4 w-12" />
-                ) : (
-                  <span className="text-sm font-semibold text-foreground">
-                    {balance?.balance ?? 0}
-                  </span>
-                )}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <div className="space-y-1">
-                <p className="font-semibold">Баланс провайдера: {balance?.provider}</p>
-                <p className="text-xs">Кредитов: {balance?.balance ?? 0}</p>
-                {balance?.plan && <p className="text-xs">План: {balance.plan}</p>}
-                {balance?.monthly_limit && (
-                  <p className="text-xs">Лимит: {balance.monthly_usage ?? 0}/{balance.monthly_limit}</p>
-                )}
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <div className="flex items-center gap-2 rounded-md border border-border/60 bg-card px-3 py-1.5 text-sm">
+          <Coins className="h-4 w-4 text-primary" aria-hidden="true" />
+          {balanceLoading ? (
+            <Skeleton className="h-4 w-10" />
+          ) : (
+            <span className="font-medium">{balance?.balance ?? 0}</span>
+          )}
+        </div>
 
-        {/* Notifications Dropdown */}
         <NotificationsDropdown />
 
-        {/* User Profile - Desktop Info + Dropdown */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="hidden md:flex flex-col items-end min-w-0 max-w-[180px]">
-            <p className="text-sm font-semibold text-foreground truncate w-full">
+        <div className="flex items-center gap-2">
+          <div className="hidden min-w-0 flex-col items-end md:flex">
+            <span className="truncate text-sm font-medium">
               {userEmail.split("@")[0] || "Пользователь"}
-            </p>
-            <p
-              className="text-xs text-muted-foreground truncate w-full overflow-hidden text-ellipsis"
-              title={userEmail}
-            >
+            </span>
+            <span className="truncate text-xs text-muted-foreground" title={userEmail}>
               {userEmail}
-            </p>
+            </span>
           </div>
-          
           <UserProfileDropdown userEmail={userEmail} />
         </div>
       </div>

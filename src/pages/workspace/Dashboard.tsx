@@ -1,12 +1,18 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Music, Library, Settings, Sparkles, TrendingUp } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useMemo } from "react";
-import { TrackCard } from "@/components/TrackCard";
+import { useNavigate } from "react-router-dom";
+import { Music, Library, Settings, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TrackCard } from "@/features/tracks";
 import { useToast } from "@/hooks/use-toast";
 import { normalizeTracks } from "@/utils/trackNormalizer";
 import { useDashboardData, DEFAULT_DASHBOARD_STATS } from "@/hooks/useDashboardData";
+import { AnalyticsService } from "@/services/analytics.service";
+import { PageContainer } from "@/components/layout/PageContainer";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageSection } from "@/components/layout/PageSection";
+import { StatCard } from "@/components/layout/StatCard";
+import { ActionTile } from "@/components/layout/ActionTile";
+import { EmptyState } from "@/components/layout/EmptyState";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -14,6 +20,20 @@ const Dashboard = () => {
   const { data, isLoading, error } = useDashboardData();
   const stats = data?.stats ?? DEFAULT_DASHBOARD_STATS;
   const publicTracks = useMemo(() => normalizeTracks(data?.publicTracks ?? []), [data?.publicTracks]);
+
+  useEffect(() => {
+    if (!publicTracks.length) {
+      return;
+    }
+
+    publicTracks.forEach((track) => {
+      if (track.id) {
+        AnalyticsService.recordView(track.id).catch((error) => {
+          console.error('Failed to record dashboard track view', error);
+        });
+      }
+    });
+  }, [publicTracks]);
 
   useEffect(() => {
     if (!error) {
@@ -34,160 +54,78 @@ const Dashboard = () => {
   const handleShowAllTracks = useCallback(() => navigate("/workspace/library"), [navigate]);
 
   return (
-    <div className="p-4 md:p-6 space-y-8 animate-fade-in">
-      {/* Welcome Section */}
-      <div className="text-center space-y-4 animate-slide-up">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 animate-float">
-          <Music className="w-8 h-8 text-primary" />
-        </div>
-        <h1 className="text-4xl font-bold text-gradient-primary">
-          Добро пожаловать в MusicAI Pro
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Создавайте невероятную музыку с помощью искусственного интеллекта
-        </p>
-      </div>
+    <PageContainer>
+      <div className="space-y-8">
+        <PageHeader
+          title="Добро пожаловать"
+          description="Создавайте музыку, управляйте проектами и отслеживайте прогресс"
+          icon={Music}
+        />
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-scale-in">
-        <Card variant="modern" className="text-center">
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-primary">{stats.total}</div>
-            <div className="text-sm text-muted-foreground">Всего треков</div>
-          </CardContent>
-        </Card>
-        
-        <Card variant="modern" className="text-center">
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-secondary">{stats.processing}</div>
-            <div className="text-sm text-muted-foreground">В обработке</div>
-          </CardContent>
-        </Card>
-        
-        <Card variant="modern" className="text-center">
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-accent">{stats.completed}</div>
-            <div className="text-sm text-muted-foreground">Завершено</div>
-          </CardContent>
-        </Card>
-        
-        <Card variant="modern" className="text-center">
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-gradient-secondary">{stats.public}</div>
-            <div className="text-sm text-muted-foreground">Публичных</div>
-          </CardContent>
-        </Card>
-      </div>
+        <section>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard label="Всего треков" value={stats.total} />
+            <StatCard label="В обработке" value={stats.processing} />
+            <StatCard label="Завершено" value={stats.completed} />
+            <StatCard label="Публичных" value={stats.public} />
+          </div>
+        </section>
 
-      {/* Quick Actions */}
-      <div className="grid md:grid-cols-3 gap-6">
-        <Card 
-          variant="interactive"
-          className="cursor-pointer hover:border-primary/50 transition-all hover-lift animate-scale-in"
-          onClick={handleGenerateClick}
-          style={{ animationDelay: '0.1s' }}
-        >
-          <CardHeader>
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mb-2 animate-pulse-glow">
-              <Sparkles className="w-6 h-6 text-primary" />
-            </div>
-            <CardTitle className="text-gradient-primary">Создать трек</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-sm mb-4">
-              Сгенерируйте новую композицию с помощью AI
-            </p>
-            <Button variant="hero" className="w-full">
-              Перейти
-            </Button>
-          </CardContent>
-        </Card>
+        <section>
+          <div className="grid gap-4 md:grid-cols-3">
+            <ActionTile
+              title="Создать трек"
+              description="Сгенерируйте новую композицию при помощи AI"
+              icon={Sparkles}
+              actionLabel="Открыть генератор"
+              onClick={handleGenerateClick}
+            />
+            <ActionTile
+              title="Ваша библиотека"
+              description="Послушайте и управляйте всеми сохранёнными треками"
+              icon={Library}
+              actionLabel="Перейти к библиотеке"
+              onClick={handleLibraryClick}
+            />
+            <ActionTile
+              title="Настройки аккаунта"
+              description="Обновите профиль и параметры рабочей области"
+              icon={Settings}
+              actionLabel="Открыть настройки"
+              onClick={handleSettingsClick}
+            />
+          </div>
+        </section>
 
-        <Card 
-          variant="interactive"
-          className="cursor-pointer hover:border-secondary/50 transition-all hover-lift animate-scale-in"
-          onClick={handleLibraryClick}
-          style={{ animationDelay: '0.2s' }}
-        >
-          <CardHeader>
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-secondary/20 to-secondary/10 flex items-center justify-center mb-2">
-              <Library className="w-6 h-6 text-secondary" />
-            </div>
-            <CardTitle className="text-gradient-secondary">Библиотека</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-sm mb-4">
-              Просмотрите все ваши треки
-            </p>
-            <Button variant="glow" className="w-full">
-              Перейти
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card 
-          variant="interactive"
-          className="cursor-pointer hover:border-accent/50 transition-all hover-lift animate-scale-in"
-          onClick={handleSettingsClick}
-          style={{ animationDelay: '0.3s' }}
-        >
-          <CardHeader>
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent/20 to-accent/10 flex items-center justify-center mb-2">
-              <Settings className="w-6 h-6 text-accent" />
-            </div>
-            <CardTitle>Настройки</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-sm mb-4">
-              Управляйте вашим аккаунтом
-            </p>
-            <Button variant="modern" className="w-full">
-              Перейти
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Public Tracks Feed */}
-      <Card variant="glass" className="animate-slide-up" style={{ animationDelay: '0.4s' }}>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-primary animate-pulse" />
-              <span className="text-shimmer">Популярные треки</span>
-            </CardTitle>
-            <Button variant="ghost" size="sm" className="hover:text-primary" onClick={handleShowAllTracks}>
+        <PageSection
+          title="Популярные треки"
+          description="Последние публичные релизы сообщества"
+          action={
+            <Button variant="outline" size="sm" onClick={handleShowAllTracks}>
               Показать все
             </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
+          }
+        >
           {isLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="text-muted-foreground mt-2">Загружаем треки...</p>
+            <div className="flex h-40 items-center justify-center">
+              <span className="text-sm text-muted-foreground">Загружаем треки...</span>
             </div>
           ) : publicTracks.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {publicTracks.map((track, index) => (
-                <div
-                  key={track.id}
-                  className="animate-scale-in"
-                  style={{ animationDelay: `${0.5 + index * 0.1}s` }}
-                >
-                  <TrackCard track={track} />
-                </div>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {publicTracks.map((track) => (
+                <TrackCard key={track.id} track={track} />
               ))}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <Music className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <p className="text-muted-foreground">Пока нет публичных треков</p>
-            </div>
+            <EmptyState
+              title="Пока нет публичных треков"
+              description="Поделитесь своим первым релизом, чтобы он появился здесь"
+              icon={<Music className="h-10 w-10" />}
+            />
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </PageSection>
+      </div>
+    </PageContainer>
   );
 };
 

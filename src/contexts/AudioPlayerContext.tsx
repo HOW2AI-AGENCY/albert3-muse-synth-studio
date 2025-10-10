@@ -4,7 +4,21 @@ import { logError, logInfo } from '@/utils/logger';
 import { cacheAudioFile } from '../utils/serviceWorker';
 import { AudioPlayerTrack } from '@/types/track';
 import { useToast } from '@/hooks/use-toast';
-import { getTrackWithVersions, TrackWithVersions } from '@/utils/trackVersions';
+import { getTrackWithVersions, TrackWithVersions } from '@/features/tracks';
+
+const AUDIO_EXTENSIONS = ['.mp3', '.wav', '.m4a', '.aac', '.flac', '.ogg', '.opus', '.webm'] as const;
+
+export const hasKnownAudioExtension = (url: string): boolean => {
+  try {
+    const parsedUrl = new URL(url);
+    const pathname = parsedUrl.pathname.toLowerCase();
+    return AUDIO_EXTENSIONS.some(extension => pathname.endsWith(extension));
+  } catch {
+    const sanitized = url.split('?')[0]?.toLowerCase() ?? '';
+    const lastSegment = sanitized.split('/').pop() ?? '';
+    return AUDIO_EXTENSIONS.some(extension => lastSegment.endsWith(extension));
+  }
+};
 
 // Константы высот плеера для разных устройств
 export const PLAYER_HEIGHTS = {
@@ -97,6 +111,8 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
             parentTrackId: v.parentTrackId,
             versionNumber: v.versionNumber,
             isMasterVersion: v.isMasterVersion,
+            isOriginalVersion: v.isOriginal,
+            sourceVersionNumber: v.sourceVersionNumber,
           }));
           
           setQueue(prev => {
@@ -124,15 +140,17 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [autoPlayVersions, currentQueueIndex]);
 
+  const isKnownAudioExtension = useCallback((url: string) => hasKnownAudioExtension(url), []);
+
   // Мемоизированная функция воспроизведения трека
   const playTrack = useCallback(async (track: AudioPlayerTrack) => {
     // Нормализация URL - добавить .mp3 если отсутствует
     let audioUrl = track.audio_url;
-    if (audioUrl && !audioUrl.endsWith('.mp3') && !audioUrl.includes('?')) {
+    if (audioUrl && !isKnownAudioExtension(audioUrl) && !audioUrl.includes('?')) {
       audioUrl = audioUrl + '.mp3';
-      logInfo('Normalized audio URL', 'AudioPlayerContext', { 
-        original: track.audio_url, 
-        normalized: audioUrl 
+      logInfo('Normalized audio URL', 'AudioPlayerContext', {
+        original: track.audio_url,
+        normalized: audioUrl
       });
     }
     
@@ -162,7 +180,12 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     }
     
     // Используем нормализованный URL
-    const normalizedTrack = { ...track, audio_url: audioUrl };
+    const normalizedTrack = {
+      ...track,
+      audio_url: audioUrl,
+      isOriginalVersion: track.isOriginalVersion ?? (track.versionNumber ? track.versionNumber <= 1 : undefined),
+      sourceVersionNumber: track.sourceVersionNumber ?? null,
+    };
     
     // Детальное логирование трека
     logInfo('Preparing to play track', 'AudioPlayerContext', {
@@ -229,13 +252,15 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
           await audioRef.current.play();
           setIsPlaying(true);
           
-          logInfo(`Now playing: ${normalizedTrack.title}`, 'AudioPlayerContext', { 
+          logInfo(`Now playing: ${normalizedTrack.title}`, 'AudioPlayerContext', {
             trackId: normalizedTrack.id,
-            versionNumber: normalizedTrack.versionNumber || 0 
+            versionNumber: normalizedTrack.versionNumber,
+            sourceVersionNumber: normalizedTrack.sourceVersionNumber,
+            isOriginal: normalizedTrack.isOriginalVersion,
           });
-          
+
           // Показываем тост при переключении версии
-          if (normalizedTrack.versionNumber && normalizedTrack.versionNumber > 0) {
+          if (!normalizedTrack.isOriginalVersion && normalizedTrack.versionNumber) {
             toast({
               title: `Версия ${normalizedTrack.versionNumber}`,
               description: `Переключено на ${normalizedTrack.title}`,
@@ -256,7 +281,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       logError('Error in playTrack', error as Error, 'AudioPlayerContext', { trackId: normalizedTrack.id });
     }
-  }, [toast, loadVersions]);
+  }, [toast, loadVersions, isKnownAudioExtension]);
 
   // Мемоизированная функция воспроизведения трека с очередью
   const playTrackWithQueue = useCallback((track: AudioPlayerTrack, allTracks: AudioPlayerTrack[]) => {

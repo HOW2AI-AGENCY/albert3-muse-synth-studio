@@ -34,6 +34,8 @@ export interface AudioPlayerTrack {
   parentTrackId?: string;
   versionNumber?: number;
   isMasterVersion?: boolean;
+  isOriginalVersion?: boolean;
+  sourceVersionNumber?: number | null;
   title: string;
   audio_url: string; // Обязательное поле для плеера
   cover_url?: string;
@@ -79,6 +81,8 @@ export interface TrackVersion {
   id: string;
   version_number: number;
   is_master: boolean | null;
+  is_original?: boolean;
+  source_version_number?: number | null;
   suno_id: string | null;
   audio_url: string | null;
   video_url?: string | null;

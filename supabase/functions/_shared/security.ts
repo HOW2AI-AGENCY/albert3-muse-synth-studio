@@ -1,4 +1,5 @@
 import { logger } from "./logger.ts";
+import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 /**
  * Модуль безопасности для Edge Functions
@@ -18,7 +19,7 @@ export const createSecurityHeaders = () => {
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: https:",
       "media-src 'self' blob: https:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.suno.ai https://api.sunoapi.org",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.sunoapi.org",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'"
@@ -163,7 +164,18 @@ export class RateLimiter {
 /**
  * Создает ответ с ошибкой rate limit
  */
-export const createRateLimitResponse = (resetTime: Date) => {
+export const createRateLimitResponse = (
+  resetTime: Date,
+  options: {
+    request?: Request;
+    corsHeaders?: Record<string, string>;
+    securityHeaders?: Record<string, string>;
+  } = {}
+) => {
+  const { request, corsHeaders, securityHeaders } = options;
+  const resolvedCorsHeaders = corsHeaders ?? createCorsHeaders(request);
+  const resolvedSecurityHeaders = securityHeaders ?? createSecurityHeaders();
+
   return new Response(
     JSON.stringify({
       error: 'Rate limit exceeded',
@@ -175,7 +187,8 @@ export const createRateLimitResponse = (resetTime: Date) => {
       headers: {
         'Content-Type': 'application/json',
         'Retry-After': Math.ceil((resetTime.getTime() - Date.now()) / 1000).toString(),
-        ...createSecurityHeaders()
+        ...resolvedCorsHeaders,
+        ...resolvedSecurityHeaders
       }
     }
   );
@@ -196,6 +209,13 @@ export const withRateLimit = (
     const { maxRequests = 10, windowMinutes = 1, endpoint } = options;
 
     try {
+      const corsHeaders = createCorsHeaders(req);
+      const securityHeaders = createSecurityHeaders();
+
+      if (req.method === 'OPTIONS') {
+        return handleCorsPreflightRequest(req);
+      }
+
       // Извлекаем пользователя из токена
       const authHeader = req.headers.get('Authorization') || '';
       const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
@@ -203,7 +223,7 @@ export const withRateLimit = (
       if (!token) {
         return new Response(
           JSON.stringify({ error: 'Unauthorized' }),
-          { status: 401, headers: { 'Content-Type': 'application/json', ...createSecurityHeaders() } }
+          { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...securityHeaders } }
         );
       }
 
@@ -217,7 +237,7 @@ export const withRateLimit = (
             error: 'Service Unavailable',
             message: 'Rate limiter configuration missing',
           }),
-          { status: 503, headers: { 'Content-Type': 'application/json', ...createSecurityHeaders() } }
+          { status: 503, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...securityHeaders } }
         );
       }
 
@@ -228,7 +248,7 @@ export const withRateLimit = (
       if (authError || !user) {
         return new Response(
           JSON.stringify({ error: 'Unauthorized' }),
-          { status: 401, headers: { 'Content-Type': 'application/json', ...createSecurityHeaders() } }
+          { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...securityHeaders } }
         );
       }
 
@@ -242,20 +262,24 @@ export const withRateLimit = (
       );
 
       if (!allowed) {
-        return createRateLimitResponse(resetTime);
+        return createRateLimitResponse(resetTime, { corsHeaders, securityHeaders });
       }
 
       // Выполняем основной обработчик
       const response = await handler(req);
-      
+
       // Добавляем заголовки rate limit в ответ
       const headers = new Headers(response.headers);
       headers.set('X-RateLimit-Limit', maxRequests.toString());
       headers.set('X-RateLimit-Remaining', remaining.toString());
       headers.set('X-RateLimit-Reset', Math.ceil(resetTime.getTime() / 1000).toString());
-      
+
       // Добавляем заголовки безопасности
-      Object.entries(createSecurityHeaders()).forEach(([key, value]) => {
+      Object.entries(corsHeaders).forEach(([key, value]) => {
+        headers.set(key, value);
+      });
+
+      Object.entries(securityHeaders).forEach(([key, value]) => {
         headers.set(key, value);
       });
 
@@ -266,6 +290,9 @@ export const withRateLimit = (
       });
 
     } catch (error) {
+      const corsHeaders = createCorsHeaders(req);
+      const securityHeaders = createSecurityHeaders();
+
       if (error instanceof RateLimitUnavailableError) {
         logger.error('Rate limiter unavailable', { endpoint, error: error.message });
         return new Response(
@@ -273,14 +300,14 @@ export const withRateLimit = (
             error: 'Service Unavailable',
             message: 'Rate limiting temporarily unavailable',
           }),
-          { status: 503, headers: { 'Content-Type': 'application/json', ...createSecurityHeaders() } }
+          { status: 503, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...securityHeaders } }
         );
       }
 
       logger.error('Rate limit middleware error', { endpoint, error });
       return new Response(
         JSON.stringify({ error: 'Internal Server Error' }),
-        { status: 500, headers: { 'Content-Type': 'application/json', ...createSecurityHeaders() } }
+        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...securityHeaders } }
       );
     }
   };
