@@ -115,7 +115,7 @@ supabase.functions.invoke = (async (functionName, options = {}) => {
 
   // Lightweight diagnostics to help track 401s on get-balance
   try {
-    if (typeof window !== "undefined" && functionName === "get-balance") {
+    if (typeof window !== "undefined" && functionName.startsWith("get-balance")) {
       const method = (options as { method?: string }).method ?? "POST";
       const hasAuth = Object.keys(headers).some(
         (key) => key.toLowerCase() === "authorization"
