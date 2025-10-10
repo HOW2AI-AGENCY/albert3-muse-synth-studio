@@ -121,7 +121,10 @@ export const LazyGlobalAudioPlayer = createLazyComponent(
 );
 
 export const LazyTrackCard = createLazyComponent(
-  () => import('@/features/tracks/components/TrackCard'),
+  async () => {
+    const module = await import('@/features/tracks/components/TrackCard');
+    return { default: module.TrackCard as ComponentType<unknown> };
+  },
   <div className="animate-pulse bg-card/50 rounded-xl h-64" />,
   <div className="text-center p-4 text-muted-foreground">
     Ошибка загрузки карточки трека

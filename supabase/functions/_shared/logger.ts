@@ -1,4 +1,5 @@
-import * as Sentry from "npm:@sentry/node";
+// Sentry is optional - only imported if configured
+let Sentry: typeof import("npm:@sentry/node") | null = null;
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -85,46 +86,54 @@ const sentryFlushTimeoutMs = Number(Deno.env.get("SENTRY_FLUSH_TIMEOUT_MS") ?? "
 const isSentryConfigured = sentryDsn.trim().length > 0;
 let isSentryInitialised = false;
 
-const initialiseSentry = () => {
+const initialiseSentry = async () => {
   if (isSentryInitialised || !isSentryConfigured) {
     return;
   }
 
-  const tracesSampleRate = Number.isFinite(rawTracesSampleRate)
-    ? Math.min(Math.max(rawTracesSampleRate, 0), 1)
-    : 0;
+  try {
+    // Dynamically import Sentry only if configured
+    const sentryModule = await import("npm:@sentry/node");
+    Sentry = sentryModule;
 
-  Sentry.init({
-    dsn: sentryDsn,
-    environment: sentryEnvironment,
-    release: sentryRelease,
-    tracesSampleRate,
-    debug: sentryDebug,
-  });
+    const tracesSampleRate = Number.isFinite(rawTracesSampleRate)
+      ? Math.min(Math.max(rawTracesSampleRate, 0), 1)
+      : 0;
 
-  Sentry.setTag("runtime", "supabase-edge");
+    Sentry.init({
+      dsn: sentryDsn,
+      environment: sentryEnvironment,
+      release: sentryRelease,
+      tracesSampleRate,
+      debug: sentryDebug,
+    });
 
-  isSentryInitialised = true;
+    Sentry.setTag("runtime", "supabase-edge");
+
+    isSentryInitialised = true;
+  } catch (error) {
+    console.warn("Failed to initialize Sentry:", error);
+  }
 };
 
-const ensureSentry = (): boolean => {
+const ensureSentry = async (): Promise<boolean> => {
   if (!isSentryConfigured) {
     return false;
   }
 
   if (!isSentryInitialised) {
-    initialiseSentry();
+    await initialiseSentry();
   }
 
-  return isSentryInitialised;
+  return isSentryInitialised && Sentry !== null;
 };
 
-const captureLogWithSentry = (level: LogLevel, message: string, context?: LogContext, maskedContext?: LogContext) => {
+const captureLogWithSentry = async (level: LogLevel, message: string, context?: LogContext, maskedContext?: LogContext) => {
   if (level !== "error") {
     return;
   }
 
-  if (!ensureSentry()) {
+  if (!(await ensureSentry()) || !Sentry) {
     return;
   }
 
@@ -155,7 +164,7 @@ export const withSentry = <Args extends unknown[], Result>(
   _options?: { transaction?: string },
 ) => {
   return async (...args: Args): Promise<Result> => {
-    if (!ensureSentry()) {
+    if (!(await ensureSentry()) || !Sentry) {
       return await handler(...args);
     }
 
@@ -225,7 +234,8 @@ const log = (level: LogLevel, message: string, context?: LogContext) => {
       console.debug(text);
   }
 
-  captureLogWithSentry(level, message, context, maskedContext);
+  // Fire and forget - don't await Sentry to avoid blocking logs
+  captureLogWithSentry(level, message, context, maskedContext).catch(() => {});
 };
 
 export const logger = {
