@@ -1,15 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Music4, ChevronDown, ChevronUp, Play, Pause, Download, List, Sliders } from "lucide-react";
+import { Music4, ChevronDown, ChevronUp, LayoutGrid, Sliders } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { StemMixerProvider } from "@/contexts/StemMixerContext";
 import { AdvancedStemMixer } from "./AdvancedStemMixer";
 import { useStemSeparation } from "@/hooks/useStemSeparation";
+import { StemCard } from "./StemCard";
 
 interface TrackStem {
   id: string;
@@ -82,8 +82,8 @@ const formatStemLabel = (stemType: string) => {
 };
 
 export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }: TrackStemsPanelProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [viewMode, setViewMode] = useState<'simple' | 'mixer'>('simple');
+  const [isExpanded, setIsExpanded] = useState(true); // Раскрыто по умолчанию
+  const [viewMode, setViewMode] = useState<'grid' | 'mixer'>('grid');
   const { currentTrack, isPlaying, playTrack, togglePlayPause } = useAudioPlayer();
 
   const { isGenerating, generateStems: handleGenerateStems } = useStemSeparation({
@@ -94,263 +94,168 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
     },
   });
 
-  // Realtime subscription to track_stems
+  // Улучшенная Realtime подписка
   useEffect(() => {
+    console.log(`[TrackStemsPanel] Subscribing to stems for track ${trackId}`);
+    
     const channel = supabase
-      .channel(`track_stems_${trackId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'track_stems',
-          filter: `track_id=eq.${trackId}`,
-        },
-        (payload) => {
-          console.log('Track stems updated:', payload);
-          onStemsGenerated?.();
-        }
-      )
-      .subscribe();
+      .channel(`track_stems_realtime_${trackId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'track_stems',
+        filter: `track_id=eq.${trackId}`,
+      }, (payload) => {
+        console.log('✅ New stem inserted:', payload.new);
+        onStemsGenerated?.();
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'track_stems',
+        filter: `track_id=eq.${trackId}`,
+      }, (payload) => {
+        console.log('✅ Stem updated:', payload.new);
+        onStemsGenerated?.();
+      })
+      .subscribe((status) => {
+        console.log(`[TrackStemsPanel] Subscription status: ${status}`);
+      });
 
     return () => {
+      console.log(`[TrackStemsPanel] Unsubscribing from stems for track ${trackId}`);
       supabase.removeChannel(channel);
     };
   }, [trackId, onStemsGenerated]);
 
-  const handlePlayStem = (stem: TrackStem) => {
-    const stemKey = `stem-${stem.id}`;
-    const isCurrentStem = currentTrack?.id === stemKey;
-
-    if (isCurrentStem && isPlaying) {
-      togglePlayPause();
-    } else {
-      playTrack({
-        id: stemKey,
-        title: formatStemLabel(stem.stem_type),
-        audio_url: stem.audio_url,
-      });
-    }
-  };
-
-  const handleDownloadStem = (stem: TrackStem) => {
-    window.open(stem.audio_url, '_blank');
-  };
-
-  const twoStemCollection = sortStems(stems.filter(s => s.separation_mode === 'separate_vocal'));
-  const multiStemCollection = sortStems(stems.filter(s => s.separation_mode === 'split_stem'));
-
-  const hasTwoStemMode = twoStemCollection.length > 0;
-  const hasMultiStemMode = multiStemCollection.length > 0;
+  const sortedStems = useMemo(() => sortStems(stems), [stems]);
 
   return (
-    <Card className="p-4 space-y-4">
+    <div className="space-y-4">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Music4 className="w-5 h-5 text-primary" />
           <h3 className="font-semibold">Стемы</h3>
           {stems.length > 0 && (
-            <Badge variant="secondary">{stems.length}</Badge>
+            <Badge variant="secondary" className="animate-in fade-in">
+              {stems.length}
+            </Badge>
           )}
         </div>
+
         {stems.length > 0 && (
           <div className="flex items-center gap-2">
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'simple' | 'mixer')}>
-              <TabsList className="h-9">
-                <TabsTrigger value="simple" className="gap-1.5">
-                  <List className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Список</span>
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'grid' | 'mixer')}>
+              <TabsList>
+                <TabsTrigger value="grid">
+                  <LayoutGrid className="w-4 h-4" />
                 </TabsTrigger>
-                <TabsTrigger value="mixer" className="gap-1.5">
-                  <Sliders className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Микшер</span>
+                <TabsTrigger value="mixer">
+                  <Sliders className="w-4 h-4" />
                 </TabsTrigger>
               </TabsList>
             </Tabs>
+
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
             >
-              {isExpanded ? (
-                <ChevronUp className="w-4 h-4" />
-              ) : (
-                <ChevronDown className="w-4 h-4" />
-              )}
+              {isExpanded ? <ChevronUp /> : <ChevronDown />}
             </Button>
           </div>
         )}
       </div>
 
+      {/* Loading state */}
       {isGenerating && (
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground animate-pulse">
-            ⏱️ Processing... This typically takes {stems.some(s => s.separation_mode === 'split_stem') || stems.length === 0 ? '60-180' : '30-90'} seconds
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Генерация стемов запущена. Мы обновим список автоматически, как только Suno пришлёт результат.
-          </p>
-        </div>
+        <Card className="p-4 bg-primary/5 border-primary/20">
+          <div className="flex items-center gap-3">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div>
+              <p className="font-medium">Генерация стемов...</p>
+              <p className="text-xs text-muted-foreground">
+                Это может занять 30-180 секунд
+              </p>
+            </div>
+          </div>
+        </Card>
       )}
 
-      {stems.length === 0 ? (
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Разделите трек на отдельные элементы для более гибкой работы со звуком
-          </p>
-          <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
+      {/* Empty state */}
+      {stems.length === 0 && !isGenerating && (
+        <Card className="p-6 text-center space-y-4">
+          <div className="text-4xl">🎚️</div>
+          <div>
+            <h4 className="font-semibold mb-1">Стемы не созданы</h4>
+            <p className="text-sm text-muted-foreground">
+              Разделите трек на отдельные элементы
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
             <Button
               onClick={() => handleGenerateStems('separate_vocal')}
               disabled={isGenerating}
               variant="outline"
-              className="h-auto py-3 flex-col gap-1"
+              className="h-auto py-4 flex-col gap-2"
             >
-              <span className="font-semibold">Вокал + Инструментал</span>
-              <span className="text-xs text-muted-foreground">2 стема</span>
+              <span className="text-2xl">🎤</span>
+              <div>
+                <div className="font-semibold">Базовое</div>
+                <div className="text-xs text-muted-foreground">2 стема</div>
+              </div>
             </Button>
+
             <Button
               onClick={() => handleGenerateStems('split_stem')}
               disabled={isGenerating}
               variant="outline"
-              className="h-auto py-3 flex-col gap-1"
+              className="h-auto py-4 flex-col gap-2"
             >
-              <span className="font-semibold">По инструментам</span>
-              <span className="text-xs text-muted-foreground">До 8 стемов</span>
+              <span className="text-2xl">🎛️</span>
+              <div>
+                <div className="font-semibold">Детальное</div>
+                <div className="text-xs text-muted-foreground">До 8 стемов</div>
+              </div>
             </Button>
           </div>
-          {isGenerating && (
-            <p className="text-xs text-muted-foreground animate-pulse">
-              Обработка может занять до пары минут. Оставьте окно открытым — мы пришлём уведомление, когда стемы будут готовы.
-            </p>
-          )}
-        </div>
-      ) : (
-        <>
-          {isExpanded && viewMode === 'simple' && (
-            <div className="space-y-4">
-              {hasTwoStemMode && (
-                <div className="space-y-2">
-                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    Базовое разделение
-                  </div>
-                  {twoStemCollection.map(stem => {
-                      const stemKey = `stem-${stem.id}`;
-                      const isCurrentStem = currentTrack?.id === stemKey;
-                      const isStemPlaying = isCurrentStem && isPlaying;
-
-                      return (
-                        <div key={stem.id} className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
-                          <Button
-                            size="icon"
-                            variant={isStemPlaying ? "default" : "ghost"}
-                            className="shrink-0 h-11 w-11 sm:h-9 sm:w-9 touch-action-manipulation"
-                            onClick={() => handlePlayStem(stem)}
-                          >
-                            {isStemPlaying ? (
-                              <Pause className="w-4 h-4" />
-                            ) : (
-                              <Play className="w-4 h-4" />
-                            )}
-                          </Button>
-                          <span className="flex-1 text-sm font-medium">
-                            {formatStemLabel(stem.stem_type)}
-                          </span>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="shrink-0 h-11 w-11 sm:h-9 sm:w-9 touch-action-manipulation"
-                            onClick={() => handleDownloadStem(stem)}
-                          >
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      );
-                    })}
-                </div>
-              )}
-
-              {hasMultiStemMode && hasTwoStemMode && (
-                <Separator className="my-3" />
-              )}
-
-              {hasMultiStemMode && (
-                <div className="space-y-2">
-                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                    Детальное разделение
-                  </div>
-                  {multiStemCollection.map(stem => {
-                      const stemKey = `stem-${stem.id}`;
-                      const isCurrentStem = currentTrack?.id === stemKey;
-                      const isStemPlaying = isCurrentStem && isPlaying;
-
-                      return (
-                        <div key={stem.id} className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
-                          <Button
-                            size="icon"
-                            variant={isStemPlaying ? "default" : "ghost"}
-                            className="shrink-0 h-11 w-11 sm:h-9 sm:w-9 touch-action-manipulation"
-                            onClick={() => handlePlayStem(stem)}
-                          >
-                            {isStemPlaying ? (
-                              <Pause className="w-4 h-4" />
-                            ) : (
-                              <Play className="w-4 h-4" />
-                            )}
-                          </Button>
-                          <span className="flex-1 text-sm font-medium">
-                            {formatStemLabel(stem.stem_type)}
-                          </span>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="shrink-0 h-11 w-11 sm:h-9 sm:w-9 touch-action-manipulation"
-                            onClick={() => handleDownloadStem(stem)}
-                          >
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      );
-                    })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {isExpanded && viewMode === 'mixer' && (
-            <StemMixerProvider>
-              <AdvancedStemMixer stems={stems} />
-            </StemMixerProvider>
-          )}
-
-          {!hasTwoStemMode && (
-            <div className="mt-3">
-              <Button
-                onClick={() => handleGenerateStems('separate_vocal')}
-                disabled={isGenerating}
-                variant="outline"
-                size="sm"
-                className="w-full"
-              >
-                Добавить вокал + инструментал
-              </Button>
-            </div>
-          )}
-
-          {!hasMultiStemMode && (
-            <div className="mt-2">
-              <Button
-                onClick={() => handleGenerateStems('split_stem')}
-                disabled={isGenerating}
-                variant="outline"
-                size="sm"
-                className="w-full"
-              >
-                Добавить разделение по инструментам
-              </Button>
-            </div>
-          )}
-        </>
+        </Card>
       )}
-    </Card>
+
+      {/* Stems Grid View */}
+      {isExpanded && viewMode === 'grid' && stems.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {sortedStems.map((stem) => {
+            const stemKey = `stem-${stem.id}`;
+            const isCurrentStem = currentTrack?.id === stemKey;
+            const isStemPlaying = isCurrentStem && isPlaying;
+
+            return (
+              <StemCard
+                key={stem.id}
+                stem={stem}
+                isPlaying={isStemPlaying}
+                onPlay={() => playTrack({
+                  id: stemKey,
+                  title: formatStemLabel(stem.stem_type),
+                  audio_url: stem.audio_url,
+                })}
+                onPause={togglePlayPause}
+                onDownload={() => window.open(stem.audio_url, '_blank')}
+              />
+            );
+          })}
+        </div>
+      )}
+
+      {/* Mixer View */}
+      {isExpanded && viewMode === 'mixer' && stems.length > 0 && (
+        <StemMixerProvider>
+          <AdvancedStemMixer stems={sortedStems} />
+        </StemMixerProvider>
+      )}
+    </div>
   );
 };

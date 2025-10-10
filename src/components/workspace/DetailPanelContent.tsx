@@ -210,11 +210,15 @@ export const DetailPanelContent = ({
   );
 
   const filteredStems = useMemo(() => {
+    // Если версия не выбрана, показываем только "общие" стемы (version_id === null)
     if (!selectedVersionId) {
-      return stems;
+      return stems.filter(stem => !stem.version_id);
     }
 
-    return stems.filter((stem) => !stem.version_id || stem.version_id === selectedVersionId);
+    // Если версия выбрана, показываем стемы этой версии + общие стемы
+    return stems.filter(
+      stem => !stem.version_id || stem.version_id === selectedVersionId
+    );
   }, [stems, selectedVersionId]);
 
   const handleVersionSelect = useCallback((versionId: string) => {
