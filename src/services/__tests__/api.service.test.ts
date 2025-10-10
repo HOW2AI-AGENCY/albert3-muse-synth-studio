@@ -17,6 +17,7 @@ vi.mock("@/utils/logger", () => ({
   logError: vi.fn(),
   logDebug: vi.fn(),
   logWarn: vi.fn(),
+  maskObject: vi.fn((data) => data),
 }));
 
 const localStorageMock = (() => {

@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError, handlePostgrestError, ensureData, handleSupabaseFunctionError } from "@/services/api/errors";
 import { trackCache, CachedTrack, getCachedTracks } from "@/features/tracks";
-import { logInfo, logError, logDebug, logWarn } from "@/utils/logger";
+import { logInfo, logError, logDebug, logWarn, maskObject } from "@/utils/logger";
 
 type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
 
@@ -184,116 +184,108 @@ export class ApiService {
     request: GenerateMusicRequest
   ): Promise<GenerateMusicResponse> {
     const context = "ApiService.generateMusic";
-    const provider = request.provider || 'suno';
+    // --- Укрепление и логирование ---
+    const provider = !request.provider || !['suno', 'replicate'].includes(request.provider)
+      ? 'suno'
+      : request.provider;
     const functionName = provider === 'suno' ? 'generate-suno' : 'generate-music';
 
-    // Normalise user input to match the generate-suno edge function contract.
-    // Custom mode sends lyrics as the main prompt while still providing the
-    // original prompt metadata through Supabase.
-    const normalizedPrompt = request.prompt?.trim() ?? '';
-    const lyrics = request.lyrics;
-    const styleTags = request.styleTags?.filter((tag) => Boolean(tag?.trim())) ?? [];
-    const promptForSuno = request.customMode
-      ? (lyrics ?? normalizedPrompt)
-      : normalizedPrompt;
-    const resolvedTitle = (() => {
-      const explicitTitle = request.title?.trim();
-      if (explicitTitle && explicitTitle.length > 0) {
-        return explicitTitle;
-      }
-      const fallbackSource = normalizedPrompt || lyrics || '';
-      if (fallbackSource) {
-        return fallbackSource.substring(0, 50);
-      }
-      return 'Generated Track';
-    })();
-    const makeInstrumental = request.hasVocals === false;
-    const clamp01 = (value?: number) => {
-      if (typeof value !== 'number' || Number.isNaN(value)) {
-        return undefined;
-      }
-      return Math.min(Math.max(value, 0), 1);
-    };
-    const negativeTags = request.negativeTags?.trim();
-    const sanitizedNegativeTags = negativeTags && negativeTags.length > 0 ? negativeTags : undefined;
-    const vocalGender = request.vocalGender === 'm' || request.vocalGender === 'f' ? request.vocalGender : undefined;
-    const styleWeight = clamp01(request.styleWeight);
-    const weirdnessConstraint = clamp01(request.weirdnessConstraint);
-    const audioWeight = clamp01(request.audioWeight);
+    try {
+      const normalizedPrompt = request.prompt?.trim() ?? '';
+      const lyrics = request.lyrics;
+      const styleTags = request.styleTags?.filter((tag) => Boolean(tag?.trim())) ?? [];
+      const promptForSuno = request.customMode ? (lyrics ?? normalizedPrompt) : normalizedPrompt;
 
-    const payload = {
-      trackId: request.trackId,
-      title: resolvedTitle,
-      prompt: promptForSuno,
-      tags: styleTags,
-      lyrics,
-      hasVocals: request.hasVocals,
-      make_instrumental: makeInstrumental,
-      model_version: request.modelVersion || 'V5',
-      customMode: request.customMode,
-      ...(sanitizedNegativeTags ? { negativeTags: sanitizedNegativeTags } : {}),
-      ...(vocalGender ? { vocalGender } : {}),
-      ...(styleWeight !== undefined ? { styleWeight } : {}),
-      ...(weirdnessConstraint !== undefined ? { weirdnessConstraint } : {}),
-      ...(audioWeight !== undefined ? { audioWeight } : {}),
-    };
+      const resolvedTitle = (() => {
+        const explicitTitle = request.title?.trim();
+        if (explicitTitle) return explicitTitle;
+        const fallbackSource = normalizedPrompt || lyrics || '';
+        return fallbackSource ? fallbackSource.substring(0, 50) : 'Generated Track';
+      })();
 
-    logInfo('🎵 [API Service] Selected provider', context, { provider, functionName });
-    logDebug('📤 [API Service] Payload summary', context, {
-      hasTrackId: Boolean(request.trackId),
-      promptLength: normalizedPrompt.length,
-      tagsCount: styleTags.length,
-      hasVocals: typeof request.hasVocals === 'boolean' ? request.hasVocals : null,
-      lyricsLength: lyrics?.length ?? 0,
-      customMode: request.customMode ?? null,
-      hasNegativeTags: Boolean(sanitizedNegativeTags),
-      styleWeight,
-      weirdnessConstraint,
-      audioWeight,
-      vocalGender,
-    });
+      const makeInstrumental = request.hasVocals === false;
 
-    logInfo('⏳ [API Service] Invoking edge function...', context);
+      const payload = {
+        trackId: request.trackId,
+        title: resolvedTitle,
+        prompt: promptForSuno,
+        tags: styleTags,
+        lyrics,
+        hasVocals: request.hasVocals,
+        make_instrumental: makeInstrumental,
+        model_version: request.modelVersion || 'V5',
+        customMode: request.customMode,
+      };
 
-    const { data, error } = await supabase.functions.invoke<GenerateMusicResponse>(
-      functionName,
-      { body: payload }
-    );
-
-    if (error) {
-      logError('🔴 [API Service] Edge function error', error, context, { provider, functionName });
-      let userMessage = error.message || "Failed to generate music";
-      if (error.message?.includes('429') || error.message?.includes('Rate limit')) {
-        userMessage = 'Превышен лимит запросов. Пожалуйста, подождите немного';
-      } else if (error.message?.includes('402') || error.message?.includes('Payment')) {
-        userMessage = 'Недостаточно средств. Пополните баланс API';
-      }
-
-      throw new ApiError(userMessage, {
-        context,
-        payload: { provider, functionName },
-        cause: error,
+      logInfo(`🎵 [API Service] Starting music generation`, context, { provider, functionName });
+      logDebug(`📤 [API Service] Sending payload to ${functionName}`, context, {
+        ...maskObject(payload),
+        // Явно логируем нечувствительные метаданные для быстрой диагностики
+        promptLength: normalizedPrompt.length,
+        lyricsLength: lyrics?.length ?? 0,
+        tagsCount: styleTags.length,
+        hasTrackId: !!payload.trackId,
       });
-    }
 
-    if (!data) {
-      const err = new Error('No response from server');
-      logError('🔴 [API Service] No response from server', err, context, { provider, functionName });
-      throw new ApiError('No response from server', {
-        context,
-        payload: { provider, functionName },
-        cause: err,
+      logInfo('⏳ [API Service] Invoking edge function...', context);
+      const { data, error } = await supabase.functions.invoke<GenerateMusicResponse>(
+        functionName,
+        { body: payload }
+      );
+
+      // --- Обработка ошибок ---
+      if (error) {
+        logError('🔴 [API Service] Edge function invocation failed', error, context, {
+          provider,
+          functionName,
+        });
+
+        let userMessage = error.message || "Не удалось запустить генерацию музыки";
+        // Проверяем на частые клиентские проблемы, которые маскируются под сетевые ошибки
+        if (error.message.toLowerCase().includes('failed to fetch')) {
+          userMessage = "Сетевая ошибка при вызове функции. Возможно, проблема с CORS. Проверьте консоль браузера на наличие ошибок, связанных с 'no-cors'.";
+        } else if (error.message?.includes('429') || error.message?.includes('Rate limit')) {
+          userMessage = 'Превышен лимит запросов. Пожалуйста, подождите немного';
+        } else if (error.message?.includes('402') || error.message?.includes('Payment')) {
+          userMessage = 'Недостаточно средств. Пополните баланс API';
+        }
+
+        throw new ApiError(userMessage, {
+          context,
+          payload: { provider, functionName },
+          cause: error,
+        });
+      }
+
+      // --- Обработка ответа ---
+      if (!data) {
+        const err = new Error('No data in response from edge function');
+        logError('🔴 [API Service] Empty response from server', err, context, { provider, functionName });
+        throw new ApiError('Сервер вернул пустой ответ. Не удалось подтвердить запуск генерации.', {
+          context,
+          payload: { provider, functionName },
+          cause: err,
+        });
+      }
+
+      logInfo('✅ [API Service] Edge function returned successfully', context, {
+        provider,
+        functionName,
+        ...maskObject(data),
       });
+
+      return data;
+
+    } catch (e) {
+      const error = e instanceof Error ? e : new Error(String(e));
+      logError('🆘 [API Service] Unhandled exception in generateMusic', error, context, {
+        provider,
+        functionName,
+      });
+
+      // Перевыбрасываем ошибку, чтобы она была обработана выше
+      throw error;
     }
-
-    logInfo('✅ [API Service] Generation success', context, {
-      provider,
-      functionName,
-      trackId: data.trackId,
-      success: data.success,
-    });
-
-    return data;
   }
 
   /**
