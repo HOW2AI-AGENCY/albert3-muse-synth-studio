@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Music4, ChevronDown, ChevronUp, Play, Pause, Download, List, Sliders } from "lucide-react";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
@@ -254,14 +254,18 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
         </div>
         {stems.length > 0 && (
           <div className="flex items-center gap-2">
-            <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as 'simple' | 'mixer')}>
-              <ToggleGroupItem value="simple" aria-label="Простой режим">
-                <List className="w-4 h-4" />
-              </ToggleGroupItem>
-              <ToggleGroupItem value="mixer" aria-label="Режим микшера">
-                <Sliders className="w-4 h-4" />
-              </ToggleGroupItem>
-            </ToggleGroup>
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'simple' | 'mixer')}>
+              <TabsList className="h-9">
+                <TabsTrigger value="simple" className="gap-1.5">
+                  <List className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Список</span>
+                </TabsTrigger>
+                <TabsTrigger value="mixer" className="gap-1.5">
+                  <Sliders className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Микшер</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
             <Button
               variant="ghost"
               size="sm"

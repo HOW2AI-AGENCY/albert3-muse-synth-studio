@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Progress } from '@/components/ui/progress';
+import { SimpleProgress } from '@/components/ui/SimpleProgress';
 import { Play, Pause, RotateCcw } from 'lucide-react';
 import { useStemMixer } from '@/contexts/StemMixerContext';
 import { StemMixerTrack } from './StemMixerTrack';
@@ -124,7 +124,7 @@ export const AdvancedStemMixer = ({ stems, trackTitle }: AdvancedStemMixerProps)
             <span className="text-xs text-muted-foreground tabular-nums">
               {formatDuration(Math.floor(currentTime))}
             </span>
-            <Progress value={progressPercent} className="h-1.5" />
+            <SimpleProgress value={progressPercent} className="h-1.5" />
             <span className="text-xs text-muted-foreground tabular-nums">
               {formatDuration(Math.floor(duration))}
             </span>
