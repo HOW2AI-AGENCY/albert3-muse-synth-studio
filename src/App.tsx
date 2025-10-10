@@ -11,27 +11,6 @@ import { AudioPlayerProvider } from "./contexts/AudioPlayerContext";
 import { GlobalAudioPlayer } from "./components/player/GlobalAudioPlayer";
 import { toast } from "sonner";
 
-// Импортируем оптимизированные ленивые компоненты
-import { 
-  LazyDashboard, 
-  LazyGenerate, 
-  LazyLibrary, 
-  LazyFavorites, 
-  LazyAnalytics, 
-  LazySettings
-} from './utils/lazyImports.tsx';
-
-// Ленивая загрузка админ-панели (защищенный роут)
-const LazyAdmin = lazy(() => import('./pages/workspace/Admin'));
-// Ленивая загрузка страницы диагностики Edge Functions
-const LazyEdgeFunctionsDebug = lazy(() => import('./pages/debug/EdgeFunctionsDebug'));
-
-// Компонент загрузки
-const LoadingSpinner = () => (
-  <div className="flex items-center justify-center min-h-[200px]">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-  </div>
-);
 
 // Оптимизированная конфигурация React Query
 const queryClient = new QueryClient({
