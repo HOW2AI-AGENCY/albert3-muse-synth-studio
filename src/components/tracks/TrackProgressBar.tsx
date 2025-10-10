@@ -1,4 +1,4 @@
-import { Progress } from '@/components/ui/progress';
+import { SimpleProgress } from '@/components/ui/SimpleProgress';
 import { Clock, Loader2 } from 'lucide-react';
 
 interface TrackProgressBarProps {
@@ -25,7 +25,7 @@ export const TrackProgressBar = ({ progress, status, createdAt }: TrackProgressB
 
   return (
     <div className="space-y-2">
-      <Progress 
+      <SimpleProgress 
         value={progress} 
         className="h-2 bg-secondary/20"
       />
