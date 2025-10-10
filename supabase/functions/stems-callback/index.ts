@@ -4,10 +4,12 @@ import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.t
 import { createSupabaseAdminClient } from "../_shared/supabase.ts";
 import {
   determineSeparationMode,
+  determineErrorMessage,
   extractStatusMessage,
   extractStemAssetsFromPayload,
   getRecord,
   sanitizeStemText,
+  SUNO_STEM_ERROR_CODES,
 } from "../_shared/stems.ts";
 
 const corsHeaders = {
@@ -65,7 +67,13 @@ const mainHandler = async (req: Request) => {
     }
 
     const code = typeof root.code === "number" ? root.code : undefined;
-    const statusMessage = sanitizeStemText(extractStatusMessage(root), 500) || null;
+    const rawStatusMessage = extractStatusMessage(root);
+    const statusMessage = sanitizeStemText(
+      code !== SUNO_STEM_ERROR_CODES.SUCCESS 
+        ? determineErrorMessage(code, typeof rawStatusMessage === 'string' ? rawStatusMessage : undefined)
+        : rawStatusMessage,
+      500
+    ) || null;
 
     const supabase = createSupabaseAdminClient();
 
@@ -100,7 +108,18 @@ const mainHandler = async (req: Request) => {
     const derivedMode = stemAssets.length > 2 ? "split_stem" : "separate_vocal";
     const separationMode = currentMode ?? derivedMode;
 
-    const isSuccess = (code === 200 || code === undefined) && stemAssets.length > 0;
+    const isSuccess = (code === SUNO_STEM_ERROR_CODES.SUCCESS || code === undefined) && stemAssets.length > 0;
+
+    console.log("[stems-callback] 📥 Callback received", {
+      stemTaskId,
+      code,
+      statusMessage,
+      assetsFound: stemAssets.length,
+      separationMode,
+      trackId,
+      versionId,
+      timestamp: new Date().toISOString()
+    });
 
     if (isSuccess) {
       const deleteQuery = supabase

@@ -150,12 +150,13 @@ const mainHandler = async (req: Request) => {
       throw new Error("Missing Suno audio identifier for track or version");
     }
 
-    console.log("[separate-stems] starting", {
+    console.log("[separate-stems] 🎵 Request details", {
       trackId,
       versionId: versionId ?? null,
       audioId,
       taskId,
       separationMode,
+      timestamp: new Date().toISOString()
     });
 
     const stemResult = await sunoClient.requestStemSeparation({
@@ -223,12 +224,13 @@ const mainHandler = async (req: Request) => {
       }
     }
 
-    console.log("[separate-stems] request submitted", {
+    console.log("[separate-stems] ✨ Request submitted", {
       trackId,
       versionId: versionId ?? null,
       separationMode,
       stemTaskId,
       endpoint: stemResult.endpoint,
+      timestamp: new Date().toISOString()
     });
 
     return new Response(

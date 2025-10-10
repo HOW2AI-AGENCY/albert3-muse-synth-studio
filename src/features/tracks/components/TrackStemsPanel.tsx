@@ -264,9 +264,14 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
       </div>
 
       {isGenerating && (
-        <p className="text-xs text-muted-foreground animate-pulse">
-          Генерация стемов запущена. Мы обновим список автоматически, как только Suno пришлёт результат.
-        </p>
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground animate-pulse">
+            ⏱️ Processing... This typically takes {stems.some(s => s.separation_mode === 'split_stem') || stems.length === 0 ? '60-180' : '30-90'} seconds
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Генерация стемов запущена. Мы обновим список автоматически, как только Suno пришлёт результат.
+          </p>
+        </div>
       )}
 
       {stems.length === 0 ? (

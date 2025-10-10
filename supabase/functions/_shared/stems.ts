@@ -129,6 +129,34 @@ export const extractStemAssetsFromPayload = (
   return assets;
 };
 
+export const SUNO_STEM_STATUS = {
+  PENDING: "PENDING",
+  SUCCESS: "SUCCESS",
+  CREATE_TASK_FAILED: "CREATE_TASK_FAILED",
+  GENERATE_AUDIO_FAILED: "GENERATE_AUDIO_FAILED",
+  CALLBACK_EXCEPTION: "CALLBACK_EXCEPTION",
+} as const;
+
+export const SUNO_STEM_ERROR_CODES = {
+  SUCCESS: 200,
+  BAD_REQUEST: 400,
+  DOWNLOAD_FAILED: 451,
+  SERVER_ERROR: 500,
+} as const;
+
+export const determineErrorMessage = (code: number | undefined, message: string | undefined): string => {
+  if (code === SUNO_STEM_ERROR_CODES.BAD_REQUEST) {
+    return "Parameter error or unsupported audio file format";
+  }
+  if (code === SUNO_STEM_ERROR_CODES.DOWNLOAD_FAILED) {
+    return "Failed to download source audio file from Suno";
+  }
+  if (code === SUNO_STEM_ERROR_CODES.SERVER_ERROR) {
+    return "Suno server error. Please try again later";
+  }
+  return message || "Stem separation failed";
+};
+
 export const determineSeparationMode = (
   currentMode: string | null,
   assetsCount: number,
