@@ -22,13 +22,19 @@ const TracksListComponent = ({
   const { playTrackWithQueue } = useAudioPlayer();
   const { toast } = useToast();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('tracks-view-mode') : 'grid';
-    return (saved as 'grid' | 'list') || 'grid';
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('tracks-view-mode') : 'grid';
+      return (saved as 'grid' | 'list') || 'grid';
+    } catch {
+      return 'grid';
+    }
   });
 
   const handleViewChange = useCallback((view: 'grid' | 'list') => {
     setViewMode(view);
-    localStorage.setItem('tracks-view-mode', view);
+    try {
+      localStorage.setItem('tracks-view-mode', view);
+    } catch {}
   }, []);
 
   const handlePlay = useCallback((track: Track) => {

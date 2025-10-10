@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { trackCacheIDB, CachedTrack } from "@/features/tracks";
 import type { Database } from "@/integrations/supabase/types";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
-import { logInfo, logError } from "@/utils/logger";
+import { logInfo, logError, logWarn } from "@/utils/logger";
 
 type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
 
@@ -79,9 +79,13 @@ export const useTracks = (refreshTrigger?: number, _options?: UseTracksOptions) 
       if (tracksToCache.length > 0) {
         await trackCacheIDB.setTracks(tracksToCache);
       }
-
-      setTracks(userTracks);
-      hasTracksRef.current = userTracks.length > 0;
+      // Обновляем список, но не затираем ранее загруженные данные пустым ответом
+      if (userTracks.length === 0 && hasTracksRef.current) {
+        logWarn('Empty track list from API; keeping previous tracks', 'useTracks', { userId: user.id });
+      } else {
+        setTracks(userTracks);
+        hasTracksRef.current = userTracks.length > 0;
+      }
       
       logInfo('Tracks loaded successfully', 'useTracks', {
         count: userTracks.length,
