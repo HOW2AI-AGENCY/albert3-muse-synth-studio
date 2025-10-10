@@ -60,6 +60,9 @@ interface TrackCardProps {
   onClick?: () => void;
   onRetry?: (trackId: string) => void;
   onDelete?: (trackId: string) => void;
+  onExtend?: (trackId: string) => void;
+  onCover?: (trackId: string) => void;
+  onSeparateStems?: (trackId: string) => void;
   className?: string;
 }
 
@@ -196,7 +199,7 @@ const FailedState: React.FC<{
   </div>
 );
 
-const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDelete, className }: TrackCardProps) => {
+const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDelete, onExtend, onCover, onSeparateStems, className }: TrackCardProps) => {
   const { toast } = useToast();
   const { currentTrack, isPlaying, playTrack } = useAudioPlayer();
   const { isLiked, toggleLike } = useTrackLike(track.id, track.like_count || 0);
@@ -384,15 +387,33 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDe
                     Опубликовать
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast({ title: "Скоро", description: "Функция в разработке" }); }}>
+                  <DropdownMenuItem 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      onSeparateStems?.(track.id);
+                    }}
+                    disabled={!onSeparateStems}
+                  >
                     <Split className="w-4 h-4 mr-2" />
                     Разделить на стемы
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast({ title: "Скоро", description: "Функция в разработке" }); }}>
+                  <DropdownMenuItem 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      onExtend?.(track.id);
+                    }}
+                    disabled={!onExtend}
+                  >
                     <Expand className="w-4 h-4 mr-2" />
                     Расширить трек
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast({ title: "Скоро", description: "Функция в разработке" }); }}>
+                  <DropdownMenuItem 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      onCover?.(track.id);
+                    }}
+                    disabled={!onCover}
+                  >
                     <Mic2 className="w-4 h-4 mr-2" />
                     Создать кавер
                   </DropdownMenuItem>
