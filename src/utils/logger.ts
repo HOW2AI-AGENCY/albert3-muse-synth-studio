@@ -267,57 +267,7 @@ class Logger {
    * Маскируем чувствительные данные перед отправкой
    */
   private maskSensitiveData(data?: Record<string, unknown>): Record<string, unknown> | undefined {
-    if (!data) {
-      return undefined;
-    }
-
-    const sensitiveKeywords = ["token", "key", "secret", "password", "authorization", "cookie", "credential"];
-
-    const maskValue = (value: unknown, keyPath: string[]): unknown => {
-      if (Array.isArray(value)) {
-        return value.map((item, index) => maskValue(item, [...keyPath, String(index)]));
-      }
-
-      if (value && typeof value === "object") {
-        return Object.entries(value as Record<string, unknown>).reduce<Record<string, unknown>>((acc, [nestedKey, nestedValue]) => {
-          acc[nestedKey] = maskValue(nestedValue, [...keyPath, nestedKey]);
-          return acc;
-        }, {});
-      }
-
-      const lastKey = keyPath[keyPath.length - 1]?.toLowerCase() ?? "";
-      const shouldMask = sensitiveKeywords.some((keyword) => lastKey.includes(keyword));
-
-      if (shouldMask) {
-        if (typeof value === "string") {
-          return this.maskString(value);
-        }
-
-        if (typeof value === "number") {
-          return "***";
-        }
-
-        if (typeof value === "boolean") {
-          return value;
-        }
-
-        return value === null || value === undefined ? value : "***";
-      }
-
-      return value;
-    };
-
-    return maskValue({ ...data }, []) as Record<string, unknown>;
-  }
-
-  private maskString(value: string): string {
-    if (value.length <= 6) {
-      return `${value[0] ?? "*"}***${value[value.length - 1] ?? "*"}`;
-    }
-
-    const start = value.slice(0, 3);
-    const end = value.slice(-2);
-    return `${start}***${end}`;
+    return maskObject(data);
   }
 
   /**
@@ -330,6 +280,67 @@ class Logger {
 
 // Создаем единственный экземпляр логгера
 export const logger = new Logger();
+
+/**
+ * Masks a string value for logging.
+ * @param value The string to mask.
+ * @returns A masked version of the string.
+ */
+const maskString = (value: string): string => {
+  if (value.length <= 6) {
+    return `${value[0] ?? "*"}***${value[value.length - 1] ?? "*"}`;
+  }
+  const start = value.slice(0, 3);
+  const end = value.slice(-2);
+  return `${start}***${end}`;
+};
+
+/**
+ * Recursively masks sensitive data in an object.
+ * @param data The object to mask.
+ * @returns A new object with sensitive data masked.
+ */
+export const maskObject = (data?: Record<string, unknown>): Record<string, unknown> | undefined => {
+  if (!data) {
+    return undefined;
+  }
+
+  const sensitiveKeywords = ["token", "key", "secret", "password", "authorization", "cookie", "credential"];
+
+  const maskValue = (value: unknown, keyPath: string[]): unknown => {
+    if (Array.isArray(value)) {
+      return value.map((item, index) => maskValue(item, [...keyPath, String(index)]));
+    }
+
+    if (value && typeof value === "object") {
+      return Object.entries(value as Record<string, unknown>).reduce<Record<string, unknown>>((acc, [nestedKey, nestedValue]) => {
+        acc[nestedKey] = maskValue(nestedValue, [...keyPath, nestedKey]);
+        return acc;
+      }, {});
+    }
+
+    const lastKey = keyPath[keyPath.length - 1]?.toLowerCase() ?? "";
+    const shouldMask = sensitiveKeywords.some((keyword) => lastKey.includes(keyword));
+
+    if (shouldMask) {
+      if (typeof value === "string") {
+        return maskString(value);
+      }
+      if (typeof value === "number") {
+        return "***";
+      }
+      if (typeof value === "boolean") {
+        return value;
+      }
+      return value === null || value === undefined ? value : "***";
+    }
+
+    return value;
+  };
+
+  return maskValue({ ...data }, []) as Record<string, unknown>;
+};
+
 
 if (typeof window !== 'undefined') {
   // Перехватываем необработанные ошибки
