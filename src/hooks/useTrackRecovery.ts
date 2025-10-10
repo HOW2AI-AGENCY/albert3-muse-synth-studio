@@ -87,12 +87,18 @@ export const useTrackRecovery = (
       const isStuck = trackAge > pendingThresholdMs;
       const isNotProcessing = !processingTracksRef.current.has(track.id);
       
-      // ✅ Не retry если уже есть suno_task_id - значит запрос уже отправлен
+      // ✅ ФАЗА 2.1: Не retry если уже есть suno_task_id - значит запрос уже отправлен
       const hasSunoTask = track.metadata && 
         typeof track.metadata === 'object' && 
         'suno_task_id' in track.metadata;
       
-      return isStuck && isNotProcessing && !hasSunoTask;
+      // ✅ ФАЗА 2.1: НЕ retry если была ошибка парсинга taskId
+      const hasTaskIdError = track.metadata &&
+        typeof track.metadata === 'object' &&
+        'last_error' in track.metadata &&
+        String(track.metadata.last_error).includes('did not include a task identifier');
+      
+      return isStuck && isNotProcessing && !hasSunoTask && !hasTaskIdError;
     });
 
       // Фильтруем failed треки для retry (с exponential backoff)

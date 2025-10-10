@@ -144,6 +144,10 @@ export class SunoApiError extends Error {
   }
 }
 
+// ✅ ФАЗА 2.2: Circuit Breaker для Suno API
+import { CircuitBreaker } from "./circuit-breaker.ts";
+const sunoCircuitBreaker = new CircuitBreaker(5, 60000, 30000);
+
 const unique = (values: (string | undefined | null)[]): string[] => {
   const seen = new Set<string>();
   const output: string[] = [];
@@ -275,7 +279,10 @@ export const buildSunoHeaders = (
 };
 
 const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null } => {
-  if (!payload || typeof payload !== "object") return {};
+  if (!payload || typeof payload !== "object") {
+    console.warn('⚠️ [SUNO] Invalid payload type:', typeof payload);
+    return {};
+  }
 
   const normaliseString = (value: unknown): string | undefined => {
     if (typeof value !== "string") return undefined;
@@ -285,6 +292,44 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
 
   const TASK_ID_KEYS = ["taskId", "task_id", "id"] as const;
   const JOB_ID_KEYS = ["jobId", "job_id"] as const;
+
+  // ✅ ФАЗА 1.2: Попытка извлечь taskId из разных форматов ответа
+  const record = payload as Record<string, unknown>;
+  
+  // Формат 1: Прямой объект с taskId
+  for (const key of TASK_ID_KEYS) {
+    const candidate = normaliseString(record[key]);
+    if (candidate) {
+      console.log('✅ [SUNO] Found taskId directly:', { key, taskId: candidate });
+      return { taskId: candidate, jobId: normaliseString(record.jobId || record.job_id) ?? null };
+    }
+  }
+  
+  // Формат 2: Массив с data/results
+  if ('data' in record && Array.isArray(record.data) && record.data.length > 0) {
+    const first = record.data[0];
+    if (first && typeof first === 'object') {
+      const result = parseTaskId(first);
+      if (result.taskId) {
+        console.log('✅ [SUNO] Found taskId in data array');
+        return result;
+      }
+    }
+  }
+  
+  // Формат 3: Вложенный объект result/response
+  if ('result' in record || 'response' in record) {
+    const nested = record.result || record.response;
+    if (nested && typeof nested === 'object') {
+      const result = parseTaskId(nested);
+      if (result.taskId) {
+        console.log('✅ [SUNO] Found taskId in nested object');
+        return result;
+      }
+    }
+  }
+  
+  // ✅ Fallback: Рекурсивный поиск (существующая логика)
 
   const visited = new Set<object>();
   const queue: unknown[] = [payload];
@@ -344,6 +389,11 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
   }
 
   if (!foundTaskId) {
+    // ✅ ФАЗА 1.1: Логируем если ничего не найдено
+    console.error('🔴 [SUNO] Failed to extract taskId from payload:', {
+      payloadKeys: Object.keys(payload as Record<string, unknown>),
+      payloadPreview: JSON.stringify(payload).substring(0, 500)
+    });
     return {};
   }
 
@@ -374,9 +424,11 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
   }
 
   const generateTrack = async (payload: SunoGenerationPayload): Promise<SunoGenerationResult> => {
-    const errors: SunoApiError[] = [];
-    const MAX_RETRIES = 3;
-    const BACKOFF_BASE_MS = 1000;
+    // ✅ ФАЗА 2.2: Используем circuit breaker
+    return await sunoCircuitBreaker.call(async () => {
+      const errors: SunoApiError[] = [];
+      const MAX_RETRIES = 3;
+      const BACKOFF_BASE_MS = 1000;
 
     // The new API has a single, stable endpoint. We iterate for resilience, but it's less critical.
     for (const endpoint of generateEndpoints) {
@@ -391,6 +443,25 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
 
           const rawText = await response.text();
           const { json, parseError } = safeParseJson(rawText);
+
+          // ✅ ФАЗА 1.1: Полное логирование ответа Suno API
+          console.log('🔍 [SUNO DEBUG] Raw response:', {
+            endpoint,
+            status: response.status,
+            headers: Object.fromEntries(response.headers.entries()),
+            bodyLength: rawText.length,
+            bodyPreview: rawText.substring(0, 500),
+            parsedJson: json,
+            parseError: parseError?.message
+          });
+
+          if (json && typeof json === 'object') {
+            console.log('🔍 [SUNO DEBUG] Response structure:', {
+              keys: Object.keys(json as Record<string, unknown>),
+              isArray: Array.isArray(json),
+              firstLevelStructure: JSON.stringify(json, null, 2).substring(0, 1000)
+            });
+          }
 
           // Handle 429 Rate Limit with exponential backoff
           if (response.status === 429 && retryAttempt < MAX_RETRIES) {
@@ -451,9 +522,10 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
       }
     }
 
-    const summary = errors.map(err => `${err.details.endpoint}: ${err.message}`).join("; ");
-    throw new SunoApiError(`All Suno generation endpoints failed. Attempts: ${summary}`, {
-      endpoint: generateEndpoints.join(", "),
+      const summary = errors.map(err => `${err.details.endpoint}: ${err.message}`).join("; ");
+      throw new SunoApiError(`All Suno generation endpoints failed. Attempts: ${summary}`, {
+        endpoint: generateEndpoints.join(", "),
+      });
     });
   };
 

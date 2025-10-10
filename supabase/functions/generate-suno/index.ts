@@ -309,7 +309,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     
     logger.info('🎵 Calling Suno API', { trackId: finalTrackId, customMode: customModeValue });
 
-    // ✅ PHASE 1 FIX: Throw on error instead of return
+    // ✅ ФАЗА 3.1: Улучшенная обработка ошибок с graceful degradation
     let generationResult;
     try {
       generationResult = await sunoClient.generateTrack(sunoPayload);
@@ -322,12 +322,43 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       
       const errorMessage = err instanceof Error ? err.message : 'Suno generation failed';
       
+      // ✅ ФАЗА 3.1: Сохранить детали ошибки в metadata
+      const errorDetails = {
+        error_type: 'suno_api_error',
+        error_message: errorMessage,
+        error_timestamp: new Date().toISOString(),
+        error_stack: err instanceof Error ? err.stack : undefined,
+        payload_sent: {
+          prompt: sunoPayload.prompt?.substring(0, 100),
+          tags: sunoPayload.tags,
+          model: sunoPayload.model,
+          customMode: sunoPayload.customMode,
+        },
+      };
+
       await supabaseAdmin
         .from('tracks')
-        .update({ status: 'failed', error_message: errorMessage })
+        .update({
+          status: 'failed',
+          error_message: errorMessage,
+          metadata: {
+            ...requestMetadata,
+            last_error: errorDetails,
+          }
+        })
         .eq('id', finalTrackId);
-      
-      throw new Error(`Suno API error: ${errorMessage}`);
+
+      // ✅ ФАЗА 3.1: Возвращаем 200 OK чтобы не trigger retry на клиенте
+      return new Response(JSON.stringify({
+        success: false,
+        trackId: finalTrackId,
+        error: errorMessage,
+        errorDetails,
+        message: 'Track marked as failed. Check logs and metadata for details.'
+      }), {
+        status: 200, // ← Возвращаем 200, чтобы не trigger retry
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     const taskId = generationResult.taskId;
