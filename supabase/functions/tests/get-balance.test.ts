@@ -52,6 +52,52 @@ Deno.test({
 });
 
 Deno.test({
+  name: "get-balance forwards Suno API authentication headers",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const { accessToken } = await createTestUser();
+
+    let capturedHeaders: Headers | null = null;
+
+    const restoreFetch = installFetchMock({
+      "https://api.sunoapi.org/api/v1/generate/credit": (_input, init) => {
+        capturedHeaders = new Headers(init?.headers ?? {});
+        return new Response(
+          JSON.stringify({ code: 200, msg: "ok", data: { balance: 12, currency: "credits" } }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      },
+    });
+
+    try {
+      const request = new Request("http://localhost/get-balance", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ provider: "suno" }),
+      });
+
+      const response = await getBalanceHandler(request);
+      assertEquals(response.status, 200);
+      assertExists(capturedHeaders);
+      assertEquals(capturedHeaders?.get("authorization"), "Bearer test-suno-key");
+      assertEquals(capturedHeaders?.get("x-api-key"), "test-suno-key");
+      assertEquals(capturedHeaders?.get("api-key"), "test-suno-key");
+
+      const payload = await response.json();
+      assertEquals(payload.provider, "suno");
+      assertEquals(payload.balance, 12);
+      assertEquals(payload.currency, "credits");
+    } finally {
+      restoreFetch();
+    }
+  },
+});
+
+Deno.test({
   name: "get-balance reports aggregated error when all Suno endpoints fail",
   sanitizeOps: false,
   sanitizeResources: false,
