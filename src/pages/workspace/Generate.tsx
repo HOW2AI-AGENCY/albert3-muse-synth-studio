@@ -21,6 +21,9 @@ import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeTrack } from "@/utils/trackNormalizer";
 import type { Track } from "@/services/api.service";
+import { SeparateStemsDialog } from "@/components/tracks/SeparateStemsDialog";
+import { ExtendTrackDialog } from "@/components/tracks/ExtendTrackDialog";
+import { CreateCoverDialog } from "@/components/tracks/CreateCoverDialog";
 
 const Generate = () => {
   const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks();
@@ -29,6 +32,14 @@ const Generate = () => {
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showGenerator, setShowGenerator] = useState(false);
   const [userId, setUserId] = useState<string | undefined>();
+
+  // Dialog states
+  const [separateStemsOpen, setSeparateStemsOpen] = useState(false);
+  const [selectedTrackForStems, setSelectedTrackForStems] = useState<{ id: string; title: string } | null>(null);
+  const [extendOpen, setExtendOpen] = useState(false);
+  const [selectedTrackForExtend, setSelectedTrackForExtend] = useState<Track | null>(null);
+  const [coverOpen, setCoverOpen] = useState(false);
+  const [selectedTrackForCover, setSelectedTrackForCover] = useState<{ id: string; title: string } | null>(null);
 
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1023px)");
@@ -72,6 +83,27 @@ const Generate = () => {
     }
   };
 
+  const handleSeparateStems = (trackId: string) => {
+    const t = tracks.find(tr => tr.id === trackId);
+    if (!t) return;
+    setSelectedTrackForStems({ id: t.id, title: t.title });
+    setSeparateStemsOpen(true);
+  };
+
+  const handleExtend = (trackId: string) => {
+    const t = tracks.find(tr => tr.id === trackId);
+    if (!t) return;
+    setSelectedTrackForExtend(t);
+    setExtendOpen(true);
+  };
+
+  const handleCover = (trackId: string) => {
+    const t = tracks.find(tr => tr.id === trackId);
+    if (!t) return;
+    setSelectedTrackForCover({ id: t.id, title: t.title });
+    setCoverOpen(true);
+  };
+
   // Desktop: 3-panel resizable layout
   if (isDesktop) {
     return (
@@ -95,6 +127,9 @@ const Generate = () => {
                 isLoading={isLoading}
                 deleteTrack={deleteTrack}
                 refreshTracks={refreshTracks}
+                onSeparateStems={handleSeparateStems}
+                onExtend={handleExtend}
+                onCover={handleCover}
               />
             </div>
           </ResizablePanel>
@@ -113,6 +148,43 @@ const Generate = () => {
             </>
           )}
         </ResizablePanelGroup>
+
+        {/* Dialogs */}
+        {selectedTrackForStems && (
+          <SeparateStemsDialog
+            open={separateStemsOpen}
+            onOpenChange={setSeparateStemsOpen}
+            trackId={selectedTrackForStems.id}
+            trackTitle={selectedTrackForStems.title}
+            onSuccess={() => {
+              refreshTracks();
+              setSelectedTrackForStems(null);
+            }}
+          />
+        )}
+        {selectedTrackForExtend && (
+          <ExtendTrackDialog
+            open={extendOpen}
+            onOpenChange={setExtendOpen}
+            track={{
+              id: selectedTrackForExtend.id,
+              title: selectedTrackForExtend.title,
+              duration: selectedTrackForExtend.duration ?? undefined,
+              prompt: selectedTrackForExtend.prompt,
+              style_tags: selectedTrackForExtend.style_tags as any,
+            }}
+          />
+        )}
+        {selectedTrackForCover && (
+          <CreateCoverDialog
+            open={coverOpen}
+            onOpenChange={setCoverOpen}
+            track={{
+              id: selectedTrackForCover.id,
+              title: selectedTrackForCover.title,
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -138,10 +210,51 @@ const Generate = () => {
                 isLoading={isLoading}
                 deleteTrack={deleteTrack}
                 refreshTracks={refreshTracks}
+                onSeparateStems={handleSeparateStems}
+                onExtend={handleExtend}
+                onCover={handleCover}
               />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
+
+        {/* Dialogs */}
+        {selectedTrackForStems && (
+          <SeparateStemsDialog
+            open={separateStemsOpen}
+            onOpenChange={setSeparateStemsOpen}
+            trackId={selectedTrackForStems.id}
+            trackTitle={selectedTrackForStems.title}
+            onSuccess={() => {
+              refreshTracks();
+              setSelectedTrackForStems(null);
+            }}
+          />
+        )}
+        {selectedTrackForExtend && (
+          <ExtendTrackDialog
+            open={extendOpen}
+            onOpenChange={setExtendOpen}
+            track={{
+              id: selectedTrackForExtend.id,
+              title: selectedTrackForExtend.title,
+              duration: selectedTrackForExtend.duration ?? undefined,
+              prompt: selectedTrackForExtend.prompt,
+              style_tags: selectedTrackForExtend.style_tags as any,
+            }}
+          />
+        )}
+        {selectedTrackForCover && (
+          <CreateCoverDialog
+            open={coverOpen}
+            onOpenChange={setCoverOpen}
+            track={{
+              id: selectedTrackForCover.id,
+              title: selectedTrackForCover.title,
+            }}
+          />
+        )}
+
         <Sheet open={!!selectedTrack} onOpenChange={(open) => !open && handleCloseDetail()}>
           <SheetContent side="right" className="w-full sm:w-[500px] p-0 border-l">
             {selectedTrack && (
@@ -167,8 +280,48 @@ const Generate = () => {
           isLoading={isLoading}
           deleteTrack={deleteTrack}
           refreshTracks={refreshTracks}
+          onSeparateStems={handleSeparateStems}
+          onExtend={handleExtend}
+          onCover={handleCover}
         />
       </div>
+
+      {/* Dialogs */}
+      {selectedTrackForStems && (
+        <SeparateStemsDialog
+          open={separateStemsOpen}
+          onOpenChange={setSeparateStemsOpen}
+          trackId={selectedTrackForStems.id}
+          trackTitle={selectedTrackForStems.title}
+          onSuccess={() => {
+            refreshTracks();
+            setSelectedTrackForStems(null);
+          }}
+        />
+      )}
+      {selectedTrackForExtend && (
+        <ExtendTrackDialog
+          open={extendOpen}
+          onOpenChange={setExtendOpen}
+          track={{
+            id: selectedTrackForExtend.id,
+            title: selectedTrackForExtend.title,
+            duration: selectedTrackForExtend.duration ?? undefined,
+            prompt: selectedTrackForExtend.prompt,
+            style_tags: selectedTrackForExtend.style_tags as any,
+          }}
+        />
+      )}
+      {selectedTrackForCover && (
+        <CreateCoverDialog
+          open={coverOpen}
+          onOpenChange={setCoverOpen}
+          track={{
+            id: selectedTrackForCover.id,
+            title: selectedTrackForCover.title,
+          }}
+        />
+      )}
 
       <Drawer open={showGenerator} onOpenChange={setShowGenerator}>
         <DrawerTrigger asChild>
