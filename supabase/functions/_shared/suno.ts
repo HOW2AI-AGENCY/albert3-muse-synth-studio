@@ -54,6 +54,7 @@ export interface SunoGenerationResult {
 
 export interface SunoLyricsGenerationResult {
   taskId: string;
+  jobId?: string | null;
   rawResponse: unknown;
   endpoint: string;
 }
@@ -271,71 +272,78 @@ export const buildSunoHeaders = (
 
 const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null } => {
   if (!payload || typeof payload !== "object") return {};
-  const data = payload as Record<string, unknown>;
 
-  const tryValue = (...keys: string[]): string | undefined => {
-    for (const key of keys) {
-      const value = data[key];
-      if (typeof value === "string" && value.trim()) return value;
-      if (typeof value === "object" && value !== null) {
-        const nested = value as Record<string, unknown>;
-        for (const nestedKey of keys) {
-          const nestedValue = nested[nestedKey];
-          if (typeof nestedValue === "string" && nestedValue.trim()) {
-            return nestedValue;
-          }
+  const normaliseString = (value: unknown): string | undefined => {
+    if (typeof value !== "string") return undefined;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  };
+
+  const TASK_ID_KEYS = ["taskId", "task_id", "id"] as const;
+  const JOB_ID_KEYS = ["jobId", "job_id"] as const;
+
+  const visited = new Set<object>();
+  const queue: unknown[] = [payload];
+
+  let foundTaskId: string | undefined;
+  let foundJobId: string | undefined;
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (!current || typeof current !== "object") {
+      continue;
+    }
+
+    if (visited.has(current)) {
+      continue;
+    }
+    visited.add(current);
+
+    if (Array.isArray(current)) {
+      for (const item of current) {
+        queue.push(item);
+      }
+      continue;
+    }
+
+    const record = current as Record<string, unknown>;
+
+    if (!foundTaskId) {
+      for (const key of TASK_ID_KEYS) {
+        const candidate = normaliseString(record[key]);
+        if (candidate) {
+          foundTaskId = candidate;
+          break;
         }
       }
     }
-    return undefined;
-  };
 
-  const fromArray = (value: unknown): string | undefined => {
-    if (Array.isArray(value)) {
-      for (const entry of value) {
-        if (entry && typeof entry === "object") {
-          const candidate = (entry as Record<string, unknown>).taskId
-            ?? (entry as Record<string, unknown>).task_id
-            ?? (entry as Record<string, unknown>).id;
-          if (typeof candidate === "string" && candidate.trim()) {
-            return candidate;
-          }
+    if (!foundJobId) {
+      for (const key of JOB_ID_KEYS) {
+        const candidate = normaliseString(record[key]);
+        if (candidate) {
+          foundJobId = candidate;
+          break;
         }
       }
     }
-    return undefined;
-  };
 
-  const direct = tryValue("taskId", "task_id", "id");
-  if (direct) {
-    return { taskId: direct, jobId: tryValue("jobId", "job_id") ?? null };
-  }
+    if (foundTaskId && foundJobId) {
+      break;
+    }
 
-  if ("data" in data) {
-    const rawData = (data as { data?: unknown }).data;
-    if (rawData && typeof rawData === "object") {
-      const nested = rawData as Record<string, unknown>;
-      const nestedCandidate = nested.taskId ?? nested.task_id ?? nested.id;
-      if (typeof nestedCandidate === "string" && nestedCandidate.trim()) {
-        return {
-          taskId: nestedCandidate,
-          jobId: typeof nested.jobId === "string" ? nested.jobId : typeof nested.job_id === "string" ? nested.job_id : null,
-        };
+    for (const value of Object.values(record)) {
+      if (value && typeof value === "object") {
+        queue.push(value);
       }
     }
-
-    const arrayCandidate = fromArray(rawData);
-    if (arrayCandidate) {
-      return { taskId: arrayCandidate, jobId: null };
-    }
   }
 
-  const arrayCandidate = Array.isArray(data) ? fromArray(data) : null;
-  if (arrayCandidate) {
-    return { taskId: arrayCandidate, jobId: null };
+  if (!foundTaskId) {
+    return {};
   }
 
-  return {};
+  return { taskId: foundTaskId, jobId: foundJobId ?? null };
 };
 
 // This function is no longer needed with the new, simplified API response structure.
@@ -393,11 +401,9 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        // New, simplified response structure: { code, msg, data: { taskId } }
-        const data = (json as any)?.data;
-        const taskId = data?.taskId;
+        const { taskId, jobId } = parseTaskId(json);
 
-        if (typeof taskId !== 'string' || !taskId) {
+        if (typeof taskId !== "string" || !taskId) {
           throw new SunoApiError("Suno generation response did not include a task identifier", {
             endpoint,
             status: response.status,
@@ -405,8 +411,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        // The new API doesn't return a `jobId` in the generation response.
-        return { taskId, rawResponse: json, endpoint };
+        return { taskId, jobId: jobId ?? null, rawResponse: json, endpoint };
       } catch (error) {
         const sunoError = error instanceof SunoApiError
           ? error
@@ -460,10 +465,9 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        const data = (json as any)?.data;
-        const taskId = data?.taskId;
+        const { taskId, jobId } = parseTaskId(json);
 
-        if (typeof taskId !== 'string' || !taskId) {
+        if (typeof taskId !== "string" || !taskId) {
           throw new SunoApiError("Suno lyrics response did not include a task identifier", {
             endpoint,
             status: response.status,
@@ -471,7 +475,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        return { taskId, rawResponse: json, endpoint };
+        return { taskId, jobId: jobId ?? null, rawResponse: json, endpoint };
       } catch (error) {
         const sunoError = error instanceof SunoApiError
           ? error
