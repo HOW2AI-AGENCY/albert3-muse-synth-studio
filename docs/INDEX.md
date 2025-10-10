@@ -7,7 +7,7 @@
 - [🔄 Пользовательские потоки](USER_FLOWS.md) - Детальные сценарии использования
 - [🎨 UI/UX дизайн](UI_UX_DESIGN_SYSTEM.md) - Интерфейс и взаимодействие
 
-### Для разработчиков
+- [🧭 Developer Control Center](DEVELOPER_DASHBOARD.md) - Карта модулей, чек-листы CI/CD, мониторинг тестов
 - [👨‍💻 Руководство разработчика](DEVELOPER_GUIDE.md) - Настройка и разработка
 - [🏗️ Архитектура](ARCHITECTURE_DIAGRAMS.md) - 10+ диаграмм системы
 - [🧩 Компоненты](COMPONENT_GUIDE.md) - Примеры и best practices
@@ -16,6 +16,7 @@
 
 ### Для менеджеров
 - [🚀 Roadmap](ROADMAP.md) - Планы развития
+- [📊 Доска статусов](../project-management/tasks/STATUS_DASHBOARD.md) - Оперативный мониторинг задач
 - [✅ Итоги Sprint 24](../project-management/tasks/current-sprint.md) - закрывающий отчёт
 - [🗂️ Архив Sprint 24](../project-management/tasks/sprint-24-plan.md) - план и фактические результаты
 - [📊 Бэклог](../project-management/tasks/backlog.md) - актуальный перечень инициатив
@@ -26,6 +27,7 @@
 - README.md - Главная страница проекта
 - CHANGELOG.md - История изменений
 - SETUP-GUIDE.md - Установка и настройка
+- DEVELOPER_DASHBOARD.md - Контрольный центр разработчика
 
 ### Архитектура
 - architecture/ARCHITECTURE.md - Общая архитектура
@@ -53,20 +55,22 @@
 - PERFORMANCE_OPTIMIZATIONS.md - Оптимизация
 - MOBILE_OPTIMIZATION.md - Мобильная оптимизация
 - STEMS_SYSTEM.md - Система стемов
-- integrations/SUNO_API_AUDIT.md - Полный аудит интеграции Suno API (обновлено 10.10.2025)
-  - ../project-management/reports/2025-10-15-repo-audit.md ⭐ NEW - Комплексный аудит репозитория (15.10.2025)
+- integrations/SUNO_API_AUDIT.md ⭐ UPDATED - Полный аудит интеграции Suno API (обновлено 16.10.2025)
+- integrations/THIRD_PARTY_OVERVIEW.md ⭐ NEW - Обзор внешних сервисов (Suno, Supabase, Sentry, Analytics)
+  - ../project-management/reports/2025-10-16-repo-audit.md ⭐ NEW - Комплексный аудит репозитория (16.10.2025)
+  - ../project-management/reports/2025-10-15-repo-audit.md - Репо-аудит (15.10.2025)
   - ../project-management/reports/2025-10-10-repo-audit.md - Репо-аудит (10.10.2025)
   - ../project-management/reports/2025-10-09-workspace-audit.md - Полный аудит Workspace (09.10.2025)
 
 ### Важные темы (октябрь 2025)
-- Service Worker & Caching Policy — см. `public/sw.js`, а также разделы в `architecture/ARCHITECTURE.md` и `performance/PERFORMANCE.md`
-- Supabase Integration Notes — см. `storage/STORAGE_GUIDE.md` и `api/API.md`
+- Service Worker & Caching Policy — см. `public/sw.js`, `architecture/ARCHITECTURE.md` и `performance/PERFORMANCE.md`
+- Suno & внешние интеграции — см. `integrations/SUNO_API_AUDIT.md` и `integrations/THIRD_PARTY_OVERVIEW.md`
 - Logger & Logs — см. `DEVELOPER_GUIDE.md`, `src/utils/logger.ts` и `project-management/TECHNICAL_DEBT_PLAN.md`
 - UI Component Registry — см. `interface/COMPONENT_SYSTEM.md` и `COMPONENT_GUIDE.md`
-- Dev Server & Docs validation — см. `SETUP-GUIDE.md` и `scripts/docs/validate.ts`
+- Dev Server & Docs validation — см. `SETUP-GUIDE.md`, `DEVELOPER_DASHBOARD.md` и `scripts/docs/validate.ts`
 
 ---
 
 ⭐ **UPDATED** - Актуализировано в Sprint 24 (неделя 0)
 
-*Обновлено: 15 октября 2025*
+*Обновлено: 16 октября 2025*
