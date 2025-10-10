@@ -16,12 +16,16 @@ const unique = (values: Array<string | null | undefined>): string[] => {
   const result: string[] = [];
   for (const value of values) {
     if (!value) continue;
-    const trimmed = value.trim();
-    if (!trimmed) continue;
-    const normalised = trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
-    if (!seen.has(normalised)) {
-      seen.add(normalised);
-      result.push(normalised);
+
+    const segments = value.split(",").map((segment) => segment.trim()).filter(Boolean);
+    for (const segment of segments) {
+      if (!segment) continue;
+      const normalised = segment.endsWith('/') ? segment.slice(0, -1) : segment;
+      if (!normalised) continue;
+      if (!seen.has(normalised)) {
+        seen.add(normalised);
+        result.push(normalised);
+      }
     }
   }
   return result;
