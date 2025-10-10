@@ -164,21 +164,26 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       timestamp: new Date().toISOString()
     }, null, 2));
 
-    // ✅ Требуем наличие JWT и извлекаем пользователя корректно
+    // ✅ JWT проверяется автоматически через verify_jwt=true в config.toml
+    // Supabase уже валидировал токен до входа в функцию
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Authorization header required' }), {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const supabase = createSupabaseUserClient(token);
+    
+    // Создаем user-scoped client для получения данных пользователя
+    const userClient = createSupabaseUserClient(token);
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      logger.error('🔴 [GENERATE-SUNO] Auth failed', { error: authError ?? undefined });
+    if (userError || !user) {
+      logger.error('🔴 [GENERATE-SUNO] Failed to get user from verified token', { 
+        error: userError ?? undefined 
+      });
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -186,6 +191,16 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     }
 
     console.log('✅ [GENERATE-SUNO] User authenticated:', user.id);
+    
+    logger.info('🎵 [GENERATE-SUNO] Generation request validated', {
+      userId: user.id,
+      trackId: body.trackId,
+      hasLyrics: !!normalizedLyrics,
+      hasVocals: effectiveHasVocals,
+      customMode: customModeValue,
+      provider: 'suno',
+      modelVersion: body.model_version || 'chirp-v3-5'
+    });
 
     const trackId = body.trackId;
     const prompt = body.prompt;

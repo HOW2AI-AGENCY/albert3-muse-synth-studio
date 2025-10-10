@@ -48,7 +48,7 @@ export const useTrackRecovery = (
       // Получаем все треки в статусе pending
       const { data: pendingTracks, error: pendingError } = await supabase
         .from('tracks')
-        .select('id, title, created_at, prompt, provider, lyrics, has_vocals, style_tags')
+        .select('id, title, created_at, prompt, provider, lyrics, has_vocals, style_tags, metadata')
         .eq('user_id', userId)
         .eq('status', 'pending')
         .is('suno_id', null)
@@ -82,12 +82,18 @@ export const useTrackRecovery = (
       }));
 
       // Фильтруем pending треки старше порога
-      const stuckPendingTracks = (pendingTracks || []).filter(track => {
-        const trackAge = now - new Date(track.created_at).getTime();
-        const isStuck = trackAge > pendingThresholdMs;
-        const isNotProcessing = !processingTracksRef.current.has(track.id);
-        return isStuck && isNotProcessing;
-      });
+    const stuckPendingTracks = (pendingTracks || []).filter(track => {
+      const trackAge = now - new Date(track.created_at).getTime();
+      const isStuck = trackAge > pendingThresholdMs;
+      const isNotProcessing = !processingTracksRef.current.has(track.id);
+      
+      // ✅ Не retry если уже есть suno_task_id - значит запрос уже отправлен
+      const hasSunoTask = track.metadata && 
+        typeof track.metadata === 'object' && 
+        'suno_task_id' in track.metadata;
+      
+      return isStuck && isNotProcessing && !hasSunoTask;
+    });
 
       // Фильтруем failed треки для retry (с exponential backoff)
       const retriableFailedTracks = failedTracks.filter(track => {
