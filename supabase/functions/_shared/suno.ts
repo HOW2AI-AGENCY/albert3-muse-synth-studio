@@ -375,26 +375,40 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
 
   const generateTrack = async (payload: SunoGenerationPayload): Promise<SunoGenerationResult> => {
     const errors: SunoApiError[] = [];
+    const MAX_RETRIES = 3;
+    const BACKOFF_BASE_MS = 1000;
 
     // The new API has a single, stable endpoint. We iterate for resilience, but it's less critical.
     for (const endpoint of generateEndpoints) {
-      try {
-        const response = await fetchImpl(endpoint, {
-          method: "POST",
-          headers: buildSunoHeaders(apiKey, { "Content-Type": "application/json" }),
-          body: JSON.stringify(payload),
-        });
-
-        const rawText = await response.text();
-        const { json, parseError } = safeParseJson(rawText);
-
-        if (!response.ok) {
-          throw new SunoApiError(`Suno generation failed with status ${response.status}`, {
-            endpoint,
-            status: response.status,
-            body: rawText,
+      // Retry logic with exponential backoff for 429 errors
+      for (let retryAttempt = 0; retryAttempt <= MAX_RETRIES; retryAttempt++) {
+        try {
+          const response = await fetchImpl(endpoint, {
+            method: "POST",
+            headers: buildSunoHeaders(apiKey, { "Content-Type": "application/json" }),
+            body: JSON.stringify(payload),
           });
-        }
+
+          const rawText = await response.text();
+          const { json, parseError } = safeParseJson(rawText);
+
+          // Handle 429 Rate Limit with exponential backoff
+          if (response.status === 429 && retryAttempt < MAX_RETRIES) {
+            const backoffMs = BACKOFF_BASE_MS * Math.pow(2, retryAttempt);
+            console.warn(`⚠️ [SUNO] Rate limit hit (429), retry ${retryAttempt + 1}/${MAX_RETRIES} after ${backoffMs}ms`, {
+              endpoint,
+            });
+            await new Promise(resolve => setTimeout(resolve, backoffMs));
+            continue; // Retry same endpoint
+          }
+
+          if (!response.ok) {
+            throw new SunoApiError(`Suno generation failed with status ${response.status}`, {
+              endpoint,
+              status: response.status,
+              body: rawText,
+            });
+          }
 
         if (parseError) {
           throw new SunoApiError("Unable to parse Suno generation response", {
@@ -416,19 +430,24 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
         }
 
         return { taskId, jobId: jobId ?? null, rawResponse: json, endpoint };
-      } catch (error) {
-        const sunoError = error instanceof SunoApiError
-          ? error
-          : new SunoApiError((error as Error)?.message ?? "Unknown Suno generation error", {
+        } catch (error) {
+          const sunoError = error instanceof SunoApiError
+            ? error
+            : new SunoApiError((error as Error)?.message ?? "Unknown Suno generation error", {
+              endpoint,
+              cause: error,
+            });
+          errors.push(sunoError);
+          console.error("🔴 [SUNO] Generation attempt failed", {
             endpoint,
-            cause: error,
+            message: sunoError.message,
+            status: sunoError.details.status,
+            retryAttempt,
           });
-        errors.push(sunoError);
-        console.error("🔴 [SUNO] Generation attempt failed", {
-          endpoint,
-          message: sunoError.message,
-          status: sunoError.details.status,
-        });
+          
+          // Don't retry on non-429 errors, move to next endpoint
+          break;
+        }
       }
     }
 

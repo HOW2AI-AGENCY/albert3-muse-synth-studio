@@ -36,6 +36,8 @@ export interface ImprovePromptResponse {
   improvedPrompt: string;
 }
 
+export type SunoModelVersion = 'V3_5' | 'V4' | 'V4_5' | 'V4_5PLUS' | 'V5';
+
 export interface GenerateMusicRequest {
   trackId?: string;
   userId?: string;
@@ -53,6 +55,31 @@ export interface GenerateMusicRequest {
   weirdnessConstraint?: number;
   audioWeight?: number;
 }
+
+/**
+ * Normalize client-side model names to Suno API expected format
+ */
+const normalizeSunoModel = (input?: string): SunoModelVersion => {
+  const mapping: Record<string, SunoModelVersion> = {
+    'chirp-v3-5': 'V3_5',
+    'chirp-v3.5': 'V3_5',
+    'v3.5': 'V3_5',
+    'chirp-v4': 'V4',
+    'v4': 'V4',
+    'chirp-v4-5': 'V4_5',
+    'chirp-v4.5': 'V4_5',
+    'v4.5': 'V4_5',
+    'chirp-v4-5plus': 'V4_5PLUS',
+    'chirp-v4.5plus': 'V4_5PLUS',
+    'v4.5plus': 'V4_5PLUS',
+    'chirp-crow': 'V5',
+    'chirp-v5': 'V5',
+    'v5': 'V5',
+  };
+  
+  const normalized = input?.toLowerCase().trim();
+  return mapping[normalized ?? ''] ?? 'V5'; // Default to latest version
+};
 
 export interface GenerateMusicResponse {
   success: boolean;
@@ -203,6 +230,9 @@ export class ApiService {
       })();
 
       const makeInstrumental = request.hasVocals === false;
+      
+      // Normalize model version to Suno API format
+      const normalizedModel = normalizeSunoModel(request.modelVersion);
 
       const payload: Record<string, unknown> = {
         trackId: request.trackId,
@@ -212,7 +242,7 @@ export class ApiService {
         lyrics,
         hasVocals: request.hasVocals,
         make_instrumental: makeInstrumental,
-        model_version: request.modelVersion || 'V5',
+        model_version: normalizedModel,
         customMode: request.customMode,
       };
 

@@ -29,6 +29,51 @@ async function downloadWithRetry(url: string, maxRetries = 3): Promise<Response>
 }
 
 /**
+ * Upload to Supabase Storage with retry mechanism
+ * @param supabase - Supabase client
+ * @param bucket - Storage bucket name
+ * @param path - File path
+ * @param blob - File blob
+ * @param contentType - MIME type
+ * @param maxRetries - Maximum retry attempts (default: 3)
+ * @returns Upload result
+ */
+async function uploadWithRetry(
+  supabase: SupabaseClient,
+  bucket: string,
+  path: string,
+  blob: Blob,
+  contentType: string,
+  maxRetries = 3
+) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .upload(path, blob, {
+          contentType,
+          upsert: true,
+          cacheControl: '31536000'
+        });
+      
+      if (error) {
+        throw error;
+      }
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error(`[STORAGE] Upload attempt ${i + 1} failed:`, error);
+      if (i === maxRetries - 1) {
+        return { data: null, error };
+      }
+      // Exponential backoff: 2s, 4s, 8s
+      await new Promise(resolve => setTimeout(resolve, 2000 * Math.pow(2, i)));
+    }
+  }
+  throw new Error(`Upload failed after ${maxRetries} attempts`);
+}
+
+/**
  * Downloads audio from external URL and uploads to Supabase Storage
  * @param audioUrl - External URL from Suno (or other provider)
  * @param trackId - Track ID for folder organization
@@ -57,20 +102,20 @@ export async function downloadAndUploadAudio(
     
     console.log(`✅ [STORAGE] Downloaded ${(audioSize / 1024 / 1024).toFixed(2)} MB`);
     
-    // 2. Upload to Supabase Storage
+    // 2. Upload to Supabase Storage with retry
     const path = `${userId}/${trackId}/${fileName}`;
     console.log(`⬆️  [STORAGE] Uploading to: tracks-audio/${path}`);
     
-    const { data, error } = await supabase.storage
-      .from('tracks-audio')
-      .upload(path, audioBlob, {
-        contentType: 'audio/mpeg',
-        upsert: true, // Replace if exists
-        cacheControl: '31536000' // Cache for 1 year
-      });
+    const { data, error } = await uploadWithRetry(
+      supabase,
+      'tracks-audio',
+      path,
+      audioBlob,
+      'audio/mpeg'
+    );
     
     if (error) {
-      console.error('🔴 [STORAGE] Upload failed:', error);
+      console.error('🔴 [STORAGE] Upload failed after all retries:', error);
       throw error;
     }
     
@@ -116,13 +161,13 @@ export async function downloadAndUploadCover(
     
     const path = `${userId}/${trackId}/${fileName}`;
     
-    const { data, error } = await supabase.storage
-      .from('tracks-covers')
-      .upload(path, coverBlob, {
-        contentType: coverBlob.type || 'image/jpeg',
-        upsert: true,
-        cacheControl: '31536000'
-      });
+    const { data, error } = await uploadWithRetry(
+      supabase,
+      'tracks-covers',
+      path,
+      coverBlob,
+      coverBlob.type || 'image/jpeg'
+    );
     
     if (error) throw error;
     
@@ -162,13 +207,13 @@ export async function downloadAndUploadVideo(
     
     const path = `${userId}/${trackId}/${fileName}`;
     
-    const { data, error } = await supabase.storage
-      .from('tracks-videos')
-      .upload(path, videoBlob, {
-        contentType: videoBlob.type || 'video/mp4',
-        upsert: true,
-        cacheControl: '31536000'
-      });
+    const { data, error } = await uploadWithRetry(
+      supabase,
+      'tracks-videos',
+      path,
+      videoBlob,
+      videoBlob.type || 'video/mp4'
+    );
     
     if (error) throw error;
     
@@ -183,3 +228,4 @@ export async function downloadAndUploadVideo(
     return videoUrl; // Fallback to original URL
   }
 }
+
