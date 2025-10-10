@@ -3,13 +3,14 @@
  * Handles data fetching and track operations with caching support
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ApiService, Track, mapTrackRowToTrack } from "@/services/api.service";
 import { supabase } from "@/integrations/supabase/client";
-import { trackCache, CachedTrack } from "@/features/tracks";
+import { trackCacheIDB, CachedTrack } from "@/features/tracks";
 import type { Database } from "@/integrations/supabase/types";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
+import { logInfo, logError } from "@/utils/logger";
 
 type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
 
@@ -23,26 +24,51 @@ export const useTracks = (refreshTrigger?: number, _options?: UseTracksOptions) 
   const [tracks, setTracks] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const lastUserIdRef = useRef<string | null>(null);
+  const hasTracksRef = useRef(false);
 
   const loadTracks = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
+      // Защита от ложного логаута: если раньше были треки и user=null,
+      // не очищаем список сразу - это может быть временная проблема с auth
       if (!user) {
+        if (hasTracksRef.current && lastUserIdRef.current) {
+          logError(
+            'Auth returned null but we had tracks before - possible session issue',
+            new Error('Temporary auth loss'),
+            'useTracks',
+            { lastUserId: lastUserIdRef.current }
+          );
+          // Не очищаем треки, показываем предупреждение
+          toast({
+            title: "Проблема с сессией",
+            description: "Пытаемся восстановить соединение...",
+            variant: "default",
+          });
+          return;
+        }
+        
+        // Если это первая загрузка и юзера нет - очищаем
         setTracks([]);
+        hasTracksRef.current = false;
+        lastUserIdRef.current = null;
         return;
       }
 
-      // Сначала пытаемся загрузить треки из кэша
+      lastUserIdRef.current = user.id;
+
+      // Загружаем треки из БД (ApiService больше не дублирует кэширование)
       const userTracks = await ApiService.getUserTracks(user.id);
       
-      // Кэшируем загруженные треки
+      // Кэшируем загруженные треки в IndexedDB
       const tracksToCache: Omit<CachedTrack, 'cached_at'>[] = userTracks
-        .filter(track => track.audio_url) // Кэшируем только треки с аудио
+        .filter(track => track.audio_url)
         .map(track => ({
           id: track.id,
           title: track.title,
-          artist: 'AI Generated', // Можно добавить поле artist в Track интерфейс
+          artist: 'AI Generated',
           audio_url: track.audio_url!,
           image_url: track.cover_url || undefined,
           duration: track.duration_seconds || undefined,
@@ -51,12 +77,18 @@ export const useTracks = (refreshTrigger?: number, _options?: UseTracksOptions) 
         }));
 
       if (tracksToCache.length > 0) {
-        trackCache.setTracks(tracksToCache);
+        await trackCacheIDB.setTracks(tracksToCache);
       }
 
       setTracks(userTracks);
+      hasTracksRef.current = userTracks.length > 0;
+      
+      logInfo('Tracks loaded successfully', 'useTracks', {
+        count: userTracks.length,
+        userId: user.id,
+      });
     } catch (error) {
-      console.error("Error loading tracks:", error);
+      logError("Error loading tracks", error as Error, 'useTracks');
       toast({
         title: "Ошибка загрузки",
         description: "Не удалось загрузить треки",
@@ -72,15 +104,15 @@ export const useTracks = (refreshTrigger?: number, _options?: UseTracksOptions) 
       await ApiService.deleteTrack(trackId);
       setTracks((currentTracks) => currentTracks.filter((t) => t.id !== trackId));
 
-      // Удаляем трек из кэша
-      trackCache.removeTrack(trackId);
+      // Удаляем трек из IndexedDB кэша
+      await trackCacheIDB.removeTrack(trackId);
       
       toast({
         title: "Трек удалён",
         description: "Ваш трек был успешно удалён",
       });
     } catch (error) {
-      console.error("Error deleting track:", error);
+      logError("Error deleting track", error as Error, 'useTracks', { trackId });
       toast({
         title: "Ошибка удаления",
         description: "Не удалось удалить трек",

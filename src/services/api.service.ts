@@ -547,87 +547,10 @@ export class ApiService {
 
       const tracks = (data ?? []).map(mapTrackRowToTrack);
 
-      // Кэшируем треки с аудио
-      const tracksToCache: Omit<CachedTrack, 'cached_at'>[] = tracks
-        .filter((track): track is Track & { audio_url: string } => Boolean(track.audio_url) && track.status === 'completed')
-        .map((track) => ({
-          id: track.id,
-          title: track.title,
-          artist: 'AI Generated',
-          audio_url: track.audio_url,
-          image_url: track.cover_url || undefined,
-          duration: track.duration_seconds || undefined,
-          genre: track.style_tags?.join(', ') || undefined,
-          created_at: track.created_at,
-        }));
-
-      if (tracksToCache.length > 0) {
-        trackCache.setTracks(tracksToCache);
-      }
-
+      // Кэширование теперь происходит только в useTracks, убираем дублирование
       return tracks;
     } catch (error) {
-      logWarn('Ошибка при загрузке треков из API, пытаемся использовать кэш', context, {
-        userId,
-        error: error instanceof Error ? error.message : String(error),
-      });
-
-      // В случае ошибки API пытаемся получить треки из кэша
-      const cacheStats = trackCache.getCacheStats();
-      if (cacheStats.totalTracks > 0) {
-        logInfo(`Используем кэшированные треки: ${cacheStats.totalTracks} треков`, context);
-
-        const cachedEntries = getCachedTracks();
-        if (cachedEntries.length > 0) {
-          const cachedTracks: Track[] = cachedEntries.map((cachedTrack) => {
-            const styleTags = cachedTrack.genre
-              ? cachedTrack.genre
-                  .split(',')
-                  .map((tag) => tag.trim())
-                  .filter(Boolean)
-              : null;
-
-            return {
-              id: cachedTrack.id,
-              user_id: userId,
-              title: cachedTrack.title,
-              prompt: '',
-              improved_prompt: null,
-              audio_url: cachedTrack.audio_url,
-              cover_url: cachedTrack.image_url ?? null,
-              video_url: null,
-              status: 'completed' as TrackStatus,
-              error_message: null,
-              provider: null,
-              lyrics: null,
-              style_tags: styleTags,
-              genre: cachedTrack.genre ?? null,
-              mood: null,
-              duration: cachedTrack.duration ?? null,
-              duration_seconds: cachedTrack.duration ?? null,
-              has_vocals: null,
-              is_public: false,
-              metadata: null,
-              suno_id: null,
-              model_name: null,
-              created_at: cachedTrack.created_at,
-              updated_at: cachedTrack.created_at,
-              created_at_suno: null,
-              has_stems: false,
-              like_count: 0,
-              play_count: 0,
-              download_count: 0,
-              view_count: 0,
-              reference_audio_url: null,
-              artist: cachedTrack.artist,
-              style: null,
-            } as Track;
-          });
-
-          return cachedTracks;
-        }
-      }
-
+      logError('Failed to fetch tracks', error as Error, context, { userId });
       throw error;
     }
   }
