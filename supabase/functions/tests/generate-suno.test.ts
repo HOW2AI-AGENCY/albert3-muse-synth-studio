@@ -43,6 +43,11 @@ Deno.test({
 
         const observedSunoRequests: unknown[] = [];
         const restorePrimaryFetch = installFetchMock({
+          "https://api.sunoapi.org/api/v1/generate/credit": () =>
+            new Response(
+              JSON.stringify({ code: 200, msg: "ok", data: 25 }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            ),
           "https://api.sunoapi.org/api/v1/generate": (_input, init) => {
             if (init?.body) {
               if (typeof init.body === "string") {
@@ -115,6 +120,11 @@ Deno.test({
         }
 
         const restoreIdempotentFetch = installFetchMock({
+          "https://api.sunoapi.org/api/v1/generate/credit": () =>
+            new Response(
+              JSON.stringify({ code: 200, msg: "ok", data: 20 }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            ),
           "https://api.sunoapi.org/api/v1/generate": () => {
             throw new Error("Idempotent request should not trigger Suno API");
           },
@@ -141,6 +151,54 @@ Deno.test({
         assertEquals(rateAfter?.length, 2);
       });
 
+      await t.step("returns 402 when suno balance is depleted", async () => {
+        await clearTables();
+        const { accessToken } = await createTestUser();
+
+        const requestInit: RequestInit = {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            title: "Insufficient balance",
+            prompt: "Generate something",
+            tags: ["test"],
+            wait_audio: false,
+          }),
+        };
+
+        const restoreBalanceFetch = installFetchMock({
+          "https://api.sunoapi.org/api/v1/generate/credit": () =>
+            new Response(
+              JSON.stringify({ code: 200, msg: "ok", data: 0 }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            ),
+          "https://api.sunoapi.org/api/v1/generate": () => {
+            throw new Error("Generation should not start when balance is empty");
+          },
+        });
+
+        try {
+          const response = await handler(new Request("http://localhost/generate-suno", requestInit));
+          assertEquals(response.status, 402);
+          const payload = await response.json();
+          assertStringIncludes(payload.error, "Недостаточно кредитов Suno");
+          assertEquals(payload.details?.provider, "suno");
+        } finally {
+          restoreBalanceFetch();
+        }
+
+        const { data: jobs } = await adminClient.from("ai_jobs").select("*");
+        assertEquals(jobs?.length, 1);
+        assertEquals(jobs?.[0].status, "failed");
+        assertStringIncludes(jobs?.[0].error_message ?? "", "Недостаточно кредитов");
+
+        const { data: tracks } = await adminClient.from("tracks").select("*");
+        assertEquals(tracks?.length, 0);
+      });
+
       await t.step("resumes existing suno task without new API call", async () => {
         await clearTables();
         const { userId, accessToken } = await createTestUser();
@@ -164,6 +222,11 @@ Deno.test({
         setPollSunoCompletionOverride(mockPoller(pollCalls));
 
         const restoreResumeFetch = installFetchMock({
+          "https://api.sunoapi.org/api/v1/generate/credit": () =>
+            new Response(
+              JSON.stringify({ code: 200, msg: "ok", data: 18 }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            ),
           "https://api.sunoapi.org/api/v1/generate": (_input, _init) => {
             throw new Error("Resume flow should not hit Suno API");
           },

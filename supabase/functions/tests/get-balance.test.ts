@@ -45,6 +45,8 @@ Deno.test({
       assertEquals(payload.plan, undefined);
       assertEquals(payload.monthly_limit, undefined);
       assertEquals(payload.monthly_usage, undefined);
+      assert(Array.isArray(payload.details?.attempts));
+      assertEquals(payload.details.attempts.length, 1);
     } finally {
       restoreFetch();
     }

@@ -5,6 +5,7 @@ import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { downloadAndUploadAudio, downloadAndUploadCover, downloadAndUploadVideo } from "../_shared/storage.ts";
 import { createSunoClient, SunoApiError, type SunoGenerationPayload } from "../_shared/suno.ts";
+import { fetchSunoBalance } from "../_shared/suno-balance.ts";
 
 interface GenerateSunoRequestBody {
   trackId?: string;
@@ -185,6 +186,46 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     if (!SUNO_API_KEY) {
       logger.error('🔴 [GENERATE-SUNO] SUNO_API_KEY not configured');
       throw new Error('SUNO_API_KEY not configured');
+    }
+
+    const balanceResult = await fetchSunoBalance({ apiKey: SUNO_API_KEY });
+    if (balanceResult.success) {
+      const checkedAt = new Date().toISOString();
+      requestMetadata.suno_balance_remaining = balanceResult.balance;
+      requestMetadata.suno_balance_checked_at = checkedAt;
+      requestMetadata.suno_balance_endpoint = balanceResult.endpoint;
+      if (balanceResult.monthly_limit !== undefined) {
+        requestMetadata.suno_balance_monthly_limit = balanceResult.monthly_limit;
+      }
+      if (balanceResult.monthly_usage !== undefined) {
+        requestMetadata.suno_balance_monthly_usage = balanceResult.monthly_usage;
+      }
+
+      console.log(`💳 [GENERATE-SUNO] Suno credits remaining: ${balanceResult.balance}`);
+      if (balanceResult.balance <= 0) {
+        const message = 'Недостаточно кредитов Suno для генерации трека. Пополните баланс и попробуйте снова.';
+        if (jobId) {
+          await supabaseAdmin.from('ai_jobs').update({ status: 'failed', error_message: message }).eq('id', jobId);
+        }
+        return new Response(JSON.stringify({
+          error: message,
+          details: {
+            provider: 'suno',
+            endpoint: balanceResult.endpoint,
+            attempts: balanceResult.attempts,
+          },
+        }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    } else {
+      logger.warn('⚠️ [GENERATE-SUNO] Не удалось проверить баланс Suno перед генерацией', {
+        error: balanceResult.error,
+        attempts: balanceResult.attempts,
+      });
+      requestMetadata.suno_balance_error = balanceResult.error;
+      requestMetadata.suno_balance_attempts = balanceResult.attempts;
     }
 
     const sunoClient = createSunoClient({ apiKey: SUNO_API_KEY });

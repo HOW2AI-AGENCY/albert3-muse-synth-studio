@@ -203,73 +203,38 @@ export const getSunoBalance = async () => {
     return { provider: 'suno', balance: 0, currency: 'credits', error: 'API key not configured' };
   }
 
-  const attempts: Array<{ endpoint: string; status?: number; message: string }> = [];
+  const result = await fetchSunoBalance({ apiKey: SUNO_API_KEY });
 
-  for (const endpoint of DEFAULT_SUNO_BALANCE_ENDPOINTS) {
-    let status: number | undefined;
-    let rawText = '';
-    try {
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: buildSunoHeaders(SUNO_API_KEY),
-      });
+  if (result.success) {
+    const currency = result.currency ?? 'credits';
+    const details: Record<string, unknown> = {
+      endpoint: result.endpoint,
+      attempts: result.attempts,
+    };
 
-      status = response.status;
-      rawText = await response.text();
-
-      let parsedBody: unknown = null;
-      if (rawText) {
-        try {
-          parsedBody = JSON.parse(rawText);
-        } catch (parseError) {
-          throw new Error(`Invalid JSON response: ${(parseError as Error).message}`);
-        }
-      }
-
-      if (!response.ok) {
-        const errorMessage = isRecord(parsedBody)
-          ? (coerceString(parsedBody.msg) ?? coerceString(parsedBody.message))
-          : undefined;
-        throw new Error(errorMessage ? `${errorMessage} (HTTP ${response.status})` : `HTTP ${response.status}`);
-      }
-
-      const parsed = parseSunoBalanceResponse(parsedBody);
-      const currency = parsed.currency ?? 'credits';
-      const details: Record<string, unknown> = { endpoint };
-      if (parsed.monthly_limit !== undefined && parsed.monthly_usage !== undefined) {
-        details.monthly_remaining = Math.max(0, parsed.monthly_limit - parsed.monthly_usage);
-      }
-
-      return {
-        provider: 'suno',
-        balance: parsed.balance,
-        currency,
-        plan: parsed.plan,
-        monthly_limit: parsed.monthly_limit,
-        monthly_usage: parsed.monthly_usage,
-        details,
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error('Suno balance endpoint failed', {
-        endpoint,
-        status,
-        message,
-      });
-      attempts.push({ endpoint, status, message });
+    if (result.monthly_limit !== undefined && result.monthly_usage !== undefined) {
+      details.monthly_remaining = Math.max(0, result.monthly_limit - result.monthly_usage);
     }
+
+    return {
+      provider: 'suno',
+      balance: result.balance,
+      currency,
+      plan: result.plan,
+      monthly_limit: result.monthly_limit,
+      monthly_usage: result.monthly_usage,
+      details,
+    };
   }
 
-  const summary = attempts.length
-    ? attempts.map((attempt) => `${attempt.endpoint}: ${attempt.message}`).join('; ')
-    : 'No Suno balance endpoints configured';
+  console.error('Suno balance endpoint failed', { attempts: result.attempts });
 
   return {
     provider: 'suno',
     balance: 0,
     currency: 'credits',
-    error: `All Suno balance endpoints failed. ${summary}`,
-    details: { attempts },
+    error: result.error,
+    details: { attempts: result.attempts },
   };
 };
 
