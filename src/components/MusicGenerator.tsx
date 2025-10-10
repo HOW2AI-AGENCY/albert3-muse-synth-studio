@@ -15,11 +15,13 @@ import {
   FileText,
   SlidersHorizontal,
   Info,
+  Sparkles,
 } from 'lucide-react';
 import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { useBoostStyle } from '@/hooks/useBoostStyle';
 
 // --- PROPS & TYPES ---
 
@@ -95,6 +97,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   const { generateMusic, isGenerating } = useMusicGenerationStore();
   const { toast } = useToast();
   const { vibrate } = useHapticFeedback();
+  const { boostStyle, isBoosting } = useBoostStyle();
 
   const [generationMode, setGenerationMode] = useState<GenerationMode>('simple');
   const [params, setParams] = useState({
@@ -114,6 +117,22 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   const setParam = <K extends keyof typeof params>(key: K, value: (typeof params)[K]) => {
     setParams(prev => ({ ...prev, [key]: value }));
   };
+
+  const handleBoostStyle = useCallback(async () => {
+    if (!params.stylePrompt.trim()) {
+      toast({
+        title: 'Empty style',
+        description: 'Please enter a style description to boost',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const boostedResult = await boostStyle(params.stylePrompt);
+    if (boostedResult) {
+      setParam('stylePrompt', boostedResult);
+    }
+  }, [params.stylePrompt, boostStyle, toast]);
 
   const handleGenerate = useCallback(async () => {
     vibrate('heavy');
@@ -209,7 +228,37 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
 
                 <FormSection title="Стиль и Жанр" icon={Music}>
                   <FormField label="Стилевой промт" htmlFor="style-prompt" tooltip="Опишите звучание, настроение, похожих исполнителей">
-                    <Textarea id="style-prompt" placeholder="Например, dream pop, synthwave, post-rock..." value={params.stylePrompt} onChange={(e) => setParam('stylePrompt', e.target.value)} disabled={isGenerating} rows={3}/>
+                    <div className="relative">
+                      <Textarea 
+                        id="style-prompt" 
+                        placeholder="Например, dream pop, synthwave, post-rock..." 
+                        value={params.stylePrompt} 
+                        onChange={(e) => setParam('stylePrompt', e.target.value)} 
+                        disabled={isGenerating || isBoosting} 
+                        rows={3}
+                        className="pr-12"
+                      />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="absolute top-2 right-2 h-8 w-8 p-0"
+                            onClick={handleBoostStyle}
+                            disabled={!params.stylePrompt.trim() || isBoosting || isGenerating}
+                          >
+                            {isBoosting ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Sparkles className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">Enhance style with Suno AI</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                   </FormField>
                   <FormField label="Жанры" htmlFor="tags" tooltip="Перечислите жанры через запятую для более точного результата">
                     <Input id="tags" placeholder="rock, indie, 80s" value={params.tags} onChange={(e) => setParam('tags', e.target.value)} disabled={isGenerating} />

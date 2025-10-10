@@ -1,5 +1,8 @@
 project_id = "qycfsepwguaiwcquwwbw"
 
+[functions.boost-style]
+verify_jwt = true
+
 [functions.improve-prompt]
 verify_jwt = true
 
