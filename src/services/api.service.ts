@@ -56,30 +56,7 @@ export interface GenerateMusicRequest {
   audioWeight?: number;
 }
 
-/**
- * Normalize client-side model names to Suno API expected format
- */
-const normalizeSunoModel = (input?: string): SunoModelVersion => {
-  const mapping: Record<string, SunoModelVersion> = {
-    'chirp-v3-5': 'V3_5',
-    'chirp-v3.5': 'V3_5',
-    'v3.5': 'V3_5',
-    'chirp-v4': 'V4',
-    'v4': 'V4',
-    'chirp-v4-5': 'V4_5',
-    'chirp-v4.5': 'V4_5',
-    'v4.5': 'V4_5',
-    'chirp-v4-5plus': 'V4_5PLUS',
-    'chirp-v4.5plus': 'V4_5PLUS',
-    'v4.5plus': 'V4_5PLUS',
-    'chirp-crow': 'V5',
-    'chirp-v5': 'V5',
-    'v5': 'V5',
-  };
-  
-  const normalized = input?.toLowerCase().trim();
-  return mapping[normalized ?? ''] ?? 'V5'; // Default to latest version
-};
+// ✅ ИСПРАВЛЕНИЕ 6: Функция normalizeSunoModel() удалена - клиент теперь отправляет корректный формат напрямую
 
 export interface GenerateMusicResponse {
   success: boolean;
@@ -149,6 +126,14 @@ export class ApiService {
     const functionName = provider === 'suno' ? 'generate-suno' : 'generate-music';
 
     try {
+      // ✅ ИСПРАВЛЕНИЕ 1: Проверка аутентификации перед вызовом edge function
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new ApiError('Требуется авторизация для генерации музыки', { 
+          context, 
+          payload: { provider, functionName } 
+        });
+      }
       const normalizedPrompt = request.prompt?.trim() ?? '';
       const lyrics = request.lyrics;
       const styleTags = request.styleTags?.filter((tag) => Boolean(tag?.trim())) ?? [];
@@ -162,9 +147,6 @@ export class ApiService {
       })();
 
       const makeInstrumental = request.hasVocals === false;
-      
-      // Normalize model version to Suno API format
-      const normalizedModel = normalizeSunoModel(request.modelVersion);
 
       const payload: Record<string, unknown> = {
         trackId: request.trackId,
@@ -174,7 +156,7 @@ export class ApiService {
         lyrics,
         hasVocals: request.hasVocals,
         make_instrumental: makeInstrumental,
-        model_version: normalizedModel,
+        model_version: request.modelVersion, // ✅ ИСПРАВЛЕНИЕ 5: передаем напрямую без нормализации
         customMode: request.customMode,
       };
 
@@ -213,7 +195,12 @@ export class ApiService {
       logInfo('⏳ [API Service] Invoking edge function...', context);
       const { data, error } = await supabase.functions.invoke<GenerateMusicResponse>(
         functionName,
-        { body: payload }
+        { 
+          body: payload,
+          headers: {
+            Authorization: `Bearer ${session.access_token}` // ✅ ИСПРАВЛЕНИЕ 1: Явная передача JWT токена
+          }
+        }
       );
 
       // --- Обработка ошибок ---

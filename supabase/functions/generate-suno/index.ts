@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { v4 } from "https://deno.land/std@0.168.0/uuid/mod.ts";
-import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
+import { createSecurityHeaders } from "../_shared/security.ts"; // ✅ ИСПРАВЛЕНИЕ 2: Удалён withRateLimit
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { downloadAndUploadAudio, downloadAndUploadCover, downloadAndUploadVideo } from "../_shared/storage.ts";
 import { createSunoClient, SunoApiError, type SunoGenerationPayload } from "../_shared/suno.ts";
@@ -310,10 +310,9 @@ export const mainHandler = async (req: Request): Promise<Response> => {
 
     const sunoPayload: SunoGenerationPayload = {
       prompt: promptForSuno,
-      // The 'tags' array is now a single 'style' string.
-      style: tags.join(', '),
+      tags: tags, // ✅ ИСПРАВЛЕНИЕ 4: Передаем массив напрямую вместо style string
       title: title || 'Generated Track',
-      instrumental: effectiveMakeInstrumental ?? false,
+      make_instrumental: effectiveMakeInstrumental ?? false, // ✅ ИСПРАВЛЕНИЕ 4: make_instrumental вместо instrumental
       model: (modelVersion as SunoGenerationPayload['model']) || 'V5',
       customMode: customModeValue ?? false,
       callBackUrl: callbackUrl ?? undefined,
@@ -623,14 +622,8 @@ export const setPollSunoCompletionOverride = (override?: PollSunoCompletionFn) =
   pollSunoCompletionImpl = override ?? defaultPollSunoCompletion;
 };
 
-// Применяем rate limiting middleware и обёртку Sentry
-const rateLimitedHandler = withRateLimit(mainHandler, {
-  maxRequests: 10,
-  windowMinutes: 1, // 1 minute
-  endpoint: 'generate-suno'
-});
-
-export const handler = withSentry(rateLimitedHandler, { transaction: 'generate-suno' });
+// ✅ ИСПРАВЛЕНИЕ 2: Удалена обёртка withRateLimit - Suno API сам управляет rate limiting
+export const handler = withSentry(mainHandler, { transaction: 'generate-suno' });
 
 if (import.meta.main) {
   serve(handler);

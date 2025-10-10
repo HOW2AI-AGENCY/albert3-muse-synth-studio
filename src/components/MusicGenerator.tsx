@@ -48,8 +48,9 @@ type VocalGender = 'any' | 'female' | 'male' | 'duet' | 'instrumental';
 // --- CONSTANTS & HELPERS ---
 
 const modelVersions = [
-  { value: 'chirp-v3-5', label: 'Suno v5 (chirp-v3-5)' },
-  { value: 'chirp-v3-0', label: 'Suno v4.5 (chirp-v3-0)' },
+  { value: 'V5', label: 'Suno v5 (chirp-crow)' }, // ✅ ИСПРАВЛЕНИЕ 5: Использовать формат Suno API
+  { value: 'V4_5', label: 'Suno v4.5' }, // ✅ ИСПРАВЛЕНИЕ 5
+  { value: 'V3_5', label: 'Suno v3.5' }, // ✅ ИСПРАВЛЕНИЕ 5
 ];
 
 const vocalGenderOptions: { value: VocalGender; label: string }[] = [
@@ -107,7 +108,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     vocalGender: 'any' as VocalGender,
     weirdness: 10, // 0-100 scale
     styleInfluence: 75, // 0-100 scale
-    modelVersion: 'chirp-v3-5',
+    modelVersion: 'V5', // ✅ ИСПРАВЛЕНИЕ 5: Изменено на формат Suno API
   });
 
   const setParam = <K extends keyof typeof params>(key: K, value: (typeof params)[K]) => {

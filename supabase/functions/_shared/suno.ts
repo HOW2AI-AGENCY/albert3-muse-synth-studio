@@ -1,9 +1,9 @@
 export interface SunoGenerationPayload {
   prompt: string;
-  style?: string;
+  tags?: string[]; // ✅ ИСПРАВЛЕНИЕ 3: Изменено с style (string) на tags (array)
   title?: string;
   customMode?: boolean;
-  instrumental?: boolean;
+  make_instrumental?: boolean; // ✅ ИСПРАВЛЕНИЕ 3: Изменено с instrumental на make_instrumental
   model?: "V3_5" | "V4" | "V4_5" | "V4_5PLUS" | "V5";
   negativeTags?: string;
   vocalGender?: "m" | "f";
