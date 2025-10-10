@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,11 +6,10 @@ import { Separator } from "@/components/ui/separator";
 import { Music4, ChevronDown, ChevronUp, Play, Pause, Download, List, Sliders } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { ApiService } from "@/services/api.service";
 import { StemMixerProvider } from "@/contexts/StemMixerContext";
 import { AdvancedStemMixer } from "./AdvancedStemMixer";
+import { useStemSeparation } from "@/hooks/useStemSeparation";
 
 interface TrackStem {
   id: string;
@@ -84,138 +83,40 @@ const formatStemLabel = (stemType: string) => {
 
 export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }: TrackStemsPanelProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [viewMode, setViewMode] = useState<'simple' | 'mixer'>('simple');
   const { currentTrack, isPlaying, playTrack, togglePlayPause } = useAudioPlayer();
 
-  const handleGenerateStems = async (mode: 'separate_vocal' | 'split_stem') => {
-    let pollInterval: ReturnType<typeof setInterval> | null = null;
-    let abortTimeout: ReturnType<typeof setTimeout> | null = null;
-    let syncInterval: ReturnType<typeof setInterval> | null = null;
-    let syncStartTimeout: ReturnType<typeof setTimeout> | null = null;
-    let syncInFlight = false;
+  const { isGenerating, generateStems } = useStemSeparation({
+    trackId,
+    versionId,
+    onStemsReady: () => {
+      onStemsGenerated?.();
+    },
+  });
 
-    const clearTimers = () => {
-      if (pollInterval) {
-        clearInterval(pollInterval);
-        pollInterval = null;
-      }
-      if (abortTimeout) {
-        clearTimeout(abortTimeout);
-        abortTimeout = null;
-      }
-      if (syncInterval) {
-        clearInterval(syncInterval);
-        syncInterval = null;
-      }
-      if (syncStartTimeout) {
-        clearTimeout(syncStartTimeout);
-        syncStartTimeout = null;
-      }
-      syncInFlight = false;
-    };
-
-    try {
-      setIsGenerating(true);
-
-      const requestBody: Record<string, unknown> = {
-        trackId,
-        separationMode: mode,
-      };
-
-      if (versionId) {
-        requestBody.versionId = versionId;
-      }
-
-      const { data: response, error } = await supabase.functions.invoke<{
-        success?: boolean;
-        taskId?: string;
-        error?: string;
-      }>('separate-stems', {
-        body: requestBody,
-      });
-
-      if (error) {
-        throw new Error(error.message ?? 'Не удалось запустить разделение стемов');
-      }
-
-      if (response?.error) {
-        throw new Error(response.error);
-      }
-
-      const targetTaskId = response?.taskId;
-
-      if (!response?.success || !targetTaskId) {
-        throw new Error('Сервис не вернул идентификатор задачи разделения стемов');
-      }
-
-      toast.success(
-        mode === 'separate_vocal'
-          ? 'Запущено разделение на вокал и инструментал'
-          : 'Запущено инструментальное разделение трека'
-      );
-
-      pollInterval = setInterval(async () => {
-        const { data: stemsData, error: stemsError } = await supabase
-          .from('track_stems')
-          .select('*')
-          .eq('track_id', trackId);
-
-        if (stemsError) {
-          console.error('Error polling stems:', stemsError);
-          return;
-        }
-
-        const matchingStems = stemsData?.filter(stem => stem.suno_task_id === targetTaskId);
-
-        if (matchingStems && matchingStems.length > 0) {
-          clearTimers();
+  // Realtime subscription to track_stems
+  useEffect(() => {
+    const channel = supabase
+      .channel(`track_stems_${trackId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'track_stems',
+          filter: `track_id=eq.${trackId}`,
+        },
+        (payload) => {
+          console.log('Track stems updated:', payload);
           onStemsGenerated?.();
-          toast.success('Стемы успешно созданы!');
-          setIsGenerating(false);
         }
-      }, 5000);
+      )
+      .subscribe();
 
-      const attemptSync = async () => {
-        if (syncInFlight) {
-          return;
-        }
-        syncInFlight = true;
-        try {
-          await ApiService.syncStemJob({
-            trackId,
-            versionId,
-            taskId: targetTaskId,
-            separationMode: mode,
-          });
-        } catch (syncError) {
-          console.error('Error synchronising stem job:', syncError);
-        } finally {
-          syncInFlight = false;
-        }
-      };
-
-      syncStartTimeout = setTimeout(() => {
-        void attemptSync();
-        syncInterval = setInterval(() => {
-          void attemptSync();
-        }, 60000);
-      }, 45000);
-
-      abortTimeout = setTimeout(() => {
-        clearTimers();
-        setIsGenerating(false);
-        toast.error('Не удалось получить новые стемы. Попробуйте еще раз через несколько минут.');
-      }, 300000);
-
-    } catch (error) {
-      clearTimers();
-      const message = error instanceof Error ? error.message : 'Ошибка при создании стемов';
-      console.error('Error generating stems:', error);
-      toast.error(message);
-      setIsGenerating(false);
-    }
-  };
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [trackId, onStemsGenerated]);
 
   const handlePlayStem = (stem: TrackStem) => {
     const stemKey = `stem-${stem.id}`;

@@ -9,9 +9,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Music4, Loader2, Mic, Music } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useStemSeparation } from "@/hooks/useStemSeparation";
 
 interface SeparateStemsDialogProps {
   open: boolean;
@@ -28,58 +27,20 @@ export const SeparateStemsDialog = ({
   trackTitle,
   onSuccess,
 }: SeparateStemsDialogProps) => {
-  const [isGenerating, setIsGenerating] = useState(false);
   const [selectedMode, setSelectedMode] = useState<'separate_vocal' | 'split_stem' | null>(null);
-
-  const handleGenerate = async (mode: 'separate_vocal' | 'split_stem') => {
-    setIsGenerating(true);
-    setSelectedMode(mode);
-
-    try {
-      const { data: response, error } = await supabase.functions.invoke<{
-        success?: boolean;
-        taskId?: string;
-        error?: string;
-      }>('separate-stems', {
-        body: {
-          trackId,
-          separationMode: mode,
-        },
-      });
-
-      if (error) {
-        throw new Error(error.message ?? 'Не удалось запустить разделение стемов');
-      }
-
-      if (response?.error) {
-        throw new Error(response.error);
-      }
-
-      if (!response?.success || !response?.taskId) {
-        throw new Error('Сервис не вернул идентификатор задачи разделения стемов');
-      }
-
-      toast.success(
-        mode === 'separate_vocal'
-          ? 'Запущено разделение на вокал и инструментал'
-          : 'Запущено инструментальное разделение трека'
-      );
-
-      toast.info(
-        'Обработка займёт 30-180 секунд. Мы уведомим вас, когда стемы будут готовы.',
-        { duration: 5000 }
-      );
-
+  
+  const { isGenerating, generateStems } = useStemSeparation({
+    trackId,
+    onSuccess: () => {
       onOpenChange(false);
       onSuccess?.();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Ошибка при создании стемов';
-      console.error('Error generating stems:', error);
-      toast.error(message);
-    } finally {
-      setIsGenerating(false);
-      setSelectedMode(null);
-    }
+    },
+  });
+
+  const handleGenerate = async (mode: 'separate_vocal' | 'split_stem') => {
+    setSelectedMode(mode);
+    await generateStems(mode);
+    setSelectedMode(null);
   };
 
   return (
