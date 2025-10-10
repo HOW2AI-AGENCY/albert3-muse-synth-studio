@@ -182,16 +182,20 @@ export class ApiService {
     const provider = request.provider || 'suno';
     const functionName = provider === 'suno' ? 'generate-suno' : 'generate-music';
 
+    // Logic to determine the final prompt based on the new API contract.
+    // In custom mode, lyrics are sent as the main prompt.
+    const promptForSuno = request.customMode ? (request.lyrics || '') : (request.prompt || '');
+
     const payload = {
       trackId: request.trackId,
       title: request.title || request.prompt.substring(0, 50),
-      prompt: request.prompt,
-      tags: request.styleTags ?? [],
-      make_instrumental: request.hasVocals === false,
-      model_version: request.modelVersion || 'chirp-v3-5',
-      wait_audio: false,
-      lyrics: request.lyrics,
-      hasVocals: request.hasVocals,
+      prompt: promptForSuno,
+      // The 'tags' array is now a single 'style' string.
+      style: (request.styleTags ?? []).join(', '),
+      // The `instrumental` flag replaces `make_instrumental` and `hasVocals`.
+      instrumental: request.hasVocals === false,
+      // The `model` field replaces `model_version`.
+      model: request.modelVersion || 'V5',
       customMode: request.customMode,
     };
 

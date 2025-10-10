@@ -1,53 +1,48 @@
 export interface SunoGenerationPayload {
-  prompt?: string;
-  tags?: string[];
+  prompt: string;
+  style?: string;
   title?: string;
-  make_instrumental?: boolean;
-  model_version?: string;
-  wait_audio?: boolean;
-  continue_clip_id?: string | null;
-  audio_prompt_id?: string | null;
-  style?: string | null;
+  customMode?: boolean;
+  instrumental?: boolean;
+  model?: "V3_5" | "V4" | "V4_5" | "V4_5PLUS" | "V5";
+  negativeTags?: string;
+  vocalGender?: "m" | "f";
+  styleWeight?: number;
+  weirdnessConstraint?: number;
+  audioWeight?: number;
   callBackUrl?: string;
-  callbackUrl?: string;
-  callback_url?: string;
-  lyrics?: string;
-  has_vocals?: boolean;
-  custom_mode?: boolean;
 }
 
 export interface SunoLyricsPayload {
   prompt: string;
   callBackUrl: string;
-  callbackUrl?: string;
-  callback_url?: string;
+}
+
+export interface SunoTrack {
+  id: string;
+  audioUrl: string;
+  streamAudioUrl?: string;
+  imageUrl?: string;
+  prompt?: string;
+  modelName: string;
+  title: string;
+  tags?: string;
+  createTime: string;
+  duration: number;
 }
 
 export interface SunoTaskStatus {
-  id?: string;
-  taskId?: string;
-  status?: string;
-  msg?: string;
-  error?: string;
-  audioUrl?: string;
-  audio_url?: string;
-  stream_audio_url?: string;
-  source_stream_audio_url?: string;
-  image_url?: string;
-  imageUrl?: string;
-  image_large_url?: string;
-  video_url?: string;
-  videoUrl?: string;
-  duration?: number;
-  duration_seconds?: number;
-  lyric?: string | null;
-  lyrics?: string | null;
-  prompt?: string | null;
-  model?: string | null;
-  model_name?: string | null;
-  created_at?: string | null;
-  createdAt?: string | null;
-  [key: string]: unknown;
+  taskId: string;
+  parentMusicId?: string;
+  param: string;
+  response: {
+    taskId: string;
+    sunoData: SunoTrack[];
+  };
+  status: "PENDING" | "TEXT_SUCCESS" | "FIRST_SUCCESS" | "SUCCESS" | "CREATE_TASK_FAILED" | "GENERATE_AUDIO_FAILED" | "CALLBACK_EXCEPTION" | "SENSITIVE_WORD_ERROR";
+  type: "GENERATE";
+  errorCode: string | null;
+  errorMessage: string | null;
 }
 
 export interface SunoGenerationResult {
@@ -64,7 +59,8 @@ export interface SunoLyricsGenerationResult {
 }
 
 export interface SunoQueryResult {
-  tasks: SunoTaskStatus[];
+  status: SunoTaskStatus["status"];
+  tasks: SunoTrack[];
   rawResponse: unknown;
   endpoint: string;
   code?: number;
@@ -78,10 +74,16 @@ export interface SunoLyricsVariantStatus {
   [key: string]: unknown;
 }
 
+export interface SunoLyricsResult {
+  taskId: string;
+  status: string;
+  data: SunoLyricsVariantStatus[];
+}
+
 export interface SunoLyricsQueryResult {
   taskId: string;
+  status: string,
   data: SunoLyricsVariantStatus[];
-  status?: string;
   rawResponse: unknown;
   endpoint: string;
   code?: number;
@@ -90,9 +92,7 @@ export interface SunoLyricsQueryResult {
 export interface SunoStemRequest {
   taskId: string;
   audioId: string;
-  separationMode: string;
-  callbackUrl: string;
-  callback_url?: string;
+  type: "separate_vocal" | "split_stem";
   callBackUrl?: string;
 }
 
@@ -103,14 +103,14 @@ export interface SunoStemResult {
 }
 
 export interface SunoStemAsset {
-  sourceKey: string;
+  instrument: string; // e.g., 'vocal', 'instrumental', 'drums'
   url: string;
 }
 
 export interface SunoStemQueryResult {
   taskId: string;
   assets: SunoStemAsset[];
-  status?: string | null;
+  status: "PENDING" | "SUCCESS" | "CREATE_TASK_FAILED" | "GENERATE_AUDIO_FAILED" | "CALLBACK_EXCEPTION";
   rawResponse: unknown;
   endpoint: string;
   code?: number;
@@ -166,7 +166,7 @@ const DEFAULT_GENERATE_ENDPOINTS = unique([
 
 const DEFAULT_QUERY_ENDPOINTS = unique([
   Deno.env.get("SUNO_QUERY_URL"),
-  "https://api.sunoapi.org/api/v1/query",
+  "https://api.sunoapi.org/api/v1/generate/record-info",
 ]);
 
 const DEFAULT_STEM_ENDPOINTS = unique([
@@ -181,7 +181,7 @@ const DEFAULT_STEM_QUERY_ENDPOINTS = unique([
 
 const DEFAULT_LYRICS_GENERATE_ENDPOINTS = unique([
   Deno.env.get("SUNO_LYRICS_URL"),
-  "https://api.sunoapi.org/api/v1/lyrics",
+  "https://api.sunoapi.org/api/v1/lyrics/generate",
 ]);
 
 const DEFAULT_LYRICS_QUERY_ENDPOINTS = unique([
@@ -338,116 +338,12 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
   return {};
 };
 
-const parseQueryTasks = (payload: unknown): SunoTaskStatus[] => {
-  if (!payload) return [];
-  if (Array.isArray(payload)) {
-    return payload as SunoTaskStatus[];
-  }
-  if (typeof payload === "object") {
-    const data = payload as Record<string, unknown>;
-    if (Array.isArray(data.data)) {
-      return data.data as SunoTaskStatus[];
-    }
-    if (data.data && typeof data.data === "object" && Array.isArray((data.data as Record<string, unknown>).tasks)) {
-      return (data.data as { tasks: SunoTaskStatus[] }).tasks;
-    }
-    if (Array.isArray(data.tasks)) {
-      return data.tasks as SunoTaskStatus[];
-    }
-  }
-  return [];
-};
+// This function is no longer needed with the new, simplified API response structure.
 
-const parseLyricsVariants = (payload: unknown): SunoLyricsVariantStatus[] => {
-  if (!payload || typeof payload !== "object") return [];
+// This function is no longer needed with the new, simplified API response structure.
 
-  const root = payload as Record<string, unknown>;
-  const data = root.data;
-
-  const candidates: unknown[] = [];
-
-  if (Array.isArray(data)) {
-    candidates.push(...data);
-  }
-
-  if (data && typeof data === "object") {
-    const dataObj = data as Record<string, unknown>;
-    if (Array.isArray(dataObj.data)) {
-      candidates.push(...dataObj.data);
-    }
-    if (dataObj.response && typeof dataObj.response === "object") {
-      const responseObj = dataObj.response as Record<string, unknown>;
-      if (Array.isArray(responseObj.data)) {
-        candidates.push(...responseObj.data);
-      }
-    }
-  }
-
-  const variants: SunoLyricsVariantStatus[] = [];
-  for (const candidate of candidates) {
-    if (candidate && typeof candidate === "object") {
-      variants.push(candidate as SunoLyricsVariantStatus);
-    }
-  }
-
-  return variants;
-};
-
-const extractStemContainer = (value: unknown): Record<string, unknown> | null => {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const container = value as Record<string, unknown>;
-
-  if (container.vocal_removal_info && typeof container.vocal_removal_info === "object") {
-    return container.vocal_removal_info as Record<string, unknown>;
-  }
-
-  if (container.vocalRemovalInfo && typeof container.vocalRemovalInfo === "object") {
-    return container.vocalRemovalInfo as Record<string, unknown>;
-  }
-
-  if (container.response && typeof container.response === "object") {
-    return container.response as Record<string, unknown>;
-  }
-
-  if (container.data && typeof container.data === "object") {
-    return extractStemContainer(container.data);
-  }
-
-  return container;
-};
-
-const parseStemAssets = (payload: unknown): SunoStemAsset[] => {
-  if (!payload || typeof payload !== "object") return [];
-
-  const root = payload as Record<string, unknown>;
-  let container: Record<string, unknown> | null = null;
-
-  if (root.data && typeof root.data === "object") {
-    container = extractStemContainer(root.data);
-  }
-
-  if (!container && root.response && typeof root.response === "object") {
-    container = root.response as Record<string, unknown>;
-  }
-
-  if (!container) {
-    return [];
-  }
-
-  const assets: SunoStemAsset[] = [];
-  for (const [key, value] of Object.entries(container)) {
-    if (typeof value !== "string") continue;
-    const trimmed = value.trim();
-    if (!trimmed) continue;
-    if (!key.toLowerCase().includes("url")) continue;
-    assets.push({ sourceKey: key, url: trimmed });
-  }
-
-  return assets;
-};
+// Helper functions `extractStemContainer` and `parseStemAssets` are no longer needed
+// and have been removed. The logic is now simplified and integrated into `queryStemTask`.
 
 export const createSunoClient = (options: CreateSunoClientOptions) => {
   const {
@@ -467,20 +363,14 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
 
   const generateTrack = async (payload: SunoGenerationPayload): Promise<SunoGenerationResult> => {
     const errors: SunoApiError[] = [];
-    const normalizedPayload = (() => {
-      const base = dropUndefined({ ...(payload as Record<string, unknown>) });
-      delete base.callBackUrl;
-      delete base.callbackUrl;
-      delete base.callback_url;
-      return applyCallbackAliases(base, extractCallbackUrl(payload));
-    })();
 
+    // The new API has a single, stable endpoint. We iterate for resilience, but it's less critical.
     for (const endpoint of generateEndpoints) {
       try {
-        const response = await fetchImpl(`${endpoint}`, {
+        const response = await fetchImpl(endpoint, {
           method: "POST",
           headers: buildSunoHeaders(apiKey, { "Content-Type": "application/json" }),
-          body: JSON.stringify(normalizedPayload),
+          body: JSON.stringify(payload),
         });
 
         const rawText = await response.text();
@@ -503,8 +393,11 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        const { taskId, jobId } = parseTaskId(json);
-        if (!taskId) {
+        // New, simplified response structure: { code, msg, data: { taskId } }
+        const data = (json as any)?.data;
+        const taskId = data?.taskId;
+
+        if (typeof taskId !== 'string' || !taskId) {
           throw new SunoApiError("Suno generation response did not include a task identifier", {
             endpoint,
             status: response.status,
@@ -512,7 +405,8 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        return { taskId, jobId: jobId ?? null, rawResponse: json, endpoint };
+        // The new API doesn't return a `jobId` in the generation response.
+        return { taskId, rawResponse: json, endpoint };
       } catch (error) {
         const sunoError = error instanceof SunoApiError
           ? error
@@ -537,20 +431,13 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
 
   const generateLyrics = async (payload: SunoLyricsPayload): Promise<SunoLyricsGenerationResult> => {
     const errors: SunoApiError[] = [];
-    const normalizedPayload = (() => {
-      const base = dropUndefined({ ...(payload as Record<string, unknown>) });
-      delete base.callBackUrl;
-      delete base.callbackUrl;
-      delete base.callback_url;
-      return applyCallbackAliases(base, extractCallbackUrl(payload));
-    })();
 
     for (const endpoint of lyricsGenerateEndpoints) {
       try {
-        const response = await fetchImpl(`${endpoint}`, {
+        const response = await fetchImpl(endpoint, {
           method: "POST",
           headers: buildSunoHeaders(apiKey, { "Content-Type": "application/json" }),
-          body: JSON.stringify(normalizedPayload),
+          body: JSON.stringify(payload),
         });
 
         const rawText = await response.text();
@@ -573,8 +460,10 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        const { taskId } = parseTaskId(json);
-        if (!taskId) {
+        const data = (json as any)?.data;
+        const taskId = data?.taskId;
+
+        if (typeof taskId !== 'string' || !taskId) {
           throw new SunoApiError("Suno lyrics response did not include a task identifier", {
             endpoint,
             status: response.status,
@@ -634,19 +523,21 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        const tasks = parseQueryTasks(json);
-        if (!tasks.length) {
-          throw new SunoApiError("Suno query response did not include tasks", {
+        const data = (json as any)?.data;
+        const status = data?.status;
+        const tasks = data?.response?.sunoData ?? [];
+
+        if (!status) {
+           throw new SunoApiError("Suno query response did not include task status", {
             endpoint: url,
             status: response.status,
             body: rawText,
           });
         }
 
-        const code = typeof (json as Record<string, unknown>)?.code === "number"
-          ? (json as Record<string, unknown>).code as number
-          : undefined;
-        return { tasks, rawResponse: json, endpoint: url, code };
+        const code = typeof (json as any)?.code === "number" ? (json as any).code : undefined;
+        return { status, tasks, rawResponse: json, endpoint: url, code };
+
       } catch (error) {
         const sunoError = error instanceof SunoApiError
           ? error
@@ -698,26 +589,19 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        const variants = parseLyricsVariants(json);
-        if (!variants.length) {
-          throw new SunoApiError("Suno lyrics query response did not include variants", {
+        const data = (json as any)?.data;
+        const status = data?.status;
+        const variants = data?.data ?? []; // The variants are in `data.data`
+        const resolvedTaskId = data?.taskId ?? taskId;
+        const code = (json as any)?.code;
+
+        if (!status) {
+          throw new SunoApiError("Suno lyrics query response did not include status", {
             endpoint: url,
             status: response.status,
             body: rawText,
           });
         }
-
-        const bodyObj = (json ?? {}) as Record<string, unknown>;
-        const dataObj = typeof bodyObj.data === "object" && bodyObj.data !== null
-          ? (bodyObj.data as Record<string, unknown>)
-          : undefined;
-        const status = typeof dataObj?.status === "string" ? dataObj.status : undefined;
-        const resolvedTaskId = typeof dataObj?.taskId === "string"
-          ? dataObj.taskId
-          : typeof dataObj?.task_id === "string"
-            ? (dataObj?.task_id as string)
-            : taskId;
-        const code = typeof bodyObj.code === "number" ? bodyObj.code : undefined;
 
         return {
           taskId: resolvedTaskId,
@@ -725,8 +609,9 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           status,
           rawResponse: json,
           endpoint: url,
-          code,
+          code: typeof code === 'number' ? code : undefined,
         };
+
       } catch (error) {
         const sunoError = error instanceof SunoApiError
           ? error
@@ -750,27 +635,13 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
   };
 
   const requestStemSeparation = async (input: SunoStemRequest): Promise<SunoStemResult> => {
-    const payload = (() => {
-      const base = dropUndefined({
-        taskId: input.taskId,
-        audioId: input.audioId,
-        type: input.separationMode,
-      } as Record<string, unknown>);
-
-      return applyCallbackAliases(base, extractCallbackUrl({
-        callBackUrl: input.callBackUrl,
-        callbackUrl: input.callbackUrl,
-        callback_url: input.callback_url,
-      }));
-    })();
-
     const errors: SunoApiError[] = [];
     for (const endpoint of stemEndpoints) {
       try {
-        const response = await fetchImpl(`${endpoint}`, {
+        const response = await fetchImpl(endpoint, {
           method: "POST",
           headers: buildSunoHeaders(apiKey, { "Content-Type": "application/json" }),
-          body: JSON.stringify(payload),
+          body: JSON.stringify(input),
         });
 
         const rawText = await response.text();
@@ -793,8 +664,9 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        const { taskId: stemTaskId } = parseTaskId(json);
-        if (!stemTaskId) {
+        const data = (json as any)?.data;
+        const taskId = data?.taskId;
+        if (typeof taskId !== 'string' || !taskId) {
           throw new SunoApiError("Suno stem response did not include a task identifier", {
             endpoint,
             status: response.status,
@@ -802,7 +674,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        return { taskId: stemTaskId, rawResponse: json, endpoint };
+        return { taskId, rawResponse: json, endpoint };
       } catch (error) {
         const sunoError = error instanceof SunoApiError
           ? error
@@ -856,45 +728,39 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        const { taskId: parsedTaskId } = parseTaskId(json);
-        const assets = parseStemAssets(json);
+        const data = (json as any)?.data;
+        const status = data?.successFlag;
+        const message = data?.errorMessage ?? (json as any)?.msg;
+        const code = (json as any)?.code;
+        const resolvedTaskId = data?.taskId ?? taskId;
 
-        let status: string | null = null;
-        let message: string | null = null;
-        let code: number | undefined = undefined;
+        if (!status) {
+          throw new SunoApiError("Suno stem query response did not include status", {
+            endpoint: url,
+            status: response.status,
+            body: rawText,
+          });
+        }
 
-        if (json && typeof json === "object") {
-          const root = json as Record<string, unknown>;
-          if (typeof root.code === "number") {
-            code = root.code;
-          }
-          if (typeof root.msg === "string") {
-            message = root.msg;
-          } else if (typeof root.message === "string") {
-            message = root.message;
-          }
-
-          if (root.data && typeof root.data === "object") {
-            const dataObj = root.data as Record<string, unknown>;
-            if (typeof dataObj.status === "string") {
-              status = dataObj.status;
-            } else if (typeof dataObj.successFlag === "string") {
-              status = dataObj.successFlag;
-            }
-            if (!message && typeof dataObj.msg === "string") {
-              message = dataObj.msg;
+        const assets: SunoStemAsset[] = [];
+        const stemResponse = data?.response;
+        if (stemResponse && typeof stemResponse === 'object') {
+          for (const [key, value] of Object.entries(stemResponse)) {
+            if (typeof value === 'string' && key.endsWith('Url')) {
+              const instrument = key.replace('Url', '');
+              assets.push({ instrument, url: value });
             }
           }
         }
 
         return {
-          taskId: parsedTaskId ?? taskId,
+          taskId: resolvedTaskId,
           assets,
           status,
           rawResponse: json,
           endpoint: endpoint,
-          code,
-          message,
+          code: typeof code === 'number' ? code : undefined,
+          message: typeof message === 'string' ? message : null,
         };
       } catch (error) {
         const sunoError = error instanceof SunoApiError
