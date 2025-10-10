@@ -13,13 +13,11 @@ interface TracksListProps {
   isLoading: boolean;
   deleteTrack: (trackId: string) => Promise<void>;
   refreshTracks: () => void;
-  onTrackSelect?: (track: Track) => void;
 }
 
 const TracksListComponent = ({
   tracks,
   isLoading,
-  onTrackSelect,
 }: TracksListProps) => {
   const { playTrackWithQueue } = useAudioPlayer();
   const { toast } = useToast();
@@ -113,7 +111,7 @@ const TracksListComponent = ({
           {tracks.map((track) => (
             <TrackCard
               key={track.id}
-              track={track}
+              track={track as any}
               onClick={() => handlePlay(track)}
               onDownload={() => handleDownload(track)}
               onShare={() => handleShare(track.id)}
@@ -125,7 +123,7 @@ const TracksListComponent = ({
           {tracks.map((track) => (
             <TrackListItem
               key={track.id}
-              track={track}
+              track={track as any}
               onClick={() => handlePlay(track)}
               onDownload={() => handleDownload(track)}
               onShare={() => handleShare(track.id)}

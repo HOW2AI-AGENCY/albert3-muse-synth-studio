@@ -61,10 +61,6 @@ const Generate = () => {
     setTimeout(refreshTracks, 500);
   };
 
-  const handleTrackSelect = (track: Track) => {
-    setSelectedTrack(track);
-  };
-
   const handleCloseDetail = () => {
     setSelectedTrack(null);
   };
@@ -99,7 +95,6 @@ const Generate = () => {
                 isLoading={isLoading}
                 deleteTrack={deleteTrack}
                 refreshTracks={refreshTracks}
-                onTrackSelect={handleTrackSelect}
               />
             </div>
           </ResizablePanel>
@@ -143,7 +138,6 @@ const Generate = () => {
                 isLoading={isLoading}
                 deleteTrack={deleteTrack}
                 refreshTracks={refreshTracks}
-                onTrackSelect={handleTrackSelect}
               />
             </div>
           </ResizablePanel>
@@ -173,7 +167,6 @@ const Generate = () => {
           isLoading={isLoading}
           deleteTrack={deleteTrack}
           refreshTracks={refreshTracks}
-          onTrackSelect={handleTrackSelect}
         />
       </div>
 
