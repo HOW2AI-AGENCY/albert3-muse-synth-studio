@@ -17,6 +17,7 @@ interface TracksListProps {
   onSeparateStems?: (trackId: string) => void;
   onExtend?: (trackId: string) => void;
   onCover?: (trackId: string) => void;
+  onSelect?: (track: Track) => void;
 }
 
 const TracksListComponent = ({
@@ -27,6 +28,7 @@ const TracksListComponent = ({
   onSeparateStems,
   onExtend,
   onCover,
+  onSelect,
 }: TracksListProps) => {
   const { playTrackWithQueue } = useAudioPlayer();
   const { toast } = useToast();
@@ -177,7 +179,7 @@ const TracksListComponent = ({
             <TrackCard
               key={track.id}
               track={track as any}
-              onClick={() => handlePlay(track)}
+              onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
               onDownload={() => handleDownload(track)}
               onShare={() => handleShare(track.id)}
               onRetry={handleRetry}
@@ -194,7 +196,7 @@ const TracksListComponent = ({
             <TrackListItem
               key={track.id}
               track={track as any}
-              onClick={() => handlePlay(track)}
+              onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
               onDownload={() => handleDownload(track)}
               onShare={() => handleShare(track.id)}
               onRetry={handleRetry}

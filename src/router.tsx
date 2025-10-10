@@ -1,6 +1,5 @@
 import { Suspense, lazy } from "react";
 import { createBrowserRouter } from "react-router-dom";
-import { LazyGenerate } from "./utils/lazyImports";
 
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
@@ -10,7 +9,7 @@ import WorkspaceLayout from "./components/workspace/WorkspaceLayout";
 
 // Lazy routes
 const LazyDashboard = lazy(() => import("./pages/workspace/Dashboard"));
-// LazyGenerate is imported from utils/lazyImports to avoid duplicate dynamic imports
+const LazyGenerate = lazy(() => import("./pages/workspace/Generate"));
 const LazyLibrary = lazy(() => import("./pages/workspace/Library"));
 const LazyFavorites = lazy(() => import("./pages/workspace/Favorites"));
 const LazyAnalytics = lazy(() => import("./pages/workspace/Analytics"));

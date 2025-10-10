@@ -1,9 +1,7 @@
-import { useState, useEffect } from "react";
-import { 
-  MusicGeneratorLazy as MusicGenerator,
-  TracksListLazy as TracksList,
-  DetailPanelLazy as DetailPanel
-} from "@/components/LazyComponents";
+import { useState, useEffect, Suspense, lazy } from "react";
+import { MusicGenerator } from "@/components/MusicGenerator";
+import { TracksList } from "@/components/TracksList";
+const DetailPanel = lazy(() => import("@/features/tracks/ui/DetailPanel").then(m => ({ default: m.DetailPanel })));
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -130,6 +128,7 @@ const Generate = () => {
                 onSeparateStems={handleSeparateStems}
                 onExtend={handleExtend}
                 onCover={handleCover}
+                onSelect={setSelectedTrack}
               />
             </div>
           </ResizablePanel>
@@ -138,12 +137,14 @@ const Generate = () => {
             <>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
-                <DetailPanel
-                  track={normalizeTrack(selectedTrack)}
-                  onClose={handleCloseDetail}
-                  onUpdate={refreshTracks}
-                  onDelete={handleDelete}
-                />
+                <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+                  <DetailPanel
+                    track={normalizeTrack(selectedTrack)}
+                    onClose={handleCloseDetail}
+                    onUpdate={refreshTracks}
+                    onDelete={handleDelete}
+                  />
+                </Suspense>
               </ResizablePanel>
             </>
           )}
@@ -213,6 +214,7 @@ const Generate = () => {
                 onSeparateStems={handleSeparateStems}
                 onExtend={handleExtend}
                 onCover={handleCover}
+                onSelect={setSelectedTrack}
               />
             </div>
           </ResizablePanel>
@@ -258,12 +260,14 @@ const Generate = () => {
         <Sheet open={!!selectedTrack} onOpenChange={(open) => !open && handleCloseDetail()}>
           <SheetContent side="right" className="w-full sm:w-[500px] p-0 border-l">
             {selectedTrack && (
-              <DetailPanel
-                track={normalizeTrack(selectedTrack)}
-                onClose={handleCloseDetail}
-                onUpdate={refreshTracks}
-                onDelete={handleDelete}
-              />
+              <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+                <DetailPanel
+                  track={normalizeTrack(selectedTrack)}
+                  onClose={handleCloseDetail}
+                  onUpdate={refreshTracks}
+                  onDelete={handleDelete}
+                />
+              </Suspense>
             )}
           </SheetContent>
         </Sheet>
@@ -283,6 +287,7 @@ const Generate = () => {
           onSeparateStems={handleSeparateStems}
           onExtend={handleExtend}
           onCover={handleCover}
+          onSelect={setSelectedTrack}
         />
       </div>
 
@@ -344,12 +349,14 @@ const Generate = () => {
       <Sheet open={!!selectedTrack} onOpenChange={(open) => !open && handleCloseDetail()}>
         <SheetContent side="bottom" className="h-[90vh] p-0 border-t">
           {selectedTrack && (
-            <DetailPanel
-              track={normalizeTrack(selectedTrack)}
-              onClose={handleCloseDetail}
-              onUpdate={refreshTracks}
-              onDelete={handleDelete}
-            />
+            <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+              <DetailPanel
+                track={normalizeTrack(selectedTrack)}
+                onClose={handleCloseDetail}
+                onUpdate={refreshTracks}
+                onDelete={handleDelete}
+              />
+            </Suspense>
           )}
         </SheetContent>
       </Sheet>
