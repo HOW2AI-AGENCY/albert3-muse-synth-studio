@@ -112,6 +112,27 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     const user = authData.user;
     const { prompt, trackId, metadata } = body;
 
+    console.log("🎵 [GENERATE-LYRICS] Request", {
+      userId: user.id,
+      promptLength: prompt?.length || 0,
+      promptWords: prompt?.trim().split(/\s+/).length || 0,
+      hasTrackId: !!trackId,
+      metadata
+    });
+
+    // Check word limit (200 words max)
+    const wordCount = prompt.trim().split(/\s+/).length;
+    if (wordCount > 200) {
+      console.warn("⚠️ [GENERATE-LYRICS] Prompt too long", { wordCount });
+      return new Response(
+        JSON.stringify({ error: `Prompt too long (${wordCount} words). Maximum is 200 words.` }),
+        {
+          status: 413,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
     if (trackId) {
       const { data: trackCheck, error: trackError } = await supabaseUser
         .from("tracks")
@@ -149,6 +170,8 @@ export const mainHandler = async (req: Request): Promise<Response> => {
 
     supabaseAdmin = createSupabaseAdminClient();
 
+    console.log("📝 [GENERATE-LYRICS] Creating lyrics job in DB");
+
     const insertPayload = {
       user_id: user.id,
       track_id: trackId ?? null,
@@ -175,12 +198,23 @@ export const mainHandler = async (req: Request): Promise<Response> => {
 
     const sunoClient = createSunoClient({ apiKey: SUNO_API_KEY });
 
+    console.log("🚀 [GENERATE-LYRICS] Calling Suno API", {
+      endpoint: 'https://api.sunoapi.org/api/v1/lyrics',
+      promptLength: prompt.length,
+      callbackUrl
+    });
+
     const sunoPayload: SunoLyricsPayload = {
       prompt,
       callBackUrl: callbackUrl,
     };
 
     const { taskId, rawResponse } = await sunoClient.generateLyrics(sunoPayload);
+
+    console.log("✅ [GENERATE-LYRICS] Suno API success", {
+      taskId,
+      jobId: job.id
+    });
 
     await supabaseAdmin
       .from("lyrics_jobs")

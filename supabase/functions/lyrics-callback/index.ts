@@ -119,6 +119,26 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       return status === "complete";
     });
 
+    // Helper to determine error message from callback
+    const determineErrorMessage = (code: number | undefined, msg: string | undefined): string => {
+      if (code === 413) {
+        return "Prompt too long. Please shorten your lyrics description (max 200 words).";
+      }
+      if (code === 429) {
+        return "Insufficient credits. Please top up your Suno account.";
+      }
+      if (code === 430) {
+        return "Rate limit exceeded. Please try again later.";
+      }
+      if (code === 455) {
+        return "Suno system maintenance. Please try again later.";
+      }
+      if (code === 451) {
+        return "Failed to process lyrics. File download error.";
+      }
+      return msg || "Lyrics generation failed";
+    };
+
     const now = new Date().toISOString();
 
     if (variants.length > 0) {
@@ -149,12 +169,13 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     }
 
     const success = code === 200 && callbackType !== "error" && completeVariants.length > 0;
+    const errorMessage = success ? null : determineErrorMessage(code, message);
 
     const { error: updateError } = await supabase
       .from("lyrics_jobs")
       .update({
         status: success ? "completed" : "failed",
-        error_message: success ? null : (message ?? callbackType ?? "Lyrics generation failed"),
+        error_message: errorMessage,
         last_callback: payload,
         updated_at: now,
       })
