@@ -11,6 +11,15 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  optimizeDeps: {
+    force: true,
+    include: [
+      '@radix-ui/react-checkbox',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-tooltip',
+    ],
+  },
   plugins: [
     react(),
     mode === "development" && componentTagger(),
