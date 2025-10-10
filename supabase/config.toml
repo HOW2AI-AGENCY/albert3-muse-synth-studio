@@ -11,7 +11,7 @@ verify_jwt = true
 
 [functions.generate-suno]
   verify_jwt = true
-  [functions.generate-suno.environment]
+  [functions.generate-suno.env]
     SENTRY_DSN = ""
     SENTRY_ENVIRONMENT = "development"
     SENTRY_RELEASE = "local"
@@ -28,7 +28,7 @@ verify_jwt = false
 
 [functions.separate-stems]
   verify_jwt = true
-  [functions.separate-stems.environment]
+  [functions.separate-stems.env]
     SENTRY_DSN = ""
     SENTRY_ENVIRONMENT = "development"
     SENTRY_RELEASE = "local"
@@ -48,7 +48,7 @@ verify_jwt = true
 
 [functions.suggest-styles]
   verify_jwt = true
-  [functions.suggest-styles.environment]
+  [functions.suggest-styles.env]
     SENTRY_DSN = ""
     SENTRY_ENVIRONMENT = "development"
     SENTRY_RELEASE = "local"
