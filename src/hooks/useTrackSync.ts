@@ -3,7 +3,7 @@
  * Monitors track generation and auto-recovers from failures
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { logInfo, logWarn, logError } from '@/utils/logger';
@@ -19,11 +19,16 @@ interface TrackSyncOptions {
   enabled?: boolean;
 }
 
+const MIN_RETRY_DELAY = 5000; // 5 секунд минимум между попытками
+const MAX_RETRY_ATTEMPTS = 3; // Уменьшено с 5 до 3
+
 export const useTrackSync = (userId: string | undefined, options: TrackSyncOptions = {}) => {
   const { toast } = useToast();
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const retryAttemptRef = useRef(0);
+  const lastAttemptRef = useRef<number>(0);
+  const [isConnecting, setIsConnecting] = useState(false);
   const onTrackCompletedRef = useRef<TrackSyncOptions['onTrackCompleted']>();
   const onTrackFailedRef = useRef<TrackSyncOptions['onTrackFailed']>();
   const { onTrackCompleted, onTrackFailed, enabled = true } = options;
@@ -53,6 +58,23 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
     };
 
     const subscribeToChannel = () => {
+      const now = Date.now();
+      
+      // Предотвращаем множественные одновременные подключения
+      if (isConnecting || (now - lastAttemptRef.current) < MIN_RETRY_DELAY) {
+        logWarn('Skipping subscription attempt - too soon or already connecting', 'useTrackSync');
+        return;
+      }
+
+      // Проверяем, есть ли уже активное подключение
+      if (channelRef.current) {
+        logWarn('Channel already exists, cleaning up before reconnect', 'useTrackSync');
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      
+      setIsConnecting(true);
+      lastAttemptRef.current = now;
       clearRetryTimeout();
 
       const channel = supabase.channel(channelName);
@@ -123,9 +145,10 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
             logInfo('Track sync subscribed', 'useTrackSync');
             retryAttemptRef.current = 0;
             channelRef.current = channel;
+            setIsConnecting(false);
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            setIsConnecting(false);
             const attempt = retryAttemptRef.current;
-            const delay = Math.min(2 ** attempt * 1000, 30000);
 
             if (status === 'CHANNEL_ERROR') {
               logError('Track sync channel error', new Error('Channel error'), 'useTrackSync');
@@ -140,12 +163,13 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
               channelRef.current = null;
             }
 
-            if (attempt >= 5) {
+            if (attempt >= MAX_RETRY_ATTEMPTS) {
               logError('Track sync retry limit reached', new Error('Realtime connection failed'), 'useTrackSync');
               return;
             }
 
             retryAttemptRef.current = attempt + 1;
+            const delay = Math.min(2 ** attempt * 1000, 30000);
 
             clearRetryTimeout();
             retryTimeoutRef.current = setTimeout(() => {
@@ -153,14 +177,13 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
             }, delay);
           }
         });
-
-      channelRef.current = channel;
     };
 
     subscribeToChannel();
 
     return () => {
       clearRetryTimeout();
+      setIsConnecting(false);
 
       if (channelRef.current) {
         logInfo('Unsubscribing from track sync', 'useTrackSync');
@@ -169,6 +192,7 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
       }
 
       retryAttemptRef.current = 0;
+      lastAttemptRef.current = 0;
     };
   }, [userId, enabled, toast]);
 
