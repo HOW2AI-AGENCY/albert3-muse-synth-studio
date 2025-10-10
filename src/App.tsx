@@ -18,7 +18,7 @@ import {
   LazyFavorites, 
   LazyAnalytics, 
   LazySettings
-} from './utils/lazyImports';
+} from './utils/lazyImports.tsx';
 
 // Ленивая загрузка админ-панели (защищенный роут)
 const LazyAdmin = lazy(() => import('./pages/workspace/Admin'));
