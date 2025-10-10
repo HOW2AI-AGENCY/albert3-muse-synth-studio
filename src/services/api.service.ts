@@ -48,6 +48,11 @@ export interface GenerateMusicRequest {
   styleTags?: string[];
   customMode?: boolean;
   modelVersion?: string;
+  negativeTags?: string;
+  vocalGender?: 'm' | 'f';
+  styleWeight?: number;
+  weirdnessConstraint?: number;
+  audioWeight?: number;
 }
 
 export interface GenerateMusicResponse {
