@@ -1,8 +1,201 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { createSecurityHeaders } from "../_shared/security.ts";
-import { createSupabaseUserClient } from "../_shared/supabase.ts";
-import { fetchSunoBalance } from "../_shared/suno-balance.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { buildSunoHeaders } from "../_shared/suno.ts";
+
+type SunoBalanceAttempt = {
+  endpoint: string;
+  status?: number;
+  message: string;
+};
+
+const unique = (values: Array<string | null | undefined>): string[] => {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values) {
+    if (!value) continue;
+    const trimmed = value.trim();
+    if (!trimmed) continue;
+    const normalised = trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
+    if (!seen.has(normalised)) {
+      seen.add(normalised);
+      result.push(normalised);
+    }
+  }
+  return result;
+};
+
+const DEFAULT_SUNO_BALANCE_ENDPOINTS = unique([
+  Deno.env.get('SUNO_BALANCE_URL'),
+  'https://api.sunoapi.org/api/v1/generate/credit',
+  'https://api.sunoapi.org/api/v1/account/balance',
+  'https://studio-api.suno.ai/api/billing/info/',
+]);
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const coerceNumber = (value: unknown): number | undefined => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const numeric = Number(value.trim());
+    return Number.isFinite(numeric) ? numeric : undefined;
+  }
+  return undefined;
+};
+
+const coerceString = (value: unknown): string | undefined => {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+  return undefined;
+};
+
+const getNestedValue = (root: Record<string, unknown>, path: string[]): unknown => {
+  let current: unknown = root;
+  for (const segment of path) {
+    if (!isRecord(current)) {
+      return undefined;
+    }
+    current = current[segment];
+  }
+  return current;
+};
+
+const pickNumber = (root: Record<string, unknown>, paths: string[][]): number | undefined => {
+  for (const path of paths) {
+    const value = getNestedValue(root, path);
+    const numeric = coerceNumber(value);
+    if (numeric !== undefined) {
+      return numeric;
+    }
+  }
+  return undefined;
+};
+
+const pickString = (root: Record<string, unknown>, paths: string[][]): string | undefined => {
+  for (const path of paths) {
+    const value = getNestedValue(root, path);
+    const stringValue = coerceString(value);
+    if (stringValue) {
+      return stringValue;
+    }
+  }
+  return undefined;
+};
+
+const parseSunoBalanceResponse = (body: unknown): {
+  balance: number;
+  currency?: string;
+  plan?: string;
+  monthly_limit?: number;
+  monthly_usage?: number;
+} => {
+  if (!isRecord(body)) {
+    throw new Error('Unexpected response format');
+  }
+
+  const code = coerceNumber(body.code) ?? coerceNumber(body.status);
+  const successMessage = coerceString(body.msg) ?? coerceString(body.message) ?? undefined;
+  if (code !== undefined && code !== 200 && code !== 0) {
+    throw new Error(successMessage ? `${successMessage} (code ${code})` : `Suno responded with code ${code}`);
+  }
+
+  const successFlag = body.success ?? body.ok ?? undefined;
+  if (typeof successFlag === 'boolean' && successFlag === false) {
+    throw new Error(successMessage ?? 'Suno balance request failed');
+  }
+  if (typeof successFlag === 'string' && successFlag.toLowerCase() === 'false') {
+    throw new Error(successMessage ?? 'Suno balance request failed');
+  }
+
+  const balancePaths: string[][] = [
+    ['balance'],
+    ['data', 'balance'],
+    ['data', 'data', 'balance'],
+    ['data'],
+    ['data', 'remaining'],
+    ['data', 'remaining_creations'],
+    ['data', 'credit_balance'],
+    ['remaining_creations'],
+    ['remainingCredits'],
+    ['credits', 'balance'],
+    ['credits', 'remaining'],
+    ['credits', 'remaining_creations'],
+    ['credits', 'monthly', 'remaining'],
+    ['credits', 'monthly', 'remaining_creations'],
+    ['usage', 'remaining'],
+    ['billing', 'remaining'],
+    ['data', 'credits', 'balance'],
+    ['data', 'credits', 'remaining'],
+    ['data', 'usage', 'remaining'],
+    ['monthly_remaining'],
+  ];
+
+  const monthlyLimitPaths: string[][] = [
+    ['monthly_limit'],
+    ['data', 'monthly_limit'],
+    ['data', 'data', 'monthly_limit'],
+    ['credits', 'monthly_limit'],
+    ['credits', 'monthly', 'limit'],
+    ['subscription', 'monthly_limit'],
+    ['limits', 'monthly'],
+    ['usage', 'limit'],
+    ['data', 'credits', 'monthly', 'limit'],
+  ];
+
+  const monthlyUsagePaths: string[][] = [
+    ['monthly_usage'],
+    ['data', 'monthly_usage'],
+    ['data', 'data', 'monthly_usage'],
+    ['credits', 'monthly_usage'],
+    ['credits', 'monthly', 'used'],
+    ['credits', 'monthly', 'usage'],
+    ['usage', 'monthly'],
+    ['usage', 'used'],
+    ['data', 'credits', 'monthly', 'used'],
+  ];
+
+  const balance = pickNumber(body, balancePaths);
+  const monthlyLimit = pickNumber(body, monthlyLimitPaths);
+  const monthlyUsage = pickNumber(body, monthlyUsagePaths);
+
+  let resolvedBalance = balance;
+  if (resolvedBalance === undefined && monthlyLimit !== undefined && monthlyUsage !== undefined) {
+    resolvedBalance = Math.max(0, monthlyLimit - monthlyUsage);
+  }
+
+  if (resolvedBalance === undefined) {
+    throw new Error('Balance value missing in response');
+  }
+
+  const currency = pickString(body, [
+    ['currency'],
+    ['data', 'currency'],
+    ['data', 'data', 'currency'],
+    ['credits', 'currency'],
+  ]);
+
+  const plan = pickString(body, [
+    ['plan'],
+    ['data', 'plan'],
+    ['subscription', 'plan'],
+    ['subscription', 'name'],
+    ['data', 'subscription', 'plan'],
+  ]);
+
+  return {
+    balance: resolvedBalance,
+    currency,
+    plan,
+    monthly_limit: monthlyLimit,
+    monthly_usage: monthlyUsage,
+  };
+};
 
 export const getSunoBalance = async () => {
   const SUNO_API_KEY = Deno.env.get('SUNO_API_KEY');
@@ -94,16 +287,10 @@ export const handler = async (req: Request): Promise<Response> => {
     }
     const token = authHeader.replace('Bearer ', '');
 
-    let supabase;
-    try {
-      supabase = createSupabaseUserClient(token);
-    } catch (configError) {
-      console.error('Supabase configuration error while creating auth client:', configError);
-      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
-        status: 500,
-        headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    );
 
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
 
