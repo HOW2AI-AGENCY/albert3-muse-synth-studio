@@ -305,13 +305,22 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
     }
   }
   
-  // Формат 2: Массив с data/results
+  // ✅ ИСПРАВЛЕНИЕ: Формат 2a - Объект data (начальный ответ /api/v1/generate)
+  if ('data' in record && record.data && typeof record.data === 'object' && !Array.isArray(record.data)) {
+    const result = parseTaskId(record.data);
+    if (result.taskId) {
+      console.log('✅ [SUNO] Found taskId in data object (initial response)');
+      return result;
+    }
+  }
+  
+  // Формат 2b: Массив с data/results (callback ответы)
   if ('data' in record && Array.isArray(record.data) && record.data.length > 0) {
     const first = record.data[0];
     if (first && typeof first === 'object') {
       const result = parseTaskId(first);
       if (result.taskId) {
-        console.log('✅ [SUNO] Found taskId in data array');
+        console.log('✅ [SUNO] Found taskId in data array (callback)');
         return result;
       }
     }
