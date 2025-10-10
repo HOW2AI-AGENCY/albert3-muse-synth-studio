@@ -734,8 +734,10 @@ export class ApiService {
         error: 'Session check failed',
       } as ProviderBalanceResponse;
     }
-    const { data, error } = await supabase.functions.invoke('get-balance', {
-      body: { provider },
+    // Corrected: Use GET request with query parameters for better REST compliance
+    const functionName = `get-balance?provider=${provider}`;
+    const { data, error } = await supabase.functions.invoke(functionName, {
+      method: 'GET',
     });
 
     if (error || !data) {
