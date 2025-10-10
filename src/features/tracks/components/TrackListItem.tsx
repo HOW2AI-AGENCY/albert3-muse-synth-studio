@@ -255,11 +255,17 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
             {track.status === 'completed' && onSeparateStems && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="w-7 h-7" aria-label="Дополнительно">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="w-7 h-7" 
+                    aria-label="Дополнительно"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <MoreVertical className="w-3.5 h-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 bg-popover z-[100]">
+                <DropdownMenuContent align="end" className="w-48 bg-popover z-[200]">
                   <DropdownMenuItem onClick={handleSeparateStemsClick}>
                     <Split className="w-4 h-4 mr-2" />
                     Разделить на стемы
