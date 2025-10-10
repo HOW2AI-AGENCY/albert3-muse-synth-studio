@@ -44,6 +44,18 @@ const mainHandler = async (req: Request) => {
   }
 
   try {
+    // Get userId from X-User-Id header (injected by middleware)
+    const userId = req.headers.get('X-User-Id');
+    if (!userId) {
+      console.error('[separate-stems] ❌ handler-401: Missing X-User-Id header (middleware auth failed)');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - missing user context' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log(`[separate-stems] 🎵 Handler entry: userId=${userId.substring(0, 8)}..., method=${req.method}`);
+
     const SUNO_API_KEY = Deno.env.get("SUNO_API_KEY");
     if (!SUNO_API_KEY) {
       throw new Error("SUNO_API_KEY is not configured");
@@ -52,26 +64,10 @@ const mainHandler = async (req: Request) => {
     const SUPABASE_URL = ensureSupabaseUrl();
     const sunoClient = createSunoClient({ apiKey: SUNO_API_KEY });
 
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
-    if (!token) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
-    const supabaseUserClient = createSupabaseUserClient(token);
-    const { data: { user }, error: authError } = await supabaseUserClient.auth.getUser();
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
     const body = await validateRequest(req, validationSchemas.separateStems) as SeparateStemsRequestBody;
     const { trackId, versionId, separationMode } = body;
+    
+    console.log(`[separate-stems] 📋 Request details: trackId=${trackId}, versionId=${versionId || 'null'}, mode=${separationMode}`);
 
     if (!SUPPORTED_SEPARATION_MODES.has(separationMode)) {
       throw new ValidationException([
@@ -94,7 +90,8 @@ const mainHandler = async (req: Request) => {
       throw new Error("Track not found");
     }
 
-    if (trackRecord.user_id !== user.id) {
+    if (trackRecord.user_id !== userId) {
+      console.error(`[separate-stems] ❌ handler-403: User ${userId.substring(0, 8)}... does not own track ${trackId}`);
       return new Response(
         JSON.stringify({ error: "Forbidden" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },

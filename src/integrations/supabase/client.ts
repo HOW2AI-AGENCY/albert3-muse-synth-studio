@@ -113,15 +113,15 @@ supabase.functions.invoke = (async (functionName, options = {}) => {
       ? { ...headersWithAuth, "x-app-environment": appEnv.appEnv }
       : headersWithAuth;
 
-  // Lightweight diagnostics to help track 401s on get-balance
+  // Lightweight diagnostics to help track 401s on specific functions
   try {
-    if (typeof window !== "undefined" && functionName.startsWith("get-balance")) {
+    if (typeof window !== "undefined" && (functionName.startsWith("get-balance") || functionName === "separate-stems")) {
       const method = (options as { method?: string }).method ?? "POST";
       const hasAuth = Object.keys(headers).some(
         (key) => key.toLowerCase() === "authorization"
       );
       // Do not log header contents to avoid exposing tokens
-      console.debug("[Supabase.invoke] get-balance", { method, hasAuth });
+      console.debug(`[Supabase.invoke] ${functionName}`, { method, hasAuth });
     }
   } catch (_) {
     // no-op: diagnostics should never break invoke

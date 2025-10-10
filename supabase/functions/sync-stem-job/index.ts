@@ -78,23 +78,17 @@ const handler = async (req: Request): Promise<Response> => {
     const body = await validateRequest(req, validationSchemas.syncStemJob) as SyncStemJobRequestBody;
     const { trackId, versionId, taskId: overrideTaskId, separationMode: requestedMode } = body;
 
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
-    if (!token) {
+    // Get userId from X-User-Id header (injected by middleware)
+    const userId = req.headers.get('X-User-Id');
+    if (!userId) {
+      console.error('[sync-stem-job] ❌ handler-401: Missing X-User-Id header (middleware auth failed)');
       return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        JSON.stringify({ error: 'Unauthorized - missing user context' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const supabaseUserClient = createSupabaseUserClient(token);
-    const { data: { user }, error: authError } = await supabaseUserClient.auth.getUser();
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
+    console.log(`[sync-stem-job] 🔄 Handler entry: userId=${userId.substring(0, 8)}..., trackId=${body.trackId || 'pending'}`);
 
     const supabaseAdmin = createSupabaseAdminClient();
 
@@ -108,7 +102,8 @@ const handler = async (req: Request): Promise<Response> => {
       throw trackError || new Error("Track not found");
     }
 
-    if (trackRecord.user_id !== user.id) {
+    if (trackRecord.user_id !== userId) {
+      console.error(`[sync-stem-job] ❌ handler-403: User ${userId.substring(0, 8)}... does not own track ${trackId}`);
       return new Response(
         JSON.stringify({ error: "Forbidden" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
