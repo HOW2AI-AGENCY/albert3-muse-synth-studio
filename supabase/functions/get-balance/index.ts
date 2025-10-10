@@ -3,6 +3,7 @@ import { createCorsHeaders } from "../_shared/cors.ts";
 import { createSecurityHeaders } from "../_shared/security.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { buildSunoHeaders } from "../_shared/suno.ts";
+import { fetchSunoBalance } from "../_shared/suno-balance.ts";
 
 type SunoBalanceAttempt = {
   endpoint: string;

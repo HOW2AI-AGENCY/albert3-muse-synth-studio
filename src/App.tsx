@@ -2,14 +2,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { RouterProvider } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import Landing from "./pages/Landing";
-import Auth from "./pages/Auth";
-import WorkspaceLayout from "./components/workspace/WorkspaceLayout";
-import ProtectedRoute from "./components/ProtectedRoute";
-import NotFound from "./pages/NotFound";
+import router from "./router";
 import { AudioPlayerProvider } from "./contexts/AudioPlayerContext";
 import { GlobalAudioPlayer } from "./components/player/GlobalAudioPlayer";
 
@@ -66,92 +62,8 @@ const App = () => (
         <AudioPlayerProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/auth" element={<Auth />} />
-              {/* Debug route for Edge Functions connectivity */}
-              <Route 
-                path="/debug/edge-functions" 
-                element={
-                  <Suspense fallback={<LoadingSpinner />}>
-                    <LazyEdgeFunctionsDebug />
-                  </Suspense>
-                } 
-              />
-              
-              {/* Protected Workspace Routes */}
-              <Route
-                path="/workspace"
-                element={
-                  <ProtectedRoute>
-                    <WorkspaceLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route 
-                  path="dashboard" 
-                  element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <LazyDashboard />
-                    </Suspense>
-                  } 
-                />
-                <Route 
-                  path="generate" 
-                  element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <LazyGenerate />
-                    </Suspense>
-                  } 
-                />
-                <Route 
-                  path="library" 
-                  element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <LazyLibrary />
-                    </Suspense>
-                  } 
-                />
-                <Route 
-                  path="favorites" 
-                  element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <LazyFavorites />
-                    </Suspense>
-                  } 
-                />
-                <Route 
-                  path="analytics" 
-                  element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <LazyAnalytics />
-                    </Suspense>
-                  } 
-                />
-                <Route 
-                  path="settings" 
-                  element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <LazySettings />
-                    </Suspense>
-                  } 
-                />
-                <Route 
-                  path="admin" 
-                  element={
-                    <Suspense fallback={<LoadingSpinner />}>
-                      <LazyAdmin />
-                    </Suspense>
-                  } 
-                />
-              </Route>
-
-              {/* Catch-all route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <GlobalAudioPlayer />
-          </BrowserRouter>
+          <RouterProvider router={router} />
+          <GlobalAudioPlayer />
         </AudioPlayerProvider>
       </TooltipProvider>
     </QueryClientProvider>
