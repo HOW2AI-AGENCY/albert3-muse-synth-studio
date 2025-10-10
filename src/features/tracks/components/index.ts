@@ -5,3 +5,5 @@ export { TrackStemsPanel } from './TrackStemsPanel';
 export { TrackVersionMetadataPanel } from './TrackVersionMetadataPanel';
 export type { TrackVersionMetadata } from './TrackVersionMetadataPanel';
 export { TrackVersionComparison } from './TrackVersionComparison';
+export { AdvancedStemMixer } from './AdvancedStemMixer';
+export { StemMixerTrack } from './StemMixerTrack';

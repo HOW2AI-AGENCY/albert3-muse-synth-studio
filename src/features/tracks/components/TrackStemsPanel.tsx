@@ -3,11 +3,14 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Music4, ChevronDown, ChevronUp, Play, Pause, Download } from "lucide-react";
+import { Music4, ChevronDown, ChevronUp, Play, Pause, Download, List, Sliders } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { ApiService } from "@/services/api.service";
+import { StemMixerProvider } from "@/contexts/StemMixerContext";
+import { AdvancedStemMixer } from "./AdvancedStemMixer";
 
 interface TrackStem {
   id: string;
@@ -82,6 +85,7 @@ const formatStemLabel = (stemType: string) => {
 export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }: TrackStemsPanelProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [viewMode, setViewMode] = useState<'simple' | 'mixer'>('simple');
   const { currentTrack, isPlaying, playTrack, togglePlayPause } = useAudioPlayer();
 
   const handleGenerateStems = async (mode: 'separate_vocal' | 'split_stem') => {
@@ -249,17 +253,27 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
           )}
         </div>
         {stems.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            {isExpanded ? (
-              <ChevronUp className="w-4 h-4" />
-            ) : (
-              <ChevronDown className="w-4 h-4" />
-            )}
-          </Button>
+          <div className="flex items-center gap-2">
+            <ToggleGroup type="single" value={viewMode} onValueChange={(v) => v && setViewMode(v as 'simple' | 'mixer')}>
+              <ToggleGroupItem value="simple" aria-label="Простой режим">
+                <List className="w-4 h-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="mixer" aria-label="Режим микшера">
+                <Sliders className="w-4 h-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
         )}
       </div>
 
@@ -307,7 +321,7 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
         </div>
       ) : (
         <>
-          {isExpanded && (
+          {isExpanded && viewMode === 'simple' && (
             <div className="space-y-4">
               {hasTwoStemMode && (
                 <div className="space-y-2">
@@ -395,6 +409,12 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
                 </div>
               )}
             </div>
+          )}
+
+          {isExpanded && viewMode === 'mixer' && (
+            <StemMixerProvider>
+              <AdvancedStemMixer stems={stems} />
+            </StemMixerProvider>
           )}
 
           {!hasTwoStemMode && (

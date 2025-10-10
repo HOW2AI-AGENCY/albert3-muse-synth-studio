@@ -13,7 +13,15 @@ import {
   Loader2,
   RefreshCw,
   Trash2,
+  Split,
+  MoreVertical,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useTrackLike } from "@/features/tracks/hooks";
 import { cn } from "@/lib/utils";
@@ -40,10 +48,11 @@ interface TrackListItemProps {
   onShare?: () => void;
   onRetry?: (trackId: string) => void;
   onDelete?: (trackId: string) => void;
+  onSeparateStems?: (trackId: string) => void;
   className?: string;
 }
 
-const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, onDelete, className }: TrackListItemProps) => {
+const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, onDelete, onSeparateStems, className }: TrackListItemProps) => {
   const { currentTrack, isPlaying, playTrack } = useAudioPlayer();
   const { isLiked, toggleLike } = useTrackLike(track.id, track.like_count || 0);
   const [isHovered, setIsHovered] = useState(false);
@@ -100,7 +109,12 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
     onDelete?.(track.id);
   }, [onDelete, track.id]);
 
-  const isStuck = track.created_at && 
+  const handleSeparateStemsClick = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
+    onSeparateStems?.(track.id);
+  }, [onSeparateStems, track.id]);
+
+  const isStuck = track.created_at &&
     (Date.now() - new Date(track.created_at).getTime()) > 5 * 60 * 1000; // 5 минут
 
   const formattedDuration = track.duration ? formatDuration(track.duration) : null;
@@ -238,6 +252,21 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
                 <TooltipContent>Поделиться</TooltipContent>
               </Tooltip>
             </TooltipProvider>
+            {track.status === 'completed' && onSeparateStems && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="w-7 h-7" aria-label="Дополнительно">
+                    <MoreVertical className="w-3.5 h-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 bg-background border-border">
+                  <DropdownMenuItem onClick={handleSeparateStemsClick}>
+                    <Split className="w-4 h-4 mr-2" />
+                    Разделить на стемы
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </>
         )}
       </div>
