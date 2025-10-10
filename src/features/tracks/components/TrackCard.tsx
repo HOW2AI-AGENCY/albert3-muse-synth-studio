@@ -372,7 +372,7 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDe
                     <MoreVertical className="w-3 h-3" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 bg-popover z-[200]">
+                <DropdownMenuContent align="end" className="w-48 z-[200]">
                   <DropdownMenuItem onClick={handleDownloadClick}>
                     <Download className="w-4 h-4 mr-2" />
                     Скачать MP3

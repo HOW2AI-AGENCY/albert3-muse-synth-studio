@@ -265,7 +265,7 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
                     <MoreVertical className="w-3.5 h-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 bg-popover z-[200]">
+                <DropdownMenuContent align="end" className="w-48 z-[200]">
                   <DropdownMenuItem onClick={handleSeparateStemsClick}>
                     <Split className="w-4 h-4 mr-2" />
                     Разделить на стемы

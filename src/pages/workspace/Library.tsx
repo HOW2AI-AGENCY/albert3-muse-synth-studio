@@ -19,6 +19,9 @@ import { OptimizedTrackList } from "@/components/OptimizedTrackList";
 import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
 import { TrackStatusMonitor } from "@/components/TrackStatusMonitor";
 import { SeparateStemsDialog } from "@/components/tracks/SeparateStemsDialog";
+import { ExtendTrackDialog } from "@/components/tracks/ExtendTrackDialog";
+import { CreateCoverDialog } from "@/components/tracks/CreateCoverDialog";
+import { TrackDeleteDialog } from "@/components/tracks/TrackDeleteDialog";
 import { useTracks } from "@/hooks/useTracks";
 import { useToast } from "@/hooks/use-toast";
 import { useTrackCleanup } from "@/hooks/useTrackCleanup";
@@ -66,9 +69,18 @@ const Library: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [loadingTrackId, setLoadingTrackId] = useState<string | null>(null);
   
-  // Диалог разделения на стемы
+  // Диалоги
   const [separateStemsDialogOpen, setSeparateStemsDialogOpen] = useState(false);
   const [selectedTrackForStems, setSelectedTrackForStems] = useState<{ id: string; title: string } | null>(null);
+  
+  const [extendDialogOpen, setExtendDialogOpen] = useState(false);
+  const [selectedTrackForExtend, setSelectedTrackForExtend] = useState<DisplayTrack | null>(null);
+  
+  const [coverDialogOpen, setCoverDialogOpen] = useState(false);
+  const [selectedTrackForCover, setSelectedTrackForCover] = useState<{ id: string; title: string } | null>(null);
+  
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedTrackForDelete, setSelectedTrackForDelete] = useState<{ id: string; title: string } | null>(null);
   
   // Сохранение настроек просмотра
   useEffect(() => {
@@ -395,6 +407,90 @@ const Library: React.FC = () => {
     setSeparateStemsDialogOpen(true);
   }, [tracks]);
 
+  const handleExtend = useCallback((trackId: string) => {
+    const track = tracks.find(t => t.id === trackId);
+    if (!track) return;
+    
+    setSelectedTrackForExtend(convertToDisplayTrack(track));
+    setExtendDialogOpen(true);
+  }, [tracks]);
+
+  const handleCover = useCallback((trackId: string) => {
+    const track = tracks.find(t => t.id === trackId);
+    if (!track) return;
+    
+    setSelectedTrackForCover({ id: trackId, title: track.title });
+    setCoverDialogOpen(true);
+  }, [tracks]);
+
+  const handleRetry = useCallback(async (trackId: string) => {
+    try {
+      const track = tracks.find(t => t.id === trackId);
+      if (!track) return;
+
+      toast({
+        title: "Повторная генерация",
+        description: "Запускаем генерацию заново...",
+      });
+
+      // Обновляем статус трека на pending
+      await supabase
+        .from('tracks')
+        .update({ 
+          status: 'pending',
+          error_message: null 
+        })
+        .eq('id', trackId);
+
+      await refreshTracks();
+      
+      logger.info('Track retry initiated', `trackId: ${trackId}`);
+    } catch (error) {
+      logger.error('Failed to retry track', error instanceof Error ? error : new Error(`trackId: ${trackId}`));
+      toast({
+        title: "Ошибка",
+        description: "Не удалось повторить генерацию",
+        variant: "destructive",
+      });
+    }
+  }, [tracks, toast, refreshTracks]);
+
+  const handleDelete = useCallback((trackId: string) => {
+    const track = tracks.find(t => t.id === trackId);
+    if (!track) return;
+    
+    setSelectedTrackForDelete({ id: trackId, title: track.title });
+    setDeleteDialogOpen(true);
+  }, [tracks]);
+
+  const confirmDelete = useCallback(async () => {
+    if (!selectedTrackForDelete) return;
+
+    try {
+      await supabase
+        .from('tracks')
+        .delete()
+        .eq('id', selectedTrackForDelete.id);
+
+      toast({
+        title: "✅ Трек удален",
+        description: `"${selectedTrackForDelete.title}" удален из библиотеки`,
+      });
+
+      await refreshTracks();
+      setSelectedTrackForDelete(null);
+      
+      logger.info('Track deleted', `trackId: ${selectedTrackForDelete.id}, title: ${selectedTrackForDelete.title}`);
+    } catch (error) {
+      logger.error('Failed to delete track', error instanceof Error ? error : new Error(`trackId: ${selectedTrackForDelete.id}`));
+      toast({
+        title: "Ошибка",
+        description: "Не удалось удалить трек",
+        variant: "destructive",
+      });
+    }
+  }, [selectedTrackForDelete, toast, refreshTracks]);
+
   // Уникальные статусы для фильтра
   const availableStatuses = useMemo(() => {
     const statuses = new Set(tracks.map(track => track.status));
@@ -589,13 +685,27 @@ const Library: React.FC = () => {
                     onDownload={() => handleDownload(track.id)}
                     onShare={() => handleShare(track.id)}
                     onSeparateStems={() => handleSeparateStems(track.id)}
+                    onExtend={() => handleExtend(track.id)}
+                    onCover={() => handleCover(track.id)}
+                    onRetry={handleRetry}
+                    onDelete={handleDelete}
                   />
                   {loadingTrackId === track.id && (
                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-3xl bg-background/80 backdrop-blur-sm">
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />
                       <span className="text-xs font-medium text-muted-foreground">Загрузка версий…</span>
                     </div>
-                  )}
+      )}
+
+      {selectedTrackForDelete && (
+        <TrackDeleteDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          trackId={selectedTrackForDelete.id}
+          trackTitle={selectedTrackForDelete.title}
+          onConfirm={confirmDelete}
+        />
+      )}
                 </div>
               ))}
             </div>
@@ -611,6 +721,8 @@ const Library: React.FC = () => {
                     onShare={() => handleShare(track.id)}
                     onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
                     onSeparateStems={() => handleSeparateStems(track.id)}
+                    onRetry={handleRetry}
+                    onDelete={handleDelete}
                   />
                   {loadingTrackId === track.id && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-xl bg-background/80 backdrop-blur-sm">
@@ -633,7 +745,7 @@ const Library: React.FC = () => {
         </>
       )}
 
-      {/* Диалог разделения на стемы */}
+      {/* Диалоги */}
       {selectedTrackForStems && (
         <SeparateStemsDialog
           open={separateStemsDialogOpen}
@@ -643,6 +755,31 @@ const Library: React.FC = () => {
           onSuccess={() => {
             refreshTracks();
             setSelectedTrackForStems(null);
+          }}
+        />
+      )}
+
+      {selectedTrackForExtend && (
+        <ExtendTrackDialog
+          open={extendDialogOpen}
+          onOpenChange={setExtendDialogOpen}
+          track={{
+            id: selectedTrackForExtend.id,
+            title: selectedTrackForExtend.title,
+            duration: selectedTrackForExtend.duration || selectedTrackForExtend.duration_seconds,
+            prompt: selectedTrackForExtend.prompt,
+            style_tags: selectedTrackForExtend.style_tags,
+          }}
+        />
+      )}
+
+      {selectedTrackForCover && (
+        <CreateCoverDialog
+          open={coverDialogOpen}
+          onOpenChange={setCoverDialogOpen}
+          track={{
+            id: selectedTrackForCover.id,
+            title: selectedTrackForCover.title,
           }}
         />
       )}
