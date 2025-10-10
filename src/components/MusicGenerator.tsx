@@ -469,35 +469,49 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
 
   return (
     <div className="h-full w-full">
-      <Card className="h-full border-border/40 bg-background/95 backdrop-blur-sm shadow-lg">
-        <div className="p-4 border-b border-border/40 bg-muted/20">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              {balanceLoading ? (
-                <Skeleton className="h-6 w-24" />
-              ) : (
-                <Badge variant="secondary" className="text-xs px-2 py-1">
-                  <Music className="h-3 w-3 mr-1" />
-                  {balance?.balance ?? 0} {balance?.currency ?? 'credits'} · {balance?.provider ?? 'unknown'}
-                </Badge>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
+      <Card className="app-panel h-full">
+        <div className="app-panel__header">
+          <div className="app-stack app-stack--tight">
+            <div className="app-inline app-inline--between">
+              <div className="app-stack app-stack--tight">
+                <h2 className="app-panel__heading">Создание трека</h2>
+                <p className="app-panel__description">
+                  Используйте быстрый режим или перейдите в продвинутый для точной настройки.
+                </p>
+              </div>
               <Tabs
                 value={generationMode}
                 onValueChange={handleModeChange}
-                className="w-auto"
+                className="shrink-0"
               >
-                <TabsList className="h-9 p-1 bg-background/50">
-                  <TabsTrigger value="simple" className="text-xs px-3">Simple</TabsTrigger>
-                  <TabsTrigger value="custom" className="text-xs px-3">Custom</TabsTrigger>
+                <TabsList className="app-mode-toggle">
+                  <TabsTrigger value="simple" className="app-mode-toggle__item">Простой</TabsTrigger>
+                  <TabsTrigger value="custom" className="app-mode-toggle__item">Продвинутый</TabsTrigger>
                 </TabsList>
               </Tabs>
+            </div>
+
+            <div className="app-inline app-inline--between">
+              <div className="flex items-center">
+                {balanceLoading ? (
+                  <Skeleton className="h-5 w-24 rounded-full" />
+                ) : (
+                  <Badge
+                    variant="secondary"
+                    className="app-chip bg-background/70 text-[11px] font-medium"
+                  >
+                    <Music className="h-3 w-3" />
+                    <span>
+                      {balance?.balance ?? 0} {balance?.currency ?? 'credits'}
+                    </span>
+                    <span className="hidden sm:inline text-muted-foreground">· {balance?.provider ?? 'unknown'}</span>
+                  </Badge>
+                )}
+              </div>
 
               <Select value={selectedModel} onValueChange={setSelectedModel}>
-                <SelectTrigger className="h-9 w-[120px] text-xs bg-background/50">
-                  <SelectValue />
+                <SelectTrigger className="h-9 w-[160px] text-xs bg-background/60">
+                  <SelectValue placeholder="Модель" />
                 </SelectTrigger>
                 <SelectContent>
                   {modelVersions.map((model) => (
@@ -511,10 +525,10 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
           </div>
         </div>
 
-        <ScrollArea className="h-[calc(100%-80px)]">
-          <div className="p-4 space-y-4">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-2">
+        <ScrollArea className="app-panel__scroll">
+          <div className="app-panel__body app-stack">
+            <div className="app-fieldset">
+              <Label className="app-fieldset__label">
                 <FileText className="h-4 w-4" />
                 Заголовок (опционально)
               </Label>
@@ -522,24 +536,24 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                 placeholder="Введите название трека"
                 value={songTitle}
                 onChange={(event) => setSongTitle(event.target.value)}
-                className="h-9 bg-background/50 text-sm"
+                className="h-9 bg-background/60 text-sm"
                 disabled={isGenerating}
               />
-              <p className="text-xs text-muted-foreground">
-                Если поле оставить пустым, мы подберём название автоматически.
+              <p className="app-fieldset__description">
+                Можно оставить пустым — название придумаем автоматически.
               </p>
             </div>
 
             {generationMode === 'simple' ? (
-              <div className="space-y-4 animate-fade-in">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">Опишите будущий трек</Label>
+              <div className="app-stack animate-fade-in">
+                <div className="app-fieldset">
+                  <div className="app-inline app-inline--between">
+                    <Label className="app-fieldset__label">Опишите будущий трек</Label>
                     <div className="flex items-center gap-2">
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        className="h-7 text-xs gap-1"
+                        className="h-8 px-3 text-xs gap-1"
                         onClick={() => handleRandomizePrompt('simple')}
                         disabled={isGenerating}
                       >
@@ -547,9 +561,9 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                         Рандом
                       </Button>
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        className="h-7 text-xs gap-1"
+                        className="h-8 px-3 text-xs gap-1"
                         onClick={() => handleEnhancePrompt('simple')}
                         disabled={isImproving || isGenerating}
                       >
@@ -566,20 +580,35 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                     placeholder="Опишите желаемую музыку, настроение и ключевые инструменты"
                     value={simplePrompt}
                     onChange={(event) => setSimplePrompt(event.target.value)}
-                    className="min-h-[120px] resize-none bg-background/50 text-sm"
+                    className="min-h-[96px] resize-none bg-background/60 text-sm"
                     disabled={isGenerating}
                   />
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {simplePromptExamples.slice(0, 3).map((example) => (
+                      <Button
+                        key={example}
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-3 text-xs"
+                        onClick={() => setSimplePrompt(example)}
+                        disabled={isGenerating}
+                      >
+                        {example}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-between gap-3 border rounded-lg border-dashed border-border/60 p-3 bg-muted/10">
-                  <div className="flex items-center gap-2">
+                <div className="app-inline-card">
+                  <div className="app-inline">
                     <Switch
                       id="simple-instrumental"
                       checked={simpleInstrumental}
                       onCheckedChange={(checked) => setSimpleInstrumental(Boolean(checked))}
                       disabled={isGenerating}
                     />
-                    <Label htmlFor="simple-instrumental" className="text-sm flex items-center gap-2">
+                    <Label htmlFor="simple-instrumental" className="app-fieldset__label">
                       <Music className="h-4 w-4" />
                       Сделать инструментал
                     </Label>
@@ -589,7 +618,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-8 text-xs gap-2"
+                    className="h-8 px-3 text-xs gap-2"
                     onClick={handleAddLyricsFromSimple}
                     disabled={isGenerating}
                   >
@@ -599,27 +628,27 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4 animate-fade-in">
+              <div className="app-stack animate-fade-in">
                 <Accordion
                   type="multiple"
                   value={openBlocks}
                   onValueChange={(value) => setOpenBlocks(Array.isArray(value) ? value : [value])}
-                  className="space-y-2"
+                  className="app-stack app-stack--tight"
                 >
-                  <AccordionItem value="lyrics" className="border-border/40">
-                    <AccordionTrigger className="text-sm font-medium">
+                  <AccordionItem value="lyrics" className="app-subsection border-none">
+                    <AccordionTrigger className="app-subsection__header hover:no-underline">
                       <div className="flex items-center gap-2">
                         <Mic2 className="h-4 w-4" />
                         Лирика
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent className="space-y-2 pt-2">
+                    <AccordionContent className="app-subsection__body">
                       <Textarea
                         ref={lyricsRef}
                         placeholder="Напишите или вставьте текст песни"
                         value={lyrics}
                         onChange={(event) => setLyrics(event.target.value)}
-                        className="min-h-[160px] resize-none bg-background/50 text-sm"
+                        className="min-h-[150px] resize-none bg-background/60 text-sm"
                         disabled={isGenerating}
                       />
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -629,19 +658,19 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="style" className="border-border/40">
-                    <AccordionTrigger className="text-sm font-medium">
+                  <AccordionItem value="style" className="app-subsection border-none">
+                    <AccordionTrigger className="app-subsection__header hover:no-underline">
                       <div className="flex items-center gap-2">
                         <FileText className="h-4 w-4" />
                         Стилевой промт
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent className="space-y-2 pt-2">
-                      <div className="flex items-center justify-end gap-2">
+                    <AccordionContent className="app-subsection__body">
+                      <div className="flex flex-wrap justify-end gap-2">
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          className="h-7 text-xs gap-1"
+                          className="h-8 px-3 text-xs gap-1"
                           onClick={() => handleRandomizePrompt('custom')}
                           disabled={isGenerating}
                         >
@@ -649,9 +678,9 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                           Рандом
                         </Button>
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
-                          className="h-7 text-xs gap-1"
+                          className="h-8 px-3 text-xs gap-1"
                           onClick={() => handleEnhancePrompt('custom')}
                           disabled={isImproving || isGenerating}
                         >
@@ -668,29 +697,29 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                         placeholder="Опишите стиль, атмосферу, референсы"
                         value={customStylePrompt}
                         onChange={(event) => setCustomStylePrompt(event.target.value)}
-                        className="min-h-[160px] resize-none bg-background/50 text-sm"
+                        className="min-h-[140px] resize-none bg-background/60 text-sm"
                         disabled={isGenerating}
                       />
 
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium flex items-center gap-2">
+                      <div className="app-stack app-stack--tight">
+                        <Label className="app-fieldset__label">
                           <Tag className="h-4 w-4" />
                           Жанры и теги
                         </Label>
-                        <div className="flex flex-col gap-2 sm:flex-row">
+                        <div className="flex flex-col gap-app-tight sm:flex-row sm:items-center">
                           <Input
                             placeholder="Например: synthwave, dream pop"
                             value={styleTagInput}
                             onChange={(event) => setStyleTagInput(event.target.value)}
                             onKeyDown={handleStyleTagKeyDown}
-                            className="h-9 bg-background/50 text-sm"
+                            className="h-9 bg-background/60 text-sm"
                             disabled={isGenerating}
                           />
                           <Button
                             type="button"
-                            variant="secondary"
+                            variant="outline"
                             size="sm"
-                            className="sm:w-auto"
+                            className="sm:w-auto h-9 px-3 text-xs"
                             onClick={() => handleAddStyleTag()}
                             disabled={isGenerating || !styleTagInput.trim() || styleTags.length >= MAX_STYLE_TAGS}
                           >
@@ -698,20 +727,24 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                             Добавить
                           </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="app-fieldset__description">
                           Добавьте жанры и ключевые теги, чтобы Suno точнее понял стиль. Максимум {MAX_STYLE_TAGS} тегов.
                         </p>
 
                         {styleTags.length > 0 ? (
                           <div className="flex flex-wrap gap-2">
                             {styleTags.map((tag) => (
-                              <Badge key={tag} variant="secondary" className="gap-1 px-2 py-1 text-xs">
+                              <Badge
+                                key={tag}
+                                variant="secondary"
+                                className="app-chip app-chip--removable gap-1"
+                              >
                                 <Tag className="h-3 w-3" />
                                 {tag}
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveStyleTag(tag)}
-                                  className="rounded-full bg-secondary-foreground/10 p-0.5 hover:bg-secondary-foreground/20 focus:outline-none focus:ring-1 focus:ring-ring"
+                                  className="focus:outline-none"
                                   aria-label={`Удалить тег ${tag}`}
                                   disabled={isGenerating}
                                 >
@@ -721,19 +754,19 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                             ))}
                           </div>
                         ) : (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="app-fieldset__description">
                             Пока теги не выбраны — добавьте хотя бы один, чтобы запустить генерацию.
                           </p>
                         )}
 
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-2">
                           {DEFAULT_STYLE_TAGS.map((tag) => (
                             <Button
                               key={tag}
                               type="button"
                               variant="outline"
                               size="sm"
-                              className="text-xs"
+                              className="h-7 px-3 text-xs"
                               onClick={() => handleAddStyleTag(tag)}
                               disabled={isGenerating || styleTags.length >= MAX_STYLE_TAGS}
                             >
@@ -745,16 +778,16 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="advanced" className="border-border/40">
-                    <AccordionTrigger className="text-sm font-medium">
+                  <AccordionItem value="advanced" className="app-subsection border-none">
+                    <AccordionTrigger className="app-subsection__header hover:no-underline">
                       <div className="flex items-center gap-2">
                         <SlidersHorizontal className="h-4 w-4" />
                         Продвинутые настройки
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent className="space-y-4 pt-2">
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium flex items-center gap-2">
+                    <AccordionContent className="app-subsection__body app-stack">
+                      <div className="app-fieldset">
+                        <Label className="app-fieldset__label">
                           <ListMinus className="h-4 w-4" />
                           Стили, которые нужно исключить
                         </Label>
@@ -762,19 +795,19 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                           placeholder="Например: trap, eurodance"
                           value={excludeStyles}
                           onChange={(event) => setExcludeStyles(event.target.value)}
-                          className="h-9 bg-background/50 text-sm"
+                          className="h-9 bg-background/60 text-sm"
                           disabled={isGenerating}
                         />
                       </div>
 
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Пол вокала</Label>
+                      <div className="app-fieldset">
+                        <Label className="app-fieldset__label">Пол вокала</Label>
                         <Select
                           value={vocalGender}
                           onValueChange={(value: typeof vocalGender) => setVocalGender(value)}
                           disabled={isGenerating}
                         >
-                          <SelectTrigger className="h-9 bg-background/50 text-sm">
+                          <SelectTrigger className="h-9 bg-background/60 text-sm">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -787,8 +820,8 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                         </Select>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Weirdness</Label>
+                      <div className="app-fieldset">
+                        <Label className="app-fieldset__label">Weirdness</Label>
                         <Slider
                           min={0}
                           max={100}
@@ -804,8 +837,8 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                         </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">Style influence</Label>
+                      <div className="app-fieldset">
+                        <Label className="app-fieldset__label">Style influence</Label>
                         <Slider
                           min={0}
                           max={100}
@@ -821,8 +854,8 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                         </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium flex items-center gap-2">
+                      <div className="app-stack app-stack--tight">
+                        <Label className="app-fieldset__label">
                           <Upload className="h-4 w-4" />
                           Аудио-референс
                         </Label>
@@ -835,13 +868,13 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                           disabled={isGenerating}
                         />
                         {audioReference ? (
-                          <div className="flex items-center justify-between rounded-md border bg-background/60 px-3 py-2 text-sm">
+                          <div className="app-inline-card text-sm">
                             <span className="truncate max-w-[220px] sm:max-w-[260px]">{audioReference.name}</span>
                             <Button
                               type="button"
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
-                              className="text-xs"
+                              className="h-8 px-3 text-xs"
                               onClick={handleClearAudioReference}
                               disabled={isGenerating}
                             >
@@ -851,9 +884,9 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                         ) : (
                           <Button
                             type="button"
-                            variant="secondary"
+                            variant="outline"
                             size="sm"
-                            className="text-xs gap-2"
+                            className="h-8 px-3 text-xs gap-2"
                             onClick={() => audioInputRef.current?.click()}
                             disabled={isGenerating}
                           >
@@ -861,13 +894,13 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                             Добавить референс
                           </Button>
                         )}
-                        <p className="text-xs text-muted-foreground">
+                        <p className="app-fieldset__description">
                           После загрузки появится ползунок влияния. Файл используется только во время генерации.
                         </p>
 
                         {audioReference && (
-                          <div className="space-y-2">
-                            <Label className="text-sm font-medium">Audio influence</Label>
+                          <div className="app-fieldset">
+                            <Label className="app-fieldset__label">Audio influence</Label>
                             <Slider
                               min={0}
                               max={100}
@@ -892,7 +925,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
           </div>
         </ScrollArea>
 
-        <div className="p-4 border-t border-border/40 bg-muted/20">
+        <div className="app-panel__footer">
           <Button
             onClick={handleGenerate}
             disabled={isGenerating}
@@ -910,7 +943,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
               </>
             )}
           </Button>
-          <div className="text-xs text-muted-foreground text-center mt-2">
+          <div className="app-fieldset__description text-center mt-2">
             ⌘/Ctrl + Enter для запуска
           </div>
         </div>
