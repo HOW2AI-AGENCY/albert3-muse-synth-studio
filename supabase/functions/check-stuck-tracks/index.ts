@@ -19,18 +19,35 @@ serve(async (req: Request): Promise<Response> => {
     const supabaseAdmin = createSupabaseAdminClient();
     const SUNO_API_KEY = Deno.env.get('SUNO_API_KEY');
 
+    // Опционально принимаем список trackIds для точечной синхронизации
+    let trackIds: string[] = [];
+    try {
+      const body = await req.json();
+      if (body && Array.isArray(body.trackIds)) {
+        trackIds = body.trackIds.filter((v: unknown) => typeof v === 'string');
+      }
+    } catch (_) {
+      // no body provided
+    }
+
     if (!SUNO_API_KEY) {
       throw new Error('SUNO_API_KEY not configured');
     }
 
-    // Найти все треки в processing старше 10 минут
+    // Найти все треки в processing старше 10 минут (если trackIds не переданы)
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-    
-    const { data: stuckTracks, error: fetchError } = await supabaseAdmin
+
+    let query = supabaseAdmin
       .from('tracks')
-      .select('id, title, user_id, created_at, metadata, status')
-      .eq('status', 'processing')
-      .lt('created_at', tenMinutesAgo)
+      .select('id, title, user_id, created_at, metadata, status');
+
+    if (trackIds.length > 0) {
+      query = query.in('id', trackIds);
+    } else {
+      query = query.eq('status', 'processing').lt('created_at', tenMinutesAgo);
+    }
+
+    const { data: stuckTracks, error: fetchError } = await query
       .order('created_at', { ascending: true })
       .limit(20);
 
