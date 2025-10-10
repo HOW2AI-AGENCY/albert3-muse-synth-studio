@@ -3,92 +3,130 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
 import { MusicGenerator } from '../MusicGenerator';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
-// Mock the toast hook
+// --- MOCKS ---
+
 const toastMock = vi.fn();
 vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({ toast: toastMock }),
 }));
 
-// Mock the Zustand store
 vi.mock('@/stores/useMusicGenerationStore');
-
-// Mock other hooks
 vi.mock('@/hooks/useHapticFeedback', () => ({
   useHapticFeedback: () => ({ vibrate: vi.fn() }),
 }));
 
-vi.mock('@/hooks/useProviderBalance', () => ({
-  useProviderBalance: () => ({
-    balance: { balance: 12, currency: 'credits', provider: 'suno' },
-    isLoading: false,
-    error: null,
-  }),
-}));
+const TestWrapper = ({ children }: { children: React.ReactNode }) => (
+  <TooltipProvider>{children}</TooltipProvider>
+);
 
-describe('MusicGenerator component', () => {
+// --- TESTS ---
+
+describe('MusicGenerator (Redesigned)', () => {
   const generateMusicFn = vi.fn();
-  const improvePromptFn = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
-    toastMock.mockClear();
 
-    // Mock the implementation of generateMusic to simulate success callback
-    generateMusicFn.mockImplementation(async (options, toast, onSuccess) => {
+    generateMusicFn.mockImplementation(async (params, toast, onSuccess) => {
       onSuccess?.();
       return Promise.resolve(true);
     });
-    improvePromptFn.mockResolvedValue('Better prompt');
 
-    // Setup the mock return value for the store hook
     vi.mocked(useMusicGenerationStore).mockReturnValue({
       generateMusic: generateMusicFn,
-      improvePrompt: improvePromptFn,
       isGenerating: false,
-      isImproving: false,
-      subscription: null,
-      cleanupSubscription: vi.fn(),
     });
   });
 
-  it('validates empty form before generation', async () => {
-    const user = userEvent.setup();
-    render(<MusicGenerator />);
-    const createButton = screen.getByRole('button', { name: 'Создать трек' });
-    await user.click(createButton);
-    expect(toastMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        description: 'Введите описание трека',
-      }),
-    );
+  it('renders simple mode by default', () => {
+    render(<TestWrapper><MusicGenerator /></TestWrapper>);
+    expect(screen.getByLabelText(/Описание трека/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Стилевой промт/i)).not.toBeInTheDocument();
   });
 
-  it('starts generation with filled prompt and resets the form', async () => {
+  it('switches to advanced mode and shows advanced fields', async () => {
     const user = userEvent.setup();
-    const onTrackGenerated = vi.fn();
-    render(<MusicGenerator onTrackGenerated={onTrackGenerated} />);
+    render(<TestWrapper><MusicGenerator /></TestWrapper>);
 
-    const textarea = screen.getByPlaceholderText('Опишите желаемую музыку, настроение и ключевые инструменты');
-    await user.type(textarea, 'Test melody');
-    const createButton = screen.getByRole('button', { name: 'Создать трек' });
+    const advancedTab = screen.getByRole('tab', { name: 'Продвинутый' });
+    await user.click(advancedTab);
+
+    // Use findBy to wait for the element to appear
+    expect(await screen.findByLabelText(/Стилевой промт/i)).toBeInTheDocument();
+    expect(await screen.findByLabelText(/Текст песни/i)).toBeInTheDocument();
+  });
+
+  it('validates empty prompt in simple mode', async () => {
+    const user = userEvent.setup();
+    render(<TestWrapper><MusicGenerator /></TestWrapper>);
+
+    const createButton = screen.getByRole('button', { name: /Создать/i });
     await user.click(createButton);
+
+    expect(toastMock).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Опишите трек или добавьте текст' })
+    );
+    expect(generateMusicFn).not.toHaveBeenCalled();
+  });
+
+  it('validates empty fields in advanced mode', async () => {
+    const user = userEvent.setup();
+    render(<TestWrapper><MusicGenerator /></TestWrapper>);
+
+    await user.click(screen.getByRole('tab', { name: 'Продвинутый' }));
+    const createButton = screen.getByRole('button', { name: /Создать/i });
+    await user.click(createButton);
+
+    expect(toastMock).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Опишите трек или добавьте текст' })
+    );
+    expect(generateMusicFn).not.toHaveBeenCalled();
+  });
+
+  it('calls generate with correct params from simple mode', async () => {
+    const user = userEvent.setup();
+    render(<TestWrapper><MusicGenerator /></TestWrapper>);
+
+    await user.type(screen.getByLabelText(/Описание трека/i), 'Synthwave masterpiece');
+    await user.click(screen.getByRole('button', { name: /Создать/i }));
 
     await waitFor(() => {
-      expect(generateMusicFn).toHaveBeenCalledTimes(1);
-      expect(onTrackGenerated).toHaveBeenCalled();
-      expect(textarea).toHaveValue('');
+      expect(generateMusicFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          prompt: 'Synthwave masterpiece',
+          customMode: false,
+        }),
+        expect.any(Function),
+        undefined
+      );
     });
   });
 
-  it('enhances prompt using AI helper', async () => {
+  it('calls generate with correct params from advanced mode', async () => {
     const user = userEvent.setup();
-    render(<MusicGenerator />);
-    const textarea = screen.getByPlaceholderText('Опишите желаемую музыку, настроение и ключевые инструменты');
-    await user.type(textarea, 'Initial idea');
-    const enhanceButton = screen.getAllByRole('button', { name: 'Улучшить' })[0];
-    await user.click(enhanceButton);
-    await waitFor(() => expect(improvePromptFn).toHaveBeenCalledWith('Initial idea', toastMock));
-    expect(await screen.findByDisplayValue('Better prompt')).toBeInTheDocument();
+    render(<TestWrapper><MusicGenerator /></TestWrapper>);
+
+    await user.click(screen.getByRole('tab', { name: 'Продвинутый' }));
+
+    await user.type(await screen.findByLabelText(/Стилевой промт/i), '80s synth pop');
+    await user.type(await screen.findByLabelText(/Текст песни/i), 'Electric dreams');
+    await user.type(await screen.findByLabelText(/Жанры/i), 'pop, electronic');
+
+    await user.click(screen.getByRole('button', { name: /Создать/i }));
+
+    await waitFor(() => {
+      expect(generateMusicFn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          prompt: '80s synth pop',
+          lyrics: 'Electric dreams',
+          styleTags: ['pop', 'electronic'],
+          customMode: true,
+        }),
+        expect.any(Function),
+        undefined
+      );
+    });
   });
 });

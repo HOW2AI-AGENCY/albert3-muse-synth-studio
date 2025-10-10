@@ -205,7 +205,7 @@ export class ApiService {
 
       const makeInstrumental = request.hasVocals === false;
 
-      const payload = {
+      const payload: Record<string, unknown> = {
         trackId: request.trackId,
         title: resolvedTitle,
         prompt: promptForSuno,
@@ -216,6 +216,28 @@ export class ApiService {
         model_version: request.modelVersion || 'V5',
         customMode: request.customMode,
       };
+
+      // --- Опциональные параметры с валидацией/нормализацией ---
+      const trimmedNegativeTags = request.negativeTags?.trim();
+      if (trimmedNegativeTags) {
+        payload.negativeTags = trimmedNegativeTags;
+      }
+
+      if (request.vocalGender === 'm' || request.vocalGender === 'f') {
+        payload.vocalGender = request.vocalGender;
+      }
+
+      const clamp = (val: number) => Math.max(0, Math.min(1, val));
+
+      if (typeof request.styleWeight === 'number' && !Number.isNaN(request.styleWeight)) {
+        payload.styleWeight = clamp(request.styleWeight);
+      }
+      if (typeof request.weirdnessConstraint === 'number' && !Number.isNaN(request.weirdnessConstraint)) {
+        payload.weirdnessConstraint = clamp(request.weirdnessConstraint);
+      }
+      if (typeof request.audioWeight === 'number' && !Number.isNaN(request.audioWeight)) {
+        payload.audioWeight = clamp(request.audioWeight);
+      }
 
       logInfo(`🎵 [API Service] Starting music generation`, context, { provider, functionName });
       logDebug(`📤 [API Service] Sending payload to ${functionName}`, context, {

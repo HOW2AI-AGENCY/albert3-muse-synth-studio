@@ -1,12 +1,16 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import type { ReactNode, ButtonHTMLAttributes } from 'react';
+import { AudioPlayerProvider } from '@/contexts/AudioPlayerContext';
 import { TracksList } from '../TracksList';
 
-vi.mock('@/features/tracks', () => ({
+vi.mock('@/features/tracks/components/TrackCard', () => ({
   TrackCard: ({ track }: { track: { title: string } }) => (
     <div data-testid="track-card">{track.title}</div>
   ),
+}));
+
+vi.mock('@/features/tracks/components/TrackListItem', () => ({
   TrackListItem: ({ track }: { track: { title: string } }) => (
     <div data-testid="track-item">{track.title}</div>
   ),
@@ -91,12 +95,14 @@ describe('TracksList', () => {
     const deleteTrack = vi.fn().mockResolvedValue(undefined);
 
     render(
-      <TracksList
-        tracks={tracks as any}
-        isLoading={false}
-        deleteTrack={deleteTrack as any}
-        refreshTracks={vi.fn()}
-      />
+      <AudioPlayerProvider>
+        <TracksList
+          tracks={tracks as any}
+          isLoading={false}
+          deleteTrack={deleteTrack as any}
+          refreshTracks={vi.fn()}
+        />
+      </AudioPlayerProvider>
     );
 
     expect(screen.getByTestId('track-card')).toHaveTextContent('My Track');

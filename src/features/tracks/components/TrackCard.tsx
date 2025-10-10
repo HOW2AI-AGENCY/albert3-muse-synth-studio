@@ -22,23 +22,20 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { formatDuration } from "@/utils/formatters";
 
+// Сокращенный интерфейс для карточки
 interface Track {
   id: string;
   title: string;
-  prompt?: string;
   audio_url?: string;
-  image_url?: string;
   cover_url?: string;
   duration?: number;
   status: "pending" | "processing" | "completed" | "failed";
   error_message?: string;
-  created_at: string;
-  has_vocals?: boolean;
-  genre?: string;
+  created_at: string; // Оставляем для вычисления "зависших" треков
   style_tags?: string[];
-  lyrics?: string;
   like_count?: number;
   view_count?: number;
+  prompt?: string;
 }
 
 interface TrackCardProps {
@@ -47,16 +44,14 @@ interface TrackCardProps {
   onShare?: () => void;
   onClick?: () => void;
   className?: string;
-  variant?: "default" | "compact" | "minimal";
 }
 
+// Упрощенные градиенты
 const gradients = [
-  "from-purple-500/20 to-pink-500/20",
-  "from-blue-500/20 to-cyan-500/20",
-  "from-green-500/20 to-emerald-500/20",
-  "from-orange-500/20 to-red-500/20",
-  "from-indigo-500/20 to-purple-500/20",
-  "from-teal-500/20 to-blue-500/20",
+  "from-purple-500/10 to-pink-500/10",
+  "from-blue-500/10 to-cyan-500/10",
+  "from-green-500/10 to-emerald-500/10",
+  "from-orange-500/10 to-red-500/10",
 ];
 
 const getGradientByTrackId = (trackId: string) => {
@@ -64,337 +59,189 @@ const getGradientByTrackId = (trackId: string) => {
   return gradients[index];
 };
 
-const GenerationProgress: React.FC<{ track: Track }> = () => {
-  const [progress, setProgress] = useState(5);
-  const [stage, setStage] = useState("Анализ промпта...");
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= 99) {
-          clearInterval(interval);
-          return 99;
-        }
-        const increment = Math.random() * 4 + 1; // More realistic increment
-        const newProgress = Math.min(prev + increment, 99);
-
-        if (newProgress < 20) {
-          setStage("Анализ промпта...");
-        } else if (newProgress < 85) {
-          setStage("Создание музыки...");
-        } else {
-          setStage("Финализация...");
-        }
-
-        return newProgress;
-      });
-    }, 1200);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const estimatedTime = Math.max(0, Math.round((100 - progress) * 0.6));
-
-  return (
-    <div className="absolute inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-4 text-white z-10 text-center transition-all duration-300">
-      <Loader2 className="w-8 h-8 animate-spin mb-4" />
-      <h4 className="font-semibold text-lg mb-2">{stage}</h4>
-      <div className="w-full bg-white/20 rounded-full h-2 mb-2 overflow-hidden">
-        <div
-          className="bg-primary h-full rounded-full transition-all duration-1000 ease-linear"
-          style={{ width: `${progress}%` }}
-        ></div>
-      </div>
-      <p className="text-sm text-white/80">Осталось примерно: {estimatedTime} сек.</p>
-      <p className="text-xs text-white/60 mt-4">💡 Сложные треки могут занять больше времени</p>
-    </div>
-  );
-};
-
-const FailedState: React.FC<{ track: Track }> = ({ track }) => (
-  <div className="absolute inset-0 bg-destructive/80 backdrop-blur-md flex flex-col items-center justify-center p-4 text-white z-10 text-center">
-    <AlertTriangle className="w-8 h-8 mb-4" />
-    <h4 className="font-semibold text-lg mb-2">Ошибка генерации</h4>
-    <p className="text-sm text-destructive-foreground/90 line-clamp-3 mb-4">
-      {track.error_message || "Произошла неизвестная ошибка."}
-    </p>
-    <Button variant="secondary" size="sm" onClick={() => alert("Функция повторной попытки в разработке")}>
-      Попробовать снова
-    </Button>
+const GenerationProgress: React.FC = () => (
+  <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-white z-10 text-center transition-opacity duration-300">
+    <Loader2 className="w-6 h-6 animate-spin mb-2" />
+    <h4 className="font-semibold text-sm">Генерация...</h4>
+    <p className="text-xs text-white/70 mt-1">Это может занять минуту</p>
   </div>
 );
 
-const useFadeInOnIntersect = (ref: React.RefObject<HTMLDivElement>) => {
+const FailedState: React.FC<{ message?: string }> = ({ message }) => (
+  <div className="absolute inset-0 bg-destructive/70 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-white z-10 text-center">
+    <AlertTriangle className="w-6 h-6 mb-2" />
+    <h4 className="font-semibold text-sm">Ошибка</h4>
+    <p className="text-xs text-destructive-foreground/80 line-clamp-2">
+      {message || "Не удалось создать трек."}
+    </p>
+  </div>
+);
+
+const TrackCardComponent = ({ track, onDownload, onShare, onClick, className }: TrackCardProps) => {
+  const { toast } = useToast();
+  const { currentTrack, isPlaying, playTrack } = useAudioPlayer();
+  const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count || 0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const cardRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    const element = ref.current;
+    const element = cardRef.current;
     if (!element) return;
-
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("animate-fade-in");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.1 },
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          element.classList.add('animate-fade-in');
+          observer.unobserve(element);
+        }
+      }, { threshold: 0.1 }
     );
-
     observer.observe(element);
     return () => observer.disconnect();
-  }, [ref]);
-};
+  }, []);
 
-const useTrackCardActions = ({ track, onDownload, onShare, onClick }: TrackCardProps) => {
-    const { toast } = useToast();
-    const { currentTrack, isPlaying, playTrack, togglePlayPause } = useAudioPlayer();
-    const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count || 0);
+  const isCurrentTrack = currentTrack?.id === track.id;
+  const playButtonDisabled = track.status !== "completed" || !track.audio_url;
 
-    const isCurrentTrack = currentTrack?.id === track.id;
-    const playButtonDisabled = track.status !== "completed" || !track.audio_url;
+  const handlePlayClick = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (playButtonDisabled) return;
+    playTrack({
+      id: track.id,
+      title: track.title,
+      audio_url: track.audio_url!,
+      cover_url: track.cover_url,
+      duration: track.duration,
+      status: track.status,
+    });
+  }, [playButtonDisabled, playTrack, track]);
 
-    const handleCardClick = useCallback(() => {
-        if (track.status === 'completed') {
-            onClick?.();
-        }
-    }, [onClick, track.status]);
+  const handleLikeClick = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
+    toggleLike();
+  }, [toggleLike]);
 
-    const handlePlayClick = useCallback((event: React.MouseEvent) => {
-        event.stopPropagation();
-        if (playButtonDisabled) return;
+  const handleDownloadClick = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (!track.audio_url) {
+      toast({ title: "Ошибка", description: "Аудиофайл недоступен", variant: "destructive" });
+      return;
+    }
+    onDownload?.();
+    toast({ title: "Скачивание начато" });
+  }, [onDownload, toast, track.audio_url]);
 
-        playTrack({
-            id: track.id,
-            title: track.title,
-            audio_url: track.audio_url!,
-            cover_url: track.cover_url,
-            duration: track.duration,
-            status: track.status,
-            style_tags: track.style_tags,
-            lyrics: track.lyrics,
-        });
-    }, [isCurrentTrack, isPlaying, togglePlayPause, track, playTrack, playButtonDisabled]);
+  const handleShareClick = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
+    onShare?.();
+  }, [onShare]);
 
-    const handleLikeClick = useCallback((event: React.MouseEvent) => {
-        event.stopPropagation();
-        toggleLike();
-        toast({
-            title: isLiked ? "Убрано из избранного" : "Добавлено в избранное",
-            description: `Трек "${track.title}" ${isLiked ? "убран из" : "добавлен в"} избранное`,
-            duration: 2000,
-        });
-    }, [isLiked, toggleLike, toast, track.title]);
+  const gradient = getGradientByTrackId(track.id);
+  const formattedDuration = track.duration ? formatDuration(track.duration) : null;
 
-    const handleDownloadClick = useCallback((event: React.MouseEvent) => {
-        event.stopPropagation();
-        if (!track.audio_url) {
-            toast({ title: "Ошибка", description: "Аудиофайл недоступен", variant: "destructive" });
-            return;
-        }
-        onDownload?.();
-        toast({ title: "Скачивание начато", description: `Трек "${track.title}" загружается` });
-    }, [onDownload, toast, track.audio_url, track.title]);
-
-    const handleShareClick = useCallback((event: React.MouseEvent) => {
-        event.stopPropagation();
-        onShare?.();
-        toast({ title: "Ссылка скопирована", description: `Ссылка на трек "${track.title}" скопирована` });
-    }, [onShare, toast, track.title]);
-
-    return {
-      isLiked, likeCount, isCurrentTrack, isPlaying, playButtonDisabled,
-      handleCardClick, handlePlayClick, handleLikeClick, handleDownloadClick, handleShareClick,
-    };
-};
-
-interface ValidTrackCardProps extends TrackCardProps {
-    track: Required<Pick<Track, 'id'>> & Track;
-    variant?: "default" | "compact" | "minimal";
-}
-
-const DefaultTrackCard: React.FC<
-  ValidTrackCardProps & {
-    cardRef: React.RefObject<HTMLDivElement>;
-    isHovered: boolean;
-    onHoverChange: (value: boolean) => void;
-    formattedDuration: string | null;
-    gradient: string;
-    actions: ReturnType<typeof useTrackCardActions>;
-  }
-> = ({ track, className, cardRef, isHovered, onHoverChange, formattedDuration, gradient, actions }) => (
+  return (
     <Card
       ref={cardRef}
       className={cn(
-        "group relative overflow-hidden cursor-pointer transition-all duration-500 hover:shadow-xl hover:shadow-primary/20",
-        "border-border/50 bg-card/80 backdrop-blur-sm hover:bg-card/95",
-        "hover:scale-[1.03] hover:-translate-y-2",
-        "before:absolute before:inset-0 before:bg-gradient-to-br before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-500",
-        `before:${gradient}`,
-        actions.isCurrentTrack && "ring-2 ring-primary/50",
-        "flex flex-col h-full",
+        "group relative overflow-hidden cursor-pointer transition-all duration-300",
+        "border-border/50 bg-card hover:bg-muted/30",
+        "h-full flex flex-col opacity-0", // Start with opacity 0 for fade-in
+        isCurrentTrack && "ring-2 ring-primary/80",
         className,
       )}
-      onClick={actions.handleCardClick}
-      onMouseEnter={() => onHoverChange(true)}
-      onMouseLeave={() => onHoverChange(false)}
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       role="article"
-      aria-label={`Трек ${track.title || "Без названия"}`}
+      aria-label={`Трек ${track.title}`}
       tabIndex={0}
     >
-      <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
-        {track.status === 'processing' && <GenerationProgress track={track} />}
-        {track.status === 'failed' && <FailedState track={track} />}
+      <div className="relative aspect-square bg-gradient-to-br from-gray-800 to-gray-900">
+        {track.status === 'processing' && <GenerationProgress />}
+        {track.status === 'failed' && <FailedState message={track.error_message} />}
+
+        {track.cover_url ? (
+          <img
+            src={track.cover_url}
+            alt={`Обложка трека ${track.title}`}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className={cn("w-full h-full flex items-center justify-center bg-gradient-to-br", gradient)}>
+            <Music className="w-8 h-8 text-primary/50" />
+          </div>
+        )}
+
         {track.status === 'completed' && (
-            <>
-                {track.cover_url || track.image_url ? (
-                    <img
-                        src={track.cover_url || track.image_url}
-                        alt={`Обложка трека ${track.title || "Без названия"}`}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                ) : (
-                    <div className={cn("w-full h-full flex items-center justify-center bg-gradient-to-br transition-all duration-500", gradient)}>
-                        <Music className="w-12 h-12 text-primary/60" aria-hidden="true" />
-                    </div>
-                )}
-                <div
-                    className={cn(
-                        "absolute inset-0 bg-black/40 flex items-center justify-center transition-all duration-300",
-                        isHovered || (actions.isCurrentTrack && actions.isPlaying) ? "opacity-100" : "opacity-0"
-                    )}
-                >
-                    <Button
-                        variant="secondary"
-                        size="lg"
-                        onClick={actions.handlePlayClick}
-                        disabled={actions.playButtonDisabled}
-                        className={cn(
-                            "rounded-full w-16 h-16 sm:w-14 sm:h-14 transition-all duration-200 shadow-lg",
-                            actions.isCurrentTrack && actions.isPlaying ? "bg-primary text-primary-foreground" : "bg-white/90 hover:bg-white text-black hover:scale-110"
-                        )}
-                        aria-label={actions.isCurrentTrack && actions.isPlaying ? `Приостановить` : `Воспроизвести`}
-                    >
-                        {actions.isCurrentTrack && actions.isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-1" />}
-                    </Button>
-                </div>
-            </>
+          <div
+            className={cn(
+              "absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300",
+              isHovered || (isCurrentTrack && isPlaying) ? "opacity-100" : "opacity-0 group-focus-within:opacity-100"
+            )}
+          >
+            <Button
+              variant="secondary"
+              size="icon"
+              onClick={handlePlayClick}
+              disabled={playButtonDisabled}
+              className="rounded-full w-10 h-10 shadow-lg hover:scale-110 transition-transform"
+              aria-label={isCurrentTrack && isPlaying ? "Приостановить" : "Воспроизвести"}
+            >
+              {isCurrentTrack && isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+            </Button>
+          </div>
         )}
       </div>
 
-      <CardContent className="relative p-4 flex-1 flex flex-col">
+      <CardContent className="p-2 flex-1 flex flex-col">
         <div className="flex-1">
-          <h3 className="font-semibold text-base mb-2 line-clamp-1 group-hover:text-primary transition-colors duration-300">
-            {track.title || "Без названия"}
+          <h3 className="font-semibold text-sm leading-tight mb-0.5 line-clamp-1 group-hover:text-primary">
+            {track.title}
           </h3>
-
-          {track.prompt && (
-            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{track.prompt}</p>
-          )}
-
-          <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-            <div className="flex items-center gap-3">
-              {formattedDuration && (
-                <div className="flex items-center gap-1" aria-label={`Длительность: ${formattedDuration}`}>
-                  <Clock className="w-3 h-3" />
-                  <span>{formattedDuration}</span>
-                </div>
-              )}
-              {track.view_count !== undefined && (
-                <div className="flex items-center gap-1" aria-label={`Просмотров: ${track.view_count}`}>
-                  <Eye className="w-3 h-3" />
-                  <span>{track.view_count}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {track.style_tags && track.style_tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-3" role="list" aria-label="Теги стилей">
-              {track.style_tags.slice(0, 2).map((tag, index) => (
-                <Badge key={index} variant="secondary" className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/20">
-                  {tag}
-                </Badge>
-              ))}
-              {track.style_tags.length > 2 && (
-                <Badge variant="outline" className="text-xs px-2 py-0.5 border-primary/20 text-primary">
-                  +{track.style_tags.length - 2}
-                </Badge>
-              )}
-            </div>
-          )}
+          <p className="text-xs text-muted-foreground mb-1.5 line-clamp-1">{track.prompt}</p>
         </div>
 
-        <div className="flex items-center justify-between mt-auto">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={actions.handleLikeClick}
-            className={cn("transition-all duration-300 hover:scale-110", actions.isLiked ? "text-red-500" : "hover:text-red-500")}
-          >
-            <Heart className={cn("w-4 h-4", actions.isLiked && "fill-current")} />
-            {actions.likeCount > 0 && <span className="ml-1 text-xs">{actions.likeCount}</span>}
-          </Button>
-
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" onClick={actions.handleDownloadClick} disabled={track.status !== "completed"} className="hover:text-green-500"><Download className="w-4 h-4" /></Button>
-            <Button variant="ghost" size="sm" onClick={actions.handleShareClick} className="hover:text-blue-500"><Share2 className="w-4 h-4" /></Button>
+        <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto">
+          <div className="flex items-center gap-2">
+            {formattedDuration && (
+              <div className="flex items-center gap-1"><Clock className="w-3 h-3" /><span>{formattedDuration}</span></div>
+            )}
+          </div>
+          <div className="flex items-center">
+            <Button variant="ghost" size="icon" className="w-6 h-6" onClick={handleLikeClick} aria-label={isLiked ? "Убрать из избранного" : "В избранное"}>
+              <Heart className={cn("w-3 h-3", isLiked && "fill-red-500 text-red-500")} />
+            </Button>
+            <Button variant="ghost" size="icon" className="w-6 h-6" onClick={handleDownloadClick} aria-label="Скачать">
+              <Download className="w-3 h-3" />
+            </Button>
+            <Button variant="ghost" size="icon" className="w-6 h-6" onClick={handleShareClick} aria-label="Поделиться">
+              <Share2 className="w-3 h-3" />
+            </Button>
           </div>
         </div>
       </CardContent>
     </Card>
-);
-
-const ValidTrackCard: React.FC<ValidTrackCardProps> = ({ variant = "default", ...props }) => {
-    const cardRef = useRef<HTMLDivElement>(null);
-    const [isHovered, setIsHovered] = useState(false);
-    const actions = useTrackCardActions(props);
-    const formattedDuration = props.track.duration ? formatDuration(props.track.duration) : null;
-    const gradient = getGradientByTrackId(props.track.id);
-
-    useFadeInOnIntersect(cardRef);
-
-    // Compact variant can be added here if needed
-
-    return (
-      <DefaultTrackCard
-        {...props}
-        variant={variant}
-        cardRef={cardRef}
-        isHovered={isHovered}
-        onHoverChange={setIsHovered}
-        formattedDuration={formattedDuration}
-        gradient={gradient}
-        actions={actions}
-      />
-    );
+  );
 };
 
-const TrackCardComponent = ({ track, ...rest }: TrackCardProps) => {
-    if (!track || !track.id) {
-      logError("Invalid track data", undefined, "TrackCard", { track });
-      return (
-        <Card className="p-4" role="alert"><p className="text-center text-sm text-muted-foreground">Некорректные данные трека</p></Card>
-      );
-    }
-    return <ValidTrackCard track={track as Required<Pick<Track, 'id'>> & Track} {...rest} />;
-};
+// Error Boundary and Memoization
+const TrackCardWithErrorBoundary = memo(withErrorBoundary(TrackCardComponent));
+TrackCardWithErrorBoundary.displayName = "TrackCard";
 
-export const TrackCard = memo(withErrorBoundary(TrackCardComponent));
-TrackCard.displayName = "TrackCard";
+export { TrackCardWithErrorBoundary as TrackCard };
 
-if (typeof document !== "undefined") {
+// Inject keyframes for fade-in animation once
+if (typeof document !== "undefined" && !document.getElementById('track-card-animation-style')) {
   const style = document.createElement("style");
+  style.id = 'track-card-animation-style';
   style.textContent = `
     @keyframes fade-in {
-      from { opacity: 0; transform: translateY(10px); }
+      from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
     }
     .animate-fade-in {
-      animation: fade-in 0.5s ease-out forwards;
+      animation: fade-in 0.4s ease-out forwards;
     }
   `;
   document.head.appendChild(style);
 }
-
-export default TrackCard;

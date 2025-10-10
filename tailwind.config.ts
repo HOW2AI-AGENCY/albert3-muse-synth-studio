@@ -217,6 +217,10 @@ const config: Config = {
         'control-xl': 'var(--height-control-xl)',
       },
       width: {
+        'control-sm': 'var(--height-control-sm)',
+        'control-md': 'var(--height-control-md)',
+        'control-lg': 'var(--height-control-lg)',
+        'control-xl': 'var(--height-control-xl)',
         'icon-xs': 'var(--icon-xs)',
         'icon-sm': 'var(--icon-sm)',
         'icon-md': 'var(--icon-md)',
