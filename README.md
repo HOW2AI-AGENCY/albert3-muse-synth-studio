@@ -11,6 +11,9 @@
 [![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![CI](https://github.com/your-username/albert3-muse-synth-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/albert3-muse-synth-studio/actions/workflows/ci.yml)
+[![Docs Update](https://github.com/your-username/albert3-muse-synth-studio/actions/workflows/docs-update.yml/badge.svg)](https://github.com/your-username/albert3-muse-synth-studio/actions/workflows/docs-update.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **Версия кодовой базы:** 2.6.2 | **Документация обновлена:** 16 октября 2025 | **Статус:** Стабильная поддержка (переход к Sprint 25)
 
@@ -19,6 +22,28 @@
 </div>
 
 ---
+
+## 📑 Содержание
+
+- [🧭 Навигация по репозиторию](#-навигация-по-репозиторию)
+- [📋 Описание проекта](#-описание-проекта)
+- [🎯 Основные функции](#-основные-функции)
+- [📊 Состояние проекта](#-состояние-проекта-аудит-16-октября-2025)
+- [🔎 Важные технические примечания](#-важные-технические-примечания-16-октября-2025)
+- [🏗️ Архитектура](#️-архитектура)
+- [🛠️ Технологический стек](#️-технологический-стек)
+- [🚀 Быстрый старт](#-быстрый-старт)
+  - [🛠️ Установка](#установка)
+  - [📦 Дополнительные команды](#дополнительные-команды)
+  - [⚙️ Использование](#️-использование)
+  - [🧪 Примеры](#-примеры)
+- [📁 Структура проекта](#-структура-проекта)
+- [📊 Текущий статус проекта](#-текущий-статус-проекта)
+- [🤝 Вклад в проект](#-вклад-в-проект)
+- [📄 Лицензия](#-лицензия)
+- [👥 Команда](#-команда)
+- [📞 Поддержка](#-поддержка)
+- [🔎 SEO](#-seo)
 
 ## 🧭 Навигация по репозиторию
 
@@ -268,6 +293,65 @@ npm run coverage
 npm run typecheck
 ```
 
+## ⚙️ Использование
+
+- Запуск dev-сервера: `npm run dev` и переход на `http://localhost:5173`.
+- Проверка баланса провайдера (Suno/Replicate) через Edge Function `get-balance`.
+- Генерация музыки через Edge Function `generate-suno`.
+
+См. подробности: `docs/api/API.md` и `docs/integrations/SUNO_API_AUDIT.md`.
+
+## 🧪 Примеры
+
+### Проверка баланса Suno (client-side, TypeScript)
+
+```ts
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL!,
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY!
+);
+
+export async function getSunoBalance() {
+  const { data, error } = await supabase.functions.invoke('get-balance', {
+    body: { provider: 'suno' },
+  });
+  if (error) throw error;
+  return data;
+}
+```
+
+### Генерация музыки через Suno (client-side, TypeScript)
+
+```ts
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL!,
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY!
+);
+
+export async function generateSunoTrack({ trackId, title, prompt }: { trackId: string; title: string; prompt: string; }) {
+  const { data, error } = await supabase.functions.invoke('generate-suno', {
+    body: { trackId, title, prompt },
+  });
+  if (error) throw error;
+  return data;
+}
+```
+
+### cURL: проверить баланс
+
+```bash
+curl -X POST "https://your-project.supabase.co/functions/v1/get-balance" \
+  -H "Authorization: Bearer YOUR_SUPABASE_JWT" \
+  -H "Content-Type: application/json" \
+  -d '{"provider":"suno"}'
+```
+
+Больше примеров: см. `docs/api/API.md`.
+
 ## 📁 Структура проекта
 
 ```
@@ -394,3 +478,9 @@ albert3-muse-synth-studio/
 [⬆ Вернуться к началу](#-albert3-muse-synth-studio)
 
 </div>
+
+## 🔎 SEO
+
+- Ключевые слова: `Suno AI`, `Генерация музыки`, `Supabase Edge Functions`, `React`, `TypeScript`, `Audio Player`, `AI Music`, `Music Generator`, `Stem Separation`, `Lyrics Generation`.
+- Быстрые ссылки: `docs/INDEX.md`, `docs/api/API.md`, `docs/integrations/SUNO_API_AUDIT.md`, `project-management/NAVIGATION_INDEX.md`, `project-management/tasks/STATUS_DASHBOARD.md`.
+- Навигация: используйте оглавление в начале и блок «Навигация по репозиторию».

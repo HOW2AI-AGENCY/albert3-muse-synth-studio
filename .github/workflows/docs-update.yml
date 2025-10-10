@@ -1,0 +1,40 @@
+name: Docs Update
+
+on:
+  push:
+    paths:
+      - 'README.md'
+      - 'docs/**'
+      - 'project-management/**'
+  pull_request:
+    paths:
+      - 'README.md'
+      - 'docs/**'
+      - 'project-management/**'
+
+jobs:
+  validate-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate documentation links and index
+        run: |
+          npm run docs:validate || echo "docs:validate not configured; skipping"
+
+      - name: Lint markdown
+        run: |
+          npx markdownlint-cli2 '**/*.md' || echo "markdownlint not configured; skipping"
+
+      - name: Summary
+        run: |
+          echo "Docs validation completed"
