@@ -148,12 +148,16 @@ const unique = (values: (string | undefined | null)[]): string[] => {
   const output: string[] = [];
   for (const value of values) {
     if (!value) continue;
-    const normalised = value.trim();
-    if (!normalised) continue;
-    const key = normalised.endsWith("/") ? normalised.slice(0, -1) : normalised;
-    if (!seen.has(key)) {
-      seen.add(key);
-      output.push(key);
+
+    const segments = value.split(",").map((segment) => segment.trim()).filter(Boolean);
+    for (const segment of segments) {
+      if (!segment) continue;
+      const key = segment.endsWith("/") ? segment.slice(0, -1) : segment;
+      if (!key) continue;
+      if (!seen.has(key)) {
+        seen.add(key);
+        output.push(key);
+      }
     }
   }
   return output;
