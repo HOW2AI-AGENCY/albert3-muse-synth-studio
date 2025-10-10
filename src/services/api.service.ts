@@ -6,7 +6,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError, handlePostgrestError, ensureData, handleSupabaseFunctionError } from "@/services/api/errors";
-import { trackCache, CachedTrack, getCachedTracks } from "@/features/tracks";
 import { logInfo, logError, logDebug, logWarn, maskObject } from "@/utils/logger";
 
 type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
@@ -589,9 +588,8 @@ export class ApiService {
       .eq("id", trackId);
 
     handlePostgrestError(error, "Failed to delete track", context, { trackId });
-
-    // Удаляем трек из кэша
-    trackCache.removeTrack(trackId);
+    
+    // Кэш теперь управляется только в useTracks через IndexedDB
   }
 
   /**
