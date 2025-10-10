@@ -48,21 +48,14 @@ vi.mock('sonner', () => ({
   toast: toastMocks,
 }));
 
-const supabaseMocks = vi.hoisted(() => {
-  const obj = {
-    updateEq: vi.fn(),
-    deleteEq: vi.fn(),
-    update: vi.fn(() => ({ eq: obj.updateEq } as const)),
-    delete: vi.fn(() => ({ eq: obj.deleteEq } as const)),
-    from: vi.fn(() => ({ update: obj.update, delete: obj.delete })),
-  };
-  return obj;
-});
+const trackVersionApiMocks = vi.hoisted(() => ({
+  updateTrackVersion: vi.fn(),
+  deleteTrackVersion: vi.fn(),
+}));
 
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    from: supabaseMocks.from,
-  },
+vi.mock('@/features/tracks/api/trackVersions', () => ({
+  updateTrackVersion: trackVersionApiMocks.updateTrackVersion,
+  deleteTrackVersion: trackVersionApiMocks.deleteTrackVersion,
 }));
 
 vi.mock('@/utils/logger', () => ({
@@ -97,11 +90,8 @@ describe('TrackVersions component', () => {
     audioPlayerMocks.useAudioPlayerMock.mockClear();
     audioPlayerMocks.playTrack.mockClear();
     audioPlayerMocks.togglePlayPause.mockClear();
-    supabaseMocks.updateEq.mockClear();
-    supabaseMocks.deleteEq.mockClear();
-    supabaseMocks.update.mockClear();
-    supabaseMocks.delete.mockClear();
-    supabaseMocks.from.mockClear();
+    trackVersionApiMocks.updateTrackVersion.mockClear();
+    trackVersionApiMocks.deleteTrackVersion.mockClear();
 
     audioPlayerMocks.useAudioPlayerMock.mockReturnValue({
       currentTrack: null,
@@ -129,8 +119,8 @@ describe('TrackVersions component', () => {
       audioRef: { current: null } as RefObject<HTMLAudioElement>,
       clearCurrentTrack: audioPlayerMocks.clearCurrentTrack,
     });
-    supabaseMocks.updateEq.mockResolvedValue({ error: null });
-    supabaseMocks.deleteEq.mockResolvedValue({ error: null });
+    trackVersionApiMocks.updateTrackVersion.mockResolvedValue({ ok: true });
+    trackVersionApiMocks.deleteTrackVersion.mockResolvedValue({ ok: true });
   });
 
   it('does not render when there is a single version', () => {
@@ -172,9 +162,9 @@ describe('TrackVersions component', () => {
     await user.click(masterButton);
 
     await waitFor(() => {
-      expect(supabaseMocks.update).toHaveBeenCalled();
+      expect(trackVersionApiMocks.updateTrackVersion).toHaveBeenCalledTimes(2);
       expect(onVersionUpdate).toHaveBeenCalled();
-      expect(toastMocks.success).toHaveBeenCalled();
+      expect(toastMocks.success).toHaveBeenCalledWith('Версия 1 установлена как главная');
     });
   });
 
@@ -226,8 +216,8 @@ describe('TrackVersions component', () => {
     await user.click(confirmButton);
 
     await waitFor(() => {
-      expect(supabaseMocks.delete).toHaveBeenCalled();
-      expect(toastMocks.success).toHaveBeenCalled();
+      expect(trackVersionApiMocks.deleteTrackVersion).toHaveBeenCalledWith('track-extra');
+      expect(toastMocks.success).toHaveBeenCalledWith('Версия 2 удалена');
     });
   });
 });

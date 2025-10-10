@@ -169,7 +169,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
   const additionalVersions = versions.filter(version => !version.is_original);
   const additionalCount = additionalVersions.length;
 
-  if (!versions || additionalCount === 0) {
+  if (!versions || versions.length <= 1) {
     return null;
   }
 
