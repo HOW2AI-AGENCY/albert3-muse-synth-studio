@@ -93,15 +93,27 @@ serve(async (req: Request): Promise<Response> => {
           const successfulTracks = queryResult.tasks.filter(t => t.audioUrl);
           
           if (successfulTracks.length > 0) {
+            const sunoTrack = successfulTracks[0];
             logger.info('✅ Found completed track', { 
               trackId: track.id, 
-              audioUrl: successfulTracks[0].audioUrl?.substring(0, 50) 
+              audioUrl: sunoTrack.audioUrl?.substring(0, 50) 
             });
             
-            // Обновить метаданные - callback должен подобрать
+            // Полная синхронизация трека со всеми метаданными
             await supabaseAdmin
               .from('tracks')
               .update({
+                status: 'completed',
+                audio_url: sunoTrack.audioUrl,
+                video_url: sunoTrack.streamAudioUrl || null,
+                cover_url: sunoTrack.imageUrl || null,
+                lyrics: sunoTrack.prompt || null,
+                duration: sunoTrack.duration ? Math.round(sunoTrack.duration) : null,
+                model_name: sunoTrack.modelName || null,
+                genre: sunoTrack.tags || null,
+                style_tags: sunoTrack.tags ? sunoTrack.tags.split(',').map((t: string) => t.trim()) : null,
+                suno_id: sunoTrack.id || null,
+                created_at_suno: sunoTrack.createTime ? new Date(sunoTrack.createTime).toISOString() : null,
                 metadata: {
                   ...metadata,
                   sync_check_at: new Date().toISOString(),
@@ -111,10 +123,18 @@ serve(async (req: Request): Promise<Response> => {
               })
               .eq('id', track.id);
             
+            logger.info('✅ Track fully synced', { 
+              trackId: track.id,
+              title: sunoTrack.title || track.title,
+              duration: sunoTrack.duration,
+              hasPrompt: !!sunoTrack.prompt
+            });
+            
             results.push({ 
               trackId: track.id, 
-              action: 'found_completed',
-              audioUrl: successfulTracks[0].audioUrl
+              action: 'synced_completed',
+              audioUrl: sunoTrack.audioUrl,
+              hasPrompt: !!sunoTrack.prompt
             });
           } else {
             // Завершен но без audio

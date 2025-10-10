@@ -84,14 +84,24 @@ const GenerationProgress: React.FC<{
   onRetry?: (trackId: string) => void;
   onDelete?: (trackId: string) => void;
 }> = ({ track, onRetry, onDelete }) => {
-  const isStuck = track.created_at && 
-    (Date.now() - new Date(track.created_at).getTime()) > 5 * 60 * 1000; // 5 минут
+  const ageMinutes = track.created_at 
+    ? Math.floor((Date.now() - new Date(track.created_at).getTime()) / 60000)
+    : 0;
+  const isStuck = ageMinutes > 5;
+  const isVeryStuck = ageMinutes > 10;
 
   return (
     <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-white z-10 text-center transition-opacity duration-300">
       <Loader2 className="w-6 h-6 animate-spin mb-2" />
       <h4 className="font-semibold text-sm">Генерация...</h4>
-      <p className="text-xs text-white/70 mt-1">Это может занять минуту</p>
+      <p className="text-xs text-white/70 mt-1">
+        {isVeryStuck 
+          ? `${ageMinutes} мин - проверяю статус...` 
+          : isStuck 
+            ? `${ageMinutes} мин - ожидание...`
+            : 'Это может занять минуту'
+        }
+      </p>
       
       {isStuck && (
         <div className="flex gap-2 mt-3">
