@@ -11,13 +11,22 @@
 [![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![CI](https://github.com/your-username/albert3-muse-synth-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/albert3-muse-synth-studio/actions/workflows/ci.yml)
-[![Docs Update](https://github.com/your-username/albert3-muse-synth-studio/actions/workflows/docs-update.yml/badge.svg)](https://github.com/your-username/albert3-muse-synth-studio/actions/workflows/docs-update.yml)
+[![CI](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/actions/workflows/ci.yml)
+[![Docs Update](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/actions/workflows/docs-update.yml/badge.svg)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/actions/workflows/docs-update.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+[![GitHub Stars](https://img.shields.io/github/stars/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/stargazers)
+[![Open Issues](https://img.shields.io/github/issues/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/issues)
+[![Open PRs](https://img.shields.io/github/issues-pr/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/pulls)
+[![Last Commit](https://img.shields.io/github/last-commit/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/commits)
+[![Contributors](https://img.shields.io/github/contributors/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/graphs/contributors)
+[![Top Language](https://img.shields.io/github/languages/top/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio)
+[![Code Size](https://img.shields.io/github/languages/code-size/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio)
+[![Repo Size](https://img.shields.io/github/repo-size/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio)
 
 **Версия кодовой базы:** 2.6.2 | **Документация обновлена:** 16 октября 2025 | **Статус:** Стабильная поддержка (переход к Sprint 25)
 
-[🚀 Демо](http://localhost:5173) • [📖 Документация](#-документация) • [🛠️ Установка](#️-установка) • [🎯 Функции](#-основные-функции)
+[🚀 Демо](http://localhost:5173) • [📖 Документация](#-документация) • [🛠️ Установка](#️-установка) • [🎯 Функции](#-основные-функции) • [🔗 Репозиторий](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio)
 
 </div>
 
@@ -200,6 +209,40 @@ graph TB
     G --> O
     E --> P
     AC --> P
+```
+
+## 📈 Диаграммы
+
+### CI/CD Pipeline
+
+```mermaid
+flowchart LR
+    A[Commit/PR] --> B[GitHub Actions: CI]
+    B -->|Lint/Typecheck/Test| C{CI Status}
+    C -- Pass --> D[Build]
+    C -- Fail --> E[Fix & Retry]
+    D --> F[Docs Update Workflow]
+    F --> G[Deploy Docs / Validate Links]
+    D --> H[Preview/Release]
+```
+
+### Edge Functions Flow (Suno)
+
+```mermaid
+sequenceDiagram
+    participant UI as UI (React)
+    participant SDK as Supabase SDK
+    participant EF as Edge Function (generate-suno)
+    participant Suno as Suno API
+    participant DB as Supabase DB/Storage
+
+    UI->>SDK: functions.invoke('generate-suno', { trackId, title, prompt })
+    SDK->>EF: POST /functions/v1/generate-suno (JWT)
+    EF->>Suno: Generate Track (prompt)
+    Suno-->>EF: Track Metadata + Audio URLs
+    EF->>DB: Persist metadata / enqueue processing
+    EF-->>SDK: Response { status, trackId }
+    SDK-->>UI: Update state & notify user
 ```
 
 ## 🛠️ Технологический стек

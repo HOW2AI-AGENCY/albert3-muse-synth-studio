@@ -2,13 +2,16 @@
 
 <div align="center">
 
-[![Docs Update](https://github.com/your-username/albert3-muse-synth-studio/actions/workflows/docs-update.yml/badge.svg)](https://github.com/your-username/albert3-muse-synth-studio/actions/workflows/docs-update.yml)
-[![CI](https://github.com/your-username/albert3-muse-synth-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/albert3-muse-synth-studio/actions/workflows/ci.yml)
+[![Docs Update](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/actions/workflows/docs-update.yml/badge.svg)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/actions/workflows/docs-update.yml)
+[![CI](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](../LICENSE)
+[![Open Issues](https://img.shields.io/github/issues/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/issues)
+[![Last Commit](https://img.shields.io/github/last-commit/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/commits)
+[![Contributors](https://img.shields.io/github/contributors/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/graphs/contributors)
 
 </div>
 
-Навигация: [Главная README](../README.md) → [Индекс документации](INDEX.md) → Центр документации
+Навигация: [Главная README](../README.md) → [Индекс документации](INDEX.md) → Центр документации → [Репозиторий](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio)
 
 ## 📑 Содержание
 
