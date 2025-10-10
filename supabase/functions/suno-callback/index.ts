@@ -65,10 +65,6 @@ const mainHandler = async (req: Request) => {
 
     console.log("Suno callback payload:", JSON.stringify(payload, null, 2));
 
-    // Log callback to callback_logs table for debugging
-    const callbackType = payload.callbackType || 'unknown';
-    const taskId = payload.task_id || payload.taskId || 'unknown';
-
     // Extract tracks array from payload
     // Suno can send: { data: { data: [...] } } or { data: [...] } or just single task
     let tasks: any[] = [];
@@ -101,7 +97,9 @@ const mainHandler = async (req: Request) => {
       });
     }
 
-    console.log("Extracted taskId:", taskId, "Tasks count:", tasks.length);
+    const callbackType = payload?.callbackType || 'unknown';
+
+    console.log("Extracted taskId:", taskId, "Tasks count:", tasks.length, "Callback type:", callbackType);
 
     const updateJobStatus = async (
       status: "completed" | "failed",
