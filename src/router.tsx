@@ -9,7 +9,7 @@ import WorkspaceLayout from "./components/workspace/WorkspaceLayout";
 
 // Lazy routes
 const LazyDashboard = lazy(() => import("./pages/workspace/Dashboard"));
-const LazyGenerate = lazy(() => import("./pages/workspace/Generate"));
+import Generate from "./pages/workspace/Generate";
 const LazyLibrary = lazy(() => import("./pages/workspace/Library"));
 const LazyFavorites = lazy(() => import("./pages/workspace/Favorites"));
 const LazyAnalytics = lazy(() => import("./pages/workspace/Analytics"));
@@ -55,11 +55,7 @@ export const router = createBrowserRouter(
         },
         {
           path: "generate",
-          element: (
-            <Suspense fallback={<LoadingSpinner />}>
-              <LazyGenerate />
-            </Suspense>
-          ),
+          element: <Generate />,
         },
         {
           path: "library",
