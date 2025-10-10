@@ -48,6 +48,11 @@ export interface GenerateMusicRequest {
   styleTags?: string[];
   customMode?: boolean;
   modelVersion?: string;
+  negativeTags?: string;
+  vocalGender?: 'm' | 'f';
+  styleWeight?: number;
+  weirdnessConstraint?: number;
+  audioWeight?: number;
 }
 
 export interface GenerateMusicResponse {
@@ -203,6 +208,18 @@ export class ApiService {
       return 'Generated Track';
     })();
     const makeInstrumental = request.hasVocals === false;
+    const clamp01 = (value?: number) => {
+      if (typeof value !== 'number' || Number.isNaN(value)) {
+        return undefined;
+      }
+      return Math.min(Math.max(value, 0), 1);
+    };
+    const negativeTags = request.negativeTags?.trim();
+    const sanitizedNegativeTags = negativeTags && negativeTags.length > 0 ? negativeTags : undefined;
+    const vocalGender = request.vocalGender === 'm' || request.vocalGender === 'f' ? request.vocalGender : undefined;
+    const styleWeight = clamp01(request.styleWeight);
+    const weirdnessConstraint = clamp01(request.weirdnessConstraint);
+    const audioWeight = clamp01(request.audioWeight);
 
     const payload = {
       trackId: request.trackId,
@@ -214,6 +231,11 @@ export class ApiService {
       make_instrumental: makeInstrumental,
       model_version: request.modelVersion || 'V5',
       customMode: request.customMode,
+      ...(sanitizedNegativeTags ? { negativeTags: sanitizedNegativeTags } : {}),
+      ...(vocalGender ? { vocalGender } : {}),
+      ...(styleWeight !== undefined ? { styleWeight } : {}),
+      ...(weirdnessConstraint !== undefined ? { weirdnessConstraint } : {}),
+      ...(audioWeight !== undefined ? { audioWeight } : {}),
     };
 
     logInfo('🎵 [API Service] Selected provider', context, { provider, functionName });
@@ -224,6 +246,11 @@ export class ApiService {
       hasVocals: typeof request.hasVocals === 'boolean' ? request.hasVocals : null,
       lyricsLength: lyrics?.length ?? 0,
       customMode: request.customMode ?? null,
+      hasNegativeTags: Boolean(sanitizedNegativeTags),
+      styleWeight,
+      weirdnessConstraint,
+      audioWeight,
+      vocalGender,
     });
 
     logInfo('⏳ [API Service] Invoking edge function...', context);
