@@ -12,13 +12,13 @@
 - [🏗️ Архитектура](ARCHITECTURE_DIAGRAMS.md) - 10+ диаграмм системы
 - [🧩 Компоненты](COMPONENT_GUIDE.md) - Примеры и best practices
 - [🧱 Реестр UI-компонентов](interface/COMPONENT_SYSTEM.md) - Каталог и правила использования
-- [🚀 План разработки](DEVELOPMENT_PLAN.md) - Sprint 24 и подготовка Sprint 25
+- [🚀 План разработки](DEVELOPMENT_PLAN.md) - Итоги Sprint 24 и подготовка следующих релизов
 
 ### Для менеджеров
 - [🚀 Roadmap](ROADMAP.md) - Планы развития
-- [📋 Текущий спринт](../project-management/tasks/current-sprint.md) - Sprint 24 статус
-- [🗂️ План Sprint 24](../project-management/tasks/sprint-24-plan.md) - Детальный план
-- [📊 Бэклог](../project-management/tasks/backlog.md) - Все задачи
+- [✅ Итоги Sprint 24](../project-management/tasks/current-sprint.md) - закрывающий отчёт
+- [🗂️ Архив Sprint 24](../project-management/tasks/sprint-24-plan.md) - план и фактические результаты
+- [📊 Бэклог](../project-management/tasks/backlog.md) - актуальный перечень инициатив
 
 ## 📑 Полный список документов
 
@@ -46,7 +46,7 @@
 - COMPONENT_GUIDE.md - Компоненты
 
 ### Планирование
-- DEVELOPMENT_PLAN.md ⭐ UPDATED - Sprint 24, readiness review
+- DEVELOPMENT_PLAN.md ⭐ UPDATED - Итоги Sprint 24 и подготовка к последующим релизам
 - ROADMAP.md ⭐ UPDATED - Обновлённая дорожная карта v2.6.x
 
 ### Специальные темы
@@ -54,10 +54,11 @@
 - MOBILE_OPTIMIZATION.md - Мобильная оптимизация
 - STEMS_SYSTEM.md - Система стемов
 - integrations/SUNO_API_AUDIT.md - Полный аудит интеграции Suno API (обновлено 10.10.2025)
- - ../project-management/reports/2025-10-10-repo-audit.md ⭐ NEW - Комплексный аудит репозитория (10.10.2025)
- - ../project-management/reports/2025-10-09-workspace-audit.md ⭐ NEW - Полный аудит Workspace (09.10.2025)
+  - ../project-management/reports/2025-10-15-repo-audit.md ⭐ NEW - Комплексный аудит репозитория (15.10.2025)
+  - ../project-management/reports/2025-10-10-repo-audit.md - Репо-аудит (10.10.2025)
+  - ../project-management/reports/2025-10-09-workspace-audit.md - Полный аудит Workspace (09.10.2025)
 
-### Важные темы Sprint 24
+### Важные темы (октябрь 2025)
 - Service Worker & Caching Policy — см. `public/sw.js`, а также разделы в `architecture/ARCHITECTURE.md` и `performance/PERFORMANCE.md`
 - Supabase Integration Notes — см. `storage/STORAGE_GUIDE.md` и `api/API.md`
 - Logger & Logs — см. `DEVELOPER_GUIDE.md`, `src/utils/logger.ts` и `project-management/TECHNICAL_DEBT_PLAN.md`
@@ -68,4 +69,4 @@
 
 ⭐ **UPDATED** - Актуализировано в Sprint 24 (неделя 0)
 
-*Обновлено: 13 октября 2025*
+*Обновлено: 15 октября 2025*
