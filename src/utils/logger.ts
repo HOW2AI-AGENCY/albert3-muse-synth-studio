@@ -16,7 +16,7 @@ const enableSentryInDevelopment = import.meta.env?.VITE_SENTRY_ENABLE_IN_DEV ===
 
 const hasSentryClient = (): boolean => {
   try {
-    return Boolean(Sentry.getCurrentHub().getClient());
+    return Boolean(Sentry.getClient());
   } catch (_error) {
     return false;
   }

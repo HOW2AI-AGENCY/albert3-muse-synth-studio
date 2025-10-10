@@ -78,7 +78,7 @@ export function unwrapResult<T, E extends Error = TrackVersionError>(result: Res
 
 export async function createTrackVersion(payload: TrackVersionInsert): Promise<Result<TrackVersionRow>> {
   return handleTrackVersionOperation(
-    () =>
+    async () =>
       supabase
         .from('track_versions')
         .insert(payload)
@@ -101,7 +101,7 @@ export async function updateTrackVersion(
   updates: TrackVersionUpdate,
 ): Promise<Result<TrackVersionRow>> {
   return handleTrackVersionOperation(
-    () =>
+    async () =>
       supabase
         .from('track_versions')
         .update(updates)
@@ -122,7 +122,7 @@ export async function updateTrackVersion(
 
 export async function deleteTrackVersion(versionId: string): Promise<Result<TrackVersionRow>> {
   return handleTrackVersionOperation(
-    () =>
+    async () =>
       supabase
         .from('track_versions')
         .delete()
@@ -307,7 +307,7 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
           metadata: (version.metadata as TrackMetadata | null) ?? null,
           created_at: version.created_at ?? null,
           suno_id: version.suno_id ?? null,
-          status: version.status ?? 'completed',
+          status: 'completed',
         });
       });
     } else if (

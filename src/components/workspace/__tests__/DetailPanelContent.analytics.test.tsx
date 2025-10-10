@@ -65,7 +65,7 @@ describe('DetailPanelContent analytics integration', () => {
     } catch (error) {
       // ignore session storage issues in tests
     }
-    rpcSpy = vi.spyOn(supabase, 'rpc').mockResolvedValue({ data: null, error: null } as any);
+    rpcSpy = vi.spyOn(supabase, 'rpc' as any).mockResolvedValue({ data: null, error: null } as any);
   });
 
   afterEach(() => {

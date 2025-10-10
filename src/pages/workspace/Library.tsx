@@ -26,7 +26,7 @@ import { DisplayTrack, convertToAudioPlayerTrack, convertToDisplayTrack, convert
 import { cn } from "@/lib/utils";
 import { logger } from "@/utils/logger";
 import { normalizeTrack } from "@/utils/trackNormalizer";
-import { getTrackWithVersions, type TrackWithVersions } from "@/features/tracks/api/trackVersions";
+import { getTrackWithVersions } from "@/features/tracks/api/trackVersions";
 import { primeTrackVersionsCache } from "@/features/tracks/hooks/useTrackVersions";
 import type { AudioPlayerTrack } from "@/types/track";
 
@@ -165,7 +165,7 @@ const Library: React.FC = () => {
             version,
             audio: {
               ...audio,
-              parentTrackId: version.parentTrackId ?? track.id,
+              parentTrackId: version.parentTrackId,
               versionNumber: version.versionNumber,
               isMasterVersion: version.isMasterVersion,
               isOriginalVersion: version.isOriginal,
@@ -173,10 +173,11 @@ const Library: React.FC = () => {
             },
           };
         })
-        .filter((entry): entry is { version: TrackWithVersions; audio: AudioPlayerTrack } => entry !== null);
+        .filter((entry): entry is NonNullable<typeof entry> => entry !== null && entry.audio !== null);
 
       const masterEntry = playableVersionEntries.find(entry => entry.version.isMasterVersion) ??
         playableVersionEntries.find(entry => entry.version.isOriginal) ??
+        playableVersionEntries[0] ??
         null;
 
       const otherVersionTracks = playableVersionEntries

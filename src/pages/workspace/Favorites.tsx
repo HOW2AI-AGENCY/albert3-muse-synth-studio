@@ -7,7 +7,6 @@ import { TrackCard, getTrackWithVersions } from "@/features/tracks";
 import { primeTrackVersionsCache } from "@/features/tracks/hooks/useTrackVersions";
 import { toast } from "sonner";
 import { convertToAudioPlayerTrack } from "@/types/track";
-import type { AudioPlayerTrack } from "@/types/track";
 import type { TrackStatus } from "@/services/api.service";
 
 const isTrackStatus = (status: string): status is TrackStatus =>
@@ -99,11 +98,11 @@ export default function Favorites() {
         };
       };
 
-      const audioTracks = tracksWithVersions.map(toAudioTrack).filter((t): t is AudioPlayerTrack => t !== null);
+      const audioTracks = tracksWithVersions.map(toAudioTrack).filter((t): t is NonNullable<typeof t> => t !== null);
       const masterOrMain = tracksWithVersions.find(t => t.isMasterVersion) || tracksWithVersions.find(t => t.isOriginal) || tracksWithVersions[0];
       const masterAudio = masterOrMain ? toAudioTrack(masterOrMain) : null;
 
-      if (masterAudio) {
+      if (masterAudio && audioTracks.length > 0) {
         playTrackWithQueue(masterAudio, audioTracks);
       }
     } else {

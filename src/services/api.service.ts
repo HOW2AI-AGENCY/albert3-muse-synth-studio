@@ -529,7 +529,7 @@ export class ApiService {
               id: cachedTrack.id,
               user_id: userId,
               title: cachedTrack.title,
-              prompt: null,
+              prompt: '',
               improved_prompt: null,
               audio_url: cachedTrack.audio_url,
               cover_url: cachedTrack.image_url ?? null,

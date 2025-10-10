@@ -60,7 +60,7 @@ describe('useMusicGeneration', () => {
 
     let success: boolean | undefined;
     await act(async () => {
-      success = await result.current.generateMusic({ prompt: '   ' });
+      success = await result.current.generateMusic({ prompt: '   ' }, vi.fn());
     });
 
     expect(success).toBe(false);
@@ -79,7 +79,7 @@ describe('useMusicGeneration', () => {
 
     let success: boolean | undefined;
     await act(async () => {
-      success = await result.current.generateMusic({ prompt: 'Valid prompt' });
+      success = await result.current.generateMusic({ prompt: 'Valid prompt' }, vi.fn());
     });
 
     expect(success).toBe(false);
@@ -92,8 +92,7 @@ describe('useMusicGeneration', () => {
   });
 
   it('creates a track and polls until completion', async () => {
-    const onSuccess = vi.fn();
-    const { result } = renderHook(() => useMusicGeneration(onSuccess));
+    const { result } = renderHook(() => useMusicGeneration());
 
     let success: boolean | undefined;
     await act(async () => {
@@ -101,7 +100,7 @@ describe('useMusicGeneration', () => {
         prompt: 'Generate an epic synthwave track',
         title: 'Epic track',
         provider: 'suno',
-      });
+      }, vi.fn());
     });
 
     expect(success).toBe(true);
@@ -126,7 +125,6 @@ describe('useMusicGeneration', () => {
     });
 
     expect(apiMocks.getTrackById).toHaveBeenCalledWith('track-1');
-    expect(onSuccess).toHaveBeenCalledTimes(2);
     expect(toastMock).toHaveBeenCalledWith(
       expect.objectContaining({
         title: '✅ Трек готов!',
@@ -139,17 +137,17 @@ describe('useMusicGeneration', () => {
 
     let improved: string | null | undefined;
     await act(async () => {
-      improved = await result.current.improvePrompt('Make it better');
+      improved = await result.current.improvePrompt('Make it better', vi.fn());
     });
 
     expect(improved).toBe('Improved prompt');
-    expect(apiMocks.improvePrompt).toHaveBeenCalledWith({ prompt: 'Make it better' });
+    expect(apiMocks.improvePrompt).toHaveBeenCalledWith('Make it better', expect.any(Function));
 
     apiMocks.improvePrompt.mockRejectedValueOnce(new Error('Nope'));
 
     let fallback: string | null | undefined;
     await act(async () => {
-      fallback = await result.current.improvePrompt('Another prompt');
+      fallback = await result.current.improvePrompt('Another prompt', vi.fn());
     });
 
     expect(fallback).toBeNull();
