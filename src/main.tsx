@@ -102,4 +102,5 @@ if (typeof window !== 'undefined') {
   }
 }
 
+console.log('[main.tsx] Starting React app');
 createRoot(document.getElementById('root')!).render(<App />);

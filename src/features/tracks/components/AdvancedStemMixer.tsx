@@ -8,6 +8,8 @@ import { useStemMixer } from '@/contexts/StemMixerContext';
 import { StemMixerTrack } from './StemMixerTrack';
 import { formatDuration } from '@/utils/formatters';
 
+console.log('[AdvancedStemMixer] Module loaded');
+
 interface TrackStem {
   id: string;
   stem_type: string;
