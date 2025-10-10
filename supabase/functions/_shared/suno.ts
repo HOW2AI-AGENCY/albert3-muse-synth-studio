@@ -9,6 +9,8 @@ export interface SunoGenerationPayload {
   audio_prompt_id?: string | null;
   style?: string | null;
   callBackUrl?: string;
+  callbackUrl?: string;
+  callback_url?: string;
   lyrics?: string;
   has_vocals?: boolean;
   custom_mode?: boolean;
@@ -17,6 +19,8 @@ export interface SunoGenerationPayload {
 export interface SunoLyricsPayload {
   prompt: string;
   callBackUrl: string;
+  callbackUrl?: string;
+  callback_url?: string;
 }
 
 export interface SunoTaskStatus {
@@ -88,6 +92,8 @@ export interface SunoStemRequest {
   audioId: string;
   separationMode: string;
   callbackUrl: string;
+  callback_url?: string;
+  callBackUrl?: string;
 }
 
 export interface SunoStemResult {
@@ -190,6 +196,63 @@ const appendQueryParam = (base: string, params: Record<string, string>): string 
   }
   const separator = base.includes("?") ? "&" : "?";
   return `${base}${separator}${query.toString()}`;
+};
+
+const extractCallbackUrl = (
+  payload: { callBackUrl?: string | null; callbackUrl?: string | null; callback_url?: string | null },
+): string | undefined => {
+  const candidates = [payload.callBackUrl, payload.callbackUrl, payload.callback_url];
+  for (const value of candidates) {
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed.length > 0) {
+        return trimmed;
+      }
+    }
+  }
+  return undefined;
+};
+
+const applyCallbackAliases = (
+  target: Record<string, unknown>,
+  callbackUrl: string | undefined,
+) => {
+  if (!callbackUrl) return target;
+  target.callBackUrl = callbackUrl;
+  target.callbackUrl = callbackUrl;
+  target.callback_url = callbackUrl;
+  return target;
+};
+
+const dropUndefined = (input: Record<string, unknown>): Record<string, unknown> => {
+  const output: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (value !== undefined) {
+      output[key] = value;
+    }
+  }
+  return output;
+};
+
+export const buildSunoHeaders = (
+  apiKey: string,
+  extraHeaders: Record<string, string | undefined> = {},
+): Record<string, string> => {
+  const baseHeaders: Record<string, string> = {
+    "Authorization": `Bearer ${apiKey}`,
+    "X-API-Key": apiKey,
+    "api-key": apiKey,
+    "Accept": "application/json",
+    "User-Agent": "albert3-muse-synth-studio/edge",
+  };
+
+  for (const [key, value] of Object.entries(extraHeaders)) {
+    if (typeof value === "string" && value.length > 0) {
+      baseHeaders[key] = value;
+    }
+  }
+
+  return baseHeaders;
 };
 
 const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null } => {
@@ -390,16 +453,20 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
 
   const generateTrack = async (payload: SunoGenerationPayload): Promise<SunoGenerationResult> => {
     const errors: SunoApiError[] = [];
+    const normalizedPayload = (() => {
+      const base = dropUndefined({ ...(payload as Record<string, unknown>) });
+      delete base.callBackUrl;
+      delete base.callbackUrl;
+      delete base.callback_url;
+      return applyCallbackAliases(base, extractCallbackUrl(payload));
+    })();
+
     for (const endpoint of generateEndpoints) {
       try {
         const response = await fetchImpl(`${endpoint}`, {
           method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-          },
-          body: JSON.stringify(payload),
+          headers: buildSunoHeaders(apiKey, { "Content-Type": "application/json" }),
+          body: JSON.stringify(normalizedPayload),
         });
 
         const rawText = await response.text();
@@ -457,16 +524,20 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
 
   const generateLyrics = async (payload: SunoLyricsPayload): Promise<SunoLyricsGenerationResult> => {
     const errors: SunoApiError[] = [];
+    const normalizedPayload = (() => {
+      const base = dropUndefined({ ...(payload as Record<string, unknown>) });
+      delete base.callBackUrl;
+      delete base.callbackUrl;
+      delete base.callback_url;
+      return applyCallbackAliases(base, extractCallbackUrl(payload));
+    })();
+
     for (const endpoint of lyricsGenerateEndpoints) {
       try {
         const response = await fetchImpl(`${endpoint}`, {
           method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-          },
-          body: JSON.stringify(payload),
+          headers: buildSunoHeaders(apiKey, { "Content-Type": "application/json" }),
+          body: JSON.stringify(normalizedPayload),
         });
 
         const rawText = await response.text();
@@ -528,10 +599,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
       const url = appendQueryParam(endpoint, { taskId });
       try {
         const response = await fetchImpl(url, {
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Accept": "application/json",
-          },
+          headers: buildSunoHeaders(apiKey),
         });
 
         const rawText = await response.text();
@@ -596,10 +664,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
       const url = appendQueryParam(endpoint, { taskId });
       try {
         const response = await fetchImpl(url, {
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Accept": "application/json",
-          },
+          headers: buildSunoHeaders(apiKey),
         });
 
         const rawText = await response.text();
@@ -675,23 +740,26 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
   };
 
   const requestStemSeparation = async (input: SunoStemRequest): Promise<SunoStemResult> => {
-    const payload = {
-      taskId: input.taskId,
-      audioId: input.audioId,
-      type: input.separationMode,
-      callBackUrl: input.callbackUrl,
-    };
+    const payload = (() => {
+      const base = dropUndefined({
+        taskId: input.taskId,
+        audioId: input.audioId,
+        type: input.separationMode,
+      } as Record<string, unknown>);
+
+      return applyCallbackAliases(base, extractCallbackUrl({
+        callBackUrl: input.callBackUrl,
+        callbackUrl: input.callbackUrl,
+        callback_url: input.callback_url,
+      }));
+    })();
 
     const errors: SunoApiError[] = [];
     for (const endpoint of stemEndpoints) {
       try {
         const response = await fetchImpl(`${endpoint}`, {
           method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-          },
+          headers: buildSunoHeaders(apiKey, { "Content-Type": "application/json" }),
           body: JSON.stringify(payload),
         });
 
@@ -756,10 +824,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
         const url = appendQueryParam(endpoint, { taskId });
         const response = await fetchImpl(url, {
           method: "GET",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Accept": "application/json",
-          },
+          headers: buildSunoHeaders(apiKey),
         });
 
         const rawText = await response.text();

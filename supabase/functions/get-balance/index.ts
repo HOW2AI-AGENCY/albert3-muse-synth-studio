@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { createSecurityHeaders } from "../_shared/security.ts";
 import { createSupabaseUserClient } from "../_shared/supabase.ts";
+import { buildSunoHeaders } from "../_shared/suno.ts";
 
 type SunoBalanceAttempt = {
   endpoint: string;
@@ -210,10 +211,7 @@ export const getSunoBalance = async () => {
     try {
       const response = await fetch(endpoint, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${SUNO_API_KEY}`,
-          'Accept': 'application/json',
-        },
+        headers: buildSunoHeaders(SUNO_API_KEY),
       });
 
       status = response.status;
