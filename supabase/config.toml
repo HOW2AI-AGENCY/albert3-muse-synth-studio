@@ -56,3 +56,10 @@ verify_jwt = true
 
 [functions.log-error]
 verify_jwt = false
+
+[functions.extend-track]
+verify_jwt = true
+
+[functions.create-cover]
+verify_jwt = true
+
