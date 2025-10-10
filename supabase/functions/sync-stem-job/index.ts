@@ -51,12 +51,13 @@ const failureStatuses = new Set([
 const mapSunoAssets = (assets: { sourceKey: string; url: string }[]): NormalizedStemAsset[] => {
   const mapped: NormalizedStemAsset[] = [];
   for (const asset of assets) {
-    const stemType = resolveStemType(asset.sourceKey ?? "");
+    const sourceKey = asset.sourceKey ?? "";
+    const stemType = resolveStemType(sourceKey);
     if (!stemType) continue;
     if (typeof asset.url !== "string") continue;
     const trimmed = asset.url.trim();
     if (!trimmed) continue;
-    mapped.push({ stemType, audioUrl: trimmed, sourceKey: asset.sourceKey });
+    mapped.push({ stemType, audioUrl: trimmed, sourceKey });
   }
   return mapped;
 };

@@ -1,4 +1,4 @@
-import * as Sentry from "https://deno.land/x/sentry@8.25.0/mod.ts";
+import * as Sentry from "npm:@sentry/node";
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
