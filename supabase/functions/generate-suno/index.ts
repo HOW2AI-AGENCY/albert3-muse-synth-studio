@@ -154,7 +154,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       wait_audio: effectiveWaitAudio,
       hasVocals: effectiveHasVocals,
       customMode: customModeValue,
-      lyricsLength: hasLyricsInput ? body.lyrics.length : 0,
+      lyricsLength: hasLyricsInput && body.lyrics ? body.lyrics.length : 0,
       idempotencyKey: body.idempotencyKey,
       negativeTags: negativeTags ?? null,
       vocalGender,

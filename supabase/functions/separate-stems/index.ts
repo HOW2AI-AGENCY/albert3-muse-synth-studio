@@ -161,8 +161,8 @@ const mainHandler = async (req: Request) => {
     const stemResult = await sunoClient.requestStemSeparation({
       taskId,
       audioId,
-      separationMode,
-      callbackUrl: `${SUPABASE_URL}/functions/v1/stems-callback`,
+      type: (separationMode === 'split_stem' || separationMode === 'separate_vocal') ? separationMode : 'separate_vocal',
+      callBackUrl: `${SUPABASE_URL}/functions/v1/stems-callback`,
     });
 
     const stemTaskId = stemResult.taskId;

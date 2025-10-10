@@ -48,7 +48,7 @@ const failureStatuses = new Set([
   "sensitive_word_error",
 ]);
 
-const mapSunoAssets = (assets: { sourceKey: string; url: string }[]): NormalizedStemAsset[] => {
+const mapSunoAssets = (assets: { sourceKey?: string; url: string }[]): NormalizedStemAsset[] => {
   const mapped: NormalizedStemAsset[] = [];
   for (const asset of assets) {
     const sourceKey = asset.sourceKey ?? "";

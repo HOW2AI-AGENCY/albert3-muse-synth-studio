@@ -1,23 +1,15 @@
-import { useEffect, useState, memo, useCallback } from "react";
+import { useState, memo, useCallback } from "react";
 import { TrackCard } from "@/features/tracks/components/TrackCard";
 import { TrackListItem } from "@/features/tracks/components/TrackListItem";
 import { ViewSwitcher } from "./tracks/ViewSwitcher";
 import { LoadingSkeleton as Skeleton } from "./ui/LoadingSkeleton";
-import { ApiService, Track as ApiTrack } from "@/services/api.service";
-import { Button } from "./ui/button";
-import { RefreshCcw, Music } from "lucide-react";
+import { Track as ApiTrack } from "@/services/api.service";
+import { Music } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { cn } from "@/lib/utils";
 
-// Используем урезанный интерфейс, необходимый для списка
-interface Track extends ApiTrack {
-  // Поля, которые могут быть null
-  provider?: string | null;
-  lyrics?: string | null;
-  style_tags?: string[] | null;
-  has_vocals?: boolean | null;
-}
+// Используем прямой тип без расширения
+type Track = ApiTrack;
 
 interface TracksListProps {
   tracks: Track[];
@@ -30,8 +22,6 @@ interface TracksListProps {
 const TracksListComponent = ({
   tracks,
   isLoading,
-  deleteTrack,
-  refreshTracks,
   onTrackSelect,
 }: TracksListProps) => {
   const { playTrackWithQueue } = useAudioPlayer();
@@ -77,17 +67,6 @@ const TracksListComponent = ({
     navigator.clipboard.writeText(url);
     toast({ title: "Ссылка скопирована" });
   }, [toast]);
-
-  const retryTrack = useCallback(async (track: Track) => {
-    // Эта логика требует более глубокого рефакторинга API, пока оставляем заглушку
-    toast({ title: 'Функция "Повторить" в разработке' });
-  }, [toast]);
-
-  const isStale = (track: Track) => {
-    if (track.status !== 'processing') return false;
-    const createdAt = new Date(track.created_at).getTime();
-    return (Date.now() - createdAt) > 600000; // 10 минут
-  };
 
   if (isLoading) {
     return (
