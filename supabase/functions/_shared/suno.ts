@@ -444,10 +444,16 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
       // Retry logic with exponential backoff for 429 errors
       for (let retryAttempt = 0; retryAttempt <= MAX_RETRIES; retryAttempt++) {
         try {
+          const apiPayload: Record<string, unknown> = { ...payload };
+          if (typeof payload.make_instrumental === 'boolean') {
+            apiPayload.instrumental = payload.make_instrumental;
+          }
+          delete (apiPayload as any).make_instrumental;
+
           const response = await fetchImpl(endpoint, {
             method: "POST",
             headers: buildSunoHeaders(apiKey, { "Content-Type": "application/json" }),
-            body: JSON.stringify(payload),
+            body: JSON.stringify(apiPayload),
           });
 
           const rawText = await response.text();
@@ -498,9 +504,20 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
             cause: parseError,
           });
         }
+        // Handle API-level error codes returned with HTTP 200
+        if (json && typeof json === 'object' && 'code' in (json as Record<string, unknown>)) {
+          const codeVal = Number((json as any).code);
+          if (!Number.isNaN(codeVal) && codeVal !== 200) {
+            const apiMsg = (json as any).msg || 'Suno API responded with an error';
+            throw new SunoApiError(String(apiMsg), {
+              endpoint,
+              status: response.status,
+              body: rawText,
+            });
+          }
+        }
 
         const { taskId, jobId } = parseTaskId(json);
-
         if (typeof taskId !== "string" || !taskId) {
           throw new SunoApiError("Suno generation response did not include a task identifier", {
             endpoint,
