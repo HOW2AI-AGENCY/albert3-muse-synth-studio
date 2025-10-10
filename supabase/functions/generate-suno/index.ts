@@ -71,8 +71,8 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     supabaseAdmin = createSupabaseAdminClient();
 
     const body = (await req.json()) as GenerateSunoRequestBody;
-    const hasLyricsInput = typeof body.lyrics === 'string' && body.lyrics !== null;
-    const trimmedLyrics = hasLyricsInput ? (body.lyrics as string).trim() : '';
+    const hasLyricsInput = typeof body.lyrics === 'string';
+    const trimmedLyrics = hasLyricsInput ? body.lyrics.trim() : '';
     const normalizedLyrics = hasLyricsInput
       ? (trimmedLyrics.length > 0 ? body.lyrics : null)
       : undefined;

@@ -184,7 +184,7 @@ const mainHandler = async (req: Request) => {
       stem_last_callback_received_at: null,
       stem_assets_count: trackMetadata["stem_assets_count"] ?? null,
       suno_last_stem_endpoint: stemResult.endpoint,
-      suno_last_stem_snapshot: (stemResult.rawResponse && typeof stemResult.rawResponse === 'object') ? stemResult.rawResponse : { "data": stemResult.rawResponse },
+      suno_last_stem_snapshot: stemResult.rawResponse,
     } as Record<string, unknown>;
 
     const { error: trackUpdateError } = await supabaseAdmin

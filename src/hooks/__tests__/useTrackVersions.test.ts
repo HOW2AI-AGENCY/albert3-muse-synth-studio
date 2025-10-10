@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useTrackVersions, resetTrackVersionsCache } from '@/features/tracks/hooks';
+import { useTrackVersions } from '@/features/tracks/hooks';
 
 const loggerMocks = vi.hoisted(() => ({ logInfo: vi.fn(), logError: vi.fn() }));
 vi.mock('@/utils/logger', () => ({
@@ -25,7 +25,6 @@ describe('useTrackVersions', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    resetTrackVersionsCache();
     trackVersionMocks.getTrackWithVersions.mockResolvedValue(sampleVersions);
     trackVersionMocks.getMasterVersion.mockReturnValue(sampleVersions[0]);
     trackVersionMocks.hasMultipleVersions.mockReturnValue(true);

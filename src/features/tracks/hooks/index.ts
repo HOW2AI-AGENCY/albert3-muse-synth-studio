@@ -1,2 +1,2 @@
 export { useTrackLike } from './useTrackLike';
-export { useTrackVersions, useTrackVersionCount, resetTrackVersionsCache } from './useTrackVersions';
+export { useTrackVersions, useTrackVersionCount } from './useTrackVersions';
