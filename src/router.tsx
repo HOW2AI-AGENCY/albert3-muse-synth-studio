@@ -8,14 +8,12 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import WorkspaceLayout from "./components/workspace/WorkspaceLayout";
 
 // Lazy routes
-import {
-  LazyDashboard,
-  LazyGenerate,
-  LazyLibrary,
-  LazyFavorites,
-  LazyAnalytics,
-  LazySettings,
-} from './utils/lazyImports';
+const LazyDashboard = lazy(() => import("./pages/workspace/Dashboard"));
+const LazyGenerate = lazy(() => import("./pages/workspace/Generate"));
+const LazyLibrary = lazy(() => import("./pages/workspace/Library"));
+const LazyFavorites = lazy(() => import("./pages/workspace/Favorites"));
+const LazyAnalytics = lazy(() => import("./pages/workspace/Analytics"));
+const LazySettings = lazy(() => import("./pages/workspace/Settings"));
 
 const LazyAdmin = lazy(() => import("./pages/workspace/Admin"));
 const LazyProfile = lazy(() => import("./pages/workspace/Profile"));
