@@ -23,7 +23,7 @@ export const PageContainer = ({
   <div className={cn("w-full", className)}>
     <div
       className={cn(
-        "mx-auto w-full px-4 py-6 sm:px-6 lg:px-8",
+        "mx-auto w-full px-4 py-5 sm:px-5 lg:px-6",
         sizeClassMap[size]
       )}
     >

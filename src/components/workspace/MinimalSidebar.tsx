@@ -27,8 +27,8 @@ const MinimalSidebar = ({
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 hidden h-full border-r border-border/60 bg-background/95 backdrop-blur lg:flex",
-        isExpanded ? "w-56" : "w-16"
+        "fixed left-0 top-0 z-40 hidden h-full border-r border-border/60 bg-background/95 backdrop-blur lg:flex transition-all duration-300",
+        isExpanded ? "w-52" : "w-14"
       )}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}

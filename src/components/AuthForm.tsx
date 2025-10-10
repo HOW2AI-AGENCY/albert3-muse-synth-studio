@@ -104,16 +104,18 @@ export const AuthForm = () => {
     <Card className="card-glass p-6 w-full max-w-md mx-auto">
       <Tabs defaultValue="signin" className="w-full" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="signin">Sign In</TabsTrigger>
-          <TabsTrigger value="signup">Sign Up</TabsTrigger>
+          <TabsTrigger value="signin">Войти</TabsTrigger>
+          <TabsTrigger value="signup">Регистрация</TabsTrigger>
         </TabsList>
 
         <TabsContent value="signin">
           <form onSubmit={handleSignIn} className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="signin-email">Электронная почта</Label>
               <Input
+                id="signin-email"
                 type="email"
-                placeholder="Email"
+                placeholder="email@example.com"
                 value={signInEmail}
                 onChange={(e) => setSignInEmail(e.target.value)}
                 required
@@ -121,9 +123,11 @@ export const AuthForm = () => {
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="signin-password">Пароль</Label>
               <Input
+                id="signin-password"
                 type="password"
-                placeholder="Password"
+                placeholder="••••••••"
                 value={signInPassword}
                 onChange={(e) => setSignInPassword(e.target.value)}
                 required
@@ -134,10 +138,10 @@ export const AuthForm = () => {
               {isSigningIn ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
+                  Вход...
                 </>
               ) : (
-                "Sign In"
+                "Войти"
               )}
             </Button>
           </form>
@@ -146,9 +150,11 @@ export const AuthForm = () => {
         <TabsContent value="signup">
           <form onSubmit={handleSignUp} className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="signup-email">Электронная почта</Label>
               <Input
+                id="signup-email"
                 type="email"
-                placeholder="Email"
+                placeholder="email@example.com"
                 value={signUpEmail}
                 onChange={(e) => setSignUpEmail(e.target.value)}
                 required
@@ -156,9 +162,11 @@ export const AuthForm = () => {
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="signup-password">Пароль</Label>
               <Input
+                id="signup-password"
                 type="password"
-                placeholder="Password"
+                placeholder="••••••••"
                 value={signUpPassword}
                 onChange={(e) => setSignUpPassword(e.target.value)}
                 required
@@ -166,17 +174,17 @@ export const AuthForm = () => {
                 disabled={isLoading}
               />
               <p className="text-xs text-muted-foreground px-1">
-                Must be 8+ characters with uppercase, lowercase, and a number.
+                Не менее 8 символов, включая заглавные, строчные буквы и цифры.
               </p>
             </div>
             <Button type="submit" className="w-full" variant="hero" disabled={isSigningUp}>
               {isSigningUp ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating account...
+                  Создание аккаунта...
                 </>
               ) : (
-                "Sign Up"
+                "Зарегистрироваться"
               )}
             </Button>
           </form>

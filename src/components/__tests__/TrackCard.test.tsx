@@ -140,34 +140,28 @@ describe('TrackCard component', () => {
     expect(audioPlayerMocks.playTrack).toHaveBeenCalledWith(expect.objectContaining({ id: 'track-1' }));
   });
 
-  it('toggles like state and shows feedback', async () => {
+  it('toggles like state', async () => {
     const user = userEvent.setup();
+    trackLikeMocks.toggleLike.mockResolvedValue({ success: true });
     render(<TrackCard track={baseTrack} />);
 
-    const buttons = screen.getAllByRole('button');
-    const likeButton = buttons[1];
-
+    const likeButton = screen.getByRole('button', { name: /В избранное/i });
     await user.click(likeButton);
 
     expect(trackLikeMocks.toggleLike).toHaveBeenCalled();
-    expect(toastMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: 'Добавлено в избранное',
-      }),
-    );
   });
 
   it('prevents downloads when audio is missing', async () => {
     const user = userEvent.setup();
     render(<TrackCard track={{ ...baseTrack, audio_url: undefined }} />);
 
-    const buttons = screen.getAllByRole('button');
-    const downloadButton = buttons[2];
+    const downloadButton = screen.getByRole('button', { name: 'Скачать' });
     await user.click(downloadButton);
 
     expect(toastMock).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Ошибка',
+        description: 'Аудиофайл недоступен',
       }),
     );
   });

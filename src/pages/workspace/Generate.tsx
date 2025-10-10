@@ -1,15 +1,14 @@
+import { useState, useEffect } from "react";
 import { 
   MusicGeneratorLazy as MusicGenerator,
   TracksListLazy as TracksList,
   DetailPanelLazy as DetailPanel
 } from "@/components/LazyComponents";
-import { useState, useEffect, useRef } from "react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -19,26 +18,20 @@ import { useTracks } from "@/hooks/useTracks";
 import { useTrackSync } from "@/hooks/useTrackSync";
 import { useTrackRecovery } from "@/hooks/useTrackRecovery";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { PLAYER_HEIGHTS } from "@/contexts/AudioPlayerContext";
 import { supabase } from "@/integrations/supabase/client";
-import { logInfo } from "@/utils/logger";
 import { normalizeTrack } from "@/utils/trackNormalizer";
 import type { Track } from "@/services/api.service";
 
 const Generate = () => {
   const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks();
-  const { currentTrack } = useAudioPlayer();
+  const { isPlayerVisible } = useAudioPlayer();
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showGenerator, setShowGenerator] = useState(false);
-  const [isPolling, setIsPolling] = useState(false);
-  const pollingRef = useRef<NodeJS.Timeout | null>(null);
-  const initialTrackCount = useRef(tracks.length);
   const [userId, setUserId] = useState<string | undefined>();
 
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1023px)");
   
-  // Get current user for track sync
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -47,85 +40,25 @@ const Generate = () => {
     getUser();
   }, []);
 
-  // Auto-sync tracks in real-time
   useTrackSync(userId, {
-    onTrackCompleted: (trackId) => {
-      logInfo('Track completed - refreshing list', 'Generate', { trackId });
-      refreshTracks();
-      setIsPolling(false);
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
-    },
-    onTrackFailed: (trackId, error) => {
-      logInfo('Track failed - refreshing list', 'Generate', { trackId, error });
-      refreshTracks();
-      setIsPolling(false);
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
-    },
+    onTrackCompleted: refreshTracks,
+    onTrackFailed: refreshTracks,
     enabled: true,
   });
 
-  // Auto-recovery for stuck tracks (треки в pending без suno_id)
   useTrackRecovery(userId, refreshTracks, {
     enabled: true,
-    checkIntervalMs: 60000, // Проверять каждую минуту
-    pendingThresholdMs: 120000, // Восстанавливать треки старше 2 минут
+    checkIntervalMs: 60000,
+    pendingThresholdMs: 120000,
   });
 
   const handleTrackGenerated = () => {
-    setShowGenerator(false);
-
-    initialTrackCount.current = tracks.length;
-    setIsPolling(true);
-
-    if (pollingRef.current) {
-      return;
+    if (!isDesktop) {
+      setShowGenerator(false);
     }
-
-    // Start polling if no existing timer
-    pollingRef.current = setInterval(() => {
-      refreshTracks();
-    }, 2500); // Poll every 2.5 seconds
+    // Запускаем обновление, чтобы сразу увидеть 'processing' статус
+    setTimeout(refreshTracks, 500);
   };
-
-  useEffect(() => {
-    if (!isPolling) return;
-
-    const hasNewTrack =
-      tracks.length > initialTrackCount.current &&
-      tracks.slice(initialTrackCount.current).some((track) => Boolean(track));
-    const hasProcessingTracks = tracks.some(t => t.status === 'processing');
-
-    if (hasNewTrack || hasProcessingTracks) {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
-      setIsPolling(false);
-    }
-
-    // Failsafe timeout after 1 minute
-    const timeout = setTimeout(() => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
-      setIsPolling(false);
-    }, 60000);
-
-    return () => {
-      clearTimeout(timeout);
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
-    };
-  }, [tracks, isPolling]);
 
   const handleTrackSelect = (track: Track) => {
     setSelectedTrack(track);
@@ -144,44 +77,35 @@ const Generate = () => {
 
   // Desktop: 3-panel resizable layout
   if (isDesktop) {
-    // Вычисляем высоту с учетом плеера
-    const pageHeight = currentTrack 
-      ? `calc(100vh - 4rem - ${PLAYER_HEIGHTS.desktop}px - ${PLAYER_HEIGHTS.safeAreaOffset}px)`
-      : 'calc(100vh - 4rem)';
-    
     return (
-      <div className="app-page" style={{ height: pageHeight }}>
+      <div className="h-full p-4">
         <ResizablePanelGroup
           direction="horizontal"
-          className="h-full overflow-hidden rounded-2xl border border-border/15 bg-background/70 backdrop-blur"
+          className="h-full rounded-lg border"
         >
-          {/* Create Panel */}
-          <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
-            <div className="h-full overflow-y-auto scrollbar-styled padding-app-tight">
+          <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
+            <div className="h-full p-1">
               <MusicGenerator onTrackGenerated={handleTrackGenerated} />
             </div>
           </ResizablePanel>
 
-          <ResizableHandle withHandle className="hover:bg-primary/20 transition-colors" />
+          <ResizableHandle withHandle />
 
-          {/* Track List */}
-          <ResizablePanel defaultSize={selectedTrack ? 50 : 80} minSize={40}>
-            <div className="h-full overflow-y-auto scrollbar-styled padding-app-tight">
+          <ResizablePanel defaultSize={selectedTrack ? 45 : 75} minSize={30}>
+            <div className="h-full overflow-y-auto p-4">
               <TracksList
                 tracks={tracks}
                 isLoading={isLoading}
                 deleteTrack={deleteTrack}
                 refreshTracks={refreshTracks}
                 onTrackSelect={handleTrackSelect}
-                selectedTrackId={selectedTrack?.id}
               />
             </div>
           </ResizablePanel>
 
-          {/* Detail Panel */}
           {selectedTrack && (
             <>
-              <ResizableHandle withHandle className="hover:bg-primary/20 transition-colors" />
+              <ResizableHandle withHandle />
               <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
                 <DetailPanel
                   track={normalizeTrack(selectedTrack)}
@@ -197,42 +121,34 @@ const Generate = () => {
     );
   }
 
-  // Tablet: Semi-expanded layout
+  // Tablet: 2-panel layout
   if (isTablet) {
-    const pageHeight = currentTrack 
-      ? `calc(100vh - 4rem - ${PLAYER_HEIGHTS.desktop}px - ${PLAYER_HEIGHTS.safeAreaOffset}px)`
-      : 'calc(100vh - 4rem)';
-    
     return (
-      <div className="app-page" style={{ height: pageHeight }}>
+      <div className="h-full p-4">
         <ResizablePanelGroup
           direction="horizontal"
-          className="h-full overflow-hidden rounded-2xl border border-border/15 bg-background/70 backdrop-blur"
+          className="h-full rounded-lg border"
         >
-          <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
-            <div className="h-full overflow-y-auto scrollbar-styled padding-app-tight">
+          <ResizablePanel defaultSize={40} minSize={30} maxSize={50}>
+            <div className="h-full p-1">
               <MusicGenerator onTrackGenerated={handleTrackGenerated} />
             </div>
           </ResizablePanel>
-
-          <ResizableHandle withHandle className="hover:bg-primary/20 transition-colors" />
-
-          <ResizablePanel defaultSize={70} minSize={60}>
-            <div className="h-full overflow-y-auto scrollbar-styled padding-app-tight">
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={60} minSize={50}>
+            <div className="h-full overflow-y-auto p-4">
               <TracksList
                 tracks={tracks}
                 isLoading={isLoading}
                 deleteTrack={deleteTrack}
                 refreshTracks={refreshTracks}
                 onTrackSelect={handleTrackSelect}
-                selectedTrackId={selectedTrack?.id}
               />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
-
         <Sheet open={!!selectedTrack} onOpenChange={(open) => !open && handleCloseDetail()}>
-          <SheetContent side="right" className="w-full sm:w-[540px] p-0">
+          <SheetContent side="right" className="w-full sm:w-[500px] p-0 border-l">
             {selectedTrack && (
               <DetailPanel
                 track={normalizeTrack(selectedTrack)}
@@ -247,69 +163,39 @@ const Generate = () => {
     );
   }
 
-  // Mobile: Optimized layout with Drawer for generator
-  const mobilePaddingBottom = currentTrack 
-    ? `calc(${PLAYER_HEIGHTS.mobile}px + env(safe-area-inset-bottom, 0px) + 1rem)`
-    : 'calc(env(safe-area-inset-bottom, 0px) + 1rem)';
-  
+  // Mobile: List with FAB and Drawers
   return (
-    <div className="app-page flex flex-col h-full relative">
-      {/* Track List - Full Screen */}
-      <div
-        className="flex-1 overflow-y-auto scrollbar-styled padding-inline-app padding-block-app transition-all duration-300"
-        style={{ paddingBottom: `calc(${mobilePaddingBottom} + 4rem)` }} // Add extra space for FAB
-      >
-        {isPolling && (
-          <div className="app-stack app-stack--tight mb-3">
-            <Skeleton className="h-24 w-full rounded-lg" />
-          </div>
-        )}
+    <div className="h-full">
+      <div className="p-4 h-full overflow-y-auto pb-24">
         <TracksList
           tracks={tracks}
           isLoading={isLoading}
           deleteTrack={deleteTrack}
           refreshTracks={refreshTracks}
           onTrackSelect={handleTrackSelect}
-          selectedTrackId={selectedTrack?.id}
         />
       </div>
 
-      {/* Floating Action Button - Right Side Mobile */}
       <Drawer open={showGenerator} onOpenChange={setShowGenerator}>
         <DrawerTrigger asChild>
           <Button
             size="lg"
-            className="fixed right-4 h-14 w-14 rounded-full shadow-2xl glow-primary bg-gradient-primary hover:scale-110 transition-all duration-300 z-40 animate-pulse-glow touch-action-manipulation min-h-[48px] min-w-[48px]"
-            style={{ 
-              bottom: currentTrack 
-                ? `calc(${PLAYER_HEIGHTS.mobile}px + env(safe-area-inset-bottom) + 1rem)` 
-                : 'calc(env(safe-area-inset-bottom) + 1rem)' 
-            }}
+            className="fixed right-4 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 transition-transform hover:scale-105 z-20"
+            style={{ bottom: isPlayerVisible ? 'calc(5rem + 1rem)' : '1rem' }}
             aria-label="Создать музыку"
           >
             <Plus className="h-6 w-6" />
           </Button>
         </DrawerTrigger>
-        <DrawerContent
-          className="p-0 z-[55]"
-          style={{
-            maxHeight: currentTrack
-              ? `calc(90vh - ${PLAYER_HEIGHTS.mobile}px - env(safe-area-inset-bottom))`
-              : '90vh'
-          }}
-        >
-          <div className="overflow-y-auto scrollbar-styled padding-app max-w-2xl mx-auto w-full">
-            <MusicGenerator onTrackGenerated={handleTrackGenerated} />
-          </div>
+        <DrawerContent className="h-[90vh] mt-20" aria-describedby={undefined}>
+            <div className="p-4 h-full overflow-y-auto">
+                <MusicGenerator onTrackGenerated={handleTrackGenerated} />
+            </div>
         </DrawerContent>
       </Drawer>
 
-      {/* Detail Sheet (Mobile) */}
       <Sheet open={!!selectedTrack} onOpenChange={(open) => !open && handleCloseDetail()}>
-        <SheetContent 
-          side="bottom" 
-          className="h-[90vh] rounded-t-2xl p-0 animate-slide-up"
-        >
+        <SheetContent side="bottom" className="h-[90vh] p-0 border-t">
           {selectedTrack && (
             <DetailPanel
               track={normalizeTrack(selectedTrack)}
