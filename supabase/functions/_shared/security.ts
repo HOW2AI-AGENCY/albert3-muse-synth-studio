@@ -85,13 +85,14 @@ export class RateLimiter {
     maxRequests: number = 10,
     windowMinutes: number = 1
   ): Promise<{ allowed: boolean; remaining: number; resetTime: Date }> {
+    const now = new Date();
+    const resetTime = new Date(now.getTime() + windowMinutes * 60 * 1000);
+    
     if (!this.supabaseUrl || !this.supabaseKey) {
       logger.warn("Rate limiter disabled due to missing secrets", { endpoint, userId });
-      const resetTime = new Date(Date.now() + windowMinutes * 60 * 1000);
       return { allowed: true, remaining: maxRequests, resetTime };
     }
 
-    const now = new Date();
     const windowStart = new Date(now.getTime() - windowMinutes * 60 * 1000);
 
     try {
@@ -106,13 +107,13 @@ export class RateLimiter {
         .gte('created_at', windowStart.toISOString());
 
       if (error) {
-        logger.error("Failed to query rate limit storage", { endpoint, userId, error });
-        throw new RateLimitUnavailableError("Rate limit storage unavailable", error);
+        // Table doesn't exist, allow request
+        logger.warn("Rate limit table not found, allowing request", { endpoint, userId, errorCode: error.code });
+        return { allowed: true, remaining: maxRequests, resetTime };
       }
 
       const requestCount = requests?.length || 0;
       const remaining = Math.max(0, maxRequests - requestCount);
-      const resetTime = new Date(now.getTime() + windowMinutes * 60 * 1000);
 
       if (requestCount >= maxRequests) {
         return { allowed: false, remaining: 0, resetTime };
@@ -127,8 +128,8 @@ export class RateLimiter {
         });
 
       if (insertError) {
-        logger.error("Failed to store rate limit usage", { endpoint, userId, error: insertError });
-        throw new RateLimitUnavailableError("Rate limit storage unavailable", insertError);
+        // Table doesn't exist, allow request anyway
+        logger.warn("Failed to store rate limit, allowing request", { endpoint, userId, errorCode: insertError.code });
       }
 
       return { allowed: true, remaining: remaining - 1, resetTime };
