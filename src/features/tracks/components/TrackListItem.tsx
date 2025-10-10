@@ -10,6 +10,8 @@ import {
   Headphones,
   AlertTriangle,
   Loader2,
+  RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useTrackLike } from "@/features/tracks/hooks";
@@ -27,6 +29,7 @@ interface Track {
   error_message?: string;
   style_tags?: string[];
   like_count?: number;
+  created_at?: string;
 }
 
 interface TrackListItemProps {
@@ -34,10 +37,12 @@ interface TrackListItemProps {
   onClick?: () => void;
   onDownload?: () => void;
   onShare?: () => void;
+  onRetry?: (trackId: string) => void;
+  onDelete?: (trackId: string) => void;
   className?: string;
 }
 
-const TrackListItemComponent = ({ track, onClick, onDownload, onShare, className }: TrackListItemProps) => {
+const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, onDelete, className }: TrackListItemProps) => {
   const { currentTrack, isPlaying, playTrack } = useAudioPlayer();
   const { isLiked, toggleLike } = useTrackLike(track.id, track.like_count || 0);
   const [isHovered, setIsHovered] = useState(false);
@@ -83,6 +88,19 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, className
     event.stopPropagation();
     onShare?.();
   }, [onShare]);
+
+  const handleRetryClick = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
+    onRetry?.(track.id);
+  }, [onRetry, track.id]);
+
+  const handleDeleteClick = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
+    onDelete?.(track.id);
+  }, [onDelete, track.id]);
+
+  const isStuck = track.created_at && 
+    (Date.now() - new Date(track.created_at).getTime()) > 5 * 60 * 1000; // 5 минут
 
   const formattedDuration = track.duration ? formatDuration(track.duration) : null;
 
@@ -152,15 +170,40 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, className
         "flex items-center gap-1 transition-opacity duration-200",
         isHovered || isCurrentTrack ? "opacity-100" : "opacity-0 group-focus-within:opacity-100"
       )}>
-        <Button variant="ghost" size="icon" className="w-7 h-7" onClick={handleLikeClick} aria-label={isLiked ? "Убрать из избранного" : "В избранное"}>
-          <Heart className={cn("w-3.5 h-3.5", isLiked && "fill-red-500 text-red-500")} />
-        </Button>
-        <Button variant="ghost" size="icon" className="w-7 h-7" onClick={handleDownloadClick} disabled={playButtonDisabled} aria-label="Скачать">
-          <Download className="w-3.5 h-3.5" />
-        </Button>
-        <Button variant="ghost" size="icon" className="w-7 h-7" onClick={handleShareClick} aria-label="Поделиться">
-          <Share2 className="w-3.5 h-3.5" />
-        </Button>
+        {(track.status === 'processing' || track.status === 'pending' || track.status === 'failed') && isStuck && onRetry && onDelete ? (
+          <>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="w-7 h-7" 
+              onClick={handleRetryClick}
+              aria-label="Повторить генерацию"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="w-7 h-7 text-destructive hover:text-destructive" 
+              onClick={handleDeleteClick}
+              aria-label="Удалить трек"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button variant="ghost" size="icon" className="w-7 h-7" onClick={handleLikeClick} aria-label={isLiked ? "Убрать из избранного" : "В избранное"}>
+              <Heart className={cn("w-3.5 h-3.5", isLiked && "fill-red-500 text-red-500")} />
+            </Button>
+            <Button variant="ghost" size="icon" className="w-7 h-7" onClick={handleDownloadClick} disabled={playButtonDisabled} aria-label="Скачать">
+              <Download className="w-3.5 h-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="w-7 h-7" onClick={handleShareClick} aria-label="Поделиться">
+              <Share2 className="w-3.5 h-3.5" />
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );

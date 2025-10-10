@@ -3,10 +3,11 @@ import { TrackCard } from "@/features/tracks/components/TrackCard";
 import { TrackListItem } from "@/features/tracks/components/TrackListItem";
 import { ViewSwitcher } from "./tracks/ViewSwitcher";
 import { LoadingSkeleton as Skeleton } from "./ui/LoadingSkeleton";
-import { Track } from "@/services/api.service";
+import { Track, ApiService } from "@/services/api.service";
 import { Music } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TracksListProps {
   tracks: Track[];
@@ -18,6 +19,8 @@ interface TracksListProps {
 const TracksListComponent = ({
   tracks,
   isLoading,
+  deleteTrack,
+  refreshTracks,
 }: TracksListProps) => {
   const { playTrackWithQueue } = useAudioPlayer();
   const { toast } = useToast();
@@ -68,6 +71,56 @@ const TracksListComponent = ({
     navigator.clipboard.writeText(url);
     toast({ title: "Ссылка скопирована" });
   }, [toast]);
+
+  const handleRetry = useCallback(async (trackId: string) => {
+    try {
+      const track = tracks.find(t => t.id === trackId);
+      if (!track) return;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({ title: "Ошибка", description: "Необходима авторизация", variant: "destructive" });
+        return;
+      }
+
+      toast({ title: "Повторная генерация", description: "Запускаем генерацию заново..." });
+
+      await ApiService.generateMusic({
+        trackId: track.id,
+        userId: user.id,
+        title: track.title,
+        prompt: track.prompt,
+        provider: (track.provider as 'replicate' | 'suno') || 'suno',
+        lyrics: track.lyrics || undefined,
+        hasVocals: track.has_vocals ?? false,
+        styleTags: track.style_tags || undefined,
+      });
+
+      refreshTracks();
+      toast({ title: "Успешно", description: "Генерация перезапущена" });
+    } catch (error) {
+      console.error('Retry error:', error);
+      toast({ 
+        title: "Ошибка", 
+        description: error instanceof Error ? error.message : "Не удалось перезапустить генерацию", 
+        variant: "destructive" 
+      });
+    }
+  }, [tracks, toast, refreshTracks]);
+
+  const handleDelete = useCallback(async (trackId: string) => {
+    try {
+      await deleteTrack(trackId);
+      toast({ title: "Удалено", description: "Трек успешно удалён" });
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast({ 
+        title: "Ошибка", 
+        description: "Не удалось удалить трек", 
+        variant: "destructive" 
+      });
+    }
+  }, [deleteTrack, toast]);
 
   if (isLoading) {
     return (
@@ -121,6 +174,8 @@ const TracksListComponent = ({
               onClick={() => handlePlay(track)}
               onDownload={() => handleDownload(track)}
               onShare={() => handleShare(track.id)}
+              onRetry={handleRetry}
+              onDelete={handleDelete}
             />
           ))}
         </div>
@@ -133,6 +188,8 @@ const TracksListComponent = ({
               onClick={() => handlePlay(track)}
               onDownload={() => handleDownload(track)}
               onShare={() => handleShare(track.id)}
+              onRetry={handleRetry}
+              onDelete={handleDelete}
             />
           ))}
         </div>

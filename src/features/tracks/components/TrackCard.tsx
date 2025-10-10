@@ -11,6 +11,8 @@ import {
   Music,
   AlertTriangle,
   Loader2,
+  RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useTrackLike } from "@/features/tracks/hooks";
@@ -42,6 +44,8 @@ interface TrackCardProps {
   onDownload?: () => void;
   onShare?: () => void;
   onClick?: () => void;
+  onRetry?: (trackId: string) => void;
+  onDelete?: (trackId: string) => void;
   className?: string;
 }
 
@@ -58,25 +62,103 @@ const getGradientByTrackId = (trackId: string) => {
   return gradients[index];
 };
 
-const GenerationProgress: React.FC = () => (
-  <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-white z-10 text-center transition-opacity duration-300">
-    <Loader2 className="w-6 h-6 animate-spin mb-2" />
-    <h4 className="font-semibold text-sm">Генерация...</h4>
-    <p className="text-xs text-white/70 mt-1">Это может занять минуту</p>
-  </div>
-);
+const GenerationProgress: React.FC<{ 
+  track: Track; 
+  onRetry?: (trackId: string) => void;
+  onDelete?: (trackId: string) => void;
+}> = ({ track, onRetry, onDelete }) => {
+  const isStuck = track.created_at && 
+    (Date.now() - new Date(track.created_at).getTime()) > 5 * 60 * 1000; // 5 минут
 
-const FailedState: React.FC<{ message?: string }> = ({ message }) => (
+  return (
+    <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-white z-10 text-center transition-opacity duration-300">
+      <Loader2 className="w-6 h-6 animate-spin mb-2" />
+      <h4 className="font-semibold text-sm">Генерация...</h4>
+      <p className="text-xs text-white/70 mt-1">Это может занять минуту</p>
+      
+      {isStuck && (
+        <div className="flex gap-2 mt-3">
+          {onRetry && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRetry(track.id);
+              }}
+              className="text-xs"
+            >
+              <RefreshCw className="w-3 h-3 mr-1" />
+              Повторить
+            </Button>
+          )}
+          {onDelete && (
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(track.id);
+              }}
+              className="text-xs"
+            >
+              <Trash2 className="w-3 h-3 mr-1" />
+              Удалить
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const FailedState: React.FC<{ 
+  message?: string;
+  trackId: string;
+  onRetry?: (trackId: string) => void;
+  onDelete?: (trackId: string) => void;
+}> = ({ message, trackId, onRetry, onDelete }) => (
   <div className="absolute inset-0 bg-destructive/70 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-white z-10 text-center">
     <AlertTriangle className="w-6 h-6 mb-2" />
     <h4 className="font-semibold text-sm">Ошибка</h4>
-    <p className="text-xs text-destructive-foreground/80 line-clamp-2">
+    <p className="text-xs text-destructive-foreground/80 line-clamp-2 mb-3">
       {message || "Не удалось создать трек."}
     </p>
+    
+    <div className="flex gap-2">
+      {onRetry && (
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRetry(trackId);
+          }}
+          className="text-xs"
+        >
+          <RefreshCw className="w-3 h-3 mr-1" />
+          Повторить
+        </Button>
+      )}
+      {onDelete && (
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(trackId);
+          }}
+          className="text-xs"
+        >
+          <Trash2 className="w-3 h-3 mr-1" />
+          Удалить
+        </Button>
+      )}
+    </div>
   </div>
 );
 
-const TrackCardComponent = ({ track, onDownload, onShare, onClick, className }: TrackCardProps) => {
+const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDelete, className }: TrackCardProps) => {
   const { toast } = useToast();
   const { currentTrack, isPlaying, playTrack } = useAudioPlayer();
   const { isLiked, toggleLike } = useTrackLike(track.id, track.like_count || 0);
@@ -150,8 +232,12 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, className }: 
       tabIndex={0}
     >
       <div className="relative aspect-square bg-gradient-to-br from-gray-800 to-gray-900">
-        {(track.status === 'processing' || track.status === 'pending') && <GenerationProgress />}
-        {track.status === 'failed' && <FailedState message={track.error_message} />}
+        {(track.status === 'processing' || track.status === 'pending') && (
+          <GenerationProgress track={track} onRetry={onRetry} onDelete={onDelete} />
+        )}
+        {track.status === 'failed' && (
+          <FailedState message={track.error_message} trackId={track.id} onRetry={onRetry} onDelete={onDelete} />
+        )}
 
         {track.cover_url ? (
           <img
