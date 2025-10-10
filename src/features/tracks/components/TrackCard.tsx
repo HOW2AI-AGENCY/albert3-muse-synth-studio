@@ -1,6 +1,14 @@
 import React, { useState, useCallback, memo, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Play,
   Pause,
@@ -13,6 +21,12 @@ import {
   Loader2,
   RefreshCw,
   Trash2,
+  MoreVertical,
+  Split,
+  Expand,
+  Mic2,
+  Globe,
+  FileAudio,
 } from "lucide-react";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useTrackLike } from "@/features/tracks/hooks";
@@ -79,32 +93,44 @@ const GenerationProgress: React.FC<{
       {isStuck && (
         <div className="flex gap-2 mt-3">
           {onRetry && (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={(e) => {
-                e.stopPropagation();
-                onRetry(track.id);
-              }}
-              className="text-xs"
-            >
-              <RefreshCw className="w-3 h-3 mr-1" />
-              Повторить
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRetry(track.id);
+                    }}
+                    className="h-8 w-8"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Повторить</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
           {onDelete && (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(track.id);
-              }}
-              className="text-xs"
-            >
-              <Trash2 className="w-3 h-3 mr-1" />
-              Удалить
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(track.id);
+                    }}
+                    className="h-8 w-8"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Удалить</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
       )}
@@ -127,32 +153,44 @@ const FailedState: React.FC<{
     
     <div className="flex gap-2">
       {onRetry && (
-        <Button
-          size="sm"
-          variant="secondary"
-          onClick={(e) => {
-            e.stopPropagation();
-            onRetry(trackId);
-          }}
-          className="text-xs"
-        >
-          <RefreshCw className="w-3 h-3 mr-1" />
-          Повторить
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="secondary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRetry(trackId);
+                }}
+                className="h-8 w-8"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Повторить</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
       {onDelete && (
-        <Button
-          size="sm"
-          variant="destructive"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(trackId);
-          }}
-          className="text-xs"
-        >
-          <Trash2 className="w-3 h-3 mr-1" />
-          Удалить
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(trackId);
+                }}
+                className="h-8 w-8"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Удалить</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
     </div>
   </div>
@@ -297,15 +335,70 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDe
             )}
           </div>
           <div className="flex items-center">
-            <Button variant="ghost" size="icon" className="w-6 h-6" onClick={handleLikeClick} aria-label={isLiked ? "Убрать из избранного" : "В избранное"}>
-              <Heart className={cn("w-3 h-3", isLiked && "fill-red-500 text-red-500")} />
-            </Button>
-            <Button variant="ghost" size="icon" className="w-6 h-6" onClick={handleDownloadClick} aria-label="Скачать">
-              <Download className="w-3 h-3" />
-            </Button>
-            <Button variant="ghost" size="icon" className="w-6 h-6" onClick={handleShareClick} aria-label="Поделиться">
-              <Share2 className="w-3 h-3" />
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="w-6 h-6" onClick={handleLikeClick} aria-label={isLiked ? "Убрать из избранного" : "В избранное"}>
+                    <Heart className={cn("w-3 h-3", isLiked && "fill-red-500 text-red-500")} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{isLiked ? "Убрать из избранного" : "В избранное"}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            {track.status === 'completed' && (
+              <DropdownMenu>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="w-6 h-6"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreVertical className="w-3 h-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>Опции</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={handleDownloadClick}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Скачать MP3
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast({ title: "Скоро", description: "Функция в разработке" }); }}>
+                    <FileAudio className="w-4 h-4 mr-2" />
+                    Скачать WAV
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleShareClick}>
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Поделиться
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast({ title: "Скоро", description: "Функция в разработке" }); }}>
+                    <Globe className="w-4 h-4 mr-2" />
+                    Опубликовать
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast({ title: "Скоро", description: "Функция в разработке" }); }}>
+                    <Split className="w-4 h-4 mr-2" />
+                    Разделить на стемы
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast({ title: "Скоро", description: "Функция в разработке" }); }}>
+                    <Expand className="w-4 h-4 mr-2" />
+                    Расширить трек
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast({ title: "Скоро", description: "Функция в разработке" }); }}>
+                    <Mic2 className="w-4 h-4 mr-2" />
+                    Создать кавер
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         </div>
       </CardContent>

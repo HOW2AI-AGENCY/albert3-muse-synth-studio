@@ -1,5 +1,6 @@
 import React, { useState, useCallback, memo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Play,
   Pause,
@@ -172,36 +173,71 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
       )}>
         {(track.status === 'processing' || track.status === 'pending' || track.status === 'failed') && isStuck && onRetry && onDelete ? (
           <>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="w-7 h-7" 
-              onClick={handleRetryClick}
-              aria-label="Повторить генерацию"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="w-7 h-7 text-destructive hover:text-destructive" 
-              onClick={handleDeleteClick}
-              aria-label="Удалить трек"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="w-7 h-7" 
+                    onClick={handleRetryClick}
+                    aria-label="Повторить генерацию"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Повторить</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="w-7 h-7 text-destructive hover:text-destructive" 
+                    onClick={handleDeleteClick}
+                    aria-label="Удалить трек"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Удалить</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </>
         ) : (
           <>
-            <Button variant="ghost" size="icon" className="w-7 h-7" onClick={handleLikeClick} aria-label={isLiked ? "Убрать из избранного" : "В избранное"}>
-              <Heart className={cn("w-3.5 h-3.5", isLiked && "fill-red-500 text-red-500")} />
-            </Button>
-            <Button variant="ghost" size="icon" className="w-7 h-7" onClick={handleDownloadClick} disabled={playButtonDisabled} aria-label="Скачать">
-              <Download className="w-3.5 h-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="w-7 h-7" onClick={handleShareClick} aria-label="Поделиться">
-              <Share2 className="w-3.5 h-3.5" />
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="w-7 h-7" onClick={handleLikeClick} aria-label={isLiked ? "Убрать из избранного" : "В избранное"}>
+                    <Heart className={cn("w-3.5 h-3.5", isLiked && "fill-red-500 text-red-500")} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{isLiked ? "Убрать из избранного" : "В избранное"}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="w-7 h-7" onClick={handleDownloadClick} disabled={playButtonDisabled} aria-label="Скачать">
+                    <Download className="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Скачать</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="w-7 h-7" onClick={handleShareClick} aria-label="Поделиться">
+                    <Share2 className="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Поделиться</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </>
         )}
       </div>
