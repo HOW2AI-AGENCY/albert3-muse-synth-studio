@@ -20,17 +20,34 @@ const MAX_AUDIO_FILES = 50;
 self.addEventListener('install', (event) => {
   console.log('[SW] Установка Service Worker');
   
-  event.waitUntil(
-    caches.open(STATIC_CACHE_NAME)
-      .then((cache) => {
-        console.log('[SW] Кэширование статических файлов');
-        return cache.addAll(STATIC_FILES);
-      })
-      .then(() => {
-        console.log('[SW] Service Worker установлен');
-        return self.skipWaiting();
-      })
-  );
+  event.waitUntil((async () => {
+    try {
+      const cache = await caches.open(STATIC_CACHE_NAME);
+      console.log('[SW] Кэширование статических файлов');
+      try {
+        // Пытаемся закэшировать все сразу
+        await cache.addAll(STATIC_FILES);
+      } catch (e) {
+        // Если какая-то запись недоступна, пробуем по одной и не падаем
+        console.warn('[SW] addAll не удалось, кэшируем по одному:', e);
+        for (const url of STATIC_FILES) {
+          try {
+            const resp = await fetch(url, { cache: 'no-store' });
+            if (resp.ok) {
+              await cache.put(url, resp.clone());
+            } else {
+              console.warn('[SW] Пропуск файла (не ok):', url, resp.status);
+            }
+          } catch (singleErr) {
+            console.warn('[SW] Пропуск файла (ошибка):', url, singleErr);
+          }
+        }
+      }
+      console.log('[SW] Service Worker установлен');
+    } finally {
+      await self.skipWaiting();
+    }
+  })());
 });
 
 // Активация Service Worker
