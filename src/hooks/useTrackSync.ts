@@ -24,6 +24,7 @@ const MAX_RETRY_ATTEMPTS = 3; // Уменьшено с 5 до 3
 
 export const useTrackSync = (userId: string | undefined, options: TrackSyncOptions = {}) => {
   const { toast } = useToast();
+  const toastRef = useRef<ReturnType<typeof useToast>['toast'] | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const retryAttemptRef = useRef(0);
@@ -40,6 +41,11 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
   useEffect(() => {
     onTrackFailedRef.current = onTrackFailed;
   }, [onTrackFailed]);
+
+  useEffect(() => {
+    // Keep toast function stable across renders to avoid resubscribe loops
+    toastRef.current = toast;
+  }, [toast]);
 
   useEffect(() => {
     if (!userId || !enabled) {
@@ -110,7 +116,7 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
             if (oldTrack && 'status' in oldTrack && oldTrack.status !== 'completed' && newTrack.status === 'completed') {
               logInfo('Track completed', 'useTrackSync', { trackId: newTrack.id });
 
-              toast({
+              toastRef.current?.({
                 title: '✅ Трек готов!',
                 description: `"${newTrack.title}" успешно сгенерирован`,
               });
@@ -125,7 +131,7 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
                 error: newTrack.error_message,
               });
 
-              toast({
+              toastRef.current?.({
                 title: '❌ Ошибка генерации',
                 description: newTrack.error_message || 'Не удалось создать трек',
                 variant: 'destructive',
@@ -194,7 +200,7 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
       retryAttemptRef.current = 0;
       lastAttemptRef.current = 0;
     };
-  }, [userId, enabled, toast]);
+  }, [userId, enabled]);
 
   // Check for stale processing tracks on mount
   useEffect(() => {
@@ -226,7 +232,7 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
               trackIds: staleTracks.map((t) => t.id),
             });
 
-            toast({
+            toastRef.current?.({
               title: '⚠️ Незавершённые треки',
               description: `Найдено ${staleTracks.length} треков в процессе генерации более 10 минут. Попробуйте перезапустить их.`,
               variant: 'default',
@@ -239,7 +245,7 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
     };
 
     checkStaleTracks();
-  }, [userId, enabled, toast]);
+  }, [userId, enabled]);
 
   return {
     isSubscribed: channelRef.current !== null,
