@@ -18,6 +18,7 @@ import { TrackCard, TrackListItem } from "@/features/tracks";
 import { OptimizedTrackList } from "@/components/OptimizedTrackList";
 import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
 import { TrackStatusMonitor } from "@/components/TrackStatusMonitor";
+import { SeparateStemsDialog } from "@/components/tracks/SeparateStemsDialog";
 import { useTracks } from "@/hooks/useTracks";
 import { useToast } from "@/hooks/use-toast";
 import { useTrackCleanup } from "@/hooks/useTrackCleanup";
@@ -64,6 +65,10 @@ const Library: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [loadingTrackId, setLoadingTrackId] = useState<string | null>(null);
+  
+  // Диалог разделения на стемы
+  const [separateStemsDialogOpen, setSeparateStemsDialogOpen] = useState(false);
+  const [selectedTrackForStems, setSelectedTrackForStems] = useState<{ id: string; title: string } | null>(null);
   
   // Сохранение настроек просмотра
   useEffect(() => {
@@ -382,6 +387,14 @@ const Library: React.FC = () => {
     }
   }, [tracks, toast]);
 
+  const handleSeparateStems = useCallback((trackId: string) => {
+    const track = tracks.find(t => t.id === trackId);
+    if (!track) return;
+    
+    setSelectedTrackForStems({ id: trackId, title: track.title });
+    setSeparateStemsDialogOpen(true);
+  }, [tracks]);
+
   // Уникальные статусы для фильтра
   const availableStatuses = useMemo(() => {
     const statuses = new Set(tracks.map(track => track.status));
@@ -575,6 +588,7 @@ const Library: React.FC = () => {
                     onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
                     onDownload={() => handleDownload(track.id)}
                     onShare={() => handleShare(track.id)}
+                    onSeparateStems={() => handleSeparateStems(track.id)}
                   />
                   {loadingTrackId === track.id && (
                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-3xl bg-background/80 backdrop-blur-sm">
@@ -596,6 +610,7 @@ const Library: React.FC = () => {
                     onDownload={() => handleDownload(track.id)}
                     onShare={() => handleShare(track.id)}
                     onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
+                    onSeparateStems={() => handleSeparateStems(track.id)}
                   />
                   {loadingTrackId === track.id && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-xl bg-background/80 backdrop-blur-sm">
@@ -616,6 +631,20 @@ const Library: React.FC = () => {
             />
           )}
         </>
+      )}
+
+      {/* Диалог разделения на стемы */}
+      {selectedTrackForStems && (
+        <SeparateStemsDialog
+          open={separateStemsDialogOpen}
+          onOpenChange={setSeparateStemsDialogOpen}
+          trackId={selectedTrackForStems.id}
+          trackTitle={selectedTrackForStems.title}
+          onSuccess={() => {
+            refreshTracks();
+            setSelectedTrackForStems(null);
+          }}
+        />
       )}
     </div>
   );

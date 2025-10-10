@@ -35,10 +35,7 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  console.log('[App] Component rendering');
-  
   useEffect(() => {
-    console.log('[App] Component mounted');
     if (typeof window === "undefined") return;
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail as { url?: string; method?: string; status?: number } | undefined;

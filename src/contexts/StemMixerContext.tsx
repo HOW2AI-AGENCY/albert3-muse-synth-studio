@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 
-console.log('[StemMixerContext] Module loaded');
-
 interface TrackStem {
   id: string;
   stem_type: string;

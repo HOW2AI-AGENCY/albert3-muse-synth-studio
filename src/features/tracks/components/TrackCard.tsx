@@ -378,7 +378,7 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDe
                     <TooltipContent>Опции</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-48 bg-popover z-[100]">
                   <DropdownMenuItem onClick={handleDownloadClick}>
                     <Download className="w-4 h-4 mr-2" />
                     Скачать MP3
