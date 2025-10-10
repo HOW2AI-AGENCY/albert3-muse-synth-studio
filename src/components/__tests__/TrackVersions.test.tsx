@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RefObject } from 'react';
@@ -171,9 +171,11 @@ describe('TrackVersions component', () => {
     const masterButton = screen.getByRole('button', { name: 'Сделать версию 1 главной' });
     await user.click(masterButton);
 
-    expect(supabaseMocks.update).toHaveBeenCalled();
-    expect(onVersionUpdate).toHaveBeenCalled();
-    expect(toastMocks.success).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(supabaseMocks.update).toHaveBeenCalled();
+      expect(onVersionUpdate).toHaveBeenCalled();
+      expect(toastMocks.success).toHaveBeenCalled();
+    });
   });
 
   it('deletes a version after confirmation', async () => {
@@ -223,7 +225,9 @@ describe('TrackVersions component', () => {
     const confirmButton = screen.getByRole('button', { name: 'Удалить' });
     await user.click(confirmButton);
 
-    expect(supabaseMocks.delete).toHaveBeenCalled();
-    expect(toastMocks.success).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(supabaseMocks.delete).toHaveBeenCalled();
+      expect(toastMocks.success).toHaveBeenCalled();
+    });
   });
 });

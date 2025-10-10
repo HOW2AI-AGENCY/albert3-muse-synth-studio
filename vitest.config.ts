@@ -16,7 +16,8 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     exclude: [
       'node_modules/',
-      'supabase/functions/**' // Exclude Deno tests from Vitest execution
+      'supabase/functions/**', // Exclude Deno tests from Vitest execution
+      'tests/e2e/**', // Exclude Playwright E2E tests
     ],
     coverage: {
       provider: 'v8',

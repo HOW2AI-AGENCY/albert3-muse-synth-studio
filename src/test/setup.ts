@@ -108,28 +108,17 @@ vi.mock('@/contexts/AudioPlayerContext', async () => {
   };
 });
 
-vi.mock('@/hooks/useMusicGeneration', () => ({
-  useMusicGeneration: vi.fn(() => ({
-    prompt: '',
-    setPrompt: vi.fn(),
-    isGenerating: false,
-    generateMusic: vi.fn(),
-    improvePrompt: vi.fn(),
-    styleTags: [],
-    setStyleTags: vi.fn(),
-    vocals: false,
-    setVocals: vi.fn(),
-  })),
-}));
-
-// Mock API Service
+// Mock API Service - corrected to use a named export
 vi.mock('@/services/api.service', () => ({
-  default: {
+  ApiService: {
     getUserTracks: vi.fn(),
     deleteTrack: vi.fn(),
     likeTrack: vi.fn(),
     unlikeTrack: vi.fn(),
     downloadTrack: vi.fn(),
+    createTrack: vi.fn(),
+    generateMusic: vi.fn(),
+    improvePrompt: vi.fn(),
   },
 }));
 

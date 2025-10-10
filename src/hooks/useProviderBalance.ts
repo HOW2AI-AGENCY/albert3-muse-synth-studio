@@ -39,9 +39,9 @@ export const useProviderBalance = () => {
       }
 
       const { data, error: invokeError } = await supabase.functions.invoke<ProviderBalance>(
-        'get-balance',
+        `get-balance?provider=${PRIMARY_PROVIDER}`,
         {
-          body: { provider: PRIMARY_PROVIDER },
+          method: 'GET',
         }
       );
 
