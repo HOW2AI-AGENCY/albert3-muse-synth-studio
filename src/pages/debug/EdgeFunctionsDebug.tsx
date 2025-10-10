@@ -68,6 +68,26 @@ export default function EdgeFunctionsDebug() {
     }
   };
 
+  const simulateExternalGet401 = async () => {
+    const fn = "get-balance";
+    const endpoint = `${getNetworkEndpoint(fn)}?provider=${provider}`;
+    pushLog({ level: "info", message: "Simulating external GET to get-balance (no Authorization)", context: { endpoint, fn, provider } });
+    try {
+      const res = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          // apikey is typically required; omit Authorization intentionally
+          apikey: appEnv.supabaseAnonKey,
+          "Content-Type": "application/json",
+        },
+      });
+      const text = await res.text();
+      pushLog({ level: res.ok ? "info" : "error", message: `GET ${res.status}`, context: { body: text?.slice(0, 500) } });
+    } catch (e) {
+      pushLog({ level: "error", message: "External GET threw", context: { error: e instanceof Error ? e.message : String(e) } });
+    }
+  };
+
   const exportLogs = () => {
     const blob = new Blob([JSON.stringify(logs, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -107,6 +127,7 @@ export default function EdgeFunctionsDebug() {
               <option value="replicate">replicate</option>
             </select>
             <Button onClick={invokeGetBalance}>Проверить баланс (auth)</Button>
+            <Button onClick={simulateExternalGet401} variant="destructive">Симулировать GET 401</Button>
             <Button onClick={exportLogs} variant="outline">Экспорт логов</Button>
           </div>
 

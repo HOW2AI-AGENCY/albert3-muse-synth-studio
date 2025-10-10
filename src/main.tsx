@@ -41,6 +41,54 @@ const registerWebVitals = async () => {
 };
 
 if (typeof window !== 'undefined') {
+  // Dev-only network diagnostics: detect external GET 401 to get-balance without Authorization
+  if (import.meta.env.DEV && typeof window.fetch === 'function') {
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' || input instanceof URL ? String(input) : input.url;
+      const method = (init?.method ?? (typeof input !== 'string' && !(input instanceof URL) ? (input as Request).method : 'GET'))?.toUpperCase();
+
+      // Try to detect presence of Authorization header on request
+      let hasAuth = false;
+      try {
+        const reqHeaders = init?.headers
+          ? new Headers(init.headers as HeadersInit)
+          : (typeof input !== 'string' && !(input instanceof URL) ? (input as Request).headers : undefined);
+        hasAuth = !!reqHeaders?.get('authorization') || !!reqHeaders?.get('Authorization');
+      } catch {
+        // ignore header introspection errors
+      }
+
+      const response = await originalFetch(input as any, init as any);
+
+      try {
+        if (
+          method === 'GET' &&
+          url.includes('/functions/v1/get-balance') &&
+          response.status === 401 &&
+          !hasAuth
+        ) {
+          // Dispatch a custom event for UI warning listeners
+          window.dispatchEvent(
+            new CustomEvent('external-get-balance-401', {
+              detail: { url, method, status: response.status },
+            })
+          );
+          // Also log to console for developers
+          // Do not log any tokens; only URL and status
+          console.warn('[diagnostics] External GET 401 to get-balance without Authorization', {
+            url,
+            status: response.status,
+          });
+        }
+      } catch {
+        // never break fetch
+      }
+
+      return response;
+    };
+  }
+
   const scheduleRegistration = () => {
     registerWebVitals().catch((error) => {
       console.error('Failed to register Web Vitals collection', error);

@@ -3,11 +3,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "react-router-dom";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import router from "./router";
 import { AudioPlayerProvider } from "./contexts/AudioPlayerContext";
 import { GlobalAudioPlayer } from "./components/player/GlobalAudioPlayer";
+import { toast } from "sonner";
 
 // Импортируем оптимизированные ленивые компоненты
 import { 
@@ -55,19 +56,35 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AudioPlayerProvider>
-          <Toaster />
-          <Sonner />
-          <RouterProvider router={router} />
-          <GlobalAudioPlayer />
-        </AudioPlayerProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </ErrorBoundary>
-);
+const App = () => {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { url?: string; method?: string; status?: number } | undefined;
+      if (detail && import.meta.env.DEV) {
+        toast.warning("Внешний GET 401 к get-balance", {
+          description: `Метод: ${detail.method ?? "GET"}. Проверьте расширения браузера или внешние запросы.`,
+        });
+      }
+    };
+    window.addEventListener("external-get-balance-401", handler as EventListener);
+    return () => window.removeEventListener("external-get-balance-401", handler as EventListener);
+  }, []);
+
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AudioPlayerProvider>
+            <Toaster />
+            <Sonner />
+            <RouterProvider router={router} />
+            <GlobalAudioPlayer />
+          </AudioPlayerProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
+  );
+};
 
 export default App;
