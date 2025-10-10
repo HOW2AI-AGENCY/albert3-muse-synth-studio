@@ -2,24 +2,28 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useTracks } from '../useTracks';
 
-const toastMock = vi.fn();
-const getUserMock = vi.fn();
-const getUserTracksMock = vi.fn();
-const deleteTrackMock = vi.fn();
-const setTracksMock = vi.fn();
-const removeTrackMock = vi.fn();
-const channelOnMock = vi.fn();
-const channelSubscribeMock = vi.fn();
-const removeChannelMock = vi.fn();
+// Hoist all mocks to prevent initialization errors
+const toastMock = vi.hoisted(() => vi.fn());
+const getUserMock = vi.hoisted(() => vi.fn());
+const getUserTracksMock = vi.hoisted(() => vi.fn());
+const deleteTrackMock = vi.hoisted(() => vi.fn());
+const setTracksMock = vi.hoisted(() => vi.fn());
+const removeTrackMock = vi.hoisted(() => vi.fn());
+const channelOnMock = vi.hoisted(() => vi.fn());
+const channelSubscribeMock = vi.hoisted(() => vi.fn());
+const removeChannelMock = vi.hoisted(() => vi.fn());
 
-const eqFinalMock = vi.fn().mockResolvedValue({ data: [], error: null });
-const eqFirstMock = vi.fn(() => ({ eq: eqFinalMock }));
-const selectMock = vi.fn(() => ({ eq: eqFirstMock }));
-const fromMock = vi.fn(() => ({ select: selectMock }));
+const eqFinalMock = vi.hoisted(() => vi.fn().mockResolvedValue({ data: [], error: null }));
+const eqFirstMock = vi.hoisted(() => vi.fn(() => ({ eq: eqFinalMock })));
+const selectMock = vi.hoisted(() => vi.fn(() => ({ eq: eqFirstMock })));
+const fromMock = vi.hoisted(() => vi.fn(() => ({ select: selectMock })));
 
-const channelMock: any = {};
-channelMock.on = channelOnMock.mockImplementation(() => channelMock);
-channelMock.subscribe = channelSubscribeMock.mockImplementation(() => channelMock);
+const channelMock = vi.hoisted(() => {
+  const mock: any = {};
+  mock.on = channelOnMock.mockImplementation(() => mock);
+  mock.subscribe = channelSubscribeMock.mockImplementation(() => mock);
+  return mock;
+});
 
 vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({ toast: toastMock }),

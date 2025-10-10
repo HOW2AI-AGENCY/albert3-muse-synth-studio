@@ -19,9 +19,9 @@ vi.mock('@/features/tracks/api/trackVersions', () => trackVersionMocks);
 
 describe('useTrackVersions', () => {
   const sampleVersions = [
-    { id: 'v1', versionNumber: 0, title: 'Main', audio_url: 'main.mp3', isMasterVersion: true },
-    { id: 'v2', versionNumber: 1, title: 'Alt', audio_url: 'alt.mp3', isMasterVersion: false },
-  ];
+    { id: 'track-1', isOriginal: true, isMasterVersion: true, title: 'Main', audio_url: 'main.mp3' },
+    { id: 'v2', isOriginal: false, isMasterVersion: false, title: 'Alt', audio_url: 'alt.mp3' },
+  ] as any;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -66,7 +66,7 @@ describe('useTrackVersions', () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    expect(result.current.error).toBe(error);
+    expect(result.current.error).toEqual(error);
     expect(loggerMocks.logError).toHaveBeenCalled();
   });
 });

@@ -14,6 +14,10 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    exclude: [
+      'node_modules/',
+      'supabase/functions/**' // Exclude Deno tests from Vitest execution
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -24,6 +28,7 @@ export default defineConfig({
         '**/*.config.*',
         '**/mockData',
         '**/dist',
+        'supabase/functions/**', // Also exclude from coverage
       ],
       thresholds: {
         lines: 60,
