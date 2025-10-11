@@ -3,6 +3,7 @@ import { createCorsHeaders } from "../_shared/cors.ts";
 import { createSecurityHeaders } from "../_shared/security.ts";
 import { createSupabaseAdminClient, createSupabaseUserClient } from "../_shared/supabase.ts";
 import { logger } from "../_shared/logger.ts";
+import { validateAudioUrl } from "../_shared/audio-validation.ts";
 
 interface CreateCoverRequest {
   prompt: string;
@@ -62,6 +63,20 @@ serve(async (req: Request) => {
 
     const supabaseAdmin = createSupabaseAdminClient();
     let audioReference = referenceAudioUrl;
+
+    // Validate uploaded reference audio
+    if (audioReference) {
+      logger.info('🔍 [COVER] Validating reference audio URL', { url: audioReference });
+      const validation = await validateAudioUrl(audioReference);
+      if (!validation.isValid) {
+        logger.error('❌ [COVER] Invalid reference audio', { error: validation.error });
+        return new Response(
+          JSON.stringify({ error: validation.error }),
+          { status: 400, headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      logger.info('✅ [COVER] Reference audio validated');
+    }
 
     // Если указан referenceTrackId, получаем URL из трека
     if (referenceTrackId && !audioReference) {
@@ -124,17 +139,22 @@ serve(async (req: Request) => {
 
     const sunoPayload: any = {
       prompt,
-      tags: tags || [], // ✅ ИСПРАВЛЕНИЕ: tags массив
+      tags: tags || [], // ✅ tags массив
       title: title || newTrack.title,
-      make_instrumental: make_instrumental || false,
+      instrumental: make_instrumental ?? false, // ✅ ИСПРАВЛЕНО: instrumental вместо make_instrumental
       model: model || 'V4',
       callBackUrl: callbackUrl
     };
 
-    // Добавляем reference audio, если есть
+    // ✅ ИСПРАВЛЕНО: Добавляем referenceAudioUrl (не audioUrl)
     if (audioReference) {
-      sunoPayload.audioUrl = audioReference;
+      sunoPayload.referenceAudioUrl = audioReference;
     }
+
+    logger.info('📤 [COVER] Payload transformation', {
+      before: { make_instrumental, referenceAudioUrl: audioReference ? '[URL]' : null },
+      after: { instrumental: sunoPayload.instrumental, referenceAudioUrl: !!sunoPayload.referenceAudioUrl }
+    });
 
     logger.info('📤 [COVER] Calling Suno cover API', { 
       hasReference: !!audioReference,

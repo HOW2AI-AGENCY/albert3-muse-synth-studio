@@ -149,10 +149,19 @@ serve(async (req: Request) => {
 
     if (useCustomParams) {
       sunoPayload.prompt = prompt || originalTrack.prompt;
-      sunoPayload.tags = tags || originalTrack.style_tags || []; // ✅ ИСПРАВЛЕНИЕ: tags массив
+      sunoPayload.tags = tags || originalTrack.style_tags || []; // ✅ tags массив
       sunoPayload.title = `${originalTrack.title} (Extended)`;
       sunoPayload.continueAt = continueAt || Math.max(0, (originalTrack.duration || 120) - 20);
+      // ✅ ИСПРАВЛЕНО: Добавляем referenceAudioUrl из оригинального трека если есть
+      if (originalTrack.reference_audio_url) {
+        sunoPayload.referenceAudioUrl = originalTrack.reference_audio_url;
+      }
     }
+
+    logger.info('📤 [EXTEND] Payload details', {
+      hasReferenceAudio: !!sunoPayload.referenceAudioUrl,
+      payloadKeys: Object.keys(sunoPayload)
+    });
 
     logger.info('📤 [EXTEND] Calling Suno extend API', { 
       payload: sunoPayload,

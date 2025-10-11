@@ -73,6 +73,14 @@ export const useMusicGenerationStore = create<MusicGenerationState>((set, get) =
       return false;
     }
 
+    // ✅ DEBOUNCE: предотвращаем случайные двойные клики
+    const now = Date.now();
+    const lastGeneration = (window as any).__lastGenerationTime || 0;
+    if (now - lastGeneration < 2000) {
+      return false;
+    }
+    (window as any).__lastGenerationTime = now;
+
     cleanupSubscription();
     set({ isGenerating: true });
 

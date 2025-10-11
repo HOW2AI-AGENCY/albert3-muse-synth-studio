@@ -19,9 +19,7 @@ import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeTrack } from "@/utils/trackNormalizer";
 import type { Track } from "@/services/api.service";
-import { SeparateStemsDialog } from "@/components/tracks/SeparateStemsDialog";
-import { ExtendTrackDialog } from "@/components/tracks/ExtendTrackDialog";
-import { CreateCoverDialog } from "@/components/tracks/CreateCoverDialog";
+import { TrackDialogsManager } from "@/components/tracks/TrackDialogsManager";
 
 const Generate = () => {
   const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks();
@@ -150,42 +148,19 @@ const Generate = () => {
           )}
         </ResizablePanelGroup>
 
-        {/* Dialogs */}
-        {selectedTrackForStems && (
-          <SeparateStemsDialog
-            open={separateStemsOpen}
-            onOpenChange={setSeparateStemsOpen}
-            trackId={selectedTrackForStems.id}
-            trackTitle={selectedTrackForStems.title}
-            onSuccess={() => {
-              refreshTracks();
-              setSelectedTrackForStems(null);
-            }}
-          />
-        )}
-        {selectedTrackForExtend && (
-          <ExtendTrackDialog
-            open={extendOpen}
-            onOpenChange={setExtendOpen}
-            track={{
-              id: selectedTrackForExtend.id,
-              title: selectedTrackForExtend.title,
-              duration: selectedTrackForExtend.duration ?? undefined,
-              prompt: selectedTrackForExtend.prompt,
-              style_tags: selectedTrackForExtend.style_tags as any,
-            }}
-          />
-        )}
-        {selectedTrackForCover && (
-          <CreateCoverDialog
-            open={coverOpen}
-            onOpenChange={setCoverOpen}
-            track={{
-              id: selectedTrackForCover.id,
-              title: selectedTrackForCover.title,
-            }}
-          />
-        )}
+        <TrackDialogsManager
+          separateStemsOpen={separateStemsOpen}
+          setSeparateStemsOpen={setSeparateStemsOpen}
+          selectedTrackForStems={selectedTrackForStems}
+          setSelectedTrackForStems={setSelectedTrackForStems}
+          extendOpen={extendOpen}
+          setExtendOpen={setExtendOpen}
+          selectedTrackForExtend={selectedTrackForExtend}
+          coverOpen={coverOpen}
+          setCoverOpen={setCoverOpen}
+          selectedTrackForCover={selectedTrackForCover}
+          onSuccess={refreshTracks}
+        />
       </div>
     );
   }
@@ -220,42 +195,19 @@ const Generate = () => {
           </ResizablePanel>
         </ResizablePanelGroup>
 
-        {/* Dialogs */}
-        {selectedTrackForStems && (
-          <SeparateStemsDialog
-            open={separateStemsOpen}
-            onOpenChange={setSeparateStemsOpen}
-            trackId={selectedTrackForStems.id}
-            trackTitle={selectedTrackForStems.title}
-            onSuccess={() => {
-              refreshTracks();
-              setSelectedTrackForStems(null);
-            }}
-          />
-        )}
-        {selectedTrackForExtend && (
-          <ExtendTrackDialog
-            open={extendOpen}
-            onOpenChange={setExtendOpen}
-            track={{
-              id: selectedTrackForExtend.id,
-              title: selectedTrackForExtend.title,
-              duration: selectedTrackForExtend.duration ?? undefined,
-              prompt: selectedTrackForExtend.prompt,
-              style_tags: selectedTrackForExtend.style_tags as any,
-            }}
-          />
-        )}
-        {selectedTrackForCover && (
-          <CreateCoverDialog
-            open={coverOpen}
-            onOpenChange={setCoverOpen}
-            track={{
-              id: selectedTrackForCover.id,
-              title: selectedTrackForCover.title,
-            }}
-          />
-        )}
+        <TrackDialogsManager
+          separateStemsOpen={separateStemsOpen}
+          setSeparateStemsOpen={setSeparateStemsOpen}
+          selectedTrackForStems={selectedTrackForStems}
+          setSelectedTrackForStems={setSelectedTrackForStems}
+          extendOpen={extendOpen}
+          setExtendOpen={setExtendOpen}
+          selectedTrackForExtend={selectedTrackForExtend}
+          coverOpen={coverOpen}
+          setCoverOpen={setCoverOpen}
+          selectedTrackForCover={selectedTrackForCover}
+          onSuccess={refreshTracks}
+        />
 
         <Sheet open={!!selectedTrack} onOpenChange={(open) => !open && handleCloseDetail()}>
           <SheetContent side="right" className="w-full sm:w-[500px] p-0 border-l">
@@ -291,42 +243,19 @@ const Generate = () => {
         />
       </div>
 
-      {/* Dialogs */}
-      {selectedTrackForStems && (
-        <SeparateStemsDialog
-          open={separateStemsOpen}
-          onOpenChange={setSeparateStemsOpen}
-          trackId={selectedTrackForStems.id}
-          trackTitle={selectedTrackForStems.title}
-          onSuccess={() => {
-            refreshTracks();
-            setSelectedTrackForStems(null);
-          }}
-        />
-      )}
-      {selectedTrackForExtend && (
-        <ExtendTrackDialog
-          open={extendOpen}
-          onOpenChange={setExtendOpen}
-          track={{
-            id: selectedTrackForExtend.id,
-            title: selectedTrackForExtend.title,
-            duration: selectedTrackForExtend.duration ?? undefined,
-            prompt: selectedTrackForExtend.prompt,
-            style_tags: selectedTrackForExtend.style_tags as any,
-          }}
-        />
-      )}
-      {selectedTrackForCover && (
-        <CreateCoverDialog
-          open={coverOpen}
-          onOpenChange={setCoverOpen}
-          track={{
-            id: selectedTrackForCover.id,
-            title: selectedTrackForCover.title,
-          }}
-        />
-      )}
+      <TrackDialogsManager
+        separateStemsOpen={separateStemsOpen}
+        setSeparateStemsOpen={setSeparateStemsOpen}
+        selectedTrackForStems={selectedTrackForStems}
+        setSelectedTrackForStems={setSelectedTrackForStems}
+        extendOpen={extendOpen}
+        setExtendOpen={setExtendOpen}
+        selectedTrackForExtend={selectedTrackForExtend}
+        coverOpen={coverOpen}
+        setCoverOpen={setCoverOpen}
+        selectedTrackForCover={selectedTrackForCover}
+        onSuccess={refreshTracks}
+      />
 
       <Drawer open={showGenerator} onOpenChange={setShowGenerator}>
         <DrawerTrigger asChild>
