@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Info } from "lucide-react";
 import { useExtendTrack } from "@/hooks/useExtendTrack";
+import { cn } from "@/lib/utils";
 
 interface ExtendTrackDialogProps {
   open: boolean;
@@ -35,12 +37,22 @@ const MODELS = [
   { value: "V5", label: "V5 - Superior expression (fastest)" },
 ] as const;
 
+const formatDuration = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
 export function ExtendTrackDialog({ open, onOpenChange, track }: ExtendTrackDialogProps) {
   const { extendTrack, isExtending } = useExtendTrack();
   const [continueAt, setContinueAt] = useState(track.duration ? Math.floor(track.duration * 0.7) : 60);
   const [prompt, setPrompt] = useState("");
   const [tags, setTags] = useState(track.style_tags?.join(", ") || "");
   const [model, setModel] = useState<"V3_5" | "V4" | "V4_5" | "V4_5PLUS" | "V5">("V4");
+
+  const trackDuration = track.duration || 120;
+  const recommendedPosition = Math.floor(trackDuration * 0.7);
+  const progressPercent = useMemo(() => (continueAt / trackDuration) * 100, [continueAt, trackDuration]);
 
   const handleExtend = async () => {
     try {
@@ -69,18 +81,45 @@ export function ExtendTrackDialog({ open, onOpenChange, track }: ExtendTrackDial
 
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="continueAt">
-              Начать расширение с {continueAt}с / {track.duration || 0}с
-            </Label>
+            <Label>Начать расширение с позиции</Label>
+            
+            {/* Визуальный индикатор */}
+            <div className="relative h-12 bg-muted rounded-lg overflow-hidden">
+              <div 
+                className="absolute inset-y-0 left-0 bg-primary/20 transition-all"
+                style={{ width: `${progressPercent}%` }}
+              />
+              
+              <div 
+                className={cn(
+                  "absolute inset-y-0 w-1 bg-primary shadow-[0_0_8px_hsl(var(--primary))] transition-all",
+                )}
+                style={{ left: `${progressPercent}%` }}
+              />
+              
+              <div className="absolute inset-0 flex items-center justify-between px-2 text-xs text-muted-foreground">
+                <span>0:00</span>
+                <span className="font-medium text-foreground">
+                  {formatDuration(continueAt)}
+                </span>
+                <span>{formatDuration(trackDuration)}</span>
+              </div>
+            </div>
+            
             <Slider
               id="continueAt"
               min={0}
-              max={track.duration || 120}
+              max={trackDuration}
               step={1}
               value={[continueAt]}
               onValueChange={([value]) => setContinueAt(value)}
               className="w-full"
             />
+            
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Info className="w-3.5 h-3.5" />
+              Рекомендуется: {formatDuration(recommendedPosition)} (70% трека)
+            </div>
           </div>
 
           <div className="grid gap-2">

@@ -16,12 +16,15 @@ import {
   SlidersHorizontal,
   Info,
   Sparkles,
+  FileAudio,
 } from 'lucide-react';
 import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { useBoostStyle } from '@/hooks/useBoostStyle';
+import { ReferenceAudioSection } from '@/components/audio/ReferenceAudioSection';
+import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog';
 
 // --- PROPS & TYPES ---
 
@@ -102,6 +105,8 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
   const { boostStyle, isBoosting } = useBoostStyle();
 
   const [generationMode, setGenerationMode] = useState<GenerationMode>('simple');
+  const [lyricsDialogOpen, setLyricsDialogOpen] = useState(false);
+  const [referenceExpanded, setReferenceExpanded] = useState(false);
   const [params, setParams] = useState({
     simplePrompt: '',
     isInstrumental: false,
@@ -113,7 +118,8 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
     vocalGender: 'any' as VocalGender,
     weirdness: 10, // 0-100 scale
     styleInfluence: 75, // 0-100 scale
-    modelVersion: 'V5', // ✅ ИСПРАВЛЕНИЕ 5: Изменено на формат Suno API
+    modelVersion: 'V5',
+    referenceAudioUrl: null as string | null,
   });
 
   const setParam = <K extends keyof typeof params>(key: K, value: (typeof params)[K]) => {
@@ -210,11 +216,57 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
                     rows={4}
                   />
                 </FormField>
+
+                <FormField label="Модель AI" htmlFor="simple-model">
+                  <Select value={params.modelVersion} onValueChange={(v) => setParam('modelVersion', v)}>
+                    <SelectTrigger id="simple-model">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {modelVersions.map(m => (
+                        <SelectItem key={m.value} value={m.value}>
+                          {m.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormField>
+
                 <div className="flex items-center justify-between">
                   <FormField label="Инструментал" htmlFor="instrumental-switch" tooltip="Создать трек без вокала">
                     <Switch id="instrumental-switch" checked={params.isInstrumental} onCheckedChange={(v) => setParam('isInstrumental', v)} disabled={isGenerating} />
                   </FormField>
                 </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setLyricsDialogOpen(true)}
+                  className="w-full"
+                  disabled={isGenerating}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Сгенерировать текст песни
+                </Button>
+
+                <Accordion type="single" collapsible value={referenceExpanded ? "reference" : ""} onValueChange={(v) => setReferenceExpanded(v === "reference")}>
+                  <AccordionItem value="reference" className="border-b-0">
+                    <AccordionTrigger className="py-2 text-sm font-semibold hover:no-underline">
+                      <div className="flex items-center gap-2">
+                        <FileAudio className="h-4 w-4" />
+                        Референсное аудио (опционально)
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-2">
+                      <ReferenceAudioSection
+                        onReferenceChange={(url) => setParam('referenceAudioUrl', url)}
+                      />
+                      <p className="text-xs text-muted-foreground mt-2">
+                        💡 Загрузите или запишите аудио, чтобы AI создал музыку в похожем стиле
+                      </p>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </div>
             ) : (
               <div className="space-y-1 animate-fade-in">
@@ -300,6 +352,15 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
             {isGenerating ? <><Loader2 className="h-4 w-4 animate-spin" />Генерация...</> : <><Music className="h-4 w-4" />Создать</>}
           </Button>
         </div>
+
+        <LyricsGeneratorDialog
+          open={lyricsDialogOpen}
+          onOpenChange={setLyricsDialogOpen}
+          onGenerated={(lyrics: string) => {
+            setParam('lyrics', lyrics);
+            setLyricsDialogOpen(false);
+          }}
+        />
       </div>
     </TooltipProvider>
   );

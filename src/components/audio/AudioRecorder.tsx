@@ -1,0 +1,198 @@
+import { useEffect, useRef } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Mic, Square, Upload, Trash2 } from 'lucide-react';
+import { useAudioRecorder } from '@/hooks/useAudioRecorder';
+import { useAudioUpload } from '@/hooks/useAudioUpload';
+import { cn } from '@/lib/utils';
+
+interface AudioRecorderProps {
+  onRecordComplete?: (url: string) => void;
+  onRemove?: () => void;
+  className?: string;
+}
+
+const formatTime = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+export const AudioRecorder = ({ onRecordComplete, onRemove, className }: AudioRecorderProps) => {
+  const {
+    isRecording,
+    audioBlob,
+    audioUrl,
+    recordingTime,
+    analyser,
+    maxTime,
+    startRecording,
+    stopRecording,
+    reset,
+  } = useAudioRecorder();
+
+  const { uploadAudio, isUploading, uploadProgress } = useAudioUpload();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationRef = useRef<number>();
+
+  // Waveform visualization
+  useEffect(() => {
+    if (!isRecording || !analyser || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    const draw = () => {
+      animationRef.current = requestAnimationFrame(draw);
+
+      analyser.getByteTimeDomainData(dataArray);
+
+      ctx.fillStyle = 'hsl(var(--card))';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'hsl(var(--primary))';
+      ctx.beginPath();
+
+      const sliceWidth = (canvas.width * 1.0) / bufferLength;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = (v * canvas.height) / 2;
+
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+
+        x += sliceWidth;
+      }
+
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
+    };
+
+    draw();
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isRecording, analyser]);
+
+  const handleUpload = async () => {
+    if (!audioBlob) return;
+
+    const fileName = `recording-${Date.now()}.webm`;
+    const file = new File([audioBlob], fileName, { type: audioBlob.type });
+
+    const uploadedUrl = await uploadAudio(file);
+    if (uploadedUrl) {
+      onRecordComplete?.(uploadedUrl);
+    }
+  };
+
+  const handleRemove = () => {
+    reset();
+    onRemove?.();
+  };
+
+  return (
+    <Card className={cn('border-2', className)}>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Mic className="w-4 h-4" />
+          Запись с микрофона
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Waveform Canvas */}
+        <canvas
+          ref={canvasRef}
+          width={400}
+          height={80}
+          className={cn(
+            'w-full h-20 rounded bg-muted/50',
+            !isRecording && 'opacity-50'
+          )}
+        />
+
+        {/* Controls */}
+        <div className="flex items-center gap-2">
+          {!audioBlob ? (
+            <Button
+              onClick={isRecording ? stopRecording : startRecording}
+              variant={isRecording ? 'destructive' : 'default'}
+              className="flex-1"
+              disabled={isUploading}
+            >
+              {isRecording ? (
+                <>
+                  <Square className="w-4 h-4 mr-2" />
+                  Остановить
+                </>
+              ) : (
+                <>
+                  <Mic className="w-4 h-4 mr-2" />
+                  Записать
+                </>
+              )}
+            </Button>
+          ) : (
+            <>
+              <Button
+                onClick={handleUpload}
+                disabled={isUploading}
+                className="flex-1"
+              >
+                {isUploading ? (
+                  <>Загрузка {uploadProgress}%</>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Загрузить
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={handleRemove}
+                variant="outline"
+                size="icon"
+                disabled={isUploading}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </>
+          )}
+        </div>
+
+        {/* Timer/Info */}
+        <div className="flex items-center justify-between text-sm">
+          <span className={cn(
+            'font-mono',
+            isRecording && recordingTime > maxTime * 0.8 && 'text-destructive'
+          )}>
+            {formatTime(recordingTime)} / {formatTime(maxTime)}
+          </span>
+          {audioBlob && (
+            <span className="text-muted-foreground">
+              {(audioBlob.size / 1024 / 1024).toFixed(2)} MB
+            </span>
+          )}
+        </div>
+
+        {/* Audio Preview */}
+        {audioUrl && (
+          <audio controls src={audioUrl} className="w-full" />
+        )}
+      </CardContent>
+    </Card>
+  );
+};

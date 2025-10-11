@@ -7,13 +7,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Music, Upload, Mic } from "lucide-react";
 import { useCreateCover } from "@/hooks/useCreateCover";
+import { ReferenceAudioSection } from "@/components/audio/ReferenceAudioSection";
 
 interface CreateCoverDialogProps {
   open: boolean;
@@ -39,6 +42,8 @@ export function CreateCoverDialog({ open, onOpenChange, track }: CreateCoverDial
   const [tags, setTags] = useState("");
   const [makeInstrumental, setMakeInstrumental] = useState(false);
   const [model, setModel] = useState<"V3_5" | "V4" | "V4_5" | "V4_5PLUS" | "V5">("V4");
+  const [referenceMode, setReferenceMode] = useState<'track' | 'upload' | 'record'>('track');
+  const [referenceAudioUrl, setReferenceAudioUrl] = useState<string | null>(null);
 
   const handleCreate = async () => {
     if (!prompt.trim()) {
@@ -50,7 +55,8 @@ export function CreateCoverDialog({ open, onOpenChange, track }: CreateCoverDial
         prompt: prompt.trim(),
         title: title.trim() || undefined,
         tags: tags ? tags.split(",").map(t => t.trim()) : undefined,
-        referenceTrackId: track.id,
+        referenceTrackId: referenceMode === 'track' ? track.id : undefined,
+        referenceAudioUrl: referenceMode !== 'track' ? (referenceAudioUrl || undefined) : undefined,
         make_instrumental: makeInstrumental,
         model,
       });
@@ -60,6 +66,8 @@ export function CreateCoverDialog({ open, onOpenChange, track }: CreateCoverDial
       setTitle(`${track.title} (Cover)`);
       setTags("");
       setMakeInstrumental(false);
+      setReferenceMode('track');
+      setReferenceAudioUrl(null);
     } catch (error) {
       // Error is handled in the hook
     }
@@ -76,6 +84,41 @@ export function CreateCoverDialog({ open, onOpenChange, track }: CreateCoverDial
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label>Референс</Label>
+            <Tabs value={referenceMode} onValueChange={(v) => setReferenceMode(v as typeof referenceMode)}>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="track">
+                  <Music className="w-4 h-4" />
+                </TabsTrigger>
+                <TabsTrigger value="upload">
+                  <Upload className="w-4 h-4" />
+                </TabsTrigger>
+                <TabsTrigger value="record">
+                  <Mic className="w-4 h-4" />
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="track">
+                <p className="text-sm text-muted-foreground">
+                  Используется оригинальный трек "{track.title}" как референс
+                </p>
+              </TabsContent>
+
+              <TabsContent value="upload" className="mt-2">
+                <ReferenceAudioSection
+                  onReferenceChange={(url) => setReferenceAudioUrl(url)}
+                />
+              </TabsContent>
+
+              <TabsContent value="record" className="mt-2">
+                <ReferenceAudioSection
+                  onReferenceChange={(url) => setReferenceAudioUrl(url)}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
+
           <div className="grid gap-2">
             <Label htmlFor="prompt">
               Промпт <span className="text-destructive">*</span>
