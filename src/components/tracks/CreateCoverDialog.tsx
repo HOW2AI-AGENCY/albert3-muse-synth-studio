@@ -42,9 +42,13 @@ export function CreateCoverDialog({ open, onOpenChange, track }: CreateCoverDial
   const [title, setTitle] = useState(`${track.title} (Cover)`);
   const [tags, setTags] = useState("");
   const [makeInstrumental, setMakeInstrumental] = useState(false);
-  const [model, setModel] = useState<"V3_5" | "V4" | "V4_5" | "V4_5PLUS" | "V5">("V4");
+  const [model, setModel] = useState<"V3_5" | "V4" | "V4_5" | "V4_5PLUS" | "V5">("V5");
   const [referenceMode, setReferenceMode] = useState<'track' | 'upload' | 'record'>('track');
   const [referenceAudioUrl, setReferenceAudioUrl] = useState<string | null>(null);
+  const customMode = true; // Always use custom mode for detailed control
+  const [audioWeight, setAudioWeight] = useState(0.65);
+  const [negativeTags, setNegativeTags] = useState("");
+  const [vocalGender, setVocalGender] = useState<'m' | 'f' | undefined>();
 
   const handleCreate = async () => {
     if (!prompt.trim()) {
@@ -60,6 +64,10 @@ export function CreateCoverDialog({ open, onOpenChange, track }: CreateCoverDial
         referenceAudioUrl: referenceMode !== 'track' ? (referenceAudioUrl || undefined) : undefined,
         make_instrumental: makeInstrumental,
         model,
+        customMode,
+        audioWeight,
+        negativeTags: negativeTags.trim() || undefined,
+        vocalGender,
       });
       onOpenChange(false);
       // Reset form
@@ -69,6 +77,8 @@ export function CreateCoverDialog({ open, onOpenChange, track }: CreateCoverDial
       setMakeInstrumental(false);
       setReferenceMode('track');
       setReferenceAudioUrl(null);
+      setNegativeTags("");
+      setVocalGender(undefined);
     } catch (error) {
       // Error is handled in the hook
     }
@@ -188,6 +198,52 @@ export function CreateCoverDialog({ open, onOpenChange, track }: CreateCoverDial
             <Label htmlFor="instrumental" className="cursor-pointer">
               Инструментальная версия (без вокала)
             </Label>
+          </div>
+
+          {referenceAudioUrl && (
+            <div className="grid gap-2">
+              <Label htmlFor="audioWeight">
+                Audio Weight: {audioWeight.toFixed(2)}
+              </Label>
+              <input
+                id="audioWeight"
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={audioWeight}
+                onChange={(e) => setAudioWeight(parseFloat(e.target.value))}
+                className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+              />
+              <p className="text-xs text-muted-foreground">
+                Влияние референсного аудио на результат (0 = минимальное, 1 = максимальное)
+              </p>
+            </div>
+          )}
+
+          <div className="grid gap-2">
+            <Label htmlFor="negativeTags">Negative Tags (опционально)</Label>
+            <Input
+              id="negativeTags"
+              placeholder="Heavy Metal, Upbeat Drums"
+              value={negativeTags}
+              onChange={(e) => setNegativeTags(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">Стили и характеристики, которые нужно исключить</p>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="vocalGender">Vocal Gender (опционально)</Label>
+            <Select value={vocalGender} onValueChange={(v: any) => setVocalGender(v)}>
+              <SelectTrigger id="vocalGender">
+                <SelectValue placeholder="Auto" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">Auto</SelectItem>
+                <SelectItem value="m">Male</SelectItem>
+                <SelectItem value="f">Female</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

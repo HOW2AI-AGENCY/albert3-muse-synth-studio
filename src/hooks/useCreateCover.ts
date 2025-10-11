@@ -11,6 +11,12 @@ interface CreateCoverParams {
   referenceTrackId?: string;
   make_instrumental?: boolean;
   model?: "V3_5" | "V4" | "V4_5" | "V4_5PLUS" | "V5";
+  customMode?: boolean;
+  audioWeight?: number;
+  negativeTags?: string;
+  vocalGender?: 'm' | 'f';
+  styleWeight?: number;
+  weirdnessConstraint?: number;
 }
 
 export const useCreateCover = () => {
