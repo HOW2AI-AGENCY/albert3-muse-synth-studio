@@ -65,7 +65,7 @@ export function LyricsGeneratorDialog({
       const { data, error } = await supabase.functions.invoke('generate-lyrics', {
         body: {
           prompt: prompt.trim(),
-          trackId: trackId || null
+          ...(trackId && { trackId })
         }
       });
 
