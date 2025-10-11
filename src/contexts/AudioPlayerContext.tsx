@@ -191,7 +191,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     const normalizedTrack = {
       ...track,
       audio_url: audioUrl,
-      isOriginalVersion: track.isOriginalVersion ?? (track.versionNumber ? track.versionNumber <= 1 : undefined),
+      isOriginalVersion: track.isOriginalVersion ?? (track.versionNumber === 0),
       sourceVersionNumber: track.sourceVersionNumber ?? null,
     };
     

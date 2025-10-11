@@ -52,6 +52,7 @@ interface Track {
   prompt?: string;
   progress_percent?: number | null;
   metadata?: Record<string, any> | null;
+  is_public?: boolean;
 }
 
 interface TrackCardProps {
@@ -210,6 +211,33 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDe
   const { isLiked, toggleLike } = useTrackLike(track.id, track.like_count || 0);
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+
+  const handleTogglePublic = useCallback(async () => {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { error } = await supabase
+        .from('tracks')
+        .update({ is_public: !track.is_public })
+        .eq('id', track.id);
+      
+      if (error) throw error;
+      
+      toast({
+        title: track.is_public ? "Трек скрыт" : "Трек опубликован",
+        description: track.is_public 
+          ? "Трек теперь виден только вам" 
+          : "Трек теперь доступен всем пользователям",
+      });
+    } catch (error) {
+      const { logError } = await import('@/utils/logger');
+      logError('Failed to toggle track public status', error as Error, 'TrackCard');
+      toast({
+        title: "Ошибка",
+        description: "Не удалось изменить статус публикации",
+        variant: "destructive",
+      });
+    }
+  }, [track.id, track.is_public, toast]);
 
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -389,9 +417,9 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDe
                     <Share2 className="w-4 h-4 mr-2" />
                     Поделиться
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast({ title: "Скоро", description: "Функция в разработке" }); }}>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleTogglePublic(); }}>
                     <Globe className="w-4 h-4 mr-2" />
-                    Опубликовать
+                    {track.is_public ? 'Скрыть' : 'Опубликовать'}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 

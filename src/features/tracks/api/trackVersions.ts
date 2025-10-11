@@ -303,7 +303,7 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
           sourceVersionNumber: version.version_number ?? null,
           isMasterVersion: Boolean(version.is_master),
           isOriginal: false,
-          title: `${mainTrack.title} (V${version.version_number ?? normalizedVersions.length})`,
+          title: mainTrack.title,
           audio_url: version.audio_url ?? null,
           cover_url: version.cover_url ?? mainTrack.cover_url ?? null,
           video_url: version.video_url ?? null,

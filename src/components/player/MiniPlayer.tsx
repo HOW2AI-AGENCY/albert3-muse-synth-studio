@@ -96,7 +96,7 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
         {/* Track Info */}
         <div className="flex-1 min-w-0">
           <h4 className="text-sm font-semibold text-foreground truncate animate-shimmer">
-            {currentTrack.title}
+            {currentTrack.title.replace(/\s*\(V\d+\)$/i, '')}
           </h4>
           <div className="flex items-center gap-2 text-xs text-muted-foreground/80">
             <span className="truncate">
