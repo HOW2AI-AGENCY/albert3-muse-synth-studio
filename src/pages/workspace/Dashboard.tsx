@@ -13,6 +13,7 @@ import { PageSection } from "@/components/layout/PageSection";
 import { StatCard } from "@/components/layout/StatCard";
 import { ActionTile } from "@/components/layout/ActionTile";
 import { EmptyState } from "@/components/layout/EmptyState";
+import { logger } from "@/utils/logger";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ const Dashboard = () => {
     publicTracks.forEach((track) => {
       if (track.id) {
         AnalyticsService.recordView(track.id).catch((error) => {
-          console.error('Failed to record dashboard track view', error);
+          logger.error('Failed to record dashboard track view', error, 'Dashboard', { trackId: track.id });
         });
       }
     });
@@ -40,7 +41,7 @@ const Dashboard = () => {
       return;
     }
 
-    console.error("Error loading dashboard data:", error);
+    logger.error("Failed to load dashboard data", error, "Dashboard");
     toast({
       title: "Ошибка",
       description: "Не удалось загрузить данные дашборда",

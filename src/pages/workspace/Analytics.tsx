@@ -5,6 +5,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BarChart3, TrendingUp, Download, Heart, Eye, Music } from 'lucide-react';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 import { Badge } from '@/components/ui/badge';
+import { logger } from '@/utils/logger';
 
 interface TrackStats {
   id: string;
@@ -86,7 +87,7 @@ const Analytics = () => {
         setOverallStats(stats);
       }
     } catch (error) {
-      console.error('Error fetching analytics:', error);
+      logger.error('Failed to fetch analytics', error as Error, 'Analytics', { timeRange });
     } finally {
       setIsLoading(false);
     }

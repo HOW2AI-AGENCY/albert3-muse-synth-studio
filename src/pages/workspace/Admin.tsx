@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { logger } from '@/utils/logger';
 
 interface AdminStats {
   totalUsers: number;
@@ -60,7 +61,7 @@ export default function Admin() {
         setCreditMode(data.value.mode as 'test' | 'production');
       }
     } catch (error) {
-      console.error('Error fetching credit mode:', error);
+      logger.error('Failed to fetch credit mode', error as Error, 'Admin');
     }
   };
 
@@ -89,7 +90,7 @@ export default function Admin() {
         description: `Режим кредитов изменен на ${newMode === 'test' ? 'тестовый' : 'продакшн'}`,
       });
     } catch (error) {
-      console.error('Error updating credit mode:', error);
+      logger.error('Failed to update credit mode', error as Error, 'Admin');
       toast({
         title: 'Ошибка',
         description: 'Не удалось изменить режим кредитов',
@@ -147,7 +148,7 @@ export default function Admin() {
         setTracks(tracksWithProfiles);
       }
     } catch (error) {
-      console.error('Error fetching admin data:', error);
+      logger.error('Failed to fetch admin data', error as Error, 'Admin');
       toast({
         title: 'Ошибка',
         description: 'Не удалось загрузить данные админ-панели',
@@ -173,7 +174,7 @@ export default function Admin() {
 
       fetchAdminData();
     } catch (error) {
-      console.error('Error deleting track:', error);
+      logger.error('Failed to delete track', error as Error, 'Admin', { trackId });
       toast({
         title: 'Ошибка',
         description: 'Не удалось удалить трек',
@@ -198,7 +199,7 @@ export default function Admin() {
 
       fetchAdminData();
     } catch (error) {
-      console.error('Error toggling track visibility:', error);
+      logger.error('Failed to toggle track visibility', error as Error, 'Admin', { trackId, currentStatus });
       toast({
         title: 'Ошибка',
         description: 'Не удалось изменить видимость трека',

@@ -8,6 +8,7 @@ import { ApiService, Track } from "@/services/api.service";
 import { AnalyticsService } from "@/services/analytics.service";
 import { useAudioPlayerSafe } from "@/contexts/AudioPlayerContext";
 import heroBg from "@/assets/hero-bg.jpg";
+import { logger } from "@/utils/logger";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ const Landing = () => {
         const tracks = await ApiService.getPublicTracks(6, 'like_count');
         setFeaturedTracks(tracks);
       } catch (error) {
-        console.error('Failed to fetch featured tracks:', error);
+        logger.error('Failed to fetch featured tracks', error as Error, 'Landing');
       }
     };
     fetchFeaturedTracks();
@@ -34,7 +35,7 @@ const Landing = () => {
     featuredTracks.forEach((track) => {
       if (track.id) {
         AnalyticsService.recordView(track.id).catch((error) => {
-          console.error('Failed to record landing track view', error);
+          logger.error('Failed to record landing track view', error, 'Landing', { trackId: track.id });
         });
       }
     });

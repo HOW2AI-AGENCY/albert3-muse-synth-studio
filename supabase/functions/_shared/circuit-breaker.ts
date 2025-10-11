@@ -2,6 +2,7 @@
  * Circuit Breaker pattern для предотвращения каскадных сбоев
  * Временно блокирует запросы после превышения порога ошибок
  */
+import { logger } from "./logger.ts";
 
 export class CircuitBreaker {
   private failureCount = 0;
@@ -25,7 +26,7 @@ export class CircuitBreaker {
         throw new Error(`Circuit breaker is OPEN - too many failures (${this.failureCount}/${this.threshold})`);
       }
       this.state = 'HALF_OPEN';
-      console.log('🟡 [CIRCUIT BREAKER] State changed to HALF_OPEN');
+      logger.info('Circuit breaker transitioning to half-open', { state: 'HALF_OPEN' });
     }
     
     try {
@@ -46,10 +47,11 @@ export class CircuitBreaker {
     
     if (this.failureCount >= this.threshold) {
       this.state = 'OPEN';
-      console.error('🔴 [CIRCUIT BREAKER] Opened due to failures', {
+      logger.error('Circuit breaker opened due to failures', {
+        error: new Error('Circuit breaker threshold exceeded'),
         failureCount: this.failureCount,
         threshold: this.threshold,
-        timeout: `${this.timeout}ms`
+        timeoutMs: this.timeout
       });
     }
   }
@@ -57,7 +59,7 @@ export class CircuitBreaker {
   private reset() {
     this.failureCount = 0;
     this.state = 'CLOSED';
-    console.log('✅ [CIRCUIT BREAKER] Reset to CLOSED');
+    logger.info('Circuit breaker reset to closed', { state: 'CLOSED' });
   }
   
   getState() {

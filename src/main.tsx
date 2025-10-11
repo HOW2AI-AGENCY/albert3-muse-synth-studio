@@ -6,6 +6,7 @@ import * as Sentry from '@sentry/react';
 import { browserTracingIntegration } from '@sentry/react';
 import { AnalyticsService } from './services/analytics.service';
 import type { Metric } from 'web-vitals';
+import { logger } from './utils/logger';
 
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
 
@@ -25,7 +26,9 @@ if (sentryDsn) {
 }
 
 // Инициализируем Service Worker
-initServiceWorker().catch(console.error);
+initServiceWorker().catch((error) => {
+  logger.error('Failed to register service worker', error, 'ServiceWorker');
+});
 
 const registerWebVitals = async () => {
   const vitals = await import('web-vitals');
@@ -91,7 +94,7 @@ if (typeof window !== 'undefined') {
 
   const scheduleRegistration = () => {
     registerWebVitals().catch((error) => {
-      console.error('Failed to register Web Vitals collection', error);
+      logger.error('Failed to register Web Vitals collection', error, 'WebVitals');
     });
   };
 
