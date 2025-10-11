@@ -1,4 +1,4 @@
-import { Heart, Download, Share2, Music, Clock, Calendar, CheckCircle } from "lucide-react";
+import { Download, Heart, Music2, Play, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -8,9 +8,12 @@ interface CompactTrackHeroProps {
   track: {
     title: string;
     cover_url?: string;
-    status: string;
+    status?: string;
     created_at?: string;
     duration_seconds?: number;
+    style_tags?: string[] | null;
+    play_count?: number;
+    download_count?: number;
   };
   activeVersion?: {
     version_number: number;
@@ -23,159 +26,131 @@ interface CompactTrackHeroProps {
   onLike: () => void;
   onDownload: () => void;
   onShare: () => void;
+  onOpenPlayer?: () => void;
 }
 
-const formatDuration = (seconds?: number) => {
-  if (!seconds) return "—";
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-};
-
-const formatDate = (date?: string) => {
-  if (!date) return "—";
-  try {
-    return new Date(date).toLocaleDateString("ru-RU", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  } catch {
-    return "—";
-  }
+const formatCount = (count?: number) => {
+  if (!count || count === 0) return "0";
+  if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+  if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+  return count.toString();
 };
 
 export const CompactTrackHero = ({
   track,
-  activeVersion,
   artist = "Неизвестный артист",
   isLiked,
   likeCount,
   onLike,
   onDownload,
   onShare,
+  onOpenPlayer,
 }: CompactTrackHeroProps) => {
-  const duration = activeVersion?.duration ?? track.duration_seconds;
-  const createdAt = activeVersion?.created_at ?? track.created_at;
-
   return (
-    <div className="relative h-48 overflow-hidden">
+    <div className="relative overflow-hidden">
       {/* Blurred Cover Background */}
       {track.cover_url && (
-        <div className="absolute inset-0 opacity-30">
-          <img
-            src={track.cover_url}
-            alt=""
-            className="w-full h-full object-cover blur-2xl scale-110"
-            loading="eager"
-          />
-        </div>
+        <>
+          <div className="absolute inset-0 opacity-20">
+            <img
+              src={track.cover_url}
+              alt=""
+              className="h-full w-full object-cover blur-3xl scale-110"
+              loading="eager"
+            />
+          </div>
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/85 to-background" />
+        </>
       )}
 
-      {/* Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background" />
-
-      {/* Content */}
-      <div className="relative z-10 h-full flex items-center gap-4 p-6">
-        {/* Compact Cover (80x80px) */}
+      {/* Content - Vertical Centered Layout */}
+      <div className="relative z-10 flex flex-col items-center text-center px-6 py-8 space-y-4">
+        {/* Large Cover (160x160px) */}
         {track.cover_url && (
-          <div className="w-20 h-20 rounded-xl overflow-hidden border-2 border-primary/30 shadow-xl shrink-0">
+          <div className="w-40 h-40 rounded-2xl overflow-hidden border-2 border-primary/20 shadow-2xl">
             <img
               src={track.cover_url}
               alt={`Обложка трека ${track.title}`}
-              className="w-full h-full object-cover"
+              className="h-full w-full object-cover"
               loading="eager"
             />
           </div>
         )}
 
-        {/* Metadata */}
-        <div className="flex-1 min-w-0 space-y-2">
-          {/* Title + Status Badge */}
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold truncate text-foreground">
-              {track.title}
-            </h1>
-            <Badge
-              variant={track.status === "completed" ? "default" : "secondary"}
-              className="shrink-0 text-xs"
-            >
-              {track.status === "completed" ? (
-                <>
-                  <CheckCircle className="h-3 w-3 mr-1" />
-                  Готов
-                </>
-              ) : (
-                "В процессе"
-              )}
-            </Badge>
-          </div>
+        {/* Title */}
+        <h1 className="text-2xl font-bold text-foreground max-w-md">{track.title}</h1>
 
-          {/* Artist */}
-          <p className="text-sm text-muted-foreground">{artist}</p>
+        {/* Artist / Caption */}
+        <p className="text-sm text-muted-foreground">{artist}</p>
 
-          {/* Quick Stats */}
-          <div className="flex flex-wrap items-center gap-3 text-xs">
-            {activeVersion && (
-              <Badge variant="outline" className="gap-1">
-                <Music className="h-3 w-3" />
-                v{activeVersion.version_number}
-              </Badge>
-            )}
-            <Badge variant="outline" className="gap-1">
-              <Clock className="h-3 w-3" />
-              {formatDuration(duration)}
-            </Badge>
-            <Badge variant="outline" className="gap-1">
-              <Calendar className="h-3 w-3" />
-              {formatDate(createdAt)}
-            </Badge>
-          </div>
-        </div>
-
-        {/* Action Buttons (Vertical) */}
-        <div className="flex flex-col gap-2 shrink-0">
+        {/* Horizontal Action Row with Inline Counters */}
+        <div className="flex items-center gap-1">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  size="icon"
-                  variant={isLiked ? "default" : "secondary"}
-                  className="relative"
+                  size="sm"
+                  variant="ghost"
+                  className="gap-1 h-9 px-3"
                   onClick={onLike}
                 >
-                  <Heart className={cn("h-5 w-5", isLiked && "fill-current")} />
-                  {likeCount > 0 && (
-                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center">
-                      {likeCount}
-                    </span>
-                  )}
+                  <Heart className={cn("h-4 w-4", isLiked && "fill-current text-red-500")} />
+                  <span className="text-xs tabular-nums">{formatCount(likeCount)}</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="left">
-                {isLiked ? "Убрать из избранного" : "В избранное"}
-              </TooltipContent>
+              <TooltipContent>{isLiked ? "Убрать из избранного" : "В избранное"}</TooltipContent>
             </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button size="icon" variant="secondary" onClick={onDownload}>
-                  <Download className="h-5 w-5" />
+                <Button size="sm" variant="ghost" className="gap-1 h-9 px-3">
+                  <Play className="h-4 w-4" />
+                  <span className="text-xs tabular-nums">{formatCount(track.play_count)}</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="left">Скачать MP3</TooltipContent>
+              <TooltipContent>Прослушиваний</TooltipContent>
             </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button size="icon" variant="secondary" onClick={onShare}>
-                  <Share2 className="h-5 w-5" />
+                <Button size="sm" variant="ghost" className="gap-1 h-9 px-3" onClick={onDownload}>
+                  <Download className="h-4 w-4" />
+                  <span className="text-xs tabular-nums">{formatCount(track.download_count)}</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="left">Поделиться</TooltipContent>
+              <TooltipContent>Скачать MP3</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="sm" variant="ghost" className="gap-1 h-9 px-3" onClick={onShare}>
+                  <Share2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Поделиться</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
+
+        {/* Primary CTA Button */}
+        {onOpenPlayer && (
+          <Button className="w-full max-w-xs" size="lg" onClick={onOpenPlayer}>
+            <Music2 className="h-4 w-4 mr-2" />
+            Открыть в плеере
+          </Button>
+        )}
+
+        {/* Genre Tags (Read-only) */}
+        {track.style_tags && track.style_tags.length > 0 && (
+          <div className="flex flex-wrap gap-2 justify-center pt-2">
+            {track.style_tags.slice(0, 5).map((tag) => (
+              <Badge key={tag} variant="secondary" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

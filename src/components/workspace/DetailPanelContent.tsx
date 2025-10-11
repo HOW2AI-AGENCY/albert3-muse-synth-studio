@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Trash2, Eye, Heart, Calendar, Clock, ExternalLink, Play, GitBranch, Music4 } from "lucide-react";
+import { Trash2, Eye, Heart, Calendar, Clock, ExternalLink, GitBranch, Music4, ChevronDown } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrackVersions, TrackVersionComparison, TrackStemsPanel, useTrackLike } from "@/features/tracks";
@@ -13,7 +13,9 @@ import type { TrackVersionMetadata } from "@/features/tracks/components/TrackVer
 import { TrackVersionSelector } from "@/features/tracks/ui/TrackVersionSelector";
 import { CompactTrackHero } from "@/features/tracks/ui/CompactTrackHero";
 import { EmptyStateCard } from "@/components/layout/EmptyStateCard";
+import { StructuredLyrics } from "@/components/lyrics/StructuredLyrics";
 import { StyleRecommendationsPanel } from "./StyleRecommendationsPanel";
+import { cn } from "@/lib/utils";
 import type { StylePreset } from "@/types/styles";
 import { getStyleById } from "@/data/music-styles";
 import { AnalyticsService, viewSessionGuard } from "@/services/analytics.service";
@@ -138,6 +140,7 @@ export const DetailPanelContent = ({
   const [selectedVersionId, setSelectedVersionId] = useState<string | undefined>();
   const [comparisonLeftId, setComparisonLeftId] = useState<string | undefined>();
   const [comparisonRightId, setComparisonRightId] = useState<string | undefined>();
+  const [showMoreOpen, setShowMoreOpen] = useState(false);
 
   useEffect(() => {
     if (!track?.id) {
@@ -316,7 +319,7 @@ export const DetailPanelContent = ({
 
   return (
     <TooltipProvider delayDuration={500}>
-      {/* Compact Track Hero */}
+      {/* Compact Track Hero - Vertical Layout */}
       <CompactTrackHero
         track={track}
         activeVersion={activeVersion ?? null}
@@ -326,6 +329,10 @@ export const DetailPanelContent = ({
         onLike={toggleLike}
         onDownload={onDownload}
         onShare={onShare}
+        onOpenPlayer={() => {
+          // TODO: Implement player opening logic
+          console.log("Open player for track:", track.id);
+        }}
       />
 
       <div className="p-4 sm:p-6 space-y-6 lg:space-y-8">
@@ -405,6 +412,62 @@ export const DetailPanelContent = ({
                 />
               </CardContent>
             </Card>
+
+            {/* Show More Collapsible - Technical Details & Prompt */}
+            <Collapsible open={showMoreOpen} onOpenChange={setShowMoreOpen}>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="w-full">
+                  {showMoreOpen ? "Скрыть детали" : "Показать больше"}
+                  <ChevronDown className={cn("h-4 w-4 ml-2 transition-transform", showMoreOpen && "rotate-180")} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4 mt-4">
+                {/* Technical Details */}
+                <Card className="bg-[var(--card-tertiary-bg)] border-[var(--card-tertiary-border)]">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Технические детали</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Модель:</span>
+                      <span className="font-medium">{track.model_name || "—"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Suno ID:</span>
+                      <span className="font-mono text-xs">{track.suno_id || "—"}</span>
+                    </div>
+                    {track.video_url && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Видео:</span>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="h-auto p-0"
+                          onClick={() => window.open(track.video_url, "_blank")}
+                        >
+                          Открыть
+                          <ExternalLink className="h-3 w-3 ml-1" />
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Generation Prompt */}
+                {track.prompt && (
+                  <Card className="bg-[var(--card-tertiary-bg)] border-[var(--card-tertiary-border)]">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">Промпт генерации</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <pre className="text-xs bg-muted/50 p-3 rounded-md whitespace-pre-wrap font-mono">
+                        {track.prompt}
+                      </pre>
+                    </CardContent>
+                  </Card>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
           </>
         )}
 
@@ -492,64 +555,57 @@ export const DetailPanelContent = ({
         {/* Details Tab Content */}
         {tabView === "details" && (
           <>
-            {/* Prompt Card */}
-            <Card className="bg-[var(--card-tertiary-bg)] border-[var(--card-tertiary-border)] shadow-[var(--card-tertiary-shadow)]">
+            {/* Structured Lyrics */}
+            {track.lyrics && (
+              <Card className="bg-[var(--card-primary-bg)] border-[var(--card-primary-border)] shadow-[var(--card-primary-shadow)]">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Текст песни</CardTitle>
+                  <CardDescription>Структурированный вывод секций и текста</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <StructuredLyrics lyrics={track.lyrics} />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Technical Details */}
+            <Card className="bg-[var(--card-tertiary-bg)] border-[var(--card-tertiary-border)]">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Промпт генерации</CardTitle>
-                <CardDescription>Исходный запрос, использованный при генерации трека.</CardDescription>
+                <CardTitle className="text-lg">Технические детали</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="p-3 rounded-md bg-muted text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-words">
-                  {track.prompt}
+              <CardContent className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Модель:</span>
+                  <span className="font-medium">{track.model_name || "—"}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Suno ID:</span>
+                  <span className="font-mono text-xs">{track.suno_id || "—"}</span>
+                </div>
+                {track.video_url && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => window.open(track.video_url, "_blank")}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Открыть видео
+                  </Button>
+                )}
               </CardContent>
             </Card>
 
-            {/* Generation Details Card */}
-            {(track.suno_id || track.model_name || track.lyrics) && (
-              <Card className="bg-[var(--card-tertiary-bg)] border-[var(--card-tertiary-border)] shadow-[var(--card-tertiary-shadow)]">
+            {/* Generation Prompt */}
+            {track.prompt && (
+              <Card className="bg-[var(--card-tertiary-bg)] border-[var(--card-tertiary-border)]">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Технические детали</CardTitle>
+                  <CardTitle className="text-lg">Промпт генерации</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4 text-sm">
-                  {(track.model_name || track.suno_id) && (
-                    <div className="space-y-2">
-                      {track.model_name && <p className="text-muted-foreground">Модель: <span className="text-foreground font-medium">{track.model_name}</span></p>}
-                      {track.suno_id && <p className="text-muted-foreground">Suno ID: <span className="font-mono text-xs text-foreground">{track.suno_id}</span></p>}
-                      {track.suno_id && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-start h-9 text-sm"
-                          onClick={() => window.open(`https://suno.com/song/${track.suno_id}`, "_blank")}
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          Открыть в Suno
-                        </Button>
-                      )}
-                      {track.video_url && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-start h-9 text-sm"
-                          onClick={() => window.open(track.video_url, "_blank")}
-                        >
-                          <Play className="h-4 w-4 mr-2" />
-                          Видео
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                  {track.lyrics && (
-                    <div className="space-y-2">
-                      <Label className="text-sm">Текст песни</Label>
-                      <Textarea
-                        value={track.lyrics}
-                        readOnly
-                        className="min-h-[120px] resize-none text-sm"
-                      />
-                    </div>
-                  )}
+                <CardContent>
+                  <pre className="text-xs bg-muted/50 p-3 rounded-md whitespace-pre-wrap font-mono max-h-48 overflow-y-auto">
+                    {track.prompt}
+                  </pre>
                 </CardContent>
               </Card>
             )}
