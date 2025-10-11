@@ -1,7 +1,11 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Music, Library, Settings, Sparkles } from "lucide-react";
+import { Music, Library, Settings, Sparkles, Heart, Download, TrendingUp, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TrackCard } from "@/features/tracks";
 import { useToast } from "@/hooks/use-toast";
 import { normalizeTracks } from "@/utils/trackNormalizer";
@@ -20,7 +24,32 @@ const Dashboard = () => {
   const { toast } = useToast();
   const { data, isLoading, error } = useDashboardData();
   const stats = data?.stats ?? DEFAULT_DASHBOARD_STATS;
+  const quickInsights = data?.quickInsights;
   const publicTracks = useMemo(() => normalizeTracks(data?.publicTracks ?? []), [data?.publicTracks]);
+
+  const [genreFilter, setGenreFilter] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredPublicTracks = useMemo(() => {
+    let filtered = publicTracks;
+
+    if (genreFilter) {
+      filtered = filtered.filter((t) => t.genre === genreFilter);
+    }
+
+    if (searchQuery) {
+      filtered = filtered.filter((t) =>
+        t.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    return filtered;
+  }, [publicTracks, genreFilter, searchQuery]);
+
+  const availableGenres = useMemo(() => {
+    const genres = new Set(publicTracks.map((t) => t.genre).filter(Boolean));
+    return Array.from(genres);
+  }, [publicTracks]);
 
   useEffect(() => {
     if (!publicTracks.length) {
@@ -63,15 +92,109 @@ const Dashboard = () => {
           icon={Music}
         />
 
+        {/* Stats with trends */}
         <section>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatCard label="Всего треков" value={stats.total} />
-            <StatCard label="В обработке" value={stats.processing} />
-            <StatCard label="Завершено" value={stats.completed} />
-            <StatCard label="Публичных" value={stats.public} />
+            <StatCard 
+              label="Всего треков" 
+              value={stats.total}
+              isLoading={isLoading}
+            />
+            <StatCard 
+              label="Просмотры" 
+              value={stats.totalViews}
+              trend={{ value: stats.trends.views, label: "за неделю" }}
+              isLoading={isLoading}
+              icon={<Eye className="h-4 w-4" />}
+            />
+            <StatCard 
+              label="Прослушивания" 
+              value={stats.totalPlays}
+              trend={{ value: stats.trends.plays, label: "за неделю" }}
+              isLoading={isLoading}
+              icon={<TrendingUp className="h-4 w-4" />}
+            />
+            <StatCard 
+              label="Лайки" 
+              value={stats.totalLikes}
+              trend={{ value: stats.trends.likes, label: "за неделю" }}
+              isLoading={isLoading}
+              icon={<Heart className="h-4 w-4" />}
+            />
           </div>
         </section>
 
+        {/* Quick Insights */}
+        {quickInsights && (
+          <PageSection title="Быстрая статистика" description="Последние тренды и активность">
+            <div className="grid gap-4 md:grid-cols-3">
+              {/* Most Played Track */}
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">Самый популярный трек</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {quickInsights.mostPlayedTrack ? (
+                    <div className="flex items-center gap-3">
+                      {quickInsights.mostPlayedTrack.cover_url && (
+                        <img
+                          src={quickInsights.mostPlayedTrack.cover_url}
+                          className="h-12 w-12 rounded-md object-cover"
+                          alt=""
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{quickInsights.mostPlayedTrack.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {quickInsights.mostPlayedTrack.play_count} прослушиваний
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Нет данных</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Recent Activity */}
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">Активность за неделю</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Heart className="h-4 w-4 text-red-500" />
+                      <span>+{quickInsights.recentLikes} лайков</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Download className="h-4 w-4 text-purple-500" />
+                      <span>+{quickInsights.recentDownloads} скачиваний</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Top Genre */}
+              <Card className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium">Популярный жанр</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {quickInsights.topGenre ? (
+                    <Badge variant="secondary" className="text-base px-3 py-1">
+                      {quickInsights.topGenre}
+                    </Badge>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Нет данных</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </PageSection>
+        )}
+
+        {/* Action Tiles */}
         <section>
           <div className="grid gap-4 md:grid-cols-3">
             <ActionTile
@@ -98,25 +221,55 @@ const Dashboard = () => {
           </div>
         </section>
 
+        {/* Popular Tracks with Filters */}
         <PageSection
           title="Популярные треки"
           description="Последние публичные релизы сообщества"
           action={
-            <Button variant="outline" size="sm" onClick={handleShowAllTracks}>
-              Показать все
-            </Button>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <Input
+                placeholder="Поиск..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full sm:w-40"
+              />
+              {availableGenres.length > 0 && (
+                <Select value={genreFilter} onValueChange={setGenreFilter}>
+                  <SelectTrigger className="w-full sm:w-32">
+                    <SelectValue placeholder="Жанр" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Все</SelectItem>
+                    {availableGenres.map((genre) => (
+                      <SelectItem key={genre} value={genre || ""}>
+                        {genre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <Button variant="outline" size="sm" onClick={handleShowAllTracks}>
+                Показать все
+              </Button>
+            </div>
           }
         >
           {isLoading ? (
             <div className="flex h-40 items-center justify-center">
               <span className="text-sm text-muted-foreground">Загружаем треки...</span>
             </div>
-          ) : publicTracks.length > 0 ? (
+          ) : filteredPublicTracks.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {publicTracks.map((track) => (
+              {filteredPublicTracks.map((track) => (
                 <TrackCard key={track.id} track={track} />
               ))}
             </div>
+          ) : searchQuery || genreFilter ? (
+            <EmptyState
+              title="Ничего не найдено"
+              description="Попробуйте изменить фильтры поиска"
+              icon={<Music className="h-10 w-10" />}
+            />
           ) : (
             <EmptyState
               title="Пока нет публичных треков"
