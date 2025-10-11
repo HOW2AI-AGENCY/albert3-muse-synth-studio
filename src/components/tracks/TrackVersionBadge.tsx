@@ -49,10 +49,10 @@ export function TrackVersionBadge({
     <Badge
       variant={variant}
       className={`flex items-center gap-1 ${className}`}
-      title={`${versionCount} дополнительных версий`}
+      title={`${versionCount} ${versionCount === 1 ? 'дополнительная версия' : 'дополнительных версий'}`}
     >
       <Layers className="w-3 h-3" />
-      <span>{versionCount}</span>
+      <span>+{versionCount}</span>
     </Badge>
   );
 }

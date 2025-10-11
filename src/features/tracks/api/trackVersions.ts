@@ -180,7 +180,7 @@ function isSunoDataArray(data: unknown): data is SunoTrackData[] {
 export interface TrackWithVersions {
   id: string;
   parentTrackId: string;
-  /** Порядковый номер версии в интерфейсе (начиная с 1 для оригинала) */
+  /** Порядковый номер версии в интерфейсе (0 для оригинала, 1+ для версий) */
   versionNumber: number;
   /** Исходный номер версии из БД (может начинаться с 0 или 1 в зависимости от источника) */
   sourceVersionNumber: number | null;
@@ -251,10 +251,15 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       suno_id?: string | null;
       status?: string | null;
     }) => {
+      // ✅ ИСПРАВЛЕНО: Правильная логика versionNumber
+      const versionNumber = payload.isOriginal 
+        ? 0 // Оригинал = 0
+        : (payload.sourceVersionNumber ?? normalizedVersions.length); // Версии используют sourceVersionNumber
+      
       normalizedVersions.push({
         id: payload.id,
         parentTrackId: mainTrack.id,
-        versionNumber: normalizedVersions.length + 1,
+        versionNumber,
         sourceVersionNumber: payload.sourceVersionNumber,
         isOriginal: payload.isOriginal,
         isMasterVersion: payload.isMasterVersion,
@@ -298,7 +303,7 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
           sourceVersionNumber: version.version_number ?? null,
           isMasterVersion: Boolean(version.is_master),
           isOriginal: false,
-          title: `${mainTrack.title} (V${version.version_number ?? normalizedVersions.length + 1})`,
+          title: `${mainTrack.title} (V${version.version_number ?? normalizedVersions.length})`,
           audio_url: version.audio_url ?? null,
           cover_url: version.cover_url ?? mainTrack.cover_url ?? null,
           video_url: version.video_url ?? null,

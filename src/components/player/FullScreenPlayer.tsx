@@ -235,9 +235,11 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
               {currentTrack.title}
             </h2>
             {/* Индикатор текущей версии */}
-            {hasVersions && currentVersionIndex > 0 && (
+            {hasVersions && (
               <Badge variant="secondary" className="text-sm">
-                V{currentVersionIndex + 1}
+                {currentTrack.isOriginalVersion 
+                  ? 'Оригинал' 
+                  : `V${currentTrack.versionNumber ?? currentVersionIndex + 1}`}
               </Badge>
             )}
           </div>

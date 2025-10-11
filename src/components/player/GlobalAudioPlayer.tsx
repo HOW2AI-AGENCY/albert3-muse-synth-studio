@@ -199,9 +199,11 @@ export const GlobalAudioPlayer = () => {
                   {currentTrack.title}
                 </h4>
                 {/* Индикатор текущей версии */}
-                {hasVersions && currentVersionIndex > 0 && (
+                {hasVersions && (
                   <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
-                    V{currentVersionIndex + 1}
+                    {currentTrack.isOriginalVersion 
+                      ? 'Оригинал' 
+                      : `V${currentTrack.versionNumber ?? currentVersionIndex + 1}`}
                   </Badge>
                 )}
               </div>

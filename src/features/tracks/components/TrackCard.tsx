@@ -322,6 +322,14 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDe
         <div className="flex-1">
           <h3 className="font-semibold text-sm leading-tight mb-0.5 line-clamp-1 group-hover:text-primary">
             {track.title}
+            {/* Показываем метку версии если это extended/cover трек */}
+            {track.metadata && (
+              (track.metadata as { extended_from?: string; is_cover?: boolean }).extended_from ? 
+                <span className="text-xs text-muted-foreground font-normal ml-1">(Extended)</span> : 
+              (track.metadata as { extended_from?: string; is_cover?: boolean }).is_cover ? 
+                <span className="text-xs text-muted-foreground font-normal ml-1">(Cover)</span> : 
+              null
+            )}
           </h3>
           <p className="text-xs text-muted-foreground mb-1.5 line-clamp-1">{track.prompt}</p>
         </div>
