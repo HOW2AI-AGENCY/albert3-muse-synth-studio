@@ -97,7 +97,12 @@ const formatDate = (date?: string) => {
       year: "numeric",
     });
   } catch (error) {
-    console.error("Failed to format date", error);
+    import('@/utils/logger').then(({ logWarn }) => {
+      logWarn('Failed to format date', 'DetailPanel', {
+        date,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    });
     return "—";
   }
 };
@@ -141,12 +146,20 @@ export const DetailPanelContent = ({
     const hasView = viewSessionGuard.has(track.id);
 
     AnalyticsService.recordView(track.id).catch((error) => {
-      console.error('Failed to record track view', error);
+      import('@/utils/logger').then(({ logError }) => {
+        logError('Failed to record track view', error, 'DetailPanel', {
+          trackId: track.id
+        });
+      });
     });
 
     if (track.status === 'completed' && !hasView) {
       AnalyticsService.recordPlay(track.id).catch((error) => {
-        console.error('Failed to record track play', error);
+        import('@/utils/logger').then(({ logError }) => {
+          logError('Failed to record track play', error, 'DetailPanel', {
+            trackId: track.id
+          });
+        });
       });
     }
   }, [track?.id, track.status]);

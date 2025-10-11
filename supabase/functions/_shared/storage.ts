@@ -17,9 +17,13 @@ async function downloadWithRetry(url: string, maxRetries = 3): Promise<Response>
       if (response.ok) {
         return response;
       }
-      console.error(`[STORAGE] Download attempt ${i + 1} failed:`, response.status);
+      import('../_shared/logger.ts').then(({ logger }) => {
+        logger.warn('Download attempt failed', { attempt: i + 1, status: response.status });
+      });
     } catch (error) {
-      console.error(`[STORAGE] Download attempt ${i + 1} error:`, error);
+      import('../_shared/logger.ts').then(({ logger }) => {
+        logger.error('Download attempt error', { error, attempt: i + 1 });
+      });
       if (i === maxRetries - 1) throw error;
       // Exponential backoff: wait 1s, 2s, 3s
       await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
@@ -62,7 +66,9 @@ async function uploadWithRetry(
       
       return { data, error: null };
     } catch (error) {
-      console.error(`[STORAGE] Upload attempt ${i + 1} failed:`, error);
+      import('../_shared/logger.ts').then(({ logger }) => {
+        logger.error('Upload attempt failed', { error, attempt: i + 1, bucket, path });
+      });
       if (i === maxRetries - 1) {
         return { data: null, error };
       }
@@ -89,10 +95,13 @@ export async function downloadAndUploadAudio(
   fileName: string,
   supabase: SupabaseClient
 ): Promise<string> {
-  console.log(`🔽 [STORAGE] Downloading audio from external URL...`);
-  console.log(`   Track ID: ${trackId}`);
-  console.log(`   File: ${fileName}`);
-  console.log(`   URL: ${audioUrl.substring(0, 60)}...`);
+  import('../_shared/logger.ts').then(({ logger }) => {
+    logger.info('Downloading audio from external URL', {
+      trackId,
+      fileName,
+      urlPreview: audioUrl.substring(0, 60)
+    });
+  });
   
   try {
     // 1. Download from external URL with retry
@@ -100,11 +109,21 @@ export async function downloadAndUploadAudio(
     const audioBlob = await response.blob();
     const audioSize = audioBlob.size;
     
-    console.log(`✅ [STORAGE] Downloaded ${(audioSize / 1024 / 1024).toFixed(2)} MB`);
+    import('../_shared/logger.ts').then(({ logger }) => {
+      logger.info('Audio downloaded', {
+        trackId,
+        sizeMB: (audioSize / 1024 / 1024).toFixed(2)
+      });
+    });
     
     // 2. Upload to Supabase Storage with retry
     const path = `${userId}/${trackId}/${fileName}`;
-    console.log(`⬆️  [STORAGE] Uploading to: tracks-audio/${path}`);
+    import('../_shared/logger.ts').then(({ logger }) => {
+      logger.info('Uploading to storage', {
+        bucket: 'tracks-audio',
+        path
+      });
+    });
     
     const { data, error } = await uploadWithRetry(
       supabase,
@@ -115,24 +134,38 @@ export async function downloadAndUploadAudio(
     );
     
     if (error) {
-      console.error('🔴 [STORAGE] Upload failed after all retries:', error);
+      import('../_shared/logger.ts').then(({ logger }) => {
+        logger.error('Upload failed after retries', { error, trackId, fileName });
+      });
       throw error;
     }
     
-    console.log(`✅ [STORAGE] Upload successful`);
+    import('../_shared/logger.ts').then(({ logger }) => {
+      logger.info('Upload successful', { trackId, fileName });
+    });
     
     // 3. Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('tracks-audio')
       .getPublicUrl(path);
     
-    console.log(`🔗 [STORAGE] Public URL: ${publicUrl.substring(0, 60)}...`);
+    import('../_shared/logger.ts').then(({ logger }) => {
+      logger.info('Public URL generated', {
+        trackId,
+        urlPreview: publicUrl.substring(0, 60)
+      });
+    });
     
     return publicUrl;
   } catch (error) {
-    console.error('🔴 [STORAGE] Failed to download and upload audio:', error);
-    // Return original URL as fallback
-    console.warn('⚠️  [STORAGE] Falling back to original URL');
+    import('../_shared/logger.ts').then(({ logger }) => {
+      logger.error('Failed to download and upload audio', {
+        error,
+        trackId,
+        fileName
+      });
+      logger.warn('Falling back to original URL', { trackId });
+    });
     return audioUrl;
   }
 }
@@ -153,7 +186,9 @@ export async function downloadAndUploadCover(
   fileName: string,
   supabase: SupabaseClient
 ): Promise<string> {
-  console.log(`🔽 [STORAGE] Downloading cover from external URL...`);
+  import('../_shared/logger.ts').then(({ logger }) => {
+    logger.info('Downloading cover from external URL', { trackId, fileName });
+  });
   
   try {
     const response = await downloadWithRetry(coverUrl);
@@ -175,10 +210,14 @@ export async function downloadAndUploadCover(
       .from('tracks-covers')
       .getPublicUrl(path);
     
-    console.log(`✅ [STORAGE] Cover uploaded successfully`);
+    import('../_shared/logger.ts').then(({ logger }) => {
+      logger.info('Cover uploaded successfully', { trackId, fileName });
+    });
     return publicUrl;
   } catch (error) {
-    console.error('🔴 [STORAGE] Failed to upload cover:', error);
+    import('../_shared/logger.ts').then(({ logger }) => {
+      logger.error('Failed to upload cover', { error, trackId, fileName });
+    });
     return coverUrl; // Fallback to original URL
   }
 }
@@ -199,7 +238,9 @@ export async function downloadAndUploadVideo(
   fileName: string,
   supabase: SupabaseClient
 ): Promise<string> {
-  console.log(`🔽 [STORAGE] Downloading video from external URL...`);
+  import('../_shared/logger.ts').then(({ logger }) => {
+    logger.info('Downloading video from external URL', { trackId, fileName });
+  });
   
   try {
     const response = await downloadWithRetry(videoUrl);
@@ -221,10 +262,14 @@ export async function downloadAndUploadVideo(
       .from('tracks-videos')
       .getPublicUrl(path);
     
-    console.log(`✅ [STORAGE] Video uploaded successfully`);
+    import('../_shared/logger.ts').then(({ logger }) => {
+      logger.info('Video uploaded successfully', { trackId, fileName });
+    });
     return publicUrl;
   } catch (error) {
-    console.error('🔴 [STORAGE] Failed to upload video:', error);
+    import('../_shared/logger.ts').then(({ logger }) => {
+      logger.error('Failed to upload video', { error, trackId, fileName });
+    });
     return videoUrl; // Fallback to original URL
   }
 }

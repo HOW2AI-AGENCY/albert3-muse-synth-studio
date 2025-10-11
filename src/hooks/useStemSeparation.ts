@@ -121,7 +121,12 @@ export const useStemSeparation = ({
             .eq("track_id", trackId);
 
           if (stemsError) {
-            console.error("Error polling stems:", stemsError);
+            import('@/utils/logger').then(({ logError }) => {
+              logError('Error polling stems', new Error(stemsError.message), 'useStemSeparation', {
+                trackId,
+                versionId
+              });
+            });
             return;
           }
 
@@ -157,7 +162,13 @@ export const useStemSeparation = ({
               separationMode: mode,
             });
           } catch (syncError) {
-            console.error("Error synchronising stem job:", syncError);
+            import('@/utils/logger').then(({ logError }) => {
+              logError('Error synchronising stem job', syncError as Error, 'useStemSeparation', {
+                trackId,
+                versionId,
+                taskId: targetTaskId
+              });
+            });
           } finally {
             syncInFlightRef.current = false;
           }
@@ -178,7 +189,13 @@ export const useStemSeparation = ({
       } catch (error) {
         clearAllTimers();
         const message = error instanceof Error ? error.message : "Ошибка при создании стемов";
-        console.error("Error generating stems:", error);
+        import('@/utils/logger').then(({ logError }) => {
+          logError('Stem generation failed', error as Error, 'useStemSeparation', {
+            trackId,
+            versionId,
+            separationMode: mode
+          });
+        });
         
         if (message.includes("429")) {
           toast.error("Превышен лимит запросов. Попробуйте позже.");

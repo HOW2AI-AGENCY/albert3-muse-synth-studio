@@ -57,7 +57,11 @@ export const useBoostStyle = () => {
 
       return data.result;
     } catch (error: any) {
-      console.error('Boost style error:', error);
+      import('@/utils/logger').then(({ logError }) => {
+        logError('Boost style failed', error, 'useBoostStyle', {
+          contentLength: content.length
+        });
+      });
       
       let errorMessage = 'Failed to boost style';
       

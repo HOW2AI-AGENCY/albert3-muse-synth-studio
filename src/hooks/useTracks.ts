@@ -217,7 +217,9 @@ export const useTracks = (refreshTrigger?: number, _options?: UseTracksOptions) 
           // Reload tracks after sync
           setTimeout(() => loadTracks(), 3000);
         } catch (error) {
-          console.error('Failed to check stuck tracks:', error);
+          logError('Failed to check stuck tracks', error as Error, 'useTracks', {
+            trackIds: stuckTracks.map(t => t.id)
+          });
         }
       }
     }, 2 * 60 * 1000); // every 2 minutes

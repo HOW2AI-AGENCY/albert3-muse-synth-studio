@@ -81,10 +81,10 @@ const TracksListComponent = ({
   }, [toast]);
 
   const handleRetry = useCallback(async (trackId: string) => {
+    const track = tracks.find(t => t.id === trackId);
+    if (!track) return;
+    
     try {
-      const track = tracks.find(t => t.id === trackId);
-      if (!track) return;
-
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast({ title: "Ошибка", description: "Необходима авторизация", variant: "destructive" });
@@ -107,7 +107,13 @@ const TracksListComponent = ({
       refreshTracks();
       toast({ title: "Успешно", description: "Генерация перезапущена" });
     } catch (error) {
-      console.error('Retry error:', error);
+      import('@/utils/logger').then(({ logError }) => {
+        logError('Track retry failed', error as Error, 'TracksList', {
+          trackId,
+          title: track.title,
+          provider: track.provider
+        });
+      });
       toast({ 
         title: "Ошибка", 
         description: error instanceof Error ? error.message : "Не удалось перезапустить генерацию", 
@@ -121,7 +127,11 @@ const TracksListComponent = ({
       await deleteTrack(trackId);
       toast({ title: "Удалено", description: "Трек успешно удалён" });
     } catch (error) {
-      console.error('Delete error:', error);
+      import('@/utils/logger').then(({ logError }) => {
+        logError('Track deletion failed', error as Error, 'TracksList', {
+          trackId
+        });
+      });
       toast({ 
         title: "Ошибка", 
         description: "Не удалось удалить трек", 

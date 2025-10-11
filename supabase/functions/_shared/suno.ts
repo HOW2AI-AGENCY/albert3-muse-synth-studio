@@ -281,7 +281,9 @@ export const buildSunoHeaders = (
 
 const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null } => {
   if (!payload || typeof payload !== "object") {
-    console.warn('⚠️ [SUNO] Invalid payload type:', typeof payload);
+    import('./logger.ts').then(({ logger }) => {
+      logger.warn('Invalid Suno payload type', { type: typeof payload });
+    });
     return {};
   }
 
@@ -301,7 +303,9 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
   for (const key of TASK_ID_KEYS) {
     const candidate = normaliseString(record[key]);
     if (candidate) {
-      console.log('✅ [SUNO] Found taskId directly:', { key, taskId: candidate });
+      import('./logger.ts').then(({ logger }) => {
+        logger.info('Found taskId directly', { key, taskId: candidate });
+      });
       return { taskId: candidate, jobId: normaliseString(record.jobId || record.job_id) ?? null };
     }
   }
@@ -310,7 +314,9 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
   if ('data' in record && record.data && typeof record.data === 'object' && !Array.isArray(record.data)) {
     const result = parseTaskId(record.data);
     if (result.taskId) {
-      console.log('✅ [SUNO] Found taskId in data object (initial response)');
+      import('./logger.ts').then(({ logger }) => {
+        logger.info('Found taskId in data object');
+      });
       return result;
     }
   }
@@ -321,7 +327,9 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
     if (first && typeof first === 'object') {
       const result = parseTaskId(first);
       if (result.taskId) {
-        console.log('✅ [SUNO] Found taskId in data array (callback)');
+        import('./logger.ts').then(({ logger }) => {
+          logger.info('Found taskId in data array');
+        });
         return result;
       }
     }
@@ -333,7 +341,9 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
     if (nested && typeof nested === 'object') {
       const result = parseTaskId(nested);
       if (result.taskId) {
-        console.log('✅ [SUNO] Found taskId in nested object');
+        import('./logger.ts').then(({ logger }) => {
+          logger.info('Found taskId in nested object');
+        });
         return result;
       }
     }
@@ -400,9 +410,11 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
 
   if (!foundTaskId) {
     // ✅ ФАЗА 1.1: Логируем если ничего не найдено
-    console.error('🔴 [SUNO] Failed to extract taskId from payload:', {
-      payloadKeys: Object.keys(payload as Record<string, unknown>),
-      payloadPreview: JSON.stringify(payload).substring(0, 500)
+    import('./logger.ts').then(({ logger }) => {
+      logger.error('Failed to extract taskId from payload', {
+        payloadKeys: Object.keys(payload as Record<string, unknown>),
+        payloadPreview: JSON.stringify(payload).substring(0, 500)
+      });
     });
     return {};
   }

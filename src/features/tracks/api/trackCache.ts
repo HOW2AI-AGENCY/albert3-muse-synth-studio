@@ -55,7 +55,12 @@ class TrackCacheManager {
 
       return track;
     } catch (error) {
-      console.warn('Ошибка при получении трека из кэша:', error);
+      import('@/utils/logger').then(({ logWarn }) => {
+        logWarn('Failed to get track from cache', 'TrackCache', {
+          trackId,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      });
       return null;
     }
   }
@@ -81,7 +86,13 @@ class TrackCacheManager {
     } catch (error) {
       // Handle quota exceeded error
       if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.code === 22)) {
-        console.warn('[TrackCache] Storage quota exceeded, clearing old entries and retrying');
+        import('@/utils/logger').then(({ logWarn }) => {
+          logWarn('Storage quota exceeded, clearing cache', 'TrackCache', {
+            operation: 'cache',
+            trackId: track.id,
+            quotaExceeded: true
+          });
+        });
         this.cleanExpiredTracks();
         // If still failing, reduce cache size by 50%
         const cache = this.getCache();
@@ -95,10 +106,22 @@ class TrackCacheManager {
           newCache[track.id] = { ...track, cached_at: Date.now() };
           localStorage.setItem(this.CACHE_KEY, JSON.stringify(newCache));
         } catch (retryError) {
-          console.error('[TrackCache] Failed to cache even after cleanup:', retryError);
+          import('@/utils/logger').then(({ logError }) => {
+            logError('Cache failed after cleanup', retryError as Error, 'TrackCache', {
+              operation: 'cache',
+              trackId: track.id,
+              retriesExhausted: true
+            });
+          });
         }
       } else {
-        console.warn('Ошибка при сохранении трека в кэш:', error);
+        import('@/utils/logger').then(({ logWarn }) => {
+          logWarn('Failed to save track to cache', 'TrackCache', {
+            operation: 'cache',
+            trackId: track.id,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        });
       }
     }
   }
@@ -145,7 +168,12 @@ class TrackCacheManager {
 
       return validTracks.sort((a, b) => b.cached_at - a.cached_at);
     } catch (error) {
-      console.warn('Ошибка при получении треков из кэша:', error);
+      import('@/utils/logger').then(({ logWarn }) => {
+        logWarn('Failed to get valid tracks from cache', 'TrackCache', {
+          operation: 'getValidTracks',
+          error: error instanceof Error ? error.message : String(error)
+        });
+      });
       return [];
     }
   }
@@ -169,7 +197,13 @@ class TrackCacheManager {
       this.saveCache(cache);
       this.updateMetadata();
     } catch (error) {
-      console.warn('Ошибка при удалении трека из кэша:', error);
+      import('@/utils/logger').then(({ logWarn }) => {
+        logWarn('Failed to remove track from cache', 'TrackCache', {
+          operation: 'remove',
+          trackId,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      });
     }
   }
 
@@ -181,7 +215,12 @@ class TrackCacheManager {
       localStorage.removeItem(this.CACHE_KEY);
       localStorage.removeItem(this.CACHE_METADATA_KEY);
     } catch (error) {
-      console.warn('Ошибка при очистке кэша:', error);
+      import('@/utils/logger').then(({ logWarn }) => {
+        logWarn('Failed to clear cache', 'TrackCache', {
+          operation: 'clearCache',
+          error: error instanceof Error ? error.message : String(error)
+        });
+      });
     }
   }
 
@@ -222,7 +261,12 @@ class TrackCacheManager {
         newestTrack,
       };
     } catch (error) {
-      console.warn('Ошибка при получении статистики кэша:', error);
+      import('@/utils/logger').then(({ logWarn }) => {
+        logWarn('Failed to get cache stats', 'TrackCache', {
+          operation: 'getCacheStats',
+          error: error instanceof Error ? error.message : String(error)
+        });
+      });
       return {
         totalTracks: 0,
         cacheSize: 0,
@@ -253,7 +297,12 @@ class TrackCacheManager {
 
       return removedCount;
     } catch (error) {
-      console.warn('Ошибка при очистке устаревших треков:', error);
+      import('@/utils/logger').then(({ logWarn }) => {
+        logWarn('Failed to clean expired tracks', 'TrackCache', {
+          operation: 'cleanExpired',
+          error: error instanceof Error ? error.message : String(error)
+        });
+      });
       return 0;
     }
   }
@@ -263,7 +312,12 @@ class TrackCacheManager {
       const cacheString = localStorage.getItem(this.CACHE_KEY);
       return cacheString ? JSON.parse(cacheString) : {};
     } catch (error) {
-      console.warn('Ошибка при чтении кэша, создаем новый:', error);
+      import('@/utils/logger').then(({ logWarn }) => {
+        logWarn('Failed to read cache, creating new', 'TrackCache', {
+          operation: 'getCache',
+          error: error instanceof Error ? error.message : String(error)
+        });
+      });
       return {};
     }
   }
@@ -300,7 +354,12 @@ class TrackCacheManager {
       };
       localStorage.setItem(this.CACHE_METADATA_KEY, JSON.stringify(metadata));
     } catch (error) {
-      console.warn('Ошибка при обновлении метаданных кэша:', error);
+      import('@/utils/logger').then(({ logWarn }) => {
+        logWarn('Failed to update cache metadata', 'TrackCache', {
+          operation: 'updateMetadata',
+          error: error instanceof Error ? error.message : String(error)
+        });
+      });
     }
   }
 }
