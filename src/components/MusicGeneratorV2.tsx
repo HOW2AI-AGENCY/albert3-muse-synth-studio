@@ -1,16 +1,19 @@
 import { memo, useCallback, useState } from 'react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Music, Loader2, Plus, FileAudio, FileText, SlidersHorizontal, Sparkles, Mic, ChevronDown, Wand2, X } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Music, Loader2, Plus, FileAudio, FileText, SlidersHorizontal, Sparkles, Mic, ChevronDown, Wand2, X, Zap, Sliders, Volume2, Palette } from 'lucide-react';
 import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
@@ -426,13 +429,22 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               </div>
 
               {/* Inline AudioRecorder */}
-              {recordingMode && (
-                <AudioRecorder
-                  onRecordComplete={handleRecordComplete}
-                  onRemove={() => setRecordingMode(false)}
-                  className="border-primary/20"
-                />
-              )}
+            {recordingMode && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden"
+              >
+                <Card className="p-3 bg-primary/5 border-primary/20">
+                  <AudioRecorder
+                    onRecordComplete={handleRecordComplete}
+                    onRemove={() => setRecordingMode(false)}
+                  />
+                </Card>
+              </motion.div>
+            )}
 
               {/* Reference Audio Display */}
               {params.referenceFileName && (

@@ -220,6 +220,23 @@
     --container-5xl: 64rem;    /* 1024px */
     --container-6xl: 72rem;    /* 1152px */
     --container-7xl: 80rem;    /* 1280px */
+
+    /* ===== CARD HIERARCHY ===== */
+    --card-primary-border: hsl(var(--outline) / 0.8);
+    --card-primary-shadow: var(--shadow-md);
+
+    --card-secondary-bg: hsl(var(--surface-variant) / 0.3);
+    --card-secondary-border: hsl(var(--outline) / 0.5);
+    --card-secondary-shadow: var(--shadow-sm);
+
+    --card-tertiary-bg: transparent;
+    --card-tertiary-border: hsl(var(--outline) / 0.3);
+    --card-tertiary-shadow: none;
+
+    /* ===== INTERACTIVE STATES ===== */
+    --interactive-hover-bg: hsl(var(--color-accent-purple) / 0.05);
+    --interactive-active-bg: hsl(var(--color-accent-purple) / 0.1);
+    --interactive-focus-ring: 0 0 0 3px hsl(var(--color-accent-purple) / 0.3);
   }
 
   /* ===== АДАПТИВНЫЕ ТОКЕНЫ (КОМПАКТНАЯ ВЕРСИЯ) ===== */
