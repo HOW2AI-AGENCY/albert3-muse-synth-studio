@@ -15,7 +15,6 @@ import {
   Trash2,
   Split,
   MoreVertical,
-  Mic,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -169,20 +168,6 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
         <div className="flex items-center gap-2">
           <p className={cn("font-medium text-sm truncate", isCurrentTrack && "text-primary")}>{track.title}</p>
           {isCurrentTrack && isPlaying && <Headphones className="h-4 w-4 text-primary flex-shrink-0" />}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                {track.has_vocals ? (
-                  <Mic className="h-3 w-3 text-primary flex-shrink-0" />
-                ) : (
-                  <Music className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                )}
-              </TooltipTrigger>
-              <TooltipContent>
-                {track.has_vocals ? 'С вокалом' : 'Инструментал'}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
         </div>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {track.status === 'completed' ? (

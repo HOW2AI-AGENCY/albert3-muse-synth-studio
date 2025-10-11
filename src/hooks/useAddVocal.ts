@@ -18,10 +18,10 @@ export const useAddVocal = () => {
     try {
       logger.info(`🎤 [ADD-VOCAL] Starting vocal generation for track: ${params.trackId}`);
 
-      // Получаем данные трека
+      // Получаем данные инструментального трека
       const { data: track, error: trackError } = await supabase
         .from('tracks')
-        .select('audio_url, title, style_tags')
+        .select('audio_url, title, style_tags, prompt')
         .eq('id', params.trackId)
         .single();
 
@@ -29,14 +29,16 @@ export const useAddVocal = () => {
         throw new Error('Трек не найден или не имеет аудио');
       }
 
-      // Генерируем вокал через generate-suno с параметром make_instrumental = false
-      const { data, error } = await supabase.functions.invoke('generate-suno', {
+      // Используем create-cover endpoint с вокалом
+      const { data, error } = await supabase.functions.invoke('create-cover', {
         body: {
-          prompt: params.vocalText || `Vocal for ${track.title}`,
+          referenceAudioUrl: track.audio_url,
+          referenceTrackId: params.trackId,
+          prompt: params.vocalText || track.prompt || `Vocal version of ${track.title}`,
           tags: params.vocalStyle || track.style_tags?.join(', ') || 'vocal',
-          make_instrumental: false,
-          reference_audio_url: track.audio_url,
-          model: 'V4_5PLUS'
+          title: `${track.title} (Vocal)`,
+          make_instrumental: false,  // ✅ С вокалом
+          customMode: true
         }
       });
 

@@ -4,8 +4,39 @@
 
 ## [Unreleased]
 
-### Fixed
-- Исправлена edge-функция `get-balance`: удалён устаревший код и восстановлен расширенный парсинг ответа Suno, чтобы запросы баланса снова выполнялись без ошибок.
+## [2.6.4] - 2025-10-11
+
+### ✅ Fixed
+- **[FIX-001]** Registered `upload-extend-audio` and `add-instrumental` functions in `supabase/config.toml`
+- **[FIX-002]** Replaced deprecated `SUPABASE_ANON_KEY` with `SUPABASE_PUBLISHABLE_KEY` in Edge Functions (`upload-extend-audio`, `add-instrumental`, `get-balance`)
+- **[FIX-003]** Integrated AudioRecorder component into MusicGeneratorV2 (record button now functional)
+- **[FIX-006]** Fixed `search_path` in database functions (`update_updated_at_column`, `update_lyrics_jobs_updated_at`)
+- Исправлена edge-функция `get-balance`: удалён устаревший код и восстановлен расширенный парсинг ответа Suno
+
+### ♻️ Refactored
+- **[FIX-003A]** Refactored `upload-extend-audio` to use shared utilities (auth, logging, validation, security)
+- **[FIX-003B]** Refactored `add-instrumental` to use shared utilities
+- **[FIX-004]** Fixed `useAddVocal` hook to use `create-cover` endpoint instead of `generate-suno`
+
+### 🎨 UI/UX Improvements
+- **[FIX-005]** Removed vocal/instrumental icons from `TrackListItem` (kept only in TrackCard for consistency)
+
+### 🧪 Testing
+- Added unit tests for `useAddVocal` hook
+- Added integration tests for `upload-extend-audio` Edge Function
+- Added integration tests for `add-instrumental` Edge Function
+- Added E2E Playwright tests for Upload & Extend workflows
+
+### 📚 Documentation
+- Created comprehensive `UPLOAD_AND_EXTEND_GUIDE.md`
+- Updated architecture diagrams
+- Added troubleshooting section for new features
+
+### 🔧 Technical Improvements
+- Centralized CORS headers using `createCorsHeaders()` from `_shared/cors.ts`
+- Centralized security headers using `createSecurityHeaders()` from `_shared/security.ts`
+- Improved logging with structured logger across all new Edge Functions
+- Consistent error handling and validation patterns
 
 ## [2.6.3] - 2025-10-15
 

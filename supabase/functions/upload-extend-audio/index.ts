@@ -1,9 +1,9 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createCorsHeaders } from '../_shared/cors.ts';
+import { createSecurityHeaders } from '../_shared/security.ts';
+import { createSupabaseUserClient } from '../_shared/supabase.ts';
+import { logger } from '../_shared/logger.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const corsHeaders = createCorsHeaders();
 
 interface UploadExtendAudioRequest {
   uploadUrl: string;
@@ -29,34 +29,38 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      logger.error('🔴 [UPLOAD-EXTEND] Missing authorization header');
       return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
         status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, ...createSecurityHeaders(), 'Content-Type': 'application/json' }
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    const token = authHeader.replace('Bearer ', '');
+    const supabase = createSupabaseUserClient(token);
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
+      logger.error('🔴 [UPLOAD-EXTEND] Unauthorized', { error: userError });
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, ...createSecurityHeaders(), 'Content-Type': 'application/json' }
       });
     }
+
+    logger.info('🎵 [UPLOAD-EXTEND] Request from user', { userId: user.id });
 
     const body: UploadExtendAudioRequest = await req.json();
     
     if (!body.uploadUrl || typeof body.defaultParamFlag !== 'boolean') {
+      logger.error('🔴 [UPLOAD-EXTEND] Missing required fields', { hasUploadUrl: !!body.uploadUrl, hasDefaultParamFlag: typeof body.defaultParamFlag === 'boolean' });
       return new Response(JSON.stringify({ error: 'Missing required fields: uploadUrl, defaultParamFlag' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, ...createSecurityHeaders(), 'Content-Type': 'application/json' }
       });
     }
+
+    logger.info('🎵 [UPLOAD-EXTEND] Starting upload-extend', { uploadUrl: body.uploadUrl, defaultParamFlag: body.defaultParamFlag, model: body.model });
 
     const SUNO_API_KEY = Deno.env.get('SUNO_API_KEY');
     if (!SUNO_API_KEY) {
@@ -73,11 +77,12 @@ Deno.serve(async (req) => {
 
     if (body.defaultParamFlag) {
       if (!body.style || !body.title || typeof body.continueAt !== 'number') {
+        logger.error('🔴 [UPLOAD-EXTEND] Missing required default params', { hasStyle: !!body.style, hasTitle: !!body.title, hasContinueAt: typeof body.continueAt === 'number' });
         return new Response(JSON.stringify({ 
           error: 'When defaultParamFlag is true, style, title, and continueAt are required' 
         }), {
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: { ...corsHeaders, ...createSecurityHeaders(), 'Content-Type': 'application/json' }
         });
       }
       sunoPayload.style = body.style;
@@ -96,7 +101,7 @@ Deno.serve(async (req) => {
     if (typeof body.weirdnessConstraint === 'number') sunoPayload.weirdnessConstraint = body.weirdnessConstraint;
     if (typeof body.audioWeight === 'number') sunoPayload.audioWeight = body.audioWeight;
 
-    console.log('Calling Suno API upload-extend with:', sunoPayload);
+    logger.info('🎵 [UPLOAD-EXTEND] Calling Suno API', { payload: sunoPayload });
 
     const sunoResponse = await fetch('https://api.sunoapi.org/api/v1/generate/upload-extend', {
       method: 'POST',
@@ -110,13 +115,13 @@ Deno.serve(async (req) => {
     const sunoData = await sunoResponse.json();
 
     if (!sunoResponse.ok || sunoData.code !== 200) {
-      console.error('Suno API error:', sunoData);
+      logger.error('🔴 [UPLOAD-EXTEND] Suno API error', { status: sunoResponse.status, data: sunoData });
       return new Response(JSON.stringify({ 
         error: sunoData.msg || 'Failed to call Suno API',
         details: sunoData
       }), {
         status: sunoResponse.status,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, ...createSecurityHeaders(), 'Content-Type': 'application/json' }
       });
     }
 
@@ -148,11 +153,11 @@ Deno.serve(async (req) => {
       .single();
 
     if (trackError) {
-      console.error('Failed to create track:', trackError);
+      logger.error('🔴 [UPLOAD-EXTEND] Failed to create track', { error: trackError });
       throw trackError;
     }
 
-    console.log('Upload-extend task created:', { trackId: track.id, sunoTaskId: taskId });
+    logger.info('✅ [UPLOAD-EXTEND] Task created successfully', { trackId: track.id, sunoTaskId: taskId });
 
     return new Response(JSON.stringify({
       success: true,
@@ -160,17 +165,17 @@ Deno.serve(async (req) => {
       sunoTaskId: taskId
     }), {
       status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, ...createSecurityHeaders(), 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
-    console.error('Error in upload-extend-audio:', error);
+    logger.error('🔴 [UPLOAD-EXTEND] Unexpected error', { error: error instanceof Error ? error.message : 'Unknown' });
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return new Response(JSON.stringify({ 
       error: errorMessage
     }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, ...createSecurityHeaders(), 'Content-Type': 'application/json' }
     });
   }
 });

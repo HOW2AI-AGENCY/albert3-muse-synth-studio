@@ -68,3 +68,9 @@ verify_jwt = true
 
 [functions.check-stuck-tracks]
 verify_jwt = true
+
+[functions.upload-extend-audio]
+verify_jwt = true
+
+[functions.add-instrumental]
+verify_jwt = true

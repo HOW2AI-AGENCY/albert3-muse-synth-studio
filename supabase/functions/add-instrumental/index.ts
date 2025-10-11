@@ -1,9 +1,9 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createCorsHeaders } from '../_shared/cors.ts';
+import { createSecurityHeaders } from '../_shared/security.ts';
+import { createSupabaseUserClient } from '../_shared/supabase.ts';
+import { logger } from '../_shared/logger.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const corsHeaders = createCorsHeaders();
 
 interface AddInstrumentalRequest {
   uploadUrl: string;
@@ -25,36 +25,45 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      logger.error('🔴 [ADD-INSTRUMENTAL] Missing authorization header');
       return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
         status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, ...createSecurityHeaders(), 'Content-Type': 'application/json' }
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    const token = authHeader.replace('Bearer ', '');
+    const supabase = createSupabaseUserClient(token);
 
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
+      logger.error('🔴 [ADD-INSTRUMENTAL] Unauthorized', { error: userError });
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, ...createSecurityHeaders(), 'Content-Type': 'application/json' }
       });
     }
+
+    logger.info('🎵 [ADD-INSTRUMENTAL] Request from user', { userId: user.id });
 
     const body: AddInstrumentalRequest = await req.json();
     
     if (!body.uploadUrl || !body.title || !body.negativeTags || !body.tags) {
+      logger.error('🔴 [ADD-INSTRUMENTAL] Missing required fields', { 
+        hasUploadUrl: !!body.uploadUrl, 
+        hasTitle: !!body.title, 
+        hasNegativeTags: !!body.negativeTags, 
+        hasTags: !!body.tags 
+      });
       return new Response(JSON.stringify({ 
         error: 'Missing required fields: uploadUrl, title, negativeTags, tags' 
       }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, ...createSecurityHeaders(), 'Content-Type': 'application/json' }
       });
     }
+
+    logger.info('🎵 [ADD-INSTRUMENTAL] Starting add-instrumental', { uploadUrl: body.uploadUrl, title: body.title, tags: body.tags });
 
     const SUNO_API_KEY = Deno.env.get('SUNO_API_KEY');
     if (!SUNO_API_KEY) {
@@ -76,7 +85,7 @@ Deno.serve(async (req) => {
     if (typeof body.weirdnessConstraint === 'number') sunoPayload.weirdnessConstraint = body.weirdnessConstraint;
     if (typeof body.audioWeight === 'number') sunoPayload.audioWeight = body.audioWeight;
 
-    console.log('Calling Suno API add-instrumental with:', sunoPayload);
+    logger.info('🎵 [ADD-INSTRUMENTAL] Calling Suno API', { payload: sunoPayload });
 
     const sunoResponse = await fetch('https://api.sunoapi.org/api/v1/generate/add-instrumental', {
       method: 'POST',
@@ -90,13 +99,13 @@ Deno.serve(async (req) => {
     const sunoData = await sunoResponse.json();
 
     if (!sunoResponse.ok || sunoData.code !== 200) {
-      console.error('Suno API error:', sunoData);
+      logger.error('🔴 [ADD-INSTRUMENTAL] Suno API error', { status: sunoResponse.status, data: sunoData });
       return new Response(JSON.stringify({ 
         error: sunoData.msg || 'Failed to call Suno API',
         details: sunoData
       }), {
         status: sunoResponse.status,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, ...createSecurityHeaders(), 'Content-Type': 'application/json' }
       });
     }
 
@@ -129,11 +138,11 @@ Deno.serve(async (req) => {
       .single();
 
     if (trackError) {
-      console.error('Failed to create track:', trackError);
+      logger.error('🔴 [ADD-INSTRUMENTAL] Failed to create track', { error: trackError });
       throw trackError;
     }
 
-    console.log('Add-instrumental task created:', { trackId: track.id, sunoTaskId: taskId });
+    logger.info('✅ [ADD-INSTRUMENTAL] Task created successfully', { trackId: track.id, sunoTaskId: taskId });
 
     return new Response(JSON.stringify({
       success: true,
@@ -141,17 +150,17 @@ Deno.serve(async (req) => {
       sunoTaskId: taskId
     }), {
       status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, ...createSecurityHeaders(), 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
-    console.error('Error in add-instrumental:', error);
+    logger.error('🔴 [ADD-INSTRUMENTAL] Unexpected error', { error: error instanceof Error ? error.message : 'Unknown' });
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return new Response(JSON.stringify({ 
       error: errorMessage
     }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { ...corsHeaders, ...createSecurityHeaders(), 'Content-Type': 'application/json' }
     });
   }
 });

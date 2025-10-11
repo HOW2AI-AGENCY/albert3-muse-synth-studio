@@ -294,7 +294,7 @@ export const handler = async (req: Request): Promise<Response> => {
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? ""
     );
 
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
