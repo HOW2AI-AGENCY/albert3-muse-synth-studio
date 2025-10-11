@@ -1,11 +1,18 @@
-import { Play, Pause, SkipBack, SkipForward, X, ListMusic, List, Star } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, X, List, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ResponsiveStack } from "@/components/ui/ResponsiveLayout";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { getVersionLabel } from "@/utils/versionLabels";
 
 interface MiniPlayerProps {
   onExpand: () => void;
@@ -106,7 +113,7 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
               <>
                 <span>•</span>
                 <span className="flex items-center gap-1">
-                  <ListMusic className="h-3 w-3" />
+                  <List className="h-3 w-3" />
                   {currentQueueIndex + 1}/{queue.length}
                 </span>
               </>
@@ -116,51 +123,57 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
 
         {/* Playback Controls */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Версии трека (мини) */}
+          {/* Phase 2.3: Versions Sheet для мобильных */}
           {hasVersions && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="relative h-8 w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
-                      title={`${availableVersions.length} версий`}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="relative h-8 w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <List className="h-4 w-4" />
+                  <Badge className="absolute -top-1 -right-1 h-3.5 w-3.5 p-0 flex items-center justify-center text-[9px] bg-gradient-primary">
+                    {availableVersions.length}
+                  </Badge>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="bg-card/95 backdrop-blur-xl border-primary/20">
+                <SheetHeader>
+                  <SheetTitle>Версии трека</SheetTitle>
+                </SheetHeader>
+                <div className="py-4 space-y-2 max-h-96 overflow-y-auto">
+                  {availableVersions.map((version, idx) => (
+                    <Button
+                      key={version.id}
+                      variant={currentVersionIndex === idx ? "default" : "outline"}
+                      size="lg"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        switchToVersion(version.id);
+                      }}
                     >
-                      <List className="h-4 w-4" />
-                      <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-gradient-primary">
-                        {availableVersions.length}
-                      </Badge>
+                      <div className="flex items-center gap-2 w-full">
+                        {version.isMasterVersion && (
+                          <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
+                        )}
+                        <span className="flex-1 text-left">
+                          {getVersionLabel({
+                            versionNumber: version.versionNumber,
+                            isOriginal: version.isOriginalVersion,
+                            isMaster: version.isMasterVersion,
+                          })}
+                        </span>
+                        {currentVersionIndex === idx && (
+                          <Play className="h-4 w-4" />
+                        )}
+                      </div>
                     </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-xl border-primary/20 shadow-glow z-[100]">
-                    {availableVersions.map((version, idx) => (
-                      <DropdownMenuItem
-                        key={version.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          switchToVersion(version.id);
-                        }}
-                        className={`hover:bg-primary/10 transition-colors ${currentVersionIndex === idx ? 'bg-primary/20' : ''}`}
-                      >
-                        <div className="flex items-center gap-2 w-full">
-                          <span className="flex-1">
-                            {version.isOriginalVersion ? 'Оригинал' : `Версия ${version.versionNumber}`}
-                          </span>
-                          {version.isMasterVersion && (
-                            <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
-                          )}
-                        </div>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Версии трека ({availableVersions.length})</p>
-              </TooltipContent>
-            </Tooltip>
+                  ))}
+                </div>
+              </SheetContent>
+            </Sheet>
           )}
           <Tooltip>
             <TooltipTrigger asChild>

@@ -2,17 +2,21 @@ import { useState, useEffect, useRef } from "react";
 import { MiniPlayer } from "./MiniPlayer";
 import { FullScreenPlayer } from "./FullScreenPlayer";
 import { PlayerQueue } from "./PlayerQueue";
-// import { LoadingSkeleton } from "../ui/LoadingSkeleton";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMediaSession } from "@/hooks/useMediaSession";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { formatTime } from "@/utils/formatters";
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1, Music, X, Star, List } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1, Music, X, List, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const GlobalAudioPlayer = () => {
   const {
@@ -261,7 +265,7 @@ export const GlobalAudioPlayer = () => {
               {hasVersions && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <DropdownMenu>
+                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button 
                           variant="ghost" 
@@ -279,7 +283,7 @@ export const GlobalAudioPlayer = () => {
                         {availableVersions.map((version, idx) => (
                           <DropdownMenuItem
                             key={version.id}
-                            onClick={(e) => {
+                            onClick={(e: React.MouseEvent) => {
                               e.stopPropagation();
                               switchToVersion(version.id);
                             }}
@@ -287,7 +291,7 @@ export const GlobalAudioPlayer = () => {
                           >
                             <div className="flex items-center gap-2 w-full">
                               <span className="flex-1">
-                                {version.isOriginalVersion ? 'Оригинал' : `Версия ${version.versionNumber}`}
+                                {version.isOriginalVersion ? 'Оригинал' : `Вариант ${version.versionNumber}`}
                               </span>
                               {version.isMasterVersion && (
                                 <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />

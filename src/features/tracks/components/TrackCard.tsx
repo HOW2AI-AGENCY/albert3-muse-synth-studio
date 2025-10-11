@@ -1,6 +1,7 @@
 import React, { useState, useCallback, memo, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
@@ -26,15 +27,20 @@ import {
   Mic2,
   Globe,
   FileAudio,
+  Star,
+  Layers,
 } from "lucide-react";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useTrackLike } from "@/features/tracks/hooks";
+import { useSmartTrackPlay } from "@/hooks/useSmartTrackPlay";
+import { useTrackVersions } from "@/features/tracks/hooks";
 import { withErrorBoundary } from "@/components/ErrorBoundary";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { formatDuration } from "@/utils/formatters";
 import { TrackProgressBar } from "@/components/tracks/TrackProgressBar";
 import { TrackSyncStatus } from "@/components/tracks/TrackSyncStatus";
+import { getVersionShortLabel } from "@/utils/versionLabels";
 
 // Сокращенный интерфейс для карточки
 interface Track {
@@ -207,8 +213,10 @@ const FailedState: React.FC<{
 
 const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDelete, onExtend, onCover, onSeparateStems, className }: TrackCardProps) => {
   const { toast } = useToast();
-  const { currentTrack, isPlaying, playTrack } = useAudioPlayer();
+  const { currentTrack, isPlaying } = useAudioPlayer();
+  const { playTrackSmart } = useSmartTrackPlay();
   const { isLiked, toggleLike } = useTrackLike(track.id, track.like_count || 0);
+  const { versionCount, masterVersion } = useTrackVersions(track.id, false);
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -252,18 +260,20 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDe
   const isCurrentTrack = currentTrack?.id === track.id;
   const playButtonDisabled = track.status !== "completed" || !track.audio_url;
 
-  const handlePlayClick = useCallback((event: React.MouseEvent) => {
+  const handlePlayClick = useCallback(async (event: React.MouseEvent) => {
     event.stopPropagation();
     if (playButtonDisabled) return;
-    playTrack({
-      id: track.id,
-      title: track.title,
-      audio_url: track.audio_url!,
-      cover_url: track.cover_url,
-      duration: track.duration,
-      status: track.status,
-    });
-  }, [playButtonDisabled, playTrack, track]);
+    
+    // Phase 2.2: Используем умное воспроизведение
+    const success = await playTrackSmart(track.id);
+    if (!success) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось начать воспроизведение",
+        variant: "destructive",
+      });
+    }
+  }, [playButtonDisabled, playTrackSmart, track.id, toast]);
 
   const handleLikeClick = useCallback((event: React.MouseEvent) => {
     event.stopPropagation();
@@ -348,17 +358,51 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDe
 
       <CardContent className="p-2 flex-1 flex flex-col">
         <div className="flex-1">
-          <h3 className="font-semibold text-sm leading-tight mb-0.5 line-clamp-1 group-hover:text-primary">
-            {track.title}
-            {/* Показываем метку версии если это extended/cover трек */}
-            {track.metadata && (
-              (track.metadata as { extended_from?: string; is_cover?: boolean }).extended_from ? 
-                <span className="text-xs text-muted-foreground font-normal ml-1">(Extended)</span> : 
-              (track.metadata as { extended_from?: string; is_cover?: boolean }).is_cover ? 
-                <span className="text-xs text-muted-foreground font-normal ml-1">(Cover)</span> : 
-              null
+          <div className="flex items-start justify-between gap-2 mb-0.5">
+            <h3 className="font-semibold text-sm leading-tight line-clamp-1 group-hover:text-primary flex-1">
+              {track.title}
+            </h3>
+            
+            {/* Phase 1.2: Version badges */}
+            {versionCount > 0 && (
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="secondary" className="h-5 px-1.5 text-[10px] gap-0.5">
+                        <Layers className="h-2.5 w-2.5" />
+                        <span>{versionCount + 1}</span>
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {versionCount + 1} {versionCount === 0 ? 'версия' : versionCount < 4 ? 'версии' : 'версий'}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                {masterVersion && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="outline" className="h-5 px-1.5 text-[10px] gap-0.5 border-primary/50">
+                          <Star className="h-2.5 w-2.5 fill-primary text-primary" />
+                          <span>
+                            {getVersionShortLabel({
+                              versionNumber: masterVersion.versionNumber,
+                              isOriginal: masterVersion.isOriginal,
+                              isMaster: true,
+                            })}
+                          </span>
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>Мастер-версия для воспроизведения</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
             )}
-          </h3>
+          </div>
+          
           <p className="text-xs text-muted-foreground mb-1.5 line-clamp-1">{track.prompt}</p>
         </div>
 
