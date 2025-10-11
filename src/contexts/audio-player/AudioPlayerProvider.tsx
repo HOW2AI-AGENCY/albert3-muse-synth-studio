@@ -2,7 +2,7 @@
  * Главный провайдер Audio Player Context
  * Композиция всех sub-hooks для управления воспроизведением
  */
-import { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
+import { createContext, useContext, ReactNode, useMemo, useCallback, useEffect } from 'react';
 import { usePlayAnalytics } from '@/hooks/usePlayAnalytics';
 import { AudioPlayerTrack } from '@/types/track';
 import { AudioPlayerContextType } from './types';
@@ -55,6 +55,20 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   const switchToVersion = useCallback((versionId: string) => {
     versions.switchToVersion(versionId, playback.currentTrack, playTrack);
   }, [versions, playback.currentTrack, playTrack]);
+
+  // Обработка окончания трека - автопереход к следующему
+  useEffect(() => {
+    const audio = playback.audioRef.current;
+    if (!audio) return;
+
+    const handleEnded = () => {
+      playback.pauseTrack(); // Останавливаем текущий
+      playNext(); // Переходим к следующему в очереди
+    };
+
+    audio.addEventListener('ended', handleEnded);
+    return () => audio.removeEventListener('ended', handleEnded);
+  }, [playback, playNext]);
 
   const contextValue = useMemo<AudioPlayerContextType>(() => ({
     // Playback state
