@@ -1,4 +1,6 @@
 // Утилиты для работы с Service Worker
+import { logInfo, logError } from '@/utils/logger';
+
 export interface CacheInfo {
   fileCount: number;
   maxFiles: number;
@@ -24,13 +26,13 @@ class ServiceWorkerManager {
     }
 
     try {
-      console.log('[SW Manager] Регистрация Service Worker...');
+      logInfo('Регистрация Service Worker', 'SW Manager');
       
       this.registration = await navigator.serviceWorker.register('/sw.js', {
         scope: '/'
       });
 
-      console.log('[SW Manager] Service Worker зарегистрирован:', this.registration.scope);
+      logInfo('Service Worker зарегистрирован', 'SW Manager', { scope: this.registration.scope });
 
       // Обработка обновлений
       this.registration.addEventListener('updatefound', () => {
@@ -38,7 +40,7 @@ class ServiceWorkerManager {
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('[SW Manager] Доступно обновление Service Worker');
+              logInfo('Доступно обновление Service Worker', 'SW Manager');
               this.notifyUpdate();
             }
           });
@@ -62,7 +64,7 @@ class ServiceWorkerManager {
 
     try {
       const result = await this.registration.unregister();
-      console.log('[SW Manager] Service Worker отменен:', result);
+      logInfo('Service Worker отменен', 'SW Manager', { result });
       this.registration = null;
       return result;
     } catch (error) {
@@ -85,9 +87,9 @@ class ServiceWorkerManager {
         type: 'CACHE_AUDIO',
         data: { url }
       });
-      console.log('[SW Manager] Запрос на кэширование отправлен:', url);
+      logInfo('Запрос на кэширование отправлен', 'SW Manager', { url });
     } catch (error) {
-      console.error('[SW Manager] Ошибка отправки запроса на кэширование:', error);
+      logError('Ошибка отправки запроса на кэширование', error as Error, 'SW Manager');
     }
   }
 
@@ -104,9 +106,9 @@ class ServiceWorkerManager {
       navigator.serviceWorker.controller?.postMessage({
         type: 'CLEAR_CACHE'
       });
-      console.log('[SW Manager] Запрос на очистку кэша отправлен');
+      logInfo('Запрос на очистку кэша отправлен', 'SW Manager');
     } catch (error) {
-      console.error('[SW Manager] Ошибка очистки кэша:', error);
+      logError('Ошибка очистки кэша', error as Error, 'SW Manager');
     }
   }
 
@@ -150,8 +152,7 @@ class ServiceWorkerManager {
    * Уведомление об обновлении
    */
   private notifyUpdate(): void {
-    // Можно добавить toast уведомление или другую логику
-    console.log('[SW Manager] Service Worker обновлен');
+    logInfo('Service Worker обновлен', 'SW Manager');
     
     // Отправляем событие для компонентов
     window.dispatchEvent(new CustomEvent('sw-update-available'));
@@ -205,10 +206,10 @@ export const initServiceWorker = async (): Promise<void> => {
   if (import.meta.env.PROD) {
     const registered = await serviceWorkerManager.register();
     if (registered) {
-      console.log('[SW Manager] Service Worker успешно инициализирован');
+      logInfo('Service Worker успешно инициализирован', 'SW Manager');
     }
   } else {
-    console.log('[SW Manager] Service Worker отключен в режиме разработки');
+    logInfo('Service Worker отключен в режиме разработки', 'SW Manager');
   }
 };
 
@@ -221,7 +222,7 @@ export const preloadAudioFiles = async (urls: string[]): Promise<void> => {
     return;
   }
 
-  console.log('[SW Manager] Предзагрузка аудио файлов:', urls.length);
+  logInfo('Предзагрузка аудио файлов', 'SW Manager', { count: urls.length });
   
   for (const url of urls) {
     await serviceWorkerManager.cacheAudioFile(url);

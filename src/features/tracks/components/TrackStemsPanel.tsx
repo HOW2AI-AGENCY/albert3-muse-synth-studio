@@ -10,6 +10,7 @@ import { StemMixerProvider } from "@/contexts/StemMixerContext";
 import { AdvancedStemMixer } from "./AdvancedStemMixer";
 import { useStemSeparation } from "@/hooks/useStemSeparation";
 import { StemCard } from "./StemCard";
+import { logInfo } from "@/utils/logger";
 
 interface TrackStem {
   id: string;
@@ -96,7 +97,7 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
 
   // Улучшенная Realtime подписка
   useEffect(() => {
-    console.log(`[TrackStemsPanel] Subscribing to stems for track ${trackId}`);
+    logInfo(`Subscribing to stems for track ${trackId}`, 'TrackStemsPanel');
     
     const channel = supabase
       .channel(`track_stems_realtime_${trackId}`)
@@ -106,7 +107,7 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
         table: 'track_stems',
         filter: `track_id=eq.${trackId}`,
       }, (payload) => {
-        console.log('✅ New stem inserted:', payload.new);
+        logInfo('New stem inserted', 'TrackStemsPanel', { stem: payload.new });
         onStemsGenerated?.();
       })
       .on('postgres_changes', {
@@ -115,15 +116,15 @@ export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }:
         table: 'track_stems',
         filter: `track_id=eq.${trackId}`,
       }, (payload) => {
-        console.log('✅ Stem updated:', payload.new);
+        logInfo('Stem updated', 'TrackStemsPanel', { stem: payload.new });
         onStemsGenerated?.();
       })
       .subscribe((status) => {
-        console.log(`[TrackStemsPanel] Subscription status: ${status}`);
+        logInfo(`Subscription status: ${status}`, 'TrackStemsPanel');
       });
 
     return () => {
-      console.log(`[TrackStemsPanel] Unsubscribing from stems for track ${trackId}`);
+      logInfo(`Unsubscribing from stems for track ${trackId}`, 'TrackStemsPanel');
       supabase.removeChannel(channel);
     };
   }, [trackId, onStemsGenerated]);

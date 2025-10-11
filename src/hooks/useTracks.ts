@@ -183,14 +183,14 @@ export const useTracks = (refreshTrigger?: number, _options?: UseTracksOptions) 
       return;
     }
 
-    console.log('Starting polling for track updates...');
+    logInfo('Starting polling for track updates', 'useTracks');
     const interval = setInterval(() => {
-      console.log('Polling for track updates...');
+      logInfo('Polling for track updates', 'useTracks');
       loadTracks();
     }, 5000); // Poll every 5 seconds
 
     return () => {
-      console.log('Stopping polling');
+      logInfo('Stopping polling', 'useTracks');
       clearInterval(interval);
     };
   }, [isPolling]);
@@ -207,7 +207,7 @@ export const useTracks = (refreshTrigger?: number, _options?: UseTracksOptions) 
       });
       
       if (stuckTracks.length > 0) {
-        console.log('Auto-checking stuck tracks:', stuckTracks.length);
+        logInfo('Auto-checking stuck tracks', 'useTracks', { count: stuckTracks.length });
         
         try {
           await supabase.functions.invoke('check-stuck-tracks', {
