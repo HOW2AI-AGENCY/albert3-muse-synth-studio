@@ -63,7 +63,7 @@ export function LyricsVariantsPanel({ jobId, onSelect }: LyricsVariantsPanelProp
       setVariants(data || []);
       setIsLoading(false);
     } catch (error) {
-      logger.error('Failed to load lyrics variants:', error);
+      logger.error('Failed to load lyrics variants:', error instanceof Error ? error : undefined);
       toast({
         variant: 'destructive',
         title: 'Ошибка',

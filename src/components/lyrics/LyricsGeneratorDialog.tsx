@@ -85,7 +85,7 @@ export function LyricsGeneratorDialog({
       onOpenChange(false);
       setPrompt("");
     } catch (error) {
-      logger.error(`❌ [LYRICS] Error generating lyrics:`, error);
+      logger.error(`❌ [LYRICS] Error generating lyrics:`, error instanceof Error ? error : undefined);
       toast({
         variant: "destructive",
         title: "Ошибка",
