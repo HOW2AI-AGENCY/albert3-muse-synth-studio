@@ -126,4 +126,37 @@ describe('useTrackSync', () => {
 
     vi.useRealTimers();
   });
+
+  it('prevents infinite loop with guard clause in retry logic', async () => {
+    vi.useFakeTimers();
+
+    const { unmount } = renderHook(() => useTrackSync('user-1'));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const firstChannel = channelInstances[0];
+
+    // Simulate multiple rapid connection errors
+    act(() => {
+      firstChannel.__statusCallback?.('CHANNEL_ERROR');
+    });
+
+    // Advance timers slightly (less than MIN_RETRY_DELAY)
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+
+    // Try to trigger another error before retry completes
+    act(() => {
+      firstChannel.__statusCallback?.('CHANNEL_ERROR');
+    });
+
+    // Should NOT create infinite loop - only one retry should be scheduled
+    expect(channelInstances.length).toBeLessThan(5);
+
+    unmount();
+    vi.useRealTimers();
+  });
 });

@@ -372,7 +372,24 @@ logInfo('Track generated', 'MusicGenerator', { trackId });
 
 ---
 
-### 2. **Логи не появляются в Sentry**
+### 2. **Infinite Loop в useTrackSync** (исправлено в v2.6.3)
+
+**Проблема**: Бесконечные reconnect attempts при потере Realtime соединения.
+
+**Решение**: Добавлена guard clause в retry logic:
+
+```typescript
+// Проверка перед reconnect
+if (!channelRef.current && !isConnecting) {
+  subscribeToChannel();
+}
+```
+
+**Проверка**: Отключите интернет на 10 секунд и проверьте консоль - не должно быть Stack Overflow.
+
+---
+
+### 3. **Логи не появляются в Sentry**
 
 **Возможные причины:**
 - Sentry не инициализирован (проверьте `src/main.tsx`)
