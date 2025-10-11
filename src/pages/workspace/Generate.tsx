@@ -1,5 +1,5 @@
 import { useState, useEffect, Suspense, lazy } from "react";
-import { MusicGenerator } from "@/components/MusicGenerator";
+import { MusicGeneratorV2 } from "@/components/MusicGeneratorV2";
 import { TracksList } from "@/components/TracksList";
 const DetailPanel = lazy(() => import("@/features/tracks/ui/DetailPanel").then(m => ({ default: m.DetailPanel })));
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -110,7 +110,7 @@ const Generate = () => {
         >
           <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
             <div className="h-full p-1">
-              <MusicGenerator onTrackGenerated={handleTrackGenerated} />
+              <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
             </div>
           </ResizablePanel>
 
@@ -175,7 +175,7 @@ const Generate = () => {
         >
           <ResizablePanel defaultSize={40} minSize={30} maxSize={50}>
             <div className="h-full p-1">
-              <MusicGenerator onTrackGenerated={handleTrackGenerated} />
+              <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
             </div>
           </ResizablePanel>
           <ResizableHandle withHandle />
@@ -270,7 +270,7 @@ const Generate = () => {
         </DrawerTrigger>
         <DrawerContent className="h-[90vh] mt-20" aria-describedby={undefined}>
             <div className="p-4 h-full overflow-y-auto">
-                <MusicGenerator onTrackGenerated={handleTrackGenerated} />
+                <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
             </div>
         </DrawerContent>
       </Drawer>
