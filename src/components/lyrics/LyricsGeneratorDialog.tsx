@@ -30,7 +30,7 @@ export function LyricsGeneratorDialog({
   onOpenChange, 
   trackId,
   onSuccess,
-  onGenerated: _onGenerated
+  onGenerated
 }: LyricsGeneratorDialogProps) {
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -75,17 +75,78 @@ export function LyricsGeneratorDialog({
 
       logger.info(`✅ [LYRICS] Lyrics generation started:`, data);
 
-      toast({
-        title: "Генерация началась",
-        description: "Текст песни будет готов через 10-30 секунд"
-      });
+      // Poll for results
+      if (data?.jobId) {
+        logger.info(`⏳ [LYRICS] Polling for job ${data.jobId}...`);
+        
+        toast({
+          title: "Генерация началась",
+          description: "Получаем результаты..."
+        });
 
-      if (data?.jobId && onSuccess) {
-        onSuccess(data.jobId);
+        // Poll every 3 seconds for max 30 seconds
+        let attempts = 0;
+        const maxAttempts = 10;
+        const pollInterval = setInterval(async () => {
+          attempts++;
+          
+          try {
+            const { data: jobData, error: jobError } = await supabase
+              .from('lyrics_jobs')
+              .select('*, lyrics_variants(*)')
+              .eq('id', data.jobId)
+              .single();
+
+            if (jobError) throw jobError;
+
+            logger.info(`📊 [LYRICS] Poll attempt ${attempts}/${maxAttempts}, status: ${jobData.status}`);
+
+            if (jobData.status === 'completed' && jobData.lyrics_variants?.length > 0) {
+              clearInterval(pollInterval);
+              
+              const firstVariant = jobData.lyrics_variants[0];
+              logger.info(`✅ [LYRICS] Got ${jobData.lyrics_variants.length} variants, using first one`);
+              
+              if (onGenerated && firstVariant.content) {
+                onGenerated(firstVariant.content);
+              }
+              
+              toast({
+                title: "✨ Текст готов!",
+                description: `Получено ${jobData.lyrics_variants.length} вариантов`
+              });
+              
+              onOpenChange(false);
+              setPrompt("");
+            } else if (jobData.status === 'failed') {
+              clearInterval(pollInterval);
+              throw new Error(jobData.error_message || 'Генерация не удалась');
+            } else if (attempts >= maxAttempts) {
+              clearInterval(pollInterval);
+              throw new Error('Превышено время ожидания');
+            }
+          } catch (pollError) {
+            clearInterval(pollInterval);
+            logger.error(`❌ [LYRICS] Polling error:`, pollError instanceof Error ? pollError : undefined);
+            toast({
+              variant: "destructive",
+              title: "Ошибка",
+              description: pollError instanceof Error ? pollError.message : "Не удалось получить результаты"
+            });
+          }
+        }, 3000);
+
+        if (onSuccess) {
+          onSuccess(data.jobId);
+        }
+      } else {
+        toast({
+          title: "Генерация началась",
+          description: "Текст песни будет готов через 10-30 секунд"
+        });
+        onOpenChange(false);
+        setPrompt("");
       }
-
-      onOpenChange(false);
-      setPrompt("");
     } catch (error) {
       logger.error(`❌ [LYRICS] Error generating lyrics:`, error instanceof Error ? error : undefined);
       toast({
