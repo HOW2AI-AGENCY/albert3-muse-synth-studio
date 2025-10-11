@@ -24,6 +24,7 @@ interface GenerateSunoRequestBody {
   styleWeight?: number;
   weirdnessConstraint?: number;
   audioWeight?: number;
+  referenceAudioUrl?: string;
 }
 import {
   createSupabaseAdminClient,
@@ -305,6 +306,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       ...(styleWeight !== undefined ? { styleWeight: Number(styleWeight.toFixed(2)) } : {}),
       ...(weirdnessConstraint !== undefined ? { weirdnessConstraint: Number(weirdnessConstraint.toFixed(2)) } : {}),
       ...(audioWeight !== undefined ? { audioWeight: Number(audioWeight.toFixed(2)) } : {}),
+      ...(body.referenceAudioUrl ? { referenceAudioUrl: body.referenceAudioUrl } : {}),
     };
     
     logger.info('🎵 Calling Suno API', { trackId: finalTrackId, customMode: customModeValue });

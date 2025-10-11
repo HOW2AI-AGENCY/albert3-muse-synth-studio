@@ -55,6 +55,7 @@ export interface GenerateMusicRequest {
   styleWeight?: number;
   weirdnessConstraint?: number;
   audioWeight?: number;
+  referenceAudioUrl?: string;
 }
 
 // ✅ ИСПРАВЛЕНИЕ 6: Функция normalizeSunoModel() удалена - клиент теперь отправляет корректный формат напрямую
@@ -149,8 +150,9 @@ export class ApiService {
         lyrics,
         hasVocals: request.hasVocals,
         make_instrumental: makeInstrumental,
-        model_version: request.modelVersion, // ✅ ИСПРАВЛЕНИЕ 5: передаем напрямую без нормализации
+        model_version: request.modelVersion,
         customMode: request.customMode,
+        referenceAudioUrl: request.referenceAudioUrl,
       };
 
       // --- Опциональные параметры с валидацией/нормализацией ---

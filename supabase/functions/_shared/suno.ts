@@ -1,9 +1,9 @@
 export interface SunoGenerationPayload {
   prompt: string;
-  tags?: string[]; // ✅ ИСПРАВЛЕНИЕ 3: Изменено с style (string) на tags (array)
+  tags?: string[];
   title?: string;
   customMode?: boolean;
-  make_instrumental?: boolean; // ✅ ИСПРАВЛЕНИЕ 3: Изменено с instrumental на make_instrumental
+  make_instrumental?: boolean;
   model?: "V3_5" | "V4" | "V4_5" | "V4_5PLUS" | "V5";
   negativeTags?: string;
   vocalGender?: "m" | "f";
@@ -11,6 +11,7 @@ export interface SunoGenerationPayload {
   weirdnessConstraint?: number;
   audioWeight?: number;
   callBackUrl?: string;
+  referenceAudioUrl?: string;
 }
 
 export interface SunoLyricsPayload {
@@ -444,8 +445,31 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
       // Retry logic with exponential backoff for 429 errors
       for (let retryAttempt = 0; retryAttempt <= MAX_RETRIES; retryAttempt++) {
         try {
-    // ✅ ИСПРАВЛЕНИЕ: Используем payload напрямую, не преобразуем параметры
-    const apiPayload: Record<string, unknown> = { ...payload };
+    // ✅ КРИТИЧНОЕ ИСПРАВЛЕНИЕ: Явная трансформация параметров для Suno API
+    const apiPayload: Record<string, unknown> = {
+      prompt: payload.prompt,
+      tags: payload.tags || [],
+      title: payload.title,
+      instrumental: payload.make_instrumental ?? false, // ← API ожидает "instrumental", а не "make_instrumental"
+      model: payload.model || 'V5',
+      customMode: payload.customMode ?? false,
+    };
+
+    // Добавляем опциональные параметры
+    if (payload.callBackUrl) apiPayload.callBackUrl = payload.callBackUrl;
+    if (payload.negativeTags) apiPayload.negativeTags = payload.negativeTags;
+    if (payload.vocalGender) apiPayload.vocalGender = payload.vocalGender;
+    if (payload.styleWeight !== undefined) apiPayload.styleWeight = payload.styleWeight;
+    if (payload.weirdnessConstraint !== undefined) apiPayload.weirdnessConstraint = payload.weirdnessConstraint;
+    if (payload.audioWeight !== undefined) apiPayload.audioWeight = payload.audioWeight;
+    if (payload.referenceAudioUrl) apiPayload.referenceAudioUrl = payload.referenceAudioUrl;
+
+    // Логирование трансформации для отладки
+    console.log('🔍 [SUNO DEBUG] Payload transformation:', {
+      before: { make_instrumental: payload.make_instrumental },
+      after: { instrumental: apiPayload.instrumental },
+      hasReference: !!payload.referenceAudioUrl
+    });
 
           const response = await fetchImpl(endpoint, {
             method: "POST",

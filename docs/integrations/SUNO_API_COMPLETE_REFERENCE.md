@@ -30,34 +30,39 @@ Albert3 Muse Synth Studio интегрирован с Suno AI API для ген�
 POST /api/v1/generate
 
 {
-  "prompt": string,           // Описание музыки (или lyrics если customMode = true)
-  "tags": string[],          // ✅ Массив тегов (НЕ строка через запятую!)
+  "prompt": string,
+  "tags": string[],          // Массив тегов
   "title"?: string,
-  "make_instrumental"?: boolean,  // ✅ Правильное имя параметра
+  "instrumental"?: boolean,  // ⚠️ API ожидает "instrumental" (не "make_instrumental")
   "model"?: "V3_5" | "V4" | "V4_5" | "V4_5PLUS" | "V5",
-  "customMode"?: boolean,     // true = использовать lyrics из prompt
-  "callBackUrl"?: string,     // URL для webhook уведомлений
+  "customMode"?: boolean,
+  "callBackUrl"?: string,
   "negativeTags"?: string,
   "vocalGender"?: "m" | "f",
   "styleWeight"?: number,     // 0-1
   "weirdnessConstraint"?: number,  // 0-1
-  "audioWeight"?: number      // 0-1
+  "audioWeight"?: number,     // 0-1
+  "referenceAudioUrl"?: string // URL референсного аудио
 }
 ```
 
 ### ✅ Правильные параметры
 
+**ВАЖНО:** Внутри приложения используем `make_instrumental`, но при отправке в Suno API параметр автоматически трансформируется в `instrumental`.
+
 ```javascript
-// ✅ ПРАВИЛЬНО
+// ✅ ПРАВИЛЬНО - формат Suno API
 {
-  "tags": ["rock", "energetic", "guitar"],  // Массив
-  "make_instrumental": false                 // Правильное имя
+  "tags": ["rock", "energetic", "guitar"],
+  "instrumental": false,
+  "referenceAudioUrl": "https://..."
 }
 
-// ❌ НЕПРАВИЛЬНО (устаревший формат)
+// ℹ️ Внутри приложения (наш формат)
 {
-  "style": "rock, energetic, guitar",       // Устарело
-  "instrumental": false                      // Устарело
+  "tags": ["rock", "energetic", "guitar"],
+  "make_instrumental": false,  // Трансформируется в "instrumental" автоматически
+  "referenceAudioUrl": "https://..."
 }
 ```
 
