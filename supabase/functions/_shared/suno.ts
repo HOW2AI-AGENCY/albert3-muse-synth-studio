@@ -444,11 +444,8 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
       // Retry logic with exponential backoff for 429 errors
       for (let retryAttempt = 0; retryAttempt <= MAX_RETRIES; retryAttempt++) {
         try {
-          const apiPayload: Record<string, unknown> = { ...payload };
-          if (typeof payload.make_instrumental === 'boolean') {
-            apiPayload.instrumental = payload.make_instrumental;
-          }
-          delete (apiPayload as any).make_instrumental;
+    // ✅ ИСПРАВЛЕНИЕ: Используем payload напрямую, не преобразуем параметры
+    const apiPayload: Record<string, unknown> = { ...payload };
 
           const response = await fetchImpl(endpoint, {
             method: "POST",

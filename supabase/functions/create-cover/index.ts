@@ -124,7 +124,7 @@ serve(async (req: Request) => {
 
     const sunoPayload: any = {
       prompt,
-      style: tags?.join(', ') || '',
+      tags: tags || [], // ✅ ИСПРАВЛЕНИЕ: tags массив
       title: title || newTrack.title,
       make_instrumental: make_instrumental || false,
       model: model || 'V4',

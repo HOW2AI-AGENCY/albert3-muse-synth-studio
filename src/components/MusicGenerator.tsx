@@ -50,9 +50,11 @@ type VocalGender = 'any' | 'female' | 'male' | 'duet' | 'instrumental';
 // --- CONSTANTS & HELPERS ---
 
 const modelVersions = [
-  { value: 'V5', label: 'Suno v5 (chirp-crow)' }, // ✅ ИСПРАВЛЕНИЕ 5: Использовать формат Suno API
-  { value: 'V4_5', label: 'Suno v4.5' }, // ✅ ИСПРАВЛЕНИЕ 5
-  { value: 'V3_5', label: 'Suno v3.5' }, // ✅ ИСПРАВЛЕНИЕ 5
+  { value: 'V5', label: 'Suno v5 (Latest)' },
+  { value: 'V4_5PLUS', label: 'Suno v4.5+' },
+  { value: 'V4_5', label: 'Suno v4.5' },
+  { value: 'V4', label: 'Suno v4' },
+  { value: 'V3_5', label: 'Suno v3.5' },
 ];
 
 const vocalGenderOptions: { value: VocalGender; label: string }[] = [

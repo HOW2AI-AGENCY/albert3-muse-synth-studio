@@ -149,7 +149,7 @@ serve(async (req: Request) => {
 
     if (useCustomParams) {
       sunoPayload.prompt = prompt || originalTrack.prompt;
-      sunoPayload.style = tags?.join(', ') || originalTrack.style_tags?.join(', ') || '';
+      sunoPayload.tags = tags || originalTrack.style_tags || []; // ✅ ИСПРАВЛЕНИЕ: tags массив
       sunoPayload.title = `${originalTrack.title} (Extended)`;
       sunoPayload.continueAt = continueAt || Math.max(0, (originalTrack.duration || 120) - 20);
     }
