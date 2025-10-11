@@ -11,9 +11,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Music, Loader2, Plus, FileAudio, FileText, SlidersHorizontal, Sparkles, Mic, ChevronDown, Wand2, X, Zap, Sliders, Volume2, Palette } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Music, Loader2, Plus, FileAudio, FileText, SlidersHorizontal, Sparkles, Mic, Wand2, X, Volume2, Palette } from 'lucide-react';
 import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
@@ -23,7 +22,6 @@ import { AudioPreviewDialog } from '@/components/audio/AudioPreviewDialog';
 import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog';
 import { AudioRecorder } from '@/components/audio/AudioRecorder';
 import { logger } from '@/utils/logger';
-import { cn } from '@/lib/utils';
 
 interface MusicGeneratorV2Props {
   onTrackGenerated?: () => void;
@@ -60,11 +58,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const [lyricsDialogOpen, setLyricsDialogOpen] = useState(false);
   const [pendingAudioFile, setPendingAudioFile] = useState<File | null>(null);
   const [recordingMode, setRecordingMode] = useState(false);
-  
-  // Collapsible states for Advanced Settings
-  const [audioControlsOpen, setAudioControlsOpen] = useState(false);
-  const [styleControlsOpen, setStyleControlsOpen] = useState(false);
-  const [vocalControlsOpen, setVocalControlsOpen] = useState(false);
 
   const [params, setParams] = useState({
     prompt: '',
@@ -116,10 +109,9 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       setParam('referenceAudioUrl', url);
       setParam('referenceFileName', pendingAudioFile.name);
       setPendingAudioFile(null);
-      setAudioControlsOpen(true);
       toast({
         title: '🎵 Референс добавлен',
-        description: 'Контроль аудио раскрыт для настройки веса',
+        description: 'Теперь можно настроить вес аудио в параметрах',
       });
     }
   };
@@ -134,7 +126,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     setParam('referenceAudioUrl', url);
     setParam('referenceFileName', `recording-${Date.now()}.webm`);
     setRecordingMode(false);
-    setAudioControlsOpen(true);
     toast({
       title: '🎤 Запись добавлена',
       description: 'Используется как референсное аудио',
@@ -463,44 +454,23 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                 </div>
               )}
 
-              {/* Title (optional) */}
-              <div className="space-y-1">
-                <Label htmlFor="title" className="text-xs font-medium text-muted-foreground">
-                  Название <span className="text-[10px] opacity-70">(опционально)</span>
-                </Label>
-                <Input
-                  id="title"
-                  placeholder="AI придумает автоматически"
-                  value={params.title}
-                  onChange={(e) => setParam('title', e.target.value)}
-                  className="h-9 text-xs"
-                  disabled={isGenerating}
-                />
-              </div>
-
-              {/* Tags */}
-              <div className="space-y-1">
-                <Label htmlFor="tags" className="text-xs font-medium">Жанры</Label>
-                <Input
-                  id="tags"
-                  placeholder="rock, indie, synthwave"
-                  value={params.tags}
-                  onChange={(e) => setParam('tags', e.target.value)}
-                  className="h-9 text-xs"
-                  disabled={isGenerating}
-                />
-              </div>
-
-              {/* Advanced Settings - Collapsible Groups */}
-              <div className="space-y-1.5 pt-1">
-                {/* Audio Controls - только если есть референс */}
+              {/* Advanced Settings - Accordion Groups */}
+              <Accordion type="multiple" defaultValue={["style"]} className="space-y-1.5 pt-1">
+                {/* Audio Controls - only if reference exists */}
                 {params.referenceAudioUrl && (
-                  <Collapsible open={audioControlsOpen} onOpenChange={setAudioControlsOpen}>
-                    <CollapsibleTrigger className="flex items-center justify-between w-full py-2 px-2 hover:bg-secondary/50 rounded-md transition-colors">
-                      <span className="text-xs font-medium">Контроль аудио</span>
-                      <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", audioControlsOpen && "rotate-180")} />
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="pt-2 space-y-2 px-2">
+                  <AccordionItem value="audio" className="border-none">
+                    <AccordionTrigger className="py-2 px-2 hover:bg-secondary/50 rounded-md transition-colors hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-2">
+                        <div className="flex items-center gap-2">
+                          <Volume2 className="h-3.5 w-3.5" />
+                          <span className="text-xs font-medium">Контроль аудио</span>
+                        </div>
+                        <Badge variant="secondary" className="h-5 text-[10px] px-1.5">
+                          {params.audioWeight}%
+                        </Badge>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-2 space-y-2 px-2 pb-3">
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
                           <Label className="text-xs">Вес аудио</Label>
@@ -518,18 +488,24 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                           Влияние референсного аудио на результат
                         </p>
                       </div>
-                    </CollapsibleContent>
-                  </Collapsible>
+                    </AccordionContent>
+                  </AccordionItem>
                 )}
 
                 {/* Style Controls */}
-                <Collapsible open={styleControlsOpen} onOpenChange={setStyleControlsOpen}>
-                  <CollapsibleTrigger className="flex items-center justify-between w-full py-2 px-2 hover:bg-secondary/50 rounded-md transition-colors">
-                    <span className="text-xs font-medium">Контроль стиля</span>
-                    <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", styleControlsOpen && "rotate-180")} />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-2 space-y-2 px-2">
-                    {/* Style Weight */}
+                <AccordionItem value="style" className="border-none">
+                  <AccordionTrigger className="py-2 px-2 hover:bg-secondary/50 rounded-md transition-colors hover:no-underline">
+                    <div className="flex items-center justify-between w-full pr-2">
+                      <div className="flex items-center gap-2">
+                        <Palette className="h-3.5 w-3.5" />
+                        <span className="text-xs font-medium">Контроль стиля</span>
+                      </div>
+                      <Badge variant="secondary" className="h-5 text-[10px] px-1.5">
+                        {params.styleWeight}% / {params.weirdness}%
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-2 space-y-2 px-2 pb-3">
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <Label className="text-xs">Вес стиля</Label>
@@ -544,8 +520,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                         className="[&_[role=slider]]:h-3.5 [&_[role=slider]]:w-3.5"
                       />
                     </div>
-
-                    {/* Weirdness */}
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
                         <Label className="text-xs">Креативность</Label>
@@ -563,17 +537,23 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                         0% = строго по промпту, 100% = полная свобода
                       </p>
                     </div>
-                  </CollapsibleContent>
-                </Collapsible>
+                  </AccordionContent>
+                </AccordionItem>
 
                 {/* Vocal Controls */}
-                <Collapsible open={vocalControlsOpen} onOpenChange={setVocalControlsOpen}>
-                  <CollapsibleTrigger className="flex items-center justify-between w-full py-2 px-2 hover:bg-secondary/50 rounded-md transition-colors">
-                    <span className="text-xs font-medium">Контроль вокала</span>
-                    <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", vocalControlsOpen && "rotate-180")} />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-2 space-y-2 px-2">
-                    {/* Vocal Gender */}
+                <AccordionItem value="vocal" className="border-none">
+                  <AccordionTrigger className="py-2 px-2 hover:bg-secondary/50 rounded-md transition-colors hover:no-underline">
+                    <div className="flex items-center justify-between w-full pr-2">
+                      <div className="flex items-center gap-2">
+                        <Mic className="h-3.5 w-3.5" />
+                        <span className="text-xs font-medium">Контроль вокала</span>
+                      </div>
+                      <Badge variant="secondary" className="h-5 text-[10px] px-1.5">
+                        {vocalGenderOptions.find(o => o.value === params.vocalGender)?.label || 'Любой'}
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-2 space-y-2 px-2 pb-3">
                     <div className="space-y-1">
                       <Label className="text-xs">Пол вокала</Label>
                       <Select
@@ -593,8 +573,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                         </SelectContent>
                       </Select>
                     </div>
-
-                    {/* Lyrics Weight - только если есть текст */}
                     {params.lyrics.trim() && (
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
@@ -611,8 +589,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                         />
                       </div>
                     )}
-
-                    {/* Negative Tags */}
                     <div className="space-y-1">
                       <Label htmlFor="negative-tags" className="text-xs">Исключить стили</Label>
                       <Input
@@ -624,9 +600,9 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                         disabled={isGenerating}
                       />
                     </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </>
           )}
         </div>
