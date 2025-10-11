@@ -1,10 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { createCorsHeaders } from "../_shared/cors.ts";
+import { createSupabaseAdminClient } from "../_shared/supabase.ts";
+import { logger } from "../_shared/logger.ts";
 
 interface BoostStyleRequest {
   content: string;
@@ -27,6 +24,8 @@ interface SunoBoostResponse {
 }
 
 serve(async (req) => {
+  const corsHeaders = createCorsHeaders(req);
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -37,13 +36,7 @@ serve(async (req) => {
       throw new Error('Missing authorization header');
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Missing Supabase configuration');
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createSupabaseAdminClient();
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
 
@@ -68,10 +61,10 @@ serve(async (req) => {
       );
     }
 
-    console.log('🎨 [BOOST-STYLE] Request', {
+    logger.info('Boost style request received', {
       userId: user.id,
       contentLength: content.length,
-      content: content.substring(0, 100) + (content.length > 100 ? '...' : '')
+      contentPreview: content.substring(0, 100) + (content.length > 100 ? '...' : '')
     });
 
     const SUNO_API_KEY = Deno.env.get('SUNO_API_KEY');
@@ -90,9 +83,10 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ [BOOST-STYLE] Suno API Error', {
+      logger.error('Suno API error in boost-style', {
+        error: errorText,
         status: response.status,
-        error: errorText
+        userId: user.id
       });
 
       if (response.status === 413) {
@@ -132,7 +126,12 @@ serve(async (req) => {
     const data: SunoBoostResponse = await response.json();
 
     if (data.code !== 200) {
-      console.error('❌ [BOOST-STYLE] Suno response error', data);
+      logger.error('Suno response error in boost-style', {
+        error: data.msg,
+        errorDetails: data.data?.errorMessage,
+        code: data.code,
+        userId: user.id
+      });
       return new Response(
         JSON.stringify({ 
           error: data.msg || 'Style boost failed',
@@ -152,11 +151,12 @@ serve(async (req) => {
       );
     }
 
-    console.log('✨ [BOOST-STYLE] Success', {
+    logger.info('Boost style success', {
       taskId: data.data.taskId,
       creditsConsumed: data.data.creditsConsumed,
       creditsRemaining: data.data.creditsRemaining,
-      resultLength: data.data.result.length
+      resultLength: data.data.result.length,
+      userId: user.id
     });
 
     return new Response(
@@ -174,7 +174,10 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('❌ [BOOST-STYLE] Error', error);
+    logger.error('Boost style function error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'Internal server error' 
