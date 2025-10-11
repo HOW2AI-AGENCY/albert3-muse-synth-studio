@@ -16,7 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Music, Upload, Mic } from "lucide-react";
 import { useCreateCover } from "@/hooks/useCreateCover";
-import { ReferenceAudioSection } from "@/components/audio/ReferenceAudioSection";
+import { AudioUploader } from "@/components/audio/AudioUploader";
+import { AudioRecorder } from "@/components/audio/AudioRecorder";
 
 interface CreateCoverDialogProps {
   open: boolean;
@@ -87,33 +88,38 @@ export function CreateCoverDialog({ open, onOpenChange, track }: CreateCoverDial
           <div className="grid gap-2">
             <Label>Референс</Label>
             <Tabs value={referenceMode} onValueChange={(v) => setReferenceMode(v as typeof referenceMode)}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="track">
-                  <Music className="w-4 h-4" />
+              <TabsList className="grid w-full grid-cols-3 h-8">
+                <TabsTrigger value="track" className="text-xs px-1.5 gap-1">
+                  <Music className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Трек</span>
                 </TabsTrigger>
-                <TabsTrigger value="upload">
-                  <Upload className="w-4 h-4" />
+                <TabsTrigger value="upload" className="text-xs px-1.5 gap-1">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Файл</span>
                 </TabsTrigger>
-                <TabsTrigger value="record">
-                  <Mic className="w-4 h-4" />
+                <TabsTrigger value="record" className="text-xs px-1.5 gap-1">
+                  <Mic className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Запись</span>
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="track">
+              <TabsContent value="track" className="mt-2 animate-fade-in">
                 <p className="text-sm text-muted-foreground">
                   Используется оригинальный трек "{track.title}" как референс
                 </p>
               </TabsContent>
 
-              <TabsContent value="upload" className="mt-2">
-                <ReferenceAudioSection
-                  onReferenceChange={(url) => setReferenceAudioUrl(url)}
+              <TabsContent value="upload" className="mt-2 animate-fade-in">
+                <AudioUploader
+                  onUploadComplete={(url) => setReferenceAudioUrl(url)}
+                  onRemove={() => setReferenceAudioUrl(null)}
                 />
               </TabsContent>
 
-              <TabsContent value="record" className="mt-2">
-                <ReferenceAudioSection
-                  onReferenceChange={(url) => setReferenceAudioUrl(url)}
+              <TabsContent value="record" className="mt-2 animate-fade-in">
+                <AudioRecorder
+                  onRecordComplete={(url) => setReferenceAudioUrl(url)}
+                  onRemove={() => setReferenceAudioUrl(null)}
                 />
               </TabsContent>
             </Tabs>
@@ -125,10 +131,14 @@ export function CreateCoverDialog({ open, onOpenChange, track }: CreateCoverDial
             </Label>
             <Textarea
               id="prompt"
-              placeholder="Опишите, как должен звучать кавер..."
+              placeholder="Примеры промптов:
+• Acoustic indie folk с нежной гитарой
+• Электронная dance-версия с синтезаторами
+• Джазовая интерпретация с саксофоном и контрабасом"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              rows={3}
+              rows={4}
+              className="text-xs"
               required
             />
           </div>

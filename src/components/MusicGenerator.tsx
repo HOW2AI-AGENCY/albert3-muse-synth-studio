@@ -168,6 +168,7 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
       vocalGender: vocalGenderParam,
       customMode: !isSimple,
       modelVersion: params.modelVersion,
+      referenceAudioUrl: params.referenceAudioUrl || undefined,
     };
 
     const started = await generateMusic(requestParams, toast, onTrackGenerated);
@@ -251,18 +252,19 @@ const MusicGeneratorComponent = ({ onTrackGenerated }: MusicGeneratorProps) => {
 
                 <Accordion type="single" collapsible value={referenceExpanded ? "reference" : ""} onValueChange={(v) => setReferenceExpanded(v === "reference")}>
                   <AccordionItem value="reference" className="border-b-0">
-                    <AccordionTrigger className="py-2 text-sm font-semibold hover:no-underline">
-                      <div className="flex items-center gap-2">
-                        <FileAudio className="h-4 w-4" />
-                        Референсное аудио (опционально)
+                    <AccordionTrigger className="py-1.5 text-xs font-medium hover:no-underline">
+                      <div className="flex items-center gap-1.5">
+                        <FileAudio className="h-3.5 w-3.5" />
+                        <span>Референс (опционально)</span>
                       </div>
                     </AccordionTrigger>
-                    <AccordionContent className="pt-2">
+                    <AccordionContent className="pt-2 pb-1">
                       <ReferenceAudioSection
                         onReferenceChange={(url) => setParam('referenceAudioUrl', url)}
+                        className="text-xs"
                       />
-                      <p className="text-xs text-muted-foreground mt-2">
-                        💡 Загрузите или запишите аудио, чтобы AI создал музыку в похожем стиле
+                      <p className="text-[10px] text-muted-foreground mt-1.5 leading-tight">
+                        💡 Загрузите аудио, чтобы AI создал похожий стиль
                       </p>
                     </AccordionContent>
                   </AccordionItem>

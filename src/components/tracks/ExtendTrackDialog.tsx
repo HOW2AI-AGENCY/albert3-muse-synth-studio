@@ -126,10 +126,15 @@ export function ExtendTrackDialog({ open, onOpenChange, track }: ExtendTrackDial
             <Label htmlFor="prompt">Новый промпт (опционально)</Label>
             <Textarea
               id="prompt"
-              placeholder="Оставьте пустым, чтобы использовать оригинальный промпт"
+              placeholder="Примеры:
+• Добавить энергичное соло на гитаре
+• Сделать более медленный и меланхоличный финал
+• Добавить оркестровую секцию с струнными
+Оставьте пустым для продолжения в том же стиле"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              rows={3}
+              rows={4}
+              className="text-xs"
             />
           </div>
 

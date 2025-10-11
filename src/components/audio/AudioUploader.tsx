@@ -93,6 +93,14 @@ export const AudioUploader = ({ onUploadComplete, onRemove, className }: AudioUp
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        role="button"
+        tabIndex={0}
+        aria-label="Загрузить аудио файл. Нажмите или перетащите файл сюда"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            handleClick();
+          }
+        }}
       >
         {isUploading ? (
           <>

@@ -30,7 +30,7 @@ export function LyricsGeneratorDialog({
   onOpenChange, 
   trackId,
   onSuccess,
-  onGenerated
+  onGenerated: _onGenerated
 }: LyricsGeneratorDialogProps) {
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -82,11 +82,6 @@ export function LyricsGeneratorDialog({
 
       if (data?.jobId && onSuccess) {
         onSuccess(data.jobId);
-      }
-
-      // If onGenerated callback provided, use it for direct lyrics return
-      if (onGenerated && data?.lyrics) {
-        onGenerated(data.lyrics);
       }
 
       onOpenChange(false);

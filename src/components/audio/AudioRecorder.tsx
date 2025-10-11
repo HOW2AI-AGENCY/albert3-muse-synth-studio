@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Mic, Square, Upload, Trash2 } from 'lucide-react';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAudioUpload } from '@/hooks/useAudioUpload';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 interface AudioRecorderProps {
@@ -32,23 +33,36 @@ export const AudioRecorder = ({ onRecordComplete, onRemove, className }: AudioRe
   } = useAudioRecorder();
 
   const { uploadAudio, isUploading, uploadProgress } = useAudioUpload();
+  const { toast } = useToast();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [canvasWidth, setCanvasWidth] = useState(400);
+
+  // Dynamic canvas width
+  useEffect(() => {
+    const updateCanvasWidth = () => {
+      if (containerRef.current) {
+        setCanvasWidth(containerRef.current.clientWidth);
+      }
+    };
+
+    updateCanvasWidth();
+    window.addEventListener('resize', updateCanvasWidth);
+    return () => window.removeEventListener('resize', updateCanvasWidth);
+  }, []);
 
   // Waveform visualization
   useEffect(() => {
     if (!isRecording || !analyser || !canvasRef.current) return;
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const renderWaveform = () => {
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext('2d');
+      if (!ctx || !canvas || !analyser) return;
 
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-
-    const draw = () => {
-      animationRef.current = requestAnimationFrame(draw);
-
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
       analyser.getByteTimeDomainData(dataArray);
 
       ctx.fillStyle = 'hsl(var(--card))';
@@ -78,6 +92,20 @@ export const AudioRecorder = ({ onRecordComplete, onRemove, className }: AudioRe
       ctx.stroke();
     };
 
+    const draw = () => {
+      if (!isRecording || !analyser || !canvasRef.current) return;
+
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => {
+          animationRef.current = requestAnimationFrame(draw);
+          renderWaveform();
+        }, { timeout: 50 });
+      } else {
+        animationRef.current = requestAnimationFrame(draw);
+        renderWaveform();
+      }
+    };
+
     draw();
 
     return () => {
@@ -89,6 +117,16 @@ export const AudioRecorder = ({ onRecordComplete, onRemove, className }: AudioRe
 
   const handleUpload = async () => {
     if (!audioBlob) return;
+
+    const MAX_SIZE = 20 * 1024 * 1024; // 20MB
+    if (audioBlob.size > MAX_SIZE) {
+      toast({
+        variant: 'destructive',
+        title: 'Файл слишком большой',
+        description: `Максимальный размер: 20MB. Размер вашего файла: ${(audioBlob.size / 1024 / 1024).toFixed(2)}MB`,
+      });
+      return;
+    }
 
     const fileName = `recording-${Date.now()}.webm`;
     const file = new File([audioBlob], fileName, { type: audioBlob.type });
@@ -105,23 +143,25 @@ export const AudioRecorder = ({ onRecordComplete, onRemove, className }: AudioRe
   };
 
   return (
-    <Card className={cn('border-2', className)}>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Mic className="w-4 h-4" />
+    <Card className={cn('border-2', className)} ref={containerRef}>
+      <CardHeader className="pb-2 pt-3">
+        <CardTitle className="text-xs flex items-center gap-1.5">
+          <Mic className="w-3.5 h-3.5" />
           Запись с микрофона
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-2">
         {/* Waveform Canvas */}
         <canvas
           ref={canvasRef}
-          width={400}
-          height={80}
+          width={canvasWidth}
+          height={60}
           className={cn(
-            'w-full h-20 rounded bg-muted/50',
+            'w-full h-15 rounded bg-muted/50',
             !isRecording && 'opacity-50'
           )}
+          aria-label="Визуализация записи аудио"
+          role="img"
         />
 
         {/* Controls */}
@@ -130,18 +170,21 @@ export const AudioRecorder = ({ onRecordComplete, onRemove, className }: AudioRe
             <Button
               onClick={isRecording ? stopRecording : startRecording}
               variant={isRecording ? 'destructive' : 'default'}
-              className="flex-1"
+              className="flex-1 text-xs h-8"
               disabled={isUploading}
+              aria-label={isRecording ? "Остановить запись" : "Начать запись"}
+              aria-live="polite"
+              aria-atomic="true"
             >
               {isRecording ? (
                 <>
-                  <Square className="w-4 h-4 mr-2" />
-                  Остановить
+                  <Square className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                  <span>Остановить</span>
                 </>
               ) : (
                 <>
-                  <Mic className="w-4 h-4 mr-2" />
-                  Записать
+                  <Mic className="w-3.5 h-3.5 mr-1.5" aria-hidden="true" />
+                  <span>Записать</span>
                 </>
               )}
             </Button>
@@ -150,13 +193,13 @@ export const AudioRecorder = ({ onRecordComplete, onRemove, className }: AudioRe
               <Button
                 onClick={handleUpload}
                 disabled={isUploading}
-                className="flex-1"
+                className="flex-1 text-xs h-8"
               >
                 {isUploading ? (
                   <>Загрузка {uploadProgress}%</>
                 ) : (
                   <>
-                    <Upload className="w-4 h-4 mr-2" />
+                    <Upload className="w-3.5 h-3.5 mr-1.5" />
                     Загрузить
                   </>
                 )}
@@ -166,15 +209,16 @@ export const AudioRecorder = ({ onRecordComplete, onRemove, className }: AudioRe
                 variant="outline"
                 size="icon"
                 disabled={isUploading}
+                className="h-8 w-8"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
               </Button>
             </>
           )}
         </div>
 
         {/* Timer/Info */}
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center justify-between text-xs">
           <span className={cn(
             'font-mono',
             isRecording && recordingTime > maxTime * 0.8 && 'text-destructive'
