@@ -11,6 +11,7 @@ import WorkspaceLayout from "./components/workspace/WorkspaceLayout";
 const LazyDashboard = lazy(() => import("./pages/workspace/Dashboard"));
 import Generate from "./pages/workspace/Generate";
 const LazyLibrary = lazy(() => import("./pages/workspace/Library"));
+const UploadAudio = lazy(() => import("./pages/workspace/UploadAudio"));
 const LazyFavorites = lazy(() => import("./pages/workspace/Favorites"));
 const LazyAnalytics = lazy(() => import("./pages/workspace/Analytics"));
 const LazySettings = lazy(() => import("./pages/workspace/Settings"));
@@ -63,6 +64,14 @@ export const router = createBrowserRouter(
           element: (
             <Suspense fallback={<LoadingSpinner />}>
               <LazyLibrary />
+            </Suspense>
+          ),
+        },
+        {
+          path: "upload-audio",
+          element: (
+            <Suspense fallback={<LoadingSpinner />}>
+              <UploadAudio />
             </Suspense>
           ),
         },

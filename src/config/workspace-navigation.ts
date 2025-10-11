@@ -7,6 +7,7 @@ import {
   BarChart3,
   Settings,
   Shield,
+  Upload,
 } from "lucide-react";
 import {
   preloadDashboard,
@@ -46,6 +47,12 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     path: "/workspace/library",
     icon: Library,
     preload: preloadLibrary,
+  },
+  {
+    id: "upload-audio",
+    label: "Загрузить аудио",
+    path: "/workspace/upload-audio",
+    icon: Upload,
   },
   {
     id: "favorites",

@@ -29,6 +29,7 @@ import {
   FileAudio,
   Star,
   Layers,
+  Mic,
 } from "lucide-react";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useTrackLike } from "@/features/tracks/hooks";
@@ -59,6 +60,7 @@ interface Track {
   progress_percent?: number | null;
   metadata?: Record<string, any> | null;
   is_public?: boolean;
+  has_vocals?: boolean;
 }
 
 interface TrackCardProps {
@@ -322,6 +324,21 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDe
         {track.status === 'failed' && (
           <FailedState message={track.error_message} trackId={track.id} onRetry={onRetry} onDelete={onDelete} />
         )}
+
+        {/* Vocal/Instrumental badge */}
+        <div className="absolute top-2 left-2 z-10 bg-background/90 backdrop-blur-sm px-2 py-1 rounded-md flex items-center gap-1">
+          {track.has_vocals ? (
+            <>
+              <Mic className="h-3 w-3 text-primary" />
+              <span className="text-xs font-medium">Вокал</span>
+            </>
+          ) : (
+            <>
+              <Music className="h-3 w-3 text-muted-foreground" />
+              <span className="text-xs font-medium text-muted-foreground">Инструментал</span>
+            </>
+          )}
+        </div>
 
         {track.cover_url ? (
           <img
