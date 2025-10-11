@@ -21,26 +21,55 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   // Analytics
   usePlayAnalytics(playback.currentTrack?.id || null, playback.isPlaying, playback.currentTime);
 
-  // Wrapper для playTrack с загрузкой версий
-  const playTrack = useCallback((track: AudioPlayerTrack) => {
-    playback.playTrack(track, async (baseTrackId: string, wasEmpty: boolean) => {
-      await versions.loadVersions(baseTrackId, wasEmpty);
+  // Wrapper для playTrack с загрузкой версий и автоматической очередью
+  const playTrack = useCallback(async (track: AudioPlayerTrack) => {
+    // Загружаем версии трека
+    const baseTrackId = track.parentTrackId || track.id;
+    const versionsList = await versions.loadVersions(baseTrackId, false);
+    
+    // Формируем очередь из всех версий
+    if (versionsList.length > 0) {
+      const allVersionsQueue: AudioPlayerTrack[] = versionsList
+        .filter(v => v.audio_url)
+        .map(v => ({
+          id: v.id,
+          title: v.title,
+          audio_url: v.audio_url!,
+          cover_url: v.cover_url,
+          duration: v.duration,
+          style_tags: v.style_tags,
+          lyrics: v.lyrics,
+          status: 'completed' as const,
+          parentTrackId: v.parentTrackId,
+          versionNumber: v.versionNumber,
+          isMasterVersion: v.isMasterVersion,
+          isOriginalVersion: v.versionNumber === 0 || v.isOriginal === true,
+        }));
       
-      const versionsList = await versions.loadVersions(baseTrackId, wasEmpty);
-      if (versionsList.length > 0) {
-        const currentIdx = versionsList.findIndex(v => v.id === track.id);
-        versions.setCurrentVersionIndex(currentIdx >= 0 ? currentIdx : 0);
-      }
+      // Устанавливаем очередь из всех версий
+      queue.setQueue(allVersionsQueue);
+      
+      // Находим текущий трек в очереди
+      const currentIdx = allVersionsQueue.findIndex(v => v.id === track.id);
+      queue.setCurrentQueueIndex(currentIdx >= 0 ? currentIdx : 0);
+      versions.setCurrentVersionIndex(currentIdx >= 0 ? currentIdx : 0);
+    }
+    
+    // Воспроизводим трек
+    playback.playTrack(track, async (baseId: string, wasEmpty: boolean) => {
+      await versions.loadVersions(baseId, wasEmpty);
     });
-  }, [playback, versions]);
+  }, [playback, versions, queue]);
 
-  // Воспроизведение трека с очередью
+  // Воспроизведение трека с кастомной очередью (все треки страницы)
   const playTrackWithQueue = useCallback((track: AudioPlayerTrack, allTracks: AudioPlayerTrack[]) => {
     queue.setQueue(allTracks);
     const trackIndex = allTracks.findIndex(t => t.id === track.id);
     queue.setCurrentQueueIndex(trackIndex >= 0 ? trackIndex : 0);
-    playTrack(track);
-  }, [queue, playTrack]);
+    
+    // Воспроизводим без автоматической очереди версий
+    playback.playTrack(track);
+  }, [queue, playback]);
 
   // Обертки для queue методов
   const playNext = useCallback(() => {
