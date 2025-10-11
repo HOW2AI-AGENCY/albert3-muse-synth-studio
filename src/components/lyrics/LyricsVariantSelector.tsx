@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Music } from "lucide-react";
+import { logger } from "@/utils/logger";
 
 interface LyricsVariant {
   id: string;
@@ -41,7 +42,7 @@ export const LyricsVariantSelector = ({
         if (error) throw error;
         setVariants(data || []);
       } catch (error) {
-        console.error("Failed to load lyrics variants:", error);
+        logger.error("Failed to load lyrics variants", error instanceof Error ? error : new Error(String(error)), "LyricsVariantSelector", { jobId });
       } finally {
         setLoading(false);
       }

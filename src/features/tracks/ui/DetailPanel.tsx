@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DetailPanelContent } from "@/components/workspace/DetailPanelContent";
 import { TrackDeleteDialog } from "@/components/tracks/TrackDeleteDialog";
 import { ApiService } from "@/services/api.service";
-import { logError } from "@/utils/logger";
+import { logger } from "@/utils/logger";
 import { getTrackWithVersions } from "../api/trackVersions";
 import { primeTrackVersionsCache } from "../hooks/useTrackVersions";
 
@@ -220,7 +220,7 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
         });
       }
     } catch (error) {
-      logError('Error loading versions and stems', error as Error, 'TrackDetailPanel', {
+      logger.error('Error loading versions and stems', error instanceof Error ? error : new Error(String(error)), 'TrackDetailPanel', {
         trackId: track.id,
       });
       toast({
@@ -263,7 +263,7 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
 
       onUpdate?.();
     } catch (error) {
-      console.error("Error updating track:", error);
+      logger.error("Error updating track", error instanceof Error ? error : new Error(String(error)), "DetailPanel", { trackId: track.id });
       toast({
         title: "Ошибка",
         description: "Не удалось сохранить изменения",
@@ -301,7 +301,7 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
       onDelete?.();
       onClose?.();
     } catch (error) {
-      console.error("Error deleting track:", error);
+      logger.error("Error deleting track", error instanceof Error ? error : new Error(String(error)), "DetailPanel", { trackId: track.id });
       toast({
         title: "Ошибка",
         description: "Не удалось удалить трек",

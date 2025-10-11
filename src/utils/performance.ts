@@ -3,6 +3,7 @@
  */
 
 import { useCallback, useRef, useEffect, useMemo, useState, type DependencyList } from 'react';
+import { logger } from '@/utils/logger';
 
 declare global {
   interface Window {
@@ -258,8 +259,10 @@ export const usePerformanceMonitor = (componentName: string) => {
       const renderTime = performance.now() - renderStartRef.current;
       
       if (renderTime > 16) { // Больше одного кадра (60fps)
-        console.warn(
-          `Slow render detected in ${componentName}: ${renderTime.toFixed(2)}ms (render #${renderCountRef.current})`
+        logger.warn(
+          `Slow render detected in ${componentName}: ${renderTime.toFixed(2)}ms (render #${renderCountRef.current})`,
+          "usePerformanceMonitor",
+          { componentName, renderTime, renderCount: renderCountRef.current }
         );
       }
     }

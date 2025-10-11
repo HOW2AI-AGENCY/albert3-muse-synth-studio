@@ -16,6 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { logger } from "@/utils/logger";
 
 interface FullScreenPlayerProps {
   onMinimize: () => void;
@@ -114,7 +115,7 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
           url: window.location.href,
         });
       } catch (error) {
-        console.error('Error sharing:', error);
+        logger.error('Error sharing', error instanceof Error ? error : new Error(String(error)), 'FullScreenPlayer');
       }
     } else {
       navigator.clipboard.writeText(window.location.href);

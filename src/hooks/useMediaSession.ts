@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { logger } from '@/utils/logger';
 
 interface Track {
   title: string;
@@ -55,7 +56,7 @@ export const useMediaSession = (track: Track | null, handlers: MediaSessionHandl
       try {
         navigator.mediaSession.setActionHandler(action, handler);
       } catch (error) {
-        console.warn(`The media session action "${action}" is not supported.`);
+        logger.warn(`The media session action "${action}" is not supported.`, "useMediaSession", { action });
       }
     });
 

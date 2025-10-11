@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 interface TrackStem {
   id: string;
@@ -164,7 +165,7 @@ export const StemMixerProvider = ({ children }: StemMixerProviderProps) => {
         }
       }, 100);
     } catch (error) {
-      console.error('Error playing stems:', error);
+      logger.error('Error playing stems', error instanceof Error ? error : new Error(String(error)), 'StemMixerContext');
       toast.error('Ошибка воспроизведения стемов');
     }
   }, [activeStemIds, stemMuted, soloStemId, stemVolumes, currentTime]);

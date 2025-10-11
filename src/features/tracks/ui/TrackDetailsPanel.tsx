@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { logger } from "@/utils/logger";
 
 interface TrackDetailsPanelProps {
   track: {
@@ -33,7 +34,7 @@ const formatDate = (value?: string | null) => {
       year: "numeric",
     });
   } catch (error) {
-    console.error("Failed to format date", error);
+    logger.error("Failed to format date", error instanceof Error ? error : new Error(String(error)), "TrackDetailsPanel", { value });
     return "—";
   }
 };

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { cn } from "@/lib/utils";
+import { logger } from "@/utils/logger";
 
 export interface TrackVersionSelectorOption {
   id: string;
@@ -35,7 +36,7 @@ const formatDate = (value?: string | null) => {
       year: "numeric",
     });
   } catch (error) {
-    console.error("Failed to format version date", error);
+    logger.error("Failed to format version date", error instanceof Error ? error : new Error(String(error)), "TrackVersionSelector", { value });
     return "Дата неизвестна";
   }
 };
