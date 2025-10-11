@@ -192,7 +192,25 @@ const mainHandler = async (req: Request) => {
       const sanitizedLyrics = sanitizeText(mainTrack.prompt || mainTrack.lyric || mainTrack.lyrics);
       const sanitizedModelName = sanitizeText(mainTrack.model || mainTrack.model_name);
       const sanitizedSunoId = sanitizeText(mainTrack.id);
-      const createdAtSuno = mainTrack.created_at || mainTrack.createTime || mainTrack.createdAt;
+      
+      // ✅ FIX: Convert Unix timestamp to ISO 8601
+      const createdAtSuno = (() => {
+        const rawTime = mainTrack.created_at || mainTrack.createTime || mainTrack.createdAt;
+        if (!rawTime) return null;
+        
+        // If it's a number (Unix timestamp in milliseconds)
+        if (typeof rawTime === 'number') {
+          return new Date(rawTime).toISOString();
+        }
+        
+        // If it's already a string (ISO or other format)
+        if (typeof rawTime === 'string') {
+          const parsed = new Date(rawTime);
+          return isNaN(parsed.getTime()) ? null : parsed.toISOString();
+        }
+        
+        return null;
+      })();
       
       // Only update title if it's empty or default
       const currentTitle = track.title || '';
@@ -267,17 +285,64 @@ const mainHandler = async (req: Request) => {
         updateData.title = sanitizedTitle;
       }
       
-      const { error: updateTrackError } = await supabase
-        .from("tracks")
-        .update(updateData)
-        .eq("id", track.id);
+      try {
+        const { error: updateTrackError } = await supabase
+          .from("tracks")
+          .update(updateData)
+          .eq("id", track.id);
 
-      if (updateTrackError) {
-        console.error("Suno callback: failed to update main track", updateTrackError);
-        return new Response(JSON.stringify({ ok: false, error: "update_failed" }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        if (updateTrackError) {
+          // Save error in metadata for debugging
+          await supabase
+            .from("tracks")
+            .update({
+              metadata: {
+                ...existingMetadata,
+                callback_error: {
+                  timestamp: new Date().toISOString(),
+                  error: updateTrackError.message,
+                  code: updateTrackError.code,
+                  attempted_data: {
+                    created_at_suno: createdAtSuno,
+                    audio_url: uploadedAudioUrl ? 'present' : 'missing'
+                  }
+                }
+              }
+            })
+            .eq("id", track.id);
+          
+          console.error("Suno callback: failed to update main track", updateTrackError);
+          
+          // Return 500 so Suno retries the callback
+          return new Response(JSON.stringify({ 
+            ok: false, 
+            error: "update_failed", 
+            details: updateTrackError.message 
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } catch (unexpectedError) {
+        console.error("Suno callback: unexpected error", unexpectedError);
+        
+        // Fallback: mark as failed with details
+        await supabase
+          .from("tracks")
+          .update({
+            status: "failed",
+            error_message: `Callback processing error: ${unexpectedError instanceof Error ? unexpectedError.message : 'Unknown'}`,
+            metadata: {
+              ...existingMetadata,
+              callback_crash: {
+                timestamp: new Date().toISOString(),
+                error: String(unexpectedError)
+              }
+            }
+          })
+          .eq("id", track.id);
+        
+        throw unexpectedError;
       }
 
       console.log("Suno callback: main track updated successfully", { trackId: track.id, taskId });

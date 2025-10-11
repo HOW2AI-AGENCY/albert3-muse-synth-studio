@@ -195,6 +195,36 @@ export const useTracks = (refreshTrigger?: number, _options?: UseTracksOptions) 
     };
   }, [isPolling]);
 
+  // ✅ Auto-check stuck tracks every 2 minutes
+  useEffect(() => {
+    if (!tracks.some(t => t.status === 'processing')) return;
+    
+    const checkStuckInterval = setInterval(async () => {
+      const processingTracks = tracks.filter(t => t.status === 'processing');
+      const stuckTracks = processingTracks.filter(t => {
+        const age = Date.now() - new Date(t.created_at).getTime();
+        return age > 10 * 60 * 1000; // older than 10 minutes
+      });
+      
+      if (stuckTracks.length > 0) {
+        console.log('Auto-checking stuck tracks:', stuckTracks.length);
+        
+        try {
+          await supabase.functions.invoke('check-stuck-tracks', {
+            body: { trackIds: stuckTracks.map(t => t.id) }
+          });
+          
+          // Reload tracks after sync
+          setTimeout(() => loadTracks(), 3000);
+        } catch (error) {
+          console.error('Failed to check stuck tracks:', error);
+        }
+      }
+    }, 2 * 60 * 1000); // every 2 minutes
+    
+    return () => clearInterval(checkStuckInterval);
+  }, [tracks, loadTracks]);
+
   return {
     tracks,
     isLoading,

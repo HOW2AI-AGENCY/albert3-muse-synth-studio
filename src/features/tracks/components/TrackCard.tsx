@@ -18,7 +18,6 @@ import {
   Clock,
   Music,
   AlertTriangle,
-  Loader2,
   RefreshCw,
   Trash2,
   MoreVertical,
@@ -35,6 +34,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { formatDuration } from "@/utils/formatters";
 import { TrackProgressBar } from "@/components/tracks/TrackProgressBar";
+import { TrackSyncStatus } from "@/components/tracks/TrackSyncStatus";
 
 // Сокращенный интерфейс для карточки
 interface Track {
@@ -51,6 +51,7 @@ interface Track {
   view_count?: number;
   prompt?: string;
   progress_percent?: number | null;
+  metadata?: Record<string, any> | null;
 }
 
 interface TrackCardProps {
@@ -84,26 +85,20 @@ const GenerationProgress: React.FC<{
   onRetry?: (trackId: string) => void;
   onDelete?: (trackId: string) => void;
 }> = ({ track, onRetry, onDelete }) => {
-  const ageMinutes = track.created_at 
-    ? Math.floor((Date.now() - new Date(track.created_at).getTime()) / 60000)
-    : 0;
-  const isStuck = ageMinutes > 5;
-  const isVeryStuck = ageMinutes > 10;
-
+  const trackForSync = {
+    id: track.id,
+    status: track.status,
+    created_at: track.created_at,
+    metadata: track.metadata as Record<string, any> | null | undefined,
+  };
+  
   return (
     <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-white z-10 text-center transition-opacity duration-300">
-      <Loader2 className="w-6 h-6 animate-spin mb-2" />
-      <h4 className="font-semibold text-sm">Генерация...</h4>
-      <p className="text-xs text-white/70 mt-1">
-        {isVeryStuck 
-          ? `${ageMinutes} мин - проверяю статус...` 
-          : isStuck 
-            ? `${ageMinutes} мин - ожидание...`
-            : 'Это может занять минуту'
-        }
-      </p>
+      <div className="w-full max-w-[200px]">
+        <TrackSyncStatus track={trackForSync} />
+      </div>
       
-      {isStuck && (
+      {(onRetry || onDelete) && (
         <div className="flex gap-2 mt-3">
           {onRetry && (
             <TooltipProvider>

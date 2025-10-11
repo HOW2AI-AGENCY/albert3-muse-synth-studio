@@ -47,9 +47,29 @@ serve(async (req: Request): Promise<Response> => {
       query = query.eq('status', 'processing').lt('created_at', tenMinutesAgo);
     }
 
-    const { data: stuckTracks, error: fetchError } = await query
+    let { data: stuckTracks, error: fetchError } = await query
       .order('created_at', { ascending: true })
       .limit(20);
+    
+    if (fetchError) {
+      throw fetchError;
+    }
+    
+    // ✅ ALSO CHECK: Tracks with callback errors
+    const { data: errorTracks, error: errorTracksErr } = await supabaseAdmin
+      .from('tracks')
+      .select('id, title, prompt, user_id, created_at, metadata, status')
+      .eq('status', 'processing')
+      .not('metadata->callback_error', 'is', null)
+      .limit(10);
+    
+    if (!errorTracksErr && errorTracks && errorTracks.length > 0) {
+      logger.warn('⚠️ Found tracks with callback errors', { count: errorTracks.length });
+      // Add them to the list for checking
+      const allTracksToCheck = [...(stuckTracks || []), ...errorTracks];
+      const uniqueTracks = Array.from(new Map(allTracksToCheck.map(t => [t.id, t])).values());
+      stuckTracks = uniqueTracks;
+    }
 
     if (fetchError) {
       throw fetchError;
@@ -174,6 +194,20 @@ serve(async (req: Request): Promise<Response> => {
               track.title === 'Generated Track' ||
               (track.prompt && track.title === track.prompt);
             
+            // ✅ FIX: Convert Unix timestamp to ISO 8601
+            const createdAtSuno = (() => {
+              const rawTime = mainTrack.createTime;
+              if (!rawTime) return null;
+              if (typeof rawTime === 'number') {
+                return new Date(rawTime).toISOString();
+              }
+              if (typeof rawTime === 'string') {
+                const parsed = new Date(rawTime);
+                return isNaN(parsed.getTime()) ? null : parsed.toISOString();
+              }
+              return null;
+            })();
+            
             const updateData: any = {
               status: 'completed',
               audio_url: uploadedAudioUrl,
@@ -185,13 +219,14 @@ serve(async (req: Request): Promise<Response> => {
               model_name: mainTrack.modelName || null,
               style_tags: styleTags,
               suno_id: mainTrack.id || null,
-              created_at_suno: mainTrack.createTime || null,
+              created_at_suno: createdAtSuno,
               metadata: {
                 ...metadata,
                 sync_check_at: new Date().toISOString(),
                 sync_found_completed: true,
                 suno_data: queryResult.tasks,
-                source: 'stuck-sync'
+                source: 'stuck-sync',
+                callback_error: null // Clear any previous errors
               }
             };
             
