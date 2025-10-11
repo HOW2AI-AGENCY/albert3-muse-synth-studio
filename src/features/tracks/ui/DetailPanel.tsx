@@ -347,11 +347,11 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
       </div>
 
       {/* Tabs Navigation */}
-      <Tabs defaultValue="details" className="flex-1 flex flex-col min-h-0">
-        <TabsList className="mx-4 mt-2 grid w-auto grid-cols-3 h-9 shrink-0">
-          <TabsTrigger value="details" className="text-xs gap-1.5">
+      <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0">
+        <TabsList className="sticky top-48 z-20 mx-4 mt-2 grid w-auto grid-cols-4 h-9 shrink-0 bg-background/95 backdrop-blur">
+          <TabsTrigger value="overview" className="text-xs gap-1.5">
             <Info className="w-3.5 h-3.5" />
-            Детали
+            Обзор
           </TabsTrigger>
           <TabsTrigger value="versions" className="text-xs gap-1.5">
             <GitBranch className="w-3.5 h-3.5" />
@@ -367,26 +367,15 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
               <Badge className="ml-1 h-4 px-1 text-[10px]">{state.data.stems.length}</Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="details" className="text-xs gap-1.5">
+            <Info className="w-3.5 h-3.5" />
+            Детали
+          </TabsTrigger>
         </TabsList>
 
-        {/* Details Tab */}
-        <TabsContent value="details" className="flex-1 overflow-auto overscroll-contain pb-[env(safe-area-inset-bottom)] mt-0 animate-fade-in">
-          <div className="padding-inline-app padding-block-app">
-            {/* Cover Art Preview */}
-            {track.cover_url && (
-              <div className="padding-app-tight">
-                <div className="aspect-square max-h-32 sm:max-h-48 overflow-hidden border border-border rounded-xl shadow-lg">
-                  <img
-                    src={track.cover_url}
-                    alt={`Обложка трека ${track.title}`}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </div>
-              </div>
-            )}
-
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="flex-1 overflow-auto overscroll-contain pb-[env(safe-area-inset-bottom)] mt-0 animate-fade-in">
+          <div className="space-y-4">
             <DetailPanelContent
               track={track}
               title={state.formData.title}
@@ -405,70 +394,87 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
               onShare={handleShare}
               onDelete={() => handleDeleteDialogOpen(true)}
               loadVersionsAndStems={loadVersionsAndStems}
+              tabView="overview"
             />
           </div>
         </TabsContent>
 
         {/* Versions Tab */}
         <TabsContent value="versions" className="flex-1 overflow-auto overscroll-contain pb-[env(safe-area-inset-bottom)] mt-0 animate-fade-in">
-          {state.data.versions.length > 0 ? (
-            <div className="padding-inline-app padding-block-app">
-              <DetailPanelContent
-                track={track}
-                title={state.formData.title}
-                setTitle={(value) => handleFormChange('title', value)}
-                genre={state.formData.genre}
-                setGenre={(value) => handleFormChange('genre', value)}
-                mood={state.formData.mood}
-                setMood={(value) => handleFormChange('mood', value)}
-                isPublic={state.formData.isPublic}
-                setIsPublic={(value) => handleFormChange('isPublic', value)}
-                isSaving={state.ui.isSaving}
-                versions={state.data.versions}
-                stems={[]}
-                onSave={handleSave}
-                onDownload={handleDownload}
-                onShare={handleShare}
-                onDelete={() => handleDeleteDialogOpen(true)}
-                loadVersionsAndStems={loadVersionsAndStems}
-              />
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-full p-8 text-center">
-              <p className="text-sm text-muted-foreground">Версии пока не созданы</p>
-            </div>
-          )}
+          <div className="space-y-4">
+            <DetailPanelContent
+              track={track}
+              title={state.formData.title}
+              setTitle={(value) => handleFormChange('title', value)}
+              genre={state.formData.genre}
+              setGenre={(value) => handleFormChange('genre', value)}
+              mood={state.formData.mood}
+              setMood={(value) => handleFormChange('mood', value)}
+              isPublic={state.formData.isPublic}
+              setIsPublic={(value) => handleFormChange('isPublic', value)}
+              isSaving={state.ui.isSaving}
+              versions={state.data.versions}
+              stems={state.data.stems}
+              onSave={handleSave}
+              onDownload={handleDownload}
+              onShare={handleShare}
+              onDelete={() => handleDeleteDialogOpen(true)}
+              loadVersionsAndStems={loadVersionsAndStems}
+              tabView="versions"
+            />
+          </div>
         </TabsContent>
 
         {/* Stems Tab */}
         <TabsContent value="stems" className="flex-1 overflow-auto overscroll-contain pb-[env(safe-area-inset-bottom)] mt-0 animate-fade-in">
-          {state.data.stems.length > 0 ? (
-            <div className="padding-inline-app padding-block-app">
-              <DetailPanelContent
-                track={track}
-                title={state.formData.title}
-                setTitle={(value) => handleFormChange('title', value)}
-                genre={state.formData.genre}
-                setGenre={(value) => handleFormChange('genre', value)}
-                mood={state.formData.mood}
-                setMood={(value) => handleFormChange('mood', value)}
-                isPublic={state.formData.isPublic}
-                setIsPublic={(value) => handleFormChange('isPublic', value)}
-                isSaving={state.ui.isSaving}
-                versions={[]}
-                stems={state.data.stems}
-                onSave={handleSave}
-                onDownload={handleDownload}
-                onShare={handleShare}
-                onDelete={() => handleDeleteDialogOpen(true)}
-                loadVersionsAndStems={loadVersionsAndStems}
-              />
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-full p-8 text-center">
-              <p className="text-sm text-muted-foreground">Стемы пока не созданы</p>
-            </div>
-          )}
+          <div className="space-y-4">
+            <DetailPanelContent
+              track={track}
+              title={state.formData.title}
+              setTitle={(value) => handleFormChange('title', value)}
+              genre={state.formData.genre}
+              setGenre={(value) => handleFormChange('genre', value)}
+              mood={state.formData.mood}
+              setMood={(value) => handleFormChange('mood', value)}
+              isPublic={state.formData.isPublic}
+              setIsPublic={(value) => handleFormChange('isPublic', value)}
+              isSaving={state.ui.isSaving}
+              versions={state.data.versions}
+              stems={state.data.stems}
+              onSave={handleSave}
+              onDownload={handleDownload}
+              onShare={handleShare}
+              onDelete={() => handleDeleteDialogOpen(true)}
+              loadVersionsAndStems={loadVersionsAndStems}
+              tabView="stems"
+            />
+          </div>
+        </TabsContent>
+
+        {/* Details Tab */}
+        <TabsContent value="details" className="flex-1 overflow-auto overscroll-contain pb-[env(safe-area-inset-bottom)] mt-0 animate-fade-in">
+          <div className="space-y-4">
+            <DetailPanelContent
+              track={track}
+              title={state.formData.title}
+              setTitle={(value) => handleFormChange('title', value)}
+              genre={state.formData.genre}
+              setGenre={(value) => handleFormChange('genre', value)}
+              mood={state.formData.mood}
+              setMood={(value) => handleFormChange('mood', value)}
+              isPublic={state.formData.isPublic}
+              setIsPublic={(value) => handleFormChange('isPublic', value)}
+              isSaving={state.ui.isSaving}
+              versions={state.data.versions}
+              stems={state.data.stems}
+              onSave={handleSave}
+              onDownload={handleDownload}
+              onShare={handleShare}
+              onDelete={() => handleDeleteDialogOpen(true)}
+              loadVersionsAndStems={loadVersionsAndStems}
+              tabView="details"
+            />
+          </div>
         </TabsContent>
       </Tabs>
 
