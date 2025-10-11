@@ -30,6 +30,7 @@ import {
   Star,
   Layers,
   Mic,
+  UserPlus,
 } from "lucide-react";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useTrackLike } from "@/features/tracks/hooks";
@@ -73,6 +74,7 @@ interface TrackCardProps {
   onExtend?: (trackId: string) => void;
   onCover?: (trackId: string) => void;
   onSeparateStems?: (trackId: string) => void;
+  onAddVocal?: (trackId: string) => void;
   className?: string;
 }
 
@@ -213,7 +215,7 @@ const FailedState: React.FC<{
   </div>
 );
 
-const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDelete, onExtend, onCover, onSeparateStems, className }: TrackCardProps) => {
+const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDelete, onExtend, onCover, onSeparateStems, onAddVocal, className }: TrackCardProps) => {
   const { toast } = useToast();
   const { currentTrack, isPlaying } = useAudioPlayer();
   const { playTrackSmart } = useSmartTrackPlay();
@@ -326,19 +328,22 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDe
         )}
 
         {/* Vocal/Instrumental badge */}
-        <div className="absolute top-2 left-2 z-10 bg-background/90 backdrop-blur-sm px-2 py-1 rounded-md flex items-center gap-1">
-          {track.has_vocals ? (
-            <>
-              <Mic className="h-3 w-3 text-primary" />
-              <span className="text-xs font-medium">Вокал</span>
-            </>
-          ) : (
-            <>
-              <Music className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs font-medium text-muted-foreground">Инструментал</span>
-            </>
-          )}
-        </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="absolute top-2 left-2 z-10 bg-background/90 backdrop-blur-sm p-1.5 rounded-md cursor-help">
+                {track.has_vocals ? (
+                  <Mic className="h-4 w-4 text-primary" />
+                ) : (
+                  <Music className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              {track.has_vocals ? 'С вокалом' : 'Инструментал'}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         {track.cover_url ? (
           <img
@@ -513,6 +518,18 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDe
                     <Mic2 className="w-4 h-4 mr-2" />
                     Создать кавер
                   </DropdownMenuItem>
+                  {!track.has_vocals && (
+                    <DropdownMenuItem 
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        onAddVocal?.(track.id);
+                      }}
+                      disabled={!onAddVocal}
+                    >
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Добавить вокал
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}

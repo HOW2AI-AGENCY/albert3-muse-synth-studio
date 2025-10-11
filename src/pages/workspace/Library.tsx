@@ -22,6 +22,7 @@ import { SeparateStemsDialog } from "@/components/tracks/SeparateStemsDialog";
 import { ExtendTrackDialog } from "@/components/tracks/ExtendTrackDialog";
 import { CreateCoverDialog } from "@/components/tracks/CreateCoverDialog";
 import { TrackDeleteDialog } from "@/components/tracks/TrackDeleteDialog";
+import { AddVocalDialog } from "@/components/tracks/AddVocalDialog";
 import { useTracks } from "@/hooks/useTracks";
 import { useToast } from "@/hooks/use-toast";
 import { useTrackCleanup } from "@/hooks/useTrackCleanup";
@@ -81,6 +82,9 @@ const Library: React.FC = () => {
   
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedTrackForDelete, setSelectedTrackForDelete] = useState<{ id: string; title: string } | null>(null);
+  
+  const [addVocalDialogOpen, setAddVocalDialogOpen] = useState(false);
+  const [selectedTrackForVocal, setSelectedTrackForVocal] = useState<string | null>(null);
   
   // Сохранение настроек просмотра
   useEffect(() => {
@@ -491,6 +495,11 @@ const Library: React.FC = () => {
     }
   }, [selectedTrackForDelete, toast, refreshTracks]);
 
+  const handleAddVocal = useCallback((trackId: string) => {
+    setSelectedTrackForVocal(trackId);
+    setAddVocalDialogOpen(true);
+  }, []);
+
   // Уникальные статусы для фильтра
   const availableStatuses = useMemo(() => {
     const statuses = new Set(tracks.map(track => track.status));
@@ -687,6 +696,7 @@ const Library: React.FC = () => {
                     onSeparateStems={() => handleSeparateStems(track.id)}
                     onExtend={() => handleExtend(track.id)}
                     onCover={() => handleCover(track.id)}
+                    onAddVocal={() => handleAddVocal(track.id)}
                     onRetry={handleRetry}
                     onDelete={handleDelete}
                   />
@@ -783,6 +793,15 @@ const Library: React.FC = () => {
           }}
         />
       )}
+
+      <AddVocalDialog
+        open={addVocalDialogOpen}
+        onOpenChange={setAddVocalDialogOpen}
+        trackId={selectedTrackForVocal}
+        onSuccess={() => {
+          refreshTracks();
+        }}
+      />
     </div>
   );
 };
