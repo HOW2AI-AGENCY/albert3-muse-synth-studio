@@ -15,6 +15,7 @@ import { CompactTrackHero } from "@/features/tracks/ui/CompactTrackHero";
 import { EmptyStateCard } from "@/components/layout/EmptyStateCard";
 import { StructuredLyrics } from "@/components/lyrics/StructuredLyrics";
 import { StyleRecommendationsPanel } from "./StyleRecommendationsPanel";
+import { useAudioPlayer } from "@/contexts/audio-player";
 import { cn } from "@/lib/utils";
 import type { StylePreset } from "@/types/styles";
 import { getStyleById } from "@/data/music-styles";
@@ -137,6 +138,7 @@ export const DetailPanelContent = ({
   tabView = "overview",
 }: DetailPanelContentProps) => {
   const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count || 0);
+  const { playTrack } = useAudioPlayer();
   const [selectedVersionId, setSelectedVersionId] = useState<string | undefined>();
   const [comparisonLeftId, setComparisonLeftId] = useState<string | undefined>();
   const [comparisonRightId, setComparisonRightId] = useState<string | undefined>();
@@ -329,10 +331,18 @@ export const DetailPanelContent = ({
         onLike={toggleLike}
         onDownload={onDownload}
         onShare={onShare}
-        onOpenPlayer={() => {
-          // TODO: Implement player opening logic
-          console.log("Open player for track:", track.id);
-        }}
+                onOpenPlayer={() => {
+                  playTrack({
+                    id: track.id,
+                    title: track.title,
+                    audio_url: track.audio_url || '',
+                    cover_url: track.cover_url,
+                    duration: track.duration || track.duration_seconds,
+                    status: (track.status as "completed" | "failed" | "pending" | "processing") || "completed",
+                    style_tags: track.style_tags || [],
+                    lyrics: track.lyrics,
+                  });
+                }}
       />
 
       <div className="p-4 sm:p-6 space-y-6 lg:space-y-8">

@@ -1,0 +1,56 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-10-11",
+  "description": "Архив устаревших отчетов и документации проекта Albert3 Muse Synth Studio",
+  "structure": {
+    "2024": {
+      "december": {
+        "description": "Отчеты за декабрь 2024",
+        "files": ["CHANGELOG.md"]
+      }
+    },
+    "2025": {
+      "january": {
+        "description": "Отчеты за январь 2025",
+        "files": [
+          "CODE_ANALYSIS.md",
+          "JANUARY_CHANGELOG.md",
+          "completed-tasks.md",
+          "reports-README.md"
+        ]
+      },
+      "october": {
+        "description": "Отчеты и планы Sprint 19-20 за октябрь 2025",
+        "files": [
+          "README.md",
+          "WORKSPACE_UI_AUDIT_REPORT.md",
+          "sprint-19-plan.md",
+          "sprint-20-completed.md",
+          "sprint-20-plan-initial.md"
+        ],
+        "reports": {
+          "description": "Аудиты и отчеты 08-10 октября 2025",
+          "files": [
+            "2025-10-08-remote-audit.md",
+            "2025-10-08-suno-audit.md",
+            "2025-10-08-suno-integration-verification.md",
+            "2025-10-09-audit-fixes-implementation.md",
+            "2025-10-09-suno-integration-reaudit.md",
+            "2025-10-09-workspace-audit.md",
+            "2025-10-10-repo-audit.md"
+          ]
+        }
+      }
+    }
+  },
+  "retention": {
+    "policy": "Хранить отчеты старше 2 месяцев в архиве",
+    "autoArchive": true,
+    "archiveAfterDays": 60
+  },
+  "migration": {
+    "date": "2025-10-11",
+    "reason": "Фаза 2: Реорганизация репозитория - перемещение октябрьских отчетов в архив",
+    "movedFiles": 7
+  }
+}
