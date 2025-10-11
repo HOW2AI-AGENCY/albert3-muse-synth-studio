@@ -184,7 +184,10 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
 
             clearRetryTimeout();
             retryTimeoutRef.current = setTimeout(() => {
-              subscribeToChannel();
+              // Guard: предотвращаем infinite loop при множественных reconnect attempts
+              if (!channelRef.current && !isConnecting) {
+                subscribeToChannel();
+              }
             }, delay);
           }
         });

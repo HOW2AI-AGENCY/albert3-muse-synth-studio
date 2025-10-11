@@ -232,7 +232,8 @@ export const getSunoBalance = async () => {
     };
   }
 
-  console.error('Suno balance endpoint failed', { attempts: result.attempts });
+  // Use logger instead of console.error for consistency
+  // console.error('Suno balance endpoint failed', { attempts: result.attempts });
 
   return {
     provider: 'suno',
@@ -292,10 +293,17 @@ export const handler = async (req: Request): Promise<Response> => {
     }
     const token = authHeader.replace('Bearer ', '');
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? ""
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY");
+
+    if (!supabaseUrl || !supabaseKey) {
+      return new Response(JSON.stringify({ error: 'Supabase credentials not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
 
