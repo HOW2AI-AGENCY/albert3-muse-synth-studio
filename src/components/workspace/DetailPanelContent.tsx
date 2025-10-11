@@ -462,26 +462,26 @@ export const DetailPanelContent = ({
               <CardTitle className="text-lg">Статистика</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2">
-              <StatsItem icon={Eye} label="Просмотры" value={`${track.view_count || 0}`} />
-              <StatsItem icon={Heart} label="Лайки" value={`${track.like_count || 0}`} />
-              <StatsItem icon={Calendar} label="Создан" value={formatDate(createdAtToDisplay)} />
-              <StatsItem icon={Clock} label="Длительность" value={formatDuration(durationToDisplay)} />
-            </CardContent>
-          </Card>
+                  <StatsItem icon={Eye} label="Просмотры" value={`${track.view_count || 0}`} />
+                  <StatsItem icon={Heart} label="Лайки" value={`${track.like_count || 0}`} />
+                  <StatsItem icon={Calendar} label="Создан" value={formatDate(createdAtToDisplay)} />
+                  <StatsItem icon={Clock} label="Длительность" value={formatDuration(durationToDisplay)} />
+                </CardContent>
+              </Card>
 
-          <Card className="border-border/70">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Промпт</CardTitle>
-              <CardDescription>Исходный запрос, использованный при генерации трека.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="p-3 rounded-md bg-muted text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-words">
-                {track.prompt}
-              </div>
-            </CardContent>
-          </Card>
+              <Card className="border-border/70">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Промпт</CardTitle>
+                  <CardDescription>Исходный запрос, использованный при генерации трека.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="p-3 rounded-md bg-muted text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-words">
+                    {track.prompt}
+                  </div>
+                </CardContent>
+              </Card>
 
-          {(track.suno_id || track.model_name || track.lyrics) && (
+              {(track.suno_id || track.model_name || track.lyrics) && (
             <Card className="border-border/70">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg">Детали генерации</CardTitle>
@@ -533,23 +533,23 @@ export const DetailPanelContent = ({
             </Card>
           )}
 
-          <Card className="border border-destructive/40 bg-destructive/5">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-destructive">Опасная зона</CardTitle>
-              <CardDescription>Удалите трек и все связанные данные без возможности восстановления.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="destructive" size="sm" className="w-full" onClick={onDelete}>
-                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                    Удалить трек
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Удалить трек безвозвратно</TooltipContent>
-              </Tooltip>
-            </CardContent>
-          </Card>
+              <Card className="border border-destructive/40 bg-destructive/5">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg text-destructive">Опасная зона</CardTitle>
+                  <CardDescription>Удалите трек и все связанные данные без возможности восстановления.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="destructive" size="sm" className="w-full" onClick={onDelete}>
+                        <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                        Удалить трек
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Удалить трек безвозвратно</TooltipContent>
+                  </Tooltip>
+                </CardContent>
+              </Card>
         </div>
       </div>
     </TooltipProvider>
