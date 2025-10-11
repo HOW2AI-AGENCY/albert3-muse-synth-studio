@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, User, Mail, Shield } from "lucide-react";
+import { logger } from "@/utils/logger";
 
 interface Profile {
   id: string;
@@ -52,7 +53,7 @@ const Profile = () => {
       });
       setFullName(data.full_name || "");
     } catch (error: any) {
-      console.error("Error loading profile:", error);
+      logger.error("Error loading profile", error instanceof Error ? error : new Error(String(error)), "Profile");
       toast({
         title: "Ошибка",
         description: "Не удалось загрузить профиль",
@@ -82,7 +83,7 @@ const Profile = () => {
 
       await loadProfile();
     } catch (error: any) {
-      console.error("Error updating profile:", error);
+      logger.error("Error updating profile", error instanceof Error ? error : new Error(String(error)), "Profile");
       toast({
         title: "Ошибка",
         description: "Не удалось обновить профиль",

@@ -8,6 +8,7 @@ import { primeTrackVersionsCache } from "@/features/tracks/hooks/useTrackVersion
 import { toast } from "sonner";
 import { convertToAudioPlayerTrack } from "@/types/track";
 import type { TrackStatus } from "@/services/api.service";
+import { logger } from "@/utils/logger";
 
 const isTrackStatus = (status: string): status is TrackStatus =>
   status === 'pending' || status === 'processing' || status === 'completed' || status === 'failed';
@@ -44,7 +45,7 @@ export default function Favorites() {
       const tracks = await LikesService.getLikedTracks(user.id);
       setLikedTracks(tracks as LikedTrack[]);
     } catch (error) {
-      console.error('Error loading liked tracks:', error);
+      logger.error('Error loading liked tracks', error instanceof Error ? error : new Error(String(error)), 'Favorites');
       toast.error('Не удалось загрузить избранные треки');
     } finally {
       setIsLoading(false);

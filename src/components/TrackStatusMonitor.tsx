@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 interface TrackStatus {
   id: string;
@@ -32,7 +33,7 @@ export const TrackStatusMonitor = ({ userId }: { userId: string }) => {
       if (error) throw error;
       setTracks((data || []) as TrackStatus[]);
     } catch (error) {
-      console.error('Error loading tracks:', error);
+      logger.error('Error loading tracks', error instanceof Error ? error : new Error(String(error)), 'TrackStatusMonitor', { userId });
       toast.error('Ошибка загрузки треков');
     } finally {
       setLoading(false);
@@ -52,7 +53,7 @@ export const TrackStatusMonitor = ({ userId }: { userId: string }) => {
       
       await loadProcessingTracks();
     } catch (error) {
-      console.error('Error checking stuck tracks:', error);
+      logger.error('Error checking stuck tracks', error instanceof Error ? error : new Error(String(error)), 'TrackStatusMonitor');
       toast.error('Ошибка проверки треков');
     } finally {
       setChecking(false);

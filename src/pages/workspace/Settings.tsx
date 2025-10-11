@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Settings as SettingsIcon, User, LogOut, Bell, Shield, Palette, Database } from "lucide-react";
+import { logger } from "@/utils/logger";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ const Settings = () => {
         description: `Перенесено: ${data?.migrated || 0}, Ошибок: ${data?.failed || 0}`,
       });
     } catch (error) {
-      console.error('Migration error:', error);
+      logger.error('Migration error', error instanceof Error ? error : new Error(String(error)), 'Settings');
       toast({
         title: "Ошибка миграции",
         description: error instanceof Error ? error.message : "Неизвестная ошибка",
