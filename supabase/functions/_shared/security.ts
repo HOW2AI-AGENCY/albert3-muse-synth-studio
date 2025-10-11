@@ -223,14 +223,14 @@ export const withRateLimit = (
       const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
       const hasAuth = !!authHeader;
       
-      console.log(`[${endpoint}] Middleware entry:`, {
+      logger.info(`[${endpoint}] Middleware entry`, { 
         method: req.method,
         hasAuthorization: hasAuth,
         endpoint
       });
 
       if (!token) {
-        console.error(`[${endpoint}] ❌ middleware-401: Missing authorization header`);
+        logger.error(`[${endpoint}] ❌ middleware-401: Missing authorization header`, { endpoint });
         return new Response(
           JSON.stringify({ error: 'Unauthorized' }),
           { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...securityHeaders } }
@@ -254,14 +254,14 @@ export const withRateLimit = (
 
       const { data: { user }, error: authError } = await authClient.auth.getUser(token);
       if (authError || !user) {
-        console.error(`[${endpoint}] ❌ middleware-401: Invalid or expired token`, { error: authError?.message });
+        logger.error(`[${endpoint}] ❌ middleware-401: Invalid or expired token`, { endpoint, error: authError?.message });
         return new Response(
           JSON.stringify({ error: 'Unauthorized' }),
           { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders, ...securityHeaders } }
         );
       }
 
-      console.log(`[${endpoint}] ✅ Auth validated, userId: ${user.id.substring(0, 8)}..., injecting X-User-Id`);
+      logger.info(`[${endpoint}] ✅ Auth validated, userId: ${user.id.substring(0, 8)}..., injecting X-User-Id`, { endpoint, userId: user.id });
 
       // Clone request and inject X-User-Id header for handler
       const clonedHeaders = new Headers(req.headers);
@@ -300,11 +300,11 @@ export const withRateLimit = (
       }
 
       if (rateLimitApplied && rateLimitInfo && !rateLimitInfo.allowed) {
-        console.warn(`[${endpoint}] ⚠️ Rate limit exceeded for user ${user.id.substring(0, 8)}...`);
+        logger.warn(`[${endpoint}] ⚠️ Rate limit exceeded for user ${user.id.substring(0, 8)}...`, { endpoint, userId: user.id });
         return createRateLimitResponse(rateLimitInfo.resetTime, { corsHeaders, securityHeaders });
       }
 
-      console.log(`[${endpoint}] Rate limit OK, forwarding to handler with X-User-Id`);
+      logger.info(`[${endpoint}] Rate limit OK, forwarding to handler with X-User-Id`, { endpoint });
       const response = await handler(clonedRequest);
       const headers = new Headers(response.headers);
 

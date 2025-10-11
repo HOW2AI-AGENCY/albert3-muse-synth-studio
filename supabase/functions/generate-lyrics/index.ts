@@ -8,6 +8,7 @@ import {
   createCorsHeaders,
   handleCorsPreflightRequest,
 } from "../_shared/cors.ts";
+import { logger } from "../_shared/logger.ts";
 import {
   validateRequest,
   validationSchemas,
@@ -102,7 +103,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     const { data: authData, error: authError } = await supabaseUser.auth.getUser();
 
     if (authError || !authData?.user) {
-      console.error("🔴 [GENERATE-LYRICS] Auth failed", authError);
+      logger.error("🔴 [GENERATE-LYRICS] Auth failed", { error: authError?.message });
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -112,7 +113,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     const user = authData.user;
     const { prompt, trackId, metadata } = body;
 
-    console.log("🎵 [GENERATE-LYRICS] Request", {
+    logger.info("🎵 [GENERATE-LYRICS] Request", {
       userId: user.id,
       promptLength: prompt?.length || 0,
       promptWords: prompt?.trim().split(/\s+/).length || 0,
@@ -123,7 +124,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     // Check word limit (200 words max)
     const wordCount = prompt.trim().split(/\s+/).length;
     if (wordCount > 200) {
-      console.warn("⚠️ [GENERATE-LYRICS] Prompt too long", { wordCount });
+      logger.warn("⚠️ [GENERATE-LYRICS] Prompt too long", { wordCount });
       return new Response(
         JSON.stringify({ error: `Prompt too long (${wordCount} words). Maximum is 200 words.` }),
         {
@@ -142,9 +143,9 @@ export const mainHandler = async (req: Request): Promise<Response> => {
         .maybeSingle();
 
       if (trackError || !trackCheck) {
-        console.error("🔴 [GENERATE-LYRICS] Track not found or unauthorized", {
+        logger.error("🔴 [GENERATE-LYRICS] Track not found or unauthorized", {
           trackId,
-          error: trackError,
+          error: trackError?.message,
         });
         return new Response(
           JSON.stringify({ error: "Track not found or unauthorized" }),
@@ -170,7 +171,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
 
     supabaseAdmin = createSupabaseAdminClient();
 
-    console.log("📝 [GENERATE-LYRICS] Creating lyrics job in DB");
+    logger.info("📝 [GENERATE-LYRICS] Creating lyrics job in DB");
 
     const insertPayload = {
       user_id: user.id,
@@ -190,7 +191,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       .single();
 
     if (jobError || !job) {
-      console.error("🔴 [GENERATE-LYRICS] Failed to create job", jobError);
+      logger.error("🔴 [GENERATE-LYRICS] Failed to create job", { error: jobError?.message });
       throw new Error("Failed to create lyrics job");
     }
 
@@ -198,7 +199,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
 
     const sunoClient = createSunoClient({ apiKey: SUNO_API_KEY });
 
-    console.log("🚀 [GENERATE-LYRICS] Calling Suno API", {
+    logger.info("🚀 [GENERATE-LYRICS] Calling Suno API", {
       endpoint: 'https://api.sunoapi.org/api/v1/lyrics',
       promptLength: prompt.length,
       callbackUrl
@@ -211,7 +212,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
 
     const { taskId, rawResponse } = await sunoClient.generateLyrics(sunoPayload);
 
-    console.log("✅ [GENERATE-LYRICS] Suno API success", {
+    logger.info("✅ [GENERATE-LYRICS] Suno API success", {
       taskId,
       jobId: job.id
     });
@@ -239,7 +240,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("🔴 [GENERATE-LYRICS] Error", error);
+    logger.error("🔴 [GENERATE-LYRICS] Error", { error: error instanceof Error ? error.message : String(error) });
 
     if (error instanceof ValidationException) {
       return new Response(JSON.stringify({

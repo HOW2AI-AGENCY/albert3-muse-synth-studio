@@ -1,4 +1,5 @@
 import { crypto } from 'https://deno.land/std@0.168.0/crypto/mod.ts';
+import { logger } from './logger.ts';
 
 /**
  * Verifies webhook signature using HMAC-SHA256
@@ -43,7 +44,7 @@ export async function verifyWebhookSignature(
       receivedSig
     );
   } catch (error) {
-    console.error('🔴 [WEBHOOK] Signature verification error:', error);
+    logger.error('🔴 [WEBHOOK] Signature verification error', { error: error instanceof Error ? error.message : String(error) });
     return false;
   }
 }

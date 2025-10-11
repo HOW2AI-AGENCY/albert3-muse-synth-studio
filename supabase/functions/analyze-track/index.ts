@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { logger } from "../_shared/logger.ts";
 
 const corsHeaders = {
   ...createCorsHeaders(),
@@ -87,7 +88,7 @@ Format the response as JSON with these fields:
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Lovable AI error:', response.status, errorText);
+      logger.error('Lovable AI error', { status: response.status, error: errorText });
       throw new Error(`AI service error: ${response.status}`);
     }
 
@@ -107,7 +108,7 @@ Format the response as JSON with these fields:
       const jsonText = jsonMatch ? jsonMatch[1] : analysisText;
       analysis = JSON.parse(jsonText);
     } catch (e) {
-      console.error('Failed to parse AI response as JSON:', analysisText);
+      logger.error('Failed to parse AI response as JSON', { analysisText, error: e instanceof Error ? e.message : String(e) });
       analysis = { raw: analysisText };
     }
 
@@ -117,7 +118,7 @@ Format the response as JSON with these fields:
     );
 
   } catch (error) {
-    console.error('Error in analyze-track:', error);
+    logger.error('Error in analyze-track', { error: error instanceof Error ? error.message : String(error) });
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

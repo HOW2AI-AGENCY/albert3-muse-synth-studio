@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { logger } from "../_shared/logger.ts";
 
 const mainHandler = async (req: Request) => {
   const corsHeaders = {
@@ -75,7 +76,7 @@ RULES:
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Lovable AI error:', response.status, errorText);
+      logger.error('Lovable AI error', { status: response.status, error: errorText });
       throw new Error(`AI service error: ${response.status}`);
     }
 
@@ -92,7 +93,7 @@ RULES:
     );
 
   } catch (error) {
-    console.error('Error in improve-prompt:', error);
+    logger.error('Error in improve-prompt', { error: error instanceof Error ? error.message : String(error) });
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
