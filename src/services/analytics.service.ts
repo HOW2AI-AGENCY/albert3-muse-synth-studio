@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import * as Sentry from '@sentry/react';
 import type { Metric } from 'web-vitals';
+import { logger } from '@/utils/logger';
 
 type SerializableMetric = Pick<Metric, 'id' | 'name' | 'delta' | 'value' | 'rating'> & {
   navigationType?: Metric['navigationType'];
@@ -38,7 +39,7 @@ const initialiseViewGuard = () => {
       });
     }
   } catch (error) {
-    console.warn('Failed to restore view guard state', error);
+    logger.warn('Failed to restore view guard state', 'AnalyticsService', { error });
   }
 
   return guard;
@@ -55,7 +56,7 @@ const persistViewGuard = (guard: Set<string>) => {
       JSON.stringify(Array.from(guard))
     );
   } catch (error) {
-    console.warn('Failed to persist view guard state', error);
+    logger.warn('Failed to persist view guard state', 'AnalyticsService', { error });
   }
 };
 
@@ -83,10 +84,10 @@ export class AnalyticsService {
       });
 
       if (error) {
-        console.error('Error in recordPlay:', error);
+        logger.error('Error in recordPlay', error instanceof Error ? error : new Error(String(error)), 'AnalyticsService', { trackId });
       }
     } catch (error) {
-      console.error('Error recording play:', error);
+      logger.error('Error recording play', error instanceof Error ? error : new Error(String(error)), 'AnalyticsService', { trackId });
       // Don't throw - analytics shouldn't break the app
     }
   }
@@ -116,10 +117,10 @@ export class AnalyticsService {
       });
 
       if (error) {
-        console.error('Error in recordView:', error);
+        logger.error('Error in recordView', error instanceof Error ? error : new Error(String(error)), 'AnalyticsService', { trackId });
       }
     } catch (error) {
-      console.error('Error recording view:', error);
+      logger.error('Error recording view', error instanceof Error ? error : new Error(String(error)), 'AnalyticsService', { trackId });
     }
   }
 
@@ -143,7 +144,7 @@ export class AnalyticsService {
         createdAt: data?.created_at,
       };
     } catch (error) {
-      console.error('Error fetching track analytics:', error);
+      logger.error('Error fetching track analytics', error instanceof Error ? error : new Error(String(error)), 'AnalyticsService', { trackId });
       return {
         plays: 0,
         views: 0,
@@ -168,7 +169,7 @@ export class AnalyticsService {
       if (error) throw error;
       return data || [];
     } catch (error) {
-      console.error('Error fetching most played tracks:', error);
+      logger.error('Error fetching most played tracks', error instanceof Error ? error : new Error(String(error)), 'AnalyticsService', { userId, limit });
       return [];
     }
   }
@@ -196,7 +197,7 @@ export class AnalyticsService {
         totalLikes,
       };
     } catch (error) {
-      console.error('Error fetching user stats:', error);
+      logger.error('Error fetching user stats', error instanceof Error ? error : new Error(String(error)), 'AnalyticsService', { userId });
       return {
         totalTracks: 0,
         totalViews: 0,
@@ -227,7 +228,7 @@ export class AnalyticsService {
       AnalyticsService.sendToSentry(payload);
       await AnalyticsService.sendToCustomEndpoint(payload);
     } catch (error) {
-      console.error('Error reporting web vital', metric.name, error);
+      logger.error('Error reporting web vital', error instanceof Error ? error : new Error(String(error)), 'AnalyticsService', { metricName: metric.name });
     }
   }
 

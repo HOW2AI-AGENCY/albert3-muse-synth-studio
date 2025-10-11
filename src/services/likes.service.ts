@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/utils/logger";
 
 export class LikesService {
   /**
@@ -39,7 +40,7 @@ export class LikesService {
         return true;
       }
     } catch (error) {
-      console.error('Error toggling like:', error);
+      logger.error('Error toggling like', error instanceof Error ? error : new Error(String(error)), 'LikesService', { trackId, userId });
       throw error;
     }
   }
@@ -59,7 +60,7 @@ export class LikesService {
       if (error) throw error;
       return !!data;
     } catch (error) {
-      console.error('Error checking like status:', error);
+      logger.error('Error checking like status', error instanceof Error ? error : new Error(String(error)), 'LikesService', { trackId, userId });
       return false;
     }
   }
@@ -96,7 +97,7 @@ export class LikesService {
       const tracks = data?.map(item => item.tracks).filter(Boolean) || [];
       return tracks;
     } catch (error) {
-      console.error('Error fetching liked tracks:', error);
+      logger.error('Error fetching liked tracks', error instanceof Error ? error : new Error(String(error)), 'LikesService', { userId });
       return [];
     }
   }
@@ -115,7 +116,7 @@ export class LikesService {
       if (error) throw error;
       return data?.like_count || 0;
     } catch (error) {
-      console.error('Error fetching like count:', error);
+      logger.error('Error fetching like count', error instanceof Error ? error : new Error(String(error)), 'LikesService', { trackId });
       return 0;
     }
   }

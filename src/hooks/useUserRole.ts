@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 export type AppRole = 'admin' | 'moderator' | 'user';
 
@@ -38,7 +39,7 @@ export const useUserRole = (): UserRole => {
           setRole(data.role as AppRole);
         }
       } catch (error) {
-        console.error('Error fetching user role:', error);
+        logger.error('Error fetching user role', error instanceof Error ? error : new Error(String(error)), 'useUserRole');
         setRole('user');
       } finally {
         setIsLoading(false);

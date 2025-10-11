@@ -477,10 +477,12 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
     if (payload.referenceAudioUrl) apiPayload.referenceAudioUrl = payload.referenceAudioUrl;
 
     // Логирование трансформации для отладки
-    console.log('🔍 [SUNO DEBUG] Payload transformation:', {
-      before: { make_instrumental: payload.make_instrumental },
-      after: { instrumental: apiPayload.instrumental },
-      hasReference: !!payload.referenceAudioUrl
+    import('./logger.ts').then(({ logger }) => {
+      logger.debug('Suno payload transformation', {
+        before: { make_instrumental: payload.make_instrumental },
+        after: { instrumental: apiPayload.instrumental },
+        hasReference: !!payload.referenceAudioUrl
+      });
     });
 
           const response = await fetchImpl(endpoint, {
@@ -493,29 +495,31 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           const { json, parseError } = safeParseJson(rawText);
 
           // ✅ ФАЗА 1.1: Полное логирование ответа Suno API
-          console.log('🔍 [SUNO DEBUG] Raw response:', {
-            endpoint,
-            status: response.status,
-            headers: Object.fromEntries(response.headers.entries()),
-            bodyLength: rawText.length,
-            bodyPreview: rawText.substring(0, 500),
-            parsedJson: json,
-            parseError: parseError?.message
-          });
-
-          if (json && typeof json === 'object') {
-            console.log('🔍 [SUNO DEBUG] Response structure:', {
-              keys: Object.keys(json as Record<string, unknown>),
-              isArray: Array.isArray(json),
-              firstLevelStructure: JSON.stringify(json, null, 2).substring(0, 1000)
+          import('./logger.ts').then(({ logger }) => {
+            logger.debug('Suno API raw response', {
+              endpoint,
+              status: response.status,
+              bodyLength: rawText.length,
+              bodyPreview: rawText.substring(0, 500),
+              parseError: parseError?.message
             });
-          }
+
+            if (json && typeof json === 'object') {
+              logger.debug('Suno API response structure', {
+                keys: Object.keys(json as Record<string, unknown>),
+                isArray: Array.isArray(json)
+              });
+            }
+          });
 
           // Handle 429 Rate Limit with exponential backoff
           if (response.status === 429 && retryAttempt < MAX_RETRIES) {
             const backoffMs = BACKOFF_BASE_MS * Math.pow(2, retryAttempt);
-            console.warn(`⚠️ [SUNO] Rate limit hit (429), retry ${retryAttempt + 1}/${MAX_RETRIES} after ${backoffMs}ms`, {
-              endpoint,
+            import('./logger.ts').then(({ logger }) => {
+              logger.warn(`Suno rate limit hit, retry ${retryAttempt + 1}/${MAX_RETRIES}`, {
+                endpoint,
+                backoffMs
+              });
             });
             await new Promise(resolve => setTimeout(resolve, backoffMs));
             continue; // Retry same endpoint

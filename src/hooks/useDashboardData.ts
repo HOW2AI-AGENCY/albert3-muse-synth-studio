@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Track } from "@/services/api.service";
+import { logger } from "@/utils/logger";
 
 export interface DashboardStats {
   total: number;
@@ -49,7 +50,7 @@ const useCurrentUser = () => {
       }
 
       if (error) {
-        console.error("Error fetching current user:", error);
+        logger.error("Error fetching current user", error instanceof Error ? error : new Error(String(error)), "useDashboardData");
         setUser(null);
         return;
       }

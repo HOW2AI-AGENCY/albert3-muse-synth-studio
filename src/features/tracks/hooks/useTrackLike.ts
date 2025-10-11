@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { LikesService } from '@/services/likes.service';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export const useTrackLike = (trackId: string, initialLikeCount: number = 0) => {
   const [isLiked, setIsLiked] = useState(false);
@@ -78,7 +79,7 @@ export const useTrackLike = (trackId: string, initialLikeCount: number = 0) => {
 
       toast.success(nowLiked ? 'Трек добавлен в избранное' : 'Трек удален из избранного');
     } catch (error) {
-      console.error('Error toggling like:', error);
+      logger.error('Error toggling like', error instanceof Error ? error : new Error(String(error)), 'useTrackLike', { trackId });
       
       // Revert optimistic update on error
       setIsLiked(!isLiked);
