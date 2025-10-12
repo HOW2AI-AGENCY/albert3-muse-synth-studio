@@ -288,7 +288,12 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       });
     }
 
-    const promptForSuno = customModeValue ? (normalizedLyrics || '') : (prompt || '');
+    // ✅ FIX: В customMode используем lyrics если есть, иначе prompt
+    // В обычном режиме используем prompt
+    const promptForSuno = customModeValue 
+      ? (normalizedLyrics || prompt || '') 
+      : (prompt || '');
+    
     if (!promptForSuno) {
       throw new Error("A prompt or lyrics are required for Suno generation.");
     }
