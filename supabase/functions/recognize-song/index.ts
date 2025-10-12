@@ -52,7 +52,7 @@ serve(async (req) => {
       throw new Error('audioUrl is required');
     }
 
-    logger.info('🔍 Song recognition request', 'recognize-song', {
+    logger.info('🔍 Song recognition request', {
       userId: user.id,
       audioUrl,
     });
@@ -66,7 +66,7 @@ serve(async (req) => {
     const murekaClient = createMurekaClient({ apiKey: murekaApiKey });
 
     // 4. Download audio file
-    logger.info('⬇️ Downloading audio file', 'recognize-song', { audioUrl });
+    logger.info('⬇️ Downloading audio file', { audioUrl });
     const audioResponse = await fetch(audioUrl);
     if (!audioResponse.ok) {
       throw new Error(`Failed to download audio: ${audioResponse.statusText}`);
@@ -75,8 +75,9 @@ serve(async (req) => {
     const audioBlob = await audioResponse.blob();
 
     // 5. Upload to Mureka
-    logger.info('⬆️ Uploading to Mureka', 'recognize-song');
-    const { file_id } = await murekaClient.uploadFile(audioBlob, 'recognition-audio.mp3');
+    logger.info('⬆️ Uploading to Mureka');
+    const uploadResponse = await murekaClient.uploadFile(audioBlob);
+    const file_id = uploadResponse.data.file_id;
 
     // 6. Create recognition record
     const { data: recognition, error: insertError } = await supabaseAdmin
@@ -95,16 +96,19 @@ serve(async (req) => {
     }
 
     // 7. Call Mureka recognition API
-    logger.info('🎵 Calling Mureka recognition API', 'recognize-song', { fileId: file_id });
-    const { task_id } = await murekaClient.recognizeSong({ file_id });
+    logger.info('🎵 Calling Mureka recognition API', { fileId: file_id });
+    const recognizeResponse = await murekaClient.recognizeSong({ audio_file: file_id });
+    const task_id = recognizeResponse.data.task_id;
 
     // 8. Update record with task ID
-    await supabaseAdmin
-      .from('song_recognitions')
-      .update({ mureka_task_id: task_id })
-      .eq('id', recognition.id);
+    if (recognition) {
+      await supabaseAdmin
+        .from('song_recognitions')
+        .update({ mureka_task_id: task_id })
+        .eq('id', recognition.id);
+    }
 
-    logger.info('✅ Recognition task created', 'recognize-song', {
+    logger.info('✅ Recognition task created', {
       recognitionId: recognition.id,
       taskId: task_id,
     });
@@ -112,45 +116,47 @@ serve(async (req) => {
     // 9. Start background polling
     async function pollRecognition(attemptNumber = 0): Promise<void> {
       if (attemptNumber >= 30) { // 5 minutes max (10s interval)
-        await supabaseAdmin
-          .from('song_recognitions')
-          .update({
-            status: 'failed',
-            error_message: 'Recognition timeout',
-          })
-          .eq('id', recognition.id);
-        return;
-      }
-
-      try {
-        const result = await murekaClient.querySongRecognition({ task_id });
-
-        if (result.status === 'completed' && result.data) {
-          await supabaseAdmin
-            .from('song_recognitions')
-            .update({
-              status: 'completed',
-              recognized_title: result.data.title,
-              recognized_artist: result.data.artist,
-              recognized_album: result.data.album,
-              release_date: result.data.release_date,
-              confidence_score: result.data.confidence || 0.8,
-              external_ids: result.data.external_ids || {},
-              metadata: result,
-            })
-            .eq('id', recognition.id);
-
-          logger.info('🎉 Song recognized', 'recognize-song', {
-            title: result.data.title,
-            artist: result.data.artist,
-          });
-
-        } else if (result.status === 'failed') {
+        if (recognition) {
           await supabaseAdmin
             .from('song_recognitions')
             .update({
               status: 'failed',
-              error_message: 'Recognition failed',
+              error_message: 'Recognition timeout',
+            })
+            .eq('id', recognition.id);
+        }
+        return;
+      }
+
+      try {
+        const result = await murekaClient.queryTask(task_id) as any;
+
+        if (result.data?.result && recognition) {
+          await supabaseAdmin
+            .from('song_recognitions')
+            .update({
+              status: 'completed',
+              recognized_title: result.data.result.title,
+              recognized_artist: result.data.result.artist,
+              recognized_album: result.data.result.album,
+              release_date: result.data.result.release_date,
+              confidence_score: result.data.result.confidence || 0.8,
+              external_ids: result.data.result.external_ids || {},
+              metadata: result,
+            })
+            .eq('id', recognition.id);
+
+          logger.info('🎉 Song recognized', {
+            title: result.data.result.title,
+            artist: result.data.result.artist,
+          });
+
+        } else if (result.code !== 200 && recognition) {
+          await supabaseAdmin
+            .from('song_recognitions')
+            .update({
+              status: 'failed',
+              error_message: result.msg || 'Recognition failed',
             })
             .eq('id', recognition.id);
 
@@ -159,13 +165,13 @@ serve(async (req) => {
         }
 
       } catch (pollError) {
-        logger.error('🔴 Recognition polling error', pollError as Error, 'recognize-song');
+        logger.error('🔴 Recognition polling error', { error: pollError });
         setTimeout(() => pollRecognition(attemptNumber + 1), 10000);
       }
     }
 
     pollRecognition().catch((err) => {
-      logger.error('🔴 Background recognition polling failed', err as Error, 'recognize-song');
+      logger.error('🔴 Background recognition polling failed', { error: err });
     });
 
     // 10. Return immediate response
@@ -182,7 +188,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    logger.error('🔴 Song recognition error', error as Error, 'recognize-song');
+    logger.error('🔴 Song recognition error', { error });
     
     return new Response(
       JSON.stringify({

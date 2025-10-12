@@ -29,11 +29,11 @@ serve(async (req) => {
 
     const murekaClient = createMurekaClient({ apiKey: murekaApiKey });
     
-    logger.info('💰 Fetching Mureka balance', 'get-mureka-balance');
+    logger.info('💰 Fetching Mureka balance');
     
     const billingData = await murekaClient.getBilling();
     
-    logger.info('✅ Mureka balance retrieved', 'get-mureka-balance', {
+    logger.info('✅ Mureka balance retrieved', {
       balance: billingData.data.balance,
       currency: billingData.data.currency,
     });
@@ -51,7 +51,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    logger.error('🔴 Failed to fetch Mureka balance', error as Error, 'get-mureka-balance');
+    logger.error('🔴 Failed to fetch Mureka balance', { error });
     
     return new Response(
       JSON.stringify({

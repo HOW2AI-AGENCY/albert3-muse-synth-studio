@@ -12,7 +12,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createSupabaseAdminClient } from "../_shared/supabase.ts";
-import { createMurekaClient } from "../_shared/mureka.ts";
+import { createMurekaClient, type MurekaDescriptionResponse } from "../_shared/mureka.ts";
 import { logger } from "../_shared/logger.ts";
 
 const corsHeaders = {
@@ -73,7 +73,7 @@ serve(async (req) => {
       throw new Error('Track has no audio URL');
     }
 
-    logger.info('📖 Track description request', 'describe-song', {
+    logger.info('📖 Track description request', {
       trackId,
       audioUrl: track.audio_url,
     });
@@ -94,7 +94,8 @@ serve(async (req) => {
     const audioBlob = await audioResponse.blob();
 
     // 6. Upload to Mureka
-    const { file_id } = await murekaClient.uploadFile(audioBlob, 'analysis-audio.mp3');
+    const uploadResponse = await murekaClient.uploadFile(audioBlob);
+    const file_id = uploadResponse.data.file_id;
 
     // 7. Create description record
     const { data: description, error: insertError } = await supabaseAdmin
@@ -114,65 +115,68 @@ serve(async (req) => {
     }
 
     // 8. Call Mureka describe API
-    logger.info('🎼 Calling Mureka describe API', 'describe-song', { fileId: file_id });
-    const { task_id } = await murekaClient.describeSong({ file_id });
+    logger.info('🎼 Calling Mureka describe API', { fileId: file_id });
+    const describeResponse = await murekaClient.describeSong({ audio_file: file_id });
+    const task_id = describeResponse.data.task_id;
 
     await supabaseAdmin
       .from('song_descriptions')
       .update({ mureka_task_id: task_id })
       .eq('id', description.id);
 
-    logger.info('✅ Description task created', 'describe-song', {
-      descriptionId: description.id,
+    logger.info('✅ Description task created', {
+      descriptionId: description?.id,
       taskId: task_id,
     });
 
     // 9. Background polling
     async function pollDescription(attemptNumber = 0): Promise<void> {
       if (attemptNumber >= 30) {
-        await supabaseAdmin
-          .from('song_descriptions')
-          .update({
-            status: 'failed',
-            error_message: 'Analysis timeout',
-          })
-          .eq('id', description.id);
-        return;
-      }
-
-      try {
-        const result = await murekaClient.querySongDescription({ task_id });
-
-        if (result.status === 'completed' && result.data) {
-          await supabaseAdmin
-            .from('song_descriptions')
-            .update({
-              status: 'completed',
-              ai_description: result.data.description,
-              detected_genre: result.data.genre,
-              detected_mood: result.data.mood,
-              tempo_bpm: result.data.tempo,
-              key_signature: result.data.key,
-              detected_instruments: result.data.instruments || [],
-              energy_level: result.data.energy,
-              danceability: result.data.danceability,
-              valence: result.data.valence,
-              metadata: result,
-            })
-            .eq('id', description.id);
-
-          logger.info('🎉 Track description completed', 'describe-song', {
-            genre: result.data.genre,
-            mood: result.data.mood,
-            tempo: result.data.tempo,
-          });
-
-        } else if (result.status === 'failed') {
+        if (description) {
           await supabaseAdmin
             .from('song_descriptions')
             .update({
               status: 'failed',
-              error_message: 'Analysis failed',
+              error_message: 'Analysis timeout',
+            })
+            .eq('id', description.id);
+        }
+        return;
+      }
+
+      try {
+        const result = await murekaClient.queryTask(task_id) as MurekaDescriptionResponse;
+
+        if (result.data.description && description) {
+          await supabaseAdmin
+            .from('song_descriptions')
+            .update({
+              status: 'completed',
+              ai_description: result.data.description.text,
+              detected_genre: result.data.description.genre,
+              detected_mood: result.data.description.mood,
+              tempo_bpm: result.data.description.tempo_bpm,
+              key_signature: result.data.description.key,
+              detected_instruments: result.data.description.instruments || [],
+              energy_level: result.data.description.energy_level,
+              danceability: result.data.description.danceability,
+              valence: result.data.description.valence,
+              metadata: result,
+            })
+            .eq('id', description.id);
+
+          logger.info('🎉 Track description completed', {
+            genre: result.data.description.genre,
+            mood: result.data.description.mood,
+            tempo: result.data.description.tempo_bpm,
+          });
+
+        } else if (result.code !== 200 && description) {
+          await supabaseAdmin
+            .from('song_descriptions')
+            .update({
+              status: 'failed',
+              error_message: result.msg || 'Analysis failed',
             })
             .eq('id', description.id);
 
@@ -181,13 +185,13 @@ serve(async (req) => {
         }
 
       } catch (pollError) {
-        logger.error('🔴 Description polling error', pollError as Error, 'describe-song');
+        logger.error('🔴 Description polling error', { error: pollError });
         setTimeout(() => pollDescription(attemptNumber + 1), 10000);
       }
     }
 
     pollDescription().catch((err) => {
-      logger.error('🔴 Background description polling failed', err as Error, 'describe-song');
+      logger.error('🔴 Background description polling failed', { error: err });
     });
 
     // 10. Return response
@@ -204,7 +208,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    logger.error('🔴 Track description error', error as Error, 'describe-song');
+    logger.error('🔴 Track description error', { error });
     
     return new Response(
       JSON.stringify({

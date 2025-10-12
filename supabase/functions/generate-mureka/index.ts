@@ -50,7 +50,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
     if (authError || !user) {
-      logger.error('🔴 Authentication failed', authError || new Error('No user'), 'generate-mureka');
+      logger.error('🔴 Authentication failed', { error: authError || new Error('No user') });
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -65,7 +65,7 @@ serve(async (req) => {
       throw new Error('Prompt is required');
     }
 
-    logger.info('📝 Mureka generation request received', 'generate-mureka', {
+    logger.info('📝 Mureka generation request received', {
       userId: user.id,
       trackId,
       promptLength: prompt.length,
@@ -113,9 +113,10 @@ serve(async (req) => {
       output_audio_count: 2, // Generate 2 variants
     };
 
-    logger.info('🎵 Calling Mureka generateSong API', 'generate-mureka', { payload: generatePayload });
+    logger.info('🎵 Calling Mureka generateSong API', { payload: generatePayload });
 
-    const { task_id, status } = await murekaClient.generateSong(generatePayload);
+    const response = await murekaClient.generateSong(generatePayload);
+    const task_id = response.data.task_id;
 
     if (!task_id) {
       throw new Error('Mureka API did not return task_id');
@@ -131,16 +132,14 @@ serve(async (req) => {
         metadata: {
           ...generatePayload,
           mureka_task_id: task_id,
-          initial_status: status,
           started_at: new Date().toISOString(),
         },
       })
       .eq('id', finalTrackId);
 
-    logger.info('✅ Mureka generation started', 'generate-mureka', {
+    logger.info('✅ Mureka generation started', {
       trackId: finalTrackId,
       taskId: task_id,
-      status,
     });
 
     // 7. Start background polling (every 10s)
@@ -157,7 +156,8 @@ serve(async (req) => {
           })
           .eq('id', finalTrackId);
         
-        logger.error('⏱️ Mureka polling timeout', new Error('Max attempts reached'), 'generate-mureka', {
+        logger.error('⏱️ Mureka polling timeout', {
+          error: new Error('Max attempts reached'),
           trackId: finalTrackId,
           taskId: task_id,
         });
@@ -165,18 +165,18 @@ serve(async (req) => {
       }
 
       try {
-        const queryResult = await murekaClient.querySong({ task_id });
+        const queryResult = await murekaClient.queryTask(task_id);
         
-        logger.info('🔍 Mureka poll attempt', 'generate-mureka', {
+        logger.info('🔍 Mureka poll attempt', {
           attempt: attemptNumber + 1,
-          status: queryResult.status,
           taskId: task_id,
         });
 
-        if (queryResult.status === 'completed' && queryResult.data?.length > 0) {
-          const audioUrl = queryResult.data[0].audio_url;
-          const coverUrl = queryResult.data[0].image_url;
-          const duration = queryResult.data[0].duration || 0;
+        const clips = queryResult.data?.clips;
+        if (queryResult.code === 200 && clips && clips.length > 0) {
+          const audioUrl = clips[0].audio_url;
+          const coverUrl = clips[0].image_url;
+          const duration = clips[0].duration || 0;
 
           await supabaseAdmin
             .from('tracks')
@@ -185,7 +185,7 @@ serve(async (req) => {
               audio_url: audioUrl,
               cover_url: coverUrl,
               duration_seconds: duration,
-              lyrics: queryResult.data[0].lyric || lyrics,
+              lyrics: clips[0].lyrics || lyrics,
               metadata: {
                 mureka_task_id: task_id,
                 completed_at: new Date().toISOString(),
@@ -194,15 +194,15 @@ serve(async (req) => {
             })
             .eq('id', finalTrackId);
 
-          logger.info('🎉 Mureka generation completed', 'generate-mureka', {
+          logger.info('🎉 Mureka generation completed', {
             trackId: finalTrackId,
             audioUrl,
             duration,
           });
 
           // Create track versions for additional outputs
-          if (queryResult.data.length > 1) {
-            const versions = queryResult.data.slice(1).map((output, index) => ({
+          if (clips.length > 1) {
+            const versions = clips.slice(1).map((output: any, index: number) => ({
               parent_track_id: finalTrackId,
               version_number: index + 1,
               audio_url: output.audio_url,
@@ -214,19 +214,19 @@ serve(async (req) => {
             }));
 
             await supabaseAdmin.from('track_versions').insert(versions);
-            logger.info('📦 Created track versions', 'generate-mureka', { count: versions.length });
+            logger.info('📦 Created track versions', { count: versions.length });
           }
 
-        } else if (queryResult.status === 'failed') {
+        } else if (queryResult.code !== 200) {
           await supabaseAdmin
             .from('tracks')
             .update({
               status: 'failed',
-              error_message: queryResult.error || 'Mureka generation failed',
+              error_message: queryResult.msg || 'Mureka generation failed',
             })
             .eq('id', finalTrackId);
 
-          logger.error('❌ Mureka generation failed', new Error(queryResult.error || 'Unknown error'), 'generate-mureka');
+          logger.error('❌ Mureka generation failed', { error: new Error(queryResult.msg || 'Unknown error') });
           
         } else {
           // Still processing, schedule next poll
@@ -234,7 +234,8 @@ serve(async (req) => {
         }
 
       } catch (pollError) {
-        logger.error('🔴 Mureka polling error', pollError as Error, 'generate-mureka', {
+        logger.error('🔴 Mureka polling error', {
+          error: pollError,
           attempt: attemptNumber,
           taskId: task_id,
         });
@@ -246,7 +247,7 @@ serve(async (req) => {
 
     // Start background polling
     pollMurekaCompletion().catch((err) => {
-      logger.error('🔴 Background polling failed', err as Error, 'generate-mureka');
+      logger.error('🔴 Background polling failed', { error: err });
     });
 
     // 8. Return success response immediately
@@ -264,7 +265,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    logger.error('🔴 Mureka generation error', error as Error, 'generate-mureka');
+    logger.error('🔴 Mureka generation error', { error });
     
     return new Response(
       JSON.stringify({
