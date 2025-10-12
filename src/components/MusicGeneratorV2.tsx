@@ -1,4 +1,4 @@
-import { memo, useCallback, useState } from 'react';
+import { memo, useCallback, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,6 +21,8 @@ import { useBoostStyle } from '@/hooks/useBoostStyle';
 import { AudioPreviewDialog } from '@/components/audio/AudioPreviewDialog';
 import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog';
 import { AudioRecorder } from '@/components/audio/AudioRecorder';
+import { ProviderSelector } from '@/components/mureka/ProviderSelector';
+import { MurekaBalanceDisplay } from '@/components/mureka/MurekaBalanceDisplay';
 import { logger } from '@/utils/logger';
 
 interface MusicGeneratorV2Props {
@@ -46,7 +48,7 @@ const vocalGenderOptions: { value: VocalGender; label: string }[] = [
 ];
 
 const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) => {
-  const { generateMusic, isGenerating } = useMusicGenerationStore();
+  const { generateMusic, isGenerating, selectedProvider, setProvider } = useMusicGenerationStore();
   const { toast } = useToast();
   const { vibrate } = useHapticFeedback();
   const { uploadAudio, isUploading } = useAudioUpload();
@@ -73,11 +75,17 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     styleWeight: 75,
     lyricsWeight: 70,
     weirdness: 10,
+    provider: selectedProvider,
   });
 
   const setParam = <K extends keyof typeof params>(key: K, value: (typeof params)[K]) => {
     setParams(prev => ({ ...prev, [key]: value }));
   };
+
+  // Sync provider selection with global state
+  useEffect(() => {
+    setParams(prev => ({ ...prev, provider: selectedProvider }));
+  }, [selectedProvider]);
 
   // ✅ Улучшенный Boost с обратной связью
   const handleBoostPrompt = async () => {
@@ -234,8 +242,23 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
 
   return (
     <div className="flex flex-col h-full bg-card border border-border/20 rounded-lg shadow-sm" data-testid="music-generator">
-      {/* Header: Tabs + Model Version */}
-      <div className="p-2.5 border-b border-border/20">
+      {/* Header: Provider Selector + Tabs + Model Version */}
+      <div className="p-2.5 border-b border-border/20 space-y-2">
+        {/* Provider Selector Row */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <ProviderSelector
+              value={selectedProvider}
+              onChange={setProvider}
+              disabled={isGenerating}
+            />
+          </div>
+          {selectedProvider === 'mureka' && (
+            <MurekaBalanceDisplay />
+          )}
+        </div>
+
+        {/* Mode Tabs + Model Version Row */}
         <div className="flex items-center justify-between gap-2">
           {/* Mode Tabs */}
           <Tabs value={mode} onValueChange={(v) => setMode(v as GeneratorMode)} className="flex-1">

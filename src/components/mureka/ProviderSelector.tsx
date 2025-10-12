@@ -1,14 +1,26 @@
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-
-export type MusicProvider = 'suno' | 'mureka';
+import { MusicProvider } from '@/services/providers/types';
+import { PROVIDERS } from '@/services/providers/registry';
 
 interface ProviderSelectorProps {
   value: MusicProvider;
   onChange: (provider: MusicProvider) => void;
   disabled?: boolean;
 }
+
+const providerDescriptions: Record<MusicProvider, string> = {
+  suno: 'Быстрая генерация, широкий выбор стилей, stem separation',
+  mureka: 'AI-описание треков, распознавание песен, высокое качество',
+  sonauto: 'Самая быстрая генерация, плавные переходы, низкая стоимость',
+};
+
+const providerBadges: Record<MusicProvider, { text: string; variant: 'default' | 'secondary' | 'outline' }> = {
+  suno: { text: 'v5', variant: 'secondary' },
+  mureka: { text: 'AI+', variant: 'default' },
+  sonauto: { text: 'Fast', variant: 'outline' },
+};
 
 export const ProviderSelector = ({ value, onChange, disabled }: ProviderSelectorProps) => {
   return (
@@ -21,22 +33,25 @@ export const ProviderSelector = ({ value, onChange, disabled }: ProviderSelector
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="suno">
-            <div className="flex items-center gap-2">
-              <span>Suno AI</span>
-              <Badge variant="secondary" className="text-[9px] px-1 py-0">v5</Badge>
-            </div>
-          </SelectItem>
-          <SelectItem value="mureka">
-            <div className="flex items-center gap-2">
-              <span>Mureka O1</span>
-              <Badge variant="default" className="text-[9px] px-1 py-0">NEW</Badge>
-            </div>
-          </SelectItem>
+          {(Object.keys(PROVIDERS) as MusicProvider[]).map((provider) => {
+            const config = PROVIDERS[provider];
+            const badge = providerBadges[provider];
+            
+            return (
+              <SelectItem key={provider} value={provider}>
+                <div className="flex items-center gap-2">
+                  <span>{config.displayName}</span>
+                  <Badge variant={badge.variant} className="text-[9px] px-1 py-0">
+                    {badge.text}
+                  </Badge>
+                </div>
+              </SelectItem>
+            );
+          })}
         </SelectContent>
       </Select>
       <p className="text-[10px] text-muted-foreground">
-        {value === 'suno' ? 'Быстрая генерация, широкий выбор стилей' : 'Новая система с высоким качеством'}
+        {providerDescriptions[value]}
       </p>
     </div>
   );
