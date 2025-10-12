@@ -58,7 +58,7 @@ export const GlobalAudioPlayer = () => {
     }
   }, [currentTrack]);
 
-  // ✅ Индикатор buffering
+  // ✅ Индикатор buffering + Phase 2: Обработка ошибок загрузки аудио
   useEffect(() => {
     const audio = audioRef?.current;
     if (!audio) return;
@@ -67,16 +67,74 @@ export const GlobalAudioPlayer = () => {
     const handleCanPlay = () => setIsBuffering(false);
     const handlePlaying = () => setIsBuffering(false);
     
+    // ✅ Phase 2: Обработка ошибок загрузки (истекшие URL)
+    const handleError = async () => {
+      const error = audio.error;
+      if (!error || !currentTrack) return;
+      
+      // Network errors (400, 403, 410) - истекшие ссылки
+      if (error.code === MediaError.MEDIA_ERR_NETWORK || 
+          error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
+        console.warn('[GlobalAudioPlayer] Audio URL expired, attempting refresh...', {
+          trackId: currentTrack.id,
+          errorCode: error.code,
+          errorMessage: error.message,
+        });
+        
+        setIsBuffering(true);
+        
+        try {
+          // Попытка обновить трек из базы данных
+          const { data: refreshedTrack } = await import('@/integrations/supabase/client').then(
+            ({ supabase }) => supabase
+              .from('tracks')
+              .select('audio_url')
+              .eq('id', currentTrack.id)
+              .single()
+          );
+          
+          if (refreshedTrack?.audio_url && refreshedTrack.audio_url !== currentTrack.audio_url) {
+            // URL обновился - пробуем загрузить
+            audio.src = refreshedTrack.audio_url;
+            audio.load();
+            if (isPlaying) {
+              audio.play().catch(console.error);
+            }
+            
+            import('sonner').then(({ toast }) => {
+              toast.success('Аудио обновлено');
+            });
+          } else {
+            // URL не изменился - показываем ошибку
+            import('sonner').then(({ toast }) => {
+              toast.error('Не удалось загрузить аудио', {
+                description: 'Ссылка на файл истекла. Попробуйте перегенерировать трек.',
+              });
+            });
+          }
+        } catch (err) {
+          console.error('[GlobalAudioPlayer] Failed to refresh audio URL', err);
+          import('sonner').then(({ toast }) => {
+            toast.error('Ошибка загрузки аудио');
+          });
+        } finally {
+          setIsBuffering(false);
+        }
+      }
+    };
+    
     audio.addEventListener('waiting', handleWaiting);
     audio.addEventListener('canplay', handleCanPlay);
     audio.addEventListener('playing', handlePlaying);
+    audio.addEventListener('error', handleError);
     
     return () => {
       audio.removeEventListener('waiting', handleWaiting);
       audio.removeEventListener('canplay', handleCanPlay);
       audio.removeEventListener('playing', handlePlaying);
+      audio.removeEventListener('error', handleError);
     };
-  }, [audioRef]);
+  }, [audioRef, currentTrack, isPlaying]);
 
   // Keyboard shortcuts for desktop only
   useEffect(() => {

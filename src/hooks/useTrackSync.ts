@@ -193,10 +193,121 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
         });
     };
 
-    subscribeToChannel();
+    // ✅ Phase 4: Обновлённая логика подписки с улучшенным reconnection
+    const reconnectAttempts = { current: 0 };
+    const MAX_RECONNECT = 5;
+    let reconnectTimeout: NodeJS.Timeout;
+
+    const setupChannelWithRetry = () => {
+      const channel = supabase
+        .channel('tracks')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'tracks',
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload: RealtimePostgresChangesPayload<TrackRow>) => {
+            const newTrack = payload.new;
+            const oldTrack = payload.old;
+
+            if (!newTrack || !oldTrack || !('id' in newTrack) || !('status' in newTrack)) {
+              return;
+            }
+
+            logInfo('Track update received', 'useTrackSync', {
+              trackId: newTrack.id,
+              oldStatus: 'status' in oldTrack ? oldTrack.status : undefined,
+              newStatus: newTrack.status,
+            });
+
+            // Track completed
+            if ('status' in oldTrack && oldTrack.status !== 'completed' && newTrack.status === 'completed') {
+              logInfo('Track completed', 'useTrackSync', { trackId: newTrack.id });
+              toastRef.current?.({
+                title: '✅ Трек готов!',
+                description: `"${newTrack.title}" успешно сгенерирован`,
+              });
+              invalidateTrackVersionsCache(newTrack.id);
+              onTrackCompletedRef.current?.(newTrack.id);
+            }
+
+            // Track failed
+            if ('status' in oldTrack && oldTrack.status !== 'failed' && newTrack.status === 'failed') {
+              logWarn('Track failed', 'useTrackSync', {
+                trackId: newTrack.id,
+                error: newTrack.error_message,
+              });
+              toastRef.current?.({
+                title: '❌ Ошибка генерации',
+                description: newTrack.error_message || 'Не удалось создать трек',
+                variant: 'destructive',
+              });
+              onTrackFailedRef.current?.(newTrack.id, newTrack.error_message ?? null);
+            }
+
+            // Track processing
+            if ('status' in oldTrack && oldTrack.status === 'pending' && newTrack.status === 'processing') {
+              logInfo('Track processing started', 'useTrackSync', { trackId: newTrack.id });
+            }
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            logInfo('Track sync subscribed', 'useTrackSync');
+            reconnectAttempts.current = 0;
+            channelRef.current = channel;
+            setIsConnecting(false);
+          } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
+            setIsConnecting(false);
+            
+            if (status === 'CHANNEL_ERROR') {
+              logError('Track sync channel error', new Error('Channel error'), 'useTrackSync');
+            } else {
+              logWarn('Track sync closed', 'useTrackSync');
+            }
+
+            if (channelRef.current) {
+              supabase.removeChannel(channelRef.current);
+              channelRef.current = null;
+            }
+
+            // ✅ Exponential backoff retry
+            if (reconnectAttempts.current < MAX_RECONNECT) {
+              const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
+              reconnectAttempts.current++;
+              
+              logInfo('[useTrackSync] Attempting reconnect', undefined, { 
+                attempt: reconnectAttempts.current, 
+                delay 
+              });
+              
+              reconnectTimeout = setTimeout(() => {
+                if (!channelRef.current && !isConnecting) {
+                  setupChannelWithRetry();
+                }
+              }, delay);
+            } else {
+              logError('🔴 [useTrackSync] Max reconnect attempts reached', new Error('Reconnect failed'), 'useTrackSync');
+              toastRef.current?.({
+                title: 'Потеряно соединение',
+                description: 'Обновите страницу для восстановления',
+                variant: 'destructive',
+              });
+            }
+          }
+        });
+
+      return channel;
+    };
+
+    const initialChannel = setupChannelWithRetry();
+    channelRef.current = initialChannel;
 
     return () => {
-      clearRetryTimeout();
+      clearTimeout(reconnectTimeout);
       setIsConnecting(false);
 
       if (channelRef.current) {
@@ -204,9 +315,6 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
-
-      retryAttemptRef.current = 0;
-      lastAttemptRef.current = 0;
     };
   }, [userId, enabled]);
 

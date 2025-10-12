@@ -44,6 +44,22 @@ serve(async (req) => {
     
     const billingData = await murekaClient.getBilling();
     
+    // ✅ Phase 1: Проверка на undefined
+    if (!billingData || !billingData.data) {
+      logger.error('🔴 Invalid billing response from Mureka API', { error: 'Missing data field' });
+      return new Response(
+        JSON.stringify({
+          balance: 0,
+          currency: 'CNY',
+          error: 'Invalid response from Mureka API',
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+    
     logger.info('✅ Mureka balance retrieved', {
       balance: billingData.data.balance,
       currency: billingData.data.currency,

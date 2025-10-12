@@ -28,11 +28,29 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Логируем ошибку
+    // ✅ Phase 6: Улучшенная обработка ошибок
     logError('ErrorBoundary caught an error:', error, 'ErrorBoundary', {
       componentStack: errorInfo.componentStack,
-      errorBoundary: true
+      errorBoundary: true,
+      errorName: error.name,
+      errorMessage: error.message,
+      userAgent: navigator.userAgent,
     });
+
+    // ✅ Отправка в Supabase для мониторинга (только в production)
+    if (process.env.NODE_ENV === 'production') {
+      import('@/integrations/supabase/client').then(({ supabase }) => {
+        supabase.functions.invoke('log-error', {
+          body: {
+            error: error.message,
+            stack: error.stack,
+            componentStack: errorInfo.componentStack,
+            context: 'ErrorBoundary',
+            timestamp: new Date().toISOString(),
+          }
+        }).catch(console.error);
+      });
+    }
 
     // Вызываем пользовательский обработчик ошибок, если он предоставлен
     this.props.onError?.(error, errorInfo);
