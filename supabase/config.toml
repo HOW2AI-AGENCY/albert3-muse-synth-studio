@@ -86,3 +86,18 @@ verify_jwt = true
 
 [functions.wav-callback]
 verify_jwt = false
+
+[functions.generate-mureka]
+verify_jwt = true
+
+[functions.get-mureka-balance]
+verify_jwt = true
+
+[functions.recognize-song]
+verify_jwt = true
+
+[functions.describe-song]
+verify_jwt = true
+
+[functions.extend-lyrics-mureka]
+verify_jwt = true

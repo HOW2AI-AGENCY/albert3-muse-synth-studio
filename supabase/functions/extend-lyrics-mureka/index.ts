@@ -69,9 +69,8 @@ serve(async (req) => {
 
     // 4. Extend lyrics with Mureka
     const extendPayload = {
-      existing_lyrics: existingLyrics,
+      lyrics: existingLyrics,
       prompt: prompt || 'Continue the lyrics naturally',
-      target_length: targetLength,
     };
 
     logger.info('📝 Calling Mureka extendLyrics API', { payload: extendPayload });
@@ -97,15 +96,16 @@ serve(async (req) => {
       try {
         const queryResult = await murekaClient.queryTask(task_id);
         
-        if (queryResult.code === 200 && queryResult.data?.lyrics) {
+        if (queryResult.code === 200 && queryResult.data?.clips && queryResult.data.clips.length > 0) {
+          const firstClip = queryResult.data.clips[0];
           logger.info('🎉 Lyrics extension completed', {
-            lyricsLength: queryResult.data.lyrics.length,
+            lyricsLength: firstClip.lyrics?.length || 0,
           });
           
           return {
             success: true,
             taskId: task_id,
-            lyrics: queryResult.data.lyrics,
+            lyrics: firstClip.lyrics || existingLyrics,
           };
         } else if (queryResult.code !== 200) {
           throw new Error(queryResult.msg || 'Lyrics extension failed');
