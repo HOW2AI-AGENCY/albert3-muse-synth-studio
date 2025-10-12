@@ -28,6 +28,8 @@ export const useAudioPlayback = () => {
   const [volume, setVolumeState] = useState(1);
   
   const audioRef = useRef<HTMLAudioElement>(null);
+  const isLoadingRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
 
   const isKnownAudioExtension = useCallback((url: string) => hasKnownAudioExtension(url), []);
@@ -36,6 +38,22 @@ export const useAudioPlayback = () => {
     track: AudioPlayerTrack,
     loadVersionsCallback?: (trackId: string, wasEmpty: boolean) => Promise<void>
   ) => {
+    // ✅ Guard clause против повторных вызовов
+    if (isLoadingRef.current) {
+      logInfo('Playback already in progress, ignoring duplicate call', 'useAudioPlayback');
+      return;
+    }
+    
+    // ✅ Отменить предыдущую загрузку
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      logInfo('Aborted previous playTrack request', 'useAudioPlayback');
+    }
+    
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+    isLoadingRef.current = true;
+    
     const audioUrl = track.audio_url?.trim();
     
     if (!audioUrl || audioUrl === '') {
@@ -48,6 +66,7 @@ export const useAudioPlayback = () => {
         description: "URL аудио отсутствует",
         variant: "destructive",
       });
+      isLoadingRef.current = false;
       return;
     }
 
@@ -61,6 +80,7 @@ export const useAudioPlayback = () => {
         description: "Файл не является аудио",
         variant: "destructive",
       });
+      isLoadingRef.current = false;
       return;
     }
 
@@ -81,9 +101,17 @@ export const useAudioPlayback = () => {
     });
 
     try {
+      if (signal.aborted) {
+        isLoadingRef.current = false;
+        return;
+      }
+
       if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
+        // ✅ Дождаться завершения предыдущей загрузки
+        if (audioRef.current.readyState > 0) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+        }
       }
 
       setCurrentTrack(normalizedTrack);
@@ -92,6 +120,11 @@ export const useAudioPlayback = () => {
       if (loadVersionsCallback) {
         const baseTrackId = normalizedTrack.parentTrackId || normalizedTrack.id;
         await loadVersionsCallback(baseTrackId, false);
+      }
+
+      if (signal.aborted) {
+        isLoadingRef.current = false;
+        return;
       }
 
       if (audioRef.current && audioUrl) {
@@ -104,8 +137,27 @@ export const useAudioPlayback = () => {
           logInfo('Skipped crossOrigin for external URL', 'useAudioPlayback');
         }
         
+        // ✅ Установить новый src только после pause
         audioRef.current.src = audioUrl;
         audioRef.current.load();
+        
+        // ✅ Дождаться canplay event
+        await new Promise<void>((resolve, reject) => {
+          const timeoutId = setTimeout(() => reject(new Error('Audio load timeout')), 10000);
+          
+          const handleCanPlay = () => {
+            clearTimeout(timeoutId);
+            audioRef.current?.removeEventListener('canplay', handleCanPlay);
+            resolve();
+          };
+          
+          audioRef.current!.addEventListener('canplay', handleCanPlay);
+        });
+
+        if (signal.aborted) {
+          isLoadingRef.current = false;
+          return;
+        }
         
         try {
           await cacheAudioFile(audioUrl);
@@ -132,6 +184,11 @@ export const useAudioPlayback = () => {
             });
           }
         } catch (error) {
+          if ((error as Error).name === 'AbortError') {
+            logInfo('Playback aborted by user', 'useAudioPlayback');
+            isLoadingRef.current = false;
+            return;
+          }
           logError('Failed to play track', error as Error, 'useAudioPlayback', { trackId: normalizedTrack.id });
           toast({
             title: "Ошибка воспроизведения",
@@ -141,12 +198,29 @@ export const useAudioPlayback = () => {
         }
       }
     } catch (error) {
+      if ((error as Error).name === 'AbortError') {
+        logInfo('Playback aborted by user', 'useAudioPlayback');
+        return;
+      }
       logError('Error in playTrack', error as Error, 'useAudioPlayback', { trackId: normalizedTrack.id });
+    } finally {
+      isLoadingRef.current = false;
     }
   }, [toast, isKnownAudioExtension]);
 
   const togglePlayPause = useCallback(() => {
     if (!audioRef.current) return;
+    
+    // ✅ Проверить наличие src перед play()
+    if (!audioRef.current.src || audioRef.current.src === '') {
+      logError('Cannot play: no audio source', new Error('Missing src'), 'useAudioPlayback');
+      toast({
+        title: "Ошибка воспроизведения",
+        description: "Аудио не загружено. Выберите трек заново.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (isPlaying) {
       audioRef.current.pause();
@@ -155,11 +229,16 @@ export const useAudioPlayback = () => {
     } else {
       audioRef.current.play().catch((error) => {
         logError('Failed to resume playback', error as Error, 'useAudioPlayback');
+        toast({
+          title: "Ошибка воспроизведения",
+          description: "Не удалось возобновить воспроизведение.",
+          variant: "destructive",
+        });
       });
       setIsPlaying(true);
       logInfo('Playback resumed', 'useAudioPlayback');
     }
-  }, [isPlaying]);
+  }, [isPlaying, toast]);
 
   const pauseTrack = useCallback(() => {
     if (audioRef.current) {

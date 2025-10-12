@@ -326,13 +326,24 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
         logInfo('Using fallback to extract versions from metadata', 'trackVersions', { trackId });
 
         sunoData.slice(1).forEach((versionData: SunoTrackData, index: number) => {
+          // ✅ ИСПРАВЛЕНО: Правильный приоритет URL
+          const audioUrl = versionData.audio_url 
+            || versionData.stream_audio_url 
+            || null;
+          
+          // ✅ Пропустить версии без аудио
+          if (!audioUrl) {
+            logInfo('Skipping version without audio', 'trackVersions', { versionId: versionData.id });
+            return;
+          }
+          
           pushVersion({
             id: versionData.id,
             sourceVersionNumber: index + 1,
             isMasterVersion: false,
             isOriginal: false,
             title: `${mainTrack.title} (V${index + 1})`,
-            audio_url: versionData.audio_url ?? versionData.stream_audio_url ?? null,
+            audio_url: audioUrl,
             cover_url: versionData.image_url ?? mainTrack.cover_url ?? null,
             video_url: versionData.video_url ?? null,
             duration: versionData.duration ?? null,

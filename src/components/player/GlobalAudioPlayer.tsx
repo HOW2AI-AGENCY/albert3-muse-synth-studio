@@ -6,7 +6,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useMediaSession } from "@/hooks/useMediaSession";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { formatTime } from "@/utils/formatters";
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1, Music, X, List, Star } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1, Music, X, List, Star, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -34,6 +34,7 @@ export const GlobalAudioPlayer = () => {
     getAvailableVersions,
     currentVersionIndex,
     clearCurrentTrack,
+    audioRef,
   } = useAudioPlayer();
   
   // ============= ВЕРСИИ ТРЕКОВ =============
@@ -45,6 +46,7 @@ export const GlobalAudioPlayer = () => {
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(volume);
   const [isVisible, setIsVisible] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
   const playerRef = useRef<HTMLDivElement>(null);
 
   // Анимация появления плеера
@@ -55,6 +57,26 @@ export const GlobalAudioPlayer = () => {
       setIsVisible(false);
     }
   }, [currentTrack]);
+
+  // ✅ Индикатор buffering
+  useEffect(() => {
+    const audio = audioRef?.current;
+    if (!audio) return;
+    
+    const handleWaiting = () => setIsBuffering(true);
+    const handleCanPlay = () => setIsBuffering(false);
+    const handlePlaying = () => setIsBuffering(false);
+    
+    audio.addEventListener('waiting', handleWaiting);
+    audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('playing', handlePlaying);
+    
+    return () => {
+      audio.removeEventListener('waiting', handleWaiting);
+      audio.removeEventListener('canplay', handleCanPlay);
+      audio.removeEventListener('playing', handlePlaying);
+    };
+  }, [audioRef]);
 
   // Keyboard shortcuts for desktop only
   useEffect(() => {
@@ -244,7 +266,9 @@ export const GlobalAudioPlayer = () => {
                 className="h-14 w-14 rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-300 hover:scale-110 group relative overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                {isPlaying ? (
+                {isBuffering ? (
+                  <Loader2 className="h-7 w-7 animate-spin relative z-10" />
+                ) : isPlaying ? (
                   <Pause className="h-7 w-7 relative z-10" />
                 ) : (
                   <Play className="h-7 w-7 ml-0.5 relative z-10" />

@@ -1,13 +1,14 @@
 /**
  * Hook для управления очередью воспроизведения
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { AudioPlayerTrack } from '@/types/track';
 import { logInfo } from '@/utils/logger';
 
 export const useAudioQueue = () => {
   const [queue, setQueue] = useState<AudioPlayerTrack[]>([]);
   const [currentQueueIndex, setCurrentQueueIndex] = useState(-1);
+  const preloadedTracksRef = useRef<Set<string>>(new Set());
 
   const addToQueue = useCallback((track: AudioPlayerTrack) => {
     setQueue(prev => {
@@ -90,6 +91,29 @@ export const useAudioQueue = () => {
       logInfo('Beginning of queue reached', 'useAudioQueue');
     }
   }, [queue, currentQueueIndex]);
+
+  // ✅ Preload для следующего трека в очереди
+  const preloadNextTrack = useCallback(() => {
+    if (queue.length === 0 || currentQueueIndex >= queue.length - 1) return;
+    
+    const nextTrack = queue[currentQueueIndex + 1];
+    if (nextTrack?.audio_url && !preloadedTracksRef.current.has(nextTrack.id)) {
+      const preloadAudio = new Audio();
+      preloadAudio.preload = 'auto';
+      preloadAudio.src = nextTrack.audio_url;
+      preloadedTracksRef.current.add(nextTrack.id);
+      
+      logInfo('Preloading next track', 'useAudioQueue', { 
+        trackId: nextTrack.id,
+        title: nextTrack.title 
+      });
+    }
+  }, [queue, currentQueueIndex]);
+
+  // Вызывать при смене трека
+  useEffect(() => {
+    preloadNextTrack();
+  }, [currentQueueIndex, preloadNextTrack]);
 
   return {
     queue,

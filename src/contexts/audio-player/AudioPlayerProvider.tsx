@@ -23,11 +23,11 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
 
   // Wrapper для playTrack с загрузкой версий и автоматической очередью
   const playTrack = useCallback(async (track: AudioPlayerTrack) => {
-    // Загружаем версии трека
     const baseTrackId = track.parentTrackId || track.id;
+    
+    // ✅ Загружаем версии ОДИН РАЗ
     const versionsList = await versions.loadVersions(baseTrackId, false);
     
-    // Формируем очередь из всех версий
     if (versionsList.length > 0) {
       const allVersionsQueue: AudioPlayerTrack[] = versionsList
         .filter(v => v.audio_url)
@@ -46,19 +46,15 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
           isOriginalVersion: v.versionNumber === 0 || v.isOriginal === true,
         }));
       
-      // Устанавливаем очередь из всех версий
       queue.setQueue(allVersionsQueue);
       
-      // Находим текущий трек в очереди
       const currentIdx = allVersionsQueue.findIndex(v => v.id === track.id);
       queue.setCurrentQueueIndex(currentIdx >= 0 ? currentIdx : 0);
       versions.setCurrentVersionIndex(currentIdx >= 0 ? currentIdx : 0);
     }
     
-    // Воспроизводим трек
-    playback.playTrack(track, async (baseId: string, wasEmpty: boolean) => {
-      await versions.loadVersions(baseId, wasEmpty);
-    });
+    // ✅ Воспроизводим БЕЗ повторной загрузки версий
+    playback.playTrack(track);
   }, [playback, versions, queue]);
 
   // Воспроизведение трека с кастомной очередью (все треки страницы)
