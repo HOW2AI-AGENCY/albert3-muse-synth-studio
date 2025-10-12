@@ -10,10 +10,10 @@ const rawEnv = {
 
 const envSchema = z.object({
   supabaseUrl: z
-    .string({ required_error: "VITE_SUPABASE_URL is required" })
+    .string({ message: "VITE_SUPABASE_URL is required" })
     .url("VITE_SUPABASE_URL must be a valid URL"),
   supabaseAnonKey: z
-    .string({ required_error: "VITE_SUPABASE_PUBLISHABLE_KEY is required" })
+    .string({ message: "VITE_SUPABASE_PUBLISHABLE_KEY is required" })
     .min(1, "VITE_SUPABASE_PUBLISHABLE_KEY cannot be empty"),
   appEnv: z
     .enum(["development", "production", "test", "staging"])

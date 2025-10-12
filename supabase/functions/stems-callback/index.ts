@@ -25,6 +25,10 @@ const mainHandler = async (req: Request) => {
   }
 
   try {
+    // ✅ Webhook signature verification
+    const signature = req.headers.get('X-Suno-Signature');
+    const SUNO_WEBHOOK_SECRET = Deno.env.get('SUNO_WEBHOOK_SECRET');
+    
     const contentLength = req.headers.get("content-length");
     if (contentLength && parseInt(contentLength) > MAX_PAYLOAD_SIZE) {
       return new Response(
@@ -39,6 +43,30 @@ const mainHandler = async (req: Request) => {
         JSON.stringify({ error: "Payload too large" }),
         { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
+    }
+    
+    // ✅ Verify webhook signature
+    if (SUNO_WEBHOOK_SECRET) {
+      if (!signature) {
+        console.error('[stems-callback] Missing webhook signature');
+        return new Response(
+          JSON.stringify({ error: 'missing_signature' }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      
+      const { verifyWebhookSignature } = await import('../_shared/webhook-verify.ts');
+      const isValid = await verifyWebhookSignature(bodyText, signature, SUNO_WEBHOOK_SECRET);
+      
+      if (!isValid) {
+        console.error('[stems-callback] Invalid webhook signature');
+        return new Response(
+          JSON.stringify({ error: 'invalid_signature' }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    } else {
+      console.warn('[stems-callback] SUNO_WEBHOOK_SECRET not configured - skipping signature verification');
     }
 
     const payload = JSON.parse(bodyText);

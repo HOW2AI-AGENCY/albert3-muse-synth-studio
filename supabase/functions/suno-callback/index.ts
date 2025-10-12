@@ -30,21 +30,33 @@ const mainHandler = async (req: Request) => {
   }
 
   try {
-    // ✅ PHASE 3.1: Webhook signature verification (placeholder - requires SUNO_WEBHOOK_SECRET)
-    // const signature = req.headers.get('X-Suno-Signature');
-    // const SUNO_WEBHOOK_SECRET = Deno.env.get('SUNO_WEBHOOK_SECRET');
-    // if (SUNO_WEBHOOK_SECRET && signature) {
-    //   const bodyText = await req.text();
-    //   const { verifyWebhookSignature } = await import('../_shared/webhook-verify.ts');
-    //   const isValid = await verifyWebhookSignature(bodyText, signature, SUNO_WEBHOOK_SECRET);
-    //   if (!isValid) {
-    //     console.error('[suno-callback] Invalid webhook signature');
-    //     return new Response(JSON.stringify({ ok: false, error: 'invalid_signature' }), {
-    //       status: 401,
-    //       headers: corsHeaders
-    //     });
-    //   }
-    // }
+    // ✅ Webhook signature verification enabled
+    const signature = req.headers.get('X-Suno-Signature');
+    const SUNO_WEBHOOK_SECRET = Deno.env.get('SUNO_WEBHOOK_SECRET');
+    
+    if (SUNO_WEBHOOK_SECRET) {
+      if (!signature) {
+        console.error('[suno-callback] Missing webhook signature');
+        return new Response(JSON.stringify({ ok: false, error: 'missing_signature' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+      
+      const bodyText = await req.text();
+      const { verifyWebhookSignature } = await import('../_shared/webhook-verify.ts');
+      const isValid = await verifyWebhookSignature(bodyText, signature, SUNO_WEBHOOK_SECRET);
+      
+      if (!isValid) {
+        console.error('[suno-callback] Invalid webhook signature');
+        return new Response(JSON.stringify({ ok: false, error: 'invalid_signature' }), {
+          status: 401,
+          headers: corsHeaders
+        });
+      }
+    } else {
+      console.warn('[suno-callback] SUNO_WEBHOOK_SECRET not configured - skipping signature verification');
+    }
     
     const supabase = createSupabaseAdminClient();
 

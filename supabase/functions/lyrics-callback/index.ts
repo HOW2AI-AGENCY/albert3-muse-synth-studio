@@ -62,7 +62,38 @@ export const mainHandler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const payload = await req.json() as LyricsCallbackBody;
+    // ✅ Webhook signature verification
+    const signature = req.headers.get('X-Suno-Signature');
+    const SUNO_WEBHOOK_SECRET = Deno.env.get('SUNO_WEBHOOK_SECRET');
+    
+    let payload: LyricsCallbackBody;
+    
+    if (SUNO_WEBHOOK_SECRET) {
+      if (!signature) {
+        console.error('🔴 [LYRICS-CALLBACK] Missing webhook signature');
+        return new Response(JSON.stringify({ error: 'missing_signature' }), {
+          status: 401,
+          headers: corsHeaders,
+        });
+      }
+      
+      const bodyText = await req.text();
+      const { verifyWebhookSignature } = await import('../_shared/webhook-verify.ts');
+      const isValid = await verifyWebhookSignature(bodyText, signature, SUNO_WEBHOOK_SECRET);
+      
+      if (!isValid) {
+        console.error('🔴 [LYRICS-CALLBACK] Invalid webhook signature');
+        return new Response(JSON.stringify({ error: 'invalid_signature' }), {
+          status: 401,
+          headers: corsHeaders,
+        });
+      }
+      
+      payload = JSON.parse(bodyText) as LyricsCallbackBody;
+    } else {
+      console.warn('⚠️ [LYRICS-CALLBACK] SUNO_WEBHOOK_SECRET not configured - skipping signature verification');
+      payload = await req.json() as LyricsCallbackBody;
+    }
     const code = typeof payload.code === "number" ? payload.code : undefined;
     const message = typeof payload.msg === "string" ? payload.msg : undefined;
     const callbackData = payload.data ?? undefined;

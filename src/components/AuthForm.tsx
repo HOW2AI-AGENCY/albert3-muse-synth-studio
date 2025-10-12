@@ -35,7 +35,7 @@ export const AuthForm = () => {
     try {
       const validation = authSchema.safeParse({ email: signUpEmail, password: signUpPassword });
       if (!validation.success) {
-        const firstError = validation.error.errors[0];
+        const firstError = validation.error.issues[0];
         throw new Error(firstError.message);
       }
 
