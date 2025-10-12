@@ -1,0 +1,186 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
+import { createSunoClient } from "../_shared/suno.ts";
+import { createCorsHeaders } from "../_shared/cors.ts";
+import { logger } from "../_shared/logger.ts";
+
+const corsHeaders = createCorsHeaders();
+
+interface ConvertToWavRequest {
+  trackId: string;
+  audioId?: string;
+}
+
+serve(async (req: Request): Promise<Response> => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const SUNO_API_KEY = Deno.env.get("SUNO_API_KEY");
+
+    if (!SUNO_API_KEY) {
+      throw new Error("SUNO_API_KEY not configured");
+    }
+
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Missing authorization" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const userId = user.id;
+    const body: ConvertToWavRequest = await req.json();
+
+    if (!body.trackId) {
+      return new Response(JSON.stringify({ error: "Missing trackId" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: track, error: trackError } = await supabaseAdmin
+      .from("tracks")
+      .select("*")
+      .eq("id", body.trackId)
+      .eq("user_id", userId)
+      .single();
+
+    if (trackError || !track) {
+      logger.error("Track not found", { trackId: body.trackId, userId, trackError });
+      return new Response(JSON.stringify({ error: "Track not found or unauthorized" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const metadata = track.metadata as Record<string, unknown> | null;
+    const sunoTaskId = metadata?.suno_task_id as string | undefined;
+    const audioId = body.audioId || (metadata?.suno_audio_id as string | undefined) || track.suno_id;
+
+    if (!sunoTaskId || !audioId) {
+      return new Response(
+        JSON.stringify({ 
+          error: "Track does not have Suno task ID or audio ID. Only Suno-generated tracks can be converted." 
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { data: existingJob } = await supabaseAdmin
+      .from("wav_jobs")
+      .select("*")
+      .eq("track_id", body.trackId)
+      .in("status", ["pending", "processing", "completed"])
+      .maybeSingle();
+
+    if (existingJob) {
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          jobId: existingJob.id,
+          status: existingJob.status,
+          wavUrl: existingJob.wav_url,
+          message: "WAV conversion already in progress or completed" 
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { data: wavJob, error: jobError } = await supabaseAdmin
+      .from("wav_jobs")
+      .insert({
+        user_id: userId,
+        track_id: body.trackId,
+        audio_id: audioId,
+        status: "pending",
+        callback_url: `${SUPABASE_URL}/functions/v1/wav-callback`,
+        metadata: {
+          suno_task_id: sunoTaskId,
+          requested_at: new Date().toISOString(),
+        },
+      })
+      .select()
+      .single();
+
+    if (jobError) {
+      logger.error("Failed to create wav_job", { error: jobError, trackId: body.trackId });
+      return new Response(JSON.stringify({ error: "Failed to create conversion job" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const sunoClient = createSunoClient({ apiKey: SUNO_API_KEY });
+
+    logger.info("Requesting WAV conversion", {
+      trackId: body.trackId,
+      audioId,
+      sunoTaskId,
+      jobId: wavJob.id,
+    });
+
+    const result = await sunoClient.convertToWav({
+      taskId: sunoTaskId,
+      audioId,
+      callBackUrl: `${SUPABASE_URL}/functions/v1/wav-callback`,
+    });
+
+    const { error: updateError } = await supabaseAdmin
+      .from("wav_jobs")
+      .update({
+        suno_task_id: result.taskId,
+        status: "processing",
+        metadata: {
+          ...wavJob.metadata,
+          suno_response: result.rawResponse,
+          suno_endpoint: result.endpoint,
+        },
+      })
+      .eq("id", wavJob.id);
+
+    if (updateError) {
+      logger.error("Failed to update wav_job", { error: updateError, jobId: wavJob.id });
+    }
+
+    logger.info("WAV conversion requested successfully", {
+      jobId: wavJob.id,
+      trackId: body.trackId,
+      sunoTaskId: result.taskId,
+    });
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        jobId: wavJob.id,
+        sunoTaskId: result.taskId,
+        message: "WAV conversion started",
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    logger.error("convert-to-wav error", { error: error instanceof Error ? error : new Error(String(error)) });
+    return new Response(
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : "Internal server error" 
+      }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});

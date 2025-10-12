@@ -474,7 +474,28 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDe
                     <Download className="w-4 h-4 mr-2" />
                     Скачать MP3
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); toast({ title: "Скоро", description: "Функция в разработке" }); }}>
+                  <DropdownMenuItem 
+                    onClick={async (e) => { 
+                      e.stopPropagation(); 
+                      
+                      const metadata = track.metadata as Record<string, unknown> | null;
+                      const sunoTaskId = metadata?.suno_task_id as string | undefined;
+                      
+                      if (!sunoTaskId) {
+                        toast({ 
+                          title: "Недоступно", 
+                          description: "Только треки, созданные через Suno, могут быть конвертированы в WAV",
+                          variant: "destructive" 
+                        });
+                        return;
+                      }
+                      
+                      const { useConvertToWav } = await import('@/hooks/useConvertToWav');
+                      const { convertToWav, isConverting: converting, convertingTrackId: convTrackId } = useConvertToWav();
+                      if (converting && convTrackId === track.id) return;
+                      await convertToWav({ trackId: track.id });
+                    }}
+                  >
                     <FileAudio className="w-4 h-4 mr-2" />
                     Скачать WAV
                   </DropdownMenuItem>

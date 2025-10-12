@@ -560,6 +560,62 @@ export type Database = {
         }
         Relationships: []
       }
+      wav_jobs: {
+        Row: {
+          audio_id: string
+          callback_url: string | null
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          status: string
+          suno_task_id: string | null
+          track_id: string
+          updated_at: string | null
+          user_id: string
+          wav_url: string | null
+        }
+        Insert: {
+          audio_id: string
+          callback_url?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          status?: string
+          suno_task_id?: string | null
+          track_id: string
+          updated_at?: string | null
+          user_id: string
+          wav_url?: string | null
+        }
+        Update: {
+          audio_id?: string
+          callback_url?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          status?: string
+          suno_task_id?: string | null
+          track_id?: string
+          updated_at?: string | null
+          user_id?: string
+          wav_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wav_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
