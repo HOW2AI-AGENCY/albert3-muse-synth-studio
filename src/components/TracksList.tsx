@@ -68,11 +68,6 @@ const TracksListComponent = ({
     }, playableTracks);
   }, [tracks, playTrackWithQueue]);
 
-  const handleDownload = useCallback((track: Track) => {
-    if (!track.audio_url) return;
-    window.open(track.audio_url, '_blank');
-    toast({ title: "Скачивание начато", description: `Трек "${track.title}" загружается.` });
-  }, [toast]);
 
   const handleShare = useCallback((trackId: string) => {
     const url = `${window.location.origin}/track/${trackId}`;
@@ -190,7 +185,6 @@ const TracksListComponent = ({
               key={track.id}
               track={track as any}
               onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
-              onDownload={() => handleDownload(track)}
               onShare={() => handleShare(track.id)}
               onRetry={handleRetry}
               onDelete={handleDelete}
@@ -207,7 +201,6 @@ const TracksListComponent = ({
               key={track.id}
               track={track as any}
               onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
-              onDownload={() => handleDownload(track)}
               onShare={() => handleShare(track.id)}
               onRetry={handleRetry}
               onDelete={handleDelete}

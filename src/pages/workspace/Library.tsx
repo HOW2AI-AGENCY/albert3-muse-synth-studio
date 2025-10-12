@@ -290,60 +290,6 @@ const Library: React.FC = () => {
   //   }
   // }, [toast, refreshTracks]);
 
-  const handleDownload = useCallback(async (trackId: string) => {
-    try {
-      const track = tracks.find(t => t.id === trackId);
-      if (!track || !track.audio_url) {
-        toast({
-          title: "Ошибка",
-          description: "Аудиофайл недоступен для скачивания",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Show loading toast
-      toast({
-        title: "Загрузка...",
-        description: "Подготовка файла к скачиванию",
-      });
-
-      // Fetch the audio file
-      const response = await fetch(track.audio_url);
-      if (!response.ok) throw new Error('Failed to fetch audio');
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      
-      // Create download link
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${track.title}.mp3`;
-      document.body.appendChild(a);
-      a.click();
-      
-      // Cleanup
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      // Increment download count in database
-      await supabase.rpc('increment_download_count', { track_id: trackId });
-
-      toast({
-        title: "✅ Скачано",
-        description: `Трек "${track.title}" успешно загружен`,
-      });
-
-      logger.info('Track downloaded', `trackId: ${trackId}, title: ${track.title}`);
-    } catch (error) {
-      logger.error('Failed to download track', error instanceof Error ? error : new Error(`trackId: ${trackId}`));
-      toast({
-        title: "Ошибка",
-        description: "Не удалось скачать трек. Попробуйте позже",
-        variant: "destructive",
-      });
-    }
-  }, [tracks, toast]);
 
   const handleShare = useCallback(async (trackId: string) => {
     try {
@@ -691,7 +637,6 @@ const Library: React.FC = () => {
                   <TrackCard
                     track={normalizeTrack(track)}
                     onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
-                    onDownload={() => handleDownload(track.id)}
                     onShare={() => handleShare(track.id)}
                     onSeparateStems={() => handleSeparateStems(track.id)}
                     onExtend={() => handleExtend(track.id)}
@@ -727,7 +672,6 @@ const Library: React.FC = () => {
                 <div key={track.id} className="relative" aria-busy={loadingTrackId === track.id}>
                   <TrackListItem
                     track={convertToDisplayTrack(track) as any}
-                    onDownload={() => handleDownload(track.id)}
                     onShare={() => handleShare(track.id)}
                     onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
                     onSeparateStems={() => handleSeparateStems(track.id)}
@@ -748,7 +692,6 @@ const Library: React.FC = () => {
           {viewMode === 'optimized' && (
             <OptimizedTrackList
               tracks={filteredAndSortedTracks.map(convertToOptimizedTrack)}
-              onDownload={handleDownload}
               onShare={handleShare}
             />
           )}

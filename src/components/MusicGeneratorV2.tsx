@@ -79,16 +79,38 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     setParams(prev => ({ ...prev, [key]: value }));
   };
 
-  // Boost style handler
+  // ✅ Улучшенный Boost с обратной связью
   const handleBoostPrompt = async () => {
-    if (!params.prompt.trim()) return;
+    if (!params.prompt.trim()) {
+      toast({
+        title: 'Введите описание',
+        description: 'Сначала заполните поле с описанием музыки',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    toast({
+      title: '✨ Улучшаем промпт...',
+      description: 'AI обрабатывает ваше описание',
+    });
     
     logger.info('✨ [BOOST] Improving prompt:', params.prompt.substring(0, 50));
     const boosted = await boostStyle(params.prompt);
     
     if (boosted) {
       setParam('prompt', boosted);
+      toast({
+        title: '✅ Промпт улучшен',
+        description: 'AI добавил детали для лучшего результата',
+      });
       logger.info('✅ [BOOST] Prompt improved');
+    } else {
+      toast({
+        title: 'Не удалось улучшить',
+        description: 'Попробуйте еще раз или используйте текущее описание',
+        variant: 'destructive'
+      });
     }
   };
 
@@ -135,13 +157,37 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const handleGenerate = useCallback(async () => {
     vibrate('heavy');
 
-    if (!params.prompt.trim() && !params.lyrics.trim()) {
+    // ✅ Улучшенная валидация с предупреждениями
+    const hasPrompt = params.prompt.trim().length > 0;
+    const hasLyrics = params.lyrics.trim().length > 0;
+    const hasReferenceAudio = !!params.referenceAudioUrl;
+
+    // Базовая валидация
+    if (!hasPrompt && !hasLyrics) {
       toast({ 
         title: 'Заполните промпт или текст песни', 
         description: 'Хотя бы одно поле должно быть заполнено',
         variant: 'destructive' 
       });
       return;
+    }
+
+    // ✅ Предупреждения для нестандартных комбинаций
+    if (hasReferenceAudio && !hasPrompt && !hasLyrics) {
+      toast({
+        title: 'Добавьте описание',
+        description: 'Референсное аудио лучше работает с промптом или текстом',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (hasLyrics && !hasPrompt) {
+      toast({
+        title: '💡 Совет',
+        description: 'Добавьте описание стиля для лучшего результата',
+        duration: 3000,
+      });
     }
 
     const hasVocals = params.vocalGender !== 'instrumental';
@@ -455,7 +501,8 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               )}
 
               {/* Advanced Settings - Accordion Groups */}
-              <Accordion type="multiple" defaultValue={["style"]} className="space-y-1.5 pt-1">
+              {/* ✅ Открываем важные секции по умолчанию */}
+              <Accordion type="multiple" defaultValue={["style", "vocal"]} className="space-y-1.5 pt-1">
                 {/* Audio Controls - only if reference exists */}
                 {params.referenceAudioUrl && (
                   <AccordionItem value="audio" className="border-none">

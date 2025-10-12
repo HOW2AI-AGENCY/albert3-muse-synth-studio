@@ -52,11 +52,6 @@ export default function Favorites() {
     }
   };
 
-  const handleDownload = (track: LikedTrack) => {
-    if (track.audio_url) {
-      window.open(track.audio_url, '_blank');
-    }
-  };
 
   const handleShare = (trackId: string) => {
     const shareUrl = `${window.location.origin}/track/${trackId}`;
@@ -199,7 +194,6 @@ export default function Favorites() {
                 like_count: track.like_count ?? undefined,
                 view_count: track.view_count ?? undefined,
               }}
-              onDownload={() => handleDownload(track)}
               onShare={() => handleShare(track.id)}
               onClick={() => handleTrackClick(track)}
             />

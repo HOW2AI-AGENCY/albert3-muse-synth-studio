@@ -8,12 +8,36 @@ import { cacheAudioFile } from '@/utils/serviceWorker';
 import { useToast } from '@/hooks/use-toast';
 import { AUDIO_EXTENSIONS } from './types';
 
+/**
+ * Проверяет, является ли URL аудиофайлом
+ * Доверяет известным доменам (Suno, Supabase) без проверки расширения
+ */
 export const hasKnownAudioExtension = (url: string): boolean => {
+  // ✅ Whitelist доверенных доменов
+  const trustedDomains = [
+    'mfile.erweima.ai',
+    'apiboxfiles.erweima.ai',
+    'cdn1.suno.ai',
+    'cdn2.suno.ai',
+    'audiopipe.suno.ai',
+    'supabase.co',
+    'lovableproject.com'
+  ];
+  
   try {
     const parsedUrl = new URL(url);
+    const hostname = parsedUrl.hostname.toLowerCase();
+    
+    // ✅ Доверяем известным доменам без проверки расширения
+    if (trustedDomains.some(domain => hostname.includes(domain))) {
+      return true;
+    }
+    
+    // Для остальных - проверка расширения
     const pathname = parsedUrl.pathname.toLowerCase();
     return AUDIO_EXTENSIONS.some(extension => pathname.endsWith(extension));
   } catch {
+    // Fallback для невалидных URL
     const sanitized = url.split('?')[0]?.toLowerCase() ?? '';
     const lastSegment = sanitized.split('/').pop() ?? '';
     return AUDIO_EXTENSIONS.some(extension => lastSegment.endsWith(extension));
@@ -141,17 +165,32 @@ export const useAudioPlayback = () => {
         audioRef.current.src = audioUrl;
         audioRef.current.load();
         
-        // ✅ Дождаться canplay event
+        // ✅ Дождаться canplay event с error handling
         await new Promise<void>((resolve, reject) => {
-          const timeoutId = setTimeout(() => reject(new Error('Audio load timeout')), 10000);
+          const timeoutId = setTimeout(() => {
+            cleanup();
+            reject(new Error('Audio load timeout after 30s'));
+          }, 30000); // ✅ 30 секунд вместо 10
           
           const handleCanPlay = () => {
-            clearTimeout(timeoutId);
-            audioRef.current?.removeEventListener('canplay', handleCanPlay);
+            cleanup();
             resolve();
           };
           
+          const handleError = (e: Event) => {
+            cleanup();
+            const error = (e.target as HTMLAudioElement).error;
+            reject(new Error(`Audio load failed: ${error?.message || 'Unknown error'}`));
+          };
+          
+          const cleanup = () => {
+            clearTimeout(timeoutId);
+            audioRef.current?.removeEventListener('canplay', handleCanPlay);
+            audioRef.current?.removeEventListener('error', handleError);
+          };
+          
           audioRef.current!.addEventListener('canplay', handleCanPlay);
+          audioRef.current!.addEventListener('error', handleError); // ✅ Обработка ошибок загрузки
         });
 
         if (signal.aborted) {
@@ -211,12 +250,15 @@ export const useAudioPlayback = () => {
   const togglePlayPause = useCallback(() => {
     if (!audioRef.current) return;
     
-    // ✅ Проверить наличие src перед play()
-    if (!audioRef.current.src || audioRef.current.src === '') {
-      logError('Cannot play: no audio source', new Error('Missing src'), 'useAudioPlayback');
+    // ✅ Комплексная проверка готовности к воспроизведению
+    if (!audioRef.current.src || audioRef.current.src === '' || audioRef.current.readyState < 2) {
+      logError('Cannot play: audio not ready', new Error('Missing src or readyState < 2'), 'useAudioPlayback', {
+        src: audioRef.current.src,
+        readyState: audioRef.current.readyState
+      });
       toast({
-        title: "Ошибка воспроизведения",
-        description: "Аудио не загружено. Выберите трек заново.",
+        title: "Аудио не загружено",
+        description: "Подождите завершения загрузки или выберите трек заново.",
         variant: "destructive",
       });
       return;
@@ -228,10 +270,16 @@ export const useAudioPlayback = () => {
       logInfo('Playback paused', 'useAudioPlayback');
     } else {
       audioRef.current.play().catch((error) => {
-        logError('Failed to resume playback', error as Error, 'useAudioPlayback');
+        // ✅ Более информативная ошибка
+        logError('Failed to play', error as Error, 'useAudioPlayback', {
+          readyState: audioRef.current?.readyState,
+          networkState: audioRef.current?.networkState
+        });
         toast({
           title: "Ошибка воспроизведения",
-          description: "Не удалось возобновить воспроизведение.",
+          description: error.name === 'NotAllowedError' 
+            ? 'Браузер заблокировал автовоспроизведение'
+            : 'Не удалось воспроизвести трек',
           variant: "destructive",
         });
       });

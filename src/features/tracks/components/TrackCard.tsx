@@ -43,6 +43,42 @@ import { formatDuration } from "@/utils/formatters";
 import { TrackProgressBar } from "@/components/tracks/TrackProgressBar";
 import { TrackSyncStatus } from "@/components/tracks/TrackSyncStatus";
 import { getVersionShortLabel } from "@/utils/versionLabels";
+import { useConvertToWav } from "@/hooks/useConvertToWav";
+
+// ✅ Компонент для WAV конвертации (использует hook на уровне компонента)
+const WavConvertMenuItem: React.FC<{ 
+  trackId: string; 
+  trackMetadata: Record<string, any> | null | undefined;
+}> = ({ trackId, trackMetadata }) => {
+  const { toast } = useToast();
+  const { convertToWav, isConverting, convertingTrackId } = useConvertToWav();
+  
+  const handleConvert = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    const metadata = trackMetadata as Record<string, unknown> | null;
+    const sunoTaskId = metadata?.suno_task_id as string | undefined;
+    
+    if (!sunoTaskId) {
+      toast({ 
+        title: "Недоступно", 
+        description: "Только треки, созданные через Suno, могут быть конвертированы в WAV",
+        variant: "destructive" 
+      });
+      return;
+    }
+    
+    if (isConverting && convertingTrackId === trackId) return;
+    await convertToWav({ trackId });
+  }, [trackId, trackMetadata, convertToWav, isConverting, convertingTrackId, toast]);
+  
+  return (
+    <DropdownMenuItem onClick={handleConvert} disabled={isConverting && convertingTrackId === trackId}>
+      <FileAudio className="w-4 h-4 mr-2" />
+      {isConverting && convertingTrackId === trackId ? 'Конвертация...' : 'Скачать WAV'}
+    </DropdownMenuItem>
+  );
+};
 
 // Сокращенный интерфейс для карточки
 interface Track {
@@ -66,7 +102,6 @@ interface Track {
 
 interface TrackCardProps {
   track: Track;
-  onDownload?: () => void;
   onShare?: () => void;
   onClick?: () => void;
   onRetry?: (trackId: string) => void;
@@ -215,7 +250,7 @@ const FailedState: React.FC<{
   </div>
 );
 
-const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDelete, onExtend, onCover, onSeparateStems, onAddVocal, className }: TrackCardProps) => {
+const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExtend, onCover, onSeparateStems, onAddVocal, className }: TrackCardProps) => {
   const { toast } = useToast();
   const { currentTrack, isPlaying } = useAudioPlayer();
   const { playTrackSmart } = useSmartTrackPlay();
@@ -284,15 +319,18 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDe
     toggleLike();
   }, [toggleLike]);
 
-  const handleDownloadClick = useCallback((event: React.MouseEvent) => {
+  const handleDownloadClick = useCallback(async (event: React.MouseEvent) => {
     event.stopPropagation();
     if (!track.audio_url) {
       toast({ title: "Ошибка", description: "Аудиофайл недоступен", variant: "destructive" });
       return;
     }
-    onDownload?.();
-    toast({ title: "Скачивание начато" });
-  }, [onDownload, toast, track.audio_url]);
+    
+    // ✅ Используем централизованный hook для скачивания
+    const { useDownloadTrack } = await import('@/hooks/useDownloadTrack');
+    const { downloadTrack } = useDownloadTrack();
+    await downloadTrack(track);
+  }, [toast, track]);
 
   const handleShareClick = useCallback((event: React.MouseEvent) => {
     event.stopPropagation();
@@ -474,31 +512,7 @@ const TrackCardComponent = ({ track, onDownload, onShare, onClick, onRetry, onDe
                     <Download className="w-4 h-4 mr-2" />
                     Скачать MP3
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={async (e) => { 
-                      e.stopPropagation(); 
-                      
-                      const metadata = track.metadata as Record<string, unknown> | null;
-                      const sunoTaskId = metadata?.suno_task_id as string | undefined;
-                      
-                      if (!sunoTaskId) {
-                        toast({ 
-                          title: "Недоступно", 
-                          description: "Только треки, созданные через Suno, могут быть конвертированы в WAV",
-                          variant: "destructive" 
-                        });
-                        return;
-                      }
-                      
-                      const { useConvertToWav } = await import('@/hooks/useConvertToWav');
-                      const { convertToWav, isConverting: converting, convertingTrackId: convTrackId } = useConvertToWav();
-                      if (converting && convTrackId === track.id) return;
-                      await convertToWav({ trackId: track.id });
-                    }}
-                  >
-                    <FileAudio className="w-4 h-4 mr-2" />
-                    Скачать WAV
-                  </DropdownMenuItem>
+                  <WavConvertMenuItem trackId={track.id} trackMetadata={track.metadata} />
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleShareClick}>
                     <Share2 className="w-4 h-4 mr-2" />
