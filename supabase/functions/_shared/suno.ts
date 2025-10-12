@@ -349,77 +349,11 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
     }
   }
   
-  // ✅ Fallback: Рекурсивный поиск (существующая логика)
-
-  const visited = new Set<object>();
-  const queue: unknown[] = [payload];
-
-  let foundTaskId: string | undefined;
-  let foundJobId: string | undefined;
-
-  while (queue.length > 0) {
-    const current = queue.shift();
-    if (!current || typeof current !== "object") {
-      continue;
-    }
-
-    if (visited.has(current)) {
-      continue;
-    }
-    visited.add(current);
-
-    if (Array.isArray(current)) {
-      for (const item of current) {
-        queue.push(item);
-      }
-      continue;
-    }
-
-    const record = current as Record<string, unknown>;
-
-    if (!foundTaskId) {
-      for (const key of TASK_ID_KEYS) {
-        const candidate = normaliseString(record[key]);
-        if (candidate) {
-          foundTaskId = candidate;
-          break;
-        }
-      }
-    }
-
-    if (!foundJobId) {
-      for (const key of JOB_ID_KEYS) {
-        const candidate = normaliseString(record[key]);
-        if (candidate) {
-          foundJobId = candidate;
-          break;
-        }
-      }
-    }
-
-    if (foundTaskId && foundJobId) {
-      break;
-    }
-
-    for (const value of Object.values(record)) {
-      if (value && typeof value === "object") {
-        queue.push(value);
-      }
-    }
-  }
-
-  if (!foundTaskId) {
-    // ✅ ФАЗА 1.1: Логируем если ничего не найдено
-    import('./logger.ts').then(({ logger }) => {
-      logger.error('Failed to extract taskId from payload', {
-        payloadKeys: Object.keys(payload as Record<string, unknown>),
-        payloadPreview: JSON.stringify(payload).substring(0, 500)
-      });
-    });
-    return {};
-  }
-
-  return { taskId: foundTaskId, jobId: foundJobId ?? null };
+  // ✅ PHASE 1.2 OPTIMIZATION: Removed recursive BFS parsing
+  // Suno API always returns deterministic structure, no need for expensive search
+  // All taskId/jobId extraction is done in the deterministic section above (lines 303-351)
+  
+  return {};
 };
 
 // This function is no longer needed with the new, simplified API response structure.

@@ -10,6 +10,7 @@ interface MusicGenerationState {
   isGenerating: boolean;
   isImproving: boolean;
   subscription: RealtimeChannel | null;
+  autoCleanupTimer: NodeJS.Timeout | null;
   generateMusic: (options: GenerateMusicRequest, toast: ToastFunction, onSuccess?: () => void) => Promise<boolean>;
   improvePrompt: (rawPrompt: string | undefined, toast: ToastFunction) => Promise<string | null>;
   cleanupSubscription: () => void;
@@ -19,10 +20,20 @@ export const useMusicGenerationStore = create<MusicGenerationState>((set, get) =
   isGenerating: false,
   isImproving: false,
   subscription: null,
+  autoCleanupTimer: null,
 
   cleanupSubscription: () => {
-    get().subscription?.unsubscribe();
-    set({ subscription: null });
+    const { subscription, autoCleanupTimer } = get();
+    
+    // Clear auto-cleanup timer
+    if (autoCleanupTimer) {
+      clearTimeout(autoCleanupTimer);
+    }
+    
+    // Unsubscribe from realtime
+    subscription?.unsubscribe();
+    
+    set({ subscription: null, autoCleanupTimer: null });
   },
 
   improvePrompt: async (rawPrompt, toast) => {
@@ -138,7 +149,14 @@ export const useMusicGenerationStore = create<MusicGenerationState>((set, get) =
         )
         .subscribe();
       
-      set({ subscription });
+      // ✅ PHASE 1.3 FIX: Auto-cleanup after 5 minutes
+      const autoCleanupTimer = setTimeout(() => {
+        console.warn('[STORE] Auto-cleaning stale subscription after 5 minutes');
+        subscription.unsubscribe();
+        set({ subscription: null, autoCleanupTimer: null });
+      }, 5 * 60 * 1000);
+      
+      set({ subscription, autoCleanupTimer });
       return true;
     } catch (error) {
       logError('Ошибка при генерации музыки', error as Error, 'useMusicGenerationStore');

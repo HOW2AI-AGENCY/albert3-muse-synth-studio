@@ -378,6 +378,8 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       ...(generationResult.jobId ? { suno_job_id: generationResult.jobId } : {}),
       suno_completion_strategy: callbackUrl ? 'callback' : 'polling',
       suno_callback_url: callbackUrl ?? null,
+      // ✅ PHASE 1.4 FIX: Polling active flag
+      is_polling_active: true,
     };
 
     const trackUpdateAfterGeneration: Record<string, unknown> = {

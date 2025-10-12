@@ -74,3 +74,9 @@ verify_jwt = true
 
 [functions.add-instrumental]
 verify_jwt = true
+
+[functions.retry-failed-tracks]
+verify_jwt = false
+
+[functions.monitor-suno-health]
+verify_jwt = false
