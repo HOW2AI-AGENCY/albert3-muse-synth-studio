@@ -347,8 +347,8 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
       </div>
 
       {/* Tabs Navigation */}
-      <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0">
-        <TabsList className="sticky top-48 z-20 mx-4 mt-2 grid w-auto grid-cols-4 h-9 shrink-0 bg-background/95 backdrop-blur">
+      <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
+        <TabsList className="sticky top-0 z-20 mx-4 mt-2 grid w-auto grid-cols-4 h-9 shrink-0 bg-background/95 backdrop-blur">
           <TabsTrigger value="overview" className="text-xs gap-1.5">
             <Info className="w-3.5 h-3.5" />
             Обзор
@@ -374,8 +374,8 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="flex-1 overflow-auto overscroll-contain pb-[env(safe-area-inset-bottom)] mt-0 animate-fade-in">
-          <div className="space-y-4">
+        <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0" data-testid="detail-panel-scroll">
+          <div className="px-4 pb-6 space-y-3">
             <DetailPanelContent
               track={track}
               title={state.formData.title}
@@ -400,8 +400,8 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
         </TabsContent>
 
         {/* Versions Tab */}
-        <TabsContent value="versions" className="flex-1 overflow-auto overscroll-contain pb-[env(safe-area-inset-bottom)] mt-0 animate-fade-in">
-          <div className="space-y-4">
+        <TabsContent value="versions" className="flex-1 overflow-y-auto mt-0" data-testid="detail-panel-scroll">
+          <div className="px-4 pb-6 space-y-3">
             <DetailPanelContent
               track={track}
               title={state.formData.title}
@@ -426,8 +426,8 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
         </TabsContent>
 
         {/* Stems Tab */}
-        <TabsContent value="stems" className="flex-1 overflow-auto overscroll-contain pb-[env(safe-area-inset-bottom)] mt-0 animate-fade-in">
-          <div className="space-y-4">
+        <TabsContent value="stems" className="flex-1 overflow-y-auto mt-0" data-testid="detail-panel-scroll">
+          <div className="px-4 pb-6 space-y-3">
             <DetailPanelContent
               track={track}
               title={state.formData.title}
@@ -452,8 +452,8 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
         </TabsContent>
 
         {/* Details Tab */}
-        <TabsContent value="details" className="flex-1 overflow-auto overscroll-contain pb-[env(safe-area-inset-bottom)] mt-0 animate-fade-in">
-          <div className="space-y-4">
+        <TabsContent value="details" className="flex-1 overflow-y-auto mt-0" data-testid="detail-panel-scroll">
+          <div className="px-4 pb-6 space-y-3">
             <DetailPanelContent
               track={track}
               title={state.formData.title}

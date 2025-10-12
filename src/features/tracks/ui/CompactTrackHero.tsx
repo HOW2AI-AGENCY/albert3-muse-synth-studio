@@ -65,10 +65,10 @@ export const CompactTrackHero = ({
       )}
 
       {/* Content - Vertical Centered Layout */}
-      <div className="relative z-10 flex flex-col items-center text-center px-6 py-8 space-y-4">
-        {/* Large Cover (160x160px) */}
+      <div className="relative z-10 flex flex-col items-center text-center px-4 py-4 space-y-2">
+        {/* Compact Cover (96x96px) */}
         {track.cover_url && (
-          <div className="w-40 h-40 rounded-2xl overflow-hidden border-2 border-primary/20 shadow-2xl">
+          <div className="w-24 h-24 rounded-xl overflow-hidden border-2 border-primary/20 shadow-xl">
             <img
               src={track.cover_url}
               alt={`Обложка трека ${track.title}`}
@@ -79,7 +79,7 @@ export const CompactTrackHero = ({
         )}
 
         {/* Title */}
-        <h1 className="text-2xl font-bold text-foreground max-w-md">{track.title}</h1>
+        <h1 className="text-xl font-bold text-foreground max-w-md">{track.title}</h1>
 
         {/* Artist / Caption */}
         <p className="text-sm text-muted-foreground">{artist}</p>
@@ -135,7 +135,7 @@ export const CompactTrackHero = ({
 
         {/* Primary CTA Button */}
         {onOpenPlayer && (
-          <Button className="w-full max-w-xs" size="lg" onClick={onOpenPlayer}>
+          <Button className="w-full max-w-xs" size="default" onClick={onOpenPlayer}>
             <Music2 className="h-4 w-4 mr-2" />
             Открыть в плеере
           </Button>

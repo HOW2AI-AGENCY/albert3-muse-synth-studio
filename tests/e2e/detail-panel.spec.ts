@@ -58,26 +58,24 @@ test.describe('Track Details Panel', () => {
     await expect(page.getByText(/Технические детали/i)).toBeVisible();
   });
 
-  test('should toggle "Show More" collapsible', async ({ page }) => {
+  test('should scroll detail panel content', async ({ page }) => {
     const firstTrack = page.locator('[aria-label*="Трек"]').first();
     await firstTrack.waitFor({ state: 'visible', timeout: 10000 });
     await firstTrack.click();
     
-    // Find Show More button
-    const showMoreButton = page.getByRole('button', { name: /Show More/i });
+    // Find scroll container
+    const scrollContainer = page.locator('[data-testid="detail-panel-scroll"]');
+    await scrollContainer.waitFor({ state: 'visible', timeout: 5000 });
     
-    if (await showMoreButton.isVisible()) {
-      // Click to expand
-      await showMoreButton.click();
-      await page.waitForTimeout(300);
-      
-      // Verify technical details are visible
-      await expect(page.getByText(/Технические детали/i)).toBeVisible();
-      
-      // Click again to collapse
-      await showMoreButton.click();
-      await page.waitForTimeout(300);
-    }
+    // Scroll down
+    await scrollContainer.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+    
+    await page.waitForTimeout(300);
+    
+    // Verify technical details are visible after scroll
+    await expect(page.getByText(/Технические детали/i)).toBeVisible();
   });
 
   test('should open player when clicking "Открыть в плеере" button', async ({ page }) => {

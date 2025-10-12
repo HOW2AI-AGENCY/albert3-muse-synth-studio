@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Trash2, Eye, Heart, Calendar, Clock, ExternalLink, GitBranch, Music4, ChevronDown } from "lucide-react";
+import { Trash2, Eye, Heart, Calendar, Clock, ExternalLink, GitBranch, Music4 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -16,7 +15,6 @@ import { EmptyStateCard } from "@/components/layout/EmptyStateCard";
 import { StructuredLyrics } from "@/components/lyrics/StructuredLyrics";
 import { StyleRecommendationsPanel } from "./StyleRecommendationsPanel";
 import { useAudioPlayer } from "@/contexts/audio-player";
-import { cn } from "@/lib/utils";
 import type { StylePreset } from "@/types/styles";
 import { getStyleById } from "@/data/music-styles";
 import { AnalyticsService, viewSessionGuard } from "@/services/analytics.service";
@@ -142,7 +140,6 @@ export const DetailPanelContent = ({
   const [selectedVersionId, setSelectedVersionId] = useState<string | undefined>();
   const [comparisonLeftId, setComparisonLeftId] = useState<string | undefined>();
   const [comparisonRightId, setComparisonRightId] = useState<string | undefined>();
-  const [showMoreOpen, setShowMoreOpen] = useState(false);
 
   useEffect(() => {
     if (!track?.id) {
@@ -331,31 +328,31 @@ export const DetailPanelContent = ({
         onLike={toggleLike}
         onDownload={onDownload}
         onShare={onShare}
-                onOpenPlayer={() => {
-                  playTrack({
-                    id: track.id,
-                    title: track.title,
-                    audio_url: track.audio_url || '',
-                    cover_url: track.cover_url,
-                    duration: track.duration || track.duration_seconds,
-                    status: (track.status as "completed" | "failed" | "pending" | "processing") || "completed",
-                    style_tags: track.style_tags || [],
-                    lyrics: track.lyrics,
-                  });
-                }}
+        onOpenPlayer={() => {
+          playTrack({
+            id: track.id,
+            title: track.title,
+            audio_url: track.audio_url || '',
+            cover_url: track.cover_url,
+            duration: track.duration || track.duration_seconds,
+            status: (track.status as "completed" | "failed" | "pending" | "processing") || "completed",
+            style_tags: track.style_tags || [],
+            lyrics: track.lyrics,
+          });
+        }}
       />
 
-      <div className="p-4 sm:p-6 space-y-6 lg:space-y-8">
+      <div className="space-y-3">
         {/* Overview Tab Content */}
         {tabView === "overview" && (
           <>
             {/* Metadata Card */}
             <Card className="bg-[var(--card-primary-bg)] border-[var(--card-primary-border)] shadow-[var(--card-primary-shadow)]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Метаданные</CardTitle>
-                <CardDescription>Обновите ключевую информацию и видимость трека.</CardDescription>
+              <CardHeader className="pb-2 px-4 pt-4">
+                <CardTitle className="text-base">Метаданные</CardTitle>
+                <CardDescription className="text-xs">Обновите ключевую информацию и видимость трека.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="px-4 pb-4 space-y-3">
                 <Input
                   id="title"
                   value={title}
@@ -394,10 +391,10 @@ export const DetailPanelContent = ({
 
             {/* Statistics Card */}
             <Card className="bg-[var(--card-secondary-bg)] border-[var(--card-secondary-border)] shadow-[var(--card-secondary-shadow)]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Статистика</CardTitle>
+              <CardHeader className="pb-2 px-4 pt-4">
+                <CardTitle className="text-base">Статистика</CardTitle>
               </CardHeader>
-              <CardContent className="grid gap-3 sm:grid-cols-2">
+              <CardContent className="px-4 pb-4 grid gap-2 sm:grid-cols-2">
                 <StatsItem icon={Eye} label="Просмотры" value={`${track.view_count || 0}`} />
                 <StatsItem icon={Heart} label="Лайки" value={`${track.like_count || 0}`} />
                 <StatsItem icon={Calendar} label="Создан" value={formatDate(createdAtToDisplay)} />
@@ -407,11 +404,11 @@ export const DetailPanelContent = ({
 
             {/* AI Recommendations Card */}
             <Card className="bg-[var(--card-secondary-bg)] border-[var(--card-secondary-border)] shadow-[var(--card-secondary-shadow)]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">AI рекомендации по стилю</CardTitle>
-                <CardDescription>Подберите подходящие жанры и теги с помощью ассистента.</CardDescription>
+              <CardHeader className="pb-2 px-4 pt-4">
+                <CardTitle className="text-base">AI рекомендации по стилю</CardTitle>
+                <CardDescription className="text-xs">Подберите подходящие жанры и теги с помощью ассистента.</CardDescription>
               </CardHeader>
-              <CardContent className="pb-4">
+              <CardContent className="px-4 pb-4">
                 <StyleRecommendationsPanel
                   mood={mood}
                   genre={genre}
@@ -423,61 +420,50 @@ export const DetailPanelContent = ({
               </CardContent>
             </Card>
 
-            {/* Show More Collapsible - Technical Details & Prompt */}
-            <Collapsible open={showMoreOpen} onOpenChange={setShowMoreOpen}>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm" className="w-full">
-                  {showMoreOpen ? "Скрыть детали" : "Показать больше"}
-                  <ChevronDown className={cn("h-4 w-4 ml-2 transition-transform", showMoreOpen && "rotate-180")} />
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-4 mt-4">
-                {/* Technical Details */}
-                <Card className="bg-[var(--card-tertiary-bg)] border-[var(--card-tertiary-border)]">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Технические детали</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Модель:</span>
-                      <span className="font-medium">{track.model_name || "—"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Suno ID:</span>
-                      <span className="font-mono text-xs">{track.suno_id || "—"}</span>
-                    </div>
-                    {track.video_url && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Видео:</span>
-                        <Button
-                          variant="link"
-                          size="sm"
-                          className="h-auto p-0"
-                          onClick={() => window.open(track.video_url, "_blank")}
-                        >
-                          Открыть
-                          <ExternalLink className="h-3 w-3 ml-1" />
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Generation Prompt */}
-                {track.prompt && (
-                  <Card className="bg-[var(--card-tertiary-bg)] border-[var(--card-tertiary-border)]">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base">Промпт генерации</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <pre className="text-xs bg-muted/50 p-3 rounded-md whitespace-pre-wrap font-mono">
-                        {track.prompt}
-                      </pre>
-                    </CardContent>
-                  </Card>
+            {/* Technical Details - Always Visible */}
+            <Card className="bg-muted/30 border-border/40">
+              <CardHeader className="pb-2 px-4 pt-3">
+                <CardTitle className="text-sm font-medium">Технические детали</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-3 space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Модель:</span>
+                  <span className="font-medium">{track.model_name || "—"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Suno ID:</span>
+                  <span className="font-mono text-[10px]">{track.suno_id || "—"}</span>
+                </div>
+                {track.video_url && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Видео:</span>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto p-0 text-xs"
+                      onClick={() => window.open(track.video_url, "_blank")}
+                    >
+                      Открыть
+                      <ExternalLink className="h-3 w-3 ml-1" />
+                    </Button>
+                  </div>
                 )}
-              </CollapsibleContent>
-            </Collapsible>
+              </CardContent>
+            </Card>
+
+            {/* Generation Prompt - Always Visible */}
+            {track.prompt && (
+              <Card className="bg-muted/30 border-border/40">
+                <CardHeader className="pb-2 px-4 pt-3">
+                  <CardTitle className="text-sm font-medium">Промпт генерации</CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 pb-3">
+                  <pre className="text-xs bg-muted/50 p-3 rounded-md whitespace-pre-wrap font-mono">
+                    {track.prompt}
+                  </pre>
+                </CardContent>
+              </Card>
+            )}
           </>
         )}
 
