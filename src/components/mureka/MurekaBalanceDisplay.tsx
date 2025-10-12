@@ -16,11 +16,11 @@ export const MurekaBalanceDisplay = () => {
   if (error || !data) {
     return (
       <div 
-        className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-destructive/10 border border-destructive/20 cursor-help" 
-        title="Не удалось загрузить баланс Mureka"
+        className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 border border-border" 
+        title="Mureka API ключ не настроен"
       >
-        <DollarSign className="h-3.5 w-3.5 text-destructive" />
-        <span className="text-xs text-destructive font-medium">Ошибка</span>
+        <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="text-xs text-muted-foreground">Не настроен</span>
       </div>
     );
   }

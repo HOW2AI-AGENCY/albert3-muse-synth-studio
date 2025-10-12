@@ -23,8 +23,8 @@ export const useMurekaBalance = () => {
       );
 
       if (error) {
-        logger.error('Failed to fetch Mureka balance', error instanceof Error ? error : new Error(String(error)));
-        throw new Error(error.message || 'Failed to fetch balance');
+        logger.warn('Failed to fetch Mureka balance, using fallback');
+        return { balance: 0, currency: 'CNY' };
       }
 
       logger.info('Mureka balance retrieved', undefined, {

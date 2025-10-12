@@ -24,7 +24,18 @@ serve(async (req) => {
   try {
     const murekaApiKey = Deno.env.get('MUREKA_API_KEY');
     if (!murekaApiKey) {
-      throw new Error('MUREKA_API_KEY not configured');
+      logger.info('⚠️ MUREKA_API_KEY not configured - returning mock balance');
+      return new Response(
+        JSON.stringify({
+          balance: 0,
+          currency: 'CNY',
+          details: { configured: false },
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     const murekaClient = createMurekaClient({ apiKey: murekaApiKey });
@@ -55,11 +66,12 @@ serve(async (req) => {
     
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Failed to fetch balance',
         balance: 0,
+        currency: 'CNY',
+        error: error instanceof Error ? error.message : 'Failed to fetch balance',
       }),
       {
-        status: 500,
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
