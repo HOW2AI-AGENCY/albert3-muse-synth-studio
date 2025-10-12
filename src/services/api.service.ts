@@ -44,7 +44,7 @@ export interface GenerateMusicRequest {
   userId?: string;
   title?: string;
   prompt: string;
-  provider?: 'replicate' | 'suno';
+  provider?: 'replicate' | 'suno' | 'mureka' | 'sonauto';
   lyrics?: string;
   hasVocals?: boolean;
   styleTags?: string[];
@@ -56,6 +56,9 @@ export interface GenerateMusicRequest {
   weirdnessConstraint?: number;
   audioWeight?: number;
   referenceAudioUrl?: string;
+  makeInstrumental?: boolean;
+  referenceAudio?: string;
+  referenceTrackId?: string;
 }
 
 // ✅ ИСПРАВЛЕНИЕ 6: Функция normalizeSunoModel() удалена - клиент теперь отправляет корректный формат напрямую

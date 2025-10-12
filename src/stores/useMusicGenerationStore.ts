@@ -3,14 +3,17 @@ import { ApiService, GenerateMusicRequest } from '@/services/api.service';
 import { supabase } from '@/integrations/supabase/client';
 import { logError } from '@/utils/logger';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import { MusicProvider } from '@/services/providers';
 
 type ToastFunction = (options: { title: string; description: string; variant?: 'destructive' | 'default' | null }) => void;
 
 interface MusicGenerationState {
   isGenerating: boolean;
   isImproving: boolean;
+  selectedProvider: MusicProvider;
   subscription: RealtimeChannel | null;
   autoCleanupTimer: NodeJS.Timeout | null;
+  setProvider: (provider: MusicProvider) => void;
   generateMusic: (options: GenerateMusicRequest, toast: ToastFunction, onSuccess?: () => void) => Promise<boolean>;
   improvePrompt: (rawPrompt: string | undefined, toast: ToastFunction) => Promise<string | null>;
   cleanupSubscription: () => void;
@@ -19,8 +22,13 @@ interface MusicGenerationState {
 export const useMusicGenerationStore = create<MusicGenerationState>((set, get) => ({
   isGenerating: false,
   isImproving: false,
+  selectedProvider: 'suno',
   subscription: null,
   autoCleanupTimer: null,
+
+  setProvider: (provider: MusicProvider) => {
+    set({ selectedProvider: provider });
+  },
 
   cleanupSubscription: () => {
     const { subscription, autoCleanupTimer } = get();
@@ -71,8 +79,9 @@ export const useMusicGenerationStore = create<MusicGenerationState>((set, get) =
   },
 
   generateMusic: async (options, toast, onSuccess) => {
-    const { isGenerating, isImproving, cleanupSubscription } = get();
+    const { isGenerating, isImproving, selectedProvider, cleanupSubscription } = get();
     const effectivePrompt = options.prompt?.trim() ?? '';
+    const provider = options.provider || selectedProvider;
 
     if (!effectivePrompt) {
       toast({ title: 'Ошибка', description: 'Пожалуйста, введите описание музыки', variant: 'destructive' });
@@ -106,16 +115,18 @@ export const useMusicGenerationStore = create<MusicGenerationState>((set, get) =
         user.id,
         options.title || effectivePrompt.substring(0, 50) || 'Untitled Track',
         effectivePrompt,
-        options.provider || 'suno',
+        provider,
         options.lyrics,
         options.hasVocals,
         options.styleTags
       );
 
+      // Use existing API service for now (will migrate to ProviderRouter in next phase)
       await ApiService.generateMusic({
+        ...options,
         trackId: newTrack.id,
         userId: user.id,
-        ...options,
+        provider: provider as any,
       });
 
       toast({
