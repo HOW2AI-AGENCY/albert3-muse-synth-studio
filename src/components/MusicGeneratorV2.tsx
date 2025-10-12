@@ -32,12 +32,19 @@ interface MusicGeneratorV2Props {
 type VocalGender = 'any' | 'female' | 'male' | 'instrumental';
 type GeneratorMode = 'simple' | 'custom';
 
-const modelVersions = [
+const sunoModelVersions = [
   { value: 'V5', label: 'v5' },
   { value: 'V4_5PLUS', label: 'v4.5+' },
   { value: 'V4_5', label: 'v4.5' },
   { value: 'V4', label: 'v4' },
   { value: 'V3_5', label: 'v3.5' },
+];
+
+const murekaModelVersions = [
+  { value: 'auto', label: 'Auto' },
+  { value: 'mureka-6', label: 'v6' },
+  { value: 'mureka-7.5', label: 'v7.5' },
+  { value: 'mureka-o1', label: 'O1' },
 ];
 
 const vocalGenderOptions: { value: VocalGender; label: string }[] = [
@@ -68,7 +75,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     tags: '',
     negativeTags: '',
     vocalGender: 'any' as VocalGender,
-    modelVersion: 'V5',
+    modelVersion: selectedProvider === 'mureka' ? 'auto' : 'V5',
     referenceAudioUrl: null as string | null,
     referenceFileName: null as string | null,
     audioWeight: 50,
@@ -82,9 +89,13 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     setParams(prev => ({ ...prev, [key]: value }));
   };
 
-  // Sync provider selection with global state
+  // Sync provider selection with global state and update model version
   useEffect(() => {
-    setParams(prev => ({ ...prev, provider: selectedProvider }));
+    setParams(prev => ({ 
+      ...prev, 
+      provider: selectedProvider,
+      modelVersion: selectedProvider === 'mureka' ? 'auto' : 'V5'
+    }));
   }, [selectedProvider]);
 
   // ✅ Улучшенный Boost с обратной связью
@@ -218,6 +229,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       customMode: true,
       modelVersion: params.modelVersion,
       referenceAudioUrl: params.referenceAudioUrl || undefined,
+      provider: selectedProvider, // ✅ Добавляем провайдер
     };
 
     logger.info('🎵 [GENERATE] Starting generation', 
@@ -278,7 +290,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {modelVersions.map(m => (
+              {(selectedProvider === 'mureka' ? murekaModelVersions : sunoModelVersions).map(m => (
                 <SelectItem key={m.value} value={m.value} className="text-xs">{m.label}</SelectItem>
               ))}
             </SelectContent>

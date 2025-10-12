@@ -121,13 +121,27 @@ export const useMusicGenerationStore = create<MusicGenerationState>((set, get) =
         options.styleTags
       );
 
-      // Use existing API service for now (will migrate to ProviderRouter in next phase)
-      await ApiService.generateMusic({
-        ...options,
-        trackId: newTrack.id,
-        userId: user.id,
-        provider: provider as any,
-      });
+      // ✅ Используем правильную функцию в зависимости от провайдера
+      if (provider === 'mureka') {
+        await supabase.functions.invoke('generate-mureka', {
+          body: {
+            trackId: newTrack.id,
+            title: options.title || effectivePrompt.substring(0, 50),
+            prompt: effectivePrompt,
+            lyrics: options.lyrics,
+            styleTags: options.styleTags,
+            hasVocals: options.hasVocals,
+            modelVersion: options.modelVersion,
+          }
+        });
+      } else {
+        await ApiService.generateMusic({
+          ...options,
+          trackId: newTrack.id,
+          userId: user.id,
+          provider: provider as any,
+        });
+      }
 
       toast({
         title: '🎵 Генерация началась!',
