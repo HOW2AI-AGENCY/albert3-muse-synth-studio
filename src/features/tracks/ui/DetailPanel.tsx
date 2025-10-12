@@ -346,29 +346,29 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
         )}
       </div>
 
-      {/* Tabs Navigation */}
+      {/* Tabs Navigation - Touch-friendly */}
       <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="sticky top-0 z-20 mx-4 mt-2 grid w-auto grid-cols-4 h-9 shrink-0 bg-background/95 backdrop-blur">
-          <TabsTrigger value="overview" className="text-xs gap-1.5">
-            <Info className="w-3.5 h-3.5" />
+        <TabsList className="sticky top-0 z-20 mx-4 mt-2 grid w-auto grid-cols-4 h-11 shrink-0 bg-background/95 backdrop-blur">
+          <TabsTrigger value="overview" className="text-xs gap-1.5 min-h-[44px]">
+            <Info className="w-4 h-4" />
             Обзор
           </TabsTrigger>
-          <TabsTrigger value="versions" className="text-xs gap-1.5">
-            <GitBranch className="w-3.5 h-3.5" />
+          <TabsTrigger value="versions" className="text-xs gap-1.5 min-h-[44px]">
+            <GitBranch className="w-4 h-4" />
             Версии
             {state.data.versions.length > 1 && (
               <Badge className="ml-1 h-4 px-1 text-[10px]">{state.data.versions.length}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="stems" className="text-xs gap-1.5">
-            <Music4 className="w-3.5 h-3.5" />
+          <TabsTrigger value="stems" className="text-xs gap-1.5 min-h-[44px]">
+            <Music4 className="w-4 h-4" />
             Стемы
             {state.data.stems.length > 0 && (
               <Badge className="ml-1 h-4 px-1 text-[10px]">{state.data.stems.length}</Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="details" className="text-xs gap-1.5">
-            <Info className="w-3.5 h-3.5" />
+          <TabsTrigger value="details" className="text-xs gap-1.5 min-h-[44px]">
+            <Info className="w-4 h-4" />
             Детали
           </TabsTrigger>
         </TabsList>

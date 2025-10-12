@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Trash2, Eye, Heart, Calendar, Clock, ExternalLink, GitBranch, Music4 } from "lucide-react";
+import { Trash2, Eye, Heart, Calendar, Clock, ExternalLink, GitBranch, Music4, FileText } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -451,14 +451,50 @@ export const DetailPanelContent = ({
               </CardContent>
             </Card>
 
-            {/* Generation Prompt - Always Visible */}
+            {/* Lyrics - Minimalist Design */}
+            {track.lyrics && (
+              <Card className="bg-muted/20 border-border/30">
+                <CardContent className="px-3 py-3">
+                  <div className="flex items-start gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <pre className="text-xs leading-relaxed text-foreground/90 whitespace-pre-wrap font-sans overflow-x-auto">
+                      {track.lyrics}
+                    </pre>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Technical Details - Minimalist */}
+            <Card className="bg-muted/20 border-border/30">
+              <CardContent className="px-3 py-3 space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Model</span>
+                  <span className="font-medium">{track.model_name || "—"}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">ID</span>
+                  <span className="font-mono text-[10px]">{track.suno_id || "—"}</span>
+                </div>
+                {track.video_url && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-xs"
+                    onClick={() => window.open(track.video_url, "_blank")}
+                  >
+                    Video
+                    <ExternalLink className="h-3 w-3 ml-1" />
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Generation Prompt - Minimalist */}
             {track.prompt && (
-              <Card className="bg-muted/30 border-border/40">
-                <CardHeader className="pb-2 px-4 pt-3">
-                  <CardTitle className="text-sm font-medium">Промпт генерации</CardTitle>
-                </CardHeader>
-                <CardContent className="px-4 pb-3">
-                  <pre className="text-xs bg-muted/50 p-3 rounded-md whitespace-pre-wrap font-mono">
+              <Card className="bg-muted/20 border-border/30">
+                <CardContent className="px-3 py-3">
+                  <pre className="text-xs bg-muted/30 p-2 rounded whitespace-pre-wrap font-mono">
                     {track.prompt}
                   </pre>
                 </CardContent>

@@ -330,11 +330,39 @@
     background: hsl(var(--muted-foreground));
   }
 
-  /* Detail Panel Variables */
-  --detail-panel-header-height: 3.5rem;
-  --detail-panel-tabs-height: 2.5rem;
-  --detail-panel-padding: 1rem;
-  --detail-panel-gap: 0.75rem;
+  /* Mobile-first spacing system */
+  --spacing-mobile-xs: 0.5rem;
+  --spacing-mobile-sm: 0.75rem;
+  --spacing-mobile-md: 1rem;
+  --spacing-mobile-lg: 1.25rem;
+  
+  /* Component-specific mobile heights */
+  --hero-height-mobile: 120px;
+  --card-padding-mobile: 0.75rem;
+  --touch-target-min: 44px;
+  
+  /* Fixed UI heights for mobile */
+  --bottom-tab-bar-height: 60px;
+  --mini-player-height: 80px;
+  --workspace-bottom-offset: calc(var(--bottom-tab-bar-height) + env(safe-area-inset-bottom));
+}
+
+/* Compact screens optimization */
+@media (max-height: 667px) {
+  :root {
+    --hero-height-mobile: 100px;
+    --card-padding-mobile: 0.5rem;
+    --spacing-mobile-md: 0.75rem;
+  }
+}
+
+/* When MiniPlayer is active */
+.workspace-main[data-player-active="true"] {
+  --workspace-bottom-offset: calc(
+    var(--bottom-tab-bar-height) + 
+    var(--mini-player-height) + 
+    env(safe-area-inset-bottom)
+  );
 }
 
 /* Компактные layout-примитивы - встроено для совместимости с @layer */

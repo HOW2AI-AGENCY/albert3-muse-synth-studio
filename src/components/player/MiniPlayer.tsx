@@ -181,7 +181,7 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
                 size="icon"
                 variant="ghost"
                 onClick={handlePrevious}
-                className="h-8 w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+                className="h-11 w-11 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
               >
                 <SkipBack className="h-4 w-4" />
               </Button>
@@ -195,7 +195,7 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
                 size="icon"
                 variant="default"
                 onClick={handlePlayPause}
-                className="h-10 w-10 rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-200 hover:scale-105"
+                className="h-11 w-11 rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-200 hover:scale-105"
               >
                 {isPlaying ? (
                   <Pause className="h-5 w-5" />
@@ -213,7 +213,7 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
                 size="icon"
                 variant="ghost"
                 onClick={handleNext}
-                className="h-8 w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+                className="h-11 w-11 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
               >
                 <SkipForward className="h-4 w-4" />
               </Button>
@@ -227,7 +227,7 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
                 size="icon"
                 variant="ghost"
                 onClick={handleClose}
-                className="h-8 w-8 hover:bg-destructive/20 hover:scale-105 transition-all duration-200"
+                className="h-11 w-11 hover:bg-destructive/20 hover:scale-105 transition-all duration-200"
               >
                 <X className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors" />
               </Button>

@@ -35,7 +35,11 @@ const WorkspaceLayout = () => {
         <WorkspaceHeader className="safe-area-inset lg:block hidden" />
 
         <main
-          className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pb-[60px] supports-[padding:env(safe-area-inset-bottom)]:pb-[calc(60px+env(safe-area-inset-bottom))] lg:pb-0 bg-background scrollbar-styled"
+          className="workspace-main flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-background scrollbar-styled"
+          style={{
+            paddingBottom: 'var(--workspace-bottom-offset)'
+          }}
+          data-player-active={false}
         >
           <Outlet />
         </main>

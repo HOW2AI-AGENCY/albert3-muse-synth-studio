@@ -51,7 +51,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
               onFocus={() => item.preload?.()}
               className={({ isActive: navActive }) =>
                 cn(
-                  "flex flex-1 flex-col items-center justify-center gap-1 rounded-md px-3 py-2 text-xs font-medium transition",
+                  "flex flex-1 flex-col items-center justify-center gap-1 rounded-md px-3 py-2.5 text-xs font-medium transition min-h-[44px]",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                   "hover:bg-muted/50",
                   (isActive || navActive) && "text-primary"
