@@ -103,14 +103,36 @@ serve(async (req) => {
 
     const murekaClient = createMurekaClient({ apiKey: murekaApiKey });
 
-    // 5. Generate music with Mureka
+    // ✅ FIX: Если лирика не передана, сначала генерируем её через /v1/lyrics/generate
+    let finalLyrics = lyrics;
+    
+    if (!finalLyrics || finalLyrics.trim().length === 0) {
+      logger.info('📝 No lyrics provided, generating lyrics from prompt');
+      
+      try {
+        const lyricsResult = await murekaClient.generateLyrics({ prompt });
+        
+        if (lyricsResult.code === 200 && lyricsResult.data?.lyrics) {
+          finalLyrics = lyricsResult.data.lyrics;
+          logger.info('✅ Lyrics generated successfully', {
+            lyricsLength: finalLyrics.length
+          });
+        } else {
+          throw new Error('Failed to generate lyrics: ' + lyricsResult.msg);
+        }
+      } catch (lyricsError) {
+        logger.error('🔴 Lyrics generation failed', { error: lyricsError });
+        throw new Error('Failed to generate lyrics before song generation');
+      }
+    }
+
+    // ✅ FIX: Правильный payload согласно документации Mureka API
+    // https://platform.mureka.ai/docs/api/operations/post-v1-song-generate.html
     const generatePayload = {
-      prompt,
-      lyrics,
-      style: styleTags?.join(', '),
-      model: modelVersion || 'o1-2024',
-      bg_music: isBGM || false,
-      output_audio_count: 2, // Generate 2 variants
+      lyrics: finalLyrics,              // REQUIRED: Текст песни (обязательно)
+      prompt: prompt || undefined,      // OPTIONAL: Контроль генерации музыки
+      model: modelVersion || 'auto',    // auto | mureka-6 | mureka-7.5 | mureka-o1
+      n: 2,                              // Количество вариантов (2-3)
     };
 
     logger.info('🎵 Calling Mureka generateSong API', { payload: generatePayload });
@@ -129,8 +151,11 @@ serve(async (req) => {
         suno_id: task_id, // Reusing suno_id field for Mureka task_id
         status: 'processing',
         provider: 'mureka',
+        lyrics: finalLyrics,        // ✅ Сохраняем итоговую лирику
         metadata: {
-          ...generatePayload,
+          originalPrompt: prompt,
+          generatedLyrics: !lyrics, // Флаг что лирика была сгенерирована
+          murekaModel: generatePayload.model,
           mureka_task_id: task_id,
           started_at: new Date().toISOString(),
         },

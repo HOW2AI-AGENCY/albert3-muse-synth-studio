@@ -76,55 +76,27 @@ serve(async (req) => {
     logger.info('📝 Calling Mureka extendLyrics API', { payload: extendPayload });
 
     const response = await murekaClient.extendLyrics(extendPayload);
-    const task_id = response.data.task_id;
+    
+    // ✅ FIX: API возвращает { title, lyrics } напрямую, без task_id
+    const extendedLyrics = response.data?.lyrics;
 
-    if (!task_id) {
-      throw new Error('Mureka API did not return task_id');
+    if (!extendedLyrics) {
+      throw new Error('Mureka API did not return extended lyrics');
     }
 
-    logger.info('✅ Lyrics extension started', { taskId: task_id });
+    logger.info('✅ Lyrics extended successfully', { 
+      originalLength: existingLyrics.length,
+      extendedLength: extendedLyrics.length
+    });
 
-    // 5. Poll for completion
-    const pollInterval = 5000; // 5 seconds
-    const maxAttempts = 24; // 2 minutes max
-
-    async function pollLyricsCompletion(attemptNumber = 0): Promise<any> {
-      if (attemptNumber >= maxAttempts) {
-        throw new Error('Lyrics extension timeout');
-      }
-
-      try {
-        const queryResult = await murekaClient.queryTask(task_id);
-        
-        if (queryResult.code === 200 && queryResult.data?.clips && queryResult.data.clips.length > 0) {
-          const firstClip = queryResult.data.clips[0];
-          logger.info('🎉 Lyrics extension completed', {
-            lyricsLength: firstClip.lyrics?.length || 0,
-          });
-          
-          return {
-            success: true,
-            taskId: task_id,
-            lyrics: firstClip.lyrics || existingLyrics,
-          };
-        } else if (queryResult.code !== 200) {
-          throw new Error(queryResult.msg || 'Lyrics extension failed');
-        } else {
-          // Still processing
-          await new Promise(resolve => setTimeout(resolve, pollInterval));
-          return pollLyricsCompletion(attemptNumber + 1);
-        }
-
-      } catch (pollError) {
-        logger.error('🔴 Lyrics polling error', { error: pollError });
-        throw pollError;
-      }
-    }
-
-    const result = await pollLyricsCompletion();
-
+    // 5. Return success response immediately (no polling needed)
     return new Response(
-      JSON.stringify(result),
+      JSON.stringify({
+        success: true,
+        lyrics: extendedLyrics,
+        originalLength: existingLyrics.length,
+        extendedLength: extendedLyrics.length,
+      }),
       {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

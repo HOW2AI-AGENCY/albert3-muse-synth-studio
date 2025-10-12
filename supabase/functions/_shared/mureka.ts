@@ -30,24 +30,22 @@ import { logger } from "./logger.ts";
  * @interface MurekaGenerationPayload
  */
 export interface MurekaGenerationPayload {
-  /** Текстовое описание желаемой музыки (обязательно) */
-  prompt: string;
-  /** Текст песни (опционально) */
-  lyrics?: string;
-  /** Название трека (опционально) */
-  title?: string;
-  /** Музыкальный стиль (опционально, например: "lo-fi, chill") */
-  style?: string;
-  /** Продолжительность в секундах (опционально) */
-  duration?: number;
-  /** ID аудиофайла из /v1/files/upload для референса (опционально) */
-  audio_file?: string;
-  /** Генерировать видеоклип (опционально) */
-  mv?: boolean;
-  /** ID клипа для продолжения (используется в extendSong) */
-  continue_clip_id?: string;
-  /** Timestamp для начала расширения (используется в extendSong) */
-  continue_at?: number;
+  /** Текст песни (ОБЯЗАТЕЛЬНО согласно API) */
+  lyrics: string;
+  /** Промпт для контроля генерации музыки (опционально) */
+  prompt?: string;
+  /** Модель: auto | mureka-6 | mureka-7.5 | mureka-o1 */
+  model?: string;
+  /** Количество треков (2-3, по умолчанию 2) */
+  n?: number;
+  /** ID референсного аудио из /v1/files/upload (опционально) */
+  reference_id?: string;
+  /** ID голоса из /v1/files/upload (опционально) */
+  vocal_id?: string;
+  /** ID мелодии из /v1/files/upload (опционально) */
+  melody_id?: string;
+  /** Включить streaming режим (опционально) */
+  stream?: boolean;
 }
 
 /**
@@ -131,8 +129,9 @@ export interface MurekaLyricsResponse {
   code: number;
   msg: string;
   data: {
-    task_id: string;
-    /** Сгенерированный/расширенный текст (после завершения) */
+    /** Сгенерированное название (только для generate) */
+    title?: string;
+    /** Сгенерированный/расширенный текст */
     lyrics?: string;
   };
 }
@@ -446,7 +445,7 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
     // ========================================================================
     
     /**
-     * Генерация музыки через Mureka AI O1 System
+     * Генерация музыки через Mureka AI
      * 
      * @param {MurekaGenerationPayload} payload - Параметры генерации
      * @returns {Promise<MurekaGenerationResponse>} Результат с task_id
@@ -454,19 +453,19 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
      * @example
      * ```typescript
      * const result = await client.generateSong({
-     *   prompt: "Cinematic orchestral theme",
-     *   title: "Epic Journey",
-     *   style: "orchestral, epic",
-     *   duration: 180
+     *   lyrics: "Verse 1:\nWalking down...\n\nChorus:\nI'm free...",
+     *   prompt: "upbeat pop song",
+     *   model: "auto",
+     *   n: 2
      * });
      * console.log(`Task ID: ${result.data.task_id}`);
      * ```
      */
     async generateSong(payload: MurekaGenerationPayload): Promise<MurekaGenerationResponse> {
       logger.info('🎵 [MUREKA] Generating song', { 
+        lyricsLength: payload.lyrics?.length,
         prompt: payload.prompt?.substring(0, 50),
-        title: payload.title,
-        duration: payload.duration
+        model: payload.model
       });
       
       return makeRequest(
@@ -478,24 +477,12 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
 
     /**
      * Расширение существующей композиции
+     * (Функция устарела - используйте /v1/song/generate с правильными параметрами)
      * 
-     * @param {MurekaGenerationPayload} payload - Параметры расширения
-     * @returns {Promise<MurekaGenerationResponse>} Результат с task_id
-     * 
-     * @example
-     * ```typescript
-     * const result = await client.extendSong({
-     *   continue_clip_id: "original-clip-id",
-     *   continue_at: 60, // Продолжить с 60-й секунды
-     *   prompt: "Continue with uplifting chorus"
-     * });
-     * ```
+     * @deprecated
      */
-    async extendSong(payload: MurekaGenerationPayload): Promise<MurekaGenerationResponse> {
-      logger.info('➕ [MUREKA] Extending song', { 
-        clip_id: payload.continue_clip_id,
-        continue_at: payload.continue_at
-      });
+    async extendSong(payload: any): Promise<MurekaGenerationResponse> {
+      logger.warn('⚠️ [MUREKA] extendSong deprecated - use generateSong instead');
       
       return makeRequest(
         options.generateEndpoint || '/v1/song/extend',
