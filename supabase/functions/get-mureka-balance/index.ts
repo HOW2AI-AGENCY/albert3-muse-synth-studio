@@ -44,14 +44,43 @@ serve(async (req) => {
     
     const billingData = await murekaClient.getBilling();
     
-    // ✅ Phase 1: Проверка на undefined
-    if (!billingData || !billingData.data) {
-      logger.error('🔴 Invalid billing response from Mureka API', { error: 'Missing data field' });
+    logger.info('🔍 Mureka billing API response', { 
+      rawResponse: billingData,
+      hasData: !!billingData?.data,
+      code: billingData?.code 
+    });
+    
+    // ✅ Проверка разных форматов ответа Mureka API
+    if (!billingData) {
+      logger.error('🔴 No response from Mureka API', { error: 'Billing data is null/undefined' });
       return new Response(
         JSON.stringify({
           balance: 0,
           currency: 'CNY',
-          error: 'Invalid response from Mureka API',
+          error: 'No response from Mureka API',
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Поддержка двух форматов ответа:
+    // Формат 1: { code: 200, data: { balance, currency } }
+    // Формат 2: { balance, currency } (прямой объект)
+    const balanceData = billingData.data || billingData;
+    
+    if (!balanceData.balance && balanceData.balance !== 0) {
+      logger.error('🔴 Invalid billing response structure', { 
+        error: 'Missing balance field',
+        receivedKeys: Object.keys(balanceData)
+      });
+      return new Response(
+        JSON.stringify({
+          balance: 0,
+          currency: 'CNY',
+          error: 'Invalid response structure from Mureka API',
         }),
         {
           status: 200,
@@ -61,15 +90,15 @@ serve(async (req) => {
     }
     
     logger.info('✅ Mureka balance retrieved', {
-      balance: billingData.data.balance,
-      currency: billingData.data.currency,
+      balance: balanceData.balance,
+      currency: balanceData.currency || 'CNY',
     });
 
     return new Response(
       JSON.stringify({
-        balance: billingData.data.balance,
-        currency: billingData.data.currency,
-        details: billingData.data,
+        balance: balanceData.balance,
+        currency: balanceData.currency || 'CNY',
+        details: balanceData,
       }),
       {
         status: 200,
