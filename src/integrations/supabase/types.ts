@@ -75,16 +75,19 @@ export type Database = {
       }
       lyrics_jobs: {
         Row: {
+          base_lyrics: string | null
           call_strategy: string | null
           callback_url: string | null
           created_at: string
           error_message: string | null
           id: string
           initial_response: Json | null
+          is_extension: boolean | null
           last_callback: Json | null
           last_poll_response: Json | null
           metadata: Json | null
           prompt: string
+          provider: string | null
           request_payload: Json | null
           status: string
           suno_task_id: string | null
@@ -93,16 +96,19 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          base_lyrics?: string | null
           call_strategy?: string | null
           callback_url?: string | null
           created_at?: string
           error_message?: string | null
           id?: string
           initial_response?: Json | null
+          is_extension?: boolean | null
           last_callback?: Json | null
           last_poll_response?: Json | null
           metadata?: Json | null
           prompt: string
+          provider?: string | null
           request_payload?: Json | null
           status?: string
           suno_task_id?: string | null
@@ -111,16 +117,19 @@ export type Database = {
           user_id: string
         }
         Update: {
+          base_lyrics?: string | null
           call_strategy?: string | null
           callback_url?: string | null
           created_at?: string
           error_message?: string | null
           id?: string
           initial_response?: Json | null
+          is_extension?: boolean | null
           last_callback?: Json | null
           last_poll_response?: Json | null
           metadata?: Json | null
           prompt?: string
+          provider?: string | null
           request_payload?: Json | null
           status?: string
           suno_task_id?: string | null
@@ -245,6 +254,140 @@ export type Database = {
           id?: string
           subscription_tier?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      song_descriptions: {
+        Row: {
+          ai_description: string | null
+          audio_file_url: string
+          created_at: string
+          danceability: number | null
+          detected_genre: string | null
+          detected_instruments: string[] | null
+          detected_mood: string | null
+          energy_level: number | null
+          error_message: string | null
+          id: string
+          key_signature: string | null
+          metadata: Json | null
+          mureka_file_id: string | null
+          mureka_task_id: string | null
+          status: string
+          tempo_bpm: number | null
+          track_id: string | null
+          updated_at: string
+          user_id: string
+          valence: number | null
+        }
+        Insert: {
+          ai_description?: string | null
+          audio_file_url: string
+          created_at?: string
+          danceability?: number | null
+          detected_genre?: string | null
+          detected_instruments?: string[] | null
+          detected_mood?: string | null
+          energy_level?: number | null
+          error_message?: string | null
+          id?: string
+          key_signature?: string | null
+          metadata?: Json | null
+          mureka_file_id?: string | null
+          mureka_task_id?: string | null
+          status?: string
+          tempo_bpm?: number | null
+          track_id?: string | null
+          updated_at?: string
+          user_id: string
+          valence?: number | null
+        }
+        Update: {
+          ai_description?: string | null
+          audio_file_url?: string
+          created_at?: string
+          danceability?: number | null
+          detected_genre?: string | null
+          detected_instruments?: string[] | null
+          detected_mood?: string | null
+          energy_level?: number | null
+          error_message?: string | null
+          id?: string
+          key_signature?: string | null
+          metadata?: Json | null
+          mureka_file_id?: string | null
+          mureka_task_id?: string | null
+          status?: string
+          tempo_bpm?: number | null
+          track_id?: string | null
+          updated_at?: string
+          user_id?: string
+          valence?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "song_descriptions_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: true
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      song_recognitions: {
+        Row: {
+          audio_file_url: string
+          confidence_score: number | null
+          created_at: string
+          error_message: string | null
+          external_ids: Json | null
+          id: string
+          metadata: Json | null
+          mureka_file_id: string | null
+          mureka_task_id: string | null
+          recognized_album: string | null
+          recognized_artist: string | null
+          recognized_title: string | null
+          release_date: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          audio_file_url: string
+          confidence_score?: number | null
+          created_at?: string
+          error_message?: string | null
+          external_ids?: Json | null
+          id?: string
+          metadata?: Json | null
+          mureka_file_id?: string | null
+          mureka_task_id?: string | null
+          recognized_album?: string | null
+          recognized_artist?: string | null
+          recognized_title?: string | null
+          release_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          audio_file_url?: string
+          confidence_score?: number | null
+          created_at?: string
+          error_message?: string | null
+          external_ids?: Json | null
+          id?: string
+          metadata?: Json | null
+          mureka_file_id?: string | null
+          mureka_task_id?: string | null
+          recognized_album?: string | null
+          recognized_artist?: string | null
+          recognized_title?: string | null
+          release_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -621,6 +764,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_mureka_stats: {
+        Args: { user_uuid: string }
+        Returns: {
+          avg_recognition_confidence: number
+          successful_recognitions: number
+          total_descriptions: number
+          total_recognitions: number
+          total_tracks: number
+        }[]
+      }
       has_role: {
         Args:
           | { _role: Database["public"]["Enums"]["app_role"]; _user_id: string }
