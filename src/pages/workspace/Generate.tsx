@@ -262,7 +262,7 @@ const Generate = () => {
           <Button
             size="lg"
             className="fixed right-4 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 transition-transform hover:scale-105 z-20"
-            style={{ bottom: isPlayerVisible ? 'calc(5rem + 1rem)' : '1rem' }}
+            style={{ bottom: isPlayerVisible ? 'calc(var(--workspace-bottom-offset, 0px) + 1rem)' : '1rem' }}
             aria-label="Создать музыку"
           >
             <Plus className="h-6 w-6" />

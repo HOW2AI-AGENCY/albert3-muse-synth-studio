@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import MinimalSidebar from "./MinimalSidebar";
 import WorkspaceHeader from "./WorkspaceHeader";
@@ -14,6 +14,37 @@ const WorkspaceLayout = () => {
     () => getWorkspaceNavItems({ isAdmin }),
     [isAdmin]
   );
+
+  // Update CSS variable for player offset
+  useEffect(() => {
+    const updatePlayerOffset = () => {
+      const player = document.querySelector('[data-testid="mini-player"]') as HTMLElement;
+      const height = player ? player.offsetHeight : 0;
+      document.documentElement.style.setProperty(
+        '--workspace-bottom-offset',
+        `${height}px`
+      );
+    };
+
+    updatePlayerOffset();
+    
+    // Watch for DOM changes
+    const observer = new MutationObserver(updatePlayerOffset);
+    observer.observe(document.body, { 
+      childList: true, 
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style']
+    });
+
+    // Also update on resize
+    window.addEventListener('resize', updatePlayerOffset);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updatePlayerOffset);
+    };
+  }, []);
 
   return (
     <div className="flex min-h-screen min-h-[100dvh] bg-background">
