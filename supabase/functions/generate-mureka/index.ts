@@ -14,10 +14,12 @@ import { createSupabaseAdminClient } from "../_shared/supabase.ts";
 import { createMurekaClient } from "../_shared/mureka.ts";
 import { logger } from "../_shared/logger.ts";
 import { findOrCreateTrack } from "../_shared/track-helpers.ts";
+import { createSecurityHeaders } from "../_shared/security.ts";
+import { createCorsHeaders } from "../_shared/cors.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  ...createCorsHeaders(),
+  ...createSecurityHeaders(),
 };
 
 interface GenerateMurekaRequest {

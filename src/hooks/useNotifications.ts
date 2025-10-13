@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
-import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface Notification {
   id: string;
@@ -54,7 +53,7 @@ export const useNotifications = () => {
   useEffect(() => {
     if (!userId) return;
 
-    const channel: RealtimeChannel = supabase
+    const realtimeChannel = supabase
       .channel('notifications-changes')
       .on(
         'postgres_changes',
@@ -81,7 +80,7 @@ export const useNotifications = () => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(realtimeChannel);
     };
   }, [userId, queryClient]);
 

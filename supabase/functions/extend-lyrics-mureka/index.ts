@@ -11,10 +11,12 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createSupabaseAdminClient } from "../_shared/supabase.ts";
 import { createMurekaClient } from "../_shared/mureka.ts";
 import { logger } from "../_shared/logger.ts";
+import { createSecurityHeaders } from "../_shared/security.ts";
+import { createCorsHeaders } from "../_shared/cors.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  ...createCorsHeaders(),
+  ...createSecurityHeaders(),
 };
 
 interface ExtendLyricsRequest {
@@ -67,7 +69,7 @@ serve(async (req) => {
 
     const murekaClient = createMurekaClient({ apiKey: murekaApiKey });
 
-    // 4. Extend lyrics with Mureka
+    // 4. Extend lyrics with Mureka (synchronous API)
     const extendPayload = {
       lyrics: existingLyrics,
       prompt: prompt || 'Continue the lyrics naturally',
@@ -77,7 +79,7 @@ serve(async (req) => {
 
     const response = await murekaClient.extendLyrics(extendPayload);
     
-    // ✅ FIX: API возвращает { title, lyrics } напрямую, без task_id
+    // API returns { code, data: { lyrics, title } } synchronously
     const extendedLyrics = response.data?.lyrics;
 
     if (!extendedLyrics) {
@@ -89,7 +91,7 @@ serve(async (req) => {
       extendedLength: extendedLyrics.length
     });
 
-    // 5. Return success response immediately (no polling needed)
+    // Return success response immediately (synchronous response)
     return new Response(
       JSON.stringify({
         success: true,

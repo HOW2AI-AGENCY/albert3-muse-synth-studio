@@ -304,11 +304,11 @@ export const buildSunoHeaders = (
   return baseHeaders;
 };
 
+import { logger } from "./logger.ts";
+
 const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null } => {
   if (!payload || typeof payload !== "object") {
-    import('./logger.ts').then(({ logger }) => {
-      logger.warn('Invalid Suno payload type', { type: typeof payload });
-    });
+    logger.warn('Invalid Suno payload type', { type: typeof payload });
     return {};
   }
 
@@ -328,9 +328,7 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
   for (const key of TASK_ID_KEYS) {
     const candidate = normaliseString(record[key]);
     if (candidate) {
-      import('./logger.ts').then(({ logger }) => {
-        logger.info('Found taskId directly', { key, taskId: candidate });
-      });
+      logger.info('Found taskId directly', { key, taskId: candidate });
       return { taskId: candidate, jobId: normaliseString(record.jobId || record.job_id) ?? null };
     }
   }
@@ -339,9 +337,7 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
   if ('data' in record && record.data && typeof record.data === 'object' && !Array.isArray(record.data)) {
     const result = parseTaskId(record.data);
     if (result.taskId) {
-      import('./logger.ts').then(({ logger }) => {
-        logger.info('Found taskId in data object');
-      });
+      logger.info('Found taskId in data object');
       return result;
     }
   }
@@ -352,9 +348,7 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
     if (first && typeof first === 'object') {
       const result = parseTaskId(first);
       if (result.taskId) {
-        import('./logger.ts').then(({ logger }) => {
-          logger.info('Found taskId in data array');
-        });
+        logger.info('Found taskId in data array');
         return result;
       }
     }
@@ -366,9 +360,7 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
     if (nested && typeof nested === 'object') {
       const result = parseTaskId(nested);
       if (result.taskId) {
-        import('./logger.ts').then(({ logger }) => {
-          logger.info('Found taskId in nested object');
-        });
+        logger.info('Found taskId in nested object');
         return result;
       }
     }
@@ -438,12 +430,10 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
     if (payload.referenceAudioUrl) apiPayload.referenceAudioUrl = payload.referenceAudioUrl;
 
     // Логирование трансформации для отладки
-    import('./logger.ts').then(({ logger }) => {
-      logger.debug('Suno payload transformation', {
-        before: { make_instrumental: payload.make_instrumental },
-        after: { instrumental: apiPayload.instrumental },
-        hasReference: !!payload.referenceAudioUrl
-      });
+    logger.debug('Suno payload transformation', {
+      before: { make_instrumental: payload.make_instrumental },
+      after: { instrumental: apiPayload.instrumental },
+      hasReference: !!payload.referenceAudioUrl
     });
 
           const response = await fetchImpl(endpoint, {
@@ -456,31 +446,27 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           const { json, parseError } = safeParseJson(rawText);
 
           // ✅ ФАЗА 1.1: Полное логирование ответа Suno API
-          import('./logger.ts').then(({ logger }) => {
-            logger.debug('Suno API raw response', {
-              endpoint,
-              status: response.status,
-              bodyLength: rawText.length,
-              bodyPreview: rawText.substring(0, 500),
-              parseError: parseError?.message
-            });
-
-            if (json && typeof json === 'object') {
-              logger.debug('Suno API response structure', {
-                keys: Object.keys(json as Record<string, unknown>),
-                isArray: Array.isArray(json)
-              });
-            }
+          logger.debug('Suno API raw response', {
+            endpoint,
+            status: response.status,
+            bodyLength: rawText.length,
+            bodyPreview: rawText.substring(0, 500),
+            parseError: parseError?.message
           });
+
+          if (json && typeof json === 'object') {
+            logger.debug('Suno API response structure', {
+              keys: Object.keys(json as Record<string, unknown>),
+              isArray: Array.isArray(json)
+            });
+          }
 
           // Handle 429 Rate Limit with exponential backoff
           if (response.status === 429 && retryAttempt < MAX_RETRIES) {
             const backoffMs = BACKOFF_BASE_MS * Math.pow(2, retryAttempt);
-            import('./logger.ts').then(({ logger }) => {
-              logger.warn(`Suno rate limit hit, retry ${retryAttempt + 1}/${MAX_RETRIES}`, {
-                endpoint,
-                backoffMs
-              });
+            logger.warn(`Suno rate limit hit, retry ${retryAttempt + 1}/${MAX_RETRIES}`, {
+              endpoint,
+              backoffMs
             });
             await new Promise(resolve => setTimeout(resolve, backoffMs));
             continue; // Retry same endpoint
