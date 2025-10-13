@@ -14,6 +14,7 @@ import { createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { balanceCache, createCacheHeaders } from "../_shared/cache.ts";
 import { checkRateLimit, rateLimitConfigs } from "../_shared/rate-limit.ts";
+import { performanceMonitor } from "../_shared/performance-monitor.ts";
 
 const corsHeaders = {
   ...createCorsHeaders(),
@@ -21,7 +22,10 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  const requestTimer = performanceMonitor.startTimer('get-mureka-balance-request');
+
   if (req.method === 'OPTIONS') {
+    requestTimer();
     return new Response(null, { headers: corsHeaders });
   }
 
@@ -76,6 +80,7 @@ serve(async (req) => {
     if (cachedBalance) {
       logger.info('💰 Cache hit for Mureka balance');
       const cacheHeaders = createCacheHeaders({ maxAge: 60, staleWhileRevalidate: 300 });
+      requestTimer({ cached: true });
       return new Response(
         JSON.stringify(cachedBalance),
         {
@@ -95,7 +100,9 @@ serve(async (req) => {
     
     logger.info('💰 Fetching Mureka balance');
     
+    const apiTimer = performanceMonitor.startTimer('mureka-api-get-billing');
     const billingData = await murekaClient.getBilling();
+    apiTimer({ provider: 'mureka' });
     
     logger.info('🔍 Mureka billing API response', { 
       rawResponse: billingData,
@@ -157,6 +164,8 @@ serve(async (req) => {
     balanceCache.set(cacheKey, responseData, 300);
 
     const cacheHeaders = createCacheHeaders({ maxAge: 60, staleWhileRevalidate: 300 });
+    requestTimer({ cached: false, success: true });
+    
     return new Response(
       JSON.stringify(responseData),
       {
@@ -173,6 +182,7 @@ serve(async (req) => {
 
   } catch (error) {
     logger.error('🔴 Failed to fetch Mureka balance', { error });
+    requestTimer({ success: false, error: true });
     
     return new Response(
       JSON.stringify({

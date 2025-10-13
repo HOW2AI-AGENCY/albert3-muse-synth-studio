@@ -6,6 +6,7 @@ import { buildSunoHeaders } from "../_shared/suno.ts";
 import { fetchSunoBalance } from "../_shared/suno-balance.ts";
 import { balanceCache, createCacheHeaders } from "../_shared/cache.ts";
 import { checkRateLimit, rateLimitConfigs } from "../_shared/rate-limit.ts";
+import { performanceMonitor } from "../_shared/performance-monitor.ts";
 
 type SunoBalanceAttempt = {
   endpoint: string;
@@ -278,10 +279,12 @@ export const getReplicateBalance = async () => {
 };
 
 export const handler = async (req: Request): Promise<Response> => {
+  const requestTimer = performanceMonitor.startTimer('get-balance-request');
   const corsHeaders = createCorsHeaders(req);
   const securityHeaders = createSecurityHeaders();
 
   if (req.method === 'OPTIONS') {
+    requestTimer();
     return new Response(null, { headers: { ...corsHeaders, ...securityHeaders } });
   }
 
@@ -367,6 +370,7 @@ export const handler = async (req: Request): Promise<Response> => {
     if (cachedBalance) {
       console.log(`Cache hit for ${provider} balance`);
       const cacheHeaders = createCacheHeaders({ maxAge: 60, staleWhileRevalidate: 300 });
+      requestTimer({ cached: true, provider });
       return new Response(JSON.stringify(cachedBalance), {
         status: 200,
         headers: { 
@@ -382,16 +386,20 @@ export const handler = async (req: Request): Promise<Response> => {
 
     let balanceResponse;
 
+    const apiTimer = performanceMonitor.startTimer(`${provider}-api-get-balance`);
     if (provider === 'suno') {
       balanceResponse = await getSunoBalance();
     } else if (provider === 'replicate') {
       balanceResponse = await getReplicateBalance();
     }
+    apiTimer({ provider });
 
     // Cache the response for 5 minutes
     balanceCache.set(cacheKey, balanceResponse, 300);
 
     const cacheHeaders = createCacheHeaders({ maxAge: 60, staleWhileRevalidate: 300 });
+    requestTimer({ cached: false, provider, success: true });
+    
     return new Response(JSON.stringify(balanceResponse), {
       status: 200,
       headers: { 
@@ -406,6 +414,7 @@ export const handler = async (req: Request): Promise<Response> => {
 
   } catch (error) {
     console.error(`Error in get-balance for provider:`, error);
+    requestTimer({ success: false, error: true });
     const message = error instanceof Error ? error.message : 'An unknown error occurred';
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
