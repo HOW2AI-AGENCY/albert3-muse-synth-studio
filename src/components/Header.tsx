@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Music2, LogOut, User } from "lucide-react";
+import { Music2, LogOut, User } from "@/utils/iconImports";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
