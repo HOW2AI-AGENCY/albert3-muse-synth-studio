@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Trash2, Eye, Heart, Calendar, Clock, ExternalLink, GitBranch, Music4, FileText } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Trash2, Eye, Heart, Calendar, Clock, ExternalLink, GitBranch, Music4, FileText, type LucideIcon } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

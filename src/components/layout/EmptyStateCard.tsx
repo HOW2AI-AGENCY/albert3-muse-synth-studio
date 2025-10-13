@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@/utils/iconImports";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface EmptyStateCardProps {

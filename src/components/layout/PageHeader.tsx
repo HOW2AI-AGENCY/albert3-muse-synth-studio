@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@/utils/iconImports";
 import { cn } from "@/lib/utils";
 
 interface PageHeaderProps {

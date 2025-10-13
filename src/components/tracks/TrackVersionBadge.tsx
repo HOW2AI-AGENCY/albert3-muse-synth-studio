@@ -12,7 +12,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { useTrackVersionCount } from "@/features/tracks";
-import { Layers } from "lucide-react";
+import { Layers } from "@/utils/iconImports";
 
 interface TrackVersionBadgeProps {
   /** ID трека для проверки версий */

@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@/utils/iconImports";
 import type { MouseEventHandler, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 

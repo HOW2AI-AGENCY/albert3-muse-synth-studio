@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Loader2, RefreshCcw } from "lucide-react";
+import { Loader2, RefreshCcw } from "@/utils/iconImports";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -110,7 +110,8 @@ export {
   Mail,
   Shield,
   Database,
-  UserPlus
+  UserPlus,
+  ExternalLink
 } from 'lucide-react';
 
 // Charts & Analytics
