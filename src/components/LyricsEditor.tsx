@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { sanitizeLyrics } from "@/utils/sanitizeLyrics";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
@@ -234,7 +235,9 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
   };
 
   const handleSelectVariant = (selectedLyrics: string) => {
-    onLyricsChange(selectedLyrics);
+    // ✅ FIX: Sanitize lyrics before applying
+    const safeLyrics = sanitizeLyrics(selectedLyrics);
+    onLyricsChange(safeLyrics);
     setShowVariantSelector(false);
     setGeneratedJobId(null);
     toast({
@@ -266,7 +269,9 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
 
       if (error) throw error;
 
-      onLyricsChange(data.improvedLyrics);
+      // ✅ FIX: Sanitize improved lyrics before applying
+      const safeLyrics = sanitizeLyrics(data.improvedLyrics);
+      onLyricsChange(safeLyrics);
       
       toast({
         title: "✨ Текст улучшен!",
@@ -502,7 +507,7 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
                 
                 {showPreview ? (
                   <div className="bg-muted/50 p-4 rounded-lg max-h-64 overflow-y-auto">
-                    <pre className="whitespace-pre-wrap text-sm font-sans">{lyrics}</pre>
+                    <pre className="whitespace-pre-wrap text-sm font-sans">{sanitizeLyrics(lyrics)}</pre>
                   </div>
                 ) : (
                   <Textarea

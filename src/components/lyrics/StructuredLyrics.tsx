@@ -1,13 +1,18 @@
 import { parseLyrics } from "@/utils/lyricsParser";
+import { sanitizeLyrics } from "@/utils/sanitizeLyrics";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useMemo } from "react";
 
 interface StructuredLyricsProps {
   lyrics: string;
 }
 
 export const StructuredLyrics = ({ lyrics }: StructuredLyricsProps) => {
-  if (!lyrics || lyrics.trim().length === 0) {
+  // ✅ FIX: Sanitize lyrics to prevent XSS
+  const safeLyrics = useMemo(() => sanitizeLyrics(lyrics), [lyrics]);
+
+  if (!safeLyrics || safeLyrics.trim().length === 0) {
     return (
       <Card className="border-dashed">
         <CardContent className="py-8 text-center">
@@ -17,7 +22,7 @@ export const StructuredLyrics = ({ lyrics }: StructuredLyricsProps) => {
     );
   }
 
-  const sections = parseLyrics(lyrics);
+  const sections = parseLyrics(safeLyrics);
 
   return (
     <div className="space-y-4">
