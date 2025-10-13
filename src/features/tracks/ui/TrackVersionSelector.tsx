@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarClock, Star, Play, Pause, ArrowLeftRight } from "lucide-react";
+import { CalendarClock, Star, Play, Pause, ArrowLeftRight } from "@/utils/iconImports";
 import {
   Select,
   SelectContent,

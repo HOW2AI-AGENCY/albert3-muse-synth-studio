@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sparkles, Music2, Wand2, FileText, Eye, Music } from "lucide-react";
+import { Sparkles, Music2, Wand2, FileText, Eye, Music } from "@/utils/iconImports";
 import { useToast } from "@/hooks/use-toast";
 import { ApiService } from "@/services/api.service";
 import { supabase } from "@/integrations/supabase/client";

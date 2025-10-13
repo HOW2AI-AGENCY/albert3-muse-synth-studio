@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Music, Library, Settings, Sparkles, Heart, Download, TrendingUp, Eye } from "lucide-react";
+import { Music, Library, Settings, Sparkles, Heart, Download, TrendingUp, Eye } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

@@ -1,5 +1,5 @@
 import { memo, useMemo, useCallback } from "react";
-import { Play, Pause, ArrowLeftRight, Star, Clock } from "lucide-react";
+import { Play, Pause, ArrowLeftRight, Star, Clock } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

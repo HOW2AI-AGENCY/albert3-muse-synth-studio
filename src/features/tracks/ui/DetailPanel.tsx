@@ -1,5 +1,5 @@
 import { useReducer, useEffect, useCallback, useMemo } from "react";
-import { X, Info, GitBranch, Music4 } from "lucide-react";
+import { X, Info, GitBranch, Music4 } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

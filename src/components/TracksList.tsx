@@ -4,7 +4,7 @@ import { TrackListItem } from "@/features/tracks/components/TrackListItem";
 import { ViewSwitcher } from "./tracks/ViewSwitcher";
 import { LoadingSkeleton as Skeleton } from "./ui/LoadingSkeleton";
 import { Track, ApiService } from "@/services/api.service";
-import { Music } from "lucide-react";
+import { Music } from "@/utils/iconImports";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { supabase } from "@/integrations/supabase/client";

@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { Settings as SettingsIcon, User, LogOut, Bell, Shield, Palette, Database } from "lucide-react";
+import { Settings as SettingsIcon, User, LogOut, Bell, Shield, Palette, Database } from "@/utils/iconImports";
 import { logger } from "@/utils/logger";
 
 const Settings = () => {

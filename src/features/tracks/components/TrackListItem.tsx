@@ -15,7 +15,7 @@ import {
   Trash2,
   Split,
   MoreVertical,
-} from "lucide-react";
+} from "@/utils/iconImports";
 import {
   DropdownMenu,
   DropdownMenuContent,

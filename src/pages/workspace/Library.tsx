@@ -13,7 +13,7 @@ import {
   SortAsc,
   SortDesc,
   Loader2,
-} from "lucide-react";
+} from "@/utils/iconImports";
 import { TrackCard, TrackListItem } from "@/features/tracks";
 import { OptimizedTrackList } from "@/components/OptimizedTrackList";
 import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";

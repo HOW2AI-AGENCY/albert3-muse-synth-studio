@@ -1,4 +1,4 @@
-import { Download, Heart, Music2, Play, Share2 } from "lucide-react";
+import { Download, Heart, Music2, Play, Share2 } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";

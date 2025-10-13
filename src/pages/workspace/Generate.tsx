@@ -5,7 +5,7 @@ const DetailPanel = lazy(() => import("@/features/tracks/ui/DetailPanel").then(m
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus } from "@/utils/iconImports";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import {
   ResizablePanelGroup,

@@ -2,7 +2,7 @@ import { useState, memo, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, Star, Music2, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { Play, Pause, Star, Music2, ChevronDown, ChevronUp, Trash2 } from "@/utils/iconImports";
 import { toast } from "sonner";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";

@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Search } from "@/utils/iconImports";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";

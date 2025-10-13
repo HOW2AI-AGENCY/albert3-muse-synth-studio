@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, User, Mail, Shield } from "lucide-react";
+import { Loader2, User, Mail, Shield } from "@/utils/iconImports";
 import { logger } from "@/utils/logger";
 
 interface Profile {

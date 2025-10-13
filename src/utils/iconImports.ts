@@ -36,7 +36,8 @@ export {
   SkipBack,
   SkipForward,
   Repeat,
-  Star
+  Star,
+  Split
 } from 'lucide-react';
 
 // UI Controls
@@ -48,10 +49,12 @@ export {
   ChevronRight,
   ChevronUp,
   MoreHorizontal,
+  MoreVertical,
   Menu,
   Search,
   Settings,
   SlidersHorizontal,
+  Sliders,
   Eye,
   EyeOff,
   Palette
@@ -78,10 +81,26 @@ export {
   GripVertical,
   Minimize2,
   Maximize2,
+  Expand,
   Share2,
   Info,
   Clock,
-  Calendar
+  Calendar,
+  CalendarClock,
+  Globe,
+  GitBranch,
+  ArrowLeftRight,
+  RefreshCcw,
+  Grid3X3,
+  SortAsc,
+  SortDesc,
+  Headphones,
+  Library,
+  Mail,
+  Shield,
+  Database,
+  UserPlus,
+  Mic2
 } from 'lucide-react';
 
 // Charts & Analytics
