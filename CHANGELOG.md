@@ -4,6 +4,33 @@
 
 ## [Unreleased]
 
+### 📚 Documentation & Repository Structure (Phase 1.1)
+
+#### ✨ Added - Architecture Diagrams
+- **Data Flow Architecture** (`docs/diagrams/data-flow-architecture.md`):
+  - Complete system data flow visualization (5 core flows)
+  - Authentication & Authorization flow
+  - Music Generation Pipeline flow
+  - Real-time Subscriptions flow
+  - File Upload & Storage flow
+  - Audio Playback & Streaming flow
+- **Stem Separation Flow** (`docs/diagrams/stem-separation-flow.md`):
+  - Detailed sequence diagram for audio separation
+  - Two separation modes (separate_vocal, split_stem)
+  - Complete state machine and error handling
+- **Repository Map** (`docs/REPOSITORY_MAP.md`):
+  - Visual navigation guide for the entire codebase
+  - Color-coded directory structure
+  - Quick reference for key files and modules
+
+#### 🔧 Changed - Navigation & Index
+- Updated `docs/INDEX.md` with all new diagrams and Sprint 27 status
+- Updated `project-management/NAVIGATION_INDEX.md` with current structure
+- Updated `project-management/tasks/current-sprint.md` (Sprint 27 progress)
+- Updated `docs/ROADMAP.md` with Q4 2025 - Q1 2026 timeline
+
+---
+
 ## [2.7.1] - 2025-10-13
 
 ### 🎨 UI/UX Complete Overhaul (P0-P1)
