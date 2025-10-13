@@ -32,8 +32,17 @@
 ### Архитектура
 - architecture/ARCHITECTURE.md - Общая архитектура
 - ARCHITECTURE_DIAGRAMS.md ⭐ NEW - Диаграммы (Mermaid)
- - architecture/PROJECT_MAP.md ⭐ NEW - Карта проекта (структура и потоки)
- - architecture/KNOWLEDGE_GRAPH.md ⭐ NEW - Граф знаний (сущности и связи)
+- architecture/PROJECT_MAP.md ⭐ NEW - Карта проекта (структура и потоки)
+- architecture/KNOWLEDGE_GRAPH.md ⭐ NEW - Граф знаний (сущности и связи)
+- REPOSITORY_MAP.md ⭐ NEW - Навигация по репозиторию (13.10.2025)
+
+### Диаграммы системы
+- diagrams/system-architecture.md - Системная архитектура
+- diagrams/data-flow-architecture.md ⭐ NEW - Потоки данных (13.10.2025)
+- diagrams/database-erd.md ⭐ NEW - ER-диаграмма БД (13.10.2025)
+- diagrams/music-generation-flow.md - Генерация музыки
+- diagrams/stem-separation-flow.md ⭐ NEW - Разделение стемов (13.10.2025)
+- diagrams/user-journey-map.md ⭐ NEW - Путь пользователя (13.10.2025)
 
 ### API
 - api/API.md - API документация
@@ -71,6 +80,7 @@
 
 ---
 
-⭐ **UPDATED** - Актуализировано в Sprint 24 (неделя 0)
+⭐ **NEW** - Создано в Sprint 27 (13.10.2025)
+⭐ **UPDATED** - Актуализировано в Sprint 24-27
 
-*Обновлено: 16 октября 2025*
+*Обновлено: 13 октября 2025*
