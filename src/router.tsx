@@ -8,18 +8,18 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import WorkspaceLayout from "./components/workspace/WorkspaceLayout";
 
 // Lazy routes (code splitting)
-const LazyDashboard = lazy(() => import("./pages/workspace/Dashboard"));
-const LazyGenerate = lazy(() => import("./pages/workspace/Generate"));
-const LazyLibrary = lazy(() => import("./pages/workspace/Library"));
+const Dashboard = lazy(() => import("./pages/workspace/Dashboard"));
+const Generate = lazy(() => import("./pages/workspace/Generate"));
+const Library = lazy(() => import("./pages/workspace/Library"));
 const UploadAudio = lazy(() => import("./pages/workspace/UploadAudio"));
-const LazyFavorites = lazy(() => import("./pages/workspace/Favorites"));
-const LazyAnalytics = lazy(() => import("./pages/workspace/Analytics"));
-const LazySettings = lazy(() => import("./pages/workspace/Settings"));
+const Favorites = lazy(() => import("./pages/workspace/Favorites"));
+const Analytics = lazy(() => import("./pages/workspace/Analytics"));
+const Settings = lazy(() => import("./pages/workspace/Settings"));
 
-const LazyAdmin = lazy(() => import("./pages/workspace/Admin"));
-const LazyProfile = lazy(() => import("./pages/workspace/Profile"));
-const LazyMetrics = lazy(() => import("./pages/workspace/Metrics"));
-const LazyEdgeFunctionsDebug = lazy(() => import("./pages/debug/EdgeFunctionsDebug"));
+const Admin = lazy(() => import("./pages/workspace/Admin"));
+const Profile = lazy(() => import("./pages/workspace/Profile"));
+const Metrics = lazy(() => import("./pages/workspace/Metrics"));
+const EdgeFunctionsDebug = lazy(() => import("./pages/debug/EdgeFunctionsDebug"));
 
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center min-h-[200px]">
@@ -35,7 +35,7 @@ export const router = createBrowserRouter(
       path: "/debug/edge-functions",
       element: (
         <Suspense fallback={<LoadingSpinner />}>
-          <LazyEdgeFunctionsDebug />
+          <EdgeFunctionsDebug />
         </Suspense>
       ),
     },
@@ -51,7 +51,7 @@ export const router = createBrowserRouter(
           path: "dashboard",
           element: (
             <Suspense fallback={<LoadingSpinner />}>
-              <LazyDashboard />
+              <Dashboard />
             </Suspense>
           ),
         },
@@ -59,7 +59,7 @@ export const router = createBrowserRouter(
           path: "generate",
           element: (
             <Suspense fallback={<LoadingSpinner />}>
-              <LazyGenerate />
+              <Generate />
             </Suspense>
           ),
         },
@@ -67,7 +67,7 @@ export const router = createBrowserRouter(
           path: "library",
           element: (
             <Suspense fallback={<LoadingSpinner />}>
-              <LazyLibrary />
+              <Library />
             </Suspense>
           ),
         },
@@ -83,7 +83,7 @@ export const router = createBrowserRouter(
           path: "favorites",
           element: (
             <Suspense fallback={<LoadingSpinner />}>
-              <LazyFavorites />
+              <Favorites />
             </Suspense>
           ),
         },
@@ -91,7 +91,7 @@ export const router = createBrowserRouter(
           path: "analytics",
           element: (
             <Suspense fallback={<LoadingSpinner />}>
-              <LazyAnalytics />
+              <Analytics />
             </Suspense>
           ),
         },
@@ -99,7 +99,7 @@ export const router = createBrowserRouter(
           path: "metrics",
           element: (
             <Suspense fallback={<LoadingSpinner />}>
-              <LazyMetrics />
+              <Metrics />
             </Suspense>
           ),
         },
@@ -107,7 +107,7 @@ export const router = createBrowserRouter(
           path: "settings",
           element: (
             <Suspense fallback={<LoadingSpinner />}>
-              <LazySettings />
+              <Settings />
             </Suspense>
           ),
         },
@@ -115,7 +115,7 @@ export const router = createBrowserRouter(
           path: "profile",
           element: (
             <Suspense fallback={<LoadingSpinner />}>
-              <LazyProfile />
+              <Profile />
             </Suspense>
           ),
         },
@@ -123,7 +123,7 @@ export const router = createBrowserRouter(
           path: "admin",
           element: (
             <Suspense fallback={<LoadingSpinner />}>
-              <LazyAdmin />
+              <Admin />
             </Suspense>
           ),
         },
