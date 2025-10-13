@@ -24,6 +24,7 @@ import { AudioRecorder } from '@/components/audio/AudioRecorder';
 import { ProviderSelector } from '@/components/mureka/ProviderSelector';
 import { MurekaBalanceDisplay } from '@/components/mureka/MurekaBalanceDisplay';
 import { logger } from '@/utils/logger';
+import { getProviderModels, getDefaultModel, type MusicProvider as ProviderType, type ModelVersion } from '@/config/provider-models';
 
 interface MusicGeneratorV2Props {
   onTrackGenerated?: () => void;
@@ -31,21 +32,6 @@ interface MusicGeneratorV2Props {
 
 type VocalGender = 'any' | 'female' | 'male' | 'instrumental';
 type GeneratorMode = 'simple' | 'custom';
-
-const sunoModelVersions = [
-  { value: 'V5', label: 'v5' },
-  { value: 'V4_5PLUS', label: 'v4.5+' },
-  { value: 'V4_5', label: 'v4.5' },
-  { value: 'V4', label: 'v4' },
-  { value: 'V3_5', label: 'v3.5' },
-];
-
-const murekaModelVersions = [
-  { value: 'auto', label: 'Auto' },
-  { value: 'mureka-6', label: 'v6' },
-  { value: 'mureka-7.5', label: 'v7.5' },
-  { value: 'mureka-o1', label: 'O1' },
-];
 
 const vocalGenderOptions: { value: VocalGender; label: string }[] = [
   { value: 'any', label: 'Любой' },
@@ -56,6 +42,9 @@ const vocalGenderOptions: { value: VocalGender; label: string }[] = [
 
 const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) => {
   const { generateMusic, isGenerating, selectedProvider, setProvider } = useMusicGenerationStore();
+  
+  // Get model versions based on selected provider
+  const currentModels = getProviderModels(selectedProvider as ProviderType);
   const { toast } = useToast();
   const { vibrate } = useHapticFeedback();
   const { uploadAudio, isUploading } = useAudioUpload();
@@ -91,10 +80,11 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
 
   // Sync provider selection with global state and update model version
   useEffect(() => {
+    const defaultModel = getDefaultModel(selectedProvider as ProviderType);
     setParams(prev => ({ 
       ...prev, 
       provider: selectedProvider,
-      modelVersion: selectedProvider === 'mureka' ? 'auto' : 'V5'
+      modelVersion: defaultModel.value
     }));
   }, [selectedProvider]);
 
@@ -290,7 +280,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {(selectedProvider === 'mureka' ? murekaModelVersions : sunoModelVersions).map(m => (
+              {currentModels.map((m: ModelVersion) => (
                 <SelectItem key={m.value} value={m.value} className="text-xs">{m.label}</SelectItem>
               ))}
             </SelectContent>

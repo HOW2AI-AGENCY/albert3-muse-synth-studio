@@ -11,6 +11,20 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
+          'query-vendor': ['@tanstack/react-query'],
+          'animation-vendor': ['framer-motion'],
+          'chart-vendor': ['recharts'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
+  },
   optimizeDeps: {
     force: true,
     include: [
@@ -18,6 +32,9 @@ export default defineConfig(({ mode }) => ({
       '@radix-ui/react-dialog',
       '@radix-ui/react-dropdown-menu',
       '@radix-ui/react-tooltip',
+      '@radix-ui/react-select',
+      'framer-motion',
+      '@tanstack/react-query',
     ],
   },
   plugins: [
