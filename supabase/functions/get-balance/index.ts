@@ -4,6 +4,7 @@ import { createSecurityHeaders } from "../_shared/security.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { buildSunoHeaders } from "../_shared/suno.ts";
 import { fetchSunoBalance } from "../_shared/suno-balance.ts";
+import { balanceCache, createCacheHeaders } from "../_shared/cache.ts";
 
 type SunoBalanceAttempt = {
   endpoint: string;
@@ -333,6 +334,25 @@ export const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    // Check cache first
+    const cacheKey = `balance:${provider}:${user.id}`;
+    const cachedBalance = balanceCache.get(cacheKey);
+    
+    if (cachedBalance) {
+      console.log(`Cache hit for ${provider} balance`);
+      const cacheHeaders = createCacheHeaders({ maxAge: 60, staleWhileRevalidate: 300 });
+      return new Response(JSON.stringify(cachedBalance), {
+        status: 200,
+        headers: { 
+          ...corsHeaders, 
+          ...securityHeaders, 
+          ...cacheHeaders,
+          'Content-Type': 'application/json',
+          'X-Cache': 'HIT',
+        },
+      });
+    }
+
     let balanceResponse;
 
     if (provider === 'suno') {
@@ -341,9 +361,19 @@ export const handler = async (req: Request): Promise<Response> => {
       balanceResponse = await getReplicateBalance();
     }
 
+    // Cache the response for 5 minutes
+    balanceCache.set(cacheKey, balanceResponse, 300);
+
+    const cacheHeaders = createCacheHeaders({ maxAge: 60, staleWhileRevalidate: 300 });
     return new Response(JSON.stringify(balanceResponse), {
       status: 200,
-      headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
+      headers: { 
+        ...corsHeaders, 
+        ...securityHeaders, 
+        ...cacheHeaders,
+        'Content-Type': 'application/json',
+        'X-Cache': 'MISS',
+      },
     });
 
   } catch (error) {

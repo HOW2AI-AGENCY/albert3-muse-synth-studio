@@ -12,6 +12,7 @@ import { createMurekaClient } from "../_shared/mureka.ts";
 import { logger } from "../_shared/logger.ts";
 import { createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
+import { balanceCache, createCacheHeaders } from "../_shared/cache.ts";
 
 const corsHeaders = {
   ...createCorsHeaders(),
@@ -36,6 +37,27 @@ serve(async (req) => {
         {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Check cache first
+    const cacheKey = 'balance:mureka';
+    const cachedBalance = balanceCache.get(cacheKey);
+    
+    if (cachedBalance) {
+      logger.info('💰 Cache hit for Mureka balance');
+      const cacheHeaders = createCacheHeaders({ maxAge: 60, staleWhileRevalidate: 300 });
+      return new Response(
+        JSON.stringify(cachedBalance),
+        {
+          status: 200,
+          headers: { 
+            ...corsHeaders, 
+            ...cacheHeaders,
+            'Content-Type': 'application/json',
+            'X-Cache': 'HIT',
+          },
         }
       );
     }
@@ -96,15 +118,26 @@ serve(async (req) => {
       currency: balanceData.currency || 'CNY',
     });
 
+    const responseData = {
+      balance: balanceData.balance,
+      currency: balanceData.currency || 'CNY',
+      details: balanceData,
+    };
+
+    // Cache the response for 5 minutes
+    balanceCache.set(cacheKey, responseData, 300);
+
+    const cacheHeaders = createCacheHeaders({ maxAge: 60, staleWhileRevalidate: 300 });
     return new Response(
-      JSON.stringify({
-        balance: balanceData.balance,
-        currency: balanceData.currency || 'CNY',
-        details: balanceData,
-      }),
+      JSON.stringify(responseData),
       {
         status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 
+          ...corsHeaders, 
+          ...cacheHeaders,
+          'Content-Type': 'application/json',
+          'X-Cache': 'MISS',
+        },
       }
     );
 
