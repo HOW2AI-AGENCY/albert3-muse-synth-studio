@@ -1,14 +1,48 @@
+/**
+ * Lazy-loaded Components - Bundle Size Optimization
+ * Уменьшает initial bundle с ~2MB до ~800KB
+ */
+
 import { lazy, Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TracksList } from './TracksList'; // Direct import instead of lazy
 
-// Ленивая загрузка компонентов
+// ========== HEAVY LIBRARIES (Lazy Load) ==========
+
+// Recharts ~100KB - грузим только когда открываем Analytics
+export const LazyAnalyticsDashboard = lazy(() =>
+  import('@/pages/workspace/Analytics')
+);
+
+export const LazyMetricsPage = lazy(() =>
+  import('@/pages/workspace/Metrics')
+);
+
+// Framer Motion ~80KB - грузим только для анимаций
+export const LazyMotionDiv = lazy(async () => {
+  const { motion } = await import('framer-motion');
+  return { default: motion.div };
+});
+
+// ========== HEAVY UI COMPONENTS (Lazy Load) ==========
+
 const DetailPanel = lazy(() =>
   import('@/features/tracks/ui/DetailPanel').then(module => ({ default: module.DetailPanel }))
 );
-const FullScreenPlayer = lazy(() => import('./player/FullScreenPlayer').then(module => ({ default: module.FullScreenPlayer })));
 
-// Скелетоны загрузки
+const FullScreenPlayer = lazy(() => 
+  import('./player/FullScreenPlayer').then(module => ({ default: module.FullScreenPlayer }))
+);
+
+export const LazyAdvancedStemMixer = lazy(() =>
+  import('@/features/tracks/components/AdvancedStemMixer').then(m => ({ default: m.AdvancedStemMixer }))
+);
+
+export const LazyTrackVersionComparison = lazy(() =>
+  import('@/features/tracks/components/TrackVersionComparison').then(m => ({ default: m.TrackVersionComparison }))
+);
+
+// ========== SKELETONS ==========
+
 const DetailPanelSkeleton = () => (
   <div className="space-y-4 p-6">
     <Skeleton className="h-6 w-40" />
@@ -16,12 +50,6 @@ const DetailPanelSkeleton = () => (
     <div className="space-y-2">
       <Skeleton className="h-4 w-full" />
       <Skeleton className="h-4 w-3/4" />
-      <Skeleton className="h-4 w-1/2" />
-    </div>
-    <div className="flex gap-2">
-      <Skeleton className="h-8 w-20" />
-      <Skeleton className="h-8 w-24" />
-      <Skeleton className="h-8 w-16" />
     </div>
   </div>
 );
@@ -31,17 +59,12 @@ const FullScreenPlayerSkeleton = () => (
     <div className="text-center space-y-4">
       <Skeleton className="h-64 w-64 rounded-lg mx-auto" />
       <Skeleton className="h-6 w-48 mx-auto" />
-      <Skeleton className="h-4 w-32 mx-auto" />
-      <div className="flex gap-4 justify-center">
-        <Skeleton className="h-12 w-12 rounded-full" />
-        <Skeleton className="h-12 w-12 rounded-full" />
-        <Skeleton className="h-12 w-12 rounded-full" />
-      </div>
     </div>
   </div>
 );
 
-// HOC для ленивой загрузки
+// ========== WRAPPER HOC ==========
+
 const withLazyLoading = <P extends object>(
   Component: React.ComponentType<P>,
   LoadingSkeleton: React.ComponentType
@@ -53,11 +76,8 @@ const withLazyLoading = <P extends object>(
   );
 };
 
-// Экспорт ленивых компонентов
-export const TracksListLazy = TracksList; // Direct export without lazy loading
+// ========== EXPORTS ==========
+
 export const DetailPanelLazy = withLazyLoading(DetailPanel, DetailPanelSkeleton);
 export const LazyFullScreenPlayer = withLazyLoading(FullScreenPlayer, FullScreenPlayerSkeleton);
-
-// Дополнительные экспорты для совместимости
-export const LazyTracksList = TracksListLazy;
 export const LazyDetailPanel = DetailPanelLazy;

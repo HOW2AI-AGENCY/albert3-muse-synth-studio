@@ -7,9 +7,9 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import WorkspaceLayout from "./components/workspace/WorkspaceLayout";
 
-// Lazy routes
+// Lazy routes (code splitting)
 const LazyDashboard = lazy(() => import("./pages/workspace/Dashboard"));
-import Generate from "./pages/workspace/Generate";
+const LazyGenerate = lazy(() => import("./pages/workspace/Generate"));
 const LazyLibrary = lazy(() => import("./pages/workspace/Library"));
 const UploadAudio = lazy(() => import("./pages/workspace/UploadAudio"));
 const LazyFavorites = lazy(() => import("./pages/workspace/Favorites"));
@@ -57,7 +57,11 @@ export const router = createBrowserRouter(
         },
         {
           path: "generate",
-          element: <Generate />,
+          element: (
+            <Suspense fallback={<LoadingSpinner />}>
+              <LazyGenerate />
+            </Suspense>
+          ),
         },
         {
           path: "library",

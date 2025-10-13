@@ -53,7 +53,8 @@ export {
   Settings,
   SlidersHorizontal,
   Eye,
-  EyeOff
+  EyeOff,
+  Palette
 } from 'lucide-react';
 
 // File Operations

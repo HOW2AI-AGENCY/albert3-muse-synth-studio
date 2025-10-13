@@ -15,15 +15,36 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
+          // Core dependencies
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
+          
+          // UI framework (Radix UI components)
+          'ui-vendor': [
+            '@radix-ui/react-dialog', 
+            '@radix-ui/react-dropdown-menu', 
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-tooltip',
+            '@radix-ui/react-popover'
+          ],
+          
+          // Data fetching
           'query-vendor': ['@tanstack/react-query'],
+          
+          // Heavy visualization libraries (lazy loaded on demand)
           'animation-vendor': ['framer-motion'],
           'chart-vendor': ['recharts'],
+          
+          // Supabase
+          'supabase-vendor': ['@supabase/supabase-js'],
+          
+          // Icons (tree-shaken via iconImports.ts)
+          'icons-vendor': ['lucide-react'],
         },
       },
     },
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 800, // Снижен с 1000
+    sourcemap: false, // Отключаем sourcemaps в production для уменьшения размера
   },
   optimizeDeps: {
     force: true,
