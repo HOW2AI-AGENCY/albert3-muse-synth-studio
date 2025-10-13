@@ -7,19 +7,27 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import WorkspaceLayout from "./components/workspace/WorkspaceLayout";
 
-// Lazy routes (code splitting)
+// ========== LAZY ROUTES (Code Splitting) ==========
+// Critical path - minimal chunks
 const Dashboard = lazy(() => import("./pages/workspace/Dashboard"));
 const Generate = lazy(() => import("./pages/workspace/Generate"));
 const Library = lazy(() => import("./pages/workspace/Library"));
+
+// Secondary routes - separate chunks
 const UploadAudio = lazy(() => import("./pages/workspace/UploadAudio"));
 const Favorites = lazy(() => import("./pages/workspace/Favorites"));
-const Analytics = lazy(() => import("./pages/workspace/Analytics"));
 const Settings = lazy(() => import("./pages/workspace/Settings"));
-
-const Admin = lazy(() => import("./pages/workspace/Admin"));
 const Profile = lazy(() => import("./pages/workspace/Profile"));
+
+// Heavy routes - isolated chunks (recharts)
+const Analytics = lazy(() => import("./pages/workspace/Analytics"));
 const Metrics = lazy(() => import("./pages/workspace/Metrics"));
+
+// Admin routes - separate chunk
+const Admin = lazy(() => import("./pages/workspace/Admin"));
 const Monitoring = lazy(() => import("./pages/workspace/Monitoring"));
+
+// Debug route
 const EdgeFunctionsDebug = lazy(() => import("./pages/debug/EdgeFunctionsDebug"));
 
 const LoadingSpinner = () => (

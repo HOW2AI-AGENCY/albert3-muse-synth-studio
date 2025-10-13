@@ -41,6 +41,10 @@ export const LazyTrackVersionComparison = lazy(() =>
   import('@/features/tracks/components/TrackVersionComparison').then(m => ({ default: m.TrackVersionComparison }))
 );
 
+export const LazyTrackVersionMetadataPanel = lazy(() =>
+  import('@/features/tracks/components/TrackVersionMetadataPanel').then(m => ({ default: m.TrackVersionMetadataPanel }))
+);
+
 // ========== SKELETONS ==========
 
 const DetailPanelSkeleton = () => (
@@ -81,3 +85,12 @@ const withLazyLoading = <P extends object>(
 export const DetailPanelLazy = withLazyLoading(DetailPanel, DetailPanelSkeleton);
 export const LazyFullScreenPlayer = withLazyLoading(FullScreenPlayer, FullScreenPlayerSkeleton);
 export const LazyDetailPanel = DetailPanelLazy;
+
+// ========== PRELOADING ==========
+
+/**
+ * Предзагрузка критических компонентов при первом взаимодействии
+ */
+export const preloadDetailPanel = () => import('@/features/tracks/ui/DetailPanel');
+export const preloadStemMixer = () => import('@/features/tracks/components/AdvancedStemMixer');
+export const preloadVersionComparison = () => import('@/features/tracks/components/TrackVersionComparison');
