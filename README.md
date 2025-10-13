@@ -1,32 +1,26 @@
-# 🎵 Albert3 Muse Synth Studio
+# 🎵 Albert3 Muse Synth Studio v2.7.1
 
 <div align="center">
 
-![Albert3 Logo](src/assets/logo.png)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
+![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 
-**Профессиональная студия для создания музыки с использованием ИИ**
+![CI Status](https://img.shields.io/github/actions/workflow/status/HOW2AI-AGENCY/albert3-muse-synth-studio/ci.yml?branch=main&style=for-the-badge&label=CI)
+![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)
+![Issues](https://img.shields.io/github/issues/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)
+![Last Commit](https://img.shields.io/github/last-commit/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)
+![Contributors](https://img.shields.io/github/contributors/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-[![CI](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/actions/workflows/ci.yml)
-[![Docs Update](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/actions/workflows/docs-update.yml/badge.svg)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/actions/workflows/docs-update.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+**Профессиональная AI-студия для создания музыки**
 
-[![GitHub Stars](https://img.shields.io/github/stars/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/stargazers)
-[![Open Issues](https://img.shields.io/github/issues/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/issues)
-[![Open PRs](https://img.shields.io/github/issues-pr/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/pulls)
-[![Last Commit](https://img.shields.io/github/last-commit/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/commits)
-[![Contributors](https://img.shields.io/github/contributors/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/graphs/contributors)
-[![Top Language](https://img.shields.io/github/languages/top/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio)
-[![Code Size](https://img.shields.io/github/languages/code-size/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio)
-[![Repo Size](https://img.shields.io/github/repo-size/HOW2AI-AGENCY/albert3-muse-synth-studio?style=for-the-badge)](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio)
+[🚀 Live Demo](http://localhost:5173) • [📚 Документация](docs/INDEX.md) • [🐛 Баг-репорты](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/issues) • [💡 Предложения](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/discussions)
 
-**Версия кодовой базы:** 2.6.3 | **Документация обновлена:** 12 октября 2025 | **Статус:** Стабильная поддержка (завершён Sprint 25)
-
-[🚀 Демо](http://localhost:5173) • [📖 Документация](#-документация) • [🛠️ Установка](#️-установка) • [🎯 Функции](#-основные-функции) • [🔗 Репозиторий](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio)
+**Последнее обновление:** 13 октября 2025  
+**Текущий спринт:** Sprint 27  
+**Статус:** 🟢 Активная разработка
 
 </div>
 
@@ -62,21 +56,23 @@
 
 ### 📚 **Документация**
 - [📚 Индекс документации](docs/INDEX.md)
-- [🧭 Developer Control Center](docs/DEVELOPER_DASHBOARD.md)
-- [🏗️ Архитектурный обзор](docs/architecture-overview.md)
+- [🏗️ Архитектурный обзор](docs/ARCHITECTURE.md)
+- [🗄️ Схема БД](docs/DATABASE_SCHEMA.md)
 - [🔌 API и интеграции](docs/api/API.md)
-- [🧩 Реестр UI компонентов](docs/interface/COMPONENT_SYSTEM.md)
 - [🎧 Руководство пользователя](docs/USER_GUIDE.md)
+- [🗺️ User Journey](docs/diagrams/user-journey-map.md)
+- [🗄️ Database ERD](docs/diagrams/database-erd.md)
 
 </td>
 <td width="50%">
 
 ### 📋 **Управление проектом**
 - [📊 Доска статусов](project-management/tasks/STATUS_DASHBOARD.md)
-- [✅ Итоги Sprint 24](project-management/tasks/current-sprint.md)
+- [🚀 Текущий спринт (Sprint 27)](project-management/tasks/current-sprint.md)
 - [📋 Бэклог задач](project-management/tasks/backlog.md)
-- [🔧 Реестр техдолга](project-management/TECHNICAL_DEBT_PLAN.md)
+- [🎯 Roadmap](docs/ROADMAP.md)
 - [🧭 Навигация по проекту](project-management/NAVIGATION_INDEX.md)
+- [📊 Отчеты](project-management/reports/)
 
 </td>
 </tr>
@@ -85,19 +81,19 @@
 
 ### 🛠️ **Для разработчиков**
 - [⚙️ Руководство по установке](SETUP-GUIDE.md)
+- [👨‍💻 Developer Guide](docs/DEVELOPER_GUIDE.md)
 - [🤝 Руководство по участию](project-management/CONTRIBUTING.md)
-- [📋 Быстрый справочник](project-management/QUICK-REFERENCE.md)
-- [🧪 План аудита и QA](project-management/tasks/audit-remediation-plan.md)
+- [🔧 Troubleshooting](docs/TROUBLESHOOTING.md)
 - [🔄 Рабочие процессы](project-management/workflows/development.md)
 
 </td>
 <td width="50%">
 
-### 📊 **Отчеты**
+### 📊 **Отчеты & Аналитика**
 - [🗂️ Индекс отчетов](project-management/reports/README.md)
-- [🆕 Репо-аудит 16.10.2025](project-management/reports/2025-10-16-repo-audit.md)
-- [📁 Репо-аудит 15.10.2025](project-management/reports/2025-10-15-repo-audit.md)
+- [🆕 Реорганизация 13.10.2025](project-management/reports/2025-10-13-repository-reorganization.md)
 - [📊 Sprint 23 Report](project-management/reports/sprint-23-report.md)
+- [📁 Архив](archive/)
 - [🔒 Безопасность](reports/security/SECURITY.md)
 - [⚡ Производительность](reports/performance/PERFORMANCE.md)
 - [🗂️ Архив](archive/README.md)
