@@ -13,6 +13,7 @@ import { logger } from "../_shared/logger.ts";
 import { createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { balanceCache, createCacheHeaders } from "../_shared/cache.ts";
+import { checkRateLimit, rateLimitConfigs } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   ...createCorsHeaders(),
@@ -25,6 +26,33 @@ serve(async (req) => {
   }
 
   try {
+    // Extract user identifier
+    const authHeader = req.headers.get('Authorization');
+    const userId = authHeader ? authHeader.split(' ')[1]?.substring(0, 20) : 
+                   req.headers.get('x-forwarded-for') || 'anonymous';
+
+    // Check rate limit
+    const { allowed, headers: rateLimitHeaders } = checkRateLimit(
+      userId, 
+      rateLimitConfigs.balance
+    );
+
+    if (!allowed) {
+      logger.warn('Rate limit exceeded for Mureka balance check', { userId });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Too many requests. Please try again later.' 
+        }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            ...rateLimitHeaders,
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
+    }
     const murekaApiKey = Deno.env.get('MUREKA_API_KEY');
     if (!murekaApiKey) {
       logger.info('⚠️ MUREKA_API_KEY not configured - returning mock balance');
@@ -53,7 +81,8 @@ serve(async (req) => {
         {
           status: 200,
           headers: { 
-            ...corsHeaders, 
+            ...corsHeaders,
+            ...rateLimitHeaders,
             ...cacheHeaders,
             'Content-Type': 'application/json',
             'X-Cache': 'HIT',
@@ -133,7 +162,8 @@ serve(async (req) => {
       {
         status: 200,
         headers: { 
-          ...corsHeaders, 
+          ...corsHeaders,
+          ...rateLimitHeaders,
           ...cacheHeaders,
           'Content-Type': 'application/json',
           'X-Cache': 'MISS',

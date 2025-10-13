@@ -5,6 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { buildSunoHeaders } from "../_shared/suno.ts";
 import { fetchSunoBalance } from "../_shared/suno-balance.ts";
 import { balanceCache, createCacheHeaders } from "../_shared/cache.ts";
+import { checkRateLimit, rateLimitConfigs } from "../_shared/rate-limit.ts";
 
 type SunoBalanceAttempt = {
   endpoint: string;
@@ -294,6 +295,31 @@ export const handler = async (req: Request): Promise<Response> => {
     }
     const token = authHeader.replace('Bearer ', '');
 
+    // Rate limiting
+    const userId = token.substring(0, 20);
+    const { allowed, headers: rateLimitHeaders } = checkRateLimit(
+      userId, 
+      rateLimitConfigs.balance
+    );
+
+    if (!allowed) {
+      console.warn('Rate limit exceeded for balance check', { userId });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Too many requests. Please try again later.' 
+        }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders,
+            ...securityHeaders,
+            ...rateLimitHeaders,
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY");
 
@@ -345,7 +371,8 @@ export const handler = async (req: Request): Promise<Response> => {
         status: 200,
         headers: { 
           ...corsHeaders, 
-          ...securityHeaders, 
+          ...securityHeaders,
+          ...rateLimitHeaders,
           ...cacheHeaders,
           'Content-Type': 'application/json',
           'X-Cache': 'HIT',
@@ -369,7 +396,8 @@ export const handler = async (req: Request): Promise<Response> => {
       status: 200,
       headers: { 
         ...corsHeaders, 
-        ...securityHeaders, 
+        ...securityHeaders,
+        ...rateLimitHeaders,
         ...cacheHeaders,
         'Content-Type': 'application/json',
         'X-Cache': 'MISS',
