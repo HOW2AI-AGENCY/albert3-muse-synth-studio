@@ -1,8 +1,11 @@
 import React from 'react';
 import { Tag } from '@/types/lyrics';
 import { Badge } from '@/components/ui/badge';
-import { X } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
+import { 
+  X, Music, Mic, Volume2, Headphones, Disc, Zap, Heart,
+  Sun, Moon, Cloud, Star, Sparkles, Flame, Droplet, Wind,
+  type LucideIcon 
+} from '@/utils/iconImports';
 import { cn } from '@/lib/utils';
 
 interface TagBadgeProps {
@@ -12,9 +15,11 @@ interface TagBadgeProps {
 }
 
 export const TagBadge: React.FC<TagBadgeProps> = ({ tag, onRemove, className }) => {
-  const IconComponent = tag.icon 
-    ? (LucideIcons[tag.icon as keyof typeof LucideIcons] as React.ComponentType<{ className?: string }>)
-    : null;
+  const iconMap: Record<string, LucideIcon> = {
+    Music, Mic, Volume2, Headphones, Disc, Zap, Heart,
+    Sun, Moon, Cloud, Star, Sparkles, Flame, Droplet, Wind
+  };
+  const IconComponent = tag.icon ? iconMap[tag.icon] : null;
 
   return (
     <Badge 

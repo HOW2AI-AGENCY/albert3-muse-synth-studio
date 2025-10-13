@@ -5,7 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import * as LucideIcons from 'lucide-react';
+import { 
+  Music, Mic, Volume2, Headphones, Disc, Zap, Heart, 
+  Sun, Moon, Cloud, Star, Sparkles, Flame, Droplet, Wind,
+  type LucideIcon 
+} from '@/utils/iconImports';
 import { parseTag } from '@/utils/lyricsParser';
 
 interface TagPaletteProps {
@@ -54,10 +58,14 @@ export const TagPalette: React.FC<TagPaletteProps> = ({
         <ScrollArea className="w-full">
           <TabsList className="inline-flex w-full min-w-max">
             {categories.map(([key, def]) => {
-              const IconComponent = LucideIcons[def.icon as keyof typeof LucideIcons] as React.ComponentType<{ className?: string }>;
+              const iconMap: Record<string, LucideIcon> = {
+                Music, Mic, Volume2, Headphones, Disc, Zap, Heart,
+                Sun, Moon, Cloud, Star, Sparkles, Flame, Droplet, Wind
+              };
+              const IconComponent = iconMap[def.icon] || Music;
               return (
                 <TabsTrigger key={key} value={key} className="flex items-center gap-2">
-                  {IconComponent && <IconComponent className="h-4 w-4" />}
+                  <IconComponent className="h-4 w-4" />
                   <span className="capitalize">{key}</span>
                 </TabsTrigger>
               );
@@ -73,9 +81,11 @@ export const TagPalette: React.FC<TagPaletteProps> = ({
                   const tag = parseTag(value, `[${value}]`);
                   if (!tag) return null;
                   
-                  const IconComponent = tag.icon 
-                    ? (LucideIcons[tag.icon as keyof typeof LucideIcons] as React.ComponentType<{ className?: string }>)
-                    : null;
+                  const iconMap: Record<string, LucideIcon> = {
+                    Music, Mic, Volume2, Headphones, Disc, Zap, Heart,
+                    Sun, Moon, Cloud, Star, Sparkles, Flame, Droplet, Wind
+                  };
+                  const IconComponent = tag.icon ? iconMap[tag.icon] : null;
 
                   return (
                     <Button

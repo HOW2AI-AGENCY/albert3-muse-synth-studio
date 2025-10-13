@@ -26,7 +26,15 @@ export {
   Volume1,
   FileAudio,
   Wand2,
-  Sparkles
+  Sparkles,
+  Radio,
+  Disc,
+  Flame,
+  Droplet,
+  Wind,
+  Sun,
+  Moon,
+  Cloud
 } from 'lucide-react';
 
 // Player Controls

@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import { initWebVitals } from './services/monitoring.service';
 import { initServiceWorker } from './utils/serviceWorker';
 import * as Sentry from '@sentry/react';
 import { browserTracingIntegration } from '@sentry/react';
@@ -93,10 +94,13 @@ if (typeof window !== 'undefined') {
     };
   }
 
-  const scheduleRegistration = () => {
+const scheduleRegistration = () => {
     registerWebVitals().catch((error) => {
       logger.error('Failed to register Web Vitals collection', error, 'WebVitals');
     });
+    
+    // Initialize monitoring service
+    initWebVitals();
   };
 
   if ('requestIdleCallback' in window) {

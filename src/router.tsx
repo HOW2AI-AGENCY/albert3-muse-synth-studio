@@ -19,6 +19,7 @@ const Settings = lazy(() => import("./pages/workspace/Settings"));
 const Admin = lazy(() => import("./pages/workspace/Admin"));
 const Profile = lazy(() => import("./pages/workspace/Profile"));
 const Metrics = lazy(() => import("./pages/workspace/Metrics"));
+const Monitoring = lazy(() => import("./pages/workspace/Monitoring"));
 const EdgeFunctionsDebug = lazy(() => import("./pages/debug/EdgeFunctionsDebug"));
 
 const LoadingSpinner = () => (
@@ -124,6 +125,14 @@ export const router = createBrowserRouter(
           element: (
             <Suspense fallback={<LoadingSpinner />}>
               <Admin />
+            </Suspense>
+          ),
+        },
+        {
+          path: "monitoring",
+          element: (
+            <Suspense fallback={<LoadingSpinner />}>
+              <Monitoring />
             </Suspense>
           ),
         },
