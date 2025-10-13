@@ -304,30 +304,99 @@
     }
   }
 
-  /* Custom scrollbar styling */
+  /* ============================================
+     PHASE 1.2: Utility Classes для Консистентности
+     ============================================ */
+
+  /* Современные карточки с depth */
+  .card-elevated {
+    @apply bg-card border border-border/50 rounded-xl shadow-md hover:shadow-xl;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-elevated:hover {
+    transform: translateY(-4px);
+  }
+
+  /* Интерактивные элементы */
+  .interactive-scale {
+    @apply transition-transform duration-200;
+  }
+
+  .interactive-scale:active {
+    transform: scale(0.96);
+  }
+
+  /* Визуальные акценты */
+  .accent-border {
+    @apply border-l-4 border-l-primary;
+  }
+
+  .accent-border-top {
+    @apply border-t-4 border-t-primary;
+  }
+
+  /* Градиентные фоны для разделения зон */
+  .gradient-surface {
+    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--muted)/20) 100%);
+  }
+
+  .gradient-surface-secondary {
+    background: linear-gradient(135deg, hsl(var(--muted)/10) 0%, hsl(var(--accent)/5) 100%);
+  }
+
+  /* Hover lift effect */
+  .hover-lift {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px -4px hsl(var(--primary) / 0.1);
+  }
+
+  /* Glow effects (enhanced) */
+  .glow-primary-strong {
+    box-shadow: 0 0 30px hsl(var(--primary) / 0.4), 0 0 60px hsl(var(--primary) / 0.2);
+  }
+
+  .glow-accent-strong {
+    box-shadow: 0 0 30px hsl(var(--accent-purple) / 0.4), 0 0 60px hsl(var(--accent-purple) / 0.2);
+  }
+
+  /* Custom scrollbar styling (enhanced) */
   .scrollbar-styled {
     scrollbar-gutter: stable;
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--muted)) transparent;
+    scrollbar-color: hsl(var(--primary) / 0.4) hsl(var(--muted) / 0.3);
   }
 
   .scrollbar-styled::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
   }
 
   .scrollbar-styled::-webkit-scrollbar-track {
-    background: transparent;
+    background: hsl(var(--muted) / 0.3);
+    border-radius: 10px;
   }
 
   .scrollbar-styled::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted));
-    border-radius: 4px;
-    transition: background 0.2s ease;
+    background: linear-gradient(
+      180deg,
+      hsl(var(--primary) / 0.3) 0%,
+      hsl(var(--primary) / 0.5) 100%
+    );
+    border-radius: 10px;
+    transition: background 0.2s;
   }
 
   .scrollbar-styled::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground));
+    background: linear-gradient(
+      180deg,
+      hsl(var(--primary) / 0.5) 0%,
+      hsl(var(--primary) / 0.7) 100%
+    );
   }
 
   /* Mobile-first spacing system */

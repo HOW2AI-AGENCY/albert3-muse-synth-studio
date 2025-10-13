@@ -90,6 +90,9 @@
     /* Семейства шрифтов */
     --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     --font-family-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+    
+    /* PHASE 1.1: Дополнительные размеры шрифтов */
+    --font-size-2xs: 0.625rem; /* 10px */
 
     /* ===== ПРОСТРАНСТВО И РАЗМЕРЫ (КОМПАКТНАЯ ВЕРСИЯ) ===== */
     

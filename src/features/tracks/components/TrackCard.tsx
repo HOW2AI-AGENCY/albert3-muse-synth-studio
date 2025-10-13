@@ -1,8 +1,10 @@
 import React, { useState, useCallback, memo, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { fadeInUp } from "@/utils/animations";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -341,22 +343,29 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
   const formattedDuration = track.duration ? formatDuration(track.duration) : null;
 
   return (
-    <Card
+    <motion.div
       ref={cardRef}
-    className={cn(
-      "group relative overflow-hidden cursor-pointer transition-all duration-300",
-      "border-border/50 bg-card hover:bg-muted/30",
-      isVisible ? "h-full flex flex-col opacity-100 animate-fade-in" : "h-full flex flex-col opacity-0",
-      isCurrentTrack && "ring-2 ring-primary/80",
-      className,
-    )}
-      onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      variants={fadeInUp}
+      initial="initial"
+      animate="animate"
+      whileHover={{ y: -4 }}
+      whileTap={{ scale: 0.98 }}
       role="article"
       aria-label={`Трек ${track.title}`}
       tabIndex={0}
     >
+      <Card
+        className={cn(
+          "group relative overflow-hidden cursor-pointer transition-all duration-300",
+          "border-border/50 bg-card hover:bg-muted/30 card-elevated",
+          isVisible ? "h-full flex flex-col opacity-100" : "h-full flex flex-col opacity-0",
+          isCurrentTrack && "ring-2 ring-primary/80 shadow-glow-primary-strong",
+          className,
+        )}
+        onClick={onClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
       <div className="relative aspect-square bg-gradient-to-br from-gray-800 to-gray-900">
         {(track.status === 'processing' || track.status === 'pending') && (
           <GenerationProgress track={track} onRetry={onRetry} onDelete={onDelete} />
@@ -572,6 +581,7 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
         </div>
       </CardContent>
     </Card>
+    </motion.div>
   );
 };
 

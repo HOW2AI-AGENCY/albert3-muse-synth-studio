@@ -132,6 +132,7 @@ const config: Config = {
         'container': 'var(--space-container)',
       },
       fontSize: {
+        '2xs': 'var(--font-size-2xs, 0.625rem)',
         'xs': 'var(--font-size-xs)',
         'sm': 'var(--font-size-sm)',
         'base': 'var(--font-size-base)',
@@ -144,6 +145,13 @@ const config: Config = {
         '6xl': 'var(--font-size-6xl)',
         'display': 'var(--font-size-display)',
         'heading': 'var(--font-size-heading)',
+        // PHASE 8: Fluid typography
+        'fluid-xs': 'clamp(0.75rem, 1.5vw, 0.875rem)',
+        'fluid-sm': 'clamp(0.875rem, 2vw, 1rem)',
+        'fluid-base': 'clamp(1rem, 2.5vw, 1.125rem)',
+        'fluid-lg': 'clamp(1.125rem, 3vw, 1.5rem)',
+        'fluid-xl': 'clamp(1.25rem, 4vw, 2rem)',
+        'fluid-2xl': 'clamp(1.5rem, 5vw, 3rem)',
       },
       fontFamily: {
         sans: 'var(--font-family-sans)',
@@ -167,6 +175,7 @@ const config: Config = {
         loose: 'var(--line-height-loose)',
       },
       boxShadow: {
+        xs: '0 1px 2px rgba(0, 0, 0, 0.05)',
         sm: 'var(--shadow-sm)',
         DEFAULT: 'var(--shadow-base)',
         md: 'var(--shadow-md)',
@@ -174,6 +183,7 @@ const config: Config = {
         xl: 'var(--shadow-xl)',
         '2xl': 'var(--shadow-2xl)',
         'glow-primary': 'var(--shadow-glow-primary)',
+        'glow-primary-strong': '0 0 60px hsl(var(--primary) / 0.5)',
         'glow-secondary': 'var(--shadow-glow-secondary)',
         'glow-accent': 'var(--shadow-glow-accent)',
         'glow-success': 'var(--shadow-glow-success)',
