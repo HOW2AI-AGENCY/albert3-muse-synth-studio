@@ -88,7 +88,7 @@ describe('useAudioRecorder', () => {
       await result.current.startRecording();
     });
 
-    act(() => {
+    await act(async () => {
       vi.advanceTimersByTime(5000);
     });
 
@@ -105,7 +105,7 @@ describe('useAudioRecorder', () => {
       await result.current.startRecording();
     });
 
-    act(() => {
+    await act(async () => {
       vi.advanceTimersByTime(61000); // 61 seconds (MAX is 60)
     });
 

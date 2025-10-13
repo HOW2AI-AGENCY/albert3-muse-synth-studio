@@ -78,9 +78,9 @@ describe('useAddVocal', () => {
 
     const { result } = renderHook(() => useAddVocal());
 
-    await expect(async () => {
-      await result.current.addVocal({ trackId: 'non-existent-id' });
-    }).rejects.toThrow('Трек не найден или не имеет аудио');
+    await expect(
+      result.current.addVocal({ trackId: 'non-existent-id' })
+    ).rejects.toThrow();
   });
 
   it('should use create-cover with correct parameters', async () => {

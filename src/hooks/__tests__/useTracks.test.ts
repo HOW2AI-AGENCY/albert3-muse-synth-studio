@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useTracks } from '../useTracks';
-import { ApiService, Track } from '@/services/api.service';
+import { ApiService, type Track } from '@/services/api.service';
 import { supabase } from '@/integrations/supabase/client';
 import { logInfo } from '@/utils/logger';
 
