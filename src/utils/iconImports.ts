@@ -65,7 +65,8 @@ export {
   Sliders,
   Eye,
   EyeOff,
-  Palette
+  Palette,
+  Square
 } from 'lucide-react';
 
 // File Operations

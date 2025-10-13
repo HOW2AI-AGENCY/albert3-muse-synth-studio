@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Mic, Square, Upload, Trash2 } from 'lucide-react';
+import { Mic, Upload, Trash2 } from '@/utils/iconImports';
+import { Square } from 'lucide-react';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useAudioUpload } from '@/hooks/useAudioUpload';
 import { useToast } from '@/hooks/use-toast';

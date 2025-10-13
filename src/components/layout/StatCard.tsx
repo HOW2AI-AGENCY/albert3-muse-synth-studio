@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown } from "@/utils/iconImports";
 import { cn } from "@/lib/utils";
 
 interface StatCardProps {

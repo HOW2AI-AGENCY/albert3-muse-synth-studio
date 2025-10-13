@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, Volume2, X } from 'lucide-react';
+import { Play, Pause, Volume2, X } from '@/utils/iconImports';
 import { Slider } from '@/components/ui/slider';
 
 interface AudioPreviewDialogProps {

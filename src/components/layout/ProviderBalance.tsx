@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ApiService } from '@/services/api.service';
 import { useToast } from '@/hooks/use-toast';
 import { logError, logInfo } from '@/utils/logger';
-import { DollarSign, Zap } from 'lucide-react';
+import { DollarSign, Zap } from '@/utils/iconImports';
 
 const ProviderBalance = () => {
   const [balance, setBalance] = useState<number | null>(null);

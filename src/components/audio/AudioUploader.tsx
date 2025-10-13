@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Upload, Loader2, CheckCircle, X } from 'lucide-react';
+import { Upload, Loader2, CheckCircle, X } from '@/utils/iconImports';
 import { useAudioUpload } from '@/hooks/useAudioUpload';
 import { cn } from '@/lib/utils';
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Mic } from 'lucide-react';
+import { Upload, Mic } from '@/utils/iconImports';
 import { AudioUploader } from './AudioUploader';
 import { AudioRecorder } from './AudioRecorder';
 

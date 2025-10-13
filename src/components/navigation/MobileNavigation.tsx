@@ -12,8 +12,8 @@ import {
   Search,
   Heart,
   Download,
-  Share
-} from 'lucide-react';
+  Share2 as Share
+} from '@/utils/iconImports';
 
 interface TabItem {
   id: string;
