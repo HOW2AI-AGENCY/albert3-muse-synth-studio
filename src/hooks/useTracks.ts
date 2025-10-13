@@ -31,30 +31,38 @@ export const useTracks = (refreshTrigger?: number, _options?: UseTracksOptions) 
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Защита от ложного логаута: если раньше были треки и user=null,
-      // не очищаем список сразу - это может быть временная проблема с auth
+      // ✅ FIX: Всегда очищаем треки при отсутствии пользователя
       if (!user) {
-        if (hasTracksRef.current && lastUserIdRef.current) {
-          logError(
-            'Auth returned null but we had tracks before - possible session issue',
-            new Error('Temporary auth loss'),
-            'useTracks',
-            { lastUserId: lastUserIdRef.current }
-          );
-          // Не очищаем треки, показываем предупреждение
-          toast({
-            title: "Проблема с сессией",
-            description: "Пытаемся восстановить соединение...",
-            variant: "default",
-          });
-          return;
-        }
-        
-        // Если это первая загрузка и юзера нет - очищаем
+        logInfo('No user found, clearing tracks and cache', 'useTracks');
         setTracks([]);
         hasTracksRef.current = false;
         lastUserIdRef.current = null;
+        
+        // ✅ FIX: Очищаем IndexedDB для предотвращения утечки данных
+        try {
+          await trackCacheIDB.clearAll();
+        } catch (cacheError) {
+          logWarn('Failed to clear track cache', 'useTracks', { error: cacheError });
+        }
+        
         return;
+      }
+
+      // ✅ FIX: Проверяем смену пользователя и очищаем старые данные
+      if (lastUserIdRef.current && lastUserIdRef.current !== user.id) {
+        logInfo('User changed, clearing previous user data', 'useTracks', {
+          oldUserId: lastUserIdRef.current,
+          newUserId: user.id,
+        });
+        setTracks([]);
+        hasTracksRef.current = false;
+        
+        // Очищаем кэш предыдущего пользователя
+        try {
+          await trackCacheIDB.clearAll();
+        } catch (cacheError) {
+          logWarn('Failed to clear track cache on user switch', 'useTracks', { error: cacheError });
+        }
       }
 
       lastUserIdRef.current = user.id;

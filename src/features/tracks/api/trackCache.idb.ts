@@ -162,6 +162,13 @@ class TrackCacheIDB {
     }
   }
 
+  /**
+   * ✅ FIX: Alias for clearCache (для совместимости)
+   */
+  async clearAll(): Promise<void> {
+    return this.clearCache();
+  }
+
   async getCacheStats(): Promise<{ count: number; oldestTimestamp: number | null; newestTimestamp: number | null }> {
     try {
       const db = await this.getDB();
