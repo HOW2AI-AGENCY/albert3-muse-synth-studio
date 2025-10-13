@@ -1,6 +1,7 @@
 import { memo, useCallback, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -275,7 +276,13 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const lyricsLineCount = params.lyrics ? params.lyrics.split('\n').filter(l => l.trim()).length : 0;
 
   return (
-    <div className="flex flex-col h-full bg-card border border-border/20 rounded-lg shadow-sm" data-testid="music-generator">
+    <motion.div 
+      className="flex flex-col h-full card-elevated" 
+      data-testid="music-generator"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
       {/* Header: Provider Selector + Tabs + Model Version */}
       <div className="p-2.5 border-b border-border/20 space-y-2">
         {/* Provider Selector Row with Balance */}
@@ -360,6 +367,10 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                     rows={3}
                   />
                   {params.prompt.trim() && (
+                  <motion.div
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
                     <Button
                       variant="ghost"
                       size="icon"
@@ -368,8 +379,9 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                       disabled={isBoosting || isGenerating}
                       title="Улучшить промпт с помощью AI"
                     >
-                      <Sparkles className="h-3.5 w-3.5" />
+                      <Sparkles className={cn("h-3.5 w-3.5", isBoosting && "animate-spin")} />
                     </Button>
+                  </motion.div>
                   )}
                 </div>
                 {!params.prompt.trim() && !params.lyrics.trim() && (
@@ -714,23 +726,38 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
 
       {/* Generate Button - Fixed at bottom */}
       <div className="p-2.5 border-t border-border/20">
-        <Button
-          onClick={handleGenerate}
-          disabled={isGenerating || isUploading || (!params.prompt.trim() && !params.lyrics.trim())}
-          className="w-full h-10 text-sm font-semibold gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-lg transition-all"
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          {isGenerating ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Генерация...
-            </>
-          ) : (
-            <>
+          <Button
+            onClick={handleGenerate}
+            disabled={isGenerating || isUploading || (!params.prompt.trim() && !params.lyrics.trim())}
+            className="w-full h-10 text-sm font-semibold gap-2 relative overflow-hidden group bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg transition-all"
+          >
+            <span className={cn(
+              "flex items-center gap-2 transition-all duration-300",
+              isGenerating && "opacity-0"
+            )}>
               <Music className="h-4 w-4" />
               Создать трек
-            </>
-          )}
-        </Button>
+            </span>
+            
+            {isGenerating && (
+              <motion.span 
+                className="absolute inset-0 flex items-center justify-center gap-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Генерация...
+              </motion.span>
+            )}
+            
+            {/* Shine effect on hover */}
+            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+          </Button>
+        </motion.div>
       </div>
 
       {/* Dialogs */}
@@ -760,7 +787,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
           });
         }}
       />
-    </div>
+    </motion.div>
   );
 };
 

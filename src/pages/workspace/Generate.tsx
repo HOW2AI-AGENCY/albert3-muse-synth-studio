@@ -1,4 +1,5 @@
 import { useState, useEffect, Suspense, lazy } from "react";
+import { motion } from "framer-motion";
 import { MusicGeneratorV2 } from "@/components/MusicGeneratorV2";
 import { TracksList } from "@/components/TracksList";
 const DetailPanel = lazy(() => import("@/features/tracks/ui/DetailPanel").then(m => ({ default: m.DetailPanel })));
@@ -259,14 +260,22 @@ const Generate = () => {
 
       <Drawer open={showGenerator} onOpenChange={setShowGenerator}>
         <DrawerTrigger asChild>
-          <Button
-            size="lg"
-            className="fixed right-4 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 transition-transform hover:scale-105 z-20"
-            style={{ bottom: isPlayerVisible ? 'calc(var(--workspace-bottom-offset, 0px) + 1rem)' : '1rem' }}
-            aria-label="Создать музыку"
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.5, type: 'spring', stiffness: 260, damping: 20 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
           >
-            <Plus className="h-6 w-6" />
-          </Button>
+            <Button
+              size="lg"
+              className="fixed right-4 h-14 w-14 rounded-full shadow-lg glow-primary-strong bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary z-20"
+              style={{ bottom: isPlayerVisible ? 'calc(var(--workspace-bottom-offset, 0px) + 1rem)' : '1rem' }}
+              aria-label="Создать музыку"
+            >
+              <Plus className="h-6 w-6" />
+            </Button>
+          </motion.div>
         </DrawerTrigger>
         <DrawerContent className="h-[90vh] mt-20" aria-describedby={undefined}>
             <div className="p-4 h-full overflow-y-auto">
