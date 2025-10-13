@@ -75,10 +75,12 @@ export const GlobalAudioPlayer = () => {
       // Network errors (400, 403, 410) - истекшие ссылки
       if (error.code === MediaError.MEDIA_ERR_NETWORK || 
           error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
-        console.warn('[GlobalAudioPlayer] Audio URL expired, attempting refresh...', {
-          trackId: currentTrack.id,
-          errorCode: error.code,
-          errorMessage: error.message,
+        import('@/utils/logger').then(({ logger }) => {
+          logger.warn('Audio URL expired, attempting refresh', 'GlobalAudioPlayer', {
+            trackId: currentTrack.id,
+            errorCode: error.code,
+            errorMessage: error.message,
+          });
         });
         
         setIsBuffering(true);
@@ -98,7 +100,11 @@ export const GlobalAudioPlayer = () => {
             audio.src = refreshedTrack.audio_url;
             audio.load();
             if (isPlaying) {
-              audio.play().catch(console.error);
+              audio.play().catch((err) => {
+                import('@/utils/logger').then(({ logger }) => {
+                  logger.error('Failed to play refreshed audio', err, 'GlobalAudioPlayer');
+                });
+              });
             }
             
             import('sonner').then(({ toast }) => {
@@ -113,7 +119,9 @@ export const GlobalAudioPlayer = () => {
             });
           }
         } catch (err) {
-          console.error('[GlobalAudioPlayer] Failed to refresh audio URL', err);
+          import('@/utils/logger').then(({ logger }) => {
+            logger.error('Failed to refresh audio URL', err instanceof Error ? err : new Error(String(err)), 'GlobalAudioPlayer');
+          });
           import('sonner').then(({ toast }) => {
             toast.error('Ошибка загрузки аудио');
           });

@@ -99,17 +99,6 @@ export const usePreloadComponent = <P extends object>(
 };
 
 // Предопределенные ленивые компоненты для основных частей приложения
-export const LazyMusicGenerator = createLazyComponent(
-  async () => {
-    const module = await import('./MusicGenerator');
-    return { default: module.MusicGenerator as ComponentType<unknown> };
-  },
-  <div className="animate-pulse bg-card/50 rounded-xl h-96" />,
-  <div className="text-center p-8 text-muted-foreground">
-    Ошибка загрузки генератора музыки
-  </div>,
-  'MusicGenerator'
-);
 
 export const LazyGlobalAudioPlayer = createLazyComponent(
   () => import('./player/GlobalAudioPlayer'),

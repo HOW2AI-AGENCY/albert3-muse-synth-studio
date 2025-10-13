@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
-import {
-  MusicGeneratorLazy as MusicGenerator
-  // TracksListLazy as TracksList
-} from "@/components/LazyComponents";
+import { MusicGeneratorV2 } from "@/components/MusicGeneratorV2";
 import { AuthForm } from "@/components/AuthForm";
 import heroBackground from "@/assets/hero-bg.jpg";
 import type { User } from "@supabase/supabase-js";
@@ -12,7 +9,6 @@ import type { User } from "@supabase/supabase-js";
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [, setShowAuth] = useState(false);
-  const [, setRefreshTracks] = useState(0); // используется в handleTrackGenerated
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -29,10 +25,6 @@ const Index = () => {
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const handleTrackGenerated = () => {
-    setRefreshTracks((prev) => prev + 1);
-  };
 
   return (
     <div className="min-h-screen bg-gradient-hero">
@@ -66,7 +58,7 @@ const Index = () => {
             </div>
           ) : (
             <div className="max-w-4xl mx-auto animate-fade-in">
-              <MusicGenerator onTrackGenerated={handleTrackGenerated} />
+              <MusicGeneratorV2 />
             </div>
           )}
         </div>

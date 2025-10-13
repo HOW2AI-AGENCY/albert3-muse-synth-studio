@@ -176,7 +176,9 @@ export const useMusicGenerationStore = create<MusicGenerationState>((set, get) =
       
       // ✅ PHASE 1.3 FIX: Auto-cleanup after 5 minutes
       const autoCleanupTimer = setTimeout(() => {
-        console.warn('[STORE] Auto-cleaning stale subscription after 5 minutes');
+        import('@/utils/logger').then(({ logger }) => {
+          logger.warn('Auto-cleaning stale subscription after 5 minutes', 'MusicGenerationStore');
+        });
         subscription.unsubscribe();
         set({ subscription: null, autoCleanupTimer: null });
       }, 5 * 60 * 1000);

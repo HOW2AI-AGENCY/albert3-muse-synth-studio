@@ -233,6 +233,6 @@ export const addToStyleHistory = (styleId: string): void => {
     const newHistory = [styleId, ...history.filter(id => id !== styleId)].slice(0, MAX_HISTORY_SIZE);
     localStorage.setItem(STYLE_HISTORY_KEY, JSON.stringify(newHistory));
   } catch (error) {
-    console.error('Failed to save style history:', error);
+    // Silent fail for localStorage errors
   }
 };

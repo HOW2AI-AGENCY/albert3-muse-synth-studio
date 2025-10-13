@@ -77,11 +77,12 @@ if (typeof window !== 'undefined') {
               detail: { url, method, status: response.status },
             })
           );
-          // Also log to console for developers
-          // Do not log any tokens; only URL and status
-          console.warn('[diagnostics] External GET 401 to get-balance without Authorization', {
-            url,
-            status: response.status,
+          // Also log for developers
+          import('@/utils/logger').then(({ logger }) => {
+            logger.warn('External GET 401 to get-balance without Authorization', 'main', {
+              url,
+              status: response.status,
+            });
           });
         }
       } catch {

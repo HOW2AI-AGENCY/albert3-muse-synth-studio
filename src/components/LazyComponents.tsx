@@ -3,28 +3,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { TracksList } from './TracksList'; // Direct import instead of lazy
 
 // Ленивая загрузка компонентов
-const MusicGenerator = lazy(() => import('./MusicGenerator').then(module => ({ default: module.MusicGenerator })));
 const DetailPanel = lazy(() =>
   import('@/features/tracks/ui/DetailPanel').then(module => ({ default: module.DetailPanel }))
 );
 const FullScreenPlayer = lazy(() => import('./player/FullScreenPlayer').then(module => ({ default: module.FullScreenPlayer })));
 
 // Скелетоны загрузки
-const MusicGeneratorSkeleton = () => (
-  <div className="space-y-6 p-6">
-    <Skeleton className="h-8 w-48" />
-    <div className="space-y-4">
-      <Skeleton className="h-4 w-full" />
-      <Skeleton className="h-32 w-full" />
-      <div className="flex gap-2">
-        <Skeleton className="h-6 w-16" />
-        <Skeleton className="h-6 w-20" />
-        <Skeleton className="h-6 w-18" />
-      </div>
-      <Skeleton className="h-10 w-32" />
-    </div>
-  </div>
-);
 const DetailPanelSkeleton = () => (
   <div className="space-y-4 p-6">
     <Skeleton className="h-6 w-40" />
@@ -70,12 +54,10 @@ const withLazyLoading = <P extends object>(
 };
 
 // Экспорт ленивых компонентов
-export const MusicGeneratorLazy = withLazyLoading(MusicGenerator, MusicGeneratorSkeleton);
 export const TracksListLazy = TracksList; // Direct export without lazy loading
 export const DetailPanelLazy = withLazyLoading(DetailPanel, DetailPanelSkeleton);
 export const LazyFullScreenPlayer = withLazyLoading(FullScreenPlayer, FullScreenPlayerSkeleton);
 
 // Дополнительные экспорты для совместимости
-export const LazyMusicGenerator = MusicGeneratorLazy;
 export const LazyTracksList = TracksListLazy;
 export const LazyDetailPanel = DetailPanelLazy;

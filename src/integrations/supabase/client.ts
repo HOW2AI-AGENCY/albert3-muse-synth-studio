@@ -11,7 +11,10 @@ const resolveStorage = (): Storage | undefined => {
   try {
     return window.localStorage;
   } catch (error) {
-    console.error("Failed to access localStorage for Supabase auth", error);
+    // Logger не импортируется здесь, чтобы избежать циркулярных зависимостей
+    if (typeof window !== 'undefined') {
+      console.error("Failed to access localStorage for Supabase auth", error);
+    }
     return undefined;
   }
 };
@@ -95,10 +98,10 @@ const ensureAuthHeader = async (
       };
     }
   } catch (error) {
-    console.warn(
-      "Failed to attach Supabase auth header for edge function invoke",
-      error
-    );
+    // Logger не импортируется здесь, чтобы избежать циркулярных зависимостей
+    if (typeof window !== 'undefined') {
+      console.warn("Failed to attach Supabase auth header for edge function invoke", error);
+    }
   }
 
   return headers;
@@ -120,8 +123,11 @@ supabase.functions.invoke = (async (functionName, options = {}) => {
       const hasAuth = Object.keys(headers).some(
         (key) => key.toLowerCase() === "authorization"
       );
-      // Do not log header contents to avoid exposing tokens
-      console.debug(`[Supabase.invoke] ${functionName}`, { method, hasAuth });
+      // Logger не импортируется здесь для избежания циркулярных зависимостей
+      // Используем console.debug только для критических edge functions
+      if (typeof window !== 'undefined') {
+        console.debug(`[Supabase.invoke] ${functionName}`, { method, hasAuth });
+      }
     }
   } catch (_) {
     // no-op: diagnostics should never break invoke

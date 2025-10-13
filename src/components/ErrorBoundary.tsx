@@ -48,7 +48,7 @@ export class ErrorBoundary extends Component<Props, State> {
             context: 'ErrorBoundary',
             timestamp: new Date().toISOString(),
           }
-        }).catch(console.error);
+        }).catch((err) => logError('Failed to log error to server', err));
       });
     }
 
