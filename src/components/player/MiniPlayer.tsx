@@ -1,4 +1,4 @@
-import { Play, Pause, SkipBack, SkipForward, X, List, Star } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, X, List, Star } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ResponsiveStack } from "@/components/ui/ResponsiveLayout";

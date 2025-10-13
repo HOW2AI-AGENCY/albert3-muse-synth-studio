@@ -575,8 +575,20 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
   );
 };
 
-// Error Boundary and Memoization
-const TrackCardWithErrorBoundary = memo(withErrorBoundary(TrackCardComponent));
+// Оптимизированная мемоизация: перерендер только при изменении критичных пропсов
+const MemoizedTrackCard = memo(TrackCardComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.track.id === nextProps.track.id &&
+    prevProps.track.status === nextProps.track.status &&
+    prevProps.track.like_count === nextProps.track.like_count &&
+    prevProps.track.is_public === nextProps.track.is_public &&
+    prevProps.track.audio_url === nextProps.track.audio_url &&
+    prevProps.track.progress_percent === nextProps.track.progress_percent &&
+    prevProps.onClick === nextProps.onClick
+  );
+});
+
+const TrackCardWithErrorBoundary = withErrorBoundary(MemoizedTrackCard);
 TrackCardWithErrorBoundary.displayName = "TrackCard";
 
 export { TrackCardWithErrorBoundary as TrackCard };

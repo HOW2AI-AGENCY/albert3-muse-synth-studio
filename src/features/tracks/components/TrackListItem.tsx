@@ -281,7 +281,21 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
   );
 };
 
-export const TrackListItem = memo(TrackListItemComponent);
+// Оптимизированная мемоизация: перерендер только при изменении критичных пропсов
+export const TrackListItem = memo(TrackListItemComponent, (prevProps, nextProps) => {
+  return (
+    prevProps.track.id === nextProps.track.id &&
+    prevProps.track.status === nextProps.track.status &&
+    prevProps.track.like_count === nextProps.track.like_count &&
+    prevProps.track.audio_url === nextProps.track.audio_url &&
+    prevProps.onClick === nextProps.onClick &&
+    prevProps.onDownload === nextProps.onDownload &&
+    prevProps.onShare === nextProps.onShare &&
+    prevProps.onRetry === nextProps.onRetry &&
+    prevProps.onDelete === nextProps.onDelete &&
+    prevProps.onSeparateStems === nextProps.onSeparateStems
+  );
+});
 
 // Inject keyframes for fade-in animation once if not already present
 if (typeof document !== "undefined" && !document.getElementById('track-card-animation-style')) {

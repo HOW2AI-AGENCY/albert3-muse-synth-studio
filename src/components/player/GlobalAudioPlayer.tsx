@@ -6,7 +6,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useMediaSession } from "@/hooks/useMediaSession";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { formatTime } from "@/utils/formatters";
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1, Music, X, List, Star, Loader2 } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1, Music, X, List, Star, Loader2 } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
