@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { act, waitFor } from '@testing-library/react';
 import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
 import { ApiService } from '@/services/api.service';
 import { supabase } from '@/integrations/supabase/client';
@@ -58,7 +58,10 @@ describe('useMusicGenerationStore', () => {
       title: 'Test Track',
       status: 'pending',
     } as any);
-    vi.mocked(ApiService.generateMusic).mockResolvedValue(undefined);
+    vi.mocked(ApiService.generateMusic).mockResolvedValue({
+      success: true,
+      trackId: 'track-123',
+    } as any);
     vi.mocked(supabase.functions.invoke).mockResolvedValue({
       data: { success: true },
       error: null,
@@ -234,7 +237,7 @@ describe('useMusicGenerationStore', () => {
       vi.mocked(supabase.auth.getUser).mockResolvedValue({
         data: { user: null },
         error: null,
-      });
+      } as any);
 
       const { generateMusic } = useMusicGenerationStore.getState();
 
@@ -292,7 +295,7 @@ describe('useMusicGenerationStore', () => {
 
     it('должен очищать подписку при завершении генерации', async () => {
       const mockOnCallback = vi.fn();
-      vi.mocked(mockChannel.on).mockImplementation((event, filter, callback: any) => {
+      vi.mocked(mockChannel.on).mockImplementation((_event, _filter, callback: any) => {
         mockOnCallback.mockImplementation(callback);
         return mockChannel;
       });
@@ -327,7 +330,7 @@ describe('useMusicGenerationStore', () => {
 
     it('должен обрабатывать failed статус', async () => {
       const mockOnCallback = vi.fn();
-      vi.mocked(mockChannel.on).mockImplementation((event, filter, callback: any) => {
+      vi.mocked(mockChannel.on).mockImplementation((_event, _filter, callback: any) => {
         mockOnCallback.mockImplementation(callback);
         return mockChannel;
       });
