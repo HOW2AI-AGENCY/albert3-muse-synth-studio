@@ -118,8 +118,11 @@ export {
   DollarSign,
   Zap,
   BarChart3,
-  PieChart,
-  Activity
+  Activity,
+  Coins,
+  HelpCircle,
+  CreditCard,
+  PieChart
 } from 'lucide-react';
 
 // Social & Actions

@@ -1,4 +1,4 @@
-import { User, Settings, LogOut, HelpCircle, CreditCard, Moon, Sun } from "lucide-react";
+import { User, Settings, LogOut, HelpCircle, CreditCard, Moon, Sun } from "@/utils/iconImports";
 import {
   DropdownMenu,
   DropdownMenuContent,

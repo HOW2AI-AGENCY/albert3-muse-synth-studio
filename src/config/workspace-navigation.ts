@@ -8,7 +8,8 @@ import {
   Settings,
   Shield,
   Upload,
-} from "lucide-react";
+  Activity,
+} from "@/utils/iconImports";
 import {
   preloadDashboard,
   preloadGenerate,
@@ -71,6 +72,13 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     label: "Админ-панель",
     path: "/workspace/admin",
     icon: Shield,
+    roles: ["admin"],
+  },
+  {
+    id: "monitoring",
+    label: "Мониторинг",
+    path: "/workspace/monitoring",
+    icon: Activity,
     roles: ["admin"],
   },
   {

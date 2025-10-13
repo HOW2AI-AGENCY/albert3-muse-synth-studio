@@ -1,4 +1,4 @@
-import { X, Sparkles, Coins } from "lucide-react";
+import { X, Sparkles, Coins } from "@/utils/iconImports";
 import { NavLink, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";

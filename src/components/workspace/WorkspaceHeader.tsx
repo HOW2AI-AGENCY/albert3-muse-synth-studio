@@ -2,6 +2,7 @@ import { Search } from "@/utils/iconImports";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ProviderHealthIndicator } from "@/components/mureka/ProviderHealthIndicator";
 
 interface WorkspaceHeaderProps {
   className?: string;
@@ -25,7 +26,9 @@ const WorkspaceHeader = ({ className }: WorkspaceHeaderProps) => {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-2 sm:gap-4">
+        <ProviderHealthIndicator className="mr-2" />
+        
         <Button
           variant="ghost"
           size="icon"

@@ -1,4 +1,4 @@
-import { Bell, Music, Heart, MessageCircle, Check, AlertCircle, X } from "lucide-react";
+import { Bell, Music, Heart, MessageCircle, Check, AlertCircle, X } from "@/utils/iconImports";
 import {
   DropdownMenu,
   DropdownMenuContent,
