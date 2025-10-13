@@ -32,6 +32,17 @@ export const useMurekaGeneration = () => {
 
   return useMutation({
     mutationFn: async (params: MurekaGenerationParams) => {
+      // ✅ TASK B: Показываем 2-stage прогресс
+      if (!params.lyrics || params.lyrics.trim().length === 0) {
+        toast.loading('🎼 Этап 1/2: Генерация текста песни...', {
+          id: 'mureka-lyrics-stage',
+        });
+      } else {
+        toast.loading('🎵 Создаём музыку...', {
+          id: 'mureka-generation',
+        });
+      }
+
       logger.info('Starting Mureka generation', undefined, { 
         promptLength: params.prompt.length,
         hasLyrics: !!params.lyrics,
@@ -55,6 +66,10 @@ export const useMurekaGeneration = () => {
         }
       );
 
+      // Dismiss loading toasts
+      toast.dismiss('mureka-lyrics-stage');
+      toast.dismiss('mureka-generation');
+
       if (error) {
         logger.error('Mureka generation failed', error instanceof Error ? error : new Error(String(error)));
         throw new Error(error.message || 'Failed to start Mureka generation');
@@ -72,9 +87,10 @@ export const useMurekaGeneration = () => {
       return data;
     },
 
-    onSuccess: (data) => {
-      toast.success('Mureka генерация запущена!', {
-        description: `Track ID: ${data.trackId}`,
+    onSuccess: () => {
+      toast.success('🎵 Генерация началась!', {
+        description: 'Ваш трек создаётся. Примерное время: ~2 минуты',
+        duration: 5000,
       });
 
       // Invalidate tracks queries to refresh the list

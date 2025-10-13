@@ -21,7 +21,6 @@ interface TrackSyncOptions {
 }
 
 const MIN_RETRY_DELAY = 5000; // 5 секунд минимум между попытками
-const MAX_RETRY_ATTEMPTS = 3; // Уменьшено с 5 до 3
 
 export const useTrackSync = (userId: string | undefined, options: TrackSyncOptions = {}) => {
   const { toast } = useToast();
@@ -55,22 +54,18 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
 
     logInfo('Starting track sync for user', 'useTrackSync', { userId });
 
-    const channelName = `track-updates-${userId}`;
+    // ✅ UNIFIED: Единая функция подписки с exponential backoff
+    const reconnectAttempts = { current: 0 };
+    const MAX_RECONNECT = 5;
+    let reconnectTimeout: NodeJS.Timeout;
 
-    const clearRetryTimeout = () => {
-      if (retryTimeoutRef.current) {
-        clearTimeout(retryTimeoutRef.current);
-        retryTimeoutRef.current = null;
-      }
-    };
-
-    const subscribeToChannel = () => {
+    const setupChannelWithRetry = () => {
       const now = Date.now();
       
       // Предотвращаем множественные одновременные подключения
       if (isConnecting || (now - lastAttemptRef.current) < MIN_RETRY_DELAY) {
         logWarn('Skipping subscription attempt - too soon or already connecting', 'useTrackSync');
-        return;
+        return null;
       }
 
       // Проверяем, есть ли уже активное подключение
@@ -82,125 +77,16 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
       
       setIsConnecting(true);
       lastAttemptRef.current = now;
-      clearRetryTimeout();
+      
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
 
+      const channelName = `track-updates-${userId}`;
       const channel = supabase.channel(channelName);
 
       channel
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'tracks',
-            filter: `user_id=eq.${userId}`,
-          },
-          (payload: RealtimePostgresChangesPayload<TrackRow>) => {
-            const newTrack = payload.new;
-            const oldTrack = payload.old;
-
-            if (!newTrack || !oldTrack) {
-              return;
-            }
-
-            if (!newTrack || !('id' in newTrack) || !('status' in newTrack)) {
-              return;
-            }
-
-            logInfo('Track update received', 'useTrackSync', {
-              trackId: newTrack.id,
-              oldStatus: oldTrack && 'status' in oldTrack ? oldTrack.status : undefined,
-              newStatus: newTrack.status,
-            });
-
-            // Track completed
-            if (oldTrack && 'status' in oldTrack && oldTrack.status !== 'completed' && newTrack.status === 'completed') {
-              logInfo('Track completed', 'useTrackSync', { trackId: newTrack.id });
-
-              toastRef.current?.({
-                title: '✅ Трек готов!',
-                description: `"${newTrack.title}" успешно сгенерирован`,
-              });
-
-              // Invalidate version cache to force reload
-              invalidateTrackVersionsCache(newTrack.id);
-              logInfo('Invalidated version cache for completed track', 'useTrackSync', { trackId: newTrack.id });
-
-              onTrackCompletedRef.current?.(newTrack.id);
-            }
-
-            // Track failed
-            if (oldTrack && 'status' in oldTrack && oldTrack.status !== 'failed' && newTrack.status === 'failed') {
-              logWarn('Track failed', 'useTrackSync', {
-                trackId: newTrack.id,
-                error: newTrack.error_message,
-              });
-
-              toastRef.current?.({
-                title: '❌ Ошибка генерации',
-                description: newTrack.error_message || 'Не удалось создать трек',
-                variant: 'destructive',
-              });
-
-              onTrackFailedRef.current?.(newTrack.id, newTrack.error_message ?? null);
-            }
-
-            // Track processing (from pending)
-            if (oldTrack && 'status' in oldTrack && oldTrack.status === 'pending' && newTrack.status === 'processing') {
-              logInfo('Track processing started', 'useTrackSync', { trackId: newTrack.id });
-            }
-          }
-        )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            logInfo('Track sync subscribed', 'useTrackSync');
-            retryAttemptRef.current = 0;
-            channelRef.current = channel;
-            setIsConnecting(false);
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-            setIsConnecting(false);
-            const attempt = retryAttemptRef.current;
-
-            if (status === 'CHANNEL_ERROR') {
-              logError('Track sync channel error', new Error('Channel error'), 'useTrackSync');
-            } else if (status === 'TIMED_OUT') {
-              logWarn('Track sync timed out', 'useTrackSync');
-            } else {
-              logWarn('Track sync closed unexpectedly', 'useTrackSync');
-            }
-
-            if (channelRef.current) {
-              supabase.removeChannel(channelRef.current);
-              channelRef.current = null;
-            }
-
-            if (attempt >= MAX_RETRY_ATTEMPTS) {
-              logError('Track sync retry limit reached', new Error('Realtime connection failed'), 'useTrackSync');
-              return;
-            }
-
-            retryAttemptRef.current = attempt + 1;
-            const delay = Math.min(2 ** attempt * 1000, 30000);
-
-            clearRetryTimeout();
-            retryTimeoutRef.current = setTimeout(() => {
-              // Guard: предотвращаем infinite loop при множественных reconnect attempts
-              if (!channelRef.current && !isConnecting) {
-                subscribeToChannel();
-              }
-            }, delay);
-          }
-        });
-    };
-
-    // ✅ Phase 4: Обновлённая логика подписки с улучшенным reconnection
-    const reconnectAttempts = { current: 0 };
-    const MAX_RECONNECT = 5;
-    let reconnectTimeout: NodeJS.Timeout;
-
-    const setupChannelWithRetry = () => {
-      const channel = supabase
-        .channel('tracks')
         .on(
           'postgres_changes',
           {
@@ -258,13 +144,16 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
           if (status === 'SUBSCRIBED') {
             logInfo('Track sync subscribed', 'useTrackSync');
             reconnectAttempts.current = 0;
+            retryAttemptRef.current = 0;
             channelRef.current = channel;
             setIsConnecting(false);
-          } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
             setIsConnecting(false);
             
             if (status === 'CHANNEL_ERROR') {
               logError('Track sync channel error', new Error('Channel error'), 'useTrackSync');
+            } else if (status === 'TIMED_OUT') {
+              logWarn('Track sync timed out', 'useTrackSync');
             } else {
               logWarn('Track sync closed', 'useTrackSync');
             }
@@ -278,6 +167,7 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
             if (reconnectAttempts.current < MAX_RECONNECT) {
               const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
               reconnectAttempts.current++;
+              retryAttemptRef.current = reconnectAttempts.current;
               
               logInfo('[useTrackSync] Attempting reconnect', undefined, { 
                 attempt: reconnectAttempts.current, 
@@ -304,10 +194,18 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
     };
 
     const initialChannel = setupChannelWithRetry();
-    channelRef.current = initialChannel;
+    if (initialChannel) {
+      channelRef.current = initialChannel;
+    }
 
     return () => {
-      clearTimeout(reconnectTimeout);
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
       setIsConnecting(false);
 
       if (channelRef.current) {

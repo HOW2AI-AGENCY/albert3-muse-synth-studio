@@ -129,33 +129,71 @@ serve(async (req) => {
 
     const murekaClient = createMurekaClient({ apiKey: murekaApiKey });
 
-    // ✅ FIX: Если лирика не передана, сначала генерируем её через /v1/lyrics/generate
+    // ✅ TASK B: Если лирика не передана И hasVocals=true, генерируем её
     let finalLyrics = lyrics;
+    let lyricsWereGenerated = false;
     
-    if (!finalLyrics || finalLyrics.trim().length === 0) {
+    if (hasVocals !== false && (!finalLyrics || finalLyrics.trim().length === 0)) {
       logger.info('📝 No lyrics provided, generating lyrics from prompt');
+      
+      // Update track to show lyrics generation stage
+      await supabaseAdmin
+        .from('tracks')
+        .update({
+          metadata: {
+            stage: 'generating_lyrics',
+            stage_description: 'Генерация текста песни...',
+          }
+        })
+        .eq('id', finalTrackId);
       
       try {
         const lyricsResult = await murekaClient.generateLyrics({ prompt });
         
         if (lyricsResult.code === 200 && lyricsResult.data?.lyrics) {
           finalLyrics = lyricsResult.data.lyrics;
+          lyricsWereGenerated = true;
           logger.info('✅ Lyrics generated successfully', {
             lyricsLength: finalLyrics.length
           });
+          
+          // Update track with generated lyrics
+          await supabaseAdmin
+            .from('tracks')
+            .update({
+              lyrics: finalLyrics,
+              metadata: {
+                stage: 'composing_music',
+                stage_description: 'Создание музыки...',
+                generatedLyrics: true,
+              }
+            })
+            .eq('id', finalTrackId);
         } else {
           throw new Error('Failed to generate lyrics: ' + lyricsResult.msg);
         }
       } catch (lyricsError) {
         logger.error('🔴 Lyrics generation failed', { error: lyricsError });
+        
+        await supabaseAdmin
+          .from('tracks')
+          .update({
+            status: 'failed',
+            error_message: 'Не удалось сгенерировать текст песни',
+          })
+          .eq('id', finalTrackId);
+        
         throw new Error('Failed to generate lyrics before song generation');
       }
+    } else if (hasVocals === false) {
+      logger.info('🎼 Instrumental mode, skipping lyrics generation');
+      finalLyrics = undefined; // Explicitly set to undefined for instrumental
     }
 
     // ✅ FIX: Правильный payload согласно документации Mureka API
     // https://platform.mureka.ai/docs/api/operations/post-v1-song-generate.html
     const generatePayload = {
-      lyrics: finalLyrics,              // REQUIRED: Текст песни (обязательно)
+      lyrics: finalLyrics || '',        // REQUIRED: Текст песни (обязательно, даже пустая строка)
       prompt: prompt || undefined,      // OPTIONAL: Контроль генерации музыки
       model: modelVersion || 'auto',    // auto | mureka-6 | mureka-7.5 | mureka-o1
       n: 2,                              // Количество вариантов (2-3)
@@ -174,16 +212,18 @@ serve(async (req) => {
     await supabaseAdmin
       .from('tracks')
       .update({
-        suno_id: task_id, // Reusing suno_id field for Mureka task_id
+        suno_id: task_id,
         status: 'processing',
         provider: 'mureka',
-        lyrics: finalLyrics,        // ✅ Сохраняем итоговую лирику
+        lyrics: finalLyrics,
         metadata: {
           originalPrompt: prompt,
-          generatedLyrics: !lyrics, // Флаг что лирика была сгенерирована
+          generatedLyrics: lyricsWereGenerated,
           murekaModel: generatePayload.model,
           mureka_task_id: task_id,
           started_at: new Date().toISOString(),
+          stage: 'processing_music',
+          polling_attempts: 0,
         },
       })
       .eq('id', finalTrackId);
@@ -217,6 +257,17 @@ serve(async (req) => {
 
       try {
         const queryResult = await murekaClient.queryTask(task_id);
+        
+        // ✅ TASK B: Update polling attempts in metadata
+        await supabaseAdmin
+          .from('tracks')
+          .update({
+            metadata: {
+              polling_attempts: attemptNumber + 1,
+              last_poll_at: new Date().toISOString(),
+            }
+          })
+          .eq('id', finalTrackId);
         
         logger.info('🔍 Mureka poll attempt', {
           attempt: attemptNumber + 1,

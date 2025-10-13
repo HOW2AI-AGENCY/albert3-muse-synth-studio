@@ -23,8 +23,10 @@ import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog
 import { AudioRecorder } from '@/components/audio/AudioRecorder';
 import { ProviderSelector } from '@/components/mureka/ProviderSelector';
 import { MurekaBalanceDisplay } from '@/components/mureka/MurekaBalanceDisplay';
+import { SunoBalanceDisplay } from '@/components/mureka/SunoBalanceDisplay';
 import { logger } from '@/utils/logger';
 import { getProviderModels, getDefaultModel, type MusicProvider as ProviderType, type ModelVersion } from '@/config/provider-models';
+import { useProviderBalance } from '@/hooks/useProviderBalance';
 
 interface MusicGeneratorV2Props {
   onTrackGenerated?: () => void;
@@ -49,6 +51,9 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const { vibrate } = useHapticFeedback();
   const { uploadAudio, isUploading } = useAudioUpload();
   const { boostStyle, isBoosting } = useBoostStyle();
+  
+  // ✅ TASK C: Get Suno balance for pre-flight check
+  const { balance: sunoBalance } = useProviderBalance();
 
   // UI State
   const [mode, setMode] = useState<GeneratorMode>('simple');
@@ -166,6 +171,26 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const handleGenerate = useCallback(async () => {
     vibrate('heavy');
 
+    // ✅ TASK C: Pre-flight balance check for Suno
+    if (selectedProvider === 'suno') {
+      const credits = sunoBalance?.balance || 0;
+      if (credits === 0) {
+        toast({
+          title: '❌ Недостаточно кредитов',
+          description: 'У вас закончились кредиты Suno. Пополните баланс для продолжения.',
+          variant: 'destructive'
+        });
+        return;
+      }
+      if (credits < 10) {
+        toast({
+          title: '⚠️ Низкий баланс',
+          description: `У вас осталось ${credits} кредитов Suno`,
+          duration: 3000,
+        });
+      }
+    }
+
     // ✅ Улучшенная валидация с предупреждениями
     const hasPrompt = params.prompt.trim().length > 0;
     const hasLyrics = params.lyrics.trim().length > 0;
@@ -236,7 +261,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
         tags: '',
       }));
     }
-  }, [params, generateMusic, toast, onTrackGenerated, vibrate, mode]);
+  }, [params, generateMusic, toast, onTrackGenerated, vibrate, mode, selectedProvider, sunoBalance]);
 
   const tempAudioUrl = pendingAudioFile ? URL.createObjectURL(pendingAudioFile) : '';
 
@@ -246,7 +271,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     <div className="flex flex-col h-full bg-card border border-border/20 rounded-lg shadow-sm" data-testid="music-generator">
       {/* Header: Provider Selector + Tabs + Model Version */}
       <div className="p-2.5 border-b border-border/20 space-y-2">
-        {/* Provider Selector Row */}
+        {/* Provider Selector Row with Balance */}
         <div className="flex items-center gap-2">
           <div className="flex-1">
             <ProviderSelector
@@ -255,9 +280,9 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               disabled={isGenerating}
             />
           </div>
-          {selectedProvider === 'mureka' && (
-            <MurekaBalanceDisplay />
-          )}
+          {/* ✅ TASK C: Show balance for all providers */}
+          {selectedProvider === 'mureka' && <MurekaBalanceDisplay />}
+          {selectedProvider === 'suno' && <SunoBalanceDisplay />}
         </div>
 
         {/* Mode Tabs + Model Version Row */}
