@@ -34,10 +34,10 @@ import {
   FileText, 
   Sparkles, 
   AlertCircle, 
-  CheckCircle2,
+  CheckCircle,
   Plus,
   Download
-} from 'lucide-react';
+} from '@/utils/iconImports';
 
 interface LyricsEditorAdvancedProps {
   lyrics: string;
@@ -211,7 +211,7 @@ export const LyricsEditorAdvanced: React.FC<LyricsEditorAdvancedProps> = ({
             )}
             {errorCount === 0 && warningCount === 0 && (
               <Badge variant="default" className="gap-1 bg-green-500">
-                <CheckCircle2 className="h-3 w-3" />
+                <CheckCircle className="h-3 w-3" />
                 Valid
               </Badge>
             )}

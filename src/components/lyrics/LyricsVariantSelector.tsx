@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Music } from "lucide-react";
+import { Loader2, Music } from "@/utils/iconImports";
 import { logger } from "@/utils/logger";
 
 interface LyricsVariant {

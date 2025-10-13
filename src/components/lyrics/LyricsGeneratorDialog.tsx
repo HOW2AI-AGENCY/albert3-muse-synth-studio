@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/utils/logger";
-import { Loader2, FileText } from "lucide-react";
+import { Loader2, FileText } from "@/utils/iconImports";
 
 interface LyricsGeneratorDialogProps {
   open: boolean;

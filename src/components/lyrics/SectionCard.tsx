@@ -26,9 +26,9 @@ import {
   Plus, 
   Trash2, 
   ChevronDown,
-  ChevronUp,
-  Edit2
-} from 'lucide-react';
+  ChevronUp
+} from '@/utils/iconImports';
+import { Edit2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';

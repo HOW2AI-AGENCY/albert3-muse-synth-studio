@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/utils/logger";
-import { Copy, Check, FileText, Loader2 } from "lucide-react";
+import { Copy, Check, FileText, Loader2 } from "@/utils/iconImports";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface LyricsVariant {
