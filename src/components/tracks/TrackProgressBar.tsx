@@ -1,5 +1,5 @@
 import { SimpleProgress } from '@/components/ui/SimpleProgress';
-import { Clock, Loader2 } from 'lucide-react';
+import { Clock, Loader2 } from '@/utils/iconImports';
 
 interface TrackProgressBarProps {
   progress: number; // 0-100

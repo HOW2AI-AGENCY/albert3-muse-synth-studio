@@ -1,4 +1,4 @@
-import { AlertTriangle, Loader2, RefreshCw, X } from "lucide-react";
+import { AlertTriangle, Loader2, RefreshCw, X } from "@/utils/iconImports";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
