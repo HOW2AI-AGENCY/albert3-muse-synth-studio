@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 // import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "@/utils/iconImports";
 import { supabase } from "@/integrations/supabase/client";
 import { getTrackWithVersions } from "@/features/tracks";
 import { logError } from "@/utils/logger";

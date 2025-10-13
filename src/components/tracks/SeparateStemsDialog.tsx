@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Music4, Loader2, Mic, Music } from "lucide-react";
+import { Music4, Loader2, Mic, Music } from "@/utils/iconImports";
 import { cn } from "@/lib/utils";
 import { useStemSeparation } from "@/hooks/useStemSeparation";
 

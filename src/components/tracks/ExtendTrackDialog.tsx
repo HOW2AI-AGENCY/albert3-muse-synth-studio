@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Info } from "lucide-react";
+import { Info } from "@/utils/iconImports";
 import { useExtendTrack } from "@/hooks/useExtendTrack";
 import { cn } from "@/lib/utils";
 

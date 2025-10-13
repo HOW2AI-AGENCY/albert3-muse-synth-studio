@@ -1,4 +1,4 @@
-import { LayoutGrid, List } from "lucide-react";
+import { LayoutGrid, List } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
