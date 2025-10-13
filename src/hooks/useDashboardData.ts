@@ -200,7 +200,7 @@ const fetchDashboardData = async ({
       .from("tracks")
       .select(`
         *,
-        profiles!inner(username, avatar_url)
+        profiles!inner(full_name, avatar_url)
       `)
       .eq("is_public", true)
       .eq("status", "completed")
