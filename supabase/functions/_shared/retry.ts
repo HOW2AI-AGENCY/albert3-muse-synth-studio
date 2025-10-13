@@ -44,7 +44,8 @@ export async function retryWithBackoff<T>(
     metrics.totalAttempts = attempt;
 
     try {
-      logger.info(`🔄 Retry attempt ${attempt}/${config.maxAttempts}`, context || 'retry', {
+      logger.info(`🔄 Retry attempt ${attempt}/${config.maxAttempts}`, {
+        context: context || 'retry',
         attempt,
         maxAttempts: config.maxAttempts,
       });
@@ -52,7 +53,8 @@ export async function retryWithBackoff<T>(
       const result = await fn();
 
       if (attempt > 1) {
-        logger.info(`✅ Retry successful after ${attempt} attempts`, context || 'retry', {
+        logger.info(`✅ Retry successful after ${attempt} attempts`, {
+          context: context || 'retry',
           attempt,
           totalDelay: metrics.totalDelay,
         });
@@ -63,7 +65,8 @@ export async function retryWithBackoff<T>(
       lastError = error;
       const errorMessage = error instanceof Error ? error.message : String(error);
 
-      logger.warn(`⚠️ Attempt ${attempt} failed`, context || 'retry', {
+      logger.warn(`⚠️ Attempt ${attempt} failed`, {
+        context: context || 'retry',
         attempt,
         error: errorMessage,
         willRetry: attempt < config.maxAttempts && config.shouldRetry(error),
@@ -71,7 +74,8 @@ export async function retryWithBackoff<T>(
 
       // Check if we should retry this error
       if (!config.shouldRetry(error)) {
-        logger.error('❌ Error is not retryable, failing immediately', context || 'retry', {
+        logger.error('❌ Error is not retryable, failing immediately', {
+          context: context || 'retry',
           error: errorMessage,
           attempt,
         });
@@ -80,7 +84,8 @@ export async function retryWithBackoff<T>(
 
       // Check if this was the last attempt
       if (attempt === config.maxAttempts) {
-        logger.error('❌ All retry attempts exhausted', context || 'retry', {
+        logger.error('❌ All retry attempts exhausted', {
+          context: context || 'retry',
           totalAttempts: metrics.totalAttempts,
           totalDelay: metrics.totalDelay,
           finalError: errorMessage,
@@ -100,7 +105,11 @@ export async function retryWithBackoff<T>(
       });
       metrics.totalDelay += delay;
 
-      logger.info(`⏳ Waiting ${delay.toFixed(0)}ms before retry ${attempt + 1}`, context || 'retry');
+      logger.info(`⏳ Waiting ${delay.toFixed(0)}ms before retry ${attempt + 1}`, {
+        context: context || 'retry',
+        delay,
+        nextAttempt: attempt + 1,
+      });
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
@@ -124,8 +133,8 @@ export const retryConfigs = {
     shouldRetry: (error: unknown): boolean => {
       if (error instanceof SunoApiError) {
         // Retry on rate limits and server errors
-        const statusCode = (error as any).statusCode;
-        return statusCode === 429 || statusCode >= 500;
+        const statusCode = error.details.status;
+        return statusCode === 429 || (statusCode !== undefined && statusCode >= 500);
       }
       // Retry on network errors
       if (error instanceof Error) {
@@ -150,8 +159,8 @@ export const retryConfigs = {
     maxDelay: 5000, // 5 seconds max
     shouldRetry: (error: unknown): boolean => {
       if (error instanceof SunoApiError) {
-        const statusCode = (error as any).statusCode;
-        return statusCode === 429 || statusCode >= 500;
+        const statusCode = error.details.status;
+        return statusCode === 429 || (statusCode !== undefined && statusCode >= 500);
       }
       return false;
     },
@@ -167,8 +176,8 @@ export const retryConfigs = {
     shouldRetry: (error: unknown): boolean => {
       // More aggressive retry - retry on any non-4xx error (except 429)
       if (error instanceof SunoApiError) {
-        const statusCode = (error as any).statusCode;
-        return statusCode === 429 || statusCode >= 500;
+        const statusCode = error.details.status;
+        return statusCode === 429 || (statusCode !== undefined && statusCode >= 500);
       }
       if (error instanceof Error) {
         const message = error.message.toLowerCase();

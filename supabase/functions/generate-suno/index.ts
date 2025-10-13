@@ -7,6 +7,7 @@ import { downloadAndUploadAudio, downloadAndUploadCover, downloadAndUploadVideo 
 import { createSunoClient, SunoApiError, type SunoGenerationPayload } from "../_shared/suno.ts";
 import { fetchSunoBalance } from "../_shared/suno-balance.ts";
 import { generateSunoSchema, validateAndParse } from "../_shared/zod-schemas.ts";
+import { retryWithBackoff, retryConfigs, formatRetryMetrics } from "../_shared/retry.ts";
 
 interface GenerateSunoRequestBody {
   trackId?: string;
@@ -358,7 +359,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       });
       
       const errorMessage = err instanceof Error ? err.message : 'Suno generation failed';
-      const isRateLimitError = err instanceof SunoApiError && err.statusCode === 429;
+      const isRateLimitError = err instanceof SunoApiError && err.details.status === 429;
       
       // ✅ Сохранить детали ошибки в metadata
       const errorDetails = {
