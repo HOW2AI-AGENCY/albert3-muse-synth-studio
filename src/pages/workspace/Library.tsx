@@ -18,11 +18,13 @@ import { TrackCard, TrackListItem } from "@/features/tracks";
 import { OptimizedTrackList } from "@/components/OptimizedTrackList";
 import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
 import { TrackStatusMonitor } from "@/components/TrackStatusMonitor";
-import { SeparateStemsDialog } from "@/components/tracks/SeparateStemsDialog";
-import { ExtendTrackDialog } from "@/components/tracks/ExtendTrackDialog";
-import { CreateCoverDialog } from "@/components/tracks/CreateCoverDialog";
-import { TrackDeleteDialog } from "@/components/tracks/TrackDeleteDialog";
-import { AddVocalDialog } from "@/components/tracks/AddVocalDialog";
+import { 
+  LazySeparateStemsDialog, 
+  LazyExtendTrackDialog, 
+  LazyCreateCoverDialog,
+  LazyTrackDeleteDialog,
+  LazyAddVocalDialog
+} from "@/components/LazyDialogs";
 import { useTracks } from "@/hooks/useTracks";
 import { useToast } from "@/hooks/use-toast";
 import { useTrackCleanup } from "@/hooks/useTrackCleanup";
@@ -652,8 +654,8 @@ const Library: React.FC = () => {
                     </div>
       )}
 
-      {selectedTrackForDelete && (
-        <TrackDeleteDialog
+      {deleteDialogOpen && selectedTrackForDelete && (
+        <LazyTrackDeleteDialog
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
           trackId={selectedTrackForDelete.id}
@@ -699,8 +701,8 @@ const Library: React.FC = () => {
       )}
 
       {/* Диалоги */}
-      {selectedTrackForStems && (
-        <SeparateStemsDialog
+      {separateStemsDialogOpen && selectedTrackForStems && (
+        <LazySeparateStemsDialog
           open={separateStemsDialogOpen}
           onOpenChange={setSeparateStemsDialogOpen}
           trackId={selectedTrackForStems.id}
@@ -712,8 +714,8 @@ const Library: React.FC = () => {
         />
       )}
 
-      {selectedTrackForExtend && (
-        <ExtendTrackDialog
+      {extendDialogOpen && selectedTrackForExtend && (
+        <LazyExtendTrackDialog
           open={extendDialogOpen}
           onOpenChange={setExtendDialogOpen}
           track={{
@@ -726,8 +728,8 @@ const Library: React.FC = () => {
         />
       )}
 
-      {selectedTrackForCover && (
-        <CreateCoverDialog
+      {coverDialogOpen && selectedTrackForCover && (
+        <LazyCreateCoverDialog
           open={coverDialogOpen}
           onOpenChange={setCoverDialogOpen}
           track={{
@@ -737,14 +739,16 @@ const Library: React.FC = () => {
         />
       )}
 
-      <AddVocalDialog
-        open={addVocalDialogOpen}
-        onOpenChange={setAddVocalDialogOpen}
-        trackId={selectedTrackForVocal}
-        onSuccess={() => {
-          refreshTracks();
-        }}
-      />
+      {addVocalDialogOpen && selectedTrackForVocal && (
+        <LazyAddVocalDialog
+          open={addVocalDialogOpen}
+          onOpenChange={setAddVocalDialogOpen}
+          trackId={selectedTrackForVocal}
+          onSuccess={() => {
+            refreshTracks();
+          }}
+        />
+      )}
     </div>
   );
 };

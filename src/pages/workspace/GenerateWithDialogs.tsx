@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { ExtendTrackDialog } from "@/components/tracks/ExtendTrackDialog";
-import { CreateCoverDialog } from "@/components/tracks/CreateCoverDialog";
+import { LazyExtendTrackDialog, LazyCreateCoverDialog } from "@/components/LazyDialogs";
 
 interface Track {
   id: string;
@@ -43,19 +42,20 @@ export function GenerateWithDialogs({ children, tracks }: GenerateWithDialogsPro
     <>
       {children({ handleExtend, handleCover })}
       
-      {selectedTrack && (
-        <>
-          <ExtendTrackDialog
-            open={extendDialogOpen}
-            onOpenChange={setExtendDialogOpen}
-            track={selectedTrack}
-          />
-          <CreateCoverDialog
-            open={coverDialogOpen}
-            onOpenChange={setCoverDialogOpen}
-            track={selectedTrack}
-          />
-        </>
+      {extendDialogOpen && selectedTrack && (
+        <LazyExtendTrackDialog
+          open={extendDialogOpen}
+          onOpenChange={setExtendDialogOpen}
+          track={selectedTrack}
+        />
+      )}
+      
+      {coverDialogOpen && selectedTrack && (
+        <LazyCreateCoverDialog
+          open={coverDialogOpen}
+          onOpenChange={setCoverDialogOpen}
+          track={selectedTrack}
+        />
       )}
     </>
   );

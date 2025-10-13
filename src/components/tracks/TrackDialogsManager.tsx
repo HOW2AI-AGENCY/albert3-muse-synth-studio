@@ -1,6 +1,8 @@
-import { SeparateStemsDialog } from "./SeparateStemsDialog";
-import { ExtendTrackDialog } from "./ExtendTrackDialog";
-import { CreateCoverDialog } from "./CreateCoverDialog";
+import { 
+  LazySeparateStemsDialog, 
+  LazyExtendTrackDialog, 
+  LazyCreateCoverDialog 
+} from "@/components/LazyDialogs";
 import type { Track } from "@/services/api.service";
 
 interface TrackDialogsManagerProps {
@@ -39,8 +41,8 @@ export function TrackDialogsManager({
 }: TrackDialogsManagerProps) {
   return (
     <>
-      {selectedTrackForStems && (
-        <SeparateStemsDialog
+      {separateStemsOpen && selectedTrackForStems && (
+        <LazySeparateStemsDialog
           open={separateStemsOpen}
           onOpenChange={setSeparateStemsOpen}
           trackId={selectedTrackForStems.id}
@@ -52,8 +54,8 @@ export function TrackDialogsManager({
         />
       )}
       
-      {selectedTrackForExtend && (
-        <ExtendTrackDialog
+      {extendOpen && selectedTrackForExtend && (
+        <LazyExtendTrackDialog
           open={extendOpen}
           onOpenChange={setExtendOpen}
           track={{
@@ -66,8 +68,8 @@ export function TrackDialogsManager({
         />
       )}
       
-      {selectedTrackForCover && (
-        <CreateCoverDialog
+      {coverOpen && selectedTrackForCover && (
+        <LazyCreateCoverDialog
           open={coverOpen}
           onOpenChange={setCoverOpen}
           track={{
