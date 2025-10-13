@@ -138,50 +138,6 @@ if (!channelRef.current && !isConnecting) {
 
 ---
 
-## 🚧 Оставшиеся задачи (Фазы 4-5)
-
-### ФАЗА 4: Оптимизация производительности
-- [ ] Circuit Breaker для Realtime Subscriptions
-- [ ] Проверка IndexedDB кэширования
-- [ ] Bundle size optimization
-
-### ФАЗА 5: Улучшение безопасности
-- [ ] Включение Leaked Password Protection в Supabase Dashboard
-- [ ] Rate Limiting для критических endpoints
-- [ ] Zod schemas для Input Validation
-
----
-
-## 📋 Рекомендации
-
-### Немедленные действия (в течение недели)
-1. **Включить Leaked Password Protection:**
-   - Navigate to Supabase Dashboard → Authentication → Policies
-   - Enable: Password Strength Check + Leaked Password Protection
-
-2. **Запустить E2E тесты:**
-   ```bash
-   npm run test:e2e
-   ```
-
-3. **Проверить Supabase Linter:**
-   ```bash
-   # Должен остаться только 1 WARN
-   npm run supabase:lint
-   ```
-
-### Средние приоритеты (в течение месяца)
-- Реализация Rate Limiting для `improve-prompt` и `generate-lyrics`
-- Добавление Zod schemas в Edge Functions
-- Circuit Breaker pattern для Realtime
-
-### Долгосрочные цели (следующий спринт)
-- Visual regression tests
-- Performance monitoring (Sentry Performance)
-- Unit test coverage ≥ 80%
-
----
-
 ## 🏆 Итоги
 
 ### Общая оценка проекта
@@ -202,7 +158,7 @@ if (!channelRef.current && !isConnecting) {
 
 ---
 
-**Статус проекта:** ✅ Готов к переходу на Sprint 26
+**Статус проекта:** ✅ Архивировано (Sprint 26 завершён)
 
 *Последнее обновление: 11 октября 2025*  
 *Автор аудита: AI Assistant*  

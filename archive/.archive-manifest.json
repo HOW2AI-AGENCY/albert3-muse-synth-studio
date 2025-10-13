@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "lastUpdated": "2025-10-11",
+  "version": "2.0.0",
+  "lastUpdated": "2025-10-13",
   "description": "Архив устаревших отчетов и документации проекта Albert3 Muse Synth Studio",
   "structure": {
     "2024": {
@@ -20,7 +20,7 @@
         ]
       },
       "october": {
-        "description": "Отчеты и планы Sprint 19-20 за октябрь 2025",
+        "description": "Отчеты и планы Sprint 19-26 за октябрь 2025",
         "files": [
           "README.md",
           "WORKSPACE_UI_AUDIT_REPORT.md",
@@ -29,7 +29,7 @@
           "sprint-20-plan-initial.md"
         ],
         "reports": {
-          "description": "Аудиты и отчеты 08-10 октября 2025",
+          "description": "Аудиты и отчеты 08-13 октября 2025",
           "files": [
             "2025-10-08-remote-audit.md",
             "2025-10-08-suno-audit.md",
@@ -37,20 +37,23 @@
             "2025-10-09-audit-fixes-implementation.md",
             "2025-10-09-suno-integration-reaudit.md",
             "2025-10-09-workspace-audit.md",
-            "2025-10-10-repo-audit.md"
+            "2025-10-10-repo-audit.md",
+            "2025-10-11-audit-completion.md",
+            "2025-10-11-sprint-26-completion.md",
+            "2025-10-13-ai-audit.md"
           ]
         }
       }
     }
   },
   "retention": {
-    "policy": "Хранить отчеты старше 2 месяцев в архиве",
+    "policy": "Хранить отчеты старше 1 недели в архиве",
     "autoArchive": true,
-    "archiveAfterDays": 60
+    "archiveAfterDays": 7
   },
   "migration": {
-    "date": "2025-10-11",
-    "reason": "Фаза 2: Реорганизация репозитория - перемещение октябрьских отчетов в архив",
-    "movedFiles": 7
+    "date": "2025-10-13",
+    "reason": "Комплексная реорганизация репозитория - архивация октябрьских отчетов и Sprint 26",
+    "movedFiles": 10
   }
 }
