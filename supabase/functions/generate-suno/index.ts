@@ -6,6 +6,7 @@ import { createCorsHeaders } from "../_shared/cors.ts";
 import { downloadAndUploadAudio, downloadAndUploadCover, downloadAndUploadVideo } from "../_shared/storage.ts";
 import { createSunoClient, SunoApiError, type SunoGenerationPayload } from "../_shared/suno.ts";
 import { fetchSunoBalance } from "../_shared/suno-balance.ts";
+import { generateSunoSchema, validateAndParse } from "../_shared/zod-schemas.ts";
 
 interface GenerateSunoRequestBody {
   trackId?: string;
@@ -74,7 +75,22 @@ export const mainHandler = async (req: Request): Promise<Response> => {
 
     supabaseAdmin = createSupabaseAdminClient();
 
-    const body = (await req.json()) as GenerateSunoRequestBody;
+    const rawBody = await req.json();
+    
+    // ✅ Validate request with Zod schema
+    const validation = validateAndParse(generateSunoSchema, rawBody);
+    if (!validation.success) {
+      logger.warn('Invalid request payload', { errors: validation.errors.errors });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid request parameters', 
+          details: validation.errors.errors.map(e => ({ path: e.path.join('.'), message: e.message }))
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const body = validation.data;
     const hasLyricsInput = typeof body.lyrics === 'string' && body.lyrics !== null;
     const trimmedLyrics = hasLyricsInput ? (body.lyrics as string).trim() : '';
     const normalizedLyrics = hasLyricsInput

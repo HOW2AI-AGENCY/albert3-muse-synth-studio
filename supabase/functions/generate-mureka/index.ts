@@ -16,6 +16,8 @@ import { logger } from "../_shared/logger.ts";
 import { findOrCreateTrack } from "../_shared/track-helpers.ts";
 import { createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { validateAndParse, uuidSchema } from "../_shared/zod-schemas.ts";
 
 const corsHeaders = {
   ...createCorsHeaders(),
@@ -60,12 +62,34 @@ serve(async (req) => {
     }
 
     // 2. Parse and validate request body
-    const body: GenerateMurekaRequest = await req.json();
-    const { trackId, title, prompt, lyrics, styleTags, hasVocals, isBGM, modelVersion, idempotencyKey } = body;
+    const rawBody = await req.json();
 
-    if (!prompt?.trim()) {
-      throw new Error('Prompt is required');
+    // ✅ Validate Mureka request
+    const generateMurekaSchema = z.object({
+      trackId: uuidSchema.optional(),
+      title: z.string().max(200).optional(),
+      prompt: z.string().min(1).max(3000).trim(),
+      lyrics: z.string().max(3000).nullable().optional(),
+      styleTags: z.array(z.string().max(50)).max(20).optional(),
+      hasVocals: z.boolean().optional(),
+      isBGM: z.boolean().optional(),
+      modelVersion: z.string().max(50).optional(),
+      idempotencyKey: uuidSchema.optional(),
+    });
+
+    const validation = validateAndParse(generateMurekaSchema, rawBody);
+    if (!validation.success) {
+      logger.warn('Invalid Mureka request payload', { errors: validation.errors.errors });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid request parameters', 
+          details: validation.errors.errors.map(e => ({ path: e.path.join('.'), message: e.message }))
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    const { trackId, title, prompt, lyrics, styleTags, hasVocals, isBGM, modelVersion, idempotencyKey } = validation.data;
 
     logger.info('📝 Mureka generation request received', {
       userId: user.id,

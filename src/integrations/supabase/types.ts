@@ -767,10 +767,8 @@ export type Database = {
       get_user_mureka_stats: {
         Args: { user_uuid: string }
         Returns: {
-          avg_recognition_confidence: number
-          successful_recognitions: number
-          total_descriptions: number
-          total_recognitions: number
+          total_likes: number
+          total_plays: number
           total_tracks: number
         }[]
       }

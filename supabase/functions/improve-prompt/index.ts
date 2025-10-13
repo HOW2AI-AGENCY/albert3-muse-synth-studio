@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { logger } from "../_shared/logger.ts";
+import { improvePromptSchema, validateAndParse } from "../_shared/zod-schemas.ts";
 
 const mainHandler = async (req: Request) => {
   const corsHeaders = {
@@ -24,14 +25,22 @@ const mainHandler = async (req: Request) => {
       );
     }
 
-    const { prompt } = await req.json();
+    const rawBody = await req.json();
 
-    if (!prompt) {
+    // ✅ Validate with Zod schema
+    const validation = validateAndParse(improvePromptSchema, rawBody);
+    if (!validation.success) {
+      logger.warn('Invalid improve-prompt payload', { errors: validation.errors.errors });
       return new Response(
-        JSON.stringify({ error: 'Prompt is required' }),
+        JSON.stringify({ 
+          error: 'Invalid request parameters', 
+          details: validation.errors.errors.map(e => ({ path: e.path.join('.'), message: e.message }))
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const { prompt } = validation.data;
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
