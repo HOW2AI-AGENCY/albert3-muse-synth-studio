@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Music, Loader2, Plus, FileAudio, FileText, SlidersHorizontal, Sparkles, Mic, Wand2, X, Volume2, Palette } from '@/utils/iconImports';
 import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
+import { useGenerateMusic } from '@/hooks/useGenerateMusic';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
 import { useAudioUpload } from '@/hooks/useAudioUpload';
@@ -43,12 +44,18 @@ const vocalGenderOptions: { value: VocalGender; label: string }[] = [
 ];
 
 const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) => {
-  const { generateMusic, isGenerating, selectedProvider, setProvider } = useMusicGenerationStore();
+  const { selectedProvider, setProvider } = useMusicGenerationStore();
+  const { toast } = useToast();
+  const { vibrate } = useHapticFeedback();
+  
+  const { generate, isGenerating } = useGenerateMusic({ 
+    provider: selectedProvider, 
+    onSuccess: onTrackGenerated,
+    toast 
+  });
   
   // Get model versions based on selected provider
   const currentModels = getProviderModels(selectedProvider as ProviderType);
-  const { toast } = useToast();
-  const { vibrate } = useHapticFeedback();
   const { uploadAudio, isUploading } = useAudioUpload();
   const { boostStyle, isBoosting } = useBoostStyle();
   
@@ -251,7 +258,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       `Prompt: ${!!params.prompt.trim()}, Lyrics: ${!!params.lyrics.trim()}, Audio: ${!!params.referenceAudioUrl}, Mode: ${mode}`
     );
 
-    const started = await generateMusic(requestParams, toast, onTrackGenerated);
+    const started = await generate(requestParams);
     if (started) {
       setParams(prev => ({
         ...prev,
@@ -261,7 +268,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
         tags: '',
       }));
     }
-  }, [params, generateMusic, toast, onTrackGenerated, vibrate, mode, selectedProvider, sunoBalance]);
+  }, [params, generate, toast, onTrackGenerated, vibrate, mode, selectedProvider, sunoBalance]);
 
   const tempAudioUrl = pendingAudioFile ? URL.createObjectURL(pendingAudioFile) : '';
 
