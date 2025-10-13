@@ -330,27 +330,44 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       ...(body.referenceAudioUrl ? { referenceAudioUrl: body.referenceAudioUrl } : {}),
     };
     
-    logger.info('🎵 Calling Suno API', { trackId: finalTrackId, customMode: customModeValue });
+    logger.info('🎵 Calling Suno API with retry logic', { trackId: finalTrackId, customMode: customModeValue });
 
-    // ✅ ФАЗА 3.1: Улучшенная обработка ошибок с graceful degradation
+    // ✅ FIX: Retry logic with exponential backoff
     let generationResult;
+    let retryMetrics;
     try {
-      generationResult = await sunoClient.generateTrack(sunoPayload);
+      const retryResult = await retryWithBackoff(
+        () => sunoClient.generateTrack(sunoPayload),
+        retryConfigs.sunoApi,
+        'generate-suno'
+      );
+      
+      generationResult = retryResult.result;
+      retryMetrics = retryResult.metrics;
+      
       logger.info('✅ Suno API call successful', { 
         taskId: generationResult.taskId, 
-        trackId: finalTrackId 
+        trackId: finalTrackId,
+        retryInfo: formatRetryMetrics(retryMetrics),
       });
     } catch (err: unknown) {
-      logger.error('🔴 Suno API call failed', { error: err, trackId: finalTrackId });
+      logger.error('🔴 Suno API call failed after all retries', { 
+        error: err, 
+        trackId: finalTrackId,
+        attempts: retryMetrics?.totalAttempts || 0,
+      });
       
       const errorMessage = err instanceof Error ? err.message : 'Suno generation failed';
+      const isRateLimitError = err instanceof SunoApiError && err.statusCode === 429;
       
-      // ✅ ФАЗА 3.1: Сохранить детали ошибки в metadata
+      // ✅ Сохранить детали ошибки в metadata
       const errorDetails = {
-        error_type: 'suno_api_error',
+        error_type: isRateLimitError ? 'rate_limit_exceeded' : 'suno_api_error',
         error_message: errorMessage,
         error_timestamp: new Date().toISOString(),
         error_stack: err instanceof Error ? err.stack : undefined,
+        retry_attempts: retryMetrics?.totalAttempts || 0,
+        retry_errors: retryMetrics?.errors || [],
         payload_sent: {
           prompt: sunoPayload.prompt?.substring(0, 100),
           tags: sunoPayload.tags,
@@ -371,15 +388,17 @@ export const mainHandler = async (req: Request): Promise<Response> => {
         })
         .eq('id', finalTrackId);
 
-      // ✅ ФАЗА 3.1: Возвращаем 200 OK чтобы не trigger retry на клиенте
+      // ✅ Возвращаем 200 OK чтобы не trigger retry на клиенте
       return new Response(JSON.stringify({
         success: false,
         trackId: finalTrackId,
         error: errorMessage,
         errorDetails,
-        message: 'Track marked as failed. Check logs and metadata for details.'
+        message: isRateLimitError 
+          ? 'Rate limit exceeded. Please try again later.'
+          : 'Track marked as failed. Check logs and metadata for details.'
       }), {
-        status: 200, // ← Возвращаем 200, чтобы не trigger retry
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }

@@ -1,80 +1,201 @@
-import { logger } from "./logger.ts";
+/**
+ * Retry Logic with Exponential Backoff
+ * 
+ * ✅ FIX: Implements automatic retry for temporary API failures (429, 503, etc.)
+ * Prevents premature track failure due to transient network issues
+ */
 
-export interface RetryOptions {
-  maxAttempts?: number;
-  initialDelayMs?: number;
-  maxDelayMs?: number;
-  backoffMultiplier?: number;
-  retryableStatuses?: number[];
+import { logger } from './logger.ts';
+import { SunoApiError } from './suno.ts';
+
+export interface RetryConfig {
+  maxAttempts: number;
+  baseDelay: number; // ms
+  maxDelay: number; // ms
+  shouldRetry: (error: unknown) => boolean;
 }
 
-const DEFAULT_OPTIONS: Required<RetryOptions> = {
-  maxAttempts: 3,
-  initialDelayMs: 1000,
-  maxDelayMs: 10000,
-  backoffMultiplier: 2,
-  retryableStatuses: [408, 429, 500, 502, 503, 504],
-};
+export interface RetryMetrics {
+  totalAttempts: number;
+  totalDelay: number;
+  errors: Array<{
+    attempt: number;
+    error: string;
+    delay: number;
+  }>;
+}
 
+/**
+ * Execute a function with automatic retry and exponential backoff
+ */
 export async function retryWithBackoff<T>(
   fn: () => Promise<T>,
-  options: RetryOptions = {}
-): Promise<T> {
-  const opts = { ...DEFAULT_OPTIONS, ...options };
-  let lastError: Error | undefined;
-  let delay = opts.initialDelayMs;
+  config: RetryConfig,
+  context?: string
+): Promise<{ result: T; metrics: RetryMetrics }> {
+  let lastError: unknown;
+  const metrics: RetryMetrics = {
+    totalAttempts: 0,
+    totalDelay: 0,
+    errors: [],
+  };
 
-  for (let attempt = 1; attempt <= opts.maxAttempts; attempt++) {
+  for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
+    metrics.totalAttempts = attempt;
+
     try {
-      logger.debug('Retry attempt', { attempt, maxAttempts: opts.maxAttempts });
-      return await fn();
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-
-      // Check if error is retryable
-      const isRetryable = error instanceof Response
-        ? opts.retryableStatuses.includes(error.status)
-        : true;
-
-      if (attempt === opts.maxAttempts || !isRetryable) {
-        logger.error('Max retries exceeded or non-retryable error', {
-          attempt,
-          maxAttempts: opts.maxAttempts,
-          error: lastError.message,
-        });
-        throw lastError;
-      }
-
-      logger.warn('Retry attempt failed', {
+      logger.info(`🔄 Retry attempt ${attempt}/${config.maxAttempts}`, context || 'retry', {
         attempt,
-        error: lastError.message,
-        nextDelay: delay,
+        maxAttempts: config.maxAttempts,
       });
 
-      // Wait before next retry
-      await new Promise(resolve => setTimeout(resolve, delay));
+      const result = await fn();
 
-      // Calculate next delay with exponential backoff
-      delay = Math.min(delay * opts.backoffMultiplier, opts.maxDelayMs);
+      if (attempt > 1) {
+        logger.info(`✅ Retry successful after ${attempt} attempts`, context || 'retry', {
+          attempt,
+          totalDelay: metrics.totalDelay,
+        });
+      }
+
+      return { result, metrics };
+    } catch (error) {
+      lastError = error;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      logger.warn(`⚠️ Attempt ${attempt} failed`, context || 'retry', {
+        attempt,
+        error: errorMessage,
+        willRetry: attempt < config.maxAttempts && config.shouldRetry(error),
+      });
+
+      // Check if we should retry this error
+      if (!config.shouldRetry(error)) {
+        logger.error('❌ Error is not retryable, failing immediately', context || 'retry', {
+          error: errorMessage,
+          attempt,
+        });
+        throw error;
+      }
+
+      // Check if this was the last attempt
+      if (attempt === config.maxAttempts) {
+        logger.error('❌ All retry attempts exhausted', context || 'retry', {
+          totalAttempts: metrics.totalAttempts,
+          totalDelay: metrics.totalDelay,
+          finalError: errorMessage,
+        });
+        throw error;
+      }
+
+      // Calculate delay with exponential backoff
+      const exponentialDelay = config.baseDelay * Math.pow(2, attempt - 1);
+      const jitter = Math.random() * 200; // Add random jitter to prevent thundering herd
+      const delay = Math.min(exponentialDelay + jitter, config.maxDelay);
+
+      metrics.errors.push({
+        attempt,
+        error: errorMessage,
+        delay,
+      });
+      metrics.totalDelay += delay;
+
+      logger.info(`⏳ Waiting ${delay.toFixed(0)}ms before retry ${attempt + 1}`, context || 'retry');
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
 
-  throw lastError || new Error('Retry failed for unknown reason');
+  // This should never be reached, but TypeScript needs it
+  throw lastError;
 }
 
-export async function fetchWithRetry(
-  url: string,
-  init?: RequestInit,
-  options?: RetryOptions
-): Promise<Response> {
-  return retryWithBackoff(async () => {
-    const response = await fetch(url, init);
-    
-    const opts = { ...DEFAULT_OPTIONS, ...options };
-    if (!response.ok && opts.retryableStatuses.includes(response.status)) {
-      throw response;
-    }
-    
-    return response;
-  }, options);
+/**
+ * Predefined retry configurations for common scenarios
+ */
+export const retryConfigs = {
+  /**
+   * For Suno API calls (music generation, stems separation)
+   * Retries: 429 (rate limit), 5xx (server errors)
+   */
+  sunoApi: {
+    maxAttempts: 3,
+    baseDelay: 2000, // 2 seconds
+    maxDelay: 15000, // 15 seconds max
+    shouldRetry: (error: unknown): boolean => {
+      if (error instanceof SunoApiError) {
+        // Retry on rate limits and server errors
+        const statusCode = (error as any).statusCode;
+        return statusCode === 429 || statusCode >= 500;
+      }
+      // Retry on network errors
+      if (error instanceof Error) {
+        const message = error.message.toLowerCase();
+        return (
+          message.includes('network') ||
+          message.includes('timeout') ||
+          message.includes('econnrefused') ||
+          message.includes('enotfound')
+        );
+      }
+      return false;
+    },
+  },
+
+  /**
+   * For lightweight API calls (balance checks, simple queries)
+   */
+  lightweight: {
+    maxAttempts: 2,
+    baseDelay: 1000, // 1 second
+    maxDelay: 5000, // 5 seconds max
+    shouldRetry: (error: unknown): boolean => {
+      if (error instanceof SunoApiError) {
+        const statusCode = (error as any).statusCode;
+        return statusCode === 429 || statusCode >= 500;
+      }
+      return false;
+    },
+  },
+
+  /**
+   * For critical operations that must succeed
+   */
+  critical: {
+    maxAttempts: 5,
+    baseDelay: 1000,
+    maxDelay: 30000, // 30 seconds max
+    shouldRetry: (error: unknown): boolean => {
+      // More aggressive retry - retry on any non-4xx error (except 429)
+      if (error instanceof SunoApiError) {
+        const statusCode = (error as any).statusCode;
+        return statusCode === 429 || statusCode >= 500;
+      }
+      if (error instanceof Error) {
+        const message = error.message.toLowerCase();
+        return (
+          message.includes('network') ||
+          message.includes('timeout') ||
+          message.includes('temporary')
+        );
+      }
+      return false;
+    },
+  },
+};
+
+/**
+ * Helper: Check if an error is retryable for Suno API
+ */
+export function isSunoApiRetryable(error: unknown): boolean {
+  return retryConfigs.sunoApi.shouldRetry(error);
+}
+
+/**
+ * Helper: Format retry metrics for logging
+ */
+export function formatRetryMetrics(metrics: RetryMetrics): string {
+  if (metrics.totalAttempts === 1) {
+    return 'succeeded on first attempt';
+  }
+  return `succeeded after ${metrics.totalAttempts} attempts (total delay: ${metrics.totalDelay}ms)`;
 }
