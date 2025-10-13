@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo, useCallback, useMemo } from "react";
 import { MiniPlayer } from "./MiniPlayer";
 import { FullScreenPlayer } from "./FullScreenPlayer";
 import { PlayerQueue } from "./PlayerQueue";
@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export const GlobalAudioPlayer = () => {
+const GlobalAudioPlayer = memo(() => {
   const {
     currentTrack,
     isPlaying,
@@ -38,8 +38,8 @@ export const GlobalAudioPlayer = () => {
   } = useAudioPlayer();
   
   // ============= ВЕРСИИ ТРЕКОВ =============
-  const availableVersions = getAvailableVersions();
-  const hasVersions = availableVersions.length > 1;
+  const availableVersions = useMemo(() => getAvailableVersions(), [getAvailableVersions]);
+  const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
 
   const isMobile = useIsMobile();
   const [isExpanded, setIsExpanded] = useState(false);
@@ -217,7 +217,7 @@ export const GlobalAudioPlayer = () => {
   }
 
   // Desktop: Enhanced player
-  const toggleMute = () => {
+  const toggleMute = useCallback(() => {
     if (isMuted) {
       setVolume(previousVolume);
       setIsMuted(false);
@@ -226,14 +226,14 @@ export const GlobalAudioPlayer = () => {
       setVolume(0);
       setIsMuted(true);
     }
-  };
+  }, [isMuted, setVolume, previousVolume, volume]);
 
-  const handleVolumeChange = (value: number[]) => {
+  const handleVolumeChange = useCallback((value: number[]) => {
     const newVolume = value[0];
     setVolume(newVolume);
     setIsMuted(newVolume === 0);
     if (newVolume > 0) setPreviousVolume(newVolume);
-  };
+  }, [setVolume]);
 
   return (
     <TooltipProvider delayDuration={500}>
@@ -488,6 +488,9 @@ export const GlobalAudioPlayer = () => {
     </div>
     </TooltipProvider>
   );
-};
+});
 
+GlobalAudioPlayer.displayName = 'GlobalAudioPlayer';
+
+export { GlobalAudioPlayer };
 export default GlobalAudioPlayer;

@@ -1,3 +1,4 @@
+import { memo, useCallback, useMemo } from "react";
 import { Play, Pause, SkipBack, SkipForward, X, List, Star } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -18,7 +19,7 @@ interface MiniPlayerProps {
   onExpand: () => void;
 }
 
-export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
+export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
   const { 
     currentTrack, 
     isPlaying, 
@@ -36,38 +37,38 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
 
   if (!currentTrack) return null;
 
-  const handlePlayPause = (e: React.MouseEvent) => {
+  const handlePlayPause = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     vibrate('light');
     togglePlayPause();
-  };
+  }, [vibrate, togglePlayPause]);
 
-  const handleNext = (e: React.MouseEvent) => {
+  const handleNext = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     vibrate('light');
     playNext();
-  };
+  }, [vibrate, playNext]);
 
-  const handlePrevious = (e: React.MouseEvent) => {
+  const handlePrevious = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     vibrate('light');
     playPrevious();
-  };
+  }, [vibrate, playPrevious]);
 
-  const handleExpand = () => {
+  const handleExpand = useCallback(() => {
     vibrate('medium');
     onExpand();
-  };
+  }, [vibrate, onExpand]);
 
-  const handleClose = (e: React.MouseEvent) => {
+  const handleClose = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     vibrate('medium');
     clearCurrentTrack();
-  };
+  }, [vibrate, clearCurrentTrack]);
 
   // Versions
-  const availableVersions = getAvailableVersions();
-  const hasVersions = availableVersions.length > 1;
+  const availableVersions = useMemo(() => getAvailableVersions(), [getAvailableVersions]);
+  const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
 
   return (
     <TooltipProvider delayDuration={500}>
@@ -239,4 +240,6 @@ export const MiniPlayer = ({ onExpand }: MiniPlayerProps) => {
     </div>
     </TooltipProvider>
   );
-};
+});
+
+MiniPlayer.displayName = 'MiniPlayer';

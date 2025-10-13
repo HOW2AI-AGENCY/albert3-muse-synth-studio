@@ -1,3 +1,4 @@
+import { memo, useState, useCallback, useMemo } from "react";
 import { Play, Pause, SkipBack, SkipForward, Minimize2, Volume2, VolumeX, Share2, Download, Heart, Repeat, Star } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -7,7 +8,6 @@ import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useTrackLike } from "@/features/tracks";
-import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import {
@@ -29,7 +29,7 @@ const formatTime = (seconds: number): string => {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 };
 
-export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
+export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => {
   const {
     currentTrack,
     isPlaying,
@@ -52,8 +52,8 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
   
   // ============= ВЕРСИИ ТРЕКОВ =============
   // Получаем доступные версии для текущего трека из AudioPlayerContext
-  const availableVersions = getAvailableVersions();
-  const hasVersions = availableVersions.length > 1;
+  const availableVersions = useMemo(() => getAvailableVersions(), [getAvailableVersions]);
+  const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
   
   // Always call the hook, but pass null if no currentTrack
   const { isLiked, toggleLike } = useTrackLike(
@@ -62,39 +62,39 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
   );
 
   const swipeRef = useSwipeGesture({
-    onSwipeDown: () => {
+    onSwipeDown: useCallback(() => {
       vibrate('medium');
       onMinimize();
-    },
+    }, [vibrate, onMinimize]),
   });
 
   if (!currentTrack) return null;
 
-  const handlePlayPause = () => {
+  const handlePlayPause = useCallback(() => {
     vibrate('light');
     togglePlayPause();
-  };
+  }, [vibrate, togglePlayPause]);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     vibrate('light');
     playNext();
-  };
+  }, [vibrate, playNext]);
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     vibrate('light');
     playPrevious();
-  };
+  }, [vibrate, playPrevious]);
 
-  const handleSeek = (value: number[]) => {
+  const handleSeek = useCallback((value: number[]) => {
     seekTo(value[0]);
-  };
+  }, [seekTo]);
 
-  const handleVolumeChange = (value: number[]) => {
+  const handleVolumeChange = useCallback((value: number[]) => {
     setVolume(value[0]);
     setIsMuted(value[0] === 0);
-  };
+  }, [setVolume]);
 
-  const toggleMute = () => {
+  const toggleMute = useCallback(() => {
     vibrate('light');
     if (isMuted) {
       setVolume(0.5);
@@ -103,9 +103,9 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
       setVolume(0);
       setIsMuted(true);
     }
-  };
+  }, [vibrate, isMuted, setVolume]);
 
-  const handleShare = async () => {
+  const handleShare = useCallback(async () => {
     vibrate('light');
     if (navigator.share) {
       try {
@@ -124,19 +124,19 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
         description: "Ссылка на трек скопирована в буфер обмена",
       });
     }
-  };
+  }, [vibrate, currentTrack.title, toast]);
 
-  const handleDownload = () => {
+  const handleDownload = useCallback(() => {
     vibrate('medium');
     if (currentTrack.audio_url) {
       window.open(currentTrack.audio_url, '_blank');
     }
-  };
+  }, [vibrate, currentTrack.audio_url]);
 
-  const handleLike = () => {
+  const handleLike = useCallback(() => {
     vibrate(isLiked ? 'light' : 'success');
     toggleLike();
-  };
+  }, [vibrate, isLiked, toggleLike]);
 
   // const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
@@ -348,4 +348,6 @@ export const FullScreenPlayer = ({ onMinimize }: FullScreenPlayerProps) => {
       </div>
     </div>
   );
-};
+});
+
+FullScreenPlayer.displayName = 'FullScreenPlayer';
