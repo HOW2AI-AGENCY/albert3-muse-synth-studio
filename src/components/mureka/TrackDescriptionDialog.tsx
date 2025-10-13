@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useDescribeSong, useTrackDescriptions } from '@/hooks/useDescribeSong';
-import { Loader2, Sparkles, Music2, TrendingUp, Clock } from 'lucide-react';
+import { Loader2, Sparkles, Music2, TrendingUp, Clock } from '@/utils/iconImports';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 

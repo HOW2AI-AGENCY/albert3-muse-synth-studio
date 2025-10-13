@@ -21,6 +21,7 @@ export {
   Music2,
   Music4,
   Mic,
+  Mic2,
   Volume2,
   VolumeX,
   Volume1,
@@ -78,7 +79,8 @@ export {
   Copy,
   Check,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Edit2
 } from 'lucide-react';
 
 // Layout & Navigation
@@ -108,8 +110,7 @@ export {
   Mail,
   Shield,
   Database,
-  UserPlus,
-  Mic2
+  UserPlus
 } from 'lucide-react';
 
 // Charts & Analytics

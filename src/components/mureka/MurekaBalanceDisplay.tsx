@@ -1,5 +1,5 @@
 import { useMurekaBalance } from '@/hooks/useMurekaBalance';
-import { DollarSign, Loader2 } from 'lucide-react';
+import { DollarSign, Loader2 } from '@/utils/iconImports';
 
 export const MurekaBalanceDisplay = () => {
   const { data, isLoading, error } = useMurekaBalance();

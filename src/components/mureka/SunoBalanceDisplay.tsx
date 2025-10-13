@@ -1,4 +1,4 @@
-import { Coins, Loader2, AlertCircle } from "lucide-react";
+import { Coins, Loader2, AlertCircle } from "@/utils/iconImports";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useProviderBalance } from "@/hooks/useProviderBalance";

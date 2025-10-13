@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRecognizeSong } from '@/hooks/useRecognizeSong';
-import { Loader2, Music, Upload } from 'lucide-react';
+import { Loader2, Music, Upload } from '@/utils/iconImports';
 import { useAudioUpload } from '@/hooks/useAudioUpload';
 
 interface SongRecognitionDialogProps {
