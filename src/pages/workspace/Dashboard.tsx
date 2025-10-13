@@ -10,6 +10,7 @@ import { TrackCard } from "@/features/tracks";
 import { useToast } from "@/hooks/use-toast";
 import { normalizeTracks } from "@/utils/trackNormalizer";
 import { useDashboardData, DEFAULT_DASHBOARD_STATS } from "@/hooks/useDashboardData";
+import { DashboardSkeleton } from "@/components/ui/loading-states";
 import { AnalyticsService } from "@/services/analytics.service";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -82,6 +83,14 @@ const Dashboard = () => {
   const handleLibraryClick = useCallback(() => navigate("/workspace/library"), [navigate]);
   const handleSettingsClick = useCallback(() => navigate("/workspace/settings"), [navigate]);
   const handleShowAllTracks = useCallback(() => navigate("/workspace/library"), [navigate]);
+
+  if (isLoading) {
+    return (
+      <PageContainer>
+        <DashboardSkeleton />
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer>

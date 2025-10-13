@@ -3,8 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "react-router-dom";
-import { useEffect } from "react";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useEffect, Suspense } from "react";
+import { GlobalErrorBoundary } from "@/components/errors/GlobalErrorBoundary";
+import { FullPageSpinner } from "@/components/ui/loading-states";
 import router from "./router";
 import { AudioPlayerProvider } from "./contexts/AudioPlayerContext";
 import { GlobalAudioPlayer } from "./components/player/GlobalAudioPlayer";
@@ -50,18 +51,20 @@ const App = () => {
   }, []);
 
   return (
-    <ErrorBoundary>
+    <GlobalErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <AudioPlayerProvider>
-            <Toaster />
-            <Sonner />
-            <RouterProvider router={router} />
-            <GlobalAudioPlayer />
-          </AudioPlayerProvider>
+          <Suspense fallback={<FullPageSpinner />}>
+            <AudioPlayerProvider>
+              <Toaster />
+              <Sonner />
+              <RouterProvider router={router} />
+              <GlobalAudioPlayer />
+            </AudioPlayerProvider>
+          </Suspense>
         </TooltipProvider>
       </QueryClientProvider>
-    </ErrorBoundary>
+    </GlobalErrorBoundary>
   );
 };
 
