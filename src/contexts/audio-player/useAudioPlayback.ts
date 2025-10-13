@@ -1,11 +1,12 @@
 /**
  * Hook для управления воспроизведением аудио
  */
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { AudioPlayerTrack } from '@/types/track';
 import { logInfo, logError } from '@/utils/logger';
 import { cacheAudioFile } from '@/utils/serviceWorker';
 import { useToast } from '@/hooks/use-toast';
+import { debounce } from '@/utils/debounce';
 import { AUDIO_EXTENSIONS } from './types';
 
 /**
@@ -296,20 +297,41 @@ export const useAudioPlayback = () => {
     }
   }, []);
 
+  // ✅ Debounced seekTo для плавной прокрутки без задержек
+  const debouncedSeekTo = useMemo(
+    () => debounce((time: number) => {
+      if (audioRef.current) {
+        audioRef.current.currentTime = time;
+        setCurrentTime(time);
+      }
+    }, 100),
+    []
+  );
+
   const seekTo = useCallback((time: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
-      setCurrentTime(time);
-    }
-  }, []);
+    // Немедленно обновляем UI для отзывчивости
+    setCurrentTime(time);
+    // Применяем к audio элементу с debounce
+    debouncedSeekTo(time);
+  }, [debouncedSeekTo]);
+
+  // ✅ Debounced setVolume для плавного изменения громкости
+  const debouncedSetVolume = useMemo(
+    () => debounce((newVolume: number) => {
+      if (audioRef.current) {
+        audioRef.current.volume = newVolume;
+      }
+    }, 50),
+    []
+  );
 
   const setVolume = useCallback((newVolume: number) => {
     const clampedVolume = Math.max(0, Math.min(1, newVolume));
+    // Немедленно обновляем UI
     setVolumeState(clampedVolume);
-    if (audioRef.current) {
-      audioRef.current.volume = clampedVolume;
-    }
-  }, []);
+    // Применяем к audio элементу с debounce
+    debouncedSetVolume(clampedVolume);
+  }, [debouncedSetVolume]);
 
   const clearCurrentTrack = useCallback(() => {
     if (audioRef.current) {
