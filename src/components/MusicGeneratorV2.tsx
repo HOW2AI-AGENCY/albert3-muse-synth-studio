@@ -1,4 +1,4 @@
-import { memo, useCallback, useState, useEffect } from 'react';
+import { memo, useCallback, useState, useEffect, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -24,7 +24,7 @@ import { AudioPreviewDialog } from '@/components/audio/AudioPreviewDialog';
 import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog';
 import { TagsCarousel } from '@/components/generator/TagsCarousel';
 import { AudioAnalyzer } from '@/components/audio/AudioAnalyzer';
-import { AudioDescriber } from '@/components/audio/AudioDescriber';
+const AudioDescriber = lazy(() => import('@/components/audio/AudioDescriber').then(m => ({ default: m.AudioDescriber })));
 import { PromptHistoryDialog } from '@/components/generator/PromptHistoryDialog';
 import { GenrePresets } from '@/components/generator/GenrePresets';
 import { usePromptHistory } from '@/hooks/usePromptHistory';
@@ -97,6 +97,22 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const setParam = <K extends keyof typeof params>(key: K, value: (typeof params)[K]) => {
     setParams(prev => ({ ...prev, [key]: value }));
   };
+
+  // Debounced state for textarea inputs
+  const [debouncedPrompt, setDebouncedPrompt] = useState(params.prompt);
+  const [debouncedLyrics, setDebouncedLyrics] = useState(params.lyrics);
+
+  // Debounce effect for prompt
+  useEffect(() => {
+    const timer = setTimeout(() => setParam('prompt', debouncedPrompt), 300);
+    return () => clearTimeout(timer);
+  }, [debouncedPrompt]);
+
+  // Debounce effect for lyrics
+  useEffect(() => {
+    const timer = setTimeout(() => setParam('lyrics', debouncedLyrics), 300);
+    return () => clearTimeout(timer);
+  }, [debouncedLyrics]);
 
   // Sync provider selection with global state and update model version
   useEffect(() => {
@@ -291,8 +307,22 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
         lyrics: '',
         tags: '',
       }));
+      setDebouncedPrompt('');
+      setDebouncedLyrics('');
     }
   }, [params, generate, toast, onTrackGenerated, vibrate, mode, selectedProvider, sunoBalance]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !isGenerating) {
+        e.preventDefault();
+        handleGenerate();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleGenerate, isGenerating]);
 
   const tempAudioUrl = pendingAudioFile ? URL.createObjectURL(pendingAudioFile) : '';
 
@@ -390,13 +420,14 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                   <Textarea
                     id="prompt"
                     placeholder="Опишите стиль, настроение и жанр..."
-                    value={params.prompt}
-                    onChange={(e) => setParam('prompt', e.target.value)}
+                    value={debouncedPrompt}
+                    onChange={(e) => setDebouncedPrompt(e.target.value)}
                     onFocus={(e) => e.target.classList.add('focus:min-h-[90px]')}
                     onBlur={(e) => e.target.classList.remove('focus:min-h-[90px]')}
                     className="min-h-[60px] sm:min-h-[70px] text-sm resize-none pr-10 transition-all duration-200"
                     disabled={isGenerating}
                     rows={2}
+                    aria-label="Промпт для генерации музыки"
                   />
                   {params.prompt.trim() && (
                   <motion.div
@@ -438,6 +469,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                     className="h-7 gap-1.5 text-xs"
                     disabled={isGenerating}
                     onClick={() => document.getElementById('audio-upload-input')?.click()}
+                    aria-label="Загрузить аудиофайл"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     <span className="hidden xs:inline">Аудио</span>
@@ -546,13 +578,14 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                 <Textarea
                   id="lyrics"
                   placeholder="Напишите текст или используйте AI генератор..."
-                  value={params.lyrics}
-                  onChange={(e) => setParam('lyrics', e.target.value)}
+                  value={debouncedLyrics}
+                  onChange={(e) => setDebouncedLyrics(e.target.value)}
                   onFocus={(e) => e.target.classList.add('focus:min-h-[100px]')}
                   onBlur={(e) => e.target.classList.remove('focus:min-h-[100px]')}
                   className="min-h-[60px] text-xs resize-none transition-all duration-200"
                   disabled={isGenerating}
                   rows={3}
+                  aria-label="Текст песни"
                 />
               </div>
 
@@ -589,11 +622,13 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                   {params.referenceAudioUrl && (
                     <div className="space-y-1">
                       <AudioAnalyzer audioUrl={params.referenceAudioUrl} />
-                      <AudioDescriber
-                        audioUrl={params.referenceAudioUrl}
-                        onDescriptionGenerated={(desc) => setParam('prompt', params.prompt ? `${params.prompt}\n\n${desc}` : desc)}
-                        disabled={isGenerating}
-                      />
+                      <Suspense fallback={<div className="flex items-center justify-center p-4"><Loader2 className="h-4 w-4 animate-spin" /></div>}>
+                        <AudioDescriber
+                          audioUrl={params.referenceAudioUrl}
+                          onDescriptionGenerated={(desc) => setDebouncedPrompt(debouncedPrompt ? `${debouncedPrompt}\n\n${desc}` : desc)}
+                          disabled={isGenerating}
+                        />
+                      </Suspense>
                     </div>
                   )}
                 </div>
@@ -787,6 +822,8 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
             onClick={handleGenerate}
             disabled={isGenerating || isUploading || (!params.prompt.trim() && !params.lyrics.trim())}
             className="w-full h-10 text-sm font-semibold gap-2 relative overflow-hidden group bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg transition-all"
+            aria-label="Создать музыкальный трек"
+            title="Горячая клавиша: Cmd/Ctrl + Enter"
           >
             <span className={cn(
               "flex items-center gap-2 transition-all duration-300",
