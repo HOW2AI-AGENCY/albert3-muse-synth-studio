@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Music, 
   Disc3, 
@@ -127,13 +128,64 @@ interface GenrePresetsProps {
 
 export function GenrePresets({ onSelect }: GenrePresetsProps) {
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <Music className="w-4 h-4 text-muted-foreground" />
-        <h3 className="text-sm font-medium">Жанровые пресеты</h3>
+    <div className="space-y-2 sm:space-y-3">
+      <div className="flex items-center gap-1.5 sm:gap-2 px-1">
+        <Music className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
+        <h3 className="text-xs sm:text-sm font-medium">Жанровые пресеты</h3>
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+      {/* Mobile: Horizontal scroll */}
+      <ScrollArea className="w-full md:hidden">
+        <div className="flex gap-2 pb-2">
+          {GENRE_PRESETS.map((preset) => {
+            const Icon = preset.icon;
+            return (
+              <Card
+                key={preset.id}
+                className={cn(
+                  "cursor-pointer transition-all hover:scale-[1.02] hover:shadow-md border-muted/50 shrink-0",
+                  "bg-gradient-to-br w-[280px]",
+                  preset.color
+                )}
+                onClick={() => onSelect({
+                  styleTags: preset.styleTags,
+                  mood: preset.mood,
+                  promptSuggestion: preset.promptSuggestion
+                })}
+              >
+                <CardContent className="p-2.5">
+                  <div className="flex items-start gap-2">
+                    <div className="p-1.5 rounded-lg bg-background/50">
+                      <Icon className="w-3.5 h-3.5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-xs font-semibold mb-1">{preset.name}</h4>
+                      <p className="text-[10px] text-muted-foreground line-clamp-2 mb-1.5">
+                        {preset.description}
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {preset.styleTags.slice(0, 2).map((tag) => (
+                          <Badge key={tag} variant="secondary" className="text-[9px] px-1 py-0 h-4">
+                            {tag}
+                          </Badge>
+                        ))}
+                        {preset.styleTags.length > 2 && (
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
+                            +{preset.styleTags.length - 2}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </ScrollArea>
+
+      {/* Tablet/Desktop: Grid */}
+      <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-2">
         {GENRE_PRESETS.map((preset) => {
           const Icon = preset.icon;
           return (

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Music, Activity, Clock, Loader2 } from '@/utils/iconImports';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
@@ -78,30 +79,32 @@ export const AudioAnalyzer = ({ audioUrl }: AudioAnalyzerProps) => {
   }
 
   return (
-    <div className="flex flex-wrap gap-1 text-xs">
-      {analysis.duration && (
-        <Badge variant="secondary" className="gap-1 h-5 px-1.5">
-          <Clock className="w-3 h-3" />
-          <span className="text-[10px]">{Math.floor(analysis.duration)}s</span>
-        </Badge>
-      )}
-      {analysis.bpm && (
-        <Badge variant="secondary" className="gap-1 h-5 px-1.5">
-          <Activity className="w-3 h-3" />
-          <span className="text-[10px]">{Math.round(analysis.bpm)} BPM</span>
-        </Badge>
-      )}
-      {analysis.key && (
-        <Badge variant="secondary" className="gap-1 h-5 px-1.5">
-          <Music className="w-3 h-3" />
-          <span className="text-[10px]">{analysis.key}</span>
-        </Badge>
-      )}
-      {analysis.genre && (
-        <Badge variant="outline" className="h-5 px-1.5">
-          <span className="text-[10px]">{analysis.genre}</span>
-        </Badge>
-      )}
-    </div>
+    <ScrollArea className="w-full">
+      <div className="flex gap-1 text-xs">
+        {analysis.duration && (
+          <Badge variant="secondary" className="gap-0.5 h-5 px-1.5 shrink-0 whitespace-nowrap">
+            <Clock className="w-2.5 h-2.5" />
+            <span className="text-[10px]">{Math.floor(analysis.duration)}s</span>
+          </Badge>
+        )}
+        {analysis.bpm && (
+          <Badge variant="secondary" className="gap-0.5 h-5 px-1.5 shrink-0 whitespace-nowrap">
+            <Activity className="w-2.5 h-2.5" />
+            <span className="text-[10px]">{Math.round(analysis.bpm)} BPM</span>
+          </Badge>
+        )}
+        {analysis.key && (
+          <Badge variant="secondary" className="gap-0.5 h-5 px-1.5 shrink-0 whitespace-nowrap">
+            <Music className="w-2.5 h-2.5" />
+            <span className="text-[10px]">{analysis.key}</span>
+          </Badge>
+        )}
+        {analysis.genre && (
+          <Badge variant="outline" className="h-5 px-1.5 shrink-0 whitespace-nowrap">
+            <span className="text-[10px]">{analysis.genre}</span>
+          </Badge>
+        )}
+      </div>
+    </ScrollArea>
   );
 };

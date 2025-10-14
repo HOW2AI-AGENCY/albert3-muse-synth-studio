@@ -58,28 +58,33 @@ export function PromptHistoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <History className="w-5 h-5" />
-            История и шаблоны
+      <DialogContent className="max-w-3xl max-h-[85vh] p-3 sm:p-6">
+        <DialogHeader className="pb-2 sm:pb-4">
+          <DialogTitle className="flex items-center gap-1.5 sm:gap-2 text-base sm:text-lg">
+            <History className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="hidden sm:inline">История и шаблоны</span>
+            <span className="sm:hidden">История</span>
           </DialogTitle>
         </DialogHeader>
 
         <Tabs defaultValue="history" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="history" className="gap-2">
-              <Clock className="w-4 h-4" />
-              История ({history.length})
+          <TabsList className="grid w-full grid-cols-2 h-8 sm:h-10">
+            <TabsTrigger value="history" className="gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">История</span>
+              <span className="xs:hidden">({history.length})</span>
+              <span className="hidden xs:inline">({history.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="templates" className="gap-2">
-              <Star className="w-4 h-4" />
-              Шаблоны ({templates.length})
+            <TabsTrigger value="templates" className="gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Star className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">Шаблоны</span>
+              <span className="xs:hidden">({templates.length})</span>
+              <span className="hidden xs:inline">({templates.length})</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="history" className="mt-4">
-            <ScrollArea className="h-[400px] pr-4">
+          <TabsContent value="history" className="mt-2 sm:mt-4">
+            <ScrollArea className="h-[calc(85vh-180px)] sm:h-[400px] pr-2 sm:pr-4">
               {isLoading ? (
                 <div className="flex items-center justify-center h-40">
                   <Sparkles className="w-6 h-6 animate-pulse text-primary" />
@@ -202,8 +207,8 @@ export function PromptHistoryDialog({
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="templates" className="mt-4">
-            <ScrollArea className="h-[400px] pr-4">
+          <TabsContent value="templates" className="mt-2 sm:mt-4">
+            <ScrollArea className="h-[calc(85vh-180px)] sm:h-[400px] pr-2 sm:pr-4">
               {templates.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Star className="w-12 h-12 mx-auto mb-4 opacity-50" />

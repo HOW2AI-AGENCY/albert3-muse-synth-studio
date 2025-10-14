@@ -317,9 +317,9 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       transition={{ duration: 0.3 }}
     >
       {/* Header: Provider Selector + Tabs + Model Version */}
-      <div className="p-2.5 border-b border-border/20 space-y-2">
+      <div className="p-2 sm:p-2.5 border-b border-border/20 space-y-1.5 sm:space-y-2">
         {/* Provider Selector Row with Balance */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-1.5 xs:gap-2">
           <div className="flex-1">
             <ProviderSelector
               value={selectedProvider}
@@ -328,19 +328,21 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
             />
           </div>
           {/* ✅ TASK C: Show balance for all providers */}
-          {selectedProvider === 'mureka' && <MurekaBalanceDisplay />}
-          {selectedProvider === 'suno' && <SunoBalanceDisplay />}
+          <div className="flex items-center justify-end xs:justify-start">
+            {selectedProvider === 'mureka' && <MurekaBalanceDisplay />}
+            {selectedProvider === 'suno' && <SunoBalanceDisplay />}
+          </div>
         </div>
 
         {/* Mode Tabs + Model Version Row */}
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-1.5 sm:gap-2">
           {/* Mode Tabs */}
           <Tabs value={mode} onValueChange={(v) => setMode(v as GeneratorMode)} className="flex-1">
-            <TabsList className="grid w-full grid-cols-2 h-8">
-              <TabsTrigger value="simple" className="text-xs">
+            <TabsList className="grid w-full grid-cols-2 h-7 sm:h-8">
+              <TabsTrigger value="simple" className="text-[10px] xs:text-xs px-1 sm:px-3">
                 Простой
               </TabsTrigger>
-              <TabsTrigger value="custom" className="text-xs">
+              <TabsTrigger value="custom" className="text-[10px] xs:text-xs px-1 sm:px-3">
                 Расширенный
               </TabsTrigger>
             </TabsList>
@@ -348,12 +350,12 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
 
           {/* Model Version */}
           <Select value={params.modelVersion} onValueChange={(v) => setParam('modelVersion', v)}>
-            <SelectTrigger className="h-8 w-20 text-xs">
+            <SelectTrigger className="h-7 sm:h-8 w-16 xs:w-20 text-[10px] xs:text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {currentModels.map((m: ModelVersion) => (
-                <SelectItem key={m.value} value={m.value} className="text-xs">{m.label}</SelectItem>
+                <SelectItem key={m.value} value={m.value} className="text-[10px] xs:text-xs">{m.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
