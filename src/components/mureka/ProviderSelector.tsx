@@ -13,13 +13,11 @@ interface ProviderSelectorProps {
 const providerDescriptions: Record<MusicProvider, string> = {
   suno: 'Быстрая генерация, широкий выбор стилей, stem separation',
   mureka: 'AI-описание треков, распознавание песен, высокое качество',
-  sonauto: 'Самая быстрая генерация, плавные переходы, низкая стоимость',
 };
 
 const providerBadges: Record<MusicProvider, { text: string; variant: 'default' | 'secondary' | 'outline' }> = {
   suno: { text: 'v5', variant: 'secondary' },
   mureka: { text: 'AI+', variant: 'default' },
-  sonauto: { text: 'Fast', variant: 'outline' },
 };
 
 export const ProviderSelector = ({ value, onChange, disabled }: ProviderSelectorProps) => {

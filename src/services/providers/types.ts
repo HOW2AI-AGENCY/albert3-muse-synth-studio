@@ -3,7 +3,7 @@
  * Unified abstraction layer for music generation providers
  */
 
-export type MusicProvider = 'suno' | 'mureka' | 'sonauto';
+export type MusicProvider = 'suno' | 'mureka';
 
 export interface ProviderCapabilities {
   generateMusic: boolean;

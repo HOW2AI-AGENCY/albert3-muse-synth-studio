@@ -1,14 +1,13 @@
 /**
  * Hook for music generation with realtime updates
- * Extracted from useMusicGenerationStore for better separation of concerns
+ * Now uses unified GenerationService for better separation of concerns
  */
 
 import { useState, useCallback, useRef } from 'react';
-import { ApiService, GenerateMusicRequest } from '@/services/api.service';
-import { supabase } from '@/integrations/supabase/client';
+import { GenerationService, GenerationRequest } from '@/services/generation';
 import { logger } from '@/utils/logger';
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import { MusicProvider } from '@/services/providers';
+import type { MusicProvider } from '@/config/provider-models';
 
 type ToastFunction = (options: { 
   title: string; 
@@ -48,37 +47,23 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
   const setupSubscription = useCallback((trackId: string) => {
     cleanup();
 
-    const subscription = supabase
-      .channel(`track-status:${trackId}`)
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'tracks',
-        filter: `id=eq.${trackId}`
-      }, (payload) => {
-        const updatedTrack = payload.new as { 
-          status: string; 
-          title: string; 
-          error_message?: string 
-        };
-
-        if (updatedTrack.status === 'completed') {
-          toast({
-            title: '✅ Трек готов!',
-            description: `Ваш трек "${updatedTrack.title}" успешно сгенерирован.`,
-          });
-          onSuccess?.();
-          cleanup();
-        } else if (updatedTrack.status === 'failed') {
-          toast({
-            title: '❌ Ошибка генерации',
-            description: updatedTrack.error_message || 'Произошла ошибка при обработке вашего трека.',
-            variant: 'destructive',
-          });
-          cleanup();
-        }
-      })
-      .subscribe();
+    const subscription = GenerationService.subscribe(trackId, (status, trackData) => {
+      if (status === 'completed') {
+        toast({
+          title: '✅ Трек готов!',
+          description: `Ваш трек "${trackData?.title}" успешно сгенерирован.`,
+        });
+        onSuccess?.();
+        cleanup();
+      } else if (status === 'failed') {
+        toast({
+          title: '❌ Ошибка генерации',
+          description: trackData?.errorMessage || 'Произошла ошибка при обработке вашего трека.',
+          variant: 'destructive',
+        });
+        cleanup();
+      }
+    });
 
     subscriptionRef.current = subscription;
 
@@ -90,7 +75,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
   }, [cleanup, toast, onSuccess]);
 
   // Main generation function
-  const generate = useCallback(async (options: GenerateMusicRequest): Promise<boolean> => {
+  const generate = useCallback(async (options: GenerationRequest): Promise<boolean> => {
     const effectivePrompt = options.prompt?.trim() ?? '';
     const effectiveProvider = options.provider || provider;
 
@@ -124,49 +109,11 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
     setIsGenerating(true);
 
     try {
-      // Get authenticated user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({ 
-          title: 'Требуется авторизация', 
-          description: 'Войдите в систему для генерации музыки', 
-          variant: 'destructive' 
-        });
-        return false;
-      }
-
-      // Create track record
-      const newTrack = await ApiService.createTrack(
-        user.id,
-        options.title || effectivePrompt.substring(0, 50) || 'Untitled Track',
-        effectivePrompt,
-        effectiveProvider,
-        options.lyrics,
-        options.hasVocals,
-        options.styleTags
-      );
-
-      // Invoke generation function based on provider
-      if (effectiveProvider === 'mureka') {
-        await supabase.functions.invoke('generate-mureka', {
-          body: {
-            trackId: newTrack.id,
-            title: options.title || effectivePrompt.substring(0, 50),
-            prompt: effectivePrompt,
-            lyrics: options.lyrics,
-            styleTags: options.styleTags,
-            hasVocals: options.hasVocals,
-            modelVersion: options.modelVersion,
-          }
-        });
-      } else {
-        await ApiService.generateMusic({
-          ...options,
-          trackId: newTrack.id,
-          userId: user.id,
-          provider: effectiveProvider,
-        });
-      }
+      // Use unified GenerationService
+      const result = await GenerationService.generate({
+        ...options,
+        provider: effectiveProvider,
+      });
 
       toast({
         title: '🎵 Генерация началась!',
@@ -174,7 +121,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
       });
 
       // Setup realtime updates
-      setupSubscription(newTrack.id);
+      setupSubscription(result.trackId);
       onSuccess?.();
 
       return true;

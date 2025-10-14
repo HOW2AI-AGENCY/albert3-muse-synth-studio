@@ -49,26 +49,6 @@ export const PROVIDERS: Record<MusicProvider, ProviderConfig> = {
       maxConcurrent: 3,
     },
   },
-  sonauto: {
-    id: 'sonauto',
-    name: 'Sonauto',
-    displayName: 'Sonauto AI',
-    version: '2.0',
-    capabilities: {
-      generateMusic: true,
-      extendTrack: true,
-      separateStems: false,
-      generateLyrics: false,
-    },
-    pricing: {
-      costPerGeneration: 5,
-      currency: 'credits',
-    },
-    limits: {
-      maxDuration: 300,
-      maxConcurrent: 10,
-    },
-  },
 };
 
 export function getProviderConfig(provider: MusicProvider): ProviderConfig {
