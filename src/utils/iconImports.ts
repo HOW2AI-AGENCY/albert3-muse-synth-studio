@@ -111,7 +111,8 @@ export {
   Shield,
   Database,
   UserPlus,
-  ExternalLink
+  ExternalLink,
+  History
 } from 'lucide-react';
 
 // Charts & Analytics

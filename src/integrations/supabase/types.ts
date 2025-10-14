@@ -257,6 +257,57 @@ export type Database = {
         }
         Relationships: []
       }
+      prompt_history: {
+        Row: {
+          created_at: string | null
+          genre: string | null
+          id: string
+          is_template: boolean | null
+          last_used_at: string | null
+          lyrics: string | null
+          metadata: Json | null
+          mood: string | null
+          prompt: string
+          provider: string | null
+          style_tags: string[] | null
+          template_name: string | null
+          usage_count: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          genre?: string | null
+          id?: string
+          is_template?: boolean | null
+          last_used_at?: string | null
+          lyrics?: string | null
+          metadata?: Json | null
+          mood?: string | null
+          prompt: string
+          provider?: string | null
+          style_tags?: string[] | null
+          template_name?: string | null
+          usage_count?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          genre?: string | null
+          id?: string
+          is_template?: boolean | null
+          last_used_at?: string | null
+          lyrics?: string | null
+          metadata?: Json | null
+          mood?: string | null
+          prompt?: string
+          provider?: string | null
+          style_tags?: string[] | null
+          template_name?: string | null
+          usage_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       song_descriptions: {
         Row: {
           ai_description: string | null

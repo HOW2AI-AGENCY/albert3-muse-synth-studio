@@ -13,7 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Music, Loader2, Plus, FileAudio, FileText, SlidersHorizontal, Sparkles, Mic, Wand2, X, Volume2, Palette } from '@/utils/iconImports';
+import { Music, Loader2, Plus, FileAudio, FileText, SlidersHorizontal, Sparkles, Mic, Wand2, X, Volume2, Palette, History } from '@/utils/iconImports';
 import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
 import { useGenerateMusic } from '@/hooks/useGenerateMusic';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
@@ -25,6 +25,8 @@ import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog
 import { AudioRecorder } from '@/components/audio/AudioRecorder';
 import { TagsCarousel } from '@/components/generator/TagsCarousel';
 import { AudioAnalyzer } from '@/components/audio/AudioAnalyzer';
+import { PromptHistoryDialog } from '@/components/generator/PromptHistoryDialog';
+import { usePromptHistory } from '@/hooks/usePromptHistory';
 import { ProviderSelector } from '@/components/mureka/ProviderSelector';
 import { MurekaBalanceDisplay } from '@/components/mureka/MurekaBalanceDisplay';
 import { SunoBalanceDisplay } from '@/components/mureka/SunoBalanceDisplay';
@@ -64,11 +66,13 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   
   // ✅ TASK C: Get Suno balance for pre-flight check
   const { balance: sunoBalance } = useProviderBalance();
+  const { savePrompt } = usePromptHistory();
 
   // UI State
   const [mode, setMode] = useState<GeneratorMode>('simple');
   const [audioPreviewOpen, setAudioPreviewOpen] = useState(false);
   const [lyricsDialogOpen, setLyricsDialogOpen] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [pendingAudioFile, setPendingAudioFile] = useState<File | null>(null);
   const [recordingMode, setRecordingMode] = useState(false);
 
@@ -257,6 +261,18 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       provider: selectedProvider, // ✅ Добавляем провайдер
     };
 
+    // Save to history
+    try {
+      await savePrompt({
+        prompt: params.prompt,
+        lyrics: params.lyrics || undefined,
+        style_tags: params.tags ? params.tags.split(',').map(s => s.trim()).filter(Boolean) : undefined,
+        provider: selectedProvider as 'suno' | 'mureka',
+      });
+    } catch (error) {
+      logger.error('[MusicGeneratorV2] Failed to save prompt:', error instanceof Error ? error : undefined);
+    }
+
     logger.info('🎵 [GENERATE] Starting generation', 
       `Prompt: ${!!params.prompt.trim()}, Lyrics: ${!!params.lyrics.trim()}, Audio: ${!!params.referenceAudioUrl}, Mode: ${mode}`
     );
@@ -402,6 +418,16 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               {/* Action Buttons */}
               <div className="flex items-center justify-between gap-2">
                 <div className="flex gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 gap-1.5 text-xs"
+                    onClick={() => setHistoryDialogOpen(true)}
+                    disabled={isGenerating}
+                  >
+                    <History className="h-3.5 w-3.5" />
+                    История
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
@@ -821,6 +847,19 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
             title: '✅ Лирика добавлена',
             description: 'Переключено на расширенный режим',
           });
+        }}
+      />
+
+      <PromptHistoryDialog
+        open={historyDialogOpen}
+        onOpenChange={setHistoryDialogOpen}
+        onSelect={(selectedParams) => {
+          setParams(prev => ({
+            ...prev,
+            prompt: selectedParams.prompt,
+            lyrics: selectedParams.lyrics || '',
+            tags: selectedParams.style_tags?.join(', ') || '',
+          }));
         }}
       />
     </motion.div>
