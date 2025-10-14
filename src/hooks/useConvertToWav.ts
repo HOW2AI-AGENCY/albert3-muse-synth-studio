@@ -38,6 +38,19 @@ export const useConvertToWav = () => {
         sunoTaskId: data.sunoTaskId 
       });
 
+      // ✅ Phase 3: WAV Conversion Tracking
+      import('@/services/analytics.service').then(({ AnalyticsService }) => {
+        AnalyticsService.recordEvent({
+          eventType: 'wav_conversion_started',
+          trackId,
+          metadata: {
+            audioId: audioId || null,
+            jobId: data.jobId,
+            sunoTaskId: data.sunoTaskId,
+          },
+        });
+      });
+
       toast({
         title: "Конвертация начата",
         description: "Ваш трек конвертируется в WAV формат. Это займет 1-3 минуты.",
@@ -51,6 +64,18 @@ export const useConvertToWav = () => {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       logger.error('WAV conversion failed', error instanceof Error ? error : new Error(String(error)), 'useConvertToWav', { trackId });
+
+      // ✅ Phase 3: WAV Conversion Error Tracking
+      import('@/services/analytics.service').then(({ AnalyticsService }) => {
+        AnalyticsService.recordEvent({
+          eventType: 'wav_conversion_failed',
+          trackId,
+          metadata: {
+            audioId: audioId || null,
+            errorMessage: message,
+          },
+        });
+      });
 
       toast({
         title: "Ошибка конвертации",

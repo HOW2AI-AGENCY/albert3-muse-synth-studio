@@ -28,29 +28,34 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // ✅ Phase 6: Улучшенная обработка ошибок
-    logError('ErrorBoundary caught an error:', error, 'ErrorBoundary', {
+    // ✅ Phase 3: Enhanced Error Boundary logging with analytics
+    const errorContext = {
       componentStack: errorInfo.componentStack,
       errorBoundary: true,
       errorName: error.name,
       errorMessage: error.message,
+      errorStack: error.stack,
       userAgent: navigator.userAgent,
-    });
+      url: window.location.href,
+      timestamp: new Date().toISOString(),
+    };
 
-    // ✅ Отправка в Supabase для мониторинга (только в production)
-    if (process.env.NODE_ENV === 'production') {
-      import('@/integrations/supabase/client').then(({ supabase }) => {
-        supabase.functions.invoke('log-error', {
-          body: {
-            error: error.message,
-            stack: error.stack,
-            componentStack: errorInfo.componentStack,
-            context: 'ErrorBoundary',
-            timestamp: new Date().toISOString(),
-          }
-        }).catch((err) => logError('Failed to log error to server', err));
+    logError('ErrorBoundary caught an error:', error, 'ErrorBoundary', errorContext);
+
+    // ✅ Send to analytics for monitoring
+    import('@/services/analytics.service').then(({ AnalyticsService }) => {
+      AnalyticsService.recordEvent({
+        eventType: 'error_boundary_catch',
+        metadata: {
+          errorName: error.name,
+          errorMessage: error.message,
+          componentStack: errorInfo.componentStack?.slice(0, 500), // Truncate for storage
+          url: window.location.href,
+        },
+      }).catch((err) => {
+        logError('Failed to record error boundary event', err instanceof Error ? err : new Error(String(err)), 'ErrorBoundary');
       });
-    }
+    });
 
     // Вызываем пользовательский обработчик ошибок, если он предоставлен
     this.props.onError?.(error, errorInfo);

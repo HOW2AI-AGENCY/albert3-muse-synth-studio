@@ -101,6 +101,19 @@ export const useStemSeparation = ({
           throw new Error("Сервис не вернул идентификатор задачи разделения стемов");
         }
 
+        // ✅ Phase 3: Stem Separation Metrics
+        import('@/services/analytics.service').then(({ AnalyticsService }) => {
+          AnalyticsService.recordEvent({
+            eventType: 'stem_separation_started',
+            trackId,
+            metadata: {
+              separationMode: mode,
+              versionId: versionId || null,
+              taskId: targetTaskId,
+            },
+          });
+        });
+
         toast.success(
           mode === "separate_vocal"
             ? "Запущено разделение на вокал и инструментал"
@@ -134,6 +147,22 @@ export const useStemSeparation = ({
 
           if (matchingStems && matchingStems.length > 0) {
             clearAllTimers();
+            
+            // ✅ Phase 3: Stem Separation Success Metrics
+            import('@/services/analytics.service').then(({ AnalyticsService }) => {
+              AnalyticsService.recordEvent({
+                eventType: 'stem_separation_completed',
+                trackId,
+                metadata: {
+                  separationMode: mode,
+                  versionId: versionId || null,
+                  taskId: targetTaskId,
+                  stemCount: matchingStems.length,
+                  duration: Date.now(),
+                },
+              });
+            });
+
             onStemsReady?.();
             toast.success("Стемы успешно созданы!");
             setIsGenerating(false);
@@ -189,11 +218,28 @@ export const useStemSeparation = ({
       } catch (error) {
         clearAllTimers();
         const message = error instanceof Error ? error.message : "Ошибка при создании стемов";
+        
+        // ✅ Phase 3: Stem Separation Error Metrics
         import('@/utils/logger').then(({ logError }) => {
           logError('Stem generation failed', error as Error, 'useStemSeparation', {
             trackId,
             versionId,
             separationMode: mode
+          });
+        });
+
+        import('@/services/analytics.service').then(({ AnalyticsService }) => {
+          AnalyticsService.recordEvent({
+            eventType: 'stem_separation_failed',
+            trackId,
+            metadata: {
+              separationMode: mode,
+              versionId: versionId || null,
+              errorMessage: message,
+              errorType: message.includes("429") ? 'rate_limit' :
+                         message.includes("402") ? 'insufficient_credits' :
+                         message.includes("400") ? 'bad_request' : 'unknown',
+            },
           });
         });
         

@@ -54,7 +54,37 @@ export const WavConversionStatus: React.FC<WavConversionStatusProps> = ({
         },
         (payload) => {
           logger.info('WAV job updated', 'WavConversionStatus', { payload });
-          setJob(payload.new);
+          
+          const newJob = payload.new as any;
+          
+          // ✅ Phase 3: WAV Conversion Status Change Tracking
+          if (newJob && newJob.status === 'completed') {
+            import('@/services/analytics.service').then(({ AnalyticsService }) => {
+              AnalyticsService.recordEvent({
+                eventType: 'wav_conversion_completed',
+                trackId,
+                metadata: {
+                  jobId: newJob.id,
+                  duration: newJob.completed_at 
+                    ? new Date(newJob.completed_at).getTime() - new Date(newJob.created_at).getTime()
+                    : null,
+                },
+              });
+            });
+          } else if (newJob && newJob.status === 'failed') {
+            import('@/services/analytics.service').then(({ AnalyticsService }) => {
+              AnalyticsService.recordEvent({
+                eventType: 'wav_conversion_failed',
+                trackId,
+                metadata: {
+                  jobId: newJob.id,
+                  errorMessage: newJob.error_message,
+                },
+              });
+            });
+          }
+          
+          setJob(newJob);
         }
       )
       .subscribe();
