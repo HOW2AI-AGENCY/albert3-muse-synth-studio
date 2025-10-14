@@ -3,7 +3,7 @@
  * Monitors track generation and auto-recovers from failures
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { logInfo, logWarn, logError } from '@/utils/logger';
@@ -29,7 +29,6 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const retryAttemptRef = useRef(0);
   const lastAttemptRef = useRef<number>(0);
-  const [isConnecting, setIsConnecting] = useState(false);
   const onTrackCompletedRef = useRef<TrackSyncOptions['onTrackCompleted']>();
   const onTrackFailedRef = useRef<TrackSyncOptions['onTrackFailed']>();
   const { onTrackCompleted, onTrackFailed, enabled = true } = options;
@@ -54,36 +53,36 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
 
     logInfo('Starting track sync for user', 'useTrackSync', { userId });
 
-    // ✅ UNIFIED: Единая функция подписки с exponential backoff
-    const reconnectAttempts = { current: 0 };
-    const MAX_RECONNECT = 5;
-    let reconnectTimeout: NodeJS.Timeout;
+    // ✅ FIX: Prevent infinite recursion with proper cleanup
+    const reconnectAttemptsRef = { current: 0 };
+    const MAX_RECONNECT = 3;
+    let reconnectTimeoutId: NodeJS.Timeout | undefined;
+    let isMounted = true;
+    let isSubscribing = false;
 
     const setupChannelWithRetry = () => {
       const now = Date.now();
       
-      // Предотвращаем множественные одновременные подключения
-      if (isConnecting || (now - lastAttemptRef.current) < MIN_RETRY_DELAY) {
-        logWarn('Skipping subscription attempt - too soon or already connecting', 'useTrackSync');
+      // Prevent multiple simultaneous connections
+      if (!isMounted || isSubscribing || (now - lastAttemptRef.current) < MIN_RETRY_DELAY) {
+        logWarn('Skipping subscription attempt - unmounted, already subscribing, or too soon', 'useTrackSync');
         return null;
       }
 
-      // Проверяем, есть ли уже активное подключение
+      // Cleanup existing channel before creating new one
       if (channelRef.current) {
-        logWarn('Channel already exists, cleaning up before reconnect', 'useTrackSync');
-        supabase.removeChannel(channelRef.current);
+        try {
+          supabase.removeChannel(channelRef.current);
+        } catch (e) {
+          logWarn('Error removing channel', 'useTrackSync', { error: e });
+        }
         channelRef.current = null;
       }
       
-      setIsConnecting(true);
+      isSubscribing = true;
       lastAttemptRef.current = now;
-      
-      if (retryTimeoutRef.current) {
-        clearTimeout(retryTimeoutRef.current);
-        retryTimeoutRef.current = null;
-      }
 
-      const channelName = `track-updates-${userId}`;
+      const channelName = `track-updates-${userId}-${Date.now()}`;
       const channel = supabase.channel(channelName);
 
       channel
@@ -96,6 +95,8 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
             filter: `user_id=eq.${userId}`,
           },
           (payload: RealtimePostgresChangesPayload<TrackRow>) => {
+            if (!isMounted) return;
+            
             const newTrack = payload.new;
             const oldTrack = payload.old;
 
@@ -141,14 +142,16 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
           }
         )
         .subscribe((status) => {
+          if (!isMounted) return;
+          
           if (status === 'SUBSCRIBED') {
             logInfo('Track sync subscribed', 'useTrackSync');
-            reconnectAttempts.current = 0;
+            reconnectAttemptsRef.current = 0;
             retryAttemptRef.current = 0;
             channelRef.current = channel;
-            setIsConnecting(false);
+            isSubscribing = false;
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-            setIsConnecting(false);
+            isSubscribing = false;
             
             if (status === 'CHANNEL_ERROR') {
               logError('Track sync channel error', new Error('Channel error'), 'useTrackSync');
@@ -158,29 +161,41 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
               logWarn('Track sync closed', 'useTrackSync');
             }
 
+            // Clear reconnect timeout if exists
+            if (reconnectTimeoutId) {
+              clearTimeout(reconnectTimeoutId);
+              reconnectTimeoutId = undefined;
+            }
+
+            // Cleanup channel
             if (channelRef.current) {
-              supabase.removeChannel(channelRef.current);
+              try {
+                supabase.removeChannel(channelRef.current);
+              } catch (e) {
+                logWarn('Error removing channel on error', 'useTrackSync', { error: e });
+              }
               channelRef.current = null;
             }
 
-            // ✅ Exponential backoff retry
-            if (reconnectAttempts.current < MAX_RECONNECT) {
-              const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
-              reconnectAttempts.current++;
-              retryAttemptRef.current = reconnectAttempts.current;
+            // ✅ FIX: Only retry if mounted and under limit
+            if (isMounted && reconnectAttemptsRef.current < MAX_RECONNECT) {
+              const delay = Math.min(5000 * Math.pow(2, reconnectAttemptsRef.current), 30000);
+              reconnectAttemptsRef.current++;
+              retryAttemptRef.current = reconnectAttemptsRef.current;
               
-              logInfo('[useTrackSync] Attempting reconnect', undefined, { 
-                attempt: reconnectAttempts.current, 
-                delay 
+              logInfo('Scheduling reconnect', 'useTrackSync', { 
+                attempt: reconnectAttemptsRef.current, 
+                delay,
+                maxAttempts: MAX_RECONNECT
               });
               
-              reconnectTimeout = setTimeout(() => {
-                if (!channelRef.current && !isConnecting) {
+              reconnectTimeoutId = setTimeout(() => {
+                if (isMounted && !channelRef.current && !isSubscribing) {
                   setupChannelWithRetry();
                 }
               }, delay);
-            } else {
-              logError('🔴 [useTrackSync] Max reconnect attempts reached', new Error('Reconnect failed'), 'useTrackSync');
+            } else if (reconnectAttemptsRef.current >= MAX_RECONNECT) {
+              logError('Max reconnect attempts reached', new Error('Reconnect failed'), 'useTrackSync');
               toastRef.current?.({
                 title: 'Потеряно соединение',
                 description: 'Обновите страницу для восстановления',
@@ -193,24 +208,32 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
       return channel;
     };
 
-    const initialChannel = setupChannelWithRetry();
-    if (initialChannel) {
-      channelRef.current = initialChannel;
-    }
+    // Initial setup
+    setupChannelWithRetry();
 
+    // ✅ FIX: Proper cleanup to prevent memory leaks and infinite recursion
     return () => {
-      if (reconnectTimeout) {
-        clearTimeout(reconnectTimeout);
+      isMounted = false;
+      isSubscribing = false;
+      
+      // Clear all timeouts
+      if (reconnectTimeoutId) {
+        clearTimeout(reconnectTimeoutId);
+        reconnectTimeoutId = undefined;
       }
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
         retryTimeoutRef.current = null;
       }
-      setIsConnecting(false);
 
+      // Cleanup channel
       if (channelRef.current) {
         logInfo('Unsubscribing from track sync', 'useTrackSync');
-        supabase.removeChannel(channelRef.current);
+        try {
+          supabase.removeChannel(channelRef.current);
+        } catch (e) {
+          logWarn('Error during channel cleanup', 'useTrackSync', { error: e });
+        }
         channelRef.current = null;
       }
     };
