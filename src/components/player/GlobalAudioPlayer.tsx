@@ -49,6 +49,26 @@ const GlobalAudioPlayer = memo(() => {
   const [isBuffering, setIsBuffering] = useState(false);
   const playerRef = useRef<HTMLDivElement>(null);
 
+  // ============= HOOKS: ПЕРЕМЕСТИЛИ СЮДА ДО УСЛОВНЫХ RETURN =============
+  // ✅ toggleMute и handleVolumeChange должны вызываться при каждом рендере
+  const toggleMute = useCallback(() => {
+    if (isMuted) {
+      setVolume(previousVolume);
+      setIsMuted(false);
+    } else {
+      setPreviousVolume(volume);
+      setVolume(0);
+      setIsMuted(true);
+    }
+  }, [isMuted, setVolume, previousVolume, volume]);
+
+  const handleVolumeChange = useCallback((value: number[]) => {
+    const newVolume = value[0];
+    setVolume(newVolume);
+    setIsMuted(newVolume === 0);
+    if (newVolume > 0) setPreviousVolume(newVolume);
+  }, [setVolume]);
+
   // Анимация появления плеера
   useEffect(() => {
     if (currentTrack) {
@@ -217,23 +237,6 @@ const GlobalAudioPlayer = memo(() => {
   }
 
   // Desktop: Enhanced player
-  const toggleMute = useCallback(() => {
-    if (isMuted) {
-      setVolume(previousVolume);
-      setIsMuted(false);
-    } else {
-      setPreviousVolume(volume);
-      setVolume(0);
-      setIsMuted(true);
-    }
-  }, [isMuted, setVolume, previousVolume, volume]);
-
-  const handleVolumeChange = useCallback((value: number[]) => {
-    const newVolume = value[0];
-    setVolume(newVolume);
-    setIsMuted(newVolume === 0);
-    if (newVolume > 0) setPreviousVolume(newVolume);
-  }, [setVolume]);
 
   return (
     <TooltipProvider delayDuration={500}>
