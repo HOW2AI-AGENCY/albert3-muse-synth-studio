@@ -13,6 +13,7 @@ import {
   Mic2
 } from '@/utils/iconImports';
 import { cn } from '@/lib/utils';
+import { AnalyticsService } from '@/services/analytics.service';
 
 interface GenrePreset {
   id: string;
@@ -127,6 +128,20 @@ interface GenrePresetsProps {
 }
 
 export function GenrePresets({ onSelect }: GenrePresetsProps) {
+  const handlePresetClick = (preset: GenrePreset) => {
+    onSelect({
+      styleTags: preset.styleTags,
+      mood: preset.mood,
+      promptSuggestion: preset.promptSuggestion
+    });
+    
+    // Track genre selection
+    AnalyticsService.recordEvent({
+      eventType: 'genre_selected',
+      metadata: { genre: preset.name, id: preset.id }
+    });
+  };
+  
   return (
     <div className="space-y-2 sm:space-y-3">
       <div className="flex items-center gap-1.5 sm:gap-2 px-1">
@@ -147,11 +162,7 @@ export function GenrePresets({ onSelect }: GenrePresetsProps) {
                   "bg-gradient-to-br w-[280px]",
                   preset.color
                 )}
-                onClick={() => onSelect({
-                  styleTags: preset.styleTags,
-                  mood: preset.mood,
-                  promptSuggestion: preset.promptSuggestion
-                })}
+                onClick={() => handlePresetClick(preset)}
               >
                 <CardContent className="p-2.5">
                   <div className="flex items-start gap-2">
@@ -196,11 +207,7 @@ export function GenrePresets({ onSelect }: GenrePresetsProps) {
                 "bg-gradient-to-br",
                 preset.color
               )}
-              onClick={() => onSelect({
-                styleTags: preset.styleTags,
-                mood: preset.mood,
-                promptSuggestion: preset.promptSuggestion
-              })}
+              onClick={() => handlePresetClick(preset)}
             >
               <CardContent className="p-3">
                 <div className="flex items-start gap-2">

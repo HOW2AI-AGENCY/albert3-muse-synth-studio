@@ -279,4 +279,36 @@ export class AnalyticsService {
       keepalive: true,
     });
   }
+
+  /**
+   * Record a custom analytics event
+   */
+  static async recordEvent(event: {
+    eventType: string;
+    trackId?: string;
+    userId?: string;
+    metadata?: Record<string, unknown>;
+  }): Promise<void> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { error } = await supabase.from('analytics_events').insert([{
+        user_id: event.userId || user?.id || null,
+        track_id: event.trackId || null,
+        event_type: event.eventType,
+        event_data: (event.metadata || {}) as any,
+      }]);
+      
+      if (error) {
+        logger.error('Failed to record analytics event', error instanceof Error ? error : new Error(String(error)), 'AnalyticsService', event);
+      } else {
+        logger.debug('Analytics event recorded', 'AnalyticsService', {
+          eventType: event.eventType,
+          trackId: event.trackId
+        });
+      }
+    } catch (error) {
+      logger.error('Error recording analytics event', error instanceof Error ? error : new Error(String(error)), 'AnalyticsService', event);
+    }
+  }
 }

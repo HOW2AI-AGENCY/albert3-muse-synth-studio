@@ -132,9 +132,18 @@ export function LyricsGeneratorDialog({
               }
             } else if (jobData.status === 'failed') {
               clearInterval(pollInterval);
+              logger.error(`❌ [LYRICS] Generation failed`, new Error(jobData.error_message || 'Generation failed'), `[LYRICS]`, {
+                jobId: data.jobId,
+                attempts
+              });
               throw new Error(jobData.error_message || 'Генерация не удалась');
             } else if (attempts >= maxAttempts) {
               clearInterval(pollInterval);
+              logger.error(`❌ [LYRICS] Timeout reached`, new Error('Timeout'), `[LYRICS]`, {
+                jobId: data.jobId,
+                maxAttempts,
+                lastStatus: jobData.status
+              });
               throw new Error('Превышено время ожидания');
             }
           } catch (pollError) {

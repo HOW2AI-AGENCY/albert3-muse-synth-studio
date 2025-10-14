@@ -130,6 +130,15 @@ const GlobalAudioPlayer = memo(() => {
             import('sonner').then(({ toast }) => {
               toast.success('Аудио обновлено');
             });
+            
+            // Track successful URL refresh
+            import('@/services/analytics.service').then(({ AnalyticsService }) => {
+              AnalyticsService.recordEvent({
+                eventType: 'audio_url_refreshed',
+                trackId: currentTrack.id,
+                metadata: { success: true }
+              });
+            });
           } else {
             // URL не изменился - показываем ошибку
             import('sonner').then(({ toast }) => {
@@ -142,6 +151,18 @@ const GlobalAudioPlayer = memo(() => {
           import('@/utils/logger').then(({ logger }) => {
             logger.error('Failed to refresh audio URL', err instanceof Error ? err : new Error(String(err)), 'GlobalAudioPlayer');
           });
+          
+          // Track failed URL refresh
+          import('@/services/analytics.service').then(({ AnalyticsService }) => {
+            AnalyticsService.recordEvent({
+              eventType: 'audio_url_refresh_failed',
+              trackId: currentTrack.id,
+              metadata: { 
+                errorCode: err instanceof Error ? err.message : String(err)
+              }
+            });
+          });
+          
           import('sonner').then(({ toast }) => {
             toast.error('Ошибка загрузки аудио');
           });
