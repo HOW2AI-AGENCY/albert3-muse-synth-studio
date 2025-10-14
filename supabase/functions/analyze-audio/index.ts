@@ -17,7 +17,7 @@ async function mainHandler(req: Request): Promise<Response> {
     );
   }
 
-  const { audioUrl } = await req.json();
+  const { audioUrl, fullDescription } = await req.json();
 
   if (!audioUrl) {
     return new Response(
@@ -96,7 +96,30 @@ async function mainHandler(req: Request): Promise<Response> {
 
     console.log('[analyze-audio] Analysis complete:', description);
 
-    // Return structured analysis
+    // If fullDescription requested, generate detailed text description
+    if (fullDescription) {
+      const fullDesc = [
+        description.genre ? `Genre: ${description.genre}` : '',
+        description.tempo_bpm ? `Tempo: ${description.tempo_bpm} BPM` : '',
+        description.key ? `Key: ${description.key}` : '',
+        description.energy_level ? `Energy: ${description.energy_level}` : '',
+        description.mood ? `Mood: ${description.mood}` : '',
+      ].filter(Boolean).join(', ');
+
+      return new Response(
+        JSON.stringify({
+          duration: description.duration || 0,
+          bpm: description.tempo_bpm,
+          key: description.key,
+          genre: description.genre,
+          energy: description.energy_level,
+          fullDescription: fullDesc || 'Music track with various characteristics',
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Return structured analysis (original behavior)
     return new Response(
       JSON.stringify({
         duration: description.duration || 0,

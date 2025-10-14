@@ -13,7 +13,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Music, Loader2, Plus, FileAudio, FileText, SlidersHorizontal, Sparkles, Mic, Wand2, X, Volume2, Palette, History } from '@/utils/iconImports';
+import { Music, Loader2, Plus, FileAudio, FileText, SlidersHorizontal, Sparkles, Mic, Wand2, X, Volume2, Palette, History, MoreVertical } from '@/utils/iconImports';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
 import { useGenerateMusic } from '@/hooks/useGenerateMusic';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
@@ -25,6 +26,7 @@ import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog
 import { AudioRecorder } from '@/components/audio/AudioRecorder';
 import { TagsCarousel } from '@/components/generator/TagsCarousel';
 import { AudioAnalyzer } from '@/components/audio/AudioAnalyzer';
+import { AudioDescriber } from '@/components/audio/AudioDescriber';
 import { PromptHistoryDialog } from '@/components/generator/PromptHistoryDialog';
 import { GenrePresets } from '@/components/generator/GenrePresets';
 import { usePromptHistory } from '@/hooks/usePromptHistory';
@@ -160,10 +162,11 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     if (url) {
       setParam('referenceAudioUrl', url);
       setParam('referenceFileName', pendingAudioFile.name);
+      setMode('custom');
       setPendingAudioFile(null);
       toast({
         title: '🎵 Референс добавлен',
-        description: 'Теперь можно настроить вес аудио в параметрах',
+        description: 'Переключено на расширенный режим для настройки',
       });
     }
   };
@@ -177,10 +180,11 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const handleRecordComplete = (url: string) => {
     setParam('referenceAudioUrl', url);
     setParam('referenceFileName', `recording-${Date.now()}.webm`);
+    setMode('custom');
     setRecordingMode(false);
     toast({
       title: '🎤 Запись добавлена',
-      description: 'Используется как референсное аудио',
+      description: 'Переключено на расширенный режим для настройки',
     });
   };
 
@@ -437,28 +441,18 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                 disabled={isGenerating}
               />
 
-              {/* Action Buttons */}
+              {/* Action Buttons - Simplified */}
               <div className="flex items-center justify-between gap-2">
                 <div className="flex gap-1.5">
                   <Button
                     variant="outline"
                     size="sm"
                     className="h-7 gap-1.5 text-xs"
-                    onClick={() => setHistoryDialogOpen(true)}
-                    disabled={isGenerating}
-                  >
-                    <History className="h-3.5 w-3.5" />
-                    История
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 gap-1 text-xs px-3"
                     disabled={isGenerating}
                     onClick={() => document.getElementById('audio-upload-input')?.click()}
                   >
                     <Plus className="h-3.5 w-3.5" />
-                    Audio
+                    Аудио
                   </Button>
                   <input
                     id="audio-upload-input"
@@ -467,17 +461,24 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                     className="hidden"
                     onChange={handleAudioFileSelect}
                   />
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-9 gap-1 text-xs px-3"
-                    disabled={isGenerating}
-                    onClick={() => setLyricsDialogOpen(true)}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Lyrics
-                  </Button>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={isGenerating}>
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setHistoryDialogOpen(true)}>
+                        <History className="h-4 w-4 mr-2" />
+                        История промптов
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setLyricsDialogOpen(true)}>
+                        <FileText className="h-4 w-4 mr-2" />
+                        AI генератор текстов
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
                 <div className="flex items-center gap-1.5">
@@ -625,7 +626,14 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                     </Button>
                   </div>
                   {params.referenceAudioUrl && (
-                    <AudioAnalyzer audioUrl={params.referenceAudioUrl} />
+                    <div className="space-y-1">
+                      <AudioAnalyzer audioUrl={params.referenceAudioUrl} />
+                      <AudioDescriber
+                        audioUrl={params.referenceAudioUrl}
+                        onDescriptionGenerated={(desc) => setParam('prompt', params.prompt ? `${params.prompt}\n\n${desc}` : desc)}
+                        disabled={isGenerating}
+                      />
+                    </div>
                   )}
                 </div>
               )}

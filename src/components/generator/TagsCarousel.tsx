@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Sparkles } from "@/utils/iconImports";
+import { cn } from "@/lib/utils";
 
 interface InspirationTag {
   label: string;
@@ -35,25 +36,33 @@ export const TagsCarousel = ({ onTagClick, disabled = false }: TagsCarouselProps
           Вдохновение
         </span>
       </div>
-      <ScrollArea className="w-full whitespace-nowrap rounded-md border border-border/40 bg-secondary/20 p-1 sm:p-1.5">
-        <div className="flex gap-1 sm:gap-1.5">
-          {INSPIRATION_TAGS.map((tag) => (
-            <Button
-              key={tag.label}
-              variant="outline"
-              size="sm"
-              className="shrink-0 gap-1 sm:gap-1.5 h-8 sm:h-7 text-[11px] sm:text-xs font-normal hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all"
-              onClick={() => onTagClick(tag.label)}
-              disabled={disabled}
-              title={tag.description}
-            >
-              <span className="text-xs sm:text-sm">{tag.icon}</span>
-              <span>{tag.label}</span>
-            </Button>
-          ))}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+      <div className="relative">
+        {/* Left fade gradient */}
+        <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-secondary/20 to-transparent pointer-events-none z-10 rounded-l-md" />
+        
+        <ScrollArea className="w-full whitespace-nowrap rounded-md border border-border/40 bg-secondary/20 p-1 sm:p-1.5">
+          <div className="flex gap-1 sm:gap-1.5">
+            {INSPIRATION_TAGS.map((tag) => (
+              <Button
+                key={tag.label}
+                variant="outline"
+                size="sm"
+                className="shrink-0 gap-1 sm:gap-1.5 h-8 sm:h-7 text-[11px] sm:text-xs font-normal hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all"
+                onClick={() => onTagClick(tag.label)}
+                disabled={disabled}
+                title={tag.description}
+              >
+                <span className="text-xs sm:text-sm">{tag.icon}</span>
+                <span>{tag.label}</span>
+              </Button>
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" className={cn("h-2", "bg-muted/50")} />
+        </ScrollArea>
+
+        {/* Right fade gradient */}
+        <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-secondary/20 to-transparent pointer-events-none z-10 rounded-r-md" />
+      </div>
     </div>
   );
 };
