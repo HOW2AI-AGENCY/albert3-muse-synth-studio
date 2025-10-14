@@ -26,6 +26,7 @@ import { AudioRecorder } from '@/components/audio/AudioRecorder';
 import { TagsCarousel } from '@/components/generator/TagsCarousel';
 import { AudioAnalyzer } from '@/components/audio/AudioAnalyzer';
 import { PromptHistoryDialog } from '@/components/generator/PromptHistoryDialog';
+import { GenrePresets } from '@/components/generator/GenrePresets';
 import { usePromptHistory } from '@/hooks/usePromptHistory';
 import { ProviderSelector } from '@/components/mureka/ProviderSelector';
 import { MurekaBalanceDisplay } from '@/components/mureka/MurekaBalanceDisplay';
