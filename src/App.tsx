@@ -10,7 +10,6 @@ import router from "./router";
 import { AudioPlayerProvider } from "./contexts/AudioPlayerContext";
 import { GlobalAudioPlayer } from "./components/player/GlobalAudioPlayer";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { NavigationTracker } from "@/components/NavigationTracker";
 import { toast } from "sonner";
 
 // Оптимизированная конфигурация React Query
@@ -59,12 +58,10 @@ const App = () => {
           <AppLayout>
             <Suspense fallback={<FullPageSpinner />}>
               <AudioPlayerProvider>
-                <NavigationTracker>
-                  <Toaster />
-                  <Sonner />
-                  <RouterProvider router={router} />
-                  <GlobalAudioPlayer />
-                </NavigationTracker>
+                <Toaster />
+                <Sonner />
+                <RouterProvider router={router} />
+                <GlobalAudioPlayer />
               </AudioPlayerProvider>
             </Suspense>
           </AppLayout>
