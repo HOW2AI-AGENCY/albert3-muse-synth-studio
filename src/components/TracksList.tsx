@@ -1,6 +1,7 @@
-import { useState, memo, useCallback } from "react";
+import { useState, memo, useCallback, useRef, useEffect } from "react";
 import { TrackCard } from "@/features/tracks/components/TrackCard";
 import { TrackListItem } from "@/features/tracks/components/TrackListItem";
+import { VirtualizedTracksList } from "./tracks/VirtualizedTracksList";
 import { ViewSwitcher } from "./tracks/ViewSwitcher";
 import { LoadingSkeleton as Skeleton } from "./ui/LoadingSkeleton";
 import { Track, ApiService } from "@/services/api.service";
@@ -32,6 +33,8 @@ const TracksListComponent = ({
 }: TracksListProps) => {
   const { playTrackWithQueue } = useAudioPlayer();
   const { toast } = useToast();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
     try {
       const saved = typeof window !== 'undefined' ? localStorage.getItem('tracks-view-mode') : 'grid';
@@ -40,6 +43,20 @@ const TracksListComponent = ({
       return 'grid';
     }
   });
+
+  // Track container dimensions for virtualization
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const { width, height } = containerRef.current.getBoundingClientRect();
+        setContainerDimensions({ width, height: Math.max(height, 600) });
+      }
+    };
+
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, []);
 
   const handleViewChange = useCallback((view: 'grid' | 'list') => {
     setViewMode(view);
@@ -170,7 +187,7 @@ const TracksListComponent = ({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" ref={containerRef}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-semibold tracking-tight">
           Ваши треки ({tracks.length})
@@ -179,21 +196,38 @@ const TracksListComponent = ({
       </div>
 
       {viewMode === 'grid' ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-3">
-          {tracks.map((track) => (
-            <TrackCard
-              key={track.id}
-              track={track as any}
-              onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
-              onShare={() => handleShare(track.id)}
-              onRetry={handleRetry}
-              onDelete={handleDelete}
-              onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
-              onExtend={onExtend ? () => onExtend(track.id) : undefined}
-              onCover={onCover ? () => onCover(track.id) : undefined}
-            />
-          ))}
-        </div>
+        tracks.length > 50 && containerDimensions.width > 0 ? (
+          // Use virtualization for large lists
+          <VirtualizedTracksList
+            tracks={tracks}
+            containerWidth={containerDimensions.width}
+            containerHeight={containerDimensions.height}
+            onSelect={onSelect}
+            onShare={handleShare}
+            onRetry={handleRetry}
+            onDelete={handleDelete}
+            onSeparateStems={onSeparateStems}
+            onExtend={onExtend}
+            onCover={onCover}
+          />
+        ) : (
+          // Regular grid for smaller lists
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-3">
+            {tracks.map((track) => (
+              <TrackCard
+                key={track.id}
+                track={track as any}
+                onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
+                onShare={() => handleShare(track.id)}
+                onRetry={handleRetry}
+                onDelete={handleDelete}
+                onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
+                onExtend={onExtend ? () => onExtend(track.id) : undefined}
+                onCover={onCover ? () => onCover(track.id) : undefined}
+              />
+            ))}
+          </div>
+        )
       ) : (
         <div className="space-y-2">
           {tracks.map((track) => (
