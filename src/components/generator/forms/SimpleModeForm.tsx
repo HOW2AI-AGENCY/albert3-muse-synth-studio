@@ -5,6 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Music } from '@/utils/iconImports';
 import { GenrePresets } from '@/components/generator/GenrePresets';
 import { PromptInput } from './PromptInput';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 import type { GenerationParams, GenrePreset } from '../types/generator.types';
 
 interface SimpleModeFormProps {
@@ -32,6 +34,8 @@ export const SimpleModeForm = memo(({
   debouncedPrompt,
   onDebouncedPromptChange,
 }: SimpleModeFormProps) => {
+  const isMobile = useIsMobile();
+  
   const handleGenerate = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     onGenerate();
@@ -66,7 +70,10 @@ export const SimpleModeForm = memo(({
           placeholder="Оставьте пустым для автогенерации"
           value={params.title}
           onChange={(e) => onParamChange('title', e.target.value)}
-          className="h-9 text-sm"
+          className={cn(
+            "text-sm",
+            isMobile ? "h-10 text-base" : "h-9"
+          )}
           disabled={isGenerating}
           maxLength={80}
         />
@@ -76,7 +83,10 @@ export const SimpleModeForm = memo(({
       <Button
         onClick={handleGenerate}
         disabled={isGenerating || (!params.prompt.trim() && !params.lyrics.trim())}
-        className="w-full h-11 text-sm font-semibold gap-2.5 mt-3 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20"
+        className={cn(
+          "w-full font-semibold gap-2.5 mt-3 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20",
+          isMobile ? "h-12 text-base" : "h-11 text-sm"
+        )}
         size="lg"
       >
         {isGenerating ? (

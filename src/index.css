@@ -43,6 +43,27 @@
     --shadow-glow-accent: 0 0 40px hsl(330 81% 60% / 0.3);
     
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Mobile spacing system */
+    --mobile-spacing-xs: 0.25rem;
+    --mobile-spacing-sm: 0.5rem;
+    --mobile-spacing-md: 0.75rem;
+    --mobile-spacing-lg: 1rem;
+    --mobile-spacing-xl: 1.5rem;
+    
+    /* Mobile touch targets */
+    --mobile-touch-min: 44px;
+    --mobile-touch-optimal: 48px;
+    
+    /* Mobile typography */
+    --mobile-font-xs: 0.625rem;
+    --mobile-font-sm: 0.75rem;
+    --mobile-font-base: 1rem;
+    --mobile-font-lg: 1.125rem;
+
+    /* Dynamic offsets */
+    --workspace-bottom-offset: 0px;
+    --bottom-tab-bar-height: 0px;
   }
 }
 
@@ -264,6 +285,22 @@
   .touch-action-manipulation {
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Mobile utilities */
+  @media (max-width: 767px) {
+    .mobile-compact {
+      @apply p-2 gap-2;
+    }
+    
+    .mobile-touch {
+      min-height: var(--mobile-touch-min);
+      min-width: var(--mobile-touch-min);
+    }
+    
+    .mobile-no-zoom {
+      font-size: var(--mobile-font-base) !important;
+    }
   }
 
   /* Reduce motion for accessibility and performance */

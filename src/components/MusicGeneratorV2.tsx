@@ -12,6 +12,8 @@ import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog
 import { PromptHistoryDialog } from '@/components/generator/PromptHistoryDialog';
 import { usePromptHistory } from '@/hooks/usePromptHistory';
 import { useProviderBalance } from '@/hooks/useProviderBalance';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import { getProviderModels, getDefaultModel, type MusicProvider as ProviderType } from '@/config/provider-models';
 
@@ -298,10 +300,14 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
 
   const tempAudioUrl = pendingAudioFile ? URL.createObjectURL(pendingAudioFile) : '';
   const lyricsLineCount = params.lyrics ? params.lyrics.split('\n').filter(l => l.trim()).length : 0;
+  const isMobile = useIsMobile();
 
   return (
     <motion.div 
-      className="flex flex-col h-full card-elevated" 
+      className={cn(
+        "flex flex-col h-full card-elevated",
+        isMobile && "rounded-none"
+      )}
       data-testid="music-generator"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -322,8 +328,14 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       />
 
       {/* Main Content */}
-      <ScrollArea className="flex-grow">
-        <div className="p-2.5 space-y-2">
+      <ScrollArea className={cn(
+        "flex-grow",
+        isMobile && "max-h-[calc(100vh-180px)]"
+      )}>
+        <div className={cn(
+          "space-y-2",
+          isMobile ? "p-3" : "p-2.5"
+        )}>
           {mode === 'simple' ? (
             <SimpleModeForm
               params={params}

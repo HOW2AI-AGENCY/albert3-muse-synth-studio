@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { useIntersectionObserver } from '@/utils/performance';
 
@@ -21,7 +21,6 @@ export const LazyImage = React.memo(({
   const [imageSrc, setImageSrc] = useState<string>(placeholder);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isError, setIsError] = useState(false);
-  const imgRef = useRef<HTMLDivElement>(null);
 
   const handleIntersection = (entry: IntersectionObserverEntry) => {
     if (entry.isIntersecting && imageSrc === placeholder) {
@@ -29,7 +28,7 @@ export const LazyImage = React.memo(({
     }
   };
 
-  useIntersectionObserver(handleIntersection, {
+  const imgRef = useIntersectionObserver(handleIntersection, {
     threshold: 0.1,
     rootMargin: '50px'
   });
@@ -52,7 +51,7 @@ export const LazyImage = React.memo(({
 
   return (
     <div 
-      ref={imgRef}
+      ref={imgRef as React.RefObject<HTMLDivElement>}
       className={cn('relative overflow-hidden bg-muted', wrapperClassName)}
     >
       <img
