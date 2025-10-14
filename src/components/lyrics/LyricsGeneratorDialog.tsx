@@ -183,58 +183,82 @@ export function LyricsGeneratorDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Генерация текста песни
-          </DialogTitle>
-          <DialogDescription>
-            Опишите настроение, тему и стиль для вашего текста
-          </DialogDescription>
-        </DialogHeader>
+        <DialogContent className="sm:max-w-[540px] gap-0 p-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b">
+            <DialogTitle className="flex items-center gap-2.5 text-lg">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <FileText className="w-4 h-4 text-primary" />
+              </div>
+              Генерация текста песни
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground mt-1.5">
+              Опишите настроение, тему и стиль — AI создаст несколько вариантов
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="prompt">
-                Описание <span className="text-destructive">*</span>
-              </Label>
-              <span className={`text-xs ${wordCount > MAX_WORDS ? 'text-destructive' : 'text-muted-foreground'}`}>
-                {wordCount} / {MAX_WORDS} слов
-              </span>
+          <div className="px-6 py-5 space-y-4">
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="prompt" className="text-sm font-medium flex items-center gap-1.5">
+                  Описание
+                  <span className="text-destructive text-xs">*</span>
+                </Label>
+                <div className={`text-xs font-mono tabular-nums transition-colors ${
+                  wordCount > MAX_WORDS 
+                    ? 'text-destructive font-semibold' 
+                    : wordCount > MAX_WORDS * 0.8
+                    ? 'text-orange-500'
+                    : 'text-muted-foreground'
+                }`}>
+                  {wordCount} / {MAX_WORDS}
+                </div>
+              </div>
+              <Textarea
+                id="prompt"
+                placeholder="Например: песня о любви в стиле поп-рок, веселая и энергичная, с припевом о преодолении трудностей..."
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                rows={7}
+                className="resize-none text-sm leading-relaxed"
+              />
+              <div className="flex items-start gap-2 text-[11px] text-muted-foreground">
+                <div className="mt-0.5">💡</div>
+                <p>
+                  Будьте конкретны: укажите жанр, настроение, тему и структуру песни для лучших результатов
+                </p>
+              </div>
             </div>
-            <Textarea
-              id="prompt"
-              placeholder="Например: песня о любви в стиле поп-рок, веселая и энергичная..."
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              rows={6}
-              className="resize-none"
-            />
-            <p className="text-xs text-muted-foreground">
-              AI создаст несколько вариантов текста на основе вашего описания
-            </p>
           </div>
-        </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isGenerating}>
-            Отмена
-          </Button>
-          <Button onClick={handleGenerate} disabled={isGenerating || !prompt.trim() || wordCount > MAX_WORDS}>
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Генерация...
-              </>
-            ) : (
-              'Сгенерировать'
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter className="px-6 pb-6 pt-0 gap-2 sm:gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => onOpenChange(false)} 
+              disabled={isGenerating}
+              className="flex-1 sm:flex-none"
+            >
+              Отмена
+            </Button>
+            <Button 
+              onClick={handleGenerate} 
+              disabled={isGenerating || !prompt.trim() || wordCount > MAX_WORDS}
+              className="flex-1 sm:flex-none gap-2"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Генерация...</span>
+                </>
+              ) : (
+                <>
+                  <FileText className="h-4 w-4" />
+                  <span>Сгенерировать</span>
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     <LyricsVariantSelectorDialog
       open={variantSelectorOpen}

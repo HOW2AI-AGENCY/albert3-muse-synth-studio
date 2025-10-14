@@ -55,10 +55,10 @@ export const SimpleModeForm = memo(({
         hasLyrics={!!params.lyrics.trim()}
       />
 
-      {/* Title Input */}
-      <div className="space-y-1">
-        <Label htmlFor="title" className="text-xs font-medium">
-          Название трека (опционально)
+      {/* Compact Title Input */}
+      <div className="space-y-1.5">
+        <Label htmlFor="title" className="text-xs font-medium text-muted-foreground">
+          Название трека <span className="text-[10px]">(опционально)</span>
         </Label>
         <Input
           id="title"
@@ -66,28 +66,28 @@ export const SimpleModeForm = memo(({
           placeholder="Оставьте пустым для автогенерации"
           value={params.title}
           onChange={(e) => onParamChange('title', e.target.value)}
-          className="h-8 text-sm"
+          className="h-9 text-sm"
           disabled={isGenerating}
           maxLength={80}
         />
       </div>
 
-      {/* Generate Button */}
+      {/* Compact Generate Button */}
       <Button
         onClick={handleGenerate}
         disabled={isGenerating || (!params.prompt.trim() && !params.lyrics.trim())}
-        className="w-full h-10 text-sm font-medium gap-2 mt-2"
+        className="w-full h-11 text-sm font-semibold gap-2.5 mt-3 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20"
         size="lg"
       >
         {isGenerating ? (
           <>
             <Music className="h-4 w-4 animate-spin" />
-            Генерация...
+            <span>Генерация музыки...</span>
           </>
         ) : (
           <>
             <Music className="h-4 w-4" />
-            Создать музыку
+            <span>Создать музыку</span>
           </>
         )}
       </Button>
