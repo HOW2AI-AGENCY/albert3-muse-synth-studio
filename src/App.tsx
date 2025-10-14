@@ -9,6 +9,7 @@ import { FullPageSpinner } from "@/components/ui/loading-states";
 import router from "./router";
 import { AudioPlayerProvider } from "./contexts/AudioPlayerContext";
 import { GlobalAudioPlayer } from "./components/player/GlobalAudioPlayer";
+import { AppLayout } from "@/components/layout/AppLayout";
 import { toast } from "sonner";
 
 // Оптимизированная конфигурация React Query
@@ -54,14 +55,16 @@ const App = () => {
     <GlobalErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <Suspense fallback={<FullPageSpinner />}>
-            <AudioPlayerProvider>
-              <Toaster />
-              <Sonner />
-              <RouterProvider router={router} />
-              <GlobalAudioPlayer />
-            </AudioPlayerProvider>
-          </Suspense>
+          <AppLayout>
+            <Suspense fallback={<FullPageSpinner />}>
+              <AudioPlayerProvider>
+                <Toaster />
+                <Sonner />
+                <RouterProvider router={router} />
+                <GlobalAudioPlayer />
+              </AudioPlayerProvider>
+            </Suspense>
+          </AppLayout>
         </TooltipProvider>
       </QueryClientProvider>
     </GlobalErrorBoundary>

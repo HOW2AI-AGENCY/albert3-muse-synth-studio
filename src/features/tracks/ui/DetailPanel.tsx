@@ -1,8 +1,9 @@
-import { useReducer, useEffect, useCallback, useMemo } from "react";
+import { useReducer, useEffect, useCallback, useMemo, useState } from "react";
 import { X, Info, GitBranch, Music4 } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DetailPanelContent } from "@/components/workspace/DetailPanelContent";
@@ -147,6 +148,8 @@ const detailPanelReducer = (state: DetailPanelState, action: DetailPanelAction):
 };
 
 export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelProps) => {
+  const [activeTab, setActiveTab] = useState("overview");
+  
   // Инициализируем состояние с помощью useMemo для оптимизации
   const initialState = useMemo((): DetailPanelState => ({
     formData: {
@@ -346,32 +349,70 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelP
         )}
       </div>
 
-      {/* Tabs Navigation - Touch-friendly */}
-      <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="sticky top-0 z-20 mx-4 mt-2 grid w-auto grid-cols-4 h-11 shrink-0 bg-background/95 backdrop-blur">
-          <TabsTrigger value="overview" className="text-xs gap-1.5 min-h-[44px]">
-            <Info className="w-4 h-4" />
-            Обзор
-          </TabsTrigger>
-          <TabsTrigger value="versions" className="text-xs gap-1.5 min-h-[44px]">
-            <GitBranch className="w-4 h-4" />
-            Версии
-            {state.data.versions.length > 1 && (
-              <Badge className="ml-1 h-4 px-1 text-[10px]">{state.data.versions.length}</Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="stems" className="text-xs gap-1.5 min-h-[44px]">
-            <Music4 className="w-4 h-4" />
-            Стемы
-            {state.data.stems.length > 0 && (
-              <Badge className="ml-1 h-4 px-1 text-[10px]">{state.data.stems.length}</Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="details" className="text-xs gap-1.5 min-h-[44px]">
-            <Info className="w-4 h-4" />
-            Детали
-          </TabsTrigger>
-        </TabsList>
+      {/* Tabs Navigation - Sticky with animated indicator */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border/30 mx-4 mt-2 shrink-0">
+          <TabsList className="relative grid w-full grid-cols-4 h-11 bg-transparent">
+            <TabsTrigger 
+              value="overview" 
+              className={cn(
+                "text-xs gap-1.5 min-h-[44px] relative transition-colors",
+                activeTab === "overview" && "text-primary"
+              )}
+            >
+              <Info className="w-4 h-4" />
+              <span className="hidden sm:inline">Обзор</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="versions" 
+              className={cn(
+                "text-xs gap-1.5 min-h-[44px] relative transition-colors",
+                activeTab === "versions" && "text-primary"
+              )}
+            >
+              <GitBranch className="w-4 h-4" />
+              <span className="hidden sm:inline">Версии</span>
+              {state.data.versions.length > 1 && (
+                <Badge className="ml-1 h-4 px-1 text-[10px]">{state.data.versions.length}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="stems" 
+              className={cn(
+                "text-xs gap-1.5 min-h-[44px] relative transition-colors",
+                activeTab === "stems" && "text-primary"
+              )}
+            >
+              <Music4 className="w-4 h-4" />
+              <span className="hidden sm:inline">Стемы</span>
+              {state.data.stems.length > 0 && (
+                <Badge className="ml-1 h-4 px-1 text-[10px]">{state.data.stems.length}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="details" 
+              className={cn(
+                "text-xs gap-1.5 min-h-[44px] relative transition-colors",
+                activeTab === "details" && "text-primary"
+              )}
+            >
+              <Info className="w-4 h-4" />
+              <span className="hidden sm:inline">Детали</span>
+            </TabsTrigger>
+            
+            {/* Animated indicator */}
+            <div
+              className={cn(
+                "absolute bottom-0 h-0.5 bg-primary transition-all duration-300 ease-out",
+                activeTab === "overview" && "left-0 w-1/4",
+                activeTab === "versions" && "left-1/4 w-1/4",
+                activeTab === "stems" && "left-1/2 w-1/4",
+                activeTab === "details" && "left-3/4 w-1/4"
+              )}
+              style={{ boxShadow: 'var(--shadow-glow-primary)' }}
+            />
+          </TabsList>
+        </div>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0" data-testid="detail-panel-scroll">
