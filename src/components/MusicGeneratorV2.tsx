@@ -392,9 +392,11 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                     placeholder="Опишите стиль, настроение и жанр..."
                     value={params.prompt}
                     onChange={(e) => setParam('prompt', e.target.value)}
-                    className="min-h-[70px] text-sm resize-none pr-10"
+                    onFocus={(e) => e.target.classList.add('focus:min-h-[90px]')}
+                    onBlur={(e) => e.target.classList.remove('focus:min-h-[90px]')}
+                    className="min-h-[60px] sm:min-h-[70px] text-sm resize-none pr-10 transition-all duration-200"
                     disabled={isGenerating}
-                    rows={3}
+                    rows={2}
                   />
                   {params.prompt.trim() && (
                   <motion.div
@@ -438,7 +440,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                     onClick={() => document.getElementById('audio-upload-input')?.click()}
                   >
                     <Plus className="h-3.5 w-3.5" />
-                    Аудио
+                    <span className="hidden xs:inline">Аудио</span>
                   </Button>
                   <input
                     id="audio-upload-input"
@@ -546,7 +548,9 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                   placeholder="Напишите текст или используйте AI генератор..."
                   value={params.lyrics}
                   onChange={(e) => setParam('lyrics', e.target.value)}
-                  className="min-h-[60px] text-xs resize-none"
+                  onFocus={(e) => e.target.classList.add('focus:min-h-[100px]')}
+                  onBlur={(e) => e.target.classList.remove('focus:min-h-[100px]')}
+                  className="min-h-[60px] text-xs resize-none transition-all duration-200"
                   disabled={isGenerating}
                   rows={3}
                 />
@@ -789,7 +793,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               isGenerating && "opacity-0"
             )}>
               <Music className="h-4 w-4" />
-              Создать трек
+              <span className="hidden xs:inline">Создать трек</span>
             </span>
             
             {isGenerating && (
