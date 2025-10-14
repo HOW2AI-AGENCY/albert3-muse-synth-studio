@@ -4,6 +4,7 @@ import { TrackListItem } from "@/features/tracks/components/TrackListItem";
 import { VirtualizedTracksList } from "./tracks/VirtualizedTracksList";
 import { ViewSwitcher } from "./tracks/ViewSwitcher";
 import { LoadingSkeleton as Skeleton } from "./ui/LoadingSkeleton";
+import { StaggerContainer, StaggerItem } from "@/components/animations/OptimizedMotion";
 import { Track, ApiService } from "@/services/api.service";
 import { Music } from "@/utils/iconImports";
 import { useToast } from "@/hooks/use-toast";
@@ -211,22 +212,26 @@ const TracksListComponent = ({
             onCover={onCover}
           />
         ) : (
-          // Regular grid for smaller lists
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-3">
+          // Regular grid for smaller lists with stagger animations
+          <StaggerContainer 
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-3"
+            staggerDelay={0.03}
+          >
             {tracks.map((track) => (
-              <TrackCard
-                key={track.id}
-                track={track as any}
-                onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
-                onShare={() => handleShare(track.id)}
-                onRetry={handleRetry}
-                onDelete={handleDelete}
-                onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
-                onExtend={onExtend ? () => onExtend(track.id) : undefined}
-                onCover={onCover ? () => onCover(track.id) : undefined}
-              />
+              <StaggerItem key={track.id}>
+                <TrackCard
+                  track={track as any}
+                  onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
+                  onShare={() => handleShare(track.id)}
+                  onRetry={handleRetry}
+                  onDelete={handleDelete}
+                  onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
+                  onExtend={onExtend ? () => onExtend(track.id) : undefined}
+                  onCover={onCover ? () => onCover(track.id) : undefined}
+                />
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         )
       ) : (
         <div className="space-y-2">

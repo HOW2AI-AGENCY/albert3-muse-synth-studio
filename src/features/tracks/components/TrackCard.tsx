@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { LazyImage } from "@/components/ui/lazy-image";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { fadeInUp } from "@/utils/animations";
 import {
@@ -393,10 +394,12 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
         </TooltipProvider>
 
         {track.cover_url ? (
-          <img
+          <LazyImage
             src={track.cover_url}
             alt={`Обложка трека ${track.title}`}
+            placeholder="/placeholder.svg"
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            wrapperClassName="w-full h-full"
           />
         ) : (
           <div className={cn("w-full h-full flex items-center justify-center bg-gradient-to-br", gradient)}>
