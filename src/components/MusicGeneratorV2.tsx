@@ -23,6 +23,8 @@ import { useBoostStyle } from '@/hooks/useBoostStyle';
 import { AudioPreviewDialog } from '@/components/audio/AudioPreviewDialog';
 import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog';
 import { AudioRecorder } from '@/components/audio/AudioRecorder';
+import { TagsCarousel } from '@/components/generator/TagsCarousel';
+import { AudioAnalyzer } from '@/components/audio/AudioAnalyzer';
 import { ProviderSelector } from '@/components/mureka/ProviderSelector';
 import { MurekaBalanceDisplay } from '@/components/mureka/MurekaBalanceDisplay';
 import { SunoBalanceDisplay } from '@/components/mureka/SunoBalanceDisplay';
@@ -391,6 +393,12 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                 )}
               </div>
 
+              {/* Tags Carousel */}
+              <TagsCarousel
+                onTagClick={(tag) => setParam('prompt', params.prompt ? `${params.prompt}, ${tag}` : tag)}
+                disabled={isGenerating}
+              />
+
               {/* Action Buttons */}
               <div className="flex items-center justify-between gap-2">
                 <div className="flex gap-1.5">
@@ -554,18 +562,23 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
 
               {/* Reference Audio Display */}
               {params.referenceFileName && (
-                <div className="flex items-center gap-2 text-xs bg-secondary/30 px-2 py-1.5 rounded-md border border-border/30">
-                  <FileAudio className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <span className="flex-1 truncate">{params.referenceFileName}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-5 w-5"
-                    onClick={handleRemoveAudio}
-                    disabled={isGenerating}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 text-xs bg-secondary/30 px-2 py-1.5 rounded-md border border-border/30">
+                    <FileAudio className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <span className="flex-1 truncate">{params.referenceFileName}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5"
+                      onClick={handleRemoveAudio}
+                      disabled={isGenerating}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  {params.referenceAudioUrl && (
+                    <AudioAnalyzer audioUrl={params.referenceAudioUrl} />
+                  )}
                 </div>
               )}
 
@@ -592,6 +605,29 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                           <Label className="text-xs">Вес аудио</Label>
                           <span className="text-xs text-muted-foreground font-mono">{params.audioWeight}%</span>
                         </div>
+                        
+                        {/* Visual representation */}
+                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground mb-1">
+                          <span className={cn(
+                            "transition-colors",
+                            params.audioWeight < 30 && "text-primary font-medium"
+                          )}>
+                            Стиль
+                          </span>
+                          <div className="flex-1 h-1 bg-secondary rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-primary transition-all duration-300"
+                              style={{ width: `${params.audioWeight}%` }}
+                            />
+                          </div>
+                          <span className={cn(
+                            "transition-colors",
+                            params.audioWeight > 70 && "text-primary font-medium"
+                          )}>
+                            Референс
+                          </span>
+                        </div>
+                        
                         <Slider
                           value={[params.audioWeight]}
                           onValueChange={([v]) => setParam('audioWeight', v)}

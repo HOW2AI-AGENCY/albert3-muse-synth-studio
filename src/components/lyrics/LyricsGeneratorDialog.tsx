@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/utils/logger";
 import { Loader2, FileText } from "@/utils/iconImports";
+import { LyricsVariantSelectorDialog } from "@/components/lyrics/LyricsVariantSelector";
 
 interface LyricsGeneratorDialogProps {
   open: boolean;
@@ -34,6 +35,8 @@ export function LyricsGeneratorDialog({
 }: LyricsGeneratorDialogProps) {
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [variantSelectorOpen, setVariantSelectorOpen] = useState(false);
+  const [variants, setVariants] = useState<any[]>([]);
   const { toast } = useToast();
 
   const wordCount = prompt.trim().split(/\s+/).filter(Boolean).length;
@@ -104,20 +107,29 @@ export function LyricsGeneratorDialog({
             if (jobData.status === 'completed' && jobData.lyrics_variants?.length > 0) {
               clearInterval(pollInterval);
               
-              const firstVariant = jobData.lyrics_variants[0];
-              logger.info(`✅ [LYRICS] Got ${jobData.lyrics_variants.length} variants, using first one`);
+              logger.info(`✅ [LYRICS] Got ${jobData.lyrics_variants.length} variants`);
               
-              if (onGenerated && firstVariant.content) {
-                onGenerated(firstVariant.content);
+              // If multiple variants, show selector
+              if (jobData.lyrics_variants.length > 1) {
+                setVariants(jobData.lyrics_variants);
+                setVariantSelectorOpen(true);
+                toast({
+                  title: "✨ Текст готов!",
+                  description: `Получено ${jobData.lyrics_variants.length} вариантов. Выберите лучший!`
+                });
+              } else {
+                // Auto-select single variant
+                const firstVariant = jobData.lyrics_variants[0];
+                if (onGenerated && firstVariant.content) {
+                  onGenerated(firstVariant.content);
+                }
+                toast({
+                  title: "✨ Текст готов!",
+                  description: "Текст добавлен в форму"
+                });
+                onOpenChange(false);
+                setPrompt("");
               }
-              
-              toast({
-                title: "✨ Текст готов!",
-                description: `Получено ${jobData.lyrics_variants.length} вариантов`
-              });
-              
-              onOpenChange(false);
-              setPrompt("");
             } else if (jobData.status === 'failed') {
               clearInterval(pollInterval);
               throw new Error(jobData.error_message || 'Генерация не удалась');
@@ -160,8 +172,9 @@ export function LyricsGeneratorDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
@@ -213,5 +226,20 @@ export function LyricsGeneratorDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <LyricsVariantSelectorDialog
+      open={variantSelectorOpen}
+      onOpenChange={setVariantSelectorOpen}
+      jobId={variants[0]?.job_id || ''}
+      onSelect={(lyrics) => {
+        if (onGenerated) {
+          onGenerated(lyrics);
+        }
+        setVariantSelectorOpen(false);
+        onOpenChange(false);
+        setPrompt("");
+      }}
+    />
+    </>
   );
 }

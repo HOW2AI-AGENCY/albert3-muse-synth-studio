@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Music } from "@/utils/iconImports";
 import { logger } from "@/utils/logger";
@@ -20,6 +21,31 @@ interface LyricsVariantSelectorProps {
   onSelect: (lyrics: string) => void;
   onClose?: () => void;
 }
+
+// Wrapper to make component work with Dialog
+export const LyricsVariantSelectorDialog = ({
+  open,
+  onOpenChange,
+  jobId,
+  onSelect,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  jobId: string;
+  onSelect: (lyrics: string) => void;
+}) => {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl">
+        <LyricsVariantSelector
+          jobId={jobId}
+          onSelect={onSelect}
+          onClose={() => onOpenChange(false)}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 export const LyricsVariantSelector = ({
   jobId,
