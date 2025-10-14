@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+import { logger } from "../_shared/logger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,7 +11,7 @@ async function mainHandler(req: Request): Promise<Response> {
   const MUREKA_API_KEY = Deno.env.get('MUREKA_API_KEY');
 
   if (!MUREKA_API_KEY) {
-    console.error('[analyze-audio] MUREKA_API_KEY not configured');
+    logger.error('[analyze-audio] MUREKA_API_KEY not configured');
     return new Response(
       JSON.stringify({ error: 'MUREKA_API_KEY not configured' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -18,6 +19,11 @@ async function mainHandler(req: Request): Promise<Response> {
   }
 
   const { audioUrl, fullDescription } = await req.json();
+  
+  logger.info('[analyze-audio] Request received', {
+    audioUrlPreview: audioUrl?.substring(0, 50),
+    fullDescription: !!fullDescription
+  });
 
   if (!audioUrl) {
     return new Response(
@@ -27,7 +33,7 @@ async function mainHandler(req: Request): Promise<Response> {
   }
 
   try {
-    console.log('[analyze-audio] Downloading audio:', audioUrl.substring(0, 50));
+    logger.info('[analyze-audio] Downloading audio from storage');
 
     // Download audio from Supabase storage
     const audioResponse = await fetch(audioUrl);
@@ -36,13 +42,13 @@ async function mainHandler(req: Request): Promise<Response> {
     }
 
     const audioBlob = await audioResponse.blob();
-    console.log('[analyze-audio] Audio downloaded, size:', audioBlob.size);
+    logger.info('[analyze-audio] Audio downloaded', { sizeBytes: audioBlob.size });
 
     // Upload to Mureka
     const formData = new FormData();
     formData.append('file', audioBlob, 'reference.mp3');
 
-    console.log('[analyze-audio] Uploading to Mureka...');
+    logger.info('[analyze-audio] Uploading to Mureka API');
     const uploadResponse = await fetch('https://api.mureka.ai/v1/files/upload', {
       method: 'POST',
       headers: {
@@ -53,7 +59,11 @@ async function mainHandler(req: Request): Promise<Response> {
 
     if (!uploadResponse.ok) {
       const errorText = await uploadResponse.text();
-      console.error('[analyze-audio] Mureka upload failed:', errorText);
+      logger.error('[analyze-audio] Mureka upload failed', {
+        status: uploadResponse.status,
+        statusText: uploadResponse.statusText,
+        errorPreview: errorText.substring(0, 200)
+      });
       throw new Error(`Mureka upload failed: ${uploadResponse.statusText}`);
     }
 
@@ -64,10 +74,10 @@ async function mainHandler(req: Request): Promise<Response> {
       throw new Error('No file_id returned from Mureka');
     }
 
-    console.log('[analyze-audio] File uploaded to Mureka, file_id:', fileId);
+    logger.info('[analyze-audio] File uploaded to Mureka', { fileId });
 
     // Analyze using Mureka Song Description API
-    console.log('[analyze-audio] Requesting song description...');
+    logger.info('[analyze-audio] Requesting song description from Mureka');
     const descriptionResponse = await fetch('https://api.mureka.ai/v1/song/describe', {
       method: 'POST',
       headers: {
@@ -79,7 +89,11 @@ async function mainHandler(req: Request): Promise<Response> {
 
     if (!descriptionResponse.ok) {
       const errorText = await descriptionResponse.text();
-      console.error('[analyze-audio] Mureka describe failed:', errorText);
+      logger.error('[analyze-audio] Mureka describe failed', {
+        status: descriptionResponse.status,
+        statusText: descriptionResponse.statusText,
+        errorPreview: errorText.substring(0, 200)
+      });
       throw new Error(`Mureka describe failed: ${descriptionResponse.statusText}`);
     }
 
@@ -87,14 +101,20 @@ async function mainHandler(req: Request): Promise<Response> {
     const description = descriptionData.data?.description;
 
     if (!description) {
-      console.warn('[analyze-audio] No description returned, returning basic info');
+      logger.warn('[analyze-audio] No description returned from Mureka');
       return new Response(
         JSON.stringify({ duration: 0 }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('[analyze-audio] Analysis complete:', description);
+    logger.info('[analyze-audio] Analysis complete', {
+      hasGenre: !!description.genre,
+      hasTempo: !!description.tempo_bpm,
+      hasKey: !!description.key,
+      hasMood: !!description.mood,
+      duration: description.duration
+    });
 
     // If fullDescription requested, generate detailed text description
     if (fullDescription) {
@@ -105,6 +125,11 @@ async function mainHandler(req: Request): Promise<Response> {
         description.energy_level ? `Energy: ${description.energy_level}` : '',
         description.mood ? `Mood: ${description.mood}` : '',
       ].filter(Boolean).join(', ');
+
+      logger.info('[analyze-audio] Full description generated', {
+        descriptionLength: fullDesc.length,
+        fullDescriptionRequested: true
+      });
 
       return new Response(
         JSON.stringify({
@@ -131,7 +156,9 @@ async function mainHandler(req: Request): Promise<Response> {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('[analyze-audio] Error:', error);
+    logger.error('[analyze-audio] Fatal error', {
+      error: error instanceof Error ? error.message : String(error)
+    });
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'Unknown error',

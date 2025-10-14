@@ -32,7 +32,13 @@ export function AudioDescriber({ audioUrl, onDescriptionGenerated, disabled }: A
           title: '✨ Описание готово',
           description: 'Текстовое описание музыки добавлено в промпт',
         });
-        logger.info('[AudioDescriber] Description generated successfully');
+        logger.info('[AudioDescriber] Description generated', '[AudioDescriber]', {
+          descriptionLength: data.fullDescription.length,
+          audioUrlPreview: audioUrl.substring(0, 50),
+          hasGenre: !!data.genre,
+          hasBpm: !!data.bpm,
+          hasKey: !!data.key
+        });
       } else {
         throw new Error('No description returned');
       }
