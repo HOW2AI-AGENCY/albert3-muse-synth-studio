@@ -88,8 +88,30 @@ class ServiceWorkerManager {
         data: { url }
       });
       logger.info('Запрос на кэширование отправлен', 'SW Manager', { url });
+
+      // ✅ Phase 4: Service Worker Analytics
+      import('@/services/analytics.service').then(({ AnalyticsService }) => {
+        AnalyticsService.recordEvent({
+          eventType: 'sw_cache_request',
+          metadata: {
+            url,
+            timestamp: Date.now(),
+          },
+        });
+      });
     } catch (error) {
       logger.error('Ошибка отправки запроса на кэширование', error instanceof Error ? error : new Error(String(error)), 'SW Manager');
+      
+      // ✅ Phase 4: Service Worker Error Analytics
+      import('@/services/analytics.service').then(({ AnalyticsService }) => {
+        AnalyticsService.recordEvent({
+          eventType: 'sw_cache_error',
+          metadata: {
+            url,
+            errorMessage: error instanceof Error ? error.message : String(error),
+          },
+        });
+      });
     }
   }
 

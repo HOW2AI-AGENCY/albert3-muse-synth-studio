@@ -76,8 +76,23 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     queue.playPrevious(playTrack);
   }, [queue, playTrack]);
 
-  // Wrapper для switchToVersion
+  // ✅ Phase 4: Version Switch Tracking
   const switchToVersion = useCallback((versionId: string) => {
+    const currentVersionIndex = versions.currentVersionIndex;
+    
+    // Track version switch analytics
+    import('@/services/analytics.service').then(({ AnalyticsService }) => {
+      AnalyticsService.recordEvent({
+        eventType: 'track_version_switch',
+        trackId: playback.currentTrack?.id,
+        metadata: {
+          fromVersionIndex: currentVersionIndex,
+          toVersionId: versionId,
+          availableVersionsCount: versions.getAvailableVersions().length,
+        },
+      });
+    });
+
     versions.switchToVersion(versionId, playback.currentTrack, playTrack);
   }, [versions, playback.currentTrack, playTrack]);
 
