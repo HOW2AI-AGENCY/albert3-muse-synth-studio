@@ -12,7 +12,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
 import { Music, Loader2, Plus, FileAudio, FileText, SlidersHorizontal, Sparkles, Mic, Wand2, X, Volume2, Palette, History, MoreVertical } from '@/utils/iconImports';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
@@ -23,7 +22,6 @@ import { useAudioUpload } from '@/hooks/useAudioUpload';
 import { useBoostStyle } from '@/hooks/useBoostStyle';
 import { AudioPreviewDialog } from '@/components/audio/AudioPreviewDialog';
 import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog';
-import { AudioRecorder } from '@/components/audio/AudioRecorder';
 import { TagsCarousel } from '@/components/generator/TagsCarousel';
 import { AudioAnalyzer } from '@/components/audio/AudioAnalyzer';
 import { AudioDescriber } from '@/components/audio/AudioDescriber';
@@ -78,7 +76,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [showPresets, setShowPresets] = useState(true);
   const [pendingAudioFile, setPendingAudioFile] = useState<File | null>(null);
-  const [recordingMode, setRecordingMode] = useState(false);
 
   const [params, setParams] = useState({
     prompt: '',
@@ -175,17 +172,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     setParam('referenceAudioUrl', null);
     setParam('referenceFileName', null);
     setPendingAudioFile(null);
-  };
-
-  const handleRecordComplete = (url: string) => {
-    setParam('referenceAudioUrl', url);
-    setParam('referenceFileName', `recording-${Date.now()}.webm`);
-    setMode('custom');
-    setRecordingMode(false);
-    toast({
-      title: '🎤 Запись добавлена',
-      description: 'Переключено на расширенный режим для настройки',
-    });
   };
 
   const handlePresetSelect = (preset: {
@@ -578,36 +564,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
                   <Plus className="h-3.5 w-3.5" />
                   Файл
                 </Button>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 h-9 gap-1 text-xs"
-                  disabled={isGenerating || isUploading}
-                  onClick={() => setRecordingMode(!recordingMode)}
-                >
-                  <Mic className="h-3.5 w-3.5" />
-                  Записать
-                </Button>
               </div>
-
-              {/* Inline AudioRecorder */}
-            {recordingMode && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className="overflow-hidden"
-              >
-                <Card className="p-3 bg-primary/5 border-primary/20">
-                  <AudioRecorder
-                    onRecordComplete={handleRecordComplete}
-                    onRemove={() => setRecordingMode(false)}
-                  />
-                </Card>
-              </motion.div>
-            )}
 
               {/* Reference Audio Display */}
               {params.referenceFileName && (
