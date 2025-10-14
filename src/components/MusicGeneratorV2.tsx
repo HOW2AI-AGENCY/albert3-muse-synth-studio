@@ -1,19 +1,6 @@
-import { memo, useCallback, useState, useEffect, lazy, Suspense } from 'react';
+import { memo, useCallback, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
-import { Music, Loader2, Plus, FileAudio, FileText, SlidersHorizontal, Sparkles, Mic, Wand2, X, Volume2, Palette, History, MoreVertical } from '@/utils/iconImports';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
 import { useGenerateMusic } from '@/hooks/useGenerateMusic';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
@@ -22,32 +9,21 @@ import { useAudioUpload } from '@/hooks/useAudioUpload';
 import { useBoostStyle } from '@/hooks/useBoostStyle';
 import { AudioPreviewDialog } from '@/components/audio/AudioPreviewDialog';
 import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog';
-import { TagsCarousel } from '@/components/generator/TagsCarousel';
-import { AudioAnalyzer } from '@/components/audio/AudioAnalyzer';
-const AudioDescriber = lazy(() => import('@/components/audio/AudioDescriber').then(m => ({ default: m.AudioDescriber })));
 import { PromptHistoryDialog } from '@/components/generator/PromptHistoryDialog';
-import { GenrePresets } from '@/components/generator/GenrePresets';
 import { usePromptHistory } from '@/hooks/usePromptHistory';
-import { ProviderSelector } from '@/components/mureka/ProviderSelector';
-import { MurekaBalanceDisplay } from '@/components/mureka/MurekaBalanceDisplay';
-import { SunoBalanceDisplay } from '@/components/mureka/SunoBalanceDisplay';
-import { logger } from '@/utils/logger';
-import { getProviderModels, getDefaultModel, type MusicProvider as ProviderType, type ModelVersion } from '@/config/provider-models';
 import { useProviderBalance } from '@/hooks/useProviderBalance';
+import { logger } from '@/utils/logger';
+import { getProviderModels, getDefaultModel, type MusicProvider as ProviderType } from '@/config/provider-models';
+
+// New modular components
+import { GeneratorHeader } from '@/components/generator/GeneratorHeader';
+import { SimpleModeForm } from '@/components/generator/forms/SimpleModeForm';
+import { CustomModeForm } from '@/components/generator/forms/CustomModeForm';
+import type { GenerationParams, GeneratorMode, GenrePreset } from '@/components/generator/types/generator.types';
 
 interface MusicGeneratorV2Props {
   onTrackGenerated?: () => void;
 }
-
-type VocalGender = 'any' | 'female' | 'male' | 'instrumental';
-type GeneratorMode = 'simple' | 'custom';
-
-const vocalGenderOptions: { value: VocalGender; label: string }[] = [
-  { value: 'any', label: 'Любой' },
-  { value: 'female', label: 'Женский' },
-  { value: 'male', label: 'Мужской' },
-  { value: 'instrumental', label: 'Без вокала' },
-];
 
 const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) => {
   const { selectedProvider, setProvider } = useMusicGenerationStore();
@@ -60,12 +36,9 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     toast 
   });
   
-  // Get model versions based on selected provider
   const currentModels = getProviderModels(selectedProvider as ProviderType);
   const { uploadAudio, isUploading } = useAudioUpload();
   const { boostStyle, isBoosting } = useBoostStyle();
-  
-  // ✅ TASK C: Get Suno balance for pre-flight check
   const { balance: sunoBalance } = useProviderBalance();
   const { savePrompt } = usePromptHistory();
 
@@ -77,16 +50,17 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const [showPresets, setShowPresets] = useState(true);
   const [pendingAudioFile, setPendingAudioFile] = useState<File | null>(null);
 
-  const [params, setParams] = useState({
+  // Generation params
+  const [params, setParams] = useState<GenerationParams>({
     prompt: '',
     title: '',
     lyrics: '',
     tags: '',
     negativeTags: '',
-    vocalGender: 'any' as VocalGender,
+    vocalGender: 'any',
     modelVersion: selectedProvider === 'mureka' ? 'auto' : 'V5',
-    referenceAudioUrl: null as string | null,
-    referenceFileName: null as string | null,
+    referenceAudioUrl: null,
+    referenceFileName: null,
     audioWeight: 50,
     styleWeight: 75,
     lyricsWeight: 70,
@@ -94,27 +68,26 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     provider: selectedProvider,
   });
 
-  const setParam = <K extends keyof typeof params>(key: K, value: (typeof params)[K]) => {
+  const setParam = useCallback(<K extends keyof GenerationParams>(key: K, value: GenerationParams[K]) => {
     setParams(prev => ({ ...prev, [key]: value }));
-  };
+  }, []);
 
   // Debounced state for textarea inputs
   const [debouncedPrompt, setDebouncedPrompt] = useState(params.prompt);
   const [debouncedLyrics, setDebouncedLyrics] = useState(params.lyrics);
 
-  // Debounce effect for prompt
+  // Debounce effects
   useEffect(() => {
     const timer = setTimeout(() => setParam('prompt', debouncedPrompt), 300);
     return () => clearTimeout(timer);
-  }, [debouncedPrompt]);
+  }, [debouncedPrompt, setParam]);
 
-  // Debounce effect for lyrics
   useEffect(() => {
     const timer = setTimeout(() => setParam('lyrics', debouncedLyrics), 300);
     return () => clearTimeout(timer);
-  }, [debouncedLyrics]);
+  }, [debouncedLyrics, setParam]);
 
-  // Sync provider selection with global state and update model version
+  // Sync provider with model version
   useEffect(() => {
     const defaultModel = getDefaultModel(selectedProvider as ProviderType);
     setParams(prev => ({ 
@@ -124,8 +97,8 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     }));
   }, [selectedProvider]);
 
-  // ✅ Улучшенный Boost с обратной связью
-  const handleBoostPrompt = async () => {
+  // Boost prompt handler
+  const handleBoostPrompt = useCallback(async () => {
     if (!params.prompt.trim()) {
       toast({
         title: 'Введите описание',
@@ -145,6 +118,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     
     if (boosted) {
       setParam('prompt', boosted);
+      setDebouncedPrompt(boosted);
       toast({
         title: '✅ Промпт улучшен',
         description: 'AI добавил детали для лучшего результата',
@@ -157,18 +131,19 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
         variant: 'destructive'
       });
     }
-  };
+  }, [params.prompt, boostStyle, setParam, toast]);
 
-  const handleAudioFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Audio file handlers
+  const handleAudioFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setPendingAudioFile(file);
       setAudioPreviewOpen(true);
     }
     e.target.value = '';
-  };
+  }, []);
 
-  const handleAudioConfirm = async () => {
+  const handleAudioConfirm = useCallback(async () => {
     if (!pendingAudioFile) return;
 
     const url = await uploadAudio(pendingAudioFile);
@@ -182,31 +157,30 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
         description: 'Переключено на расширенный режим для настройки',
       });
     }
-  };
+  }, [pendingAudioFile, uploadAudio, setParam, toast]);
 
-  const handleRemoveAudio = () => {
+  const handleRemoveAudio = useCallback(() => {
     setParam('referenceAudioUrl', null);
     setParam('referenceFileName', null);
     setPendingAudioFile(null);
-  };
+  }, [setParam]);
 
-  const handlePresetSelect = (preset: {
-    styleTags: string[];
-    mood?: string;
-    promptSuggestion: string;
-  }) => {
+  // Preset handler
+  const handlePresetSelect = useCallback((preset: GenrePreset) => {
     setParams(prev => ({
       ...prev,
       prompt: preset.promptSuggestion,
       tags: preset.styleTags.join(', '),
     }));
+    setDebouncedPrompt(preset.promptSuggestion);
     setShowPresets(false);
-  };
+  }, []);
 
+  // Main generation handler
   const handleGenerate = useCallback(async () => {
     vibrate('heavy');
 
-    // ✅ TASK C: Pre-flight balance check for Suno
+    // Pre-flight balance check for Suno
     if (selectedProvider === 'suno') {
       const credits = sunoBalance?.balance || 0;
       if (credits === 0) {
@@ -226,12 +200,11 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       }
     }
 
-    // ✅ Улучшенная валидация с предупреждениями
+    // Validation
     const hasPrompt = params.prompt.trim().length > 0;
     const hasLyrics = params.lyrics.trim().length > 0;
     const hasReferenceAudio = !!params.referenceAudioUrl;
 
-    // Базовая валидация
     if (!hasPrompt && !hasLyrics) {
       toast({ 
         title: 'Заполните промпт или текст песни', 
@@ -241,7 +214,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       return;
     }
 
-    // ✅ Предупреждения для нестандартных комбинаций
     if (hasReferenceAudio && !hasPrompt && !hasLyrics) {
       toast({
         title: 'Добавьте описание',
@@ -279,7 +251,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       customMode: true,
       modelVersion: params.modelVersion,
       referenceAudioUrl: params.referenceAudioUrl || undefined,
-      provider: selectedProvider, // ✅ Добавляем провайдер
+      provider: selectedProvider,
     };
 
     // Save to history
@@ -310,7 +282,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       setDebouncedPrompt('');
       setDebouncedLyrics('');
     }
-  }, [params, generate, toast, onTrackGenerated, vibrate, mode, selectedProvider, sunoBalance]);
+  }, [params, generate, toast, vibrate, mode, selectedProvider, sunoBalance, savePrompt]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -325,7 +297,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   }, [handleGenerate, isGenerating]);
 
   const tempAudioUrl = pendingAudioFile ? URL.createObjectURL(pendingAudioFile) : '';
-
   const lyricsLineCount = params.lyrics ? params.lyrics.split('\n').filter(l => l.trim()).length : 0;
 
   return (
@@ -336,519 +307,57 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Header: Provider Selector + Tabs + Model Version */}
-      <div className="p-2 sm:p-2.5 border-b border-border/20 space-y-1.5 sm:space-y-2">
-        {/* Provider Selector Row with Balance */}
-        <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-1.5 xs:gap-2">
-          <div className="flex-1">
-            <ProviderSelector
-              value={selectedProvider}
-              onChange={setProvider}
-              disabled={isGenerating}
-            />
-          </div>
-          {/* ✅ TASK C: Show balance for all providers */}
-          <div className="flex items-center justify-end xs:justify-start">
-            {selectedProvider === 'mureka' && <MurekaBalanceDisplay />}
-            {selectedProvider === 'suno' && <SunoBalanceDisplay />}
-          </div>
-        </div>
+      {/* Header */}
+      <GeneratorHeader
+        selectedProvider={selectedProvider as 'suno' | 'mureka'}
+        onProviderChange={(provider) => setProvider(provider as any)}
+        mode={mode}
+        onModeChange={setMode}
+        modelVersion={params.modelVersion}
+        onModelChange={(version) => setParam('modelVersion', version)}
+        availableModels={[...currentModels]}
+        isGenerating={isGenerating}
+        referenceFileName={params.referenceFileName}
+        lyricsLineCount={lyricsLineCount}
+      />
 
-        {/* Mode Tabs + Model Version Row */}
-        <div className="flex items-center justify-between gap-1.5 sm:gap-2">
-          {/* Mode Tabs */}
-          <Tabs value={mode} onValueChange={(v) => setMode(v as GeneratorMode)} className="flex-1">
-            <TabsList className="grid w-full grid-cols-2 h-7 sm:h-8">
-              <TabsTrigger value="simple" className="text-[10px] xs:text-xs px-1 sm:px-3">
-                Простой
-              </TabsTrigger>
-              <TabsTrigger value="custom" className="text-[10px] xs:text-xs px-1 sm:px-3">
-                Расширенный
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          {/* Model Version */}
-          <Select value={params.modelVersion} onValueChange={(v) => setParam('modelVersion', v)}>
-            <SelectTrigger className="h-7 sm:h-8 w-16 xs:w-20 text-[10px] xs:text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {currentModels.map((m: ModelVersion) => (
-                <SelectItem key={m.value} value={m.value} className="text-[10px] xs:text-xs">{m.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Status Badges */}
-        <div className="flex flex-wrap items-center gap-1.5 mt-2">
-          {params.referenceFileName && (
-            <Badge variant="secondary" className="h-5 text-[10px] gap-1 px-2">
-              <FileAudio className="h-2.5 w-2.5" />
-              Референс
-            </Badge>
-          )}
-          {params.lyrics && (
-            <Badge variant="secondary" className="h-5 text-[10px] gap-1 px-2">
-              <FileText className="h-2.5 w-2.5" />
-              {lyricsLineCount} строк
-            </Badge>
-          )}
-        </div>
-      </div>
-
+      {/* Main Content */}
       <ScrollArea className="flex-grow">
         <div className="p-2.5 space-y-2">
-          {/* Simple Mode */}
-          {mode === 'simple' && (
-            <>
-              {/* Genre Presets */}
-              {showPresets && params.prompt.length === 0 && (
-                <GenrePresets onSelect={handlePresetSelect} />
-              )}
-
-              {/* Song Description with Boost */}
-              <div className="space-y-1">
-                <Label htmlFor="prompt" className="text-xs font-medium">
-                  Описание музыки
-                  {!params.prompt.trim() && !params.lyrics.trim() && (
-                    <span className="text-destructive ml-0.5">*</span>
-                  )}
-                </Label>
-                <div className="relative">
-                  <Textarea
-                    id="prompt"
-                    placeholder="Опишите стиль, настроение и жанр..."
-                    value={debouncedPrompt}
-                    onChange={(e) => setDebouncedPrompt(e.target.value)}
-                    onFocus={(e) => e.target.classList.add('focus:min-h-[90px]')}
-                    onBlur={(e) => e.target.classList.remove('focus:min-h-[90px]')}
-                    className="min-h-[60px] sm:min-h-[70px] text-sm resize-none pr-10 transition-all duration-200"
-                    disabled={isGenerating}
-                    rows={2}
-                    aria-label="Промпт для генерации музыки"
-                  />
-                  {params.prompt.trim() && (
-                  <motion.div
-                    whileHover={{ scale: 1.1, rotate: 5 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-2 h-6 w-6 text-primary hover:text-primary hover:bg-primary/10"
-                      onClick={handleBoostPrompt}
-                      disabled={isBoosting || isGenerating}
-                      title="Улучшить промпт с помощью AI"
-                    >
-                      <Sparkles className={cn("h-3.5 w-3.5", isBoosting && "animate-spin")} />
-                    </Button>
-                  </motion.div>
-                  )}
-                </div>
-                {!params.prompt.trim() && !params.lyrics.trim() && (
-                  <p className="text-[10px] text-muted-foreground">
-                    💡 Заполните промпт или добавьте текст песни
-                  </p>
-                )}
-              </div>
-
-              {/* Tags Carousel */}
-              <TagsCarousel
-                onTagClick={(tag) => setParam('prompt', params.prompt ? `${params.prompt}, ${tag}` : tag)}
-                disabled={isGenerating}
-              />
-
-              {/* Action Buttons - Simplified */}
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex gap-1.5">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 gap-1.5 text-xs"
-                    disabled={isGenerating}
-                    onClick={() => document.getElementById('audio-upload-input')?.click()}
-                    aria-label="Загрузить аудиофайл"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    <span className="hidden xs:inline">Аудио</span>
-                  </Button>
-                  <input
-                    id="audio-upload-input"
-                    type="file"
-                    accept="audio/*"
-                    className="hidden"
-                    onChange={handleAudioFileSelect}
-                  />
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={isGenerating}>
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setHistoryDialogOpen(true)}>
-                        <History className="h-4 w-4 mr-2" />
-                        История промптов
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setLyricsDialogOpen(true)}>
-                        <FileText className="h-4 w-4 mr-2" />
-                        AI генератор текстов
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  <Label className="text-xs text-muted-foreground">Без вокала</Label>
-                  <Switch
-                    checked={params.vocalGender === 'instrumental'}
-                    onCheckedChange={(checked) => setParam('vocalGender', checked ? 'instrumental' : 'any')}
-                    disabled={isGenerating}
-                  />
-                </div>
-              </div>
-
-              {/* More Settings Link */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full text-xs text-muted-foreground hover:text-foreground h-8"
-                onClick={() => setMode('custom')}
-              >
-                <SlidersHorizontal className="w-3 h-3 mr-1" />
-                Больше настроек
-              </Button>
-            </>
-          )}
-
-          {/* Custom Mode */}
-          {mode === 'custom' && (
-            <>
-              {/* Main Prompt with Boost */}
-              <div className="space-y-1">
-                <Label htmlFor="prompt" className="text-xs font-medium">
-                  Описание стиля и настроения
-                  {!params.prompt.trim() && !params.lyrics.trim() && (
-                    <span className="text-destructive ml-0.5">*</span>
-                  )}
-                </Label>
-                <div className="relative">
-                  <Textarea
-                    id="prompt"
-                    placeholder="энергичный рок, мечтательный indie pop..."
-                    value={params.prompt}
-                    onChange={(e) => setParam('prompt', e.target.value)}
-                    className="min-h-[70px] text-sm resize-none pr-10"
-                    disabled={isGenerating}
-                    rows={3}
-                  />
-                  {params.prompt.trim() && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-2 top-2 h-6 w-6 text-primary hover:text-primary hover:bg-primary/10"
-                      onClick={handleBoostPrompt}
-                      disabled={isBoosting || isGenerating}
-                      title="Улучшить промпт с помощью AI"
-                    >
-                      <Sparkles className="h-3.5 w-3.5" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-
-              {/* Lyrics Textarea - Always visible */}
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="lyrics" className="text-xs font-medium">Текст песни</Label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 text-xs gap-1 px-2"
-                    onClick={() => setLyricsDialogOpen(true)}
-                    disabled={isGenerating}
-                  >
-                    <Wand2 className="h-3 w-3" />
-                    AI генератор
-                  </Button>
-                </div>
-                <Textarea
-                  id="lyrics"
-                  placeholder="Напишите текст или используйте AI генератор..."
-                  value={debouncedLyrics}
-                  onChange={(e) => setDebouncedLyrics(e.target.value)}
-                  onFocus={(e) => e.target.classList.add('focus:min-h-[100px]')}
-                  onBlur={(e) => e.target.classList.remove('focus:min-h-[100px]')}
-                  className="min-h-[60px] text-xs resize-none transition-all duration-200"
-                  disabled={isGenerating}
-                  rows={3}
-                  aria-label="Текст песни"
-                />
-              </div>
-
-              {/* Audio Buttons Row */}
-              <div className="flex gap-1.5">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 h-9 gap-1 text-xs"
-                  disabled={isGenerating || isUploading}
-                  onClick={() => document.getElementById('audio-upload-input')?.click()}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Файл
-                </Button>
-              </div>
-
-              {/* Reference Audio Display */}
-              {params.referenceFileName && (
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 text-xs bg-secondary/30 px-2 py-1.5 rounded-md border border-border/30">
-                    <FileAudio className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="flex-1 truncate">{params.referenceFileName}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-5 w-5"
-                      onClick={handleRemoveAudio}
-                      disabled={isGenerating}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                  {params.referenceAudioUrl && (
-                    <div className="space-y-1">
-                      <AudioAnalyzer audioUrl={params.referenceAudioUrl} />
-                      <Suspense fallback={<div className="flex items-center justify-center p-4"><Loader2 className="h-4 w-4 animate-spin" /></div>}>
-                        <AudioDescriber
-                          audioUrl={params.referenceAudioUrl}
-                          onDescriptionGenerated={(desc) => setDebouncedPrompt(debouncedPrompt ? `${debouncedPrompt}\n\n${desc}` : desc)}
-                          disabled={isGenerating}
-                        />
-                      </Suspense>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Advanced Settings - Accordion Groups */}
-              {/* ✅ Открываем важные секции по умолчанию */}
-              <Accordion type="multiple" defaultValue={["style", "vocal"]} className="space-y-1.5 pt-1">
-                {/* Audio Controls - only if reference exists */}
-                {params.referenceAudioUrl && (
-                  <AccordionItem value="audio" className="border-none">
-                    <AccordionTrigger className="py-2 px-2 hover:bg-secondary/50 rounded-md transition-colors hover:no-underline">
-                      <div className="flex items-center justify-between w-full pr-2">
-                        <div className="flex items-center gap-2">
-                          <Volume2 className="h-3.5 w-3.5" />
-                          <span className="text-xs font-medium">Контроль аудио</span>
-                        </div>
-                        <Badge variant="secondary" className="h-5 text-[10px] px-1.5">
-                          {params.audioWeight}%
-                        </Badge>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="pt-2 space-y-2 px-2 pb-3">
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-xs">Вес аудио</Label>
-                          <span className="text-xs text-muted-foreground font-mono">{params.audioWeight}%</span>
-                        </div>
-                        
-                        {/* Visual representation */}
-                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground mb-1">
-                          <span className={cn(
-                            "transition-colors",
-                            params.audioWeight < 30 && "text-primary font-medium"
-                          )}>
-                            Стиль
-                          </span>
-                          <div className="flex-1 h-1 bg-secondary rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-primary transition-all duration-300"
-                              style={{ width: `${params.audioWeight}%` }}
-                            />
-                          </div>
-                          <span className={cn(
-                            "transition-colors",
-                            params.audioWeight > 70 && "text-primary font-medium"
-                          )}>
-                            Референс
-                          </span>
-                        </div>
-                        
-                        <Slider
-                          value={[params.audioWeight]}
-                          onValueChange={([v]) => setParam('audioWeight', v)}
-                          max={100}
-                          step={5}
-                          disabled={isGenerating}
-                          className="[&_[role=slider]]:h-3.5 [&_[role=slider]]:w-3.5"
-                        />
-                        <p className="text-[10px] text-muted-foreground">
-                          Влияние референсного аудио на результат
-                        </p>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                )}
-
-                {/* Style Controls */}
-                <AccordionItem value="style" className="border-none">
-                  <AccordionTrigger className="py-2 px-2 hover:bg-secondary/50 rounded-md transition-colors hover:no-underline">
-                    <div className="flex items-center justify-between w-full pr-2">
-                      <div className="flex items-center gap-2">
-                        <Palette className="h-3.5 w-3.5" />
-                        <span className="text-xs font-medium">Контроль стиля</span>
-                      </div>
-                      <Badge variant="secondary" className="h-5 text-[10px] px-1.5">
-                        {params.styleWeight}% / {params.weirdness}%
-                      </Badge>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pt-2 space-y-2 px-2 pb-3">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs">Вес стиля</Label>
-                        <span className="text-xs text-muted-foreground font-mono">{params.styleWeight}%</span>
-                      </div>
-                      <Slider
-                        value={[params.styleWeight]}
-                        onValueChange={([v]) => setParam('styleWeight', v)}
-                        max={100}
-                        step={5}
-                        disabled={isGenerating}
-                        className="[&_[role=slider]]:h-3.5 [&_[role=slider]]:w-3.5"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs">Креативность</Label>
-                        <span className="text-xs text-muted-foreground font-mono">{params.weirdness}%</span>
-                      </div>
-                      <Slider
-                        value={[params.weirdness]}
-                        onValueChange={([v]) => setParam('weirdness', v)}
-                        max={100}
-                        step={5}
-                        disabled={isGenerating}
-                        className="[&_[role=slider]]:h-3.5 [&_[role=slider]]:w-3.5"
-                      />
-                      <p className="text-[10px] text-muted-foreground">
-                        0% = строго по промпту, 100% = полная свобода
-                      </p>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                {/* Vocal Controls */}
-                <AccordionItem value="vocal" className="border-none">
-                  <AccordionTrigger className="py-2 px-2 hover:bg-secondary/50 rounded-md transition-colors hover:no-underline">
-                    <div className="flex items-center justify-between w-full pr-2">
-                      <div className="flex items-center gap-2">
-                        <Mic className="h-3.5 w-3.5" />
-                        <span className="text-xs font-medium">Контроль вокала</span>
-                      </div>
-                      <Badge variant="secondary" className="h-5 text-[10px] px-1.5">
-                        {vocalGenderOptions.find(o => o.value === params.vocalGender)?.label || 'Любой'}
-                      </Badge>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pt-2 space-y-2 px-2 pb-3">
-                    <div className="space-y-1">
-                      <Label className="text-xs">Пол вокала</Label>
-                      <Select
-                        value={params.vocalGender}
-                        onValueChange={(v) => setParam('vocalGender', v as VocalGender)}
-                        disabled={isGenerating}
-                      >
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {vocalGenderOptions.map(o => (
-                            <SelectItem key={o.value} value={o.value} className="text-xs">
-                              {o.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {params.lyrics.trim() && (
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-xs">Вес текста</Label>
-                          <span className="text-xs text-muted-foreground font-mono">{params.lyricsWeight}%</span>
-                        </div>
-                        <Slider
-                          value={[params.lyricsWeight]}
-                          onValueChange={([v]) => setParam('lyricsWeight', v)}
-                          max={100}
-                          step={5}
-                          disabled={isGenerating}
-                          className="[&_[role=slider]]:h-3.5 [&_[role=slider]]:w-3.5"
-                        />
-                      </div>
-                    )}
-                    <div className="space-y-1">
-                      <Label htmlFor="negative-tags" className="text-xs">Исключить стили</Label>
-                      <Input
-                        id="negative-tags"
-                        placeholder="trap, eurodance"
-                        value={params.negativeTags}
-                        onChange={(e) => setParam('negativeTags', e.target.value)}
-                        className="h-8 text-xs"
-                        disabled={isGenerating}
-                      />
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </>
+          {mode === 'simple' ? (
+            <SimpleModeForm
+              params={params}
+              onParamChange={setParam}
+              onBoostPrompt={handleBoostPrompt}
+              onGenerate={handleGenerate}
+              isBoosting={isBoosting}
+              isGenerating={isGenerating}
+              showPresets={showPresets}
+              onPresetSelect={handlePresetSelect}
+              debouncedPrompt={debouncedPrompt}
+              onDebouncedPromptChange={setDebouncedPrompt}
+            />
+          ) : (
+            <CustomModeForm
+              params={params}
+              onParamChange={setParam}
+              onBoostPrompt={handleBoostPrompt}
+              onGenerate={handleGenerate}
+              onOpenLyricsDialog={() => setLyricsDialogOpen(true)}
+              onOpenHistory={() => setHistoryDialogOpen(true)}
+              onAudioFileSelect={handleAudioFileSelect}
+              onRemoveAudio={handleRemoveAudio}
+              isBoosting={isBoosting}
+              isGenerating={isGenerating}
+              isUploading={isUploading}
+              debouncedPrompt={debouncedPrompt}
+              debouncedLyrics={debouncedLyrics}
+              onDebouncedPromptChange={setDebouncedPrompt}
+              onDebouncedLyricsChange={setDebouncedLyrics}
+            />
           )}
         </div>
       </ScrollArea>
-
-      {/* Generate Button - Fixed at bottom */}
-      <div className="p-2.5 border-t border-border/20">
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <Button
-            onClick={handleGenerate}
-            disabled={isGenerating || isUploading || (!params.prompt.trim() && !params.lyrics.trim())}
-            className="w-full h-10 text-sm font-semibold gap-2 relative overflow-hidden group bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg transition-all"
-            aria-label="Создать музыкальный трек"
-            title="Горячая клавиша: Cmd/Ctrl + Enter"
-          >
-            <span className={cn(
-              "flex items-center gap-2 transition-all duration-300",
-              isGenerating && "opacity-0"
-            )}>
-              <Music className="h-4 w-4" />
-              <span className="hidden xs:inline">Создать трек</span>
-            </span>
-            
-            {isGenerating && (
-              <motion.span 
-                className="absolute inset-0 flex items-center justify-center gap-2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Генерация...
-              </motion.span>
-            )}
-            
-            {/* Shine effect on hover */}
-            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-          </Button>
-        </motion.div>
-      </div>
 
       {/* Dialogs */}
       <AudioPreviewDialog
@@ -857,37 +366,40 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
           setAudioPreviewOpen(open);
           if (!open) setPendingAudioFile(null);
         }}
-        audioUrl={tempAudioUrl}
-        fileName={pendingAudioFile?.name || ''}
         onConfirm={handleAudioConfirm}
         onRemove={handleRemoveAudio}
+        audioUrl={tempAudioUrl}
+        fileName={pendingAudioFile?.name || ''}
       />
 
       <LyricsGeneratorDialog
         open={lyricsDialogOpen}
         onOpenChange={setLyricsDialogOpen}
         onGenerated={(lyrics: string) => {
-          logger.info('📝 [LYRICS] Received generated lyrics, switching to custom mode');
           setParam('lyrics', lyrics);
-          setMode('custom');
+          setDebouncedLyrics(lyrics);
           setLyricsDialogOpen(false);
-          toast({
-            title: '✅ Лирика добавлена',
-            description: 'Переключено на расширенный режим',
-          });
         }}
       />
 
       <PromptHistoryDialog
         open={historyDialogOpen}
         onOpenChange={setHistoryDialogOpen}
-        onSelect={(selectedParams) => {
-          setParams(prev => ({
-            ...prev,
-            prompt: selectedParams.prompt,
-            lyrics: selectedParams.lyrics || '',
-            tags: selectedParams.style_tags?.join(', ') || '',
-          }));
+        onSelect={(historyItem: {
+          prompt: string;
+          lyrics?: string;
+          style_tags?: string[];
+        }) => {
+          setParam('prompt', historyItem.prompt);
+          setDebouncedPrompt(historyItem.prompt);
+          if (historyItem.lyrics) {
+            setParam('lyrics', historyItem.lyrics);
+            setDebouncedLyrics(historyItem.lyrics);
+          }
+          if (historyItem.style_tags?.length) {
+            setParam('tags', historyItem.style_tags.join(', '));
+          }
+          setHistoryDialogOpen(false);
         }}
       />
     </motion.div>
