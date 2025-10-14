@@ -39,12 +39,14 @@ export interface ImprovePromptResponse {
 
 export type SunoModelVersion = 'V3_5' | 'V4' | 'V4_5' | 'V4_5PLUS' | 'V5';
 
+// NOTE: GenerateMusicRequest & GenerateMusicResponse types deprecated
+// Use GenerationService from @/services/generation instead
 export interface GenerateMusicRequest {
   trackId?: string;
   userId?: string;
   title?: string;
   prompt: string;
-  provider?: 'replicate' | 'suno' | 'mureka' | 'sonauto';
+  provider?: 'replicate' | 'suno' | 'mureka';
   lyrics?: string;
   hasVocals?: boolean;
   styleTags?: string[];
@@ -60,8 +62,6 @@ export interface GenerateMusicRequest {
   referenceAudio?: string;
   referenceTrackId?: string;
 }
-
-// ✅ ИСПРАВЛЕНИЕ 6: Функция normalizeSunoModel() удалена - клиент теперь отправляет корректный формат напрямую
 
 export interface GenerateMusicResponse {
   success: boolean;
@@ -119,6 +119,7 @@ export class ApiService {
 
   /**
    * Start music generation process
+   * @deprecated Use GenerationService.generate() instead
    */
   static async generateMusic(
     request: GenerateMusicRequest
@@ -344,6 +345,7 @@ export class ApiService {
 
   /**
    * Create a new track record
+   * @deprecated Use GenerationService.generate() instead (creates track automatically)
    */
   static async createTrack(
     userId: string,

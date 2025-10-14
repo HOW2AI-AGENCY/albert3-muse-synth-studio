@@ -31,7 +31,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const { vibrate } = useHapticFeedback();
   
   const { generate, isGenerating } = useGenerateMusic({ 
-    provider: selectedProvider, 
+    provider: selectedProvider as ProviderType, 
     onSuccess: onTrackGenerated,
     toast 
   });
