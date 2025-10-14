@@ -73,6 +73,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const [audioPreviewOpen, setAudioPreviewOpen] = useState(false);
   const [lyricsDialogOpen, setLyricsDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [showPresets, setShowPresets] = useState(true);
   const [pendingAudioFile, setPendingAudioFile] = useState<File | null>(null);
   const [recordingMode, setRecordingMode] = useState(false);
 
@@ -180,6 +181,19 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       title: '🎤 Запись добавлена',
       description: 'Используется как референсное аудио',
     });
+  };
+
+  const handlePresetSelect = (preset: {
+    styleTags: string[];
+    mood?: string;
+    promptSuggestion: string;
+  }) => {
+    setParams(prev => ({
+      ...prev,
+      prompt: preset.promptSuggestion,
+      tags: preset.styleTags.join(', '),
+    }));
+    setShowPresets(false);
   };
 
   const handleGenerate = useCallback(async () => {
@@ -366,6 +380,11 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
           {/* Simple Mode */}
           {mode === 'simple' && (
             <>
+              {/* Genre Presets */}
+              {showPresets && params.prompt.length === 0 && (
+                <GenrePresets onSelect={handlePresetSelect} />
+              )}
+
               {/* Song Description with Boost */}
               <div className="space-y-1">
                 <Label htmlFor="prompt" className="text-xs font-medium">
