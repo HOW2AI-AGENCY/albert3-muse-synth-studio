@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "@/utils/iconImports";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Portal } from "@/components/ui/Portal";
 import {
   ResizablePanelGroup,
   ResizablePanel,
@@ -228,8 +229,7 @@ const Generate = () => {
 
   // Mobile: List with FAB and Drawers
   return (
-    <div className="h-full">
-      {/* Убрали overflow-y-auto отсюда - scroll в WorkspaceLayout */}
+    <div>
       <div className="p-4 pb-24">
         <TracksList
           tracks={tracks}
@@ -257,45 +257,47 @@ const Generate = () => {
         onSuccess={refreshTracks}
       />
 
-      <TooltipProvider>
-        <Drawer open={showGenerator} onOpenChange={setShowGenerator}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <DrawerTrigger asChild>
-                <motion.div
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.5, type: 'spring', stiffness: 260, damping: 20 }}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <Button
-                    size="lg"
-                    className="fixed right-4 h-14 w-14 rounded-full shadow-lg glow-primary-strong bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary z-50"
-                    style={{ 
-                      bottom: 'calc(var(--bottom-tab-bar-height) + 1rem)'
-                    }}
-                    aria-label="Создать музыку"
+      <Portal>
+        <TooltipProvider>
+          <Drawer open={showGenerator} onOpenChange={setShowGenerator}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DrawerTrigger asChild>
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.5, type: 'spring', stiffness: 260, damping: 20 }}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
                   >
-                    <Plus className="h-6 w-6" />
-                  </Button>
-                </motion.div>
-              </DrawerTrigger>
-            </TooltipTrigger>
-            <TooltipContent side="left">
-              <p className="text-sm font-medium">Создать музыку</p>
-            </TooltipContent>
-          </Tooltip>
-          <DrawerContent className="h-[85vh] mt-20" aria-describedby={undefined}>
-            <div className="w-full max-w-md mx-auto h-8 flex items-center justify-center">
-              <div className="w-12 h-1 bg-muted-foreground/20 rounded-full" />
-            </div>
-            <div className="p-4 h-full overflow-y-auto">
-              <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
-            </div>
-          </DrawerContent>
-        </Drawer>
-      </TooltipProvider>
+                    <Button
+                      size="lg"
+                      className="fixed right-4 bottom-4 h-14 w-14 rounded-full shadow-lg glow-primary-strong bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary z-50"
+                      style={{ 
+                        bottom: 'calc(var(--workspace-bottom-offset) + var(--bottom-tab-bar-height) + 1rem)'
+                      }}
+                      aria-label="Создать музыку"
+                    >
+                      <Plus className="h-6 w-6" />
+                    </Button>
+                  </motion.div>
+                </DrawerTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                <p className="text-sm font-medium">Создать музыку</p>
+              </TooltipContent>
+            </Tooltip>
+            <DrawerContent className="h-[85vh] mt-20" aria-describedby={undefined}>
+              <div className="w-full max-w-md mx-auto h-8 flex items-center justify-center">
+                <div className="w-12 h-1 bg-muted-foreground/20 rounded-full" />
+              </div>
+              <div className="p-4 h-full overflow-y-auto">
+                <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
+              </div>
+            </DrawerContent>
+          </Drawer>
+        </TooltipProvider>
+      </Portal>
 
       <Drawer open={!!selectedTrack} onOpenChange={(open) => !open && handleCloseDetail()}>
         <DrawerContent className="h-[85vh] max-h-[90vh]" aria-describedby={undefined}>

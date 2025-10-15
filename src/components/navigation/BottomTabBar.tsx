@@ -1,9 +1,10 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import type { WorkspaceNavItem } from "@/config/workspace-navigation";
+import { MobileMoreMenu } from "./MobileMoreMenu";
 
 interface BottomTabBarProps {
   items: WorkspaceNavItem[];
@@ -21,6 +22,12 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
   const handleTabClick = useCallback(() => {
     vibrate("light");
   }, [vibrate]);
+
+  const { primaryItems, secondaryItems } = useMemo(() => {
+    const primary = items.filter(item => item.isMobilePrimary);
+    const secondary = items.filter(item => !item.isMobilePrimary);
+    return { primaryItems: primary, secondaryItems: secondary };
+  }, [items]);
 
   // Update CSS variable for tab bar height
   React.useEffect(() => {
@@ -56,7 +63,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
       aria-label="Основная навигация"
     >
       <div className="flex items-center justify-around px-0.5">
-        {items.map((item) => {
+        {primaryItems.map((item) => {
           const Icon = item.icon;
           const isActive =
             location.pathname === item.path ||
@@ -106,6 +113,10 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
             </NavLink>
           );
         })}
+        
+        {secondaryItems.length > 0 && (
+          <MobileMoreMenu items={secondaryItems} />
+        )}
       </div>
     </nav>
   );

@@ -306,6 +306,13 @@
     body {
       overflow-x: hidden;
     }
+    
+    /* Мобильная прокрутка с жестами */
+    .workspace-main {
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      overscroll-behavior-y: contain;
+    }
   }
 
   /* Reduce motion for accessibility and performance */

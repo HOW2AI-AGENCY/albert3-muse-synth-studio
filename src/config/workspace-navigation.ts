@@ -25,6 +25,7 @@ export interface WorkspaceNavItem {
   icon: LucideIcon;
   preload?: () => void;
   roles?: WorkspaceNavRole[];
+  isMobilePrimary?: boolean;
 }
 
 export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
@@ -34,6 +35,7 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     path: "/workspace/dashboard",
     icon: Home,
     preload: preloadDashboard,
+    isMobilePrimary: true,
   },
   {
     id: "generate",
@@ -41,6 +43,7 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     path: "/workspace/generate",
     icon: Sparkles,
     preload: preloadGenerate,
+    isMobilePrimary: true,
   },
   {
     id: "library",
@@ -48,10 +51,18 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     path: "/workspace/library",
     icon: Library,
     preload: preloadLibrary,
+    isMobilePrimary: true,
+  },
+  {
+    id: "settings",
+    label: "Настройки",
+    path: "/workspace/settings",
+    icon: Settings,
+    isMobilePrimary: true,
   },
   {
     id: "upload-audio",
-    label: "Загрузить аудио",
+    label: "Загрузить",
     path: "/workspace/upload-audio",
     icon: Upload,
   },
@@ -80,12 +91,6 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     path: "/workspace/monitoring",
     icon: Activity,
     roles: ["admin"],
-  },
-  {
-    id: "settings",
-    label: "Настройки",
-    path: "/workspace/settings",
-    icon: Settings,
   },
 ];
 
