@@ -131,7 +131,7 @@ export class SunoProviderAdapter implements IProviderClient {
     return {
       prompt: params.prompt,
       lyrics: params.lyrics,
-      tags: params.styleTags?.join(', ') || params.style,
+      tags: params.styleTags || (params.style ? [params.style] : []),
       make_instrumental: params.makeInstrumental || false,
       model_version: params.modelVersion || 'V5',
       reference_audio_url: params.referenceAudio,

@@ -7,8 +7,9 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Plus } from "@/utils/iconImports";
-import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from "@/components/ui/drawer";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import { Portal } from "@/components/ui/Portal";
 import {
   ResizablePanelGroup,
@@ -288,7 +289,10 @@ const Generate = () => {
                 <p className="text-sm font-medium">Создать музыку</p>
               </TooltipContent>
             </Tooltip>
-            <DrawerContent className="h-[90vh] mt-20" aria-describedby={undefined}>
+            <DrawerContent className="h-[90vh] mt-20">
+              <VisuallyHidden>
+                <DrawerTitle>Создать музыку</DrawerTitle>
+              </VisuallyHidden>
               <div className="w-full max-w-md mx-auto h-8 flex items-center justify-center">
                 <div className="w-12 h-1 bg-muted-foreground/20 rounded-full" />
               </div>
@@ -301,7 +305,10 @@ const Generate = () => {
       </Portal>
 
       <Drawer open={!!selectedTrack} onOpenChange={(open) => !open && handleCloseDetail()}>
-        <DrawerContent className="h-[70vh] max-h-[75vh]" aria-describedby={undefined}>
+        <DrawerContent className="h-[70vh] max-h-[75vh]">
+          <VisuallyHidden>
+            <DrawerTitle>Детали трека</DrawerTitle>
+          </VisuallyHidden>
           {/* Drag handle */}
           <div className="w-full h-8 flex items-center justify-center shrink-0">
             <div className="w-12 h-1 bg-muted-foreground/20 rounded-full" />

@@ -53,7 +53,7 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
             title: params.title,
             prompt: params.prompt,
             lyrics: params.lyrics,
-            tags: params.styleTags?.join(', '),
+            tags: params.styleTags || [],
             make_instrumental: !params.hasVocals,
             model: params.modelVersion || 'V5',
             idempotencyKey: params.idempotencyKey,
