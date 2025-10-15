@@ -78,9 +78,6 @@ export const SimpleModeForm = memo(({
       {/* Applied Tags Display */}
       {params.tags && (
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-muted-foreground">
-            Применённые теги
-          </Label>
           <div className="flex flex-wrap gap-1.5 p-2 rounded-lg bg-muted/30 border border-border/50 min-h-[32px]">
             {params.tags.split(',').map(t => t.trim()).filter(Boolean).map((tag, index) => (
               <span
