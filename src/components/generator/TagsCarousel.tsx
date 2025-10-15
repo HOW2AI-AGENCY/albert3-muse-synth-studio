@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Sparkles } from "@/utils/iconImports";
-import { cn } from "@/lib/utils";
 
 interface InspirationTag {
   label: string;
@@ -40,8 +39,8 @@ export const TagsCarousel = ({ onTagClick, disabled = false }: TagsCarouselProps
         {/* Left fade gradient */}
         <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-secondary/20 to-transparent pointer-events-none z-10 rounded-l-md" />
         
-        <ScrollArea className="w-full whitespace-nowrap rounded-md border border-border/40 bg-secondary/20 p-1 sm:p-1.5">
-          <div className="flex gap-1 sm:gap-1.5">
+        <ScrollArea className="w-full max-w-full whitespace-nowrap rounded-md border border-border/40 bg-secondary/20 p-1 sm:p-1.5">
+          <div className="flex gap-1 sm:gap-1.5 pb-2">
             {INSPIRATION_TAGS.map((tag) => (
               <Button
                 key={tag.label}
@@ -57,7 +56,7 @@ export const TagsCarousel = ({ onTagClick, disabled = false }: TagsCarouselProps
               </Button>
             ))}
           </div>
-          <ScrollBar orientation="horizontal" className={cn("h-2", "bg-muted/50")} />
+          <ScrollBar orientation="horizontal" className="h-2 bg-muted/50" />
         </ScrollArea>
 
         {/* Right fade gradient */}

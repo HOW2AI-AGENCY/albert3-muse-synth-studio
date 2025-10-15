@@ -8,10 +8,12 @@
 /**
  * Предзагрузка роута при наведении на ссылку
  */
+import { logger } from './logger';
+
 export const preloadOnHover = (importFn: () => Promise<unknown>) => {
   return () => {
     importFn().catch(err => {
-      console.warn('Failed to preload component:', err);
+      logger.warn('Failed to preload component', 'bundleOptimization', { error: err });
     });
   };
 };
@@ -23,14 +25,14 @@ export const preloadOnIdle = (importFn: () => Promise<unknown>) => {
   if ('requestIdleCallback' in window) {
     requestIdleCallback(() => {
       importFn().catch(err => {
-        console.warn('Failed to preload component on idle:', err);
+        logger.warn('Failed to preload component on idle', 'bundleOptimization', { error: err });
       });
     });
   } else {
     // Fallback для браузеров без requestIdleCallback
     setTimeout(() => {
       importFn().catch(err => {
-        console.warn('Failed to preload component:', err);
+        logger.warn('Failed to preload component', 'bundleOptimization', { error: err });
       });
     }, 1000);
   }

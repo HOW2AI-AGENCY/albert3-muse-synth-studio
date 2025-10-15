@@ -71,7 +71,13 @@ export {
   Eye,
   EyeOff,
   Palette,
-  Square
+  Square,
+  Circle,
+  Dot,
+  ArrowLeft,
+  ArrowRight,
+  PanelLeft,
+  RotateCcw
 } from 'lucide-react';
 
 // File Operations

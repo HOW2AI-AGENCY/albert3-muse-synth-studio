@@ -68,13 +68,7 @@ export const CustomModeForm = memo(({
     <>
       {/* Prompt with Boost & History */}
       <div className="space-y-1">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="custom-prompt" className="text-xs font-medium">
-            Описание стиля
-            {!params.prompt.trim() && !params.lyrics.trim() && (
-              <span className="text-destructive ml-0.5">*</span>
-            )}
-          </Label>
+        <div className="flex items-center justify-end mb-1">
           <Button
             variant="ghost"
             size="sm"
@@ -92,8 +86,9 @@ export const CustomModeForm = memo(({
           onBoost={onBoostPrompt}
           isBoosting={isBoosting}
           isGenerating={isGenerating}
-          isRequired
+          isRequired={!params.lyrics.trim()}
           hasLyrics={!!params.lyrics.trim()}
+          label="Описание стиля"
           placeholder="Опишите стиль, жанр, настроение..."
           rows={isMobile ? 2 : 3}
           minHeight={isMobile ? "60px" : "80px"}
@@ -143,7 +138,7 @@ export const CustomModeForm = memo(({
             <AccordionTrigger className="text-xs font-medium py-2 hover:no-underline">
               Теги стиля {params.tags && `(${params.tags.split(',').filter(t => t.trim()).length})`}
             </AccordionTrigger>
-            <AccordionContent className="pt-2 pb-3 space-y-3">
+            <AccordionContent className="pt-2 pb-3 space-y-3 max-h-[60vh] overflow-y-auto">
               {/* AI Recommendations */}
               {params.prompt.length >= 10 && (
                 <StyleRecommendationsInline
@@ -237,7 +232,7 @@ export const CustomModeForm = memo(({
             <AccordionTrigger className="text-xs font-medium py-2 hover:no-underline">
               Теги стиля {params.tags && `(${params.tags.split(',').filter(t => t.trim()).length})`}
             </AccordionTrigger>
-            <AccordionContent className="pt-2 pb-3 space-y-3">
+            <AccordionContent className="pt-2 pb-3 space-y-3 max-h-[60vh] overflow-y-auto">
               {/* AI Recommendations */}
               {params.prompt.length >= 10 && (
                 <StyleRecommendationsInline

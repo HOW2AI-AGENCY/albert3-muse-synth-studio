@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { trackCacheIDB, CachedTrack } from "@/features/tracks";
 import type { Database } from "@/integrations/supabase/types";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
-import { logInfo, logError, logWarn } from "@/utils/logger";
+import { logger, logInfo, logError, logWarn } from "@/utils/logger";
 
 type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
 
@@ -191,17 +191,33 @@ export const useTracks = (refreshTrigger?: number, _options?: UseTracksOptions) 
       return;
     }
 
-    logInfo('Starting polling for track updates', 'useTracks');
+    // ✅ Adaptive polling: быстрее если есть новые треки (< 2 мин)
+    const getPollingInterval = () => {
+      const newTracks = tracks.filter(t => {
+        const age = Date.now() - new Date(t.created_at).getTime();
+        return (t.status === 'processing' || t.status === 'pending') && age < 2 * 60 * 1000; // < 2 minutes
+      });
+      
+      return newTracks.length > 0 ? 3000 : 5000; // 3s for new, 5s for old
+    };
+
+    const pollingInterval = getPollingInterval();
+    
+    logInfo('Starting polling for track updates', 'useTracks', {
+      processingCount: tracks.filter(t => t.status === 'processing').length,
+      pollingInterval,
+    });
+    
     const interval = setInterval(() => {
-      logInfo('Polling for track updates', 'useTracks');
+      logger.debug('Polling for track updates', 'useTracks');
       loadTracks();
-    }, 5000); // Poll every 5 seconds
+    }, pollingInterval);
 
     return () => {
       logInfo('Stopping polling', 'useTracks');
       clearInterval(interval);
     };
-  }, [isPolling]);
+  }, [isPolling, tracks, loadTracks]);
 
   // ✅ Auto-check stuck tracks every 2 minutes
   useEffect(() => {

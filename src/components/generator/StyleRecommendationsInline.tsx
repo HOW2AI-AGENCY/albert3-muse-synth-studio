@@ -1,7 +1,8 @@
 import { memo, useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, ChevronDown, ChevronUp, Loader2, RefreshCw, Plus, Check } from 'lucide-react';
+import { Sparkles, ChevronDown, ChevronUp, Loader2, RefreshCw, Plus, Check } from '@/utils/iconImports';
 import { useStyleRecommendations } from '@/services/ai/style-recommendations';
+import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
 
 interface StyleRecommendationsInlineProps {
@@ -38,14 +39,24 @@ export const StyleRecommendationsInline = memo(({
   );
 
   const handleToggle = () => {
+    logger.debug('AI recommendations toggled', 'StyleRecommendationsInline', {
+      isExpanded,
+      promptLength: prompt.length,
+      hasContext: hasMinimumContext,
+    });
+    
     if (!isExpanded && !manualTrigger) {
       setManualTrigger(true);
+      logger.info('AI recommendations manual trigger', 'StyleRecommendationsInline', {
+        prompt: prompt.substring(0, 50),
+      });
     }
     setIsExpanded(!isExpanded);
   };
 
   const handleApplyTag = (tag: string) => {
     if (!currentTagsSet.has(tag)) {
+      logger.debug('Tag applied from AI recommendations', 'StyleRecommendationsInline', { tag });
       onApplyTags([tag]);
     }
   };
@@ -54,6 +65,10 @@ export const StyleRecommendationsInline = memo(({
     if (data?.tags) {
       const newTags = data.tags.filter(tag => !currentTagsSet.has(tag));
       if (newTags.length > 0) {
+        logger.info('All AI recommendations applied', 'StyleRecommendationsInline', {
+          tagsCount: newTags.length,
+          tags: newTags,
+        });
         onApplyTags(newTags);
       }
     }
