@@ -1,11 +1,11 @@
 /**
  * "Умная" логика воспроизведения треков
- * Phase 2.2 - Автоматический выбор версии для воспроизведения
+ * Phase 2.2 - Автоматический выбор варианта для воспроизведения
  * 
- * Приоритет выбора версии:
- * 1. Явно указанная мастер-версия (is_master === true)
- * 2. Оригинал (version_number === 0 или is_original === true)
- * 3. Первая доступная версия с audio_url
+ * Приоритет выбора варианта:
+ * 1. Явно указанный предпочитаемый вариант (is_preferred_variant === true)
+ * 2. Оригинал (variant_index === 0 или is_original === true)
+ * 3. Первый доступный вариант с audio_url
  */
 
 import { useCallback } from 'react';
@@ -28,10 +28,10 @@ export const useSmartTrackPlay = () => {
   const { playTrack } = useAudioPlayer();
 
   /**
-   * Выбрать лучшую версию для воспроизведения по приоритету:
-   * 1. Явно указанная мастер-версия (is_master === true)
-   * 2. Оригинал (version_number === 0 или is_original === true)
-   * 3. Первая доступная версия
+   * Выбрать лучший вариант для воспроизведения по приоритету:
+   * 1. Явно указанный предпочитаемый вариант (is_preferred_variant === true)
+   * 2. Оригинал (variant_index === 0 или is_original === true)
+   * 3. Первый доступный вариант
    */
   const selectBestVersion = useCallback((versions: TrackWithVersions[]): TrackWithVersions | null => {
     if (versions.length === 0) return null;

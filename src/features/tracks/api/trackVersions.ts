@@ -226,7 +226,7 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       .from('track_versions')
       .select('*')
       .eq('parent_track_id', trackId)
-      .order('version_number', { ascending: true })
+      .order('variant_index', { ascending: true })
       .returns<TrackVersionRow[]>();
 
     if (versionsError) throw versionsError;
