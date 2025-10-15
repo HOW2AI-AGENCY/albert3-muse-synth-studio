@@ -16,7 +16,7 @@ interface CompactTrackHeroProps {
     download_count?: number;
   };
   activeVersion?: {
-    version_number: number;
+    variant_index: number;
     created_at?: string;
     duration?: number;
   } | null;

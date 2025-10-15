@@ -15,9 +15,10 @@ import { logger } from "@/utils/logger";
 
 export interface TrackVersionSelectorOption {
   id: string;
-  version_number: number;
+  variant_index: number;
   created_at?: string | null;
-  is_master?: boolean;
+  is_preferred_variant?: boolean;
+  is_primary_variant?: boolean;
   is_original?: boolean;
 }
 
@@ -178,7 +179,7 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
         return "Оригинал";
       }
 
-      return `Версия ${version.version_number}`;
+      return `Вариант ${version.variant_index}`;
     },
     [],
   );
@@ -192,7 +193,7 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
       <div className="flex items-center gap-2 text-sm font-medium">
         <CalendarClock className="h-4 w-4 text-muted-foreground" />
         <span>Выбрать версию</span>
-        {versionList.some((version) => version.is_master) && (
+        {versionList.some((version) => version.is_preferred_variant) && (
           <Badge variant="outline" className="gap-1 text-xs">
             <Star className="h-3 w-3" />
             Главная
@@ -212,11 +213,11 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
             >
               <div className="flex flex-col">
                 <span className="font-medium">
-                  {version.is_original ? "Оригинал" : `Версия ${version.version_number}`}
+                  {version.is_original ? "Оригинал" : `Вариант ${version.variant_index}`}
                 </span>
                 <span className="text-xs text-muted-foreground">{formatDate(version.created_at)}</span>
               </div>
-              {version.is_master && (
+              {version.is_preferred_variant && (
                 <Badge variant="secondary" className="gap-1 text-[11px]">
                   <Star className="h-3 w-3" />
                   Главная
@@ -304,13 +305,13 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
                     ? isPlayingCurrent
                       ? version.is_original
                         ? "Пауза оригинала"
-                        : `Пауза версии ${version.version_number}`
+                        : `Пауза варианта ${version.variant_index}`
                       : version.is_original
                         ? "Продолжить оригинал"
-                        : `Продолжить версию ${version.version_number}`
+                        : `Продолжить вариант ${version.variant_index}`
                     : version.is_original
                       ? "Воспроизвести оригинал"
-                      : `Воспроизвести версию ${version.version_number}`
+                      : `Воспроизвести вариант ${version.variant_index}`
                 }
                 aria-pressed={isPlayingCurrent}
                 onClick={() => handlePlayPause(version.id)}
@@ -319,12 +320,12 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
               </Button>
               <div className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate font-medium">
-                  {version.is_original ? "Оригинал" : `Версия ${version.version_number}`}
+                  {version.is_original ? "Оригинал" : `Вариант ${version.variant_index}`}
                 </span>
                 <span className="text-xs text-muted-foreground">{formatDate(version.created_at)}</span>
               </div>
               <div className="flex items-center gap-2">
-                {version.is_master && (
+                {version.is_preferred_variant && (
                   <Badge variant="secondary" className="gap-1 text-[11px]">
                     <Star className="h-3 w-3" />
                     Главная
@@ -341,7 +342,7 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
                   type="button"
                   variant={isAssignedToPrimary ? "default" : "outline"}
                   size="icon-sm"
-                  aria-label={`Назначить версию ${version.version_number} как A`}
+                  aria-label={`Назначить вариант ${version.variant_index} как A`}
                   aria-pressed={isAssignedToPrimary}
                   onClick={() =>
                     handleAssignSlot("primary", version.id, {
@@ -355,7 +356,7 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
                   type="button"
                   variant={isAssignedToSecondary ? "default" : "outline"}
                   size="icon-sm"
-                  aria-label={`Назначить версию ${version.version_number} как B`}
+                  aria-label={`Назначить вариант ${version.variant_index} как B`}
                   aria-pressed={isAssignedToSecondary}
                   onClick={() =>
                     handleAssignSlot("secondary", version.id, {

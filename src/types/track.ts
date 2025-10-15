@@ -81,8 +81,9 @@ export interface OptimizedTrack {
 // Версия трека
 export interface TrackVersion {
   id: string;
-  version_number: number;
-  is_master: boolean | null;
+  variant_index: number;
+  is_preferred_variant: boolean | null;
+  is_primary_variant: boolean | null;
   is_original?: boolean;
   source_version_number?: number | null;
   suno_id: string | null;

@@ -74,14 +74,15 @@ describe('TrackVersionSelector', () => {
   const versions = [
     {
       id: 'version-a',
-      version_number: 1,
+      variant_index: 1,
       created_at: '2024-01-01T00:00:00.000Z',
-      is_master: true,
+      is_preferred_variant: true,
     },
     {
       id: 'version-b',
-      version_number: 2,
+      variant_index: 2,
       created_at: '2024-02-01T00:00:00.000Z',
+      is_preferred_variant: false,
     },
   ];
 
@@ -102,7 +103,7 @@ describe('TrackVersionSelector', () => {
     const trigger = screen.getByRole('combobox', { name: 'Выбор версии трека' });
     await user.click(trigger);
 
-    const option = await screen.findByRole('option', { name: /Версия 2/ });
+    const option = await screen.findByRole('option', { name: /Вариант 2/ });
     await user.click(option);
 
     expect(onSelect).toHaveBeenCalledWith('version-b');
@@ -124,7 +125,7 @@ describe('TrackVersionSelector', () => {
       <TrackVersionSelector versions={versions} selectedVersionId={versions[0].id} />,
     );
 
-    const pauseButton = screen.getByRole('button', { name: 'Пауза версии 2' });
+    const pauseButton = screen.getByRole('button', { name: 'Пауза варианта 2' });
     await user.click(pauseButton);
 
     expect(audioPlayerMocks.togglePlayPause).toHaveBeenCalledTimes(1);
@@ -136,7 +137,7 @@ describe('TrackVersionSelector', () => {
 
     render(<TrackVersionSelector versions={versions} selectedVersionId={versions[0].id} />);
 
-    const assignBButton = screen.getByRole('button', { name: 'Назначить версию 2 как B' });
+    const assignBButton = screen.getByRole('button', { name: 'Назначить вариант 2 как B' });
     await user.click(assignBButton);
 
     const listenBButton = screen.getByRole('button', { name: 'Слушать версию B' });

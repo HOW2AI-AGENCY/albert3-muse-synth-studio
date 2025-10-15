@@ -18,10 +18,11 @@ interface TrackDetailsPanelProps {
   };
   activeVersion?: {
     id: string;
-    version_number: number;
+    variant_index: number;
     duration?: number | null;
     created_at?: string | null;
-    is_master?: boolean;
+    is_preferred_variant?: boolean;
+    is_primary_variant?: boolean;
   } | null;
 }
 
@@ -103,7 +104,7 @@ export const TrackDetailsPanel = ({ track, activeVersion }: TrackDetailsPanelPro
             </div>
 
             <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 text-sm">
-              <MetadataItem label="Версия" value={activeVersion ? `№ ${activeVersion.version_number}` : "—"} />
+              <MetadataItem label="Вариант" value={activeVersion ? `№ ${activeVersion.variant_index}` : "—"} />
               <MetadataItem label="Дата создания" value={formatDate(createdAt)} />
               <MetadataItem label="Длительность" value={formatDuration(duration ?? undefined)} />
               <MetadataItem label="Жанр" value={track.genre || "—"} />

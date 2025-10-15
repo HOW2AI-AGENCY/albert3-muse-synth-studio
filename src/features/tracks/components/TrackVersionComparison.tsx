@@ -179,9 +179,9 @@ const TrackVersionComparisonComponent = ({
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
             <div className="flex items-center gap-2">
               <span className="text-base font-semibold">
-                {version.is_original ? 'Оригинал' : `Версия ${version.version_number}`}
+                {version.is_original ? 'Оригинал' : `Вариант ${version.variant_index}`}
               </span>
-              {version.is_master && (
+              {version.is_preferred_variant && (
                 <Badge variant="secondary" className="gap-1 text-[11px]">
                   <Star className="h-3 w-3" />
                   Главная
@@ -202,10 +202,10 @@ const TrackVersionComparisonComponent = ({
               isVersionPlaying
                 ? version.is_original
                   ? "Пауза оригинала"
-                  : `Пауза версии ${version.version_number}`
+                  : `Пауза варианта ${version.variant_index}`
                 : version.is_original
                   ? "Воспроизвести оригинал"
-                  : `Воспроизвести версию ${version.version_number}`
+                  : `Воспроизвести вариант ${version.variant_index}`
             }
           >
             {isVersionPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
@@ -227,13 +227,13 @@ const TrackVersionComparisonComponent = ({
               <SelectItem key={option.id} value={option.id} className="flex items-center gap-2 text-sm">
                 <div className="flex flex-col">
                   <span className="font-medium">
-                    {option.is_original ? 'Оригинал' : `Версия ${option.version_number}`}
+                    {option.is_original ? 'Оригинал' : `Вариант ${option.variant_index}`}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {formatTrackVersionDuration(option.duration)}
                   </span>
                 </div>
-                {option.is_master && (
+                {option.is_preferred_variant && (
                   <Badge variant="outline" className="ml-auto gap-1 text-[10px]">
                     <Star className="h-3 w-3" />
                     Главная
@@ -244,7 +244,7 @@ const TrackVersionComparisonComponent = ({
           </SelectContent>
         </Select>
 
-        <WaveformPreview seed={`${version.id}-${version.version_number}`} isActive={isVersionPlaying} />
+        <WaveformPreview seed={`${version.id}-${version.variant_index}`} isActive={isVersionPlaying} />
 
         <TrackVersionMetadataPanel
           metadata={getVersionMetadata(version.metadata, trackMetadata)}

@@ -44,10 +44,11 @@ interface Track {
 
 interface TrackVersion {
   id: string;
-  version_number: number;
-  is_master: boolean;
+  variant_index: number;
+  is_preferred_variant: boolean;
+  is_primary_variant?: boolean;
   is_original?: boolean;
-  source_version_number?: number | null;
+  source_variant_index?: number | null;
   suno_id: string;
   audio_url: string;
   video_url?: string;
@@ -170,7 +171,7 @@ export const DetailPanelContent = ({
         return current;
       }
 
-      const masterVersion = versions.find((version) => version.is_master);
+      const masterVersion = versions.find((version) => version.is_preferred_variant);
       return masterVersion?.id ?? versions[0].id;
     });
   }, [versions]);
@@ -185,7 +186,7 @@ export const DetailPanelContent = ({
         return current;
       }
 
-      const masterVersion = versions.find((version) => version.is_master);
+      const masterVersion = versions.find((version) => version.is_preferred_variant);
       return masterVersion?.id ?? versions[0].id;
     });
   }, [versions]);
@@ -311,7 +312,11 @@ export const DetailPanelContent = ({
       {/* Compact Track Hero - Vertical Layout */}
       <CompactTrackHero
         track={track}
-        activeVersion={activeVersion ?? null}
+        activeVersion={activeVersion ? {
+          variant_index: activeVersion.variant_index,
+          created_at: activeVersion.created_at,
+          duration: activeVersion.duration
+        } : null}
         artist={artist}
         isLiked={isLiked}
         likeCount={likeCount}
@@ -513,9 +518,10 @@ export const DetailPanelContent = ({
                     <TrackVersionSelector
                       versions={versions.map((version) => ({
                         id: version.id,
-                        version_number: version.version_number,
+                        variant_index: version.variant_index,
                         created_at: version.created_at,
-                        is_master: version.is_master,
+                        is_preferred_variant: version.is_preferred_variant,
+                        is_primary_variant: version.is_primary_variant,
                         is_original: version.is_original,
                       }))}
                       selectedVersionId={selectedVersionId}

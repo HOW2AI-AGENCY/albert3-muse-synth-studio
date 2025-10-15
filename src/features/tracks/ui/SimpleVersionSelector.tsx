@@ -20,8 +20,9 @@ import { getVersionLabel } from '@/utils/versionLabels';
 
 interface VersionOption {
   id: string;
-  version_number: number;
-  is_master: boolean;
+  variant_index: number;
+  is_preferred_variant: boolean;
+  is_primary_variant?: boolean;
   is_original?: boolean;
   created_at?: string;
 }
@@ -45,7 +46,7 @@ export const SimpleVersionSelector: React.FC<SimpleVersionSelectorProps> = ({
   showPlayMasterButton = true,
 }) => {
   const masterVersion = useMemo(
-    () => versions.find(v => v.is_master),
+    () => versions.find(v => v.is_preferred_variant),
     [versions]
   );
 
@@ -65,9 +66,9 @@ export const SimpleVersionSelector: React.FC<SimpleVersionSelectorProps> = ({
       <div className={cn("flex items-center gap-2", className)}>
         <Badge variant="outline" className="text-xs">
           {getVersionLabel({
-            versionNumber: version.version_number,
+            versionNumber: version.variant_index,
             isOriginal: version.is_original,
-            isMaster: version.is_master,
+            isMaster: version.is_preferred_variant,
           })}
         </Badge>
       </div>
@@ -110,14 +111,14 @@ export const SimpleVersionSelector: React.FC<SimpleVersionSelectorProps> = ({
           <SelectValue>
             {selectedVersion ? (
               <div className="flex items-center gap-1.5">
-                {selectedVersion.is_master && (
+                {selectedVersion.is_preferred_variant && (
                   <Star className="h-3 w-3 fill-primary text-primary" />
                 )}
                 <span>
                   {getVersionLabel({
-                    versionNumber: selectedVersion.version_number,
+                    versionNumber: selectedVersion.variant_index,
                     isOriginal: selectedVersion.is_original,
-                    isMaster: selectedVersion.is_master,
+                    isMaster: selectedVersion.is_preferred_variant,
                   })}
                 </span>
               </div>
@@ -130,14 +131,14 @@ export const SimpleVersionSelector: React.FC<SimpleVersionSelectorProps> = ({
           {versions.map((version) => (
             <SelectItem key={version.id} value={version.id}>
               <div className="flex items-center gap-2">
-                {version.is_master && (
+                {version.is_preferred_variant && (
                   <Star className="h-3.5 w-3.5 fill-primary text-primary" />
                 )}
                 <span>
                   {getVersionLabel({
-                    versionNumber: version.version_number,
+                    versionNumber: version.variant_index,
                     isOriginal: version.is_original,
-                    isMaster: version.is_master,
+                    isMaster: version.is_preferred_variant,
                   })}
                 </span>
                 {version.created_at && (

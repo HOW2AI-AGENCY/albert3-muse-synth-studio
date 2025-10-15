@@ -58,7 +58,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
       // Unset all other masters for this track
       await Promise.all(
         versions
-          .filter(version => version.id !== versionId && version.is_master)
+          .filter(version => version.id !== versionId && version.is_preferred_variant)
           .map(async version => {
             const updateResult = await updateTrackVersion(version.id, { is_preferred_variant: false });
             if (!updateResult.ok) {
@@ -91,9 +91,9 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
   const handlePlayVersion = useCallback((version: TrackVersion) => {
     vibrate('light');
 
-    logInfo(`Playing version ${version.version_number}`, 'TrackVersions', {
+    logInfo(`Playing version ${version.variant_index}`, 'TrackVersions', {
       versionId: version.id,
-      versionNumber: version.version_number,
+      versionNumber: version.variant_index,
       trackId
     });
 
@@ -133,7 +133,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
       vibrate('warning');
       
       // If deleting master version, reassign to first remaining
-      if (versionToDelete.is_master && versions.length > 1) {
+      if (versionToDelete.is_preferred_variant && versions.length > 1) {
         const nextVersion = versions.find(v => v.id !== versionToDelete.id && !v.is_original);
         if (nextVersion) {
           const updateResult = await updateTrackVersion(nextVersion.id, { is_preferred_variant: true });
@@ -150,7 +150,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
       }
 
       vibrate('success');
-      toast.success(`Версия ${versionToDelete.version_number} удалена`);
+      toast.success(`Вариант ${versionToDelete.variant_index} удалён`);
       onVersionUpdate?.();
     } catch (error) {
       logError("Ошибка при удалении версии", error as Error, "TrackVersions", {
@@ -210,7 +210,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
               <Card
                 key={version.id}
                 className={`p-3 transition-all hover:bg-muted/50 ${
-                  version.is_master ? 'ring-2 ring-primary bg-primary/5' : ''
+                  version.is_preferred_variant ? 'ring-2 ring-primary bg-primary/5' : ''
                 }`}
               >
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-4">
@@ -223,8 +223,8 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                           onClick={() => handlePlayVersion(version)}
                           aria-label={
                             isVersionPlaying
-                              ? `Пауза версии ${version.version_number}`
-                              : `Воспроизвести версию ${version.version_number}`
+                              ? `Пауза варианта ${version.variant_index}`
+                              : `Воспроизвести вариант ${version.variant_index}`
                           }
                           className="h-10 w-10 flex-shrink-0 transition-transform active:scale-95"
                         >
@@ -238,9 +238,9 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                         <div className="min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-medium text-sm">
-                              {version.is_original ? 'Оригинал' : `Версия ${version.version_number}`}
+                              {version.is_original ? 'Оригинал' : `Вариант ${version.variant_index}`}
                             </span>
-                            {version.is_master && (
+                            {version.is_preferred_variant && (
                               <Badge variant="default" className="gap-1 text-xs">
                                 <Star className="w-3 h-3 fill-current" />
                                 Главная
@@ -254,12 +254,12 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                       </div>
 
                       <div className="flex gap-1 sm:ml-auto">
-                        {!version.is_master && !version.is_original && (
+                        {!version.is_preferred_variant && !version.is_original && (
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleSetMaster(version.id, version.version_number, version.is_original)}
-                            aria-label={`Сделать версию ${version.version_number} главной`}
+                            onClick={() => handleSetMaster(version.id, version.variant_index, version.is_original)}
+                            aria-label={`Сделать вариант ${version.variant_index} предпочитаемым`}
                             className="text-xs h-8 transition-transform active:scale-95"
                           >
                             <Star className="w-3 h-3 mr-1" />
@@ -273,7 +273,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                             size="sm"
                             variant="ghost"
                             onClick={() => handleDeleteVersion(version)}
-                            aria-label={`Удалить версию ${version.version_number}`}
+                            aria-label={`Удалить вариант ${version.variant_index}`}
                             className="text-xs h-8 text-destructive hover:text-destructive transition-transform active:scale-95"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -301,8 +301,8 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
           <AlertDialogHeader>
             <AlertDialogTitle>Удалить версию?</AlertDialogTitle>
             <AlertDialogDescription>
-              Вы собираетесь удалить {versionToDelete?.is_original ? 'оригинальную версию' : `версию ${versionToDelete?.version_number}`}.
-              {versionToDelete?.is_master && !versionToDelete?.is_original && (
+              Вы собираетесь удалить {versionToDelete?.is_original ? 'оригинальный вариант' : `вариант ${versionToDelete?.variant_index}`}.
+              {versionToDelete?.is_preferred_variant && !versionToDelete?.is_original && (
                 <span className="block mt-2 text-orange-500 font-medium">
                   ⚠️ Это главная версия. Статус главной будет присвоен другой версии.
                 </span>

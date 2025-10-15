@@ -16,8 +16,9 @@ import { DetailPanelMobile } from "./DetailPanelMobile";
 
 interface TrackVersion {
   id: string;
-  version_number: number;
-  is_master: boolean;
+  variant_index: number;
+  is_preferred_variant: boolean;
+  is_primary_variant?: boolean;
   suno_id: string;
   audio_url: string;
   video_url?: string;
@@ -194,9 +195,10 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete, variant = 'des
           .filter(version => Boolean(version.audio_url))
           .map(version => ({
             id: version.id,
-            version_number: version.versionNumber,
-            source_version_number: version.sourceVersionNumber,
-            is_master: Boolean(version.isMasterVersion),
+            variant_index: version.versionNumber,
+            source_variant_index: version.sourceVersionNumber,
+            is_preferred_variant: Boolean(version.isMasterVersion),
+            is_primary_variant: false, // TODO: Add when backend implements this field
             is_original: version.isOriginal,
             suno_id: version.suno_id ?? track.suno_id ?? "",
             audio_url: version.audio_url!,

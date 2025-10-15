@@ -125,7 +125,11 @@ describe('TrackVersions component', () => {
 
   it('does not render when there is a single version', () => {
     const { container } = render(
-      <TrackVersions trackId="track-1" versions={[baseVersions[0]]} />
+      <TrackVersions trackId="track-1" versions={[{
+        ...baseVersions[0],
+        variant_index: 0,
+        is_preferred_variant: true
+      }]} />
     );
 
     expect(container.firstChild).toBeNull();
@@ -134,15 +138,19 @@ describe('TrackVersions component', () => {
   it('expands versions list and plays a selected version', async () => {
     const user = userEvent.setup();
 
-    render(<TrackVersions trackId="track-1" versions={baseVersions} />);
+    render(<TrackVersions trackId="track-1" versions={baseVersions.map(v => ({
+      ...v,
+      variant_index: v.version_number,
+      is_preferred_variant: v.is_master
+    }))} />);
 
     const toggleButton = screen.getAllByRole('button')[0];
     await user.click(toggleButton);
 
-    const versionCard = await screen.findByText('Версия 1');
+    const versionCard = await screen.findByText('Вариант 1');
     expect(versionCard).toBeInTheDocument();
 
-    const playButton = screen.getByRole('button', { name: 'Воспроизвести версию 1' });
+    const playButton = screen.getByRole('button', { name: 'Воспроизвести вариант 1' });
     await user.click(playButton);
 
     expect(audioPlayerMocks.playTrack).toHaveBeenCalledWith(expect.objectContaining({ id: 'track-alt' }));
@@ -152,19 +160,23 @@ describe('TrackVersions component', () => {
     const user = userEvent.setup();
     const onVersionUpdate = vi.fn();
 
-    render(<TrackVersions trackId="track-1" versions={baseVersions} onVersionUpdate={onVersionUpdate} />);
+    render(<TrackVersions trackId="track-1" versions={baseVersions.map(v => ({
+      ...v,
+      variant_index: v.version_number,
+      is_preferred_variant: v.is_master
+    }))} onVersionUpdate={onVersionUpdate} />);
 
     const toggleButton = screen.getAllByRole('button')[0];
     await user.click(toggleButton);
 
-    await screen.findByText('Версия 1');
-    const masterButton = screen.getByRole('button', { name: 'Сделать версию 1 главной' });
+    await screen.findByText('Вариант 1');
+    const masterButton = screen.getByRole('button', { name: 'Сделать вариант 1 предпочитаемым' });
     await user.click(masterButton);
 
     await waitFor(() => {
       expect(trackVersionApiMocks.updateTrackVersion).toHaveBeenCalledTimes(2);
       expect(onVersionUpdate).toHaveBeenCalled();
-      expect(toastMocks.success).toHaveBeenCalledWith('Версия 1 установлена как главная');
+      expect(toastMocks.success).toHaveBeenCalledWith('Вариант 1 установлен как предпочитаемый');
     });
   });
 
@@ -178,24 +190,24 @@ describe('TrackVersions component', () => {
           {
             id: 'track-main',
             suno_id: 'track-main-suno',
-            version_number: 0,
-            is_master: true,
+            variant_index: 0,
+            is_preferred_variant: true,
             audio_url: 'main.mp3',
             duration: 120,
           },
           {
             id: 'track-alt',
             suno_id: 'track-alt-suno',
-            version_number: 1,
-            is_master: false,
+            variant_index: 1,
+            is_preferred_variant: false,
             audio_url: 'alt.mp3',
             duration: 100,
           },
           {
             id: 'track-extra',
             suno_id: 'track-extra-suno',
-            version_number: 2,
-            is_master: false,
+            variant_index: 2,
+            is_preferred_variant: false,
             audio_url: 'extra.mp3',
             duration: 90,
           },
@@ -206,18 +218,18 @@ describe('TrackVersions component', () => {
     const toggleButton = screen.getAllByRole('button')[0];
     await user.click(toggleButton);
 
-    await screen.findByText('Версия 2');
-    const deleteButton = screen.getByRole('button', { name: 'Удалить версию 2' });
+    await screen.findByText('Вариант 2');
+    const deleteButton = screen.getByRole('button', { name: 'Удалить вариант 2' });
     await user.click(deleteButton!);
 
-    expect(await screen.findByText('Удалить версию?')).toBeInTheDocument();
+    expect(await screen.findByText('Удалить вариант?')).toBeInTheDocument();
 
     const confirmButton = screen.getByRole('button', { name: 'Удалить' });
     await user.click(confirmButton);
 
     await waitFor(() => {
       expect(trackVersionApiMocks.deleteTrackVersion).toHaveBeenCalledWith('track-extra');
-      expect(toastMocks.success).toHaveBeenCalledWith('Версия 2 удалена');
+      expect(toastMocks.success).toHaveBeenCalledWith('Вариант 2 удалён');
     });
   });
 });
