@@ -543,21 +543,15 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
                           <DropdownMenuItem 
                             onClick={(e) => { 
                               e.stopPropagation(); 
-                              if (isSunoTrack) onSeparateStems?.(track.id);
+                              onSeparateStems?.(track.id);
                             }}
-                            disabled={!onSeparateStems || isMurekaTrack}
-                            className={isMurekaTrack ? 'opacity-50' : ''}
+                            disabled={!onSeparateStems}
                           >
                             <Split className="w-4 h-4 mr-2" />
                             Разделить на стемы
                           </DropdownMenuItem>
                         </div>
                       </TooltipTrigger>
-                      {isMurekaTrack && (
-                        <TooltipContent side="left">
-                          Разделение на стемы доступно только для Suno треков
-                        </TooltipContent>
-                      )}
                     </Tooltip>
                   </TooltipProvider>
                   <DropdownMenuItem 

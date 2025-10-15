@@ -6,6 +6,7 @@ import {
 } from "../_shared/cors.ts";
 import { logger, withSentry } from "../_shared/logger.ts";
 import { createSunoClient, SunoApiError } from "../_shared/suno.ts";
+import { createMurekaStemClient, MurekaApiError } from "../_shared/mureka-stem.ts";
 import {
   createSupabaseAdminClient,
   createSupabaseUserClient,
@@ -102,7 +103,7 @@ const mainHandler = async (req: Request) => {
 
     const { data: trackRecord, error: trackError } = await supabaseAdmin
       .from("tracks")
-      .select("id, user_id, suno_id, metadata, has_stems")
+      .select("id, user_id, suno_id, audio_url, metadata, has_stems, provider")
       .eq("id", trackId)
       .maybeSingle();
 
@@ -118,6 +119,7 @@ const mainHandler = async (req: Request) => {
       );
     }
 
+    const trackProvider = trackRecord.provider || 'suno';
     const trackMetadata = getMetadataObject(trackRecord.metadata);
     const trackTaskId = trackMetadata["suno_task_id"];
     let taskId = typeof trackTaskId === "string" && trackTaskId.trim() ? trackTaskId.trim() : null;
@@ -173,22 +175,68 @@ const mainHandler = async (req: Request) => {
       audioId,
       taskId,
       separationMode,
+      provider: trackProvider,
       timestamp: new Date().toISOString()
     });
 
-    const stemResult = await sunoClient.requestStemSeparation({
-      taskId,
-      audioId,
-      type: (separationMode === 'split_stem' || separationMode === 'separate_vocal') ? separationMode : 'separate_vocal',
-      callBackUrl: `${SUPABASE_URL}/functions/v1/stems-callback`,
-    });
+    // ✅ Route to appropriate provider
+    let stemTaskId: string;
+    let stemEndpoint: string;
 
-    const stemTaskId = stemResult.taskId;
+    if (trackProvider === 'mureka') {
+      // === MUREKA STEM SEPARATION ===
+      const MUREKA_API_KEY = Deno.env.get('MUREKA_API_KEY');
+      if (!MUREKA_API_KEY) {
+        throw new Error('MUREKA_API_KEY not configured');
+      }
+
+      const murekaClient = createMurekaStemClient({ apiKey: MUREKA_API_KEY });
+
+      if (!trackRecord.audio_url) {
+        throw new Error('Track audio_url required for Mureka stem separation');
+      }
+
+      logger.info('[MUREKA-STEM] Initiating stem separation', { 
+        trackId, 
+        audioUrl: trackRecord.audio_url.substring(0, 100) 
+      });
+
+      const murekaResult = await murekaClient.requestStemSeparation({
+        audio_file: trackRecord.audio_url,
+      });
+
+      stemTaskId = murekaResult.taskId;
+      stemEndpoint = murekaResult.endpoint;
+
+      logger.info('[MUREKA-STEM] Task created', { stemTaskId, trackId });
+
+    } else {
+      // === SUNO STEM SEPARATION ===
+      if (!taskId) {
+        throw new Error("Missing Suno task identifier for track");
+      }
+      if (!audioId) {
+        throw new Error("Missing Suno audio identifier for track or version");
+      }
+
+      const stemResult = await sunoClient.requestStemSeparation({
+        taskId,
+        audioId,
+        type: (separationMode === 'split_stem' || separationMode === 'separate_vocal') ? separationMode : 'separate_vocal',
+        callBackUrl: `${SUPABASE_URL}/functions/v1/stems-callback`,
+      });
+
+      stemTaskId = stemResult.taskId;
+      stemEndpoint = stemResult.endpoint;
+
+      logger.info('[SUNO-STEM] Task created', { stemTaskId, trackId });
+    }
     const nowIso = new Date().toISOString();
 
     const updatedTrackMetadata = {
       ...trackMetadata,
       stem_task_id: stemTaskId,
+      stem_provider: trackProvider,
       stem_version_id: versionId ?? null,
       stem_audio_id: audioId,
       stem_separation_mode: separationMode,
@@ -201,8 +249,12 @@ const mainHandler = async (req: Request) => {
       stem_last_callback_message: null,
       stem_last_callback_received_at: null,
       stem_assets_count: trackMetadata["stem_assets_count"] ?? null,
-      suno_last_stem_endpoint: stemResult.endpoint,
-      suno_last_stem_snapshot: (stemResult.rawResponse && typeof stemResult.rawResponse === 'object') ? stemResult.rawResponse : { "data": stemResult.rawResponse },
+      ...(trackProvider === 'suno' && { 
+        suno_last_stem_endpoint: stemEndpoint,
+      }),
+      ...(trackProvider === 'mureka' && { 
+        mureka_stem_task_id: stemTaskId 
+      }),
     } as Record<string, unknown>;
 
     const { error: trackUpdateError } = await supabaseAdmin
@@ -246,7 +298,8 @@ const mainHandler = async (req: Request) => {
       versionId: versionId ?? null,
       separationMode,
       stemTaskId,
-      endpoint: stemResult.endpoint,
+      provider: trackProvider,
+      endpoint: stemEndpoint,
       timestamp: new Date().toISOString()
     });
 
@@ -255,8 +308,9 @@ const mainHandler = async (req: Request) => {
         success: true,
         taskId: stemTaskId,
         separationMode,
+        provider: trackProvider,
         audioId,
-        endpoint: stemResult.endpoint,
+        endpoint: stemEndpoint,
       }),
       {
         status: 200,
@@ -273,12 +327,12 @@ const mainHandler = async (req: Request) => {
       );
     }
 
-    if (error instanceof SunoApiError) {
+    if (error instanceof SunoApiError || error instanceof MurekaApiError) {
       const status = error.details.status ?? 500;
       return new Response(
         JSON.stringify({
           error: status === 429
-            ? "Suno API rate limit reached. Please retry later."
+            ? "API rate limit reached. Please retry later."
             : error.message,
           details: {
             endpoint: error.details.endpoint,
