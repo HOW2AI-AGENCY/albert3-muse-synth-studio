@@ -46,6 +46,12 @@ verify_jwt = false
 [functions.migrate-tracks-to-storage]
 verify_jwt = true
 
+[functions.analyze-audio]
+verify_jwt = true
+
+[functions.analyze-reference-audio]
+verify_jwt = true
+
 [functions.get-balance]
   verify_jwt = true
 

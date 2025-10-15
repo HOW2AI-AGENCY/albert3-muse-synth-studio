@@ -33,29 +33,65 @@ async function mainHandler(req: Request): Promise<Response> {
   }
 
   try {
-    logger.info('[analyze-audio] Downloading audio from storage');
+    logger.info('[analyze-audio] Downloading audio from URL');
 
-    // Download audio from Supabase storage
-    const audioResponse = await fetch(audioUrl);
-    if (!audioResponse.ok) {
-      throw new Error(`Failed to download audio: ${audioResponse.statusText}`);
+    // ✅ FIX: Add proper error handling for audio download
+    let audioBlob: Blob;
+    try {
+      const audioResponse = await fetch(audioUrl);
+      if (!audioResponse.ok) {
+        throw new Error(`Failed to download audio: ${audioResponse.status} ${audioResponse.statusText}`);
+      }
+      audioBlob = await audioResponse.blob();
+      
+      if (!audioBlob || audioBlob.size === 0) {
+        throw new Error('Downloaded audio file is empty');
+      }
+      
+      logger.info('[analyze-audio] Audio downloaded', { sizeBytes: audioBlob.size });
+    } catch (downloadError) {
+      logger.error('[analyze-audio] Audio download failed', {
+        error: downloadError instanceof Error ? downloadError.message : String(downloadError),
+        audioUrl: audioUrl.substring(0, 100)
+      });
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to download audio file. Please check if the URL is accessible.',
+          details: downloadError instanceof Error ? downloadError.message : 'Unknown error'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
-
-    const audioBlob = await audioResponse.blob();
-    logger.info('[analyze-audio] Audio downloaded', { sizeBytes: audioBlob.size });
 
     // Upload to Mureka
     const formData = new FormData();
     formData.append('file', audioBlob, 'reference.mp3');
 
     logger.info('[analyze-audio] Uploading to Mureka API');
-    const uploadResponse = await fetch('https://api.mureka.ai/v1/files/upload', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${MUREKA_API_KEY}`,
-      },
-      body: formData,
-    });
+    
+    let uploadResponse: Response;
+    try {
+      uploadResponse = await fetch('https://api.mureka.ai/v1/files/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${MUREKA_API_KEY}`,
+        },
+        body: formData,
+      });
+    } catch (uploadError) {
+      logger.error('[analyze-audio] Mureka upload network error', {
+        error: uploadError instanceof Error ? uploadError.message : String(uploadError)
+      });
+      
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to connect to Mureka API',
+          details: uploadError instanceof Error ? uploadError.message : 'Network error'
+        }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!uploadResponse.ok) {
       const errorText = await uploadResponse.text();
@@ -64,13 +100,22 @@ async function mainHandler(req: Request): Promise<Response> {
         statusText: uploadResponse.statusText,
         errorPreview: errorText.substring(0, 200)
       });
-      throw new Error(`Mureka upload failed: ${uploadResponse.statusText}`);
+      
+      return new Response(
+        JSON.stringify({ 
+          error: `Mureka upload failed: ${uploadResponse.statusText}`,
+          details: errorText.substring(0, 200),
+          status: uploadResponse.status
+        }),
+        { status: uploadResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const uploadData = await uploadResponse.json();
     const fileId = uploadData.data?.file_id;
 
     if (!fileId) {
+      logger.error('[analyze-audio] No file_id in response', { uploadData });
       throw new Error('No file_id returned from Mureka');
     }
 

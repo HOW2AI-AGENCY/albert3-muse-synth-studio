@@ -1,10 +1,19 @@
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
-import { Music4 } from 'lucide-react';
+import { Music4, MoreVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StemWaveform } from './StemWaveform';
-import { StemContextMenu } from './StemContextMenu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Download, FileAudio, Music2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useConvertToWav } from '@/hooks/useConvertToWav';
 
 interface TrackStem {
   id: string;
@@ -72,20 +81,53 @@ export const StemMixerTrack = ({
   onVolumeChange,
   onUseAsReference,
 }: StemMixerTrackProps) => {
+  const { convertToWav, isConverting } = useConvertToWav();
+
+  const handleDownloadMP3 = async () => {
+    try {
+      const response = await fetch(stem.audio_url);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${trackTitle || 'track'}_${stem.stem_type}.mp3`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success(`Стем "${stem.stem_type}" скачан`);
+    } catch (error) {
+      console.error('Failed to download stem:', error);
+      toast.error('Ошибка скачивания стема');
+    }
+  };
+
+  const handleConvertToWav = async () => {
+    try {
+      await convertToWav({
+        trackId: stem.track_id,
+        audioId: stem.id,
+      });
+    } catch (error) {
+      console.error('Failed to convert stem:', error);
+      toast.error('Ошибка конвертации стема');
+    }
+  };
+
+  const handleUseAsReference = () => {
+    onUseAsReference?.(stem.audio_url, stem.stem_type);
+    toast.success(`Стем "${stem.stem_type}" установлен как референс`);
+  };
+
   return (
-    <StemContextMenu 
-      stem={stem} 
-      trackTitle={trackTitle}
-      onUseAsReference={onUseAsReference}
+    <div
+      className={cn(
+        'flex flex-col gap-2 p-3 rounded-lg border transition-all',
+        isActive && !isMuted && 'border-primary/50 bg-primary/5',
+        isSolo && 'border-yellow-500/50 bg-yellow-500/5 ring-1 ring-yellow-500/20',
+        !isActive && 'opacity-60'
+      )}
     >
-      <div
-        className={cn(
-          'flex flex-col gap-2 p-3 rounded-lg border transition-all',
-          isActive && !isMuted && 'border-primary/50 bg-primary/5',
-          isSolo && 'border-yellow-500/50 bg-yellow-500/5 ring-1 ring-yellow-500/20',
-          !isActive && 'opacity-60'
-        )}
-      >
       {/* Main controls row */}
       <div className="flex items-center gap-3">
         {/* Toggle Active */}
@@ -146,6 +188,35 @@ export const StemMixerTrack = ({
             {Math.round(volume * 100)}%
           </span>
         </div>
+
+        {/* Menu Button */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0 shrink-0"
+              title="Опции стема"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={handleDownloadMP3}>
+              <Download className="w-4 h-4 mr-2" />
+              Скачать MP3
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleConvertToWav} disabled={isConverting}>
+              <FileAudio className="w-4 h-4 mr-2" />
+              {isConverting ? 'Конвертация...' : 'Конвертировать в WAV'}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleUseAsReference}>
+              <Music2 className="w-4 h-4 mr-2" />
+              Использовать как референс
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Waveform visualization */}
@@ -157,6 +228,5 @@ export const StemMixerTrack = ({
         className="w-full"
       />
     </div>
-    </StemContextMenu>
   );
 };
