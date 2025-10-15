@@ -60,48 +60,70 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     jobId: ''
   });
   
-  // ✅ NEW: Check for pending stem reference on mount
+  // ✅ Check for pending stem reference on mount
   useEffect(() => {
     const pendingRef = localStorage.getItem('pendingStemReference');
     if (pendingRef) {
       try {
         const refData = JSON.parse(pendingRef);
         
+        logger.info('🎯 [STEM-REF] Loading stem reference', 'MusicGeneratorV2', {
+          stemType: refData.stemType,
+          audioUrl: refData.audioUrl?.substring(0, 50),
+          hasPrompt: !!refData.prompt,
+          hasLyrics: !!refData.lyrics,
+          hasTags: !!refData.styleTags,
+        });
+        
         // Переключаем на расширенную форму (custom mode)
         setMode('custom');
         
-        // Автозаполнение формы из референс-стема
-        setParams(prev => ({
-          ...prev,
-          prompt: refData.prompt || prev.prompt,
-          lyrics: refData.lyrics || prev.lyrics,
-          tags: refData.styleTags?.join(', ') || prev.tags,
-          referenceAudioUrl: refData.audioUrl,
-          referenceFileName: `${refData.stemType}.mp3`,
-          referenceTrackId: refData.trackId,
-          provider: 'suno', // Mureka не поддерживает референс
-        }));
-        
-        // Переключаем на Suno если нужно
+        // Переключаем на Suno если нужно (делаем это до setParams)
         if (selectedProvider === 'mureka') {
           setProvider('suno');
         }
         
+        // Автозаполнение формы из референс-стема
+        setParams(prev => {
+          const newParams = {
+            ...prev,
+            prompt: refData.prompt || prev.prompt,
+            lyrics: refData.lyrics || prev.lyrics,
+            tags: refData.styleTags?.join(', ') || prev.tags,
+            referenceAudioUrl: refData.audioUrl,
+            referenceFileName: `${refData.stemType}.mp3`,
+            referenceTrackId: refData.trackId,
+            provider: 'suno', // Mureka не поддерживает референс
+          };
+          
+          logger.info('✅ [STEM-REF] Params updated', 'MusicGeneratorV2', {
+            hasReferenceAudioUrl: !!newParams.referenceAudioUrl,
+            referenceFileName: newParams.referenceFileName,
+            prompt: newParams.prompt?.substring(0, 50),
+            tags: newParams.tags,
+          });
+          
+          return newParams;
+        });
+        
+        // Также обновляем debounced значения
+        setDebouncedPrompt(refData.prompt || '');
+        setDebouncedLyrics(refData.lyrics || '');
+        
         // Очищаем после использования
         localStorage.removeItem('pendingStemReference');
         
-        toast({
-          title: '✅ Референс загружен',
+        sonnerToast.success('Референс загружен', {
           description: `Стем "${refData.stemType}" установлен как основа для генерации`,
         });
         
-        logger.info('Stem reference loaded', 'MusicGeneratorV2', refData);
       } catch (error) {
-        logger.error('Failed to load stem reference', error as Error, 'MusicGeneratorV2');
+        logger.error('[STEM-REF] Failed to load stem reference', error as Error, 'MusicGeneratorV2');
         localStorage.removeItem('pendingStemReference');
+        sonnerToast.error('Не удалось загрузить референс из стема');
       }
     }
-  }, []);
+  }, [selectedProvider, setProvider]);
 
 
   // Generation params
