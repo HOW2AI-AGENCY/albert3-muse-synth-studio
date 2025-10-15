@@ -127,6 +127,14 @@ export function useReferenceAnalysis() {
         trackId: params.trackId
       });
 
+      // ✅ Проверяем сессию перед вызовом
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        logger.error('[ANALYZE] No active session', sessionError || new Error('No session'), 'useReferenceAnalysis');
+        throw new Error('Необходима авторизация для анализа аудио');
+      }
+
       const { data, error } = await supabase.functions.invoke('analyze-reference-audio', {
         body: params
       });
