@@ -16,7 +16,7 @@ import { StyleRecommendationsPanel } from "./StyleRecommendationsPanel";
 import { useAudioPlayer } from "@/contexts/audio-player";
 import type { StylePreset } from "@/types/styles";
 import { getStyleById } from "@/data/music-styles";
-import { AnalyticsService, viewSessionGuard } from "@/services/analytics.service";
+import { AnalyticsService } from "@/services/analytics.service";
 
 interface Track {
   id: string;
@@ -141,13 +141,13 @@ export const DetailPanelContent = ({
   const [comparisonLeftId, setComparisonLeftId] = useState<string | undefined>();
   const [comparisonRightId, setComparisonRightId] = useState<string | undefined>();
 
+  // ✅ АНАЛИТИКА: Учет просмотров при открытии detail panel
   useEffect(() => {
     if (!track?.id) {
       return;
     }
 
-    const hasView = viewSessionGuard.has(track.id);
-
+    // Записываем просмотр трека (дедуплицируется через session guard)
     AnalyticsService.recordView(track.id).catch((error) => {
       import('@/utils/logger').then(({ logError }) => {
         logError('Failed to record track view', error, 'DetailPanel', {
@@ -155,17 +155,7 @@ export const DetailPanelContent = ({
         });
       });
     });
-
-    if (track.status === 'completed' && !hasView) {
-      AnalyticsService.recordPlay(track.id).catch((error) => {
-        import('@/utils/logger').then(({ logError }) => {
-          logError('Failed to record track play', error, 'DetailPanel', {
-            trackId: track.id
-          });
-        });
-      });
-    }
-  }, [track?.id, track.status]);
+  }, [track?.id]);
 
   useEffect(() => {
     if (!versions?.length) {
