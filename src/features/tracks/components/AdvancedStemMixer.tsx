@@ -186,6 +186,8 @@ export const AdvancedStemMixer = ({ stems, trackTitle }: AdvancedStemMixerProps)
             volume={stemVolumes.get(stem.id) || 0.7}
             isMuted={stemMuted.get(stem.id) || false}
             isSolo={soloStemId === stem.id}
+            currentTime={currentTime}
+            duration={duration}
             onToggleActive={() => toggleStem(stem.id)}
             onToggleSolo={() => setSolo(soloStemId === stem.id ? null : stem.id)}
             onToggleMute={() => toggleStemMute(stem.id)}

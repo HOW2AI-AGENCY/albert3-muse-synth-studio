@@ -3,6 +3,7 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Music4, Volume2, VolumeX, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { StemWaveform } from './StemWaveform';
 
 interface TrackStem {
   id: string;
@@ -17,6 +18,8 @@ interface StemMixerTrackProps {
   volume: number;
   isMuted: boolean;
   isSolo: boolean;
+  currentTime?: number;
+  duration?: number;
   onToggleActive: () => void;
   onToggleSolo: () => void;
   onToggleMute: () => void;
@@ -57,6 +60,8 @@ export const StemMixerTrack = ({
   volume,
   isMuted,
   isSolo,
+  currentTime = 0,
+  duration = 0,
   onToggleActive,
   onToggleSolo,
   onToggleMute,
@@ -66,83 +71,95 @@ export const StemMixerTrack = ({
   return (
     <div
       className={cn(
-        'flex items-center gap-3 p-3 rounded-lg border transition-all',
+        'flex flex-col gap-2 p-3 rounded-lg border transition-all',
         isActive && !isMuted && 'border-primary/50 bg-primary/5',
         isSolo && 'border-yellow-500/50 bg-yellow-500/5 ring-1 ring-yellow-500/20',
         !isActive && 'opacity-60'
       )}
     >
-      {/* Toggle Active */}
-      <div className="flex items-center gap-2 w-32 sm:w-36 shrink-0">
-        <Switch
-          checked={isActive}
-          onCheckedChange={onToggleActive}
-          className="touch-action-manipulation"
-        />
-        <Music4 className={cn(
-          "w-4 h-4 shrink-0 transition-colors",
-          isActive ? "text-primary" : "text-muted-foreground"
-        )} />
-        <span className={cn(
-          "text-sm font-medium truncate transition-colors",
-          isActive && "text-foreground",
-          !isActive && "text-muted-foreground"
-        )}>
-          {formatStemLabel(stem.stem_type)}
-        </span>
-      </div>
+      {/* Main controls row */}
+      <div className="flex items-center gap-3">
+        {/* Toggle Active */}
+        <div className="flex items-center gap-2 w-32 sm:w-36 shrink-0">
+          <Switch
+            checked={isActive}
+            onCheckedChange={onToggleActive}
+            className="touch-action-manipulation"
+          />
+          <Music4 className={cn(
+            "w-4 h-4 shrink-0 transition-colors",
+            isActive ? "text-primary" : "text-muted-foreground"
+          )} />
+          <span className={cn(
+            "text-sm font-medium truncate transition-colors",
+            isActive && "text-foreground",
+            !isActive && "text-muted-foreground"
+          )}>
+            {formatStemLabel(stem.stem_type)}
+          </span>
+        </div>
 
-      {/* Solo & Mute Buttons */}
-      <div className="flex items-center gap-1.5 shrink-0">
+        {/* Solo & Mute Buttons */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Button
+            size="sm"
+            variant={isSolo ? 'default' : 'outline'}
+            onClick={onToggleSolo}
+            className="h-8 w-8 p-0 touch-action-manipulation"
+            disabled={!isActive}
+          >
+            <span className="text-xs font-bold">S</span>
+          </Button>
+          <Button
+            size="sm"
+            variant={isMuted ? 'destructive' : 'outline'}
+            onClick={onToggleMute}
+            className="h-8 w-8 p-0 touch-action-manipulation"
+            disabled={!isActive}
+          >
+            {isMuted ? (
+              <VolumeX className="w-4 h-4" />
+            ) : (
+              <Volume2 className="w-4 h-4" />
+            )}
+          </Button>
+        </div>
+
+        {/* Volume Slider */}
+        <div className="flex-1 flex items-center gap-2 min-w-0">
+          <Slider
+            value={[volume * 100]}
+            onValueChange={([v]) => onVolumeChange(v / 100)}
+            max={100}
+            step={1}
+            disabled={!isActive}
+            className="flex-1 touch-action-manipulation"
+          />
+          <span className="text-xs text-muted-foreground w-10 text-right tabular-nums shrink-0">
+            {Math.round(volume * 100)}%
+          </span>
+        </div>
+
+        {/* Download Button */}
         <Button
           size="sm"
-          variant={isSolo ? 'default' : 'outline'}
-          onClick={onToggleSolo}
-          className="h-8 w-8 p-0 touch-action-manipulation"
-          disabled={!isActive}
+          variant="ghost"
+          onClick={onDownload}
+          className="h-8 w-8 p-0 shrink-0"
+          title="Скачать стем"
         >
-          <span className="text-xs font-bold">S</span>
-        </Button>
-        <Button
-          size="sm"
-          variant={isMuted ? 'destructive' : 'outline'}
-          onClick={onToggleMute}
-          className="h-8 w-8 p-0 touch-action-manipulation"
-          disabled={!isActive}
-        >
-          {isMuted ? (
-            <VolumeX className="w-4 h-4" />
-          ) : (
-            <Volume2 className="w-4 h-4" />
-          )}
+          <Download className="w-4 h-4" />
         </Button>
       </div>
 
-      {/* Volume Slider */}
-      <div className="flex-1 flex items-center gap-2 min-w-0">
-        <Slider
-          value={[volume * 100]}
-          onValueChange={([v]) => onVolumeChange(v / 100)}
-          max={100}
-          step={1}
-          disabled={!isActive}
-          className="flex-1 touch-action-manipulation"
-        />
-        <span className="text-xs text-muted-foreground w-10 text-right tabular-nums shrink-0">
-          {Math.round(volume * 100)}%
-        </span>
-      </div>
-
-      {/* Download Button */}
-      <Button
-        size="sm"
-        variant="ghost"
-        onClick={onDownload}
-        className="h-8 w-8 p-0 shrink-0"
-        title="Скачать стем"
-      >
-        <Download className="w-4 h-4" />
-      </Button>
+      {/* Waveform visualization */}
+      <StemWaveform
+        audioUrl={stem.audio_url}
+        isActive={isActive && !isMuted}
+        currentTime={currentTime}
+        duration={duration}
+        className="w-full"
+      />
     </div>
   );
 };
