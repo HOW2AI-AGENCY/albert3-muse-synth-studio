@@ -571,7 +571,10 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
       logger.info('📤 [MUREKA] Uploading file', { size: file.size });
       
       const formData = new FormData();
-      formData.append('file', file);
+      // ✅ CRITICAL FIX: Create Blob with explicit MIME type and filename
+      // Mureka API requires proper file format identification
+      const audioBlob = new Blob([file], { type: 'audio/mpeg' });
+      formData.append('file', audioBlob, 'audio.mp3'); // Add explicit filename
       // ✅ REQUIRED by Mureka API: specify purpose. Using generic 'audio' for analysis/recognition.
       formData.append('purpose', 'audio');
       
