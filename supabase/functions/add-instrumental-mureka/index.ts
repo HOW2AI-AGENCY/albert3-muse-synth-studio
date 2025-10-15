@@ -91,11 +91,12 @@ Deno.serve(async (req) => {
     logger.info('✅ [ADD-INSTRUMENTAL-MUREKA] File uploaded to Mureka', { fileId });
 
     // Step 3: Generate song with instrumental prompt
+    // According to Mureka API: use empty lyrics for instrumental generation
     logger.info('🎹 [ADD-INSTRUMENTAL-MUREKA] Generating instrumental');
     
     const generateResult = await murekaClient.generateSong({
+      lyrics: '', // Empty lyrics = instrumental
       prompt: body.prompt,
-      instrumental: true,
       model: body.model || 'chirp-v4',
     });
 
