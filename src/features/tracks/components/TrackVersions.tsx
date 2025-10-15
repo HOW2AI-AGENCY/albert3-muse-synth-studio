@@ -60,7 +60,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
         versions
           .filter(version => version.id !== versionId && version.is_master)
           .map(async version => {
-            const updateResult = await updateTrackVersion(version.id, { is_master: false });
+            const updateResult = await updateTrackVersion(version.id, { is_preferred_variant: false });
             if (!updateResult.ok) {
               throw updateResult.error;
             }
@@ -68,7 +68,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
       );
 
       // Set new master
-      const updateResult = await updateTrackVersion(versionId, { is_master: true });
+      const updateResult = await updateTrackVersion(versionId, { is_preferred_variant: true });
       if (!updateResult.ok) {
         throw updateResult.error;
       }
@@ -136,7 +136,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
       if (versionToDelete.is_master && versions.length > 1) {
         const nextVersion = versions.find(v => v.id !== versionToDelete.id && !v.is_original);
         if (nextVersion) {
-          const updateResult = await updateTrackVersion(nextVersion.id, { is_master: true });
+          const updateResult = await updateTrackVersion(nextVersion.id, { is_preferred_variant: true });
           if (!updateResult.ok) {
             throw updateResult.error;
           }

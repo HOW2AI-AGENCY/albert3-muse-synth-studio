@@ -89,7 +89,7 @@ export async function createTrackVersion(payload: TrackVersionInsert): Promise<R
       errorMessage: 'Failed to create track version',
       payload: {
         parentTrackId: payload.parent_track_id,
-        versionNumber: payload.version_number,
+        variantIndex: payload.variant_index,
         hasAudioUrl: Boolean(payload.audio_url),
       },
     },
@@ -233,7 +233,7 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
 
     const normalizedVersions: TrackWithVersions[] = [];
 
-    const hasExplicitMaster = versions?.some(version => version.is_master) ?? false;
+    const hasExplicitMaster = versions?.some(version => version.is_preferred_variant) ?? false;
 
     const pushVersion = (payload: {
       id: string;
@@ -300,8 +300,8 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       versions.forEach((version: TrackVersionRow) => {
         pushVersion({
           id: version.id,
-          sourceVersionNumber: version.version_number ?? null,
-          isMasterVersion: Boolean(version.is_master),
+          sourceVersionNumber: version.variant_index ?? null,
+          isMasterVersion: Boolean(version.is_preferred_variant),
           isOriginal: false,
           title: mainTrack.title,
           audio_url: version.audio_url ?? null,
