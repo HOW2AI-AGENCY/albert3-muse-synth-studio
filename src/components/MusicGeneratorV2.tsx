@@ -63,6 +63,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     modelVersion: selectedProvider === 'mureka' ? 'auto' : 'V5',
     referenceAudioUrl: null,
     referenceFileName: null,
+    referenceTrackId: null,
     audioWeight: 50,
     styleWeight: 75,
     lyricsWeight: 70,
@@ -164,8 +165,32 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const handleRemoveAudio = useCallback(() => {
     setParam('referenceAudioUrl', null);
     setParam('referenceFileName', null);
+    setParam('referenceTrackId', null);
     setPendingAudioFile(null);
   }, [setParam]);
+
+  const handleSelectReferenceTrack = useCallback((track: { id: string; audio_url: string; title: string }) => {
+    setParam('referenceTrackId', track.id);
+    setParam('referenceAudioUrl', track.audio_url);
+    setParam('referenceFileName', track.title);
+    setMode('custom');
+    logger.info('Reference track selected', 'MusicGeneratorV2', { trackId: track.id, title: track.title });
+    toast({
+      title: '🎵 Трек выбран',
+      description: `Используется "${track.title}" как референс`,
+    });
+  }, [setParam, toast]);
+
+  const handleRecordComplete = useCallback(async (audioUrl: string) => {
+    setParam('referenceAudioUrl', audioUrl);
+    setParam('referenceFileName', 'Записанное аудио');
+    setMode('custom');
+    logger.info('Audio recorded', 'MusicGeneratorV2', { audioUrl: audioUrl.substring(0, 50) });
+    toast({
+      title: '🎤 Запись завершена',
+      description: 'Аудио добавлено как референс',
+    });
+  }, [setParam, toast]);
 
   // Preset handler
   const handlePresetSelect = useCallback((preset: GenrePreset) => {
@@ -253,6 +278,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       customMode: true,
       modelVersion: params.modelVersion,
       referenceAudioUrl: params.referenceAudioUrl || undefined,
+      referenceTrackId: params.referenceTrackId || undefined,
       provider: selectedProvider,
     };
 
@@ -359,6 +385,8 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               onOpenHistory={() => setHistoryDialogOpen(true)}
               onAudioFileSelect={handleAudioFileSelect}
               onRemoveAudio={handleRemoveAudio}
+              onSelectReferenceTrack={handleSelectReferenceTrack}
+              onRecordComplete={handleRecordComplete}
               isBoosting={isBoosting}
               isGenerating={isGenerating}
               isUploading={isUploading}

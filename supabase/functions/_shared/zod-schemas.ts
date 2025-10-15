@@ -56,6 +56,7 @@ export const generateSunoSchema = z.object({
   weirdnessConstraint: z.number().min(0).max(100).optional(),
   audioWeight: z.number().min(0).max(100).optional(),
   referenceAudioUrl: httpsUrlSchema.optional(),
+  referenceTrackId: uuidSchema.optional(),
   idempotencyKey: uuidSchema.optional(),
   wait_audio: z.boolean().optional()
 });

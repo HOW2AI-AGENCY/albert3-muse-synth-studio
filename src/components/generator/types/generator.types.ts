@@ -16,6 +16,7 @@ export interface GenerationParams {
   modelVersion: string;
   referenceAudioUrl: string | null;
   referenceFileName: string | null;
+  referenceTrackId?: string | null;
   audioWeight: number;
   styleWeight: number;
   lyricsWeight: number;

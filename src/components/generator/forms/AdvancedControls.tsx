@@ -63,7 +63,7 @@ export const AdvancedControls = memo(({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label className="text-xs font-medium">Влияние референса</Label>
-            <span className="text-xs text-muted-foreground">{audioWeight}%</span>
+            <span className="text-xs font-mono text-muted-foreground">{audioWeight}%</span>
           </div>
           <Slider
             value={[audioWeight]}
@@ -74,6 +74,11 @@ export const AdvancedControls = memo(({
             disabled={isGenerating}
             className="w-full"
           />
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>Слабое</span>
+            <span>Умеренное</span>
+            <span>Сильное</span>
+          </div>
         </div>
       )}
 

@@ -27,6 +27,7 @@ interface GenerateSunoRequestBody {
   weirdnessConstraint?: number;
   audioWeight?: number;
   referenceAudioUrl?: string;
+  referenceTrackId?: string;
 }
 import {
   createSupabaseAdminClient,
@@ -195,6 +196,77 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     const modelVersion = body.model_version;
     const idempotencyKey = body.idempotencyKey || crypto.randomUUID();
 
+    // ✅ PHASE 1.2: Обработка referenceTrackId
+    let effectiveReferenceAudioUrl = body.referenceAudioUrl;
+    
+    // Сохранение референсных данных в metadata
+    if (effectiveReferenceAudioUrl) {
+      requestMetadata.reference_audio_url = effectiveReferenceAudioUrl;
+    }
+    if (body.referenceTrackId) {
+      requestMetadata.reference_track_id = body.referenceTrackId;
+    }
+    
+    if (body.referenceTrackId && !effectiveReferenceAudioUrl) {
+      logger.info('📂 Fetching reference audio from track', { referenceTrackId: body.referenceTrackId });
+      
+      const { data: refTrack, error: refError } = await supabaseAdmin
+        .from('tracks')
+        .select('audio_url, title')
+        .eq('id', body.referenceTrackId)
+        .eq('user_id', user.id) // ✅ Только свои треки
+        .maybeSingle();
+
+      if (refError || !refTrack?.audio_url) {
+        logger.error('🔴 Reference track not found or has no audio', { 
+          error: refError ?? undefined, 
+          referenceTrackId: body.referenceTrackId 
+        });
+        throw new Error('Reference track not found or has no audio');
+      }
+
+      effectiveReferenceAudioUrl = refTrack.audio_url;
+      logger.info('✅ Reference audio fetched from track', { 
+        audioUrl: effectiveReferenceAudioUrl?.substring(0, 50), 
+        trackTitle: refTrack.title 
+      });
+    }
+
+    // ✅ PHASE 1.3: Валидация референсного аудио
+    if (effectiveReferenceAudioUrl) {
+      logger.info('🔍 Validating reference audio URL', { 
+        url: effectiveReferenceAudioUrl.substring(0, 50) 
+      });
+      
+      try {
+        const headResponse = await fetch(effectiveReferenceAudioUrl, { method: 'HEAD' });
+        if (!headResponse.ok) {
+          logger.error('🔴 Invalid reference audio URL (HEAD request failed)', { 
+            status: headResponse.status, 
+            url: effectiveReferenceAudioUrl.substring(0, 50) 
+          });
+          throw new Error(`Invalid reference audio: HTTP ${headResponse.status}`);
+        }
+        
+        const contentType = headResponse.headers.get('content-type');
+        if (!contentType || !contentType.startsWith('audio/')) {
+          logger.error('🔴 Invalid reference audio content type', { 
+            contentType, 
+            url: effectiveReferenceAudioUrl.substring(0, 50) 
+          });
+          throw new Error(`Invalid reference audio: expected audio/* content type, got ${contentType}`);
+        }
+        
+        logger.info('✅ Reference audio validated', { contentType });
+      } catch (error) {
+        logger.error('🔴 Reference audio validation failed', { 
+          error: error instanceof Error ? error.message : String(error),
+          url: effectiveReferenceAudioUrl.substring(0, 50)
+        });
+        throw new Error(`Reference audio validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
     // ✅ PHASE 1 FIX: Use tracks table for idempotency
     const { data: existingTrack } = await supabaseAdmin
       .from('tracks')
@@ -328,7 +400,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       ...(styleWeight !== undefined ? { styleWeight: Number(styleWeight.toFixed(2)) } : {}),
       ...(weirdnessConstraint !== undefined ? { weirdnessConstraint: Number(weirdnessConstraint.toFixed(2)) } : {}),
       ...(audioWeight !== undefined ? { audioWeight: Number(audioWeight.toFixed(2)) } : {}),
-      ...(body.referenceAudioUrl ? { referenceAudioUrl: body.referenceAudioUrl } : {}),
+      ...(effectiveReferenceAudioUrl ? { referenceAudioUrl: effectiveReferenceAudioUrl } : {}),
     };
     
     logger.info('🎵 Calling Suno API with retry logic', { trackId: finalTrackId, customMode: customModeValue });

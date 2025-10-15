@@ -25,6 +25,8 @@ interface CustomModeFormProps {
   onOpenHistory: () => void;
   onAudioFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveAudio: () => void;
+  onSelectReferenceTrack?: (track: { id: string; audio_url: string; title: string }) => void;
+  onRecordComplete?: (url: string) => void;
   isBoosting: boolean;
   isGenerating: boolean;
   isUploading: boolean;
@@ -43,6 +45,8 @@ export const CustomModeForm = memo(({
   onOpenHistory,
   onAudioFileSelect,
   onRemoveAudio,
+  onSelectReferenceTrack,
+  onRecordComplete,
   isBoosting,
   isGenerating,
   isUploading,
@@ -167,21 +171,35 @@ export const CustomModeForm = memo(({
             </div>
           </AccordionTrigger>
           <AccordionContent className="pt-2 pb-3">
-            <AudioReferenceSection
-              referenceFileName={params.referenceFileName}
-              referenceAudioUrl={params.referenceAudioUrl}
-              onFileSelect={onAudioFileSelect}
-              onRemove={onRemoveAudio}
-              isUploading={isUploading}
-              isGenerating={isGenerating}
-            />
-            {params.referenceAudioUrl && !isMobile && (
-              <Suspense fallback={<div className="text-xs text-muted-foreground">Загрузка анализатора...</div>}>
-                <AudioDescriber 
-                  audioUrl={params.referenceAudioUrl} 
-                  onDescriptionGenerated={(description) => onParamChange('prompt', description)}
+            {params.provider === 'mureka' ? (
+              <div className="p-3 rounded-md bg-warning/10 border border-warning/20">
+                <p className="text-xs text-warning-foreground">
+                  ⚠️ Mureka не поддерживает референсное аудио. Переключитесь на Suno для этой функции.
+                </p>
+              </div>
+            ) : (
+              <>
+                <AudioReferenceSection
+                  referenceFileName={params.referenceFileName}
+                  referenceAudioUrl={params.referenceAudioUrl}
+                  onFileSelect={onAudioFileSelect}
+                  onRemove={onRemoveAudio}
+                  onSelectTrack={onSelectReferenceTrack}
+                  onRecordComplete={onRecordComplete}
+                  isUploading={isUploading}
+                  isGenerating={isGenerating}
                 />
-              </Suspense>
+                {params.referenceAudioUrl && (
+                  <Suspense fallback={<div className="text-xs text-muted-foreground mt-2">Загрузка анализатора...</div>}>
+                    <div className="mt-2">
+                      <AudioDescriber 
+                        audioUrl={params.referenceAudioUrl} 
+                        onDescriptionGenerated={(description) => onParamChange('prompt', description)}
+                      />
+                    </div>
+                  </Suspense>
+                )}
+              </>
             )}
           </AccordionContent>
         </AccordionItem>
