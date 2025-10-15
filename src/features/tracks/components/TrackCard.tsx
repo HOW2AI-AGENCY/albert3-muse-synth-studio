@@ -37,7 +37,7 @@ import {
 } from "@/utils/iconImports";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useTrackLike } from "@/features/tracks/hooks";
-import { useSmartTrackPlay } from "@/hooks/useSmartTrackPlay";
+
 import { useTrackVersions } from "@/features/tracks/hooks";
 import { withErrorBoundary } from "@/components/ErrorBoundary";
 import { cn } from "@/lib/utils";
@@ -253,13 +253,14 @@ const FailedState: React.FC<{
 
 const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExtend, onCover, onSeparateStems, onAddVocal, className }: TrackCardProps) => {
   const { toast } = useToast();
-  const { currentTrack, isPlaying } = useAudioPlayer();
-  const { playTrackSmart } = useSmartTrackPlay();
+  const { currentTrack, isPlaying, playTrack } = useAudioPlayer();
+  
   const { isLiked, toggleLike } = useTrackLike(track.id, track.like_count || 0);
-  const { versionCount, masterVersion } = useTrackVersions(track.id, false);
+  const { versions, mainVersion, versionCount, masterVersion } = useTrackVersions(track.id, true);
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [hasStems, setHasStems] = useState(false);
+  const [activeVersionIndex, setActiveVersionIndex] = useState(0);
   
   // ✅ Определяем провайдер трека
   const isMurekaTrack = track.metadata?.provider === 'mureka';
@@ -316,23 +317,55 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
     setIsVisible(true);
   }, []);
 
-  const isCurrentTrack = currentTrack?.id === track.id;
-  const playButtonDisabled = track.status !== "completed" || !track.audio_url;
+  // Получаем активную версию
+  const allVersions = React.useMemo(() => {
+    if (!mainVersion) return [];
+    return [mainVersion, ...versions];
+  }, [mainVersion, versions]);
 
-  const handlePlayClick = useCallback(async (event: React.MouseEvent) => {
+  const activeVersion = React.useMemo(() => {
+    return allVersions[activeVersionIndex] || mainVersion || {
+      id: track.id,
+      title: track.title,
+      audio_url: track.audio_url,
+      cover_url: track.cover_url,
+      duration: track.duration,
+      versionNumber: 0,
+      isOriginal: true,
+      isMasterVersion: false,
+      parentTrackId: track.id,
+    };
+  }, [allVersions, activeVersionIndex, mainVersion, track]);
+
+  const handleVersionChange = React.useCallback((versionIndex: number) => {
+    setActiveVersionIndex(versionIndex);
+  }, []);
+
+  const isCurrentTrack = currentTrack?.id === activeVersion.id;
+  const playButtonDisabled = track.status !== "completed" || !activeVersion.audio_url;
+
+  const handlePlayClick = useCallback((event: React.MouseEvent) => {
     event.stopPropagation();
     if (playButtonDisabled) return;
     
-    // Phase 2.2: Используем умное воспроизведение
-    const success = await playTrackSmart(track.id);
-    if (!success) {
-      toast({
-        title: "Ошибка",
-        description: "Не удалось начать воспроизведение",
-        variant: "destructive",
-      });
-    }
-  }, [playButtonDisabled, playTrackSmart, track.id, toast]);
+    // Воспроизводим активную версию
+    const audioTrack = {
+      id: activeVersion.id,
+      title: activeVersion.title || track.title,
+      audio_url: activeVersion.audio_url || '',
+      cover_url: activeVersion.cover_url || track.cover_url,
+      duration: activeVersion.duration || track.duration,
+      status: "completed" as const,
+      style_tags: track.style_tags || [],
+      lyrics: activeVersion.lyrics,
+      parentTrackId: track.id,
+      versionNumber: activeVersion.versionNumber,
+      isMasterVersion: activeVersion.isMasterVersion,
+      isOriginalVersion: activeVersion.isOriginal,
+    };
+    
+    playTrack(audioTrack);
+  }, [playButtonDisabled, activeVersion, track, playTrack]);
 
   const handleLikeClick = useCallback((event: React.MouseEvent) => {
     event.stopPropagation();
@@ -341,16 +374,24 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
 
   const handleDownloadClick = useCallback(async (event: React.MouseEvent) => {
     event.stopPropagation();
-    if (!track.audio_url) {
+    if (!activeVersion.audio_url) {
       toast({ title: "Ошибка", description: "Аудиофайл недоступен", variant: "destructive" });
       return;
     }
     
-    // ✅ Используем централизованный hook для скачивания
-    const { useDownloadTrack } = await import('@/hooks/useDownloadTrack');
-    const { downloadTrack } = useDownloadTrack();
-    await downloadTrack(track);
-  }, [toast, track]);
+    // Скачиваем активную версию
+    const link = document.createElement('a');
+    link.href = activeVersion.audio_url;
+    link.download = `${activeVersion.title || track.title}.mp3`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast({
+      title: "Скачивание начато",
+      description: `${activeVersion.title || track.title}`,
+    });
+  }, [toast, activeVersion, track.title]);
 
   const handleShareClick = useCallback((event: React.MouseEvent) => {
     event.stopPropagation();
@@ -358,7 +399,7 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
   }, [onShare]);
 
   const gradient = getGradientByTrackId(track.id);
-  const formattedDuration = track.duration ? formatDuration(track.duration) : null;
+  const formattedDuration = activeVersion.duration ? formatDuration(activeVersion.duration) : null;
 
   return (
     <motion.div
@@ -413,14 +454,18 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
         {/* Variant selector в правом верхнем углу */}
         {track.status === 'completed' && (
           <div className="absolute top-2 right-2 z-10">
-            <TrackVariantSelector trackId={track.id} />
+            <TrackVariantSelector 
+              trackId={track.id} 
+              currentVersionIndex={activeVersionIndex}
+              onVersionChange={handleVersionChange}
+            />
           </div>
         )}
 
-        {track.cover_url ? (
+        {activeVersion.cover_url ? (
           <LazyImage
-            src={track.cover_url}
-            alt={`Обложка трека ${track.title}`}
+            src={activeVersion.cover_url}
+            alt={`Обложка трека ${activeVersion.title || track.title}`}
             placeholder="/placeholder.svg"
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             wrapperClassName="w-full h-full"
@@ -453,12 +498,12 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
       </div>
 
       <CardContent className="p-2 flex-1 flex flex-col">
-        <div className="flex-1">
-          <div className="flex items-start justify-between gap-2 mb-0.5">
-            <div className="flex items-center gap-1.5 flex-1 min-w-0">
-              <h3 className="font-semibold text-sm leading-tight line-clamp-1 group-hover:text-primary">
-                {track.title}
-              </h3>
+          <div className="flex-1">
+            <div className="flex items-start justify-between gap-2 mb-0.5">
+              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <h3 className="font-semibold text-sm leading-tight line-clamp-1 group-hover:text-primary">
+                  {activeVersion.title || track.title}
+                </h3>
               {hasStems && (
                 <TooltipProvider>
                   <Tooltip>
