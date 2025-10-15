@@ -331,8 +331,8 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     });
   }, [setParam, toast]);
 
-  // ✅ НОВОЕ: Auto-apply логика для результатов анализа
-  const handleAnalysisComplete = useCallback((result: {
+  // ✅ Auto-apply логика для результатов анализа с поиском лирики
+  const handleAnalysisComplete = useCallback(async (result: {
     recognition: any;
     description: any;
   }) => {
@@ -352,11 +352,44 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       setParam('title', suggestedTitle);
       
       logger.info('✅ [AUTO-APPLY] Title applied', 'MusicGeneratorV2', { title: suggestedTitle });
-      toast({
-        title: '✅ Название применено',
+      sonnerToast.success('Название применено', {
         description: `"${suggestedTitle}"`,
-        duration: 4000,
       });
+
+      // ✅ НОВОЕ: Попытка найти лирику в БД по названию
+      if (!params.lyrics.trim()) {
+        try {
+          const searchTitle = recognizedTitle.toLowerCase();
+          const { data: tracksWithLyrics } = await supabase
+            .from('tracks')
+            .select('lyrics, title')
+            .or(`title.ilike.%${searchTitle}%`)
+            .not('lyrics', 'is', null)
+            .limit(1)
+            .maybeSingle();
+
+          if (tracksWithLyrics?.lyrics) {
+            setParam('lyrics', tracksWithLyrics.lyrics);
+            setDebouncedLyrics(tracksWithLyrics.lyrics);
+            
+            logger.info('✅ [AUTO-APPLY] Lyrics found in database', 'MusicGeneratorV2', {
+              sourceTrack: tracksWithLyrics.title
+            });
+            
+            sonnerToast.success('Лирика найдена', {
+              description: 'Текст песни загружен из библиотеки',
+            });
+          } else {
+            logger.info('💡 [AUTO-APPLY] Lyrics not found', 'MusicGeneratorV2');
+            sonnerToast.info('Совет', {
+              description: 'Лирика не найдена. Используйте "Генерировать текст" для создания',
+              duration: 5000,
+            });
+          }
+        } catch (error) {
+          logger.warn('[AUTO-APPLY] Failed to find lyrics', 'MusicGeneratorV2', { error: String(error) });
+        }
+      }
     }
 
     // Автоматически подставить характеристики в промпт
@@ -381,8 +414,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
 
       // Добавить к существующему промпту или создать новый
       if (params.prompt.trim()) {
-        toast({
-          title: '💡 AI-анализ готов',
+        sonnerToast.info('AI-анализ готов', {
           description: `Характеристики: ${analysisPrompt}`,
           duration: 5000,
         });
@@ -393,10 +425,9 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
         logger.info('✅ [AUTO-APPLY] Prompt generated from analysis', 'MusicGeneratorV2', {
           prompt: analysisPrompt
         });
-        toast({
-          title: '✅ Промпт сгенерирован',
+        
+        sonnerToast.success('Промпт сгенерирован', {
           description: 'AI описал характеристики трека',
-          duration: 4000,
         });
       }
 
@@ -413,7 +444,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
         });
       }
     }
-  }, [params.title, params.prompt, params.tags, setParam, toast]);
+  }, [params.title, params.prompt, params.lyrics, params.tags, setParam, setDebouncedPrompt, setDebouncedLyrics, supabase]);
 
   // Preset handler
   const handlePresetSelect = useCallback((preset: GenrePreset) => {

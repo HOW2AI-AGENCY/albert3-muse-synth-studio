@@ -57,19 +57,39 @@ export const AudioReferenceSection = memo(({
     setTrackSelectorOpen(false);
   };
 
-  // ✅ НОВОЕ: Автоматический анализ при загрузке аудио
+  // ✅ FIX: Автоматический анализ при изменении referenceAudioUrl
   useEffect(() => {
-    if (autoAnalyze && referenceAudioUrl && !isAnalyzing && !recognition && !description) {
-      logger.info('🔍 [ANALYSIS] Auto-analyzing reference audio', 'AudioReferenceSection', {
-        audioUrl: referenceAudioUrl.substring(0, 50)
-      });
+    if (!autoAnalyze || !referenceAudioUrl) return;
+    
+    // Проверяем, не запущен ли уже анализ для этого URL
+    const isAlreadyAnalyzed = (
+      recognition?.audio_file_url === referenceAudioUrl && 
+      recognition.status === 'completed'
+    ) || (
+      description?.audio_file_url === referenceAudioUrl && 
+      description.status === 'completed'
+    );
 
-      analyzeAudio({ audioUrl: referenceAudioUrl })
-        .catch(error => {
-          logger.error('[ANALYSIS] Auto-analysis failed', error, 'AudioReferenceSection');
-        });
+    if (isAlreadyAnalyzed || isAnalyzing || isPolling) {
+      return; // Не запускаем повторно
     }
-  }, [autoAnalyze, referenceAudioUrl, isAnalyzing, recognition, description, analyzeAudio]);
+
+    logger.info('🔍 [AUTO-ANALYSIS] Starting analysis', 'AudioReferenceSection', {
+      audioUrl: referenceAudioUrl.substring(0, 50)
+    });
+
+    analyzeAudio({ audioUrl: referenceAudioUrl })
+      .catch(error => {
+        logger.error('[AUTO-ANALYSIS] Failed', error, 'AudioReferenceSection');
+      });
+  }, [
+    autoAnalyze, 
+    referenceAudioUrl,
+    isAnalyzing,
+    isPolling,
+    analyzeAudio
+    // ✅ НЕ добавляем recognition/description в зависимости!
+  ]);
 
   // ✅ НОВОЕ: Уведомление родителя о завершении анализа
   useEffect(() => {

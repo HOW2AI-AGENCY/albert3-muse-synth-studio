@@ -74,13 +74,27 @@ export const ReferenceAnalysisCard = memo(({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-            Идентификация трека
+          <div className="flex items-center gap-2 text-xs">
+            <div className={cn(
+              "h-2 w-2 rounded-full transition-colors",
+              recognition?.status === 'completed' 
+                ? 'bg-success' 
+                : 'bg-primary animate-pulse'
+            )} />
+            <span className={recognition?.status === 'completed' ? 'text-success' : 'text-muted-foreground'}>
+              {recognition?.status === 'completed' ? '✓ Трек распознан' : 'Идентификация трека...'}
+            </span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-            AI-анализ характеристик
+          <div className="flex items-center gap-2 text-xs">
+            <div className={cn(
+              "h-2 w-2 rounded-full transition-colors",
+              description?.status === 'completed' 
+                ? 'bg-success' 
+                : 'bg-primary animate-pulse'
+            )} />
+            <span className={description?.status === 'completed' ? 'text-success' : 'text-muted-foreground'}>
+              {description?.status === 'completed' ? '✓ Характеристики получены' : 'AI-анализ характеристик...'}
+            </span>
           </div>
         </CardContent>
       </Card>
