@@ -11,6 +11,7 @@ import { AudioPlayerProvider } from "./contexts/AudioPlayerContext";
 import { GlobalAudioPlayer } from "./components/player/GlobalAudioPlayer";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { toast } from "sonner";
+import { reportWebVitals, logMetric } from "@/utils/web-vitals";
 
 // Оптимизированная конфигурация React Query
 const queryClient = new QueryClient({
@@ -37,6 +38,13 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
+  // Monitor Web Vitals in development
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      reportWebVitals(logMetric);
+    }
+  }, []);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const handler = (e: Event) => {
