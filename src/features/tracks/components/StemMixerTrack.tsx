@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
-import { Music4, Volume2, VolumeX } from 'lucide-react';
+import { Music4, Volume2, VolumeX, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TrackStem {
@@ -21,6 +21,7 @@ interface StemMixerTrackProps {
   onToggleSolo: () => void;
   onToggleMute: () => void;
   onVolumeChange: (volume: number) => void;
+  onDownload: () => void;
 }
 
 const stemTypeLabels: Record<string, string> = {
@@ -60,25 +61,33 @@ export const StemMixerTrack = ({
   onToggleSolo,
   onToggleMute,
   onVolumeChange,
+  onDownload,
 }: StemMixerTrackProps) => {
   return (
     <div
       className={cn(
         'flex items-center gap-3 p-3 rounded-lg border transition-all',
         isActive && !isMuted && 'border-primary/50 bg-primary/5',
-        isSolo && 'border-yellow-500/50 bg-yellow-500/5',
+        isSolo && 'border-yellow-500/50 bg-yellow-500/5 ring-1 ring-yellow-500/20',
         !isActive && 'opacity-60'
       )}
     >
       {/* Toggle Active */}
-      <div className="flex items-center gap-2 w-36 sm:w-40 shrink-0">
+      <div className="flex items-center gap-2 w-32 sm:w-36 shrink-0">
         <Switch
           checked={isActive}
           onCheckedChange={onToggleActive}
           className="touch-action-manipulation"
         />
-        <Music4 className="w-4 h-4 text-muted-foreground shrink-0" />
-        <span className="text-sm font-medium truncate">
+        <Music4 className={cn(
+          "w-4 h-4 shrink-0 transition-colors",
+          isActive ? "text-primary" : "text-muted-foreground"
+        )} />
+        <span className={cn(
+          "text-sm font-medium truncate transition-colors",
+          isActive && "text-foreground",
+          !isActive && "text-muted-foreground"
+        )}>
           {formatStemLabel(stem.stem_type)}
         </span>
       </div>
@@ -123,6 +132,17 @@ export const StemMixerTrack = ({
           {Math.round(volume * 100)}%
         </span>
       </div>
+
+      {/* Download Button */}
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={onDownload}
+        className="h-8 w-8 p-0 shrink-0"
+        title="Скачать стем"
+      >
+        <Download className="w-4 h-4" />
+      </Button>
     </div>
   );
 };

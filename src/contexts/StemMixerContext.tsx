@@ -17,11 +17,13 @@ interface StemMixerContextType {
   isPlaying: boolean;
   currentTime: number;
   duration: number;
+  masterVolume: number;
   loadStems: (stems: TrackStem[]) => void;
   toggleStem: (stemId: string) => void;
   setStemVolume: (stemId: string, volume: number) => void;
   toggleStemMute: (stemId: string) => void;
   setSolo: (stemId: string | null) => void;
+  setMasterVolume: (volume: number) => void;
   play: () => Promise<void>;
   pause: () => void;
   seekTo: (time: number) => void;
@@ -50,6 +52,7 @@ export const StemMixerProvider = ({ children }: StemMixerProviderProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [masterVolume, setMasterVolume] = useState(1.0);
 
   const audioElementsRef = useRef<Map<string, HTMLAudioElement>>(new Map());
   const timeUpdateIntervalRef = useRef<number | null>(null);
@@ -110,11 +113,6 @@ export const StemMixerProvider = ({ children }: StemMixerProviderProps) => {
       next.set(stemId, volume);
       return next;
     });
-
-    const audio = audioElementsRef.current.get(stemId);
-    if (audio) {
-      audio.volume = volume;
-    }
   }, []);
 
   const toggleStemMute = useCallback((stemId: string) => {
@@ -140,11 +138,12 @@ export const StemMixerProvider = ({ children }: StemMixerProviderProps) => {
         const volume = stemVolumes.get(stemId) || 0.7;
 
         if (isActive && isSoloed && !isMuted) {
-          audio.volume = volume;
+          audio.volume = volume * masterVolume;
           audio.currentTime = currentTime;
           playPromises.push(audio.play());
         } else {
           audio.volume = 0;
+          audio.pause();
         }
       });
 
@@ -168,7 +167,7 @@ export const StemMixerProvider = ({ children }: StemMixerProviderProps) => {
       logger.error('Error playing stems', error instanceof Error ? error : new Error(String(error)), 'StemMixerContext');
       toast.error('Ошибка воспроизведения стемов');
     }
-  }, [activeStemIds, stemMuted, soloStemId, stemVolumes, currentTime]);
+  }, [activeStemIds, stemMuted, soloStemId, stemVolumes, currentTime, masterVolume]);
 
   const pause = useCallback(() => {
     audioElementsRef.current.forEach(audio => {
@@ -207,9 +206,10 @@ export const StemMixerProvider = ({ children }: StemMixerProviderProps) => {
     setStemVolumes(defaultVolumes);
     setStemMuted(defaultMuted);
     setSoloStemId(null);
+    setMasterVolume(1.0);
   }, [pause, seekTo]);
 
-  // Update audio volumes when mute/solo state changes
+  // Update audio volumes when mute/solo/master state changes
   useEffect(() => {
     audioElementsRef.current.forEach((audio, stemId) => {
       const isActive = activeStemIds.has(stemId);
@@ -218,12 +218,12 @@ export const StemMixerProvider = ({ children }: StemMixerProviderProps) => {
       const volume = stemVolumes.get(stemId) || 0.7;
 
       if (isPlaying && isActive && isSoloed && !isMuted) {
-        audio.volume = volume;
+        audio.volume = volume * masterVolume;
       } else if (isPlaying) {
         audio.volume = 0;
       }
     });
-  }, [activeStemIds, stemMuted, soloStemId, stemVolumes, isPlaying]);
+  }, [activeStemIds, stemMuted, soloStemId, stemVolumes, masterVolume, isPlaying]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -249,11 +249,13 @@ export const StemMixerProvider = ({ children }: StemMixerProviderProps) => {
         isPlaying,
         currentTime,
         duration,
+        masterVolume,
         loadStems,
         toggleStem,
         setStemVolume,
         toggleStemMute,
         setSolo,
+        setMasterVolume,
         play,
         pause,
         seekTo,

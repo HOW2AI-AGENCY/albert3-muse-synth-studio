@@ -2,11 +2,13 @@ import { useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Slider } from '@/components/ui/slider';
 import { SimpleProgress } from '@/components/ui/SimpleProgress';
-import { Play, Pause, RotateCcw } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2 } from 'lucide-react';
 import { useStemMixer } from '@/contexts/StemMixerContext';
 import { StemMixerTrack } from './StemMixerTrack';
 import { formatDuration } from '@/utils/formatters';
+import { toast } from 'sonner';
 
 interface TrackStem {
   id: string;
@@ -57,11 +59,13 @@ export const AdvancedStemMixer = ({ stems, trackTitle }: AdvancedStemMixerProps)
     isPlaying,
     currentTime,
     duration,
+    masterVolume,
     loadStems,
     toggleStem,
     setStemVolume,
     toggleStemMute,
     setSolo,
+    setMasterVolume,
     play,
     pause,
     resetAll,
@@ -79,29 +83,51 @@ export const AdvancedStemMixer = ({ stems, trackTitle }: AdvancedStemMixerProps)
     }
   };
 
+  const handleDownloadStem = async (stem: TrackStem) => {
+    try {
+      const response = await fetch(stem.audio_url);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${trackTitle || 'track'}_${stem.stem_type}.mp3`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success(`Стем "${stem.stem_type}" скачан`);
+    } catch (error) {
+      console.error('Failed to download stem:', error);
+      toast.error('Ошибка скачивания стема');
+    }
+  };
+
   const sortedStems = sortStems(stems);
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <Card className="p-4 space-y-4">
+    <Card className="p-4 space-y-4 animate-fade-in">
+      {/* Header */}
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <h3 className="font-semibold text-sm truncate">
-            🎛️ Микшер{trackTitle ? `: ${trackTitle}` : ''}
+          <h3 className="font-semibold text-sm truncate flex items-center gap-2">
+            <div className="p-1.5 rounded-md bg-primary/10">
+              🎛️
+            </div>
+            Микшер{trackTitle ? `: ${trackTitle}` : ''}
           </h3>
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={resetAll}
-              className="h-8"
-            >
-              <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
-              Reset
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={resetAll}
+            className="h-8"
+          >
+            <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+            Сброс
+          </Button>
         </div>
 
+        {/* Playback Controls */}
         <div className="flex items-center gap-3">
           <Button
             size="sm"
@@ -116,7 +142,7 @@ export const AdvancedStemMixer = ({ stems, trackTitle }: AdvancedStemMixerProps)
             ) : (
               <>
                 <Play className="w-4 h-4 mr-1.5" />
-                Играть всё
+                Играть
               </>
             )}
           </Button>
@@ -130,10 +156,27 @@ export const AdvancedStemMixer = ({ stems, trackTitle }: AdvancedStemMixerProps)
             </span>
           </div>
         </div>
+
+        {/* Master Volume */}
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
+          <Volume2 className="w-4 h-4 text-muted-foreground shrink-0" />
+          <span className="text-sm font-medium shrink-0 w-20">Мастер</span>
+          <Slider
+            value={[masterVolume * 100]}
+            onValueChange={([v]) => setMasterVolume(v / 100)}
+            max={100}
+            step={1}
+            className="flex-1"
+          />
+          <span className="text-xs text-muted-foreground w-10 text-right tabular-nums shrink-0">
+            {Math.round(masterVolume * 100)}%
+          </span>
+        </div>
       </div>
 
       <Separator />
 
+      {/* Stems */}
       <div className="space-y-2">
         {sortedStems.map(stem => (
           <StemMixerTrack
@@ -147,14 +190,17 @@ export const AdvancedStemMixer = ({ stems, trackTitle }: AdvancedStemMixerProps)
             onToggleSolo={() => setSolo(soloStemId === stem.id ? null : stem.id)}
             onToggleMute={() => toggleStemMute(stem.id)}
             onVolumeChange={(vol) => setStemVolume(stem.id, vol)}
+            onDownload={() => handleDownloadStem(stem)}
           />
         ))}
       </div>
 
       {sortedStems.length === 0 && (
-        <p className="text-sm text-muted-foreground text-center py-4">
-          Стемы не найдены
-        </p>
+        <div className="text-center py-8">
+          <p className="text-sm text-muted-foreground">
+            Стемы не найдены
+          </p>
+        </div>
       )}
     </Card>
   );
