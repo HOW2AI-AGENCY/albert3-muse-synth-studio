@@ -75,6 +75,25 @@ export const SimpleModeForm = memo(({
         />
       )}
 
+      {/* Applied Tags Display */}
+      {params.tags && (
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-muted-foreground">
+            Применённые теги
+          </Label>
+          <div className="flex flex-wrap gap-1.5 p-2 rounded-lg bg-muted/30 border border-border/50 min-h-[32px]">
+            {params.tags.split(',').map(t => t.trim()).filter(Boolean).map((tag, index) => (
+              <span
+                key={index}
+                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Compact Title Input */}
       <div className="space-y-1.5">
         <Label htmlFor="title" className="text-xs font-medium text-muted-foreground">
