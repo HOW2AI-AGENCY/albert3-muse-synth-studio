@@ -113,21 +113,59 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
+    // ✅ ОПТИМИЗАЦИЯ 1: Проверка на уже завершенную конвертацию (кэш)
+    const { data: completedJob } = await supabaseAdmin
+      .from("wav_jobs")
+      .select("*")
+      .eq("audio_id", audioId)
+      .eq("status", "completed")
+      .maybeSingle();
+
+    if (completedJob?.wav_url) {
+      logger.info("WAV already exists, returning cached URL", {
+        audioId,
+        jobId: completedJob.id,
+        wavUrl: completedJob.wav_url,
+        trackId: body.trackId
+      });
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          jobId: completedJob.id,
+          status: "completed",
+          wavUrl: completedJob.wav_url,
+          cached: true,
+          message: "WAV already converted (using cached version)" 
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ✅ ОПТИМИЗАЦИЯ 2: Debounce для одновременных запросов
     const { data: existingJob } = await supabaseAdmin
       .from("wav_jobs")
       .select("*")
-      .eq("track_id", body.trackId)
-      .in("status", ["pending", "processing", "completed"])
+      .eq("audio_id", audioId)
+      .in("status", ["pending", "processing"])
       .maybeSingle();
 
     if (existingJob) {
+      logger.info("WAV conversion already in progress", {
+        audioId,
+        jobId: existingJob.id,
+        status: existingJob.status,
+        trackId: body.trackId
+      });
+      
       return new Response(
         JSON.stringify({ 
           success: true,
           jobId: existingJob.id,
           status: existingJob.status,
-          wavUrl: existingJob.wav_url,
-          message: "WAV conversion already in progress or completed" 
+          wavUrl: null,
+          cached: false,
+          message: "WAV conversion already in progress" 
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );

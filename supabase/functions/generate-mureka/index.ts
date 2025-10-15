@@ -151,9 +151,32 @@ serve(async (req) => {
       try {
         const lyricsResult = await murekaClient.generateLyrics({ prompt });
         
-        // ✅ FIX: Проверяем новую структуру ответа (массив вариантов)
-        if (lyricsResult.code === 200 && lyricsResult.data?.data && lyricsResult.data.data.length > 0) {
-          const lyricsVariants = lyricsResult.data.data;
+        // ✅ КРИТИЧНО: Детальное логирование ответа API
+        logger.info('🎤 [MUREKA] Lyrics API response received', {
+          code: lyricsResult.code,
+          msg: lyricsResult.msg,
+          hasData: !!lyricsResult.data,
+          hasVariants: !!lyricsResult.data?.data,
+          variantsCount: lyricsResult.data?.data?.length || 0,
+          responseStructure: Object.keys(lyricsResult.data || {})
+        });
+        
+        // ✅ FIX: Проверка кода ответа
+        if (lyricsResult.code !== 200) {
+          throw new Error(`Mureka API returned error code ${lyricsResult.code}: ${lyricsResult.msg || 'Unknown error'}`);
+        }
+        
+        // ✅ FIX: Проверка наличия данных
+        if (!lyricsResult.data?.data) {
+          throw new Error('Mureka API response is missing data.data field');
+        }
+        
+        // ✅ FIX: Проверка пустого массива
+        if (!Array.isArray(lyricsResult.data.data) || lyricsResult.data.data.length === 0) {
+          throw new Error('Mureka API returned empty lyrics variants array');
+        }
+        
+        const lyricsVariants = lyricsResult.data.data;
           
           logger.info('✅ Lyrics generated successfully', {
             variantsCount: lyricsVariants.length,
@@ -255,11 +278,15 @@ serve(async (req) => {
             })
             .eq('id', finalTrackId);
             
-        } else {
-          throw new Error('Failed to generate lyrics: ' + (lyricsResult.msg || 'No data'));
-        }
       } catch (lyricsError) {
-        logger.error('🔴 Lyrics generation failed', { error: lyricsError });
+        // ✅ FIX: Детальное логирование ошибки
+        logger.error('🔴 [MUREKA] Lyrics generation failed', {
+          error: lyricsError,
+          errorName: lyricsError?.constructor?.name,
+          errorMessage: lyricsError instanceof Error ? lyricsError.message : String(lyricsError),
+          errorStack: lyricsError instanceof Error ? lyricsError.stack : undefined,
+          prompt: prompt.substring(0, 100)
+        });
         
         await supabaseAdmin
           .from('tracks')

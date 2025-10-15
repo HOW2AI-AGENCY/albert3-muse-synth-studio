@@ -33,7 +33,6 @@ import {
   createSupabaseUserClient,
 } from "../_shared/supabase.ts";
 import { validateRequest, validationSchemas, ValidationException } from "../_shared/validation.ts";
-import { convertAudioToWav } from "../_shared/audio-converter.ts";
 
 // ============================================================================
 // TYPES
@@ -143,18 +142,14 @@ const mainHandler = async (req: Request): Promise<Response> => {
       type: audioBlob.type 
     });
 
-    // ✅ CRITICAL FIX: Convert to WAV for Mureka compatibility
-    logger.info('[ANALYZE-REF] 🔄 Converting to WAV format');
-    const wavBlob = await convertAudioToWav(audioBlob);
-    logger.info('[ANALYZE-REF] ✅ Converted to WAV', {
-      originalSize: audioBlob.size,
-      wavSize: wavBlob.size,
-      originalType: audioBlob.type,
-      wavType: wavBlob.type
+    // ✅ КРИТИЧНО: НЕ конвертируем в WAV (FFmpeg запрещен в Edge Runtime)
+    // Mureka API поддерживает MP3, WAV, FLAC, M4A, AAC, OGG
+    // Просто передаем оригинальный файл
+    logger.info('[ANALYZE-REF] 📤 Uploading to Mureka (original format)', {
+      audioType: audioBlob.type,
+      audioSize: audioBlob.size
     });
-
-    logger.info('[ANALYZE-REF] 📤 Uploading WAV to Mureka');
-    const uploadResult = await murekaClient.uploadFile(wavBlob);
+    const uploadResult = await murekaClient.uploadFile(audioBlob);
 
     if (uploadResult.code !== 200 || !uploadResult.data?.file_id) {
       throw new Error('Mureka file upload failed');
