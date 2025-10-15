@@ -106,11 +106,12 @@ serve(async (req) => {
       user.id,
       {
         trackId,
-        title: title || prompt.substring(0, 50),
+        title,
         prompt,
         lyrics,
         hasVocals,
         styleTags,
+        provider: 'mureka',
         requestMetadata: {
           provider: 'mureka',
           isBGM,

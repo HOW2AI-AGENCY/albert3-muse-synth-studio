@@ -3,7 +3,7 @@ import { logger } from './logger.ts';
 export async function findOrCreateTrack(
   supabaseAdmin: any,
   userId: string,
-  { trackId, title, prompt, lyrics, hasVocals, styleTags, requestMetadata, idempotencyKey }: {
+  { trackId, title, prompt, lyrics, hasVocals, styleTags, requestMetadata, idempotencyKey, provider }: {
     trackId?: string;
     title?: string;
     prompt?: string;
@@ -12,6 +12,7 @@ export async function findOrCreateTrack(
     styleTags?: string[];
     requestMetadata: Record<string, unknown>;
     idempotencyKey?: string;
+    provider?: string;
   }
 ): Promise<{ trackId: string; track: any }> {
   if (trackId) {
@@ -27,7 +28,10 @@ export async function findOrCreateTrack(
       throw new Error('Track not found or unauthorized');
     }
     
-    await supabaseAdmin.from('tracks').update({ status: 'processing', provider: 'suno' }).eq('id', trackId);
+    await supabaseAdmin.from('tracks').update({ 
+      status: 'processing', 
+      provider: provider || 'suno' 
+    }).eq('id', trackId);
     return { trackId, track: existingTrack };
   }
 
@@ -37,7 +41,7 @@ export async function findOrCreateTrack(
       user_id: userId,
       title: title || 'Untitled Track',
       prompt: prompt || 'Untitled Track',
-      provider: 'suno',
+      provider: provider || 'suno',
       status: 'processing',
       lyrics: lyrics ?? null,
       has_vocals: hasVocals ?? null,
