@@ -82,15 +82,12 @@ export const mainHandler = async (req: Request): Promise<Response> => {
   let jobId: string | null = null;
 
   try {
-    const body = await validateRequest(
-      req,
-      validationSchemas.generateLyrics,
-    ) as GenerateLyricsRequestBody;
-
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    // ✅ Extract userId from X-User-Id header (set by middleware)
+    const userId = req.headers.get("X-User-Id");
+    if (!userId) {
+      logger.error("🔴 [GENERATE-LYRICS] Missing X-User-Id from middleware");
       return new Response(
-        JSON.stringify({ error: "Authorization header required" }),
+        JSON.stringify({ error: "Unauthorized - missing user context" }),
         {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -98,23 +95,19 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const token = authHeader.replace("Bearer ", "");
-    const supabaseUser = createSupabaseUserClient(token);
-    const { data: authData, error: authError } = await supabaseUser.auth.getUser();
+    logger.info("✅ [GENERATE-LYRICS] User context from middleware", {
+      userId: userId.substring(0, 8)
+    });
 
-    if (authError || !authData?.user) {
-      logger.error("🔴 [GENERATE-LYRICS] Auth failed", { error: authError?.message });
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const body = await validateRequest(
+      req,
+      validationSchemas.generateLyrics,
+    ) as GenerateLyricsRequestBody;
 
-    const user = authData.user;
     const { prompt, trackId, metadata } = body;
 
     logger.info("🎵 [GENERATE-LYRICS] Request", {
-      userId: user.id,
+      userId,
       promptLength: prompt?.length || 0,
       promptWords: prompt?.trim().split(/\s+/).length || 0,
       hasTrackId: !!trackId,
@@ -134,12 +127,14 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       );
     }
 
+    supabaseAdmin = createSupabaseAdminClient();
+
     if (trackId) {
-      const { data: trackCheck, error: trackError } = await supabaseUser
+      const { data: trackCheck, error: trackError } = await supabaseAdmin
         .from("tracks")
         .select("id")
         .eq("id", trackId)
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .maybeSingle();
 
       if (trackError || !trackCheck) {
@@ -169,12 +164,10 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       throw new Error("SUNO_API_KEY not configured");
     }
 
-    supabaseAdmin = createSupabaseAdminClient();
-
     logger.info("📝 [GENERATE-LYRICS] Creating lyrics job in DB");
 
     const insertPayload = {
-      user_id: user.id,
+      user_id: userId,
       track_id: trackId ?? null,
       prompt,
       status: "pending",

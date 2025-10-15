@@ -88,34 +88,21 @@ const mainHandler = async (req: Request): Promise<Response> => {
   try {
     logger.info('🎵 [ANALYZE-REF] Handler entry', {
       method: req.method,
-      hasAuth: !!req.headers.get('Authorization'),
+      hasXUserId: !!req.headers.get('X-User-Id'),
       timestamp: new Date().toISOString()
     });
 
-    // ✅ JWT Authentication
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      logger.error('🔴 [ANALYZE-REF] Missing Authorization header');
+    // ✅ Extract userId from X-User-Id header (set by middleware)
+    const userId = req.headers.get('X-User-Id');
+    if (!userId) {
+      logger.error('🔴 [ANALYZE-REF] Missing X-User-Id header from middleware');
       return new Response(
-        JSON.stringify({ error: 'Missing authorization' }),
+        JSON.stringify({ error: 'Unauthorized - missing user context' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    const supabaseUser = createSupabaseUserClient(token);
-    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
-    
-    if (authError || !user) {
-      logger.error('🔴 [ANALYZE-REF] Invalid token', { authError });
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const userId = user.id;
-    logger.info(`[ANALYZE-REF] 🔍 Authenticated: userId=${userId.substring(0, 8)}...`);
+    logger.info(`[ANALYZE-REF] ✅ User context from middleware: userId=${userId.substring(0, 8)}...`);
 
     // ✅ Validate request body
     const body = await validateRequest(req, validationSchemas.analyzeReferenceAudio) as AnalyzeReferenceAudioRequest;

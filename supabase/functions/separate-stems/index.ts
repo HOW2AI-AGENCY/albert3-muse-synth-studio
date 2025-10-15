@@ -48,34 +48,21 @@ const mainHandler = async (req: Request) => {
     console.log('🟢 [STEMS] Handler entry', {
       method: req.method,
       url: req.url,
-      hasAuth: !!req.headers.get('Authorization'),
+      hasXUserId: !!req.headers.get('X-User-Id'),
       timestamp: new Date().toISOString()
     });
 
-    // ✅ ИСПРАВЛЕНИЕ: Используем JWT аутентификацию
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      console.error('🔴 [STEMS] handler-401: Missing Authorization header');
+    // ✅ Extract userId from X-User-Id header (set by middleware)
+    const userId = req.headers.get('X-User-Id');
+    if (!userId) {
+      console.error('🔴 [STEMS] handler-401: Missing X-User-Id from middleware');
       return new Response(
-        JSON.stringify({ error: 'Missing authorization' }),
+        JSON.stringify({ error: 'Unauthorized - missing user context' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    const supabaseUser = createSupabaseUserClient(token);
-    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
-    
-    if (authError || !user) {
-      console.error('🔴 [STEMS] handler-401: Invalid token', { authError });
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const userId = user.id;
-    console.log(`[separate-stems] 🎵 Handler entry: userId=${userId.substring(0, 8)}..., method=${req.method}`);
+    console.log(`[separate-stems] ✅ User context from middleware: userId=${userId.substring(0, 8)}..., method=${req.method}`);
 
     const SUNO_API_KEY = Deno.env.get("SUNO_API_KEY");
     if (!SUNO_API_KEY) {
