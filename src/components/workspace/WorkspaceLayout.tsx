@@ -70,7 +70,7 @@ const WorkspaceLayout = () => {
           <main
             className="workspace-main flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-background scrollbar-styled"
             style={{
-              paddingBottom: 'var(--workspace-bottom-offset)'
+              paddingBottom: 'calc(var(--workspace-bottom-offset) + var(--bottom-tab-bar-height))'
             }}
             data-player-active={false}
           >

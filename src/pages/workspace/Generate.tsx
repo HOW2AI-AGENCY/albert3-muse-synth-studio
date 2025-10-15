@@ -17,7 +17,6 @@ import {
 import { useTracks } from "@/hooks/useTracks";
 import { useTrackSync } from "@/hooks/useTrackSync";
 import { useTrackRecovery } from "@/hooks/useTrackRecovery";
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeTrack } from "@/utils/trackNormalizer";
 import type { Track } from "@/services/api.service";
@@ -25,8 +24,6 @@ import { TrackDialogsManager } from "@/components/tracks/TrackDialogsManager";
 
 const Generate = () => {
   const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks();
-  const { currentTrack } = useAudioPlayer();
-  const isPlayerVisible = !!currentTrack;
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showGenerator, setShowGenerator] = useState(false);
   const [userId, setUserId] = useState<string | undefined>();
@@ -232,7 +229,8 @@ const Generate = () => {
   // Mobile: List with FAB and Drawers
   return (
     <div className="h-full">
-      <div className="p-4 h-full overflow-y-auto pb-24">
+      {/* Убрали overflow-y-auto отсюда - scroll в WorkspaceLayout */}
+      <div className="p-4 pb-24">
         <TracksList
           tracks={tracks}
           isLoading={isLoading}
@@ -275,9 +273,7 @@ const Generate = () => {
                     size="lg"
                     className="fixed right-4 h-14 w-14 rounded-full shadow-lg glow-primary-strong bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary z-50"
                     style={{ 
-                      bottom: isPlayerVisible 
-                        ? 'calc(var(--workspace-bottom-offset) + var(--bottom-tab-bar-height) + 1rem)' 
-                        : 'calc(var(--bottom-tab-bar-height) + 1rem)' 
+                      bottom: 'calc(var(--bottom-tab-bar-height) + 1rem)'
                     }}
                     aria-label="Создать музыку"
                   >

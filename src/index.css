@@ -301,6 +301,11 @@
     .mobile-no-zoom {
       font-size: var(--mobile-font-base) !important;
     }
+    
+    /* На мобильных убираем overflow-x полностью */
+    body {
+      overflow-x: hidden;
+    }
   }
 
   /* Reduce motion for accessibility and performance */
@@ -409,13 +414,13 @@
   }
 
   .scrollbar-styled::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 6px; /* Минимальная ширина для мобильных */
+    height: 6px;
   }
 
   .scrollbar-styled::-webkit-scrollbar-track {
-    background: hsl(var(--muted) / 0.3);
-    border-radius: 10px;
+    background: hsl(var(--muted) / 0.2);
+    border-radius: 3px;
   }
 
   .scrollbar-styled::-webkit-scrollbar-thumb {
@@ -424,7 +429,7 @@
       hsl(var(--primary) / 0.3) 0%,
       hsl(var(--primary) / 0.5) 100%
     );
-    border-radius: 10px;
+    border-radius: 3px;
     transition: background 0.2s;
   }
 
@@ -434,6 +439,22 @@
       hsl(var(--primary) / 0.5) 0%,
       hsl(var(--primary) / 0.7) 100%
     );
+  }
+  
+  /* На больших экранах делаем scrollbar шире */
+  @media (min-width: 768px) {
+    .scrollbar-styled::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    
+    .scrollbar-styled::-webkit-scrollbar-track {
+      border-radius: 10px;
+    }
+    
+    .scrollbar-styled::-webkit-scrollbar-thumb {
+      border-radius: 10px;
+    }
   }
 
   /* Mobile-first spacing system */
