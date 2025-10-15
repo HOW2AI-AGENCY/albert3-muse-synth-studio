@@ -850,6 +850,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrement_production_credits: {
+        Args: { _amount: number; _user_id: string }
+        Returns: undefined
+      }
+      decrement_test_credits: {
+        Args: { _amount: number; _user_id: string }
+        Returns: undefined
+      }
       get_user_mureka_stats: {
         Args: { user_uuid: string }
         Returns: {
