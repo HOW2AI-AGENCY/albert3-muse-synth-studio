@@ -255,6 +255,7 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
   const { toast } = useToast();
   const { currentTrack, isPlaying, playTrack } = useAudioPlayer();
   
+  // ✅ Лайки всегда относятся к родительскому треку (не к версиям)
   const { isLiked, toggleLike } = useTrackLike(track.id, track.like_count || 0);
   const { versions, mainVersion, versionCount, masterVersion } = useTrackVersions(track.id, true);
   const [isHovered, setIsHovered] = useState(false);
@@ -618,6 +619,7 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
                     <Download className="w-4 h-4 mr-2" />
                     Скачать MP3
                   </DropdownMenuItem>
+                  {/* ✅ WAV конвертация работает с оригинальным треком (не версиями) */}
                   <WavConvertMenuItem trackId={track.id} trackMetadata={track.metadata} />
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleShareClick}>
@@ -636,9 +638,10 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
                           <DropdownMenuItem 
                             onClick={(e) => { 
                               e.stopPropagation(); 
-                              onSeparateStems?.(track.id);
+                              // ✅ Разделяем выбранную версию (используем её audio_url)
+                              onSeparateStems?.(displayedVersion.id);
                             }}
-                            disabled={!onSeparateStems}
+                            disabled={!onSeparateStems || !displayedVersion.audio_url}
                           >
                             <Split className="w-4 h-4 mr-2" />
                             Разделить на стемы
@@ -650,9 +653,10 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
                   <DropdownMenuItem 
                     onClick={(e) => { 
                       e.stopPropagation(); 
-                      onExtend?.(track.id);
+                      // ✅ Расширяем выбранную версию
+                      onExtend?.(displayedVersion.id);
                     }}
-                    disabled={!onExtend || !track.audio_url}
+                    disabled={!onExtend || !displayedVersion.audio_url}
                   >
                     <Expand className="w-4 h-4 mr-2" />
                     Расширить трек
@@ -664,9 +668,10 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
                           <DropdownMenuItem 
                             onClick={(e) => { 
                               e.stopPropagation(); 
-                              if (isSunoTrack) onCover?.(track.id);
+                              // ✅ Создаём кавер выбранной версии
+                              if (isSunoTrack) onCover?.(displayedVersion.id);
                             }}
-                            disabled={!onCover || isMurekaTrack}
+                            disabled={!onCover || isMurekaTrack || !displayedVersion.audio_url}
                             className={isMurekaTrack ? 'opacity-50' : ''}
                           >
                             <Mic2 className="w-4 h-4 mr-2" />
@@ -685,9 +690,10 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
                     <DropdownMenuItem 
                       onClick={(e) => { 
                         e.stopPropagation(); 
-                        onAddVocal?.(track.id);
+                        // ✅ Добавляем вокал к выбранной версии
+                        onAddVocal?.(displayedVersion.id);
                       }}
-                      disabled={!onAddVocal}
+                      disabled={!onAddVocal || !displayedVersion.audio_url}
                     >
                       <UserPlus className="w-4 h-4 mr-2" />
                       Добавить вокал
