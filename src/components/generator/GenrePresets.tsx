@@ -1,6 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { 
   Music, 
   Disc3, 
@@ -150,7 +150,10 @@ export function GenrePresets({ onSelect }: GenrePresetsProps) {
       </div>
       
       {/* Mobile: Horizontal scroll with snap */}
-      <ScrollArea className="w-full md:hidden" type="scroll">
+      <div
+        className="w-full md:hidden overflow-x-auto overflow-y-hidden -mx-1 px-1"
+        style={{ WebkitOverflowScrolling: 'touch' }}
+      >
         <div className="flex gap-2 pb-2 px-1" style={{ scrollSnapType: 'x mandatory' }}>
           {GENRE_PRESETS.map((preset) => {
             const Icon = preset.icon;
@@ -193,7 +196,7 @@ export function GenrePresets({ onSelect }: GenrePresetsProps) {
             );
           })}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Tablet/Desktop: Grid */}
       <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-2">
