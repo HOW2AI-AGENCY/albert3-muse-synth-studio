@@ -606,12 +606,13 @@ export type Database = {
           created_at: string
           duration: number | null
           id: string
-          is_master: boolean | null
+          is_preferred_variant: boolean | null
+          is_primary_variant: boolean | null
           lyrics: string | null
           metadata: Json | null
           parent_track_id: string
           suno_id: string | null
-          version_number: number
+          variant_index: number
           video_url: string | null
         }
         Insert: {
@@ -620,12 +621,13 @@ export type Database = {
           created_at?: string
           duration?: number | null
           id?: string
-          is_master?: boolean | null
+          is_preferred_variant?: boolean | null
+          is_primary_variant?: boolean | null
           lyrics?: string | null
           metadata?: Json | null
           parent_track_id: string
           suno_id?: string | null
-          version_number: number
+          variant_index: number
           video_url?: string | null
         }
         Update: {
@@ -634,12 +636,13 @@ export type Database = {
           created_at?: string
           duration?: number | null
           id?: string
-          is_master?: boolean | null
+          is_preferred_variant?: boolean | null
+          is_primary_variant?: boolean | null
           lyrics?: string | null
           metadata?: Json | null
           parent_track_id?: string
           suno_id?: string | null
-          version_number?: number
+          variant_index?: number
           video_url?: string | null
         }
         Relationships: [
