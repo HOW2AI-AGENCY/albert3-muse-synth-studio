@@ -217,6 +217,90 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     });
   }, [setParam, toast]);
 
+  // ✅ НОВОЕ: Auto-apply логика для результатов анализа
+  const handleAnalysisComplete = useCallback((result: {
+    recognition: any;
+    description: any;
+  }) => {
+    logger.info('🔍 [ANALYSIS] Analysis completed', 'MusicGeneratorV2', {
+      hasRecognition: !!result.recognition,
+      hasDescription: !!result.description
+    });
+
+    // Автоматически применить название если распознано
+    if (result.recognition?.recognized_title && !params.title.trim()) {
+      const recognizedTitle = result.recognition.recognized_title;
+      const artist = result.recognition.recognized_artist;
+      const suggestedTitle = artist 
+        ? `${recognizedTitle} (Cover by AI)`
+        : `${recognizedTitle}`;
+
+      setParam('title', suggestedTitle);
+      
+      logger.info('✅ [AUTO-APPLY] Title applied', 'MusicGeneratorV2', { title: suggestedTitle });
+      toast({
+        title: '✅ Название применено',
+        description: `"${suggestedTitle}"`,
+        duration: 4000,
+      });
+    }
+
+    // Автоматически подставить характеристики в промпт
+    if (result.description?.detected_genre) {
+      const characteristics: string[] = [];
+      
+      if (result.description.detected_genre) {
+        characteristics.push(result.description.detected_genre);
+      }
+      if (result.description.detected_mood) {
+        characteristics.push(`${result.description.detected_mood} mood`);
+      }
+      if (result.description.tempo_bpm) {
+        const tempoDesc = result.description.tempo_bpm > 120 ? 'fast tempo' : 'slow tempo';
+        characteristics.push(`${tempoDesc} (${result.description.tempo_bpm} BPM)`);
+      }
+      if (result.description.detected_instruments && result.description.detected_instruments.length > 0) {
+        characteristics.push(`featuring ${result.description.detected_instruments.slice(0, 3).join(', ')}`);
+      }
+
+      const analysisPrompt = characteristics.join(', ');
+
+      // Добавить к существующему промпту или создать новый
+      if (params.prompt.trim()) {
+        toast({
+          title: '💡 AI-анализ готов',
+          description: `Характеристики: ${analysisPrompt}`,
+          duration: 5000,
+        });
+      } else {
+        setParam('prompt', analysisPrompt);
+        setDebouncedPrompt(analysisPrompt);
+        
+        logger.info('✅ [AUTO-APPLY] Prompt generated from analysis', 'MusicGeneratorV2', {
+          prompt: analysisPrompt
+        });
+        toast({
+          title: '✅ Промпт сгенерирован',
+          description: 'AI описал характеристики трека',
+          duration: 4000,
+        });
+      }
+
+      // Добавить инструменты в теги
+      if (result.description.detected_instruments && result.description.detected_instruments.length > 0) {
+        const existingTags = params.tags.split(',').map(t => t.trim()).filter(Boolean);
+        const instrumentTags = result.description.detected_instruments.slice(0, 5);
+        const uniqueTags = Array.from(new Set([...existingTags, ...instrumentTags]));
+        
+        setParam('tags', uniqueTags.join(', '));
+        
+        logger.info('✅ [AUTO-APPLY] Instrument tags added', 'MusicGeneratorV2', {
+          tags: instrumentTags
+        });
+      }
+    }
+  }, [params.title, params.prompt, params.tags, setParam, toast]);
+
   // Preset handler
   const handlePresetSelect = useCallback((preset: GenrePreset) => {
     setParams(prev => ({
@@ -412,6 +496,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               onRemoveAudio={handleRemoveAudio}
               onSelectReferenceTrack={handleSelectReferenceTrack}
               onRecordComplete={handleRecordComplete}
+              onAnalysisComplete={handleAnalysisComplete}
               isBoosting={isBoosting}
               isGenerating={isGenerating}
               isUploading={isUploading}

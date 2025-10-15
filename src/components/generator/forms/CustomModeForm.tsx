@@ -29,6 +29,8 @@ interface CustomModeFormProps {
   onRemoveAudio: () => void;
   onSelectReferenceTrack?: (track: { id: string; audio_url: string; title: string }) => void;
   onRecordComplete?: (url: string) => void;
+  /** ✅ НОВОЕ: Callback при завершении анализа референса */
+  onAnalysisComplete?: (result: { recognition: any; description: any }) => void;
   isBoosting: boolean;
   isGenerating: boolean;
   isUploading: boolean;
@@ -49,6 +51,7 @@ export const CustomModeForm = memo(({
   onRemoveAudio,
   onSelectReferenceTrack,
   onRecordComplete,
+  onAnalysisComplete,
   isBoosting,
   isGenerating,
   isUploading,
@@ -196,6 +199,8 @@ export const CustomModeForm = memo(({
                   onRemove={onRemoveAudio}
                   onSelectTrack={onSelectReferenceTrack}
                   onRecordComplete={onRecordComplete}
+                  autoAnalyze={true}
+                  onAnalysisComplete={onAnalysisComplete}
                   isUploading={isUploading}
                   isGenerating={isGenerating}
                 />
@@ -294,6 +299,8 @@ export const CustomModeForm = memo(({
                 referenceAudioUrl={params.referenceAudioUrl}
                 onFileSelect={onAudioFileSelect}
                 onRemove={onRemoveAudio}
+                autoAnalyze={true}
+                onAnalysisComplete={onAnalysisComplete}
                 isUploading={isUploading}
                 isGenerating={isGenerating}
               />

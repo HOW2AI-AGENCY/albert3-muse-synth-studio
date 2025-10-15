@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -6,6 +6,9 @@ import { Upload, X, Loader2, Music, Mic, Trash2 } from '@/utils/iconImports';
 import { cn } from '@/lib/utils';
 import { ReferenceTrackSelector } from './ReferenceTrackSelector';
 import { AudioRecorder } from '@/components/audio/AudioRecorder';
+import { ReferenceAnalysisCard } from './ReferenceAnalysisCard';
+import { useReferenceAnalysis } from '@/hooks/useReferenceAnalysis';
+import { logger } from '@/utils/logger';
 
 interface AudioReferenceSectionProps {
   referenceFileName: string | null;
@@ -16,6 +19,14 @@ interface AudioReferenceSectionProps {
   onRecordComplete?: (url: string) => void;
   isUploading: boolean;
   isGenerating: boolean;
+  /** ✅ НОВОЕ: Автоматически запускать анализ при загрузке */
+  autoAnalyze?: boolean;
+  /** ✅ НОВОЕ: Callback при завершении анализа */
+  onAnalysisComplete?: (result: {
+    recognition: any;
+    description: any;
+    murekaFileId?: string;
+  }) => void;
 }
 
 export const AudioReferenceSection = memo(({
@@ -27,13 +38,51 @@ export const AudioReferenceSection = memo(({
   onRecordComplete,
   isUploading,
   isGenerating,
+  autoAnalyze = false,
+  onAnalysisComplete,
 }: AudioReferenceSectionProps) => {
   const [trackSelectorOpen, setTrackSelectorOpen] = useState(false);
+
+  // ✅ НОВОЕ: Интеграция с Mureka Analysis
+  const {
+    analyzeAudio,
+    isAnalyzing,
+    recognition,
+    description,
+    isPolling,
+  } = useReferenceAnalysis();
 
   const handleTrackSelect = (track: { id: string; audio_url: string; title: string }) => {
     onSelectTrack?.(track);
     setTrackSelectorOpen(false);
   };
+
+  // ✅ НОВОЕ: Автоматический анализ при загрузке аудио
+  useEffect(() => {
+    if (autoAnalyze && referenceAudioUrl && !isAnalyzing && !recognition && !description) {
+      logger.info('🔍 [ANALYSIS] Auto-analyzing reference audio', 'AudioReferenceSection', {
+        audioUrl: referenceAudioUrl.substring(0, 50)
+      });
+
+      analyzeAudio({ audioUrl: referenceAudioUrl })
+        .catch(error => {
+          logger.error('[ANALYSIS] Auto-analysis failed', error, 'AudioReferenceSection');
+        });
+    }
+  }, [autoAnalyze, referenceAudioUrl, isAnalyzing, recognition, description, analyzeAudio]);
+
+  // ✅ НОВОЕ: Уведомление родителя о завершении анализа
+  useEffect(() => {
+    if (
+      onAnalysisComplete &&
+      (recognition?.status === 'completed' || description?.status === 'completed')
+    ) {
+      onAnalysisComplete({
+        recognition,
+        description,
+      });
+    }
+  }, [recognition?.status, description?.status, onAnalysisComplete]);
 
   return (
     <div className="space-y-2">
@@ -60,6 +109,17 @@ export const AudioReferenceSection = memo(({
           {/* Audio preview */}
           {referenceAudioUrl && (
             <audio controls src={referenceAudioUrl} className="w-full h-8" />
+          )}
+
+          {/* ✅ НОВОЕ: AI Analysis Results */}
+          {referenceAudioUrl && (
+            <ReferenceAnalysisCard
+              recognition={recognition || null}
+              description={description || null}
+              isAnalyzing={isAnalyzing}
+              isPolling={isPolling}
+              className="mt-2"
+            />
           )}
         </div>
       ) : (
