@@ -43,6 +43,8 @@ export const SeparateStemsDialog = ({
   const [selectedMode, setSelectedMode] = useState<'separate_vocal' | 'split_stem' | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [stems, setStems] = useState<TrackStem[]>([]);
+  const [hasExistingStems, setHasExistingStems] = useState(false);
+  const [isLoadingStems, setIsLoadingStems] = useState(true);
   const { convertToWav, isConverting } = useConvertToWav();
   
   const { isGenerating, generateStems } = useStemSeparation({
@@ -60,6 +62,7 @@ export const SeparateStemsDialog = ({
     if (!open || !trackId) return;
 
     const fetchStems = async () => {
+      setIsLoadingStems(true);
       const { data } = await supabase
         .from('track_stems')
         .select('*')
@@ -67,10 +70,17 @@ export const SeparateStemsDialog = ({
       
       if (data) {
         setStems(data as TrackStem[]);
-        if (data.length > 0 && isGenerating) {
+        const hasStems = data.length > 0;
+        setHasExistingStems(hasStems);
+        
+        // If stems exist and dialog is opened, show results immediately
+        if (hasStems && !isGenerating) {
+          setShowResults(true);
+        } else if (hasStems && isGenerating) {
           setShowResults(true);
         }
       }
+      setIsLoadingStems(false);
     };
 
     fetchStems();
@@ -100,8 +110,18 @@ export const SeparateStemsDialog = ({
     setSelectedMode(mode);
     setShowResults(false);
     setStems([]);
+    setHasExistingStems(false);
     await generateStems(mode);
     setSelectedMode(null);
+  };
+
+  const handleViewExisting = () => {
+    setShowResults(true);
+  };
+
+  const handleRegenerateSeparation = () => {
+    setShowResults(false);
+    setHasExistingStems(false);
   };
 
   const handleDownloadAll = async () => {
@@ -147,10 +167,11 @@ export const SeparateStemsDialog = ({
   };
 
   const handleClose = () => {
-    setShowResults(false);
-    setStems([]);
-    setSelectedMode(null);
-    onOpenChange(false);
+    if (!isGenerating) {
+      setShowResults(false);
+      setSelectedMode(null);
+      onOpenChange(false);
+    }
   };
 
   return (
@@ -172,7 +193,15 @@ export const SeparateStemsDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Loading State */}
+        {/* Initial Loading State */}
+        {isLoadingStems && !isGenerating && (
+          <div className="py-8 text-center space-y-4">
+            <Loader2 className="w-8 h-8 mx-auto animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Загрузка...</p>
+          </div>
+        )}
+
+        {/* Processing State */}
         {isGenerating && !showResults && (
           <div className="py-8 text-center space-y-4">
             <Loader2 className="w-12 h-12 mx-auto animate-spin text-primary" />
@@ -188,11 +217,11 @@ export const SeparateStemsDialog = ({
         {/* Results View */}
         {showResults && stems.length > 0 && (
           <div className="space-y-4 pt-4">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <p className="text-sm text-muted-foreground">
                 Найдено стемов: {stems.length}
               </p>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button
                   size="sm"
                   variant="outline"
@@ -216,16 +245,45 @@ export const SeparateStemsDialog = ({
 
             <AdvancedStemMixer stems={stems} trackTitle={trackTitle} />
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={handleClose}>
+            <div className="flex justify-between gap-2 pt-2">
+              <Button 
+                variant="outline" 
+                onClick={handleRegenerateSeparation}
+                disabled={isGenerating}
+              >
+                Повторить разделение
+              </Button>
+              <Button variant="outline" onClick={handleClose} disabled={isGenerating}>
                 Закрыть
               </Button>
             </div>
           </div>
         )}
 
+        {/* Existing Stems View */}
+        {!isLoadingStems && hasExistingStems && !showResults && !isGenerating && (
+          <div className="py-8 text-center space-y-4">
+            <Music4 className="w-16 h-16 mx-auto text-primary opacity-50" />
+            <div className="space-y-2">
+              <p className="font-medium">Стемы уже разделены</p>
+              <p className="text-sm text-muted-foreground">
+                Для этого трека найдено {stems.length} {stems.length === 1 ? 'стем' : stems.length < 5 ? 'стема' : 'стемов'}
+              </p>
+            </div>
+            <div className="flex justify-center gap-3">
+              <Button onClick={handleViewExisting}>
+                <Music className="w-4 h-4 mr-2" />
+                Просмотр стемов
+              </Button>
+              <Button variant="outline" onClick={handleRegenerateSeparation}>
+                Повторить разделение
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Selection View */}
-        {!isGenerating && !showResults && (
+        {!isLoadingStems && !isGenerating && !showResults && !hasExistingStems && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
           {/* Базовое разделение */}
