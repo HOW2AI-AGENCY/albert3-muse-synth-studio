@@ -17,6 +17,7 @@ import { StemMixerProvider } from "@/contexts/StemMixerContext";
 import { AdvancedStemMixer } from "@/features/tracks/components/AdvancedStemMixer";
 import { useConvertToWav } from "@/hooks/useConvertToWav";
 import { toast } from "sonner";
+import { useStemReference } from "@/hooks/useStemReference";
 
 interface SeparateStemsDialogProps {
   open: boolean;
@@ -42,10 +43,10 @@ export const SeparateStemsDialog = ({
   trackTitle,
   onSuccess,
 }: SeparateStemsDialogProps) => {
+  const { setReferenceFromStem } = useStemReference();
   const handleUseAsReference = async (audioUrl: string, stemType: string) => {
-    const { useStemReference } = await import('@/hooks/useStemReference');
-    const { setReferenceFromStem } = useStemReference();
     await setReferenceFromStem(audioUrl, stemType, trackId);
+    onOpenChange(false); // Закрываем диалог после выбора
   };
   const [selectedMode, setSelectedMode] = useState<'separate_vocal' | 'split_stem' | null>(null);
   const [viewMode, setViewMode] = useState<'separate_vocal' | 'split_stem' | null>(null);

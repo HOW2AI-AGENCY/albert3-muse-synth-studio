@@ -572,6 +572,8 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
       
       const formData = new FormData();
       formData.append('file', file);
+      // ✅ REQUIRED by Mureka API: specify purpose. Using generic 'audio' for analysis/recognition.
+      formData.append('purpose', 'audio');
       
       const url = `${BASE_URL}${options.uploadEndpoint || '/v1/files/upload'}`;
       
