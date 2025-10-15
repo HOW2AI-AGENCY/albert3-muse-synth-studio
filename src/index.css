@@ -421,8 +421,8 @@
   }
 
   .scrollbar-styled::-webkit-scrollbar {
-    width: 6px; /* Минимальная ширина для мобильных */
-    height: 6px;
+    width: 4px; /* Минимальная ширина для мобильных */
+    height: 4px;
   }
 
   .scrollbar-styled::-webkit-scrollbar-track {
@@ -451,34 +451,21 @@
   /* На больших экранах делаем scrollbar шире */
   @media (min-width: 768px) {
     .scrollbar-styled::-webkit-scrollbar {
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
     }
     
     .scrollbar-styled::-webkit-scrollbar-track {
-      border-radius: 10px;
+      border-radius: 8px;
     }
     
     .scrollbar-styled::-webkit-scrollbar-thumb {
-      border-radius: 10px;
+      border-radius: 8px;
     }
   }
 
-  /* Mobile-first spacing system */
-  --spacing-mobile-xs: 0.5rem;
-  --spacing-mobile-sm: 0.75rem;
-  --spacing-mobile-md: 1rem;
-  --spacing-mobile-lg: 1.25rem;
-  
-  /* Component-specific mobile heights */
-  --hero-height-mobile: 120px;
-  --card-padding-mobile: 0.75rem;
-  --touch-target-min: 44px;
-  
-  /* Fixed UI heights for mobile */
-  --bottom-tab-bar-height: 60px;
-  --mini-player-height: 80px;
-  --workspace-bottom-offset: calc(var(--bottom-tab-bar-height) + env(safe-area-inset-bottom));
+  /* Dynamic layout adjustments - deduplicated */
+  --workspace-bottom-offset: calc(var(--bottom-tab-bar-height) + var(--mini-player-height));
 }
 
 /* Compact screens optimization */

@@ -16,16 +16,16 @@ export const MobileMoreMenu = ({ items }: MobileMoreMenuProps) => {
         <Button
           variant="ghost"
           size="sm"
-          className="flex flex-col items-center justify-center gap-1 min-h-[44px] px-2 py-1 rounded-lg hover:bg-accent/50 transition-colors"
+          className="flex flex-col items-center justify-center gap-0.5 min-h-[44px] px-2 py-1 rounded-lg hover:bg-accent/50 transition-colors flex-1"
           aria-label="Ещё"
         >
-          <MoreHorizontal className="h-5 w-5" />
-          <span className="text-[10px] font-medium truncate max-w-full">Ещё</span>
+          <MoreHorizontal className="h-4 w-4" />
+          <span className="text-[9px] font-medium truncate max-w-full">Ещё</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="h-auto max-h-[60vh]">
+      <SheetContent side="bottom" className="h-auto max-h-[50vh]">
         <SheetHeader>
-          <SheetTitle>Дополнительно</SheetTitle>
+          <SheetTitle>Меню</SheetTitle>
         </SheetHeader>
         <div className="grid gap-2 py-4">
           {items.map((item) => (

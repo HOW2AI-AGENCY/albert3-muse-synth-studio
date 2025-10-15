@@ -24,8 +24,11 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
   }, [vibrate]);
 
   const { primaryItems, secondaryItems } = useMemo(() => {
-    const primary = items.filter(item => item.isMobilePrimary);
-    const secondary = items.filter(item => !item.isMobilePrimary);
+    const mobilePrimary = items.filter(item => item.isMobilePrimary);
+    const primary = mobilePrimary.slice(0, 3);
+    const overflow = mobilePrimary.slice(3);
+    const nonPrimary = items.filter(item => !item.isMobilePrimary);
+    const secondary = [...overflow, ...nonPrimary];
     return { primaryItems: primary, secondaryItems: secondary };
   }, [items]);
 

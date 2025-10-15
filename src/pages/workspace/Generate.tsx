@@ -229,8 +229,8 @@ const Generate = () => {
 
   // Mobile: List with FAB and Drawers
   return (
-    <div>
-      <div className="p-4 pb-24">
+    <div className="h-full bg-background flex flex-col">
+      <div className="flex-1 overflow-y-auto workspace-main p-4 pb-24">
         <TracksList
           tracks={tracks}
           isLoading={isLoading}
@@ -274,7 +274,7 @@ const Generate = () => {
                       size="lg"
                       className="fixed right-4 bottom-4 h-14 w-14 rounded-full shadow-lg glow-primary-strong bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary z-50"
                       style={{ 
-                        bottom: 'calc(var(--workspace-bottom-offset) + var(--bottom-tab-bar-height) + 1rem)'
+                        bottom: 'calc(var(--bottom-tab-bar-height) + 1rem)'
                       }}
                       aria-label="Создать музыку"
                     >
@@ -287,7 +287,7 @@ const Generate = () => {
                 <p className="text-sm font-medium">Создать музыку</p>
               </TooltipContent>
             </Tooltip>
-            <DrawerContent className="h-[85vh] mt-20" aria-describedby={undefined}>
+            <DrawerContent className="h-[90vh] mt-20" aria-describedby={undefined}>
               <div className="w-full max-w-md mx-auto h-8 flex items-center justify-center">
                 <div className="w-12 h-1 bg-muted-foreground/20 rounded-full" />
               </div>
@@ -300,7 +300,7 @@ const Generate = () => {
       </Portal>
 
       <Drawer open={!!selectedTrack} onOpenChange={(open) => !open && handleCloseDetail()}>
-        <DrawerContent className="h-[85vh] max-h-[90vh]" aria-describedby={undefined}>
+        <DrawerContent className="h-[70vh] max-h-[75vh]" aria-describedby={undefined}>
           {/* Drag handle */}
           <div className="w-full h-8 flex items-center justify-center shrink-0">
             <div className="w-12 h-1 bg-muted-foreground/20 rounded-full" />
