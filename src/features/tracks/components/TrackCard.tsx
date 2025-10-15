@@ -320,11 +320,27 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
   // Получаем активную версию
   const allVersions = React.useMemo(() => {
     if (!mainVersion) return [];
-    return [mainVersion, ...versions];
-  }, [mainVersion, versions]);
+    const result = [mainVersion, ...versions];
+    console.log('All versions for track:', track.id, result.map(v => ({
+      id: v.id,
+      versionNumber: v.versionNumber,
+      title: v.title
+    })));
+    return result;
+  }, [mainVersion, versions, track.id]);
 
   const activeVersion = React.useMemo(() => {
-    return allVersions[activeVersionIndex] || mainVersion || {
+    const version = allVersions[activeVersionIndex];
+    console.log('Active version:', { 
+      activeVersionIndex, 
+      version: version ? {
+        id: version.id,
+        versionNumber: version.versionNumber,
+        title: version.title
+      } : null
+    });
+    
+    return version || mainVersion || {
       id: track.id,
       title: track.title,
       audio_url: track.audio_url,
@@ -338,8 +354,13 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
   }, [allVersions, activeVersionIndex, mainVersion, track]);
 
   const handleVersionChange = React.useCallback((versionIndex: number) => {
+    console.log('Version change requested:', { 
+      from: activeVersionIndex, 
+      to: versionIndex,
+      allVersionsCount: allVersions.length 
+    });
     setActiveVersionIndex(versionIndex);
-  }, []);
+  }, [activeVersionIndex, allVersions.length]);
 
   const isCurrentTrack = currentTrack?.id === activeVersion.id;
   const playButtonDisabled = track.status !== "completed" || !activeVersion.audio_url;

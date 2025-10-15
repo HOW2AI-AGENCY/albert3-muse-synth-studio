@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTrackVersions } from '@/features/tracks/hooks';
 import { cn } from '@/lib/utils';
 
@@ -22,7 +23,17 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
   // Переключение на следующую версию
   const handleNextVersion = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    const nextIndex = (currentVersionIndex + 1) % (versionCount + 1);
+    e.preventDefault();
+    
+    const totalVersions = versionCount + 1;
+    const nextIndex = (currentVersionIndex + 1) % totalVersions;
+    
+    console.log('Switching version:', { 
+      current: currentVersionIndex, 
+      next: nextIndex, 
+      total: totalVersions 
+    });
+    
     onVersionChange(nextIndex);
   }, [currentVersionIndex, versionCount, onVersionChange]);
 
@@ -35,17 +46,29 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
   const displayIndex = currentVersionIndex + 1;
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={handleNextVersion}
-      className={cn(
-        "h-6 px-2 gap-1 text-xs font-medium bg-background/90 backdrop-blur-sm hover:bg-background",
-        className
-      )}
-    >
-      <span>{displayIndex}/{totalVersions}</span>
-      <ChevronDown className="h-3 w-3" />
-    </Button>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleNextVersion}
+            className={cn(
+              "h-7 px-2.5 gap-1.5 text-xs font-semibold",
+              "bg-background/95 hover:bg-background backdrop-blur-md",
+              "border border-border/50 shadow-lg",
+              "transition-all duration-200 hover:scale-105 active:scale-95",
+              className
+            )}
+          >
+            <span className="tabular-nums">{displayIndex}/{totalVersions}</span>
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="left">
+          <p>Переключить вариант трека</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
