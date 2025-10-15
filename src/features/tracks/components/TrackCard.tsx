@@ -258,10 +258,25 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
   const { versionCount, masterVersion } = useTrackVersions(track.id, false);
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [hasStems, setHasStems] = useState(false);
   
   // ✅ Определяем провайдер трека
   const isMurekaTrack = track.metadata?.provider === 'mureka';
   const isSunoTrack = !isMurekaTrack;
+  
+  // ✅ Проверяем наличие стемов
+  useEffect(() => {
+    const checkStems = async () => {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data } = await supabase
+        .from('track_stems')
+        .select('id')
+        .eq('track_id', track.id)
+        .limit(1);
+      setHasStems((data?.length || 0) > 0);
+    };
+    checkStems();
+  }, [track.id]);
 
   const handleTogglePublic = useCallback(async () => {
     try {
@@ -432,9 +447,21 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
       <CardContent className="p-2 flex-1 flex flex-col">
         <div className="flex-1">
           <div className="flex items-start justify-between gap-2 mb-0.5">
-            <h3 className="font-semibold text-sm leading-tight line-clamp-1 group-hover:text-primary flex-1">
-              {track.title}
-            </h3>
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              <h3 className="font-semibold text-sm leading-tight line-clamp-1 group-hover:text-primary">
+                {track.title}
+              </h3>
+              {hasStems && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Split className="h-3.5 w-3.5 text-primary shrink-0" />
+                    </TooltipTrigger>
+                    <TooltipContent>Доступны стемы</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
             
             {/* Phase 1.2: Version badges */}
             {versionCount > 0 && (

@@ -8,18 +8,19 @@ import { Play, Pause, RotateCcw, Volume2 } from 'lucide-react';
 import { useStemMixer } from '@/contexts/StemMixerContext';
 import { StemMixerTrack } from './StemMixerTrack';
 import { formatDuration } from '@/utils/formatters';
-import { toast } from 'sonner';
 
 interface TrackStem {
   id: string;
   stem_type: string;
   audio_url: string;
   separation_mode: string;
+  track_id: string;
 }
 
 interface AdvancedStemMixerProps {
   stems: TrackStem[];
   trackTitle?: string;
+  onUseAsReference?: (audioUrl: string, stemType: string) => void;
 }
 
 const stemTypeOrder: Record<string, number> = {
@@ -50,7 +51,7 @@ const sortStems = (collection: TrackStem[]) => {
   });
 };
 
-export const AdvancedStemMixer = ({ stems, trackTitle }: AdvancedStemMixerProps) => {
+export const AdvancedStemMixer = ({ stems, trackTitle, onUseAsReference }: AdvancedStemMixerProps) => {
   const {
     activeStemIds,
     stemVolumes,
@@ -83,24 +84,6 @@ export const AdvancedStemMixer = ({ stems, trackTitle }: AdvancedStemMixerProps)
     }
   };
 
-  const handleDownloadStem = async (stem: TrackStem) => {
-    try {
-      const response = await fetch(stem.audio_url);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${trackTitle || 'track'}_${stem.stem_type}.mp3`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast.success(`Стем "${stem.stem_type}" скачан`);
-    } catch (error) {
-      console.error('Failed to download stem:', error);
-      toast.error('Ошибка скачивания стема');
-    }
-  };
 
   const sortedStems = sortStems(stems);
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
@@ -188,11 +171,12 @@ export const AdvancedStemMixer = ({ stems, trackTitle }: AdvancedStemMixerProps)
             isSolo={soloStemId === stem.id}
             currentTime={currentTime}
             duration={duration}
+            trackTitle={trackTitle}
             onToggleActive={() => toggleStem(stem.id)}
             onToggleSolo={() => setSolo(soloStemId === stem.id ? null : stem.id)}
             onToggleMute={() => toggleStemMute(stem.id)}
             onVolumeChange={(vol) => setStemVolume(stem.id, vol)}
-            onDownload={() => handleDownloadStem(stem)}
+            onUseAsReference={onUseAsReference}
           />
         ))}
       </div>

@@ -42,6 +42,11 @@ export const SeparateStemsDialog = ({
   trackTitle,
   onSuccess,
 }: SeparateStemsDialogProps) => {
+  const handleUseAsReference = async (audioUrl: string, stemType: string) => {
+    const { useStemReference } = await import('@/hooks/useStemReference');
+    const { setReferenceFromStem } = useStemReference();
+    await setReferenceFromStem(audioUrl, stemType, trackId);
+  };
   const [selectedMode, setSelectedMode] = useState<'separate_vocal' | 'split_stem' | null>(null);
   const [viewMode, setViewMode] = useState<'separate_vocal' | 'split_stem' | null>(null);
   const [showResults, setShowResults] = useState(false);
@@ -307,7 +312,11 @@ export const SeparateStemsDialog = ({
             </div>
 
             <StemMixerProvider>
-              <AdvancedStemMixer stems={currentStems} trackTitle={trackTitle} />
+              <AdvancedStemMixer 
+                stems={currentStems} 
+                trackTitle={trackTitle}
+                onUseAsReference={handleUseAsReference}
+              />
             </StemMixerProvider>
 
             <div className="flex justify-between gap-2 pt-2">

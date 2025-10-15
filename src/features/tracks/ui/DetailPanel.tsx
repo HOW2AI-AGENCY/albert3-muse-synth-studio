@@ -33,6 +33,7 @@ interface TrackStem {
   stem_type: string;
   audio_url: string;
   separation_mode: string;
+  track_id: string;
   version_id?: string | null;
   created_at?: string;
 }

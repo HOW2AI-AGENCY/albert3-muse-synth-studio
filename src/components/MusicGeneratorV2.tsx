@@ -59,6 +59,47 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     trackId: '',
     jobId: ''
   });
+  
+  // ✅ NEW: Check for pending stem reference on mount
+  useEffect(() => {
+    const pendingRef = localStorage.getItem('pendingStemReference');
+    if (pendingRef) {
+      try {
+        const refData = JSON.parse(pendingRef);
+        
+        // Автозаполнение формы из референс-стема
+        setParams(prev => ({
+          ...prev,
+          prompt: refData.prompt || prev.prompt,
+          lyrics: refData.lyrics || prev.lyrics,
+          tags: refData.styleTags?.join(', ') || prev.tags,
+          referenceAudioUrl: refData.audioUrl,
+          referenceFileName: `${refData.stemType}.mp3`,
+          referenceTrackId: refData.trackId,
+          provider: 'suno', // Mureka не поддерживает референс
+        }));
+        
+        // Переключаем на Suno если нужно
+        if (selectedProvider === 'mureka') {
+          setProvider('suno');
+        }
+        
+        // Очищаем после использования
+        localStorage.removeItem('pendingStemReference');
+        
+        toast({
+          title: '✅ Референс загружен',
+          description: `Стем "${refData.stemType}" установлен как основа`,
+        });
+        
+        logger.info('Stem reference loaded', 'MusicGeneratorV2', refData);
+      } catch (error) {
+        logger.error('Failed to load stem reference', error as Error, 'MusicGeneratorV2');
+        localStorage.removeItem('pendingStemReference');
+      }
+    }
+  }, []);
+
 
   // Generation params
   const [params, setParams] = useState<GenerationParams>({

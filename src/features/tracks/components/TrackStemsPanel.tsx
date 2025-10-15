@@ -17,6 +17,7 @@ interface TrackStem {
   stem_type: string;
   audio_url: string;
   separation_mode: string;
+  track_id: string;
   suno_task_id?: string;
 }
 

@@ -1,15 +1,17 @@
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
-import { Music4, Volume2, VolumeX, Download } from 'lucide-react';
+import { Music4 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StemWaveform } from './StemWaveform';
+import { StemContextMenu } from './StemContextMenu';
 
 interface TrackStem {
   id: string;
   stem_type: string;
   audio_url: string;
   separation_mode: string;
+  track_id: string;
 }
 
 interface StemMixerTrackProps {
@@ -20,11 +22,12 @@ interface StemMixerTrackProps {
   isSolo: boolean;
   currentTime?: number;
   duration?: number;
+  trackTitle?: string;
   onToggleActive: () => void;
   onToggleSolo: () => void;
   onToggleMute: () => void;
   onVolumeChange: (volume: number) => void;
-  onDownload: () => void;
+  onUseAsReference?: (audioUrl: string, stemType: string) => void;
 }
 
 const stemTypeLabels: Record<string, string> = {
@@ -62,21 +65,27 @@ export const StemMixerTrack = ({
   isSolo,
   currentTime = 0,
   duration = 0,
+  trackTitle,
   onToggleActive,
   onToggleSolo,
   onToggleMute,
   onVolumeChange,
-  onDownload,
+  onUseAsReference,
 }: StemMixerTrackProps) => {
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-2 p-3 rounded-lg border transition-all',
-        isActive && !isMuted && 'border-primary/50 bg-primary/5',
-        isSolo && 'border-yellow-500/50 bg-yellow-500/5 ring-1 ring-yellow-500/20',
-        !isActive && 'opacity-60'
-      )}
+    <StemContextMenu 
+      stem={stem} 
+      trackTitle={trackTitle}
+      onUseAsReference={onUseAsReference}
     >
+      <div
+        className={cn(
+          'flex flex-col gap-2 p-3 rounded-lg border transition-all',
+          isActive && !isMuted && 'border-primary/50 bg-primary/5',
+          isSolo && 'border-yellow-500/50 bg-yellow-500/5 ring-1 ring-yellow-500/20',
+          !isActive && 'opacity-60'
+        )}
+      >
       {/* Main controls row */}
       <div className="flex items-center gap-3">
         {/* Toggle Active */}
@@ -107,6 +116,7 @@ export const StemMixerTrack = ({
             onClick={onToggleSolo}
             className="h-8 w-8 p-0 touch-action-manipulation"
             disabled={!isActive}
+            title="Solo (S)"
           >
             <span className="text-xs font-bold">S</span>
           </Button>
@@ -116,12 +126,9 @@ export const StemMixerTrack = ({
             onClick={onToggleMute}
             className="h-8 w-8 p-0 touch-action-manipulation"
             disabled={!isActive}
+            title="Mute (M)"
           >
-            {isMuted ? (
-              <VolumeX className="w-4 h-4" />
-            ) : (
-              <Volume2 className="w-4 h-4" />
-            )}
+            <span className="text-xs font-bold">M</span>
           </Button>
         </div>
 
@@ -139,17 +146,6 @@ export const StemMixerTrack = ({
             {Math.round(volume * 100)}%
           </span>
         </div>
-
-        {/* Download Button */}
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={onDownload}
-          className="h-8 w-8 p-0 shrink-0"
-          title="Скачать стем"
-        >
-          <Download className="w-4 h-4" />
-        </Button>
       </div>
 
       {/* Waveform visualization */}
@@ -161,5 +157,6 @@ export const StemMixerTrack = ({
         className="w-full"
       />
     </div>
+    </StemContextMenu>
   );
 };

@@ -2,11 +2,12 @@ import React, { createContext, useContext, useState, useRef, useCallback, useEff
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 
-interface TrackStem {
+export interface TrackStem {
   id: string;
   stem_type: string;
   audio_url: string;
   separation_mode: string;
+  track_id: string;
 }
 
 interface StemMixerContextType {
@@ -73,6 +74,10 @@ export const StemMixerProvider = ({ children }: StemMixerProviderProps) => {
     stems.forEach(stem => {
       const audio = new Audio(stem.audio_url);
       audio.preload = 'metadata';
+      
+      // ✅ FIX: Add CORS settings for Mureka stems
+      audio.crossOrigin = 'anonymous';
+      
       audioElementsRef.current.set(stem.id, audio);
       
       // Initialize all stems as active
@@ -84,6 +89,11 @@ export const StemMixerProvider = ({ children }: StemMixerProviderProps) => {
         if (audio.duration && audio.duration > duration) {
           setDuration(audio.duration);
         }
+      });
+      
+      // ✅ FIX: Add error handling for loading failures
+      audio.addEventListener('error', (e) => {
+        console.error(`Audio loading failed for stem ${stem.stem_type}:`, (e.target as HTMLAudioElement).error);
       });
     });
 
