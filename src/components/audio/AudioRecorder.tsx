@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Mic, Upload, Trash2, Square } from '@/utils/iconImports';
+import { Mic, Trash2, Square } from '@/utils/iconImports';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
-import { useAudioUpload } from '@/hooks/useAudioUpload';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 interface AudioRecorderProps {
@@ -30,10 +28,8 @@ export const AudioRecorder = ({ onRecordComplete, onRemove, className }: AudioRe
     startRecording,
     stopRecording,
     reset,
-  } = useAudioRecorder();
+  } = useAudioRecorder(onRecordComplete);
 
-  const { uploadAudio, isUploading, uploadProgress } = useAudioUpload();
-  const { toast } = useToast();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -115,28 +111,6 @@ export const AudioRecorder = ({ onRecordComplete, onRemove, className }: AudioRe
     };
   }, [isRecording, analyser]);
 
-  const handleUpload = async () => {
-    if (!audioBlob) return;
-
-    const MAX_SIZE = 20 * 1024 * 1024; // 20MB
-    if (audioBlob.size > MAX_SIZE) {
-      toast({
-        variant: 'destructive',
-        title: 'Файл слишком большой',
-        description: `Максимальный размер: 20MB. Размер вашего файла: ${(audioBlob.size / 1024 / 1024).toFixed(2)}MB`,
-      });
-      return;
-    }
-
-    const fileName = `recording-${Date.now()}.webm`;
-    const file = new File([audioBlob], fileName, { type: audioBlob.type });
-
-    const uploadedUrl = await uploadAudio(file);
-    if (uploadedUrl) {
-      onRecordComplete?.(uploadedUrl);
-    }
-  };
-
   const handleRemove = () => {
     reset();
     onRemove?.();
@@ -166,12 +140,11 @@ export const AudioRecorder = ({ onRecordComplete, onRemove, className }: AudioRe
 
         {/* Controls */}
         <div className="flex items-center gap-2">
-          {!audioBlob ? (
+          {!audioUrl || isRecording ? (
             <Button
               onClick={isRecording ? stopRecording : startRecording}
               variant={isRecording ? 'destructive' : 'default'}
               className="flex-1 text-xs h-8"
-              disabled={isUploading}
               aria-label={isRecording ? "Остановить запись" : "Начать запись"}
               aria-live="polite"
               aria-atomic="true"
@@ -189,31 +162,14 @@ export const AudioRecorder = ({ onRecordComplete, onRemove, className }: AudioRe
               )}
             </Button>
           ) : (
-            <>
-              <Button
-                onClick={handleUpload}
-                disabled={isUploading}
-                className="flex-1 text-xs h-8"
-              >
-                {isUploading ? (
-                  <>Загрузка {uploadProgress}%</>
-                ) : (
-                  <>
-                    <Upload className="w-3.5 h-3.5 mr-1.5" />
-                    Загрузить
-                  </>
-                )}
-              </Button>
-              <Button
-                onClick={handleRemove}
-                variant="outline"
-                size="icon"
-                disabled={isUploading}
-                className="h-8 w-8"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </Button>
-            </>
+            <Button
+              onClick={handleRemove}
+              variant="outline"
+              className="flex-1 text-xs h-8"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+              Удалить и записать заново
+            </Button>
           )}
         </div>
 

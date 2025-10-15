@@ -2,7 +2,7 @@ import { memo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, X, Loader2, Music, Mic } from '@/utils/iconImports';
+import { Upload, X, Loader2, Music, Mic, Trash2 } from '@/utils/iconImports';
 import { cn } from '@/lib/utils';
 import { ReferenceTrackSelector } from './ReferenceTrackSelector';
 import { AudioRecorder } from '@/components/audio/AudioRecorder';
@@ -129,10 +129,32 @@ export const AudioReferenceSection = memo(({
           </TabsContent>
 
           <TabsContent value="record" className="mt-2">
-            <AudioRecorder
-              onRecordComplete={(url) => onRecordComplete?.(url)}
-              onRemove={onRemove}
-            />
+            {referenceFileName && referenceAudioUrl ? (
+              <div className="space-y-2 p-3 rounded-md border border-border/40 bg-secondary/10">
+                <div className="flex items-center gap-2 p-2 bg-success/10 rounded border border-success/20">
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-success">✓ Аудио записано и загружено</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Готово к использованию</p>
+                  </div>
+                </div>
+                <audio controls src={referenceAudioUrl} className="w-full h-8" />
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={onRemove} 
+                  className="w-full text-xs"
+                  disabled={isGenerating}
+                >
+                  <Trash2 className="h-3 w-3 mr-2" />
+                  Удалить и записать заново
+                </Button>
+              </div>
+            ) : (
+              <AudioRecorder
+                onRecordComplete={(url) => onRecordComplete?.(url)}
+                onRemove={onRemove}
+              />
+            )}
           </TabsContent>
         </Tabs>
       )}

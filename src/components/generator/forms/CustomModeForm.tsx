@@ -3,7 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Music, FileAudio, History } from '@/utils/iconImports';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Music, FileAudio, History, AlertCircle } from '@/utils/iconImports';
 import { PromptInput } from './PromptInput';
 import { LyricsInput } from './LyricsInput';
 import { AdvancedControls } from './AdvancedControls';
@@ -165,18 +167,26 @@ export const CustomModeForm = memo(({
         {/* Audio Reference Section */}
         <AccordionItem value="audio" className="border-border/30">
           <AccordionTrigger className="text-xs font-medium py-2 hover:no-underline">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <FileAudio className="h-3.5 w-3.5" />
-              Референсное аудио {params.referenceFileName && '(загружено)'}
+              <span>Референсное аудио {params.referenceFileName && '(загружено)'}</span>
+              {params.provider === 'mureka' && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 ml-1">
+                  <AlertCircle className="h-2.5 w-2.5 mr-1" />
+                  Недоступно
+                </Badge>
+              )}
             </div>
           </AccordionTrigger>
           <AccordionContent className="pt-2 pb-3">
             {params.provider === 'mureka' ? (
-              <div className="p-3 rounded-md bg-warning/10 border border-warning/20">
-                <p className="text-xs text-warning-foreground">
-                  ⚠️ Mureka не поддерживает референсное аудио. Переключитесь на Suno для этой функции.
-                </p>
-              </div>
+              <Alert variant="default" className="border-warning/50 bg-warning/5">
+                <AlertCircle className="h-4 w-4 text-warning" />
+                <AlertTitle className="text-sm font-medium">Функция недоступна для Mureka</AlertTitle>
+                <AlertDescription className="text-xs text-muted-foreground mt-1">
+                  Mureka не поддерживает референсное аудио. Переключитесь на Suno, чтобы использовать эту функцию.
+                </AlertDescription>
+              </Alert>
             ) : (
               <>
                 <AudioReferenceSection

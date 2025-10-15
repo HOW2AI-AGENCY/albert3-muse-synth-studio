@@ -53,27 +53,24 @@ const WavConvertMenuItem: React.FC<{
   trackId: string; 
   trackMetadata: Record<string, any> | null | undefined;
 }> = ({ trackId, trackMetadata }) => {
-  const { toast } = useToast();
   const { convertToWav, isConverting, convertingTrackId } = useConvertToWav();
+  
+  // ✅ Проверяем провайдер - скрываем для Mureka треков
+  const metadata = trackMetadata as Record<string, unknown> | null;
+  const isMurekaTrack = metadata?.provider === 'mureka';
+  const sunoTaskId = metadata?.suno_task_id as string | undefined;
+  
+  // Не показывать кнопку для Mureka треков или треков без suno_task_id
+  if (isMurekaTrack || !sunoTaskId) {
+    return null;
+  }
   
   const handleConvert = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     
-    const metadata = trackMetadata as Record<string, unknown> | null;
-    const sunoTaskId = metadata?.suno_task_id as string | undefined;
-    
-    if (!sunoTaskId) {
-      toast({ 
-        title: "Недоступно", 
-        description: "Только треки, созданные через Suno, могут быть конвертированы в WAV",
-        variant: "destructive" 
-      });
-      return;
-    }
-    
     if (isConverting && convertingTrackId === trackId) return;
     await convertToWav({ trackId });
-  }, [trackId, trackMetadata, convertToWav, isConverting, convertingTrackId, toast]);
+  }, [trackId, convertToWav, isConverting, convertingTrackId]);
   
   return (
     <DropdownMenuItem onClick={handleConvert} disabled={isConverting && convertingTrackId === trackId}>
@@ -261,6 +258,10 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
   const { versionCount, masterVersion } = useTrackVersions(track.id, false);
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  
+  // ✅ Определяем провайдер трека
+  const isMurekaTrack = track.metadata?.provider === 'mureka';
+  const isSunoTrack = !isMurekaTrack;
 
   const handleTogglePublic = useCallback(async () => {
     try {
@@ -535,36 +536,64 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
                     {track.is_public ? 'Скрыть' : 'Опубликовать'}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={(e) => { 
-                      e.stopPropagation(); 
-                      onSeparateStems?.(track.id);
-                    }}
-                    disabled={!onSeparateStems}
-                  >
-                    <Split className="w-4 h-4 mr-2" />
-                    Разделить на стемы
-                  </DropdownMenuItem>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <DropdownMenuItem 
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              if (isSunoTrack) onSeparateStems?.(track.id);
+                            }}
+                            disabled={!onSeparateStems || isMurekaTrack}
+                            className={isMurekaTrack ? 'opacity-50' : ''}
+                          >
+                            <Split className="w-4 h-4 mr-2" />
+                            Разделить на стемы
+                          </DropdownMenuItem>
+                        </div>
+                      </TooltipTrigger>
+                      {isMurekaTrack && (
+                        <TooltipContent side="left">
+                          Разделение на стемы доступно только для Suno треков
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                   <DropdownMenuItem 
                     onClick={(e) => { 
                       e.stopPropagation(); 
                       onExtend?.(track.id);
                     }}
-                    disabled={!onExtend}
+                    disabled={!onExtend || !track.audio_url}
                   >
                     <Expand className="w-4 h-4 mr-2" />
                     Расширить трек
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={(e) => { 
-                      e.stopPropagation(); 
-                      onCover?.(track.id);
-                    }}
-                    disabled={!onCover}
-                  >
-                    <Mic2 className="w-4 h-4 mr-2" />
-                    Создать кавер
-                  </DropdownMenuItem>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div>
+                          <DropdownMenuItem 
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              if (isSunoTrack) onCover?.(track.id);
+                            }}
+                            disabled={!onCover || isMurekaTrack}
+                            className={isMurekaTrack ? 'opacity-50' : ''}
+                          >
+                            <Mic2 className="w-4 h-4 mr-2" />
+                            Создать кавер
+                          </DropdownMenuItem>
+                        </div>
+                      </TooltipTrigger>
+                      {isMurekaTrack && (
+                        <TooltipContent side="left">
+                          Кавер доступен только для Suno треков
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                   {!track.has_vocals && (
                     <DropdownMenuItem 
                       onClick={(e) => { 

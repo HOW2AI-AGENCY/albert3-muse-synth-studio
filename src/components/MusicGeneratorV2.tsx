@@ -93,12 +93,37 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   // Sync provider with model version
   useEffect(() => {
     const defaultModel = getDefaultModel(selectedProvider as ProviderType);
-    setParams(prev => ({ 
-      ...prev, 
-      provider: selectedProvider,
-      modelVersion: defaultModel.value
-    }));
-  }, [selectedProvider]);
+    setParams(prev => {
+      const newParams = { 
+        ...prev, 
+        provider: selectedProvider,
+        modelVersion: defaultModel.value
+      };
+      
+      // ✅ НОВОЕ: Очистить referenceAudioUrl если переключились на Mureka
+      if (selectedProvider === 'mureka' && prev.referenceAudioUrl) {
+        logger.warn('Clearing reference audio for Mureka', 'MusicGeneratorV2', {
+          previousProvider: prev.provider,
+          hadReference: !!prev.referenceAudioUrl
+        });
+        
+        toast({
+          title: '⚠️ Референс удалён',
+          description: 'Mureka не поддерживает референсное аудио',
+          duration: 4000,
+        });
+        
+        return {
+          ...newParams,
+          referenceAudioUrl: null,
+          referenceFileName: null,
+          referenceTrackId: null,
+        };
+      }
+      
+      return newParams;
+    });
+  }, [selectedProvider, toast]);
 
   // Boost prompt handler
   const handleBoostPrompt = useCallback(async () => {
