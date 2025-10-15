@@ -8,6 +8,7 @@ import { PromptInput } from './PromptInput';
 import { LyricsInput } from './LyricsInput';
 import { AdvancedControls } from './AdvancedControls';
 import { StyleTagsInput } from './StyleTagsInput';
+import { StyleRecommendationsInline } from '@/components/generator/StyleRecommendationsInline';
 import { AudioReferenceSection } from '../audio/AudioReferenceSection';
 import type { GenerationParams } from '../types/generator.types';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -56,6 +57,12 @@ export const CustomModeForm = memo(({
     e.preventDefault();
     onGenerate();
   }, [onGenerate]);
+
+  const handleApplyTags = useCallback((newTags: string[]) => {
+    const existingTags = params.tags.split(',').map(t => t.trim()).filter(Boolean);
+    const uniqueTags = Array.from(new Set([...existingTags, ...newTags]));
+    onParamChange('tags', uniqueTags.join(', '));
+  }, [params.tags, onParamChange]);
 
   return (
     <>
@@ -131,21 +138,30 @@ export const CustomModeForm = memo(({
           </AccordionContent>
         </AccordionItem>
 
-        {/* Style Tags Section */}
-        <AccordionItem value="tags" className="border-border/30">
-          <AccordionTrigger className="text-xs font-medium py-2 hover:no-underline">
-            Теги стиля {params.tags && `(${params.tags.split(',').filter(t => t.trim()).length})`}
-          </AccordionTrigger>
-          <AccordionContent className="pt-2 pb-3">
-            <StyleTagsInput
-              tags={params.tags}
-              negativeTags={params.negativeTags}
-              onTagsChange={(tags) => onParamChange('tags', tags)}
-              onNegativeTagsChange={(tags) => onParamChange('negativeTags', tags)}
-              isGenerating={isGenerating}
-            />
-          </AccordionContent>
-        </AccordionItem>
+          {/* Style Tags Section */}
+          <AccordionItem value="tags" className="border-border/30">
+            <AccordionTrigger className="text-xs font-medium py-2 hover:no-underline">
+              Теги стиля {params.tags && `(${params.tags.split(',').filter(t => t.trim()).length})`}
+            </AccordionTrigger>
+            <AccordionContent className="pt-2 pb-3 space-y-3">
+              {/* AI Recommendations */}
+              {params.prompt.length >= 10 && (
+                <StyleRecommendationsInline
+                  prompt={params.prompt}
+                  currentTags={params.tags.split(',').map(t => t.trim()).filter(Boolean)}
+                  onApplyTags={handleApplyTags}
+                />
+              )}
+              
+              <StyleTagsInput
+                tags={params.tags}
+                negativeTags={params.negativeTags}
+                onTagsChange={(tags) => onParamChange('tags', tags)}
+                onNegativeTagsChange={(tags) => onParamChange('negativeTags', tags)}
+                isGenerating={isGenerating}
+              />
+            </AccordionContent>
+          </AccordionItem>
 
         {/* Audio Reference Section */}
         <AccordionItem value="audio" className="border-border/30">
@@ -221,7 +237,16 @@ export const CustomModeForm = memo(({
             <AccordionTrigger className="text-xs font-medium py-2 hover:no-underline">
               Теги стиля {params.tags && `(${params.tags.split(',').filter(t => t.trim()).length})`}
             </AccordionTrigger>
-            <AccordionContent className="pt-2 pb-3">
+            <AccordionContent className="pt-2 pb-3 space-y-3">
+              {/* AI Recommendations */}
+              {params.prompt.length >= 10 && (
+                <StyleRecommendationsInline
+                  prompt={params.prompt}
+                  currentTags={params.tags.split(',').map(t => t.trim()).filter(Boolean)}
+                  onApplyTags={handleApplyTags}
+                />
+              )}
+              
               <StyleTagsInput
                 tags={params.tags}
                 negativeTags={params.negativeTags}

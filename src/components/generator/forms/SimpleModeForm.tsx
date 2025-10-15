@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Music } from '@/utils/iconImports';
 import { GenrePresets } from '@/components/generator/GenrePresets';
 import { PromptInput } from './PromptInput';
+import { StyleRecommendationsInline } from '@/components/generator/StyleRecommendationsInline';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import type { GenerationParams, GenrePreset } from '../types/generator.types';
@@ -41,6 +42,12 @@ export const SimpleModeForm = memo(({
     onGenerate();
   }, [onGenerate]);
 
+  const handleApplyTags = useCallback((newTags: string[]) => {
+    const existingTags = params.tags.split(',').map(t => t.trim()).filter(Boolean);
+    const uniqueTags = Array.from(new Set([...existingTags, ...newTags]));
+    onParamChange('tags', uniqueTags.join(', '));
+  }, [params.tags, onParamChange]);
+
   return (
     <>
       {/* Genre Presets */}
@@ -58,6 +65,15 @@ export const SimpleModeForm = memo(({
         isRequired
         hasLyrics={!!params.lyrics.trim()}
       />
+
+      {/* AI Recommendations */}
+      {params.prompt.length >= 10 && (
+        <StyleRecommendationsInline
+          prompt={params.prompt}
+          currentTags={params.tags.split(',').map(t => t.trim()).filter(Boolean)}
+          onApplyTags={handleApplyTags}
+        />
+      )}
 
       {/* Compact Title Input */}
       <div className="space-y-1.5">
