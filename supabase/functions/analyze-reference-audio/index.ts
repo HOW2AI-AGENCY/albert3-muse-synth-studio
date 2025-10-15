@@ -33,6 +33,7 @@ import {
   createSupabaseUserClient,
 } from "../_shared/supabase.ts";
 import { validateRequest, validationSchemas, ValidationException } from "../_shared/validation.ts";
+import { convertAudioToWav } from "../_shared/audio-converter.ts";
 
 // ============================================================================
 // TYPES
@@ -142,8 +143,18 @@ const mainHandler = async (req: Request): Promise<Response> => {
       type: audioBlob.type 
     });
 
-    logger.info('[ANALYZE-REF] 📤 Uploading to Mureka');
-    const uploadResult = await murekaClient.uploadFile(audioBlob);
+    // ✅ CRITICAL FIX: Convert to WAV for Mureka compatibility
+    logger.info('[ANALYZE-REF] 🔄 Converting to WAV format');
+    const wavBlob = await convertAudioToWav(audioBlob);
+    logger.info('[ANALYZE-REF] ✅ Converted to WAV', {
+      originalSize: audioBlob.size,
+      wavSize: wavBlob.size,
+      originalType: audioBlob.type,
+      wavType: wavBlob.type
+    });
+
+    logger.info('[ANALYZE-REF] 📤 Uploading WAV to Mureka');
+    const uploadResult = await murekaClient.uploadFile(wavBlob);
 
     if (uploadResult.code !== 200 || !uploadResult.data?.file_id) {
       throw new Error('Mureka file upload failed');
