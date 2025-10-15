@@ -67,6 +67,9 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       try {
         const refData = JSON.parse(pendingRef);
         
+        // Переключаем на расширенную форму (custom mode)
+        setMode('custom');
+        
         // Автозаполнение формы из референс-стема
         setParams(prev => ({
           ...prev,
@@ -89,7 +92,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
         
         toast({
           title: '✅ Референс загружен',
-          description: `Стем "${refData.stemType}" установлен как основа`,
+          description: `Стем "${refData.stemType}" установлен как основа для генерации`,
         });
         
         logger.info('Stem reference loaded', 'MusicGeneratorV2', refData);

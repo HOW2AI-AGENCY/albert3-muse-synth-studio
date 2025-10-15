@@ -15,7 +15,7 @@ export const useStemReference = (options?: UseStemReferenceOptions) => {
       const { supabase } = await import('@/integrations/supabase/client');
       const { data: track } = await supabase
         .from('tracks')
-        .select('prompt, lyrics, style_tags, provider')
+        .select('prompt, lyrics, style_tags, provider, title')
         .eq('id', trackId)
         .single();
 
@@ -28,6 +28,7 @@ export const useStemReference = (options?: UseStemReferenceOptions) => {
           prompt: track.prompt,
           lyrics: track.lyrics,
           styleTags: track.style_tags,
+          title: track.title,
           timestamp: Date.now()
         };
 
@@ -37,7 +38,7 @@ export const useStemReference = (options?: UseStemReferenceOptions) => {
         navigate('/workspace/generate');
 
         toast.success(`Стем "${stemType}" установлен как референс`, {
-          description: 'Форма генератора настроена автоматически',
+          description: 'Расширенная форма настроена автоматически',
         });
 
         options?.onReferenceSet?.(audioUrl, stemType);
