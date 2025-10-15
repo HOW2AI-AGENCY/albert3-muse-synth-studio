@@ -149,17 +149,17 @@ export function GenrePresets({ onSelect }: GenrePresetsProps) {
         <h3 className="text-xs sm:text-sm font-medium">Жанровые пресеты</h3>
       </div>
       
-      {/* Mobile: Horizontal scroll */}
-      <ScrollArea className="w-full md:hidden">
-        <div className="flex gap-2 pb-2">
+      {/* Mobile: Horizontal scroll with snap */}
+      <ScrollArea className="w-full md:hidden" type="scroll">
+        <div className="flex gap-2 pb-2 px-1" style={{ scrollSnapType: 'x mandatory' }}>
           {GENRE_PRESETS.map((preset) => {
             const Icon = preset.icon;
             return (
               <Card
                 key={preset.id}
                 className={cn(
-                  "cursor-pointer transition-all hover:scale-[1.02] hover:shadow-md border-muted/50 shrink-0",
-                  "bg-gradient-to-br w-[280px]",
+                  "cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] hover:shadow-md border-muted/50 shrink-0",
+                  "bg-gradient-to-br w-[280px] snap-start touch-pan-x",
                   preset.color
                 )}
                 onClick={() => handlePresetClick(preset)}
