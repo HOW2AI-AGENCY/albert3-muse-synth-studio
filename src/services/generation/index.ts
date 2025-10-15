@@ -1,11 +1,6 @@
 /**
- * Generation Module
- * Централизованный модуль для работы с генерацией музыки
+ * Generation Service - Public API
  */
 
-export { GenerationService } from './GenerationService';
-export type {
-  GenerationRequest,
-  GenerationResult,
-  GenerationError,
-} from './GenerationService';
+export { GenerationService } from './generation.service';
+export type { GenerationRequest, GenerationResult } from './generation.service';
