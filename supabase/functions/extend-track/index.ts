@@ -140,33 +140,39 @@ serve(async (req: Request) => {
     // Determine if we use custom params or original track params
     const useCustomParams = defaultParamFlag ?? (!!prompt || !!tags);
 
+    // ✅ CRITICAL FIX: Build payload according to Suno extend API spec
     const sunoPayload: any = {
-      defaultParamFlag: useCustomParams,
-      audioId: originalTrack.suno_id,
+      audioId: originalTrack.suno_id, // Required: the Suno audio ID
       model: extractedModel,
       callBackUrl: callbackUrl
     };
 
-    if (useCustomParams) {
-      sunoPayload.prompt = prompt || originalTrack.prompt;
-      sunoPayload.tags = tags || originalTrack.style_tags || []; // ✅ tags массив
-      sunoPayload.title = `${originalTrack.title} (Extended)`;
-      sunoPayload.continueAt = continueAt || Math.max(0, (originalTrack.duration || 120) - 20);
-      // ✅ ИСПРАВЛЕНО: Добавляем referenceAudioUrl из оригинального трека если есть
-      if (originalTrack.reference_audio_url) {
-        sunoPayload.referenceAudioUrl = originalTrack.reference_audio_url;
-      }
+    // Add optional continueAt parameter
+    if (continueAt !== undefined) {
+      sunoPayload.continueAt = continueAt;
+    } else if (originalTrack.duration) {
+      // Default: continue from 20 seconds before the end
+      sunoPayload.continueAt = Math.max(0, originalTrack.duration - 20);
     }
 
-    logger.info('📤 [EXTEND] Payload details', {
-      hasReferenceAudio: !!sunoPayload.referenceAudioUrl,
-      payloadKeys: Object.keys(sunoPayload)
-    });
+    // ✅ FIX: Only add custom params when explicitly requested
+    if (useCustomParams) {
+      sunoPayload.defaultParamFlag = true;
+      sunoPayload.prompt = prompt || originalTrack.prompt || '';
+      sunoPayload.tags = tags || originalTrack.style_tags || [];
+      sunoPayload.title = `${originalTrack.title} (Extended)`;
+    } else {
+      sunoPayload.defaultParamFlag = false;
+    }
 
     logger.info('📤 [EXTEND] Calling Suno extend API', { 
-      payload: sunoPayload,
-      useCustomParams,
-      model: extractedModel
+      audioId: originalTrack.suno_id,
+      continueAt: sunoPayload.continueAt,
+      defaultParamFlag: sunoPayload.defaultParamFlag,
+      hasPrompt: !!sunoPayload.prompt,
+      hasTags: !!(sunoPayload.tags?.length),
+      model: extractedModel,
+      payload: sunoPayload
     });
 
     const sunoResponse = await fetch('https://api.sunoapi.org/api/v1/generate/extend', {
