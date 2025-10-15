@@ -330,7 +330,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       {/* Main Content */}
       <ScrollArea className={cn(
         "flex-grow",
-        isMobile && "max-h-[calc(100vh-180px)]"
+        isMobile && "max-h-[calc(85vh-120px)]"
       )}>
         <div className={cn(
           "space-y-2",

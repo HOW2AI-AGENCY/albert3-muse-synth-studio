@@ -24,9 +24,11 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
   }, [vibrate]);
 
   const { primaryItems, secondaryItems } = useMemo(() => {
-    const primary = items.filter(item => item.isMobilePrimary);
+    const primary = items.filter(item => item.isMobilePrimary).slice(0, 3);
     const secondary = items.filter(item => !item.isMobilePrimary);
-    return { primaryItems: primary, secondaryItems: secondary };
+    const remaining = items.filter(item => item.isMobilePrimary).slice(3);
+    const allSecondary = [...remaining, ...secondary];
+    return { primaryItems: primary, secondaryItems: allSecondary };
   }, [items]);
 
   // Update CSS variable for tab bar height

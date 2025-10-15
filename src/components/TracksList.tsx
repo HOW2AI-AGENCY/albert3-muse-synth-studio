@@ -1,5 +1,6 @@
 import { useState, memo, useCallback, useRef, useEffect } from "react";
 import { TrackCard } from "@/features/tracks/components/TrackCard";
+import { TrackCardMobile } from "@/features/tracks/components/TrackCardMobile";
 import { TrackListItem } from "@/features/tracks/components/TrackListItem";
 import { VirtualizedTracksList } from "./tracks/VirtualizedTracksList";
 import { ViewSwitcher } from "./tracks/ViewSwitcher";
@@ -10,6 +11,8 @@ import { Music } from "@/utils/iconImports";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 interface TracksListProps {
   tracks: Track[];
@@ -34,6 +37,7 @@ const TracksListComponent = ({
 }: TracksListProps) => {
   const { playTrackWithQueue } = useAudioPlayer();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
@@ -214,21 +218,33 @@ const TracksListComponent = ({
         ) : (
           // Regular grid for smaller lists with stagger animations
           <StaggerContainer 
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-3"
+            className={cn(
+              "grid gap-3",
+              isMobile 
+                ? "grid-cols-2" 
+                : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8"
+            )}
             staggerDelay={0.03}
           >
             {tracks.map((track) => (
               <StaggerItem key={track.id}>
-                <TrackCard
-                  track={track as any}
-                  onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
-                  onShare={() => handleShare(track.id)}
-                  onRetry={handleRetry}
-                  onDelete={handleDelete}
-                  onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
-                  onExtend={onExtend ? () => onExtend(track.id) : undefined}
-                  onCover={onCover ? () => onCover(track.id) : undefined}
-                />
+                {isMobile ? (
+                  <TrackCardMobile
+                    track={track as any}
+                    onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
+                  />
+                ) : (
+                  <TrackCard
+                    track={track as any}
+                    onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
+                    onShare={() => handleShare(track.id)}
+                    onRetry={handleRetry}
+                    onDelete={handleDelete}
+                    onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
+                    onExtend={onExtend ? () => onExtend(track.id) : undefined}
+                    onCover={onCover ? () => onCover(track.id) : undefined}
+                  />
+                )}
               </StaggerItem>
             ))}
           </StaggerContainer>
