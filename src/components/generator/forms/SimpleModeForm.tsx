@@ -2,7 +2,8 @@ import { memo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Music } from '@/utils/iconImports';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Music, Info } from '@/utils/iconImports';
 import { GenrePresets } from '@/components/generator/GenrePresets';
 import { PromptInput } from './PromptInput';
 import { StyleRecommendationsInline } from '@/components/generator/StyleRecommendationsInline';
@@ -64,7 +65,18 @@ export const SimpleModeForm = memo(({
         isGenerating={isGenerating}
         isRequired
         hasLyrics={!!params.lyrics.trim()}
+        customMode={false}
       />
+
+      {/* ✅ NEW: Подсказка при наличии лирики */}
+      {params.lyrics.trim() && (
+        <Alert className="py-2 bg-primary/5 border-primary/20">
+          <Info className="h-3.5 w-3.5 text-primary" />
+          <AlertDescription className="text-xs text-muted-foreground ml-1">
+            💡 Промпт используется для описания стиля музыки, а текст — для лирики. Текст будет петься.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* AI Recommendations */}
       {params.prompt.length >= 10 && (

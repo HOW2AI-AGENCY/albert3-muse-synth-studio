@@ -13,6 +13,7 @@ interface PromptInputProps {
   isGenerating: boolean;
   isRequired?: boolean;
   hasLyrics?: boolean;
+  customMode?: boolean;
   placeholder?: string;
   label?: string;
   rows?: number;
@@ -27,11 +28,16 @@ export const PromptInput = memo(({
   isGenerating,
   isRequired = false,
   hasLyrics = false,
+  customMode = false,
   placeholder = "Опишите стиль, настроение и жанр...",
   label = "Описание музыки",
   rows = 2,
   minHeight = "60px",
 }: PromptInputProps) => {
+  // ✅ Адаптивный плейсхолдер в зависимости от режима
+  const effectivePlaceholder = customMode
+    ? "Опишите стиль, жанр, настроение (если есть текст, он будет петься)"
+    : placeholder || "Опишите желаемый стиль музыки (жанр, настроение, инструменты)";
   return (
     <div className="space-y-1">
       <Label htmlFor="prompt" className="text-xs font-medium">
@@ -43,7 +49,7 @@ export const PromptInput = memo(({
       <div className="relative">
         <Textarea
           id="prompt"
-          placeholder={placeholder}
+          placeholder={effectivePlaceholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onFocus={(e) => e.target.classList.add('focus:min-h-[90px]')}

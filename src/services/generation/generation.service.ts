@@ -97,13 +97,18 @@ export class GenerationService {
     // Map parameters to Suno API format
     const payload = {
       trackId,
-      prompt,
+      
+      // ✅ CRITICAL: Prompt vs Lyrics разделение
+      prompt: customMode ? undefined : prompt,  // В simple mode - описание стиля
+      lyrics: customMode ? (lyrics || prompt) : undefined,  // В custom mode - текст песни
+      
       title,
-      lyrics: lyrics || undefined,
       tags: tags.length > 0 ? tags : undefined,
       model_version: modelVersion,
+      
       hasVocals: hasVocals !== undefined ? hasVocals : undefined,
       customMode: customMode !== undefined ? customMode : undefined,
+      
       vocalGender: vocalGender && vocalGender !== 'any' ? vocalGender : undefined,
       audioWeight: audioWeight !== undefined ? audioWeight / 100 : undefined,
       styleWeight: styleWeight !== undefined ? styleWeight / 100 : undefined,
@@ -117,9 +122,10 @@ export class GenerationService {
     };
 
     logger.info('📤 [GenerationService] Calling Suno edge function', 'GenerationService', {
+      mode: customMode ? 'custom (with lyrics)' : 'simple (style description)',
       hasLyrics: !!payload.lyrics,
+      hasPrompt: !!payload.prompt,
       hasReference: !!payload.referenceAudioUrl,
-      customMode: payload.customMode,
     });
 
     const { data, error } = await supabase.functions.invoke('generate-suno', {

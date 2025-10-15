@@ -165,10 +165,16 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       trackId: body.trackId,
       title: body.title,
       promptLength: body.prompt?.length ?? 0,
+      lyricsLength: normalizedLyrics?.length ?? 0,
       tagsCount: tags.length,
-      hasLyrics: !!normalizedLyrics,
-      hasVocals: effectiveHasVocals,
       customMode: customModeValue,
+      hasVocals: effectiveHasVocals,
+      // ✅ NEW: Показываем что именно уйдет в Suno
+      willSendToSuno: {
+        promptType: customModeValue ? 'lyrics' : 'style_description',
+        promptPreview: (customModeValue ? normalizedLyrics : body.prompt)?.substring(0, 50),
+        tags: tags,
+      }
     });
 
     const authHeader = req.headers.get('Authorization');
@@ -377,24 +383,35 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // ✅ FIX: В customMode используем lyrics если есть, иначе prompt
-    // В обычном режиме используем prompt
-    const promptForSuno = customModeValue 
-      ? (normalizedLyrics || prompt || '') 
-      : (prompt || '');
+    // ✅ CRITICAL FIX: Правильная логика формирования payload для Suno API
+    // В Suno API два режима:
+    // 1. customMode = false (simple): prompt описывает стиль, Suno сам генерирует лирику
+    // 2. customMode = true (custom): prompt = lyrics (то что петь), tags описывают стиль
     
-    if (!promptForSuno) {
-      throw new Error("A prompt or lyrics are required for Suno generation.");
+    // ✅ Валидация перед отправкой
+    if (customModeValue && !normalizedLyrics) {
+      throw new Error("Custom mode requires lyrics. Please provide lyrics or switch to simple mode.");
+    }
+    
+    if (!customModeValue && !prompt) {
+      throw new Error("Simple mode requires a style description prompt.");
     }
 
     const sunoPayload: SunoGenerationPayload = {
-      prompt: promptForSuno,
+      // ✅ FIX: В customMode отправляем lyrics в поле prompt
+      // В simple mode отправляем описание стиля
+      prompt: customModeValue ? (normalizedLyrics || '') : (prompt || ''),
+      
+      // ✅ FIX: tags остаются неизменными (пользовательские style tags)
       tags: tags,
+      
       title: title || 'Generated Track',
       make_instrumental: effectiveMakeInstrumental ?? false,
       model: (modelVersion as SunoGenerationPayload['model']) || 'V5',
       customMode: customModeValue ?? false,
       callBackUrl: callbackUrl ?? undefined,
+      
+      // Остальные параметры без изменений
       ...(negativeTags ? { negativeTags } : {}),
       ...(vocalGender ? { vocalGender } : {}),
       ...(styleWeight !== undefined ? { styleWeight: Number(styleWeight.toFixed(2)) } : {}),

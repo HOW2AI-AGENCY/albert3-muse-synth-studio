@@ -97,6 +97,7 @@ export const CustomModeForm = memo(({
           isGenerating={isGenerating}
           isRequired={!params.lyrics.trim()}
           hasLyrics={!!params.lyrics.trim()}
+          customMode={true}
           label="Описание стиля"
           placeholder="Опишите стиль, жанр, настроение..."
           rows={isMobile ? 2 : 3}
