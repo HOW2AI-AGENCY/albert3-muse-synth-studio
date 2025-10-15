@@ -301,8 +301,13 @@ const Generate = () => {
         </Drawer>
       </TooltipProvider>
 
-      <Sheet open={!!selectedTrack} onOpenChange={(open) => !open && handleCloseDetail()}>
-        <SheetContent side="bottom" className="h-[90vh] p-0 border-t">
+      <Drawer open={!!selectedTrack} onOpenChange={(open) => !open && handleCloseDetail()}>
+        <DrawerContent className="h-[85vh] max-h-[90vh]" aria-describedby={undefined}>
+          {/* Drag handle */}
+          <div className="w-full h-8 flex items-center justify-center shrink-0">
+            <div className="w-12 h-1 bg-muted-foreground/20 rounded-full" />
+          </div>
+          
           {selectedTrack && (
             <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
               <DetailPanel
@@ -310,11 +315,12 @@ const Generate = () => {
                 onClose={handleCloseDetail}
                 onUpdate={refreshTracks}
                 onDelete={handleDelete}
+                variant="mobile"
               />
             </Suspense>
           )}
-        </SheetContent>
-      </Sheet>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };

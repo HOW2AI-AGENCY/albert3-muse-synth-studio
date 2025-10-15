@@ -12,6 +12,7 @@ import { ApiService } from "@/services/api.service";
 import { logger } from "@/utils/logger";
 import { getTrackWithVersions } from "../api/trackVersions";
 import { primeTrackVersionsCache } from "../hooks/useTrackVersions";
+import { DetailPanelMobile } from "./DetailPanelMobile";
 
 interface TrackVersion {
   id: string;
@@ -61,6 +62,7 @@ interface DetailPanelProps {
   onClose?: () => void;
   onUpdate?: () => void;
   onDelete?: () => void;
+  variant?: 'desktop' | 'mobile';
 }
 
 // Определяем типы для состояния и действий
@@ -147,8 +149,13 @@ const detailPanelReducer = (state: DetailPanelState, action: DetailPanelAction):
   }
 };
 
-export const DetailPanel = ({ track, onClose, onUpdate, onDelete }: DetailPanelProps) => {
+export const DetailPanel = ({ track, onClose, onUpdate, onDelete, variant = 'desktop' }: DetailPanelProps) => {
   const [activeTab, setActiveTab] = useState("overview");
+  
+  // Mobile compact version
+  if (variant === 'mobile') {
+    return <DetailPanelMobile track={track} onClose={onClose} onUpdate={onUpdate} onDelete={onDelete} />;
+  }
   
   // Инициализируем состояние с помощью useMemo для оптимизации
   const initialState = useMemo((): DetailPanelState => ({

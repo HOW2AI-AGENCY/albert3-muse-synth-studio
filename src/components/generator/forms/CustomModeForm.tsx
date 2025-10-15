@@ -10,6 +10,8 @@ import { AdvancedControls } from './AdvancedControls';
 import { StyleTagsInput } from './StyleTagsInput';
 import { AudioReferenceSection } from '../audio/AudioReferenceSection';
 import type { GenerationParams } from '../types/generator.types';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 const AudioDescriber = lazy(() => import('@/components/audio/AudioDescriber').then(m => ({ default: m.AudioDescriber })));
 
@@ -48,6 +50,8 @@ export const CustomModeForm = memo(({
   onDebouncedPromptChange,
   onDebouncedLyricsChange,
 }: CustomModeFormProps) => {
+  const isMobile = useIsMobile();
+  
   const handleGenerate = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     onGenerate();
@@ -84,8 +88,8 @@ export const CustomModeForm = memo(({
           isRequired
           hasLyrics={!!params.lyrics.trim()}
           placeholder="Опишите стиль, жанр, настроение..."
-          rows={3}
-          minHeight="80px"
+          rows={isMobile ? 2 : 3}
+          minHeight={isMobile ? "60px" : "80px"}
         />
       </div>
 
@@ -100,16 +104,20 @@ export const CustomModeForm = memo(({
           placeholder="Авто-генерация если пусто"
           value={params.title}
           onChange={(e) => onParamChange('title', e.target.value)}
-          className="h-8 text-sm"
+          className={cn(
+            "text-sm",
+            isMobile ? "h-10 text-base" : "h-8"
+          )}
           disabled={isGenerating}
           maxLength={80}
         />
       </div>
 
       {/* Collapsible Sections */}
-      <Accordion type="multiple" className="w-full">
-        {/* Lyrics Section */}
-        <AccordionItem value="lyrics" className="border-border/30">
+      {isMobile ? (
+        <Accordion type="single" collapsible className="w-full">
+          {/* Lyrics Section */}
+          <AccordionItem value="lyrics" className="border-border/30">
           <AccordionTrigger className="text-xs font-medium py-2 hover:no-underline">
             Текст песни {params.lyrics && `(${params.lyrics.split('\n').filter(l => l.trim()).length} строк)`}
           </AccordionTrigger>
@@ -156,7 +164,7 @@ export const CustomModeForm = memo(({
               isUploading={isUploading}
               isGenerating={isGenerating}
             />
-            {params.referenceAudioUrl && (
+            {params.referenceAudioUrl && !isMobile && (
               <Suspense fallback={<div className="text-xs text-muted-foreground">Загрузка анализатора...</div>}>
                 <AudioDescriber 
                   audioUrl={params.referenceAudioUrl} 
@@ -190,7 +198,93 @@ export const CustomModeForm = memo(({
             />
           </AccordionContent>
         </AccordionItem>
-      </Accordion>
+        </Accordion>
+      ) : (
+        <Accordion type="multiple" defaultValue={["lyrics"]} className="w-full">
+          {/* Lyrics Section */}
+          <AccordionItem value="lyrics" className="border-border/30">
+            <AccordionTrigger className="text-xs font-medium py-2 hover:no-underline">
+              Текст песни {params.lyrics && `(${params.lyrics.split('\n').filter(l => l.trim()).length} строк)`}
+            </AccordionTrigger>
+            <AccordionContent className="pt-2 pb-3">
+              <LyricsInput
+                value={debouncedLyrics}
+                onChange={onDebouncedLyricsChange}
+                onGenerateLyrics={onOpenLyricsDialog}
+                isGenerating={isGenerating}
+              />
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Style Tags Section */}
+          <AccordionItem value="tags" className="border-border/30">
+            <AccordionTrigger className="text-xs font-medium py-2 hover:no-underline">
+              Теги стиля {params.tags && `(${params.tags.split(',').filter(t => t.trim()).length})`}
+            </AccordionTrigger>
+            <AccordionContent className="pt-2 pb-3">
+              <StyleTagsInput
+                tags={params.tags}
+                negativeTags={params.negativeTags}
+                onTagsChange={(tags) => onParamChange('tags', tags)}
+                onNegativeTagsChange={(tags) => onParamChange('negativeTags', tags)}
+                isGenerating={isGenerating}
+              />
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Audio Reference Section */}
+          <AccordionItem value="audio" className="border-border/30">
+            <AccordionTrigger className="text-xs font-medium py-2 hover:no-underline">
+              <div className="flex items-center gap-1.5">
+                <FileAudio className="h-3.5 w-3.5" />
+                Референсное аудио {params.referenceFileName && '(загружено)'}
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="pt-2 pb-3">
+              <AudioReferenceSection
+                referenceFileName={params.referenceFileName}
+                referenceAudioUrl={params.referenceAudioUrl}
+                onFileSelect={onAudioFileSelect}
+                onRemove={onRemoveAudio}
+                isUploading={isUploading}
+                isGenerating={isGenerating}
+              />
+              {params.referenceAudioUrl && (
+                <Suspense fallback={<div className="text-xs text-muted-foreground">Загрузка анализатора...</div>}>
+                  <AudioDescriber 
+                    audioUrl={params.referenceAudioUrl} 
+                    onDescriptionGenerated={(description) => onParamChange('prompt', description)}
+                  />
+                </Suspense>
+              )}
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Advanced Settings */}
+          <AccordionItem value="advanced" className="border-border/30">
+            <AccordionTrigger className="text-xs font-medium py-2 hover:no-underline">
+              Расширенные настройки
+            </AccordionTrigger>
+            <AccordionContent className="pt-2 pb-3">
+              <AdvancedControls
+                vocalGender={params.vocalGender}
+                audioWeight={params.audioWeight}
+                styleWeight={params.styleWeight}
+                lyricsWeight={params.lyricsWeight}
+                weirdness={params.weirdness}
+                hasReferenceAudio={!!params.referenceAudioUrl}
+                hasLyrics={!!params.lyrics.trim()}
+                onVocalGenderChange={(value) => onParamChange('vocalGender', value)}
+                onAudioWeightChange={(value) => onParamChange('audioWeight', value)}
+                onStyleWeightChange={(value) => onParamChange('styleWeight', value)}
+                onLyricsWeightChange={(value) => onParamChange('lyricsWeight', value)}
+                onWeirdnessChange={(value) => onParamChange('weirdness', value)}
+                isGenerating={isGenerating}
+              />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
 
       {/* Generate Button */}
       <Button
