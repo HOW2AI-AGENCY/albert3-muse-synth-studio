@@ -30,7 +30,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.separate-stems]
-  verify_jwt = false
+  verify_jwt = true
   [functions.separate-stems.env]
     SENTRY_DSN = ""
     SENTRY_ENVIRONMENT = "development"
@@ -100,4 +100,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.extend-lyrics-mureka]
+verify_jwt = true
+
+[functions.analyze-reference-audio]
 verify_jwt = true

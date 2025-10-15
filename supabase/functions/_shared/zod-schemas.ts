@@ -147,6 +147,12 @@ export const stemsCallbackSchema = z.object({
   }).optional()
 });
 
+// ✅ analyze-reference-audio request schema
+export const analyzeReferenceAudioSchema = z.object({
+  audioUrl: httpsUrlSchema,
+  trackId: uuidSchema.optional()
+});
+
 // ✅ Helper function to validate and parse
 export function validateAndParse<T>(
   schema: z.ZodSchema<T>,

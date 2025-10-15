@@ -131,6 +131,11 @@ export const validationSchemas = {
     taskId: [validators.string, validators.minLength(8), validators.maxLength(128)],
     separationMode: [validators.string, validators.minLength(3), validators.maxLength(50)],
     forceRefresh: [validators.boolean]
+  },
+
+  analyzeReferenceAudio: {
+    audioUrl: [validators.required, validators.string, validators.minLength(10), validators.maxLength(2000)],
+    trackId: [validators.string, validators.uuid]
   }
 };
 
