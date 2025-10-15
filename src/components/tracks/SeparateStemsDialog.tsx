@@ -12,6 +12,7 @@ import { Music4, Loader2, Mic, Music, Download, FileAudio } from "@/utils/iconIm
 import { cn } from "@/lib/utils";
 import { useStemSeparation } from "@/hooks/useStemSeparation";
 import { supabase } from "@/integrations/supabase/client";
+import { StemMixerProvider } from "@/contexts/StemMixerContext";
 import { AdvancedStemMixer } from "@/features/tracks/components/AdvancedStemMixer";
 import { useConvertToWav } from "@/hooks/useConvertToWav";
 import { toast } from "sonner";
@@ -243,7 +244,9 @@ export const SeparateStemsDialog = ({
               </div>
             </div>
 
-            <AdvancedStemMixer stems={stems} trackTitle={trackTitle} />
+            <StemMixerProvider>
+              <AdvancedStemMixer stems={stems} trackTitle={trackTitle} />
+            </StemMixerProvider>
 
             <div className="flex justify-between gap-2 pt-2">
               <Button 
