@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/utils/logger";
 import { Loader2, FileText } from "@/utils/iconImports";
 import { LyricsVariantSelectorDialog } from "@/components/lyrics/LyricsVariantSelector";
+import { LyricsVariantsPanel } from "@/components/lyrics/LyricsVariantsPanel";
 
 interface LyricsGeneratorDialogProps {
   open: boolean;
@@ -36,7 +37,8 @@ export function LyricsGeneratorDialog({
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [variantSelectorOpen, setVariantSelectorOpen] = useState(false);
-  const [variants, setVariants] = useState<any[]>([]);
+  const [showVariants, setShowVariants] = useState(false);
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const wordCount = prompt.trim().split(/\s+/).filter(Boolean).length;
@@ -80,6 +82,7 @@ export function LyricsGeneratorDialog({
 
       // Poll for results
       if (data?.jobId) {
+        setCurrentJobId(data.jobId);
         logger.info(`⏳ [LYRICS] Polling for job ${data.jobId}...`);
         
         toast({
@@ -109,10 +112,9 @@ export function LyricsGeneratorDialog({
               
               logger.info(`✅ [LYRICS] Got ${jobData.lyrics_variants.length} variants`);
               
-              // If multiple variants, show selector
+              // If multiple variants, show new UI
               if (jobData.lyrics_variants.length > 1) {
-                setVariants(jobData.lyrics_variants);
-                setVariantSelectorOpen(true);
+                setShowVariants(true);
                 toast({
                   title: "✨ Текст готов!",
                   description: `Получено ${jobData.lyrics_variants.length} вариантов. Выберите лучший!`
@@ -182,7 +184,7 @@ export function LyricsGeneratorDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open && !showVariants} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[540px] gap-0 p-0">
           <DialogHeader className="px-6 pt-6 pb-4 border-b">
             <DialogTitle className="flex items-center gap-2.5 text-lg">
@@ -263,7 +265,7 @@ export function LyricsGeneratorDialog({
     <LyricsVariantSelectorDialog
       open={variantSelectorOpen}
       onOpenChange={setVariantSelectorOpen}
-      jobId={variants[0]?.job_id || ''}
+      jobId={currentJobId || ''}
       onSelect={(lyrics) => {
         if (onGenerated) {
           onGenerated(lyrics);
@@ -273,6 +275,42 @@ export function LyricsGeneratorDialog({
         setPrompt("");
       }}
     />
+
+    {/* Новый UI для выбора вариантов лирики */}
+    <Dialog open={showVariants} onOpenChange={(open) => {
+      if (!open) {
+        setShowVariants(false);
+        onOpenChange(false);
+        setPrompt("");
+      }
+    }}>
+      <DialogContent className="sm:max-w-[800px] max-h-[80vh]">
+        <DialogHeader>
+          <DialogTitle>Выберите вариант лирики</DialogTitle>
+          <DialogDescription>
+            AI сгенерировал несколько вариантов. Выберите наиболее подходящий.
+          </DialogDescription>
+        </DialogHeader>
+        
+        {currentJobId && (
+          <LyricsVariantsPanel 
+            jobId={currentJobId}
+            onSelect={(variant) => {
+              if (variant.content && onGenerated) {
+                onGenerated(variant.content);
+                setShowVariants(false);
+                onOpenChange(false);
+                setPrompt("");
+                toast({
+                  title: '✅ Лирика выбрана',
+                  description: 'Вариант добавлен в форму генерации'
+                });
+              }
+            }}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
     </>
   );
 }

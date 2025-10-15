@@ -387,6 +387,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       <LyricsGeneratorDialog
         open={lyricsDialogOpen}
         onOpenChange={setLyricsDialogOpen}
+        trackId={params.trackId}
         onGenerated={(lyrics: string) => {
           setParam('lyrics', lyrics);
           setDebouncedLyrics(lyrics);

@@ -21,6 +21,7 @@ export interface GenerationParams {
   lyricsWeight: number;
   weirdness: number;
   provider: string;
+  trackId?: string;
 }
 
 export interface GeneratorUIState {

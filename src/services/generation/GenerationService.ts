@@ -126,7 +126,7 @@ async function createTrackRecord(
 ): Promise<string> {
   const { title, prompt, provider, lyrics, styleTags, hasVocals } = request;
 
-  const effectiveTitle = title?.trim() || prompt.substring(0, 50) || 'Untitled Track';
+  const effectiveTitle = title?.trim() || 'Untitled Track';
 
   try {
     const { data, error } = await supabase
