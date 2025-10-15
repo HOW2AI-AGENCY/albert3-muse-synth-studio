@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Music4, Loader2, Mic, Music, Download, FileAudio } from "@/utils/iconImports";
 import { cn } from "@/lib/utils";
@@ -42,9 +43,11 @@ export const SeparateStemsDialog = ({
   onSuccess,
 }: SeparateStemsDialogProps) => {
   const [selectedMode, setSelectedMode] = useState<'separate_vocal' | 'split_stem' | null>(null);
+  const [viewMode, setViewMode] = useState<'separate_vocal' | 'split_stem' | null>(null);
   const [showResults, setShowResults] = useState(false);
-  const [stems, setStems] = useState<TrackStem[]>([]);
-  const [hasExistingStems, setHasExistingStems] = useState(false);
+  const [allStems, setAllStems] = useState<TrackStem[]>([]);
+  const [vocalStems, setVocalStems] = useState<TrackStem[]>([]);
+  const [splitStems, setSplitStems] = useState<TrackStem[]>([]);
   const [isLoadingStems, setIsLoadingStems] = useState(true);
   const { convertToWav, isConverting } = useConvertToWav();
   
@@ -70,16 +73,15 @@ export const SeparateStemsDialog = ({
         .eq('track_id', trackId);
       
       if (data) {
-        setStems(data as TrackStem[]);
-        const hasStems = data.length > 0;
-        setHasExistingStems(hasStems);
+        const stems = data as TrackStem[];
+        setAllStems(stems);
         
-        // If stems exist and dialog is opened, show results immediately
-        if (hasStems && !isGenerating) {
-          setShowResults(true);
-        } else if (hasStems && isGenerating) {
-          setShowResults(true);
-        }
+        // Разделяем стемы по типу разделения
+        const vocal = stems.filter(s => s.separation_mode === 'separate_vocal');
+        const split = stems.filter(s => s.separation_mode === 'split_stem');
+        
+        setVocalStems(vocal);
+        setSplitStems(split);
       }
       setIsLoadingStems(false);
     };
@@ -110,27 +112,31 @@ export const SeparateStemsDialog = ({
   const handleGenerate = async (mode: 'separate_vocal' | 'split_stem') => {
     setSelectedMode(mode);
     setShowResults(false);
-    setStems([]);
-    setHasExistingStems(false);
+    setViewMode(null);
     await generateStems(mode);
     setSelectedMode(null);
   };
 
-  const handleViewExisting = () => {
+  const handleViewStems = (mode: 'separate_vocal' | 'split_stem') => {
+    setViewMode(mode);
     setShowResults(true);
   };
 
-  const handleRegenerateSeparation = () => {
+  const handleBackToSelection = () => {
     setShowResults(false);
-    setHasExistingStems(false);
+    setViewMode(null);
   };
 
   const handleDownloadAll = async () => {
-    if (stems.length === 0) return;
+    const stemsToDownload = viewMode === 'separate_vocal' ? vocalStems : 
+                           viewMode === 'split_stem' ? splitStems : 
+                           allStems;
     
-    toast.info(`Скачивание ${stems.length} стемов...`);
+    if (stemsToDownload.length === 0) return;
     
-    for (const stem of stems) {
+    toast.info(`Скачивание ${stemsToDownload.length} стемов...`);
+    
+    for (const stem of stemsToDownload) {
       try {
         const response = await fetch(stem.audio_url);
         const blob = await response.blob();
@@ -151,11 +157,15 @@ export const SeparateStemsDialog = ({
   };
 
   const handleConvertAllToWav = async () => {
-    if (stems.length === 0) return;
+    const stemsToConvert = viewMode === 'separate_vocal' ? vocalStems : 
+                          viewMode === 'split_stem' ? splitStems : 
+                          allStems;
     
-    toast.info(`Конвертация ${stems.length} стемов в WAV...`);
+    if (stemsToConvert.length === 0) return;
     
-    for (const stem of stems) {
+    toast.info(`Конвертация ${stemsToConvert.length} стемов в WAV...`);
+    
+    for (const stem of stemsToConvert) {
       try {
         await convertToWav({
           trackId,
@@ -170,10 +180,18 @@ export const SeparateStemsDialog = ({
   const handleClose = () => {
     if (!isGenerating) {
       setShowResults(false);
+      setViewMode(null);
       setSelectedMode(null);
       onOpenChange(false);
     }
   };
+
+  const currentStems = viewMode === 'separate_vocal' ? vocalStems : 
+                      viewMode === 'split_stem' ? splitStems : 
+                      allStems;
+  
+  const hasVocalStems = vocalStems.length > 0;
+  const hasSplitStems = splitStems.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -181,7 +199,9 @@ export const SeparateStemsDialog = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Music4 className="w-5 h-5 text-primary" />
-            {showResults ? 'Результаты разделения' : 'Разделение на стемы'}
+            {showResults 
+              ? `Результаты: ${viewMode === 'separate_vocal' ? 'Вокал + Инструментал' : 'Детальное разделение'}` 
+              : 'Разделение на стемы'}
           </DialogTitle>
           <DialogDescription>
             {trackTitle && <span className="font-medium">"{trackTitle}"</span>}
@@ -216,11 +236,11 @@ export const SeparateStemsDialog = ({
         )}
 
         {/* Results View */}
-        {showResults && stems.length > 0 && (
+        {showResults && currentStems.length > 0 && (
           <div className="space-y-4 pt-4">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <p className="text-sm text-muted-foreground">
-                Найдено стемов: {stems.length}
+                Найдено стемов: {currentStems.length}
               </p>
               <div className="flex gap-2 flex-wrap">
                 <Button
@@ -245,16 +265,16 @@ export const SeparateStemsDialog = ({
             </div>
 
             <StemMixerProvider>
-              <AdvancedStemMixer stems={stems} trackTitle={trackTitle} />
+              <AdvancedStemMixer stems={currentStems} trackTitle={trackTitle} />
             </StemMixerProvider>
 
             <div className="flex justify-between gap-2 pt-2">
               <Button 
                 variant="outline" 
-                onClick={handleRegenerateSeparation}
+                onClick={handleBackToSelection}
                 disabled={isGenerating}
               >
-                Повторить разделение
+                Назад к выбору
               </Button>
               <Button variant="outline" onClick={handleClose} disabled={isGenerating}>
                 Закрыть
@@ -263,37 +283,16 @@ export const SeparateStemsDialog = ({
           </div>
         )}
 
-        {/* Existing Stems View */}
-        {!isLoadingStems && hasExistingStems && !showResults && !isGenerating && (
-          <div className="py-8 text-center space-y-4">
-            <Music4 className="w-16 h-16 mx-auto text-primary opacity-50" />
-            <div className="space-y-2">
-              <p className="font-medium">Стемы уже разделены</p>
-              <p className="text-sm text-muted-foreground">
-                Для этого трека найдено {stems.length} {stems.length === 1 ? 'стем' : stems.length < 5 ? 'стема' : 'стемов'}
-              </p>
-            </div>
-            <div className="flex justify-center gap-3">
-              <Button onClick={handleViewExisting}>
-                <Music className="w-4 h-4 mr-2" />
-                Просмотр стемов
-              </Button>
-              <Button variant="outline" onClick={handleRegenerateSeparation}>
-                Повторить разделение
-              </Button>
-            </div>
-          </div>
-        )}
-
         {/* Selection View */}
-        {!isLoadingStems && !isGenerating && !showResults && !hasExistingStems && (
+        {!isLoadingStems && !isGenerating && !showResults && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
           {/* Базовое разделение */}
           <Card
             className={cn(
               "p-4 cursor-pointer transition-all hover:border-primary/50 hover:shadow-glow-primary",
-              selectedMode === 'separate_vocal' && "border-primary ring-2 ring-primary/20"
+              selectedMode === 'separate_vocal' && "border-primary ring-2 ring-primary/20",
+              hasVocalStems && "border-green-500/50 bg-green-500/5"
             )}
             onClick={() => !isGenerating && setSelectedMode('separate_vocal')}
           >
@@ -302,29 +301,65 @@ export const SeparateStemsDialog = ({
                 <Mic className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold mb-1">Вокал + Инструментал</h3>
+                <h3 className="font-semibold mb-1 flex items-center gap-2 justify-center">
+                  Вокал + Инструментал
+                  {hasVocalStems && (
+                    <Badge variant="outline" className="text-xs bg-green-500/10 border-green-500/50">
+                      ✓ Готово
+                    </Badge>
+                  )}
+                </h3>
                 <p className="text-xs text-muted-foreground">
                   Разделить на 2 стема: чистый вокал и инструментальная часть
                 </p>
               </div>
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleGenerate('separate_vocal');
-                }}
-                disabled={isGenerating}
-                className="w-full"
-                variant={selectedMode === 'separate_vocal' ? 'default' : 'outline'}
-              >
-                {isGenerating && selectedMode === 'separate_vocal' ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Генерация...
-                  </>
-                ) : (
-                  'Разделить'
-                )}
-              </Button>
+              
+              {hasVocalStems ? (
+                <div className="w-full space-y-2">
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleViewStems('separate_vocal');
+                    }}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <Music className="w-4 h-4 mr-1.5" />
+                    Просмотр ({vocalStems.length})
+                  </Button>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGenerate('separate_vocal');
+                    }}
+                    disabled={isGenerating}
+                    className="w-full"
+                    variant="secondary"
+                    size="sm"
+                  >
+                    Перегенерировать
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleGenerate('separate_vocal');
+                  }}
+                  disabled={isGenerating}
+                  className="w-full"
+                  variant={selectedMode === 'separate_vocal' ? 'default' : 'outline'}
+                >
+                  {isGenerating && selectedMode === 'separate_vocal' ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Генерация...
+                    </>
+                  ) : (
+                    'Разделить'
+                  )}
+                </Button>
+              )}
             </div>
           </Card>
 
@@ -332,7 +367,8 @@ export const SeparateStemsDialog = ({
           <Card
             className={cn(
               "p-4 cursor-pointer transition-all hover:border-secondary/50 hover:shadow-glow-secondary",
-              selectedMode === 'split_stem' && "border-secondary ring-2 ring-secondary/20"
+              selectedMode === 'split_stem' && "border-secondary ring-2 ring-secondary/20",
+              hasSplitStems && "border-green-500/50 bg-green-500/5"
             )}
             onClick={() => !isGenerating && setSelectedMode('split_stem')}
           >
@@ -341,29 +377,65 @@ export const SeparateStemsDialog = ({
                 <Music className="w-6 h-6 text-secondary" />
               </div>
               <div>
-                <h3 className="font-semibold mb-1">По инструментам</h3>
+                <h3 className="font-semibold mb-1 flex items-center gap-2 justify-center">
+                  По инструментам
+                  {hasSplitStems && (
+                    <Badge variant="outline" className="text-xs bg-green-500/10 border-green-500/50">
+                      ✓ Готово
+                    </Badge>
+                  )}
+                </h3>
                 <p className="text-xs text-muted-foreground">
                   Разделить на 8+ стемов: вокал, ударные, бас, гитара и др.
                 </p>
               </div>
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleGenerate('split_stem');
-                }}
-                disabled={isGenerating}
-                className="w-full"
-                variant={selectedMode === 'split_stem' ? 'default' : 'outline'}
-              >
-                {isGenerating && selectedMode === 'split_stem' ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Генерация...
-                  </>
-                ) : (
-                  'Разделить'
-                )}
-              </Button>
+              
+              {hasSplitStems ? (
+                <div className="w-full space-y-2">
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleViewStems('split_stem');
+                    }}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <Music className="w-4 h-4 mr-1.5" />
+                    Просмотр ({splitStems.length})
+                  </Button>
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGenerate('split_stem');
+                    }}
+                    disabled={isGenerating}
+                    className="w-full"
+                    variant="secondary"
+                    size="sm"
+                  >
+                    Перегенерировать
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleGenerate('split_stem');
+                  }}
+                  disabled={isGenerating}
+                  className="w-full"
+                  variant={selectedMode === 'split_stem' ? 'default' : 'outline'}
+                >
+                  {isGenerating && selectedMode === 'split_stem' ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Генерация...
+                    </>
+                  ) : (
+                    'Разделить'
+                  )}
+                </Button>
+              )}
             </div>
           </Card>
             </div>
