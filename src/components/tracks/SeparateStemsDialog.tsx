@@ -178,12 +178,16 @@ export const SeparateStemsDialog = ({
   };
 
   const handleClose = () => {
-    if (!isGenerating) {
-      setShowResults(false);
-      setViewMode(null);
-      setSelectedMode(null);
-      onOpenChange(false);
+    // ✅ Блокировать закрытие если идет генерация
+    if (isGenerating) {
+      toast.info('Дождитесь завершения разделения');
+      return;
     }
+    
+    setShowResults(false);
+    setViewMode(null);
+    setSelectedMode(null);
+    onOpenChange(false);
   };
 
   const currentStems = viewMode === 'separate_vocal' ? vocalStems : 
@@ -195,7 +199,21 @@ export const SeparateStemsDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto"
+        onPointerDownOutside={(e) => {
+          if (isGenerating) {
+            e.preventDefault();
+            toast.info('Дождитесь завершения разделения');
+          }
+        }}
+        onEscapeKeyDown={(e) => {
+          if (isGenerating) {
+            e.preventDefault();
+            toast.info('Дождитесь завершения разделения');
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Music4 className="w-5 h-5 text-primary" />
@@ -222,15 +240,39 @@ export const SeparateStemsDialog = ({
           </div>
         )}
 
-        {/* Processing State */}
+        {/* Processing State - ✅ Enhanced UI */}
         {isGenerating && !showResults && (
-          <div className="py-8 text-center space-y-4">
-            <Loader2 className="w-12 h-12 mx-auto animate-spin text-primary" />
-            <div className="space-y-2">
-              <p className="font-medium">Обработка трека...</p>
-              <p className="text-sm text-muted-foreground">
-                Это может занять 30-180 секунд
-              </p>
+          <div className="space-y-4 py-8">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <div className="text-center space-y-2">
+                <p className="text-lg font-semibold">
+                  {selectedMode === 'separate_vocal' 
+                    ? 'Разделяем вокал и инструменты...' 
+                    : selectedMode === 'split_stem'
+                    ? 'Разделяем на отдельные инструменты...'
+                    : 'Обработка трека...'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Это может занять 1-2 минуты. Не закрывайте окно.
+                </p>
+              </div>
+            </div>
+            
+            {/* Progress indicator */}
+            <div className="space-y-2 max-w-md mx-auto">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                Отправка запроса на сервер...
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                AI обрабатывает аудио...
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <div className="h-2 w-2 rounded-full bg-muted-foreground/30" />
+                Сохранение результатов...
+              </div>
             </div>
           </div>
         )}

@@ -79,8 +79,8 @@ serve(async (req) => {
 
     const response = await murekaClient.extendLyrics(extendPayload);
     
-    // API returns { code, data: { lyrics, title } } synchronously
-    const extendedLyrics = response.data?.lyrics;
+    // ✅ FIX: API теперь возвращает { code, data: { data: [{ text, title }] } }
+    const extendedLyrics = response.data?.data?.[0]?.text;
 
     if (!extendedLyrics) {
       throw new Error('Mureka API did not return extended lyrics');

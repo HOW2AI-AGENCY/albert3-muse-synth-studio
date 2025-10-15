@@ -21,7 +21,7 @@ export const StyleRecommendationsInline = memo(({
   className,
 }: StyleRecommendationsInlineProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [manualTrigger, setManualTrigger] = useState(false);
+  const [hasManuallyTriggered, setHasManuallyTriggered] = useState(false);
 
   const hasMinimumContext = prompt.length >= 10;
   const currentTagsSet = useMemo(() => new Set(currentTags), [currentTags]);
@@ -33,8 +33,12 @@ export const StyleRecommendationsInline = memo(({
       currentTags,
     },
     {
-      enabled: manualTrigger && hasMinimumContext,
+      // ✅ FIX: Запускать ТОЛЬКО при ручном триггере
+      enabled: hasManuallyTriggered && hasMinimumContext,
       staleTime: 1000 * 60 * 5, // 5 минут кэш
+      // ✅ ВАЖНО: Не перезапускать при изменении currentTags
+      refetchOnMount: false,
+      refetchOnWindowFocus: false,
     }
   );
 
@@ -45,8 +49,8 @@ export const StyleRecommendationsInline = memo(({
       hasContext: hasMinimumContext,
     });
     
-    if (!isExpanded && !manualTrigger) {
-      setManualTrigger(true);
+    if (!isExpanded && !hasManuallyTriggered) {
+      setHasManuallyTriggered(true);
       logger.info('AI recommendations manual trigger', 'StyleRecommendationsInline', {
         prompt: prompt.substring(0, 50),
       });
@@ -191,18 +195,33 @@ export const StyleRecommendationsInline = memo(({
                 })}
               </div>
 
-              {newTagsCount > 0 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleApplyAll}
-                  className="w-full h-7 text-xs bg-primary/5 hover:bg-primary/10 border-primary/20"
-                >
-                  <Sparkles className="h-3 w-3 mr-1.5" />
-                  Применить все ({newTagsCount})
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {newTagsCount > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleApplyAll}
+                    className="flex-1 h-7 text-xs bg-primary/5 hover:bg-primary/10 border-primary/20"
+                  >
+                    <Sparkles className="h-3 w-3 mr-1.5" />
+                    Применить все ({newTagsCount})
+                  </Button>
+                )}
+                
+                {!isLoading && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => refetch()}
+                    className="h-7 px-3 text-xs"
+                    title="Обновить рекомендации"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
 
               {data?.vocalStyle && (
                 <div className="pt-2 border-t border-primary/10">

@@ -151,12 +151,96 @@ serve(async (req) => {
       try {
         const lyricsResult = await murekaClient.generateLyrics({ prompt });
         
-        if (lyricsResult.code === 200 && lyricsResult.data?.lyrics) {
-          finalLyrics = lyricsResult.data.lyrics;
-          lyricsWereGenerated = true;
+        // ✅ FIX: Проверяем новую структуру ответа (массив вариантов)
+        if (lyricsResult.code === 200 && lyricsResult.data?.data && lyricsResult.data.data.length > 0) {
+          const lyricsVariants = lyricsResult.data.data;
+          
           logger.info('✅ Lyrics generated successfully', {
-            lyricsLength: finalLyrics.length
+            variantsCount: lyricsVariants.length,
+            firstVariantLength: lyricsVariants[0].text?.length
           });
+          
+          // ✅ ЕСЛИ НЕСКОЛЬКО ВАРИАНТОВ -> сохраняем в lyrics_variants
+          if (lyricsVariants.length > 1) {
+            // Создаем job для хранения вариантов
+            const { data: jobData, error: jobError } = await supabaseAdmin
+              .from('lyrics_jobs')
+              .insert({
+                user_id: user.id,
+                track_id: finalTrackId,
+                status: 'completed',
+                prompt: prompt,
+                provider: 'mureka',
+                metadata: { source: 'mureka_generate' }
+              })
+              .select('id')
+              .single();
+            
+            if (jobError) {
+              logger.error('Failed to create lyrics job', { error: jobError });
+            } else if (jobData) {
+              // Сохраняем все варианты
+              const { error: variantsError } = await supabaseAdmin
+                .from('lyrics_variants')
+                .insert(
+                  lyricsVariants.map((variant, idx) => ({
+                    job_id: jobData.id,
+                    variant_index: idx,
+                    content: variant.text,
+                    title: variant.title,
+                    status: variant.status || 'complete',
+                    error_message: variant.errorMessage
+                  }))
+                );
+              
+              if (variantsError) {
+                logger.error('Failed to save lyrics variants', { error: variantsError });
+              } else {
+                logger.info('✅ Multiple lyrics variants saved', {
+                  trackId: finalTrackId,
+                  jobId: jobData.id,
+                  variantsCount: lyricsVariants.length
+                });
+                
+                // Используем первый вариант по умолчанию
+                finalLyrics = lyricsVariants[0].text;
+                
+                // Обновляем metadata трека для показа диалога выбора
+                await supabaseAdmin
+                  .from('tracks')
+                  .update({
+                    lyrics: finalLyrics,
+                    metadata: {
+                      stage: 'lyrics_selection',
+                      lyrics_job_id: jobData.id,
+                      has_multiple_lyrics_variants: true,
+                      variants_count: lyricsVariants.length
+                    }
+                  })
+                  .eq('id', finalTrackId);
+                
+                lyricsWereGenerated = true;
+                // Не продолжаем генерацию музыки - ждем выбора варианта
+                return new Response(
+                  JSON.stringify({
+                    success: true,
+                    trackId: finalTrackId,
+                    message: 'Lyrics generated, awaiting variant selection',
+                    requiresLyricsSelection: true,
+                    jobId: jobData.id,
+                  }),
+                  {
+                    status: 200,
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                  }
+                );
+              }
+            }
+          } else {
+            // Один вариант - используем сразу
+            finalLyrics = lyricsVariants[0].text;
+            lyricsWereGenerated = true;
+          }
           
           // Update track with generated lyrics
           await supabaseAdmin
@@ -170,8 +254,9 @@ serve(async (req) => {
               }
             })
             .eq('id', finalTrackId);
+            
         } else {
-          throw new Error('Failed to generate lyrics: ' + lyricsResult.msg);
+          throw new Error('Failed to generate lyrics: ' + (lyricsResult.msg || 'No data'));
         }
       } catch (lyricsError) {
         logger.error('🔴 Lyrics generation failed', { error: lyricsError });
@@ -180,7 +265,7 @@ serve(async (req) => {
           .from('tracks')
           .update({
             status: 'failed',
-            error_message: 'Не удалось сгенерировать текст песни',
+            error_message: 'Не удалось сгенерировать текст песни: ' + (lyricsError instanceof Error ? lyricsError.message : 'Unknown error'),
           })
           .eq('id', finalTrackId);
         

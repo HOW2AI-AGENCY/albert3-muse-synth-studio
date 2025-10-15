@@ -9,7 +9,10 @@ import { useAudioUpload } from '@/hooks/useAudioUpload';
 import { useBoostStyle } from '@/hooks/useBoostStyle';
 import { AudioPreviewDialog } from '@/components/audio/AudioPreviewDialog';
 import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog';
+import { MurekaLyricsVariantDialog } from '@/components/lyrics/MurekaLyricsVariantDialog';
 import { PromptHistoryDialog } from '@/components/generator/PromptHistoryDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast as sonnerToast } from 'sonner';
 import { usePromptHistory } from '@/hooks/usePromptHistory';
 import { useProviderBalance } from '@/hooks/useProviderBalance';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -51,6 +54,11 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [showPresets, setShowPresets] = useState(true);
   const [pendingAudioFile, setPendingAudioFile] = useState<File | null>(null);
+  const [murekaLyricsDialog, setMurekaLyricsDialog] = useState({
+    open: false,
+    trackId: '',
+    jobId: ''
+  });
 
   // Generation params
   const [params, setParams] = useState<GenerationParams>({
@@ -89,6 +97,46 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     const timer = setTimeout(() => setParam('lyrics', debouncedLyrics), 300);
     return () => clearTimeout(timer);
   }, [debouncedLyrics, setParam]);
+
+  // ✅ NEW: Subscribe to track updates for Mureka lyrics selection
+  useEffect(() => {
+    if (!params.trackId) return;
+
+    const channel = supabase
+      .channel(`track_lyrics_${params.trackId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tracks',
+          filter: `id=eq.${params.trackId}`,
+        },
+        (payload) => {
+          const track = payload.new as any;
+          if (
+            track.metadata?.stage === 'lyrics_selection' && 
+            track.metadata?.lyrics_job_id
+          ) {
+            logger.info('Mureka lyrics selection required', undefined, {
+              trackId: track.id,
+              jobId: track.metadata.lyrics_job_id
+            });
+            
+            setMurekaLyricsDialog({
+              open: true,
+              trackId: track.id,
+              jobId: track.metadata.lyrics_job_id
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [params.trackId]);
 
   // Sync provider with model version
   useEffect(() => {
@@ -313,6 +361,44 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   }, []);
 
   // Main generation handler
+  // ✅ NEW: Handle Mureka lyrics variant selection
+  const handleMurekaLyricsSelect = useCallback(async (lyrics: string, variantId: string) => {
+    if (!murekaLyricsDialog.trackId) return;
+    
+    try {
+      logger.info('User selected Mureka lyrics variant', undefined, {
+        trackId: murekaLyricsDialog.trackId,
+        variantId
+      });
+      
+      // Обновляем трек выбранной лирикой и продолжаем генерацию
+      const { error } = await supabase
+        .from('tracks')
+        .update({
+          lyrics: lyrics,
+          metadata: {
+            selected_lyrics_variant_id: variantId,
+            stage: 'composing_music',
+            stage_description: 'Создание музыки...'
+          }
+        })
+        .eq('id', murekaLyricsDialog.trackId);
+      
+      if (error) throw error;
+      
+      sonnerToast.success('Текст выбран! Продолжаем создание музыки...', {
+        duration: 3000
+      });
+      
+      // Обновляем локальные параметры
+      setParam('lyrics', lyrics);
+      
+    } catch (error) {
+      logger.error('Failed to apply lyrics variant', error as Error);
+      sonnerToast.error('Ошибка применения текста');
+    }
+  }, [murekaLyricsDialog.trackId, setParam]);
+
   const handleGenerate = useCallback(async () => {
     vibrate('heavy');
 
@@ -531,6 +617,15 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
           setDebouncedLyrics(lyrics);
           setLyricsDialogOpen(false);
         }}
+      />
+
+      {/* ✅ NEW: Mureka Lyrics Variant Selection Dialog */}
+      <MurekaLyricsVariantDialog
+        open={murekaLyricsDialog.open}
+        onOpenChange={(open) => setMurekaLyricsDialog(prev => ({ ...prev, open }))}
+        trackId={murekaLyricsDialog.trackId}
+        jobId={murekaLyricsDialog.jobId}
+        onSelectVariant={handleMurekaLyricsSelect}
       />
 
       <PromptHistoryDialog

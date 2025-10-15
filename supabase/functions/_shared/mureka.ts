@@ -129,10 +129,14 @@ export interface MurekaLyricsResponse {
   code: number;
   msg: string;
   data: {
-    /** Сгенерированное название (только для generate) */
-    title?: string;
-    /** Сгенерированный/расширенный текст */
-    lyrics?: string;
+    task_id?: string;
+    /** Массив вариантов лирики (API возвращает несколько вариантов) */
+    data?: Array<{
+      text: string;
+      title?: string;
+      status?: string;
+      errorMessage?: string;
+    }>;
   };
 }
 
