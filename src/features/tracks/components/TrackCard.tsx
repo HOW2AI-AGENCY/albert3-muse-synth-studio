@@ -47,6 +47,7 @@ import { TrackProgressBar } from "@/components/tracks/TrackProgressBar";
 import { TrackSyncStatus } from "@/components/tracks/TrackSyncStatus";
 import { getVersionShortLabel } from "@/utils/versionLabels";
 import { useConvertToWav } from "@/hooks/useConvertToWav";
+import { TrackVariantSelector } from "./TrackVariantSelector";
 
 // ✅ Компонент для WAV конвертации (использует hook на уровне компонента)
 const WavConvertMenuItem: React.FC<{ 
@@ -408,6 +409,13 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+
+        {/* Variant selector в правом верхнем углу */}
+        {track.status === 'completed' && (
+          <div className="absolute top-2 right-2 z-10">
+            <TrackVariantSelector trackId={track.id} />
+          </div>
+        )}
 
         {track.cover_url ? (
           <LazyImage
