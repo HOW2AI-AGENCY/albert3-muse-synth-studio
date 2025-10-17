@@ -113,3 +113,6 @@ verify_jwt = true
 
 [functions.refresh-track-audio]
 verify_jwt = true
+
+[functions.suno-webhook]
+verify_jwt = false

@@ -62,15 +62,57 @@ export const useAudioVersions = () => {
       return;
     }
 
+    const startTime = performance.now();
+
     try {
       await cacheAudioFile(nextVersion.audio_url);
       preloadedTracksRef.current.add(nextVersion.audio_url);
+      
+      const duration = performance.now() - startTime;
+      
       logInfo('Preloaded next version', 'useAudioVersions', { 
         versionId: nextVersion.id, 
-        versionNumber: nextVersion.versionNumber 
+        versionNumber: nextVersion.versionNumber,
+        preloadDuration: `${duration.toFixed(0)}ms`,
+        cacheSize: preloadedTracksRef.current.size
       });
+
+      // 📊 Метрики preloading для Sentry Performance
+      if (typeof window !== 'undefined' && (window as any).__SENTRY__) {
+        import('@/services/analytics.service').then(({ AnalyticsService }) => {
+          AnalyticsService.recordEvent({
+            eventType: 'audio_preload_success',
+            trackId: nextVersion.id,
+            metadata: {
+              duration,
+              versionNumber: nextVersion.versionNumber,
+              cacheSize: preloadedTracksRef.current.size,
+            },
+          });
+        });
+      }
     } catch (error) {
-      logError('Failed to preload next version', error as Error, 'useAudioVersions', { versionId: nextVersion.id });
+      const duration = performance.now() - startTime;
+      
+      logError('Failed to preload next version', error as Error, 'useAudioVersions', { 
+        versionId: nextVersion.id,
+        failedAfter: `${duration.toFixed(0)}ms`
+      });
+
+      // 📊 Метрики ошибок preloading
+      if (typeof window !== 'undefined' && (window as any).__SENTRY__) {
+        import('@/services/analytics.service').then(({ AnalyticsService }) => {
+          AnalyticsService.recordEvent({
+            eventType: 'audio_preload_failed',
+            trackId: nextVersion.id,
+            metadata: {
+              duration,
+              error: (error as Error).message,
+              versionNumber: nextVersion.versionNumber,
+            },
+          });
+        });
+      }
     }
   }, [availableVersions, currentVersionIndex]);
 

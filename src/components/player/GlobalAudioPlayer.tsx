@@ -5,6 +5,7 @@ import { PlayerQueue } from "./PlayerQueue";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMediaSession } from "@/hooks/useMediaSession";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useAudioUrlRefresh } from "@/hooks/useAudioUrlRefresh";
 import { formatTime } from "@/utils/formatters";
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1, Music, X, List, Star, Loader2 } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,27 @@ const GlobalAudioPlayer = memo(() => {
   const [isVisible, setIsVisible] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const playerRef = useRef<HTMLDivElement>(null);
+
+  // 🔄 Auto-refresh expired audio URLs
+  useAudioUrlRefresh({
+    trackId: currentTrack?.id || null,
+    audioUrl: currentTrack?.audio_url || null,
+    onUrlRefreshed: (newUrl) => {
+      if (audioRef.current && currentTrack) {
+        const wasPlaying = !audioRef.current.paused;
+        const currentTimeSnapshot = audioRef.current.currentTime;
+        
+        audioRef.current.src = newUrl;
+        audioRef.current.load();
+        audioRef.current.currentTime = currentTimeSnapshot;
+        
+        if (wasPlaying) {
+          audioRef.current.play().catch(console.error);
+        }
+      }
+    }
+  });
+
 
   // ============= HOOKS: ПЕРЕМЕСТИЛИ СЮДА ДО УСЛОВНЫХ RETURN =============
   // ✅ toggleMute и handleVolumeChange должны вызываться при каждом рендере
@@ -106,18 +128,18 @@ const GlobalAudioPlayer = memo(() => {
         setIsBuffering(true);
         
         try {
-          // Попытка обновить трек из базы данных
-          const { data: refreshedTrack } = await import('@/integrations/supabase/client').then(
-            ({ supabase }) => supabase
-              .from('tracks')
-              .select('audio_url')
-              .eq('id', currentTrack.id)
-              .single()
+          // ✅ Используем новый Edge Function для обновления URL
+          const { data, error: refreshError } = await import('@/integrations/supabase/client').then(
+            ({ supabase }) => supabase.functions.invoke('refresh-track-audio', {
+              body: { trackId: currentTrack.id, mode: 'production' }
+            })
           );
           
-          if (refreshedTrack?.audio_url && refreshedTrack.audio_url !== currentTrack.audio_url) {
-            // URL обновился - пробуем загрузить
-            audio.src = refreshedTrack.audio_url;
+          if (refreshError) throw refreshError;
+          
+          if (data?.refreshed?.audio_url) {
+            // URL обновлен через Edge Function
+            audio.src = data.refreshed.audio_url;
             audio.load();
             if (isPlaying) {
               audio.play().catch((err) => {
@@ -136,15 +158,13 @@ const GlobalAudioPlayer = memo(() => {
               AnalyticsService.recordEvent({
                 eventType: 'audio_url_refreshed',
                 trackId: currentTrack.id,
-                metadata: { success: true }
+                metadata: { success: true, method: 'edge_function' }
               });
             });
           } else {
-            // URL не изменился - показываем ошибку
+            // URL не обновился
             import('sonner').then(({ toast }) => {
-              toast.error('Не удалось загрузить аудио', {
-                description: 'Ссылка на файл истекла. Попробуйте перегенерировать трек.',
-              });
+              toast.error('Не удалось обновить аудио');
             });
           }
         } catch (err) {
