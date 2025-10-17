@@ -92,6 +92,11 @@ export type ProviderBalanceResponse = {
 /**
  * API Service - handles all backend communication
  */
+const isSupportedGenerateProvider = (
+  value: unknown
+): value is NonNullable<GenerateMusicRequest["provider"]> =>
+  value === "suno" || value === "replicate" || value === "mureka";
+
 export class ApiService {
   /**
    * Improve a music prompt using AI
@@ -126,15 +131,21 @@ export class ApiService {
   ): Promise<GenerateMusicResponse> {
     const context = "ApiService.generateMusic";
     // --- Укрепление и логирование ---
-    const provider = !request.provider || !['suno', 'replicate'].includes(request.provider)
-      ? 'suno'
-      : request.provider;
-    const functionName = provider === 'suno' ? 'generate-suno' : 'generate-music';
+    const provider = isSupportedGenerateProvider(request.provider) ? request.provider : "suno";
+    const functionName =
+      provider === "suno"
+        ? "generate-suno"
+        : provider === "mureka"
+          ? "generate-mureka"
+          : "generate-music";
 
     try {
       const normalizedPrompt = request.prompt?.trim() ?? '';
-      const lyrics = request.lyrics;
-      const styleTags = request.styleTags?.filter((tag) => Boolean(tag?.trim())) ?? [];
+      const lyrics = request.lyrics ?? undefined;
+      const styleTags =
+        request.styleTags
+          ?.map((tag) => tag?.trim())
+          .filter((tag): tag is string => Boolean(tag)) ?? [];
       const promptForSuno = request.customMode ? (lyrics ?? normalizedPrompt) : normalizedPrompt;
 
       const resolvedTitle = (() => {
@@ -144,41 +155,54 @@ export class ApiService {
         return fallbackSource ? fallbackSource.substring(0, 50) : 'Generated Track';
       })();
 
-      const makeInstrumental = request.hasVocals === false;
+      const makeInstrumental = request.makeInstrumental ?? request.hasVocals === false;
 
-      const payload: Record<string, unknown> = {
-        trackId: request.trackId,
-        title: resolvedTitle,
-        prompt: promptForSuno,
-        tags: styleTags,
-        lyrics,
-        hasVocals: request.hasVocals,
-        make_instrumental: makeInstrumental,
-        model_version: request.modelVersion,
-        customMode: request.customMode,
-        referenceAudioUrl: request.referenceAudioUrl,
-      };
+      const payload: Record<string, unknown> = provider === "mureka"
+        ? {
+            trackId: request.trackId,
+            title: resolvedTitle,
+            prompt: normalizedPrompt,
+            lyrics,
+            styleTags: styleTags.length ? styleTags : undefined,
+            hasVocals: request.hasVocals,
+            isBGM: makeInstrumental ? true : undefined,
+            modelVersion: request.modelVersion,
+          }
+        : {
+            trackId: request.trackId,
+            title: resolvedTitle,
+            prompt: promptForSuno,
+            tags: styleTags,
+            lyrics,
+            hasVocals: request.hasVocals,
+            make_instrumental: makeInstrumental,
+            model_version: request.modelVersion,
+            customMode: request.customMode,
+            referenceAudioUrl: request.referenceAudioUrl,
+          };
 
       // --- Опциональные параметры с валидацией/нормализацией ---
       const trimmedNegativeTags = request.negativeTags?.trim();
-      if (trimmedNegativeTags) {
+      if (provider !== "mureka" && trimmedNegativeTags) {
         payload.negativeTags = trimmedNegativeTags;
       }
 
-      if (request.vocalGender === 'm' || request.vocalGender === 'f') {
+      if (provider !== "mureka" && (request.vocalGender === 'm' || request.vocalGender === 'f')) {
         payload.vocalGender = request.vocalGender;
       }
 
       const clamp = (val: number) => Math.max(0, Math.min(1, val));
 
-      if (typeof request.styleWeight === 'number' && !Number.isNaN(request.styleWeight)) {
-        payload.styleWeight = clamp(request.styleWeight);
-      }
-      if (typeof request.weirdnessConstraint === 'number' && !Number.isNaN(request.weirdnessConstraint)) {
-        payload.weirdnessConstraint = clamp(request.weirdnessConstraint);
-      }
-      if (typeof request.audioWeight === 'number' && !Number.isNaN(request.audioWeight)) {
-        payload.audioWeight = clamp(request.audioWeight);
+      if (provider !== "mureka") {
+        if (typeof request.styleWeight === 'number' && !Number.isNaN(request.styleWeight)) {
+          payload.styleWeight = clamp(request.styleWeight);
+        }
+        if (typeof request.weirdnessConstraint === 'number' && !Number.isNaN(request.weirdnessConstraint)) {
+          payload.weirdnessConstraint = clamp(request.weirdnessConstraint);
+        }
+        if (typeof request.audioWeight === 'number' && !Number.isNaN(request.audioWeight)) {
+          payload.audioWeight = clamp(request.audioWeight);
+        }
       }
 
       logInfo(`🎵 [API Service] Starting music generation`, context, { provider, functionName });
