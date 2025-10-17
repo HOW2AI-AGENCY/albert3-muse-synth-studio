@@ -1,13 +1,15 @@
 /**
  * Главный провайдер Audio Player Context
  * Композиция всех sub-hooks для управления воспроизведением
+ * 
+ * Phase 2: Использует новый QueueManager с раздельными очередями
  */
 import { createContext, useContext, ReactNode, useMemo, useCallback, useEffect } from 'react';
 import { usePlayAnalytics } from '@/hooks/usePlayAnalytics';
 import { AudioPlayerTrack } from '@/types/track';
 import { AudioPlayerContextType } from './types';
 import { useAudioPlayback } from './useAudioPlayback';
-import { useAudioQueue } from './useAudioQueue';
+import { useQueueManager } from './useQueueManager';
 import { useAudioVersions } from './useAudioVersions';
 
 const AudioPlayerContext = createContext<AudioPlayerContextType | undefined>(undefined);
@@ -15,13 +17,16 @@ const AudioPlayerContext = createContext<AudioPlayerContextType | undefined>(und
 export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
   // Композиция hooks
   const playback = useAudioPlayback();
-  const queue = useAudioQueue();
+  const queueManager = useQueueManager();
   const versions = useAudioVersions();
 
   // Analytics
   usePlayAnalytics(playback.currentTrack?.id || null, playback.isPlaying, playback.currentTime);
 
-  // Wrapper для playTrack с загрузкой версий и автоматической очередью
+  /**
+   * Phase 2: playTrack с загрузкой версий и установкой Versions Queue
+   * НЕ перезаписывает Main Queue
+   */
   const playTrack = useCallback(async (track: AudioPlayerTrack) => {
     const baseTrackId = track.parentTrackId || track.id;
     
@@ -46,35 +51,37 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
           isOriginalVersion: v.versionNumber === 0 || v.isOriginal === true,
         }));
       
-      queue.setQueue(allVersionsQueue);
-      
-      const currentIdx = allVersionsQueue.findIndex(v => v.id === track.id);
-      queue.setCurrentQueueIndex(currentIdx >= 0 ? currentIdx : 0);
-      versions.setCurrentVersionIndex(currentIdx >= 0 ? currentIdx : 0);
+      // ✅ Устанавливаем ТОЛЬКО Versions Queue (Main Queue не трогаем!)
+      queueManager.setVersionsTracks(allVersionsQueue, track.id);
+      versions.setCurrentVersionIndex(
+        allVersionsQueue.findIndex(v => v.id === track.id)
+      );
     }
     
     // ✅ Воспроизводим БЕЗ повторной загрузки версий
     playback.playTrack(track);
-  }, [playback, versions, queue]);
+  }, [playback, versions, queueManager]);
 
-  // Воспроизведение трека с кастомной очередью (все треки страницы)
+  /**
+   * Phase 2: playTrackWithQueue устанавливает Main Queue
+   * И воспроизводит трек из неё
+   */
   const playTrackWithQueue = useCallback((track: AudioPlayerTrack, allTracks: AudioPlayerTrack[]) => {
-    queue.setQueue(allTracks);
-    const trackIndex = allTracks.findIndex(t => t.id === track.id);
-    queue.setCurrentQueueIndex(trackIndex >= 0 ? trackIndex : 0);
+    // ✅ Устанавливаем Main Queue (список треков библиотеки/плейлиста)
+    queueManager.setMainQueueTracks(allTracks, track.id);
     
-    // Воспроизводим без автоматической очереди версий
-    playback.playTrack(track);
-  }, [queue, playback]);
+    // Воспроизводим трек (при этом загрузятся его версии в Versions Queue)
+    playTrack(track);
+  }, [queueManager, playTrack]);
 
   // Обертки для queue методов
   const playNext = useCallback(() => {
-    queue.playNext(playTrack);
-  }, [queue, playTrack]);
+    queueManager.playNext(playTrack);
+  }, [queueManager, playTrack]);
 
   const playPrevious = useCallback(() => {
-    queue.playPrevious(playTrack);
-  }, [queue, playTrack]);
+    queueManager.playPrevious(playTrack);
+  }, [queueManager, playTrack]);
 
   // ✅ Phase 4: Version Switch Tracking
   const switchToVersion = useCallback((versionId: string) => {
@@ -119,9 +126,13 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     volume: playback.volume,
     audioRef: playback.audioRef,
 
-    // Queue state
-    queue: queue.queue,
-    currentQueueIndex: queue.currentQueueIndex,
+    // ✅ Phase 2: Queue state теперь использует QueueManager
+    queue: queueManager.playbackMode === 'versions' 
+      ? queueManager.versionsQueue 
+      : queueManager.mainQueue,
+    currentQueueIndex: queueManager.playbackMode === 'versions'
+      ? queueManager.currentVersionIndex
+      : queueManager.currentMainIndex,
 
     // Versions state
     currentVersionIndex: versions.currentVersionIndex,
@@ -138,10 +149,10 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     // Queue methods
     playNext,
     playPrevious,
-    addToQueue: queue.addToQueue,
-    removeFromQueue: queue.removeFromQueue,
-    clearQueue: queue.clearQueue,
-    reorderQueue: queue.reorderQueue,
+    addToQueue: queueManager.addToMainQueue,
+    removeFromQueue: queueManager.removeFromMainQueue,
+    clearQueue: queueManager.clearMainQueue,
+    reorderQueue: queueManager.reorderMainQueue,
 
     // Versions methods
     switchToVersion,
@@ -151,7 +162,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     isPlayerVisible: !!playback.currentTrack,
   }), [
     playback,
-    queue,
+    queueManager,
     versions,
     playTrack,
     playTrackWithQueue,
