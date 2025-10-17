@@ -1,34 +1,42 @@
 /**
  * Hook для управления версиями треков в аудиоплеере
+ * Phase 3 Optimization: Centralized cache + Preloading
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { AudioPlayerTrack } from '@/types/track';
-import { getTrackWithVersions, TrackWithVersions } from '@/features/tracks';
+import { TrackWithVersions } from '@/features/tracks';
 import { logInfo, logError } from '@/utils/logger';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  fetchTrackVersions, 
+  invalidateTrackVersionsCache,
+  subscribeToTrackVersions 
+} from '@/features/tracks/hooks/useTrackVersions';
+import { cacheAudioFile } from '@/utils/serviceWorker';
+
+// Export helper for use in other modules
+export { invalidateTrackVersionsCache };
 
 export const useAudioVersions = () => {
   const [availableVersions, setAvailableVersions] = useState<TrackWithVersions[]>([]);
   const [currentVersionIndex, setCurrentVersionIndex] = useState(0);
   const { toast } = useToast();
+  const preloadedTracksRef = useRef<Set<string>>(new Set());
 
   /**
    * Загрузка всех версий для трека
+   * Phase 3: Uses centralized cache from useTrackVersions
    */
   const loadVersions = useCallback(async (trackId: string, force = false): Promise<TrackWithVersions[]> => {
     try {
       logInfo(`Loading versions for track: ${trackId}${force ? ' (forced)' : ''}`, 'useAudioVersions');
       
-      if (force) {
-        const { invalidateTrackVersionsCache } = await import('@/features/tracks/hooks/useTrackVersions');
-        invalidateTrackVersionsCache(trackId);
-      }
-      
-      const versions = await getTrackWithVersions(trackId);
+      // Phase 3: Use centralized cache-aware fetch
+      const versions = await fetchTrackVersions(trackId, { force });
       
       if (versions.length > 0) {
         setAvailableVersions(versions);
-        logInfo(`Loaded ${versions.length} versions for track ${trackId}`, 'useAudioVersions');
+        logInfo(`Loaded ${versions.length} versions for track ${trackId} (from cache: ${!force})`, 'useAudioVersions');
       }
       
       return versions;
@@ -37,6 +45,69 @@ export const useAudioVersions = () => {
       return [];
     }
   }, []);
+
+  /**
+   * Preload audio for next version (instant switching)
+   * Phase 3: Background preloading optimization
+   */
+  const preloadNextVersion = useCallback(async () => {
+    if (availableVersions.length === 0 || currentVersionIndex < 0) return;
+
+    const nextIndex = (currentVersionIndex + 1) % availableVersions.length;
+    const nextVersion = availableVersions[nextIndex];
+
+    if (!nextVersion?.audio_url) return;
+    if (preloadedTracksRef.current.has(nextVersion.audio_url)) {
+      logInfo('Next version already preloaded', 'useAudioVersions', { versionId: nextVersion.id });
+      return;
+    }
+
+    try {
+      await cacheAudioFile(nextVersion.audio_url);
+      preloadedTracksRef.current.add(nextVersion.audio_url);
+      logInfo('Preloaded next version', 'useAudioVersions', { 
+        versionId: nextVersion.id, 
+        versionNumber: nextVersion.versionNumber 
+      });
+    } catch (error) {
+      logError('Failed to preload next version', error as Error, 'useAudioVersions', { versionId: nextVersion.id });
+    }
+  }, [availableVersions, currentVersionIndex]);
+
+  /**
+   * Subscribe to cache updates from useTrackVersions
+   * Phase 3: Real-time cache synchronization
+   */
+  useEffect(() => {
+    if (availableVersions.length === 0) return;
+
+    const baseTrackId = availableVersions[0]?.parentTrackId || availableVersions[0]?.id;
+    if (!baseTrackId) return;
+
+    const unsubscribe = subscribeToTrackVersions(baseTrackId, (updatedVersions: TrackWithVersions[]) => {
+      if (updatedVersions.length > 0 && updatedVersions !== availableVersions) {
+        setAvailableVersions(updatedVersions);
+        logInfo('Versions updated from cache subscription', 'useAudioVersions', { 
+          trackId: baseTrackId,
+          count: updatedVersions.length 
+        });
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [availableVersions]);
+
+  /**
+   * Auto-preload next version when current changes
+   * Phase 3: Proactive preloading
+   */
+  useEffect(() => {
+    if (availableVersions.length > 1) {
+      preloadNextVersion();
+    }
+  }, [currentVersionIndex, preloadNextVersion, availableVersions.length]);
 
   /**
    * Получение списка доступных версий текущего трека
@@ -134,5 +205,6 @@ export const useAudioVersions = () => {
     loadVersions,
     getAvailableVersions,
     switchToVersion,
+    preloadNextVersion, // Phase 3: Expose preloading for manual control
   };
 };

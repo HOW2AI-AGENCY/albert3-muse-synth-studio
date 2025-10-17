@@ -62,7 +62,11 @@ const setCache = (trackId: string, versions: TrackWithVersions[]) => {
   notifyListeners(trackId, versions);
 };
 
-const subscribeToTrackVersions = (trackId: string, listener: VersionsListener) => {
+/**
+ * Subscribe to track versions cache updates
+ * Exported for use in audio player and other modules
+ */
+export const subscribeToTrackVersions = (trackId: string, listener: VersionsListener) => {
   if (!trackId) {
     return () => {};
   }
@@ -88,7 +92,11 @@ interface FetchOptions {
   force?: boolean;
 }
 
-const fetchTrackVersions = async (trackId: string, options: FetchOptions = {}) => {
+/**
+ * Fetch track versions with cache support
+ * Exported for use in audio player and other modules
+ */
+export const fetchTrackVersions = async (trackId: string, options: FetchOptions = {}) => {
   if (!trackId) {
     return [];
   }
