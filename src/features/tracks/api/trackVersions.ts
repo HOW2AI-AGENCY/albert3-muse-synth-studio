@@ -120,6 +120,58 @@ export async function updateTrackVersion(
   );
 }
 
+/**
+ * Установить версию как мастер-версию трека
+ * Автоматически снимает флаг is_preferred_variant с других версий этого трека
+ */
+export async function setMasterVersion(
+  parentTrackId: string,
+  versionId: string
+): Promise<Result<TrackVersionRow>> {
+  const context = `${TRACK_VERSIONS_CONTEXT}.setMasterVersion`;
+  
+  try {
+    logInfo('Setting master version', context, { parentTrackId, versionId });
+    
+    // 1. Сбросить is_preferred_variant для всех версий этого трека
+    const { error: resetError } = await supabase
+      .from('track_versions')
+      .update({ is_preferred_variant: false })
+      .eq('parent_track_id', parentTrackId);
+    
+    if (resetError) {
+      const error = new TrackVersionError('Failed to reset preferred variants', context, resetError);
+      logError('Failed to reset preferred variants', error, context, { parentTrackId });
+      return { ok: false, error };
+    }
+    
+    // 2. Установить is_preferred_variant: true для выбранной версии
+    return handleTrackVersionOperation(
+      async () =>
+        supabase
+          .from('track_versions')
+          .update({ is_preferred_variant: true })
+          .eq('id', versionId)
+          .select()
+          .single<TrackVersionRow>(),
+      {
+        action: 'setMasterVersion',
+        errorMessage: 'Failed to set master version',
+        payload: { parentTrackId, versionId },
+        notFoundError: () => new TrackVersionNotFoundError(context, versionId),
+      }
+    );
+  } catch (error) {
+    const operationError = new TrackVersionError(
+      'Failed to set master version',
+      context,
+      error
+    );
+    logError('Failed to set master version', operationError, context, { parentTrackId, versionId });
+    return { ok: false, error: operationError };
+  }
+}
+
 export async function deleteTrackVersion(versionId: string): Promise<Result<TrackVersionRow>> {
   return handleTrackVersionOperation(
     async () =>

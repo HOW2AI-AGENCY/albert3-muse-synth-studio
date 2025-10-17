@@ -21,6 +21,8 @@ import {
   getTrackWithVersions,
   TrackWithVersions,
   getMasterVersion,
+  setMasterVersion as setMasterVersionApi,
+  unwrapResult,
 } from '../api/trackVersions';
 import { logInfo, logError } from '@/utils/logger';
 
@@ -188,6 +190,9 @@ interface UseTrackVersionsReturn {
   /** Функция для ручной перезагрузки версий */
   loadVersions: (options?: FetchOptions) => Promise<void>;
   
+  /** Функция для установки мастер-версии */
+  setMasterVersion: (versionId: string) => Promise<void>;
+  
   /** Ошибка загрузки (если есть) */
   error: Error | null;
 }
@@ -316,6 +321,31 @@ export function useTrackVersions(
   /** Количество дополнительных версий (без учёта оригинала) */
   const additionalVersionCount = versionCount;
 
+  /**
+   * Установить мастер-версию для трека
+   */
+  const setMasterVersion = useCallback(async (versionId: string) => {
+    if (!trackId || !mainVersion) {
+      logError('Cannot set master version: missing trackId or mainVersion', new Error('Invalid state'), 'useTrackVersions', { trackId, versionId });
+      return;
+    }
+
+    try {
+      logInfo('Setting master version', 'useTrackVersions', { trackId, versionId });
+      
+      const result = await setMasterVersionApi(mainVersion.id, versionId);
+      unwrapResult(result);
+      
+      // Перезагрузить версии для обновления UI
+      await loadVersions({ force: true });
+      
+      logInfo('Master version set successfully', 'useTrackVersions', { trackId, versionId });
+    } catch (error) {
+      logError('Failed to set master version', error as Error, 'useTrackVersions', { trackId, versionId });
+      throw error;
+    }
+  }, [trackId, mainVersion, loadVersions]);
+
   return {
     versions,
     allVersions,
@@ -327,6 +357,7 @@ export function useTrackVersions(
     masterVersion,
     hasVersions,
     loadVersions,
+    setMasterVersion,
     error,
   };
 }
