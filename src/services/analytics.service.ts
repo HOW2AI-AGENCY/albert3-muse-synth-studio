@@ -300,7 +300,12 @@ export class AnalyticsService {
       }]);
       
       if (error) {
-        logger.error('Failed to record analytics event', error instanceof Error ? error : new Error(String(error)), 'AnalyticsService', event);
+        // Игнорируем ошибки RLS - аналитика не должна ломать приложение
+        logger.debug('Analytics event insert error (ignored)', 'AnalyticsService', {
+          eventType: event.eventType,
+          errorCode: error.code,
+          errorMessage: error.message
+        });
       } else {
         logger.debug('Analytics event recorded', 'AnalyticsService', {
           eventType: event.eventType,
@@ -308,7 +313,11 @@ export class AnalyticsService {
         });
       }
     } catch (error) {
-      logger.error('Error recording analytics event', error instanceof Error ? error : new Error(String(error)), 'AnalyticsService', event);
+      // Игнорируем все ошибки аналитики
+      logger.debug('Analytics event error (ignored)', 'AnalyticsService', {
+        eventType: event.eventType,
+        errorMessage: error instanceof Error ? error.message : String(error)
+      });
     }
   }
 }
