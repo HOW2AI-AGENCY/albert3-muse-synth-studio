@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Check, Loader2 } from '@/utils/iconImports';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
+import { StructuredLyrics } from './StructuredLyrics';
 
 interface LyricsVariant {
   id: string;
@@ -114,14 +115,14 @@ export const MurekaLyricsVariantDialog = ({
                 {variants.map((variant, idx) => (
                   <Card
                     key={variant.id}
-                    className={`p-4 cursor-pointer transition-all hover:border-primary hover:shadow-sm ${
+                    className={`cursor-pointer transition-all hover:border-primary hover:shadow-sm ${
                       selectedVariant === variant.id 
                         ? 'border-primary bg-primary/5 shadow-sm' 
                         : 'border-border'
                     }`}
                     onClick={() => setSelectedVariant(variant.id)}
                   >
-                    <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-start justify-between p-4 pb-2">
                       <div className="flex items-center gap-2">
                         <Badge variant={selectedVariant === variant.id ? "default" : "outline"}>
                           Вариант {idx + 1}
@@ -136,9 +137,9 @@ export const MurekaLyricsVariantDialog = ({
                         <Check className="h-5 w-5 text-primary shrink-0" />
                       )}
                     </div>
-                    <pre className="text-xs whitespace-pre-wrap text-muted-foreground font-mono leading-relaxed max-h-64 overflow-y-auto">
-                      {variant.content}
-                    </pre>
+                    <div className="max-h-[300px] overflow-y-auto">
+                      <StructuredLyrics lyrics={variant.content} />
+                    </div>
                   </Card>
                 ))}
               </div>

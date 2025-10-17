@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/utils/logger";
 import { Copy, Check, FileText, Loader2 } from "@/utils/iconImports";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { StructuredLyrics } from "./StructuredLyrics";
 
 interface LyricsVariant {
   id: string;
@@ -91,17 +91,6 @@ export function LyricsVariantsPanel({ jobId, onSelect }: LyricsVariantsPanelProp
     }
   };
 
-  const formatLyrics = (text: string) => {
-    // Подсвечиваем структуру песни
-    return text.split('\n').map((line, i) => {
-      const isStructureTag = line.match(/^\[.*\]$/);
-      return (
-        <div key={i} className={isStructureTag ? 'font-semibold text-primary mt-2' : ''}>
-          {line || '\u00A0'}
-        </div>
-      );
-    });
-  };
 
   if (isLoading) {
     return (
@@ -150,16 +139,12 @@ export function LyricsVariantsPanel({ jobId, onSelect }: LyricsVariantsPanelProp
             {variant.status === 'complete' && variant.content ? (
               <>
                 {variant.title && (
-                  <div className="text-center pb-2 border-b">
+                  <div className="text-center pb-2 border-b mb-3">
                     <h4 className="font-semibold text-lg">{variant.title}</h4>
                   </div>
                 )}
                 
-                <ScrollArea className="h-[400px] rounded-md border p-4 bg-muted/30">
-                  <div className="font-mono text-sm whitespace-pre-wrap">
-                    {formatLyrics(variant.content)}
-                  </div>
-                </ScrollArea>
+                <StructuredLyrics lyrics={variant.content} />
 
                 <div className="flex gap-2">
                   <Button
