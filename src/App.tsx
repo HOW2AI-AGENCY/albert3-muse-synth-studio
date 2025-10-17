@@ -10,6 +10,7 @@ import router from "./router";
 import { AudioPlayerProvider } from "./contexts/AudioPlayerContext";
 import { GlobalAudioPlayer } from "./components/player/GlobalAudioPlayer";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { PerformanceMonitorWidget } from "@/components/dev/PerformanceMonitorWidget";
 import { toast } from "sonner";
 import { reportWebVitals, logMetric } from "@/utils/web-vitals";
 
@@ -70,6 +71,7 @@ const App = () => {
                 <Sonner />
                 <RouterProvider router={router} />
                 <GlobalAudioPlayer />
+                <PerformanceMonitorWidget />
               </AudioPlayerProvider>
             </Suspense>
           </AppLayout>
