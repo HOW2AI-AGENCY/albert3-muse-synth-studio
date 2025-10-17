@@ -115,7 +115,7 @@ class SentryClient {
   /**
    * Parse error stack trace
    */
-  private parseStackTrace(stack?: string): SentryEvent['exception']['stacktrace'] | undefined {
+  private parseStackTrace(stack?: string): { frames: Array<{ filename: string; function: string; lineno: number; colno: number; }> } | undefined {
     if (!stack) return undefined;
 
     const frames = stack.split('\n').slice(1).map(line => {
