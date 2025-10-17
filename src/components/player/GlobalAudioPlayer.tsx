@@ -67,7 +67,9 @@ const GlobalAudioPlayer = memo(() => {
         audioRef.current.currentTime = currentTimeSnapshot;
         
         if (wasPlaying) {
-          audioRef.current.play().catch(console.error);
+          audioRef.current.play().catch((err) => {
+            logger.error('Failed to resume playback after URL refresh', err, 'GlobalAudioPlayer');
+          });
         }
       }
     }

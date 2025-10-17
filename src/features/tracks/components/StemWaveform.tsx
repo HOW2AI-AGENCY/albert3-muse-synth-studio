@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { logError } from '@/utils/logger';
 
 interface StemWaveformProps {
   audioUrl: string;
@@ -60,7 +61,7 @@ export const StemWaveform = ({
         
         audioContext.close();
       } catch (error) {
-        console.error('Failed to generate waveform:', error);
+        logError('Failed to generate waveform', error as Error, 'StemWaveform');
         if (!isCancelled) {
           setIsLoading(false);
         }

@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { logError } from '@/utils/logger';
 import { Card } from "@/components/ui/card";
 import { Music4, Loader2, Mic, Music, Download, FileAudio } from "@/utils/iconImports";
 import { cn } from "@/lib/utils";
@@ -155,7 +156,8 @@ export const SeparateStemsDialog = ({
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } catch (error) {
-        console.error(`Failed to download stem ${stem.stem_type}:`, error);
+        logError(`Failed to download stem ${stem.stem_type}`, error as Error, 'SeparateStemsDialog');
+        toast.error(`Ошибка скачивания стема ${stem.stem_type}`);
       }
     }
     
@@ -178,7 +180,8 @@ export const SeparateStemsDialog = ({
           audioId: stem.id,
         });
       } catch (error) {
-        console.error(`Failed to convert stem ${stem.stem_type}:`, error);
+        logError(`Failed to convert stem ${stem.stem_type}`, error as Error, 'SeparateStemsDialog');
+        toast.error(`Ошибка конвертации стема ${stem.stem_type}`);
       }
     }
   };

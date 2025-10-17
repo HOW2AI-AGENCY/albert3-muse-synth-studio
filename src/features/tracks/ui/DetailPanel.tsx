@@ -198,7 +198,7 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete, variant = 'des
             variant_index: version.versionNumber,
             source_variant_index: version.sourceVersionNumber,
             is_preferred_variant: Boolean(version.isMasterVersion),
-            is_primary_variant: false, // TODO: Add when backend implements this field
+            is_primary_variant: version.isOriginal,
             is_original: version.isOriginal,
             suno_id: version.suno_id ?? track.suno_id ?? "",
             audio_url: version.audio_url!,

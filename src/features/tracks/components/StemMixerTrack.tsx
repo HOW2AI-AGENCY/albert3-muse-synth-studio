@@ -14,6 +14,7 @@ import {
 import { Download, FileAudio, Music2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useConvertToWav } from '@/hooks/useConvertToWav';
+import { logError } from '@/utils/logger';
 
 interface TrackStem {
   id: string;
@@ -97,7 +98,7 @@ export const StemMixerTrack = ({
       document.body.removeChild(a);
       toast.success(`Стем "${stem.stem_type}" скачан`);
     } catch (error) {
-      console.error('Failed to download stem:', error);
+      logError('Failed to download stem', error as Error, 'StemMixerTrack');
       toast.error('Ошибка скачивания стема');
     }
   };
@@ -109,7 +110,7 @@ export const StemMixerTrack = ({
         audioId: stem.id,
       });
     } catch (error) {
-      console.error('Failed to convert stem:', error);
+      logError('Failed to convert stem', error as Error, 'StemMixerTrack');
       toast.error('Ошибка конвертации стема');
     }
   };

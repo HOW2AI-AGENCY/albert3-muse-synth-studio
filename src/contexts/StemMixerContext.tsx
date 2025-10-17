@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { logger } from '@/utils/logger';
+import { logger, logError } from '@/utils/logger';
 
 export interface TrackStem {
   id: string;
@@ -93,7 +93,8 @@ export const StemMixerProvider = ({ children }: StemMixerProviderProps) => {
       
       // ✅ FIX: Add error handling for loading failures
       audio.addEventListener('error', (e) => {
-        console.error(`Audio loading failed for stem ${stem.stem_type}:`, (e.target as HTMLAudioElement).error);
+        const audioError = (e.target as HTMLAudioElement).error;
+        logError(`Audio loading failed for stem ${stem.stem_type}`, new Error(audioError?.message || 'Unknown audio error'), 'StemMixerContext');
       });
     });
 

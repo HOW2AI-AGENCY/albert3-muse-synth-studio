@@ -5,6 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useTrackVersions } from '@/features/tracks/hooks';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { logError } from '@/utils/logger';
 
 interface TrackVariantSelectorProps {
   trackId: string;
@@ -31,12 +32,6 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
     const totalVersions = versionCount + 1;
     const nextIndex = (currentVersionIndex + 1) % totalVersions;
     
-    console.log('Switching version:', { 
-      current: currentVersionIndex, 
-      next: nextIndex, 
-      total: totalVersions 
-    });
-    
     onVersionChange(nextIndex);
   }, [currentVersionIndex, versionCount, onVersionChange]);
 
@@ -62,7 +57,7 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
         description: `Версия ${currentVersionIndex + 1} теперь основная`,
       });
     } catch (error) {
-      console.error('Failed to set master version:', error);
+      logError('Failed to set master version', error as Error, 'TrackVariantSelector');
       toast({
         title: 'Ошибка',
         description: 'Не удалось установить мастер-версию',

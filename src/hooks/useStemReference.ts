@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { logError } from '@/utils/logger';
 
 interface UseStemReferenceOptions {
   onReferenceSet?: (audioUrl: string, stemType: string) => void;
@@ -44,7 +45,7 @@ export const useStemReference = (options?: UseStemReferenceOptions) => {
         options?.onReferenceSet?.(audioUrl, stemType);
       }
     } catch (error) {
-      console.error('Failed to set reference from stem:', error);
+      logError('Failed to set reference from stem', error as Error, 'useStemReference');
       toast.error('Не удалось установить референс');
     }
   }, [navigate, options]);

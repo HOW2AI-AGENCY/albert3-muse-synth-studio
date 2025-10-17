@@ -65,7 +65,6 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
       
       // Prevent multiple simultaneous connections
       if (!isMounted || isSubscribing || (now - lastAttemptRef.current) < MIN_RETRY_DELAY) {
-        logWarn('Skipping subscription attempt - unmounted, already subscribing, or too soon', 'useTrackSync');
         return null;
       }
 
