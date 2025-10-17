@@ -18,7 +18,7 @@ interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 export const LazyImage: React.FC<LazyImageProps> = ({
   src,
   alt,
-  placeholder,
+  placeholder = '/placeholder.svg',
   fallback,
   className,
   skeletonClassName,
@@ -28,7 +28,8 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   const { ref, src: imageSrc, isLoaded, isVisible } = useLazyImage(src, placeholder);
 
   return (
-    <div ref={ref} className={cn('relative overflow-hidden', containerClassName)}>
+    <div ref={ref} className={cn('relative overflow-hidden bg-muted', containerClassName)}>
+      {/* Skeleton во время загрузки */}
       {!isLoaded && isVisible && (
         <Skeleton 
           className={cn(
@@ -38,18 +39,19 @@ export const LazyImage: React.FC<LazyImageProps> = ({
         />
       )}
       
-      {isLoaded ? (
+      {/* Изображение */}
+      {(isVisible || isLoaded) && (
         <img
-          src={imageSrc}
+          src={imageSrc || placeholder}
           alt={alt}
           className={cn(
-            'transition-opacity duration-300',
+            'w-full h-full object-cover transition-opacity duration-300',
             isLoaded ? 'opacity-100' : 'opacity-0',
             className
           )}
+          loading="lazy"
           {...props}
           onError={(e) => {
-            // Показываем fallback при ошибке загрузки
             if (fallback) {
               const target = e.target as HTMLImageElement;
               target.style.display = 'none';
@@ -57,14 +59,11 @@ export const LazyImage: React.FC<LazyImageProps> = ({
             props.onError?.(e);
           }}
         />
-      ) : (
-        // Показываем плейсхолдер до начала загрузки
-        <div className={cn('bg-muted animate-pulse', className)} />
       )}
       
       {/* Fallback контент при ошибке загрузки */}
-      {isLoaded && imageSrc === placeholder && fallback && (
-        <div className="absolute inset-0 flex items-center justify-center">
+      {isLoaded && !imageSrc && fallback && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted">
           {fallback}
         </div>
       )}

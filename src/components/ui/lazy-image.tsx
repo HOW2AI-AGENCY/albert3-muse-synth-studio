@@ -21,9 +21,11 @@ export const LazyImage = React.memo(({
   const [imageSrc, setImageSrc] = useState<string>(placeholder);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isError, setIsError] = useState(false);
+  const hasStartedLoading = React.useRef(false);
 
   const handleIntersection = (entry: IntersectionObserverEntry) => {
-    if (entry.isIntersecting && imageSrc === placeholder) {
+    if (entry.isIntersecting && !hasStartedLoading.current && src) {
+      hasStartedLoading.current = true;
       setImageSrc(src);
     }
   };
@@ -34,17 +36,25 @@ export const LazyImage = React.memo(({
   });
 
   useEffect(() => {
+    if (!src) {
+      setImageSrc(placeholder);
+      setIsError(true);
+      return;
+    }
+
     if (imageSrc === src && !isLoaded && !isError) {
       const img = new Image();
       img.src = src;
       
       img.onload = () => {
         setIsLoaded(true);
+        setIsError(false);
       };
       
       img.onerror = () => {
         setIsError(true);
         setImageSrc(placeholder);
+        setIsLoaded(true);
       };
     }
   }, [imageSrc, src, placeholder, isLoaded, isError]);
@@ -58,14 +68,14 @@ export const LazyImage = React.memo(({
         src={imageSrc}
         alt={alt}
         className={cn(
-          'transition-opacity duration-300',
+          'w-full h-full object-cover transition-opacity duration-300',
           isLoaded ? 'opacity-100' : 'opacity-0',
           className
         )}
         loading="lazy"
         {...props}
       />
-      {!isLoaded && !isError && (
+      {!isLoaded && (
         <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50 animate-pulse" />
       )}
     </div>

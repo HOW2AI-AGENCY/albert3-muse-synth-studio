@@ -513,9 +513,9 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
           </div>
         )}
 
-        {displayedVersion.cover_url ? (
+        {displayedVersion.cover_url || track.cover_url ? (
           <LazyImage
-            src={displayedVersion.cover_url}
+            src={displayedVersion.cover_url || track.cover_url || '/placeholder.svg'}
             alt={`Обложка трека ${displayedVersion.title || track.title}`}
             placeholder="/placeholder.svg"
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
