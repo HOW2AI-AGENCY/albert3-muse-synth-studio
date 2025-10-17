@@ -9,6 +9,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 import type { MusicProvider } from '@/config/provider-models';
 
+const context = 'ProviderRouter';
+
 export interface GenerateOptions {
   provider: MusicProvider;
   trackId?: string;
@@ -53,7 +55,12 @@ export interface GenerateResponse {
 export const generateMusic = async (options: GenerateOptions): Promise<GenerateResponse> => {
   const { provider, ...params } = options;
 
-  logger.info('Routing music generation', undefined, { provider, trackId: params.trackId });
+  const logData: Record<string, unknown> = { provider };
+  if (params.trackId) {
+    logData.trackId = params.trackId;
+  }
+
+  logger.info('Routing music generation', context, logData);
 
   try {
     switch (provider) {
@@ -154,7 +161,17 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
         throw new Error(`Unsupported provider: ${provider}`);
     }
   } catch (error) {
-    logger.error('Provider router generation error', error instanceof Error ? error : new Error(String(error)), 'ProviderRouter', { provider });
+    const errorData: Record<string, unknown> = { provider };
+    if (params.trackId) {
+      errorData.trackId = params.trackId;
+    }
+
+    logger.error(
+      'Provider router generation error',
+      error instanceof Error ? error : new Error(String(error)),
+      context,
+      errorData,
+    );
     throw error;
   }
 };
@@ -163,7 +180,7 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
  * Маршрутизация получения баланса к нужному провайдеру
  */
 export const getProviderBalance = async (provider: MusicProvider): Promise<ProviderBalance> => {
-  logger.info('Routing balance request', undefined, { provider });
+  logger.info('Routing balance request', context, { provider });
 
   try {
     switch (provider) {
@@ -195,7 +212,12 @@ export const getProviderBalance = async (provider: MusicProvider): Promise<Provi
         throw new Error(`Unsupported provider: ${provider}`);
     }
   } catch (error) {
-    logger.error('Provider router balance error', error instanceof Error ? error : new Error(String(error)), 'ProviderRouter', { provider });
+    logger.error(
+      'Provider router balance error',
+      error instanceof Error ? error : new Error(String(error)),
+      context,
+      { provider },
+    );
     throw error;
   }
 };
@@ -208,7 +230,12 @@ export const isProviderAvailable = async (provider: MusicProvider): Promise<bool
     const balance = await getProviderBalance(provider);
     return balance.balance > 0;
   } catch (error) {
-    logger.warn('Provider availability check failed', undefined, { provider, error });
+    const warnData: Record<string, unknown> = {
+      provider,
+      error: error instanceof Error ? error.message : String(error),
+    };
+
+    logger.warn('Provider availability check failed', context, warnData);
     return false;
   }
 };
