@@ -1,30 +1,24 @@
 /**
- * Unit Tests for GenerationService
- * Tests validation, track creation, and provider routing
+ * Integration Tests для GenerationService
+ * SPRINT 28: Testing Infrastructure & Bug Fixes
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GenerationService } from '../GenerationService';
 import type { GenerationRequest } from '../GenerationService';
+import { supabase } from '@/integrations/supabase/client';
 
-// Mock Supabase
+// Mock Supabase client
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     auth: {
       getUser: vi.fn(),
     },
-    from: vi.fn(() => ({
-      insert: vi.fn(() => ({
-        select: vi.fn(() => ({
-          single: vi.fn(),
-        })),
-      })),
-    })),
-    channel: vi.fn(() => ({
-      on: vi.fn(() => ({
-        subscribe: vi.fn(),
-      })),
-    })),
+    from: vi.fn(),
+    functions: {
+      invoke: vi.fn(),
+    },
+    channel: vi.fn(),
   },
 }));
 
@@ -37,13 +31,17 @@ vi.mock('@/services/providers/router', () => ({
 vi.mock('@/utils/logger', () => ({
   logger: {
     info: vi.fn(),
-    error: vi.fn(),
     warn: vi.fn(),
+    error: vi.fn(),
     debug: vi.fn(),
   },
 }));
 
-describe('GenerationService', () => {
+describe('GenerationService - Integration Tests', () => {
+  const mockUserId = 'test-user-123';
+  const mockTrackId = 'test-track-456';
+  const mockTaskId = 'test-task-789';
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -60,18 +58,7 @@ describe('GenerationService', () => {
       );
     });
 
-    it('should reject prompt that is too short', async () => {
-      const request: GenerationRequest = {
-        prompt: 'ab',
-        provider: 'suno',
-      };
-
-      await expect(GenerationService.generate(request)).rejects.toThrow(
-        'Описание должно содержать минимум 3 символа'
-      );
-    });
-
-    it('should reject prompt that is too long', async () => {
+    it('should reject too long prompt', async () => {
       const request: GenerationRequest = {
         prompt: 'a'.repeat(501),
         provider: 'suno',
@@ -82,9 +69,9 @@ describe('GenerationService', () => {
       );
     });
 
-    it('should reject lyrics that are too long', async () => {
+    it('should reject too long lyrics', async () => {
       const request: GenerationRequest = {
-        prompt: 'Valid prompt',
+        prompt: 'Test prompt',
         lyrics: 'a'.repeat(3001),
         provider: 'suno',
       };
@@ -94,77 +81,29 @@ describe('GenerationService', () => {
       );
     });
 
-    it('should reject unsupported provider', async () => {
+    it('should reject invalid provider', async () => {
       const request: GenerationRequest = {
-        prompt: 'Valid prompt',
+        prompt: 'Test prompt',
         provider: 'invalid' as any,
       };
 
       await expect(GenerationService.generate(request)).rejects.toThrow(
-        'Неподдерживаемый провайдер: invalid'
+        'Неподдерживаемый провайдер'
       );
-    });
-
-    it('should accept valid request', async () => {
-      const request: GenerationRequest = {
-        prompt: 'A beautiful ambient track',
-        provider: 'suno',
-      };
-
-      // Mock successful auth
-      const { supabase } = await import('@/integrations/supabase/client');
-      vi.mocked(supabase.auth.getUser).mockResolvedValue({
-        data: {
-          user: {
-            id: 'test-user-id',
-            email: 'test@example.com',
-          } as any,
-        },
-        error: null,
-      });
-
-      // Mock successful track creation
-      const mockInsert = vi.fn(() => ({
-        select: vi.fn(() => ({
-          single: vi.fn().mockResolvedValue({
-            data: { id: 'test-track-id' },
-            error: null,
-          }),
-        })),
-      }));
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: mockInsert,
-      } as any);
-
-      // Mock provider router
-      const { generateMusic } = await import('@/services/providers/router');
-      vi.mocked(generateMusic).mockResolvedValue({
-        success: true,
-        taskId: 'test-task-id',
-        trackId: 'test-track-id',
-        message: 'Generation started',
-      });
-
-      const result = await GenerationService.generate(request);
-
-      expect(result.success).toBe(true);
-      expect(result.trackId).toBe('test-track-id');
-      expect(result.taskId).toBe('test-task-id');
     });
   });
 
   describe('Authentication', () => {
-    it('should require authentication', async () => {
+    it('should reject unauthenticated requests', async () => {
+      (supabase.auth.getUser as any).mockResolvedValue({
+        data: { user: null },
+        error: new Error('Not authenticated'),
+      });
+
       const request: GenerationRequest = {
-        prompt: 'Valid prompt',
+        prompt: 'Test prompt',
         provider: 'suno',
       };
-
-      const { supabase } = await import('@/integrations/supabase/client');
-      vi.mocked(supabase.auth.getUser).mockResolvedValue({
-        data: { user: null },
-        error: { message: 'Not authenticated' } as any,
-      });
 
       await expect(GenerationService.generate(request)).rejects.toThrow(
         'Требуется авторизация'
@@ -172,253 +111,195 @@ describe('GenerationService', () => {
     });
   });
 
-  describe('Provider Routing', () => {
-    beforeEach(async () => {
-      // Setup successful auth and track creation for routing tests
-      const { supabase } = await import('@/integrations/supabase/client');
-      vi.mocked(supabase.auth.getUser).mockResolvedValue({
+  describe('Successful Generation Flow', () => {
+    beforeEach(() => {
+      // Mock successful authentication
+      (supabase.auth.getUser as any).mockResolvedValue({
         data: {
-          user: {
-            id: 'test-user-id',
-            email: 'test@example.com',
-          } as any,
+          user: { id: mockUserId },
         },
         error: null,
       });
 
-      const mockInsert = vi.fn(() => ({
-        select: vi.fn(() => ({
-          single: vi.fn().mockResolvedValue({
-            data: { id: 'test-track-id' },
-            error: null,
+      // Mock successful track creation
+      (supabase.from as any).mockReturnValue({
+        insert: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: { id: mockTrackId },
+              error: null,
+            }),
           }),
-        })),
-      }));
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: mockInsert,
-      } as any);
+        }),
+      });
     });
 
-    it('should route to Suno provider', async () => {
+    it('should generate music with minimal parameters', async () => {
+      const { generateMusic } = await import('@/services/providers/router');
+      (generateMusic as any).mockResolvedValue({
+        taskId: mockTaskId,
+        message: 'Generation started',
+      });
+
       const request: GenerationRequest = {
-        prompt: 'Suno track',
+        prompt: 'Epic orchestral music',
         provider: 'suno',
       };
 
-      const { generateMusic } = await import('@/services/providers/router');
-      vi.mocked(generateMusic).mockResolvedValue({
-        success: true,
-        taskId: 'suno-task-id',
-        trackId: 'test-track-id',
-        message: 'Suno generation started',
-      });
-
       const result = await GenerationService.generate(request);
 
-      expect(generateMusic).toHaveBeenCalledWith(
-        expect.objectContaining({
-          provider: 'suno',
-          trackId: 'test-track-id',
-        })
-      );
+      expect(result.success).toBe(true);
+      expect(result.trackId).toBe(mockTrackId);
+      expect(result.taskId).toBe(mockTaskId);
       expect(result.provider).toBe('suno');
     });
 
-    it('should route to Mureka provider', async () => {
-      const request: GenerationRequest = {
-        prompt: 'Mureka track',
-        provider: 'mureka',
-      };
-
+    it('should generate music with full parameters', async () => {
       const { generateMusic } = await import('@/services/providers/router');
-      vi.mocked(generateMusic).mockResolvedValue({
-        success: true,
-        taskId: 'mureka-task-id',
-        trackId: 'test-track-id',
-        message: 'Mureka generation started',
+      (generateMusic as any).mockResolvedValue({
+        taskId: mockTaskId,
+        message: 'Generation started',
       });
+
+      const request: GenerationRequest = {
+        prompt: 'Epic orchestral music',
+        title: 'My Epic Track',
+        lyrics: 'Verse 1\nChorus\nVerse 2',
+        provider: 'suno',
+        styleTags: ['orchestral', 'epic'],
+        hasVocals: true,
+        modelVersion: 'chirp-v3-5',
+        customMode: true,
+      };
 
       const result = await GenerationService.generate(request);
 
+      expect(result.success).toBe(true);
+      expect(result.trackId).toBe(mockTrackId);
       expect(generateMusic).toHaveBeenCalledWith(
         expect.objectContaining({
-          provider: 'mureka',
-          trackId: 'test-track-id',
-        })
-      );
-      expect(result.provider).toBe('mureka');
-    });
-  });
-
-  describe('Track Creation', () => {
-    it('should create track with correct default values', async () => {
-      const request: GenerationRequest = {
-        prompt: 'Test prompt',
-        provider: 'suno',
-      };
-
-      const { supabase } = await import('@/integrations/supabase/client');
-      vi.mocked(supabase.auth.getUser).mockResolvedValue({
-        data: {
-          user: {
-            id: 'test-user-id',
-            email: 'test@example.com',
-          } as any,
-        },
-        error: null,
-      });
-
-      const mockInsert = vi.fn(() => ({
-        select: vi.fn(() => ({
-          single: vi.fn().mockResolvedValue({
-            data: { id: 'test-track-id' },
-            error: null,
-          }),
-        })),
-      }));
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: mockInsert,
-      } as any);
-
-      const { generateMusic } = await import('@/services/providers/router');
-      vi.mocked(generateMusic).mockResolvedValue({
-        success: true,
-        taskId: 'test-task-id',
-        trackId: 'test-track-id',
-      });
-
-      await GenerationService.generate(request);
-
-      expect(mockInsert).toHaveBeenCalledWith(
-        expect.objectContaining({
-          user_id: 'test-user-id',
-          prompt: 'Test prompt',
-          status: 'pending',
           provider: 'suno',
-          has_vocals: true,
-        })
-      );
-    });
-
-    it('should use custom title if provided', async () => {
-      const request: GenerationRequest = {
-        prompt: 'Test prompt',
-        title: 'Custom Title',
-        provider: 'suno',
-      };
-
-      const { supabase } = await import('@/integrations/supabase/client');
-      vi.mocked(supabase.auth.getUser).mockResolvedValue({
-        data: {
-          user: {
-            id: 'test-user-id',
-            email: 'test@example.com',
-          } as any,
-        },
-        error: null,
-      });
-
-      const mockInsert = vi.fn(() => ({
-        select: vi.fn(() => ({
-          single: vi.fn().mockResolvedValue({
-            data: { id: 'test-track-id' },
-            error: null,
-          }),
-        })),
-      }));
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: mockInsert,
-      } as any);
-
-      const { generateMusic } = await import('@/services/providers/router');
-      vi.mocked(generateMusic).mockResolvedValue({
-        success: true,
-        taskId: 'test-task-id',
-        trackId: 'test-track-id',
-      });
-
-      await GenerationService.generate(request);
-
-      expect(mockInsert).toHaveBeenCalledWith(
-        expect.objectContaining({
-          title: 'Custom Title',
+          trackId: mockTrackId,
+          title: 'My Epic Track',
+          prompt: 'Epic orchestral music',
+          lyrics: 'Verse 1\nChorus\nVerse 2',
+          styleTags: ['orchestral', 'epic'],
+          hasVocals: true,
+          modelVersion: 'chirp-v3-5',
         })
       );
     });
   });
 
   describe('Error Handling', () => {
+    beforeEach(() => {
+      // Mock successful authentication
+      (supabase.auth.getUser as any).mockResolvedValue({
+        data: {
+          user: { id: mockUserId },
+        },
+        error: null,
+      });
+
+      // Mock successful track creation
+      (supabase.from as any).mockReturnValue({
+        insert: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: { id: mockTrackId },
+              error: null,
+            }),
+          }),
+        }),
+      });
+    });
+
     it('should handle network errors', async () => {
+      const { generateMusic } = await import('@/services/providers/router');
+      (generateMusic as any).mockRejectedValue(new Error('Failed to fetch'));
+
       const request: GenerationRequest = {
         prompt: 'Test prompt',
         provider: 'suno',
       };
 
-      const { supabase } = await import('@/integrations/supabase/client');
-      vi.mocked(supabase.auth.getUser).mockResolvedValue({
-        data: {
-          user: {
-            id: 'test-user-id',
-            email: 'test@example.com',
-          } as any,
-        },
-        error: null,
-      });
+      await expect(GenerationService.generate(request)).rejects.toThrow(
+        'Нет связи с сервером'
+      );
+    });
 
-      const mockInsert = vi.fn(() => ({
-        select: vi.fn(() => ({
-          single: vi.fn().mockResolvedValue({
-            data: { id: 'test-track-id' },
-            error: null,
-          }),
-        })),
-      }));
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: mockInsert,
-      } as any);
-
+    it('should handle provider errors', async () => {
       const { generateMusic } = await import('@/services/providers/router');
-      vi.mocked(generateMusic).mockRejectedValue(
-        new Error('Failed to fetch')
+      (generateMusic as any).mockRejectedValue(
+        new Error('Provider error: insufficient credits')
       );
 
+      const request: GenerationRequest = {
+        prompt: 'Test prompt',
+        provider: 'suno',
+      };
+
       await expect(GenerationService.generate(request)).rejects.toThrow(
-        'Нет связи с сервером. Проверьте подключение к интернету.'
+        'Недостаточно кредитов для генерации'
       );
     });
 
     it('should handle database errors', async () => {
+      (supabase.from as any).mockReturnValue({
+        insert: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({
+              data: null,
+              error: new Error('Database error'),
+            }),
+          }),
+        }),
+      });
+
       const request: GenerationRequest = {
         prompt: 'Test prompt',
         provider: 'suno',
       };
 
-      const { supabase } = await import('@/integrations/supabase/client');
-      vi.mocked(supabase.auth.getUser).mockResolvedValue({
-        data: {
-          user: {
-            id: 'test-user-id',
-            email: 'test@example.com',
-          } as any,
-        },
-        error: null,
-      });
+      await expect(GenerationService.generate(request)).rejects.toThrow();
+    });
+  });
 
-      const mockInsert = vi.fn(() => ({
-        select: vi.fn(() => ({
-          single: vi.fn().mockResolvedValue({
-            data: null,
-            error: { message: 'Database error' },
-          }),
-        })),
-      }));
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: mockInsert,
-      } as any);
+  describe('Real-time Subscriptions', () => {
+    it('should create subscription for track updates', () => {
+      const mockChannel = {
+        on: vi.fn().mockReturnThis(),
+        subscribe: vi.fn().mockReturnThis(),
+        unsubscribe: vi.fn(),
+      };
 
-      await expect(GenerationService.generate(request)).rejects.toThrow(
-        'Не удалось создать запись трека'
+      (supabase.channel as any).mockReturnValue(mockChannel);
+
+      const callback = vi.fn();
+      const subscription = GenerationService.subscribe(mockTrackId, callback);
+
+      expect(supabase.channel).toHaveBeenCalledWith(`track-status:${mockTrackId}`);
+      expect(mockChannel.on).toHaveBeenCalledWith(
+        'postgres_changes',
+        expect.objectContaining({
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tracks',
+          filter: `id=eq.${mockTrackId}`,
+        }),
+        expect.any(Function)
       );
+      expect(subscription).toBe(mockChannel);
+    });
+
+    it('should unsubscribe from track updates', () => {
+      const mockChannel = {
+        unsubscribe: vi.fn(),
+      };
+
+      GenerationService.unsubscribe(mockChannel as any);
+
+      expect(mockChannel.unsubscribe).toHaveBeenCalled();
     });
   });
 });

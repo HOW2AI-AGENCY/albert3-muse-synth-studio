@@ -289,15 +289,37 @@ export class GenerationService {
         provider: request.provider,
       });
 
-      // Обработка ошибок провайдера
+      // Enhanced error handling with specific error types
       if (error instanceof Error) {
-        if (error.message.includes('Failed to fetch')) {
+        const errorMessage = error.message.toLowerCase();
+        
+        // Network errors
+        if (errorMessage.includes('failed to fetch') || errorMessage.includes('network')) {
           throw new Error('Нет связи с сервером. Проверьте подключение к интернету.');
         }
+        
+        // Provider-specific errors
+        if (errorMessage.includes('insufficient credits') || errorMessage.includes('no credits')) {
+          throw new Error('Недостаточно кредитов для генерации. Пополните баланс.');
+        }
+        
+        if (errorMessage.includes('invalid api key') || errorMessage.includes('unauthorized')) {
+          throw new Error('Ошибка авторизации провайдера. Обратитесь в поддержку.');
+        }
+        
+        if (errorMessage.includes('rate limit')) {
+          throw new Error('Превышен лимит запросов. Попробуйте позже.');
+        }
+        
+        if (errorMessage.includes('timeout')) {
+          throw new Error('Превышено время ожидания. Попробуйте снова.');
+        }
+        
+        // Re-throw original error if it's specific
         throw error;
       }
 
-      throw new Error('Не удалось сгенерировать музыку');
+      throw new Error('Не удалось сгенерировать музыку. Попробуйте снова.');
     }
   }
 
