@@ -6,6 +6,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useMediaSession } from "@/hooks/useMediaSession";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useAudioUrlRefresh } from "@/hooks/useAudioUrlRefresh";
+import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/utils/logger";
+import { toast } from "sonner";
 import { formatTime } from "@/utils/formatters";
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1, Music, X, List, Star, Loader2 } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
@@ -117,23 +120,19 @@ const GlobalAudioPlayer = memo(() => {
       // Network errors (400, 403, 410) - истекшие ссылки
       if (error.code === MediaError.MEDIA_ERR_NETWORK || 
           error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
-        import('@/utils/logger').then(({ logger }) => {
-          logger.warn('Audio URL expired, attempting refresh', 'GlobalAudioPlayer', {
-            trackId: currentTrack.id,
-            errorCode: error.code,
-            errorMessage: error.message,
-          });
+        logger.warn('Audio URL expired, attempting refresh', 'GlobalAudioPlayer', {
+          trackId: currentTrack.id,
+          errorCode: error.code,
+          errorMessage: error.message,
         });
         
         setIsBuffering(true);
         
         try {
           // ✅ Используем новый Edge Function для обновления URL
-          const { data, error: refreshError } = await import('@/integrations/supabase/client').then(
-            ({ supabase }) => supabase.functions.invoke('refresh-track-audio', {
-              body: { trackId: currentTrack.id, mode: 'production' }
-            })
-          );
+          const { data, error: refreshError } = await supabase.functions.invoke('refresh-track-audio', {
+            body: { trackId: currentTrack.id, mode: 'production' }
+          });
           
           if (refreshError) throw refreshError;
           
@@ -143,15 +142,11 @@ const GlobalAudioPlayer = memo(() => {
             audio.load();
             if (isPlaying) {
               audio.play().catch((err) => {
-                import('@/utils/logger').then(({ logger }) => {
-                  logger.error('Failed to play refreshed audio', err, 'GlobalAudioPlayer');
-                });
+                logger.error('Failed to play refreshed audio', err, 'GlobalAudioPlayer');
               });
             }
             
-            import('sonner').then(({ toast }) => {
-              toast.success('Аудио обновлено');
-            });
+            toast.success('Аудио обновлено');
             
             // Track successful URL refresh
             import('@/services/analytics.service').then(({ AnalyticsService }) => {
@@ -163,14 +158,10 @@ const GlobalAudioPlayer = memo(() => {
             });
           } else {
             // URL не обновился
-            import('sonner').then(({ toast }) => {
-              toast.error('Не удалось обновить аудио');
-            });
+            toast.error('Не удалось обновить аудио');
           }
         } catch (err) {
-          import('@/utils/logger').then(({ logger }) => {
-            logger.error('Failed to refresh audio URL', err instanceof Error ? err : new Error(String(err)), 'GlobalAudioPlayer');
-          });
+          logger.error('Failed to refresh audio URL', err instanceof Error ? err : new Error(String(err)), 'GlobalAudioPlayer');
           
           // Track failed URL refresh
           import('@/services/analytics.service').then(({ AnalyticsService }) => {
@@ -183,9 +174,7 @@ const GlobalAudioPlayer = memo(() => {
             });
           });
           
-          import('sonner').then(({ toast }) => {
-            toast.error('Ошибка загрузки аудио');
-          });
+          toast.error('Ошибка загрузки аудио');
         } finally {
           setIsBuffering(false);
         }
