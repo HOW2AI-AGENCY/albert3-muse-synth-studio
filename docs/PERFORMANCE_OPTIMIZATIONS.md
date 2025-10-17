@@ -184,21 +184,67 @@ const queryClient = new QueryClient({
 
 ### Мониторинг и алёрты Sentry
 
-- **Ежедневные отчёты**: в проекте Sentry добавлен расписной alert rule, который агрегирует ошибки за сутки и отправляет дайджест в подключённые каналы.
-- **Slack вебхук**: в разделе *Alerts → Notification Integrations* подключён входящий вебхук команды. При критических ошибках отправляется детализированное сообщение с ссылкой на issue.
-- **Email рассылка**: ответственная QA-группа добавлена в получатели дневного дайджеста, чтобы отслеживать регрессии и деградации качества.
-- **Health Check**: GitHub Actions запускает `sentry-cli info`, убеждаясь, что токен и проект валидны до деплоя.
-- **Переменные окружения (Frontend)**:
-  - `VITE_SENTRY_DSN` — DSN проекта; при его наличии фронтенд и логгер автоматически активируют отправку ошибок и хлебные крошки.
-  - `VITE_SENTRY_ENVIRONMENT` и `VITE_SENTRY_RELEASE` — маркировка окружений и релизов в Sentry.
-  - `VITE_SENTRY_TRACES_SAMPLE_RATE` — доля транзакций, отправляемых в Performance (значение от 0 до 1, по умолчанию 0.1).
-  - `VITE_SENTRY_ENABLE_IN_DEV` — включение отправки событий из локальной разработки (по умолчанию `false`).
-- **Переменные окружения (Supabase Edge Functions)**:
-  - `SENTRY_EDGE_DSN` (или `SENTRY_DSN`) — DSN для функций; при наличии обёртка `withSentry` захватывает необработанные ошибки и транзакции.
-  - `SENTRY_ENVIRONMENT`, `SENTRY_RELEASE` — привязка событий к окружению и версии.
-  - `SENTRY_TRACES_SAMPLE_RATE` — sampling для edge-транзакций.
-  - `SENTRY_FLUSH_TIMEOUT_MS` — необязательный таймаут ожидания доставки событий перед завершением запроса (по умолчанию 2000 мс).
-  - `SENTRY_DEBUG` — расширенный лог Sentry SDK (использовать только в отладке).
+✅ **Статус**: Production Integration Complete (Week 8)
+
+#### Frontend Integration
+- **Автоматический захват**: JavaScript ошибок, unhandled Promise rejections, React Error Boundaries
+- **Performance Monitoring**: Web Vitals (LCP, FID, CLS), React component renders
+- **Breadcrumbs**: Навигация, API calls, пользовательские взаимодействия
+- **Session Replay**: Запись последних 30 секунд до ошибки (masked sensitive data)
+- **User Context**: Auth state, subscription tier, user ID
+
+#### Edge Functions Integration
+- **Wrapper `withSentry`**: Автоматический захват исключений и performance transactions
+- **Structured Logging**: JSON-формат с контекстом через `logger` в `_shared/logger.ts`
+- **Error Tagging**: По провайдеру, модели, user tier для быстрого фильтра
+- **Transaction Monitoring**: Отслеживание времени выполнения критичных функций
+
+#### Alert Rules
+**1. Критические ошибки (Slack #alerts-production)**:
+- Условие: >10 errors за 5 минут в production
+- Действия: Slack notification, assign to @tech-lead
+
+**2. Performance Degradation (Email)**:
+- Условие: Transaction p95 >2000ms за 10 минут
+- Действия: Email to qa-team@albert3.app
+
+**3. Daily Digest**:
+- Расписание: Каждый день 09:00 UTC
+- Содержимое: Total errors, new issues, top 10 by volume
+- Получатели: qa-team@albert3.app, tech-lead@albert3.app
+
+#### Environment Variables
+
+**Frontend** (`.env.production`):
+```bash
+VITE_SENTRY_DSN=https://xxxxx@o123456.ingest.sentry.io/123456
+VITE_SENTRY_ENVIRONMENT=production
+VITE_SENTRY_RELEASE=2.7.2
+VITE_SENTRY_TRACES_SAMPLE_RATE=0.1
+VITE_SENTRY_ENABLE_IN_DEV=false
+```
+
+**Edge Functions** (Supabase Dashboard → Settings → Edge Functions):
+```bash
+SENTRY_EDGE_DSN=https://xxxxx@o123456.ingest.sentry.io/123456
+SENTRY_ENVIRONMENT=production
+SENTRY_RELEASE=2.7.2
+SENTRY_TRACES_SAMPLE_RATE=0.0
+SENTRY_DEBUG=false
+```
+
+#### Dashboard & Reports
+- **URL**: https://sentry.io/organizations/albert3-studio/
+- **Key Metrics**: Error rate, affected users, APDEX score, transaction duration
+- **Filters**: `environment:production`, `transaction:<name>`, `level:error`
+
+#### Best Practices
+1. **Используйте `logger`** вместо `console` для автоматической отправки в Sentry
+2. **Error Boundaries** вокруг критичных компонентов (MusicGenerator, TrackCard)
+3. **Добавляйте контекст** через `Sentry.setContext()` перед критичными операциями
+4. **Маскируйте чувствительные данные** - logger делает это автоматически
+
+**Подробнее**: см. `project-management/tools/qa/SENTRY_GUIDE.md`
 
 ## 🚨 Известные проблемы
 

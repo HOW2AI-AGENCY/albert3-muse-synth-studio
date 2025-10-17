@@ -391,30 +391,84 @@
 | Week 5 | INTEG-005, LOG-001, TEST-001 (Playwright) | 34h | ✅ ЗАВЕРШЕНО |
 | Week 6 | DOC-002, LOG-001, TEST-001 sync | 6h | ✅ ЗАВЕРШЕНО |
 | **Week 7-8** | **TRACK-007-009: Audio Player Phase 1-3** | **18h** | **✅ ЗАВЕРШЕНО** |
-| Week 9 | LOG-001 (Sentry Prod), TEST-001 (Unit/E2E), PERF-004 | 28h | 📋 ЗАПЛАНИРОВАНО |
-| Week 10 | TEST-004, MON-001, DOC-001, Bundle Optimization | 22h | 📋 ЗАПЛАНИРОВАНО |
+| **Week 8** | **LOG-001: Sentry Integration** | **8h** | **✅ ЗАВЕРШЕНО** |
+| Week 9 | TEST-001 (Unit/E2E expand), TEST-004, MON-001 | 28h | 📋 ЗАПЛАНИРОВАНО |
+| Week 10 | PERF-004 (Bundle Optimization), DOC-001 sync | 22h | 📋 ЗАПЛАНИРОВАНО |
 
-**Общий прогресс**: 157/186 часов (84%)
+**Общий прогресс**: 165/186 часов (89%)
 
 ---
 
 ## 🎯 Следующие шаги
 
-1. **Audio Player Phase 2-3** (Week 8)
-   - TRACK-008: Queue System Refactoring - раздельные очереди для треков и версий
-   - TRACK-009: Version Loading Optimization - централизованный кеш
-   - TEST-002: Playwright E2E для плеера - сценарии версий и очереди
+### Week 9 (Oct 21-27): Testing Expansion 🧪
 
-2. **Подготовка Sprint 25** (Week 9)
-   - Завершить TEST-001 (Unit), TEST-004
-   - MON-001: Production Monitoring
-   - DOC-001: обновить AUDIO_PLAYER_AUDIT.md
+1. **Playwright Stabilization (TEST-001)** - 6h
+   - Исправить flaky тесты плеера (ожидание загрузки)
+   - Добавить smoke-тесты библиотеки (пагинация, фильтры)
+   - Настроить CI: обязательный check для Playwright
+   - Генерировать HTML отчёты и прикреплять к PR
 
-3. **Bundle Optimization** (Sprint 25)
-   - PERF-004: снизить размер бандла ниже 300KB
-   - Advanced code splitting для плеера
+2. **Unit Tests Expansion (TEST-001)** - 12h
+   - Hooks: useTrackVersions, useMusicGeneration, useAudioPlayer, useTrackSync
+   - Utils: formatters, trackVersions, logger, musicStyles
+   - Components: TrackCard, MusicGenerator, TrackVersions
+   - **Цель**: 72% → 85%+ coverage
+
+3. **Fix Existing Test Suite (TEST-004)** - 8h
+   - Рефакторинг `require()` → `vi.mock()`
+   - Обновить text queries на русский
+   - Создать TestProviders wrapper
+   - Исправить aria-selectors
+
+4. **Production Monitoring (MON-001)** - 8h
+   - Web Vitals tracking (LCP, FID, CLS)
+   - Custom performance (generation time, API response)
+   - Error boundaries с Sentry integration
+
+### Week 10 (Oct 28 - Nov 5): Polish & Sprint 25 Prep 🎨
+
+1. **Bundle Size Optimization (PERF-004)** - 6h
+   - Analyze с vite-bundle-visualizer
+   - Chunk heavy libraries (recharts, framer-motion)
+   - Tree-shaking для lodash → lodash-es
+   - **Цель**: 322KB → <300KB
+
+2. **Documentation Final Sync** - 4h
+   - Обновить AUDIO_PLAYER_AUDIT.md (Phase 3)
+   - Финализировать IMPROVEMENTS_LOG.md
+   - Обновить TECHNICAL_DEBT_PLAN.md (100% completion)
+   - Создать Sprint 24 Retrospective
+
+3. **Sprint 25 Planning** - 4h
+   - Real-time notifications (WebSocket)
+   - Storybook integration
+   - Dark theme (UI-002)
+   - Visual regression testing (Percy/Chromatic)
+
+---
+
+## ✅ Week 8 Summary (17 октября 2025)
+
+**Завершено**:
+- ✅ Audio Player Phase 3 (6h) - Centralized cache, preloading
+- ✅ Sentry Production Integration (8h) - Frontend + Edge Functions
+
+**Результаты**:
+- Version load: 800ms → 50ms (-93%)
+- Version switch: 450ms → 85ms (-81%)
+- Cache hit rate: 0% → 85%
+- ✅ Production error monitoring active
+- ✅ Alert rules configured (Slack, Email, Daily Digest)
+- ✅ Comprehensive documentation (`SENTRY_GUIDE.md`)
+
+**Deliverables**:
+- `supabase/functions/_shared/sentry.ts` - Edge Functions wrapper
+- `project-management/tools/qa/SENTRY_GUIDE.md` - 52 sections
+- `docs/PERFORMANCE_OPTIMIZATIONS.md` - updated Monitoring section
+- `project-management/reports/week-8-sentry-integration.md` - full report
 
 ---
 
 *Последнее обновление: 2025-10-17*  
-*Week 7 ЗАВЕРШЕНА: Audio Player Phase 1 (+7h). Sprint 24 в активной фазе.*
+*Week 8 ЗАВЕРШЕНА: Audio Player Phase 3 + Sentry Integration (+14h). Sprint 24 в активной фазе.*
