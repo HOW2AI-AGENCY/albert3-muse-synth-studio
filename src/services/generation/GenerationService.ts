@@ -26,28 +26,28 @@ export interface GenerationRequest {
   title?: string;
   prompt: string;
   provider: import('@/config/provider-models').MusicProvider;
-  
+
   // Music params
   lyrics?: string;
   styleTags?: string[];
   hasVocals?: boolean;
   makeInstrumental?: boolean;
-  
+
   // Advanced params
   modelVersion?: string;
   negativeTags?: string;
   vocalGender?: 'm' | 'f' | 'any';
-  
+
   // Audio reference
   referenceAudioUrl?: string;
   referenceTrackId?: string;
   audioWeight?: number;
-  
+
   // Weights & constraints
   styleWeight?: number;
   lyricsWeight?: number;
   weirdness?: number;
-  
+
   // Optional
   customMode?: boolean;
   isBGM?: boolean;
@@ -250,6 +250,7 @@ export class GenerationService {
 
       // 4. Подготовка параметров для провайдера
       const providerParams = {
+        ...request,
         provider: request.provider,
         trackId,
         title: request.title,
@@ -257,8 +258,17 @@ export class GenerationService {
         lyrics: request.lyrics,
         styleTags: request.styleTags,
         hasVocals: request.hasVocals,
+        makeInstrumental: request.makeInstrumental,
         modelVersion: request.modelVersion,
+        negativeTags: request.negativeTags,
+        vocalGender: request.vocalGender,
         referenceAudioUrl: request.referenceAudioUrl,
+        referenceTrackId: request.referenceTrackId,
+        audioWeight: request.audioWeight,
+        styleWeight: request.styleWeight,
+        lyricsWeight: request.lyricsWeight,
+        weirdness: request.weirdness,
+        customMode: request.customMode,
         isBGM: request.isBGM,
       };
 

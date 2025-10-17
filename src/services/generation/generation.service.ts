@@ -99,28 +99,32 @@ export class GenerationService {
     // Map parameters to Suno API format
     const payload = {
       trackId,
-      
+
       // ✅ CRITICAL: Prompt vs Lyrics разделение
       prompt: customMode ? undefined : prompt,  // В simple mode - описание стиля
       lyrics: customMode ? (lyrics || prompt) : undefined,  // В custom mode - текст песни
-      
+
       title,
       tags: tags.length > 0 ? tags : undefined,
       model_version: modelVersion,
-      
+
       hasVocals: hasVocals !== undefined ? hasVocals : undefined,
+      make_instrumental: request.makeInstrumental ?? hasVocals === false,
+      makeInstrumental: request.makeInstrumental,
       customMode: customMode !== undefined ? customMode : undefined,
-      
-      vocalGender: vocalGender && vocalGender !== 'any' ? vocalGender : undefined,
+
+      vocalGender: vocalGender ?? undefined,
       audioWeight: audioWeight !== undefined ? audioWeight : undefined,
       styleWeight: styleWeight !== undefined ? styleWeight : undefined,
+      lyricsWeight: request.lyricsWeight !== undefined ? request.lyricsWeight : undefined,
       weirdnessConstraint: weirdness !== undefined ? weirdness : undefined,
+      weirdness: weirdness !== undefined ? weirdness : undefined,
       referenceAudioUrl: referenceAudioUrl || undefined,
       referenceTrackId: referenceTrackId || undefined,
       negativeTags: negativeTags || undefined,
       idempotencyKey: idempotencyKey || crypto.randomUUID(),
-      make_instrumental: hasVocals === false,
       wait_audio: false,
+      isBGM: request.isBGM,
     };
 
     logger.info('📤 [GenerationService] Calling Suno edge function', 'GenerationService', {
@@ -186,9 +190,18 @@ export class GenerationService {
       styleTags: mergedStyleTags.length > 0 ? mergedStyleTags : undefined,
       modelVersion,
       hasVocals: hasVocals !== undefined ? hasVocals : undefined,
-      vocalGender: vocalGender && vocalGender !== 'any' ? vocalGender : undefined,
+      vocalGender: vocalGender ?? undefined,
       isBGM: isBGM !== undefined ? isBGM : undefined,
       idempotencyKey: idempotencyKey || crypto.randomUUID(),
+      makeInstrumental: request.makeInstrumental,
+      customMode: request.customMode,
+      negativeTags: request.negativeTags,
+      audioWeight: request.audioWeight,
+      styleWeight: request.styleWeight,
+      lyricsWeight: request.lyricsWeight,
+      weirdness: request.weirdness,
+      referenceAudioUrl: request.referenceAudioUrl,
+      referenceTrackId: request.referenceTrackId,
     };
 
     logger.info('📤 [GenerationService] Calling Mureka edge function', 'GenerationService');

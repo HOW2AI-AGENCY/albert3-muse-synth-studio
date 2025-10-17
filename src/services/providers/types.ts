@@ -42,6 +42,15 @@ export interface GenerationParams {
   hasVocals?: boolean;
   makeInstrumental?: boolean;
   modelVersion?: string;
+  customMode?: boolean;
+  negativeTags?: string;
+  audioWeight?: number;
+  styleWeight?: number;
+  lyricsWeight?: number;
+  weirdness?: number;
+  vocalGender?: 'm' | 'f' | 'any';
+  isBGM?: boolean;
+  audioPrompt?: string;
 }
 
 export interface ExtensionParams {

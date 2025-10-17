@@ -130,9 +130,19 @@ export class MurekaProviderAdapter implements IProviderClient {
       prompt: params.prompt,
       lyrics: params.lyrics,
       styleTags: params.styleTags,
-      hasVocals: !params.makeInstrumental,
-      isBGM: params.makeInstrumental || false,
+      hasVocals: params.hasVocals ?? !params.makeInstrumental,
+      isBGM: params.isBGM ?? params.makeInstrumental || false,
+      makeInstrumental: params.makeInstrumental,
       modelVersion: params.modelVersion,
+      customMode: params.customMode,
+      negativeTags: params.negativeTags,
+      audioWeight: params.audioWeight,
+      styleWeight: params.styleWeight,
+      lyricsWeight: params.lyricsWeight,
+      weirdness: params.weirdness,
+      referenceAudioUrl: params.referenceAudio,
+      referenceTrackId: params.referenceTrackId,
+      vocalGender: params.vocalGender,
     };
   }
 

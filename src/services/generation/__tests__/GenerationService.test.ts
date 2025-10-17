@@ -168,8 +168,17 @@ describe('GenerationService - Integration Tests', () => {
         provider: 'suno',
         styleTags: ['orchestral', 'epic'],
         hasVocals: true,
+        makeInstrumental: false,
         modelVersion: 'chirp-v3-5',
         customMode: true,
+        negativeTags: 'dissonant',
+        styleWeight: 0.75,
+        lyricsWeight: 0.65,
+        weirdness: 0.3,
+        audioWeight: 0.2,
+        referenceAudioUrl: 'https://example.com/ref.mp3',
+        referenceTrackId: 'ref-track-123',
+        vocalGender: 'f',
       };
 
       const result = await GenerationService.generate(request);
@@ -185,7 +194,17 @@ describe('GenerationService - Integration Tests', () => {
           lyrics: 'Verse 1\nChorus\nVerse 2',
           styleTags: ['orchestral', 'epic'],
           hasVocals: true,
+          makeInstrumental: false,
           modelVersion: 'chirp-v3-5',
+          customMode: true,
+          negativeTags: 'dissonant',
+          styleWeight: 0.75,
+          lyricsWeight: 0.65,
+          weirdness: 0.3,
+          audioWeight: 0.2,
+          referenceAudioUrl: 'https://example.com/ref.mp3',
+          referenceTrackId: 'ref-track-123',
+          vocalGender: 'f',
         })
       );
     });

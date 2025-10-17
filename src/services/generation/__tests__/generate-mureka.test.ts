@@ -40,6 +40,16 @@ describe('GenerationService.generate (Mureka)', () => {
       modelVersion: 'o1-beta',
       hasVocals: false,
       isBGM: true,
+      makeInstrumental: true,
+      customMode: false,
+      negativeTags: 'no drums',
+      audioWeight: 0.4,
+      styleWeight: 0.6,
+      lyricsWeight: 0.2,
+      weirdness: 0.1,
+      referenceAudioUrl: 'https://cdn.example.com/sample.wav',
+      referenceTrackId: 'ref-987',
+      vocalGender: 'any',
       idempotencyKey: '123e4567-e89b-12d3-a456-426614174000',
       trackId: 'mock-track',
     };
@@ -58,6 +68,16 @@ describe('GenerationService.generate (Mureka)', () => {
     expect(payload.hasVocals).toBe(false);
     expect(payload.isBGM).toBe(true);
     expect(payload.idempotencyKey).toBe(request.idempotencyKey);
+    expect(payload.makeInstrumental).toBe(true);
+    expect(payload.customMode).toBe(false);
+    expect(payload.negativeTags).toBe('no drums');
+    expect(payload.audioWeight).toBe(0.4);
+    expect(payload.styleWeight).toBe(0.6);
+    expect(payload.lyricsWeight).toBe(0.2);
+    expect(payload.weirdness).toBe(0.1);
+    expect(payload.referenceAudioUrl).toBe('https://cdn.example.com/sample.wav');
+    expect(payload.referenceTrackId).toBe('ref-987');
+    expect(payload.vocalGender).toBe('any');
   });
 
   it('maps legacy tags to styleTags when styleTags are not provided', async () => {

@@ -17,10 +17,20 @@ export interface GenerateOptions {
   lyrics?: string;
   styleTags?: string[];
   hasVocals?: boolean;
+  makeInstrumental?: boolean;
   modelVersion?: string;
   idempotencyKey?: string;
   referenceAudioUrl?: string;
+  referenceTrackId?: string;
+  audioWeight?: number;
+  styleWeight?: number;
+  lyricsWeight?: number;
+  weirdness?: number;
+  negativeTags?: string;
+  vocalGender?: 'm' | 'f' | 'any';
+  customMode?: boolean;
   isBGM?: boolean;
+  audioPrompt?: string;
 }
 
 export interface ProviderBalance {
@@ -54,12 +64,21 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
             prompt: params.prompt || params.lyrics || 'Music generation',
             lyrics: params.lyrics,
             tags: params.styleTags || [],
-            make_instrumental: !params.hasVocals,
+            make_instrumental: params.makeInstrumental ?? !params.hasVocals,
             hasVocals: params.hasVocals,
-            customMode: !!params.lyrics,
+            customMode: params.customMode ?? !!params.lyrics,
             model_version: params.modelVersion || 'chirp-v3-5',
             idempotencyKey: params.idempotencyKey,
             referenceAudioUrl: params.referenceAudioUrl,
+            referenceTrackId: params.referenceTrackId,
+            audioWeight: params.audioWeight,
+            styleWeight: params.styleWeight,
+            lyricsWeight: params.lyricsWeight,
+            weirdness: params.weirdness,
+            negativeTags: params.negativeTags,
+            vocalGender: params.vocalGender,
+            isBGM: params.isBGM,
+            audioPrompt: params.audioPrompt,
           },
         });
 
@@ -79,6 +98,16 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
             isBGM: params.isBGM,
             modelVersion: params.modelVersion || 'auto',
             idempotencyKey: params.idempotencyKey,
+            makeInstrumental: params.makeInstrumental,
+            customMode: params.customMode,
+            negativeTags: params.negativeTags,
+            audioWeight: params.audioWeight,
+            styleWeight: params.styleWeight,
+            lyricsWeight: params.lyricsWeight,
+            weirdness: params.weirdness,
+            referenceAudioUrl: params.referenceAudioUrl,
+            referenceTrackId: params.referenceTrackId,
+            vocalGender: params.vocalGender,
           },
         });
 

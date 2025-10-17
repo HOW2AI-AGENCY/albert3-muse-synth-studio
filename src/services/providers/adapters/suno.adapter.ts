@@ -132,10 +132,22 @@ export class SunoProviderAdapter implements IProviderClient {
       prompt: params.prompt,
       lyrics: params.lyrics,
       tags: params.styleTags || (params.style ? [params.style] : []),
-      make_instrumental: params.makeInstrumental || false,
+      make_instrumental: params.makeInstrumental ?? params.hasVocals === false,
+      hasVocals: params.hasVocals,
+      customMode: params.customMode,
       model_version: params.modelVersion || 'V5',
+      negativeTags: params.negativeTags,
+      styleWeight: params.styleWeight,
+      lyricsWeight: params.lyricsWeight,
+      weirdness: params.weirdness,
+      audioWeight: params.audioWeight,
+      referenceAudioUrl: params.referenceAudio,
       reference_audio_url: params.referenceAudio,
+      referenceTrackId: params.referenceTrackId,
       reference_track_id: params.referenceTrackId,
+      vocalGender: params.vocalGender,
+      isBGM: params.isBGM,
+      audioPrompt: params.audioPrompt,
     };
   }
 
