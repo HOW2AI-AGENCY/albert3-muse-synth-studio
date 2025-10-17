@@ -2,7 +2,7 @@ import React, { useState, useCallback, memo, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
 import { LazyImage } from "@/components/ui/lazy-image";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { fadeInUp } from "@/utils/animations";
@@ -37,7 +37,6 @@ import {
 } from "@/utils/iconImports";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useTrackLike } from "@/features/tracks/hooks";
-
 import { useTrackVersions } from "@/features/tracks/hooks";
 import { withErrorBoundary } from "@/components/ErrorBoundary";
 import { cn } from "@/lib/utils";
@@ -48,6 +47,7 @@ import { TrackSyncStatus } from "@/components/tracks/TrackSyncStatus";
 import { getVersionShortLabel } from "@/utils/versionLabels";
 import { useConvertToWav } from "@/hooks/useConvertToWav";
 import { TrackVariantSelector } from "./TrackVariantSelector";
+import { logInfo } from "@/utils/logger";
 
 // ✅ Компонент для WAV конвертации (использует hook на уровне компонента)
 const WavConvertMenuItem: React.FC<{ 
@@ -335,18 +335,24 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
     return [mainVersion, ...versions];
   }, [mainVersion, versions]);
 
-  // ✅ ЭТАП 2: Автоматически переключаться на мастер-версию при её изменении
+  // ✅ ЭТАП 2: Автоматически переключаться на мастер-версию при монтировании
   useEffect(() => {
     // Только если трек НЕ играет (чтобы не сбивать воспроизведение)
     const isTrackPlaying = currentTrack?.parentTrackId === track.id || currentTrack?.id === track.id;
     
-    if (masterVersion && !isTrackPlaying) {
+    if (masterVersion && !isTrackPlaying && allVersions.length > 0) {
       const masterIndex = allVersions.findIndex(v => v.id === masterVersion.id);
       if (masterIndex !== -1 && masterIndex !== selectedVersionIndex) {
+        logInfo('Auto-switching to master version', 'TrackCard', {
+          trackId: track.id,
+          masterVersionId: masterVersion.id,
+          fromIndex: selectedVersionIndex,
+          toIndex: masterIndex,
+        });
         setSelectedVersionIndex(masterIndex);
       }
     }
-  }, [masterVersion, allVersions, selectedVersionIndex, currentTrack, track.id]);
+  }, [masterVersion?.id, track.id]); // Только при изменении ID мастер-версии или трека
 
   // Выбранная для отображения версия (может отличаться от играющей)
   const displayedVersion = React.useMemo(() => {
@@ -572,11 +578,11 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
               <div className="flex items-center gap-1 flex-shrink-0">
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Badge variant="secondary" className="h-5 px-1.5 text-[10px] gap-0.5">
+                    <TooltipTrigger>
+                      <div className="h-5 px-1.5 text-[10px] gap-0.5 inline-flex items-center rounded-full border border-transparent bg-secondary text-secondary-foreground">
                         <Layers className="h-2.5 w-2.5" />
                         <span>{versionCount + 1}</span>
-                      </Badge>
+                      </div>
                     </TooltipTrigger>
                     <TooltipContent>
                       {versionCount + 1} {versionCount === 0 ? 'версия' : versionCount < 4 ? 'версии' : 'версий'}
@@ -587,8 +593,8 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
                 {masterVersion && (
                   <TooltipProvider>
                     <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge variant="outline" className="h-5 px-1.5 text-[10px] gap-0.5 border-primary/50">
+                      <TooltipTrigger>
+                        <div className="h-5 px-1.5 text-[10px] gap-0.5 border-primary/50 inline-flex items-center rounded-full border">
                           <Star className="h-2.5 w-2.5 fill-primary text-primary" />
                           <span>
                             {getVersionShortLabel({
@@ -597,7 +603,7 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
                               isMaster: true,
                             })}
                           </span>
-                        </Badge>
+                        </div>
                       </TooltipTrigger>
                       <TooltipContent>Мастер-версия для воспроизведения</TooltipContent>
                     </Tooltip>
