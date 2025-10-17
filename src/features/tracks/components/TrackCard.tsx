@@ -335,6 +335,19 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
     return [mainVersion, ...versions];
   }, [mainVersion, versions]);
 
+  // ✅ ЭТАП 2: Автоматически переключаться на мастер-версию при её изменении
+  useEffect(() => {
+    // Только если трек НЕ играет (чтобы не сбивать воспроизведение)
+    const isTrackPlaying = currentTrack?.parentTrackId === track.id || currentTrack?.id === track.id;
+    
+    if (masterVersion && !isTrackPlaying) {
+      const masterIndex = allVersions.findIndex(v => v.id === masterVersion.id);
+      if (masterIndex !== -1 && masterIndex !== selectedVersionIndex) {
+        setSelectedVersionIndex(masterIndex);
+      }
+    }
+  }, [masterVersion, allVersions, selectedVersionIndex, currentTrack, track.id]);
+
   // Выбранная для отображения версия (может отличаться от играющей)
   const displayedVersion = React.useMemo(() => {
     const version = allVersions[selectedVersionIndex];
@@ -354,6 +367,16 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
   const handleVersionChange = React.useCallback((versionIndex: number) => {
     setSelectedVersionIndex(versionIndex);
   }, []);
+
+  // ✅ ЭТАП 3: ID для операций (мастер-версия имеет приоритет)
+  const operationTargetId = React.useMemo(() => {
+    return masterVersion?.id || mainVersion?.id || track.id;
+  }, [masterVersion, mainVersion, track.id]);
+
+  // ✅ Данные мастер-версии для операций
+  const operationTargetVersion = React.useMemo(() => {
+    return masterVersion || mainVersion || displayedVersion;
+  }, [masterVersion, mainVersion, displayedVersion]);
 
   const isCurrentTrack = currentTrack?.id === displayedVersion.id;
   const playButtonDisabled = track.status !== "completed" || !displayedVersion.audio_url;
@@ -464,6 +487,20 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+
+        {/* ✅ ЭТАП 1: Reference Audio Badge */}
+        {track.metadata?.reference_audio_url && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="absolute bottom-2 left-2 z-10 bg-amber-500/90 backdrop-blur-sm p-1.5 rounded-md cursor-help">
+                  <FileAudio className="h-4 w-4 text-white" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>Создано с аудио-референсом</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
 
         {/* Variant selector в правом верхнем углу */}
         {track.status === 'completed' && (
@@ -631,36 +668,39 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
                     {track.is_public ? 'Скрыть' : 'Опубликовать'}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div>
-                          <DropdownMenuItem 
-                            onClick={(e) => { 
-                              e.stopPropagation(); 
-                              // ✅ Разделяем выбранную версию (используем её audio_url)
-                              onSeparateStems?.(displayedVersion.id);
-                            }}
-                            disabled={!onSeparateStems || !displayedVersion.audio_url}
-                          >
-                            <Split className="w-4 h-4 mr-2" />
-                            Разделить на стемы
-                          </DropdownMenuItem>
-                        </div>
-                      </TooltipTrigger>
-                    </Tooltip>
-                  </TooltipProvider>
+                  {/* ✅ ЭТАП 3: Разделить на стемы - используем МАСТЕР */}
                   <DropdownMenuItem 
                     onClick={(e) => { 
                       e.stopPropagation(); 
-                      // ✅ Расширяем выбранную версию
-                      onExtend?.(displayedVersion.id);
+                      onSeparateStems?.(operationTargetId);
                     }}
-                    disabled={!onExtend || !displayedVersion.audio_url}
+                    disabled={!onSeparateStems || !operationTargetVersion.audio_url}
+                  >
+                    <Split className="w-4 h-4 mr-2" />
+                    Разделить на стемы {masterVersion && masterVersion.id !== track.id && `(${getVersionShortLabel({
+                      versionNumber: masterVersion.versionNumber,
+                      isOriginal: masterVersion.isOriginal,
+                      isMaster: true
+                    })})`}
+                  </DropdownMenuItem>
+                  
+                  {/* ✅ Расширить трек - используем МАСТЕР */}
+                  <DropdownMenuItem 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      onExtend?.(operationTargetId);
+                    }}
+                    disabled={!onExtend || !operationTargetVersion.audio_url}
                   >
                     <Expand className="w-4 h-4 mr-2" />
-                    Расширить трек
+                    Расширить трек {masterVersion && masterVersion.id !== track.id && `(${getVersionShortLabel({
+                      versionNumber: masterVersion.versionNumber,
+                      isOriginal: masterVersion.isOriginal,
+                      isMaster: true
+                    })})`}
                   </DropdownMenuItem>
+                  
+                  {/* ✅ Создать кавер - используем МАСТЕР */}
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -668,14 +708,17 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
                           <DropdownMenuItem 
                             onClick={(e) => { 
                               e.stopPropagation(); 
-                              // ✅ Создаём кавер выбранной версии
-                              if (isSunoTrack) onCover?.(displayedVersion.id);
+                              if (isSunoTrack) onCover?.(operationTargetId);
                             }}
-                            disabled={!onCover || isMurekaTrack || !displayedVersion.audio_url}
+                            disabled={!onCover || isMurekaTrack || !operationTargetVersion.audio_url}
                             className={isMurekaTrack ? 'opacity-50' : ''}
                           >
                             <Mic2 className="w-4 h-4 mr-2" />
-                            Создать кавер
+                            Создать кавер {masterVersion && masterVersion.id !== track.id && `(${getVersionShortLabel({
+                              versionNumber: masterVersion.versionNumber,
+                              isOriginal: masterVersion.isOriginal,
+                              isMaster: true
+                            })})`}
                           </DropdownMenuItem>
                         </div>
                       </TooltipTrigger>
@@ -686,17 +729,22 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
                       )}
                     </Tooltip>
                   </TooltipProvider>
+                  
+                  {/* ✅ Добавить вокал - используем МАСТЕР */}
                   {!track.has_vocals && (
                     <DropdownMenuItem 
                       onClick={(e) => { 
                         e.stopPropagation(); 
-                        // ✅ Добавляем вокал к выбранной версии
-                        onAddVocal?.(displayedVersion.id);
+                        onAddVocal?.(operationTargetId);
                       }}
-                      disabled={!onAddVocal || !displayedVersion.audio_url}
+                      disabled={!onAddVocal || !operationTargetVersion.audio_url}
                     >
                       <UserPlus className="w-4 h-4 mr-2" />
-                      Добавить вокал
+                      Добавить вокал {masterVersion && masterVersion.id !== track.id && `(${getVersionShortLabel({
+                        versionNumber: masterVersion.versionNumber,
+                        isOriginal: masterVersion.isOriginal,
+                        isMaster: true
+                      })})`}
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
@@ -710,7 +758,7 @@ const TrackCardComponent = ({ track, onShare, onClick, onRetry, onDelete, onExte
   );
 };
 
-// Оптимизированная мемоизация: перерендер только при изменении критичных пропсов
+// ✅ ЭТАП 4: Улучшенная мемоизация с отслеживанием мастер-версии
 const MemoizedTrackCard = memo(TrackCardComponent, (prevProps, nextProps) => {
   return (
     prevProps.track.id === nextProps.track.id &&
@@ -718,6 +766,9 @@ const MemoizedTrackCard = memo(TrackCardComponent, (prevProps, nextProps) => {
     prevProps.track.like_count === nextProps.track.like_count &&
     prevProps.track.is_public === nextProps.track.is_public &&
     prevProps.track.audio_url === nextProps.track.audio_url &&
+    prevProps.track.cover_url === nextProps.track.cover_url &&
+    prevProps.track.duration === nextProps.track.duration &&
+    prevProps.track.metadata?.reference_audio_url === nextProps.track.metadata?.reference_audio_url &&
     prevProps.track.progress_percent === nextProps.track.progress_percent &&
     prevProps.onClick === nextProps.onClick
   );
