@@ -170,6 +170,16 @@ describe('GenerationService - Integration Tests', () => {
         hasVocals: true,
         modelVersion: 'chirp-v3-5',
         customMode: true,
+        makeInstrumental: false,
+        negativeTags: 'no drums',
+        styleWeight: 0.75,
+        lyricsWeight: 0.65,
+        weirdness: 0.2,
+        audioWeight: 0.5,
+        referenceAudioUrl: 'https://example.com/reference.mp3',
+        referenceTrackId: 'ref-track-123',
+        vocalGender: 'f',
+        idempotencyKey: '00000000-0000-0000-0000-000000000001',
       };
 
       const result = await GenerationService.generate(request);
@@ -186,6 +196,17 @@ describe('GenerationService - Integration Tests', () => {
           styleTags: ['orchestral', 'epic'],
           hasVocals: true,
           modelVersion: 'chirp-v3-5',
+          makeInstrumental: false,
+          negativeTags: 'no drums',
+          styleWeight: 0.75,
+          lyricsWeight: 0.65,
+          weirdness: 0.2,
+          audioWeight: 0.5,
+          referenceAudioUrl: 'https://example.com/reference.mp3',
+          referenceTrackId: 'ref-track-123',
+          customMode: true,
+          vocalGender: 'f',
+          idempotencyKey: '00000000-0000-0000-0000-000000000001',
         })
       );
     });
