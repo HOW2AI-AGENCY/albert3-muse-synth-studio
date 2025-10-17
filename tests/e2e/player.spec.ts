@@ -110,38 +110,48 @@ test.describe('Audio player experience', () => {
     expect(switched).toBeTruthy();
   });
 
-  test('should handle rapid clicks without AbortError', async ({ page }) => {
+  test('should handle rapid clicks without errors', async ({ page }) => {
     const cards = await ensureLibraryReady(page);
     const firstCard = cards.first();
     
-    // ✅ Быстро кликнуть 5 раз
+    const consoleErrors: string[] = [];
+    page.on('console', msg => {
+      if (msg.type() === 'error') consoleErrors.push(msg.text());
+    });
+    
+    // Rapid clicks
     for (let i = 0; i < 5; i++) {
       await firstCard.click({ delay: 50 });
     }
     
-    // ✅ Плеер должен быть в состоянии воспроизведения
     await expect(page.getByTitle(/Пауза/)).toBeVisible({ timeout: 5000 });
+    await page.waitForTimeout(500);
     
-    // ✅ НЕ должно быть AbortError в консоли
-    const errors: string[] = [];
-    page.on('console', msg => {
-      if (msg.type() === 'error') errors.push(msg.text());
-    });
-    
-    await page.waitForTimeout(1000);
-    expect(errors.filter(e => e.includes('AbortError'))).toHaveLength(0);
+    expect(consoleErrors.filter(e => e.includes('AbortError'))).toHaveLength(0);
   });
 
-  test('should not crash when toggling play without loaded track', async ({ page }) => {
+  test('should gracefully handle play without loaded track', async ({ page }) => {
     await page.goto('/workspace/library');
+    await page.waitForLoadState('networkidle');
     
-    // ✅ Попытка нажать play без выбранного трека
-    const playButton = page.getByTitle(/Воспроизвести/);
+    const playButton = page.getByTitle(/Воспроизвести/).first();
     if (await playButton.isVisible()) {
       await playButton.click();
+      await page.waitForTimeout(300);
     }
     
-    // ✅ Не должно быть краша
     await expect(page.locator('body')).toBeVisible();
+  });
+
+  test('should persist playback state across navigation', async ({ page }) => {
+    const cards = await ensureLibraryReady(page);
+    await cards.first().click();
+    await expect(page.getByTitle(/Пауза/)).toBeVisible();
+    
+    await page.goto('/workspace/generate');
+    await page.waitForLoadState('networkidle');
+    
+    await page.goto('/workspace/library');
+    await expect(page.getByTitle(/Пауза/)).toBeVisible({ timeout: 5000 });
   });
 });
