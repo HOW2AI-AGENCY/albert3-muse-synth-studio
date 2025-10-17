@@ -104,20 +104,9 @@ export const usePromptHistory = () => {
   // Update usage
   const updateUsage = useMutation({
     mutationFn: async (id: string) => {
-      // First fetch current usage_count
-      const { data: current } = await supabase
-        .from('prompt_history')
-        .select('usage_count')
-        .eq('id', id)
-        .single();
-      
-      const { error } = await supabase
-        .from('prompt_history')
-        .update({
-          usage_count: (current?.usage_count || 0) + 1,
-          last_used_at: new Date().toISOString(),
-        })
-        .eq('id', id);
+      const { error } = await supabase.rpc('increment_prompt_usage', {
+        p_prompt_id: id,
+      });
 
       if (error) throw error;
     },
