@@ -110,9 +110,9 @@ export class GenerationService {
       customMode: customMode !== undefined ? customMode : undefined,
       
       vocalGender: vocalGender && vocalGender !== 'any' ? vocalGender : undefined,
-      audioWeight: audioWeight !== undefined ? audioWeight / 100 : undefined,
-      styleWeight: styleWeight !== undefined ? styleWeight / 100 : undefined,
-      weirdnessConstraint: weirdness !== undefined ? weirdness / 100 : undefined,
+      audioWeight: audioWeight !== undefined ? audioWeight : undefined,
+      styleWeight: styleWeight !== undefined ? styleWeight : undefined,
+      weirdnessConstraint: weirdness !== undefined ? weirdness : undefined,
       referenceAudioUrl: referenceAudioUrl || undefined,
       referenceTrackId: referenceTrackId || undefined,
       negativeTags: negativeTags || undefined,
