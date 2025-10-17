@@ -116,3 +116,6 @@ verify_jwt = true
 
 [functions.suno-webhook]
 verify_jwt = false
+
+[functions.health-check]
+verify_jwt = false
