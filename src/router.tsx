@@ -1,5 +1,6 @@
-import { Suspense, lazy } from "react";
+import { Suspense } from "react";
 import { createBrowserRouter } from "react-router-dom";
+import { createLazyComponent } from "./utils/lazyImports";
 
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
@@ -7,28 +8,28 @@ import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import WorkspaceLayout from "./components/workspace/WorkspaceLayout";
 
-// ========== LAZY ROUTES (Code Splitting) ==========
+// ========== LAZY ROUTES (Code Splitting) with Error Handling ==========
 // Critical path - minimal chunks
-const Dashboard = lazy(() => import("./pages/workspace/Dashboard"));
-const Generate = lazy(() => import("./pages/workspace/Generate"));
-const Library = lazy(() => import("./pages/workspace/Library"));
+const Dashboard = createLazyComponent(() => import("./pages/workspace/Dashboard"), "Dashboard");
+const Generate = createLazyComponent(() => import("./pages/workspace/Generate"), "Generate");
+const Library = createLazyComponent(() => import("./pages/workspace/Library"), "Library");
 
 // Secondary routes - separate chunks
-const UploadAudio = lazy(() => import("./pages/workspace/UploadAudio"));
-const Favorites = lazy(() => import("./pages/workspace/Favorites"));
-const Settings = lazy(() => import("./pages/workspace/Settings"));
-const Profile = lazy(() => import("./pages/workspace/Profile"));
+const UploadAudio = createLazyComponent(() => import("./pages/workspace/UploadAudio"), "UploadAudio");
+const Favorites = createLazyComponent(() => import("./pages/workspace/Favorites"), "Favorites");
+const Settings = createLazyComponent(() => import("./pages/workspace/Settings"), "Settings");
+const Profile = createLazyComponent(() => import("./pages/workspace/Profile"), "Profile");
 
 // Heavy routes - isolated chunks (recharts)
-const Analytics = lazy(() => import("./pages/workspace/Analytics"));
-const Metrics = lazy(() => import("./pages/workspace/Metrics"));
+const Analytics = createLazyComponent(() => import("./pages/workspace/Analytics"), "Analytics");
+const Metrics = createLazyComponent(() => import("./pages/workspace/Metrics"), "Metrics");
 
 // Admin routes - separate chunk
-const Admin = lazy(() => import("./pages/workspace/Admin"));
-const Monitoring = lazy(() => import("./pages/workspace/Monitoring"));
+const Admin = createLazyComponent(() => import("./pages/workspace/Admin"), "Admin");
+const Monitoring = createLazyComponent(() => import("./pages/workspace/Monitoring"), "Monitoring");
 
 // Debug route
-const EdgeFunctionsDebug = lazy(() => import("./pages/debug/EdgeFunctionsDebug"));
+const EdgeFunctionsDebug = createLazyComponent(() => import("./pages/debug/EdgeFunctionsDebug"), "EdgeFunctionsDebug");
 
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center min-h-[200px]">
