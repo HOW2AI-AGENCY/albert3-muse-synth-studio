@@ -14,13 +14,15 @@ export interface GenerationRequest {
   title?: string;
   lyrics?: string;
   tags?: string[];
-  
+  styleTags?: string[];
+
   // Provider specific
   provider?: MusicProvider;
   modelVersion?: string;
-  
+
   // Advanced options
   hasVocals?: boolean;
+  isBGM?: boolean;
   customMode?: boolean;
   vocalGender?: 'm' | 'f' | 'any';
   
@@ -163,22 +165,29 @@ export class GenerationService {
       title,
       lyrics,
       tags = [],
+      styleTags = [],
       modelVersion = 'auto',
       hasVocals,
       vocalGender,
+      isBGM,
       idempotencyKey,
       trackId,
     } = request;
+
+    const mergedStyleTags = (styleTags.length > 0 ? styleTags : tags).filter(
+      (tag) => typeof tag === 'string' && tag.trim().length > 0
+    );
 
     const payload = {
       trackId,
       prompt,
       title,
       lyrics: lyrics || undefined,
-      tags: tags.length > 0 ? tags : undefined,
-      model: modelVersion,
+      styleTags: mergedStyleTags.length > 0 ? mergedStyleTags : undefined,
+      modelVersion,
       hasVocals: hasVocals !== undefined ? hasVocals : undefined,
       vocalGender: vocalGender && vocalGender !== 'any' ? vocalGender : undefined,
+      isBGM: isBGM !== undefined ? isBGM : undefined,
       idempotencyKey: idempotencyKey || crypto.randomUUID(),
     };
 
