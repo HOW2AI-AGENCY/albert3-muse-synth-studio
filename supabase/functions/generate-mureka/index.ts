@@ -156,23 +156,43 @@ serve(async (req) => {
           code: lyricsResult.code,
           msg: lyricsResult.msg,
           hasData: !!lyricsResult.data,
+          hasTaskId: !!lyricsResult.data?.task_id,
           hasVariants: !!lyricsResult.data?.data,
           variantsCount: lyricsResult.data?.data?.length || 0,
-          responseStructure: Object.keys(lyricsResult.data || {})
+          responseStructure: Object.keys(lyricsResult.data || {}),
+          fullResponse: JSON.stringify(lyricsResult).substring(0, 500)
         });
         
-        // ✅ FIX: Проверка кода ответа
+        // ✅ FIX: Проверка кода ответа (код должен быть 200)
         if (lyricsResult.code !== 200) {
-          throw new Error(`Mureka API returned error code ${lyricsResult.code}: ${lyricsResult.msg || 'Unknown error'}`);
+          const errorMsg = lyricsResult.msg || 'Unknown Mureka API error';
+          logger.error('🔴 [MUREKA] API returned non-200 code', {
+            code: lyricsResult.code,
+            message: errorMsg
+          });
+          throw new Error(`Mureka lyrics API error (${lyricsResult.code}): ${errorMsg}`);
+        }
+        
+        // ✅ FIX: Если есть task_id, но нет данных - это callback mode
+        if (lyricsResult.data?.task_id && !lyricsResult.data?.data) {
+          logger.warn('🔔 [MUREKA] Callback mode detected, but we need sync response');
+          throw new Error('Mureka lyrics API returned task_id instead of immediate results. Please use callBackUrl parameter.');
         }
         
         // ✅ FIX: Проверка наличия данных
         if (!lyricsResult.data?.data) {
-          throw new Error('Mureka API response is missing data.data field');
+          logger.error('🔴 [MUREKA] Missing data.data in response', {
+            availableKeys: Object.keys(lyricsResult.data || {})
+          });
+          throw new Error('Mureka lyrics API response is missing data.data field');
         }
         
         // ✅ FIX: Проверка пустого массива
         if (!Array.isArray(lyricsResult.data.data) || lyricsResult.data.data.length === 0) {
+          logger.error('🔴 [MUREKA] Empty or invalid lyrics variants', {
+            isArray: Array.isArray(lyricsResult.data.data),
+            length: lyricsResult.data.data?.length
+          });
           throw new Error('Mureka API returned empty lyrics variants array');
         }
         
@@ -279,24 +299,47 @@ serve(async (req) => {
             .eq('id', finalTrackId);
             
       } catch (lyricsError) {
-        // ✅ FIX: Детальное логирование ошибки
+        // ✅ FIX: Детальное логирование ошибки с полной информацией
+        const errorMessage = lyricsError instanceof Error ? lyricsError.message : String(lyricsError);
+        const errorStack = lyricsError instanceof Error ? lyricsError.stack : undefined;
+        
         logger.error('🔴 [MUREKA] Lyrics generation failed', {
           error: lyricsError,
           errorName: lyricsError?.constructor?.name,
-          errorMessage: lyricsError instanceof Error ? lyricsError.message : String(lyricsError),
-          errorStack: lyricsError instanceof Error ? lyricsError.stack : undefined,
-          prompt: prompt.substring(0, 100)
+          errorMessage,
+          errorStack,
+          prompt: prompt.substring(0, 100),
+          trackId: finalTrackId
         });
+        
+        // ✅ Сохраняем подробное сообщение об ошибке
+        const userErrorMessage = `Ошибка генерации текста: ${errorMessage}. Попробуйте снова или укажите текст вручную.`;
         
         await supabaseAdmin
           .from('tracks')
           .update({
             status: 'failed',
-            error_message: 'Не удалось сгенерировать текст песни: ' + (lyricsError instanceof Error ? lyricsError.message : 'Unknown error'),
+            error_message: userErrorMessage,
+            metadata: {
+              stage: 'lyrics_generation_failed',
+              error: errorMessage,
+              timestamp: new Date().toISOString()
+            }
           })
           .eq('id', finalTrackId);
         
-        throw new Error('Failed to generate lyrics before song generation');
+        // Возвращаем ошибку пользователю с предложением исправить
+        return new Response(
+          JSON.stringify({
+            error: userErrorMessage,
+            trackId: finalTrackId,
+            suggestion: 'Укажите текст песни вручную или измените промпт'
+          }),
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
       }
     } else if (hasVocals === false) {
       logger.info('🎼 Instrumental mode, skipping lyrics generation');
