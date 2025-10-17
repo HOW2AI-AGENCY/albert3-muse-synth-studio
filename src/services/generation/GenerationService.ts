@@ -14,6 +14,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 import { generateMusic as routeToProvider } from '@/services/providers/router';
+import type { GenerateOptions } from '@/services/providers/router';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 // Re-export unified MusicProvider type
@@ -51,6 +52,7 @@ export interface GenerationRequest {
   // Optional
   customMode?: boolean;
   isBGM?: boolean;
+  idempotencyKey?: string;
 }
 
 export interface GenerationResult {
@@ -249,17 +251,10 @@ export class GenerationService {
       const trackId = await createTrackRecord(user.id, request);
 
       // 4. Подготовка параметров для провайдера
-      const providerParams = {
+      const providerParams: GenerateOptions = {
+        ...request,
         provider: request.provider,
         trackId,
-        title: request.title,
-        prompt: request.prompt,
-        lyrics: request.lyrics,
-        styleTags: request.styleTags,
-        hasVocals: request.hasVocals,
-        modelVersion: request.modelVersion,
-        referenceAudioUrl: request.referenceAudioUrl,
-        isBGM: request.isBGM,
       };
 
       // 5. Вызов провайдера

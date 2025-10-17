@@ -128,14 +128,41 @@ export class SunoProviderAdapter implements IProviderClient {
   }
 
   private transformToSunoFormat(params: GenerationParams): any {
+    const clampRatio = (value?: number) => {
+      if (typeof value !== 'number' || Number.isNaN(value)) {
+        return undefined;
+      }
+      return Math.min(Math.max(value, 0), 1);
+    };
+
+    const sanitizedTags = Array.isArray(params.styleTags)
+      ? params.styleTags.map((tag) => tag?.trim()).filter((tag): tag is string => Boolean(tag))
+      : params.style
+        ? [params.style]
+        : [];
+    const negativeTags = params.negativeTags?.trim();
+    const makeInstrumental =
+      params.makeInstrumental !== undefined ? params.makeInstrumental : params.hasVocals === false;
+    const vocalGender = params.vocalGender === 'm' || params.vocalGender === 'f' ? params.vocalGender : undefined;
+
     return {
+      trackId: params.trackId,
       prompt: params.prompt,
       lyrics: params.lyrics,
-      tags: params.styleTags || (params.style ? [params.style] : []),
-      make_instrumental: params.makeInstrumental || false,
+      tags: sanitizedTags,
+      make_instrumental: !!makeInstrumental,
       model_version: params.modelVersion || 'V5',
-      reference_audio_url: params.referenceAudio,
-      reference_track_id: params.referenceTrackId,
+      hasVocals: params.hasVocals,
+      customMode: params.customMode,
+      negativeTags: negativeTags && negativeTags.length > 0 ? negativeTags : undefined,
+      vocalGender,
+      styleWeight: clampRatio(params.styleWeight),
+      lyricsWeight: clampRatio(params.lyricsWeight),
+      weirdnessConstraint: clampRatio(params.weirdness),
+      audioWeight: clampRatio(params.audioWeight),
+      referenceAudioUrl: params.referenceAudio,
+      referenceTrackId: params.referenceTrackId,
+      idempotencyKey: params.idempotencyKey,
     };
   }
 

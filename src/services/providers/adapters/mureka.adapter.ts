@@ -126,13 +126,30 @@ export class MurekaProviderAdapter implements IProviderClient {
   }
 
   private transformToMurekaFormat(params: GenerationParams): any {
+    const sanitizedStyleTags = Array.isArray(params.styleTags)
+      ? params.styleTags.map((tag) => tag?.trim()).filter((tag): tag is string => Boolean(tag))
+      : [];
+    const makeInstrumental =
+      params.makeInstrumental !== undefined ? params.makeInstrumental : params.isBGM === true;
+    const hasVocals =
+      params.hasVocals !== undefined
+        ? params.hasVocals
+        : makeInstrumental !== undefined
+          ? !makeInstrumental
+          : undefined;
+    const isBGM =
+      params.isBGM !== undefined ? params.isBGM : makeInstrumental ? true : undefined;
+
     return {
+      trackId: params.trackId,
+      title: params.title,
       prompt: params.prompt,
       lyrics: params.lyrics,
-      styleTags: params.styleTags,
-      hasVocals: !params.makeInstrumental,
-      isBGM: params.makeInstrumental || false,
+      styleTags: sanitizedStyleTags.length > 0 ? sanitizedStyleTags : undefined,
+      hasVocals,
+      isBGM,
       modelVersion: params.modelVersion,
+      idempotencyKey: params.idempotencyKey,
     };
   }
 

@@ -33,6 +33,7 @@ export interface ProviderConfig {
 
 export interface GenerationParams {
   prompt: string;
+  title?: string;
   lyrics?: string;
   duration?: number;
   style?: string;
@@ -42,6 +43,16 @@ export interface GenerationParams {
   hasVocals?: boolean;
   makeInstrumental?: boolean;
   modelVersion?: string;
+  negativeTags?: string;
+  vocalGender?: 'm' | 'f' | 'any';
+  audioWeight?: number;
+  styleWeight?: number;
+  lyricsWeight?: number;
+  weirdness?: number;
+  customMode?: boolean;
+  isBGM?: boolean;
+  idempotencyKey?: string;
+  trackId?: string;
 }
 
 export interface ExtensionParams {

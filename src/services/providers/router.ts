@@ -16,11 +16,22 @@ export interface GenerateOptions {
   prompt: string;
   lyrics?: string;
   styleTags?: string[];
+  tags?: string[];
   hasVocals?: boolean;
+  makeInstrumental?: boolean;
   modelVersion?: string;
   idempotencyKey?: string;
   referenceAudioUrl?: string;
+  referenceTrackId?: string;
+  negativeTags?: string;
+  vocalGender?: 'm' | 'f' | 'any';
+  styleWeight?: number;
+  lyricsWeight?: number;
+  weirdness?: number;
+  audioWeight?: number;
+  customMode?: boolean;
   isBGM?: boolean;
+  weirdnessConstraint?: number;
 }
 
 export interface ProviderBalance {
@@ -47,19 +58,57 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
   try {
     switch (provider) {
       case 'suno': {
+        const sanitizedTags = Array.isArray(params.styleTags)
+          ? params.styleTags.map((tag) => tag?.trim()).filter((tag): tag is string => Boolean(tag))
+          : Array.isArray(params.tags)
+            ? params.tags.map((tag) => tag?.trim()).filter((tag): tag is string => Boolean(tag))
+            : [];
+        const lyrics = typeof params.lyrics === 'string' ? params.lyrics : undefined;
+        const trimmedLyrics = lyrics?.trim();
+        const effectiveLyrics = trimmedLyrics && trimmedLyrics.length > 0 ? trimmedLyrics : undefined;
+        const normalizedPrompt = params.prompt?.trim() || effectiveLyrics || 'Music generation';
+        const makeInstrumental =
+          params.makeInstrumental !== undefined
+            ? params.makeInstrumental
+            : params.hasVocals === false;
+        const normalizedVocalGender =
+          params.vocalGender === 'm' || params.vocalGender === 'f'
+            ? params.vocalGender
+            : undefined;
+        const trimmedNegativeTags = params.negativeTags?.trim();
+        const customMode =
+          typeof params.customMode === 'boolean'
+            ? params.customMode
+            : effectiveLyrics !== undefined;
+        const clampRatio = (value?: number) => {
+          if (typeof value !== 'number' || Number.isNaN(value)) {
+            return undefined;
+          }
+          return Math.min(Math.max(value, 0), 1);
+        };
+        const weirdnessConstraint =
+          params.weirdness !== undefined ? clampRatio(params.weirdness) : clampRatio(params.weirdnessConstraint);
+
         const { data, error } = await supabase.functions.invoke('generate-suno', {
           body: {
             trackId: params.trackId,
-            title: params.title,
-            prompt: params.prompt || params.lyrics || 'Music generation',
-            lyrics: params.lyrics,
-            tags: params.styleTags || [],
-            make_instrumental: !params.hasVocals,
+            title: params.title?.trim(),
+            prompt: normalizedPrompt,
+            lyrics: customMode ? effectiveLyrics : undefined,
+            tags: sanitizedTags,
+            make_instrumental: !!makeInstrumental,
             hasVocals: params.hasVocals,
-            customMode: !!params.lyrics,
+            customMode,
             model_version: params.modelVersion || 'chirp-v3-5',
             idempotencyKey: params.idempotencyKey,
             referenceAudioUrl: params.referenceAudioUrl,
+            referenceTrackId: params.referenceTrackId,
+            negativeTags: trimmedNegativeTags && trimmedNegativeTags.length > 0 ? trimmedNegativeTags : undefined,
+            vocalGender: normalizedVocalGender,
+            styleWeight: clampRatio(params.styleWeight),
+            lyricsWeight: clampRatio(params.lyricsWeight),
+            weirdnessConstraint,
+            audioWeight: clampRatio(params.audioWeight),
           },
         });
 
@@ -68,15 +117,31 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
       }
 
       case 'mureka': {
+        const sanitizedStyleTags = Array.isArray(params.styleTags)
+          ? params.styleTags.map((tag) => tag?.trim()).filter((tag): tag is string => Boolean(tag))
+          : [];
+        const makeInstrumental =
+          params.makeInstrumental !== undefined
+            ? params.makeInstrumental
+            : params.hasVocals === false || params.isBGM === true;
+        const hasVocals =
+          params.hasVocals !== undefined
+            ? params.hasVocals
+            : makeInstrumental !== undefined
+              ? !makeInstrumental
+              : undefined;
+        const isBGM =
+          params.isBGM !== undefined ? params.isBGM : makeInstrumental ? true : undefined;
+
         const { data, error } = await supabase.functions.invoke('generate-mureka', {
           body: {
             trackId: params.trackId,
-            title: params.title,
+            title: params.title?.trim(),
             prompt: params.prompt,
             lyrics: params.lyrics,
-            styleTags: params.styleTags,
-            hasVocals: params.hasVocals,
-            isBGM: params.isBGM,
+            styleTags: sanitizedStyleTags.length > 0 ? sanitizedStyleTags : undefined,
+            hasVocals,
+            isBGM,
             modelVersion: params.modelVersion || 'auto',
             idempotencyKey: params.idempotencyKey,
           },
