@@ -1,10 +1,11 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Wand2, FileText, FileText as TextIcon } from '@/utils/iconImports';
+import { Wand2, FileText, Eye, EyeOff } from '@/utils/iconImports';
 import { cn } from '@/lib/utils';
+import { StructuredLyrics } from '@/components/lyrics/StructuredLyrics';
 
 interface LyricsInputProps {
   value: string;
@@ -27,6 +28,8 @@ export const LyricsInput = memo(({
   maxLines = 3000,
   compact = false,
 }: LyricsInputProps) => {
+  const [showPreview, setShowPreview] = useState(false);
+  
   const stats = useMemo(() => {
     const lines = value.split('\n').length;
     const chars = value.length;
@@ -47,6 +50,30 @@ export const LyricsInput = memo(({
           {label}
         </Label>
         <div className="flex items-center gap-1.5">
+          {value && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowPreview(!showPreview)}
+              className={cn(
+                "gap-1.5 transition-colors",
+                compact ? "h-6 px-2 text-[10px]" : "h-7 px-2.5 text-xs"
+              )}
+              title={showPreview ? "Режим редактирования" : "Режим просмотра"}
+            >
+              {showPreview ? (
+                <>
+                  <EyeOff className="h-3 w-3" />
+                  <span className="hidden sm:inline">Редактировать</span>
+                </>
+              ) : (
+                <>
+                  <Eye className="h-3 w-3" />
+                  <span className="hidden sm:inline">Предпросмотр</span>
+                </>
+              )}
+            </Button>
+          )}
           {onGenerateLyrics && (
             <Button
               variant="ghost"
@@ -66,27 +93,33 @@ export const LyricsInput = memo(({
         </div>
       </div>
 
-      <Textarea
-        id="lyrics"
-        placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={cn(
-          "resize-none text-sm transition-all font-mono",
-          compact ? "min-h-[100px]" : "min-h-[120px] md:min-h-[140px]",
-          isOverLimit && "border-destructive focus-visible:ring-destructive"
-        )}
-        disabled={isGenerating}
-        rows={compact ? 5 : 6}
-        aria-label="Текст песни"
-      />
+      {showPreview && value ? (
+        <div className="max-h-[300px] overflow-y-auto rounded-md border bg-muted/30 p-3">
+          <StructuredLyrics lyrics={value} />
+        </div>
+      ) : (
+        <Textarea
+          id="lyrics"
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={cn(
+            "resize-none text-sm transition-all font-mono",
+            compact ? "min-h-[100px]" : "min-h-[120px] md:min-h-[140px]",
+            isOverLimit && "border-destructive focus-visible:ring-destructive"
+          )}
+          disabled={isGenerating}
+          rows={compact ? 5 : 6}
+          aria-label="Текст песни"
+        />
+      )}
 
       {/* Stats bar */}
       {value && (
         <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-mono">
-              <TextIcon className="h-2.5 w-2.5 mr-1" />
+              <FileText className="h-2.5 w-2.5 mr-1" />
               {stats.lines} строк
             </Badge>
             <span className="hidden sm:inline">•</span>
