@@ -67,10 +67,12 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
         const trimmedLyrics = lyrics?.trim();
         const effectiveLyrics = trimmedLyrics && trimmedLyrics.length > 0 ? trimmedLyrics : undefined;
         const normalizedPrompt = params.prompt?.trim() || effectiveLyrics || 'Music generation';
+        const resolvedHasVocals =
+          typeof params.hasVocals === 'boolean' ? params.hasVocals : undefined;
         const makeInstrumental =
-          params.makeInstrumental !== undefined
+          typeof params.makeInstrumental === 'boolean'
             ? params.makeInstrumental
-            : params.hasVocals === false;
+            : resolvedHasVocals === false;
         const normalizedVocalGender =
           params.vocalGender === 'm' || params.vocalGender === 'f'
             ? params.vocalGender
@@ -96,8 +98,8 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
             prompt: normalizedPrompt,
             lyrics: customMode ? effectiveLyrics : undefined,
             tags: sanitizedTags,
-            make_instrumental: !!makeInstrumental,
-            hasVocals: params.hasVocals,
+            make_instrumental: makeInstrumental,
+            hasVocals: resolvedHasVocals,
             customMode,
             model_version: params.modelVersion || 'chirp-v3-5',
             idempotencyKey: params.idempotencyKey,
@@ -120,18 +122,15 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
         const sanitizedStyleTags = Array.isArray(params.styleTags)
           ? params.styleTags.map((tag) => tag?.trim()).filter((tag): tag is string => Boolean(tag))
           : [];
+        const resolvedHasVocals =
+          typeof params.hasVocals === 'boolean' ? params.hasVocals : undefined;
         const makeInstrumental =
-          params.makeInstrumental !== undefined
+          typeof params.makeInstrumental === 'boolean'
             ? params.makeInstrumental
-            : params.hasVocals === false || params.isBGM === true;
-        const hasVocals =
-          params.hasVocals !== undefined
-            ? params.hasVocals
-            : makeInstrumental !== undefined
-              ? !makeInstrumental
-              : undefined;
+            : resolvedHasVocals === false || params.isBGM === true;
+        const hasVocals = resolvedHasVocals !== undefined ? resolvedHasVocals : !makeInstrumental;
         const isBGM =
-          params.isBGM !== undefined ? params.isBGM : makeInstrumental ? true : undefined;
+          typeof params.isBGM === 'boolean' ? params.isBGM : makeInstrumental ? true : undefined;
 
         const { data, error } = await supabase.functions.invoke('generate-mureka', {
           body: {

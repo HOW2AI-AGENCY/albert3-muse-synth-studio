@@ -141,8 +141,12 @@ export class SunoProviderAdapter implements IProviderClient {
         ? [params.style]
         : [];
     const negativeTags = params.negativeTags?.trim();
+    const resolvedHasVocals =
+      typeof params.hasVocals === 'boolean' ? params.hasVocals : undefined;
     const makeInstrumental =
-      params.makeInstrumental !== undefined ? params.makeInstrumental : params.hasVocals === false;
+      typeof params.makeInstrumental === 'boolean'
+        ? params.makeInstrumental
+        : resolvedHasVocals === false;
     const vocalGender = params.vocalGender === 'm' || params.vocalGender === 'f' ? params.vocalGender : undefined;
 
     return {
@@ -150,9 +154,9 @@ export class SunoProviderAdapter implements IProviderClient {
       prompt: params.prompt,
       lyrics: params.lyrics,
       tags: sanitizedTags,
-      make_instrumental: !!makeInstrumental,
+      make_instrumental: makeInstrumental,
       model_version: params.modelVersion || 'V5',
-      hasVocals: params.hasVocals,
+      hasVocals: resolvedHasVocals,
       customMode: params.customMode,
       negativeTags: negativeTags && negativeTags.length > 0 ? negativeTags : undefined,
       vocalGender,

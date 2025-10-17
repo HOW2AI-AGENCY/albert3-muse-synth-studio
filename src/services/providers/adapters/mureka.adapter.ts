@@ -129,16 +129,15 @@ export class MurekaProviderAdapter implements IProviderClient {
     const sanitizedStyleTags = Array.isArray(params.styleTags)
       ? params.styleTags.map((tag) => tag?.trim()).filter((tag): tag is string => Boolean(tag))
       : [];
+    const resolvedHasVocals =
+      typeof params.hasVocals === 'boolean' ? params.hasVocals : undefined;
     const makeInstrumental =
-      params.makeInstrumental !== undefined ? params.makeInstrumental : params.isBGM === true;
-    const hasVocals =
-      params.hasVocals !== undefined
-        ? params.hasVocals
-        : makeInstrumental !== undefined
-          ? !makeInstrumental
-          : undefined;
+      typeof params.makeInstrumental === 'boolean'
+        ? params.makeInstrumental
+        : resolvedHasVocals === false || params.isBGM === true;
+    const hasVocals = resolvedHasVocals !== undefined ? resolvedHasVocals : !makeInstrumental;
     const isBGM =
-      params.isBGM !== undefined ? params.isBGM : makeInstrumental ? true : undefined;
+      typeof params.isBGM === 'boolean' ? params.isBGM : makeInstrumental ? true : undefined;
 
     return {
       trackId: params.trackId,
