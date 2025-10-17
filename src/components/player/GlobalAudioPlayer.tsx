@@ -34,6 +34,7 @@ const GlobalAudioPlayer = memo(() => {
     setVolume,
     playNext,
     playPrevious,
+    playTrack,
     switchToVersion,
     getAvailableVersions,
     currentVersionIndex,
@@ -119,8 +120,10 @@ const GlobalAudioPlayer = memo(() => {
       const error = audio.error;
       if (!error || !currentTrack) return;
       
-      // Network errors (400, 403, 410) - истекшие ссылки
+      // Все типы ошибок медиа могут указывать на истекшие URL
+      // MEDIA_ERR_NETWORK (2), MEDIA_ERR_DECODE (3), MEDIA_ERR_SRC_NOT_SUPPORTED (4)
       if (error.code === MediaError.MEDIA_ERR_NETWORK || 
+          error.code === MediaError.MEDIA_ERR_DECODE ||
           error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
         logger.warn('Audio URL expired, attempting refresh', 'GlobalAudioPlayer', {
           trackId: currentTrack.id,
@@ -139,14 +142,15 @@ const GlobalAudioPlayer = memo(() => {
           if (refreshError) throw refreshError;
           
           if (data?.refreshed?.audio_url) {
-            // URL обновлен через Edge Function
-            audio.src = data.refreshed.audio_url;
-            audio.load();
-            if (isPlaying) {
-              audio.play().catch((err) => {
-                logger.error('Failed to play refreshed audio', err, 'GlobalAudioPlayer');
-              });
-            }
+            // ✅ КРИТИЧНО: Обновляем currentTrack в контексте плеера
+            const refreshedTrack = {
+              ...currentTrack,
+              audio_url: data.refreshed.audio_url,
+              cover_url: data.refreshed.cover_url || currentTrack.cover_url
+            };
+            
+            // Используем playTrack для корректной перезагрузки
+            playTrack(refreshedTrack);
             
             toast.success('Аудио обновлено');
             
@@ -194,7 +198,7 @@ const GlobalAudioPlayer = memo(() => {
       audio.removeEventListener('playing', handlePlaying);
       audio.removeEventListener('error', handleError);
     };
-  }, [audioRef, currentTrack, isPlaying]);
+  }, [audioRef, currentTrack, isPlaying, playTrack]);
 
   // Keyboard shortcuts for desktop only
   useEffect(() => {

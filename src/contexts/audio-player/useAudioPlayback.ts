@@ -181,7 +181,13 @@ export const useAudioPlayback = () => {
           const handleError = (e: Event) => {
             cleanup();
             const error = (e.target as HTMLAudioElement).error;
-            reject(new Error(`Audio load failed: ${error?.message || 'Unknown error'}`));
+            const errorCode = error?.code;
+            const errorName = errorCode === 1 ? 'MEDIA_ELEMENT_ERROR: Aborted' :
+                            errorCode === 2 ? 'MEDIA_ELEMENT_ERROR: Network error' :
+                            errorCode === 3 ? 'MEDIA_ELEMENT_ERROR: Decode error' :
+                            errorCode === 4 ? 'MEDIA_ELEMENT_ERROR: Format error' : 
+                            'MEDIA_ELEMENT_ERROR: Unknown error';
+            reject(new Error(`Audio load failed: ${errorName}`));
           };
           
           const cleanup = () => {
