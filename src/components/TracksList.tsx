@@ -106,17 +106,16 @@ const TracksListComponent = ({
 
       toast({ title: "Повторная генерация", description: "Запускаем генерацию заново..." });
 
-      const isSupportedProvider =
-        track.provider === 'suno' ||
-        track.provider === 'replicate' ||
-        track.provider === 'mureka';
+      const provider = track.provider === 'suno' || track.provider === 'replicate' || track.provider === 'mureka'
+        ? track.provider
+        : 'suno';
 
       await ApiService.generateMusic({
         trackId: track.id,
         userId: user.id,
         title: track.title,
         prompt: track.prompt,
-        ...(isSupportedProvider ? { provider: track.provider } : {}),
+        provider,
         lyrics: track.lyrics || undefined,
         hasVocals: track.has_vocals ?? false,
         styleTags: track.style_tags || undefined,

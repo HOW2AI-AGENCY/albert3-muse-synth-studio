@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GenerationService, type GenerationRequest } from '../generation.service';
+import { GenerationService, type GenerationRequest } from '../GenerationService';
 
 const { invokeMock } = vi.hoisted(() => ({
   invokeMock: vi.fn(),
@@ -41,7 +41,6 @@ describe('GenerationService.generate (Mureka)', () => {
       hasVocals: false,
       isBGM: true,
       idempotencyKey: '123e4567-e89b-12d3-a456-426614174000',
-      trackId: 'mock-track',
     };
 
     const result = await GenerationService.generate(request);
@@ -60,11 +59,11 @@ describe('GenerationService.generate (Mureka)', () => {
     expect(payload.idempotencyKey).toBe(request.idempotencyKey);
   });
 
-  it('maps legacy tags to styleTags when styleTags are not provided', async () => {
+  it('passes styleTags when provided', async () => {
     const request: GenerationRequest = {
       provider: 'mureka',
       prompt: 'Lo-fi beats',
-      tags: ['lofi', 'calm'],
+      styleTags: ['lofi', 'calm'],
       modelVersion: 'o1',
     };
 
@@ -73,7 +72,7 @@ describe('GenerationService.generate (Mureka)', () => {
     const [, options] = invokeMock.mock.calls[0];
     const payload = (options?.body ?? {}) as Record<string, unknown>;
 
-    expect(payload.styleTags).toEqual(request.tags);
+    expect(payload.styleTags).toEqual(request.styleTags);
     expect(payload.modelVersion).toBe(request.modelVersion);
   });
 });

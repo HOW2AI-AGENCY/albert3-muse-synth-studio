@@ -6,7 +6,7 @@ import { LazyImage } from "@/components/ui/lazy-image";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { fadeInUp } from "@/utils/animations";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Play, Pause, Download, Heart, Share2, Clock, Music, AlertTriangle, RefreshCw, Trash2, MoreVertical, Split, Expand, Mic2, Globe, FileAudio, Star, Layers, Mic, UserPlus } from "@/utils/iconImports";
+import { Play, Pause, Download, Heart, Share2, Clock, Music, AlertTriangle, RefreshCw, Trash2, MoreVertical, Split, Expand, Mic2, Globe, FileAudio, Mic, UserPlus } from "@/utils/iconImports";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
 import { useTrackLike } from "@/features/tracks/hooks";
 import { useTrackVersions } from "@/features/tracks/hooks";
