@@ -9,6 +9,7 @@ export interface AudioPlayerContextType {
   currentTime: number;
   duration: number;
   volume: number;
+  bufferingProgress: number;
   queue: AudioPlayerTrack[];
   currentQueueIndex: number;
   playTrack: (track: AudioPlayerTrack) => void;

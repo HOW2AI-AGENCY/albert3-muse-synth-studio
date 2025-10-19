@@ -29,6 +29,7 @@ const GlobalAudioPlayer = memo(() => {
     currentTime,
     duration,
     volume,
+    bufferingProgress,
     togglePlayPause,
     seekTo,
     setVolume,
@@ -446,6 +447,13 @@ const GlobalAudioPlayer = memo(() => {
                 {formatTime(currentTime)}
               </span>
               <div className="flex-1 relative group">
+                {/* Buffering progress indicator */}
+                {bufferingProgress > 0 && bufferingProgress < 100 && (
+                  <div 
+                    className="absolute top-1/2 -translate-y-1/2 left-0 h-1 bg-primary/30 rounded-full transition-all duration-300"
+                    style={{ width: `${bufferingProgress}%` }}
+                  />
+                )}
                 <Slider
                   value={[currentTime]}
                   max={duration || 100}

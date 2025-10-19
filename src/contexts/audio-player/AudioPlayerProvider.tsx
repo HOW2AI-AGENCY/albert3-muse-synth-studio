@@ -124,6 +124,7 @@ export const AudioPlayerProvider = ({ children }: { children: ReactNode }) => {
     currentTime: playback.currentTime,
     duration: playback.duration,
     volume: playback.volume,
+    bufferingProgress: playback.bufferingProgress,
     audioRef: playback.audioRef,
 
     // ✅ Phase 2: Queue state теперь использует QueueManager

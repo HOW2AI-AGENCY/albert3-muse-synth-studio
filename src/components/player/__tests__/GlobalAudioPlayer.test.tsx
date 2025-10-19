@@ -52,6 +52,7 @@ const defaultMockData = {
   audioRef: createRef<HTMLAudioElement>(),
   currentQueueIndex: 0,
   isPlayerVisible: true,
+  bufferingProgress: 0,
 };
 
 describe('GlobalAudioPlayer', () => {

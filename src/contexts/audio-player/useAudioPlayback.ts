@@ -51,13 +51,50 @@ export const useAudioPlayback = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolumeState] = useState(1);
+  const [bufferingProgress, setBufferingProgress] = useState(0);
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const isLoadingRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const retryCountRef = useRef(0);
   const { toast } = useToast();
 
   const isKnownAudioExtension = useCallback((url: string) => hasKnownAudioExtension(url), []);
+
+  /**
+   * Retry logic с экспоненциальной задержкой
+   */
+  const retryWithBackoff = useCallback(async (
+    fn: () => Promise<void>,
+    maxRetries: number = 3
+  ): Promise<void> => {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        await fn();
+        retryCountRef.current = 0; // Сброс счетчика после успеха
+        return;
+      } catch (error) {
+        const isNetworkError = (error as Error).message.includes('Network error');
+        const isLastAttempt = attempt === maxRetries;
+        
+        if (!isNetworkError || isLastAttempt) {
+          throw error;
+        }
+        
+        // Экспоненциальная задержка: 1s, 2s, 4s
+        const delay = Math.pow(2, attempt) * 1000;
+        logInfo(`Network error, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`, 'useAudioPlayback');
+        
+        toast({
+          title: "Повтор загрузки...",
+          description: `Попытка ${attempt + 2} из ${maxRetries + 1}`,
+          duration: 2000,
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }, [toast]);
 
   const playTrack = useCallback(async (
     track: AudioPlayerTrack,
@@ -153,51 +190,72 @@ export const useAudioPlayback = () => {
       }
 
       if (audioRef.current && audioUrl) {
-        const isInternalUrl = audioUrl.includes('supabase') || audioUrl.includes('lovable');
-        if (isInternalUrl) {
-          audioRef.current.crossOrigin = 'anonymous';
-          logInfo('Applied crossOrigin for internal URL', 'useAudioPlayback');
-        } else {
-          audioRef.current.removeAttribute('crossOrigin');
-          logInfo('Skipped crossOrigin for external URL', 'useAudioPlayback');
-        }
-        
-        // ✅ Установить новый src только после pause
-        audioRef.current.src = audioUrl;
-        audioRef.current.load();
-        
-        // ✅ Дождаться canplay event с error handling
-        await new Promise<void>((resolve, reject) => {
-          const timeoutId = setTimeout(() => {
-            cleanup();
-            reject(new Error('Audio load timeout after 30s'));
-          }, 30000); // ✅ 30 секунд вместо 10
+        // ✅ Retry logic для загрузки аудио
+        await retryWithBackoff(async () => {
+          setBufferingProgress(0);
           
-          const handleCanPlay = () => {
-            cleanup();
-            resolve();
-          };
+          const isInternalUrl = audioUrl.includes('supabase') || audioUrl.includes('lovable');
+          if (isInternalUrl) {
+            audioRef.current!.crossOrigin = 'anonymous';
+            logInfo('Applied crossOrigin for internal URL', 'useAudioPlayback');
+          } else {
+            audioRef.current!.removeAttribute('crossOrigin');
+            logInfo('Skipped crossOrigin for external URL', 'useAudioPlayback');
+          }
           
-          const handleError = (e: Event) => {
-            cleanup();
-            const error = (e.target as HTMLAudioElement).error;
-            const errorCode = error?.code;
-            const errorName = errorCode === 1 ? 'MEDIA_ELEMENT_ERROR: Aborted' :
-                            errorCode === 2 ? 'MEDIA_ELEMENT_ERROR: Network error' :
-                            errorCode === 3 ? 'MEDIA_ELEMENT_ERROR: Decode error' :
-                            errorCode === 4 ? 'MEDIA_ELEMENT_ERROR: Format error' : 
-                            'MEDIA_ELEMENT_ERROR: Unknown error';
-            reject(new Error(`Audio load failed: ${errorName}`));
-          };
+          // ✅ Установить новый src только после pause
+          audioRef.current!.src = audioUrl;
+          audioRef.current!.load();
           
-          const cleanup = () => {
-            clearTimeout(timeoutId);
-            audioRef.current?.removeEventListener('canplay', handleCanPlay);
-            audioRef.current?.removeEventListener('error', handleError);
-          };
-          
-          audioRef.current!.addEventListener('canplay', handleCanPlay);
-          audioRef.current!.addEventListener('error', handleError); // ✅ Обработка ошибок загрузки
+          // ✅ Дождаться canplay event с error handling и progress
+          await new Promise<void>((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+              cleanup();
+              reject(new Error('Audio load timeout after 30s'));
+            }, 30000);
+            
+            const handleProgress = () => {
+              if (!audioRef.current) return;
+              const buffered = audioRef.current.buffered;
+              if (buffered.length > 0) {
+                const bufferedEnd = buffered.end(buffered.length - 1);
+                const duration = audioRef.current.duration;
+                if (duration > 0) {
+                  const progress = (bufferedEnd / duration) * 100;
+                  setBufferingProgress(Math.min(progress, 100));
+                }
+              }
+            };
+            
+            const handleCanPlay = () => {
+              setBufferingProgress(100);
+              cleanup();
+              resolve();
+            };
+            
+            const handleError = (e: Event) => {
+              cleanup();
+              const error = (e.target as HTMLAudioElement).error;
+              const errorCode = error?.code;
+              const errorName = errorCode === 1 ? 'MEDIA_ELEMENT_ERROR: Aborted' :
+                              errorCode === 2 ? 'MEDIA_ELEMENT_ERROR: Network error' :
+                              errorCode === 3 ? 'MEDIA_ELEMENT_ERROR: Decode error' :
+                              errorCode === 4 ? 'MEDIA_ELEMENT_ERROR: Format error' : 
+                              'MEDIA_ELEMENT_ERROR: Unknown error';
+              reject(new Error(`Audio load failed: ${errorName}`));
+            };
+            
+            const cleanup = () => {
+              clearTimeout(timeoutId);
+              audioRef.current?.removeEventListener('canplay', handleCanPlay);
+              audioRef.current?.removeEventListener('error', handleError);
+              audioRef.current?.removeEventListener('progress', handleProgress);
+            };
+            
+            audioRef.current!.addEventListener('canplay', handleCanPlay);
+            audioRef.current!.addEventListener('error', handleError);
+            audioRef.current!.addEventListener('progress', handleProgress);
+          });
         });
 
         if (signal.aborted) {
@@ -235,10 +293,17 @@ export const useAudioPlayback = () => {
             isLoadingRef.current = false;
             return;
           }
-          logError('Failed to play track', error as Error, 'useAudioPlayback', { trackId: normalizedTrack.id });
+          const errorMessage = (error as Error).message;
+          logError('Failed to play track', error as Error, 'useAudioPlayback', { 
+            trackId: normalizedTrack.id,
+            retryCount: retryCountRef.current 
+          });
+          
           toast({
             title: "Ошибка воспроизведения",
-            description: "Не удалось загрузить аудиофайл. Попробуйте ещё раз.",
+            description: errorMessage.includes('Network') 
+              ? "Проблема с сетью. Проверьте подключение."
+              : "Не удалось загрузить аудиофайл. Попробуйте ещё раз.",
             variant: "destructive",
           });
         }
@@ -248,11 +313,15 @@ export const useAudioPlayback = () => {
         logInfo('Playback aborted by user', 'useAudioPlayback');
         return;
       }
-      logError('Error in playTrack', error as Error, 'useAudioPlayback', { trackId: normalizedTrack.id });
+      logError('Error in playTrack', error as Error, 'useAudioPlayback', { 
+        trackId: normalizedTrack.id,
+        retryCount: retryCountRef.current 
+      });
     } finally {
       isLoadingRef.current = false;
+      setBufferingProgress(0);
     }
-  }, [toast, isKnownAudioExtension]);
+  }, [toast, isKnownAudioExtension, retryWithBackoff]);
 
   const togglePlayPause = useCallback(() => {
     if (!audioRef.current) return;
@@ -380,6 +449,7 @@ export const useAudioPlayback = () => {
     currentTime,
     duration,
     volume,
+    bufferingProgress,
     audioRef,
     playTrack,
     togglePlayPause,
