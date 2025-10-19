@@ -88,33 +88,37 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
         className="p-3"
       >
         {/* Album Art */}
-        <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 flex-shrink-0 shadow-md hover:shadow-lg transition-all duration-300">
+        <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 flex-shrink-0 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 group">
           {currentTrack.cover_url ? (
             <img
+              key={currentTrack.id}
               src={currentTrack.cover_url}
               alt={currentTrack.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover animate-fade-in"
             />
           ) : (
             <div className="w-full h-full bg-gradient-primary animate-pulse" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent group-hover:from-black/30 transition-colors duration-300" />
+          {isPlaying && (
+            <div className="absolute inset-0 border-2 border-primary/50 rounded-xl animate-pulse" />
+          )}
         </div>
 
         {/* Track Info */}
-        <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-semibold text-foreground truncate animate-shimmer">
+        <div className="flex-1 min-w-0 animate-fade-in" key={currentTrack.id}>
+          <h4 className="text-sm font-semibold text-foreground truncate transition-all duration-300 hover:text-primary">
             {currentTrack.title.replace(/\s*\(V\d+\)$/i, '')}
           </h4>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground/80">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground/80 transition-opacity duration-300">
             <span className="truncate">
               {currentTrack.style_tags?.[0] || 'AI Generated'}
             </span>
             {queue.length > 0 && (
               <>
                 <span>•</span>
-                <span className="flex items-center gap-1">
-                  <List className="h-3 w-3" />
+                <span className="flex items-center gap-1 animate-fade-in">
+                  <List className="h-3 w-3 animate-pulse" />
                   {currentQueueIndex + 1}/{queue.length}
                 </span>
               </>

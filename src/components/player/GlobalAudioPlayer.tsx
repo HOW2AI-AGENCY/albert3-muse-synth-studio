@@ -450,9 +450,11 @@ const GlobalAudioPlayer = memo(() => {
                 {/* Buffering progress indicator */}
                 {bufferingProgress > 0 && bufferingProgress < 100 && (
                   <div 
-                    className="absolute top-1/2 -translate-y-1/2 left-0 h-1 bg-primary/30 rounded-full transition-all duration-300"
+                    className="absolute top-1/2 -translate-y-1/2 left-0 h-1 bg-gradient-primary rounded-full transition-all duration-300 animate-pulse"
                     style={{ width: `${bufferingProgress}%` }}
-                  />
+                  >
+                    <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-primary rounded-full animate-ping" />
+                  </div>
                 )}
                 <Slider
                   value={[currentTime]}

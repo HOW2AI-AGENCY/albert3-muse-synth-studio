@@ -215,36 +215,40 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
 
         {/* Album Art */}
         <div className="flex-1 flex items-center justify-center mb-6 sm:mb-8 px-4">
-          <div className="relative w-full max-w-sm aspect-square rounded-3xl overflow-hidden shadow-glow-primary animate-scale-in hover:scale-105 transition-transform duration-500">
+          <div className="relative w-full max-w-sm aspect-square rounded-3xl overflow-hidden shadow-glow-primary animate-scale-in hover:scale-105 transition-all duration-500 group">
             {currentTrack.cover_url ? (
               <img
+                key={currentTrack.id}
                 src={currentTrack.cover_url}
                 alt={currentTrack.title}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover animate-fade-in"
               />
             ) : (
               <div className="w-full h-full bg-gradient-primary animate-pulse" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent group-hover:from-black/30 transition-colors duration-300" />
+            {isPlaying && (
+              <div className="absolute inset-0 border-4 border-primary/40 rounded-3xl animate-pulse" />
+            )}
           </div>
         </div>
 
         {/* Track Info */}
-        <div className="text-center mb-4 sm:mb-6 px-4 animate-slide-up">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <h2 className="text-xl sm:text-2xl font-bold text-gradient-primary line-clamp-2 animate-shimmer">
+        <div className="text-center mb-4 sm:mb-6 px-4 animate-slide-up" key={currentTrack.id}>
+          <div className="flex items-center justify-center gap-2 mb-2 animate-fade-in">
+            <h2 className="text-xl sm:text-2xl font-bold text-gradient-primary line-clamp-2 transition-all duration-300">
               {currentTrack.title}
             </h2>
             {/* Индикатор текущей версии */}
             {hasVersions && (
-              <Badge variant="secondary" className="text-sm">
+              <Badge variant="secondary" className="text-sm animate-scale-in">
                 {currentTrack.isOriginalVersion 
                   ? 'Оригинал' 
                   : `V${currentTrack.versionNumber ?? currentVersionIndex + 1}`}
               </Badge>
             )}
           </div>
-          <p className="text-sm sm:text-base text-muted-foreground/80 truncate">
+          <p className="text-sm sm:text-base text-muted-foreground/80 truncate animate-fade-in transition-opacity duration-300">
             {currentTrack.style_tags?.join(' • ') || 'AI Generated'}
           </p>
         </div>
