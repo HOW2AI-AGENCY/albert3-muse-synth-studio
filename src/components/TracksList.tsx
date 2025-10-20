@@ -1,4 +1,4 @@
-import { useState, memo, useCallback, useRef, useEffect } from "react";
+import { useState, memo, useCallback, useRef, useEffect, useMemo } from "react";
 import { TrackCard } from "@/features/tracks/components/TrackCard";
 import { TrackListItem } from "@/features/tracks/components/TrackListItem";
 import { VirtualizedTracksList } from "./tracks/VirtualizedTracksList";
@@ -66,8 +66,9 @@ const TracksListComponent = ({
     } catch {}
   }, []);
 
-  const handlePlay = useCallback((track: Track) => {
-    const playableTracks = tracks
+  // ✅ Мемоизация списка воспроизводимых треков
+  const playableTracks = useMemo(() => 
+    tracks
       .filter(t => t.status === 'completed' && t.audio_url)
       .map(t => ({
         id: t.id,
@@ -75,8 +76,11 @@ const TracksListComponent = ({
         audio_url: t.audio_url!,
         cover_url: t.cover_url || undefined,
         duration: t.duration || undefined,
-      }));
+      })),
+    [tracks]
+  );
 
+  const handlePlay = useCallback((track: Track) => {
     playTrackWithQueue({
       id: track.id,
       title: track.title,
@@ -84,7 +88,7 @@ const TracksListComponent = ({
       cover_url: track.cover_url || undefined,
       duration: track.duration || undefined,
     }, playableTracks);
-  }, [tracks, playTrackWithQueue]);
+  }, [playableTracks, playTrackWithQueue]);
 
 
   const handleShare = useCallback((trackId: string) => {

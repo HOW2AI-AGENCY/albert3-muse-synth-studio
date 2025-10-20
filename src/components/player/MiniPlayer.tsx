@@ -41,30 +41,30 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
     e.stopPropagation();
     vibrate('light');
     togglePlayPause();
-  }, [vibrate, togglePlayPause]);
+  }, [togglePlayPause, vibrate]);
 
   const handleNext = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     vibrate('light');
     playNext();
-  }, [vibrate, playNext]);
+  }, [playNext, vibrate]);
 
   const handlePrevious = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     vibrate('light');
     playPrevious();
-  }, [vibrate, playPrevious]);
+  }, [playPrevious, vibrate]);
 
   const handleExpand = useCallback(() => {
     vibrate('medium');
     onExpand();
-  }, [vibrate, onExpand]);
+  }, [onExpand, vibrate]);
 
   const handleClose = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     vibrate('medium');
     clearCurrentTrack();
-  }, [vibrate, clearCurrentTrack]);
+  }, [clearCurrentTrack, vibrate]);
 
   // Versions
   const availableVersions = useMemo(() => getAvailableVersions(), [getAvailableVersions]);

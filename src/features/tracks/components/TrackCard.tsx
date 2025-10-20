@@ -366,7 +366,7 @@ const TrackCardComponent = ({
       isOriginalVersion: displayedVersion.isOriginal
     };
     playTrack(audioTrack);
-  }, [playButtonDisabled, displayedVersion, track, playTrack]);
+  }, [playButtonDisabled, displayedVersion.id, displayedVersion.title, displayedVersion.audio_url, displayedVersion.cover_url, displayedVersion.duration, displayedVersion.lyrics, displayedVersion.versionNumber, displayedVersion.isMasterVersion, displayedVersion.isOriginal, track.title, track.cover_url, track.duration, track.id, track.style_tags, playTrack]);
   const handleLikeClick = useCallback((event: React.MouseEvent) => {
     event.stopPropagation();
     toggleLike();
@@ -393,7 +393,7 @@ const TrackCardComponent = ({
       title: "Скачивание начато",
       description: `${displayedVersion.title || track.title}`
     });
-  }, [toast, displayedVersion, track.title]);
+  }, [displayedVersion.audio_url, displayedVersion.title, track.title, toast]);
   const handleShareClick = useCallback((event: React.MouseEvent) => {
     event.stopPropagation();
     onShare?.();
