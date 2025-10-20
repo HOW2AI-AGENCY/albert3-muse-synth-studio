@@ -13,6 +13,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
+import { performanceMonitor } from '@/utils/performanceMonitor';
 import { generateMusic as routeToProvider } from '@/services/providers/router';
 import type { GenerateOptions } from '@/services/providers/router';
 import type { RealtimeChannel } from '@supabase/supabase-js';
@@ -328,20 +329,36 @@ export class GenerationService {
       // 5. ✅ Кеширование запроса
       cacheRequest(request, trackId);
 
-      // 6. Подготовка параметров для провайдера
+      // 6. ✅ Начать мониторинг производительности
+      const performanceId = `generation-${trackId}`;
+      performanceMonitor.startTimer(performanceId, 'GenerationService');
+
+      // 7. Подготовка параметров для провайдера
       const providerParams: GenerateOptions = {
         ...request,
         provider: request.provider,
         trackId,
       };
 
-      // 7. Вызов провайдера
+      // 8. Вызов провайдера
       logger.info('Invoking provider', context, {
         provider: request.provider,
         trackId,
       });
 
       const result = await routeToProvider(providerParams);
+
+      // ✅ Записать метрику вызова провайдера
+      performanceMonitor.endTimer(
+        performanceId, 
+        `generation.provider.${request.provider}`,
+        'GenerationService',
+        {
+          trackId,
+          hasLyrics: !!request.lyrics,
+          customMode: request.customMode,
+        }
+      );
 
       logger.info('✅ Provider invoked successfully', context, {
         provider: request.provider,

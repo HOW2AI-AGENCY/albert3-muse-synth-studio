@@ -4,6 +4,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { AudioPlayerTrack } from '@/types/track';
 import { logInfo, logError } from '@/utils/logger';
+import { performanceMonitor } from '@/utils/performanceMonitor';
 import { cacheAudioFile } from '@/utils/serviceWorker';
 import { useToast } from '@/hooks/use-toast';
 import { debounce } from '@/utils/debounce';
@@ -105,6 +106,10 @@ export const useAudioPlayback = () => {
       logInfo('Playback already in progress, ignoring duplicate call', 'useAudioPlayback');
       return;
     }
+    
+    // ✅ Начать мониторинг загрузки аудио
+    const loadingId = `audio-load-${track.id}`;
+    performanceMonitor.startTimer(loadingId, 'AudioPlayer');
     
     // ✅ Отменить предыдущую загрузку
     if (abortControllerRef.current) {
@@ -272,6 +277,18 @@ export const useAudioPlayback = () => {
         try {
           await audioRef.current.play();
           setIsPlaying(true);
+          
+          // ✅ Записать метрику успешной загрузки
+          performanceMonitor.endTimer(
+            loadingId,
+            'audio.loadSuccess',
+            'AudioPlayer',
+            {
+              trackId: normalizedTrack.id,
+              title: normalizedTrack.title,
+              versionNumber: normalizedTrack.versionNumber,
+            }
+          );
           
           logInfo(`Now playing: ${normalizedTrack.title}`, 'useAudioPlayback', {
             trackId: normalizedTrack.id,
