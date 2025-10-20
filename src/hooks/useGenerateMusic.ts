@@ -44,8 +44,14 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
   }, []);
 
   // Setup realtime subscription for track status
-  const setupSubscription = useCallback((trackId: string) => {
+  const setupSubscription = useCallback((trackId: string, isCached: boolean = false) => {
     cleanup();
+
+    // ✅ Пропускаем подписку для закешированных треков
+    if (isCached) {
+      logger.info('Skipping subscription for cached track', 'useGenerateMusic', { trackId });
+      return;
+    }
 
     const subscription = GenerationService.subscribe(trackId, (status, trackData) => {
       if (status === 'completed') {
@@ -115,13 +121,17 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
         provider: effectiveProvider,
       });
 
+      const isCachedResult = result.taskId === 'cached';
+
       toast({
-        title: '🎵 Генерация началась!',
-        description: 'Ваш трек создаётся. Это может занять около минуты...',
+        title: isCachedResult ? '⚡ Трек найден!' : '🎵 Генерация началась!',
+        description: isCachedResult 
+          ? 'Используется ранее созданный трек с такими же параметрами.' 
+          : 'Ваш трек создаётся. Это может занять около минуты...',
       });
 
-      // Setup realtime updates
-      setupSubscription(result.trackId);
+      // Setup realtime updates only for new generations
+      setupSubscription(result.trackId, isCachedResult);
       onSuccess?.();
 
       return true;

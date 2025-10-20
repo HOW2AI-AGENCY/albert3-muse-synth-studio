@@ -74,6 +74,68 @@ export interface GenerationError {
 const MIN_PROMPT_LENGTH = 3;
 const MAX_PROMPT_LENGTH = 500;
 const MAX_LYRICS_LENGTH = 3000;
+const REQUEST_CACHE_SIZE = 10; // Cache last 10 requests
+const REQUEST_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+// ============= Request Cache =============
+
+interface CachedRequest {
+  hash: string;
+  trackId: string;
+  timestamp: number;
+}
+
+const requestCache = new Map<string, CachedRequest>();
+
+/**
+ * Генерация хеша запроса для дедупликации
+ */
+function generateRequestHash(request: GenerationRequest): string {
+  const { prompt, lyrics, styleTags, provider, hasVocals, modelVersion } = request;
+  const normalized = JSON.stringify({
+    prompt: prompt.trim().toLowerCase(),
+    lyrics: lyrics?.trim().toLowerCase() || '',
+    tags: [...(styleTags || [])].sort().join(','),
+    provider,
+    hasVocals: hasVocals ?? true,
+    model: modelVersion || 'default',
+  });
+  return btoa(normalized).substring(0, 32); // Simple hash
+}
+
+/**
+ * Проверка дублирующих запросов
+ */
+function checkDuplicateRequest(request: GenerationRequest): string | null {
+  const hash = generateRequestHash(request);
+  const cached = requestCache.get(hash);
+  
+  if (cached && Date.now() - cached.timestamp < REQUEST_CACHE_TTL) {
+    logger.info('Duplicate request detected', 'GenerationService', { 
+      hash, 
+      cachedTrackId: cached.trackId,
+      age: Math.floor((Date.now() - cached.timestamp) / 1000),
+    });
+    return cached.trackId;
+  }
+  
+  return null;
+}
+
+/**
+ * Кеширование запроса
+ */
+function cacheRequest(request: GenerationRequest, trackId: string): void {
+  const hash = generateRequestHash(request);
+  requestCache.set(hash, { hash, trackId, timestamp: Date.now() });
+  
+  // Очистка старых записей
+  if (requestCache.size > REQUEST_CACHE_SIZE) {
+    const sortedEntries = Array.from(requestCache.entries())
+      .sort((a, b) => a[1].timestamp - b[1].timestamp);
+    requestCache.delete(sortedEntries[0][0]);
+  }
+}
 
 // ============= Validation =============
 
@@ -246,18 +308,34 @@ export class GenerationService {
       throw new Error('Требуется авторизация');
     }
 
+    // 3. ✅ Проверка дублирующих запросов
+    const duplicateTrackId = checkDuplicateRequest(request);
+    if (duplicateTrackId) {
+      logger.info('⚡ Returning cached track for duplicate request', context, { trackId: duplicateTrackId });
+      return {
+        success: true,
+        trackId: duplicateTrackId,
+        taskId: 'cached',
+        provider: request.provider,
+        message: 'Используется ранее созданный трек',
+      };
+    }
+
     try {
-      // 3. Создание записи трека
+      // 4. Создание записи трека
       const trackId = await createTrackRecord(user.id, request);
 
-      // 4. Подготовка параметров для провайдера
+      // 5. ✅ Кеширование запроса
+      cacheRequest(request, trackId);
+
+      // 6. Подготовка параметров для провайдера
       const providerParams: GenerateOptions = {
         ...request,
         provider: request.provider,
         trackId,
       };
 
-      // 5. Вызов провайдера
+      // 7. Вызов провайдера
       logger.info('Invoking provider', context, {
         provider: request.provider,
         trackId,
