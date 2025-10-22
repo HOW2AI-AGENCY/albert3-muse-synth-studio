@@ -8,6 +8,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 import type { MusicProvider } from '@/config/provider-models';
+import { retryWithBackoff, RETRY_CONFIGS } from '@/utils/retryWithBackoff';
 
 const context = 'ProviderRouter';
 
@@ -98,28 +99,44 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
         const weirdnessConstraint =
           params.weirdness !== undefined ? clampRatio(params.weirdness) : clampRatio(params.weirdnessConstraint);
 
-        const { data, error } = await supabase.functions.invoke('generate-suno', {
-          body: {
-            trackId: params.trackId,
-            title: params.title?.trim(),
-            prompt: normalizedPrompt,
-            lyrics: customMode ? effectiveLyrics : undefined,
-            tags: sanitizedTags,
-            make_instrumental: makeInstrumental,
-            hasVocals: resolvedHasVocals,
-            customMode,
-            model_version: params.modelVersion || 'chirp-v3-5',
-            idempotencyKey: params.idempotencyKey,
-            referenceAudioUrl: params.referenceAudioUrl,
-            referenceTrackId: params.referenceTrackId,
-            negativeTags: trimmedNegativeTags && trimmedNegativeTags.length > 0 ? trimmedNegativeTags : undefined,
-            vocalGender: normalizedVocalGender,
-            styleWeight: clampRatio(params.styleWeight),
-            lyricsWeight: clampRatio(params.lyricsWeight),
-            weirdnessConstraint,
-            audioWeight: clampRatio(params.audioWeight),
-          },
-        });
+        const { data, error } = await retryWithBackoff(
+          () => supabase.functions.invoke('generate-suno', {
+            body: {
+              trackId: params.trackId,
+              title: params.title?.trim(),
+              prompt: normalizedPrompt,
+              lyrics: customMode ? effectiveLyrics : undefined,
+              tags: sanitizedTags,
+              make_instrumental: makeInstrumental,
+              hasVocals: resolvedHasVocals,
+              customMode,
+              model_version: params.modelVersion || 'chirp-v3-5',
+              idempotencyKey: params.idempotencyKey,
+              referenceAudioUrl: params.referenceAudioUrl,
+              referenceTrackId: params.referenceTrackId,
+              negativeTags: trimmedNegativeTags && trimmedNegativeTags.length > 0 ? trimmedNegativeTags : undefined,
+              vocalGender: normalizedVocalGender,
+              styleWeight: clampRatio(params.styleWeight),
+              lyricsWeight: clampRatio(params.lyricsWeight),
+              weirdnessConstraint,
+              audioWeight: clampRatio(params.audioWeight),
+            },
+          }),
+          {
+            ...RETRY_CONFIGS.critical,
+            onRetry: (error, attempt) => {
+              logger.warn(
+                `Suno generation failed, retrying...`,
+                context,
+                {
+                  attempt,
+                  trackId: params.trackId,
+                  error: error.message,
+                }
+              );
+            },
+          }
+        );
 
         if (error) throw error;
         return data as GenerateResponse;
@@ -139,19 +156,35 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
         const isBGM =
           typeof params.isBGM === 'boolean' ? params.isBGM : makeInstrumental ? true : undefined;
 
-        const { data, error } = await supabase.functions.invoke('generate-mureka', {
-          body: {
-            trackId: params.trackId,
-            title: params.title?.trim(),
-            prompt: params.prompt,
-            lyrics: params.lyrics,
-            styleTags: sanitizedStyleTags.length > 0 ? sanitizedStyleTags : undefined,
-            hasVocals,
-            isBGM,
-            modelVersion: params.modelVersion || 'auto',
-            idempotencyKey: params.idempotencyKey,
-          },
-        });
+        const { data, error } = await retryWithBackoff(
+          () => supabase.functions.invoke('generate-mureka', {
+            body: {
+              trackId: params.trackId,
+              title: params.title?.trim(),
+              prompt: params.prompt,
+              lyrics: params.lyrics,
+              styleTags: sanitizedStyleTags.length > 0 ? sanitizedStyleTags : undefined,
+              hasVocals,
+              isBGM,
+              modelVersion: params.modelVersion || 'auto',
+              idempotencyKey: params.idempotencyKey,
+            },
+          }),
+          {
+            ...RETRY_CONFIGS.critical,
+            onRetry: (error, attempt) => {
+              logger.warn(
+                `Mureka generation failed, retrying...`,
+                context,
+                {
+                  attempt,
+                  trackId: params.trackId,
+                  error: error.message,
+                }
+              );
+            },
+          }
+        );
 
         if (error) throw error;
         return data as GenerateResponse;
@@ -185,7 +218,10 @@ export const getProviderBalance = async (provider: MusicProvider): Promise<Provi
   try {
     switch (provider) {
       case 'suno': {
-        const { data, error } = await supabase.functions.invoke('get-balance', {});
+        const { data, error } = await retryWithBackoff(
+          () => supabase.functions.invoke('get-balance', {}),
+          RETRY_CONFIGS.fast
+        );
 
         if (error) throw error;
         
@@ -197,7 +233,10 @@ export const getProviderBalance = async (provider: MusicProvider): Promise<Provi
       }
 
       case 'mureka': {
-        const { data, error } = await supabase.functions.invoke('get-mureka-balance', {});
+        const { data, error } = await retryWithBackoff(
+          () => supabase.functions.invoke('get-mureka-balance', {}),
+          RETRY_CONFIGS.fast
+        );
 
         if (error) throw error;
 

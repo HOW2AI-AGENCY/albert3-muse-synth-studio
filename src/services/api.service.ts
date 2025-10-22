@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { ApiError, handlePostgrestError, ensureData, handleSupabaseFunctionError } from "@/services/api/errors";
 import { logInfo, logError, logDebug, logWarn, maskObject } from "@/utils/logger";
+import { retryWithBackoff, RETRY_CONFIGS, CircuitBreaker } from "@/utils/retryWithBackoff";
 
 type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
 
@@ -97,6 +98,13 @@ const isSupportedGenerateProvider = (
 ): value is NonNullable<GenerateMusicRequest["provider"]> =>
   value === "suno" || value === "replicate" || value === "mureka";
 
+// Circuit breakers для различных провайдеров
+const circuitBreakers = {
+  suno: new CircuitBreaker(5, 60000),
+  mureka: new CircuitBreaker(5, 60000),
+  replicate: new CircuitBreaker(5, 60000),
+};
+
 export class ApiService {
   /**
    * Improve a music prompt using AI
@@ -105,9 +113,26 @@ export class ApiService {
     request: ImprovePromptRequest
   ): Promise<ImprovePromptResponse> {
     const context = "ApiService.improvePrompt";
-    const { data, error } = await supabase.functions.invoke<ImprovePromptResponse>(
-      "improve-prompt",
-      { body: request }
+    
+    // Используем retry logic для улучшения промпта
+    const { data, error } = await retryWithBackoff(
+      () => supabase.functions.invoke<ImprovePromptResponse>(
+        "improve-prompt",
+        { body: request }
+      ),
+      {
+        ...RETRY_CONFIGS.standard,
+        onRetry: (error, attempt) => {
+          logWarn(
+            `Improve prompt request failed, retrying...`,
+            context,
+            {
+              attempt,
+              error: error.message,
+            }
+          );
+        },
+      }
     );
 
     if (error || !data) {
@@ -216,9 +241,31 @@ export class ApiService {
       });
 
       logInfo('⏳ [API Service] Invoking edge function...', context);
-      const { data, error } = await supabase.functions.invoke<GenerateMusicResponse>(
-        functionName,
-        { body: payload }
+      
+      // Используем retry logic с circuit breaker
+      const circuitBreaker = circuitBreakers[provider];
+      const { data, error } = await retryWithBackoff(
+        () => circuitBreaker.execute(() => 
+          supabase.functions.invoke<GenerateMusicResponse>(
+            functionName,
+            { body: payload }
+          )
+        ),
+        {
+          ...RETRY_CONFIGS.critical,
+          onRetry: (error, attempt, delayMs) => {
+            logWarn(
+              `Music generation request failed, retrying...`,
+              context,
+              {
+                provider,
+                attempt,
+                delayMs,
+                error: error.message,
+              }
+            );
+          },
+        }
       );
 
       // --- Обработка ошибок ---
@@ -283,9 +330,26 @@ export class ApiService {
     request: GenerateLyricsRequest
   ): Promise<GenerateLyricsResponse> {
     const context = "ApiService.generateLyrics";
-    const { data, error } = await supabase.functions.invoke<GenerateLyricsResponse>(
-      "generate-lyrics",
-      { body: request }
+    
+    // Используем retry logic для генерации текстов
+    const { data, error } = await retryWithBackoff(
+      () => supabase.functions.invoke<GenerateLyricsResponse>(
+        "generate-lyrics",
+        { body: request }
+      ),
+      {
+        ...RETRY_CONFIGS.critical,
+        onRetry: (error, attempt) => {
+          logWarn(
+            `Generate lyrics request failed, retrying...`,
+            context,
+            {
+              attempt,
+              error: error.message,
+            }
+          );
+        },
+      }
     );
 
     if (error || !data) {
