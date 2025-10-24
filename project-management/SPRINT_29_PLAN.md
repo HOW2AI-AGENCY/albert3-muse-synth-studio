@@ -13,6 +13,12 @@
 - ✅ Unit tests for RetryWithBackoff (`tests/unit/utils/retryWithBackoff.test.ts`)
 - ✅ Monitoring Dashboard guide (`docs/monitoring/DASHBOARD.md`)
 
+## Completed (Sprint 30 - Phase 1)
+- ✅ Database migrations (`saved_lyrics`, `audio_library`)
+- ✅ Edge Functions (`save-lyrics`, `audio-library`)
+- ✅ Hooks (`useSavedLyrics`, `useAudioLibrary`)
+- ✅ Lyrics Library UI (`LyricsLibrary`, `LyricsCard`, `LyricsPreviewPanel`)
+
 ## Next Steps
 1. Integrate Error Boundary into App.tsx
 2. Connect Web Vitals to Sentry Performance
