@@ -73,6 +73,80 @@ export type Database = {
         }
         Relationships: []
       }
+      audio_library: {
+        Row: {
+          analysis_data: Json | null
+          analysis_status: string | null
+          created_at: string | null
+          description: string | null
+          duration_seconds: number | null
+          file_name: string
+          file_size: number | null
+          file_url: string
+          folder: string | null
+          id: string
+          is_favorite: boolean | null
+          last_used_at: string | null
+          recognized_song_id: string | null
+          source_metadata: Json | null
+          source_type: string
+          tags: string[] | null
+          updated_at: string | null
+          usage_count: number | null
+          user_id: string
+        }
+        Insert: {
+          analysis_data?: Json | null
+          analysis_status?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          folder?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          last_used_at?: string | null
+          recognized_song_id?: string | null
+          source_metadata?: Json | null
+          source_type: string
+          tags?: string[] | null
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id: string
+        }
+        Update: {
+          analysis_data?: Json | null
+          analysis_status?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration_seconds?: number | null
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          folder?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          last_used_at?: string | null
+          recognized_song_id?: string | null
+          source_metadata?: Json | null
+          source_type?: string
+          tags?: string[] | null
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audio_library_recognized_song_id_fkey"
+            columns: ["recognized_song_id"]
+            isOneToOne: false
+            referencedRelation: "song_recognitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       callback_logs: {
         Row: {
           callback_type: string
