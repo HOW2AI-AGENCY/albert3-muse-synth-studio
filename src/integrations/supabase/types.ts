@@ -343,6 +343,84 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_lyrics: {
+        Row: {
+          content: string
+          created_at: string | null
+          folder: string | null
+          genre: string | null
+          id: string
+          is_favorite: boolean | null
+          job_id: string | null
+          language: string | null
+          last_used_at: string | null
+          mood: string | null
+          prompt: string | null
+          search_vector: unknown
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          usage_count: number | null
+          user_id: string
+          variant_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          folder?: string | null
+          genre?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          job_id?: string | null
+          language?: string | null
+          last_used_at?: string | null
+          mood?: string | null
+          prompt?: string | null
+          search_vector?: unknown
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id: string
+          variant_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          folder?: string | null
+          genre?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          job_id?: string | null
+          language?: string | null
+          last_used_at?: string | null
+          mood?: string | null
+          prompt?: string | null
+          search_vector?: unknown
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_lyrics_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "lyrics_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_lyrics_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "lyrics_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       song_descriptions: {
         Row: {
           ai_description: string | null
@@ -869,24 +947,21 @@ export type Database = {
           total_tracks: number
         }[]
       }
-      has_role: {
-        Args:
-          | { _role: Database["public"]["Enums"]["app_role"]; _user_id: string }
-          | { _role: string; _user_id: string }
-        Returns: boolean
-      }
+      has_role:
+        | { Args: { _role: string; _user_id: string }; Returns: boolean }
+        | {
+            Args: {
+              _role: Database["public"]["Enums"]["app_role"]
+              _user_id: string
+            }
+            Returns: boolean
+          }
       increment_download_count: {
         Args: { track_id: string }
         Returns: undefined
       }
-      increment_play_count: {
-        Args: { track_id: string }
-        Returns: undefined
-      }
-      increment_view_count: {
-        Args: { track_id: string }
-        Returns: undefined
-      }
+      increment_play_count: { Args: { track_id: string }; Returns: undefined }
+      increment_view_count: { Args: { track_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
