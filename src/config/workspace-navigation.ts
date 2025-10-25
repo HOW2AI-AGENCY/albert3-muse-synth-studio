@@ -9,6 +9,8 @@ import {
   Shield,
   Upload,
   Activity,
+  FileText,
+  Music,
 } from "@/utils/iconImports";
 import {
   preloadDashboard,
@@ -59,6 +61,18 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     path: "/workspace/settings",
     icon: Settings,
     isMobilePrimary: true,
+  },
+  {
+    id: "lyrics-library",
+    label: "Лирика",
+    path: "/workspace/lyrics-library",
+    icon: FileText,
+  },
+  {
+    id: "audio-library",
+    label: "Аудио",
+    path: "/workspace/audio-library",
+    icon: Music,
   },
   {
     id: "upload-audio",
