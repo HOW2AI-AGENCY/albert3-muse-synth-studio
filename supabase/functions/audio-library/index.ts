@@ -116,6 +116,22 @@ Deno.serve(async (req) => {
         );
       }
 
+      // Sprint 31 - Task 1.2: Server-side validation
+      const allowedExtensions = ['.mp3', '.wav', '.ogg', '.flac'];
+      if (!allowedExtensions.some(ext => fileName.toLowerCase().endsWith(ext))) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid file type. Allowed: MP3, WAV, OGG, FLAC' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (fileSize && fileSize > 50 * 1024 * 1024) {
+        return new Response(
+          JSON.stringify({ error: 'File too large (max 50MB)' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       const { data, error } = await supabase
         .from('audio_library')
         .insert({

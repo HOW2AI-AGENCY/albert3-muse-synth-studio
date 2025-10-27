@@ -8,11 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Star, Folder, Upload } from 'lucide-react';
 import { useAudioLibrary } from '@/hooks/useAudioLibrary';
-import { AudioCard } from '@/components/audio/AudioCard';
+import { AudioVirtualGrid } from '@/components/audio/AudioVirtualGrid';
 import { AudioPreviewPanel } from '@/components/audio/AudioPreviewPanel';
 import { AudioUpload } from '@/components/audio/AudioUpload';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,7 @@ export default function AudioLibrary() {
   const [selectedSourceType, setSelectedSourceType] = useState<string | null>(null);
   const [selectedAudio, setSelectedAudio] = useState<string | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const { items: audioItems, isLoading } = useAudioLibrary({
     folder: selectedFolder || undefined,
@@ -181,36 +182,33 @@ export default function AudioLibrary() {
             </div>
           </div>
 
-          <ScrollArea className="flex-1">
-            <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {isLoading ? (
-                Array.from({ length: 6 }).map((_, i) => (
+          {isLoading ? (
+            <div className="flex-1 p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Array.from({ length: 6 }).map((_, i) => (
                   <Skeleton key={i} className="h-48" />
-                ))
-              ) : filteredItems?.length === 0 ? (
-                <div className="col-span-full text-center py-12">
-                  <p className="text-muted-foreground">Нет сохраненного аудио</p>
-                  <Button
-                    variant="outline"
-                    className="mt-4"
-                    onClick={() => setUploadDialogOpen(true)}
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    Загрузить аудио
-                  </Button>
-                </div>
-              ) : (
-                filteredItems?.map(item => (
-                  <AudioCard
-                    key={item.id}
-                    audio={item}
-                    isSelected={selectedAudio === item.id}
-                    onClick={() => setSelectedAudio(item.id)}
-                  />
-                ))
-              )}
+                ))}
+              </div>
             </div>
-          </ScrollArea>
+          ) : filteredItems?.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <p className="text-muted-foreground mb-4">Нет сохраненного аудио</p>
+              <Button
+                variant="outline"
+                onClick={() => setUploadDialogOpen(true)}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Загрузить аудио
+              </Button>
+            </div>
+          ) : (
+            <AudioVirtualGrid
+              items={filteredItems || []}
+              columns={isMobile ? 1 : 3}
+              onSelect={setSelectedAudio}
+              selectedId={selectedAudio}
+            />
+          )}
         </div>
 
         {/* Preview panel */}

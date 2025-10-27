@@ -13,6 +13,7 @@ import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
+import { validateAudioFile, AudioValidationError } from '@/utils/file-validation';
 
 interface AudioUploadProps {
   onUploadComplete?: () => void;
@@ -26,23 +27,23 @@ export const AudioUpload = React.memo<AudioUploadProps>(({ onUploadComplete }) =
   const [folder, setFolder] = useState('');
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      // Validate file type
-      const validTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp3', 'audio/flac'];
-      if (!validTypes.includes(selectedFile.type) && !selectedFile.name.match(/\.(mp3|wav|ogg|flac)$/i)) {
-        toast.error('Неподдерживаемый формат аудио');
-        return;
+      try {
+        // Sprint 31 - Task 1.2: Enhanced 3-layer validation
+        await validateAudioFile(selectedFile);
+        setFile(selectedFile);
+      } catch (error) {
+        if (error instanceof AudioValidationError) {
+          toast.error(error.message);
+        } else {
+          toast.error('Ошибка валидации файла');
+        }
+        logger.error('File validation failed', error as Error, 'AudioUpload');
+        // Clear the input
+        e.target.value = '';
       }
-      
-      // Validate file size (max 50MB)
-      if (selectedFile.size > 50 * 1024 * 1024) {
-        toast.error('Файл слишком большой (максимум 50 МБ)');
-        return;
-      }
-      
-      setFile(selectedFile);
     }
   }, []);
 

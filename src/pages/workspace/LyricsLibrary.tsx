@@ -8,16 +8,17 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Star, Folder } from 'lucide-react';
 import { useSavedLyrics } from '@/hooks/useSavedLyrics';
-import { LyricsCard } from '@/components/lyrics/LyricsCard';
+import { LyricsVirtualGrid } from '@/components/lyrics/LyricsVirtualGrid';
 import { LyricsPreviewPanel } from '@/components/lyrics/LyricsPreviewPanel';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function LyricsLibrary() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [showFavorites, setShowFavorites] = useState(false);
   const [selectedLyrics, setSelectedLyrics] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   const { lyrics, isLoading } = useSavedLyrics({
     search: searchQuery || undefined,
@@ -108,28 +109,26 @@ export default function LyricsLibrary() {
             </div>
           </div>
 
-          <ScrollArea className="flex-1">
-            <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {isLoading ? (
-                Array.from({ length: 6 }).map((_, i) => (
+          {isLoading ? (
+            <div className="flex-1 p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Array.from({ length: 6 }).map((_, i) => (
                   <Skeleton key={i} className="h-48" />
-                ))
-              ) : lyrics?.length === 0 ? (
-                <div className="col-span-full text-center py-12">
-                  <p className="text-muted-foreground">Нет сохраненной лирики</p>
-                </div>
-              ) : (
-                lyrics?.map(item => (
-                  <LyricsCard
-                    key={item.id}
-                    lyrics={item}
-                    isSelected={selectedLyrics === item.id}
-                    onClick={() => setSelectedLyrics(item.id)}
-                  />
-                ))
-              )}
+                ))}
+              </div>
             </div>
-          </ScrollArea>
+          ) : lyrics?.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center">
+              <p className="text-muted-foreground">Нет сохраненной лирики</p>
+            </div>
+          ) : (
+            <LyricsVirtualGrid
+              lyrics={lyrics || []}
+              columns={isMobile ? 1 : 3}
+              onSelect={setSelectedLyrics}
+              selectedId={selectedLyrics}
+            />
+          )}
         </div>
 
         {/* Preview panel */}
