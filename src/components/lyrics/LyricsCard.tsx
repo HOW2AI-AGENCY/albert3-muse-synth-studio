@@ -1,21 +1,17 @@
 /**
  * Lyrics Card Component
- * Sprint 30: Lyrics & Audio Management
+ * Sprint 31 - Week 2: Refactored with shared components
  */
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Star, Copy, Music, MoreVertical } from 'lucide-react';
+import { Copy, Music } from 'lucide-react';
 import { SavedLyrics, useSavedLyrics } from '@/hooks/useSavedLyrics';
 import { cn } from '@/lib/utils';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { FavoriteButton } from '@/components/shared/FavoriteButton';
+import { CardActionsMenu, type CardAction } from '@/components/shared/CardActionsMenu';
+import { useCardActions } from '@/hooks/useCardActions';
 
 interface LyricsCardProps {
   lyrics: SavedLyrics;
@@ -31,22 +27,24 @@ export const LyricsCard = React.memo<LyricsCardProps>(({ lyrics, isSelected, onC
     return lines.slice(0, 4).join('\n');
   }, [lyrics.content]);
 
-  const handleToggleFavorite = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    toggleFavorite.mutate({ id: lyrics.id, isFavorite: lyrics.is_favorite });
-  };
+  const { handleToggleFavorite, handleCopy, handleDelete } = useCardActions({
+    onToggleFavorite: (id, isFavorite) => toggleFavorite.mutate({ id, isFavorite }),
+    onDelete: (id) => deleteLyrics.mutate(id),
+    deleteConfirmMessage: 'Удалить эту лирику?',
+  });
 
-  const handleCopy = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(lyrics.content);
-  };
-
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (confirm('Удалить эту лирику?')) {
-      deleteLyrics.mutate(lyrics.id);
-    }
-  };
+  const actions: CardAction[] = [
+    {
+      label: 'Копировать',
+      icon: <Copy className="h-4 w-4" />,
+      onClick: (e) => handleCopy(e, lyrics.content),
+    },
+    {
+      label: 'Удалить',
+      onClick: (e) => handleDelete(e, lyrics.id),
+      variant: 'destructive',
+    },
+  ];
 
   return (
     <Card
@@ -61,35 +59,11 @@ export const LyricsCard = React.memo<LyricsCardProps>(({ lyrics, isSelected, onC
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-medium line-clamp-1">{lyrics.title}</h3>
           <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={handleToggleFavorite}
-            >
-              <Star
-                className={cn(
-                  "h-4 w-4",
-                  lyrics.is_favorite && "fill-yellow-400 text-yellow-400"
-                )}
-              />
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleCopy}>
-                  <Copy className="mr-2 h-4 w-4" />
-                  Копировать
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleDelete}>
-                  Удалить
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <FavoriteButton
+              isFavorite={lyrics.is_favorite}
+              onClick={(e) => handleToggleFavorite(e, lyrics.id, lyrics.is_favorite)}
+            />
+            <CardActionsMenu actions={actions} />
           </div>
         </div>
 

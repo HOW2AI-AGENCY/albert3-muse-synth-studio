@@ -1,21 +1,17 @@
 /**
  * Audio Card Component
- * Sprint 30: Lyrics & Audio Management - Phase 2
+ * Sprint 31 - Week 2: Refactored with shared components
  */
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Star, Play, Music, MoreVertical, Download } from 'lucide-react';
+import { Play, Music, Download } from 'lucide-react';
 import { AudioLibraryItem, useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { cn } from '@/lib/utils';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { FavoriteButton } from '@/components/shared/FavoriteButton';
+import { CardActionsMenu, type CardAction } from '@/components/shared/CardActionsMenu';
+import { useCardActions } from '@/hooks/useCardActions';
 
 interface AudioCardProps {
   audio: AudioLibraryItem;
@@ -26,22 +22,24 @@ interface AudioCardProps {
 export const AudioCard = React.memo<AudioCardProps>(({ audio, isSelected, onClick }) => {
   const { toggleFavorite, deleteAudio } = useAudioLibrary();
 
-  const handleToggleFavorite = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    toggleFavorite.mutate({ id: audio.id, isFavorite: audio.is_favorite });
-  };
+  const { handleToggleFavorite, handleDelete, handleDownload } = useCardActions({
+    onToggleFavorite: (id, isFavorite) => toggleFavorite.mutate({ id, isFavorite }),
+    onDelete: (id) => deleteAudio.mutate(id),
+    deleteConfirmMessage: 'Удалить это аудио?',
+  });
 
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (confirm('Удалить это аудио?')) {
-      deleteAudio.mutate(audio.id);
-    }
-  };
-
-  const handleDownload = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    window.open(audio.file_url, '_blank');
-  };
+  const actions: CardAction[] = [
+    {
+      label: 'Скачать',
+      icon: <Download className="h-4 w-4" />,
+      onClick: (e) => handleDownload(e, audio.file_url, audio.file_name),
+    },
+    {
+      label: 'Удалить',
+      onClick: (e) => handleDelete(e, audio.id),
+      variant: 'destructive',
+    },
+  ];
 
   const formatDuration = (seconds: number | null) => {
     if (!seconds) return '--:--';
@@ -83,35 +81,11 @@ export const AudioCard = React.memo<AudioCardProps>(({ audio, isSelected, onClic
             </p>
           </div>
           <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={handleToggleFavorite}
-            >
-              <Star
-                className={cn(
-                  "h-4 w-4",
-                  audio.is_favorite && "fill-yellow-400 text-yellow-400"
-                )}
-              />
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleDownload}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Скачать
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleDelete}>
-                  Удалить
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <FavoriteButton
+              isFavorite={audio.is_favorite}
+              onClick={(e) => handleToggleFavorite(e, audio.id, audio.is_favorite)}
+            />
+            <CardActionsMenu actions={actions} />
           </div>
         </div>
 
