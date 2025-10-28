@@ -1,6 +1,6 @@
 /**
  * Hooks barrel export
- * IMPORTANT: Экспортируем только стабильные, часто используемые хуки
+ * Sprint 31 Week 2: Consolidated hook exports
  */
 
 // Navigation & Analytics
@@ -27,9 +27,20 @@ export { useDownloadTrack } from './useDownloadTrack';
 export { useConvertToWav } from './useConvertToWav';
 export { useAudioUpload } from './useAudioUpload';
 
+// Track Interactions (from features/tracks)
+export { useTrackLike } from '../features/tracks/hooks/useTrackLike';
+export { useTrackVersions, useTrackVersionCount, resetTrackVersionsCache } from '../features/tracks/hooks/useTrackVersions';
+
 // Smart Playback
 export { useSmartTrackPlay } from './useSmartTrackPlay';
 export { usePlayAnalytics } from './usePlayAnalytics';
+
+// Libraries & Collections
+export { useSavedLyrics } from './useSavedLyrics';
+export { useAudioLibrary } from './useAudioLibrary';
+
+// Shared Actions (Sprint 31 Week 2)
+export { useCardActions } from './useCardActions';
 
 // UI Utilities
 export { useIsMobile } from './use-mobile';
