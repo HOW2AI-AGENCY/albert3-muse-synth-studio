@@ -11,7 +11,7 @@
 import { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { LyricsCard } from './LyricsCard';
-import type { SavedLyrics } from '@/integrations/supabase/types';
+import type { SavedLyrics } from '@/hooks/useSavedLyrics';
 
 interface LyricsVirtualGridProps {
   lyrics: SavedLyrics[];

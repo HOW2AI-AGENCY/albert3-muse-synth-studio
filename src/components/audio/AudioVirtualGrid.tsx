@@ -11,24 +11,10 @@
 import { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { AudioCard } from './AudioCard';
-
-interface AudioItem {
-  id: string;
-  file_name: string;
-  file_url: string;
-  file_size: number | null;
-  duration_seconds: number | null;
-  source_type: string;
-  tags: string[];
-  folder: string | null;
-  description: string | null;
-  is_favorite: boolean;
-  created_at: string;
-  [key: string]: any;
-}
+import type { AudioLibraryItem } from '@/hooks/useAudioLibrary';
 
 interface AudioVirtualGridProps {
-  items: AudioItem[];
+  items: AudioLibraryItem[];
   columns?: number;
   onSelect?: (id: string) => void;
   selectedId?: string | null;
