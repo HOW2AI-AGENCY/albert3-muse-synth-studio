@@ -52,18 +52,19 @@ export function useAudioUrlRefresh({
     if (!trackId || !audioUrl) return;
 
     const checkAndRefresh = async () => {
+      // ✅ FIX: Не проверяем чаще 1 раза в час для того же URL
       const now = Date.now();
-      
-      // Защита от частых проверок
       if (now - lastCheckRef.current < URL_EXPIRY_CHECK_INTERVAL) {
         return;
       }
-      
-      lastCheckRef.current = now;
 
       if (refreshInProgressRef.current) return;
       
-      if (!isUrlExpired(audioUrl)) return;
+      // ✅ FIX: Не проверяем, если URL не истек
+      if (!isUrlExpired(audioUrl)) {
+        lastCheckRef.current = now; // Обновляем время последней проверки
+        return;
+      }
 
       logInfo('Audio URL expired, refreshing...', 'useAudioUrlRefresh', { trackId });
       refreshInProgressRef.current = true;
@@ -90,10 +91,8 @@ export function useAudioUrlRefresh({
       }
     };
 
-    // Проверяем при монтировании
-    checkAndRefresh();
-
-    // Периодическая проверка
+    // ✅ FIX: НЕ проверяем при монтировании (избыточно)
+    // Только периодическая проверка каждый час
     const interval = setInterval(checkAndRefresh, URL_EXPIRY_CHECK_INTERVAL);
 
     return () => clearInterval(interval);

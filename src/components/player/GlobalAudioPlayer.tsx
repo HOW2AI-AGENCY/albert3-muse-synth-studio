@@ -55,27 +55,8 @@ const GlobalAudioPlayer = memo(() => {
   const [isBuffering, setIsBuffering] = useState(false);
   const playerRef = useRef<HTMLDivElement>(null);
 
-  // 🔄 Auto-refresh expired audio URLs
-  useAudioUrlRefresh({
-    trackId: currentTrack?.id || null,
-    audioUrl: currentTrack?.audio_url || null,
-    onUrlRefreshed: (newUrl) => {
-      if (audioRef.current && currentTrack) {
-        const wasPlaying = !audioRef.current.paused;
-        const currentTimeSnapshot = audioRef.current.currentTime;
-        
-        audioRef.current.src = newUrl;
-        audioRef.current.load();
-        audioRef.current.currentTime = currentTimeSnapshot;
-        
-        if (wasPlaying) {
-          audioRef.current.play().catch((err) => {
-            logger.error('Failed to resume playback after URL refresh', err, 'GlobalAudioPlayer');
-          });
-        }
-      }
-    }
-  });
+  // ✅ FIX: ОТКЛЮЧАЕМ auto-refresh в GlobalAudioPlayer (дублирует логику в error handler)
+  // Refresh обрабатывается только при ошибках загрузки аудио (строка 119-160)
 
 
   // ============= HOOKS: ПЕРЕМЕСТИЛИ СЮДА ДО УСЛОВНЫХ RETURN =============
