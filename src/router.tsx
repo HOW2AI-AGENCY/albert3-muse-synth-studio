@@ -28,9 +28,10 @@ const Metrics = createLazyComponent(() => import("./pages/workspace/Metrics"), "
 const Admin = createLazyComponent(() => import("./pages/workspace/Admin"), "Admin");
 const Monitoring = createLazyComponent(() => import("./pages/workspace/Monitoring"), "Monitoring");
 
-// Library routes - Sprint 30
+// Library routes - Sprint 30 & Sprint 31
 const LyricsLibrary = createLazyComponent(() => import("./pages/workspace/LyricsLibrary"), "LyricsLibrary");
 const AudioLibrary = createLazyComponent(() => import("./pages/workspace/AudioLibrary"), "AudioLibrary");
+const LyricsGenerationLog = createLazyComponent(() => import("./pages/workspace/LyricsGenerationLog"), "LyricsGenerationLog");
 
 // Debug route
 const EdgeFunctionsDebug = createLazyComponent(() => import("./pages/debug/EdgeFunctionsDebug"), "EdgeFunctionsDebug");
@@ -162,6 +163,14 @@ export const router = createBrowserRouter(
           element: (
             <Suspense fallback={<LoadingSpinner />}>
               <AudioLibrary />
+            </Suspense>
+          ),
+        },
+        {
+          path: "lyrics-log",
+          element: (
+            <Suspense fallback={<LoadingSpinner />}>
+              <LyricsGenerationLog />
             </Suspense>
           ),
         },

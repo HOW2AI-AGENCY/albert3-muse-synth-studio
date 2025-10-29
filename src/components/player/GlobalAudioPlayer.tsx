@@ -5,7 +5,6 @@ import { PlayerQueue } from "./PlayerQueue";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMediaSession } from "@/hooks/useMediaSession";
 import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
-import { useAudioUrlRefresh } from "@/hooks/useAudioUrlRefresh";
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
 import { toast } from "sonner";

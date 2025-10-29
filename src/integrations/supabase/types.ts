@@ -182,6 +182,45 @@ export type Database = {
           },
         ]
       }
+      lyrics_generation_log: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          generated_lyrics: string | null
+          generated_title: string | null
+          id: string
+          metadata: Json | null
+          prompt: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          generated_lyrics?: string | null
+          generated_title?: string | null
+          id?: string
+          metadata?: Json | null
+          prompt: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          generated_lyrics?: string | null
+          generated_title?: string | null
+          id?: string
+          metadata?: Json | null
+          prompt?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       lyrics_jobs: {
         Row: {
           base_lyrics: string | null
