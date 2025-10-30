@@ -118,7 +118,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
 
     const { data: job, error: jobError } = await supabase
       .from("lyrics_jobs")
-      .select("id")
+      .select("id, user_id, prompt")
       .eq("suno_task_id", taskId)
       .maybeSingle();
 
@@ -217,6 +217,49 @@ export const mainHandler = async (req: Request): Promise<Response> => {
         jobId: job.id,
         error: updateError,
       });
+    }
+
+    // ✅ NEW: Логирование в lyrics_generation_log
+    if (job.user_id && job.prompt) {
+      try {
+        const firstCompleteVariant = completeVariants[0];
+        const logEntry = {
+          user_id: job.user_id,
+          prompt: job.prompt,
+          generated_lyrics: success && firstCompleteVariant?.text 
+            ? sanitizeText(firstCompleteVariant.text) 
+            : null,
+          generated_title: success && firstCompleteVariant?.title 
+            ? sanitizeText(firstCompleteVariant.title) 
+            : null,
+          status: success ? 'completed' : 'failed',
+          error_message: errorMessage,
+          metadata: {
+            suno_task_id: taskId,
+            job_id: job.id,
+            variants_count: variants.length,
+            callback_code: code,
+          },
+        };
+
+        const { error: logError } = await supabase
+          .from('lyrics_generation_log')
+          .insert(logEntry);
+
+        if (logError) {
+          console.error('⚠️ [LYRICS-CALLBACK] Failed to log to lyrics_generation_log', {
+            jobId: job.id,
+            error: logError,
+          });
+        } else {
+          console.log('✅ [LYRICS-CALLBACK] Logged to lyrics_generation_log', {
+            jobId: job.id,
+            status: success ? 'completed' : 'failed',
+          });
+        }
+      } catch (logError) {
+        console.error('⚠️ [LYRICS-CALLBACK] Error logging to lyrics_generation_log', logError);
+      }
     }
 
     return new Response(JSON.stringify({ status: "received" }), {
