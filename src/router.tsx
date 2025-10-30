@@ -15,7 +15,6 @@ const Generate = createLazyComponent(() => import("./pages/workspace/Generate"),
 const Library = createLazyComponent(() => import("./pages/workspace/Library"), "Library");
 
 // Secondary routes - separate chunks
-const UploadAudio = createLazyComponent(() => import("./pages/workspace/UploadAudio"), "UploadAudio");
 const Favorites = createLazyComponent(() => import("./pages/workspace/Favorites"), "Favorites");
 const Settings = createLazyComponent(() => import("./pages/workspace/Settings"), "Settings");
 const Profile = createLazyComponent(() => import("./pages/workspace/Profile"), "Profile");
@@ -31,7 +30,6 @@ const Monitoring = createLazyComponent(() => import("./pages/workspace/Monitorin
 // Library routes - Sprint 30 & Sprint 31
 const LyricsLibrary = createLazyComponent(() => import("./pages/workspace/LyricsLibrary"), "LyricsLibrary");
 const AudioLibrary = createLazyComponent(() => import("./pages/workspace/AudioLibrary"), "AudioLibrary");
-const LyricsGenerationLog = createLazyComponent(() => import("./pages/workspace/LyricsGenerationLog"), "LyricsGenerationLog");
 
 // Debug route
 const EdgeFunctionsDebug = createLazyComponent(() => import("./pages/debug/EdgeFunctionsDebug"), "EdgeFunctionsDebug");
@@ -83,14 +81,6 @@ export const router = createBrowserRouter(
           element: (
             <Suspense fallback={<LoadingSpinner />}>
               <Library />
-            </Suspense>
-          ),
-        },
-        {
-          path: "upload-audio",
-          element: (
-            <Suspense fallback={<LoadingSpinner />}>
-              <UploadAudio />
             </Suspense>
           ),
         },
@@ -163,14 +153,6 @@ export const router = createBrowserRouter(
           element: (
             <Suspense fallback={<LoadingSpinner />}>
               <AudioLibrary />
-            </Suspense>
-          ),
-        },
-        {
-          path: "lyrics-log",
-          element: (
-            <Suspense fallback={<LoadingSpinner />}>
-              <LyricsGenerationLog />
             </Suspense>
           ),
         },

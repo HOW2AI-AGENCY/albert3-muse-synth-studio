@@ -122,7 +122,8 @@ export {
   Database,
   UserPlus,
   ExternalLink,
-  History
+  History,
+  Folder
 } from 'lucide-react';
 
 // Charts & Analytics

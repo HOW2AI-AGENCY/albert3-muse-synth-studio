@@ -7,10 +7,10 @@ import {
   BarChart3,
   Settings,
   Shield,
-  Upload,
   Activity,
   FileText,
   Music,
+  Folder,
 } from "@/utils/iconImports";
 import {
   preloadDashboard,
@@ -28,6 +28,7 @@ export interface WorkspaceNavItem {
   preload?: () => void;
   roles?: WorkspaceNavRole[];
   isMobilePrimary?: boolean;
+  children?: WorkspaceNavItem[];
 }
 
 export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
@@ -41,7 +42,7 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
   },
   {
     id: "generate",
-    label: "Генерация",
+    label: "Создать",
     path: "/workspace/generate",
     icon: Sparkles,
     preload: preloadGenerate,
@@ -49,42 +50,44 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
   },
   {
     id: "library",
-    label: "Библиотека",
+    label: "Треки",
     path: "/workspace/library",
     icon: Library,
     preload: preloadLibrary,
     isMobilePrimary: true,
   },
   {
-    id: "settings",
-    label: "Настройки",
-    path: "/workspace/settings",
-    icon: Settings,
+    id: "media",
+    label: "Медиа",
+    path: "/workspace/media",
+    icon: Folder,
     isMobilePrimary: true,
-  },
-  {
-    id: "lyrics-library",
-    label: "Лирика",
-    path: "/workspace/lyrics-library",
-    icon: FileText,
-  },
-  {
-    id: "audio-library",
-    label: "Аудио",
-    path: "/workspace/audio-library",
-    icon: Music,
-  },
-  {
-    id: "upload-audio",
-    label: "Загрузить",
-    path: "/workspace/upload-audio",
-    icon: Upload,
+    children: [
+      {
+        id: "lyrics-library",
+        label: "Лирика",
+        path: "/workspace/lyrics-library",
+        icon: FileText,
+      },
+      {
+        id: "audio-library",
+        label: "Аудио",
+        path: "/workspace/audio-library",
+        icon: Music,
+      },
+    ],
   },
   {
     id: "favorites",
     label: "Избранное",
     path: "/workspace/favorites",
     icon: Heart,
+  },
+  {
+    id: "settings",
+    label: "Настройки",
+    path: "/workspace/settings",
+    icon: Settings,
   },
   {
     id: "analytics",
@@ -121,5 +124,17 @@ export const getWorkspaceNavItems = (options?: { isAdmin?: boolean }) => {
     }
 
     return true;
+  }).map(item => {
+    if (item.children) {
+      return {
+        ...item,
+        children: item.children.filter(child => {
+          if (!child.roles?.length) return true;
+          if (child.roles.includes("admin")) return Boolean(isAdmin);
+          return true;
+        }),
+      };
+    }
+    return item;
   });
 };
