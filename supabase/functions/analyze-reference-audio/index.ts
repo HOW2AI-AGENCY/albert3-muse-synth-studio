@@ -114,6 +114,29 @@ const mainHandler = async (req: Request): Promise<Response> => {
       userId: userId.substring(0, 8)
     });
 
+    // ============================================================================
+    // 🔒 Валидация формата аудио (Mureka поддерживает только MP3 и M4A)
+    // ============================================================================
+    
+    const supportedFormats = ['mp3', 'm4a'];
+    const urlLower = audioUrl.toLowerCase();
+    const hasValidExtension = supportedFormats.some(fmt => 
+      urlLower.includes(`.${fmt}`) || urlLower.includes(`/${fmt}/`)
+    );
+    
+    if (!hasValidExtension) {
+      logger.warn('[ANALYZE-REF] ❌ Unsupported audio format', { audioUrl: audioUrl.substring(0, 100) });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Unsupported audio format. Mureka API supports only MP3 and M4A files.',
+          supportedFormats: supportedFormats
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    logger.info('[ANALYZE-REF] ✅ Audio format validated', { urlSample: audioUrl.substring(0, 100) });
+
     // ✅ Check Mureka API key
     const MUREKA_API_KEY = Deno.env.get('MUREKA_API_KEY');
     if (!MUREKA_API_KEY) {
@@ -192,21 +215,37 @@ const uploadResult = await murekaClient.uploadFile(fileForUpload);
     // ============================================================================
 
     logger.info('[ANALYZE-REF] 📖 Initiating song description');
+    
+    // Создаем временный signed URL для публичного доступа Mureka API
     let describeUrl = audioUrl;
-    try {
-      const ab = await audioBlob.arrayBuffer();
-      const bytes = new Uint8Array(ab);
-      const CHUNK = 0x8000;
-      let binary = '';
-      for (let i = 0; i < bytes.length; i += CHUNK) {
-        binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + CHUNK)) as unknown as number[]);
+    
+    // Если URL из Supabase Storage, создаем signed URL
+    if (audioUrl.includes('supabase.co/storage')) {
+      try {
+        // Извлекаем путь к файлу из URL
+        const storagePathMatch = audioUrl.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);
+        if (storagePathMatch) {
+          const bucket = storagePathMatch[1];
+          const path = storagePathMatch[2];
+          
+          // Создаем signed URL на 1 час
+          const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin
+            .storage
+            .from(bucket)
+            .createSignedUrl(path, 3600); // 1 hour
+            
+          if (signedUrlError) {
+            logger.warn('[ANALYZE-REF] Failed to create signed URL, using original', { error: signedUrlError });
+          } else if (signedUrlData?.signedUrl) {
+            describeUrl = signedUrlData.signedUrl;
+            logger.info('[ANALYZE-REF] ✅ Created signed URL for description', { bucket, path });
+          }
+        }
+      } catch (e) {
+        logger.warn('[ANALYZE-REF] Error creating signed URL, using original', { error: (e as Error).message });
       }
-      const base64 = btoa(binary);
-      describeUrl = `data:${normalizedType};base64,${base64}`;
-      logger.info('[ANALYZE-REF] 🔄 Using base64 data URL for description', { type: normalizedType, size: audioBlob.size });
-    } catch (e) {
-      logger.warn('[ANALYZE-REF] Failed to build base64 URL, falling back to original URL', { error: (e as Error).message });
     }
+    
     const descriptionPromise = murekaClient.describeSong({ url: describeUrl });
 
     // ✅ Параллельное выполнение обоих запросов
