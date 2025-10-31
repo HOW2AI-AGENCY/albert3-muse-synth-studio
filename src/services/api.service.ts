@@ -16,6 +16,7 @@ export type TrackStatus = "pending" | "processing" | "completed" | "failed";
 export type Track = TrackRow & {
   status: TrackStatus;
   style?: string | null;
+  mureka_task_id?: string | null;
 };
 
 const isTrackStatus = (status: TrackRow["status"]): status is TrackStatus =>
@@ -35,6 +36,8 @@ export const mapTrackRowToTrack = (track: TrackRow): Track => ({
   storage_video_url: track.storage_video_url ?? null,
   archive_scheduled_at: track.archive_scheduled_at ?? null,
   archived_at: track.archived_at ?? null,
+  // Mureka task ID (optional)
+  mureka_task_id: (track as any).mureka_task_id ?? null,
 });
 
 export interface ImprovePromptRequest {
@@ -530,7 +533,8 @@ export class ApiService {
           storage_cover_url,
           storage_video_url,
           archive_scheduled_at,
-          archived_at
+          archived_at,
+          mureka_task_id
         `)
         .eq("user_id", userId)
         .order("created_at", { ascending: false });

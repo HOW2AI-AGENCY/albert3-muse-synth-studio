@@ -194,18 +194,34 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
   protected async updateTrackTaskId(trackId: string, taskId: string): Promise<void> {
     const taskIdField = this.providerName === 'suno' ? 'suno_task_id' : 'mureka_task_id';
     
-    await this.supabase
+    logger.info(`🔄 Updating track with ${taskIdField}`, { trackId, taskId, provider: this.providerName });
+    
+    const updateData: any = {
+      [taskIdField]: taskId,
+      status: 'processing',
+      metadata: {
+        [taskIdField]: taskId,
+        started_at: new Date().toISOString(),
+        polling_attempts: 0,
+      },
+    };
+
+    // Only set suno_id for Suno provider
+    if (this.providerName === 'suno') {
+      updateData.suno_id = taskId;
+    }
+
+    const { error } = await this.supabase
       .from('tracks')
-      .update({
-        suno_id: taskId,
-        status: 'processing',
-        metadata: {
-          [taskIdField]: taskId,
-          started_at: new Date().toISOString(),
-          polling_attempts: 0,
-        },
-      })
+      .update(updateData)
       .eq('id', trackId);
+
+    if (error) {
+      logger.error(`❌ Failed to update track with ${taskIdField}`, { error, trackId, taskId });
+      throw new Error(`Failed to update track with task ID: ${error.message}`);
+    }
+
+    logger.info(`✅ Track updated with ${taskIdField}`, { trackId, taskId });
   }
 
   /**

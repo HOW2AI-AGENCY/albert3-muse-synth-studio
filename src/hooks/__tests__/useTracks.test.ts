@@ -98,6 +98,7 @@ describe('useTracks', () => {
     reference_audio_url: null,
     is_public: null,
     style: null,
+    mureka_task_id: null,
     ...overrides,
   });
 

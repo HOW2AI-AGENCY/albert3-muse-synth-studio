@@ -936,6 +936,7 @@ export type Database = {
           metadata: Json | null
           model_name: string | null
           mood: string | null
+          mureka_task_id: string | null
           play_count: number | null
           progress_percent: number | null
           prompt: string
@@ -977,6 +978,7 @@ export type Database = {
           metadata?: Json | null
           model_name?: string | null
           mood?: string | null
+          mureka_task_id?: string | null
           play_count?: number | null
           progress_percent?: number | null
           prompt: string
@@ -1018,6 +1020,7 @@ export type Database = {
           metadata?: Json | null
           model_name?: string | null
           mood?: string | null
+          mureka_task_id?: string | null
           play_count?: number | null
           progress_percent?: number | null
           prompt?: string
