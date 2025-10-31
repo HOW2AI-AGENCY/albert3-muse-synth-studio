@@ -69,9 +69,9 @@ vi.mock('@/hooks/use-toast', () => ({
   }),
 }));
 
-vi.mock('@/contexts/AudioPlayerContext', async () => {
-  const actual = await vi.importActual<typeof import('@/contexts/AudioPlayerContext')>(
-    '@/contexts/AudioPlayerContext'
+vi.mock('@/stores/audioPlayerStore', async () => {
+  const actual = await vi.importActual<typeof import('@/stores/audioPlayerStore')>(
+    '@/stores/audioPlayerStore'
   );
 
   const createAudioPlayerValue = () => ({

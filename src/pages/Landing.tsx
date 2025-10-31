@@ -6,13 +6,12 @@ import { useNavigate } from "react-router-dom";
 import { Music, Sparkles, Zap, Headphones, Wand2, Play, Heart } from "@/utils/iconImports";
 import { ApiService, Track } from "@/services/api.service";
 import { AnalyticsService } from "@/services/analytics.service";
-import { useAudioPlayerSafe } from "@/contexts/AudioPlayerContext";
+import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import heroBg from "@/assets/hero-bg.jpg";
 import { logger } from "@/utils/logger";
 
 const Landing = () => {
   const navigate = useNavigate();
-  const audioPlayer = useAudioPlayerSafe();
   const [featuredTracks, setFeaturedTracks] = useState<Track[]>([]);
 
   useEffect(() => {
@@ -200,8 +199,9 @@ const Landing = () => {
                         variant="ghost"
                         className="shrink-0 hover:bg-primary/20 hover:text-primary transition-all hover:scale-110"
                         onClick={() => {
-                          if (audioPlayer?.playTrack && track.audio_url) {
-                            audioPlayer.playTrack({
+                          const { playTrack } = useAudioPlayerStore.getState();
+                          if (playTrack && track.audio_url) {
+                            playTrack({
                               id: track.id,
                               title: track.title,
                               audio_url: track.audio_url,

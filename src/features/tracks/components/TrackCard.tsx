@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { fadeInUp } from "@/utils/animations";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Play, Pause, Download, Heart, Share2, Clock, Music, AlertTriangle, RefreshCw, Trash2, MoreVertical, Split, Expand, Mic2, Globe, FileAudio, Mic, UserPlus } from "@/utils/iconImports";
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useCurrentTrack, useIsPlaying, useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { useTrackLike } from "@/features/tracks/hooks";
 import { useTrackVersions } from "@/features/tracks/hooks";
 import { withErrorBoundary } from "@/components/ErrorBoundary";
@@ -203,14 +203,10 @@ const TrackCardComponent = ({
   onAddVocal,
   className
 }: TrackCardProps) => {
-  const {
-    toast
-  } = useToast();
-  const {
-    currentTrack,
-    isPlaying,
-    playTrack
-  } = useAudioPlayer();
+  const { toast } = useToast();
+  const currentTrack = useCurrentTrack();
+  const isPlaying = useIsPlaying();
+  const playTrack = useAudioPlayerStore((state) => state.playTrack);
 
   // ✅ Лайки всегда относятся к родительскому треку (не к версиям)
   const {

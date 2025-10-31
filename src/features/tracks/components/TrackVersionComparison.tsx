@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useCurrentTrack, useIsPlaying, useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { TrackVersionMetadataPanel, type TrackVersionMetadata } from "./TrackVersionMetadataPanel";
 import {
@@ -93,7 +93,10 @@ const TrackVersionComparisonComponent = ({
   onRightVersionChange,
   onSwapSides,
 }: TrackVersionComparisonProps) => {
-  const { currentTrack, isPlaying, playTrack, togglePlayPause } = useAudioPlayer();
+  const currentTrack = useCurrentTrack();
+  const isPlaying = useIsPlaying();
+  const playTrack = useAudioPlayerStore((state) => state.playTrack);
+  const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
   const { vibrate } = useHapticFeedback();
 
   const hasEnoughVersions = versions?.length >= 2;

@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useCurrentTrack, useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { cn } from "@/lib/utils";
 import { logger } from "@/utils/logger";
 
@@ -43,7 +43,10 @@ const formatDate = (value?: string | null) => {
 };
 
 export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: TrackVersionSelectorProps) => {
-  const { currentTrack, isPlaying, switchToVersion, togglePlayPause } = useAudioPlayer();
+  const currentTrack = useCurrentTrack();
+  const isPlaying = useAudioPlayerStore((state) => state.isPlaying);
+  const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
+  const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
   const currentTrackId = currentTrack?.id;
 
   const versionList = useMemo(() => versions ?? [], [versions]);

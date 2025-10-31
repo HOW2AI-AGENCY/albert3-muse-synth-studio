@@ -9,7 +9,7 @@
  */
 
 import { useCallback } from 'react';
-import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
+import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
 import { getTrackWithVersions, TrackWithVersions } from '@/features/tracks';
 import { logInfo } from '@/utils/logger';
 import type { AudioPlayerTrack } from '@/types/track';
@@ -25,7 +25,7 @@ export interface SmartPlayOptions {
  * Hook для "умного" воспроизведения треков с автоматическим выбором версии
  */
 export const useSmartTrackPlay = () => {
-  const { playTrack } = useAudioPlayer();
+  const playTrack = useAudioPlayerStore((state) => state.playTrack);
 
   /**
    * Выбрать лучший вариант для воспроизведения по приоритету:

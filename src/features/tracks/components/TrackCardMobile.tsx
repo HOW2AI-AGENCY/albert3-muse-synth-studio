@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LazyImage } from '@/components/ui/lazy-image';
 import { Play, Pause, Heart, MoreVertical } from '@/utils/iconImports';
-import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
+import { useCurrentTrack, useIsPlaying } from '@/stores/audioPlayerStore';
 import { useTrackLike } from '@/features/tracks/hooks';
 import { useSmartTrackPlay } from '@/hooks/useSmartTrackPlay';
 import { formatDuration } from '@/utils/formatters';
@@ -28,7 +28,8 @@ interface TrackCardMobileProps {
 }
 
 export const TrackCardMobile = memo(({ track, onClick, onMoreClick }: TrackCardMobileProps) => {
-  const { currentTrack, isPlaying } = useAudioPlayer();
+  const currentTrack = useCurrentTrack();
+  const isPlaying = useIsPlaying();
   const { playTrackSmart } = useSmartTrackPlay();
   const { isLiked, toggleLike } = useTrackLike(track.id, track.like_count || 0);
   const { toast } = useToast();

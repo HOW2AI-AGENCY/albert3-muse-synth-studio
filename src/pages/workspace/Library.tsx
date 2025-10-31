@@ -28,7 +28,7 @@ import {
 import { useTracks } from "@/hooks/useTracks";
 import { useToast } from "@/hooks/use-toast";
 import { useTrackCleanup } from "@/hooks/useTrackCleanup";
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 // import { LikesService } from "@/services/likes.service"; // Now handled in TrackCard
 import { supabase } from "@/integrations/supabase/client";
 import { DisplayTrack, convertToAudioPlayerTrack, convertToDisplayTrack, convertToOptimizedTrack } from "@/types/track";
@@ -46,7 +46,7 @@ type SortOrder = 'asc' | 'desc';
 const Library: React.FC = () => {
   const { tracks, isLoading, refreshTracks } = useTracks();
   const { toast } = useToast();
-  const { playTrackWithQueue } = useAudioPlayer();
+  const playTrackWithQueue = useAudioPlayerStore((state) => state.playTrackWithQueue);
   
   // Get current user
   const [userId, setUserId] = useState<string | undefined>(undefined);

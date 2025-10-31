@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Music4, ChevronDown, ChevronUp, LayoutGrid, Sliders } from "@/utils/iconImports";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { StemMixerProvider } from "@/contexts/StemMixerContext";
 import { AdvancedStemMixer } from "./AdvancedStemMixer";
 import { useStemSeparation } from "@/hooks/useStemSeparation";
@@ -86,7 +86,10 @@ const formatStemLabel = (stemType: string) => {
 export const TrackStemsPanel = ({ trackId, versionId, stems, onStemsGenerated }: TrackStemsPanelProps) => {
   const [isExpanded, setIsExpanded] = useState(true); // Раскрыто по умолчанию
   const [viewMode, setViewMode] = useState<'grid' | 'mixer'>('grid');
-  const { currentTrack, isPlaying, playTrack, togglePlayPause } = useAudioPlayer();
+  const currentTrack = useAudioPlayerStore((state) => state.currentTrack);
+  const isPlaying = useAudioPlayerStore((state) => state.isPlaying);
+  const playTrack = useAudioPlayerStore((state) => state.playTrack);
+  const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
 
   const { isGenerating, generateStems: handleGenerateStems } = useStemSeparation({
     trackId,

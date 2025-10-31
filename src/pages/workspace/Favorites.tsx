@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Heart, Loader2 } from "@/utils/iconImports";
 import { LikesService } from "@/services/likes.service";
 import { supabase } from "@/integrations/supabase/client";
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { TrackCard, getTrackWithVersions } from "@/features/tracks";
 import { primeTrackVersionsCache } from "@/features/tracks/hooks/useTrackVersions";
 import { toast } from "sonner";
@@ -30,7 +30,7 @@ interface LikedTrack {
 export default function Favorites() {
   const [likedTracks, setLikedTracks] = useState<LikedTrack[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { playTrackWithQueue } = useAudioPlayer();
+  const playTrackWithQueue = useAudioPlayerStore((state) => state.playTrackWithQueue);
 
   useEffect(() => {
     loadLikedTracks();

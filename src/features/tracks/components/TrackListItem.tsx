@@ -22,7 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useCurrentTrack, useIsPlaying, useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { useTrackLike } from "@/features/tracks/hooks";
 import { cn } from "@/lib/utils";
 import { formatDuration } from "@/utils/formatters";
@@ -54,7 +54,9 @@ interface TrackListItemProps {
 }
 
 const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, onDelete, onSeparateStems, className }: TrackListItemProps) => {
-  const { currentTrack, isPlaying, playTrack } = useAudioPlayer();
+  const currentTrack = useCurrentTrack();
+  const isPlaying = useIsPlaying();
+  const playTrack = useAudioPlayerStore((state) => state.playTrack);
   const { isLiked, toggleLike } = useTrackLike(track.id, track.like_count || 0);
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);

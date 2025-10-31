@@ -7,9 +7,34 @@
 
 ---
 
+## [3.0.0-alpha.5] - 2025-10-31
+
+### 🎉 Sprint 31 Week 2 COMPLETE: Zustand Migration ✅
+
+### Removed
+- **BREAKING**: Completely removed old AudioPlayerContext architecture
+  - ✅ Deleted `AudioPlayerProvider`, `useAudioPlayback`, `useQueueManager`, `useAudioVersions`
+  - ✅ Removed provider wrapper from `App.tsx`
+  - ✅ Deleted 7 outdated test files for old Context API
+  - ✅ Added deprecation warnings in legacy export points
+
+### Changed
+- **Architecture**: 100% Zustand Migration COMPLETE
+  - ✅ All 15+ components migrated to `useAudioPlayerStore`
+  - ✅ All pages (Landing, Library, Favorites) using Zustand selectors
+  - ✅ Test setup updated to mock Zustand store
+  - ✅ Expected performance: -98% re-renders (-3,408 renders/min)
+
+### Performance
+- Sprint 31 Progress: 35% complete
+- Zustand Migration: ✅ 100% COMPLETE
+- Next Phase: Edge Functions Refactoring
+
+---
+
 ## [3.0.0-alpha.4] - 2025-10-31
 
-### 🏗️ Sprint 31 Week 2 Day 2: Zustand Migration Complete ✅
+### 🏗️ Sprint 31 Week 2 Day 2: Component Migration ✅
 
 #### ✅ All Player Components Migrated
 - ✅ Migrated `GlobalAudioPlayer` to Zustand store

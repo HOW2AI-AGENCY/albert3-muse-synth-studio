@@ -7,7 +7,6 @@ import { useEffect, Suspense } from "react";
 import { GlobalErrorBoundary } from "@/components/errors/GlobalErrorBoundary";
 import { FullPageSpinner } from "@/components/ui/loading-states";
 import router from "./router";
-import { AudioPlayerProvider } from "./contexts/AudioPlayerContext";
 import { GlobalAudioPlayer } from "./components/player/GlobalAudioPlayer";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PerformanceMonitorWidget } from "@/components/dev/PerformanceMonitorWidget";
@@ -66,13 +65,11 @@ const App = () => {
         <TooltipProvider>
           <AppLayout>
             <Suspense fallback={<FullPageSpinner />}>
-              <AudioPlayerProvider>
-                <Toaster />
-                <Sonner />
-                <RouterProvider router={router} />
-                <GlobalAudioPlayer />
-                <PerformanceMonitorWidget />
-              </AudioPlayerProvider>
+              <Toaster />
+              <Sonner />
+              <RouterProvider router={router} />
+              <GlobalAudioPlayer />
+              <PerformanceMonitorWidget />
             </Suspense>
           </AppLayout>
         </TooltipProvider>
