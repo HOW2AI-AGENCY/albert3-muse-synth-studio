@@ -204,14 +204,25 @@ const uploadResult = await murekaClient.uploadFile(fileForUpload);
     });
 
     // ============================================================================
-    // STEP 2: Запуск Song Recognition (параллельно)
+    // STEP 2: Запуск Song Recognition (последовательно, т.к. Mureka лимит 1 concurrent request)
     // ============================================================================
 
     logger.info('[ANALYZE-REF] 🔍 Initiating song recognition');
-    const recognitionPromise = murekaClient.recognizeSong({ upload_audio_id: fileId });
+    const recognitionResult = await murekaClient.recognizeSong({ upload_audio_id: fileId });
+    
+    if (recognitionResult.code !== 200 || !recognitionResult.data?.task_id) {
+      throw new Error('Mureka song recognition failed to start');
+    }
+    
+    logger.info('[ANALYZE-REF] ✅ Recognition task initiated', {
+      taskId: recognitionResult.data.task_id
+    });
+
+    // Небольшая задержка перед следующим запросом (для безопасности)
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     // ============================================================================
-    // STEP 3: Запуск Song Description (параллельно)
+    // STEP 3: Запуск Song Description (последовательно после Recognition)
     // ============================================================================
 
     logger.info('[ANALYZE-REF] 📖 Initiating song description');
@@ -246,15 +257,13 @@ const uploadResult = await murekaClient.uploadFile(fileForUpload);
       }
     }
     
-    const descriptionPromise = murekaClient.describeSong({ url: describeUrl });
+    const descriptionResult = await murekaClient.describeSong({ url: describeUrl });
+    
+    if (descriptionResult.code !== 200 || !descriptionResult.data?.task_id) {
+      throw new Error('Mureka song description failed to start');
+    }
 
-    // ✅ Параллельное выполнение обоих запросов
-    const [recognitionResult, descriptionResult] = await Promise.all([
-      recognitionPromise,
-      descriptionPromise
-    ]);
-
-    logger.info('[ANALYZE-REF] ✅ Both tasks initiated', {
+    logger.info('[ANALYZE-REF] ✅ Both tasks initiated sequentially', {
       recognitionTaskId: recognitionResult.data.task_id,
       descriptionTaskId: descriptionResult.data.task_id
     });
