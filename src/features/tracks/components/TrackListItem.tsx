@@ -266,7 +266,10 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
               </Tooltip>
             </TooltipProvider>
           </>
-        ) : null}
+        ) : (
+          <>
+            <TooltipProvider>
+              <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="ghost" size="icon" className="w-7 h-7" onClick={handleLikeClick} aria-label={isLiked ? "Убрать из избранного" : "В избранное"}>
                     <Heart className={cn("w-3.5 h-3.5", isLiked && "fill-red-500 text-red-500")} />
