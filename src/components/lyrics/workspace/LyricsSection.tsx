@@ -252,8 +252,8 @@ export const LyricsSection: React.FC<LyricsSectionProps> = ({
       {/* Tag Palette Dialog */}
       {!readOnly && (
         <Dialog open={showTagPalette} onOpenChange={setShowTagPalette}>
-          <DialogContent className="max-w-2xl max-h-[85vh] sm:max-h-[90vh]">
-            <DialogHeader>
+          <DialogContent className="max-w-5xl w-[calc(100%-2rem)] max-h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle className="text-base sm:text-lg">
                 Добавить теги к секции {section.title?.trim() ? `"${section.title}"` : ''}
               </DialogTitle>
@@ -261,13 +261,15 @@ export const LyricsSection: React.FC<LyricsSectionProps> = ({
                 Выберите теги для аннотации секции. Все теги будут на английском языке.
               </DialogDescription>
             </DialogHeader>
-            <TagPalette
-              onAddTag={(tag) => {
-                onAddTag(tag);
-                setShowTagPalette(false);
-              }}
-              excludeCategories={['section']}
-            />
+            <div className="flex-1 overflow-hidden">
+              <TagPalette
+                onAddTag={(tag) => {
+                  onAddTag(tag);
+                  setShowTagPalette(false);
+                }}
+                excludeCategories={['section']}
+              />
+            </div>
           </DialogContent>
         </Dialog>
       )}

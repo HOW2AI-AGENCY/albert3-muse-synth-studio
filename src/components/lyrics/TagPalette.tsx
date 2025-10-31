@@ -198,8 +198,8 @@ export const TagPalette: React.FC<TagPaletteProps> = ({
 
         {/* Tag Content */}
         {categories.map(([key, def]) => (
-          <TabsContent key={key} value={key} className="mt-3 sm:mt-4">
-            <ScrollArea className="h-[300px] sm:h-[350px] pr-3">
+          <TabsContent key={key} value={key} className="mt-3 sm:mt-4 space-y-0">
+            <ScrollArea className="h-[40vh] sm:h-[45vh] md:h-[50vh] pr-3">
               <div className="space-y-4">
                 {filteredAndGroupedTags && Object.entries(filteredAndGroupedTags).map(([groupName, values]) => (
                   <div key={groupName} className="space-y-2">
