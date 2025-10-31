@@ -180,21 +180,26 @@ serve(async (req: Request): Promise<Response> => {
 
           // Handle Mureka response
           const rawStatus = (queryResult.data as any)?.status;
-          const clips = queryResult.data?.clips || [];
+          const clips = queryResult.data?.clips || queryResult.data?.choices || [];
           
-          if (queryResult.code === 200 && clips.length > 0 && clips[0].audio_url) {
-            const clip = clips[0];
+          // ✅ FIX: Mureka API v7 uses 'url' instead of 'audio_url'
+          const mainClip = clips[0];
+          const hasAudioUrl = mainClip && (mainClip.url || mainClip.audio_url);
+          
+          if (queryResult.code === 200 && clips.length > 0 && hasAudioUrl) {
+            const clip = mainClip;
+            const audioUrlFromApi = clip.url || clip.audio_url; // Support both formats
             
             // Download and upload to storage
             const { downloadAndUploadAudio, downloadAndUploadCover } = 
               await import('../_shared/storage.ts');
             
-            let audioUrl = clip.audio_url as string;
-            let coverUrl = clip.image_url as string | undefined;
+            let audioUrl = audioUrlFromApi as string;
+            let coverUrl = (clip.image_url || clip.cover_url) as string | undefined;
             
             try {
               audioUrl = await downloadAndUploadAudio(
-                clip.audio_url as string,
+                audioUrlFromApi as string,
                 track.user_id,
                 track.id,
                 'main.mp3',

@@ -10,6 +10,7 @@ import { Music } from "@/utils/iconImports";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { supabase } from "@/integrations/supabase/client";
+import { useManualSyncTrack } from "@/hooks/useManualSyncTrack";
 
 interface TracksListProps {
   tracks: Track[];
@@ -34,6 +35,7 @@ const TracksListComponent = ({
 }: TracksListProps) => {
   const playTrackWithQueue = useAudioPlayerStore((state) => state.playTrackWithQueue);
   const { toast } = useToast();
+  const { mutateAsync: syncTrack } = useManualSyncTrack();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
@@ -143,6 +145,17 @@ const TracksListComponent = ({
     }
   }, [tracks, toast, refreshTracks]);
 
+  const handleSync = useCallback(async (trackId: string) => {
+    try {
+      await syncTrack({ trackId });
+      // Обновляем список после синхронизации
+      setTimeout(() => refreshTracks(), 1000);
+    } catch (error) {
+      // Ошибка уже обработана в хуке useManualSyncTrack
+      console.error('Sync failed:', error);
+    }
+  }, [syncTrack, refreshTracks]);
+
   const handleDelete = useCallback(async (trackId: string) => {
     try {
       await deleteTrack(trackId);
@@ -232,6 +245,7 @@ const TracksListComponent = ({
                   onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
                   onShare={() => handleShare(track.id)}
                   onRetry={handleRetry}
+                  onSync={handleSync}
                   onDelete={handleDelete}
                   onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
                   onExtend={onExtend ? () => onExtend(track.id) : undefined}
@@ -250,6 +264,7 @@ const TracksListComponent = ({
               onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
               onShare={() => handleShare(track.id)}
               onRetry={handleRetry}
+              onSync={handleSync}
               onDelete={handleDelete}
               onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
             />

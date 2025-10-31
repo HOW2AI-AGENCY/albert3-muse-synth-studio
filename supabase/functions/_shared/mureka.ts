@@ -61,10 +61,16 @@ export interface MurekaGenerationResponse {
   data: {
     /** ID задачи для отслеживания */
     task_id: string;
+    /** ID задачи (альтернативное поле) */
+    id?: string;
     /** Статус задачи */
-    status: 'pending' | 'processing' | 'completed' | 'failed';
-    /** Массив сгенерированных треков (после завершения) */
+    status: 'pending' | 'processing' | 'completed' | 'failed' | 'preparing' | 'queued' | 'running' | 'streaming' | 'succeeded' | 'timeouted' | 'cancelled';
+    /** Массив сгенерированных треков (legacy format) */
     clips?: MurekaTrack[];
+    /** Массив сгенерированных треков (API v7 format) */
+    choices?: MurekaTrack[];
+    /** Массив сгенерированных треков (alternate legacy format) */
+    data?: MurekaTrack[];
   };
 }
 
@@ -75,20 +81,38 @@ export interface MurekaGenerationResponse {
 export interface MurekaTrack {
   /** Уникальный ID трека в Mureka */
   id: string;
-  /** URL аудиофайла */
-  audio_url: string;
+  /** URL аудиофайла (API v7) */
+  url?: string;
+  /** URL аудиофайла (legacy format) */
+  audio_url?: string;
+  /** URL FLAC файла (API v7) */
+  flac_url?: string;
   /** URL обложки (опционально) */
   image_url?: string;
+  /** URL обложки (legacy format) */
+  cover_url?: string;
   /** URL видеоклипа (опционально) */
   video_url?: string;
   /** Название трека */
-  title: string;
+  title?: string;
+  /** Название трека (альтернативное поле) */
+  name?: string;
   /** Текст песни */
   lyrics?: string;
-  /** Продолжительность в секундах */
-  duration: number;
-  /** Дата создания (ISO 8601) */
-  created_at: string;
+  /** Детализированная структура текста (API v7) */
+  lyrics_sections?: Array<Record<string, unknown>>;
+  /** Продолжительность в миллисекундах */
+  duration?: number;
+  /** Дата создания в секундах Unix timestamp */
+  created_at?: number | string;
+  /** Дата завершения в секундах Unix timestamp (API v7) */
+  finished_at?: number;
+  /** Модель использованная для генерации */
+  model?: string;
+  /** Индекс варианта (API v7) */
+  index?: number;
+  /** Теги стиля */
+  tags?: string[];
   /** Дополнительные метаданные */
   metadata?: Record<string, unknown>;
 }

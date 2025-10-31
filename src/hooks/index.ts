@@ -16,6 +16,7 @@ export { useStemMixer } from './useStemMixer';
 // Tracks & Generation
 export { useTracks } from './useTracks';
 export { useTrackSync } from './useTrackSync';
+export { useManualSyncTrack } from './useManualSyncTrack';
 export { useTrackRecovery } from './useTrackRecovery';
 export { useTrackCleanup } from './useTrackCleanup';
 export { useGenerateMusic } from './useGenerateMusic';

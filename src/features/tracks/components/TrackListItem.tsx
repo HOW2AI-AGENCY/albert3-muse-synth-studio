@@ -48,12 +48,13 @@ interface TrackListItemProps {
   onDownload?: () => void;
   onShare?: () => void;
   onRetry?: (trackId: string) => void;
+  onSync?: (trackId: string) => void;
   onDelete?: (trackId: string) => void;
   onSeparateStems?: (trackId: string) => void;
   className?: string;
 }
 
-const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, onDelete, onSeparateStems, className }: TrackListItemProps) => {
+const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, onSync, onDelete, onSeparateStems, className }: TrackListItemProps) => {
   const currentTrack = useCurrentTrack();
   const isPlaying = useIsPlaying();
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
@@ -106,6 +107,11 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
     event.stopPropagation();
     onRetry?.(track.id);
   }, [onRetry, track.id]);
+
+  const handleSyncClick = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
+    onSync?.(track.id);
+  }, [onSync, track.id]);
 
   const handleDeleteClick = useCallback((event: React.MouseEvent) => {
     event.stopPropagation();
@@ -188,7 +194,44 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
         "flex items-center gap-1 transition-opacity duration-200",
         isHovered || isCurrentTrack ? "opacity-100" : "opacity-0 group-focus-within:opacity-100"
       )}>
-        {(track.status === 'processing' || track.status === 'pending' || track.status === 'failed') && isStuck && onRetry && onDelete ? (
+        {/* Processing/Pending: Show Sync button */}
+        {(track.status === 'processing' || track.status === 'pending') && isStuck && onSync && onDelete ? (
+          <>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="w-7 h-7" 
+                    onClick={handleSyncClick}
+                    aria-label="Обновить статус"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Обновить статус</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="w-7 h-7 text-destructive hover:text-destructive" 
+                    onClick={handleDeleteClick}
+                    aria-label="Удалить трек"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Удалить</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </>
+        ) : track.status === 'failed' && onRetry && onDelete ? (
+          /* Failed: Show Retry button */
           <>
             <TooltipProvider>
               <Tooltip>
@@ -223,10 +266,7 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
               </Tooltip>
             </TooltipProvider>
           </>
-        ) : (
-          <>
-            <TooltipProvider>
-              <Tooltip>
+        ) : null}
                 <TooltipTrigger asChild>
                   <Button variant="ghost" size="icon" className="w-7 h-7" onClick={handleLikeClick} aria-label={isLiked ? "Убрать из избранного" : "В избранное"}>
                     <Heart className={cn("w-3.5 h-3.5", isLiked && "fill-red-500 text-red-500")} />

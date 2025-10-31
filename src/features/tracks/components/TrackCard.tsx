@@ -81,6 +81,7 @@ interface TrackCardProps {
   onShare?: () => void;
   onClick?: () => void;
   onRetry?: (trackId: string) => void;
+  onSync?: (trackId: string) => void;
   onDelete?: (trackId: string) => void;
   onExtend?: (trackId: string) => void;
   onCover?: (trackId: string) => void;
@@ -97,11 +98,11 @@ const getGradientByTrackId = (trackId: string) => {
 };
 const GenerationProgress: React.FC<{
   track: Track;
-  onRetry?: (trackId: string) => void;
+  onSync?: (trackId: string) => void;
   onDelete?: (trackId: string) => void;
 }> = ({
   track,
-  onRetry,
+  onSync,
   onDelete
 }) => {
   const trackForSync = {
@@ -115,18 +116,18 @@ const GenerationProgress: React.FC<{
         <TrackSyncStatus track={trackForSync} />
       </div>
       
-      {(onRetry || onDelete) && <div className="flex gap-2 mt-3">
-          {onRetry && <TooltipProvider>
+      {(onSync || onDelete) && <div className="flex gap-2 mt-3">
+          {onSync && <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button size="icon" variant="secondary" onClick={e => {
               e.stopPropagation();
-              onRetry(track.id);
+              onSync(track.id);
             }} className="h-8 w-8">
                     <RefreshCw className="w-4 h-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent>Повторить</TooltipContent>
+                <TooltipContent>Обновить статус</TooltipContent>
               </Tooltip>
             </TooltipProvider>}
           {onDelete && <TooltipProvider>
@@ -196,6 +197,7 @@ const TrackCardComponent = ({
   onShare,
   onClick,
   onRetry,
+  onSync,
   onDelete,
   onExtend,
   onCover,
@@ -403,7 +405,7 @@ const TrackCardComponent = ({
   }} role="article" aria-label={`Трек ${track.title}`} tabIndex={0}>
       <Card className={cn("group relative overflow-hidden cursor-pointer transition-all duration-300", "border-border/50 bg-card hover:bg-muted/30 card-elevated", isVisible ? "h-full flex flex-col opacity-100" : "h-full flex flex-col opacity-0", isCurrentTrack && "ring-2 ring-primary/80 shadow-glow-primary-strong", className)} onClick={onClick} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
       <div className="relative aspect-square bg-gradient-to-br from-gray-800 to-gray-900">
-        {(track.status === 'processing' || track.status === 'pending') && <GenerationProgress track={track} onRetry={onRetry} onDelete={onDelete} />}
+        {(track.status === 'processing' || track.status === 'pending') && <GenerationProgress track={track} onSync={onSync} onDelete={onDelete} />}
         {track.status === 'failed' && <FailedState message={track.error_message} trackId={track.id} onRetry={onRetry} onDelete={onDelete} />}
 
         {/* Vocal/Instrumental badge */}
