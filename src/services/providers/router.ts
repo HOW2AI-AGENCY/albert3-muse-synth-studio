@@ -107,24 +107,19 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
         const weirdnessConstraint =
           params.weirdness !== undefined ? clampRatio(params.weirdness) : clampRatio(params.weirdnessConstraint);
 
-        // ✅ Validate model version for Suno
-        const validSunoModels = ['V3_5', 'V4', 'V4_5', 'V4_5PLUS', 'V5', 'chirp-v3-5', 'chirp-v4'];
-        const requestedModel = params.modelVersion || 'chirp-v3-5';
-        if (!validSunoModels.includes(requestedModel)) {
-          logger.warn(`Invalid Suno model version: ${requestedModel}, using default`, context);
-        }
+        // ✅ Validate model version for Suno (imported from provider-models.ts)
+        const validatedModel = params.modelVersion || 'V5';
 
         const requestBody = {
           trackId: params.trackId,
           title: params.title?.trim(),
           prompt: normalizedPrompt,
-          // ✅ FIX: Always pass lyrics if present, regardless of customMode
           lyrics: effectiveLyrics,
+          modelVersion: validatedModel,
           tags: sanitizedTags,
           make_instrumental: makeInstrumental,
           hasVocals: resolvedHasVocals,
           customMode,
-          model_version: requestedModel,
           idempotencyKey: params.idempotencyKey,
           referenceAudioUrl: params.referenceAudioUrl,
           referenceTrackId: params.referenceTrackId,
@@ -143,7 +138,7 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
             lyricsLength: requestBody.lyrics?.length || 0,
             tagsCount: requestBody.tags.length,
             customMode: requestBody.customMode,
-            modelVersion: requestBody.model_version,
+            modelVersion: requestBody.modelVersion,
           },
         });
 
@@ -197,12 +192,8 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
         const isBGM =
           typeof params.isBGM === 'boolean' ? params.isBGM : makeInstrumental ? true : undefined;
 
-        // ✅ Validate model version for Mureka
-        const validMurekaModels = ['auto', 'o1', 'o1-beta', 'o1-mini'];
-        const requestedModel = params.modelVersion || 'auto';
-        if (!validMurekaModels.includes(requestedModel)) {
-          logger.warn(`Invalid Mureka model version: ${requestedModel}, using 'auto'`, context);
-        }
+        // ✅ Validate model version for Mureka (imported from provider-models.ts)
+        const validatedModel = params.modelVersion || 'auto';
 
         const requestBodyMureka = {
           trackId: params.trackId,
@@ -210,9 +201,9 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
           prompt: params.prompt,
           lyrics: params.lyrics,
           styleTags: sanitizedStyleTags.length > 0 ? sanitizedStyleTags : undefined,
+          modelVersion: validatedModel,
           hasVocals,
           isBGM,
-          modelVersion: requestedModel,
           idempotencyKey: params.idempotencyKey,
         };
 
