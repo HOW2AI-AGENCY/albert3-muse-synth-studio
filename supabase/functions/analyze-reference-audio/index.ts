@@ -273,6 +273,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
       { name: 'audio_file', params: { audio_file: fileId } },
       { name: 'upload_audio_id', params: { upload_audio_id: fileId } },
       { name: 'file_id', params: { file_id: fileId } },
+      { name: 'url', params: { url: audioUrl } },
     ];
     
     const maxAttempts = strategies.length * 2; // 2 попытки на каждую стратегию

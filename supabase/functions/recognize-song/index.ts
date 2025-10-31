@@ -107,6 +107,7 @@ serve(async (req) => {
       { name: 'audio_file', params: { audio_file: file_id } },
       { name: 'upload_audio_id', params: { upload_audio_id: file_id } },
       { name: 'file_id', params: { file_id: file_id } },
+      { name: 'url', params: { url: audioUrl } },
     ];
     
     let task_id: string | null = null;
