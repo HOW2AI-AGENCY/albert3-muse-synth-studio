@@ -11,7 +11,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createSupabaseAdminClient } from "../_shared/supabase.ts";
-import { createMurekaClient } from "../_shared/mureka.ts";
+import { createMurekaClient, MurekaApiError } from "../_shared/mureka.ts";
 import { logger } from "../_shared/logger.ts";
 import { findOrCreateTrack } from "../_shared/track-helpers.ts";
 import { createSecurityHeaders } from "../_shared/security.ts";
@@ -352,7 +352,11 @@ serve(async (req) => {
 
     if (!normalizedMusic.success || !normalizedMusic.taskId) {
       const errMsg = normalizedMusic.error || 'Mureka API did not return task_id';
-      throw new Error(errMsg);
+      logger.error('🔴 [MUREKA] generateSong returned non-success', { errMsg });
+      return new Response(
+        JSON.stringify({ error: errMsg }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const task_id = normalizedMusic.taskId;
@@ -520,7 +524,26 @@ serve(async (req) => {
 
   } catch (error) {
     logger.error('🔴 Mureka generation error', { error });
-    
+
+    // Surface provider errors (rate limits, credits) with proper status codes
+    if (error instanceof MurekaApiError) {
+      const status = error.statusCode || 502;
+      const message = error.responseBody || error.message || 'Mureka provider error';
+
+      // Map common provider errors
+      if (status === 429) {
+        return new Response(
+          JSON.stringify({ error: 'Mureka rate limit: concurrent requests limit 1. Please wait and retry.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ error: message }),
+        { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Internal server error',
