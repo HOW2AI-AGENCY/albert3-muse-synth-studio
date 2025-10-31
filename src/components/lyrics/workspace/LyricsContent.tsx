@@ -114,7 +114,26 @@ export const LyricsContent: React.FC<LyricsContentProps> = ({
               <p className="text-xs mt-1">Add a section to get started</p>
             )}
           </div>
+        ) : readOnly || !showSectionControls ? (
+          // Static list without drag-and-drop
+          <div className="space-y-3">
+            {document.sections.map((section) => (
+              <LyricsSection
+                key={section.id}
+                section={section}
+                onUpdate={(updates) => onSectionUpdate(section.id, updates)}
+                onDelete={() => onSectionDelete(section.id)}
+                onAddTag={(tag) => onAddTag(section.id, tag)}
+                onRemoveTag={(tagId) => onRemoveTag(section.id, tagId)}
+                showTags={showTags}
+                showControls={showSectionControls}
+                readOnly={readOnly}
+                compact={compact}
+              />
+            ))}
+          </div>
         ) : (
+          // Draggable list
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -124,20 +143,22 @@ export const LyricsContent: React.FC<LyricsContentProps> = ({
               items={document.sections.map(s => s.id)}
               strategy={verticalListSortingStrategy}
             >
-              {document.sections.map((section) => (
-                <LyricsSection
-                  key={section.id}
-                  section={section}
-                  onUpdate={(updates) => onSectionUpdate(section.id, updates)}
-                  onDelete={() => onSectionDelete(section.id)}
-                  onAddTag={(tag) => onAddTag(section.id, tag)}
-                  onRemoveTag={(tagId) => onRemoveTag(section.id, tagId)}
-                  showTags={showTags}
-                  showControls={showSectionControls}
-                  readOnly={readOnly}
-                  compact={compact}
-                />
-              ))}
+              <div className="space-y-3">
+                {document.sections.map((section) => (
+                  <LyricsSection
+                    key={section.id}
+                    section={section}
+                    onUpdate={(updates) => onSectionUpdate(section.id, updates)}
+                    onDelete={() => onSectionDelete(section.id)}
+                    onAddTag={(tag) => onAddTag(section.id, tag)}
+                    onRemoveTag={(tagId) => onRemoveTag(section.id, tagId)}
+                    showTags={showTags}
+                    showControls={showSectionControls}
+                    readOnly={readOnly}
+                    compact={compact}
+                  />
+                ))}
+              </div>
             </SortableContext>
           </DndContext>
         )}

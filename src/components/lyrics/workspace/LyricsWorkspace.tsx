@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, memo } from 'react';
 import { SongDocument, Tag, Section, LintIssue, EditorMode } from '@/types/lyrics';
 import { parseLyrics, exportToSunoFormat, lintDocument, extractTags } from '@/utils/lyricsParser';
 import { LyricsToolbar } from './LyricsToolbar';
@@ -18,7 +18,7 @@ export interface LyricsWorkspaceProps {
   className?: string;
 }
 
-export const LyricsWorkspace: React.FC<LyricsWorkspaceProps> = ({
+export const LyricsWorkspace = memo<LyricsWorkspaceProps>(({
   mode,
   value,
   onChange,
@@ -167,4 +167,6 @@ export const LyricsWorkspace: React.FC<LyricsWorkspaceProps> = ({
       />
     </div>
   );
-};
+});
+
+LyricsWorkspace.displayName = 'LyricsWorkspace';
