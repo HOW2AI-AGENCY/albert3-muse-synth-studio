@@ -229,18 +229,21 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
     const murekaClient = createMurekaClient({ apiKey: this.apiKey });
     const rawQueryResult = await murekaClient.queryTask(taskId);
 
-    logger.debug('[MUREKA] Raw query result', { 
+    logger.info('🔍 [MUREKA] Raw query result received', { 
       taskId,
-      rawResult: rawQueryResult,
+      rawResultType: typeof rawQueryResult,
+      rawResultKeys: rawQueryResult && typeof rawQueryResult === 'object' ? Object.keys(rawQueryResult) : [],
+      rawResultPreview: JSON.stringify(rawQueryResult).substring(0, 800),
     });
 
     // ✅ Use normalizer to handle all response formats
     const normalized = normalizeMurekaMusicResponse(rawQueryResult);
     
     if (!normalized.success) {
-      logger.error('[MUREKA] Failed to normalize query response', {
+      logger.error('🔴 [MUREKA] Failed to normalize query response', {
         taskId,
         error: normalized.error,
+        rawResponseSnippet: JSON.stringify(rawQueryResult).substring(0, 500),
       });
       return {
         status: 'failed',
@@ -248,10 +251,11 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
       };
     }
 
-    logger.debug('[MUREKA] Normalized query result', { 
+    logger.info('✅ [MUREKA] Normalized query result', { 
       taskId,
       status: normalized.status,
       clipsCount: normalized.clips.length,
+      hasAudioInFirstClip: normalized.clips.length > 0 ? !!normalized.clips[0].audio_url : false,
     });
 
     // Map normalized status to ProviderTrackData status
@@ -277,14 +281,17 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
 
     const primaryClip = normalized.clips[0];
     
-    logger.info('🎵 [MUREKA] Primary clip data', {
+    logger.info('🎵 [MUREKA] Primary clip detailed data', {
       taskId,
+      clipId: primaryClip.id,
       hasAudioUrl: !!primaryClip.audio_url,
-      audioUrl: primaryClip.audio_url?.substring(0, 80),
+      audioUrl: primaryClip.audio_url?.substring(0, 100),
+      audioUrlLength: primaryClip.audio_url?.length,
       hasCoverUrl: !!(primaryClip.image_url || primaryClip.cover_url),
       coverUrl: (primaryClip.image_url || primaryClip.cover_url)?.substring(0, 80),
       title: primaryClip.title || primaryClip.name,
       duration: primaryClip.duration,
+      allClipFields: Object.keys(primaryClip),
     });
     
     // ✅ Save ALL clips as track_versions (including primary as variant_index=0)
@@ -395,18 +402,26 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
       }
     }
 
-    // ✅ FIX: Validate audio_url before returning
+    // ✅ FIX: Validate audio_url before returning - this should never happen now due to normalizer validation
     const audioUrl = primaryClip.audio_url;
     if (!audioUrl || audioUrl.trim() === '') {
-      logger.error('[MUREKA] No valid audio_url in completed track', { 
+      logger.error('🔴 [MUREKA] CRITICAL: No valid audio_url in completed track after normalization', { 
         taskId, 
-        clipId: primaryClip.id 
+        clipId: primaryClip.id,
+        primaryClipKeys: Object.keys(primaryClip),
+        rawClipData: primaryClip,
       });
       return {
         status: 'failed',
-        error: 'No audio URL in completed response',
+        error: 'No audio URL in completed response. This should not happen after normalizer validation.',
       };
     }
+    
+    logger.info('✅ [MUREKA] Audio URL validated successfully', {
+      taskId,
+      audioUrlPreview: audioUrl.substring(0, 100),
+      audioUrlValid: true,
+    });
 
     // ✅ Convert duration from milliseconds to seconds if needed
     const durationInSeconds = primaryClip.duration 

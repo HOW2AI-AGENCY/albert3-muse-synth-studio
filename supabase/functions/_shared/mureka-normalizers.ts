@@ -136,11 +136,15 @@ export function normalizeMurekaLyricsResponse(
 export function normalizeMurekaMusicResponse(
   rawResponse: unknown
 ): NormalizedMusicResponse {
-  logger.debug("[MUREKA] Starting music response normalization");
+  logger.info("🔍 [MUREKA-NORMALIZER] Starting music response normalization", {
+    responseType: typeof rawResponse,
+    hasData: !!(rawResponse as any)?.data,
+    rawResponsePreview: JSON.stringify(rawResponse).substring(0, 500),
+  });
 
   try {
     const validated = MurekaMusicResponseSchema.parse(rawResponse);
-    logger.debug("[MUREKA] Schema validation successful");
+    logger.info("✅ [MUREKA-NORMALIZER] Schema validation successful");
 
     // Handle wrapped response
     if ("code" in validated) {
@@ -168,17 +172,31 @@ export function normalizeMurekaMusicResponse(
                     wrappedResponse.data?.clips || 
                     wrappedResponse.data?.data || [];
       
-      // ✅ TRANSFORM: Normalize 'url' -> 'audio_url' for API v7 compatibility
-      const clips = rawClips.map(clip => ({
-        ...clip,
-        audio_url: clip.audio_url || clip.url, // Use 'url' if 'audio_url' not present
-      }));
+      // ✅ TRANSFORM: Normalize audio URL with fallback chain (url → audio_url → flac_url)
+      const clips = rawClips.map((clip, index) => {
+        const audioUrl = clip.url || clip.audio_url || clip.flac_url || '';
+        
+        logger.info(`🎧 [MUREKA-NORMALIZER] Clip ${index} audio URL detection`, {
+          clipId: clip.id,
+          hasUrl: !!clip.url,
+          hasAudioUrl: !!clip.audio_url,
+          hasFlacUrl: !!clip.flac_url,
+          selectedUrl: audioUrl ? audioUrl.substring(0, 80) : 'NONE',
+          allClipFields: Object.keys(clip),
+        });
+        
+        return {
+          ...clip,
+          audio_url: audioUrl,
+        };
+      });
       
-      logger.debug("[MUREKA] Extracted clips from wrapped response", {
+      logger.info("🎵 [MUREKA-NORMALIZER] Extracted clips from wrapped response", {
         count: clips.length,
         source: wrappedResponse.data?.choices ? 'choices (v7)' : 
                 wrappedResponse.data?.clips ? 'clips (legacy)' : 'data (legacy)',
-        hasAudioUrl: clips.length > 0 && !!clips[0].audio_url,
+        hasValidAudio: clips.length > 0 && !!clips[0].audio_url,
+        firstClipKeys: clips.length > 0 ? Object.keys(clips[0]) : [],
       });
 
       // Normalize status: map v7 statuses to our internal format
@@ -192,6 +210,32 @@ export function normalizeMurekaMusicResponse(
 
       // Mureka uses 'id' instead of 'task_id' in initial response
       const taskId = wrappedResponse.data?.task_id || wrappedResponse.data?.id || "unknown";
+
+      // ✅ VALIDATION: If status is 'completed' but no clips have valid audio_url, mark as failed
+      if (normalizedStatus === 'completed' && clips.length > 0) {
+        const validClips = clips.filter(clip => clip.audio_url && clip.audio_url.trim() !== '');
+        
+        if (validClips.length === 0) {
+          logger.error('🔴 [MUREKA-NORMALIZER] Status "completed" but NO valid audio_url in any clip', {
+            taskId,
+            clipsCount: clips.length,
+            clipIds: clips.map(c => c.id),
+          });
+          
+          return {
+            success: false,
+            taskId,
+            clips: [],
+            status: 'failed',
+            error: 'No valid audio_url in completed response',
+          };
+        }
+        
+        logger.info('✅ [MUREKA-NORMALIZER] Completed with valid audio URLs', {
+          taskId,
+          validClipsCount: validClips.length,
+        });
+      }
 
       return {
         success: true,
@@ -208,13 +252,25 @@ export function normalizeMurekaMusicResponse(
                   directResponse.clips || 
                   directResponse.data || [];
     
-    // ✅ TRANSFORM: Normalize 'url' -> 'audio_url' for API v7 compatibility
-    const clips = rawClips.map(clip => ({
-      ...clip,
-      audio_url: clip.audio_url || clip.url, // Use 'url' if 'audio_url' not present
-    }));
+    // ✅ TRANSFORM: Normalize audio URL with fallback chain (url → audio_url → flac_url)
+    const clips = rawClips.map((clip, index) => {
+      const audioUrl = clip.url || clip.audio_url || clip.flac_url || '';
+      
+      logger.info(`🎧 [MUREKA-NORMALIZER] Direct clip ${index} audio URL detection`, {
+        clipId: clip.id,
+        hasUrl: !!clip.url,
+        hasAudioUrl: !!clip.audio_url,
+        hasFlacUrl: !!clip.flac_url,
+        selectedUrl: audioUrl ? audioUrl.substring(0, 80) : 'NONE',
+      });
+      
+      return {
+        ...clip,
+        audio_url: audioUrl,
+      };
+    });
     
-    logger.debug("[MUREKA] Extracted clips from direct response", {
+    logger.info("🎵 [MUREKA-NORMALIZER] Extracted clips from direct response", {
       count: clips.length,
       source: directResponse.choices ? 'choices (v7)' : 
               directResponse.clips ? 'clips (legacy)' : 'data (legacy)',
