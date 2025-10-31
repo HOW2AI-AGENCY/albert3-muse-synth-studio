@@ -18,6 +18,7 @@ serve(async (req: Request): Promise<Response> => {
   try {
     const supabaseAdmin = createSupabaseAdminClient();
     const SUNO_API_KEY = Deno.env.get('SUNO_API_KEY');
+    const MUREKA_API_KEY = Deno.env.get('MUREKA_API_KEY');
 
     // Опционально принимаем список trackIds для точечной синхронизации
     let trackIds: string[] = [];
@@ -39,7 +40,7 @@ serve(async (req: Request): Promise<Response> => {
 
     let query = supabaseAdmin
       .from('tracks')
-      .select('id, title, prompt, user_id, created_at, metadata, status');
+      .select('id, title, prompt, user_id, provider, created_at, metadata, status, suno_task_id, mureka_task_id');
 
     if (trackIds.length > 0) {
       query = query.in('id', trackIds);
@@ -58,7 +59,7 @@ serve(async (req: Request): Promise<Response> => {
     // ✅ ALSO CHECK: Tracks with callback errors
     const { data: errorTracks, error: errorTracksErr } = await supabaseAdmin
       .from('tracks')
-      .select('id, title, prompt, user_id, created_at, metadata, status')
+      .select('id, title, prompt, user_id, provider, created_at, metadata, status, suno_task_id, mureka_task_id')
       .eq('status', 'processing')
       .not('metadata->callback_error', 'is', null)
       .limit(10);
@@ -87,15 +88,23 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const sunoClient = createSunoClient({ apiKey: SUNO_API_KEY });
     const results = [];
 
     for (const track of stuckTracks) {
+      const provider = track.provider || 'suno'; // default to suno for legacy tracks
       const metadata = track.metadata as Record<string, unknown> | null;
-      const taskId = metadata?.suno_task_id as string | undefined;
+      
+      // ✅ Support both Suno and Mureka
+      const taskId = provider === 'mureka' 
+        ? (track.mureka_task_id || metadata?.mureka_task_id as string | undefined)
+        : (track.suno_task_id || metadata?.suno_task_id as string | undefined);
 
       if (!taskId) {
-        logger.warn('⚠️ Track without taskId', { trackId: track.id, title: track.title });
+        logger.warn('⚠️ Track without taskId', { 
+          trackId: track.id, 
+          title: track.title,
+          provider 
+        });
         
         // Отметить как failed если нет taskId и трек старше 15 минут
         const fifteenMinutesAgo = Date.now() - 15 * 60 * 1000;
@@ -104,15 +113,164 @@ serve(async (req: Request): Promise<Response> => {
             .from('tracks')
             .update({ 
               status: 'failed', 
-              error_message: 'No Suno task ID - generation may have failed to start' 
+              error_message: `No ${provider} task ID - generation may have failed to start` 
             })
             .eq('id', track.id);
           
-          results.push({ trackId: track.id, action: 'marked_failed_no_taskid' });
+          logger.info(`✅ Marked track as failed (no task ID)`, { trackId: track.id, provider });
+          results.push({ trackId: track.id, action: 'marked_failed_no_taskid', provider });
         }
         continue;
       }
 
+      // ✅ Process based on provider
+      if (provider === 'mureka') {
+        if (!MUREKA_API_KEY) {
+          logger.warn('⚠️ MUREKA_API_KEY not configured, skipping Mureka track');
+          continue;
+        }
+        
+        try {
+          const { createMurekaClient } = await import('../_shared/mureka.ts');
+          const murekaClient = createMurekaClient({ apiKey: MUREKA_API_KEY });
+          
+          logger.info('📊 Querying Mureka for stuck track', { trackId: track.id, taskId });
+          
+          const queryResult = await murekaClient.queryTask(taskId);
+          
+          logger.info('📥 Mureka query result', { 
+            trackId: track.id, 
+            taskId,
+            code: queryResult.code,
+            status: queryResult.data?.status,
+            clipsCount: queryResult.data?.clips?.length || 0
+          });
+
+          // Handle Mureka response
+          const rawStatus = (queryResult.data as any)?.status;
+          const clips = queryResult.data?.clips || [];
+          
+          if (queryResult.code === 200 && clips.length > 0 && clips[0].audio_url) {
+            const clip = clips[0];
+            
+            // Download and upload to storage
+            const { downloadAndUploadAudio, downloadAndUploadCover } = 
+              await import('../_shared/storage.ts');
+            
+            let audioUrl = clip.audio_url as string;
+            let coverUrl = clip.image_url as string | undefined;
+            
+            try {
+              audioUrl = await downloadAndUploadAudio(
+                clip.audio_url as string,
+                track.user_id,
+                track.id,
+                'main.mp3',
+                supabaseAdmin
+              );
+              
+              if (coverUrl) {
+                coverUrl = await downloadAndUploadCover(
+                  coverUrl,
+                  track.user_id,
+                  track.id,
+                  'cover.webp',
+                  supabaseAdmin
+                );
+              }
+            } catch (uploadError) {
+              logger.error('⚠️ Upload to storage failed, using external URLs', {
+                error: uploadError,
+                trackId: track.id
+              });
+            }
+            
+            await supabaseAdmin
+              .from('tracks')
+              .update({
+                status: 'completed',
+                audio_url: audioUrl,
+                cover_url: coverUrl,
+                duration: (clip.duration as number) || null,
+                metadata: {
+                  ...metadata,
+                  sync_check_at: new Date().toISOString(),
+                  sync_found_completed: true,
+                  source: 'stuck-sync-mureka'
+                }
+              })
+              .eq('id', track.id);
+            
+            logger.info('✅ Mureka track synced to completed', { trackId: track.id });
+            results.push({ 
+              trackId: track.id, 
+              action: 'synced_completed',
+              provider: 'mureka'
+            });
+            
+          } else if (queryResult.code !== 200 || rawStatus === 'failed') {
+            await supabaseAdmin
+              .from('tracks')
+              .update({ 
+                status: 'failed', 
+                error_message: queryResult.msg || 'Mureka generation failed' 
+              })
+              .eq('id', track.id);
+            
+            logger.info('✅ Mureka track marked as failed', { trackId: track.id });
+            results.push({ 
+              trackId: track.id, 
+              action: 'marked_failed',
+              provider: 'mureka',
+              error: queryResult.msg
+            });
+            
+          } else {
+            // Still processing
+            await supabaseAdmin
+              .from('tracks')
+              .update({
+                metadata: {
+                  ...metadata,
+                  sync_check_at: new Date().toISOString(),
+                  sync_status: rawStatus || 'processing',
+                }
+              })
+              .eq('id', track.id);
+            
+            results.push({ 
+              trackId: track.id, 
+              action: 'still_processing',
+              provider: 'mureka',
+              status: rawStatus 
+            });
+          }
+          
+        } catch (error) {
+          logger.error('🔴 Error checking Mureka track', { 
+            trackId: track.id,
+            error: error instanceof Error ? error.message : String(error)
+          });
+          
+          results.push({ 
+            trackId: track.id, 
+            action: 'error',
+            provider: 'mureka',
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+        
+        continue;
+      }
+
+      // ✅ SUNO PROCESSING (existing logic)
+      if (!SUNO_API_KEY) {
+        logger.warn('⚠️ SUNO_API_KEY not configured');
+        continue;
+      }
+      
+      const sunoClient = createSunoClient({ apiKey: SUNO_API_KEY });
+      
       try {
         logger.info('📊 Querying Suno for stuck track', { trackId: track.id, taskId });
         
