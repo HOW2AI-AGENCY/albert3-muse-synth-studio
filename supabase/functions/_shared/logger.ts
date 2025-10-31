@@ -1,7 +1,10 @@
 /**
  * Shared logger utility for Edge Functions
  * Provides consistent structured logging across all functions
+ * Now with Sentry integration for production error tracking
  */
+
+import { captureSentryException, captureSentryMessage, type SentryContext } from "./sentry-edge.ts";
 
 interface LogContext {
   [key: string]: any;
@@ -24,6 +27,12 @@ export const logger = {
       message,
       ...(context && { context })
     }));
+    
+    // ✅ Send to Sentry
+    captureSentryException(
+      new Error(message), 
+      context as SentryContext
+    );
   },
   
   warn: (message: string, context?: LogContext) => {
@@ -33,6 +42,13 @@ export const logger = {
       message,
       ...(context && { context })
     }));
+    
+    // ✅ Send warnings to Sentry
+    captureSentryMessage(
+      message, 
+      'warning', 
+      context as SentryContext
+    );
   },
   
   debug: (message: string, context?: LogContext) => {
@@ -48,9 +64,12 @@ export const logger = {
 /**
  * Sentry integration wrapper for Edge Functions
  * Provides error tracking and performance monitoring
+ * ✅ Now with actual Sentry integration!
  */
 interface SentryOptions {
   transaction?: string;
+  userId?: string;
+  correlationId?: string;
 }
 
 export const withSentry = (
@@ -67,17 +86,33 @@ export const withSentry = (
       logger.info(`Request completed: ${options?.transaction || 'unknown'}`, {
         duration,
         status: response.status,
-        transaction: options?.transaction
+        transaction: options?.transaction,
+        correlationId: options?.correlationId,
       });
       
       return response;
     } catch (error) {
       const duration = Date.now() - startTime;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
       logger.error(`Request failed: ${options?.transaction || 'unknown'}`, {
         duration,
-        error: error instanceof Error ? error.message : String(error),
-        transaction: options?.transaction
+        error: errorMessage,
+        transaction: options?.transaction,
+        correlationId: options?.correlationId,
+        userId: options?.userId,
       });
+      
+      // ✅ Capture in Sentry
+      captureSentryException(
+        error instanceof Error ? error : new Error(errorMessage),
+        {
+          transaction: options?.transaction,
+          correlationId: options?.correlationId,
+          userId: options?.userId,
+          duration,
+        }
+      );
       
       // Re-throw to allow error handling by caller
       throw error;

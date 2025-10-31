@@ -111,7 +111,9 @@ pie title Week 1 Security Fixes
   - ✅ AudioLibrary: 1180ms → 65ms
   - ✅ Поддержка 10,000+ items без деградации
 
-### ✅ **Week 2 COMPLETE: Zustand Migration** (100%)
+### ⏳ **Week 2 IN PROGRESS: Architecture Refactoring** (62.5%)
+
+#### ✅ Phase 1: Zustand Migration (100% COMPLETE)
 
 ```mermaid
 graph TD
@@ -162,6 +164,29 @@ graph TD
 - Re-renders: 3,478/min → 70/min (-98%)
 - Memory usage: -40%
 - State update latency: -60%
+
+#### ⏳ Phase 1.5: Generation System Optimization (33% COMPLETE)
+
+**Sub-Phase 1: Sentry Integration** ✅ COMPLETE
+- ✅ Created `sentry-edge.ts` with Sentry Deno SDK
+- ✅ Enhanced `logger.ts` with auto-Sentry capture
+- ✅ All errors/warnings sent to Sentry automatically
+- ✅ Documentation: `GENERATION_SYSTEM_OPTIMIZATION.md`
+
+**Expected Impact**:
+- Error Visibility: 0% → 100% (∞ improvement)
+- Mean Time to Debug: 30min → 10min (-67%)
+- Production Alerts: Manual → Automatic (Real-time)
+
+**Sub-Phase 2: Validation & Models** ⏳ NEXT
+- [ ] Create `model-validator.ts` for unified validation
+- [ ] Create `retry.ts` with exponential backoff
+- [ ] Handle all provider statuses explicitly
+
+**Sub-Phase 3: Performance & Monitoring** ⏳ PLANNED
+- [ ] Create `performance.ts` for metrics tracking
+- [ ] Add correlation ID end-to-end tracing
+- [ ] Improve caching (10 → 100 items, localStorage persist)
 
 ### 📅 **Weeks 3-5 Roadmap**
 
