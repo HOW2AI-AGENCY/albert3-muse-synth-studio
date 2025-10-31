@@ -7,6 +7,7 @@ import { fetchSunoBalance } from "../_shared/suno-balance.ts";
 import { balanceCache, createCacheHeaders } from "../_shared/cache.ts";
 import { checkRateLimit, rateLimitConfigs } from "../_shared/rate-limit.ts";
 import { performanceMonitor } from "../_shared/performance-monitor.ts";
+import { logger } from "../_shared/logger.ts";
 
 type SunoBalanceAttempt = {
   endpoint: string;
@@ -306,7 +307,7 @@ export const handler = async (req: Request): Promise<Response> => {
     );
 
     if (!allowed) {
-      console.warn('Rate limit exceeded for balance check', { userId });
+      logger.warn('Rate limit exceeded for balance check', { userId });
       return new Response(
         JSON.stringify({ 
           error: 'Too many requests. Please try again later.' 
@@ -352,7 +353,7 @@ export const handler = async (req: Request): Promise<Response> => {
         const body = await req.json();
         provider = body?.provider;
       } catch (e) {
-        console.error('Failed to parse POST body:', e);
+        logger.error('Failed to parse POST body', { error: e instanceof Error ? e.message : String(e) });
       }
     }
 
@@ -368,7 +369,7 @@ export const handler = async (req: Request): Promise<Response> => {
     const cachedBalance = balanceCache.get(cacheKey);
     
     if (cachedBalance) {
-      console.log(`Cache hit for ${provider} balance`);
+      logger.info('Cache hit for balance', { provider });
       const cacheHeaders = createCacheHeaders({ maxAge: 60, staleWhileRevalidate: 300 });
       requestTimer({ cached: true, provider });
       return new Response(JSON.stringify(cachedBalance), {
@@ -413,7 +414,7 @@ export const handler = async (req: Request): Promise<Response> => {
     });
 
   } catch (error) {
-    console.error(`Error in get-balance for provider:`, error);
+    logger.error('Error in get-balance', { error: error instanceof Error ? error.message : String(error) });
     requestTimer({ success: false, error: true });
     const message = error instanceof Error ? error.message : 'An unknown error occurred';
     return new Response(JSON.stringify({ error: message }), {
