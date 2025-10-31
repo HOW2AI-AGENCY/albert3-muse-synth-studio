@@ -1,0 +1,42 @@
+/**
+ * Legacy LyricsInput component - now an alias to LyricsWorkspace
+ * Maintained for backward compatibility
+ */
+import React from 'react';
+import { LyricsWorkspace } from '../workspace/LyricsWorkspace';
+import { useIsMobile } from '@/hooks/use-mobile';
+
+interface LyricsInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  onGenerateLyrics?: () => void;
+  isGenerating?: boolean;
+  placeholder?: string;
+  label?: string;
+  maxLines?: number;
+  compact?: boolean;
+}
+
+export const LyricsInput: React.FC<LyricsInputProps> = ({
+  value,
+  onChange,
+  onGenerateLyrics,
+  isGenerating,
+  compact = false,
+}) => {
+  const isMobile = useIsMobile();
+
+  return (
+    <LyricsWorkspace
+      mode="edit"
+      value={value}
+      onChange={onChange}
+      onGenerate={onGenerateLyrics}
+      readOnly={isGenerating}
+      showAITools={false}
+      showTags={true}
+      showSectionControls={true}
+      compact={compact || isMobile}
+    />
+  );
+};

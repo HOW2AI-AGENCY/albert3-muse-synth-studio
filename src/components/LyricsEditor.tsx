@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { sanitizeLyrics } from "@/utils/sanitizeLyrics";
-import { StructuredLyrics } from "./lyrics/StructuredLyrics";
+import { StructuredLyrics } from "./lyrics/legacy/StructuredLyrics";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";

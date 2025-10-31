@@ -7,7 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Music, FileAudio, History, AlertCircle } from '@/utils/iconImports';
 import { PromptInput } from './PromptInput';
-import { LyricsInput } from './LyricsInput';
+import { LyricsInput } from '@/components/lyrics/legacy/LyricsInput';
 import { AdvancedControls } from './AdvancedControls';
 import { StyleTagsInput } from './StyleTagsInput';
 import { StyleRecommendationsInline } from '@/components/generator/StyleRecommendationsInline';

@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Check, Loader2 } from '@/utils/iconImports';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
-import { StructuredLyrics } from './StructuredLyrics';
+import { StructuredLyrics } from './legacy/StructuredLyrics';
 
 interface LyricsVariant {
   id: string;

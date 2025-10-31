@@ -11,7 +11,7 @@ import type { TrackVersionMetadata } from "@/features/tracks/components/TrackVer
 import { TrackVersionSelector } from "@/features/tracks/ui/TrackVersionSelector";
 import { CompactTrackHero } from "@/features/tracks/ui/CompactTrackHero";
 import { EmptyStateCard } from "@/components/layout/EmptyStateCard";
-import { StructuredLyrics } from "@/components/lyrics/StructuredLyrics";
+import { StructuredLyrics } from "@/components/lyrics/legacy/StructuredLyrics";
 import { StyleRecommendationsPanel } from "./StyleRecommendationsPanel";
 import { useAudioPlayer } from "@/contexts/audio-player";
 import { AnalyticsService } from "@/services/analytics.service";

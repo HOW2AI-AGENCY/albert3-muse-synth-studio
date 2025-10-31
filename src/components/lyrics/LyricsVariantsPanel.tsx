@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/utils/logger";
 import { Copy, Check, FileText, Loader2 } from "@/utils/iconImports";
-import { StructuredLyrics } from "./StructuredLyrics";
+import { StructuredLyrics } from "./legacy/StructuredLyrics";
 
 interface LyricsVariant {
   id: string;
