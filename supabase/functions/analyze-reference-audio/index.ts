@@ -277,6 +277,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
     
     const maxAttempts = strategies.length * 2; // 2 попытки на каждую стратегию
     let recognitionTaskId: string | null = null;
+    let immediateResult: any = null; // Для синхронных ответов
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const strategy = strategies[attempt % strategies.length];
@@ -291,13 +292,35 @@ const mainHandler = async (req: Request): Promise<Response> => {
         
         const res = await murekaClient.recognizeSong(strategy.params);
         
-        if (res.code === 200 && res.data?.task_id) {
-          recognitionTaskId = res.data.task_id;
-          logger.info('[ANALYZE-REF] ✅ Recognition succeeded with strategy', { 
-            strategy: strategy.name,
-            taskId: recognitionTaskId
-          });
-          break;
+        logger.debug('[ANALYZE-REF] 📋 Recognition response', {
+          strategy: strategy.name,
+          code: res.code,
+          hasTaskId: !!res.data?.task_id,
+          hasResult: !!res.data?.result,
+          responseKeys: res.data ? Object.keys(res.data) : []
+        });
+        
+        if (res.code === 200) {
+          // Проверяем асинхронный формат (с task_id)
+          if (res.data?.task_id) {
+            recognitionTaskId = res.data.task_id;
+            logger.info('[ANALYZE-REF] ✅ Recognition task created (async)', { 
+              strategy: strategy.name,
+              taskId: recognitionTaskId
+            });
+            break;
+          }
+          
+          // Проверяем синхронный формат (immediate result)
+          if (res.data && typeof res.data === 'object' && !res.data.task_id) {
+            immediateResult = res.data;
+            logger.info('[ANALYZE-REF] ✅ Recognition completed immediately (sync)', { 
+              strategy: strategy.name,
+              hasLyricsSections: !!(res.data as any).lyrics_sections,
+              hasDuration: !!(res.data as any).duration
+            });
+            break;
+          }
         }
         
         logger.warn('[ANALYZE-REF] ⚠️ Unexpected recognition response', { 
@@ -344,7 +367,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
       }
 
       // Exponential backoff между попытками
-      if (attempt < maxAttempts - 1) {
+      if (attempt < maxAttempts - 1 && !recognitionTaskId && !immediateResult) {
         const backoff = Math.min(1000 * Math.pow(1.5, attempt), 5000);
         logger.info('[ANALYZE-REF] ⏳ Waiting before next attempt', { 
           backoffMs: Math.round(backoff),
@@ -354,9 +377,55 @@ const mainHandler = async (req: Request): Promise<Response> => {
       }
     }
 
-    if (!recognitionTaskId) {
+    if (!recognitionTaskId && !immediateResult) {
       logger.error('[ANALYZE-REF] ❌ Recognition failed after all strategies');
       throw new Error('Mureka song recognition failed to start after trying all parameter combinations');
+    }
+    
+    // Если получили immediate result, пропускаем описание (Mureka не поддерживает параллельные запросы)
+    if (immediateResult) {
+      logger.warn('[ANALYZE-REF] ⚠️ Got immediate result instead of task_id - skipping description', {
+        hasLyrics: !!immediateResult.lyrics_sections
+      });
+      
+      // Создаём запись с completed статусом и сразу сохраняем результат
+      const { data: recognitionRecord, error: recognitionError } = await supabaseAdmin
+        .from('song_recognitions')
+        .insert({
+          user_id: userId,
+          audio_file_url: audioUrl,
+          mureka_file_id: fileId,
+          mureka_task_id: 'sync_result',
+          status: 'completed',
+          metadata: {
+            sync_response: true,
+            immediate_result: immediateResult
+          }
+        })
+        .select()
+        .single();
+
+      if (recognitionError || !recognitionRecord) {
+        logger.error('[ANALYZE-REF] Failed to create recognition record', { recognitionError });
+        throw new Error('Failed to create recognition record');
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          recognitionId: recognitionRecord.id,
+          uploadedFileId: fileId,
+          analysis: {
+            recognition: {
+              immediate: true
+            }
+          }
+        } as AnalyzeReferenceAudioResponse),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
     
     logger.info('[ANALYZE-REF] ✅ Recognition task initiated', { taskId: recognitionTaskId });
@@ -474,7 +543,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
 
     // ✅ Используем Promise без await для background execution
     pollMurekaAnalysis(
-      recognitionTaskId,
+      recognitionTaskId!,  // Non-null assertion safe here due to line 380 check
       descriptionResult.data.task_id,
       recognitionRecord.id,
       descriptionRecord.id,
