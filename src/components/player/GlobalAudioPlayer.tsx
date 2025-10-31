@@ -10,7 +10,7 @@ import { formatTime } from "@/utils/formatters";
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1, Music, X, List, Star } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -168,8 +168,7 @@ const GlobalAudioPlayer = memo(() => {
   return (
     <>
       <AudioController />
-      <TooltipProvider delayDuration={500}>
-    <div 
+    <div
       ref={playerRef}
       className={`fixed bottom-0 left-0 right-0 z-[60] transition-all duration-500 ease-out ${
         isVisible 
@@ -425,7 +424,6 @@ const GlobalAudioPlayer = memo(() => {
         </div>
       </div>
     </div>
-    </TooltipProvider>
     </>
   );
 });

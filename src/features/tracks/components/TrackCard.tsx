@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LazyImage } from "@/components/ui/lazy-image";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { fadeInUp } from "@/utils/animations";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Play, Pause, Download, Heart, Share2, Clock, Music, AlertTriangle, RefreshCw, Trash2, MoreVertical, Split, Expand, Mic2, Globe, FileAudio, Mic, UserPlus } from "@/utils/iconImports";
@@ -117,32 +117,28 @@ const GenerationProgress: React.FC<{
       </div>
       
       {(onSync || onDelete) && <div className="flex gap-2 mt-3">
-          {onSync && <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button size="icon" variant="secondary" onClick={e => {
-              e.stopPropagation();
-              onSync(track.id);
-            }} className="h-8 w-8">
-                    <RefreshCw className="w-4 h-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Обновить статус</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>}
-          {onDelete && <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button size="icon" variant="destructive" onClick={e => {
-              e.stopPropagation();
-              onDelete(track.id);
-            }} className="h-8 w-8">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Удалить</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>}
+          {onSync && <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="icon" variant="secondary" onClick={e => {
+            e.stopPropagation();
+            onSync(track.id);
+          }} className="h-8 w-8">
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Обновить статус</TooltipContent>
+            </Tooltip>}
+          {onDelete && <Tooltip>
+              <TooltipTrigger asChild>
+                <Button size="icon" variant="destructive" onClick={e => {
+            e.stopPropagation();
+            onDelete(track.id);
+          }} className="h-8 w-8">
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Удалить</TooltipContent>
+            </Tooltip>}
         </div>}
     </div>;
 };
@@ -164,32 +160,28 @@ const FailedState: React.FC<{
     </p>
     
     <div className="flex gap-2">
-      {onRetry && <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button size="icon" variant="secondary" onClick={e => {
+      {onRetry && <Tooltip>
+          <TooltipTrigger asChild>
+            <Button size="icon" variant="secondary" onClick={e => {
             e.stopPropagation();
             onRetry(trackId);
           }} className="h-8 w-8">
-                <RefreshCw className="w-4 h-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Повторить</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>}
-      {onDelete && <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button size="icon" variant="destructive" onClick={e => {
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Повторить</TooltipContent>
+        </Tooltip>}
+      {onDelete && <Tooltip>
+          <TooltipTrigger asChild>
+            <Button size="icon" variant="destructive" onClick={e => {
             e.stopPropagation();
             onDelete(trackId);
           }} className="h-8 w-8">
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Удалить</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>}
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Удалить</TooltipContent>
+        </Tooltip>}
     </div>
   </div>;
 const TrackCardComponent = ({
@@ -409,30 +401,26 @@ const TrackCardComponent = ({
         {track.status === 'failed' && <FailedState message={track.error_message} trackId={track.id} onRetry={onRetry} onDelete={onDelete} />}
 
         {/* Vocal/Instrumental badge */}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="absolute top-2 left-2 z-10 bg-background/90 backdrop-blur-sm p-1.5 rounded-md cursor-help">
-                {track.has_vocals ? <Mic className="h-4 w-4 text-primary" /> : <Music className="h-4 w-4 text-muted-foreground" />}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              {track.has_vocals ? 'С вокалом' : 'Инструментал'}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="absolute top-2 left-2 z-10 bg-background/90 backdrop-blur-sm p-1.5 rounded-md cursor-help">
+              {track.has_vocals ? <Mic className="h-4 w-4 text-primary" /> : <Music className="h-4 w-4 text-muted-foreground" />}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            {track.has_vocals ? 'С вокалом' : 'Инструментал'}
+          </TooltipContent>
+        </Tooltip>
 
         {/* ✅ ЭТАП 1: Reference Audio Badge */}
-        {track.metadata?.reference_audio_url && <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="absolute bottom-2 left-2 z-10 bg-amber-500/90 backdrop-blur-sm p-1.5 rounded-md cursor-help">
-                  <FileAudio className="h-4 w-4 text-white" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>Создано с аудио-референсом</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>}
+        {track.metadata?.reference_audio_url && <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="absolute bottom-2 left-2 z-10 bg-amber-500/90 backdrop-blur-sm p-1.5 rounded-md cursor-help">
+                <FileAudio className="h-4 w-4 text-white" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>Создано с аудио-референсом</TooltipContent>
+          </Tooltip>}
 
         {/* Variant selector в правом верхнем углу */}
         {track.status === 'completed' && <div className="absolute top-2 right-2 z-10">
@@ -457,14 +445,12 @@ const TrackCardComponent = ({
                 <h3 className="font-semibold text-sm leading-tight line-clamp-1 group-hover:text-primary">
                   {displayedVersion.title || track.title}
                 </h3>
-              {hasStems && <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Split className="h-3.5 w-3.5 text-primary shrink-0" />
-                    </TooltipTrigger>
-                    <TooltipContent>Доступны стемы</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>}
+              {hasStems && <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Split className="h-3.5 w-3.5 text-primary shrink-0" />
+                  </TooltipTrigger>
+                  <TooltipContent>Доступны стемы</TooltipContent>
+                </Tooltip>}
             </div>
             
             {/* Phase 1.2: Version badges */}
@@ -483,16 +469,14 @@ const TrackCardComponent = ({
             {formattedDuration && <div className="flex items-center gap-1"><Clock className="w-3 h-3" /><span>{formattedDuration}</span></div>}
           </div>
           <div className="flex items-center">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="w-6 h-6" onClick={handleLikeClick} aria-label={isLiked ? "Убрать из избранного" : "В избранное"}>
-                    <Heart className={cn("w-3 h-3", isLiked && "fill-red-500 text-red-500")} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{isLiked ? "Убрать из избранного" : "В избранное"}</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" className="w-6 h-6" onClick={handleLikeClick} aria-label={isLiked ? "Убрать из избранного" : "В избранное"}>
+                  <Heart className={cn("w-3 h-3", isLiked && "fill-red-500 text-red-500")} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{isLiked ? "Убрать из избранного" : "В избранное"}</TooltipContent>
+            </Tooltip>
             
             {track.status === 'completed' && <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -547,28 +531,26 @@ const TrackCardComponent = ({
                   </DropdownMenuItem>
                   
                   {/* ✅ Создать кавер - используем МАСТЕР */}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <div>
-                          <DropdownMenuItem onClick={e => {
-                          e.stopPropagation();
-                          if (isSunoTrack) onCover?.(operationTargetId);
-                        }} disabled={!onCover || isMurekaTrack || !operationTargetVersion.audio_url} className={isMurekaTrack ? 'opacity-50' : ''}>
-                            <Mic2 className="w-4 h-4 mr-2" />
-                            Создать кавер {masterVersion && masterVersion.id !== track.id && `(${getVersionShortLabel({
-                            versionNumber: masterVersion.versionNumber,
-                            isOriginal: masterVersion.isOriginal,
-                            isMaster: true
-                          })})`}
-                          </DropdownMenuItem>
-                        </div>
-                      </TooltipTrigger>
-                      {isMurekaTrack && <TooltipContent side="left">
-                          Кавер доступен только для Suno треков
-                        </TooltipContent>}
-                    </Tooltip>
-                  </TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div>
+                        <DropdownMenuItem onClick={e => {
+                        e.stopPropagation();
+                        if (isSunoTrack) onCover?.(operationTargetId);
+                      }} disabled={!onCover || isMurekaTrack || !operationTargetVersion.audio_url} className={isMurekaTrack ? 'opacity-50' : ''}>
+                          <Mic2 className="w-4 h-4 mr-2" />
+                          Создать кавер {masterVersion && masterVersion.id !== track.id && `(${getVersionShortLabel({
+                          versionNumber: masterVersion.versionNumber,
+                          isOriginal: masterVersion.isOriginal,
+                          isMaster: true
+                        })})`}
+                        </DropdownMenuItem>
+                      </div>
+                    </TooltipTrigger>
+                    {isMurekaTrack && <TooltipContent side="left">
+                        Кавер доступен только для Suno треков
+                      </TooltipContent>}
+                  </Tooltip>
                   
                   {/* ✅ Добавить вокал - используем МАСТЕР */}
                   {!track.has_vocals && <DropdownMenuItem onClick={e => {

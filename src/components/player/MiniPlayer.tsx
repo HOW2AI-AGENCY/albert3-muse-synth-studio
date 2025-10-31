@@ -1,7 +1,7 @@
 import { memo, useCallback, useMemo } from "react";
 import { Play, Pause, SkipBack, SkipForward, X, List, Star } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ResponsiveStack } from "@/components/ui/ResponsiveLayout";
 import { useAudioPlayerStore, useCurrentTrack, useIsPlaying } from "@/stores/audioPlayerStore";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
@@ -71,7 +71,6 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
 
   return (
-    <TooltipProvider delayDuration={500}>
     <div
       data-testid="mini-player"
       onClick={handleExpand}
@@ -242,7 +241,6 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
         </div>
       </ResponsiveStack>
     </div>
-    </TooltipProvider>
   );
 });
 
