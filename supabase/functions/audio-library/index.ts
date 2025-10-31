@@ -1,5 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.43.4';
-import { corsHeaders } from '../_shared/cors.ts';
+import { createCorsHeaders } from '../_shared/cors.ts';
+
+const corsHeaders = createCorsHeaders();
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -233,7 +235,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error in audio-library function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

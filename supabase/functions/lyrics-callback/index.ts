@@ -219,7 +219,44 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // ✅ NEW: Логирование в lyrics_generation_log
+    // ✅ NEW: Auto-save ALL generated lyrics to saved_lyrics
+    if (success && completeVariants.length > 0) {
+      try {
+        const savedLyricsEntries = completeVariants.map((variant) => ({
+          user_id: job.user_id,
+          job_id: job.id,
+          variant_id: null,
+          title: sanitizeText(variant.title) || `Лирика ${new Date().toLocaleString('ru-RU')}`,
+          content: sanitizeText(variant.text) || '',
+          prompt: job.prompt,
+          tags: ['auto-generated'],
+          language: 'ru',
+          is_favorite: false,
+          folder: null,
+        }));
+
+        const { data: savedLyrics, error: saveError } = await supabase
+          .from('saved_lyrics')
+          .insert(savedLyricsEntries)
+          .select('id');
+
+        if (saveError) {
+          console.error('⚠️ [LYRICS-CALLBACK] Failed to auto-save lyrics to library', {
+            jobId: job.id,
+            error: saveError,
+          });
+        } else {
+          console.log('✅ [LYRICS-CALLBACK] Auto-saved lyrics to library', {
+            jobId: job.id,
+            saved_count: savedLyrics?.length || 0,
+          });
+        }
+      } catch (saveError) {
+        console.error('⚠️ [LYRICS-CALLBACK] Error auto-saving lyrics', saveError);
+      }
+    }
+
+    // ✅ Логирование в lyrics_generation_log
     if (job.user_id && job.prompt) {
       try {
         const firstCompleteVariant = completeVariants[0];
