@@ -197,19 +197,33 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
     
     logger.info(`🔄 Updating track with ${taskIdField}`, { trackId, taskId, provider: this.providerName });
     
+    // Fetch existing metadata
+    const { data: existingTrack } = await this.supabase
+      .from('tracks')
+      .select('metadata')
+      .eq('id', trackId)
+      .single();
+
+    const existingMetadata = (existingTrack?.metadata as Record<string, unknown>) || {};
+    
     const updateData: any = {
-      [taskIdField]: taskId,
       status: 'processing',
       metadata: {
+        ...existingMetadata,
         [taskIdField]: taskId,
         started_at: new Date().toISOString(),
         polling_attempts: 0,
       },
     };
 
-    // Only set suno_id for Suno provider
+    // Only set suno_id for Suno provider (suno_id column exists)
     if (this.providerName === 'suno') {
       updateData.suno_id = taskId;
+    }
+    
+    // For Mureka, set mureka_task_id column (mureka_task_id column exists)
+    if (this.providerName === 'mureka') {
+      updateData.mureka_task_id = taskId;
     }
 
     const { error } = await this.supabase

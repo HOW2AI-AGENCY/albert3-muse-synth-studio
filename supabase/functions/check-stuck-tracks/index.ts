@@ -40,7 +40,7 @@ serve(async (req: Request): Promise<Response> => {
 
     let query = supabaseAdmin
       .from('tracks')
-      .select('id, title, prompt, user_id, provider, created_at, metadata, status, mureka_task_id');
+      .select('id, title, prompt, user_id, provider, created_at, metadata, status, mureka_task_id, suno_id');
 
     if (trackIds.length > 0) {
       query = query.in('id', trackIds);
@@ -59,7 +59,7 @@ serve(async (req: Request): Promise<Response> => {
     // ✅ ALSO CHECK: Tracks with callback errors
     const { data: errorTracks, error: errorTracksErr } = await supabaseAdmin
       .from('tracks')
-      .select('id, title, prompt, user_id, provider, created_at, metadata, status, mureka_task_id')
+      .select('id, title, prompt, user_id, provider, created_at, metadata, status, mureka_task_id, suno_id')
       .eq('status', 'processing')
       .not('metadata->>callback_error', 'is', null)
       .limit(10);
@@ -95,37 +95,65 @@ serve(async (req: Request): Promise<Response> => {
       const metadata = track.metadata as Record<string, unknown> | null;
       const md = (metadata || {}) as Record<string, any>;
       
-      // ✅ Support both Suno and Mureka
+      // ✅ Support both Suno and Mureka - improved extraction
       const taskId = provider === 'mureka' 
         ? (track.mureka_task_id || (md.mureka_task_id as string | undefined))
-        : ((md.suno_task_id as string | undefined) 
-          || (md.task_id as string | undefined)
-          || (md.taskId as string | undefined)
-          || (md.sunoTaskId as string | undefined));
+        : (
+            (md.suno_task_id as string | undefined) ||      // Priority 1: metadata.suno_task_id
+            track.suno_id ||                                 // Priority 2: suno_id column (legacy)
+            (md.task_id as string | undefined) ||            // Priority 3: generic task_id
+            (md.taskId as string | undefined) ||             // Priority 4: camelCase variant
+            (md.sunoTaskId as string | undefined)            // Priority 5: explicit sunoTaskId
+          );
 
       if (!taskId) {
-        logger.warn('⚠️ Track without taskId', { 
+        logger.error('🔴 No taskId found for stuck track', { 
           trackId: track.id, 
           title: track.title,
-          provider 
+          provider,
+          metadata_keys: Object.keys(md),
+          mureka_task_id: track.mureka_task_id,
+          suno_id: track.suno_id,
+          created_at: track.created_at
         });
         
         // Отметить как failed если нет taskId и трек старше 15 минут
         const fifteenMinutesAgo = Date.now() - 15 * 60 * 1000;
         if (new Date(track.created_at).getTime() < fifteenMinutesAgo) {
+          logger.info('⚠️ Marking old stuck track without taskId as failed', { 
+            trackId: track.id, 
+            provider,
+            age_minutes: Math.round((Date.now() - new Date(track.created_at).getTime()) / 60000)
+          });
+          
           await supabaseAdmin
             .from('tracks')
             .update({ 
               status: 'failed', 
-              error_message: `No ${provider} task ID - generation may have failed to start` 
+              error_message: `No ${provider} task ID found. Track may have failed during initialization.`,
+              metadata: {
+                ...md,
+                marked_failed_by: 'check-stuck-tracks',
+                marked_failed_at: new Date().toISOString(),
+                failed_reason: 'missing_task_id'
+              }
             })
             .eq('id', track.id);
           
-          logger.info(`✅ Marked track as failed (no task ID)`, { trackId: track.id, provider });
+          logger.info(`✅ Track marked as failed (no task ID)`, { trackId: track.id, provider });
           results.push({ trackId: track.id, action: 'marked_failed_no_taskid', provider });
+        } else {
+          results.push({ trackId: track.id, action: 'skipped_too_young', provider });
         }
         continue;
       }
+
+      logger.info(`🔍 Processing stuck ${provider} track`, { 
+        trackId: track.id, 
+        taskId, 
+        title: track.title,
+        created_at: track.created_at 
+      });
 
       // ✅ Process based on provider
       if (provider === 'mureka') {
@@ -213,15 +241,37 @@ serve(async (req: Request): Promise<Response> => {
             });
             
           } else if (queryResult.code !== 200 || rawStatus === 'failed') {
-            await supabaseAdmin
+            logger.info('🔍 Attempting to mark Mureka track as failed', { 
+              trackId: track.id, 
+              provider: 'mureka',
+              reason: 'api_reported_failure',
+              api_code: queryResult.code,
+              api_msg: queryResult.msg
+            });
+            
+            const { error: updateError } = await supabaseAdmin
               .from('tracks')
               .update({ 
                 status: 'failed', 
-                error_message: queryResult.msg || 'Mureka generation failed' 
+                error_message: queryResult.msg || 'Mureka generation failed',
+                metadata: {
+                  ...metadata,
+                  marked_failed_by: 'check-stuck-tracks',
+                  marked_failed_at: new Date().toISOString()
+                }
               })
               .eq('id', track.id);
             
-            logger.info('✅ Mureka track marked as failed', { trackId: track.id });
+            if (updateError) {
+              logger.error('❌ Failed to update Mureka track status', { 
+                trackId: track.id,
+                error: updateError.message,
+                code: updateError.code 
+              });
+            } else {
+              logger.info('✅ Mureka track marked as failed', { trackId: track.id });
+            }
+            
             results.push({ 
               trackId: track.id, 
               action: 'marked_failed',
@@ -265,7 +315,14 @@ serve(async (req: Request): Promise<Response> => {
           const isNotFound = errMsg.includes('404') || errMsg.toLowerCase().includes('not found') || errMsg.includes('All retry attempts failed');
 
           if (isNotFound) {
-            await supabaseAdmin
+            logger.info('🔍 Attempting to mark Mureka track as failed (404)', { 
+              trackId: track.id, 
+              provider: 'mureka',
+              reason: '404_not_found',
+              error_excerpt: errMsg.substring(0, 100)
+            });
+            
+            const { error: updateError } = await supabaseAdmin
               .from('tracks')
               .update({
                 status: 'failed',
@@ -274,12 +331,23 @@ serve(async (req: Request): Promise<Response> => {
                   ...metadata,
                   sync_check_at: new Date().toISOString(),
                   sync_status: 'failed',
-                  sync_error: errMsg
+                  sync_error: errMsg,
+                  marked_failed_by: 'check-stuck-tracks',
+                  marked_failed_at: new Date().toISOString()
                 }
               })
               .eq('id', track.id);
 
-            logger.info('✅ Mureka track marked as failed due to 404/not found', { trackId: track.id });
+            if (updateError) {
+              logger.error('❌ Failed to update Mureka track status (404)', { 
+                trackId: track.id,
+                error: updateError.message,
+                code: updateError.code 
+              });
+            } else {
+              logger.info('✅ Mureka track marked as failed due to 404/not found', { trackId: track.id });
+            }
+
             results.push({ trackId: track.id, action: 'marked_failed', provider: 'mureka', error: errMsg });
           } else {
             // Just annotate metadata so the job can revisit later
