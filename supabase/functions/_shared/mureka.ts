@@ -628,6 +628,11 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
       
       if (!response.ok) {
         const errorBody = await response.text();
+        logger.error('❌ [MUREKA] File upload HTTP error', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorBody
+        });
         throw new MurekaApiError(
           `File upload failed (${response.status}): ${errorBody}`,
           response.status,
@@ -637,9 +642,53 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
       
       const result = await response.json();
       
+      // ✅ CRITICAL: Validate response structure before logging
+      if (!result || typeof result !== 'object') {
+        logger.error('❌ [MUREKA] Invalid upload response', { result });
+        throw new MurekaApiError(
+          'Invalid response from Mureka API: response is not an object',
+          500,
+          JSON.stringify(result)
+        );
+      }
+      
+      // ✅ Log full response for debugging
+      logger.info('📦 [MUREKA] Upload response received', { 
+        code: result.code,
+        msg: result.msg,
+        hasData: !!result.data,
+        dataKeys: result.data ? Object.keys(result.data) : []
+      });
+      
+      // ✅ Check for API error in response
+      if (result.code !== 200) {
+        logger.error('❌ [MUREKA] File upload API error', {
+          code: result.code,
+          msg: result.msg,
+          data: result.data
+        });
+        throw new MurekaApiError(
+          `File upload failed: ${result.msg || 'Unknown error'}`,
+          result.code,
+          JSON.stringify(result)
+        );
+      }
+      
+      // ✅ Validate required fields
+      if (!result.data || !result.data.file_id) {
+        logger.error('❌ [MUREKA] Missing file_id in response', { 
+          result 
+        });
+        throw new MurekaApiError(
+          'File upload response missing file_id',
+          500,
+          JSON.stringify(result)
+        );
+      }
+      
       logger.info('✅ [MUREKA] File uploaded', { 
-        file_id: result.data?.file_id,
-        file_size: result.data?.file_size
+        file_id: result.data.file_id,
+        file_size: result.data.file_size
       });
       
       return result;
