@@ -249,7 +249,8 @@ const mainHandler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const uploadResult = await murekaClient.uploadFile(fileForUpload, { purpose: 'audio' });
+    // Загружаем файл БЕЗ указания purpose (универсальная загрузка)
+    const uploadResult = await murekaClient.uploadFile(fileForUpload);
 
     if (uploadResult.code !== 200 || !uploadResult.data?.file_id) {
       throw new Error('Mureka file upload failed');
@@ -265,55 +266,103 @@ const mainHandler = async (req: Request): Promise<Response> => {
     // STEP 2: Запуск Song Recognition (последовательно, т.к. Mureka лимит 1 concurrent request)
     // ============================================================================
 
-    logger.info('[ANALYZE-REF] 🔍 Initiating song recognition');
-    const maxAttempts = 4;
+    logger.info('[ANALYZE-REF] 🔍 Initiating song recognition with smart retry');
+    
+    // Умная стратегия с несколькими вариантами параметров
+    const strategies = [
+      { name: 'audio_file', params: { audio_file: fileId } },
+      { name: 'upload_audio_id', params: { upload_audio_id: fileId } },
+      { name: 'file_id', params: { file_id: fileId } },
+    ];
+    
+    const maxAttempts = strategies.length * 2; // 2 попытки на каждую стратегию
     let recognitionTaskId: string | null = null;
 
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const strategy = strategies[attempt % strategies.length];
+      
       try {
-        logger.info('[ANALYZE-REF] 🔁 Recognition attempt', { attempt });
-        const res = await murekaClient.recognizeSong({ upload_audio_id: fileId });
+        logger.info('[ANALYZE-REF] 🔁 Recognition attempt', { 
+          attempt: attempt + 1,
+          maxAttempts,
+          strategy: strategy.name,
+          params: strategy.params
+        });
+        
+        const res = await murekaClient.recognizeSong(strategy.params);
+        
         if (res.code === 200 && res.data?.task_id) {
           recognitionTaskId = res.data.task_id;
+          logger.info('[ANALYZE-REF] ✅ Recognition succeeded with strategy', { 
+            strategy: strategy.name,
+            taskId: recognitionTaskId
+          });
           break;
         }
-        logger.warn('[ANALYZE-REF] ⚠️ Unexpected recognition response', { res });
+        
+        logger.warn('[ANALYZE-REF] ⚠️ Unexpected recognition response', { 
+          strategy: strategy.name,
+          code: res.code,
+          msg: res.msg
+        });
       } catch (err) {
-        const body = (err && typeof err === 'object' && 'responseBody' in (err as any)) ? (err as any).responseBody as string : '';
-        const statusCode = (err && typeof err === 'object' && 'statusCode' in (err as any)) ? (err as any).statusCode as number : undefined;
-        const maybeNotFound = statusCode === 400 && (body?.includes('not found') || body?.includes('Invalid Request'));
-
-        // Fallback to alternative param name some API versions expect
-        if (attempt >= 2 && maybeNotFound) {
-          try {
-            logger.info('[ANALYZE-REF] 🔁 Fallback recognition using audio_file');
-            const alt = await murekaClient.recognizeSong({ audio_file: fileId });
-            if (alt.code === 200 && alt.data?.task_id) {
-              recognitionTaskId = alt.data.task_id;
-              break;
-            }
-          } catch (_) {
-            // ignore and continue retries
+        const statusCode = (err && typeof err === 'object' && 'statusCode' in err) 
+          ? (err as any).statusCode 
+          : undefined;
+        const responseBody = (err && typeof err === 'object' && 'responseBody' in err) 
+          ? (err as any).responseBody 
+          : String(err);
+        
+        logger.error('[ANALYZE-REF] ❌ Recognition attempt failed', {
+          strategy: strategy.name,
+          attempt: attempt + 1,
+          statusCode,
+          errorBodyPreview: typeof responseBody === 'string' ? responseBody.slice(0, 300) : responseBody
+        });
+        
+        // Специфичная обработка ошибок Mureka
+        if (typeof responseBody === 'string') {
+          if (responseBody.includes('not found')) {
+            logger.warn('[ANALYZE-REF] 📋 File not found - trying next strategy');
+            continue;
           }
+          
+          if (responseBody.includes('Invalid Request')) {
+            logger.warn('[ANALYZE-REF] 📋 Invalid request format - trying next strategy');
+            continue;
+          }
+        }
+        
+        // Критичные ошибки - прерываем попытки
+        if (statusCode === 401 || statusCode === 403) {
+          throw new Error(`Mureka authentication failed: ${responseBody}`);
+        }
+        
+        if (statusCode === 402) {
+          throw new Error('Mureka: insufficient credits');
         }
       }
 
-      if (attempt < maxAttempts) {
-        const backoff = 500 * attempt;
-        logger.info('[ANALYZE-REF] ⏳ Waiting before next recognition attempt', { backoffMs: backoff });
+      // Exponential backoff между попытками
+      if (attempt < maxAttempts - 1) {
+        const backoff = Math.min(1000 * Math.pow(1.5, attempt), 5000);
+        logger.info('[ANALYZE-REF] ⏳ Waiting before next attempt', { 
+          backoffMs: Math.round(backoff),
+          nextStrategy: strategies[(attempt + 1) % strategies.length].name
+        });
         await new Promise(r => setTimeout(r, backoff));
       }
     }
 
     if (!recognitionTaskId) {
-      logger.error('[ANALYZE-REF] ❌ Recognition start failed after retries');
-      throw new Error('Mureka song recognition failed to start');
+      logger.error('[ANALYZE-REF] ❌ Recognition failed after all strategies');
+      throw new Error('Mureka song recognition failed to start after trying all parameter combinations');
     }
     
     logger.info('[ANALYZE-REF] ✅ Recognition task initiated', { taskId: recognitionTaskId });
 
-    // Небольшая задержка перед следующим запросом (для безопасности)
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Увеличенная задержка перед следующим запросом (Mureka concurrent limit = 1)
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     // ============================================================================
     // STEP 3: Запуск Song Description (последовательно после Recognition)

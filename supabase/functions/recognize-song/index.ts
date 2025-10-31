@@ -74,10 +74,15 @@ serve(async (req) => {
     
     const audioBlob = await audioResponse.blob();
 
-    // 5. Upload to Mureka
+    // 5. Upload to Mureka (без purpose для универсальности)
     logger.info('⬆️ Uploading to Mureka');
-    const uploadResponse = await murekaClient.uploadFile(audioBlob, { purpose: 'audio' });
+    const uploadResponse = await murekaClient.uploadFile(audioBlob);
     const file_id = uploadResponse.data.file_id;
+    
+    logger.info('✅ File uploaded to Mureka', { 
+      fileId: file_id,
+      fileSize: uploadResponse.data.file_size 
+    });
 
     // 6. Create recognition record
     const { data: recognition, error: insertError } = await supabaseAdmin
@@ -95,10 +100,43 @@ serve(async (req) => {
       throw new Error('Failed to create recognition record');
     }
 
-    // 7. Call Mureka recognition API
-    logger.info('🎵 Calling Mureka recognition API', { uploadAudioId: file_id });
-    const recognizeResponse = await murekaClient.recognizeSong({ upload_audio_id: file_id });
-    const task_id = recognizeResponse.data.task_id;
+    // 7. Call Mureka recognition API с умной стратегией
+    logger.info('🎵 Calling Mureka recognition API');
+    
+    const strategies = [
+      { name: 'audio_file', params: { audio_file: file_id } },
+      { name: 'upload_audio_id', params: { upload_audio_id: file_id } },
+      { name: 'file_id', params: { file_id: file_id } },
+    ];
+    
+    let task_id: string | null = null;
+    let lastError: Error | null = null;
+    
+    for (const strategy of strategies) {
+      try {
+        logger.info('🔁 Recognition attempt with strategy', { strategy: strategy.name });
+        const recognizeResponse = await murekaClient.recognizeSong(strategy.params);
+        
+        if (recognizeResponse.code === 200 && recognizeResponse.data?.task_id) {
+          task_id = recognizeResponse.data.task_id;
+          logger.info('✅ Recognition started with strategy', { 
+            strategy: strategy.name,
+            taskId: task_id 
+          });
+          break;
+        }
+      } catch (err) {
+        lastError = err as Error;
+        logger.warn('⚠️ Strategy failed, trying next', { 
+          strategy: strategy.name,
+          error: (err as Error).message 
+        });
+      }
+    }
+    
+    if (!task_id) {
+      throw lastError || new Error('Mureka recognition failed with all strategies');
+    }
 
     // 8. Update record with task ID
     if (recognition) {
@@ -129,7 +167,8 @@ serve(async (req) => {
       }
 
       try {
-        const result = await murekaClient.queryTask(task_id) as any;
+        // task_id is guaranteed to be string at this point (line 137 throws if null)
+        const result = await murekaClient.queryTask(task_id!) as any;
 
         if (result.data?.result && recognition) {
           await supabaseAdmin

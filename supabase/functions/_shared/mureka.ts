@@ -173,10 +173,14 @@ export interface MurekaLyricsResponse {
  * @interface MurekaSongRecognitionPayload
  */
 export interface MurekaSongRecognitionPayload {
-  /** ID аудиофайла из /v1/files/upload (укажите один из параметров) */
-  upload_audio_id?: string;
-  /** Альтернативное поле (некоторые версии API ожидают его) */
+  /** ID аудиофайла из /v1/files/upload */
   audio_file?: string;
+  /** Альтернативное поле (backward compatibility) */
+  upload_audio_id?: string;
+  /** Прямое поле file_id (некоторые версии API) */
+  file_id?: string;
+  /** Публичный URL аудио (fallback) */
+  url?: string;
 }
 
 /**
@@ -412,10 +416,11 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
         
-        logger.debug(`🔵 [MUREKA] Request attempt ${attempt}/${MAX_RETRIES}`, {
+        logger.debug(`🔵 [MUREKA-REQUEST] Attempt ${attempt}/${MAX_RETRIES}`, {
           endpoint,
           method,
-          hasBody: !!body
+          hasBody: !!body,
+          bodyPreview: body ? JSON.stringify(body).slice(0, 200) : null
         });
         
         const response = await fetch(url, {
@@ -427,8 +432,21 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
         
         clearTimeout(timeoutId);
         
+        logger.debug(`🔵 [MUREKA-RESPONSE] Status ${response.status}`, {
+          endpoint,
+          statusText: response.statusText,
+          contentType: response.headers.get('Content-Type')
+        });
+        
         if (!response.ok) {
           const errorBody = await response.text();
+          
+          logger.error(`❌ [MUREKA-ERROR] Request failed`, {
+            endpoint,
+            status: response.status,
+            errorPreview: errorBody.slice(0, 500)
+          });
+          
           throw new MurekaApiError(
             `Mureka API error (${response.status}): ${errorBody}`,
             response.status,
@@ -441,7 +459,8 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
         logger.debug(`✅ [MUREKA] Request successful`, {
           endpoint,
           attempt,
-          statusCode: result.code
+          statusCode: result.code,
+          responsePreview: JSON.stringify(result).slice(0, 500)
         });
         
         return result as T;
@@ -724,14 +743,40 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
      * ```
      */
     async recognizeSong(payload: MurekaSongRecognitionPayload): Promise<MurekaRecognitionResponse> {
-      logger.info('🔍 [MUREKA] Recognizing song', { 
-        upload_audio_id: payload.upload_audio_id 
+      // Умное определение параметра на основе доступных полей
+      let requestBody: Record<string, string>;
+      let parameterUsed: string;
+      
+      if (payload.url) {
+        requestBody = { url: payload.url };
+        parameterUsed = 'url';
+      } else if (payload.audio_file) {
+        requestBody = { audio_file: payload.audio_file };
+        parameterUsed = 'audio_file';
+      } else if (payload.upload_audio_id) {
+        requestBody = { upload_audio_id: payload.upload_audio_id };
+        parameterUsed = 'upload_audio_id';
+      } else if (payload.file_id) {
+        requestBody = { file_id: payload.file_id };
+        parameterUsed = 'file_id';
+      } else {
+        throw new MurekaApiError('recognizeSong requires one of: audio_file, upload_audio_id, file_id, or url', 400, '{}');
+      }
+      
+      logger.info('🔍 [MUREKA-RECOGNIZE] Initiating song recognition', { 
+        parameterUsed,
+        value: requestBody[parameterUsed]
+      });
+      
+      logger.debug('🔍 [MUREKA-RECOGNIZE] Request payload', {
+        endpoint: options.recognizeEndpoint || '/v1/song/recognize',
+        body: JSON.stringify(requestBody)
       });
       
       return makeRequest(
         options.recognizeEndpoint || '/v1/song/recognize',
         'POST',
-        { upload_audio_id: payload.upload_audio_id }
+        requestBody
       );
     },
 
