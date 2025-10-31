@@ -14,7 +14,6 @@ import { EmptyStateCard } from "@/components/layout/EmptyStateCard";
 import { StructuredLyrics } from "@/components/lyrics/legacy/StructuredLyrics";
 import { StyleRecommendationsPanel } from "./StyleRecommendationsPanel";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
-
 const usePlayTrack = () => useAudioPlayerStore(state => state.playTrack);
 import { AnalyticsService } from "@/services/analytics.service";
 interface Track {
@@ -375,20 +374,7 @@ export const DetailPanelContent = ({
 
             {/* Technical Details - Minimalist */}
             <Card className="bg-muted/20 border-border/30">
-              <CardContent className="px-3 py-3 space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Model</span>
-                  <span className="font-medium">{track.model_name || "—"}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">ID</span>
-                  <span className="font-mono text-[10px]">{track.suno_id || "—"}</span>
-                </div>
-                {track.video_url && <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => window.open(track.video_url, "_blank")}>
-                    Video
-                    <ExternalLink className="h-3 w-3 ml-1" />
-                  </Button>}
-              </CardContent>
+              
             </Card>
 
             {/* Generation Prompt - Minimalist */}
