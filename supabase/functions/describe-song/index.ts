@@ -114,9 +114,9 @@ serve(async (req) => {
       throw new Error('Failed to create description record');
     }
 
-    // 8. Call Mureka describe API
-    logger.info('🎼 Calling Mureka describe API', { fileId: file_id });
-    const describeResponse = await murekaClient.describeSong({ audio_file: file_id });
+    // 8. Call Mureka describe API (using original audio URL, not file_id)
+    logger.info('🎼 Calling Mureka describe API', { audioUrl: track.audio_url });
+    const describeResponse = await murekaClient.describeSong({ url: track.audio_url });
     const task_id = describeResponse.data.task_id;
 
     await supabaseAdmin

@@ -174,7 +174,7 @@ export interface MurekaLyricsResponse {
  */
 export interface MurekaSongRecognitionPayload {
   /** ID аудиофайла из /v1/files/upload (обязательно) */
-  audio_file: string;
+  upload_audio_id: string;
 }
 
 /**
@@ -216,8 +216,8 @@ export interface MurekaRecognitionResponse {
  * @interface MurekaSongDescriptionPayload
  */
 export interface MurekaSongDescriptionPayload {
-  /** ID аудиофайла из /v1/files/upload (обязательно) */
-  audio_file: string;
+  /** URL аудиофайла или base64-encoded data URL (обязательно) */
+  url: string;
 }
 
 /**
@@ -721,13 +721,13 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
      */
     async recognizeSong(payload: MurekaSongRecognitionPayload): Promise<MurekaRecognitionResponse> {
       logger.info('🔍 [MUREKA] Recognizing song', { 
-        file_id: payload.audio_file 
+        upload_audio_id: payload.upload_audio_id 
       });
       
       return makeRequest(
         options.recognizeEndpoint || '/v1/song/recognize',
         'POST',
-        { audio_file: payload.audio_file, file_id: payload.audio_file, id: payload.audio_file }
+        { upload_audio_id: payload.upload_audio_id }
       );
     },
 
@@ -756,13 +756,13 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
      */
     async describeSong(payload: MurekaSongDescriptionPayload): Promise<MurekaDescriptionResponse> {
       logger.info('📖 [MUREKA] Describing song', { 
-        file_id: payload.audio_file 
+        url: payload.url 
       });
       
       return makeRequest(
         options.describeEndpoint || '/v1/song/describe',
         'POST',
-        { audio_file: payload.audio_file, file_id: payload.audio_file, id: payload.audio_file }
+        { url: payload.url }
       );
     },
 

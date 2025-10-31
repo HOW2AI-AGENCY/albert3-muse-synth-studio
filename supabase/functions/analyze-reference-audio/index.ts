@@ -185,14 +185,14 @@ const uploadResult = await murekaClient.uploadFile(fileForUpload);
     // ============================================================================
 
     logger.info('[ANALYZE-REF] 🔍 Initiating song recognition');
-    const recognitionPromise = murekaClient.recognizeSong({ audio_file: fileId, file_id: fileId } as any);
+    const recognitionPromise = murekaClient.recognizeSong({ upload_audio_id: fileId });
 
     // ============================================================================
     // STEP 3: Запуск Song Description (параллельно)
     // ============================================================================
 
     logger.info('[ANALYZE-REF] 📖 Initiating song description');
-    const descriptionPromise = murekaClient.describeSong({ audio_file: fileId, file_id: fileId } as any);
+    const descriptionPromise = murekaClient.describeSong({ url: audioUrl });
 
     // ✅ Параллельное выполнение обоих запросов
     const [recognitionResult, descriptionResult] = await Promise.all([
