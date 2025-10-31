@@ -609,11 +609,18 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
       logger.info('📤 [MUREKA] Uploading file', { size: file.size });
       
       const formData = new FormData();
-      // ✅ CRITICAL FIX: Create Blob with explicit MIME type and filename
-      // Mureka API requires proper file format identification
-      const audioBlob = new Blob([file], { type: 'audio/mpeg' });
-      formData.append('file', audioBlob, 'audio.mp3'); // Add explicit filename
-      // ✅ REQUIRED by Mureka API: specify purpose. Using generic 'audio' for analysis/recognition.
+      // Preserve original content type and filename extension
+      const contentType = (file as any).type || 'application/octet-stream';
+      const ext = contentType.includes('mpeg') ? 'mp3'
+        : contentType.includes('wav') ? 'wav'
+        : contentType.includes('ogg') ? 'ogg'
+        : contentType.includes('flac') ? 'flac'
+        : contentType.includes('aac') ? 'aac'
+        : contentType.includes('m4a') ? 'm4a'
+        : 'bin';
+      const audioBlob = new Blob([file], { type: contentType });
+      formData.append('file', audioBlob, `audio.${ext}`);
+      // REQUIRED by Mureka API: specify purpose. Using generic 'audio' for analysis/recognition.
       formData.append('purpose', 'audio');
       
       const url = `${BASE_URL}${options.uploadEndpoint || '/v1/files/upload'}`;
@@ -720,7 +727,7 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
       return makeRequest(
         options.recognizeEndpoint || '/v1/song/recognize',
         'POST',
-        payload
+        { audio_file: payload.audio_file, file_id: payload.audio_file }
       );
     },
 
@@ -755,7 +762,7 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
       return makeRequest(
         options.describeEndpoint || '/v1/song/describe',
         'POST',
-        payload
+        { audio_file: payload.audio_file, file_id: payload.audio_file }
       );
     },
 
