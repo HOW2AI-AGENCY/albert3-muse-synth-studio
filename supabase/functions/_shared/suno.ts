@@ -216,7 +216,7 @@ const DEFAULT_STEM_QUERY_ENDPOINTS = unique([
 
 const DEFAULT_LYRICS_GENERATE_ENDPOINTS = unique([
   Deno.env.get("SUNO_LYRICS_URL"),
-  "https://api.sunoapi.org/api/v1/lyrics/generate",
+  "https://api.sunoapi.org/api/v1/lyrics",
 ]);
 
 const DEFAULT_LYRICS_QUERY_ENDPOINTS = unique([
