@@ -142,14 +142,31 @@ const mainHandler = async (req: Request): Promise<Response> => {
       type: audioBlob.type 
     });
 
-    // ✅ КРИТИЧНО: НЕ конвертируем в WAV (FFmpeg запрещен в Edge Runtime)
-    // Mureka API поддерживает MP3, WAV, FLAC, M4A, AAC, OGG
-    // Просто передаем оригинальный файл
-    logger.info('[ANALYZE-REF] 📤 Uploading to Mureka (original format)', {
-      audioType: audioBlob.type,
+    // ✅ Normalize MIME type based on URL extension if missing or generic
+    const inferExt = (url: string): string => {
+      const m = url.toLowerCase().match(/\.([a-z0-9]+)(?:\?|#|$)/);
+      return m ? m[1] : '';
+    };
+    const ext = inferExt(audioUrl);
+    const mimeByExt: Record<string, string> = {
+      mp3: 'audio/mpeg',
+      wav: 'audio/wav',
+      ogg: 'audio/ogg',
+      flac: 'audio/flac',
+      aac: 'audio/aac',
+      m4a: 'audio/mp4',
+      mp4: 'audio/mp4'
+    };
+    const normalizedType = audioBlob.type && audioBlob.type !== 'application/octet-stream'
+      ? audioBlob.type
+      : (mimeByExt[ext] || 'audio/mpeg');
+
+    logger.info('[ANALYZE-REF] 📤 Uploading to Mureka (normalized format)', {
+      originalType: audioBlob.type,
+      normalizedType,
       audioSize: audioBlob.size
     });
-    const uploadResult = await murekaClient.uploadFile(audioBlob);
+    const uploadResult = await murekaClient.uploadFile(new Blob([audioBlob], { type: normalizedType }));
 
     if (uploadResult.code !== 200 || !uploadResult.data?.file_id) {
       throw new Error('Mureka file upload failed');
@@ -375,11 +392,11 @@ async function pollMurekaAnalysis(
     
     if (!recognitionCompleted) {
       try {
-        // ✅ Используем recognizeSong для получения результатов
-        const recogStatus = await murekaClient.recognizeSong({ audio_file: fileId });
+        // ✅ Query recognition task status by taskId
+        const recogStatus = await murekaClient.queryTask(recognitionTaskId) as any;
         logger.debug('[ANALYZE-REF-POLL] Recognition status', { 
           taskId: recognitionTaskId,
-          hasResult: !!recogStatus.data.result
+          hasResult: !!recogStatus?.data?.result
         });
 
         if (recogStatus.code === 200 && recogStatus.data.result) {
@@ -439,11 +456,11 @@ async function pollMurekaAnalysis(
     
     if (!descriptionCompleted) {
       try {
-        // ✅ Используем describeSong для получения результатов
-        const descStatus = await murekaClient.describeSong({ audio_file: fileId });
+        // ✅ Query description task status by taskId
+        const descStatus = await murekaClient.queryTask(descriptionTaskId) as any;
         logger.debug('[ANALYZE-REF-POLL] Description status', { 
           taskId: descriptionTaskId,
-          hasDescription: !!descStatus.data.description
+          hasDescription: !!descStatus?.data?.description
         });
 
         if (descStatus.code === 200 && descStatus.data.description) {
