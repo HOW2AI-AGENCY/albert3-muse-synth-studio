@@ -446,8 +446,8 @@ const mainHandler = async (req: Request) => {
             .from("track_versions")
             .upsert({
               parent_track_id: track.id,
-              version_number: i,
-              is_master: false,
+              variant_index: i, // ✅ FIX: Используем правильное имя колонки
+              is_preferred_variant: false, // ✅ FIX: Используем правильное имя колонки
               suno_id: sanitizeText(versionTrack.id),
               audio_url: versionAudioUrl,
               video_url: versionVideoUrl,
@@ -455,7 +455,7 @@ const mainHandler = async (req: Request) => {
               lyrics: sanitizeText(versionTrack.prompt || versionTrack.lyric || versionTrack.lyrics),
               duration: Math.round(versionTrack.duration || versionTrack.duration_seconds || 0),
               metadata: versionMetadata,
-            }, { onConflict: "parent_track_id,version_number" });
+            }, { onConflict: "parent_track_id,variant_index" }); // ✅ FIX: Обновлен onConflict
 
           if (versionError) {
             console.error(`[suno-callback] Error saving version ${i}:`, versionError);
