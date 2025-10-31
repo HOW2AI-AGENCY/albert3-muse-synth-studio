@@ -138,9 +138,9 @@ const mainHandler = async (req: Request): Promise<Response> => {
     logger.info('[ANALYZE-REF] ✅ Audio format validated', { urlSample: audioUrl.substring(0, 100) });
 
     // ✅ Check Fal.AI API key
-    const FAL_API_KEY = Deno.env.get('FAL_AI_TOKEN');
+    const FAL_API_KEY = Deno.env.get('FAL_API_KEY');
     if (!FAL_API_KEY) {
-      throw new Error('FAL_AI_TOKEN not configured');
+      throw new Error('FAL_API_KEY not configured');
     }
 
     const falClient = createFalClient({ apiKey: FAL_API_KEY });
@@ -431,9 +431,9 @@ async function pollFalAnalysis(
   recognitionId: string,
   descriptionId: string
 ): Promise<void> {
-  const FAL_API_KEY = Deno.env.get('FAL_AI_TOKEN');
+  const FAL_API_KEY = Deno.env.get('FAL_API_KEY');
   if (!FAL_API_KEY) {
-    logger.error('[ANALYZE-REF-POLL] FAL_API_TOKEN not configured');
+    logger.error('[ANALYZE-REF-POLL] FAL_API_KEY not configured');
     return;
   }
 
