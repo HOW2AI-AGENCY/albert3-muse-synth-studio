@@ -174,7 +174,7 @@ export interface MurekaLyricsResponse {
  */
 export interface MurekaSongRecognitionPayload {
   /** ID аудиофайла из /v1/files/upload (обязательно) */
-  upload_audio_id: string;
+  audio_file: string;
 }
 
 /**
@@ -216,8 +216,9 @@ export interface MurekaRecognitionResponse {
  * @interface MurekaSongDescriptionPayload
  */
 export interface MurekaSongDescriptionPayload {
-  /** URL аудиофайла или base64-encoded data URL (обязательно) */
-  url: string;
+  /** ЛИБО ID загруженного файла, ЛИБО публичный URL */
+  audio_file?: string;
+  url?: string;
 }
 
 /**
@@ -722,13 +723,13 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
      */
     async recognizeSong(payload: MurekaSongRecognitionPayload): Promise<MurekaRecognitionResponse> {
       logger.info('🔍 [MUREKA] Recognizing song', { 
-        upload_audio_id: payload.upload_audio_id 
+        audio_file: payload.audio_file 
       });
       
       return makeRequest(
         options.recognizeEndpoint || '/v1/song/recognize',
         'POST',
-        { upload_audio_id: payload.upload_audio_id }
+        { audio_file: payload.audio_file }
       );
     },
 
@@ -757,13 +758,22 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
      */
     async describeSong(payload: MurekaSongDescriptionPayload): Promise<MurekaDescriptionResponse> {
       logger.info('📖 [MUREKA] Describing song', { 
-        url: payload.url 
+        has_audio_file: !!payload.audio_file,
+        has_url: !!payload.url
       });
+      
+      const body: Record<string, string> = payload.audio_file
+        ? { audio_file: payload.audio_file }
+        : payload.url ? { url: payload.url } : {};
+      
+      if (Object.keys(body).length === 0) {
+        throw new MurekaApiError('describeSong requires either audio_file or url', 400, '{}');
+      }
       
       return makeRequest(
         options.describeEndpoint || '/v1/song/describe',
         'POST',
-        { url: payload.url }
+        body
       );
     },
 
