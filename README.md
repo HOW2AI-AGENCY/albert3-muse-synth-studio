@@ -309,6 +309,8 @@ graph TB
 - [🗄️ Схема БД](docs/DATABASE_SCHEMA.md)
 - [🔄 State Management](docs/architecture/STATE_MANAGEMENT.md) ⭐ NEW
 - [💾 Track Archiving](docs/architecture/TRACK_ARCHIVING.md) ⭐ NEW
+- [📡 API Documentation](docs/API.md) ⭐ NEW
+- [🔧 Troubleshooting Guide](docs/TROUBLESHOOTING.md) ⭐ NEW
 
 ### 📊 **Sprint Management**
 - [🎯 Sprint 31 Status](project-management/SPRINT_31_STATUS.md) ⭐ ACTIVE
