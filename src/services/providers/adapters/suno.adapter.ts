@@ -14,9 +14,13 @@ import {
   BalanceInfo,
 } from '../types';
 import { logger } from '@/utils/logger';
+import { handleGenerationError } from '@/utils/error-handlers/generation-errors';
+import { metricsCollector } from '@/utils/monitoring/metrics';
 
 export class SunoProviderAdapter implements IProviderClient {
   async generateMusic(params: GenerationParams): Promise<GenerationResult> {
+    const startTime = Date.now();
+    
     logger.info('Suno adapter: generating music', undefined, {
       hasLyrics: !!params.lyrics,
       hasReference: !!params.referenceAudio,
@@ -24,16 +28,51 @@ export class SunoProviderAdapter implements IProviderClient {
 
     const payload = this.transformToSunoFormat(params);
 
-    const { data, error } = await supabase.functions.invoke('generate-suno', {
-      body: payload,
-    });
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-suno', {
+        body: payload,
+      });
 
-    if (error) {
-      logger.error('Suno generation failed', error instanceof Error ? error : new Error(String(error)));
+      if (error) {
+        // Track failure metric
+        metricsCollector.trackGeneration({
+          trackId: params.trackId || 'unknown',
+          provider: 'suno',
+          status: 'failed',
+          duration: Date.now() - startTime,
+          timestamp: Date.now(),
+        });
+
+        logger.error('Suno generation failed', error instanceof Error ? error : new Error(String(error)));
+        handleGenerationError(error);
+        throw error;
+      }
+
+      // Track success metric
+      metricsCollector.trackGeneration({
+        trackId: data.trackId || params.trackId || 'unknown',
+        provider: 'suno',
+        status: 'completed',
+        duration: Date.now() - startTime,
+        timestamp: Date.now(),
+      });
+
+      return this.transformFromSunoFormat(data);
+    } catch (error) {
+      // Handle rate limit errors
+      if (error && typeof error === 'object' && 'errorCode' in error) {
+        const err = error as any;
+        if (err.errorCode === 'RATE_LIMIT_EXCEEDED') {
+          metricsCollector.trackRateLimit({
+            provider: 'suno',
+            endpoint: 'generate-suno',
+            retryAfter: err.retryAfter,
+            timestamp: Date.now(),
+          });
+        }
+      }
       throw error;
     }
-
-    return this.transformFromSunoFormat(data);
   }
 
   async extendTrack(params: ExtensionParams): Promise<GenerationResult> {

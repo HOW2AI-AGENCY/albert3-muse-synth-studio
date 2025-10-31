@@ -14,9 +14,13 @@ import {
   BalanceInfo,
 } from '../types';
 import { logger } from '@/utils/logger';
+import { handleGenerationError } from '@/utils/error-handlers/generation-errors';
+import { metricsCollector } from '@/utils/monitoring/metrics';
 
 export class MurekaProviderAdapter implements IProviderClient {
   async generateMusic(params: GenerationParams): Promise<GenerationResult> {
+    const startTime = Date.now();
+    
     logger.info('Mureka adapter: generating music', undefined, {
       hasLyrics: !!params.lyrics,
       isBGM: params.makeInstrumental,
@@ -24,16 +28,51 @@ export class MurekaProviderAdapter implements IProviderClient {
 
     const payload = this.transformToMurekaFormat(params);
 
-    const { data, error } = await supabase.functions.invoke('generate-mureka', {
-      body: payload,
-    });
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-mureka', {
+        body: payload,
+      });
 
-    if (error) {
-      logger.error('Mureka generation failed', error instanceof Error ? error : new Error(String(error)));
+      if (error) {
+        // Track failure metric
+        metricsCollector.trackGeneration({
+          trackId: params.trackId || 'unknown',
+          provider: 'mureka',
+          status: 'failed',
+          duration: Date.now() - startTime,
+          timestamp: Date.now(),
+        });
+
+        logger.error('Mureka generation failed', error instanceof Error ? error : new Error(String(error)));
+        handleGenerationError(error);
+        throw error;
+      }
+
+      // Track success metric
+      metricsCollector.trackGeneration({
+        trackId: data.trackId || params.trackId || 'unknown',
+        provider: 'mureka',
+        status: 'completed',
+        duration: Date.now() - startTime,
+        timestamp: Date.now(),
+      });
+
+      return this.transformFromMurekaFormat(data);
+    } catch (error) {
+      // Handle rate limit errors
+      if (error && typeof error === 'object' && 'errorCode' in error) {
+        const err = error as any;
+        if (err.errorCode === 'RATE_LIMIT_EXCEEDED') {
+          metricsCollector.trackRateLimit({
+            provider: 'mureka',
+            endpoint: 'generate-mureka',
+            retryAfter: err.retryAfter,
+            timestamp: Date.now(),
+          });
+        }
+      }
       throw error;
     }
-
-    return this.transformFromMurekaFormat(data);
   }
 
   async extendTrack(params: ExtensionParams): Promise<GenerationResult> {
