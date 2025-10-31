@@ -631,15 +631,25 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
       logger.info('📤 [MUREKA] Uploading file', { size: file.size });
       
       const formData = new FormData();
-      // Preserve original content type and filename extension
-      const contentType = (file as any).type || 'application/octet-stream';
-      const ext = contentType.includes('mpeg') ? 'mp3'
-        : contentType.includes('wav') ? 'wav'
-        : contentType.includes('ogg') ? 'ogg'
-        : contentType.includes('flac') ? 'flac'
-        : contentType.includes('aac') ? 'aac'
-        : contentType.includes('m4a') ? 'm4a'
-        : 'bin';
+      // Determine content type and file extension with sensible fallbacks
+      const originalType = (file as any).type as string | undefined;
+      let contentType = originalType && originalType !== '' ? originalType : '';
+      let ext = '';
+
+      if (contentType.includes('mpeg') || contentType.includes('mp3')) { ext = 'mp3'; contentType = 'audio/mpeg'; }
+      else if (contentType.includes('wav')) { ext = 'wav'; contentType = 'audio/wav'; }
+      else if (contentType.includes('ogg')) { ext = 'ogg'; contentType = 'audio/ogg'; }
+      else if (contentType.includes('flac')) { ext = 'flac'; contentType = 'audio/flac'; }
+      else if (contentType.includes('aac')) { ext = 'aac'; contentType = 'audio/aac'; }
+      else if (contentType.includes('m4a')) { ext = 'm4a'; contentType = 'audio/m4a'; }
+
+      // Fallback when type is missing or unknown (common when fetching cross-origin)
+      if (!ext) {
+        ext = 'mp3';
+        contentType = 'audio/mpeg';
+        logger.warn('⚠️ [MUREKA] Unknown content-type on upload; defaulting to audio/mpeg/mp3');
+      }
+
       const audioBlob = new Blob([file], { type: contentType });
       formData.append('file', audioBlob, `audio.${ext}`);
       // REQUIRED by Mureka API: specify purpose. Use provided or fallback to 'audio'.
