@@ -222,8 +222,9 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
     const murekaClient = createMurekaClient({ apiKey: this.apiKey });
     const queryResult = await murekaClient.queryTask(taskId);
 
-    // ✅ Handle "preparing" status - continue polling
-    if (queryResult.data?.status === 'preparing') {
+    // ✅ Handle "preparing" status - continue polling (check raw data)
+    const rawStatus = (queryResult.data as any)?.status;
+    if (rawStatus === 'preparing') {
       logger.debug('[MUREKA] Task is preparing, continuing polling', { taskId });
       return {
         status: 'processing',
@@ -243,7 +244,7 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
       };
     }
 
-    if (queryResult.code === 500 || queryResult.data?.status === 'failed') {
+    if (queryResult.code === 500 || rawStatus === 'failed') {
       return {
         status: 'failed',
         error: queryResult.msg || 'Mureka generation failed',

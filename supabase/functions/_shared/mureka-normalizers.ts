@@ -169,10 +169,9 @@ export function normalizeMurekaMusicResponse(
       });
 
       // Normalize status: "preparing" → "pending"
-      let normalizedStatus = wrappedResponse.data?.status || "pending";
-      if (normalizedStatus === "preparing") {
-        normalizedStatus = "pending";
-      }
+      const rawStatus = wrappedResponse.data?.status || "pending";
+      const normalizedStatus: "pending" | "processing" | "completed" | "failed" = 
+        rawStatus === "preparing" ? "pending" : rawStatus;
 
       return {
         success: true,
@@ -190,10 +189,9 @@ export function normalizeMurekaMusicResponse(
     });
 
     // Normalize status: "preparing" → "pending"
-    let normalizedStatus = directResponse.status || "pending";
-    if (normalizedStatus === "preparing") {
-      normalizedStatus = "pending";
-    }
+    const rawStatus = directResponse.status || "pending";
+    const normalizedStatus: "pending" | "processing" | "completed" | "failed" = 
+      rawStatus === "preparing" ? "pending" : rawStatus;
 
     return {
       success: true,
