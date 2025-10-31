@@ -156,7 +156,7 @@ export function normalizeMurekaMusicResponse(
 
         return {
           success: false,
-          taskId: wrappedResponse.data.task_id,
+          taskId: wrappedResponse.data?.task_id || "unknown",
           clips: [],
           status: "failed",
           error: wrappedResponse.msg,
