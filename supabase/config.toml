@@ -133,3 +133,6 @@ verify_jwt = false
 
 [functions.restore-mureka-tracks]
 verify_jwt = false
+
+[functions.enhance-generation-prompt]
+verify_jwt = false
