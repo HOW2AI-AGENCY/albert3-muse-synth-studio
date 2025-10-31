@@ -11,7 +11,7 @@ export const TAG_DEFINITIONS: Record<string, TagDefinition> = {
     category: 'section',
     icon: 'layout',
     color: 'bg-blue-500',
-    description: 'Song structure sections',
+    description: 'Структурные секции композиции',
     values: [
       'Intro', 'Verse', 'Verse 1', 'Verse 2', 'Verse 3',
       'Pre-Chorus', 'Chorus', 'Post-Chorus',
@@ -25,7 +25,7 @@ export const TAG_DEFINITIONS: Record<string, TagDefinition> = {
     category: 'vocal',
     icon: 'mic',
     color: 'bg-purple-500',
-    description: 'Vocal styles and characteristics (Suno v5 optimized)',
+    description: 'Стили и характеристики вокала (оптимизировано для Suno v5)',
     values: [
       // Types
       'Lead Vocal', 'Backing Vocals', 'Stacked Harmonies',
@@ -52,7 +52,7 @@ export const TAG_DEFINITIONS: Record<string, TagDefinition> = {
     category: 'emotion',
     icon: 'sparkles',
     color: 'bg-pink-500',
-    description: 'Emotional atmosphere and mood',
+    description: 'Эмоциональная атмосфера и настроение',
     values: [
       'Melancholic', 'Euphoric', 'Aggressive', 'Dreamy',
       'Bittersweet', 'Triumphant', 'Dark', 'Hopeful',
@@ -67,7 +67,7 @@ export const TAG_DEFINITIONS: Record<string, TagDefinition> = {
     category: 'instrument',
     icon: 'piano',
     color: 'bg-green-500',
-    description: 'Musical instruments and sounds (extensive collection)',
+    description: 'Музыкальные инструменты и звуки (расширенная коллекция)',
     values: [
       // Rhythm Section
       'Drum Machine', 'Acoustic Drums', 'Breakbeat', 'Trap Hats',
@@ -103,7 +103,7 @@ export const TAG_DEFINITIONS: Record<string, TagDefinition> = {
     category: 'arrangement',
     icon: 'layers',
     color: 'bg-orange-500',
-    description: 'Musical arrangement and structure',
+    description: 'Музыкальная аранжировка и структура',
     values: [
       'Sparse', 'Minimal', 'Layered', 'Building Intensity',
       'Climactic', 'Orchestral Build', 'Drop with Impact',
@@ -118,7 +118,7 @@ export const TAG_DEFINITIONS: Record<string, TagDefinition> = {
     category: 'fx',
     icon: 'sliders-horizontal',
     color: 'bg-cyan-500',
-    description: 'Audio effects and mixing',
+    description: 'Аудиоэффекты и сведение',
     values: [
       // Reverb
       'Reverb Heavy', 'Short Plate Reverb', 'Hall Reverb', 'Room Reverb',
@@ -138,7 +138,7 @@ export const TAG_DEFINITIONS: Record<string, TagDefinition> = {
     category: 'tempo',
     icon: 'gauge',
     color: 'bg-yellow-500',
-    description: 'Tempo and rhythm characteristics',
+    description: 'Темп и ритмические характеристики',
     values: [
       'Tempo: 60 BPM', 'Tempo: 80 BPM', 'Tempo: 90 BPM',
       'Tempo: 100 BPM', 'Tempo: 110 BPM', 'Tempo: 120 BPM',
@@ -154,7 +154,7 @@ export const TAG_DEFINITIONS: Record<string, TagDefinition> = {
     category: 'key',
     icon: 'music',
     color: 'bg-indigo-500',
-    description: 'Musical key and tonality',
+    description: 'Музыкальная тональность и лад',
     values: [
       // Major keys
       'Key: C major', 'Key: D major', 'Key: E major', 'Key: F major',
@@ -173,7 +173,7 @@ export const TAG_DEFINITIONS: Record<string, TagDefinition> = {
     category: 'language',
     icon: 'globe',
     color: 'bg-teal-500',
-    description: 'Language and vocal content',
+    description: 'Язык вокального контента',
     values: [
       'Language: English', 'Language: Russian', 'Language: Spanish',
       'Language: French', 'Language: German', 'Language: Japanese',
@@ -187,7 +187,7 @@ export const TAG_DEFINITIONS: Record<string, TagDefinition> = {
     category: 'content',
     icon: 'file-text',
     color: 'bg-gray-500',
-    description: 'Content type and emphasis',
+    description: 'Тип контента и акценты',
     values: [
       'Clean Lyrics', 'Instrumental Only', 'Hook Emphasis',
       'Verse Focus', 'Melodic Focus', 'Lyric Focus'
@@ -200,7 +200,7 @@ export const TAG_DEFINITIONS: Record<string, TagDefinition> = {
     category: 'meta',
     icon: 'settings',
     color: 'bg-slate-500',
-    description: 'Mix and master settings',
+    description: 'Настройки сведения и мастеринга',
     values: [
       'Mix: punchy', 'Mix: wide', 'Mix: warm', 'Mix: bright',
       'Master: loud but dynamic', 'Master: transparent',
