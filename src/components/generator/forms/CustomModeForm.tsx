@@ -13,8 +13,10 @@ import { StyleTagsInput } from './StyleTagsInput';
 import { StyleRecommendationsInline } from '@/components/generator/StyleRecommendationsInline';
 import { AudioReferenceSection } from '../audio/AudioReferenceSection';
 import type { GenerationParams } from '../types/generator.types';
+import type { AdvancedPromptResult } from '@/services/ai/advanced-prompt-generator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { logger } from '@/utils/logger';
 
 const AudioDescriber = lazy(() => import('@/components/audio/AudioDescriber').then(m => ({ default: m.AudioDescriber })));
 
@@ -74,6 +76,35 @@ export const CustomModeForm = memo(({
     const uniqueTags = Array.from(new Set([...existingTags, ...newTags]));
     onParamChange('tags', uniqueTags.join(', '));
   }, [params.tags, onParamChange]);
+
+  const handleAdvancedPromptGenerated = useCallback((result: AdvancedPromptResult) => {
+    logger.info('Advanced prompt applied to form', 'CustomModeForm', {
+      promptLength: result.enhancedPrompt.length,
+      lyricsLength: result.formattedLyrics.length,
+      metaTagsCount: result.metaTags.length,
+    });
+
+    // Update prompt
+    onParamChange('prompt', result.enhancedPrompt);
+    onDebouncedPromptChange(result.enhancedPrompt);
+
+    // Update lyrics if formatted
+    if (result.formattedLyrics.trim()) {
+      onParamChange('lyrics', result.formattedLyrics);
+      onDebouncedLyricsChange(result.formattedLyrics);
+    }
+
+    // Extract and apply style/mood from meta-tags
+    const styleMeta = result.metaTags.find(t => t.toLowerCase().includes('style'));
+    if (styleMeta) {
+      const styleValue = styleMeta.replace(/^style:\s*/i, '').trim();
+      // Append to existing tags instead of replacing
+      const existingTags = params.tags.split(',').map(t => t.trim()).filter(Boolean);
+      const newStyleTags = styleValue.split(',').map(t => t.trim()).filter(Boolean);
+      const uniqueTags = Array.from(new Set([...existingTags, ...newStyleTags]));
+      onParamChange('tags', uniqueTags.join(', '));
+    }
+  }, [params.tags, onParamChange, onDebouncedPromptChange, onDebouncedLyricsChange]);
 
   return (
     <>
@@ -156,7 +187,9 @@ export const CustomModeForm = memo(({
                 <StyleRecommendationsInline
                   prompt={params.prompt}
                   currentTags={params.tags.split(',').map(t => t.trim()).filter(Boolean)}
+                  lyrics={params.lyrics}
                   onApplyTags={handleApplyTags}
+                  onAdvancedPromptGenerated={handleAdvancedPromptGenerated}
                 />
               )}
               
@@ -275,7 +308,9 @@ export const CustomModeForm = memo(({
                 <StyleRecommendationsInline
                   prompt={params.prompt}
                   currentTags={params.tags.split(',').map(t => t.trim()).filter(Boolean)}
+                  lyrics={params.lyrics}
                   onApplyTags={handleApplyTags}
+                  onAdvancedPromptGenerated={handleAdvancedPromptGenerated}
                 />
               )}
               

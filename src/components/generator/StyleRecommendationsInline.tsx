@@ -1,15 +1,21 @@
-import { memo, useState, useMemo } from 'react';
+import { memo, useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, ChevronDown, ChevronUp, Loader2, RefreshCw, Plus, Check } from '@/utils/iconImports';
+import { Sparkles, ChevronDown, ChevronUp, Loader2, RefreshCw, Plus, Check, Wand2 } from '@/utils/iconImports';
 import { useStyleRecommendations } from '@/services/ai/style-recommendations';
+import { useAdvancedPromptGenerator } from '@/hooks/useAdvancedPromptGenerator';
 import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
+import type { AdvancedPromptResult } from '@/services/ai/advanced-prompt-generator';
 
 interface StyleRecommendationsInlineProps {
   prompt: string;
   currentTags: string[];
   genre?: string;
+  mood?: string;
+  lyrics?: string;
   onApplyTags: (tags: string[]) => void;
+  onAdvancedPromptGenerated?: (result: AdvancedPromptResult) => void;
   className?: string;
 }
 
@@ -17,7 +23,10 @@ export const StyleRecommendationsInline = memo(({
   prompt,
   currentTags,
   genre,
+  mood,
+  lyrics,
   onApplyTags,
+  onAdvancedPromptGenerated,
   className,
 }: StyleRecommendationsInlineProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -77,6 +86,48 @@ export const StyleRecommendationsInline = memo(({
       }
     }
   };
+
+  // Advanced Prompt Generator
+  const { mutate: generateAdvanced, isPending: isGeneratingAdvanced } = useAdvancedPromptGenerator({
+    onSuccess: (result) => {
+      logger.info('Advanced prompt generated successfully', 'StyleRecommendationsInline', {
+        promptLength: result.enhancedPrompt.length,
+        lyricsLength: result.formattedLyrics.length,
+        metaTagsCount: result.metaTags.length,
+      });
+      onAdvancedPromptGenerated?.(result);
+      toast({
+        title: "Продвинутый промпт создан!",
+        description: "AI интегрировал все рекомендации в промпт и лирику.",
+      });
+    },
+    onError: (error) => {
+      logger.error('Failed to generate advanced prompt', error, 'StyleRecommendationsInline');
+      toast({
+        variant: "destructive",
+        title: "Ошибка генерации",
+        description: error.message || "Не удалось создать промпт. Попробуйте позже.",
+      });
+    }
+  });
+
+  const handleGenerateAdvanced = useCallback(() => {
+    if (!data) return;
+    
+    logger.info('Generating advanced prompt', 'StyleRecommendationsInline', {
+      hasRecommendations: !!data,
+      hasLyrics: !!lyrics,
+      promptLength: prompt.length,
+    });
+
+    generateAdvanced({
+      styleRecommendations: data,
+      currentPrompt: prompt,
+      currentLyrics: lyrics,
+      genre,
+      mood,
+    });
+  }, [data, prompt, lyrics, genre, mood, generateAdvanced]);
 
   const newTagsCount = useMemo(() => {
     if (!data?.tags) return 0;
@@ -206,6 +257,29 @@ export const StyleRecommendationsInline = memo(({
                   >
                     <Sparkles className="h-3 w-3 mr-1.5" />
                     Применить все ({newTagsCount})
+                  </Button>
+                )}
+                
+                {onAdvancedPromptGenerated && (
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    onClick={handleGenerateAdvanced}
+                    disabled={isGeneratingAdvanced || !data}
+                    className="flex-1 h-7 text-xs"
+                  >
+                    {isGeneratingAdvanced ? (
+                      <>
+                        <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                        AI...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="h-3 w-3 mr-1.5" />
+                        Создать промпт
+                      </>
+                    )}
                   </Button>
                 )}
                 
