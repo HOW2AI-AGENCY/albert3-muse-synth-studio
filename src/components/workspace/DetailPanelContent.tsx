@@ -14,6 +14,7 @@ import { CompactTrackHero } from "@/features/tracks/ui/CompactTrackHero";
 import { EmptyStateCard } from "@/components/layout/EmptyStateCard";
 import { StructuredLyrics } from "@/components/lyrics/legacy/StructuredLyrics";
 import { StyleRecommendationsPanel } from "./StyleRecommendationsPanel";
+import { EnhancedPromptPreviewDialog, type EnhancedPromptData } from "@/components/ai-recommendations";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 const usePlayTrack = () => useAudioPlayerStore(state => state.playTrack);
 import { AnalyticsService } from "@/services/analytics.service";
@@ -254,12 +255,20 @@ export const DetailPanelContent = ({
   }, []);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [previewData, setPreviewData] = useState<EnhancedPromptData | null>(null);
+  const [isApplyingToTrack, setIsApplyingToTrack] = useState(false);
 
   const handleTagsApply = useCallback(async (tags: string[]) => {
     if (!tags.length) return;
     
-    const existingTags = track.style_tags || [];
-    const uniqueTags = Array.from(new Set([...existingTags, ...tags]));
+    const previousTags = track.style_tags || [];
+    const uniqueTags = Array.from(new Set([...previousTags, ...tags]));
+    
+    // Optimistic update
+    queryClient.setQueryData(['track', track.id], (old: any) => ({
+      ...old,
+      style_tags: uniqueTags
+    }));
     
     const { error } = await supabase
       .from('tracks')
@@ -267,12 +276,44 @@ export const DetailPanelContent = ({
       .eq('id', track.id);
       
     if (!error) {
-      toast({
-        title: "Теги применены",
-        description: `Добавлено ${tags.length} новых тегов стиля`,
+      // ✅ Toast with Undo action
+      const { dismiss } = toast({
+        title: `Добавлено ${tags.length} тегов`,
+        description: tags.slice(0, 3).join(', ') + (tags.length > 3 ? '...' : ''),
+        action: (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={async () => {
+              // Rollback
+              await supabase
+                .from('tracks')
+                .update({ style_tags: previousTags })
+                .eq('id', track.id);
+              
+              queryClient.invalidateQueries({ queryKey: ['track', track.id] });
+              dismiss();
+              
+              toast({
+                title: "Отменено",
+                description: "Теги восстановлены",
+              });
+            }}
+          >
+            Отменить
+          </Button>
+        ),
+        duration: 5000, // 5 seconds to undo
       });
+      
       queryClient.invalidateQueries({ queryKey: ['track', track.id] });
     } else {
+      // Revert optimistic update
+      queryClient.setQueryData(['track', track.id], (old: any) => ({
+        ...old,
+        style_tags: previousTags
+      }));
+      
       toast({
         title: "Ошибка",
         description: "Не удалось применить теги",
@@ -283,27 +324,20 @@ export const DetailPanelContent = ({
 
   const { mutate: generateAdvanced, isPending: isGeneratingPrompt } = useAdvancedPromptGenerator({
     onSuccess: (result) => {
-      // Сохраняем данные в localStorage для передачи в генератор
-      const enhancedData = {
-        prompt: result.enhancedPrompt,
-        lyrics: result.formattedLyrics || track.lyrics || '',
-        title: `${track.title} (ENH)`,
-        tags: track.style_tags?.join(', ') || '',
-        genre: genre || track.genre,
-        mood: mood || track.mood,
-      };
-      
-      localStorage.setItem('pendingEnhancedGeneration', JSON.stringify(enhancedData));
-      
-      toast({
-        title: "AI промпт готов!",
-        description: "Открываю форму генератора с улучшенными данными...",
+      // ✅ Show preview dialog instead of direct navigation
+      setPreviewData({
+        original: {
+          prompt: track.prompt,
+          lyrics: track.lyrics || '',
+          tags: track.style_tags || [],
+        },
+        enhanced: {
+          prompt: result.enhancedPrompt,
+          lyrics: result.formattedLyrics || track.lyrics || '',
+          tags: result.metaTags || [],
+        },
+        reasoning: 'AI интегрировал рекомендации стиля',
       });
-      
-      // Навигация на страницу генератора
-      setTimeout(() => {
-        navigate('/workspace/generate');
-      }, 500);
     },
     onError: (error) => {
       const errorMessage = error.message;
@@ -316,6 +350,88 @@ export const DetailPanelContent = ({
       });
     }
   });
+
+  const handleApplyToCurrentTrack = useCallback(async (editedData: EnhancedPromptData) => {
+    setIsApplyingToTrack(true);
+    
+    const previousData = {
+      prompt: track.prompt,
+      lyrics: track.lyrics,
+      style_tags: track.style_tags,
+    };
+    
+    const { error } = await supabase
+      .from('tracks')
+      .update({
+        prompt: editedData.enhanced.prompt,
+        lyrics: editedData.enhanced.lyrics,
+        style_tags: [...(track.style_tags || []), ...editedData.enhanced.tags],
+      })
+      .eq('id', track.id);
+    
+    setIsApplyingToTrack(false);
+    
+    if (!error) {
+      const { dismiss } = toast({
+        title: "Трек обновлен с AI улучшениями",
+        description: "Промпт, лирика и теги успешно обновлены",
+        action: (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={async () => {
+              await supabase
+                .from('tracks')
+                .update(previousData)
+                .eq('id', track.id);
+              
+              queryClient.invalidateQueries({ queryKey: ['track', track.id] });
+              dismiss();
+              
+              toast({
+                title: "Отменено",
+                description: "Изменения отменены",
+              });
+            }}
+          >
+            Отменить
+          </Button>
+        ),
+        duration: 5000,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['track', track.id] });
+      setPreviewData(null);
+    } else {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить трек",
+        variant: "destructive",
+      });
+    }
+  }, [track, queryClient]);
+
+  const handleUseForNewGeneration = useCallback((editedData: EnhancedPromptData) => {
+    // Save to localStorage for generator page
+    const generationData = {
+      prompt: editedData.enhanced.prompt,
+      lyrics: editedData.enhanced.lyrics,
+      title: `${track.title} (ENH)`,
+      tags: editedData.enhanced.tags.join(', '),
+      genre: genre || track.genre,
+      mood: mood || track.mood,
+    };
+    
+    localStorage.setItem('pendingEnhancedGeneration', JSON.stringify(generationData));
+    
+    toast({
+      title: "Переход к генератору",
+      description: "Форма будет заполнена улучшенными данными",
+    });
+    
+    setPreviewData(null);
+    navigate('/workspace/generate');
+  }, [track, genre, mood, navigate]);
   const createdAtToDisplay = activeVersion?.created_at ?? track.created_at;
   const durationToDisplay = activeVersion?.duration ?? track.duration_seconds;
   const extractArtist = (metadata?: Record<string, unknown> | null) => {
@@ -563,6 +679,16 @@ export const DetailPanelContent = ({
             </Card>
           </>}
       </div>
+
+      {/* Enhanced Prompt Preview Dialog */}
+      <EnhancedPromptPreviewDialog
+        open={!!previewData}
+        onOpenChange={(open) => !open && setPreviewData(null)}
+        data={previewData}
+        onApplyToCurrentTrack={handleApplyToCurrentTrack}
+        onUseForNewGeneration={handleUseForNewGeneration}
+        isApplying={isApplyingToTrack}
+      />
     </TooltipProvider>;
 };
 interface StatsItemProps {
