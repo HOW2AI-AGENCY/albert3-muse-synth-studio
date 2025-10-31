@@ -93,6 +93,11 @@ export const LyricsSection: React.FC<LyricsSectionProps> = ({
     onUpdate({ isCollapsed: newCollapsed });
   };
 
+  // Auto-numbering for Verse sections
+  const displayTitle = React.useMemo(() => {
+    return section.title;
+  }, [section.title]);
+
   return (
     <>
       <Card
@@ -149,7 +154,7 @@ export const LyricsSection: React.FC<LyricsSectionProps> = ({
                 compact && "text-sm"
               )}
             >
-              {section.title}
+              {displayTitle}
             </button>
           )}
 
@@ -178,12 +183,12 @@ export const LyricsSection: React.FC<LyricsSectionProps> = ({
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => setIsEditingTitle(true)}>
                       <Edit2 className="mr-2 h-4 w-4" />
-                      Edit Title
+                      Изменить название
                     </DropdownMenuItem>
                     {showTags && (
                       <DropdownMenuItem onClick={() => setShowTagPalette(true)}>
                         <Plus className="mr-2 h-4 w-4" />
-                        Add Tags
+                        Добавить теги
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
@@ -192,7 +197,7 @@ export const LyricsSection: React.FC<LyricsSectionProps> = ({
                       className="text-destructive focus:text-destructive"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
-                      Delete Section
+                      Удалить секцию
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -220,7 +225,7 @@ export const LyricsSection: React.FC<LyricsSectionProps> = ({
             <Textarea
               value={section.lines.join('\n')}
               onChange={(e) => handleLinesChange(e.target.value)}
-              placeholder="Enter lyrics..."
+              placeholder="Введите текст..."
               className={cn(
                 "min-h-[120px] resize-none font-mono text-sm",
                 compact && "min-h-[100px] text-xs"
@@ -237,7 +242,7 @@ export const LyricsSection: React.FC<LyricsSectionProps> = ({
                 className={cn("w-full", compact && "h-8 text-xs")}
               >
                 <Plus className={cn("mr-2 h-4 w-4", compact && "mr-1.5 h-3 w-3")} />
-                Add Tags
+                Добавить теги
               </Button>
             )}
           </div>
@@ -247,14 +252,13 @@ export const LyricsSection: React.FC<LyricsSectionProps> = ({
       {/* Tag Palette Dialog */}
       {!readOnly && (
         <Dialog open={showTagPalette} onOpenChange={setShowTagPalette}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[85vh] sm:max-h-[90vh]">
             <DialogHeader>
-              <DialogTitle>
-                Add Tags to {section.title?.trim() ? section.title : 'section'}
+              <DialogTitle className="text-base sm:text-lg">
+                Добавить теги к секции {section.title?.trim() ? `"${section.title}"` : ''}
               </DialogTitle>
-              <DialogDescription>
-                Choose tags to annotate this section. Selected tags will be added
-                immediately.
+              <DialogDescription className="text-xs sm:text-sm">
+                Выберите теги для аннотации секции. Все теги будут на английском языке.
               </DialogDescription>
             </DialogHeader>
             <TagPalette

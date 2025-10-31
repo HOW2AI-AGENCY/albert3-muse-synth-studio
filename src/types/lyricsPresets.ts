@@ -19,7 +19,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     id: 'intro',
     name: 'Intro',
     icon: 'play',
-    description: 'Opening section that sets the mood',
+    description: 'Вступление, задает настроение композиции',
     defaultTags: [],
     placeholderLines: ['Opening instrumental...', 'Or intro lyrics here'],
     category: 'structure'
@@ -28,34 +28,16 @@ export const SECTION_PRESETS: SectionPreset[] = [
     id: 'verse',
     name: 'Verse',
     icon: 'file-text',
-    description: 'Main storytelling section',
+    description: 'Куплет - основная повествовательная часть (нумерация автоматическая)',
     defaultTags: [],
     placeholderLines: ['First verse lyrics...', 'Tell your story here'],
-    category: 'structure'
-  },
-  {
-    id: 'verse-1',
-    name: 'Verse 1',
-    icon: 'file-text',
-    description: 'First verse with specific numbering',
-    defaultTags: [],
-    placeholderLines: ['First verse lyrics...'],
-    category: 'structure'
-  },
-  {
-    id: 'verse-2',
-    name: 'Verse 2',
-    icon: 'file-text',
-    description: 'Second verse',
-    defaultTags: [],
-    placeholderLines: ['Second verse lyrics...'],
     category: 'structure'
   },
   {
     id: 'pre-chorus',
     name: 'Pre-Chorus',
     icon: 'trending-up',
-    description: 'Builds tension before the chorus',
+    description: 'Подготовка к припеву, нарастание напряжения',
     defaultTags: ['[Building Intensity]'],
     placeholderLines: ['Building up...', 'Leading to the hook'],
     category: 'structure'
@@ -64,7 +46,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     id: 'chorus',
     name: 'Chorus',
     icon: 'music',
-    description: 'Main hook - the most memorable part',
+    description: 'Припев - главный хук, самая запоминающаяся часть',
     defaultTags: ['[Hook Emphasis]'],
     placeholderLines: ['Main hook here...', 'Most catchy part'],
     category: 'structure'
@@ -73,7 +55,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     id: 'post-chorus',
     name: 'Post-Chorus',
     icon: 'chevron-down',
-    description: 'Extension after the chorus',
+    description: 'Продолжение после припева',
     defaultTags: [],
     placeholderLines: ['After chorus extension...'],
     category: 'structure'
@@ -82,7 +64,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     id: 'bridge',
     name: 'Bridge',
     icon: 'git-branch',
-    description: 'Contrasting section, often emotional peak',
+    description: 'Бридж - контрастная часть, часто эмоциональная кульминация',
     defaultTags: ['[Climactic]'],
     placeholderLines: ['Bridge section...', 'Change in perspective or emotion'],
     category: 'structure'
@@ -91,7 +73,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     id: 'outro',
     name: 'Outro',
     icon: 'octagon',
-    description: 'Closing section',
+    description: 'Концовка композиции',
     defaultTags: [],
     placeholderLines: ['Ending...', 'Fade out or final statement'],
     category: 'structure'
@@ -102,7 +84,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     id: 'hook',
     name: 'Hook',
     icon: 'anchor',
-    description: 'Catchy repeated element',
+    description: 'Запоминающийся повторяющийся элемент',
     defaultTags: ['[Hook Emphasis]'],
     placeholderLines: ['Catchy hook...'],
     category: 'common'
@@ -111,7 +93,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     id: 'breakdown',
     name: 'Breakdown',
     icon: 'minus-circle',
-    description: 'Stripped-down section, minimal instrumentation',
+    description: 'Минималистичная секция с редким инструментарием',
     defaultTags: ['[Sparse]', '[Minimal]'],
     placeholderLines: ['Minimal section...'],
     category: 'common'
@@ -120,7 +102,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     id: 'build-up',
     name: 'Build-Up',
     icon: 'bar-chart-3',
-    description: 'Gradually increasing intensity',
+    description: 'Постепенное нарастание интенсивности',
     defaultTags: ['[Building Intensity]', '[Riser]'],
     placeholderLines: ['Building up...', 'Increasing tension'],
     category: 'common'
@@ -129,7 +111,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     id: 'drop',
     name: 'Drop',
     icon: 'chevrons-down',
-    description: 'Explosive release of energy (EDM/Electronic)',
+    description: 'Взрывной выброс энергии (EDM/Electronic)',
     defaultTags: ['[Drop with Impact]'],
     placeholderLines: ['Drop section...'],
     category: 'common'
@@ -140,7 +122,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     id: 'instrumental',
     name: 'Instrumental',
     icon: 'music-2',
-    description: 'Instrumental section without vocals',
+    description: 'Инструментальная секция без вокала',
     defaultTags: ['[Instrumental Only]'],
     placeholderLines: ['(Instrumental)'],
     category: 'special'
@@ -149,7 +131,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     id: 'solo',
     name: 'Solo',
     icon: 'guitar',
-    description: 'Instrumental solo section',
+    description: 'Инструментальное соло',
     defaultTags: [],
     placeholderLines: ['[Guitar Solo]', 'Or [Piano Solo], [Saxophone Solo], etc.'],
     category: 'special'
@@ -158,7 +140,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     id: 'interlude',
     name: 'Interlude',
     icon: 'pause',
-    description: 'Brief transitional section',
+    description: 'Короткая переходная секция',
     defaultTags: [],
     placeholderLines: ['Transitional moment...'],
     category: 'special'
@@ -167,7 +149,7 @@ export const SECTION_PRESETS: SectionPreset[] = [
     id: 'rap-verse',
     name: 'Rap Verse',
     icon: 'mic',
-    description: 'Rap/spoken word section',
+    description: 'Рэп-куплет/речитатив',
     defaultTags: ['[Rap Verse]'],
     placeholderLines: ['Rap lyrics here...', 'Fast-paced rhymes'],
     category: 'special'
@@ -176,16 +158,16 @@ export const SECTION_PRESETS: SectionPreset[] = [
     id: 'ad-lib',
     name: 'Ad-lib',
     icon: 'sparkles',
-    description: 'Improvised vocal flourishes',
+    description: 'Импровизированные вокальные украшения',
     defaultTags: ['[Backing Vocals]'],
     placeholderLines: ['Oh yeah...', 'Vocal riffs and runs'],
     category: 'special'
   },
   {
     id: 'custom',
-    name: 'Custom Section',
+    name: 'Кастомная секция',
     icon: 'edit-3',
-    description: 'Create your own section type',
+    description: 'Создайте свой тип секции',
     defaultTags: [],
     placeholderLines: ['Custom section content...'],
     category: 'special'

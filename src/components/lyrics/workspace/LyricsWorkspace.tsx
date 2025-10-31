@@ -95,13 +95,25 @@ export const LyricsWorkspace = memo<LyricsWorkspaceProps>(({
     setShowPresetDialog(true);
   }, []);
 
-  // Handle preset selection
+  // Handle preset selection with auto-numbering for Verse
   const handlePresetSelect = useCallback((section: Section) => {
+    let finalTitle = section.title;
+    
+    // Auto-number Verse sections
+    if (section.title === 'Verse') {
+      const verseCount = document.sections.filter(s => 
+        s.title.startsWith('Verse')
+      ).length;
+      finalTitle = `Verse ${verseCount + 1}`;
+    }
+    
     const newSection: Section = {
       ...section,
+      title: finalTitle,
       id: `section-${Date.now()}`,
       order: document.sections.length
     };
+    
     handleDocumentChange({ 
       ...document, 
       sections: [...document.sections, newSection] 
