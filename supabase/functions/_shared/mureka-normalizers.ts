@@ -163,16 +163,16 @@ export function normalizeMurekaMusicResponse(
         };
       }
 
-      const clips = wrappedResponse.data.clips || wrappedResponse.data.data || [];
+      const clips = wrappedResponse.data?.clips || wrappedResponse.data?.data || [];
       logger.debug("[MUREKA] Extracted clips from wrapped response", {
         count: clips.length,
       });
 
       return {
         success: true,
-        taskId: wrappedResponse.data.task_id,
+        taskId: wrappedResponse.data?.task_id || "unknown",
         clips,
-        status: wrappedResponse.data.status || "pending",
+        status: wrappedResponse.data?.status || "pending",
       };
     }
 
