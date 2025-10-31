@@ -45,13 +45,11 @@ project-management/
 
 ### 📋 Sprint Documentation
 
-**Current & Recent:**
-- **[Sprint 31 Final Report](./SPRINT_31_FINAL_REPORT.md)** ⭐ Latest completed sprint
-- **[Sprint 31 Summary](../docs/SPRINT_31_SUMMARY.md)** - Week-by-week breakdown
-- **[Sprint 31 Tracking](./SPRINT_31_TRACKING.md)** - Task tracking & progress
+**Current Sprint:**
+- **[Sprint 32 Plan](./SPRINT_32_PLAN.md)** ⭐ Testing Infrastructure (Nov 1-14)
 
-**Upcoming:**
-- **[Sprint 32 Planning](./sprints/sprint-32/)** - Testing Infrastructure (TBD)
+**Recently Completed:**
+- **[Sprint 31 Final Report](./SPRINT_31_FINAL_REPORT.md)** ✅ Critical Infrastructure (95% complete)
 
 ### 📚 Key Resources
 
@@ -87,16 +85,20 @@ project-management/
 ## 🎯 Current Focus (Sprint 32)
 
 ### Primary Objectives
-1. **Unit Tests**: Increase coverage from 35% → 60%
-2. **Integration Tests**: Add tests for all Edge Functions
-3. **E2E Tests**: Implement Playwright tests for critical paths
-4. **CI Integration**: Automate test execution
+1. 🧪 **E2E Testing Framework** - Playwright setup with critical user flows
+2. 📈 **Unit Test Coverage** - Increase from 15% to 80%+
+3. 🔗 **Integration Tests** - Edge Functions and API endpoints
+4. ⚡ **Performance Testing** - Load testing and benchmarking
+5. 🚀 **CI/CD Integration** - Automated testing pipeline
 
 ### Success Criteria
-- ✅ 60% test coverage achieved
+- ✅ E2E tests cover 5+ critical journeys
+- ✅ Unit test coverage ≥ 80%
 - ✅ All Edge Functions have integration tests
-- ✅ 3 critical E2E flows covered
-- ✅ CI/CD runs tests automatically
+- ✅ Performance benchmarks established
+- ✅ CI/CD pipeline runs all tests automatically
+
+**See:** [Sprint 32 Plan](./SPRINT_32_PLAN.md) for detailed breakdown
 
 ---
 
@@ -113,10 +115,11 @@ project-management/
 ### Sprint 32 Targets
 | Metric | Current | Target | Status |
 |--------|---------|--------|--------|
-| Test Coverage | 35% | 60% | 🟡 In Progress |
-| Unit Tests | 15 | 40+ | ⏳ Planned |
-| Integration Tests | 0 | 8 | ⏳ Planned |
-| E2E Tests | 0 | 3 | ⏳ Planned |
+| Test Coverage | 15% | 80%+ | ⏳ Planned |
+| Unit Tests | 10 | 50+ | ⏳ Planned |
+| Integration Tests | 0 | 10+ | ⏳ Planned |
+| E2E Tests | 0 | 15+ | ⏳ Planned |
+| CI/CD Test Time | N/A | < 10 min | ⏳ Planned |
 
 ---
 
