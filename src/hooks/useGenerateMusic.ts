@@ -10,6 +10,8 @@ import { rateLimiter, RATE_LIMIT_CONFIGS, formatResetTime } from '@/utils/rateLi
 import { supabase } from '@/integrations/supabase/client';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { MusicProvider } from '@/config/provider-models';
+import * as Sentry from '@sentry/react';
+import { addBreadcrumb } from '@/utils/sentry';
 
 type ToastFunction = (options: { 
   title: string; 
@@ -94,6 +96,18 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
       lyricsLength: options.lyrics?.length || 0,
       isCyrillic: /[А-Яа-яЁё]/.test(effectivePrompt),
     });
+
+    // Add Sentry breadcrumb
+    addBreadcrumb('Music generation started', 'generation', {
+      provider: effectiveProvider,
+      prompt: effectivePrompt.slice(0, 50),
+      hasVocals: options.hasVocals,
+      hasLyrics: !!options.lyrics,
+    });
+
+    // Set Sentry tags
+    Sentry.setTag('generation.provider', effectiveProvider);
+    Sentry.setTag('generation.has_vocals', options.hasVocals || false);
 
     // Validation
     if (!effectivePrompt) {
@@ -184,10 +198,21 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
         logger.info('Cached track returned. User can force new generation by adding forceNew: true', 'useGenerateMusic', {
           cachedTrackId: result.trackId,
         });
+
+        // Sentry breadcrumb for cached
+        addBreadcrumb('Music generation cached', 'generation', {
+          trackId: result.trackId,
+        });
       } else {
         toast({
           title: '🎵 Генерация началась!',
           description: 'Ваш трек создаётся. Это может занять около минуты...',
+        });
+
+        // Sentry breadcrumb for new generation
+        addBreadcrumb('Music generation initiated', 'generation', {
+          trackId: result.trackId,
+          taskId: result.taskId,
         });
       }
 
@@ -201,6 +226,19 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
         errorName: error instanceof Error ? error.name : 'Unknown',
         errorMessage: error instanceof Error ? error.message : String(error),
         provider: effectiveProvider,
+      });
+
+      // Capture to Sentry with context
+      Sentry.captureException(error, {
+        tags: {
+          'generation.provider': effectiveProvider,
+          'generation.prompt_length': effectivePrompt.length,
+        },
+        extra: {
+          prompt: effectivePrompt,
+          hasVocals: options.hasVocals,
+          hasLyrics: !!options.lyrics,
+        },
       });
       
       const rawMessage = error instanceof Error ? error.message : 'Не удалось сгенерировать музыку.';

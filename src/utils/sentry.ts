@@ -42,27 +42,60 @@ export const initSentry = () => {
       // Performance Monitoring
       integrations: [
         Sentry.browserTracingIntegration({
-          // Trace fetch/XHR requests
           traceFetch: true,
           traceXHR: true,
+          enableLongTask: true,
         }),
         
-        // Session Replay (for debugging user sessions)
         Sentry.replayIntegration({
-          // Capture only sessions with errors
           maskAllText: true,
           blockAllMedia: true,
+          maskAllInputs: true,
         }),
+        
+        Sentry.browserProfilingIntegration(),
+        
+        Sentry.httpClientIntegration({
+          failedRequestStatusCodes: [[400, 599]],
+          failedRequestTargets: [/.*supabase\.co.*/, /.*sunoapi\.org.*/, /.*mureka\.ai.*/],
+        }),
+        
+        Sentry.feedbackIntegration({
+          colorScheme: 'system',
+          showBranding: false,
+          showName: true,
+          showEmail: true,
+          formTitle: 'Сообщить о проблеме',
+          submitButtonLabel: 'Отправить',
+          cancelButtonLabel: 'Отмена',
+          nameLabel: 'Имя',
+          namePlaceholder: 'Ваше имя',
+          emailLabel: 'Email',
+          emailPlaceholder: 'your.email@example.com',
+          messageLabel: 'Описание',
+          messagePlaceholder: 'Что пошло не так?',
+          successMessageText: 'Спасибо! Мы получили ваше сообщение.',
+        }),
+        
+        Sentry.contextLinesIntegration(),
+        Sentry.extraErrorDataIntegration({ depth: 5 }),
       ],
       
       // Performance traces sample rate
-      // In production: 10% of transactions
-      // In development: 100% (if enabled)
-      tracesSampleRate: IS_PRODUCTION ? 0.1 : 1.0,
+      tracesSampleRate: IS_PRODUCTION ? 0.25 : 1.0,
+      profilesSampleRate: IS_PRODUCTION ? 0.25 : 1.0,
       
       // Session Replay sampling
-      replaysSessionSampleRate: IS_PRODUCTION ? 0.1 : 1.0, // 10% of normal sessions
-      replaysOnErrorSampleRate: 1.0, // 100% of sessions with errors
+      replaysSessionSampleRate: IS_PRODUCTION ? 0.1 : 1.0,
+      replaysOnErrorSampleRate: 1.0,
+      
+      // Trace propagation
+      tracePropagationTargets: [
+        'localhost',
+        /^https:\/\/qycfsepwguaiwcquwwbw\.supabase\.co/,
+        /^https:\/\/api\.sunoapi\.org/,
+        /^https:\/\/.*\.mureka\.ai/,
+      ],
       
       // Before sending events, filter out sensitive data
       beforeSend(event) {
@@ -93,6 +126,22 @@ export const initSentry = () => {
         if (event.request?.headers) {
           delete event.request.headers.Authorization;
           delete event.request.headers.Cookie;
+        }
+
+        // Add custom device context
+        if (event.exception) {
+          event.contexts = {
+            ...event.contexts,
+            device: {
+              userAgent: navigator.userAgent,
+              screenResolution: `${screen.width}x${screen.height}`,
+              viewportSize: `${window.innerWidth}x${window.innerHeight}`,
+              connection: (navigator as any).connection?.effectiveType || 'unknown',
+              memory: (performance as any).memory 
+                ? `${Math.round((performance as any).memory.usedJSHeapSize / 1048576)}MB` 
+                : 'unknown',
+            },
+          };
         }
         
         return event;

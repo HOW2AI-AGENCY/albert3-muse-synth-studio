@@ -10,6 +10,7 @@ import router from "./router";
 import { GlobalAudioPlayer } from "./components/player/GlobalAudioPlayer";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PerformanceMonitorWidget } from "@/components/dev/PerformanceMonitorWidget";
+import { SentryFeedbackButton } from "@/components/SentryFeedbackButton";
 import { toast } from "sonner";
 import { reportWebVitals, logMetric } from "@/utils/web-vitals";
 
@@ -70,6 +71,7 @@ const App = () => {
               <RouterProvider router={router} />
               <GlobalAudioPlayer />
               <PerformanceMonitorWidget />
+              <SentryFeedbackButton />
             </Suspense>
           </AppLayout>
         </TooltipProvider>

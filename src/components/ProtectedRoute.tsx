@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
+import { setUserContext } from "@/utils/sentry";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -16,6 +17,15 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
+      
+      // Set Sentry user context
+      if (session?.user) {
+        setUserContext({
+          id: session.user.id,
+          email: session.user.email,
+          username: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
+        });
+      }
     });
 
     // Listen for auth changes
@@ -23,6 +33,17 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      
+      // Update Sentry context on auth change
+      if (session?.user) {
+        setUserContext({
+          id: session.user.id,
+          email: session.user.email,
+          username: session.user.user_metadata?.full_name || session.user.email?.split('@')[0],
+        });
+      } else {
+        setUserContext(null);
+      }
     });
 
     return () => subscription.unsubscribe();
