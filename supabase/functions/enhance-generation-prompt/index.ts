@@ -27,32 +27,20 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Missing authorization header' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401 
-        }
-      );
-    }
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
-    
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Unauthorized' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 401 
-        }
-      );
+    if (token) {
+      const { error: userError } = await supabaseClient.auth.getUser(token);
+      if (userError) {
+        console.warn('Auth token invalid:', userError.message);
+      }
+    } else {
+      console.warn('No auth token provided - proceeding as guest');
     }
 
     const body: EnhancePromptRequest = await req.json();
@@ -60,6 +48,79 @@ serve(async (req) => {
 
     if (!prompt || prompt.trim().length === 0) {
       throw new Error('Prompt is required');
+    }
+
+    // Provider-specific enhancement
+    if (provider === 'suno') {
+      const sunoApiKey = Deno.env.get('SUNO_API_KEY');
+      if (!sunoApiKey) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'SUNO_API_KEY is not configured' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        );
+      }
+
+      // Build concise style content for Suno API
+      let content = (tags && tags.trim()) || [genre, mood].filter(Boolean).join(', ').trim();
+      if (!content) {
+        // Fallback: extract a short style phrase from the prompt
+        const firstClause = prompt.split(/[.|,;|\n]/)[0] || prompt;
+        content = firstClause.slice(0, 80);
+      }
+
+      const sunoResp = await fetch('https://api.sunoapi.org/api/v1/style/generate', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${sunoApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content })
+      });
+
+      const sunoText = await sunoResp.text();
+      let sunoJson: any;
+      try {
+        sunoJson = sunoText ? JSON.parse(sunoText) : null;
+      } catch {
+        sunoJson = null;
+      }
+
+      if (!sunoResp.ok || !sunoJson || sunoJson.code !== 200) {
+        const status = sunoResp.status || 400;
+        const providerCode = sunoJson?.code ?? null;
+        const msg = sunoJson?.msg || 'Style generation failed';
+        return new Response(
+          JSON.stringify({ success: false, error: msg, providerCode }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: status === 429 ? 429 : status === 402 ? 402 : 400 }
+        );
+      }
+
+      const styleResult = (sunoJson.data?.result || '').toString().trim();
+      const addedElements = styleResult
+        ? styleResult.split(/[，,|/]/).map((s: string) => s.trim()).filter(Boolean)
+        : [];
+
+      // Compose concise enhanced prompt
+      let enhancedPrompt = prompt.trim();
+      if (styleResult) {
+        enhancedPrompt = `${enhancedPrompt} | Style: ${styleResult}`;
+      }
+      // Keep it short for Suno
+      if (enhancedPrompt.length > 800) {
+        enhancedPrompt = enhancedPrompt.slice(0, 800);
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            enhancedPrompt,
+            addedElements,
+            reasoning: 'Used Suno style generator to condense style based on your inputs.'
+          },
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
     }
 
     // Prepare context for AI
@@ -71,7 +132,13 @@ serve(async (req) => {
     };
 
     // Build system prompt based on provider
-    const systemPrompt = `You are a music production expert specializing in ${provider === 'suno' ? 'Suno AI' : 'Mureka'} music generation.
+    const isSuno = (provider as any) === 'suno';
+    const providerName = isSuno ? 'Suno AI' : 'Mureka';
+    const providerGuidance = isSuno
+      ? 'Focus on natural language descriptions, mood words, and style tags'
+      : 'Be more technical with BPM, key, and instrument specifics';
+
+    const systemPrompt = `You are a music production expert specializing in ${providerName} music generation.
 
 Your task: Enhance the user's music description to maximize generation quality.
 
@@ -81,9 +148,7 @@ Guidelines:
 3. Add technical details (tempo range, key suggestions, dynamics)
 4. Use genre-specific vocabulary and terminology
 5. Keep the user's original intent - enhance, don't replace
-6. For ${provider}: ${provider === 'suno' 
-  ? 'Focus on natural language descriptions, mood words, and style tags' 
-  : 'Be more technical with BPM, key, and instrument specifics'}
+6. For ${provider}: ${providerGuidance}
 
 Context:
 - Genre: ${context.genre}
