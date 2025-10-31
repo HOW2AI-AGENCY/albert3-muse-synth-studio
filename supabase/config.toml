@@ -142,3 +142,11 @@ verify_jwt = true
 
 [functions.generate-lyrics-ai]
 verify_jwt = true
+
+[functions.generate-advanced-prompt]
+  verify_jwt = true
+  [functions.generate-advanced-prompt.env]
+    SENTRY_DSN = ""
+    SENTRY_ENVIRONMENT = "development"
+    SENTRY_RELEASE = "local"
+    SENTRY_TRACES_SAMPLE_RATE = "0.0"

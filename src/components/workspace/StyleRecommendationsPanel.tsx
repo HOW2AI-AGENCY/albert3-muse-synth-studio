@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Loader2, RefreshCcw } from "@/utils/iconImports";
+import { Loader2, RefreshCcw, Sparkles } from "@/utils/iconImports";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { MUSIC_STYLES, getCategoryName, getRelatedStyles, getStyleById } from "@/data/music-styles";
 import { useStyleRecommendations } from "@/services/ai/style-recommendations";
 import type { StyleRecommendationRequest } from "@/types/styles";
+import type { AdvancedPromptResult } from "@/services/ai/advanced-prompt-generator";
 const normaliseTag = (tag: string) => tag.trim().toLowerCase();
 const normaliseToId = (tag: string) => normaliseTag(tag).replace(/\s+/g, "-");
 const findStyleForTag = (tag: string) => {
@@ -21,6 +22,10 @@ const findStyleForTag = (tag: string) => {
 interface StyleRecommendationsPanelProps extends StyleRecommendationRequest {
   className?: string;
   onApplyTags?: (tags: string[]) => void;
+  onGenerateAdvancedPrompt?: (result: AdvancedPromptResult) => void;
+  currentPrompt?: string;
+  currentLyrics?: string;
+  isGeneratingPrompt?: boolean;
 }
 export const StyleRecommendationsPanel = ({
   className,
@@ -28,7 +33,11 @@ export const StyleRecommendationsPanel = ({
   genre,
   context,
   currentTags,
-  onApplyTags
+  onApplyTags,
+  onGenerateAdvancedPrompt,
+  currentPrompt,
+  currentLyrics,
+  isGeneratingPrompt = false
 }: StyleRecommendationsPanelProps) => {
   const sanitisedTags = useMemo(() => currentTags?.filter(tag => Boolean(tag?.trim())) ?? [], [currentTags]);
   const hasInput = Boolean(mood && mood.trim().length > 0 || genre && genre.trim().length > 0 || context && context.trim().length > 0 || sanitisedTags.length > 0);
@@ -104,9 +113,40 @@ export const StyleRecommendationsPanel = ({
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-2">
               <h4 className="text-sm font-semibold">Рекомендованные теги</h4>
-              <Button variant="outline" size="sm" onClick={() => onApplyTags?.(recommendedTags)} disabled={recommendedTags.length === 0 || !onApplyTags}>
-                Применить теги
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => onApplyTags?.(recommendedTags)} 
+                  disabled={recommendedTags.length === 0 || !onApplyTags}
+                >
+                  Применить теги
+                </Button>
+                {onGenerateAdvancedPrompt && currentPrompt && (
+                  <Button 
+                    variant="default" 
+                    size="sm"
+                    onClick={() => onGenerateAdvancedPrompt({ 
+                      enhancedPrompt: currentPrompt,
+                      formattedLyrics: currentLyrics || '',
+                      metaTags: []
+                    })}
+                    disabled={!data || isGeneratingPrompt}
+                  >
+                    {isGeneratingPrompt ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Генерация...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Создать промпт
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
             </div>
             {recommendedTags.length > 0 ? <div className="flex flex-wrap gap-1.5">
                 {recommendedTags.map(tag => <Badge key={tag} variant="secondary" className="text-xs px-2 py-1">
