@@ -6,7 +6,7 @@ import { LazyImage } from "@/components/ui/lazy-image";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { fadeInUp } from "@/utils/animations";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Play, Pause, Download, Heart, Share2, Clock, Music, AlertTriangle, RefreshCw, Trash2, MoreVertical, Split, Expand, Mic2, Globe, FileAudio, Mic, UserPlus } from "@/utils/iconImports";
+import { Play, Pause, Download, Heart, Share2, Clock, Music, AlertTriangle, RefreshCw, Trash2, MoreVertical, Split, Expand, Mic2, Globe, FileAudio, Mic, UserPlus, Sparkles, Search } from "@/utils/iconImports";
 import { useCurrentTrack, useIsPlaying, useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { useTrackLike } from "@/features/tracks/hooks";
 import { useTrackVersions } from "@/features/tracks/hooks";
@@ -87,6 +87,8 @@ interface TrackCardProps {
   onCover?: (trackId: string) => void;
   onSeparateStems?: (trackId: string) => void;
   onAddVocal?: (trackId: string) => void;
+  onDescribeTrack?: (trackId: string) => void;
+  onRecognizeTrack?: (trackId: string) => void;
   className?: string;
 }
 
@@ -195,6 +197,8 @@ const TrackCardComponent = ({
   onCover,
   onSeparateStems,
   onAddVocal,
+  onDescribeTrack,
+  onRecognizeTrack,
   className
 }: TrackCardProps) => {
   const { toast } = useToast();
@@ -503,6 +507,26 @@ const TrackCardComponent = ({
                     <Globe className="w-4 h-4 mr-2" />
                     {track.is_public ? 'Скрыть' : 'Опубликовать'}
                   </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  
+                  {/* ✅ НОВОЕ: AI Анализ трека */}
+                  <DropdownMenuItem onClick={e => {
+                  e.stopPropagation();
+                  onDescribeTrack?.(track.id);
+                }} disabled={!onDescribeTrack}>
+                    <Sparkles className="w-4 h-4 mr-2 text-primary" />
+                    AI Описание
+                  </DropdownMenuItem>
+                  
+                  {/* ✅ НОВОЕ: Распознать трек */}
+                  <DropdownMenuItem onClick={e => {
+                  e.stopPropagation();
+                  onRecognizeTrack?.(track.id);
+                }} disabled={!onRecognizeTrack || !operationTargetVersion.audio_url}>
+                    <Search className="w-4 h-4 mr-2 text-primary" />
+                    Распознать песню
+                  </DropdownMenuItem>
+                  
                   <DropdownMenuSeparator />
                   {/* ✅ ЭТАП 3: Разделить на стемы - используем МАСТЕР */}
                   <DropdownMenuItem onClick={e => {

@@ -12,6 +12,7 @@ import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { supabase } from "@/integrations/supabase/client";
 import { useManualSyncTrack } from "@/hooks/useManualSyncTrack";
 import { logger } from "@/utils/logger";
+import { AITrackActionsContainer } from "@/components/tracks/AITrackActionsContainer";
 
 interface TracksListProps {
   tracks: Track[];
@@ -210,38 +211,61 @@ const TracksListComponent = ({
   }
 
   return (
-    <div className="space-y-4" ref={containerRef}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold tracking-tight">
-          Ваши треки ({tracks.length})
-        </h2>
-        <ViewSwitcher view={viewMode} onViewChange={handleViewChange} />
-      </div>
+    <AITrackActionsContainer>
+      {({ onDescribeTrack, onRecognizeTrack }) => (
+        <div className="space-y-4" ref={containerRef}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-xl font-semibold tracking-tight">
+              Ваши треки ({tracks.length})
+            </h2>
+            <ViewSwitcher view={viewMode} onViewChange={handleViewChange} />
+          </div>
 
-      {viewMode === 'grid' ? (
-        tracks.length > 50 && containerDimensions.width > 0 ? (
-          // Use virtualization for large lists
-          <VirtualizedTracksList
-            tracks={tracks}
-            containerWidth={containerDimensions.width}
-            containerHeight={containerDimensions.height}
-            onSelect={onSelect}
-            onShare={handleShare}
-            onRetry={handleRetry}
-            onDelete={handleDelete}
-            onSeparateStems={onSeparateStems}
-            onExtend={onExtend}
-            onCover={onCover}
-          />
-        ) : (
-          // Regular grid for smaller lists with stagger animations
-          <StaggerContainer 
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-3"
-            staggerDelay={0.03}
-          >
-            {tracks.map((track) => (
-              <StaggerItem key={track.id}>
-                <TrackCard
+          {viewMode === 'grid' ? (
+            tracks.length > 50 && containerDimensions.width > 0 ? (
+              // Use virtualization for large lists
+              <VirtualizedTracksList
+                tracks={tracks}
+                containerWidth={containerDimensions.width}
+                containerHeight={containerDimensions.height}
+                onSelect={onSelect}
+                onShare={handleShare}
+                onRetry={handleRetry}
+                onDelete={handleDelete}
+                onSeparateStems={onSeparateStems}
+                onExtend={onExtend}
+                onCover={onCover}
+              />
+            ) : (
+              // Regular grid for smaller lists with stagger animations
+              <StaggerContainer 
+                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-3"
+                staggerDelay={0.03}
+              >
+                {tracks.map((track) => (
+                  <StaggerItem key={track.id}>
+                    <TrackCard
+                      track={track as any}
+                      onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
+                      onShare={() => handleShare(track.id)}
+                      onRetry={handleRetry}
+                      onSync={handleSync}
+                      onDelete={handleDelete}
+                      onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
+                      onExtend={onExtend ? () => onExtend(track.id) : undefined}
+                      onCover={onCover ? () => onCover(track.id) : undefined}
+                      onDescribeTrack={() => onDescribeTrack(track.id)}
+                      onRecognizeTrack={() => onRecognizeTrack(track.id)}
+                    />
+                  </StaggerItem>
+                ))}
+              </StaggerContainer>
+            )
+          ) : (
+            <div className="space-y-2">
+              {tracks.map((track) => (
+                <TrackListItem
+                  key={track.id}
                   track={track as any}
                   onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
                   onShare={() => handleShare(track.id)}
@@ -249,30 +273,13 @@ const TracksListComponent = ({
                   onSync={handleSync}
                   onDelete={handleDelete}
                   onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
-                  onExtend={onExtend ? () => onExtend(track.id) : undefined}
-                  onCover={onCover ? () => onCover(track.id) : undefined}
                 />
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
-        )
-      ) : (
-        <div className="space-y-2">
-          {tracks.map((track) => (
-            <TrackListItem
-              key={track.id}
-              track={track as any}
-              onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
-              onShare={() => handleShare(track.id)}
-              onRetry={handleRetry}
-              onSync={handleSync}
-              onDelete={handleDelete}
-              onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
-            />
-          ))}
+              ))}
+            </div>
+          )}
         </div>
       )}
-    </div>
+    </AITrackActionsContainer>
   );
 };
 
