@@ -86,25 +86,13 @@ serve(async (req) => {
 
     const murekaClient = createMurekaClient({ apiKey: murekaApiKey });
 
-    // 5. Download audio
-    const audioResponse = await fetch(track.audio_url);
-    if (!audioResponse.ok) {
-      throw new Error('Failed to download track audio');
-    }
-    const audioBlob = await audioResponse.blob();
-
-    // 6. Upload to Mureka
-    const uploadResponse = await murekaClient.uploadFile(audioBlob);
-    const file_id = uploadResponse.data.file_id;
-
-    // 7. Create description record
+    // 5. Create description record (без загрузки файла)
     const { data: description, error: insertError } = await supabaseAdmin
       .from('song_descriptions')
       .insert({
         user_id: user.id,
         track_id: trackId,
         audio_file_url: track.audio_url,
-        mureka_file_id: file_id,
         status: 'processing',
       })
       .select('id')
@@ -114,7 +102,7 @@ serve(async (req) => {
       throw new Error('Failed to create description record');
     }
 
-    // 8. Call Mureka describe API (using original audio URL, not file_id)
+    // 6. Call Mureka describe API (используем прямой URL, НЕ загружаем файл)
     logger.info('🎼 Calling Mureka describe API', { audioUrl: track.audio_url });
     const describeResponse = await murekaClient.describeSong({ url: track.audio_url });
     const task_id = describeResponse.data.task_id;
