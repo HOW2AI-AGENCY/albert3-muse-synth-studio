@@ -63,6 +63,8 @@ serve(async (req) => {
       });
     }
 
+    const userId = user.id;
+
     // 2. Parse and validate request body
     const rawBody = await req.json();
 
@@ -429,9 +431,53 @@ serve(async (req) => {
 
         const clips = queryResult.data?.clips;
         if (queryResult.code === 200 && clips && clips.length > 0) {
-          const audioUrl = clips[0].audio_url;
-          const coverUrl = clips[0].image_url;
-          const duration = clips[0].duration || 0;
+          const audioUrl = clips[0].audio_url as string | undefined;
+          const coverUrl = clips[0].image_url as string | undefined;
+          const duration = (clips[0].duration as number | undefined) || 0;
+
+          // Upload media to storage to avoid expiring external URLs and playback CORS issues
+          let finalAudioUrl = audioUrl;
+          let finalCoverUrl = coverUrl;
+
+          try {
+            if (audioUrl) {
+              logger.info('📥 Downloading audio from external URL', { trackId: finalTrackId, urlPreview: audioUrl.slice(0, 60) });
+              const audioRes = await fetch(audioUrl);
+              const audioBuf = new Uint8Array(await audioRes.arrayBuffer());
+              const audioPath = `${userId}/${finalTrackId}/main.mp3`;
+              logger.info('📤 Uploading audio to storage', { bucket: 'tracks-audio', path: audioPath });
+              const { error: audioUpErr } = await supabaseAdmin.storage
+                .from('tracks-audio')
+                .upload(audioPath, audioBuf, { contentType: 'audio/mpeg', upsert: true });
+              if (audioUpErr) {
+                logger.error('Audio upload failed', { error: audioUpErr });
+              } else {
+                const { data: pub } = supabaseAdmin.storage.from('tracks-audio').getPublicUrl(audioPath);
+                finalAudioUrl = pub.publicUrl;
+                logger.info('✅ Audio uploaded', { trackId: finalTrackId, urlPreview: finalAudioUrl?.slice(0, 60) });
+              }
+            }
+
+            if (coverUrl) {
+              logger.info('📥 Downloading cover from external URL', { trackId: finalTrackId, urlPreview: coverUrl.slice(0, 60) });
+              const coverRes = await fetch(coverUrl);
+              const coverBuf = new Uint8Array(await coverRes.arrayBuffer());
+              const coverPath = `${userId}/${finalTrackId}/cover.jpg`;
+              logger.info('📤 Uploading cover to storage', { bucket: 'tracks-covers', path: coverPath });
+              const { error: coverUpErr } = await supabaseAdmin.storage
+                .from('tracks-covers')
+                .upload(coverPath, coverBuf, { contentType: 'image/jpeg', upsert: true });
+              if (coverUpErr) {
+                logger.error('Cover upload failed', { error: coverUpErr });
+              } else {
+                const { data: pub } = supabaseAdmin.storage.from('tracks-covers').getPublicUrl(coverPath);
+                finalCoverUrl = pub.publicUrl;
+                logger.info('✅ Cover uploaded', { trackId: finalTrackId, urlPreview: finalCoverUrl?.slice(0, 60) });
+              }
+            }
+          } catch (uploadErr) {
+            logger.error('🔴 Media upload error', { error: uploadErr, trackId: finalTrackId });
+          }
 
           await supabaseAdmin
             .from('tracks')
@@ -439,8 +485,8 @@ serve(async (req) => {
               status: 'completed',
               title: ((!title || title.trim().length === 0) && (clips[0]?.title)) ? (clips[0].title) : undefined,
               style_tags: (Array.isArray((clips[0] as any)?.tags) && (!styleTags || styleTags.length === 0)) ? (clips[0] as any).tags : undefined,
-              audio_url: audioUrl,
-              cover_url: coverUrl,
+              audio_url: finalAudioUrl,
+              cover_url: finalCoverUrl,
               duration_seconds: duration,
               lyrics: (clips[0] as any).lyrics || (clips[0] as any).lyric || lyrics,
               metadata: {
@@ -454,11 +500,11 @@ serve(async (req) => {
 
           logger.info('🎉 Mureka generation completed', {
             trackId: finalTrackId,
-            audioUrl,
+            audioUrl: finalAudioUrl,
             duration,
           });
 
-          // Create track versions for additional outputs
+          // Create track versions for additional outputs (keep external URLs for now)
           if (clips.length > 1) {
             const versions = clips.slice(1).map((output: any, index: number) => ({
               parent_track_id: finalTrackId,
