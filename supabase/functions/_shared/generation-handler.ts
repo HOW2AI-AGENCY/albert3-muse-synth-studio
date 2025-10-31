@@ -311,7 +311,13 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
    * Handle successfully completed track
    */
   protected async handleCompletedTrack(trackId: string, trackData: ProviderTrackData): Promise<void> {
-    logger.info(`✅ [${this.providerName.toUpperCase()}] Track completed`, { trackId });
+    logger.info(`✅ [${this.providerName.toUpperCase()}] Track completed`, { 
+      trackId,
+      hasAudioUrl: !!trackData.audio_url,
+      hasCoverUrl: !!trackData.cover_url,
+      hasTitle: !!trackData.title,
+      title: trackData.title,
+    });
 
     // Upload media to storage
     let finalAudioUrl = trackData.audio_url;
@@ -320,6 +326,11 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
 
     try {
       if (trackData.audio_url) {
+        logger.info(`📥 [${this.providerName.toUpperCase()}] Starting audio upload`, { 
+          trackId,
+          audioUrlPreview: trackData.audio_url.substring(0, 80)
+        });
+        
         finalAudioUrl = await downloadAndUploadAudio(
           trackData.audio_url,
           trackId,
@@ -327,10 +338,20 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
           'main.mp3',
           this.supabase
         );
-        logger.info(`📥 [${this.providerName.toUpperCase()}] Audio uploaded to storage`, { trackId });
+        logger.info(`✅ [${this.providerName.toUpperCase()}] Audio uploaded to storage`, { 
+          trackId,
+          finalUrlPreview: finalAudioUrl?.substring(0, 80)
+        });
+      } else {
+        logger.warn(`⚠️ [${this.providerName.toUpperCase()}] No audio_url in trackData`, { trackId });
       }
 
       if (trackData.cover_url) {
+        logger.info(`🖼️ [${this.providerName.toUpperCase()}] Starting cover upload`, { 
+          trackId,
+          coverUrlPreview: trackData.cover_url.substring(0, 80)
+        });
+        
         finalCoverUrl = await downloadAndUploadCover(
           trackData.cover_url,
           trackId,
@@ -338,7 +359,12 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
           'cover.webp',
           this.supabase
         );
-        logger.info(`🖼️ [${this.providerName.toUpperCase()}] Cover uploaded to storage`, { trackId });
+        logger.info(`✅ [${this.providerName.toUpperCase()}] Cover uploaded to storage`, { 
+          trackId,
+          finalUrlPreview: finalCoverUrl?.substring(0, 80)
+        });
+      } else {
+        logger.warn(`⚠️ [${this.providerName.toUpperCase()}] No cover_url in trackData`, { trackId });
       }
 
       if (trackData.video_url) {
@@ -354,6 +380,7 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
     } catch (uploadError) {
       logger.error(`⚠️ [${this.providerName.toUpperCase()}] Media upload failed, using external URLs`, {
         error: uploadError,
+        errorMessage: uploadError instanceof Error ? uploadError.message : String(uploadError),
         trackId,
       });
     }
@@ -379,13 +406,33 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
       });
     }
 
+    logger.info(`💾 [${this.providerName.toUpperCase()}] Updating track in DB`, {
+      trackId,
+      hasAudioUrl: !!updateData.audio_url,
+      hasCoverUrl: !!updateData.cover_url,
+      hasTitle: !!updateData.title,
+      audioUrlPreview: updateData.audio_url?.substring(0, 80),
+      coverUrlPreview: updateData.cover_url?.substring(0, 80),
+    });
+
     // Update track as completed
-    const { data: updatedTrack } = await this.supabase
+    const { data: updatedTrack, error: updateError } = await this.supabase
       .from('tracks')
       .update(updateData)
       .eq('id', trackId)
       .select('title, lyrics, prompt, style_tags')
       .single();
+
+    if (updateError) {
+      logger.error(`❌ [${this.providerName.toUpperCase()}] Failed to update track`, {
+        trackId,
+        error: updateError,
+        errorMessage: updateError.message,
+      });
+      throw updateError;
+    }
+
+    logger.info(`✅ [${this.providerName.toUpperCase()}] Track updated in DB`, { trackId });
 
     // ✅ Auto-save lyrics if present
     if (updatedTrack?.lyrics) {

@@ -274,6 +274,16 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
 
     const primaryClip = normalized.clips[0];
     
+    logger.info('🎵 [MUREKA] Primary clip data', {
+      taskId,
+      hasAudioUrl: !!primaryClip.audio_url,
+      audioUrl: primaryClip.audio_url?.substring(0, 80),
+      hasCoverUrl: !!(primaryClip.image_url || primaryClip.cover_url),
+      coverUrl: (primaryClip.image_url || primaryClip.cover_url)?.substring(0, 80),
+      title: primaryClip.title || primaryClip.name,
+      duration: primaryClip.duration,
+    });
+    
     // ✅ Save additional variants as track_versions if multiple clips exist
     if (normalized.clips.length > 1) {
       const trackRecord = await this.supabase
