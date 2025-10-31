@@ -1,18 +1,24 @@
-import { useReducer, useEffect, useCallback, useMemo, useState } from "react";
+import { useReducer, useEffect, useCallback, useMemo, useState, Suspense, lazy } from "react";
 import { X, Info, GitBranch, Music4 } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { DetailPanelContent } from "@/components/workspace/DetailPanelContent";
 import { TrackDeleteDialog } from "@/components/tracks/TrackDeleteDialog";
 import { ApiService } from "@/services/api.service";
 import { logger } from "@/utils/logger";
 import { getTrackWithVersions } from "../api/trackVersions";
 import { primeTrackVersionsCache } from "../hooks/useTrackVersions";
 import { DetailPanelMobile } from "./DetailPanelMobile";
+
+// Lazy load tab components for better performance
+const OverviewTab = lazy(() => import("./tabs/OverviewTab").then(m => ({ default: m.OverviewTab })));
+const VersionsTab = lazy(() => import("./tabs/VersionsTab").then(m => ({ default: m.VersionsTab })));
+const StemsTab = lazy(() => import("./tabs/StemsTab").then(m => ({ default: m.StemsTab })));
+const DetailsTab = lazy(() => import("./tabs/DetailsTab").then(m => ({ default: m.DetailsTab })));
 
 interface TrackVersion {
   id: string;
@@ -426,8 +432,8 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete, variant = 'des
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="flex-1 overflow-y-auto mt-0" data-testid="detail-panel-scroll">
-          <div className="px-4 pb-6 space-y-3">
-            <DetailPanelContent
+          <Suspense fallback={<div className="px-4 py-6"><Skeleton className="h-96 w-full" /></div>}>
+            <OverviewTab
               track={track}
               title={state.formData.title}
               setTitle={(value) => handleFormChange('title', value)}
@@ -445,15 +451,14 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete, variant = 'des
               onShare={handleShare}
               onDelete={() => handleDeleteDialogOpen(true)}
               loadVersionsAndStems={loadVersionsAndStems}
-              tabView="overview"
             />
-          </div>
+          </Suspense>
         </TabsContent>
 
         {/* Versions Tab */}
         <TabsContent value="versions" className="flex-1 overflow-y-auto mt-0" data-testid="detail-panel-scroll">
-          <div className="px-4 pb-6 space-y-3">
-            <DetailPanelContent
+          <Suspense fallback={<div className="px-4 py-6"><Skeleton className="h-96 w-full" /></div>}>
+            <VersionsTab
               track={track}
               title={state.formData.title}
               setTitle={(value) => handleFormChange('title', value)}
@@ -471,15 +476,14 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete, variant = 'des
               onShare={handleShare}
               onDelete={() => handleDeleteDialogOpen(true)}
               loadVersionsAndStems={loadVersionsAndStems}
-              tabView="versions"
             />
-          </div>
+          </Suspense>
         </TabsContent>
 
         {/* Stems Tab */}
         <TabsContent value="stems" className="flex-1 overflow-y-auto mt-0" data-testid="detail-panel-scroll">
-          <div className="px-4 pb-6 space-y-3">
-            <DetailPanelContent
+          <Suspense fallback={<div className="px-4 py-6"><Skeleton className="h-96 w-full" /></div>}>
+            <StemsTab
               track={track}
               title={state.formData.title}
               setTitle={(value) => handleFormChange('title', value)}
@@ -497,15 +501,14 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete, variant = 'des
               onShare={handleShare}
               onDelete={() => handleDeleteDialogOpen(true)}
               loadVersionsAndStems={loadVersionsAndStems}
-              tabView="stems"
             />
-          </div>
+          </Suspense>
         </TabsContent>
 
         {/* Details Tab */}
         <TabsContent value="details" className="flex-1 overflow-y-auto mt-0" data-testid="detail-panel-scroll">
-          <div className="px-4 pb-6 space-y-3">
-            <DetailPanelContent
+          <Suspense fallback={<div className="px-4 py-6"><Skeleton className="h-96 w-full" /></div>}>
+            <DetailsTab
               track={track}
               title={state.formData.title}
               setTitle={(value) => handleFormChange('title', value)}
@@ -523,9 +526,8 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete, variant = 'des
               onShare={handleShare}
               onDelete={() => handleDeleteDialogOpen(true)}
               loadVersionsAndStems={loadVersionsAndStems}
-              tabView="details"
             />
-          </div>
+          </Suspense>
         </TabsContent>
       </Tabs>
 

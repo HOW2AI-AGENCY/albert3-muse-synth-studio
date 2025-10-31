@@ -54,8 +54,8 @@ const GlobalAudioPlayer = memo(() => {
   const [isBuffering, setIsBuffering] = useState(false);
   const playerRef = useRef<HTMLDivElement>(null);
 
-  // ✅ FIX: ОТКЛЮЧАЕМ auto-refresh в GlobalAudioPlayer (дублирует логику в error handler)
-  // Refresh обрабатывается только при ошибках загрузки аудио (строка 119-160)
+  // ✅ Audio URL expiration handling via Edge Function
+  // Automatically refreshes expired URLs on playback error (error handler below)
 
 
   // ============= HOOKS: ПЕРЕМЕСТИЛИ СЮДА ДО УСЛОВНЫХ RETURN =============
