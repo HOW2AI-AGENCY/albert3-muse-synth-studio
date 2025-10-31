@@ -331,41 +331,69 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
           variantsCount: additionalClips.length,
         });
         
-        const versionsToInsert = additionalClips.map((clip, index) => ({
-          parent_track_id: trackData.id,
-          variant_index: index + 1, // Start from 1 (main track is variant 0)
-          is_preferred_variant: false,
-          is_primary_variant: false,
-          audio_url: clip.audio_url || null,
-          cover_url: clip.image_url || clip.cover_url || null,
-          video_url: clip.video_url || null,
-          lyrics: clip.lyrics || null,
-          duration: clip.duration || null,
-          suno_id: clip.id || null,
-          metadata: {
-            mureka_clip_id: clip.id,
-            created_at: clip.created_at,
-            tags: clip.tags,
-            title: clip.title || clip.name || `${trackData.title || 'Track'} (V${index + 2})`,
-          },
-        }));
-        
-        const { error: versionsError } = await this.supabase
+        // ✅ FIX: Check existing variants to prevent duplicates
+        const { data: existingVariants } = await this.supabase
           .from('track_versions')
-          .insert(versionsToInsert);
+          .select('variant_index')
+          .eq('parent_track_id', trackData.id);
         
-        if (versionsError) {
-          logger.error('❌ [MUREKA] Failed to save track versions', {
-            error: versionsError,
-            errorMessage: versionsError.message,
+        const existingIndexes = new Set((existingVariants || []).map(v => v.variant_index));
+        
+        const versionsToInsert = additionalClips
+          .map((clip, index) => {
+            const variantIndex = index + 1;
+            // Skip if this variant already exists
+            if (existingIndexes.has(variantIndex)) {
+              logger.info(`⏭️ [MUREKA] Variant ${variantIndex} already exists, skipping`, {
+                trackId: trackData.id,
+                variantIndex,
+              });
+              return null;
+            }
+            
+            return {
+              parent_track_id: trackData.id,
+              variant_index: variantIndex,
+              is_preferred_variant: false,
+              is_primary_variant: false,
+              audio_url: clip.audio_url || null,
+              cover_url: clip.image_url || clip.cover_url || null,
+              video_url: clip.video_url || null,
+              lyrics: clip.lyrics || null,
+              duration: clip.duration || null,
+              suno_id: clip.id || null,
+              metadata: {
+                mureka_clip_id: clip.id,
+                created_at: clip.created_at,
+                tags: clip.tags,
+                title: clip.title || clip.name || `${trackData.title || 'Track'} (V${index + 2})`,
+              },
+            };
+          })
+          .filter(Boolean); // Remove nulls
+        
+        if (versionsToInsert.length === 0) {
+          logger.info('ℹ️ [MUREKA] All variants already exist, nothing to insert', {
             trackId: trackData.id,
-            versionsCount: versionsToInsert.length,
           });
         } else {
-          logger.info('✅ [MUREKA] Track versions saved successfully', {
-            trackId: trackData.id,
-            versionsCount: versionsToInsert.length,
-          });
+          const { error: versionsError } = await this.supabase
+            .from('track_versions')
+            .insert(versionsToInsert);
+          
+          if (versionsError) {
+            logger.error('❌ [MUREKA] Failed to save track versions', {
+              error: versionsError,
+              errorMessage: versionsError.message,
+              trackId: trackData.id,
+              versionsCount: versionsToInsert.length,
+            });
+          } else {
+            logger.info('✅ [MUREKA] Track versions saved successfully', {
+              trackId: trackData.id,
+              versionsCount: versionsToInsert.length,
+            });
+          }
         }
       }
     }

@@ -61,14 +61,20 @@ export const MurekaTrackClipSchema = z.object({
   clip_id: z.string().optional(),
   title: z.string().optional(),
   name: z.string().optional(),
+  url: z.string().url().optional(), // API v7 uses 'url' instead of 'audio_url'
   audio_url: z.string().url().optional(),
   image_url: z.string().url().optional(),
   cover_url: z.string().url().optional(),
   video_url: z.string().url().optional(),
+  flac_url: z.string().url().optional(), // API v7 FLAC format
   duration: z.number().optional(),
   lyrics: z.string().optional(),
+  lyrics_sections: z.array(z.any()).optional(), // API v7 detailed lyrics
   tags: z.array(z.string()).optional(),
-  created_at: z.string().optional(),
+  created_at: z.union([z.string(), z.number()]).optional(), // API v7 supports both string and timestamp
+  finished_at: z.number().optional(), // API v7
+  model: z.string().optional(), // API v7
+  index: z.number().optional(), // API v7 variant index
   metadata: z.record(z.unknown()).optional(),
 });
 

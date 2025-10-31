@@ -164,13 +164,21 @@ export function normalizeMurekaMusicResponse(
       }
 
       // ✅ NEW: Support API v7 'choices' format (priority)
-      const clips = wrappedResponse.data?.choices || 
+      const rawClips = wrappedResponse.data?.choices || 
                     wrappedResponse.data?.clips || 
                     wrappedResponse.data?.data || [];
+      
+      // ✅ TRANSFORM: Normalize 'url' -> 'audio_url' for API v7 compatibility
+      const clips = rawClips.map(clip => ({
+        ...clip,
+        audio_url: clip.audio_url || clip.url, // Use 'url' if 'audio_url' not present
+      }));
+      
       logger.debug("[MUREKA] Extracted clips from wrapped response", {
         count: clips.length,
         source: wrappedResponse.data?.choices ? 'choices (v7)' : 
-                wrappedResponse.data?.clips ? 'clips (legacy)' : 'data (legacy)'
+                wrappedResponse.data?.clips ? 'clips (legacy)' : 'data (legacy)',
+        hasAudioUrl: clips.length > 0 && !!clips[0].audio_url,
       });
 
       // Normalize status: map v7 statuses to our internal format
@@ -196,13 +204,21 @@ export function normalizeMurekaMusicResponse(
     // Handle direct response
     const directResponse = validated;
     // ✅ NEW: Support API v7 'choices' format (priority)
-    const clips = directResponse.choices || 
+    const rawClips = directResponse.choices || 
                   directResponse.clips || 
                   directResponse.data || [];
+    
+    // ✅ TRANSFORM: Normalize 'url' -> 'audio_url' for API v7 compatibility
+    const clips = rawClips.map(clip => ({
+      ...clip,
+      audio_url: clip.audio_url || clip.url, // Use 'url' if 'audio_url' not present
+    }));
+    
     logger.debug("[MUREKA] Extracted clips from direct response", {
       count: clips.length,
       source: directResponse.choices ? 'choices (v7)' : 
-              directResponse.clips ? 'clips (legacy)' : 'data (legacy)'
+              directResponse.clips ? 'clips (legacy)' : 'data (legacy)',
+      hasAudioUrl: clips.length > 0 && !!clips[0].audio_url,
     });
 
     // Normalize status: map v7 statuses to our internal format
