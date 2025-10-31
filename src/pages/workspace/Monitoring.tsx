@@ -179,10 +179,10 @@ export default function MonitoringPage() {
                     </p>
                   </div>
                 </div>
-                {healthStatus?.suno.balance !== undefined && (
+                {healthStatus?.suno.balance && (
                   <Badge variant="outline">
                     <DollarSign className="h-3 w-3 mr-1" />
-                    {healthStatus.suno.balance.toFixed(2)}
+                    {healthStatus.suno.balance.credits.toFixed(2)}
                   </Badge>
                 )}
               </div>
@@ -202,10 +202,10 @@ export default function MonitoringPage() {
                     </p>
                   </div>
                 </div>
-                {healthStatus?.mureka.balance !== undefined && (
+                {healthStatus?.mureka.balance && (
                   <Badge variant="outline">
                     <DollarSign className="h-3 w-3 mr-1" />
-                    {healthStatus.mureka.balance.toFixed(2)}
+                    {healthStatus.mureka.balance.credits.toFixed(2)}
                   </Badge>
                 )}
               </div>

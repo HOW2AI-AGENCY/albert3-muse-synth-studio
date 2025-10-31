@@ -4,10 +4,10 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { checkSunoHealth, checkMurekaHealth, ServiceHealthStatus } from '@/services/monitoring.service';
+import { checkSunoHealth, checkMurekaHealth, CombinedHealthStatus } from '@/services/monitoring.service';
 
 export const useServiceHealth = () => {
-  return useQuery<ServiceHealthStatus>({
+  return useQuery<CombinedHealthStatus>({
     queryKey: ['service-health'],
     queryFn: async () => {
       const [sunoHealth, murekaHealth] = await Promise.all([
@@ -17,14 +17,14 @@ export const useServiceHealth = () => {
 
       return {
         suno: {
-          status: sunoHealth.ok ? 'operational' : 'down',
+          status: sunoHealth.healthy ? 'operational' : 'down',
           balance: sunoHealth.balance,
-          lastChecked: Date.now(),
+          lastChecked: sunoHealth.lastChecked,
         },
         mureka: {
-          status: murekaHealth.ok ? 'operational' : 'down',
+          status: murekaHealth.healthy ? 'operational' : 'down',
           balance: murekaHealth.balance,
-          lastChecked: Date.now(),
+          lastChecked: murekaHealth.lastChecked,
         },
       };
     },

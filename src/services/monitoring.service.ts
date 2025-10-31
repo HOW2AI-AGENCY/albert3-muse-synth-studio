@@ -76,12 +76,27 @@ export function initWebVitals() {
 export interface ServiceHealthStatus {
   provider: 'suno' | 'mureka';
   healthy: boolean;
-  ok?: boolean; // Alias for healthy
   balance?: {
     credits: number;
     limit: number;
   };
   lastChecked: number;
+}
+
+/**
+ * Combined Health Status for all providers
+ */
+export interface CombinedHealthStatus {
+  suno: {
+    status: 'operational' | 'degraded' | 'down';
+    balance?: { credits: number; limit: number };
+    lastChecked: number;
+  };
+  mureka: {
+    status: 'operational' | 'degraded' | 'down';
+    balance?: { credits: number; limit: number };
+    lastChecked: number;
+  };
 }
 
 /**
@@ -139,18 +154,8 @@ export async function checkMurekaHealth(): Promise<ServiceHealthStatus> {
 }
 
 /**
- * Generation Performance Tracking
+ * Generation Performance Tracking (unused, kept for future use)
  */
-interface GenerationMetrics {
-  trackId: string;
-  provider: 'suno' | 'mureka';
-  startTime: number;
-  endTime?: number;
-  duration?: number;
-  status: 'completed' | 'failed';
-  errorMessage?: string;
-}
-
 const activeGenerations = new Map<string, number>();
 
 /**
