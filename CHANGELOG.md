@@ -1,9 +1,21 @@
 # 📝 Changelog
 
-Все заметные изменения в проекте **Albert3 Muse Synth Studio** будут документированы в этом файле.
+All notable changes to **Albert3 Muse Synth Studio** will be documented in this file.
 
-Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/),
-и проект придерживается [Semantic Versioning](https://semver.org/lang/ru/).
+Format based on [Keep a Changelog](https://keepachangelog.com/),
+and this project adheres to [Semantic Versioning](https://semver.org/).
+
+---
+
+## [Unreleased]
+
+### Changed
+- 🗂️ **Repository Restructure** - Complete documentation and project management reorganization
+  - Minimalist README.md (925 lines → 150 lines)
+  - New docs/README.md as central documentation hub
+  - Sprint 31 files moved to project-management/sprints/sprint-31/
+  - Created Sprint 32 structure in project-management/current-sprint/
+  - Removed duplicate and outdated files (6 files deleted)
 
 ---
 
