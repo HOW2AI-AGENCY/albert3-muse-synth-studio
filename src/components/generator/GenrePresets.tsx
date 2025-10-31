@@ -150,7 +150,7 @@ export function GenrePresets({ onSelect }: GenrePresetsProps) {
         <h3 className="text-xs font-medium">Жанровые пресеты</h3>
       </div>
       
-      <div className="relative px-10 sm:px-12">
+      <div className="relative">
         <Carousel
           opts={{
             align: "start",
@@ -159,11 +159,11 @@ export function GenrePresets({ onSelect }: GenrePresetsProps) {
           }}
           className="w-full"
         >
-          <CarouselContent className="-ml-3">
+          <CarouselContent className="-ml-2 md:-ml-3">
             {GENRE_PRESETS.map((preset) => {
               const Icon = preset.icon;
               return (
-                <CarouselItem key={preset.id} className="pl-3 basis-[280px] sm:basis-[260px] md:basis-[48%] lg:basis-1/3">
+                <CarouselItem key={preset.id} className="pl-2 md:pl-3 basis-[280px] sm:basis-[260px] md:basis-[48%] lg:basis-1/3">
                   <Card
                     className={cn(
                       "cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] hover:shadow-md border-muted/50 h-full",
@@ -202,8 +202,8 @@ export function GenrePresets({ onSelect }: GenrePresetsProps) {
               );
             })}
           </CarouselContent>
-          <CarouselPrevious className="absolute left-1 top-1/2 -translate-y-1/2 h-8 w-8 shadow-md border-border/50 bg-background/95 hover:bg-accent" />
-          <CarouselNext className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 shadow-md border-border/50 bg-background/95 hover:bg-accent" />
+          <CarouselPrevious className="absolute -left-3 md:-left-4 top-1/2 -translate-y-1/2 h-8 w-8 md:h-9 md:w-9 shadow-lg border-border/50 bg-background/95 hover:bg-accent z-10" />
+          <CarouselNext className="absolute -right-3 md:-right-4 top-1/2 -translate-y-1/2 h-8 w-8 md:h-9 md:w-9 shadow-lg border-border/50 bg-background/95 hover:bg-accent z-10" />
         </Carousel>
       </div>
     </div>
