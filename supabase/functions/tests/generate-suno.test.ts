@@ -182,7 +182,8 @@ Deno.test("generate-suno: should store suno_task_id for polling", async () => {
       .eq('id', data.trackId)
       .single();
 
-    assertEquals(track.suno_id, mockTaskId);
+    assertExists(track);
+    assertEquals(track!.suno_id, mockTaskId);
   } finally {
     cleanup();
   }
