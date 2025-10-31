@@ -161,12 +161,14 @@ const mainHandler = async (req: Request): Promise<Response> => {
       ? audioBlob.type
       : (mimeByExt[ext] || 'audio/mpeg');
 
-    logger.info('[ANALYZE-REF] 📤 Uploading to Mureka (normalized format)', {
-      originalType: audioBlob.type,
-      normalizedType,
-      audioSize: audioBlob.size
-    });
-    const uploadResult = await murekaClient.uploadFile(new Blob([audioBlob], { type: normalizedType }));
+logger.info('[ANALYZE-REF] 📤 Uploading to Mureka (normalized format)', {
+  originalType: audioBlob.type,
+  normalizedType,
+  audioSize: audioBlob.size
+});
+const filename = `reference.${ext || 'mp3'}`;
+const fileForUpload = new File([audioBlob], filename, { type: normalizedType });
+const uploadResult = await murekaClient.uploadFile(fileForUpload);
 
     if (uploadResult.code !== 200 || !uploadResult.data?.file_id) {
       throw new Error('Mureka file upload failed');
@@ -183,14 +185,14 @@ const mainHandler = async (req: Request): Promise<Response> => {
     // ============================================================================
 
     logger.info('[ANALYZE-REF] 🔍 Initiating song recognition');
-    const recognitionPromise = murekaClient.recognizeSong({ audio_file: fileId });
+    const recognitionPromise = murekaClient.recognizeSong({ audio_file: fileId, file_id: fileId } as any);
 
     // ============================================================================
     // STEP 3: Запуск Song Description (параллельно)
     // ============================================================================
 
     logger.info('[ANALYZE-REF] 📖 Initiating song description');
-    const descriptionPromise = murekaClient.describeSong({ audio_file: fileId });
+    const descriptionPromise = murekaClient.describeSong({ audio_file: fileId, file_id: fileId } as any);
 
     // ✅ Параллельное выполнение обоих запросов
     const [recognitionResult, descriptionResult] = await Promise.all([
