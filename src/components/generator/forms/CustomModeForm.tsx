@@ -28,6 +28,7 @@ interface CustomModeFormProps {
   onAudioFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveAudio: () => void;
   onSelectReferenceTrack?: (track: { id: string; audio_url: string; title: string }) => void;
+  onManualAnalyze?: (audioUrl: string) => void;
   onRecordComplete?: (url: string) => void;
   /** ✅ НОВОЕ: Callback при завершении анализа референса */
   onAnalysisComplete?: (result: { recognition: any; description: any }) => void;
@@ -50,6 +51,7 @@ export const CustomModeForm = memo(({
   onAudioFileSelect,
   onRemoveAudio,
   onSelectReferenceTrack,
+  onManualAnalyze,
   onRecordComplete,
   onAnalysisComplete,
   isBoosting,
@@ -199,6 +201,7 @@ export const CustomModeForm = memo(({
                   onFileSelect={onAudioFileSelect}
                   onRemove={onRemoveAudio}
                   onSelectTrack={onSelectReferenceTrack}
+                  onManualAnalyze={onManualAnalyze}
                   onRecordComplete={onRecordComplete}
                   autoAnalyze={true}
                   onAnalysisComplete={onAnalysisComplete}

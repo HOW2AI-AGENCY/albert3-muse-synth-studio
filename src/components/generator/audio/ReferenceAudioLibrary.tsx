@@ -22,9 +22,11 @@ interface ReferenceAudio {
 interface ReferenceAudioLibraryProps {
   onSelect: (audio: { url: string; fileName: string }) => void;
   selectedUrl?: string | null;
+  /** ✅ НОВОЕ: Callback для запуска анализа после выбора */
+  onAnalyze?: (audioUrl: string) => void;
 }
 
-export function ReferenceAudioLibrary({ onSelect, selectedUrl }: ReferenceAudioLibraryProps) {
+export function ReferenceAudioLibrary({ onSelect, selectedUrl, onAnalyze }: ReferenceAudioLibraryProps) {
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -82,6 +84,10 @@ export function ReferenceAudioLibrary({ onSelect, selectedUrl }: ReferenceAudioL
       size: audio.file_size
     });
     onSelect({ url: audio.file_url, fileName: audio.file_name });
+    
+    // ✅ КРИТИЧНО: Запустить анализ через Mureka
+    onAnalyze?.(audio.file_url);
+    
     toast.success('Аудио выбрано из библиотеки');
   };
 

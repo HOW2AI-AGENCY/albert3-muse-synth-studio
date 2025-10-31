@@ -330,6 +330,38 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     });
   }, [setParam, toast]);
 
+  // ✅ НОВОЕ: Ручной запуск анализа для аудио из библиотеки
+  const handleManualAnalyze = useCallback(async (audioUrl: string) => {
+    try {
+      logger.info('🔍 [MANUAL-ANALYSIS] Starting analysis', 'MusicGeneratorV2', {
+        audioUrl: audioUrl.substring(0, 50)
+      });
+
+      const { data, error } = await supabase.functions.invoke('analyze-reference-audio', {
+        body: { audioUrl }
+      });
+
+      if (error) throw error;
+
+      logger.info('✅ [MANUAL-ANALYSIS] Analysis started', 'MusicGeneratorV2', {
+        recognitionId: data?.recognitionId,
+        descriptionId: data?.descriptionId
+      });
+
+      toast({
+        title: '🔍 Анализ запущен',
+        description: 'Mureka обрабатывает аудио...',
+      });
+    } catch (error) {
+      logger.error('[MANUAL-ANALYSIS] Failed to start analysis', error instanceof Error ? error : new Error(String(error)), 'MusicGeneratorV2');
+      toast({
+        title: 'Ошибка анализа',
+        description: 'Не удалось запустить анализ аудио',
+        variant: 'destructive'
+      });
+    }
+  }, [supabase, toast]);
+
   const handleRecordComplete = useCallback(async (audioUrl: string) => {
     setParam('referenceAudioUrl', audioUrl);
     setParam('referenceFileName', 'Записанное аудио');
@@ -731,6 +763,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               onAudioFileSelect={handleAudioFileSelect}
               onRemoveAudio={handleRemoveAudio}
               onSelectReferenceTrack={handleSelectReferenceTrack}
+              onManualAnalyze={handleManualAnalyze}
               onRecordComplete={handleRecordComplete}
               onAnalysisComplete={handleAnalysisComplete}
               isBoosting={isBoosting}

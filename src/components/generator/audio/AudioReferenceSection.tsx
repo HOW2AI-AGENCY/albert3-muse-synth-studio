@@ -28,6 +28,8 @@ interface AudioReferenceSectionProps {
     description: any;
     murekaFileId?: string;
   }) => void;
+  /** ✅ НОВОЕ: Ручной запуск анализа (для библиотеки) */
+  onManualAnalyze?: (audioUrl: string) => void;
 }
 
 export const AudioReferenceSection = memo(({
@@ -41,6 +43,7 @@ export const AudioReferenceSection = memo(({
   isGenerating,
   autoAnalyze = false,
   onAnalysisComplete,
+  onManualAnalyze,
 }: AudioReferenceSectionProps) => {
   const [trackSelectorOpen, setTrackSelectorOpen] = useState(false);
 
@@ -198,6 +201,13 @@ export const AudioReferenceSection = memo(({
                   audio_url: url,
                   title: fileName
                 });
+              }}
+              onAnalyze={(url) => {
+                // ✅ КРИТИЧНО: Запустить анализ вручную для выбранного из библиотеки
+                logger.info('🔍 [LIBRARY-ANALYSIS] Starting analysis for library audio', 'AudioReferenceSection', {
+                  audioUrl: url.substring(0, 50)
+                });
+                onManualAnalyze?.(url);
               }}
               selectedUrl={referenceAudioUrl}
             />
