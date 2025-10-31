@@ -497,6 +497,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   }, [murekaLyricsDialog.trackId, setParam]);
 
   const handleGenerate = useCallback(async () => {
+    console.log('🎵 [GENERATOR DEBUG] handleGenerate() called!');
     vibrate('heavy');
 
     // Pre-flight balance check for Suno
