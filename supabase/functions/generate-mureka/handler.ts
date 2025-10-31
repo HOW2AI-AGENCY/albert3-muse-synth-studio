@@ -278,30 +278,34 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
     if (normalized.clips.length > 1) {
       const trackRecord = await this.supabase
         .from('tracks')
-        .select('id')
-        .eq('suno_task_id', taskId)
+        .select('id, user_id, title')
+        .eq('mureka_task_id', taskId)
         .single();
       
       if (trackRecord.data) {
         const additionalClips = normalized.clips.slice(1);
         
-        logger.info('[MUREKA] Saving additional track variants', {
+        logger.info('💾 [MUREKA] Saving additional track variants', {
           trackId: trackRecord.data.id,
           variantsCount: additionalClips.length,
         });
         
         const versionsToInsert = additionalClips.map((clip, index) => ({
           parent_track_id: trackRecord.data.id,
-          version_number: index + 2, // Start from 2 (main track is version 1)
+          variant_index: index + 1, // Start from 1 (main track is variant 0)
+          is_preferred_variant: false,
+          is_primary_variant: false,
           audio_url: clip.audio_url || null,
           cover_url: clip.image_url || clip.cover_url || null,
           video_url: clip.video_url || null,
           lyrics: clip.lyrics || null,
           duration: clip.duration || null,
+          suno_id: clip.id || null,
           metadata: {
             mureka_clip_id: clip.id,
             created_at: clip.created_at,
             tags: clip.tags,
+            title: clip.title || clip.name || `${trackRecord.data.title || 'Track'} (V${index + 2})`,
           },
         }));
         
@@ -310,11 +314,20 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
           .insert(versionsToInsert);
         
         if (versionsError) {
-          logger.error('[MUREKA] Failed to save track versions', {
+          logger.error('❌ [MUREKA] Failed to save track versions', {
             error: versionsError,
+            errorMessage: versionsError.message,
             trackId: trackRecord.data.id,
+            versionsCount: versionsToInsert.length,
+          });
+        } else {
+          logger.info('✅ [MUREKA] Track versions saved successfully', {
+            trackId: trackRecord.data.id,
+            versionsCount: versionsToInsert.length,
           });
         }
+      } else {
+        logger.error('⚠️ [MUREKA] Track not found for versions', { taskId });
       }
     }
 

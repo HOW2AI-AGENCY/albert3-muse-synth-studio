@@ -322,8 +322,8 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
       if (trackData.audio_url) {
         finalAudioUrl = await downloadAndUploadAudio(
           trackData.audio_url,
-          this.userId,
           trackId,
+          this.userId,
           'main.mp3',
           this.supabase
         );
@@ -333,8 +333,8 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
       if (trackData.cover_url) {
         finalCoverUrl = await downloadAndUploadCover(
           trackData.cover_url,
-          this.userId,
           trackId,
+          this.userId,
           'cover.webp',
           this.supabase
         );
@@ -344,8 +344,8 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
       if (trackData.video_url) {
         finalVideoUrl = await downloadAndUploadVideo(
           trackData.video_url,
-          this.userId,
           trackId,
+          this.userId,
           'video.mp4',
           this.supabase
         );
@@ -358,19 +358,31 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
       });
     }
 
+    // Prepare update object
+    const updateData: any = {
+      status: 'completed',
+      audio_url: finalAudioUrl,
+      cover_url: finalCoverUrl,
+      video_url: finalVideoUrl,
+      duration: trackData.duration,
+      metadata: {
+        completed_at: new Date().toISOString(),
+      },
+    };
+
+    // Update title if provided by provider
+    if (trackData.title) {
+      updateData.title = trackData.title;
+      logger.info(`📝 [${this.providerName.toUpperCase()}] Updating title from provider`, { 
+        trackId, 
+        title: trackData.title 
+      });
+    }
+
     // Update track as completed
     const { data: updatedTrack } = await this.supabase
       .from('tracks')
-      .update({
-        status: 'completed',
-        audio_url: finalAudioUrl,
-        cover_url: finalCoverUrl,
-        video_url: finalVideoUrl,
-        duration: trackData.duration,
-        metadata: {
-          completed_at: new Date().toISOString(),
-        },
-      })
+      .update(updateData)
       .eq('id', trackId)
       .select('title, lyrics, prompt, style_tags')
       .single();

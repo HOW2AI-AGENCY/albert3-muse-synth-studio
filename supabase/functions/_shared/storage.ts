@@ -125,13 +125,23 @@ export async function downloadAndUploadAudio(
       });
     });
     
+    const contentType = audioBlob.type || 'audio/mpeg';
+    
     const { data, error } = await uploadWithRetry(
       supabase,
       'tracks-audio',
       path,
       audioBlob,
-      'audio/mpeg'
+      contentType
     );
+    
+    import('../_shared/logger.ts').then(({ logger }) => {
+      logger.info('Audio content type detected', { 
+        trackId,
+        contentType,
+        blobType: audioBlob.type
+      });
+    });
     
     if (error) {
       import('../_shared/logger.ts').then(({ logger }) => {
