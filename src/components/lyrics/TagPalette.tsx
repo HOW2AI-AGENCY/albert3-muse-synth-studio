@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { 
@@ -129,32 +128,30 @@ export const TagPalette: React.FC<TagPaletteProps> = ({
     const IconComponent = tag.icon ? iconMap[tag.icon] : null;
 
     return (
-      <TooltipProvider key={value}>
-        <Tooltip delayDuration={300}>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onAddTag(tag)}
-              className={cn(
-                "h-auto min-h-[28px] sm:min-h-[32px] px-2 sm:px-3 py-1 sm:py-1.5",
-                "text-[10px] sm:text-xs font-medium",
-                "hover:scale-105 active:scale-95 transition-all duration-200",
-                "border-2 hover:border-primary"
-              )}
-            >
-              {IconComponent && <IconComponent className="mr-1 sm:mr-1.5 h-3 w-3 flex-shrink-0" />}
-              <span className="truncate">{value}</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-[200px] text-xs">
-            <p className="font-semibold mb-1">{value}</p>
-            {categoryDef.description && (
-              <p className="text-muted-foreground text-[10px]">{categoryDef.description}</p>
+      <Tooltip key={value} delayDuration={300}>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onAddTag(tag)}
+            className={cn(
+              "h-auto min-h-[28px] sm:min-h-[32px] px-2 sm:px-3 py-1 sm:py-1.5",
+              "text-[10px] sm:text-xs font-medium",
+              "hover:scale-105 active:scale-95 transition-all duration-200",
+              "border-2 hover:border-primary"
             )}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+          >
+            {IconComponent && <IconComponent className="mr-1 sm:mr-1.5 h-3 w-3 flex-shrink-0" />}
+            <span className="truncate">{value}</span>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-[200px] text-xs">
+          <p className="font-semibold mb-1">{value}</p>
+          {categoryDef.description && (
+            <p className="text-muted-foreground text-[10px]">{categoryDef.description}</p>
+          )}
+        </TooltipContent>
+      </Tooltip>
     );
   };
 

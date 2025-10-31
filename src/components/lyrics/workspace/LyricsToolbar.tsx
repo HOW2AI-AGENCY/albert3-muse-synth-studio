@@ -13,7 +13,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
@@ -160,7 +159,7 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
   };
 
   return (
-    <TooltipProvider>
+    <>
       <div className={cn(
         "flex items-center gap-1 p-1.5 border-b bg-muted/30 w-full min-w-0 overflow-x-auto whitespace-nowrap scrollbar-minimal",
         compact && "p-1"
@@ -388,6 +387,6 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
           </DialogContent>
         </Dialog>
       </div>
-    </TooltipProvider>
+    </>
   );
 };
