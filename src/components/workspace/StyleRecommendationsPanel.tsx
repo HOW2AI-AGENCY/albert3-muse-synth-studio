@@ -6,8 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { MUSIC_STYLES, getCategoryName, getRelatedStyles, getStyleById } from "@/data/music-styles";
 import { useStyleRecommendations } from "@/services/ai/style-recommendations";
-import { stylePresets } from "@/utils/musicStyles";
-import type { StylePreset, StyleRecommendationRequest } from "@/types/styles";
+import type { StyleRecommendationRequest } from "@/types/styles";
 const normaliseTag = (tag: string) => tag.trim().toLowerCase();
 const normaliseToId = (tag: string) => normaliseTag(tag).replace(/\s+/g, "-");
 const findStyleForTag = (tag: string) => {
@@ -21,7 +20,6 @@ const findStyleForTag = (tag: string) => {
 };
 interface StyleRecommendationsPanelProps extends StyleRecommendationRequest {
   className?: string;
-  onApplyPreset?: (preset: StylePreset) => void;
   onApplyTags?: (tags: string[]) => void;
 }
 export const StyleRecommendationsPanel = ({
@@ -30,7 +28,6 @@ export const StyleRecommendationsPanel = ({
   genre,
   context,
   currentTags,
-  onApplyPreset,
   onApplyTags
 }: StyleRecommendationsPanelProps) => {
   const sanitisedTags = useMemo(() => currentTags?.filter(tag => Boolean(tag?.trim())) ?? [], [currentTags]);

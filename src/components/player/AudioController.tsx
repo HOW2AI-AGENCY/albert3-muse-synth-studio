@@ -5,7 +5,6 @@
 import { useEffect } from 'react';
 import { useAudioPlayerStore, useCurrentTrack, useIsPlaying, useVolume, useAudioRef } from '@/stores/audioPlayerStore';
 import { logger } from '@/utils/logger';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export const AudioController = () => {
@@ -112,7 +111,7 @@ export const AudioController = () => {
       }
     };
 
-    const handleError = async () => {
+    const handleError = () => {
       logger.error('Audio loading error', new Error('Audio failed to load'), 'AudioController', {
         trackId: currentTrack?.id,
         audio_url: currentTrack?.audio_url?.substring(0, 100),
@@ -120,39 +119,9 @@ export const AudioController = () => {
         errorMessage: audio.error?.message,
       });
 
-      // Попытка обновить истекший URL через Edge Function
-      if (currentTrack && audio.error?.code === 4) {
-        try {
-          logger.info('Attempting to refresh expired audio URL', 'AudioController', {
-            trackId: currentTrack.id
-          });
-
-          const { data, error } = await supabase.functions.invoke('refresh-track-audio', {
-            body: { trackId: currentTrack.id }
-          });
-
-          if (error) throw error;
-
-          if (data?.audio_url) {
-            logger.info('Audio URL refreshed successfully', 'AudioController');
-            
-            // Обновляем трек с новым URL
-            playTrack({
-              ...currentTrack,
-              audio_url: data.audio_url
-            });
-            
-            toast.success('Аудио обновлено');
-          }
-        } catch (refreshError) {
-          logger.error('Failed to refresh audio URL', refreshError as Error, 'AudioController');
-          toast.error('Не удалось загрузить аудио');
-          pause();
-        }
-      } else {
-        toast.error('Ошибка загрузки аудио');
-        pause();
-      }
+      // Show user-friendly error message
+      toast.error('Ошибка загрузки аудио');
+      pause();
     };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);

@@ -14,8 +14,6 @@ import { EmptyStateCard } from "@/components/layout/EmptyStateCard";
 import { StructuredLyrics } from "@/components/lyrics/StructuredLyrics";
 import { StyleRecommendationsPanel } from "./StyleRecommendationsPanel";
 import { useAudioPlayer } from "@/contexts/audio-player";
-import type { StylePreset } from "@/types/styles";
-import { getStyleById } from "@/data/music-styles";
 import { AnalyticsService } from "@/services/analytics.service";
 interface Track {
   id: string;
@@ -250,12 +248,6 @@ export const DetailPanelContent = ({
     setSelectedVersionId(rightId);
     setComparisonRightId(leftId);
   }, []);
-  const handlePresetApply = (preset: StylePreset) => {
-    const presetGenre = preset.styleIds.map(styleId => getStyleById(styleId)?.name ?? styleId).join(", ");
-    if (presetGenre) {
-      setGenre(presetGenre);
-    }
-  };
   const handleTagsApply = (tags: string[]) => {
     if (!tags.length) {
       return;
@@ -341,7 +333,7 @@ export const DetailPanelContent = ({
                 <CardDescription className="text-xs">Подберите подходящие жанры и теги с помощью ассистента.</CardDescription>
               </CardHeader>
               <CardContent className="px-4 pb-4">
-                <StyleRecommendationsPanel mood={mood} genre={genre} context={track.prompt} currentTags={track.style_tags ?? []} onApplyPreset={handlePresetApply} onApplyTags={handleTagsApply} />
+                <StyleRecommendationsPanel mood={mood} genre={genre} context={track.prompt} currentTags={track.style_tags ?? []} onApplyTags={handleTagsApply} />
               </CardContent>
             </Card>
 
@@ -521,7 +513,6 @@ interface StatsItemProps {
 }
 const StatsItem = ({
   icon: Icon,
-  label,
   value
 }: StatsItemProps) => <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-background/60 p-3">
     <div className="flex items-center gap-2 text-sm">

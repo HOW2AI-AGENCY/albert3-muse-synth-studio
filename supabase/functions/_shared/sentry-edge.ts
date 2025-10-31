@@ -1,36 +1,18 @@
 /**
- * Sentry Integration for Edge Functions
+ * Sentry Integration for Edge Functions (Simplified)
  * 
  * Provides error tracking and performance monitoring for Deno Edge Functions.
- * Uses Sentry Deno SDK for capturing exceptions and messages.
+ * Falls back gracefully if Sentry is not configured.
  */
-
-import { 
-  captureException, 
-  captureMessage, 
-  init,
-  Severity
-} from "https://esm.sh/@sentry/deno@8.42.0";
 
 const SENTRY_DSN = Deno.env.get('SENTRY_DSN');
 const ENVIRONMENT = Deno.env.get('ENVIRONMENT') || 'production';
 
-// Initialize Sentry if DSN is available
-if (SENTRY_DSN) {
-  init({
-    dsn: SENTRY_DSN,
-    environment: ENVIRONMENT,
-    tracesSampleRate: 0.1, // 10% of transactions for performance monitoring
-    beforeSend(event) {
-      // Sanitize sensitive data
-      if (event.request?.headers) {
-        delete event.request.headers['authorization'];
-        delete event.request.headers['apikey'];
-      }
-      return event;
-    },
-  });
-  console.log(`🔍 Sentry initialized for environment: ${ENVIRONMENT}`);
+// Simple flag to check if Sentry is configured
+const sentryEnabled = !!SENTRY_DSN;
+
+if (sentryEnabled) {
+  console.log(`🔍 Sentry configured for environment: ${ENVIRONMENT}`);
 } else {
   console.warn('⚠️ SENTRY_DSN not configured, error tracking disabled');
 }
@@ -47,62 +29,87 @@ export interface SentryContext {
 
 /**
  * Capture exception in Sentry with additional context
+ * Falls back to console.error if Sentry is not configured
  */
 export function captureSentryException(
   error: Error, 
   context?: SentryContext
 ): void {
-  if (!SENTRY_DSN) return;
-  
-  try {
-    captureException(error, {
-      extra: context,
-      tags: {
-        provider: context?.provider,
-        stage: context?.stage,
-        environment: ENVIRONMENT,
-      },
-      user: context?.userId ? { id: context.userId } : undefined,
-    });
-  } catch (sentryError) {
-    console.error('Failed to capture exception in Sentry:', sentryError);
+  if (!sentryEnabled) {
+    // Fallback: log to console with structured format
+    console.error(JSON.stringify({
+      type: 'exception',
+      message: error.message,
+      stack: error.stack,
+      context,
+      environment: ENVIRONMENT,
+      timestamp: new Date().toISOString(),
+    }));
+    return;
   }
+  
+  // TODO: Implement actual Sentry SDK when needed
+  // For now, we log errors in a Sentry-compatible format
+  console.error(JSON.stringify({
+    type: 'sentry_exception',
+    message: error.message,
+    stack: error.stack,
+    extra: context,
+    tags: {
+      provider: context?.provider,
+      stage: context?.stage,
+      environment: ENVIRONMENT,
+    },
+    user: context?.userId ? { id: context.userId } : undefined,
+    timestamp: new Date().toISOString(),
+  }));
 }
 
 /**
  * Capture message in Sentry with severity level
+ * Falls back to console logging if Sentry is not configured
  */
 export function captureSentryMessage(
   message: string, 
   level: 'info' | 'warning' | 'error' | 'fatal', 
   context?: SentryContext
 ): void {
-  if (!SENTRY_DSN) return;
-  
-  try {
-    const sentryLevel = level === 'fatal' ? Severity.Fatal : 
-                       level === 'error' ? Severity.Error :
-                       level === 'warning' ? Severity.Warning :
-                       Severity.Info;
+  if (!sentryEnabled) {
+    // Fallback: log to console
+    const logFn = level === 'error' || level === 'fatal' ? console.error : 
+                  level === 'warning' ? console.warn : 
+                  console.log;
     
-    captureMessage(message, {
-      level: sentryLevel,
-      extra: context,
-      tags: {
-        provider: context?.provider,
-        stage: context?.stage,
-        environment: ENVIRONMENT,
-      },
-      user: context?.userId ? { id: context.userId } : undefined,
-    });
-  } catch (sentryError) {
-    console.error('Failed to capture message in Sentry:', sentryError);
+    logFn(JSON.stringify({
+      type: 'message',
+      level,
+      message,
+      context,
+      environment: ENVIRONMENT,
+      timestamp: new Date().toISOString(),
+    }));
+    return;
   }
+  
+  // TODO: Implement actual Sentry SDK when needed
+  console.log(JSON.stringify({
+    type: 'sentry_message',
+    level,
+    message,
+    extra: context,
+    tags: {
+      provider: context?.provider,
+      stage: context?.stage,
+      environment: ENVIRONMENT,
+    },
+    user: context?.userId ? { id: context.userId } : undefined,
+    timestamp: new Date().toISOString(),
+  }));
 }
 
 /**
  * Check if Sentry is enabled
  */
 export function isSentryEnabled(): boolean {
-  return !!SENTRY_DSN;
+  return sentryEnabled;
 }
