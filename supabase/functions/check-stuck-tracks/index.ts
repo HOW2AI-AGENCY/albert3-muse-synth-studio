@@ -548,12 +548,22 @@ serve(async (req: Request): Promise<Response> => {
     });
 
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    const errorName = error instanceof Error ? error.name : typeof error;
+    
     logger.error('🔴 Error in check-stuck-tracks', { 
-      error: error instanceof Error ? error : new Error(String(error))
+      message: errorMessage,
+      stack: errorStack,
+      name: errorName,
+      raw: error
     });
 
     return new Response(JSON.stringify({
-      error: error instanceof Error ? error.message : 'Unknown error'
+      success: false,
+      error: errorMessage,
+      errorType: errorName,
+      stack: errorStack
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

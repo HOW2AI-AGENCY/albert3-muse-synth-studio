@@ -79,7 +79,8 @@ export const MurekaMusicWrappedResponseSchema = z.object({
   code: z.number(),
   msg: z.string(),
   data: z.object({
-    task_id: z.string(),
+    id: z.string().optional(), // Mureka uses 'id' instead of 'task_id'
+    task_id: z.string().optional(),
     status: z.enum(["pending", "processing", "completed", "failed", "preparing"]).optional(),
     clips: z.array(MurekaTrackClipSchema).optional(),
     data: z.array(MurekaTrackClipSchema).optional(), // Some responses use 'data' instead of 'clips'
@@ -90,7 +91,8 @@ export const MurekaMusicWrappedResponseSchema = z.object({
  * Schema for direct Mureka Music Generation Response
  */
 export const MurekaMusicDirectResponseSchema = z.object({
-  task_id: z.string(),
+  id: z.string().optional(), // Mureka uses 'id' instead of 'task_id'
+  task_id: z.string().optional(),
   status: z.enum(["pending", "processing", "completed", "failed", "preparing"]).optional(),
   clips: z.array(MurekaTrackClipSchema).optional(),
   data: z.array(MurekaTrackClipSchema).optional(),

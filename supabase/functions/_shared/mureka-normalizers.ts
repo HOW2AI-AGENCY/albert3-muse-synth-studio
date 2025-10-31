@@ -156,7 +156,7 @@ export function normalizeMurekaMusicResponse(
 
         return {
           success: false,
-          taskId: wrappedResponse.data?.task_id || "unknown",
+          taskId: wrappedResponse.data?.task_id || wrappedResponse.data?.id || "unknown",
           clips: [],
           status: "failed",
           error: wrappedResponse.msg,
@@ -173,9 +173,12 @@ export function normalizeMurekaMusicResponse(
       const normalizedStatus: "pending" | "processing" | "completed" | "failed" = 
         rawStatus === "preparing" ? "pending" : rawStatus;
 
+      // Mureka uses 'id' instead of 'task_id' in initial response
+      const taskId = wrappedResponse.data?.task_id || wrappedResponse.data?.id || "unknown";
+
       return {
         success: true,
-        taskId: wrappedResponse.data?.task_id || "unknown",
+        taskId,
         clips,
         status: normalizedStatus,
       };
@@ -193,9 +196,12 @@ export function normalizeMurekaMusicResponse(
     const normalizedStatus: "pending" | "processing" | "completed" | "failed" = 
       rawStatus === "preparing" ? "pending" : rawStatus;
 
+    // Mureka uses 'id' instead of 'task_id' in initial response
+    const taskId = directResponse.task_id || directResponse.id || "unknown";
+
     return {
       success: true,
-      taskId: directResponse.task_id,
+      taskId,
       clips,
       status: normalizedStatus,
     };
