@@ -14,7 +14,7 @@ import { CompactTrackHero } from "@/features/tracks/ui/CompactTrackHero";
 import { EmptyStateCard } from "@/components/layout/EmptyStateCard";
 import { StructuredLyrics } from "@/components/lyrics/legacy/StructuredLyrics";
 import { StyleRecommendationsPanel } from "./StyleRecommendationsPanel";
-import { EnhancedPromptPreviewDialog, type EnhancedPromptData } from "@/components/ai-recommendations";
+import { EnhancedPromptPreviewDialog, AIErrorAlert, type EnhancedPromptData } from "@/components/ai-recommendations";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 const usePlayTrack = () => useAudioPlayerStore(state => state.playTrack);
 import { useGenerationPrefillStore } from "@/stores/useGenerationPrefillStore";
@@ -23,6 +23,7 @@ import { useAdvancedPromptGenerator } from "@/hooks/useAdvancedPromptGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
+import { useRateLimitHandler } from "@/hooks/useRateLimitHandler";
 interface Track {
   id: string;
   title: string;
@@ -258,6 +259,9 @@ export const DetailPanelContent = ({
   const queryClient = useQueryClient();
   const [previewData, setPreviewData] = useState<EnhancedPromptData | null>(null);
   const [isApplyingToTrack, setIsApplyingToTrack] = useState(false);
+  const [aiError, setAiError] = useState<{ status?: number; message: string } | null>(null);
+  
+  const { isRateLimited, remainingTime, handleRateLimit, clearRateLimit } = useRateLimitHandler();
 
   const handleTagsApply = useCallback(async (tags: string[]) => {
     if (!tags.length) return;
@@ -325,7 +329,11 @@ export const DetailPanelContent = ({
 
   const { mutate: generateAdvanced, isPending: isGeneratingPrompt } = useAdvancedPromptGenerator({
     onSuccess: (result) => {
-      // ✅ Show preview dialog instead of direct navigation
+      // ✅ Clear error state and rate limit on success
+      setAiError(null);
+      clearRateLimit();
+      
+      // Show preview dialog instead of direct navigation
       setPreviewData({
         original: {
           prompt: track.prompt,
@@ -342,13 +350,31 @@ export const DetailPanelContent = ({
     },
     onError: (error) => {
       const errorMessage = error.message;
-      toast({
-        title: "Ошибка AI генерации",
-        description: errorMessage.includes('402') 
-          ? 'Недостаточно AI кредитов' 
-          : 'Попробуйте позже',
-        variant: "destructive",
+      
+      // ✅ Parse error status from message
+      let status: number | undefined;
+      if (errorMessage.includes('429')) {
+        status = 429;
+        handleRateLimit(60); // 1 minute cooldown
+      } else if (errorMessage.includes('402')) {
+        status = 402;
+      } else if (errorMessage.includes('500') || errorMessage.includes('503')) {
+        status = 500;
+      }
+      
+      setAiError({
+        status,
+        message: errorMessage,
       });
+
+      // ✅ Show fallback for server errors
+      if (status === 500 || status === 503) {
+        toast({
+          title: "Используется упрощенное улучшение",
+          description: "AI сервис недоступен, применен базовый enhancer",
+          variant: "default",
+        });
+      }
     }
   });
 
@@ -515,7 +541,20 @@ export const DetailPanelContent = ({
                 <CardTitle className="text-base">AI рекомендации по стилю</CardTitle>
                 <CardDescription className="text-xs">Подберите подходящие жанры и теги с помощью ассистента.</CardDescription>
               </CardHeader>
-              <CardContent className="px-4 pb-4">
+              <CardContent className="px-4 pb-4 space-y-3">
+                {/* Error Alert */}
+                {aiError && (
+                  <AIErrorAlert
+                    error={aiError}
+                    remainingTime={remainingTime}
+                    onRetry={() => {
+                      setAiError(null);
+                      clearRateLimit();
+                    }}
+                    onNavigateToUsage={() => navigate('/settings/usage')}
+                  />
+                )}
+
                 <StyleRecommendationsPanel 
                   mood={mood} 
                   genre={genre} 
@@ -523,7 +562,7 @@ export const DetailPanelContent = ({
                   currentTags={track.style_tags ?? []} 
                   onApplyTags={handleTagsApply}
                   onGenerateAdvancedPrompt={(request) => generateAdvanced(request)}
-                  isGeneratingPrompt={isGeneratingPrompt}
+                  isGeneratingPrompt={isGeneratingPrompt || isRateLimited}
                   currentPrompt={track.prompt}
                   currentLyrics={track.lyrics}
                 />
