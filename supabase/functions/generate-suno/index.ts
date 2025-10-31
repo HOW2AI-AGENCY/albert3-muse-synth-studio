@@ -123,10 +123,47 @@ serve(async (req: Request): Promise<Response> => {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     logger.error('🔴 Generate-suno error', { error });
 
+    // Handle rate limiting and quota errors specifically
+    if (error instanceof Error) {
+      if (errorMsg.includes('429') || errorMsg.toLowerCase().includes('rate limit')) {
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'Rate limit exceeded. Please try again in a few minutes.',
+            errorCode: 'RATE_LIMIT_EXCEEDED',
+            retryAfter: 60
+          }),
+          { 
+            status: 429,
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json',
+              'Retry-After': '60'
+            }
+          }
+        );
+      }
+      
+      if (errorMsg.includes('402') || errorMsg.toLowerCase().includes('quota') || errorMsg.toLowerCase().includes('insufficient credits')) {
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'Insufficient credits. Please upgrade your plan.',
+            errorCode: 'INSUFFICIENT_CREDITS'
+          }),
+          { 
+            status: 402,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: errorMsg 
+        error: errorMsg,
+        errorCode: 'INTERNAL_ERROR'
       }),
       { 
         status: 500, 

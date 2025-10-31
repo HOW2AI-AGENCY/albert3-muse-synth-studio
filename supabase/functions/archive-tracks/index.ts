@@ -1,128 +1,67 @@
-/**
- * Archive Tracks Edge Function
- * 
- * Purpose: Automatically archive tracks from provider to Supabase Storage
- * Critical: Provider tracks expire after 15 days
- * 
- * Features:
- * - Downloads audio/cover/video from provider URLs
- * - Uploads to Supabase Storage buckets
- * - Updates tracks table with storage URLs
- * - Handles retry logic and error tracking
- * 
- * Schedule: Run daily via cron or manual trigger
- */
-
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface ArchiveRequest {
-  trackId?: string; // Optional: archive specific track
-  limit?: number; // Limit number of tracks to archive per run
-}
-
 interface Track {
   track_id: string;
   user_id: string;
   title: string;
-  audio_url: string | null;
-  cover_url: string | null;
-  video_url: string | null;
+  audio_url: string;
+  cover_url: string;
+  video_url: string;
   created_at: string;
-  days_until_expiry: number;
 }
 
-Deno.serve(async (req) => {
-  // Handle CORS
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    // Parse request
-    const body: ArchiveRequest = req.method === 'POST' 
-      ? await req.json() 
-      : {};
-    
-    const { trackId, limit = 50 } = body;
+    const { trackId, limit = 50 } = await req.json().catch(() => ({}));
 
-    console.log('🗄️ Starting track archiving process', { 
-      trackId, 
-      limit,
-      timestamp: new Date().toISOString() 
-    });
+    console.log('🗄️ Starting archiving process', { trackId, limit });
 
     // Get tracks needing archiving
-    let tracksToArchive: Track[] = [];
-    
-    if (trackId) {
-      // Archive specific track
-      const { data: track, error } = await supabase
-        .from('tracks')
-        .select('id, user_id, title, audio_url, cover_url, video_url, created_at')
-        .eq('id', trackId)
-        .single();
+    const { data: tracks, error: fetchError } = await supabaseClient
+      .rpc('get_tracks_needing_archiving', { _limit: limit });
 
-      if (error) throw error;
-      if (track) {
-        tracksToArchive = [{
-          track_id: track.id,
-          user_id: track.user_id,
-          title: track.title,
-          audio_url: track.audio_url,
-          cover_url: track.cover_url,
-          video_url: track.video_url,
-          created_at: track.created_at,
-          days_until_expiry: 15 - Math.floor((Date.now() - new Date(track.created_at).getTime()) / (1000 * 60 * 60 * 24)),
-        }];
-      }
-    } else {
-      // Get tracks from function
-      const { data, error } = await supabase.rpc('get_tracks_needing_archiving', {
-        _limit: limit,
-      });
-
-      if (error) throw error;
-      tracksToArchive = data || [];
+    if (fetchError) {
+      console.error('❌ Failed to fetch tracks', fetchError);
+      throw new Error(`Failed to fetch tracks: ${fetchError.message}`);
     }
 
-    console.log(`📋 Found ${tracksToArchive.length} tracks to archive`);
-
-    if (tracksToArchive.length === 0) {
+    if (!tracks || tracks.length === 0) {
+      console.log('✅ No tracks need archiving');
       return new Response(
-        JSON.stringify({
-          success: true,
-          message: 'No tracks need archiving',
-          archived: 0,
-        }),
+        JSON.stringify({ success: true, archived: 0, failed: 0, message: 'No tracks to archive' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    console.log(`📦 Found ${tracks.length} tracks to archive`);
+
     const results = {
-      total: tracksToArchive.length,
-      succeeded: 0,
+      success: 0,
       failed: 0,
-      errors: [] as any[],
+      errors: [] as Array<{ trackId: string; error: string }>,
     };
 
-    // Process each track
-    for (const track of tracksToArchive) {
+    for (const track of tracks as Track[]) {
       try {
-        console.log(`📦 Archiving track: ${track.title} (ID: ${track.track_id})`);
-        console.log(`⏰ Days until expiry: ${track.days_until_expiry}`);
+        console.log(`🔄 Archiving track ${track.track_id}: "${track.title}"`);
 
         // Create archiving job
-        const { data: job, error: jobError } = await supabase
+        const { data: job, error: jobError } = await supabaseClient
           .from('track_archiving_jobs')
           .insert({
             track_id: track.track_id,
@@ -137,111 +76,103 @@ Deno.serve(async (req) => {
           .single();
 
         if (jobError) {
-          console.error('Failed to create archiving job:', jobError);
-          throw jobError;
+          throw new Error(`Failed to create job: ${jobError.message}`);
         }
 
+        // Download and upload files
         const storageUrls: {
-          audio?: string;
-          cover?: string;
-          video?: string;
+          storage_audio_url?: string;
+          storage_cover_url?: string;
+          storage_video_url?: string;
         } = {};
 
-        // Archive audio (required)
+        // Archive audio
         if (track.audio_url) {
-          try {
-            const audioPath = await downloadAndUpload(
-              supabase,
-              track.audio_url,
-              'tracks-audio',
-              `${track.user_id}/${track.track_id}.mp3`,
-              'audio/mpeg'
-            );
-            storageUrls.audio = audioPath;
-            console.log(`✅ Audio archived: ${audioPath}`);
-          } catch (audioError) {
-            const errorMsg = audioError instanceof Error ? audioError.message : 'Unknown error';
-            console.error('Failed to archive audio:', audioError);
-            throw new Error(`Audio archiving failed: ${errorMsg}`);
+          const audioPath = `${track.user_id}/${track.track_id}/audio.mp3`;
+          const audioBlob = await fetch(track.audio_url).then(r => r.blob());
+          
+          const { error: uploadError } = await supabaseClient.storage
+            .from('tracks-audio')
+            .upload(audioPath, audioBlob, { upsert: true });
+
+          if (!uploadError) {
+            const { data } = supabaseClient.storage
+              .from('tracks-audio')
+              .getPublicUrl(audioPath);
+            storageUrls.storage_audio_url = data.publicUrl;
           }
         }
 
-        // Archive cover (optional)
+        // Archive cover
         if (track.cover_url) {
-          try {
-            const coverPath = await downloadAndUpload(
-              supabase,
-              track.cover_url,
-              'tracks-covers',
-              `${track.user_id}/${track.track_id}.jpg`,
-              'image/jpeg'
-            );
-            storageUrls.cover = coverPath;
-            console.log(`✅ Cover archived: ${coverPath}`);
-          } catch (error) {
-            console.warn('Failed to archive cover (non-critical):', error);
+          const coverPath = `${track.user_id}/${track.track_id}/cover.jpg`;
+          const coverBlob = await fetch(track.cover_url).then(r => r.blob());
+          
+          const { error: uploadError } = await supabaseClient.storage
+            .from('tracks-covers')
+            .upload(coverPath, coverBlob, { upsert: true });
+
+          if (!uploadError) {
+            const { data } = supabaseClient.storage
+              .from('tracks-covers')
+              .getPublicUrl(coverPath);
+            storageUrls.storage_cover_url = data.publicUrl;
           }
         }
 
-        // Archive video (optional)
+        // Archive video
         if (track.video_url) {
-          try {
-            const videoPath = await downloadAndUpload(
-              supabase,
-              track.video_url,
-              'tracks-videos',
-              `${track.user_id}/${track.track_id}.mp4`,
-              'video/mp4'
-            );
-            storageUrls.video = videoPath;
-            console.log(`✅ Video archived: ${videoPath}`);
-          } catch (error) {
-            console.warn('Failed to archive video (non-critical):', error);
+          const videoPath = `${track.user_id}/${track.track_id}/video.mp4`;
+          const videoBlob = await fetch(track.video_url).then(r => r.blob());
+          
+          const { error: uploadError } = await supabaseClient.storage
+            .from('tracks-videos')
+            .upload(videoPath, videoBlob, { upsert: true });
+
+          if (!uploadError) {
+            const { data } = supabaseClient.storage
+              .from('tracks-videos')
+              .getPublicUrl(videoPath);
+            storageUrls.storage_video_url = data.publicUrl;
           }
         }
 
-        // Mark track as archived
-        const { error: markError } = await supabase.rpc('mark_track_archived', {
-          _track_id: track.track_id,
-          _storage_audio_url: storageUrls.audio || null,
-          _storage_cover_url: storageUrls.cover || null,
-          _storage_video_url: storageUrls.video || null,
-        });
+        // Update track
+        await supabaseClient
+          .from('tracks')
+          .update({
+            archived_to_storage: true,
+            ...storageUrls,
+            archived_at: new Date().toISOString(),
+          })
+          .eq('id', track.track_id);
 
-        if (markError) throw markError;
-
-        // Update job status
-        await supabase
+        // Update job
+        await supabaseClient
           .from('track_archiving_jobs')
           .update({
             status: 'completed',
-            storage_audio_url: storageUrls.audio,
-            storage_cover_url: storageUrls.cover,
-            storage_video_url: storageUrls.video,
+            ...storageUrls,
             completed_at: new Date().toISOString(),
           })
           .eq('id', job.id);
 
-        results.succeeded++;
-        console.log(`✅ Successfully archived track: ${track.title}`);
+        results.success++;
+        console.log(`✅ Successfully archived track ${track.track_id}`);
 
-      } catch (trackError) {
-        const errorMsg = trackError instanceof Error ? trackError.message : 'Unknown error';
+      } catch (error) {
         results.failed++;
-        results.errors.push({
-          trackId: track.track_id,
-          title: track.title,
-          error: errorMsg,
-        });
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        results.errors.push({ trackId: track.track_id, error: errorMessage });
+        
+        console.error(`❌ Failed to archive track ${track.track_id}:`, errorMessage);
 
-        console.error(`❌ Failed to archive track ${track.title}:`, trackError);
-
-        // Update job with error
-        await supabase
+        // Update job as failed
+        await supabaseClient
           .from('track_archiving_jobs')
           .update({
             status: 'failed',
-            error_message: errorMsg,
+            error_message: errorMessage,
             completed_at: new Date().toISOString(),
           })
           .eq('track_id', track.track_id)
@@ -249,74 +180,23 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log('📊 Archiving complete:', results);
+    console.log(`📊 Archiving complete: ${results.success} success, ${results.failed} failed`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Archived ${results.succeeded}/${results.total} tracks`,
-        results,
+        archived: results.success,
+        failed: results.failed,
+        errors: results.errors,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (funcError) {
-    const errorMsg = funcError instanceof Error ? funcError.message : 'Unknown error';
-    console.error('❌ Archive function error:', funcError);
+  } catch (error) {
+    console.error('❌ Archive tracks error:', error);
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: errorMsg,
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
-
-/**
- * Download file from URL and upload to Supabase Storage
- */
-async function downloadAndUpload(
-  supabase: any,
-  sourceUrl: string,
-  bucket: string,
-  path: string,
-  contentType: string
-): Promise<string> {
-  // Download file
-  console.log(`📥 Downloading: ${sourceUrl}`);
-  const response = await fetch(sourceUrl);
-  
-  if (!response.ok) {
-    throw new Error(`Download failed: ${response.status} ${response.statusText}`);
-  }
-
-  const blob = await response.blob();
-  const arrayBuffer = await blob.arrayBuffer();
-  const uint8Array = new Uint8Array(arrayBuffer);
-
-  console.log(`📤 Uploading to: ${bucket}/${path} (${(uint8Array.length / 1024 / 1024).toFixed(2)}MB)`);
-
-  // Upload to storage
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .upload(path, uint8Array, {
-      contentType,
-      upsert: true, // Overwrite if exists
-    });
-
-  if (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    throw new Error(`Upload failed: ${errorMsg}`);
-  }
-
-  // Get public URL
-  const { data: { publicUrl } } = supabase.storage
-    .from(bucket)
-    .getPublicUrl(path);
-
-  return publicUrl;
-}
