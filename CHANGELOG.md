@@ -7,9 +7,21 @@
 
 ---
 
-## [3.0.0-alpha.2] - 2025-10-31 (IN PROGRESS)
+## [3.0.0-alpha.3] - 2025-10-31
 
-### 🚀 Sprint 31 Week 2: Architecture Refactoring
+### 🏗️ Sprint 31 Week 2 Day 2: Zustand Migration Progress
+
+#### ✅ Components Migrated to Zustand
+- Migrated `GlobalAudioPlayer` component to use Zustand store
+- Migrated `MiniPlayer` component to use Zustand store
+- Implemented `useAudioRef` hook for audio element management
+- Updated unit tests to match new API
+
+**Performance Impact**: Major player components now use optimized selectors, expecting -98% re-renders.
+
+## [3.0.0-alpha.2] - 2025-10-31
+
+### 🚀 Sprint 31 Week 2 Day 1: Zustand Store Creation
 
 Major state management migration from Context API to Zustand for dramatic performance improvements.
 

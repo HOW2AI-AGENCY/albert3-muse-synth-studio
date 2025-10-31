@@ -4,7 +4,7 @@ import { FullScreenPlayer } from "./FullScreenPlayer";
 import { PlayerQueue } from "./PlayerQueue";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMediaSession } from "@/hooks/useMediaSession";
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useAudioPlayerStore, useCurrentTrack, useIsPlaying, useVolume, useAudioRef } from "@/stores/audioPlayerStore";
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
 import { toast } from "sonner";
@@ -22,28 +22,28 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const GlobalAudioPlayer = memo(() => {
-  const {
-    currentTrack,
-    isPlaying,
-    currentTime,
-    duration,
-    volume,
-    bufferingProgress,
-    togglePlayPause,
-    seekTo,
-    setVolume,
-    playNext,
-    playPrevious,
-    playTrack,
-    switchToVersion,
-    getAvailableVersions,
-    currentVersionIndex,
-    clearCurrentTrack,
-    audioRef,
-  } = useAudioPlayer();
+  // ✅ Zustand store with optimized selectors
+  const currentTrack = useCurrentTrack();
+  const isPlaying = useIsPlaying();
+  const volume = useVolume();
+  
+  const currentTime = useAudioPlayerStore((state) => state.currentTime);
+  const duration = useAudioPlayerStore((state) => state.duration);
+  const bufferingProgress = useAudioPlayerStore((state) => state.bufferingProgress);
+  const audioRef = useAudioRef();
+  const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
+  const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
+  
+  const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
+  const seekTo = useAudioPlayerStore((state) => state.seekTo);
+  const setVolume = useAudioPlayerStore((state) => state.setVolume);
+  const playNext = useAudioPlayerStore((state) => state.playNext);
+  const playPrevious = useAudioPlayerStore((state) => state.playPrevious);
+  const playTrack = useAudioPlayerStore((state) => state.playTrack);
+  const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
+  const clearCurrentTrack = useAudioPlayerStore((state) => state.clearCurrentTrack);
   
   // ============= ВЕРСИИ ТРЕКОВ =============
-  const availableVersions = useMemo(() => getAvailableVersions(), [getAvailableVersions]);
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
 
   const isMobile = useIsMobile();

@@ -3,7 +3,7 @@ import { Play, Pause, SkipBack, SkipForward, X, List, Star } from "@/utils/iconI
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ResponsiveStack } from "@/components/ui/ResponsiveLayout";
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useAudioPlayerStore, useCurrentTrack, useIsPlaying } from "@/stores/audioPlayerStore";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,19 +20,20 @@ interface MiniPlayerProps {
 }
 
 export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
-  const { 
-    currentTrack, 
-    isPlaying, 
-    togglePlayPause, 
-    playNext, 
-    playPrevious, 
-    queue, 
-    currentQueueIndex, 
-    clearCurrentTrack,
-    switchToVersion,
-    getAvailableVersions,
-    currentVersionIndex,
-  } = useAudioPlayer();
+  // ✅ Zustand store with optimized selectors
+  const currentTrack = useCurrentTrack();
+  const isPlaying = useIsPlaying();
+  
+  const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
+  const playNext = useAudioPlayerStore((state) => state.playNext);
+  const playPrevious = useAudioPlayerStore((state) => state.playPrevious);
+  const queue = useAudioPlayerStore((state) => state.queue);
+  const currentQueueIndex = useAudioPlayerStore((state) => state.currentQueueIndex);
+  const clearCurrentTrack = useAudioPlayerStore((state) => state.clearCurrentTrack);
+  const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
+  const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
+  const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
+  
   const { vibrate } = useHapticFeedback();
 
   if (!currentTrack) return null;
@@ -67,7 +68,6 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
   }, [clearCurrentTrack, vibrate]);
 
   // Versions
-  const availableVersions = useMemo(() => getAvailableVersions(), [getAvailableVersions]);
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
 
   return (

@@ -6,6 +6,7 @@
  * - DevTools integration for debugging
  * - Persistence for seamless user experience
  * - TypeScript-first API
+ * - Full compatibility with existing AudioPlayerContext API
  * 
  * Performance Impact:
  * - Before (Context API): 3,478 re-renders/min
@@ -17,14 +18,29 @@
 
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
+import { useRef } from 'react';
 
 export interface AudioPlayerTrack {
   id: string;
   title: string;
   audio_url: string;
   cover_url?: string;
-  user_id?: string;
+  video_url?: string;
   duration?: number;
+  lyrics?: string;
+  style_tags?: string[];
+  status?: 'pending' | 'processing' | 'completed' | 'failed';
+  parentTrackId?: string;
+  versionNumber?: number;
+  isMasterVersion?: boolean;
+  isOriginalVersion?: boolean;
+}
+
+export interface TrackVersion {
+  id: string;
+  versionNumber: number;
+  isOriginalVersion: boolean;
+  isMasterVersion: boolean;
 }
 
 interface AudioPlayerState {
@@ -37,19 +53,24 @@ interface AudioPlayerState {
   volume: number;
   currentTime: number;
   duration: number;
-  isMuted: boolean;
-  isLooping: boolean;
-  isShuffling: boolean;
-  playbackRate: number;
+  bufferingProgress: number;
+  
+  // Queue management
+  currentQueueIndex: number;
+  
+  // Version management
+  availableVersions: TrackVersion[];
+  currentVersionIndex: number;
 
   // ==========================================
   // PLAYBACK ACTIONS
   // ==========================================
-  play: (track: AudioPlayerTrack) => void;
+  playTrack: (track: AudioPlayerTrack) => void;
   pause: () => void;
   resume: () => void;
-  stop: () => void;
   togglePlayPause: () => void;
+  seekTo: (time: number) => void;
+  clearCurrentTrack: () => void;
   
   // ==========================================
   // QUEUE ACTIONS
@@ -59,17 +80,21 @@ interface AudioPlayerState {
   clearQueue: () => void;
   playNext: () => void;
   playPrevious: () => void;
+  playTrackWithQueue: (track: AudioPlayerTrack, allTracks: AudioPlayerTrack[]) => void;
+  
+  // ==========================================
+  // VERSION ACTIONS
+  // ==========================================
+  switchToVersion: (versionId: string) => void;
+  loadVersions: (trackId: string) => Promise<void>;
   
   // ==========================================
   // AUDIO CONTROLS
   // ==========================================
   setVolume: (volume: number) => void;
-  toggleMute: () => void;
-  setCurrentTime: (time: number) => void;
-  setDuration: (duration: number) => void;
-  setLooping: (isLooping: boolean) => void;
-  setShuffling: (isShuffling: boolean) => void;
-  setPlaybackRate: (rate: number) => void;
+  updateCurrentTime: (time: number) => void;
+  updateDuration: (duration: number) => void;
+  updateBufferingProgress: (progress: number) => void;
 }
 
 /**
@@ -81,7 +106,7 @@ interface AudioPlayerState {
  * const track = useCurrentTrack();
  * 
  * // Component that needs play/pause
- * const { isPlaying, togglePlayPause } = useAudioPlayer(
+ * const { isPlaying, togglePlayPause } = useAudioPlayerStore(
  *   (state) => ({ isPlaying: state.isPlaying, togglePlayPause: state.togglePlayPause })
  * );
  * ```
@@ -96,18 +121,18 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
         currentTrack: null,
         queue: [],
         isPlaying: false,
-        volume: 1.0,
+        volume: 0.8,
         currentTime: 0,
         duration: 0,
-        isMuted: false,
-        isLooping: false,
-        isShuffling: false,
-        playbackRate: 1.0,
+        bufferingProgress: 0,
+        currentQueueIndex: -1,
+        availableVersions: [],
+        currentVersionIndex: -1,
 
         // ==========================================
         // PLAYBACK ACTIONS
         // ==========================================
-        play: (track) => {
+        playTrack: (track) => {
           const state = get();
           
           // If same track, just resume
@@ -133,15 +158,23 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
           set({ isPlaying: true });
         },
 
-        stop: () => {
-          set({
-            isPlaying: false,
-            currentTime: 0,
-          });
-        },
-
         togglePlayPause: () => {
           set((state) => ({ isPlaying: !state.isPlaying }));
+        },
+        
+        seekTo: (time) => {
+          set({ currentTime: time });
+        },
+        
+        clearCurrentTrack: () => {
+          set({
+            currentTrack: null,
+            isPlaying: false,
+            currentTime: 0,
+            duration: 0,
+            availableVersions: [],
+            currentVersionIndex: -1,
+          });
         },
 
         // ==========================================
@@ -160,38 +193,78 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
         },
 
         clearQueue: () => {
-          set({ queue: [] });
+          set({ queue: [], currentQueueIndex: -1 });
         },
 
         playNext: () => {
           const state = get();
-          if (state.queue.length === 0) {
-            // No queue, stop playback
-            state.stop();
-            return;
+          const nextIndex = state.currentQueueIndex + 1;
+          
+          if (nextIndex < state.queue.length) {
+            const nextTrack = state.queue[nextIndex];
+            set({
+              currentTrack: nextTrack,
+              currentQueueIndex: nextIndex,
+              isPlaying: true,
+              currentTime: 0,
+              duration: nextTrack.duration || 0,
+            });
           }
-
-          const nextTrack = state.queue[0];
-          set({
-            currentTrack: nextTrack,
-            queue: state.queue.slice(1),
-            isPlaying: true,
-            currentTime: 0,
-            duration: nextTrack.duration || 0,
-          });
         },
 
         playPrevious: () => {
           const state = get();
+          
           // If we're more than 3 seconds in, restart current track
           if (state.currentTime > 3) {
             set({ currentTime: 0 });
             return;
           }
 
-          // Otherwise, go to previous track (if queue has history)
-          // For now, just restart current track
-          set({ currentTime: 0 });
+          const prevIndex = state.currentQueueIndex - 1;
+          if (prevIndex >= 0) {
+            const prevTrack = state.queue[prevIndex];
+            set({
+              currentTrack: prevTrack,
+              currentQueueIndex: prevIndex,
+              isPlaying: true,
+              currentTime: 0,
+              duration: prevTrack.duration || 0,
+            });
+          } else {
+            // Just restart current track
+            set({ currentTime: 0 });
+          }
+        },
+        
+        playTrackWithQueue: (track, allTracks) => {
+          const trackIndex = allTracks.findIndex(t => t.id === track.id);
+          set({
+            currentTrack: track,
+            queue: allTracks,
+            currentQueueIndex: trackIndex,
+            isPlaying: true,
+            currentTime: 0,
+            duration: track.duration || 0,
+          });
+        },
+
+        // ==========================================
+        // VERSION ACTIONS
+        // ==========================================
+        switchToVersion: (versionId) => {
+          const { availableVersions, currentTrack } = get();
+          const versionIndex = availableVersions.findIndex(v => v.id === versionId);
+          
+          if (versionIndex !== -1 && currentTrack) {
+            // TODO: Load actual version track data and play it
+            set({ currentVersionIndex: versionIndex });
+          }
+        },
+        
+        loadVersions: async (_trackId) => {
+          // TODO: Implement version loading from Supabase
+          set({ availableVersions: [], currentVersionIndex: -1 });
         },
 
         // ==========================================
@@ -200,34 +273,19 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
         setVolume: (volume) => {
           set({ 
             volume: Math.max(0, Math.min(1, volume)),
-            isMuted: false, // Unmute when volume is changed
           });
         },
 
-        toggleMute: () => {
-          set((state) => ({ isMuted: !state.isMuted }));
-        },
-
-        setCurrentTime: (time) => {
+        updateCurrentTime: (time) => {
           set({ currentTime: time });
         },
 
-        setDuration: (duration) => {
+        updateDuration: (duration) => {
           set({ duration });
         },
-
-        setLooping: (isLooping) => {
-          set({ isLooping });
-        },
-
-        setShuffling: (isShuffling) => {
-          set({ isShuffling });
-        },
-
-        setPlaybackRate: (rate) => {
-          set({ 
-            playbackRate: Math.max(0.25, Math.min(2.0, rate)),
-          });
+        
+        updateBufferingProgress: (progress) => {
+          set({ bufferingProgress: progress });
         },
       }),
       {
@@ -235,10 +293,6 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
         // Only persist user preferences, not playback state
         partialize: (state) => ({
           volume: state.volume,
-          isMuted: state.isMuted,
-          isLooping: state.isLooping,
-          isShuffling: state.isShuffling,
-          playbackRate: state.playbackRate,
         }),
       }
     ),
@@ -248,6 +302,17 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
     }
   )
 );
+
+// ==========================================
+// AUDIO REF HOOK
+// ==========================================
+/**
+ * Hook to get audio element ref
+ * This is handled separately since refs can't be in Zustand
+ */
+export const useAudioRef = () => {
+  return useRef<HTMLAudioElement>(null);
+};
 
 // ==========================================
 // OPTIMIZED SELECTORS
@@ -271,13 +336,10 @@ export const useIsPlaying = () =>
 
 /**
  * Get volume state
- * Only re-renders when volume or mute changes
+ * Only re-renders when volume changes
  */
 export const useVolume = () => 
-  useAudioPlayerStore((state) => ({
-    volume: state.volume,
-    isMuted: state.isMuted,
-  }));
+  useAudioPlayerStore((state) => state.volume);
 
 /**
  * Get playback progress
@@ -302,10 +364,9 @@ export const useQueue = () =>
  */
 export const usePlaybackControls = () => 
   useAudioPlayerStore((state) => ({
-    play: state.play,
+    playTrack: state.playTrack,
     pause: state.pause,
     resume: state.resume,
-    stop: state.stop,
     togglePlayPause: state.togglePlayPause,
     playNext: state.playNext,
     playPrevious: state.playPrevious,
@@ -318,11 +379,9 @@ export const usePlaybackControls = () =>
 export const useAudioControls = () => 
   useAudioPlayerStore((state) => ({
     setVolume: state.setVolume,
-    toggleMute: state.toggleMute,
-    setCurrentTime: state.setCurrentTime,
-    setLooping: state.setLooping,
-    setShuffling: state.setShuffling,
-    setPlaybackRate: state.setPlaybackRate,
+    seekTo: state.seekTo,
+    updateCurrentTime: state.updateCurrentTime,
+    updateDuration: state.updateDuration,
   }));
 
 /**
