@@ -80,6 +80,11 @@ export const useBoostStyle = () => {
         errorMessage = error.error;
       }
 
+      // Add details if available from error response
+      if (error.details) {
+        errorMessage += `. ${error.details}`;
+      }
+
       toast({
         title: 'Boost failed',
         description: errorMessage,

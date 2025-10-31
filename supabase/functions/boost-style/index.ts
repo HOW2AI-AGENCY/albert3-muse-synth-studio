@@ -125,11 +125,21 @@ serve(async (req) => {
 
     const data: SunoBoostResponse = await response.json();
 
+    logger.info('Suno API response received', {
+      code: data.code,
+      msg: data.msg,
+      successFlag: data.data?.successFlag,
+      hasErrorMessage: !!data.data?.errorMessage,
+      errorCode: data.data?.errorCode,
+      userId: user.id
+    });
+
     if (data.code !== 200) {
       logger.error('Suno response error in boost-style', {
         error: data.msg,
         errorDetails: data.data?.errorMessage,
         code: data.code,
+        fullResponse: JSON.stringify(data),
         userId: user.id
       });
       return new Response(
@@ -142,10 +152,18 @@ serve(async (req) => {
     }
 
     if (data.data.successFlag !== '1') {
+      logger.error('Suno generation failed in boost-style', {
+        successFlag: data.data.successFlag,
+        errorMessage: data.data.errorMessage,
+        errorCode: data.data.errorCode,
+        fullDataResponse: JSON.stringify(data.data),
+        userId: user.id
+      });
       return new Response(
         JSON.stringify({ 
-          error: data.data.errorMessage || 'Style generation failed',
-          code: data.data.errorCode 
+          error: data.data.errorMessage || 'Style generation failed. Please try again with a different description.',
+          code: data.data.errorCode,
+          details: 'The AI style enhancement service encountered an issue. Try simplifying your style description.'
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
