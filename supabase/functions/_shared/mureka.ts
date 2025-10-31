@@ -421,16 +421,30 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
       } catch (error) {
         lastError = error as Error;
         
+        const is429 = error instanceof MurekaApiError && error.statusCode === 429;
+        
         logger.warn(`⚠️ [MUREKA] Attempt ${attempt}/${MAX_RETRIES} failed`, {
           error: lastError.message,
           endpoint,
+          is429RateLimit: is429,
           willRetry: attempt < MAX_RETRIES
         });
         
-        // Exponential backoff: 1s, 2s, 4s
         if (attempt < MAX_RETRIES) {
-          const backoffMs = 1000 * Math.pow(2, attempt - 1);
+          // For 429 rate limits: longer backoff (2s, 5s, 10s) with jitter
+          const backoffMs = is429 
+            ? (2000 * Math.pow(2, attempt - 1)) + Math.random() * 1000
+            : (1000 * Math.pow(2, attempt - 1)); // Normal errors: 1s, 2s, 4s
+          
+          logger.info(`⏳ [MUREKA] Waiting ${Math.round(backoffMs)}ms before retry...`);
           await new Promise(resolve => setTimeout(resolve, backoffMs));
+        } else if (is429) {
+          // All retries exhausted on 429: provide helpful error
+          throw new MurekaApiError(
+            'Mureka API rate limit exceeded. Please wait before retrying. (Concurrent request limit: 1)',
+            429,
+            lastError.message
+          );
         }
       }
     }
