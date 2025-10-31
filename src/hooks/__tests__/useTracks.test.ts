@@ -58,11 +58,13 @@ describe('useTracks', () => {
 
   const createTrack = (overrides: Partial<Track> = {}): Track => ({
     id: 'track-id',
+    user_id: 'user-123',
     title: 'Track Title',
     prompt: 'Test prompt',
     audio_url: 'https://example.com/audio.mp3',
     status: 'completed',
     created_at: '2024-01-15T12:00:00Z',
+    updated_at: '2024-01-15T12:00:00Z',
     // Archiving fields
     archived_to_storage: false,
     storage_audio_url: null,
@@ -94,8 +96,6 @@ describe('useTracks', () => {
     play_count: null,
     provider: null,
     reference_audio_url: null,
-    updated_at: '2024-01-15T12:00:00Z',
-    user_id: mockUser.id,
     is_public: null,
     style: null,
     ...overrides,

@@ -309,7 +309,8 @@ async function downloadAndUpload(
     });
 
   if (error) {
-    throw new Error(`Upload failed: ${error.message}`);
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    throw new Error(`Upload failed: ${errorMsg}`);
   }
 
   // Get public URL
