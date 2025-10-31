@@ -355,7 +355,12 @@ serve(async (req) => {
       n: 2,                              // Количество вариантов (2-3)
     };
 
-    logger.info('🎵 Calling Mureka generateSong API', { payload: generatePayload });
+    logger.info('🎵 [MUREKA] Calling generateSong API', { 
+      payload: generatePayload,
+      trackId: finalTrackId,
+      hasLyrics: !!finalLyrics,
+      model: generatePayload.model
+    });
 
     const response = await murekaClient.generateSong(generatePayload);
     const task_id = response.data.task_id;

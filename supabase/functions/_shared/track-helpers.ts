@@ -35,11 +35,36 @@ export async function findOrCreateTrack(
     return { trackId, track: existingTrack };
   }
 
+  // ✅ Generate intelligent title fallback
+  const generateTitle = () => {
+    if (title) return title;
+    
+    // Extract meaningful title from prompt
+    if (prompt) {
+      // Take first 50 chars, clean up
+      const cleaned = prompt
+        .replace(/[^\w\s-]/gi, '') // Remove special chars
+        .trim()
+        .slice(0, 50);
+      
+      if (cleaned) return cleaned;
+    }
+    
+    // Fallback with timestamp
+    const timestamp = new Date().toLocaleString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    return `Трек ${timestamp}`;
+  };
+
   const { data: newTrack, error: createError } = await supabaseAdmin
     .from('tracks')
     .insert({
       user_id: userId,
-      title: title || 'Untitled Track',
+      title: generateTitle(),
       prompt: prompt || 'Untitled Track',
       provider: provider || 'suno',
       status: 'processing',
