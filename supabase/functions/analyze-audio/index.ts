@@ -115,14 +115,16 @@ async function mainHandler(req: Request): Promise<Response> {
     }
 
     const uploadData = await uploadResponse.json();
-    const fileId = uploadData.data?.file_id;
+    // Support both flat and wrapped response shapes
+    const fileId = uploadData.data?.file_id ?? uploadData.id;
+    const fileSize = uploadData.data?.file_size ?? uploadData.bytes;
 
     if (!fileId) {
       logger.error('[analyze-audio] No file_id in response', { uploadData });
       throw new Error('No file_id returned from Mureka');
     }
 
-    logger.info('[analyze-audio] File uploaded to Mureka', { fileId });
+    logger.info('[analyze-audio] File uploaded to Mureka', { fileId, fileSize });
 
     // Analyze using Mureka Song Description API
     logger.info('[analyze-audio] Requesting song description from Mureka');
