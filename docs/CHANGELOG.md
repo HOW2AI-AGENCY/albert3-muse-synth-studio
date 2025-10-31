@@ -5,21 +5,35 @@ All notable changes to Albert3 Muse Synth Studio will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased] - Sprint 31 (Technical Debt Closure)
+
+### In Progress
+- Comprehensive technical debt analysis (147 issues identified)
+- Security fixes: Supabase Linter issues, Rate Limiting
+- Performance: Virtualization for TracksList/LyricsLibrary
+- Architecture: Zustand migration, GenerationHandler base class
+- Testing: Unit/E2E tests (target 80% coverage)
+
+## [2.7.5] - 2025-10-31
 
 ### Added
-- Sentry production monitoring with Web Vitals tracking
-- Enhanced Error Boundary for React errors
-- Session replay (10% normal, 100% errors)
+- Force Generation feature (bypass duplicate detection)
+- CachedTrackBanner component for UX clarity
+- Enhanced Mureka generation logging
+- Detailed audio playback error tracking
+- Storage RLS verification for public audio access
 
 ### Changed
-- Improved generation request hashing to support UTF-8 (Cyrillic characters)
-- Custom mode now requires lyrics (validation added)
+- GenerationService: Added `forceNew` parameter
+- generate-mureka: Sentry transaction tracking for polling
+- useAudioPlayback: Enhanced error logging with network state
+- Documentation: FORCE_GENERATION.md, MUREKA_GENERATION_FIXES.md
 
 ### Fixed
-- UTF-8 encoding in `generateRequestHash` (was using `btoa` incorrectly)
-- Custom mode validation (prevented generation without lyrics)
-- Removed debug console.log statements from production code
+- Mureka audio playback issues (Storage RLS verified)
+- Cached track detection UX (users now informed)
+- Sentry breadcrumbs for Mureka API calls
+- Audio download error handling with HTTP status checks
 
 ## [2.7.4] - 2025-01-30
 
