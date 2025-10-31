@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useId } from "react";
 import { Plus } from "lucide-react";
 import {
   Dialog,
@@ -54,6 +54,9 @@ export function EnhancedPromptPreviewDialog({
   const [editedPrompt, setEditedPrompt] = useState("");
   const [editedLyrics, setEditedLyrics] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  
+  const dialogDescId = useId();
+  const statusId = useId();
 
   // Reset edited state when dialog opens with new data
   const handleOpenChange = (newOpen: boolean) => {
@@ -94,17 +97,38 @@ export function EnhancedPromptPreviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col gap-0 p-0">
+      <DialogContent 
+        className="max-w-5xl max-h-[90vh] flex flex-col gap-0 p-0"
+        aria-describedby={dialogDescId}
+      >
+        {/* Screen reader status */}
+        <div 
+          id={statusId}
+          role="status" 
+          aria-live="polite" 
+          className="sr-only"
+        >
+          {isApplying && "Применение изменений к треку..."}
+        </div>
+
         <DialogHeader className="px-6 pt-6 pb-4 border-b">
           <DialogTitle>AI улучшенный промпт готов!</DialogTitle>
-          <DialogDescription>
+          <DialogDescription id={dialogDescId}>
             Просмотрите и отредактируйте данные перед применением. Вы сможете откатить изменения позже.
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="prompt" className="flex-1 flex flex-col min-h-0 px-6">
-          <TabsList className="grid w-full grid-cols-3 mt-4">
-            <TabsTrigger value="prompt" className="gap-2">
+        <Tabs 
+          defaultValue="prompt" 
+          className="flex-1 flex flex-col min-h-0 px-6"
+          aria-label="Категории улучшенных данных"
+        >
+          <TabsList className="grid w-full grid-cols-3 mt-4" role="tablist">
+            <TabsTrigger 
+              value="prompt" 
+              className="gap-2"
+              aria-label={`Промпт${hasPromptChanges ? ', содержит изменения' : ''}`}
+            >
               Промпт
               {hasPromptChanges && (
                 <Badge variant="default" className="text-[10px] px-1.5 py-0">
@@ -112,7 +136,11 @@ export function EnhancedPromptPreviewDialog({
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="lyrics" className="gap-2">
+            <TabsTrigger 
+              value="lyrics" 
+              className="gap-2"
+              aria-label={`Лирика${hasLyricsChanges ? ', содержит изменения' : ''}`}
+            >
               Лирика
               {hasLyricsChanges && (
                 <Badge variant="default" className="text-[10px] px-1.5 py-0">
@@ -120,7 +148,11 @@ export function EnhancedPromptPreviewDialog({
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="tags" className="gap-2">
+            <TabsTrigger 
+              value="tags" 
+              className="gap-2"
+              aria-label={`Теги${hasTagsChanges ? `, ${newTagsCount} новых` : ''}`}
+            >
               Теги
               {hasTagsChanges && (
                 <Badge variant="default" className="text-[10px] px-1.5 py-0">
@@ -162,17 +194,22 @@ export function EnhancedPromptPreviewDialog({
         
         <DialogFooter className="flex-col sm:flex-row gap-2 px-6 py-4 border-t bg-muted/30">
           {/* Left aligned info */}
-          <div className="flex-1 text-xs text-muted-foreground">
+          <div className="flex-1 text-xs text-muted-foreground" role="status">
             <p>💡 Совет: Вы можете редактировать любое поле перед применением</p>
           </div>
           
-          {/* Action buttons */}
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          {/* Action buttons - Mobile-first */}
+          <div 
+            className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto"
+            role="group"
+            aria-label="Действия с улучшенными данными"
+          >
             <Button 
               variant="outline" 
               onClick={() => onOpenChange(false)}
               disabled={isApplying}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto min-h-[44px] touch-manipulation"
+              aria-label="Отменить и закрыть диалог"
             >
               Отмена
             </Button>
@@ -181,7 +218,9 @@ export function EnhancedPromptPreviewDialog({
               variant="secondary"
               onClick={handleApplyToTrack}
               disabled={isApplying}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto min-h-[44px] touch-manipulation"
+              aria-label="Применить изменения к текущему треку"
+              aria-describedby={isApplying ? statusId : undefined}
             >
               {isApplying ? "Применение..." : "Применить к треку"}
             </Button>
@@ -190,7 +229,8 @@ export function EnhancedPromptPreviewDialog({
               variant="default"
               onClick={handleUseForGeneration}
               disabled={isApplying}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto min-h-[44px] touch-manipulation"
+              aria-label="Использовать данные для создания новой генерации"
             >
               <Plus className="h-4 w-4 mr-2" />
               Использовать для генерации
