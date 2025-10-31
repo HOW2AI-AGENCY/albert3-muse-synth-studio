@@ -23,6 +23,12 @@ export interface GenerationParams {
   weirdnessConstraint: number;
   provider: string;
   trackId?: string;
+  // ✅ НОВОЕ: Данные из анализа референса
+  analyzedGenre?: string;
+  analyzedMood?: string;
+  analyzedTempo?: number;
+  analyzedInstruments?: string[];
+  analyzedDescription?: string;
 }
 
 export interface GeneratorUIState {

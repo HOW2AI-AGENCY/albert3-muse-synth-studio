@@ -31,7 +31,7 @@ interface ReferenceAnalysisCardProps {
   /** Идет ли polling результатов */
   isPolling: boolean;
   /** Callback для применения названия */
-  onApplyTitle?: (title: string) => void;
+  onApplyTitle?: (title: string, artist?: string) => void;
   /** Callback для применения характеристик */
   onApplyCharacteristics?: (characteristics: {
     genre?: string;
@@ -40,6 +40,8 @@ interface ReferenceAnalysisCardProps {
     instruments?: string[];
     description?: string;
   }) => void;
+  /** Callback для применения всего сразу */
+  onApplyAll?: () => void;
   /** Дополнительные классы */
   className?: string;
 }
@@ -55,6 +57,7 @@ export const ReferenceAnalysisCard = memo(({
   isPolling,
   onApplyTitle,
   onApplyCharacteristics,
+  onApplyAll,
   className
 }: ReferenceAnalysisCardProps) => {
   // ============================================================================
@@ -188,7 +191,10 @@ export const ReferenceAnalysisCard = memo(({
                   size="sm"
                   variant="outline"
                   className="h-7 px-2 text-xs shrink-0"
-                  onClick={() => onApplyTitle(recognition.recognized_title || '')}
+                  onClick={() => onApplyTitle(
+                    recognition.recognized_title || '',
+                    recognition.recognized_artist || undefined
+                  )}
                 >
                   <Check className="h-3 w-3 mr-1" />
                   Применить
@@ -294,6 +300,18 @@ export const ReferenceAnalysisCard = memo(({
             <Loader2 className="h-3 w-3 animate-spin" />
             <span>Обновление результатов...</span>
           </div>
+        )}
+
+        {/* Apply All Button */}
+        {(hasRecognitionData || hasDescriptionData) && onApplyAll && (
+          <Button
+            size="sm"
+            className="w-full mt-2"
+            onClick={onApplyAll}
+          >
+            <Check className="h-4 w-4 mr-2" />
+            Применить всё к форме генерации
+          </Button>
         )}
       </CardContent>
     </Card>

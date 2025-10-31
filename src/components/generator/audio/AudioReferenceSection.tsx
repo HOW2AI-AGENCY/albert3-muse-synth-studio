@@ -138,6 +138,35 @@ export const AudioReferenceSection = memo(({
               description={description || null}
               isAnalyzing={isAnalyzing}
               isPolling={isPolling}
+              onApplyTitle={(title, artist) => {
+                onAnalysisComplete?.({
+                  recognition: { 
+                    recognized_title: title, 
+                    recognized_artist: artist,
+                    status: 'completed'
+                  } as any,
+                  description: null,
+                });
+              }}
+              onApplyCharacteristics={(chars) => {
+                onAnalysisComplete?.({
+                  recognition: null,
+                  description: {
+                    detected_genre: chars.genre,
+                    detected_mood: chars.mood,
+                    tempo_bpm: chars.tempo,
+                    detected_instruments: chars.instruments,
+                    ai_description: chars.description,
+                    status: 'completed'
+                  } as any,
+                });
+              }}
+              onApplyAll={() => {
+                onAnalysisComplete?.({
+                  recognition,
+                  description,
+                });
+              }}
               className="mt-2"
             />
           )}

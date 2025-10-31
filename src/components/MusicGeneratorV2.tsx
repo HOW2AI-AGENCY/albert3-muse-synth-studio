@@ -341,117 +341,98 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     });
   }, [setParam, toast]);
 
-  // ✅ Auto-apply логика для результатов анализа с поиском лирики
+  // ✅ УЛУЧШЕННАЯ Auto-apply логика с использованием mapper
   const handleAnalysisComplete = useCallback(async (result: {
     recognition: any;
     description: any;
   }) => {
+    const { mapAnalysisToGenerationParams } = await import('@/utils/analysis-mapper');
+    
     logger.info('🔍 [ANALYSIS] Analysis completed', 'MusicGeneratorV2', {
       hasRecognition: !!result.recognition,
       hasDescription: !!result.description
     });
 
-    // Автоматически применить название если распознано
-    if (result.recognition?.recognized_title && !params.title.trim()) {
-      const recognizedTitle = result.recognition.recognized_title;
-      const artist = result.recognition.recognized_artist;
-      const suggestedTitle = artist 
-        ? `${recognizedTitle} (Cover by AI)`
-        : `${recognizedTitle}`;
+    // ✅ Используем mapper для получения обновлений
+    const mappingResult = mapAnalysisToGenerationParams(
+      result.recognition,
+      result.description,
+      params
+    );
 
-      setParam('title', suggestedTitle);
-      
-      logger.info('✅ [AUTO-APPLY] Title applied', 'MusicGeneratorV2', { title: suggestedTitle });
-      sonnerToast.success('Название применено', {
-        description: `"${suggestedTitle}"`,
+    // Применяем обновления
+    if (Object.keys(mappingResult.updates).length > 0) {
+      // Применить title
+      if (mappingResult.updates.title) {
+        setParam('title', mappingResult.updates.title);
+      }
+
+      // Применить tags
+      if (mappingResult.updates.tags) {
+        setParam('tags', mappingResult.updates.tags);
+      }
+
+      // Применить prompt
+      if (mappingResult.updates.prompt) {
+        setParam('prompt', mappingResult.updates.prompt);
+        setDebouncedPrompt(mappingResult.updates.prompt);
+      }
+
+      // Сохранить analyzed данные для индикации
+      if (result.description?.detected_genre) {
+        setParams(prev => ({
+          ...prev,
+          analyzedGenre: result.description.detected_genre,
+          analyzedMood: result.description.detected_mood,
+          analyzedTempo: result.description.tempo_bpm,
+          analyzedInstruments: result.description.detected_instruments,
+          analyzedDescription: result.description.ai_description,
+        }));
+      }
+
+      logger.info('✅ [AUTO-APPLY] Analysis applied to form', 'MusicGeneratorV2', {
+        appliedFields: mappingResult.appliedFields,
+        skippedFields: mappingResult.skippedFields
       });
 
-      // ✅ НОВОЕ: Попытка найти лирику в БД по названию
-      if (!params.lyrics.trim()) {
-        try {
-          const searchTitle = recognizedTitle.toLowerCase();
-          const { data: tracksWithLyrics } = await supabase
-            .from('tracks')
-            .select('lyrics, title')
-            .or(`title.ilike.%${searchTitle}%`)
-            .not('lyrics', 'is', null)
-            .limit(1)
-            .maybeSingle();
-
-          if (tracksWithLyrics?.lyrics) {
-            setParam('lyrics', tracksWithLyrics.lyrics);
-            setDebouncedLyrics(tracksWithLyrics.lyrics);
-            
-            logger.info('✅ [AUTO-APPLY] Lyrics found in database', 'MusicGeneratorV2', {
-              sourceTrack: tracksWithLyrics.title
-            });
-            
-            sonnerToast.success('Лирика найдена', {
-              description: 'Текст песни загружен из библиотеки',
-            });
-          } else {
-            logger.info('💡 [AUTO-APPLY] Lyrics not found', 'MusicGeneratorV2');
-            sonnerToast.info('Совет', {
-              description: 'Лирика не найдена. Используйте "Генерировать текст" для создания',
-              duration: 5000,
-            });
-          }
-        } catch (error) {
-          logger.warn('[AUTO-APPLY] Failed to find lyrics', 'MusicGeneratorV2', { error: String(error) });
-        }
-      }
+      sonnerToast.success('Анализ применён', {
+        description: `Обновлено: ${mappingResult.appliedFields.join(', ')}`,
+        duration: 4000,
+      });
     }
 
-    // Автоматически подставить характеристики в промпт
-    if (result.description?.detected_genre) {
-      const characteristics: string[] = [];
-      
-      if (result.description.detected_genre) {
-        characteristics.push(result.description.detected_genre);
-      }
-      if (result.description.detected_mood) {
-        characteristics.push(`${result.description.detected_mood} mood`);
-      }
-      if (result.description.tempo_bpm) {
-        const tempoDesc = result.description.tempo_bpm > 120 ? 'fast tempo' : 'slow tempo';
-        characteristics.push(`${tempoDesc} (${result.description.tempo_bpm} BPM)`);
-      }
-      if (result.description.detected_instruments && result.description.detected_instruments.length > 0) {
-        characteristics.push(`featuring ${result.description.detected_instruments.slice(0, 3).join(', ')}`);
-      }
+    // ✅ НОВОЕ: Попытка найти лирику в БД по названию
+    if (result.recognition?.recognized_title && !params.lyrics.trim()) {
+      try {
+        const searchTitle = result.recognition.recognized_title.toLowerCase();
+        const { data: tracksWithLyrics } = await supabase
+          .from('tracks')
+          .select('lyrics, title')
+          .or(`title.ilike.%${searchTitle}%`)
+          .not('lyrics', 'is', null)
+          .limit(1)
+          .maybeSingle();
 
-      const analysisPrompt = characteristics.join(', ');
-
-      // Добавить к существующему промпту или создать новый
-      if (params.prompt.trim()) {
-        sonnerToast.info('AI-анализ готов', {
-          description: `Характеристики: ${analysisPrompt}`,
-          duration: 5000,
-        });
-      } else {
-        setParam('prompt', analysisPrompt);
-        setDebouncedPrompt(analysisPrompt);
-        
-        logger.info('✅ [AUTO-APPLY] Prompt generated from analysis', 'MusicGeneratorV2', {
-          prompt: analysisPrompt
-        });
-        
-        sonnerToast.success('Промпт сгенерирован', {
-          description: 'AI описал характеристики трека',
-        });
-      }
-
-      // Добавить инструменты в теги
-      if (result.description.detected_instruments && result.description.detected_instruments.length > 0) {
-        const existingTags = params.tags.split(',').map(t => t.trim()).filter(Boolean);
-        const instrumentTags = result.description.detected_instruments.slice(0, 5);
-        const uniqueTags = Array.from(new Set([...existingTags, ...instrumentTags]));
-        
-        setParam('tags', uniqueTags.join(', '));
-        
-        logger.info('✅ [AUTO-APPLY] Instrument tags added', 'MusicGeneratorV2', {
-          tags: instrumentTags
-        });
+        if (tracksWithLyrics?.lyrics) {
+          setParam('lyrics', tracksWithLyrics.lyrics);
+          setDebouncedLyrics(tracksWithLyrics.lyrics);
+          
+          logger.info('✅ [AUTO-APPLY] Lyrics found in database', 'MusicGeneratorV2', {
+            sourceTrack: tracksWithLyrics.title
+          });
+          
+          sonnerToast.success('Лирика найдена', {
+            description: 'Текст песни загружен из библиотеки',
+          });
+        } else {
+          logger.info('💡 [AUTO-APPLY] Lyrics not found', 'MusicGeneratorV2');
+          sonnerToast.info('Совет', {
+            description: 'Лирика не найдена. Используйте "Генерировать текст" для создания',
+            duration: 5000,
+          });
+        }
+      } catch (error) {
+        logger.warn('[AUTO-APPLY] Failed to find lyrics', 'MusicGeneratorV2', { error: String(error) });
       }
     }
   }, [params.title, params.prompt, params.lyrics, params.tags, setParam, setDebouncedPrompt, setDebouncedLyrics, supabase]);
