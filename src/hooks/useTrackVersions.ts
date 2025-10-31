@@ -5,6 +5,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 export interface TrackVersion {
   id: string;
@@ -39,7 +40,7 @@ export const useTrackVersions = (trackId: string | null) => {
         .order('version_number', { ascending: true, nullsFirst: false });
       
       if (error) {
-        console.error('Failed to fetch track versions:', error);
+        logger.error('Failed to fetch track versions', error instanceof Error ? error : new Error(String(error)), 'useTrackVersions');
         throw error;
       }
       

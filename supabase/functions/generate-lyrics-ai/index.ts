@@ -22,7 +22,6 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      console.error("LOVABLE_API_KEY is not configured");
       return new Response(
         JSON.stringify({ error: "AI service not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -47,7 +46,7 @@ Return ONLY the lyrics with structure markers, no additional commentary.`;
 
 Create complete, professional lyrics with multiple verses, chorus, and appropriate structure.`;
 
-    console.log("Generating lyrics with AI...");
+    
     
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

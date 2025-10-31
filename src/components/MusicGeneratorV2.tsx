@@ -151,7 +151,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     audioWeight: 50,
     styleWeight: 75,
     lyricsWeight: 70,
-    weirdness: 10,
+    weirdnessConstraint: 10,
     provider: selectedProvider,
   });
 
@@ -604,7 +604,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       hasVocals,
       styleTags: params.tags.split(',').map(t => t.trim()).filter(Boolean),
       negativeTags: params.negativeTags.trim() || undefined,
-      weirdnessConstraint: params.weirdness / 100,
+      weirdnessConstraint: params.weirdnessConstraint / 100,
       styleWeight: params.styleWeight / 100,
       lyricsWeight: hasLyricsContent ? params.lyricsWeight / 100 : undefined,
       audioWeight: params.referenceAudioUrl ? params.audioWeight / 100 : undefined,

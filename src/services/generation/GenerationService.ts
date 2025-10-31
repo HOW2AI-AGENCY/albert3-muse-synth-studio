@@ -48,7 +48,7 @@ export interface GenerationRequest {
   // Weights & constraints
   styleWeight?: number;
   lyricsWeight?: number;
-  weirdness?: number;
+  weirdnessConstraint?: number;
   
   // Optional
   customMode?: boolean;

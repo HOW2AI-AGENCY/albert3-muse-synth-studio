@@ -174,7 +174,7 @@ describe('GenerationService - Integration Tests', () => {
         negativeTags: 'no drums',
         styleWeight: 0.75,
         lyricsWeight: 0.65,
-        weirdness: 0.2,
+        weirdnessConstraint: 0.2,
         audioWeight: 0.5,
         referenceAudioUrl: 'https://example.com/reference.mp3',
         referenceTrackId: 'ref-track-123',

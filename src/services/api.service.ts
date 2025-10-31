@@ -377,21 +377,6 @@ export class ApiService {
     return data;
   }
 
-  /**
-   * Fetch lyrics generation job with variants
-   * NOTE: Legacy method - lyrics system removed
-   */
-  static async getLyricsJob(_jobId: string): Promise<any | null> {
-    return null;
-  }
-
-  /**
-   * Request a fresh sync with Suno for a lyrics job
-   * NOTE: Legacy method - lyrics system removed
-   */
-  static async syncLyricsJob(_jobId: string): Promise<any | null> {
-    return null;
-  }
 
   // Legacy methods removed - lyrics_jobs table no longer exists
 

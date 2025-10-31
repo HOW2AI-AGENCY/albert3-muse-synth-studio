@@ -231,14 +231,14 @@ export const CustomModeForm = memo(({
               audioWeight={params.audioWeight}
               styleWeight={params.styleWeight}
               lyricsWeight={params.lyricsWeight}
-              weirdness={params.weirdness}
+              weirdness={params.weirdnessConstraint}
               hasReferenceAudio={!!params.referenceAudioUrl}
               hasLyrics={!!params.lyrics.trim()}
               onVocalGenderChange={(value) => onParamChange('vocalGender', value)}
               onAudioWeightChange={(value) => onParamChange('audioWeight', value)}
               onStyleWeightChange={(value) => onParamChange('styleWeight', value)}
               onLyricsWeightChange={(value) => onParamChange('lyricsWeight', value)}
-              onWeirdnessChange={(value) => onParamChange('weirdness', value)}
+              onWeirdnessChange={(value) => onParamChange('weirdnessConstraint', value)}
               isGenerating={isGenerating}
             />
           </AccordionContent>
@@ -327,14 +327,14 @@ export const CustomModeForm = memo(({
                 audioWeight={params.audioWeight}
                 styleWeight={params.styleWeight}
                 lyricsWeight={params.lyricsWeight}
-                weirdness={params.weirdness}
+                weirdness={params.weirdnessConstraint}
                 hasReferenceAudio={!!params.referenceAudioUrl}
                 hasLyrics={!!params.lyrics.trim()}
                 onVocalGenderChange={(value) => onParamChange('vocalGender', value)}
                 onAudioWeightChange={(value) => onParamChange('audioWeight', value)}
                 onStyleWeightChange={(value) => onParamChange('styleWeight', value)}
                 onLyricsWeightChange={(value) => onParamChange('lyricsWeight', value)}
-                onWeirdnessChange={(value) => onParamChange('weirdness', value)}
+                onWeirdnessChange={(value) => onParamChange('weirdnessConstraint', value)}
                 isGenerating={isGenerating}
               />
             </AccordionContent>

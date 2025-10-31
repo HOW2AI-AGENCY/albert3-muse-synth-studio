@@ -13,7 +13,9 @@ import { CompactTrackHero } from "@/features/tracks/ui/CompactTrackHero";
 import { EmptyStateCard } from "@/components/layout/EmptyStateCard";
 import { StructuredLyrics } from "@/components/lyrics/legacy/StructuredLyrics";
 import { StyleRecommendationsPanel } from "./StyleRecommendationsPanel";
-import { useAudioPlayer } from "@/contexts/audio-player";
+import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
+
+const usePlayTrack = () => useAudioPlayerStore(state => state.playTrack);
 import { AnalyticsService } from "@/services/analytics.service";
 interface Track {
   id: string;
@@ -134,9 +136,7 @@ export const DetailPanelContent = ({
     likeCount,
     toggleLike
   } = useTrackLike(track.id, track.like_count || 0);
-  const {
-    playTrack
-  } = useAudioPlayer();
+  const playTrack = usePlayTrack();
   const [selectedVersionId, setSelectedVersionId] = useState<string | undefined>();
   const [comparisonLeftId, setComparisonLeftId] = useState<string | undefined>();
   const [comparisonRightId, setComparisonRightId] = useState<string | undefined>();

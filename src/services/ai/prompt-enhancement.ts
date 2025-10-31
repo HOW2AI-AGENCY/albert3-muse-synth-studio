@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 export interface EnhancePromptParams {
   prompt: string;
@@ -26,7 +27,7 @@ export const enhancePrompt = async (
     });
 
     if (error) {
-      console.error('Error enhancing prompt:', error);
+      logger.error('Error enhancing prompt', error instanceof Error ? error : new Error(String(error)), 'prompt-enhancement');
       throw error;
     }
 
@@ -36,7 +37,7 @@ export const enhancePrompt = async (
 
     return data.data;
   } catch (error) {
-    console.error('Failed to enhance prompt:', error);
+    logger.error('Failed to enhance prompt', error instanceof Error ? error : new Error(String(error)), 'prompt-enhancement');
     throw error;
   }
 };

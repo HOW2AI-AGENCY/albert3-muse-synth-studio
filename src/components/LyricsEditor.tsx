@@ -25,7 +25,7 @@ const limitWords = (value: string, limit: number): string => {
   return words.slice(0, limit).join(" ");
 };
 
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 
 interface LyricsEditorProps {
   lyrics: string;
@@ -104,67 +104,9 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
     return limitWords(finalPrompt, 200);
   };
 
-  const pollLyricsJob = async (jobId: string): Promise<string> => {
-    const maxAttempts = 30;
-    const delayMs = 4000;
-
-    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-      if (attempt > 0) {
-        await wait(delayMs);
-      }
-
-      let job = await ApiService.getLyricsJob(jobId);
-
-      if (!job) {
-        job = await ApiService.syncLyricsJob(jobId);
-        if (!job) {
-          continue;
-        }
-      }
-
-      if (job.status === "failed") {
-        throw new Error(job.errorMessage || "Lyrics generation failed");
-      }
-
-      if (job.status === "completed") {
-        const variants = job.variants || [];
-        const completedVariant = variants.find((variant: any) => (variant.status ?? "").toLowerCase() === "complete" && variant.content);
-        const fallbackVariant = variants.find((variant: any) => variant.content);
-        const chosen = completedVariant ?? fallbackVariant;
-        if (chosen?.content) {
-          return chosen.content;
-        }
-        throw new Error("Lyrics generation completed without content");
-      }
-
-      const hasCallbackData = Boolean(job.lastCallback) || Boolean(job.lastPollResponse);
-      const needsSync = attempt >= 3 && (job.variants.length === 0 || !hasCallbackData);
-      const isSyncInterval = attempt >= 3 && attempt % 3 === 0;
-
-      if (needsSync && isSyncInterval) {
-        const synced = await ApiService.syncLyricsJob(jobId);
-        if (synced) {
-          job = synced;
-
-          if (job.status === "failed") {
-            throw new Error(job.errorMessage || "Lyrics generation failed");
-          }
-
-          if (job.status === "completed") {
-            const variants = job.variants || [];
-            const completedVariant = variants.find((variant: any) => (variant.status ?? "").toLowerCase() === "complete" && variant.content);
-            const fallbackVariant = variants.find((variant: any) => variant.content);
-            const chosen = completedVariant ?? fallbackVariant;
-            if (chosen?.content) {
-              return chosen.content;
-            }
-            throw new Error("Lyrics generation completed without content");
-          }
-        }
-      }
-    }
-
-    throw new Error("Lyrics generation timed out");
+  const pollLyricsJob = async (_jobId: string): Promise<string> => {
+    // Legacy lyrics system removed - this functionality has been deprecated
+    throw new Error('Lyrics generation system has been deprecated. Please use the new lyrics generation dialog.');
   };
 
   const generateLyrics = async () => {

@@ -19,6 +19,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { logger } from '@/utils/logger';
 import {
   Wand2,
   Plus,
@@ -126,7 +127,7 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
       });
 
       if (error) {
-        console.error('AI generation error:', error);
+        logger.error('AI generation error', error instanceof Error ? error : new Error(String(error)), 'LyricsToolbar');
         toast({
           title: "Ошибка генерации",
           description: error.message || "Не удалось сгенерировать текст",
@@ -147,7 +148,7 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
         });
       }
     } catch (err) {
-      console.error('Unexpected error:', err);
+      logger.error('Unexpected error', err instanceof Error ? err : new Error(String(err)), 'LyricsToolbar');
       toast({
         title: "Ошибка",
         description: "Произошла непредвиденная ошибка",

@@ -8,7 +8,6 @@ export * from './useNavigationTracking';
 export * from './useUIInteractionTracking';
 
 // Audio & Media
-export { useAudioPlayer, useAudioPlayerSafe } from './useAudioPlayer';
 export { useAudioRecorder } from './useAudioRecorder';
 export { useMediaSession } from './useMediaSession';
 export { useStemMixer } from './useStemMixer';

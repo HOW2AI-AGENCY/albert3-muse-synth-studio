@@ -24,13 +24,9 @@ const audioPlayerMocks = vi.hoisted(() => ({
   getAvailableVersions: vi.fn<() => AudioPlayerTrack[]>(() => []),
   clearCurrentTrack: vi.fn(),
 }));
-vi.mock('@/contexts/audio-player', async () => {
-  const actual = await vi.importActual<typeof import('@/contexts/audio-player')>(
-    '@/contexts/audio-player'
-  );
+vi.mock('@/stores/audioPlayerStore', async () => {
   return {
-    ...actual,
-    useAudioPlayer: () => audioPlayerMocks.useAudioPlayerMock(),
+    useAudioPlayerStore: () => audioPlayerMocks.useAudioPlayerMock(),
   };
 });
 

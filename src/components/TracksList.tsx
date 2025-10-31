@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { supabase } from "@/integrations/supabase/client";
 import { useManualSyncTrack } from "@/hooks/useManualSyncTrack";
+import { logger } from "@/utils/logger";
 
 interface TracksListProps {
   tracks: Track[];
@@ -152,7 +153,7 @@ const TracksListComponent = ({
       setTimeout(() => refreshTracks(), 1000);
     } catch (error) {
       // Ошибка уже обработана в хуке useManualSyncTrack
-      console.error('Sync failed:', error);
+      logger.error('Sync failed', error instanceof Error ? error : new Error(String(error)), 'TracksList');
     }
   }, [syncTrack, refreshTracks]);
 

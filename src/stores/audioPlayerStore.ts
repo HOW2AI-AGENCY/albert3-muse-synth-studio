@@ -18,6 +18,7 @@
 
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
+import { logger } from '@/utils/logger';
 import { useRef } from 'react';
 import { getTrackWithVersions, getMasterVersion } from '@/features/tracks/api/trackVersions';
 import { logInfo, logError } from '@/utils/logger';
@@ -144,7 +145,7 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
           
           // ✅ FIX: Проверить что audio_url существует
           if (!track.audio_url) {
-            console.error('Cannot play track without audio URL', {
+            logger.error('Cannot play track without audio URL', new Error('Missing audio URL'), 'audioPlayerStore', {
               trackId: track.id,
               title: track.title,
             });

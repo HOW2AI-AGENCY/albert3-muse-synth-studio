@@ -20,7 +20,7 @@ export interface GenerationParams {
   audioWeight: number;
   styleWeight: number;
   lyricsWeight: number;
-  weirdness: number;
+  weirdnessConstraint: number;
   provider: string;
   trackId?: string;
 }
