@@ -14,6 +14,7 @@ import { validateAndParse, uuidSchema } from "../_shared/zod-schemas.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { MurekaGenerationHandler } from "./handler.ts";
 import type { MurekaGenerationParams } from "../_shared/types/generation.ts";
+import { checkRateLimit, rateLimitConfigs, createRateLimitHeaders } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   ...createCorsHeaders(),
@@ -47,7 +48,45 @@ serve(async (req: Request): Promise<Response> => {
 
     logger.info('✅ User authenticated', { userId: user.id });
 
-    // 2. Parse and validate request
+    // 2. Check rate limit
+    const { allowed, headers: rateLimitHeaders, result: rateLimitResult } = checkRateLimit(
+      user.id,
+      rateLimitConfigs.generation
+    );
+
+    if (!allowed) {
+      logger.warn('⚠️ Rate limit exceeded for Mureka generation', { 
+        userId: user.id,
+        limit: rateLimitResult.limit,
+        resetAt: new Date(rateLimitResult.resetAt).toISOString()
+      });
+
+      return new Response(
+        JSON.stringify({
+          error: 'Rate limit exceeded',
+          message: 'Слишком много запросов на генерацию. Попробуйте позже.',
+          resetAt: new Date(rateLimitResult.resetAt).toISOString(),
+          limit: rateLimitResult.limit,
+          remaining: rateLimitResult.remaining,
+        }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            ...rateLimitHeaders,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+
+    logger.info('✅ Rate limit check passed', { 
+      userId: user.id, 
+      remaining: rateLimitResult.remaining,
+      limit: rateLimitResult.limit 
+    });
+
+    // 3. Parse and validate request
     const rawBody = await req.json();
 
     const generateMurekaSchema = z.object({
@@ -107,12 +146,16 @@ serve(async (req: Request): Promise<Response> => {
     
     const result = await handler.generate(params);
 
-    // 5. Return response
+    // 5. Return response with rate limit headers
     return new Response(
       JSON.stringify(result),
       { 
         status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { 
+          ...corsHeaders, 
+          ...rateLimitHeaders,
+          'Content-Type': 'application/json' 
+        } 
       }
     );
 
