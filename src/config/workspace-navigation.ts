@@ -10,7 +10,6 @@ import {
   Activity,
   FileText,
   Music,
-  Folder,
 } from "@/utils/iconImports";
 import {
   preloadDashboard,
@@ -57,25 +56,17 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     isMobilePrimary: true,
   },
   {
-    id: "media",
-    label: "Медиа",
-    path: "/workspace/media",
-    icon: Folder,
+    id: "lyrics-library",
+    label: "Лирика",
+    path: "/workspace/lyrics-library",
+    icon: FileText,
     isMobilePrimary: true,
-    children: [
-      {
-        id: "lyrics-library",
-        label: "Лирика",
-        path: "/workspace/lyrics-library",
-        icon: FileText,
-      },
-      {
-        id: "audio-library",
-        label: "Аудио",
-        path: "/workspace/audio-library",
-        icon: Music,
-      },
-    ],
+  },
+  {
+    id: "audio-library",
+    label: "Аудио",
+    path: "/workspace/audio-library",
+    icon: Music,
   },
   {
     id: "favorites",

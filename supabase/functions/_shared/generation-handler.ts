@@ -16,6 +16,7 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.3
 import { logger } from "./logger.ts";
 import { findOrCreateTrack } from "./track-helpers.ts";
 import { downloadAndUploadAudio, downloadAndUploadCover, downloadAndUploadVideo } from "./storage.ts";
+import { autoSaveLyrics } from "./auto-save-lyrics.ts";
 import type {
   BaseGenerationParams,
   GenerationResponse,
@@ -344,7 +345,7 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
     }
 
     // Update track as completed
-    await this.supabase
+    const { data: updatedTrack } = await this.supabase
       .from('tracks')
       .update({
         status: 'completed',
@@ -356,7 +357,21 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
           completed_at: new Date().toISOString(),
         },
       })
-      .eq('id', trackId);
+      .eq('id', trackId)
+      .select('title, lyrics, prompt, style_tags')
+      .single();
+
+    // ✅ Auto-save lyrics if present
+    if (updatedTrack?.lyrics) {
+      await autoSaveLyrics(this.supabase, {
+        trackId,
+        userId: this.userId,
+        title: updatedTrack.title || 'Untitled Track',
+        lyrics: updatedTrack.lyrics,
+        prompt: updatedTrack.prompt || undefined,
+        tags: updatedTrack.style_tags || [],
+      });
+    }
 
     logger.info(`🎉 [${this.providerName.toUpperCase()}] Track finalized`, { trackId });
   }

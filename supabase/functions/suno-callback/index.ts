@@ -7,6 +7,7 @@ import {
   downloadAndUploadCover,
   downloadAndUploadVideo,
 } from "../_shared/storage.ts";
+import { autoSaveLyrics } from "../_shared/auto-save-lyrics.ts";
 
 const corsHeaders = {
   ...createCorsHeaders(),
@@ -382,6 +383,18 @@ const mainHandler = async (req: Request) => {
       }
 
       console.log("Suno callback: main track updated successfully", { trackId: track.id, taskId });
+
+      // ✅ Auto-save lyrics to saved_lyrics table
+      if (sanitizedLyrics && track.user_id) {
+        await autoSaveLyrics(supabase, {
+          trackId: track.id,
+          userId: track.user_id,
+          title: sanitizedTitle,
+          lyrics: sanitizedLyrics,
+          prompt: track.prompt,
+          tags: styleTags || [],
+        });
+      }
 
       if (successfulTracks.length > 1) {
         for (let i = 1; i < successfulTracks.length; i++) {
