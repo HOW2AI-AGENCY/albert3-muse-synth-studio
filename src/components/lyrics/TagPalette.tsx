@@ -173,28 +173,29 @@ export const TagPalette: React.FC<TagPaletteProps> = ({
 
       {/* Category Tabs */}
       <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-        <ScrollArea className="w-full pb-2">
-          <TabsList className="inline-flex w-full min-w-max h-auto p-1 bg-muted/50">
-            {categories.map(([key, def]) => {
-              const IconComponent = iconMap[def.icon] || Music;
-              return (
-                <TabsTrigger 
-                  key={key} 
-                  value={key} 
-                  className={cn(
-                    "flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2",
-                    "text-[10px] sm:text-xs font-medium",
-                    "data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                  )}
-                >
-                  <IconComponent className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                  <span className="hidden sm:inline">{CATEGORY_LABELS[key] || key}</span>
-                  <span className="sm:hidden">{CATEGORY_LABELS[key]?.slice(0, 3) || key.slice(0, 3)}</span>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-        </ScrollArea>
+        <div className="relative -mx-1 px-1 pb-2">
+          <div className="w-full overflow-x-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+            <TabsList className="inline-flex w-auto min-w-full h-auto p-1 bg-muted/50 gap-1">
+              {categories.map(([key, def]) => {
+                const IconComponent = iconMap[def.icon] || Music;
+                return (
+                  <TabsTrigger 
+                    key={key} 
+                    value={key} 
+                    className={cn(
+                      "flex items-center gap-1 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2",
+                      "text-[10px] sm:text-xs font-medium whitespace-nowrap flex-shrink-0",
+                      "data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                    )}
+                  >
+                    <IconComponent className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                    <span>{CATEGORY_LABELS[key] || key}</span>
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+          </div>
+        </div>
 
         {/* Tag Content */}
         {categories.map(([key, def]) => (
