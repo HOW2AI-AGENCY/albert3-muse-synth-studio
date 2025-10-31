@@ -739,10 +739,10 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
     async queryTask(taskId: string): Promise<MurekaGenerationResponse> {
       logger.info('🔄 [MUREKA] Querying task', { taskId });
       
-      const endpoint = options.queryEndpoint || '/v1/song/query';
-      const url = endpoint.replace('{task_id}', taskId) || `${endpoint}/${taskId}`;
+      // ✅ FIX: Pass task_id as query parameter
+      const endpoint = `/v1/song/query?task_id=${taskId}`;
       
-      return makeRequest(url, 'GET');
+      return makeRequest(endpoint, 'GET');
     },
 
     // ========================================================================
