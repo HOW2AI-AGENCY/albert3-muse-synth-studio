@@ -40,7 +40,7 @@ serve(async (req: Request): Promise<Response> => {
 
     let query = supabaseAdmin
       .from('tracks')
-      .select('id, title, prompt, user_id, provider, created_at, metadata, status, suno_task_id, mureka_task_id');
+      .select('id, title, prompt, user_id, provider, created_at, metadata, status, mureka_task_id');
 
     if (trackIds.length > 0) {
       query = query.in('id', trackIds);
@@ -59,7 +59,7 @@ serve(async (req: Request): Promise<Response> => {
     // ✅ ALSO CHECK: Tracks with callback errors
     const { data: errorTracks, error: errorTracksErr } = await supabaseAdmin
       .from('tracks')
-      .select('id, title, prompt, user_id, provider, created_at, metadata, status, suno_task_id, mureka_task_id')
+      .select('id, title, prompt, user_id, provider, created_at, metadata, status, mureka_task_id')
       .eq('status', 'processing')
       .not('metadata->>callback_error', 'is', null)
       .limit(10);
@@ -93,11 +93,15 @@ serve(async (req: Request): Promise<Response> => {
     for (const track of stuckTracks) {
       const provider = track.provider || 'suno'; // default to suno for legacy tracks
       const metadata = track.metadata as Record<string, unknown> | null;
+      const md = (metadata || {}) as Record<string, any>;
       
       // ✅ Support both Suno and Mureka
       const taskId = provider === 'mureka' 
-        ? (track.mureka_task_id || metadata?.mureka_task_id as string | undefined)
-        : (track.suno_task_id || metadata?.suno_task_id as string | undefined);
+        ? (track.mureka_task_id || (md.mureka_task_id as string | undefined))
+        : ((md.suno_task_id as string | undefined) 
+          || (md.task_id as string | undefined)
+          || (md.taskId as string | undefined)
+          || (md.sunoTaskId as string | undefined));
 
       if (!taskId) {
         logger.warn('⚠️ Track without taskId', { 
