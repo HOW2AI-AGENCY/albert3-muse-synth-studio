@@ -8,7 +8,7 @@ import { StaggerContainer, StaggerItem } from "@/components/animations/Optimized
 import { Track, ApiService } from "@/services/api.service";
 import { Music } from "@/utils/iconImports";
 import { useToast } from "@/hooks/use-toast";
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { supabase } from "@/integrations/supabase/client";
 
 interface TracksListProps {
@@ -32,7 +32,7 @@ const TracksListComponent = ({
   onCover,
   onSelect,
 }: TracksListProps) => {
-  const { playTrackWithQueue } = useAudioPlayer();
+  const playTrackWithQueue = useAudioPlayerStore((state) => state.playTrackWithQueue);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });

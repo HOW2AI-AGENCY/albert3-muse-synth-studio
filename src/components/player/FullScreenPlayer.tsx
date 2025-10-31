@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { PlayerQueue } from "./PlayerQueue";
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useAudioPlayerStore, useCurrentTrack, useIsPlaying, useVolume } from "@/stores/audioPlayerStore";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useTrackLike } from "@/features/tracks";
@@ -30,29 +30,28 @@ const formatTime = (seconds: number): string => {
 };
 
 export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => {
-  const {
-    currentTrack,
-    isPlaying,
-    currentTime,
-    duration,
-    volume,
-    togglePlayPause,
-    seekTo,
-    setVolume,
-    playNext,
-    playPrevious,
-    switchToVersion,
-    getAvailableVersions,
-    currentVersionIndex,
-  } = useAudioPlayer();
+  // ✅ Zustand store with optimized selectors
+  const currentTrack = useCurrentTrack();
+  const isPlaying = useIsPlaying();
+  const volume = useVolume();
+  
+  const currentTime = useAudioPlayerStore((state) => state.currentTime);
+  const duration = useAudioPlayerStore((state) => state.duration);
+  const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
+  const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
+  
+  const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
+  const seekTo = useAudioPlayerStore((state) => state.seekTo);
+  const setVolume = useAudioPlayerStore((state) => state.setVolume);
+  const playNext = useAudioPlayerStore((state) => state.playNext);
+  const playPrevious = useAudioPlayerStore((state) => state.playPrevious);
+  const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
 
   const { vibrate } = useHapticFeedback();
   const { toast } = useToast();
   const [isMuted, setIsMuted] = useState(false);
   
   // ============= ВЕРСИИ ТРЕКОВ =============
-  // Получаем доступные версии для текущего трека из AudioPlayerContext
-  const availableVersions = useMemo(() => getAvailableVersions(), [getAvailableVersions]);
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
   
   // Always call the hook, but pass null if no currentTrack

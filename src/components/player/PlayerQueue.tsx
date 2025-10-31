@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { ListMusic, Play, X, GripVertical, Star } from "@/utils/iconImports";
-import { useAudioPlayer } from "@/contexts/AudioPlayerContext";
+import { useAudioPlayerStore, useCurrentTrack } from "@/stores/audioPlayerStore";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { useToast } from "@/hooks/use-toast";
 import type { AudioPlayerTrack } from "@/types/track";
@@ -114,7 +114,12 @@ const QueueItem = memo(({
 QueueItem.displayName = 'QueueItem';
 
 export const PlayerQueue = memo(() => {
-  const { queue, currentTrack, playTrack, removeFromQueue } = useAudioPlayer();
+  // ✅ Zustand store with optimized selectors
+  const currentTrack = useCurrentTrack();
+  const queue = useAudioPlayerStore((state) => state.queue);
+  const playTrack = useAudioPlayerStore((state) => state.playTrack);
+  const removeFromQueue = useAudioPlayerStore((state) => state.removeFromQueue);
+  
   const { vibrate } = useHapticFeedback();
   const { toast } = useToast();
   const [removingTrackId, setRemovingTrackId] = useState<string | null>(null);
