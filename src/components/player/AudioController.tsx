@@ -19,7 +19,7 @@ export const AudioController = () => {
   const pause = useAudioPlayerStore((state) => state.pause);
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
   const playNext = useAudioPlayerStore((state) => state.playNext);
-  const proxyTriedRef = useRef(false);
+  const proxyTriedRef = useRef<Record<string, boolean>>({});  // ✅ FIX: Track per audio URL
 
   // ============= УПРАВЛЕНИЕ ВОСПРОИЗВЕДЕНИЕМ =============
   useEffect(() => {
@@ -53,6 +53,18 @@ export const AudioController = () => {
     const audio = audioRef?.current;
     if (!audio || !currentTrack?.audio_url) return;
 
+    // ✅ FIX: Validate audio_url format
+    const audioUrl = currentTrack.audio_url.trim();
+    if (!audioUrl || (!audioUrl.startsWith('http://') && !audioUrl.startsWith('https://') && !audioUrl.startsWith('blob:'))) {
+      logger.error('Invalid audio_url format', new Error('Invalid URL'), 'AudioController', { 
+        trackId: currentTrack.id,
+        audio_url: audioUrl.substring(0, 100)
+      });
+      toast.error('Некорректный формат аудио файла');
+      pause();
+      return;
+    }
+
     // ✅ Retry state
     let retryCount = 0;
     const MAX_RETRIES = 3;
@@ -62,12 +74,12 @@ export const AudioController = () => {
       try {
         logger.info('Loading new track', 'AudioController', { 
           trackId: currentTrack.id,
-          audio_url: currentTrack.audio_url.substring(0, 100),
+          audio_url: audioUrl.substring(0, 100),
           attempt: retryCount + 1,
         });
 
         // Сброс текущих значений
-        audio.src = currentTrack.audio_url;
+        audio.src = audioUrl;
         audio.load();
         updateCurrentTime(0);
         
@@ -171,21 +183,36 @@ export const AudioController = () => {
         4: 'Формат аудио не поддерживается', // MEDIA_ERR_SRC_NOT_SUPPORTED
       };
 
-      // ✅ Fallback: прокси/перекодирование для Mureka CDN при ошибке формата/декодирования
+      // ✅ FIX: Improved fallback with URL-specific tracking and timeout
+      const audioUrl = currentTrack?.audio_url || '';
       if (
-        !proxyTriedRef.current &&
-        currentTrack?.audio_url &&
-        /mureka\.ai/.test(currentTrack.audio_url) &&
+        !proxyTriedRef.current[audioUrl] &&
+        audioUrl &&
+        /mureka\.ai/.test(audioUrl) &&
         (errorCode === 3 || errorCode === 4)
       ) {
-        proxyTriedRef.current = true;
-        toast.message('Преобразую аудио для воспроизведения...');
+        proxyTriedRef.current[audioUrl] = true;
+        toast.message('Преобразую аудио для воспроизведения...', {
+          duration: 10000,
+        });
+        
+        // ✅ FIX: Add 30s timeout for proxy request
+        const PROXY_TIMEOUT = 30000;
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Proxy timeout after 30s')), PROXY_TIMEOUT)
+        );
+        
         (async () => {
           try {
-            const { data, error } = await supabase.functions.invoke('fetch-audio-proxy', {
-              body: { url: currentTrack.audio_url },
+            const proxyPromise = supabase.functions.invoke('fetch-audio-proxy', {
+              body: { url: audioUrl },
             });
-            if (error || !data || !(data as any).base64) throw error || new Error('proxy failed');
+            
+            const { data, error } = await Promise.race([proxyPromise, timeoutPromise]) as any;
+            
+            if (error || !data || !(data as any).base64) {
+              throw error || new Error('proxy failed');
+            }
 
             const base64: string = (data as any).base64;
             const contentType: string = (data as any).contentType || 'audio/mpeg';

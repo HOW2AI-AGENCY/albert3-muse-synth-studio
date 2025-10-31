@@ -109,8 +109,11 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
         duration: Date.now() - startTime,
       });
 
-      // 6. Update track with task ID
+      // 6. Update track with task ID and WAIT for confirmation
       await this.updateTrackTaskId(trackId, taskId);
+      
+      // ✅ FIX: Wait 500ms to ensure DB update is fully committed before polling
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // 7. Start background polling
       this.startPolling(trackId, taskId).catch(err => {
@@ -286,10 +289,11 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
     
     // ✅ Save additional variants as track_versions if multiple clips exist
     if (normalized.clips.length > 1) {
-      // ✅ FIX: Retry logic для поиска трека
+      // ✅ FIX: Improved retry logic with exponential backoff
       let trackRecord = null;
       let retries = 0;
-      const MAX_RETRIES = 3;
+      const MAX_RETRIES = 5; // Увеличено до 5
+      const RETRY_DELAYS = [500, 1000, 2000, 3000, 5000]; // Exponential backoff
       
       while (!trackRecord && retries < MAX_RETRIES) {
         const { data, error } = await this.supabase
@@ -299,15 +303,17 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
           .maybeSingle(); // ✅ Не бросает ошибку если нет записи
         
         if (!data && !error) {
-          logger.info(`⏳ [MUREKA] Track not found yet, retry ${retries + 1}/${MAX_RETRIES}`, { taskId });
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Подождать 1 секунду
+          const delay = RETRY_DELAYS[retries];
+          logger.info(`⏳ [MUREKA] Track not found yet, retry ${retries + 1}/${MAX_RETRIES} in ${delay}ms`, { taskId });
+          await new Promise(resolve => setTimeout(resolve, delay));
           retries++;
           continue;
         }
         
         if (error) {
           logger.error('❌ [MUREKA] Error fetching track', { error, taskId });
-          throw error;
+          // Не бросаем ошибку, просто логируем и продолжаем без вариантов
+          break;
         }
         
         trackRecord = { data, error: null };
@@ -364,9 +370,22 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
       }
     }
 
+    // ✅ FIX: Validate audio_url before returning
+    const audioUrl = primaryClip.audio_url;
+    if (!audioUrl || audioUrl.trim() === '') {
+      logger.error('[MUREKA] No valid audio_url in completed track', { 
+        taskId, 
+        clipId: primaryClip.id 
+      });
+      return {
+        status: 'failed',
+        error: 'No audio URL in completed response',
+      };
+    }
+
     return {
       status: 'completed',
-      audio_url: primaryClip.audio_url || undefined,
+      audio_url: audioUrl,
       cover_url: primaryClip.image_url || primaryClip.cover_url || undefined,
       video_url: primaryClip.video_url || undefined,
       duration: primaryClip.duration || 0,

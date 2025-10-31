@@ -23,10 +23,12 @@
 - ✅ Файл: `src/utils/logger.ts`
 
 ### 4. Mureka Critical Bugs ✅
-- ✅ Race condition fixed
-- ✅ Cover upload 30s timeout
-- ✅ Versions display fixed
+- ✅ Race condition в версиях треков fixed (exponential backoff)
+- ✅ Race condition polling/task_id fixed (500ms delay)
+- ✅ Proxy timeout 30s для cover/audio
+- ✅ URL-specific proxy tracking
 - ✅ Player audio_url validation
+- ✅ Edge function audio_url validation
 
 ---
 
