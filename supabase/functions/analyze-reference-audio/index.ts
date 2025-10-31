@@ -202,16 +202,54 @@ const mainHandler = async (req: Request): Promise<Response> => {
     const finalExt = isM4a ? 'm4a' : 'mp3';
     const finalMimeType = isM4a ? 'audio/mp4' : 'audio/mpeg';
     
-    logger.info('[ANALYZE-REF] 📤 Uploading to Mureka with validated format', {
-      originalType: audioBlob.type,
-      finalMimeType,
-      finalExt,
-      audioSize: audioBlob.size
-    });
-    
+    // Проверка сигнатуры файла (magic bytes)
+    try {
+      const headerAb = await audioBlob.slice(0, 12).arrayBuffer();
+      const header = new Uint8Array(headerAb);
+      const textHead = new TextDecoder().decode(header);
+      const looksLikeMp3 = (header[0] === 0x49 && header[1] === 0x44 && header[2] === 0x33) // 'ID3'
+        || (header[0] === 0xff && (header[1] & 0xe0) === 0xe0); // MPEG frame sync
+      const looksLikeMp4 = textHead.includes('ftyp');
+      
+      if (finalExt === 'mp3' && !looksLikeMp3) {
+        logger.warn('[ANALYZE-REF] ❌ Header check failed for MP3', { header: Array.from(header) });
+        return new Response(
+          JSON.stringify({ 
+            error: 'The provided file does not appear to be a valid MP3. Please upload a real MP3 clip (~30s).'
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      if (finalExt === 'm4a' && !looksLikeMp4) {
+        logger.warn('[ANALYZE-REF] ❌ Header check failed for M4A/MP4', { headerText: textHead });
+        return new Response(
+          JSON.stringify({ 
+            error: 'The provided file does not appear to be a valid M4A. Please upload a real M4A clip (~30s).'
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } catch (sigErr) {
+      logger.warn('[ANALYZE-REF] ⚠️ Unable to verify file header', { error: sigErr instanceof Error ? sigErr.message : String(sigErr) });
+    }
+
     const filename = `reference.${finalExt}`;
     const fileForUpload = new File([audioBlob], filename, { type: finalMimeType });
-    const uploadResult = await murekaClient.uploadFile(fileForUpload);
+
+    // Ограничение Mureka: максимум 10 МБ на файл
+    if (fileForUpload.size > 10_000_000) {
+      logger.warn('[ANALYZE-REF] ❌ File too large for Mureka upload', { size: fileForUpload.size });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Audio file is too large. Max size is 10MB for Mureka uploads. Please provide a ~30s MP3/M4A clip.',
+          maxBytes: 10_000_000,
+          currentBytes: fileForUpload.size
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const uploadResult = await murekaClient.uploadFile(fileForUpload, { purpose: 'reference' });
 
     if (uploadResult.code !== 200 || !uploadResult.data?.file_id) {
       throw new Error('Mureka file upload failed');

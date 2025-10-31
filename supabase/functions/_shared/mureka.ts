@@ -605,7 +605,7 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
      * console.log(`File ID: ${upload.data.file_id}`);
      * ```
      */
-    async uploadFile(file: Blob): Promise<MurekaFileUploadResponse> {
+    async uploadFile(file: Blob, opts?: { purpose?: 'audio' | 'reference' | 'vocal' | 'melody' | 'instrumental' | 'voice' }): Promise<MurekaFileUploadResponse> {
       logger.info('📤 [MUREKA] Uploading file', { size: file.size });
       
       const formData = new FormData();
@@ -620,8 +620,9 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
         : 'bin';
       const audioBlob = new Blob([file], { type: contentType });
       formData.append('file', audioBlob, `audio.${ext}`);
-      // REQUIRED by Mureka API: specify purpose. Using generic 'audio' for analysis/recognition.
-      formData.append('purpose', 'audio');
+      // REQUIRED by Mureka API: specify purpose. Use provided or fallback to 'audio'.
+      const purpose = opts?.purpose ?? 'audio';
+      formData.append('purpose', purpose);
       
       const url = `${BASE_URL}${options.uploadEndpoint || '/v1/files/upload'}`;
       
