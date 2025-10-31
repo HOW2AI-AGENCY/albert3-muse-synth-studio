@@ -767,13 +767,6 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "track_likes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_stats"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       track_retry_attempts: {
@@ -1050,13 +1043,6 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "tracks_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "user_stats"
-            referencedColumns: ["user_id"]
-          },
         ]
       }
       user_roles: {
@@ -1138,53 +1124,7 @@ export type Database = {
       }
     }
     Views: {
-      analytics_generations_daily: {
-        Row: {
-          avg_generation_time_seconds: number | null
-          count: number | null
-          date: string | null
-          provider: string | null
-          status: string | null
-          unique_users: number | null
-        }
-        Relationships: []
-      }
-      analytics_top_genres: {
-        Row: {
-          avg_plays: number | null
-          genre: string | null
-          total_plays: number | null
-          track_count: number | null
-          unique_creators: number | null
-        }
-        Relationships: []
-      }
-      archive_statistics: {
-        Row: {
-          archive_percentage: number | null
-          expired_tracks: number | null
-          pending_archive: number | null
-          total_archived: number | null
-          urgent_archive_needed: number | null
-        }
-        Relationships: []
-      }
-      user_stats: {
-        Row: {
-          email: string | null
-          full_name: string | null
-          last_track_created: string | null
-          total_downloads: number | null
-          total_likes: number | null
-          total_plays: number | null
-          total_tracks: number | null
-          total_views: number | null
-          tracks_last_30_days: number | null
-          tracks_last_7_days: number | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       decrement_production_credits: {
@@ -1194,6 +1134,46 @@ export type Database = {
       decrement_test_credits: {
         Args: { _amount: number; _user_id: string }
         Returns: undefined
+      }
+      get_analytics_archive_statistics: {
+        Args: never
+        Returns: unknown[]
+        SetofOptions: {
+          from: "*"
+          to: "archive_statistics"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      get_analytics_generations_daily: {
+        Args: never
+        Returns: unknown[]
+        SetofOptions: {
+          from: "*"
+          to: "analytics_generations_daily"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      get_analytics_top_genres: {
+        Args: never
+        Returns: unknown[]
+        SetofOptions: {
+          from: "*"
+          to: "analytics_top_genres"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      get_analytics_user_stats: {
+        Args: never
+        Returns: unknown[]
+        SetofOptions: {
+          from: "*"
+          to: "user_stats"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_tracks_needing_archiving: {
         Args: { _limit?: number }
