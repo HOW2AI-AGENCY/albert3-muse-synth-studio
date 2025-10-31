@@ -739,8 +739,8 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
     async queryTask(taskId: string): Promise<MurekaGenerationResponse> {
       logger.info('🔄 [MUREKA] Querying task', { taskId });
       
-      // ✅ FIX: Pass task_id as query parameter
-      const endpoint = `/v1/song/query?task_id=${taskId}`;
+      // ✅ CORRECT: task_id in URL path, not query param
+      const endpoint = `/v1/song/query/${taskId}`;
       
       return makeRequest(endpoint, 'GET');
     },

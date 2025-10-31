@@ -81,23 +81,32 @@ serve(async (req: Request): Promise<Response> => {
 
       try {
         const q = await mureka.queryTask(String(taskId));
-        const rawStatus = (q.data as any)?.status;
-        const clips = q.data?.clips;
+        
+        logger.info('🔍 [RESTORE] Mureka API response', { 
+          trackId: t.id, 
+          taskId,
+          status: (q as any).status,
+          hasChoices: !!((q as any).choices),
+          choiceCount: ((q as any).choices || []).length
+        });
 
-        if (q.code === 200 && clips && clips.length > 0) {
-          const clip = clips[0] as any;
+        const rawStatus = (q as any).status;
+        const choices = (q as any).choices;
+
+        if (rawStatus === 'succeeded' && choices && choices.length > 0) {
+          const choice = choices[0];
           const updatePayload: Record<string, unknown> = {
             status: 'completed',
-            audio_url: clip.audio_url ?? null,
-            cover_url: clip.image_url ?? null,
-            video_url: clip.video_url ?? null,
-            duration_seconds: clip.duration ?? 0,
-            title: clip.title || t.title || 'Generated Track',
+            audio_url: choice.url || choice.audio_url || null,
+            cover_url: choice.image_url || choice.cover_url || null,
+            video_url: choice.video_url || null,
+            duration_seconds: choice.duration ? Math.round(choice.duration / 1000) : 0,
+            title: choice.title || choice.name || t.title || 'Generated Track',
             metadata: {
               ...(t.metadata || {}),
               restored_via: 'restore-mureka-tracks',
               restored_at: new Date().toISOString(),
-              mureka_query_status: rawStatus ?? 'SUCCESS',
+              mureka_query_status: rawStatus,
             },
           };
 
@@ -108,7 +117,7 @@ serve(async (req: Request): Promise<Response> => {
 
           if (upErr) throw upErr;
 
-          results.push({ trackId: t.id, taskId: String(taskId), updated: true, audio_url: clip.audio_url });
+          results.push({ trackId: t.id, taskId: String(taskId), updated: true, audio_url: choice.url || choice.audio_url });
         } else {
           results.push({ trackId: t.id, taskId: String(taskId), updated: false, reason: rawStatus || `code_${q.code}` });
         }

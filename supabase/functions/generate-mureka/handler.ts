@@ -226,32 +226,55 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
     const murekaClient = createMurekaClient({ apiKey: this.apiKey });
     const queryResult = await murekaClient.queryTask(taskId);
 
-    // ✅ Handle "preparing" status - continue polling (check raw data)
-    const rawStatus = (queryResult.data as any)?.status;
-    if (rawStatus === 'preparing') {
-      logger.debug('[MUREKA] Task is preparing, continuing polling', { taskId });
+    logger.debug('[MUREKA] Raw query result', { 
+      taskId,
+      status: (queryResult as any).status,
+      hasChoices: !!((queryResult as any).choices),
+      choiceCount: ((queryResult as any).choices || []).length
+    });
+
+    // ✅ Handle "preparing" or "queued" status - continue polling
+    const rawStatus = (queryResult as any).status;
+    if (rawStatus === 'preparing' || rawStatus === 'queued' || rawStatus === 'running' || rawStatus === 'streaming') {
+      logger.debug('[MUREKA] Task in progress, continuing polling', { taskId, status: rawStatus });
       return {
         status: 'processing',
       };
     }
 
-    const clips = queryResult.data?.clips;
-    if (queryResult.code === 200 && clips && clips.length > 0) {
+    // ✅ Check for succeeded status with choices (new Mureka API format)
+    const choices = (queryResult as any).choices;
+    if (rawStatus === 'succeeded' && choices && choices.length > 0) {
+      const choice = choices[0];
+      
+      return {
+        status: 'completed',
+        audio_url: choice.url || choice.audio_url,
+        cover_url: choice.image_url || choice.cover_url,
+        duration: choice.duration ? Math.round(choice.duration / 1000) : 0, // convert ms to seconds
+        title: choice.title || choice.name || 'Generated Track',
+      };
+    }
+
+    // ✅ Legacy format support (clips instead of choices)
+    const clips = (queryResult as any).data?.clips;
+    if (clips && clips.length > 0) {
       const clip = clips[0];
       
       return {
         status: 'completed',
-        audio_url: clip.audio_url as string | undefined,
-        cover_url: clip.image_url as string | undefined,
+        audio_url: clip.audio_url,
+        cover_url: clip.image_url,
         duration: (clip.duration as number | undefined) || 0,
         title: (clip.title as string | undefined) || 'Generated Track',
       };
     }
 
-    if (queryResult.code === 500 || rawStatus === 'failed') {
+    // ✅ Handle failed status
+    if (rawStatus === 'failed' || rawStatus === 'timeouted' || rawStatus === 'cancelled') {
       return {
         status: 'failed',
-        error: queryResult.msg || 'Mureka generation failed',
+        error: (queryResult as any).failed_reason || 'Mureka generation failed',
       };
     }
 
