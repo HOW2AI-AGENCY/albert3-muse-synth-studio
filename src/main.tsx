@@ -3,28 +3,13 @@ import App from './App.tsx';
 import './index.css';
 import { initWebVitals } from './services/monitoring.service';
 import { initServiceWorker } from './utils/serviceWorker';
-import * as Sentry from '@sentry/react';
-import { browserTracingIntegration } from '@sentry/react';
 import { AnalyticsService } from './services/analytics.service';
 import type { Metric } from 'web-vitals';
 import { logger } from './utils/logger';
+import { initSentry } from './utils/sentry';
 
-const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
-
-if (sentryDsn) {
-  const configuredSampleRate = Number(import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE ?? '0.1');
-  const tracesSampleRate = Number.isFinite(configuredSampleRate)
-    ? Math.min(Math.max(configuredSampleRate, 0), 1)
-    : 0.1;
-
-  Sentry.init({
-    dsn: sentryDsn,
-    integrations: [browserTracingIntegration()],
-    tracesSampleRate,
-    release: import.meta.env.VITE_SENTRY_RELEASE,
-    environment: import.meta.env.VITE_SENTRY_ENVIRONMENT ?? import.meta.env.MODE,
-  });
-}
+// ✅ Initialize Sentry FIRST (with enhanced config from utils/sentry.ts)
+initSentry();
 
 // Инициализируем Service Worker
 initServiceWorker().catch((error) => {
