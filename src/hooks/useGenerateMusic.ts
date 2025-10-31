@@ -82,7 +82,6 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
 
   // Main generation function
   const generate = useCallback(async (options: GenerationRequest): Promise<boolean> => {
-    console.log('🎸 [HOOK DEBUG] generate() called!', { options });
     const effectivePrompt = options.prompt?.trim() ?? '';
     const effectiveProvider = options.provider || provider;
 

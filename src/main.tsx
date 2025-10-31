@@ -1,4 +1,6 @@
 import { createRoot } from 'react-dom/client';
+import { onCLS, onFID, onFCP, onLCP, onTTFB } from 'web-vitals';
+import * as Sentry from '@sentry/react';
 import App from './App.tsx';
 import './index.css';
 import { initWebVitals } from './services/monitoring.service';
@@ -10,6 +12,44 @@ import { initSentry } from './utils/sentry';
 
 // ✅ Initialize Sentry FIRST (with enhanced config from utils/sentry.ts)
 initSentry();
+
+// ✅ Send Web Vitals to Sentry (production only)
+if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
+  onCLS((metric) => {
+    Sentry.captureMessage(`CLS: ${metric.value}`, {
+      level: 'info',
+      tags: { metric: 'CLS', rating: metric.rating },
+    });
+  });
+
+  onFID((metric) => {
+    Sentry.captureMessage(`FID: ${metric.value}`, {
+      level: 'info',
+      tags: { metric: 'FID', rating: metric.rating },
+    });
+  });
+
+  onFCP((metric) => {
+    Sentry.captureMessage(`FCP: ${metric.value}`, {
+      level: 'info',
+      tags: { metric: 'FCP', rating: metric.rating },
+    });
+  });
+
+  onLCP((metric) => {
+    Sentry.captureMessage(`LCP: ${metric.value}`, {
+      level: 'info',
+      tags: { metric: 'LCP', rating: metric.rating },
+    });
+  });
+
+  onTTFB((metric) => {
+    Sentry.captureMessage(`TTFB: ${metric.value}`, {
+      level: 'info',
+      tags: { metric: 'TTFB', rating: metric.rating },
+    });
+  });
+}
 
 // Инициализируем Service Worker
 initServiceWorker().catch((error) => {
