@@ -7,22 +7,6 @@ interface BoostStyleRequest {
   content: string;
 }
 
-interface SunoBoostResponse {
-  code: number;
-  msg: string;
-  data: {
-    taskId: string;
-    param: string;
-    result: string;
-    creditsConsumed: number;
-    creditsRemaining: number;
-    successFlag: string;
-    errorCode?: number;
-    errorMessage?: string;
-    createTime: string;
-  };
-}
-
 serve(async (req) => {
   const corsHeaders = createCorsHeaders(req);
   
@@ -54,9 +38,9 @@ serve(async (req) => {
     }
 
     // Recommended max ~200 characters
-    if (content.length > 250) {
+    if (content.length > 500) {
       return new Response(
-        JSON.stringify({ error: 'Style description too long. Please keep it under 200 characters for best results.' }),
+        JSON.stringify({ error: 'Style description too long. Please keep it under 500 characters.' }),
         { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -64,108 +48,99 @@ serve(async (req) => {
     logger.info('Boost style request received', {
       userId: user.id,
       contentLength: content.length,
-      contentPreview: content.substring(0, 100) + (content.length > 100 ? '...' : '')
+      contentPreview: content.substring(0, 100)
     });
 
-    const SUNO_API_KEY = Deno.env.get('SUNO_API_KEY');
-    if (!SUNO_API_KEY) {
-      throw new Error('Suno API key not configured');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const response = await fetch('https://api.sunoapi.org/api/v1/style/generate', {
+    // Use Lovable AI Gateway to improve the prompt
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${SUNO_API_KEY}`,
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ content })
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert music prompt engineer specialized in AI music generation. Transform simple descriptions into rich, detailed prompts that AI can translate into exceptional music.
+
+ENHANCE WITH:
+- **Genre & Style**: Specific subgenres, fusion elements, era/period
+- **Instrumentation**: Key instruments, electronic/acoustic balance, unique sounds
+- **Tempo & Rhythm**: BPM range, time signature, rhythmic patterns, groove
+- **Mood & Atmosphere**: Emotional tone, energy level, production vibe
+- **Structure**: Arrangement hints (verse, chorus, build-ups, drops)
+- **Production**: Mix style (clean/lo-fi), reverb, effects, mastering approach
+
+RULES:
+- Keep 2-4 sentences, maximum 150 words
+- Be specific and actionable for AI
+- Use musical terminology
+- Avoid vague descriptions
+- Focus on what makes sound unique
+- Return ONLY the enhanced prompt, no explanations`
+          },
+          {
+            role: 'user',
+            content: `Improve this music description for AI generation: "${content}"`
+          }
+        ],
+      }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      logger.error('Suno API error in boost-style', {
+      logger.error('Lovable AI error in boost-style', {
         error: errorText,
         status: response.status,
         userId: user.id
       });
 
-      if (response.status === 413) {
-        return new Response(
-          JSON.stringify({ error: 'Style description too long. Please shorten it.' }),
-          { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ 
-            error: 'Insufficient Suno credits or rate limit exceeded. Please try again later.',
+            error: 'Rate limit exceeded. Please try again in a moment.',
             code: 429
           }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      if (response.status === 430) {
+      if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: 'Call frequency too high. Please wait a moment and try again.' }),
-          { status: 430, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ 
+            error: 'AI service credits exhausted. Please top up your Lovable workspace.',
+            code: 402
+          }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      if (response.status === 455) {
-        return new Response(
-          JSON.stringify({ error: 'Suno API is under maintenance. Please try again later.' }),
-          { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      throw new Error(`Suno API error: ${response.status}`);
+      throw new Error(`AI service error: ${response.status}`);
     }
 
-    const data: SunoBoostResponse = await response.json();
+    const data = await response.json();
+    const improvedPrompt = data.choices?.[0]?.message?.content;
 
-    if (data.code !== 200) {
-      logger.error('Suno response error in boost-style', {
-        error: data.msg,
-        errorDetails: data.data?.errorMessage,
-        code: data.code,
-        userId: user.id
-      });
-      return new Response(
-        JSON.stringify({ 
-          error: data.msg || 'Style boost failed',
-          details: data.data?.errorMessage 
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (data.data.successFlag !== '1') {
-      return new Response(
-        JSON.stringify({ 
-          error: data.data.errorMessage || 'Style generation failed',
-          code: data.data.errorCode 
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (!improvedPrompt) {
+      throw new Error('No response from AI');
     }
 
     logger.info('Boost style success', {
-      taskId: data.data.taskId,
-      creditsConsumed: data.data.creditsConsumed,
-      creditsRemaining: data.data.creditsRemaining,
-      resultLength: data.data.result.length,
+      resultLength: improvedPrompt.length,
       userId: user.id
     });
 
     return new Response(
       JSON.stringify({
         success: true,
-        result: data.data.result,
-        creditsConsumed: data.data.creditsConsumed,
-        creditsRemaining: data.data.creditsRemaining,
-        taskId: data.data.taskId
+        result: improvedPrompt.trim()
       }),
       { 
         status: 200, 
