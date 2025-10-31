@@ -130,3 +130,6 @@ verify_jwt = false
 
 [functions.fix-stuck-mureka-track]
 verify_jwt = false
+
+[functions.restore-mureka-tracks]
+verify_jwt = false
