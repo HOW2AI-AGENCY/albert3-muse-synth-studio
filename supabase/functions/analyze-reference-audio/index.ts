@@ -192,7 +192,22 @@ const uploadResult = await murekaClient.uploadFile(fileForUpload);
     // ============================================================================
 
     logger.info('[ANALYZE-REF] 📖 Initiating song description');
-    const descriptionPromise = murekaClient.describeSong({ url: audioUrl });
+    let describeUrl = audioUrl;
+    try {
+      const ab = await audioBlob.arrayBuffer();
+      const bytes = new Uint8Array(ab);
+      const CHUNK = 0x8000;
+      let binary = '';
+      for (let i = 0; i < bytes.length; i += CHUNK) {
+        binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + CHUNK)) as unknown as number[]);
+      }
+      const base64 = btoa(binary);
+      describeUrl = `data:${normalizedType};base64,${base64}`;
+      logger.info('[ANALYZE-REF] 🔄 Using base64 data URL for description', { type: normalizedType, size: audioBlob.size });
+    } catch (e) {
+      logger.warn('[ANALYZE-REF] Failed to build base64 URL, falling back to original URL', { error: (e as Error).message });
+    }
+    const descriptionPromise = murekaClient.describeSong({ url: describeUrl });
 
     // ✅ Параллельное выполнение обоих запросов
     const [recognitionResult, descriptionResult] = await Promise.all([
