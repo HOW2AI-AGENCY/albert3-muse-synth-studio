@@ -3,6 +3,7 @@ import { SongDocument, Tag, Section, LintIssue, EditorMode } from '@/types/lyric
 import { parseLyrics, exportToSunoFormat, lintDocument, extractTags } from '@/utils/lyricsParser';
 import { LyricsToolbar } from './LyricsToolbar';
 import { LyricsContent } from './LyricsContent';
+import { SectionPresetDialog } from './SectionPresetDialog';
 import { cn } from '@/lib/utils';
 
 export interface LyricsWorkspaceProps {
@@ -32,6 +33,7 @@ export const LyricsWorkspace = memo<LyricsWorkspaceProps>(({
 }) => {
   const [editorMode, setEditorMode] = useState<EditorMode>('scratch');
   const [viewMode, setViewMode] = useState<'visual' | 'raw'>('visual');
+  const [showPresetDialog, setShowPresetDialog] = useState(false);
 
   // Parse lyrics to document
   const document = useMemo<SongDocument>(() => {
@@ -88,13 +90,16 @@ export const LyricsWorkspace = memo<LyricsWorkspaceProps>(({
     handleDocumentChange({ ...document, sections: newSections });
   }, [document, handleDocumentChange]);
 
-  // Add section
+  // Add section with preset
   const handleAddSection = useCallback(() => {
+    setShowPresetDialog(true);
+  }, []);
+
+  // Handle preset selection
+  const handlePresetSelect = useCallback((section: Section) => {
     const newSection: Section = {
+      ...section,
       id: `section-${Date.now()}`,
-      title: 'New Section',
-      tags: [],
-      lines: [],
       order: document.sections.length
     };
     handleDocumentChange({ 
@@ -133,39 +138,48 @@ export const LyricsWorkspace = memo<LyricsWorkspaceProps>(({
   }, [document, handleDocumentChange]);
 
   return (
-    <div className={cn("flex flex-col h-full", className)}>
-      <LyricsToolbar
-        mode={mode}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        editorMode={editorMode}
-        onEditorModeChange={setEditorMode}
-        stats={stats}
-        lintIssues={lintIssues}
-        showAITools={showAITools}
-        onGenerate={onGenerate}
-        onAddSection={handleAddSection}
-        readOnly={readOnly}
-        compact={compact}
-      />
+    <>
+      <div className={cn("flex flex-col h-full w-full", className)}>
+        <LyricsToolbar
+          mode={mode}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          editorMode={editorMode}
+          onEditorModeChange={setEditorMode}
+          stats={stats}
+          lintIssues={lintIssues}
+          showAITools={showAITools}
+          onGenerate={onGenerate}
+          onAddSection={handleAddSection}
+          readOnly={readOnly}
+          compact={compact}
+        />
 
-      <LyricsContent
-        mode={mode}
-        viewMode={viewMode}
-        document={document}
-        onDocumentChange={handleDocumentChange}
-        onSectionUpdate={handleSectionUpdate}
-        onSectionDelete={handleSectionDelete}
-        onReorder={handleReorder}
-        onAddTag={handleAddTag}
-        onRemoveTag={handleRemoveTag}
-        onGlobalTagsChange={handleGlobalTagsChange}
-        showTags={showTags}
-        showSectionControls={showSectionControls}
-        readOnly={readOnly}
-        compact={compact}
+        <LyricsContent
+          mode={mode}
+          viewMode={viewMode}
+          document={document}
+          onDocumentChange={handleDocumentChange}
+          onSectionUpdate={handleSectionUpdate}
+          onSectionDelete={handleSectionDelete}
+          onReorder={handleReorder}
+          onAddTag={handleAddTag}
+          onRemoveTag={handleRemoveTag}
+          onGlobalTagsChange={handleGlobalTagsChange}
+          showTags={showTags}
+          showSectionControls={showSectionControls}
+          readOnly={readOnly}
+          compact={compact}
+        />
+      </div>
+
+      {/* Section Preset Dialog */}
+      <SectionPresetDialog
+        open={showPresetDialog}
+        onOpenChange={setShowPresetDialog}
+        onSelectPreset={handlePresetSelect}
       />
-    </div>
+    </>
   );
 });
 

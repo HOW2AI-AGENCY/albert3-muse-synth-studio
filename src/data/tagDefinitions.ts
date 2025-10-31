@@ -20,24 +20,31 @@ export const TAG_DEFINITIONS: Record<string, TagDefinition> = {
     ]
   },
 
-  // 🎤 VOCAL TAGS
+  // 🎤 VOCAL TAGS (Updated for Suno v4.5/v5)
   vocal: {
     category: 'vocal',
     icon: 'mic',
     color: 'bg-purple-500',
-    description: 'Vocal styles and characteristics',
+    description: 'Vocal styles and characteristics (Suno v5 optimized)',
     values: [
       // Types
       'Lead Vocal', 'Backing Vocals', 'Stacked Harmonies',
       'Call-and-Response', 'Duet', 'Choir', 'Spoken Word', 'Rap Verse',
-      // Tone/Texture
+      'Acapella', 'Humming', 'Whistle', 'Scat Singing',
+      // Tone/Texture (v5 Enhanced)
       'Gritty', 'Husky', 'Breathy', 'Soulful', 'Belting',
       'Falsetto', 'Whisper', 'Raspy', 'Smooth', 'Powerful',
+      'Melancholic Vocal', 'Euphoric Vocal', 'Intimate Vocal',
+      'Dark Vocal', 'Angelic', 'Raw Emotion', 'Operatic',
+      // Gender/Age
+      'Male Vocals', 'Female Vocals', 'Child Voice', 'Elderly Voice',
+      'Deep Voice', 'High Pitched', 'Androgynous',
       // FX
       'Light Autotune', 'Heavy Autotune', 'Vocoder',
-      'Double-Tracked', 'Lo-fi Vocal', 'Pitched Up', 'Pitched Down'
+      'Double-Tracked', 'Lo-fi Vocal', 'Pitched Up', 'Pitched Down',
+      'Reverb Vocal', 'Delay Vocal', 'Distorted Vocal'
     ],
-    examples: ['[Lead Vocal]', '[Gritty]', '[Light Autotune]']
+    examples: ['[Lead Vocal]', '[Gritty]', '[Light Autotune]', '[Female Vocals]']
   },
 
   // 💫 EMOTION TAGS
@@ -55,25 +62,40 @@ export const TAG_DEFINITIONS: Record<string, TagDefinition> = {
     examples: ['[Melancholic]', '[Euphoric]', '[Dreamy]']
   },
 
-  // 🎹 INSTRUMENT TAGS
+  // 🎹 INSTRUMENT TAGS (Extended for Suno v4.5/v5)
   instrument: {
     category: 'instrument',
     icon: 'piano',
     color: 'bg-green-500',
-    description: 'Musical instruments and sounds',
+    description: 'Musical instruments and sounds (extensive collection)',
     values: [
-      // Rhythm
+      // Rhythm Section
       'Drum Machine', 'Acoustic Drums', 'Breakbeat', 'Trap Hats',
-      'Four-on-the-Floor', '808 Sub', 'Fuzzy Bass', 'Slap Bass',
-      // Harmony/Melody
-      'Piano', 'Rhodes', 'Organ', 'Acoustic Guitar', 'Electric Guitar Clean',
-      'Electric Guitar Crunch', 'Strings', 'Brass', 'Saxophone', 'Accordion',
-      'Violin', 'Cello', 'Flute', 'Trumpet',
-      // Synth/Textures
-      'Analog Pad', 'Ethereal Pad', 'Pluck Synth', 'Arp Synth',
-      'FM Keys', 'Chiptune Lead', 'Supersaw', 'Warm Bass'
+      'Four-on-the-Floor', 'Live Drums', 'Drum & Bass', 'Tribal Drums',
+      '808 Sub', 'Fuzzy Bass', 'Slap Bass', 'Synth Bass', 'Upright Bass',
+      'Kick Drum', 'Snare', 'Hi-Hats', 'Clap',
+      // Keys & Piano
+      'Piano', 'Rhodes', 'Organ', 'Hammond Organ', 'Wurlitzer',
+      'Electric Piano', 'Grand Piano', 'Upright Piano',
+      // Guitars
+      'Acoustic Guitar', 'Electric Guitar Clean', 'Electric Guitar Crunch',
+      'Electric Guitar Distorted', 'Guitar Riff', 'Guitar Solo',
+      'Fingerpicked Guitar', 'Strummed Guitar', 'Bass Guitar',
+      // Orchestral
+      'Strings', 'Brass', 'Woodwinds', 'Orchestra',
+      'Violin', 'Cello', 'Viola', 'Double Bass',
+      'Saxophone', 'Trumpet', 'Trombone', 'French Horn',
+      'Flute', 'Clarinet', 'Oboe', 'Bassoon',
+      // World Instruments
+      'Accordion', 'Sitar', 'Banjo', 'Mandolin', 'Ukulele',
+      'Harp', 'Harmonica', 'Bagpipes', 'Steel Drum',
+      // Synths (v5 Enhanced)
+      'Analog Pad', 'Ethereal Pad', 'Warm Pad', 'Dark Pad',
+      'Pluck Synth', 'Arp Synth', 'Lead Synth', 'Bass Synth',
+      'FM Keys', 'FM Bass', 'Chiptune Lead', '8-bit',
+      'Supersaw', 'Warm Bass', 'Sub Bass', 'Reese Bass'
     ],
-    examples: ['[Piano]', '[808 Sub]', '[Analog Pad]']
+    examples: ['[Piano]', '[808 Sub]', '[Analog Pad]', '[Guitar Riff]']
   },
 
   // 🧭 ARRANGEMENT TAGS

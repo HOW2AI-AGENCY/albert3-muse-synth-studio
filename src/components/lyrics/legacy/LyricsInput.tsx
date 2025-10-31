@@ -27,16 +27,19 @@ export const LyricsInput: React.FC<LyricsInputProps> = ({
   const isMobile = useIsMobile();
 
   return (
-    <LyricsWorkspace
-      mode="edit"
-      value={value}
-      onChange={onChange}
-      onGenerate={onGenerateLyrics}
-      readOnly={isGenerating}
-      showAITools={false}
-      showTags={true}
-      showSectionControls={true}
-      compact={compact || isMobile}
-    />
+    <div className="w-full max-w-full overflow-hidden">
+      <LyricsWorkspace
+        mode="edit"
+        value={value}
+        onChange={onChange}
+        onGenerate={onGenerateLyrics}
+        readOnly={isGenerating}
+        showAITools={false}
+        showTags={true}
+        showSectionControls={true}
+        compact={compact || isMobile}
+        className="w-full max-w-full"
+      />
+    </div>
   );
 };

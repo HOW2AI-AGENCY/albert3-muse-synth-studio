@@ -5,3 +5,4 @@ export { LyricsSection } from './LyricsSection';
 export { GlobalTagsBar } from './GlobalTagsBar';
 export { LintIssuesPanel } from './LintIssuesPanel';
 export { RawTextEditor } from './RawTextEditor';
+export { SectionPresetDialog } from './SectionPresetDialog';

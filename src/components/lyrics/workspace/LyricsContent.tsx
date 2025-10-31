@@ -82,11 +82,11 @@ export const LyricsContent: React.FC<LyricsContentProps> = ({
       .join('\n\n');
 
     return (
-      <ScrollArea className="flex-1 p-4">
+      <ScrollArea className="flex-1 p-4 w-full">
         <Textarea
           value={rawText}
           readOnly={readOnly}
-          className="min-h-[500px] font-mono text-sm resize-none"
+          className="w-full min-h-[500px] font-mono text-sm resize-none"
           placeholder="Enter lyrics in Suno format..."
         />
       </ScrollArea>
@@ -95,8 +95,8 @@ export const LyricsContent: React.FC<LyricsContentProps> = ({
 
   // Visual mode
   return (
-    <ScrollArea className="flex-1">
-      <div className={cn("p-4 space-y-4", compact && "p-2 space-y-2")}>
+    <ScrollArea className="flex-1 w-full">
+      <div className={cn("p-4 space-y-4 w-full max-w-full", compact && "p-2 space-y-2")}>
         {/* Global Tags */}
         {showTags && document.globalTags.length > 0 && (
           <GlobalTagsBar
