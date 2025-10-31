@@ -61,6 +61,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
   return (
     <nav
       ref={tabBarRef}
+      data-bottom-tab-bar="true"
       className={cn(
         "fixed bottom-0 left-0 right-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur",
         "pb-[env(safe-area-inset-bottom)]",

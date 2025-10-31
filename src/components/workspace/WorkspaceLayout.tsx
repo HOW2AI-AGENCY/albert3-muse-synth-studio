@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { Outlet } from "react-router-dom";
 import MinimalSidebar from "./MinimalSidebar";
 import WorkspaceHeader from "./WorkspaceHeader";
@@ -7,6 +7,7 @@ import { NavigationTracker } from "@/components/NavigationTracker";
 import { cn } from "@/lib/utils";
 import { useUserRole } from "@/hooks/useUserRole";
 import { getWorkspaceNavItems } from "@/config/workspace-navigation";
+import { useWorkspaceOffsets } from "@/hooks/useWorkspaceOffsets";
 
 const WorkspaceLayout = () => {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
@@ -16,36 +17,8 @@ const WorkspaceLayout = () => {
     [isAdmin]
   );
 
-  // Update CSS variable for player offset
-  useEffect(() => {
-    const updatePlayerOffset = () => {
-      const player = document.querySelector('[data-testid="mini-player"]') as HTMLElement;
-      const height = player ? player.offsetHeight : 0;
-      document.documentElement.style.setProperty(
-        '--workspace-bottom-offset',
-        `${height}px`
-      );
-    };
-
-    updatePlayerOffset();
-    
-    // Watch for DOM changes
-    const observer = new MutationObserver(updatePlayerOffset);
-    observer.observe(document.body, { 
-      childList: true, 
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['class', 'style']
-    });
-
-    // Also update on resize
-    window.addEventListener('resize', updatePlayerOffset);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', updatePlayerOffset);
-    };
-  }, []);
+  // Use dynamic offsets hook
+  useWorkspaceOffsets();
 
   return (
     <NavigationTracker>
@@ -70,9 +43,8 @@ const WorkspaceLayout = () => {
           <main
             className="workspace-main flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-background scrollbar-styled"
             style={{
-              paddingBottom: 'calc(var(--workspace-bottom-offset) + var(--bottom-tab-bar-height))'
+              paddingBottom: 'var(--workspace-bottom-offset)'
             }}
-            data-player-active={false}
           >
             <Outlet />
           </main>

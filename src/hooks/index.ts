@@ -50,6 +50,7 @@ export { useIntersectionObserver, useLazyImage } from './useIntersectionObserver
 export { useDashboardData } from './useDashboardData';
 export { useNotifications } from './useNotifications';
 export { useProviderBalance } from './useProviderBalance';
+export { useWorkspaceOffsets } from './useWorkspaceOffsets';
 
 // Toast (shadcn/ui)
 export { useToast, toast } from './use-toast';

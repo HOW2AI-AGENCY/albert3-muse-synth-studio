@@ -61,9 +61,10 @@
     --mobile-font-base: 1rem;
     --mobile-font-lg: 1.125rem;
 
-    /* Dynamic offsets */
+    /* Dynamic offsets - автоматически обновляются через useWorkspaceOffsets hook */
     --workspace-bottom-offset: 0px;
     --bottom-tab-bar-height: 0px;
+    --mini-player-height: 0px;
   }
 }
 
