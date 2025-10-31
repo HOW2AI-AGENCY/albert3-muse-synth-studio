@@ -556,19 +556,25 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       ? params.vocalGender.substring(0, 1) as 'f' | 'm' 
       : undefined;
 
+    // ✅ CRITICAL: customMode должен быть true ТОЛЬКО если есть lyrics
+    // Simple mode: prompt описывает стиль
+    // Custom mode: prompt игнорируется, lyrics = что петь, tags = стиль
+    const effectiveLyrics = hasVocals && params.lyrics.trim() ? params.lyrics.trim() : undefined;
+    const hasLyricsContent = !!effectiveLyrics;
+
     const requestParams = {
       prompt: params.prompt.trim(),
       title: params.title.trim() || undefined,
-      lyrics: hasVocals && params.lyrics.trim() ? params.lyrics.trim() : undefined,
+      lyrics: effectiveLyrics,
       hasVocals,
       styleTags: params.tags.split(',').map(t => t.trim()).filter(Boolean),
       negativeTags: params.negativeTags.trim() || undefined,
       weirdnessConstraint: params.weirdness / 100,
       styleWeight: params.styleWeight / 100,
-      lyricsWeight: params.lyrics.trim() ? params.lyricsWeight / 100 : undefined,
+      lyricsWeight: hasLyricsContent ? params.lyricsWeight / 100 : undefined,
       audioWeight: params.referenceAudioUrl ? params.audioWeight / 100 : undefined,
       vocalGender: vocalGenderParam,
-      customMode: true,
+      customMode: hasLyricsContent, // ✅ true только если есть lyrics
       modelVersion: params.modelVersion,
       referenceAudioUrl: params.referenceAudioUrl || undefined,
       referenceTrackId: params.referenceTrackId || undefined,
