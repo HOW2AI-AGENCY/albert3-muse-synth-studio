@@ -287,113 +287,110 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
       duration: primaryClip.duration,
     });
     
-    // ✅ Save additional variants as track_versions if multiple clips exist
-    if (normalized.clips.length > 1) {
-      // ✅ FIX: Improved retry logic with exponential backoff
-      let trackRecord = null;
-      let retries = 0;
-      const MAX_RETRIES = 5; // Увеличено до 5
-      const RETRY_DELAYS = [500, 1000, 2000, 3000, 5000]; // Exponential backoff
+    // ✅ Save ALL clips as track_versions (including primary as variant_index=0)
+    // ✅ FIX: Improved retry logic with exponential backoff
+    let trackRecord = null;
+    let retries = 0;
+    const MAX_RETRIES = 5;
+    const RETRY_DELAYS = [500, 1000, 2000, 3000, 5000];
+    
+    while (!trackRecord && retries < MAX_RETRIES) {
+      const { data, error } = await this.supabase
+        .from('tracks')
+        .select('id, user_id, title')
+        .eq('mureka_task_id', taskId)
+        .maybeSingle();
       
-      while (!trackRecord && retries < MAX_RETRIES) {
-        const { data, error } = await this.supabase
-          .from('tracks')
-          .select('id, user_id, title')
-          .eq('mureka_task_id', taskId)
-          .maybeSingle(); // ✅ Не бросает ошибку если нет записи
-        
-        if (!data && !error) {
-          const delay = RETRY_DELAYS[retries];
-          logger.info(`⏳ [MUREKA] Track not found yet, retry ${retries + 1}/${MAX_RETRIES} in ${delay}ms`, { taskId });
-          await new Promise(resolve => setTimeout(resolve, delay));
-          retries++;
-          continue;
-        }
-        
-        if (error) {
-          logger.error('❌ [MUREKA] Error fetching track', { error, taskId });
-          // Не бросаем ошибку, просто логируем и продолжаем без вариантов
-          break;
-        }
-        
-        trackRecord = { data, error: null };
+      if (!data && !error) {
+        const delay = RETRY_DELAYS[retries];
+        logger.info(`⏳ [MUREKA] Track not found yet, retry ${retries + 1}/${MAX_RETRIES} in ${delay}ms`, { taskId });
+        await new Promise(resolve => setTimeout(resolve, delay));
+        retries++;
+        continue;
       }
       
-      if (!trackRecord || !trackRecord.data) {
-        logger.error(`⚠️ [MUREKA] Track not found after ${MAX_RETRIES} retries`, { taskId });
-        // Продолжаем с одной версией
+      if (error) {
+        logger.error('❌ [MUREKA] Error fetching track', { error, taskId });
+        break;
+      }
+      
+      trackRecord = { data, error: null };
+    }
+    
+    if (trackRecord?.data && normalized.clips.length > 0) {
+      const trackData = trackRecord.data;
+      
+      logger.info('💾 [MUREKA] Saving ALL track variants (including primary)', {
+        trackId: trackData.id,
+        totalClips: normalized.clips.length,
+      });
+      
+      // ✅ Check existing variants to prevent duplicates
+      const { data: existingVariants } = await this.supabase
+        .from('track_versions')
+        .select('variant_index')
+        .eq('parent_track_id', trackData.id);
+      
+      const existingIndexes = new Set((existingVariants || []).map(v => v.variant_index));
+      
+      // ✅ Create versions for ALL clips (primary = variant_index 0)
+      const versionsToInsert = normalized.clips
+        .map((clip, index) => {
+          const variantIndex = index;
+          
+          if (existingIndexes.has(variantIndex)) {
+            logger.info(`⏭️ [MUREKA] Variant ${variantIndex} already exists, skipping`, {
+              trackId: trackData.id,
+              variantIndex,
+            });
+            return null;
+          }
+          
+          // ✅ Convert duration from milliseconds to seconds if needed
+          const durationInSeconds = clip.duration 
+            ? (clip.duration > 1000 ? Math.floor(clip.duration / 1000) : clip.duration)
+            : null;
+          
+          return {
+            parent_track_id: trackData.id,
+            variant_index: variantIndex,
+            is_preferred_variant: variantIndex === 0, // Primary is preferred by default
+            is_primary_variant: variantIndex === 0,
+            audio_url: clip.audio_url || null,
+            cover_url: clip.image_url || clip.cover_url || null,
+            video_url: clip.video_url || null,
+            lyrics: clip.lyrics || null,
+            duration: durationInSeconds,
+            suno_id: clip.id || null,
+            metadata: {
+              mureka_clip_id: clip.id,
+              created_at: clip.created_at,
+              tags: clip.tags,
+              title: clip.title || clip.name || `${trackData.title || 'Track'} (V${index + 1})`,
+            },
+          };
+        })
+        .filter(Boolean);
+      
+      if (versionsToInsert.length === 0) {
+        logger.info('ℹ️ [MUREKA] All variants already exist', { trackId: trackData.id });
       } else {
-        const trackData = trackRecord.data;
-        const additionalClips = normalized.clips.slice(1);
-        
-        logger.info('💾 [MUREKA] Saving additional track variants', {
-          trackId: trackData.id,
-          variantsCount: additionalClips.length,
-        });
-        
-        // ✅ FIX: Check existing variants to prevent duplicates
-        const { data: existingVariants } = await this.supabase
+        const { error: versionsError } = await this.supabase
           .from('track_versions')
-          .select('variant_index')
-          .eq('parent_track_id', trackData.id);
+          .insert(versionsToInsert);
         
-        const existingIndexes = new Set((existingVariants || []).map(v => v.variant_index));
-        
-        const versionsToInsert = additionalClips
-          .map((clip, index) => {
-            const variantIndex = index + 1;
-            // Skip if this variant already exists
-            if (existingIndexes.has(variantIndex)) {
-              logger.info(`⏭️ [MUREKA] Variant ${variantIndex} already exists, skipping`, {
-                trackId: trackData.id,
-                variantIndex,
-              });
-              return null;
-            }
-            
-            return {
-              parent_track_id: trackData.id,
-              variant_index: variantIndex,
-              is_preferred_variant: false,
-              is_primary_variant: false,
-              audio_url: clip.audio_url || null,
-              cover_url: clip.image_url || clip.cover_url || null,
-              video_url: clip.video_url || null,
-              lyrics: clip.lyrics || null,
-              duration: clip.duration || null,
-              suno_id: clip.id || null,
-              metadata: {
-                mureka_clip_id: clip.id,
-                created_at: clip.created_at,
-                tags: clip.tags,
-                title: clip.title || clip.name || `${trackData.title || 'Track'} (V${index + 2})`,
-              },
-            };
-          })
-          .filter(Boolean); // Remove nulls
-        
-        if (versionsToInsert.length === 0) {
-          logger.info('ℹ️ [MUREKA] All variants already exist, nothing to insert', {
+        if (versionsError) {
+          logger.error('❌ [MUREKA] Failed to save track versions', {
+            error: versionsError,
+            errorMessage: versionsError.message,
             trackId: trackData.id,
+            versionsCount: versionsToInsert.length,
           });
         } else {
-          const { error: versionsError } = await this.supabase
-            .from('track_versions')
-            .insert(versionsToInsert);
-          
-          if (versionsError) {
-            logger.error('❌ [MUREKA] Failed to save track versions', {
-              error: versionsError,
-              errorMessage: versionsError.message,
-              trackId: trackData.id,
-              versionsCount: versionsToInsert.length,
-            });
-          } else {
-            logger.info('✅ [MUREKA] Track versions saved successfully', {
-              trackId: trackData.id,
-              versionsCount: versionsToInsert.length,
-            });
-          }
+          logger.info('✅ [MUREKA] Track versions saved', {
+            trackId: trackData.id,
+            versionsCount: versionsToInsert.length,
+          });
         }
       }
     }
@@ -411,12 +408,17 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
       };
     }
 
+    // ✅ Convert duration from milliseconds to seconds if needed
+    const durationInSeconds = primaryClip.duration 
+      ? (primaryClip.duration > 1000 ? Math.floor(primaryClip.duration / 1000) : primaryClip.duration)
+      : 0;
+
     return {
       status: 'completed',
       audio_url: audioUrl,
       cover_url: primaryClip.image_url || primaryClip.cover_url || undefined,
       video_url: primaryClip.video_url || undefined,
-      duration: primaryClip.duration || 0,
+      duration: durationInSeconds,
       title: primaryClip.title || primaryClip.name || 'Generated Track',
     };
   }

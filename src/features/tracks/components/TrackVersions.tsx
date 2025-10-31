@@ -49,9 +49,9 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
   const { vibrate } = useHapticFeedback();
 
   // Мемоизируем функцию установки мастер-версии
-  const handleSetMaster = useCallback(async (versionId: string, versionNumber: number, isOriginal?: boolean) => {
-    if (isOriginal) {
-      toast.info('Оригинальную версию нельзя назначить напрямую. Сделайте мастер-версией одну из альтернатив.');
+  const handleSetMaster = useCallback(async (versionId: string, versionNumber: number, isPrimary?: boolean) => {
+    if (isPrimary) {
+      toast.info('Первичную версию нельзя назначить напрямую. Сделайте мастер-версией одну из альтернатив.');
       return;
     }
 
@@ -112,21 +112,21 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
 
   // Мемоизируем функцию удаления версии
   const handleDeleteVersion = useCallback(async (version: TrackVersion) => {
-    if (version.is_original) {
-      toast.error('Невозможно удалить оригинальную версию трека');
+    if (version.is_primary_variant) {
+      toast.error('Невозможно удалить первичную версию трека');
       return;
     }
 
     // Check if this is the last version
-    const nonOriginalVersions = versions.filter(v => !v.is_original);
-    if (nonOriginalVersions.length === 1) {
+    const nonPrimaryVersions = versions.filter(v => !v.is_primary_variant);
+    if (nonPrimaryVersions.length === 1) {
       toast.error('Невозможно удалить единственную версию');
       return;
     }
 
     setVersionToDelete(version);
     setDeleteDialogOpen(true);
-  }, [versions.length]);
+  }, [versions]);
 
   // Мемоизируем функцию подтверждения удаления
   const confirmDeleteVersion = useCallback(async () => {
@@ -137,7 +137,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
       
       // If deleting master version, reassign to first remaining
       if (versionToDelete.is_preferred_variant && versions.length > 1) {
-        const nextVersion = versions.find(v => v.id !== versionToDelete.id && !v.is_original);
+        const nextVersion = versions.find(v => v.id !== versionToDelete.id && !v.is_primary_variant);
         if (nextVersion) {
           const updateResult = await updateTrackVersion(nextVersion.id, { is_preferred_variant: true });
           if (!updateResult.ok) {
@@ -169,7 +169,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
     }
   }, [versionToDelete, versions, trackId, vibrate, onVersionUpdate]);
 
-  const additionalVersions = versions.filter(version => !version.is_original);
+  const additionalVersions = versions.filter(version => !version.is_primary_variant);
   const additionalCount = additionalVersions.length;
 
   if (!versions || versions.length <= 1) {
@@ -241,7 +241,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                         <div className="min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-medium text-sm">
-                              {version.is_original ? 'Оригинал' : `Вариант ${version.variant_index}`}
+                              {version.is_primary_variant ? 'Первичный' : `Вариант ${version.variant_index}`}
                             </span>
                             {version.is_preferred_variant && (
                               <Badge variant="default" className="gap-1 text-xs">
@@ -257,11 +257,11 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                       </div>
 
                       <div className="flex gap-1 sm:ml-auto">
-                        {!version.is_preferred_variant && !version.is_original && (
+                        {!version.is_preferred_variant && !version.is_primary_variant && (
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleSetMaster(version.id, version.variant_index, version.is_original)}
+                            onClick={() => handleSetMaster(version.id, version.variant_index, version.is_primary_variant)}
                             aria-label={`Сделать вариант ${version.variant_index} предпочитаемым`}
                             className="text-xs h-8 transition-transform active:scale-95"
                           >
@@ -271,7 +271,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                           </Button>
                         )}
 
-                        {additionalCount > 1 && !version.is_original && (
+                        {additionalCount > 1 && !version.is_primary_variant && (
                           <Button
                             size="sm"
                             variant="ghost"
@@ -304,8 +304,8 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
           <AlertDialogHeader>
             <AlertDialogTitle>Удалить версию?</AlertDialogTitle>
             <AlertDialogDescription>
-              Вы собираетесь удалить {versionToDelete?.is_original ? 'оригинальный вариант' : `вариант ${versionToDelete?.variant_index}`}.
-              {versionToDelete?.is_preferred_variant && !versionToDelete?.is_original && (
+              Вы собираетесь удалить {versionToDelete?.is_primary_variant ? 'первичный вариант' : `вариант ${versionToDelete?.variant_index}`}.
+              {versionToDelete?.is_preferred_variant && !versionToDelete?.is_primary_variant && (
                 <span className="block mt-2 text-orange-500 font-medium">
                   ⚠️ Это главная версия. Статус главной будет присвоен другой версии.
                 </span>

@@ -182,7 +182,7 @@ const TrackVersionComparisonComponent = ({
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
             <div className="flex items-center gap-2">
               <span className="text-base font-semibold">
-                {version.is_original ? 'Оригинал' : `Вариант ${version.variant_index}`}
+                {version.is_primary_variant ? 'Первичный' : `Вариант ${version.variant_index}`}
               </span>
               {version.is_preferred_variant && (
                 <Badge variant="secondary" className="gap-1 text-[11px]">
@@ -203,11 +203,11 @@ const TrackVersionComparisonComponent = ({
             onClick={() => handlePlay(version)}
             aria-label={
               isVersionPlaying
-                ? version.is_original
-                  ? "Пауза оригинала"
+                ? version.is_primary_variant
+                  ? "Пауза первичного"
                   : `Пауза варианта ${version.variant_index}`
-                : version.is_original
-                  ? "Воспроизвести оригинал"
+                : version.is_primary_variant
+                  ? "Воспроизвести первичный"
                   : `Воспроизвести вариант ${version.variant_index}`
             }
           >
@@ -230,7 +230,7 @@ const TrackVersionComparisonComponent = ({
               <SelectItem key={option.id} value={option.id} className="flex items-center gap-2 text-sm">
                 <div className="flex flex-col">
                   <span className="font-medium">
-                    {option.is_original ? 'Оригинал' : `Вариант ${option.variant_index}`}
+                    {option.is_primary_variant ? 'Первичный' : `Вариант ${option.variant_index}`}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {formatTrackVersionDuration(option.duration)}

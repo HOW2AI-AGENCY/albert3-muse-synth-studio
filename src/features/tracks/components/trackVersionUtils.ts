@@ -6,7 +6,6 @@ export interface TrackVersionLike {
   variant_index: number;
   is_preferred_variant: boolean;
   is_primary_variant?: boolean;
-  is_original?: boolean;
   source_variant_index?: number | null;
   audio_url: string;
   cover_url?: string;
@@ -34,7 +33,7 @@ export const buildAudioPlayerTrack = (
   trackId: string
 ): AudioPlayerTrack => ({
   id: version.id,
-  title: version.is_original ? 'Оригинал' : `Вариант ${version.variant_index}`,
+  title: version.is_primary_variant ? 'Оригинал' : `Вариант ${version.variant_index}`,
   audio_url: version.audio_url || '',
   cover_url: version.cover_url,
   duration: version.duration,
@@ -44,6 +43,6 @@ export const buildAudioPlayerTrack = (
   parentTrackId: trackId,
   versionNumber: version.variant_index,
   isMasterVersion: version.is_preferred_variant,
-  isOriginal: Boolean(version.is_original),
+  isOriginal: Boolean(version.is_primary_variant),
   sourceVersionNumber: version.source_variant_index ?? null,
 });
