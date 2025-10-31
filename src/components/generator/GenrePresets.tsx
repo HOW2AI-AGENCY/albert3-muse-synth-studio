@@ -1,7 +1,8 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
-import { 
+import {
   Music, 
   Disc3, 
   Radio, 
@@ -149,98 +150,59 @@ export function GenrePresets({ onSelect }: GenrePresetsProps) {
         <h3 className="text-xs sm:text-sm font-medium">Жанровые пресеты</h3>
       </div>
       
-      {/* Mobile: Horizontal scroll with snap */}
-      <div
-        className="w-full md:hidden overflow-x-auto overflow-y-hidden -mx-1 px-1"
-        style={{ WebkitOverflowScrolling: 'touch' }}
+      <Carousel
+        opts={{
+          align: "start",
+          loop: false,
+        }}
+        className="w-full"
       >
-        <div className="flex gap-2 pb-2 px-1" style={{ scrollSnapType: 'x mandatory' }}>
+        <CarouselContent className="-ml-2 md:-ml-3">
           {GENRE_PRESETS.map((preset) => {
             const Icon = preset.icon;
             return (
-              <Card
-                key={preset.id}
-                className={cn(
-                  "cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] hover:shadow-md border-muted/50 shrink-0",
-                  "bg-gradient-to-br w-[280px] snap-start touch-pan-x",
-                  preset.color
-                )}
-                onClick={() => handlePresetClick(preset)}
-              >
-                <CardContent className="p-2.5">
-                  <div className="flex items-start gap-2">
-                    <div className="p-1.5 rounded-lg bg-background/50">
-                      <Icon className="w-3.5 h-3.5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-xs font-semibold mb-1">{preset.name}</h4>
-                      <p className="text-[10px] text-muted-foreground line-clamp-2 mb-1.5">
-                        {preset.description}
-                      </p>
-                      <div className="flex flex-wrap gap-1">
-                        {preset.styleTags.slice(0, 2).map((tag) => (
-                          <Badge key={tag} variant="secondary" className="text-[9px] px-1 py-0 h-4">
-                            {tag}
-                          </Badge>
-                        ))}
-                        {preset.styleTags.length > 2 && (
-                          <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
-                            +{preset.styleTags.length - 2}
-                          </Badge>
-                        )}
+              <CarouselItem key={preset.id} className="pl-2 md:pl-3 basis-[85%] sm:basis-[60%] md:basis-1/2 lg:basis-1/3">
+                <Card
+                  className={cn(
+                    "cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] hover:shadow-md border-muted/50 h-full",
+                    "bg-gradient-to-br",
+                    preset.color
+                  )}
+                  onClick={() => handlePresetClick(preset)}
+                >
+                  <CardContent className="p-2.5 sm:p-3">
+                    <div className="flex items-start gap-2">
+                      <div className="p-1.5 sm:p-2 rounded-lg bg-background/50 shrink-0">
+                        <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-xs sm:text-sm font-semibold mb-1">{preset.name}</h4>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2 mb-1.5 sm:mb-2">
+                          {preset.description}
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {preset.styleTags.slice(0, 2).map((tag) => (
+                            <Badge key={tag} variant="secondary" className="text-[9px] sm:text-xs px-1 sm:px-1.5 py-0 h-4 sm:h-auto">
+                              {tag}
+                            </Badge>
+                          ))}
+                          {preset.styleTags.length > 2 && (
+                            <Badge variant="outline" className="text-[9px] sm:text-xs px-1 sm:px-1.5 py-0 h-4 sm:h-auto">
+                              +{preset.styleTags.length - 2}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </CarouselItem>
             );
           })}
-        </div>
-      </div>
-
-      {/* Tablet/Desktop: Grid */}
-      <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-2">
-        {GENRE_PRESETS.map((preset) => {
-          const Icon = preset.icon;
-          return (
-            <Card
-              key={preset.id}
-              className={cn(
-                "cursor-pointer transition-all hover:scale-[1.02] hover:shadow-md border-muted/50",
-                "bg-gradient-to-br",
-                preset.color
-              )}
-              onClick={() => handlePresetClick(preset)}
-            >
-              <CardContent className="p-3">
-                <div className="flex items-start gap-2">
-                  <div className="p-2 rounded-lg bg-background/50">
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-semibold mb-1">{preset.name}</h4>
-                    <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                      {preset.description}
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {preset.styleTags.slice(0, 2).map((tag) => (
-                        <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0">
-                          {tag}
-                        </Badge>
-                      ))}
-                      {preset.styleTags.length > 2 && (
-                        <Badge variant="outline" className="text-xs px-1.5 py-0">
-                          +{preset.styleTags.length - 2}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+        </CarouselContent>
+        <CarouselPrevious className="hidden sm:flex -left-4 lg:-left-12" />
+        <CarouselNext className="hidden sm:flex -right-4 lg:-right-12" />
+      </Carousel>
     </div>
   );
 }
