@@ -163,15 +163,24 @@ export function normalizeMurekaMusicResponse(
         };
       }
 
-      const clips = wrappedResponse.data?.clips || wrappedResponse.data?.data || [];
+      // ✅ NEW: Support API v7 'choices' format (priority)
+      const clips = wrappedResponse.data?.choices || 
+                    wrappedResponse.data?.clips || 
+                    wrappedResponse.data?.data || [];
       logger.debug("[MUREKA] Extracted clips from wrapped response", {
         count: clips.length,
+        source: wrappedResponse.data?.choices ? 'choices (v7)' : 
+                wrappedResponse.data?.clips ? 'clips (legacy)' : 'data (legacy)'
       });
 
-      // Normalize status: "preparing" → "pending"
+      // Normalize status: map v7 statuses to our internal format
       const rawStatus = wrappedResponse.data?.status || "pending";
       const normalizedStatus: "pending" | "processing" | "completed" | "failed" = 
-        rawStatus === "preparing" ? "pending" : rawStatus;
+        rawStatus === "preparing" || rawStatus === "queued" ? "pending" :
+        rawStatus === "running" || rawStatus === "streaming" ? "processing" :
+        rawStatus === "succeeded" ? "completed" :
+        rawStatus === "timeouted" || rawStatus === "cancelled" ? "failed" :
+        rawStatus;
 
       // Mureka uses 'id' instead of 'task_id' in initial response
       const taskId = wrappedResponse.data?.task_id || wrappedResponse.data?.id || "unknown";
@@ -186,15 +195,24 @@ export function normalizeMurekaMusicResponse(
 
     // Handle direct response
     const directResponse = validated;
-    const clips = directResponse.clips || directResponse.data || [];
+    // ✅ NEW: Support API v7 'choices' format (priority)
+    const clips = directResponse.choices || 
+                  directResponse.clips || 
+                  directResponse.data || [];
     logger.debug("[MUREKA] Extracted clips from direct response", {
       count: clips.length,
+      source: directResponse.choices ? 'choices (v7)' : 
+              directResponse.clips ? 'clips (legacy)' : 'data (legacy)'
     });
 
-    // Normalize status: "preparing" → "pending"
+    // Normalize status: map v7 statuses to our internal format
     const rawStatus = directResponse.status || "pending";
     const normalizedStatus: "pending" | "processing" | "completed" | "failed" = 
-      rawStatus === "preparing" ? "pending" : rawStatus;
+      rawStatus === "preparing" || rawStatus === "queued" ? "pending" :
+      rawStatus === "running" || rawStatus === "streaming" ? "processing" :
+      rawStatus === "succeeded" ? "completed" :
+      rawStatus === "timeouted" || rawStatus === "cancelled" ? "failed" :
+      rawStatus;
 
     // Mureka uses 'id' instead of 'task_id' in initial response
     const taskId = directResponse.task_id || directResponse.id || "unknown";

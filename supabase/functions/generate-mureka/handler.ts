@@ -224,63 +224,107 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
 
   protected async pollTaskStatus(taskId: string): Promise<ProviderTrackData> {
     const murekaClient = createMurekaClient({ apiKey: this.apiKey });
-    const queryResult = await murekaClient.queryTask(taskId);
+    const rawQueryResult = await murekaClient.queryTask(taskId);
 
     logger.debug('[MUREKA] Raw query result', { 
       taskId,
-      status: (queryResult as any).status,
-      hasChoices: !!((queryResult as any).choices),
-      choiceCount: ((queryResult as any).choices || []).length
+      rawResult: rawQueryResult,
     });
 
-    // ✅ Handle "preparing" or "queued" status - continue polling
-    const rawStatus = (queryResult as any).status;
-    if (rawStatus === 'preparing' || rawStatus === 'queued' || rawStatus === 'running' || rawStatus === 'streaming') {
-      logger.debug('[MUREKA] Task in progress, continuing polling', { taskId, status: rawStatus });
-      return {
-        status: 'processing',
-      };
-    }
-
-    // ✅ Check for succeeded status with choices (new Mureka API format)
-    const choices = (queryResult as any).choices;
-    if (rawStatus === 'succeeded' && choices && choices.length > 0) {
-      const choice = choices[0];
-      
-      return {
-        status: 'completed',
-        audio_url: choice.url || choice.audio_url,
-        cover_url: choice.image_url || choice.cover_url,
-        duration: choice.duration ? Math.round(choice.duration / 1000) : 0, // convert ms to seconds
-        title: choice.title || choice.name || 'Generated Track',
-      };
-    }
-
-    // ✅ Legacy format support (clips instead of choices)
-    const clips = (queryResult as any).data?.clips;
-    if (clips && clips.length > 0) {
-      const clip = clips[0];
-      
-      return {
-        status: 'completed',
-        audio_url: clip.audio_url,
-        cover_url: clip.image_url,
-        duration: (clip.duration as number | undefined) || 0,
-        title: (clip.title as string | undefined) || 'Generated Track',
-      };
-    }
-
-    // ✅ Handle failed status
-    if (rawStatus === 'failed' || rawStatus === 'timeouted' || rawStatus === 'cancelled') {
+    // ✅ Use normalizer to handle all response formats
+    const normalized = normalizeMurekaMusicResponse(rawQueryResult);
+    
+    if (!normalized.success) {
+      logger.error('[MUREKA] Failed to normalize query response', {
+        taskId,
+        error: normalized.error,
+      });
       return {
         status: 'failed',
-        error: (queryResult as any).failed_reason || 'Mureka generation failed',
+        error: normalized.error || 'Failed to parse Mureka response',
       };
     }
 
-    // Still processing
+    logger.debug('[MUREKA] Normalized query result', { 
+      taskId,
+      status: normalized.status,
+      clipsCount: normalized.clips.length,
+    });
+
+    // Map normalized status to ProviderTrackData status
+    if (normalized.status === 'pending' || normalized.status === 'processing') {
+      return { status: 'processing' };
+    }
+
+    if (normalized.status === 'failed') {
+      return {
+        status: 'failed',
+        error: normalized.error || 'Mureka generation failed',
+      };
+    }
+
+    // ✅ Status is 'completed' - extract track data
+    if (normalized.clips.length === 0) {
+      logger.warn('[MUREKA] No clips in completed response', { taskId });
+      return {
+        status: 'failed',
+        error: 'No audio tracks in completed response',
+      };
+    }
+
+    const primaryClip = normalized.clips[0];
+    
+    // ✅ Save additional variants as track_versions if multiple clips exist
+    if (normalized.clips.length > 1) {
+      const trackRecord = await this.supabase
+        .from('tracks')
+        .select('id')
+        .eq('suno_task_id', taskId)
+        .single();
+      
+      if (trackRecord.data) {
+        const additionalClips = normalized.clips.slice(1);
+        
+        logger.info('[MUREKA] Saving additional track variants', {
+          trackId: trackRecord.data.id,
+          variantsCount: additionalClips.length,
+        });
+        
+        const versionsToInsert = additionalClips.map((clip, index) => ({
+          parent_track_id: trackRecord.data.id,
+          version_number: index + 2, // Start from 2 (main track is version 1)
+          audio_url: clip.audio_url || null,
+          cover_url: clip.image_url || clip.cover_url || null,
+          video_url: clip.video_url || null,
+          lyrics: clip.lyrics || null,
+          duration: clip.duration || null,
+          metadata: {
+            mureka_clip_id: clip.id,
+            created_at: clip.created_at,
+            tags: clip.tags,
+          },
+        }));
+        
+        const { error: versionsError } = await this.supabase
+          .from('track_versions')
+          .insert(versionsToInsert);
+        
+        if (versionsError) {
+          logger.error('[MUREKA] Failed to save track versions', {
+            error: versionsError,
+            trackId: trackRecord.data.id,
+          });
+        }
+      }
+    }
+
     return {
-      status: 'processing',
+      status: 'completed',
+      audio_url: primaryClip.audio_url || undefined,
+      cover_url: primaryClip.image_url || primaryClip.cover_url || undefined,
+      video_url: primaryClip.video_url || undefined,
+      duration: primaryClip.duration || 0,
+      title: primaryClip.title || primaryClip.name || 'Generated Track',
     };
   }
 

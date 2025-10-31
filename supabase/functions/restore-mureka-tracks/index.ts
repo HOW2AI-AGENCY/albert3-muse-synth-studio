@@ -9,6 +9,7 @@ import { createCorsHeaders } from "../_shared/cors.ts";
 import { createSupabaseAdminClient } from "../_shared/supabase.ts";
 import { logger } from "../_shared/logger.ts";
 import { createMurekaClient } from "../_shared/mureka.ts";
+import { normalizeMurekaMusicResponse } from "../_shared/mureka-normalizers.ts";
 
 const corsHeaders = {
   ...createCorsHeaders(),
@@ -80,33 +81,38 @@ serve(async (req: Request): Promise<Response> => {
       }
 
       try {
-        const q = await mureka.queryTask(String(taskId));
+        const queryResult = await mureka.queryTask(String(taskId));
         
-        logger.info('🔍 [RESTORE] Mureka API response', { 
+        // ✅ Use normalizer to handle all response formats
+        const normalized = normalizeMurekaMusicResponse(queryResult);
+        
+        logger.info('🔍 [RESTORE] Normalized Mureka response', { 
           trackId: t.id, 
           taskId,
-          status: (q as any).status,
-          hasChoices: !!((q as any).choices),
-          choiceCount: ((q as any).choices || []).length
+          success: normalized.success,
+          status: normalized.status,
+          clipsCount: normalized.clips.length
         });
 
-        const rawStatus = (q as any).status;
-        const choices = (q as any).choices;
+        if (!normalized.success) {
+          results.push({ trackId: t.id, taskId: String(taskId), updated: false, reason: normalized.error || 'normalization_failed' });
+          continue;
+        }
 
-        if (rawStatus === 'succeeded' && choices && choices.length > 0) {
-          const choice = choices[0];
+        if (normalized.status === 'completed' && normalized.clips.length > 0) {
+          const primaryClip = normalized.clips[0];
           const updatePayload: Record<string, unknown> = {
             status: 'completed',
-            audio_url: choice.url || choice.audio_url || null,
-            cover_url: choice.image_url || choice.cover_url || null,
-            video_url: choice.video_url || null,
-            duration_seconds: choice.duration ? Math.round(choice.duration / 1000) : 0,
-            title: choice.title || choice.name || t.title || 'Generated Track',
+            audio_url: primaryClip.audio_url || null,
+            cover_url: primaryClip.image_url || primaryClip.cover_url || null,
+            video_url: primaryClip.video_url || null,
+            duration_seconds: primaryClip.duration || null,
+            title: primaryClip.title || primaryClip.name || t.title || 'Generated Track',
             metadata: {
               ...(t.metadata || {}),
               restored_via: 'restore-mureka-tracks',
               restored_at: new Date().toISOString(),
-              mureka_query_status: rawStatus,
+              mureka_query_status: normalized.status,
             },
           };
 
@@ -117,9 +123,51 @@ serve(async (req: Request): Promise<Response> => {
 
           if (upErr) throw upErr;
 
-          results.push({ trackId: t.id, taskId: String(taskId), updated: true, audio_url: choice.url || choice.audio_url });
+          // ✅ Save additional variants as track_versions
+          if (normalized.clips.length > 1) {
+            const additionalClips = normalized.clips.slice(1);
+            
+            const versionsToInsert = additionalClips.map((clip, index) => ({
+              parent_track_id: t.id,
+              version_number: index + 2,
+              audio_url: clip.audio_url || null,
+              cover_url: clip.image_url || clip.cover_url || null,
+              video_url: clip.video_url || null,
+              lyrics: clip.lyrics || null,
+              duration: clip.duration || null,
+              metadata: {
+                mureka_clip_id: clip.id,
+                created_at: clip.created_at,
+                restored_at: new Date().toISOString(),
+              },
+            }));
+            
+            const { error: versionsError } = await supabaseAdmin
+              .from('track_versions')
+              .insert(versionsToInsert);
+            
+            if (versionsError) {
+              logger.warn(`Failed to save versions for track ${t.id}`, {
+                error: versionsError,
+              });
+            } else {
+              logger.info(`✅ Saved ${additionalClips.length} additional variants for track ${t.id}`);
+            }
+          }
+
+          results.push({ 
+            trackId: t.id, 
+            taskId: String(taskId), 
+            updated: true, 
+            audio_url: primaryClip.audio_url,
+          });
         } else {
-          results.push({ trackId: t.id, taskId: String(taskId), updated: false, reason: rawStatus || `code_${q.code}` });
+          results.push({ 
+            trackId: t.id, 
+            taskId: String(taskId), 
+            updated: false, 
+            reason: normalized.status,
+          });
         }
       } catch (e) {
         logger.error('🔴 Restore Mureka: query/update failed', { trackId: t.id, taskId, error: e });

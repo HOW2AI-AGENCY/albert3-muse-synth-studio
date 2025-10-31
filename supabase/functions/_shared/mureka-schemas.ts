@@ -73,7 +73,7 @@ export const MurekaTrackClipSchema = z.object({
 });
 
 /**
- * Schema for wrapped Mureka Music Generation Response
+ * Schema for wrapped Mureka Music Generation Response (API v7)
  */
 export const MurekaMusicWrappedResponseSchema = z.object({
   code: z.number(),
@@ -81,21 +81,31 @@ export const MurekaMusicWrappedResponseSchema = z.object({
   data: z.object({
     id: z.string().optional(), // Mureka uses 'id' instead of 'task_id'
     task_id: z.string().optional(),
-    status: z.enum(["pending", "processing", "completed", "failed", "preparing"]).optional(),
-    clips: z.array(MurekaTrackClipSchema).optional(),
-    data: z.array(MurekaTrackClipSchema).optional(), // Some responses use 'data' instead of 'clips'
+    status: z.enum([
+      "pending", "processing", "completed", "failed", 
+      "preparing", "queued", "running", "streaming", 
+      "succeeded", "timeouted", "cancelled"
+    ]).optional(),
+    clips: z.array(MurekaTrackClipSchema).optional(), // Legacy format
+    data: z.array(MurekaTrackClipSchema).optional(), // Legacy format
+    choices: z.array(MurekaTrackClipSchema).optional(), // NEW API v7 format
   }),
 });
 
 /**
- * Schema for direct Mureka Music Generation Response
+ * Schema for direct Mureka Music Generation Response (API v7)
  */
 export const MurekaMusicDirectResponseSchema = z.object({
   id: z.string().optional(), // Mureka uses 'id' instead of 'task_id'
   task_id: z.string().optional(),
-  status: z.enum(["pending", "processing", "completed", "failed", "preparing"]).optional(),
-  clips: z.array(MurekaTrackClipSchema).optional(),
-  data: z.array(MurekaTrackClipSchema).optional(),
+  status: z.enum([
+    "pending", "processing", "completed", "failed", 
+    "preparing", "queued", "running", "streaming", 
+    "succeeded", "timeouted", "cancelled"
+  ]).optional(),
+  clips: z.array(MurekaTrackClipSchema).optional(), // Legacy format
+  data: z.array(MurekaTrackClipSchema).optional(), // Legacy format
+  choices: z.array(MurekaTrackClipSchema).optional(), // NEW API v7 format
 });
 
 /**
