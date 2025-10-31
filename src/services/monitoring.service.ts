@@ -1,194 +1,191 @@
 /**
  * Production Monitoring Service
- * Отслеживание Web Vitals, ошибок, производительности
+ * Tracks Web Vitals, API health, and generation performance
  */
 
-import { onCLS, onFCP, onLCP, onTTFB, onINP, Metric } from 'web-vitals';
+import { onCLS, onFCP, onLCP, onTTFB, onINP } from 'web-vitals';
 import * as Sentry from '@sentry/react';
-import { logger } from '@/utils/logger';
 import { supabase } from '@/integrations/supabase/client';
 
-// Типы метрик
-export type MetricName = 'CLS' | 'FCP' | 'LCP' | 'TTFB' | 'INP';
+type MetricName = 'CLS' | 'FCP' | 'LCP' | 'TTFB' | 'INP';
 
-export interface WebVitalMetric {
+interface WebVitalMetric {
   name: MetricName;
   value: number;
   rating: 'good' | 'needs-improvement' | 'poor';
-  navigationType: string;
-  url: string;
   timestamp: number;
 }
 
-// Пороги для оценки метрик
-const THRESHOLDS = {
-  CLS: { good: 0.1, poor: 0.25 },
-  FCP: { good: 1800, poor: 3000 },
-  LCP: { good: 2500, poor: 4000 },
-  TTFB: { good: 800, poor: 1800 },
-  INP: { good: 200, poor: 500 },
-};
-
-// Оценка метрики
-function getRating(name: MetricName, value: number): 'good' | 'needs-improvement' | 'poor' {
-  const threshold = THRESHOLDS[name];
-  if (value <= threshold.good) return 'good';
-  if (value <= threshold.poor) return 'needs-improvement';
-  return 'poor';
-}
-
-// Отправка метрики в Sentry
-function reportToSentry(metric: Metric) {
-  const metricData: WebVitalMetric = {
-    name: metric.name as MetricName,
-    value: metric.value,
-    rating: getRating(metric.name as MetricName, metric.value),
-    navigationType: metric.navigationType,
-    url: window.location.href,
-    timestamp: Date.now(),
-  };
-
-  // Sentry span
-  Sentry.startSpan(
-    { 
-      name: `web-vital.${metric.name}`,
-      op: 'measure',
-      attributes: {
-        value: metric.value,
-        rating: metricData.rating,
-        navigationType: metric.navigationType,
-      }
-    },
-    () => {}
-  );
-
-  logger.info(`Web Vital: ${metric.name}`, 'MonitoringService', metricData as unknown as Record<string, unknown>);
-}
-
-// Отправка метрики в Supabase (для analytics) - DISABLED
-// Таблица web_vitals_events не существует в схеме
-async function reportToDatabase(_metric: WebVitalMetric) {
-  // Будет реализовано позже при создании таблицы
-  return Promise.resolve();
-}
-
-// Инициализация Web Vitals мониторинга
+/**
+ * Initialize Web Vitals monitoring
+ */
 export function initWebVitals() {
-  const handleMetric = (metric: Metric) => {
-    reportToSentry(metric);
-    
-    // Отправляем в БД только если метрика "poor"
-    const rating = getRating(metric.name as MetricName, metric.value);
-    if (rating === 'poor') {
-      const metricData: WebVitalMetric = {
-        name: metric.name as MetricName,
-        value: metric.value,
-        rating,
-        navigationType: metric.navigationType,
-        url: window.location.href,
-        timestamp: Date.now(),
-      };
-      void reportToDatabase(metricData);
-    }
-  };
+  if (import.meta.env.PROD) {
+    const reportMetric = (metric: WebVitalMetric) => {
+      // Send to Sentry
+      Sentry.metrics.distribution(metric.name, metric.value, {
+        unit: 'millisecond',
+      });
 
-  onCLS(handleMetric);
-  onFCP(handleMetric);
-  onLCP(handleMetric);
-  onTTFB(handleMetric);
-  onINP(handleMetric);
+      // Optionally send to database for poor metrics
+      if (metric.rating === 'poor') {
+        console.warn(`Poor ${metric.name}:`, metric.value);
+      }
+    };
+
+    onCLS((metric) => reportMetric({
+      name: 'CLS',
+      value: metric.value,
+      rating: metric.rating,
+      timestamp: Date.now(),
+    }));
+
+    onFCP((metric) => reportMetric({
+      name: 'FCP',
+      value: metric.value,
+      rating: metric.rating,
+      timestamp: Date.now(),
+    }));
+
+    onLCP((metric) => reportMetric({
+      name: 'LCP',
+      value: metric.value,
+      rating: metric.rating,
+      timestamp: Date.now(),
+    }));
+
+    onTTFB((metric) => reportMetric({
+      name: 'TTFB',
+      value: metric.value,
+      rating: metric.rating,
+      timestamp: Date.now(),
+    }));
+
+    onINP((metric) => reportMetric({
+      name: 'INP',
+      value: metric.value,
+      rating: metric.rating,
+      timestamp: Date.now(),
+    }));
+  }
 }
 
-// Мониторинг API health
+/**
+ * Service Health Status
+ */
 export interface ServiceHealthStatus {
-  suno: {
-    status: 'operational' | 'degraded' | 'down';
-    balance?: number;
-    lastChecked: number;
+  provider: 'suno' | 'mureka';
+  healthy: boolean;
+  ok?: boolean; // Alias for healthy
+  balance?: {
+    credits: number;
+    limit: number;
   };
-  mureka: {
-    status: 'operational' | 'degraded' | 'down';
-    balance?: number;
-    lastChecked: number;
-  };
+  lastChecked: number;
 }
 
-export async function checkSunoHealth(): Promise<{ ok: boolean; balance?: number }> {
+/**
+ * Check Suno API health and balance
+ */
+export async function checkSunoHealth(): Promise<ServiceHealthStatus> {
   try {
     const { data, error } = await supabase.functions.invoke('get-balance', {
-      body: { provider: 'suno' },
+      body: { provider: 'suno' }
     });
 
     if (error) throw error;
-    return { ok: true, balance: data?.balance };
+
+    return {
+      provider: 'suno',
+      healthy: true,
+      balance: data?.balance,
+      lastChecked: Date.now(),
+    };
   } catch (error) {
-    logger.error('Suno health check failed', error as Error, 'MonitoringService');
-    return { ok: false };
+    console.error('Suno health check failed:', error);
+    return {
+      provider: 'suno',
+      healthy: false,
+      lastChecked: Date.now(),
+    };
   }
 }
 
-export async function checkMurekaHealth(): Promise<{ ok: boolean; balance?: number }> {
+/**
+ * Check Mureka API health and balance
+ */
+export async function checkMurekaHealth(): Promise<ServiceHealthStatus> {
   try {
-    const { data, error } = await supabase.functions.invoke('get-mureka-balance');
+    const { data, error } = await supabase.functions.invoke('get-balance', {
+      body: { provider: 'mureka' }
+    });
 
     if (error) throw error;
-    return { ok: true, balance: data?.balance };
+
+    return {
+      provider: 'mureka',
+      healthy: true,
+      balance: data?.balance,
+      lastChecked: Date.now(),
+    };
   } catch (error) {
-    logger.error('Mureka health check failed', error as Error, 'MonitoringService');
-    return { ok: false };
+    console.error('Mureka health check failed:', error);
+    return {
+      provider: 'mureka',
+      healthy: false,
+      lastChecked: Date.now(),
+    };
   }
 }
 
-// Мониторинг производительности генерации
-export interface GenerationMetrics {
+/**
+ * Generation Performance Tracking
+ */
+interface GenerationMetrics {
   trackId: string;
   provider: 'suno' | 'mureka';
   startTime: number;
   endTime?: number;
   duration?: number;
-  status: 'pending' | 'completed' | 'failed';
+  status: 'completed' | 'failed';
   errorMessage?: string;
 }
 
-const generationMetrics = new Map<string, GenerationMetrics>();
+const activeGenerations = new Map<string, number>();
 
-export function startGenerationTracking(trackId: string, provider: 'suno' | 'mureka') {
-  generationMetrics.set(trackId, {
-    trackId,
-    provider,
-    startTime: Date.now(),
-    status: 'pending',
-  });
+/**
+ * Start tracking a generation
+ */
+export function startGenerationTracking(trackId: string, _provider: 'suno' | 'mureka') {
+  activeGenerations.set(trackId, Date.now());
 }
 
+/**
+ * End tracking and report metrics
+ */
 export function endGenerationTracking(
-  trackId: string,
+  trackId: string, 
   status: 'completed' | 'failed',
   errorMessage?: string
 ) {
-  const metric = generationMetrics.get(trackId);
-  if (!metric) return;
+  const startTime = activeGenerations.get(trackId);
+  if (!startTime) return;
 
-  metric.endTime = Date.now();
-  metric.duration = metric.endTime - metric.startTime;
-  metric.status = status;
-  metric.errorMessage = errorMessage;
+  const duration = Date.now() - startTime;
 
-  // Отправляем в Sentry
-  Sentry.startSpan(
-    {
-      name: 'generation.duration',
-      op: 'measure',
-      attributes: {
-        duration: metric.duration,
-        provider: metric.provider,
-        status,
-      }
-    },
-    () => {}
-  );
+  // Send to Sentry
+  if (import.meta.env.PROD) {
+    Sentry.metrics.distribution('generation.duration', duration, {
+      unit: 'millisecond',
+    });
 
-  logger.info('Generation completed', 'MonitoringService', metric as unknown as Record<string, unknown>);
+    if (status === 'failed' && errorMessage) {
+      Sentry.captureMessage(`Generation failed: ${errorMessage}`, {
+        level: 'error',
+        tags: { trackId },
+      });
+    }
+  }
 
-  generationMetrics.delete(trackId);
+  activeGenerations.delete(trackId);
 }

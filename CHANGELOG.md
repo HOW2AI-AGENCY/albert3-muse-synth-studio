@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.6.3] - 2025-10-31
 
+### 🎯 Sprint 31 - Phase 1: Critical Infrastructure
+
 ### 🎉 Added
 
 #### Track Archiving System
@@ -30,7 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Generation metrics (started, completed, failed)
   - Archiving metrics (success/failure rates)
   - Rate limit hits by provider
+- **Monitoring Service:** `src/services/monitoring.service.ts`:
+  - Web Vitals tracking (CLS, FCP, LCP, TTFB, INP)
+  - API health checks (Suno, Mureka)
+  - Generation performance tracking
 - **Custom Hook:** `useGenerationMonitoring` for automatic metric tracking in React components
+- **Sentry Integration:** Automatic error reporting and performance metrics
 - **Documentation:** `docs/monitoring/METRICS.md` with Grafana queries and SLO targets
 
 ### 🔧 Changed
@@ -47,9 +54,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 📚 Documentation
 - **NEW:** `docs/monitoring/METRICS.md` - Complete metrics & monitoring guide
+- **NEW:** `docs/deployment/CRON_SETUP.sql` - CRON job setup script
+- **NEW:** `docs/deployment/DEPLOYMENT_GUIDE.md` - Step-by-step deployment guide
 - **NEW:** `project-management/SPRINT_31_TRACKING.md` - Sprint progress tracking
 - **NEW:** `CHANGELOG.md` - This file!
+- **UPDATED:** `docs/SPRINT_31_SUMMARY.md` - Phase 1 completion summary
 - **UPDATED:** `docs/MASTER_IMPROVEMENT_ROADMAP.md` - Marked Week 1 tasks complete
+- **UPDATED:** `docs/DEVELOPMENT_PLAN.md` - Current sprint status
 
 ### 🔐 Security
 - Rate limiting properly enforced at edge function level
