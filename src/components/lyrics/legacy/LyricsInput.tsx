@@ -26,6 +26,10 @@ export const LyricsInput: React.FC<LyricsInputProps> = ({
 }) => {
   const isMobile = useIsMobile();
 
+  const handleGeneratedLyrics = (lyrics: string) => {
+    onChange(lyrics);
+  };
+
   return (
     <div className="w-full max-w-full overflow-hidden">
       <LyricsWorkspace
@@ -33,6 +37,7 @@ export const LyricsInput: React.FC<LyricsInputProps> = ({
         value={value}
         onChange={onChange}
         onGenerate={onGenerateLyrics}
+        onGenerateLyrics={handleGeneratedLyrics}
         readOnly={isGenerating}
         showAITools={false}
         showTags={true}

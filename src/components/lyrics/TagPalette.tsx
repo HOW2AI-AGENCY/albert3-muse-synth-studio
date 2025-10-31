@@ -3,7 +3,7 @@ import { TagCategory, Tag } from '@/types/lyrics';
 import { TAG_DEFINITIONS } from '@/data/tagDefinitions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -174,7 +174,7 @@ export const TagPalette: React.FC<TagPaletteProps> = ({
       {/* Category Tabs */}
       <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
         <div className="relative -mx-1 px-1 pb-2">
-          <div className="w-full overflow-x-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+          <div className="w-full overflow-x-auto scrollbar-minimal">
             <TabsList className="inline-flex w-auto min-w-full h-auto p-1 bg-muted/50 gap-1">
               {categories.map(([key, def]) => {
                 const IconComponent = iconMap[def.icon] || Music;
@@ -200,8 +200,8 @@ export const TagPalette: React.FC<TagPaletteProps> = ({
         {/* Tag Content */}
         {categories.map(([key, def]) => (
           <TabsContent key={key} value={key} className="mt-3 sm:mt-4 space-y-0">
-            <ScrollArea className="h-[40vh] sm:h-[45vh] md:h-[50vh] pr-3">
-              <div className="space-y-4">
+            <div className="h-[40vh] sm:h-[45vh] md:h-[50vh] overflow-y-auto scrollbar-styled pr-2">
+              <div className="space-y-4 pb-2">
                 {filteredAndGroupedTags && Object.entries(filteredAndGroupedTags).map(([groupName, values]) => (
                   <div key={groupName} className="space-y-2">
                     {groupName !== 'ungrouped' && (
@@ -228,7 +228,7 @@ export const TagPalette: React.FC<TagPaletteProps> = ({
                   </div>
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </TabsContent>
         ))}
       </Tabs>

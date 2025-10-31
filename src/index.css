@@ -414,54 +414,72 @@
     box-shadow: 0 0 30px hsl(var(--accent-purple) / 0.4), 0 0 60px hsl(var(--accent-purple) / 0.2);
   }
 
-  /* Custom scrollbar styling (enhanced) */
+  /* Custom scrollbar styling (minimal and elegant) */
   .scrollbar-styled {
     scrollbar-gutter: stable;
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--primary) / 0.4) hsl(var(--muted) / 0.3);
+    scrollbar-color: hsl(var(--primary) / 0.2) transparent;
   }
 
   .scrollbar-styled::-webkit-scrollbar {
-    width: 4px; /* Минимальная ширина для мобильных */
-    height: 4px;
+    width: 3px; /* Очень тонкий на мобильных */
+    height: 3px;
   }
 
   .scrollbar-styled::-webkit-scrollbar-track {
-    background: hsl(var(--muted) / 0.2);
-    border-radius: 3px;
+    background: transparent;
   }
 
   .scrollbar-styled::-webkit-scrollbar-thumb {
-    background: linear-gradient(
-      180deg,
-      hsl(var(--primary) / 0.3) 0%,
-      hsl(var(--primary) / 0.5) 100%
-    );
-    border-radius: 3px;
+    background: hsl(var(--primary) / 0.15);
+    border-radius: 2px;
     transition: background 0.2s;
   }
 
   .scrollbar-styled::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(
-      180deg,
-      hsl(var(--primary) / 0.5) 0%,
-      hsl(var(--primary) / 0.7) 100%
-    );
+    background: hsl(var(--primary) / 0.3);
   }
   
-  /* На больших экранах делаем scrollbar шире */
+  /* На больших экранах делаем scrollbar чуть заметнее */
   @media (min-width: 768px) {
     .scrollbar-styled::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-    
-    .scrollbar-styled::-webkit-scrollbar-track {
-      border-radius: 8px;
+      width: 5px;
+      height: 5px;
     }
     
     .scrollbar-styled::-webkit-scrollbar-thumb {
-      border-radius: 8px;
+      background: hsl(var(--primary) / 0.2);
+    }
+    
+    .scrollbar-styled::-webkit-scrollbar-thumb:hover {
+      background: hsl(var(--primary) / 0.4);
+    }
+  }
+  
+  /* Ultra minimal для TabsList */
+  .scrollbar-minimal {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted) / 0.3) transparent;
+  }
+  
+  .scrollbar-minimal::-webkit-scrollbar {
+    width: 2px;
+    height: 2px;
+  }
+  
+  .scrollbar-minimal::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-minimal::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted) / 0.3);
+    border-radius: 1px;
+  }
+  
+  @media (min-width: 768px) {
+    .scrollbar-minimal::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
     }
   }
 
