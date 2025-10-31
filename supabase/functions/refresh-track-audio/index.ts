@@ -41,17 +41,25 @@ serve(async (req) => {
 
     console.log(`[refresh-track-audio] Refreshing URLs for track: ${trackId}, mode: ${mode}`);
 
-    // Получаем трек из БД
+    // Получаем трек из БД (используем maybeSingle для корректной обработки отсутствия данных)
     const { data: track, error: fetchError } = await supabaseClient
       .from('tracks')
       .select('id, audio_url, cover_url, video_url')
       .eq('id', trackId)
-      .single();
+      .maybeSingle();
 
-    if (fetchError || !track) {
-      console.error('[refresh-track-audio] Track not found:', fetchError);
+    if (fetchError) {
+      console.error('[refresh-track-audio] Database error:', fetchError);
       return new Response(
-        JSON.stringify({ error: 'Track not found' }),
+        JSON.stringify({ error: 'Database error', details: fetchError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!track) {
+      console.warn(`[refresh-track-audio] Track not found: ${trackId}`);
+      return new Response(
+        JSON.stringify({ error: 'Track not found', trackId }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
