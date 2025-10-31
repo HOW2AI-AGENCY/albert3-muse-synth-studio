@@ -163,45 +163,59 @@ serve(async (req) => {
           fullResponse: JSON.stringify(lyricsResult).substring(0, 500)
         });
         
-        // ✅ FIX: Проверка кода ответа (код должен быть 200)
-        if (lyricsResult.code !== 200) {
-          const errorMsg = lyricsResult.msg || 'Unknown Mureka API error';
-          logger.error('🔴 [MUREKA] API returned non-200 code', {
-            code: lyricsResult.code,
-            message: errorMsg
-          });
-          throw new Error(`Mureka lyrics API error (${lyricsResult.code}): ${errorMsg}`);
+        // ✅ Handle both wrapped and direct responses from Mureka
+        let lyricsVariants: Array<{ text: string; title?: string; status?: string; errorMessage?: string }> | undefined;
+
+        if (typeof (lyricsResult as any)?.code === 'number') {
+          // Wrapped response shape
+          if ((lyricsResult as any).code !== 200) {
+            const errorMsg = (lyricsResult as any).msg || 'Unknown Mureka API error';
+            logger.error('🔴 [MUREKA] API returned non-200 code', {
+              code: (lyricsResult as any).code,
+              message: errorMsg
+            });
+            throw new Error(`Mureka lyrics API error (${(lyricsResult as any).code}): ${errorMsg}`);
+          }
+
+          // Callback mode (no immediate data)
+          if ((lyricsResult as any).data?.task_id && !(lyricsResult as any).data?.data) {
+            logger.warn('🔔 [MUREKA] Callback mode detected, but we need sync response');
+            throw new Error('Mureka lyrics API returned task_id instead of immediate results. Please use callBackUrl parameter.');
+          }
+
+          if (!(lyricsResult as any).data?.data) {
+            logger.error('🔴 [MUREKA] Missing data.data in response', {
+              availableKeys: Object.keys((lyricsResult as any).data || {})
+            });
+            throw new Error('Mureka lyrics API response is missing data.data field');
+          }
+
+          if (!Array.isArray((lyricsResult as any).data.data) || (lyricsResult as any).data.data.length === 0) {
+            logger.error('🔴 [MUREKA] Empty or invalid lyrics variants', {
+              isArray: Array.isArray((lyricsResult as any).data.data),
+              length: (lyricsResult as any).data.data?.length
+            });
+            throw new Error('Mureka API returned empty lyrics variants array');
+          }
+
+          lyricsVariants = (lyricsResult as any).data.data;
+        } else if ((lyricsResult as any)?.lyrics || (lyricsResult as any)?.text) {
+          // Some Mureka endpoints can return a direct object with { title, lyrics }
+          const text = (lyricsResult as any).lyrics || (lyricsResult as any).text;
+          const titleFromApi = (lyricsResult as any).title;
+          lyricsVariants = [{ text, title: titleFromApi, status: 'complete' }];
+        } else {
+          logger.error('🔴 [MUREKA] Unknown lyrics response shape', { sample: JSON.stringify(lyricsResult).slice(0, 300) });
+          throw new Error('Unsupported Mureka lyrics response shape');
         }
-        
-        // ✅ FIX: Если есть task_id, но нет данных - это callback mode
-        if (lyricsResult.data?.task_id && !lyricsResult.data?.data) {
-          logger.warn('🔔 [MUREKA] Callback mode detected, but we need sync response');
-          throw new Error('Mureka lyrics API returned task_id instead of immediate results. Please use callBackUrl parameter.');
+
+        if (!lyricsVariants) {
+          throw new Error('No lyrics generated from Mureka');
         }
-        
-        // ✅ FIX: Проверка наличия данных
-        if (!lyricsResult.data?.data) {
-          logger.error('🔴 [MUREKA] Missing data.data in response', {
-            availableKeys: Object.keys(lyricsResult.data || {})
-          });
-          throw new Error('Mureka lyrics API response is missing data.data field');
-        }
-        
-        // ✅ FIX: Проверка пустого массива
-        if (!Array.isArray(lyricsResult.data.data) || lyricsResult.data.data.length === 0) {
-          logger.error('🔴 [MUREKA] Empty or invalid lyrics variants', {
-            isArray: Array.isArray(lyricsResult.data.data),
-            length: lyricsResult.data.data?.length
-          });
-          throw new Error('Mureka API returned empty lyrics variants array');
-        }
-        
-        const lyricsVariants = lyricsResult.data.data;
-          
-          logger.info('✅ Lyrics generated successfully', {
-            variantsCount: lyricsVariants.length,
-            firstVariantLength: lyricsVariants[0].text?.length
-          });
+        logger.info('✅ Lyrics generated successfully', {
+          variantsCount: lyricsVariants.length,
+          firstVariantLength: lyricsVariants[0]?.text?.length
+        });
           
           // ✅ ЕСЛИ НЕСКОЛЬКО ВАРИАНТОВ -> сохраняем в lyrics_variants
           if (lyricsVariants.length > 1) {
@@ -445,13 +459,16 @@ serve(async (req) => {
             .from('tracks')
             .update({
               status: 'completed',
+              title: ((!title || title.trim().length === 0) && (clips[0]?.title)) ? (clips[0].title) : undefined,
+              style_tags: (Array.isArray((clips[0] as any)?.tags) && (!styleTags || styleTags.length === 0)) ? (clips[0] as any).tags : undefined,
               audio_url: audioUrl,
               cover_url: coverUrl,
               duration_seconds: duration,
-              lyrics: clips[0].lyrics || lyrics,
+              lyrics: (clips[0] as any).lyrics || (clips[0] as any).lyric || lyrics,
               metadata: {
                 mureka_task_id: task_id,
                 completed_at: new Date().toISOString(),
+                provider_details: { clip0: clips[0] },
                 mureka_response: queryResult,
               },
             })

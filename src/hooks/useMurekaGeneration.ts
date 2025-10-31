@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
+import * as Sentry from '@sentry/react';
 
 interface MurekaGenerationParams {
   trackId?: string;
@@ -25,6 +26,8 @@ interface MurekaGenerationResponse {
   taskId: string;
   trackId: string;
   message: string;
+  requiresLyricsSelection?: boolean;
+  jobId?: string;
 }
 
 export const useMurekaGeneration = () => {
@@ -87,7 +90,19 @@ export const useMurekaGeneration = () => {
       return data;
     },
 
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (data?.requiresLyricsSelection) {
+        toast.message('Выберите вариант текста', {
+          description: 'Откройте список вариантов и подтвердите один из них',
+          duration: 6000,
+        });
+        Sentry.addBreadcrumb({ category: 'mureka', message: 'Lyrics variants available', level: 'info', data: { jobId: data.jobId } });
+        // Обновим связанные запросы
+        queryClient.invalidateQueries({ queryKey: ['lyrics_jobs', data.jobId] });
+        queryClient.invalidateQueries({ queryKey: ['tracks'] });
+        return;
+      }
+
       toast.success('🎵 Генерация началась!', {
         description: 'Ваш трек создаётся. Примерное время: ~2 минуты',
         duration: 5000,
@@ -99,6 +114,7 @@ export const useMurekaGeneration = () => {
 
     onError: (error: Error) => {
       logger.error('Mureka generation mutation error', error);
+      Sentry.captureException(error, { tags: { provider: 'mureka' } });
       toast.error('Ошибка генерации', {
         description: error.message,
       });
