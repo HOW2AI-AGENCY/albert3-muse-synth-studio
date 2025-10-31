@@ -61,7 +61,7 @@ serve(async (req: Request): Promise<Response> => {
       .from('tracks')
       .select('id, title, prompt, user_id, provider, created_at, metadata, status, suno_task_id, mureka_task_id')
       .eq('status', 'processing')
-      .filter('metadata->>callback_error', 'not.is', null)
+      .not('metadata->>callback_error', 'is', null)
       .limit(10);
     
     if (!errorTracksErr && errorTracks && errorTracks.length > 0) {
@@ -548,21 +548,29 @@ serve(async (req: Request): Promise<Response> => {
     });
 
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    const anyErr = error as any;
+    let errorJson: string | undefined;
+    try { errorJson = JSON.stringify(anyErr); } catch (_) {}
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : (anyErr?.message || anyErr?.msg || errorJson || String(anyErr));
     const errorStack = error instanceof Error ? error.stack : undefined;
     const errorName = error instanceof Error ? error.name : typeof error;
+    const details = anyErr?.details || anyErr?.hint || undefined;
     
     logger.error('🔴 Error in check-stuck-tracks', { 
-      message: errorMessage,
-      stack: errorStack,
       name: errorName,
-      raw: error
+      message: errorMessage,
+      details,
+      stack: errorStack,
+      raw: anyErr
     });
 
     return new Response(JSON.stringify({
       success: false,
       error: errorMessage,
       errorType: errorName,
+      details,
       stack: errorStack
     }), {
       status: 500,
