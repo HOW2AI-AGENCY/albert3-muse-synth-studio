@@ -2,14 +2,12 @@ import { useState, useEffect, useRef, memo, useCallback, useMemo } from "react";
 import { MiniPlayer } from "./MiniPlayer";
 import { FullScreenPlayer } from "./FullScreenPlayer";
 import { PlayerQueue } from "./PlayerQueue";
+import { AudioController } from "./AudioController";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMediaSession } from "@/hooks/useMediaSession";
-import { useAudioPlayerStore, useCurrentTrack, useIsPlaying, useVolume, useAudioRef } from "@/stores/audioPlayerStore";
-import { supabase } from "@/integrations/supabase/client";
-import { logger } from "@/utils/logger";
-import { toast } from "sonner";
+import { useAudioPlayerStore, useCurrentTrack, useIsPlaying, useVolume } from "@/stores/audioPlayerStore";
 import { formatTime } from "@/utils/formatters";
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1, Music, X, List, Star, Loader2 } from "@/utils/iconImports";
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1, Music, X, List, Star } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -30,7 +28,6 @@ const GlobalAudioPlayer = memo(() => {
   const currentTime = useAudioPlayerStore((state) => state.currentTime);
   const duration = useAudioPlayerStore((state) => state.duration);
   const bufferingProgress = useAudioPlayerStore((state) => state.bufferingProgress);
-  const audioRef = useAudioRef();
   const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
   const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
   
@@ -39,7 +36,6 @@ const GlobalAudioPlayer = memo(() => {
   const setVolume = useAudioPlayerStore((state) => state.setVolume);
   const playNext = useAudioPlayerStore((state) => state.playNext);
   const playPrevious = useAudioPlayerStore((state) => state.playPrevious);
-  const playTrack = useAudioPlayerStore((state) => state.playTrack);
   const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
   const clearCurrentTrack = useAudioPlayerStore((state) => state.clearCurrentTrack);
   
@@ -51,14 +47,9 @@ const GlobalAudioPlayer = memo(() => {
   const [isMuted, setIsMuted] = useState(false);
   const [previousVolume, setPreviousVolume] = useState(volume);
   const [isVisible, setIsVisible] = useState(false);
-  const [isBuffering, setIsBuffering] = useState(false);
   const playerRef = useRef<HTMLDivElement>(null);
 
-  // ✅ Audio URL expiration handling via Edge Function
-  // Automatically refreshes expired URLs on playback error (error handler below)
-
-
-  // ============= HOOKS: ПЕРЕМЕСТИЛИ СЮДА ДО УСЛОВНЫХ RETURN =============
+  // ============= HOOKS =============
   // ✅ toggleMute и handleVolumeChange должны вызываться при каждом рендере
   const toggleMute = useCallback(() => {
     if (isMuted) {
@@ -86,100 +77,6 @@ const GlobalAudioPlayer = memo(() => {
       setIsVisible(false);
     }
   }, [currentTrack]);
-
-  // ✅ Индикатор buffering + Phase 2: Обработка ошибок загрузки аудио
-  useEffect(() => {
-    const audio = audioRef?.current;
-    if (!audio) return;
-    
-    const handleWaiting = () => setIsBuffering(true);
-    const handleCanPlay = () => setIsBuffering(false);
-    const handlePlaying = () => setIsBuffering(false);
-    
-    // ✅ Phase 2: Обработка ошибок загрузки (истекшие URL)
-    const handleError = async () => {
-      const error = audio.error;
-      if (!error || !currentTrack) return;
-      
-      // Все типы ошибок медиа могут указывать на истекшие URL
-      // MEDIA_ERR_NETWORK (2), MEDIA_ERR_DECODE (3), MEDIA_ERR_SRC_NOT_SUPPORTED (4)
-      if (error.code === MediaError.MEDIA_ERR_NETWORK || 
-          error.code === MediaError.MEDIA_ERR_DECODE ||
-          error.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
-        logger.warn('Audio URL expired, attempting refresh', 'GlobalAudioPlayer', {
-          trackId: currentTrack.id,
-          errorCode: error.code,
-          errorMessage: error.message,
-        });
-        
-        setIsBuffering(true);
-        
-        try {
-          // ✅ Используем новый Edge Function для обновления URL
-          const { data, error: refreshError } = await supabase.functions.invoke('refresh-track-audio', {
-            body: { trackId: currentTrack.id, mode: 'production' }
-          });
-          
-          if (refreshError) throw refreshError;
-          
-          if (data?.refreshed?.audio_url) {
-            // ✅ КРИТИЧНО: Обновляем currentTrack в контексте плеера
-            const refreshedTrack = {
-              ...currentTrack,
-              audio_url: data.refreshed.audio_url,
-              cover_url: data.refreshed.cover_url || currentTrack.cover_url
-            };
-            
-            // Используем playTrack для корректной перезагрузки
-            playTrack(refreshedTrack);
-            
-            toast.success('Аудио обновлено');
-            
-            // Track successful URL refresh
-            import('@/services/analytics.service').then(({ AnalyticsService }) => {
-              AnalyticsService.recordEvent({
-                eventType: 'audio_url_refreshed',
-                trackId: currentTrack.id,
-                metadata: { success: true, method: 'edge_function' }
-              });
-            });
-          } else {
-            // URL не обновился
-            toast.error('Не удалось обновить аудио');
-          }
-        } catch (err) {
-          logger.error('Failed to refresh audio URL', err instanceof Error ? err : new Error(String(err)), 'GlobalAudioPlayer');
-          
-          // Track failed URL refresh
-          import('@/services/analytics.service').then(({ AnalyticsService }) => {
-            AnalyticsService.recordEvent({
-              eventType: 'audio_url_refresh_failed',
-              trackId: currentTrack.id,
-              metadata: { 
-                errorCode: err instanceof Error ? err.message : String(err)
-              }
-            });
-          });
-          
-          toast.error('Ошибка загрузки аудио');
-        } finally {
-          setIsBuffering(false);
-        }
-      }
-    };
-    
-    audio.addEventListener('waiting', handleWaiting);
-    audio.addEventListener('canplay', handleCanPlay);
-    audio.addEventListener('playing', handlePlaying);
-    audio.addEventListener('error', handleError);
-    
-    return () => {
-      audio.removeEventListener('waiting', handleWaiting);
-      audio.removeEventListener('canplay', handleCanPlay);
-      audio.removeEventListener('playing', handlePlaying);
-      audio.removeEventListener('error', handleError);
-    };
-  }, [audioRef, currentTrack, isPlaying, playTrack]);
 
   // Keyboard shortcuts for desktop only
   useEffect(() => {
@@ -248,15 +145,27 @@ const GlobalAudioPlayer = memo(() => {
   // Mobile: Use mini player + full screen player
   if (isMobile) {
     if (isExpanded) {
-      return <FullScreenPlayer onMinimize={() => setIsExpanded(false)} />;
+      return (
+        <>
+          <AudioController />
+          <FullScreenPlayer onMinimize={() => setIsExpanded(false)} />
+        </>
+      );
     }
-    return <MiniPlayer onExpand={() => setIsExpanded(true)} />;
+    return (
+      <>
+        <AudioController />
+        <MiniPlayer onExpand={() => setIsExpanded(true)} />
+      </>
+    );
   }
 
   // Desktop: Enhanced player
 
   return (
-    <TooltipProvider delayDuration={500}>
+    <>
+      <AudioController />
+      <TooltipProvider delayDuration={500}>
     <div 
       ref={playerRef}
       className={`fixed bottom-0 left-0 right-0 z-[60] transition-all duration-500 ease-out ${
@@ -352,9 +261,7 @@ const GlobalAudioPlayer = memo(() => {
                 className="h-14 w-14 rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-300 hover:scale-110 group relative overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                {isBuffering ? (
-                  <Loader2 className="h-7 w-7 animate-spin relative z-10" />
-                ) : isPlaying ? (
+                {isPlaying ? (
                   <Pause className="h-7 w-7 relative z-10" />
                 ) : (
                   <Play className="h-7 w-7 ml-0.5 relative z-10" />
@@ -516,6 +423,7 @@ const GlobalAudioPlayer = memo(() => {
       </div>
     </div>
     </TooltipProvider>
+    </>
   );
 });
 
