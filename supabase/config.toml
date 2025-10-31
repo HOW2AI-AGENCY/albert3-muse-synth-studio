@@ -94,7 +94,12 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.generate-mureka]
-verify_jwt = true
+  verify_jwt = true
+  [functions.generate-mureka.env]
+    SENTRY_DSN = ""
+    SENTRY_ENVIRONMENT = "development"
+    SENTRY_RELEASE = "local"
+    SENTRY_TRACES_SAMPLE_RATE = "1.0"
 
 [functions.get-mureka-balance]
 verify_jwt = true

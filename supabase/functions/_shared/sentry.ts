@@ -206,8 +206,8 @@ class SentryClient {
   }
 }
 
-// Singleton instance
-const sentryClient = new SentryClient();
+// Singleton instance - EXPORTED
+export const sentryClient = new SentryClient();
 
 /**
  * Wrapper function to add Sentry error tracking to Edge Functions

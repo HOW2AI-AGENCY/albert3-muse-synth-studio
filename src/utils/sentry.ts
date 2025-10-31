@@ -16,15 +16,18 @@ const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
 export const initSentry = () => {
   // Skip Sentry in development unless explicitly enabled
   if (IS_DEVELOPMENT && !import.meta.env.VITE_SENTRY_DEV_ENABLED) {
-    console.log('[Sentry] Disabled in development mode');
+    console.log('ℹ️ [Sentry] Disabled in development mode');
+    console.log('   Set VITE_SENTRY_DEV_ENABLED=true to enable in dev');
     return;
   }
 
   if (!SENTRY_DSN) {
-    console.warn('[Sentry] DSN not configured. Error tracking will be disabled.');
-    console.warn('[Sentry] Add VITE_SENTRY_DSN to your environment variables.');
+    console.warn('⚠️ [Sentry] DSN not configured - error tracking disabled');
+    console.warn('   Set VITE_SENTRY_DSN in .env to enable error tracking');
     return;
   }
+
+  console.log('🔧 [Sentry] Initializing with DSN:', SENTRY_DSN ? '✅ Configured' : '❌ Missing');
 
   try {
     Sentry.init({

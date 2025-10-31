@@ -16,6 +16,8 @@ import { logger } from "../_shared/logger.ts";
 import { findOrCreateTrack } from "../_shared/track-helpers.ts";
 import { createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
+import { sentryClient } from "../_shared/sentry.ts";
+import { normalizeMurekaLyricsResponse } from "../_shared/mureka-normalizers.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { validateAndParse, uuidSchema } from "../_shared/zod-schemas.ts";
 
@@ -151,67 +153,36 @@ serve(async (req) => {
       try {
         const lyricsResult = await murekaClient.generateLyrics({ prompt });
         
-        // ✅ КРИТИЧНО: Детальное логирование ответа API
-        logger.info('🎤 [MUREKA] Lyrics API response received', {
-          code: lyricsResult.code,
-          msg: lyricsResult.msg,
-          hasData: !!lyricsResult.data,
-          hasTaskId: !!lyricsResult.data?.task_id,
-          hasVariants: !!lyricsResult.data?.data,
-          variantsCount: lyricsResult.data?.data?.length || 0,
-          responseStructure: Object.keys(lyricsResult.data || {}),
-          fullResponse: JSON.stringify(lyricsResult).substring(0, 500)
-        });
+        logger.info('🎤 [MUREKA] Lyrics API response received');
         
-        // ✅ Handle both wrapped and direct responses from Mureka
-        let lyricsVariants: Array<{ text: string; title?: string; status?: string; errorMessage?: string }> | undefined;
+        // ✅ USE NORMALIZER for type-safe parsing with Sentry integration
+        const normalized = normalizeMurekaLyricsResponse(lyricsResult);
 
-        if (typeof (lyricsResult as any)?.code === 'number') {
-          // Wrapped response shape
-          if ((lyricsResult as any).code !== 200) {
-            const errorMsg = (lyricsResult as any).msg || 'Unknown Mureka API error';
-            logger.error('🔴 [MUREKA] API returned non-200 code', {
-              code: (lyricsResult as any).code,
-              message: errorMsg
-            });
-            throw new Error(`Mureka lyrics API error (${(lyricsResult as any).code}): ${errorMsg}`);
-          }
+        if (!normalized.success) {
+          logger.error('[MUREKA] Lyrics generation failed', {
+            error: normalized.error,
+            trackId: finalTrackId,
+          });
 
-          // Callback mode (no immediate data)
-          if ((lyricsResult as any).data?.task_id && !(lyricsResult as any).data?.data) {
-            logger.warn('🔔 [MUREKA] Callback mode detected, but we need sync response');
-            throw new Error('Mureka lyrics API returned task_id instead of immediate results. Please use callBackUrl parameter.');
-          }
+          sentryClient.captureException(new Error(normalized.error || "Lyrics generation failed"), {
+            tags: { provider: "mureka", stage: "lyrics_generation", trackId: finalTrackId },
+          });
 
-          if (!(lyricsResult as any).data?.data) {
-            logger.error('🔴 [MUREKA] Missing data.data in response', {
-              availableKeys: Object.keys((lyricsResult as any).data || {})
-            });
-            throw new Error('Mureka lyrics API response is missing data.data field');
-          }
-
-          if (!Array.isArray((lyricsResult as any).data.data) || (lyricsResult as any).data.data.length === 0) {
-            logger.error('🔴 [MUREKA] Empty or invalid lyrics variants', {
-              isArray: Array.isArray((lyricsResult as any).data.data),
-              length: (lyricsResult as any).data.data?.length
-            });
-            throw new Error('Mureka API returned empty lyrics variants array');
-          }
-
-          lyricsVariants = (lyricsResult as any).data.data;
-        } else if ((lyricsResult as any)?.lyrics || (lyricsResult as any)?.text) {
-          // Some Mureka endpoints can return a direct object with { title, lyrics }
-          const text = (lyricsResult as any).lyrics || (lyricsResult as any).text;
-          const titleFromApi = (lyricsResult as any).title;
-          lyricsVariants = [{ text, title: titleFromApi, status: 'complete' }];
-        } else {
-          logger.error('🔴 [MUREKA] Unknown lyrics response shape', { sample: JSON.stringify(lyricsResult).slice(0, 300) });
-          throw new Error('Unsupported Mureka lyrics response shape');
+          throw new Error(normalized.error || "Failed to generate lyrics");
         }
 
-        if (!lyricsVariants) {
-          throw new Error('No lyrics generated from Mureka');
+        if (normalized.variants.length === 0) {
+          const errorMsg = "No lyrics returned from Mureka API";
+          logger.error(`[MUREKA] ${errorMsg}`, { trackId: finalTrackId });
+
+          sentryClient.captureException(new Error(errorMsg), {
+            tags: { provider: "mureka", stage: "lyrics_generation", trackId: finalTrackId },
+          });
+
+          throw new Error(errorMsg);
         }
+
+        const lyricsVariants = normalized.variants;
         logger.info('✅ Lyrics generated successfully', {
           variantsCount: lyricsVariants.length,
           firstVariantLength: lyricsVariants[0]?.text?.length

@@ -114,9 +114,22 @@ export const useMurekaGeneration = () => {
 
     onError: (error: Error) => {
       logger.error('Mureka generation mutation error', error);
-      Sentry.captureException(error, { tags: { provider: 'mureka' } });
-      toast.error('Ошибка генерации', {
-        description: error.message,
+      
+      // Capture to Sentry with full context
+      Sentry.captureException(error, {
+        tags: { 
+          provider: 'mureka',
+          stage: 'generation_hook',
+          errorType: error.name,
+        },
+        extra: {
+          errorMessage: error.message,
+          errorStack: error.stack,
+        },
+      });
+      
+      toast.error('Ошибка генерации музыки', {
+        description: error.message || 'Не удалось создать трек с помощью Mureka AI',
       });
     },
   });
