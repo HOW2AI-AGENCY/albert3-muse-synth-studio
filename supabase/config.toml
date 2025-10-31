@@ -124,3 +124,6 @@ verify_jwt = false
 
 [functions.health-check]
 verify_jwt = false
+
+[functions.cleanup-old-tracks]
+verify_jwt = false
