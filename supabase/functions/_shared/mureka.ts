@@ -654,44 +654,40 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
       
       // ✅ Log full response for debugging
       logger.info('📦 [MUREKA] Upload response received', { 
-        code: result.code,
-        msg: result.msg,
-        hasData: !!result.data,
-        dataKeys: result.data ? Object.keys(result.data) : []
+        hasId: !!result.id,
+        hasFileId: !!(result.data?.file_id),
+        responseKeys: Object.keys(result)
       });
       
-      // ✅ Check for API error in response
-      if (result.code !== 200) {
-        logger.error('❌ [MUREKA] File upload API error', {
-          code: result.code,
-          msg: result.msg,
-          data: result.data
-        });
-        throw new MurekaApiError(
-          `File upload failed: ${result.msg || 'Unknown error'}`,
-          result.code,
-          JSON.stringify(result)
-        );
-      }
+      // ✅ MUREKA API RETURNS FLAT STRUCTURE: { id, filename, bytes, ... }
+      // NOT wrapped format: { code: 200, data: { file_id } }
+      const fileId = result.id || result.data?.file_id;
+      const fileSize = result.bytes || result.data?.file_size;
       
-      // ✅ Validate required fields
-      if (!result.data || !result.data.file_id) {
-        logger.error('❌ [MUREKA] Missing file_id in response', { 
-          result 
-        });
+      if (!fileId) {
+        logger.error('❌ [MUREKA] Missing file ID in response', { result });
         throw new MurekaApiError(
-          'File upload response missing file_id',
+          'File upload response missing file ID',
           500,
           JSON.stringify(result)
         );
       }
       
       logger.info('✅ [MUREKA] File uploaded', { 
-        file_id: result.data.file_id,
-        file_size: result.data.file_size
+        file_id: fileId,
+        file_size: fileSize
       });
       
-      return result;
+      // ✅ Normalize response to expected format for downstream code
+      return {
+        code: 200,
+        msg: 'success',
+        data: {
+          file_id: fileId,
+          file_size: fileSize,
+          uploaded_at: result.created_at ? new Date(result.created_at * 1000).toISOString() : new Date().toISOString()
+        }
+      };
     },
 
     // ========================================================================
