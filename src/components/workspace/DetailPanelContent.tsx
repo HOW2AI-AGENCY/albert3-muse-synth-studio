@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Trash2, Eye, Heart, Calendar, Clock, ExternalLink, GitBranch, Music4, FileText, type LucideIcon } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -251,6 +252,7 @@ export const DetailPanelContent = ({
     setSelectedVersionId(rightId);
     setComparisonRightId(leftId);
   }, []);
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const handleTagsApply = useCallback(async (tags: string[]) => {
@@ -280,28 +282,28 @@ export const DetailPanelContent = ({
   }, [track.id, track.style_tags, queryClient]);
 
   const { mutate: generateAdvanced, isPending: isGeneratingPrompt } = useAdvancedPromptGenerator({
-    onSuccess: async (result) => {
-      const { error } = await supabase
-        .from('tracks')
-        .update({
-          prompt: result.enhancedPrompt,
-          lyrics: result.formattedLyrics || track.lyrics,
-        })
-        .eq('id', track.id);
-        
-      if (!error) {
-        toast({
-          title: "AI промпт применен!",
-          description: `Обновлено: промпт (${result.enhancedPrompt.length} символов), ${result.formattedLyrics ? `лирика (${result.formattedLyrics.split('\n').length} строк)` : 'без лирики'}`,
-        });
-        queryClient.invalidateQueries({ queryKey: ['track', track.id] });
-      } else {
-        toast({
-          title: "Ошибка",
-          description: "Не удалось применить промпт",
-          variant: "destructive",
-        });
-      }
+    onSuccess: (result) => {
+      // Сохраняем данные в localStorage для передачи в генератор
+      const enhancedData = {
+        prompt: result.enhancedPrompt,
+        lyrics: result.formattedLyrics || track.lyrics || '',
+        title: `${track.title} (ENH)`,
+        tags: track.style_tags?.join(', ') || '',
+        genre: genre || track.genre,
+        mood: mood || track.mood,
+      };
+      
+      localStorage.setItem('pendingEnhancedGeneration', JSON.stringify(enhancedData));
+      
+      toast({
+        title: "AI промпт готов!",
+        description: "Открываю форму генератора с улучшенными данными...",
+      });
+      
+      // Навигация на страницу генератора
+      setTimeout(() => {
+        navigate('/workspace/generate');
+      }, 500);
     },
     onError: (error) => {
       const errorMessage = error.message;

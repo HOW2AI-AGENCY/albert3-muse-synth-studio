@@ -135,6 +135,50 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     }
   }, [selectedProvider, setProvider]);
 
+  // ✅ NEW: Check for pending enhanced generation from Advanced Prompt Generator
+  useEffect(() => {
+    const pendingEnhanced = localStorage.getItem('pendingEnhancedGeneration');
+    if (pendingEnhanced) {
+      try {
+        const enhancedData = JSON.parse(pendingEnhanced);
+        
+        logger.info('🎯 [ENHANCED] Loading enhanced generation data', 'MusicGeneratorV2', {
+          hasPrompt: !!enhancedData.prompt,
+          hasLyrics: !!enhancedData.lyrics,
+          hasTitle: !!enhancedData.title,
+        });
+        
+        // Переключаем на расширенную форму (custom mode)
+        setMode('custom');
+        
+        // Автозаполнение формы улучшенными данными
+        setParams(prev => ({
+          ...prev,
+          prompt: enhancedData.prompt || prev.prompt,
+          lyrics: enhancedData.lyrics || prev.lyrics,
+          title: enhancedData.title || prev.title,
+          tags: enhancedData.tags || prev.tags,
+        }));
+        
+        // Также обновляем debounced значения
+        setDebouncedPrompt(enhancedData.prompt || '');
+        setDebouncedLyrics(enhancedData.lyrics || '');
+        
+        // Очищаем после использования
+        localStorage.removeItem('pendingEnhancedGeneration');
+        
+        sonnerToast.success('AI промпт загружен', {
+          description: 'Форма заполнена улучшенными данными. Готово к генерации!',
+        });
+        
+      } catch (error) {
+        logger.error('[ENHANCED] Failed to load enhanced data', error as Error, 'MusicGeneratorV2');
+        localStorage.removeItem('pendingEnhancedGeneration');
+        sonnerToast.error('Не удалось загрузить улучшенный промпт');
+      }
+    }
+  }, []);
+
 
   // Generation params
   const [params, setParams] = useState<GenerationParams>({
