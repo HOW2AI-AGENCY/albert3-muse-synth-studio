@@ -249,7 +249,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const uploadResult = await murekaClient.uploadFile(fileForUpload, { purpose: 'reference' });
+    const uploadResult = await murekaClient.uploadFile(fileForUpload, { purpose: 'audio' });
 
     if (uploadResult.code !== 200 || !uploadResult.data?.file_id) {
       throw new Error('Mureka file upload failed');
@@ -266,16 +266,51 @@ const mainHandler = async (req: Request): Promise<Response> => {
     // ============================================================================
 
     logger.info('[ANALYZE-REF] 🔍 Initiating song recognition');
-    const recognitionResult = await murekaClient.recognizeSong({ upload_audio_id: fileId });
-    
-    if (recognitionResult.code !== 200 || !recognitionResult.data?.task_id) {
-      logger.error('[ANALYZE-REF] ❌ Recognition start failed', { response: recognitionResult });
+    const maxAttempts = 4;
+    let recognitionTaskId: string | null = null;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        logger.info('[ANALYZE-REF] 🔁 Recognition attempt', { attempt });
+        const res = await murekaClient.recognizeSong({ upload_audio_id: fileId });
+        if (res.code === 200 && res.data?.task_id) {
+          recognitionTaskId = res.data.task_id;
+          break;
+        }
+        logger.warn('[ANALYZE-REF] ⚠️ Unexpected recognition response', { res });
+      } catch (err) {
+        const body = (err && typeof err === 'object' && 'responseBody' in (err as any)) ? (err as any).responseBody as string : '';
+        const statusCode = (err && typeof err === 'object' && 'statusCode' in (err as any)) ? (err as any).statusCode as number : undefined;
+        const maybeNotFound = statusCode === 400 && (body?.includes('not found') || body?.includes('Invalid Request'));
+
+        // Fallback to alternative param name some API versions expect
+        if (attempt >= 2 && maybeNotFound) {
+          try {
+            logger.info('[ANALYZE-REF] 🔁 Fallback recognition using audio_file');
+            const alt = await murekaClient.recognizeSong({ audio_file: fileId });
+            if (alt.code === 200 && alt.data?.task_id) {
+              recognitionTaskId = alt.data.task_id;
+              break;
+            }
+          } catch (_) {
+            // ignore and continue retries
+          }
+        }
+      }
+
+      if (attempt < maxAttempts) {
+        const backoff = 500 * attempt;
+        logger.info('[ANALYZE-REF] ⏳ Waiting before next recognition attempt', { backoffMs: backoff });
+        await new Promise(r => setTimeout(r, backoff));
+      }
+    }
+
+    if (!recognitionTaskId) {
+      logger.error('[ANALYZE-REF] ❌ Recognition start failed after retries');
       throw new Error('Mureka song recognition failed to start');
     }
     
-    logger.info('[ANALYZE-REF] ✅ Recognition task initiated', {
-      taskId: recognitionResult.data.task_id
-    });
+    logger.info('[ANALYZE-REF] ✅ Recognition task initiated', { taskId: recognitionTaskId });
 
     // Небольшая задержка перед следующим запросом (для безопасности)
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -323,7 +358,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
     }
 
     logger.info('[ANALYZE-REF] ✅ Both tasks initiated sequentially', {
-      recognitionTaskId: recognitionResult.data.task_id,
+      recognitionTaskId,
       descriptionTaskId: descriptionResult.data.task_id
     });
 
@@ -338,7 +373,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
         user_id: userId,
         audio_file_url: audioUrl,
         mureka_file_id: fileId,
-        mureka_task_id: recognitionResult.data.task_id,
+        mureka_task_id: recognitionTaskId,
         status: 'pending',
         metadata: {
           upload_size: uploadResult.data.file_size,
@@ -390,7 +425,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
 
     // ✅ Используем Promise без await для background execution
     pollMurekaAnalysis(
-      recognitionResult.data.task_id,
+      recognitionTaskId,
       descriptionResult.data.task_id,
       recognitionRecord.id,
       descriptionRecord.id,

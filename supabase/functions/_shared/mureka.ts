@@ -173,8 +173,10 @@ export interface MurekaLyricsResponse {
  * @interface MurekaSongRecognitionPayload
  */
 export interface MurekaSongRecognitionPayload {
-  /** ID аудиофайла из /v1/files/upload (обязательно) */
-  upload_audio_id: string;
+  /** ID аудиофайла из /v1/files/upload (укажите один из параметров) */
+  upload_audio_id?: string;
+  /** Альтернативное поле (некоторые версии API ожидают его) */
+  audio_file?: string;
 }
 
 /**

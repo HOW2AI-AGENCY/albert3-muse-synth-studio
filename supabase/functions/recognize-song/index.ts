@@ -76,7 +76,7 @@ serve(async (req) => {
 
     // 5. Upload to Mureka
     logger.info('⬆️ Uploading to Mureka');
-    const uploadResponse = await murekaClient.uploadFile(audioBlob, { purpose: 'reference' });
+    const uploadResponse = await murekaClient.uploadFile(audioBlob, { purpose: 'audio' });
     const file_id = uploadResponse.data.file_id;
 
     // 6. Create recognition record
