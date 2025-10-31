@@ -286,30 +286,46 @@ export class GenerationService {
    */
   static async generate(request: GenerationRequest): Promise<GenerationResult> {
     const context = 'GenerationService.generate';
-    logger.info('🎵 Starting music generation', context, {
+    logger.info('🎵 [GENERATION START] Starting music generation', context, {
       provider: request.provider,
+      prompt: request.prompt.substring(0, 50) + '...',
+      promptLength: request.prompt.length,
       hasLyrics: !!request.lyrics,
+      lyricsLength: request.lyrics?.length || 0,
       customMode: request.customMode,
+      styleTags: request.styleTags,
+      modelVersion: request.modelVersion,
+      isCyrillic: /[А-Яа-яЁё]/.test(request.prompt),
     });
 
     // 1. Валидация запроса
+    logger.debug('[STEP 1] Validating request...', context);
     const validationError = validateGenerationRequest(request);
     if (validationError) {
-      logger.warn('Validation failed', context, {
+      logger.error('[STEP 1 FAILED] Validation failed', new Error(validationError.message), context, {
         errorCode: validationError.code,
         errorMessage: validationError.message,
+        promptLength: request.prompt.length,
+        lyricsLength: request.lyrics?.length || 0,
       });
       throw new Error(validationError.message);
     }
+    logger.info('[STEP 1 ✓] Validation passed', context);
 
     // 2. Проверка аутентификации
+    logger.debug('[STEP 2] Checking authentication...', context);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      logger.error('Authentication failed', authError || new Error('No user'), context);
+      logger.error('[STEP 2 FAILED] Authentication failed', authError || new Error('No user'), context, {
+        hasAuthError: !!authError,
+        hasUser: !!user,
+      });
       throw new Error('Требуется авторизация');
     }
+    logger.info('[STEP 2 ✓] User authenticated', context, { userId: user.id });
 
     // 3. ✅ Проверка дублирующих запросов
+    logger.debug('[STEP 3] Checking for duplicate requests...', context);
     const duplicateTrackId = checkDuplicateRequest(request);
     if (duplicateTrackId) {
       logger.info('⚡ Returning cached track for duplicate request', context, { trackId: duplicateTrackId });
@@ -322,9 +338,13 @@ export class GenerationService {
       };
     }
 
+    logger.info('[STEP 3 ✓] No duplicate found, proceeding with generation', context);
+
     try {
       // 4. Создание записи трека
+      logger.debug('[STEP 4] Creating track record in database...', context);
       const trackId = await createTrackRecord(user.id, request);
+      logger.info('[STEP 4 ✓] Track record created', context, { trackId });
 
       // 5. ✅ Кеширование запроса
       cacheRequest(request, trackId);
@@ -341,12 +361,23 @@ export class GenerationService {
       };
 
       // 8. Вызов провайдера
-      logger.info('Invoking provider', context, {
+      logger.info('[STEP 5] Invoking provider', context, {
         provider: request.provider,
         trackId,
+        paramsPreview: {
+          hasLyrics: !!providerParams.lyrics,
+          hasStyleTags: !!providerParams.styleTags?.length,
+          customMode: providerParams.customMode,
+        },
       });
 
       const result = await routeToProvider(providerParams);
+      
+      logger.info('[STEP 5 ✓] Provider responded successfully', context, {
+        provider: request.provider,
+        trackId,
+        taskId: result.taskId,
+      });
 
       // ✅ Записать метрику вызова провайдера
       performanceMonitor.endTimer(
@@ -360,7 +391,7 @@ export class GenerationService {
         }
       );
 
-      logger.info('✅ Provider invoked successfully', context, {
+      logger.info('✅ [GENERATION SUCCESS] All steps completed', context, {
         provider: request.provider,
         trackId,
         taskId: result.taskId,
@@ -375,8 +406,11 @@ export class GenerationService {
       };
 
     } catch (error) {
-      logger.error('Generation failed', error instanceof Error ? error : new Error(String(error)), context, {
+      logger.error('❌ [GENERATION FAILED] Error occurred', error instanceof Error ? error : new Error(String(error)), context, {
         provider: request.provider,
+        errorName: error instanceof Error ? error.name : 'Unknown',
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
       });
 
       // Enhanced error handling with specific error types

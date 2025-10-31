@@ -85,8 +85,17 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
     const effectivePrompt = options.prompt?.trim() ?? '';
     const effectiveProvider = options.provider || provider;
 
+    logger.info('🎸 [HOOK] Generation request received', 'useGenerateMusic', {
+      promptLength: effectivePrompt.length,
+      provider: effectiveProvider,
+      hasLyrics: !!options.lyrics,
+      lyricsLength: options.lyrics?.length || 0,
+      isCyrillic: /[А-Яа-яЁё]/.test(effectivePrompt),
+    });
+
     // Validation
     if (!effectivePrompt) {
+      logger.warn('[HOOK] Validation failed: empty prompt', 'useGenerateMusic');
       toast({ 
         title: 'Ошибка', 
         description: 'Пожалуйста, введите описание музыки', 
@@ -96,6 +105,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
     }
 
     if (isGenerating) {
+      logger.warn('[HOOK] Generation already in progress', 'useGenerateMusic');
       toast({ 
         title: 'Подождите', 
         description: 'Предыдущая генерация ещё выполняется', 
@@ -107,6 +117,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
     // Debounce protection
     const now = Date.now();
     if (now - lastGenerationTimeRef.current < DEBOUNCE_DELAY) {
+      logger.warn('[HOOK] Debounce protection triggered', 'useGenerateMusic');
       return false;
     }
     lastGenerationTimeRef.current = now;
@@ -115,10 +126,21 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
     setIsGenerating(true);
 
     try {
+      logger.info('[HOOK] Calling GenerationService...', 'useGenerateMusic', {
+        provider: effectiveProvider,
+      });
+
       // Use unified GenerationService
       const result = await GenerationService.generate({
         ...options,
         provider: effectiveProvider,
+      });
+
+      logger.info('[HOOK] GenerationService returned result', 'useGenerateMusic', {
+        success: result.success,
+        trackId: result.trackId,
+        taskId: result.taskId,
+        isCached: result.taskId === 'cached',
       });
 
       const isCachedResult = result.taskId === 'cached';
@@ -136,7 +158,11 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
 
       return true;
     } catch (error) {
-      logger.error('Ошибка при генерации музыки', error as Error);
+      logger.error('❌ [HOOK] Generation error caught', error as Error, 'useGenerateMusic', {
+        errorName: error instanceof Error ? error.name : 'Unknown',
+        errorMessage: error instanceof Error ? error.message : String(error),
+        provider: effectiveProvider,
+      });
       
       const rawMessage = error instanceof Error ? error.message : 'Не удалось сгенерировать музыку.';
       const isNetworkError = typeof rawMessage === 'string' && (

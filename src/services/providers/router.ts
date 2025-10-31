@@ -56,12 +56,20 @@ export interface GenerateResponse {
 export const generateMusic = async (options: GenerateOptions): Promise<GenerateResponse> => {
   const { provider, ...params } = options;
 
-  const logData: Record<string, unknown> = { provider };
+  const logData: Record<string, unknown> = { 
+    provider,
+    promptPreview: params.prompt.substring(0, 50),
+    promptLength: params.prompt.length,
+    hasLyrics: !!params.lyrics,
+    lyricsLength: params.lyrics?.length || 0,
+    styleTagsCount: params.styleTags?.length || 0,
+    isCyrillic: /[А-Яа-яЁё]/.test(params.prompt),
+  };
   if (params.trackId) {
     logData.trackId = params.trackId;
   }
 
-  logger.info('Routing music generation', context, logData);
+  logger.info('🔀 [ROUTER] Routing music generation', context, logData);
 
   try {
     switch (provider) {
@@ -99,28 +107,41 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
         const weirdnessConstraint =
           params.weirdness !== undefined ? clampRatio(params.weirdness) : clampRatio(params.weirdnessConstraint);
 
+        const requestBody = {
+          trackId: params.trackId,
+          title: params.title?.trim(),
+          prompt: normalizedPrompt,
+          lyrics: customMode ? effectiveLyrics : undefined,
+          tags: sanitizedTags,
+          make_instrumental: makeInstrumental,
+          hasVocals: resolvedHasVocals,
+          customMode,
+          model_version: params.modelVersion || 'chirp-v3-5',
+          idempotencyKey: params.idempotencyKey,
+          referenceAudioUrl: params.referenceAudioUrl,
+          referenceTrackId: params.referenceTrackId,
+          negativeTags: trimmedNegativeTags && trimmedNegativeTags.length > 0 ? trimmedNegativeTags : undefined,
+          vocalGender: normalizedVocalGender,
+          styleWeight: clampRatio(params.styleWeight),
+          lyricsWeight: clampRatio(params.lyricsWeight),
+          weirdnessConstraint,
+          audioWeight: clampRatio(params.audioWeight),
+        };
+
+        logger.info('📤 [ROUTER] Invoking Suno Edge Function', context, {
+          trackId: params.trackId,
+          bodyPreview: {
+            promptLength: requestBody.prompt.length,
+            lyricsLength: requestBody.lyrics?.length || 0,
+            tagsCount: requestBody.tags.length,
+            customMode: requestBody.customMode,
+            modelVersion: requestBody.model_version,
+          },
+        });
+
         const { data, error } = await retryWithBackoff(
           () => supabase.functions.invoke('generate-suno', {
-            body: {
-              trackId: params.trackId,
-              title: params.title?.trim(),
-              prompt: normalizedPrompt,
-              lyrics: customMode ? effectiveLyrics : undefined,
-              tags: sanitizedTags,
-              make_instrumental: makeInstrumental,
-              hasVocals: resolvedHasVocals,
-              customMode,
-              model_version: params.modelVersion || 'chirp-v3-5',
-              idempotencyKey: params.idempotencyKey,
-              referenceAudioUrl: params.referenceAudioUrl,
-              referenceTrackId: params.referenceTrackId,
-              negativeTags: trimmedNegativeTags && trimmedNegativeTags.length > 0 ? trimmedNegativeTags : undefined,
-              vocalGender: normalizedVocalGender,
-              styleWeight: clampRatio(params.styleWeight),
-              lyricsWeight: clampRatio(params.lyricsWeight),
-              weirdnessConstraint,
-              audioWeight: clampRatio(params.audioWeight),
-            },
+            body: requestBody
           }),
           {
             ...RETRY_CONFIGS.critical,
@@ -138,7 +159,19 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
           }
         );
 
-        if (error) throw error;
+        if (error) {
+          logger.error('❌ [ROUTER] Suno Edge Function error', error, context, {
+            trackId: params.trackId,
+            errorDetails: error,
+          });
+          throw error;
+        }
+
+        logger.info('✅ [ROUTER] Suno Edge Function response received', context, {
+          trackId: params.trackId,
+          responsePreview: data ? Object.keys(data) : 'null',
+        });
+
         return data as GenerateResponse;
       }
 
@@ -156,19 +189,32 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
         const isBGM =
           typeof params.isBGM === 'boolean' ? params.isBGM : makeInstrumental ? true : undefined;
 
+        const requestBodyMureka = {
+          trackId: params.trackId,
+          title: params.title?.trim(),
+          prompt: params.prompt,
+          lyrics: params.lyrics,
+          styleTags: sanitizedStyleTags.length > 0 ? sanitizedStyleTags : undefined,
+          hasVocals,
+          isBGM,
+          modelVersion: params.modelVersion || 'auto',
+          idempotencyKey: params.idempotencyKey,
+        };
+
+        logger.info('📤 [ROUTER] Invoking Mureka Edge Function', context, {
+          trackId: params.trackId,
+          bodyPreview: {
+            promptLength: requestBodyMureka.prompt.length,
+            lyricsLength: requestBodyMureka.lyrics?.length || 0,
+            styleTagsCount: requestBodyMureka.styleTags?.length || 0,
+            hasVocals: requestBodyMureka.hasVocals,
+            isBGM: requestBodyMureka.isBGM,
+          },
+        });
+
         const { data, error } = await retryWithBackoff(
           () => supabase.functions.invoke('generate-mureka', {
-            body: {
-              trackId: params.trackId,
-              title: params.title?.trim(),
-              prompt: params.prompt,
-              lyrics: params.lyrics,
-              styleTags: sanitizedStyleTags.length > 0 ? sanitizedStyleTags : undefined,
-              hasVocals,
-              isBGM,
-              modelVersion: params.modelVersion || 'auto',
-              idempotencyKey: params.idempotencyKey,
-            },
+            body: requestBodyMureka
           }),
           {
             ...RETRY_CONFIGS.critical,
@@ -186,7 +232,19 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
           }
         );
 
-        if (error) throw error;
+        if (error) {
+          logger.error('❌ [ROUTER] Mureka Edge Function error', error, context, {
+            trackId: params.trackId,
+            errorDetails: error,
+          });
+          throw error;
+        }
+
+        logger.info('✅ [ROUTER] Mureka Edge Function response received', context, {
+          trackId: params.trackId,
+          responsePreview: data ? Object.keys(data) : 'null',
+        });
+
         return data as GenerateResponse;
       }
 
