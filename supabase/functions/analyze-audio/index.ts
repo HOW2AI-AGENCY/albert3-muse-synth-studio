@@ -67,6 +67,9 @@ async function mainHandler(req: Request): Promise<Response> {
     // Upload to Mureka
     const formData = new FormData();
     formData.append('file', audioBlob, 'reference.mp3');
+    // ✅ CRITICAL: Add 'purpose' parameter (required by Mureka API)
+    // Using 'audio' purpose for general audio analysis
+    formData.append('purpose', 'audio');
 
     logger.info('[analyze-audio] Uploading to Mureka API');
     
