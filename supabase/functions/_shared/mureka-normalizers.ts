@@ -168,11 +168,17 @@ export function normalizeMurekaMusicResponse(
         count: clips.length,
       });
 
+      // Normalize status: "preparing" → "pending"
+      let normalizedStatus = wrappedResponse.data?.status || "pending";
+      if (normalizedStatus === "preparing") {
+        normalizedStatus = "pending";
+      }
+
       return {
         success: true,
         taskId: wrappedResponse.data?.task_id || "unknown",
         clips,
-        status: wrappedResponse.data?.status || "pending",
+        status: normalizedStatus,
       };
     }
 
@@ -183,11 +189,17 @@ export function normalizeMurekaMusicResponse(
       count: clips.length,
     });
 
+    // Normalize status: "preparing" → "pending"
+    let normalizedStatus = directResponse.status || "pending";
+    if (normalizedStatus === "preparing") {
+      normalizedStatus = "pending";
+    }
+
     return {
       success: true,
       taskId: directResponse.task_id,
       clips,
-      status: directResponse.status || "pending",
+      status: normalizedStatus,
     };
   } catch (error) {
     logger.error("[MUREKA] Music response normalization failed", {

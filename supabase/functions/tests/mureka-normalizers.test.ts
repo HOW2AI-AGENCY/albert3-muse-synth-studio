@@ -147,6 +147,24 @@ Deno.test("Mureka Music Normalizer - Direct Response", () => {
   assertEquals(result.clips.length, 1);
 });
 
+Deno.test("Mureka Music Normalizer - 'preparing' status mapped to 'pending'", () => {
+  const preparingResponse = {
+    code: 200,
+    msg: "success",
+    data: {
+      task_id: "preparing-task-123",
+      status: "preparing",
+      clips: [],
+    },
+  };
+
+  const result = normalizeMurekaMusicResponse(preparingResponse);
+
+  assertEquals(result.success, true);
+  assertEquals(result.taskId, "preparing-task-123");
+  assertEquals(result.status, "pending");
+});
+
 Deno.test("Mureka Lyrics Normalizer - Invalid/Unknown Response Shape", () => {
   const invalidResponse = {
     unexpected: "format",

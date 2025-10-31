@@ -160,12 +160,43 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
     });
 
     const rawResponse = await murekaClient.generateSong(generatePayload);
-    const normalizedMusic = normalizeMurekaMusicResponse(rawResponse);
+    
+    // ✅ FALLBACK: Extract task_id even if normalization fails
+    let taskId: string | undefined;
+    
+    try {
+      const normalizedMusic = normalizeMurekaMusicResponse(rawResponse);
 
-    if (!normalizedMusic.success || !normalizedMusic.taskId) {
-      const errMsg = normalizedMusic.error || 'Mureka API did not return task_id';
-      logger.error('🔴 [MUREKA] generateSong returned non-success', { errMsg });
-      throw new Error(errMsg);
+      if (!normalizedMusic.success || !normalizedMusic.taskId) {
+        const errMsg = normalizedMusic.error || 'Mureka API did not return task_id';
+        logger.error('🔴 [MUREKA] generateSong returned non-success', { errMsg });
+        throw new Error(errMsg);
+      }
+
+      taskId = normalizedMusic.taskId;
+      
+    } catch (normalizationError) {
+      logger.warn('⚠️ [MUREKA] Normalization failed, extracting task_id manually', {
+        error: normalizationError instanceof Error ? normalizationError.message : String(normalizationError),
+        rawResponse,
+      });
+      
+      // Manual extraction from raw response
+      if (typeof rawResponse === 'object' && rawResponse !== null) {
+        const anyResponse = rawResponse as any;
+        if (anyResponse.task_id) {
+          taskId = anyResponse.task_id;
+        } else if (anyResponse.data?.task_id) {
+          taskId = anyResponse.data.task_id;
+        }
+      }
+      
+      if (!taskId) {
+        logger.error('🔴 [MUREKA] Could not extract task_id from response', { rawResponse });
+        throw new Error('Could not extract task_id from Mureka response');
+      }
+      
+      logger.info('✅ [MUREKA] task_id extracted manually', { taskId });
     }
 
     // Update track with lyrics and metadata
@@ -184,12 +215,20 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
       })
       .eq('id', trackId);
 
-    return normalizedMusic.taskId;
+    return taskId;
   }
 
   protected async pollTaskStatus(taskId: string): Promise<ProviderTrackData> {
     const murekaClient = createMurekaClient({ apiKey: this.apiKey });
     const queryResult = await murekaClient.queryTask(taskId);
+
+    // ✅ Handle "preparing" status - continue polling
+    if (queryResult.data?.status === 'preparing') {
+      logger.debug('[MUREKA] Task is preparing, continuing polling', { taskId });
+      return {
+        status: 'processing',
+      };
+    }
 
     const clips = queryResult.data?.clips;
     if (queryResult.code === 200 && clips && clips.length > 0) {
