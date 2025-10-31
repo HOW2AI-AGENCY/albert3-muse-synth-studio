@@ -30,6 +30,15 @@ export const useBoostStyle = () => {
       return null;
     }
 
+    if (content.length > 200) {
+      toast({
+        title: 'Style too long',
+        description: 'Please keep the style description under 200 characters',
+        variant: 'destructive'
+      });
+      return null;
+    }
+
     setIsBoosting(true);
     try {
       const { data, error } = await supabase.functions.invoke<BoostStyleResponse | BoostStyleError>('boost-style', {

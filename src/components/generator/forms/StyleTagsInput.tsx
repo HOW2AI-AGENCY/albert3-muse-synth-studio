@@ -34,32 +34,44 @@ export const StyleTagsInput = memo(({
       {/* Positive Tags */}
       <div className="space-y-1">
         <Label htmlFor="tags" className="text-xs font-medium">
-          Теги стиля (через запятую)
+          Теги стиля (через запятую) {tags.length > 0 && `(${tags.length}/200)`}
         </Label>
         <Input
           id="tags"
           type="text"
           placeholder="rock, energetic, guitar"
           value={tags}
-          onChange={(e) => onTagsChange(e.target.value)}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            if (newValue.length <= 200) {
+              onTagsChange(newValue);
+            }
+          }}
           className="h-8 text-sm"
           disabled={isGenerating}
+          maxLength={200}
         />
       </div>
 
       {/* Negative Tags */}
       <div className="space-y-1">
         <Label htmlFor="negative-tags" className="text-xs font-medium">
-          Исключить стили (опционально)
+          Исключить стили (опционально) {negativeTags.length > 0 && `(${negativeTags.length}/200)`}
         </Label>
         <Input
           id="negative-tags"
           type="text"
           placeholder="slow, acoustic"
           value={negativeTags}
-          onChange={(e) => onNegativeTagsChange(e.target.value)}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            if (newValue.length <= 200) {
+              onNegativeTagsChange(newValue);
+            }
+          }}
           className="h-8 text-sm"
           disabled={isGenerating}
+          maxLength={200}
         />
       </div>
     </div>
