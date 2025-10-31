@@ -90,6 +90,7 @@ const requestCache = new Map<string, CachedRequest>();
 
 /**
  * Генерация хеша запроса для дедупликации
+ * ✅ UTF-8 safe: поддерживает кириллицу и любые Unicode символы
  */
 function generateRequestHash(request: GenerationRequest): string {
   const { prompt, lyrics, styleTags, provider, hasVocals, modelVersion } = request;
@@ -101,7 +102,17 @@ function generateRequestHash(request: GenerationRequest): string {
     hasVocals: hasVocals ?? true,
     model: modelVersion || 'default',
   });
-  return btoa(normalized).substring(0, 32); // Simple hash
+  
+  // ✅ UTF-8 безопасное кодирование (поддержка кириллицы)
+  try {
+    const utf8Bytes = new TextEncoder().encode(normalized);
+    const binaryString = Array.from(utf8Bytes, byte => String.fromCharCode(byte)).join('');
+    return btoa(binaryString).substring(0, 32);
+  } catch (error) {
+    // Fallback: простой хеш если btoa всё равно не работает
+    logger.warn('Hash generation fallback', 'GenerationService', { error });
+    return `${normalized.length}_${normalized.substring(0, 16).replace(/[^a-zA-Z0-9]/g, '')}`;
+  }
 }
 
 /**
