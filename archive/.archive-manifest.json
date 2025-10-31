@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0",
-  "lastUpdated": "2025-10-13",
+  "version": "2.1.0",
+  "lastUpdated": "2025-10-31",
   "description": "Архив устаревших отчетов и документации проекта Albert3 Muse Synth Studio",
   "structure": {
     "2024": {
@@ -20,13 +20,14 @@
         ]
       },
       "october": {
-        "description": "Отчеты и планы Sprint 19-26 за октябрь 2025",
+        "description": "Отчеты и планы Sprint 19-29 за октябрь 2025",
         "files": [
           "README.md",
           "WORKSPACE_UI_AUDIT_REPORT.md",
           "sprint-19-plan.md",
           "sprint-20-completed.md",
-          "sprint-20-plan-initial.md"
+          "sprint-20-plan-initial.md",
+          "sprint-29-completed.md"
         ],
         "reports": {
           "description": "Аудиты и отчеты 08-13 октября 2025",
@@ -52,8 +53,8 @@
     "archiveAfterDays": 7
   },
   "migration": {
-    "date": "2025-10-13",
-    "reason": "Комплексная реорганизация репозитория - архивация октябрьских отчетов и Sprint 26",
-    "movedFiles": 10
+    "date": "2025-10-31",
+    "reason": "Архивация Sprint 29, обновление версии до v2.7.5, подготовка к Sprint 30 Phase 2",
+    "movedFiles": 11
   }
 }

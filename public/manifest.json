@@ -1,10 +1,13 @@
 {
-  "name": "Muse Synth Studio",
-  "short_name": "MuseStudio",
+  "name": "Albert3 Muse Synth Studio",
+  "short_name": "Albert3",
+  "description": "AI-powered music creation studio with Suno integration",
+  "version": "2.7.5",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0B0B0F",
   "theme_color": "#0B0B0F",
+  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "/favicon.ico",
