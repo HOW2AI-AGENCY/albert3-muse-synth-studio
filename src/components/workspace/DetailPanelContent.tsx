@@ -17,7 +17,6 @@ import { useAudioPlayer } from "@/contexts/audio-player";
 import type { StylePreset } from "@/types/styles";
 import { getStyleById } from "@/data/music-styles";
 import { AnalyticsService } from "@/services/analytics.service";
-
 interface Track {
   id: string;
   title: string;
@@ -41,7 +40,6 @@ interface Track {
   style_tags?: string[];
   model_name?: string;
 }
-
 interface TrackVersion {
   id: string;
   variant_index: number;
@@ -58,7 +56,6 @@ interface TrackVersion {
   metadata?: TrackVersionMetadata | null;
   created_at?: string;
 }
-
 interface TrackStem {
   id: string;
   stem_type: string;
@@ -68,7 +65,6 @@ interface TrackStem {
   version_id?: string | null;
   created_at?: string;
 }
-
 interface DetailPanelContentProps {
   track: Track;
   title: string;
@@ -89,17 +85,18 @@ interface DetailPanelContentProps {
   loadVersionsAndStems: () => void;
   tabView?: "overview" | "versions" | "stems" | "details";
 }
-
 const formatDate = (date?: string) => {
   if (!date) return "—";
   try {
     return new Date(date).toLocaleDateString("ru-RU", {
       day: "numeric",
       month: "short",
-      year: "numeric",
+      year: "numeric"
     });
   } catch (error) {
-    import('@/utils/logger').then(({ logWarn }) => {
+    import('@/utils/logger').then(({
+      logWarn
+    }) => {
       logWarn('Failed to format date', 'DetailPanel', {
         date,
         error: error instanceof Error ? error.message : String(error)
@@ -108,14 +105,12 @@ const formatDate = (date?: string) => {
     return "—";
   }
 };
-
 const formatDuration = (seconds?: number) => {
   if (!seconds) return "—";
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 };
-
 export const DetailPanelContent = ({
   track,
   title,
@@ -134,10 +129,16 @@ export const DetailPanelContent = ({
   onShare,
   onDelete,
   loadVersionsAndStems,
-  tabView = "overview",
+  tabView = "overview"
 }: DetailPanelContentProps) => {
-  const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count || 0);
-  const { playTrack } = useAudioPlayer();
+  const {
+    isLiked,
+    likeCount,
+    toggleLike
+  } = useTrackLike(track.id, track.like_count || 0);
+  const {
+    playTrack
+  } = useAudioPlayer();
   const [selectedVersionId, setSelectedVersionId] = useState<string | undefined>();
   const [comparisonLeftId, setComparisonLeftId] = useState<string | undefined>();
   const [comparisonRightId, setComparisonRightId] = useState<string | undefined>();
@@ -149,15 +150,16 @@ export const DetailPanelContent = ({
     }
 
     // Записываем просмотр трека (дедуплицируется через session guard)
-    AnalyticsService.recordView(track.id).catch((error) => {
-      import('@/utils/logger').then(({ logError }) => {
+    AnalyticsService.recordView(track.id).catch(error => {
+      import('@/utils/logger').then(({
+        logError
+      }) => {
         logError('Failed to record track view', error, 'DetailPanel', {
           trackId: track.id
         });
       });
     });
   }, [track?.id]);
-
   useEffect(() => {
     if (!versions?.length) {
       setSelectedVersionId(undefined);
@@ -165,57 +167,43 @@ export const DetailPanelContent = ({
       setComparisonRightId(undefined);
       return;
     }
-
-    setSelectedVersionId((current) => {
-      if (current && versions.some((version) => version.id === current)) {
+    setSelectedVersionId(current => {
+      if (current && versions.some(version => version.id === current)) {
         return current;
       }
-
-      const masterVersion = versions.find((version) => version.is_preferred_variant);
+      const masterVersion = versions.find(version => version.is_preferred_variant);
       return masterVersion?.id ?? versions[0].id;
     });
   }, [versions]);
-
   useEffect(() => {
     if (!versions?.length) {
       return;
     }
-
-    setComparisonLeftId((current) => {
-      if (current && versions.some((version) => version.id === current)) {
+    setComparisonLeftId(current => {
+      if (current && versions.some(version => version.id === current)) {
         return current;
       }
-
-      const masterVersion = versions.find((version) => version.is_preferred_variant);
+      const masterVersion = versions.find(version => version.is_preferred_variant);
       return masterVersion?.id ?? versions[0].id;
     });
   }, [versions]);
-
   useEffect(() => {
     if (!versions?.length) {
       setComparisonRightId(undefined);
       return;
     }
-
-    setComparisonRightId((current) => {
-      if (current && current !== comparisonLeftId && versions.some((version) => version.id === current)) {
+    setComparisonRightId(current => {
+      if (current && current !== comparisonLeftId && versions.some(version => version.id === current)) {
         return current;
       }
-
-      const alternative = versions.find((version) => version.id !== comparisonLeftId);
+      const alternative = versions.find(version => version.id !== comparisonLeftId);
       if (alternative) {
         return alternative.id;
       }
-
       return versions.length > 1 ? versions[1].id : undefined;
     });
   }, [versions, comparisonLeftId]);
-
-  const activeVersion = useMemo(
-    () => versions.find((version) => version.id === selectedVersionId),
-    [versions, selectedVersionId]
-  );
-
+  const activeVersion = useMemo(() => versions.find(version => version.id === selectedVersionId), [versions, selectedVersionId]);
   const filteredStems = useMemo(() => {
     // Если версия не выбрана, показываем только "общие" стемы (version_id === null)
     if (!selectedVersionId) {
@@ -223,78 +211,59 @@ export const DetailPanelContent = ({
     }
 
     // Если версия выбрана, показываем стемы этой версии + общие стемы
-    return stems.filter(
-      stem => !stem.version_id || stem.version_id === selectedVersionId
-    );
+    return stems.filter(stem => !stem.version_id || stem.version_id === selectedVersionId);
   }, [stems, selectedVersionId]);
-
   const handleVersionSelect = useCallback((versionId: string) => {
     setSelectedVersionId(versionId);
     setComparisonLeftId(versionId);
-
-    setComparisonRightId((current) => {
-      if (current && current !== versionId && versions.some((version) => version.id === current)) {
+    setComparisonRightId(current => {
+      if (current && current !== versionId && versions.some(version => version.id === current)) {
         return current;
       }
-
-      const alternative = versions.find((version) => version.id !== versionId);
+      const alternative = versions.find(version => version.id !== versionId);
       return alternative?.id ?? current;
     });
   }, [versions]);
-
   const handleComparisonLeftChange = useCallback((versionId: string) => {
     setComparisonLeftId(versionId);
     setSelectedVersionId(versionId);
-
-    setComparisonRightId((current) => {
-      if (current && current !== versionId && versions.some((version) => version.id === current)) {
+    setComparisonRightId(current => {
+      if (current && current !== versionId && versions.some(version => version.id === current)) {
         return current;
       }
-
-      const alternative = versions.find((version) => version.id !== versionId);
+      const alternative = versions.find(version => version.id !== versionId);
       return alternative?.id ?? current;
     });
   }, [versions]);
-
   const handleComparisonRightChange = useCallback((versionId: string) => {
     if (versionId === comparisonLeftId) {
-      const alternative = versions.find((version) => version.id !== versionId);
+      const alternative = versions.find(version => version.id !== versionId);
       if (alternative) {
         setComparisonLeftId(alternative.id);
         setSelectedVersionId(alternative.id);
       }
     }
-
     setComparisonRightId(versionId);
   }, [comparisonLeftId, versions]);
-
   const handleComparisonSwap = useCallback((leftId: string, rightId: string) => {
     setComparisonLeftId(rightId);
     setSelectedVersionId(rightId);
     setComparisonRightId(leftId);
   }, []);
-
   const handlePresetApply = (preset: StylePreset) => {
-    const presetGenre = preset.styleIds
-      .map(styleId => getStyleById(styleId)?.name ?? styleId)
-      .join(", ");
-
+    const presetGenre = preset.styleIds.map(styleId => getStyleById(styleId)?.name ?? styleId).join(", ");
     if (presetGenre) {
       setGenre(presetGenre);
     }
   };
-
   const handleTagsApply = (tags: string[]) => {
     if (!tags.length) {
       return;
     }
-
     setMood(tags.slice(0, 3).join(", "));
   };
-
   const createdAtToDisplay = activeVersion?.created_at ?? track.created_at;
   const durationToDisplay = activeVersion?.duration ?? track.duration_seconds;
-
   const extractArtist = (metadata?: Record<string, unknown> | null) => {
     if (!metadata) return undefined;
     const artistKeys = ["artist", "artist_name", "artistName", "creator", "performer"] as const;
@@ -304,43 +273,29 @@ export const DetailPanelContent = ({
     }
     return undefined;
   };
-
   const artist = extractArtist(track.metadata) ?? "Неизвестный артист";
-
-  return (
-    <TooltipProvider delayDuration={500}>
+  return <TooltipProvider delayDuration={500}>
       {/* Compact Track Hero - Vertical Layout */}
-      <CompactTrackHero
-        track={track}
-        activeVersion={activeVersion ? {
-          variant_index: activeVersion.variant_index,
-          created_at: activeVersion.created_at,
-          duration: activeVersion.duration
-        } : null}
-        artist={artist}
-        isLiked={isLiked}
-        likeCount={likeCount}
-        onLike={toggleLike}
-        onDownload={onDownload}
-        onShare={onShare}
-        onOpenPlayer={() => {
-          playTrack({
-            id: track.id,
-            title: track.title,
-            audio_url: track.audio_url || '',
-            cover_url: track.cover_url,
-            duration: track.duration || track.duration_seconds,
-            status: (track.status as "completed" | "failed" | "pending" | "processing") || "completed",
-            style_tags: track.style_tags || [],
-            lyrics: track.lyrics,
-          });
-        }}
-      />
+      <CompactTrackHero track={track} activeVersion={activeVersion ? {
+      variant_index: activeVersion.variant_index,
+      created_at: activeVersion.created_at,
+      duration: activeVersion.duration
+    } : null} artist={artist} isLiked={isLiked} likeCount={likeCount} onLike={toggleLike} onDownload={onDownload} onShare={onShare} onOpenPlayer={() => {
+      playTrack({
+        id: track.id,
+        title: track.title,
+        audio_url: track.audio_url || '',
+        cover_url: track.cover_url,
+        duration: track.duration || track.duration_seconds,
+        status: track.status as "completed" | "failed" | "pending" | "processing" || "completed",
+        style_tags: track.style_tags || [],
+        lyrics: track.lyrics
+      });
+    }} />
 
       <div className="space-y-3">
         {/* Overview Tab Content */}
-        {tabView === "overview" && (
-          <>
+        {tabView === "overview" && <>
             {/* Metadata Card */}
             <Card className="bg-[var(--card-primary-bg)] border-[var(--card-primary-border)] shadow-[var(--card-primary-shadow)]">
               <CardHeader className="pb-2 px-4 pt-4">
@@ -348,28 +303,10 @@ export const DetailPanelContent = ({
                 <CardDescription className="text-xs">Обновите ключевую информацию и видимость трека.</CardDescription>
               </CardHeader>
               <CardContent className="px-4 pb-4 space-y-3">
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Название трека"
-                  className="h-10 text-sm"
-                />
+                <Input id="title" value={title} onChange={e => setTitle(e.target.value)} placeholder="Название трека" className="h-10 text-sm" />
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Input
-                    id="genre"
-                    value={genre}
-                    onChange={(e) => setGenre(e.target.value)}
-                    placeholder="Жанр"
-                    className="h-10 text-sm"
-                  />
-                  <Input
-                    id="mood"
-                    value={mood}
-                    onChange={(e) => setMood(e.target.value)}
-                    placeholder="Настроение"
-                    className="h-10 text-sm"
-                  />
+                  <Input id="genre" value={genre} onChange={e => setGenre(e.target.value)} placeholder="Жанр" className="h-10 text-sm" />
+                  <Input id="mood" value={mood} onChange={e => setMood(e.target.value)} placeholder="Настроение" className="h-10 text-sm" />
                 </div>
                 <div className="flex items-center justify-between gap-4 rounded-md border border-border/60 bg-background/60 p-3">
                   <div className="space-y-0.5">
@@ -404,14 +341,7 @@ export const DetailPanelContent = ({
                 <CardDescription className="text-xs">Подберите подходящие жанры и теги с помощью ассистента.</CardDescription>
               </CardHeader>
               <CardContent className="px-4 pb-4">
-                <StyleRecommendationsPanel
-                  mood={mood}
-                  genre={genre}
-                  context={track.prompt}
-                  currentTags={track.style_tags ?? []}
-                  onApplyPreset={handlePresetApply}
-                  onApplyTags={handleTagsApply}
-                />
+                <StyleRecommendationsPanel mood={mood} genre={genre} context={track.prompt} currentTags={track.style_tags ?? []} onApplyPreset={handlePresetApply} onApplyTags={handleTagsApply} />
               </CardContent>
             </Card>
 
@@ -429,26 +359,18 @@ export const DetailPanelContent = ({
                   <span className="text-muted-foreground">Suno ID:</span>
                   <span className="font-mono text-[10px]">{track.suno_id || "—"}</span>
                 </div>
-                {track.video_url && (
-                  <div className="flex justify-between items-center">
+                {track.video_url && <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Видео:</span>
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="h-auto p-0 text-xs"
-                      onClick={() => window.open(track.video_url, "_blank")}
-                    >
+                    <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => window.open(track.video_url, "_blank")}>
                       Открыть
                       <ExternalLink className="h-3 w-3 ml-1" />
                     </Button>
-                  </div>
-                )}
+                  </div>}
               </CardContent>
             </Card>
 
             {/* Lyrics - Minimalist Design */}
-            {track.lyrics && (
-              <Card className="bg-muted/20 border-border/30">
+            {track.lyrics && <Card className="bg-muted/20 border-border/30">
                 <CardContent className="px-3 py-3">
                   <div className="flex items-start gap-2">
                     <FileText className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
@@ -457,8 +379,7 @@ export const DetailPanelContent = ({
                     </pre>
                   </div>
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
 
             {/* Technical Details - Minimalist */}
             <Card className="bg-muted/20 border-border/30">
@@ -471,121 +392,64 @@ export const DetailPanelContent = ({
                   <span className="text-muted-foreground">ID</span>
                   <span className="font-mono text-[10px]">{track.suno_id || "—"}</span>
                 </div>
-                {track.video_url && (
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="h-auto p-0 text-xs"
-                    onClick={() => window.open(track.video_url, "_blank")}
-                  >
+                {track.video_url && <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => window.open(track.video_url, "_blank")}>
                     Video
                     <ExternalLink className="h-3 w-3 ml-1" />
-                  </Button>
-                )}
+                  </Button>}
               </CardContent>
             </Card>
 
             {/* Generation Prompt - Minimalist */}
-            {track.prompt && (
-              <Card className="bg-muted/20 border-border/30">
+            {track.prompt && <Card className="bg-muted/20 border-border/30">
                 <CardContent className="px-3 py-3">
                   <pre className="text-xs bg-muted/30 p-2 rounded whitespace-pre-wrap font-mono">
                     {track.prompt}
                   </pre>
                 </CardContent>
-              </Card>
-            )}
-          </>
-        )}
+              </Card>}
+          </>}
 
         {/* Versions Tab Content */}
-        {tabView === "versions" && (
-          <>
-            {versions.length === 0 ? (
-              <EmptyStateCard
-                icon={GitBranch}
-                title="Нет версий"
-                description="Создайте новую версию через действия трека"
-              />
-            ) : (
-              <>
+        {tabView === "versions" && <>
+            {versions.length === 0 ? <EmptyStateCard icon={GitBranch} title="Нет версий" description="Создайте новую версию через действия трека" /> : <>
                 <Card className="border-border/70">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg">Версии трека</CardTitle>
                     <CardDescription>Переключайтесь между версиями и управляйте статусом.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <TrackVersionSelector
-                      versions={versions.map((version) => ({
-                        id: version.id,
-                        variant_index: version.variant_index,
-                        created_at: version.created_at,
-                        is_preferred_variant: version.is_preferred_variant,
-                        is_primary_variant: version.is_primary_variant,
-                        is_original: version.is_original,
-                      }))}
-                      selectedVersionId={selectedVersionId}
-                      onSelect={handleVersionSelect}
-                    />
-                    {versions.length >= 2 && (
-                      <TrackVersionComparison
-                        trackId={track.id}
-                        versions={versions}
-                        trackMetadata={track.metadata ?? null}
-                        leftVersionId={comparisonLeftId}
-                        rightVersionId={comparisonRightId}
-                        onLeftVersionChange={handleComparisonLeftChange}
-                        onRightVersionChange={handleComparisonRightChange}
-                        onSwapSides={handleComparisonSwap}
-                      />
-                    )}
-                    <TrackVersions
-                      trackId={track.id}
-                      versions={versions}
-                      trackMetadata={track.metadata ?? null}
-                      onVersionUpdate={loadVersionsAndStems}
-                    />
+                    <TrackVersionSelector versions={versions.map(version => ({
+                id: version.id,
+                variant_index: version.variant_index,
+                created_at: version.created_at,
+                is_preferred_variant: version.is_preferred_variant,
+                is_primary_variant: version.is_primary_variant,
+                is_original: version.is_original
+              }))} selectedVersionId={selectedVersionId} onSelect={handleVersionSelect} />
+                    {versions.length >= 2 && <TrackVersionComparison trackId={track.id} versions={versions} trackMetadata={track.metadata ?? null} leftVersionId={comparisonLeftId} rightVersionId={comparisonRightId} onLeftVersionChange={handleComparisonLeftChange} onRightVersionChange={handleComparisonRightChange} onSwapSides={handleComparisonSwap} />}
+                    <TrackVersions trackId={track.id} versions={versions} trackMetadata={track.metadata ?? null} onVersionUpdate={loadVersionsAndStems} />
                   </CardContent>
                 </Card>
-              </>
-            )}
-          </>
-        )}
+              </>}
+          </>}
 
         {/* Stems Tab Content */}
-        {tabView === "stems" && (
-          <>
-            {track.status !== 'completed' ? (
-              <EmptyStateCard
-                icon={Music4}
-                title="Трек еще обрабатывается"
-                description="Стемы станут доступны после завершения генерации"
-              />
-            ) : (
-              <Card className="border-border/70">
+        {tabView === "stems" && <>
+            {track.status !== 'completed' ? <EmptyStateCard icon={Music4} title="Трек еще обрабатывается" description="Стемы станут доступны после завершения генерации" /> : <Card className="border-border/70">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">Стемы</CardTitle>
                   <CardDescription>Создавайте и управляйте стемами выбранной версии.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <TrackStemsPanel
-                    trackId={track.id}
-                    versionId={selectedVersionId}
-                    stems={filteredStems}
-                    onStemsGenerated={loadVersionsAndStems}
-                  />
+                  <TrackStemsPanel trackId={track.id} versionId={selectedVersionId} stems={filteredStems} onStemsGenerated={loadVersionsAndStems} />
                 </CardContent>
-              </Card>
-            )}
-          </>
-        )}
+              </Card>}
+          </>}
 
         {/* Details Tab Content */}
-        {tabView === "details" && (
-          <>
+        {tabView === "details" && <>
             {/* Structured Lyrics */}
-            {track.lyrics && (
-              <Card className="bg-[var(--card-primary-bg)] border-[var(--card-primary-border)] shadow-[var(--card-primary-shadow)]">
+            {track.lyrics && <Card className="bg-[var(--card-primary-bg)] border-[var(--card-primary-border)] shadow-[var(--card-primary-shadow)]">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">Текст песни</CardTitle>
                   <CardDescription>Структурированный вывод секций и текста</CardDescription>
@@ -593,8 +457,7 @@ export const DetailPanelContent = ({
                 <CardContent>
                   <StructuredLyrics lyrics={track.lyrics} />
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
 
             {/* Technical Details */}
             <Card className="bg-[var(--card-tertiary-bg)] border-[var(--card-tertiary-border)]">
@@ -610,23 +473,15 @@ export const DetailPanelContent = ({
                   <span className="text-muted-foreground">Suno ID:</span>
                   <span className="font-mono text-xs">{track.suno_id || "—"}</span>
                 </div>
-                {track.video_url && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => window.open(track.video_url, "_blank")}
-                  >
+                {track.video_url && <Button variant="outline" size="sm" className="w-full" onClick={() => window.open(track.video_url, "_blank")}>
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Открыть видео
-                  </Button>
-                )}
+                  </Button>}
               </CardContent>
             </Card>
 
             {/* Generation Prompt */}
-            {track.prompt && (
-              <Card className="bg-[var(--card-tertiary-bg)] border-[var(--card-tertiary-border)]">
+            {track.prompt && <Card className="bg-[var(--card-tertiary-bg)] border-[var(--card-tertiary-border)]">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg">Промпт генерации</CardTitle>
                 </CardHeader>
@@ -635,8 +490,7 @@ export const DetailPanelContent = ({
                     {track.prompt}
                   </pre>
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
 
             {/* Danger Zone Card */}
             <Card className="border border-destructive/40 bg-destructive/5">
@@ -656,25 +510,23 @@ export const DetailPanelContent = ({
                 </Tooltip>
               </CardContent>
             </Card>
-          </>
-        )}
+          </>}
       </div>
-    </TooltipProvider>
-  );
+    </TooltipProvider>;
 };
-
 interface StatsItemProps {
   icon: LucideIcon;
   label: string;
   value: string;
 }
-
-const StatsItem = ({ icon: Icon, label, value }: StatsItemProps) => (
-  <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-background/60 p-3">
+const StatsItem = ({
+  icon: Icon,
+  label,
+  value
+}: StatsItemProps) => <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-background/60 p-3">
     <div className="flex items-center gap-2 text-sm">
       <Icon className="h-4 w-4 text-muted-foreground" />
-      <span className="text-muted-foreground">{label}</span>
+      
     </div>
     <span className="font-medium text-sm">{value}</span>
-  </div>
-);
+  </div>;
