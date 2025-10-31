@@ -165,33 +165,53 @@ const mainHandler = async (req: Request): Promise<Response> => {
       type: audioBlob.type 
     });
 
-    // ✅ Normalize MIME type based on URL extension if missing or generic
+    // ✅ Определяем формат файла из URL и Content-Type
     const inferExt = (url: string): string => {
       const m = url.toLowerCase().match(/\.([a-z0-9]+)(?:\?|#|$)/);
       return m ? m[1] : '';
     };
-    const ext = inferExt(audioUrl);
-    const mimeByExt: Record<string, string> = {
-      mp3: 'audio/mpeg',
-      wav: 'audio/wav',
-      ogg: 'audio/ogg',
-      flac: 'audio/flac',
-      aac: 'audio/aac',
-      m4a: 'audio/mp4',
-      mp4: 'audio/mp4'
-    };
-    const normalizedType = audioBlob.type && audioBlob.type !== 'application/octet-stream'
-      ? audioBlob.type
-      : (mimeByExt[ext] || 'audio/mpeg');
-
-logger.info('[ANALYZE-REF] 📤 Uploading to Mureka (normalized format)', {
-  originalType: audioBlob.type,
-  normalizedType,
-  audioSize: audioBlob.size
-});
-const filename = `reference.${ext || 'mp3'}`;
-const fileForUpload = new File([audioBlob], filename, { type: normalizedType });
-const uploadResult = await murekaClient.uploadFile(fileForUpload);
+    
+    const urlExt = inferExt(audioUrl);
+    const contentType = audioBlob.type || '';
+    
+    // Проверяем формат: Mureka принимает только MP3 и M4A
+    const isSupportedFormat = 
+      (urlExt === 'mp3' || contentType.includes('mpeg')) ||
+      (urlExt === 'm4a' || contentType.includes('mp4') || contentType.includes('m4a'));
+    
+    if (!isSupportedFormat) {
+      logger.error('[ANALYZE-REF] ❌ Unsupported file format detected', {
+        urlExt,
+        contentType,
+        audioUrl: audioUrl.substring(0, 100)
+      });
+      
+      return new Response(
+        JSON.stringify({ 
+          error: `Unsupported audio format. Detected: ${urlExt || 'unknown'} (${contentType}). Mureka API supports only MP3 and M4A files.`,
+          detectedFormat: urlExt || 'unknown',
+          detectedMimeType: contentType,
+          supportedFormats: ['mp3', 'm4a']
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Определяем правильный MIME type и расширение
+    const isM4a = urlExt === 'm4a' || contentType.includes('mp4') || contentType.includes('m4a');
+    const finalExt = isM4a ? 'm4a' : 'mp3';
+    const finalMimeType = isM4a ? 'audio/mp4' : 'audio/mpeg';
+    
+    logger.info('[ANALYZE-REF] 📤 Uploading to Mureka with validated format', {
+      originalType: audioBlob.type,
+      finalMimeType,
+      finalExt,
+      audioSize: audioBlob.size
+    });
+    
+    const filename = `reference.${finalExt}`;
+    const fileForUpload = new File([audioBlob], filename, { type: finalMimeType });
+    const uploadResult = await murekaClient.uploadFile(fileForUpload);
 
     if (uploadResult.code !== 200 || !uploadResult.data?.file_id) {
       throw new Error('Mureka file upload failed');
