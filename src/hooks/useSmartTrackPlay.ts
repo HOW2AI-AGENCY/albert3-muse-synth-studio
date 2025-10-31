@@ -122,7 +122,7 @@ export const useSmartTrackPlay = () => {
         parentTrackId: selectedVersion.parentTrackId,
         versionNumber: selectedVersion.versionNumber,
         isMasterVersion: selectedVersion.isMasterVersion,
-        isOriginalVersion: selectedVersion.versionNumber === 0 || selectedVersion.isOriginal === true,
+        isOriginal: selectedVersion.versionNumber === 0 || selectedVersion.isOriginal === true,
       };
 
       // Воспроизводим

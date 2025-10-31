@@ -36,7 +36,7 @@ export interface AudioPlayerTrack {
   parentTrackId?: string;
   versionNumber?: number;
   isMasterVersion?: boolean;
-  isOriginalVersion?: boolean;
+  isOriginal?: boolean; // ✅ Унифицировано с TrackWithVersions
   sourceVersionNumber?: number | null;
   title: string;
   audio_url: string; // Обязательное поле для плеера

@@ -19,6 +19,8 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { useRef } from 'react';
+import { getTrackWithVersions, getMasterVersion } from '@/features/tracks/api/trackVersions';
+import { logInfo, logError } from '@/utils/logger';
 
 export interface AudioPlayerTrack {
   id: string;
@@ -33,14 +35,19 @@ export interface AudioPlayerTrack {
   parentTrackId?: string;
   versionNumber?: number;
   isMasterVersion?: boolean;
-  isOriginalVersion?: boolean;
+  isOriginal?: boolean; // ✅ Унифицировано с TrackWithVersions
+  sourceVersionNumber?: number | null;
 }
 
 export interface TrackVersion {
   id: string;
   versionNumber: number;
-  isOriginalVersion: boolean;
+  isOriginal: boolean; // ✅ Унифицировано
   isMasterVersion: boolean;
+  audio_url?: string;
+  cover_url?: string;
+  duration?: number;
+  title: string;
 }
 
 interface AudioPlayerState {
@@ -141,13 +148,17 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             return;
           }
 
-          // New track - reset state
+          // New track - reset state and load versions
           set({
             currentTrack: track,
             isPlaying: true,
             currentTime: 0,
             duration: track.duration || 0,
           });
+          
+          // ✅ Автоматически загружаем версии при воспроизведении
+          const parentId = track.parentTrackId || track.id;
+          get().loadVersions(parentId);
         },
 
         pause: () => {
@@ -253,18 +264,102 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
         // VERSION ACTIONS
         // ==========================================
         switchToVersion: (versionId) => {
-          const { availableVersions, currentTrack } = get();
+          const { availableVersions, currentTrack, isPlaying } = get();
+          
+          if (!currentTrack) {
+            logError('Cannot switch version: no current track', new Error('No current track'), 'audioPlayerStore');
+            return;
+          }
+          
+          const version = availableVersions.find(v => v.id === versionId);
           const versionIndex = availableVersions.findIndex(v => v.id === versionId);
           
-          if (versionIndex !== -1 && currentTrack) {
-            // TODO: Load actual version track data and play it
-            set({ currentVersionIndex: versionIndex });
+          if (versionIndex === -1 || !version) {
+            logError('Version not found', new Error(`Version ${versionId} not found`), 'audioPlayerStore', { versionId });
+            return;
           }
+          
+          if (!version.audio_url) {
+            logError('Version has no audio URL', new Error('No audio URL'), 'audioPlayerStore', { versionId });
+            return;
+          }
+          
+          // ✅ Создаем новый трек с audio_url из выбранной версии
+          const newTrack: AudioPlayerTrack = {
+            ...currentTrack,
+            id: version.id,
+            audio_url: version.audio_url,
+            cover_url: version.cover_url || currentTrack.cover_url,
+            duration: version.duration || currentTrack.duration,
+            versionNumber: version.versionNumber,
+            isMasterVersion: version.isMasterVersion,
+            isOriginal: version.isOriginal,
+            parentTrackId: currentTrack.parentTrackId || currentTrack.id,
+            title: version.title,
+          };
+          
+          logInfo('Switching to version', 'audioPlayerStore', { 
+            fromId: currentTrack.id, 
+            toId: versionId,
+            versionNumber: version.versionNumber,
+            isMasterVersion: version.isMasterVersion,
+          });
+          
+          // ✅ Меняем трек и сбрасываем время
+          set({
+            currentTrack: newTrack,
+            currentVersionIndex: versionIndex,
+            currentTime: 0,
+            isPlaying, // Сохраняем состояние воспроизведения
+          });
         },
         
-        loadVersions: async (_trackId) => {
-          // TODO: Implement version loading from Supabase
-          set({ availableVersions: [], currentVersionIndex: -1 });
+        loadVersions: async (trackId) => {
+          try {
+            logInfo('Loading versions for track', 'audioPlayerStore', { trackId });
+            
+            // Загружаем все версии трека
+            const allVersions = await getTrackWithVersions(trackId);
+            
+            if (allVersions.length === 0) {
+              logInfo('No versions found', 'audioPlayerStore', { trackId });
+              set({ availableVersions: [], currentVersionIndex: -1 });
+              return;
+            }
+            
+            // Преобразуем TrackWithVersions в TrackVersion
+            const versions: TrackVersion[] = allVersions.map((v) => ({
+              id: v.id,
+              versionNumber: v.versionNumber,
+              isOriginal: v.isOriginal,
+              isMasterVersion: v.isMasterVersion,
+              audio_url: v.audio_url,
+              cover_url: v.cover_url,
+              duration: v.duration,
+              title: v.title,
+            }));
+            
+            // ✅ Находим мастер-версию
+            const masterVersion = getMasterVersion(allVersions);
+            const currentVersionIndex = masterVersion 
+              ? versions.findIndex(v => v.id === masterVersion.id)
+              : 0;
+            
+            logInfo('Versions loaded', 'audioPlayerStore', { 
+              trackId, 
+              count: versions.length,
+              masterVersionId: masterVersion?.id,
+              currentVersionIndex,
+            });
+            
+            set({ 
+              availableVersions: versions,
+              currentVersionIndex,
+            });
+          } catch (error) {
+            logError('Failed to load versions', error as Error, 'audioPlayerStore', { trackId });
+            set({ availableVersions: [], currentVersionIndex: -1 });
+          }
         },
 
         // ==========================================
@@ -393,4 +488,24 @@ export const useQueueControls = () =>
     addToQueue: state.addToQueue,
     removeFromQueue: state.removeFromQueue,
     clearQueue: state.clearQueue,
+  }));
+
+/**
+ * Get version state
+ * Only re-renders when versions or current version index changes
+ */
+export const useVersions = () => 
+  useAudioPlayerStore((state) => ({
+    availableVersions: state.availableVersions,
+    currentVersionIndex: state.currentVersionIndex,
+  }));
+
+/**
+ * Get version controls
+ * Returns stable function references
+ */
+export const useVersionControls = () => 
+  useAudioPlayerStore((state) => ({
+    switchToVersion: state.switchToVersion,
+    loadVersions: state.loadVersions,
   }));

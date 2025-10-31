@@ -44,6 +44,6 @@ export const buildAudioPlayerTrack = (
   parentTrackId: trackId,
   versionNumber: version.variant_index,
   isMasterVersion: version.is_preferred_variant,
-  isOriginalVersion: Boolean(version.is_original),
+  isOriginal: Boolean(version.is_original),
   sourceVersionNumber: version.source_variant_index ?? null,
 });
