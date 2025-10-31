@@ -266,7 +266,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
     // ============================================================================
 
     logger.info('[ANALYZE-REF] 🔍 Initiating song recognition');
-    const recognitionResult = await murekaClient.recognizeSong({ audio_file: fileId });
+    const recognitionResult = await murekaClient.recognizeSong({ upload_audio_id: fileId });
     
     if (recognitionResult.code !== 200 || !recognitionResult.data?.task_id) {
       logger.error('[ANALYZE-REF] ❌ Recognition start failed', { response: recognitionResult });
@@ -316,7 +316,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
       }
     }
     
-    const descriptionResult = await murekaClient.describeSong({ audio_file: fileId });
+    const descriptionResult = await murekaClient.describeSong({ url: describeUrl });
     
     if (descriptionResult.code !== 200 || !descriptionResult.data?.task_id) {
       throw new Error('Mureka song description failed to start');

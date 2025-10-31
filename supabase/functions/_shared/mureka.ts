@@ -174,7 +174,7 @@ export interface MurekaLyricsResponse {
  */
 export interface MurekaSongRecognitionPayload {
   /** ID аудиофайла из /v1/files/upload (обязательно) */
-  audio_file: string;
+  upload_audio_id: string;
 }
 
 /**
@@ -723,13 +723,13 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
      */
     async recognizeSong(payload: MurekaSongRecognitionPayload): Promise<MurekaRecognitionResponse> {
       logger.info('🔍 [MUREKA] Recognizing song', { 
-        audio_file: payload.audio_file 
+        upload_audio_id: payload.upload_audio_id 
       });
       
       return makeRequest(
         options.recognizeEndpoint || '/v1/song/recognize',
         'POST',
-        { audio_file: payload.audio_file }
+        { upload_audio_id: payload.upload_audio_id }
       );
     },
 

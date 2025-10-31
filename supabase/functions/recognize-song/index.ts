@@ -76,7 +76,7 @@ serve(async (req) => {
 
     // 5. Upload to Mureka
     logger.info('⬆️ Uploading to Mureka');
-    const uploadResponse = await murekaClient.uploadFile(audioBlob);
+    const uploadResponse = await murekaClient.uploadFile(audioBlob, { purpose: 'reference' });
     const file_id = uploadResponse.data.file_id;
 
     // 6. Create recognition record
@@ -96,8 +96,8 @@ serve(async (req) => {
     }
 
     // 7. Call Mureka recognition API
-    logger.info('🎵 Calling Mureka recognition API', { audio_file: file_id });
-    const recognizeResponse = await murekaClient.recognizeSong({ audio_file: file_id });
+    logger.info('🎵 Calling Mureka recognition API', { uploadAudioId: file_id });
+    const recognizeResponse = await murekaClient.recognizeSong({ upload_audio_id: file_id });
     const task_id = recognizeResponse.data.task_id;
 
     // 8. Update record with task ID
