@@ -11,6 +11,7 @@ import { AudioPreviewDialog } from '@/components/audio/AudioPreviewDialog';
 import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog';
 import { MurekaLyricsVariantDialog } from '@/components/lyrics/MurekaLyricsVariantDialog';
 import { PromptHistoryDialog } from '@/components/generator/PromptHistoryDialog';
+import { EnhancedPromptPreview } from '@/components/generator/EnhancedPromptPreview';
 import { supabase } from '@/integrations/supabase/client';
 import { toast as sonnerToast } from 'sonner';
 import { usePromptHistory } from '@/hooks/usePromptHistory';
@@ -19,6 +20,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import { getProviderModels, getDefaultModel, type MusicProvider as ProviderType } from '@/config/provider-models';
+import { enhancePrompt, isEnhancementEnabled } from '@/services/ai/prompt-enhancement';
 
 // New modular components
 import { GeneratorHeader } from '@/components/generator/GeneratorHeader';
@@ -59,6 +61,14 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     trackId: '',
     jobId: ''
   });
+  
+  // AI Enhancement state
+  const [enhancedPrompt, setEnhancedPrompt] = useState<{
+    enhanced: string;
+    addedElements: string[];
+    reasoning: string;
+  } | null>(null);
+  const [isEnhancing, setIsEnhancing] = useState(false);
   
   // ✅ Check for pending stem reference on mount
   useEffect(() => {
@@ -499,6 +509,32 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const handleGenerate = useCallback(async () => {
     vibrate('heavy');
 
+    // Check if AI enhancement is enabled
+    if (isEnhancementEnabled() && params.prompt.trim() && !enhancedPrompt) {
+      setIsEnhancing(true);
+      try {
+        const result = await enhancePrompt({
+          prompt: params.prompt,
+          genre: params.tags.split(',')[0]?.trim(),
+          mood: '', // Could extract from tags
+          tags: params.tags,
+          provider: selectedProvider as 'suno' | 'mureka',
+        });
+        
+        setEnhancedPrompt({
+          enhanced: result.enhancedPrompt,
+          addedElements: result.addedElements,
+          reasoning: result.reasoning,
+        });
+        setIsEnhancing(false);
+        return; // Wait for user to accept/reject
+      } catch (error) {
+        logger.error('Failed to enhance prompt', error as Error);
+        // Continue with original prompt on error
+        setIsEnhancing(false);
+      }
+    }
+
     // Pre-flight balance check for Suno
     if (selectedProvider === 'suno') {
       const credits = sunoBalance?.balance || 0;
@@ -610,6 +646,21 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     }
   }, [params, generate, toast, vibrate, mode, selectedProvider, sunoBalance, savePrompt]);
 
+  // Enhanced prompt handlers
+  const handleEnhancedPromptAccept = useCallback((finalPrompt: string) => {
+    setParam('prompt', finalPrompt);
+    setDebouncedPrompt(finalPrompt);
+    setEnhancedPrompt(null);
+    // Trigger generation with enhanced prompt
+    setTimeout(() => handleGenerate(), 100);
+  }, [setParam, setDebouncedPrompt, handleGenerate]);
+
+  const handleEnhancedPromptReject = useCallback(() => {
+    setEnhancedPrompt(null);
+    // Continue with original prompt
+    setTimeout(() => handleGenerate(), 100);
+  }, [handleGenerate]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -660,6 +711,21 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
           "space-y-2",
           isMobile ? "p-3" : "p-2.5"
         )}>
+          {/* Enhanced Prompt Preview */}
+          {enhancedPrompt && (
+            <div className="px-1">
+              <EnhancedPromptPreview
+                original={params.prompt}
+                enhanced={enhancedPrompt.enhanced}
+                addedElements={enhancedPrompt.addedElements}
+                reasoning={enhancedPrompt.reasoning}
+                onAccept={handleEnhancedPromptAccept}
+                onReject={handleEnhancedPromptReject}
+                isLoading={isGenerating}
+              />
+            </div>
+          )}
+
           {mode === 'simple' ? (
             <SimpleModeForm
               params={params}
@@ -667,7 +733,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               onBoostPrompt={handleBoostPrompt}
               onGenerate={handleGenerate}
               isBoosting={isBoosting}
-              isGenerating={isGenerating}
+              isGenerating={isGenerating || isEnhancing}
               showPresets={showPresets}
               onPresetSelect={handlePresetSelect}
               debouncedPrompt={debouncedPrompt}
@@ -687,7 +753,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               onRecordComplete={handleRecordComplete}
               onAnalysisComplete={handleAnalysisComplete}
               isBoosting={isBoosting}
-              isGenerating={isGenerating}
+              isGenerating={isGenerating || isEnhancing}
               isUploading={isUploading}
               debouncedPrompt={debouncedPrompt}
               debouncedLyrics={debouncedLyrics}
