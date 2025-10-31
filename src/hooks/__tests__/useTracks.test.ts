@@ -63,6 +63,13 @@ describe('useTracks', () => {
     audio_url: 'https://example.com/audio.mp3',
     status: 'completed',
     created_at: '2024-01-15T12:00:00Z',
+    // Archiving fields
+    archived_to_storage: false,
+    storage_audio_url: null,
+    storage_cover_url: null,
+    storage_video_url: null,
+    archive_scheduled_at: null,
+    archived_at: null,
     progress_percent: 0,
     improved_prompt: null,
     duration: null,

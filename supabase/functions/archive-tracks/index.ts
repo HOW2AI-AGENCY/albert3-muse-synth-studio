@@ -260,12 +260,13 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error) {
-    console.error('❌ Archive function error:', error);
+  } catch (funcError) {
+    const errorMsg = funcError instanceof Error ? funcError.message : 'Unknown error';
+    console.error('❌ Archive function error:', funcError);
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
+        error: errorMsg,
       }),
       { 
         status: 500,

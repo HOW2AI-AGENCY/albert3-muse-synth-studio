@@ -28,6 +28,13 @@ export const mapTrackRowToTrack = (track: TrackRow): Track => ({
   ...track,
   status: isTrackStatus(track.status) ? track.status : "pending",
   idempotency_key: track.idempotency_key ?? null,
+  // New archiving fields with defaults
+  archived_to_storage: track.archived_to_storage ?? false,
+  storage_audio_url: track.storage_audio_url ?? null,
+  storage_cover_url: track.storage_cover_url ?? null,
+  storage_video_url: track.storage_video_url ?? null,
+  archive_scheduled_at: track.archive_scheduled_at ?? null,
+  archived_at: track.archived_at ?? null,
 });
 
 export interface ImprovePromptRequest {
@@ -517,7 +524,13 @@ export class ApiService {
           view_count,
           reference_audio_url,
           progress_percent,
-          idempotency_key
+          idempotency_key,
+          archived_to_storage,
+          storage_audio_url,
+          storage_cover_url,
+          storage_video_url,
+          archive_scheduled_at,
+          archived_at
         `)
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
