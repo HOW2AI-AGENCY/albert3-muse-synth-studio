@@ -52,23 +52,63 @@ export const AudioController = () => {
     const audio = audioRef?.current;
     if (!audio || !currentTrack?.audio_url) return;
 
-    logger.info('Loading new track', 'AudioController', { 
-      trackId: currentTrack.id,
-      audio_url: currentTrack.audio_url.substring(0, 100)
-    });
+    // ✅ Retry state
+    let retryCount = 0;
+    const MAX_RETRIES = 3;
+    const RETRY_DELAYS = [1000, 3000, 5000]; // Exponential backoff
 
-    // Сброс текущих значений
-    audio.src = currentTrack.audio_url;
-    audio.load();
-    updateCurrentTime(0);
-    
-    // Автовоспроизведение при смене трека
-    if (isPlaying) {
-      audio.play().catch((error) => {
-        logger.error('Auto-play failed', error as Error, 'AudioController');
-        pause();
-      });
-    }
+    const loadAudioWithRetry = async () => {
+      try {
+        logger.info('Loading new track', 'AudioController', { 
+          trackId: currentTrack.id,
+          audio_url: currentTrack.audio_url.substring(0, 100),
+          attempt: retryCount + 1,
+        });
+
+        // Сброс текущих значений
+        audio.src = currentTrack.audio_url;
+        audio.load();
+        updateCurrentTime(0);
+        
+        // Автовоспроизведение при смене трека
+        if (isPlaying) {
+          await audio.play();
+        }
+      } catch (error) {
+        // ✅ Retry logic for network/temporary errors
+        const isRetryableError = error instanceof Error && (
+          error.message.includes('network') ||
+          error.message.includes('fetch') ||
+          error.message.includes('timeout') ||
+          error.name === 'AbortError' ||
+          error.name === 'NetworkError'
+        );
+
+        if (isRetryableError && retryCount < MAX_RETRIES) {
+          retryCount++;
+          const delay = RETRY_DELAYS[retryCount - 1];
+          
+          logger.warn(`Audio load failed, retrying in ${delay}ms`, 'AudioController', {
+            trackId: currentTrack.id,
+            attempt: retryCount,
+            maxRetries: MAX_RETRIES,
+            error: error instanceof Error ? error.message : String(error),
+          });
+
+          setTimeout(() => {
+            loadAudioWithRetry();
+          }, delay);
+        } else {
+          logger.error('Auto-play failed after retries', error as Error, 'AudioController', {
+            trackId: currentTrack.id,
+            attempts: retryCount + 1,
+          });
+          pause();
+        }
+      }
+    };
+
+    loadAudioWithRetry();
   }, [currentTrack?.audio_url, currentTrack?.id, audioRef, isPlaying, pause, updateCurrentTime]);
 
   // ============= ГРОМКОСТЬ =============
@@ -112,15 +152,26 @@ export const AudioController = () => {
     };
 
     const handleError = () => {
+      const errorCode = audio.error?.code;
+      const errorMessage = audio.error?.message || 'Unknown error';
+      
       logger.error('Audio loading error', new Error('Audio failed to load'), 'AudioController', {
         trackId: currentTrack?.id,
         audio_url: currentTrack?.audio_url?.substring(0, 100),
-        errorCode: audio.error?.code,
-        errorMessage: audio.error?.message,
+        errorCode,
+        errorMessage,
       });
 
-      // Show user-friendly error message
-      toast.error('Ошибка загрузки аудио');
+      // ✅ Show specific error messages based on error code
+      const errorMessages: Record<number, string> = {
+        1: 'Загрузка аудио прервана', // MEDIA_ERR_ABORTED
+        2: 'Ошибка сети при загрузке аудио', // MEDIA_ERR_NETWORK
+        3: 'Не удалось декодировать аудио', // MEDIA_ERR_DECODE
+        4: 'Формат аудио не поддерживается', // MEDIA_ERR_SRC_NOT_SUPPORTED
+      };
+
+      const userMessage = errorCode ? errorMessages[errorCode] || 'Ошибка загрузки аудио' : 'Ошибка загрузки аудио';
+      toast.error(userMessage);
       pause();
     };
 

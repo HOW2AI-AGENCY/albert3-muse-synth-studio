@@ -305,8 +305,12 @@ export class GenerationService {
    * Генерация музыки с полным циклом обработки
    */
   static async generate(request: GenerationRequest): Promise<GenerationResult> {
+    // ✅ Generate Correlation ID for end-to-end tracing
+    const correlationId = crypto.randomUUID();
     const context = 'GenerationService.generate';
+    
     logger.info('🎵 [GENERATION START] Starting music generation', context, {
+      correlationId,
       provider: request.provider,
       prompt: request.prompt.substring(0, 50) + '...',
       promptLength: request.prompt.length,
@@ -378,10 +382,12 @@ export class GenerationService {
         ...request,
         provider: request.provider,
         trackId,
+        correlationId, // ✅ Pass correlation ID to provider
       };
 
       // 8. Вызов провайдера
       logger.info('[STEP 5] Invoking provider', context, {
+        correlationId,
         provider: request.provider,
         trackId,
         paramsPreview: {
@@ -394,6 +400,7 @@ export class GenerationService {
       const result = await routeToProvider(providerParams);
       
       logger.info('[STEP 5 ✓] Provider responded successfully', context, {
+        correlationId,
         provider: request.provider,
         trackId,
         taskId: result.taskId,
@@ -412,6 +419,7 @@ export class GenerationService {
       );
 
       logger.info('✅ [GENERATION SUCCESS] All steps completed', context, {
+        correlationId,
         provider: request.provider,
         trackId,
         taskId: result.taskId,
@@ -427,6 +435,7 @@ export class GenerationService {
 
     } catch (error) {
       logger.error('❌ [GENERATION FAILED] Error occurred', error instanceof Error ? error : new Error(String(error)), context, {
+        correlationId,
         provider: request.provider,
         errorName: error instanceof Error ? error.name : 'Unknown',
         errorMessage: error instanceof Error ? error.message : String(error),

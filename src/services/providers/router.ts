@@ -15,6 +15,7 @@ const context = 'ProviderRouter';
 export interface GenerateOptions {
   provider: MusicProvider;
   trackId?: string;
+  correlationId?: string; // ✅ For end-to-end tracing
   title?: string;
   prompt: string;
   lyrics?: string;
@@ -54,9 +55,10 @@ export interface GenerateResponse {
  * Маршрутизация генерации музыки к нужному провайдеру
  */
 export const generateMusic = async (options: GenerateOptions): Promise<GenerateResponse> => {
-  const { provider, ...params } = options;
+  const { provider, correlationId, ...params } = options;
 
   const logData: Record<string, unknown> = { 
+    correlationId, // ✅ Add correlation ID to logs
     provider,
     promptPreview: params.prompt.substring(0, 50),
     promptLength: params.prompt.length,
@@ -132,6 +134,7 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
         };
 
         logger.info('📤 [ROUTER] Invoking Suno Edge Function', context, {
+          correlationId, // ✅ Track correlation ID
           trackId: params.trackId,
           bodyPreview: {
             promptLength: requestBody.prompt.length,
@@ -144,7 +147,10 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
 
         const { data, error } = await retryWithBackoff(
           () => supabase.functions.invoke('generate-suno', {
-            body: requestBody
+            body: requestBody,
+            headers: {
+              'X-Correlation-ID': correlationId || crypto.randomUUID(), // ✅ Pass to edge function
+            },
           }),
           {
             ...RETRY_CONFIGS.critical,
@@ -164,6 +170,7 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
 
         if (error) {
           logger.error('❌ [ROUTER] Suno Edge Function error', error, context, {
+            correlationId, // ✅ Track in errors
             trackId: params.trackId,
             errorDetails: error,
           });
@@ -171,6 +178,7 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
         }
 
         logger.info('✅ [ROUTER] Suno Edge Function response received', context, {
+          correlationId, // ✅ Track in success
           trackId: params.trackId,
           responsePreview: data ? Object.keys(data) : 'null',
         });
@@ -208,6 +216,7 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
         };
 
         logger.info('📤 [ROUTER] Invoking Mureka Edge Function', context, {
+          correlationId, // ✅ Track correlation ID
           trackId: params.trackId,
           bodyPreview: {
             promptLength: requestBodyMureka.prompt.length,
@@ -220,7 +229,10 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
 
         const { data, error } = await retryWithBackoff(
           () => supabase.functions.invoke('generate-mureka', {
-            body: requestBodyMureka
+            body: requestBodyMureka,
+            headers: {
+              'X-Correlation-ID': correlationId || crypto.randomUUID(), // ✅ Pass to edge function
+            },
           }),
           {
             ...RETRY_CONFIGS.critical,
@@ -240,6 +252,7 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
 
         if (error) {
           logger.error('❌ [ROUTER] Mureka Edge Function error', error, context, {
+            correlationId, // ✅ Track in errors
             trackId: params.trackId,
             errorDetails: error,
           });
@@ -247,6 +260,7 @@ export const generateMusic = async (options: GenerateOptions): Promise<GenerateR
         }
 
         logger.info('✅ [ROUTER] Mureka Edge Function response received', context, {
+          correlationId, // ✅ Track in success
           trackId: params.trackId,
           responsePreview: data ? Object.keys(data) : 'null',
         });
