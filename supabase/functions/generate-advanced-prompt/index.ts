@@ -39,16 +39,18 @@ const mainHandler = async (req: Request) => {
       );
     }
 
+    // Create Supabase client with user's JWT
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
-        global: {
-          headers: { Authorization: authHeader }
+        global: { 
+          headers: { Authorization: authHeader } 
         }
       }
     );
 
+    // Verify user authentication
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
 
     if (authError || !user) {
@@ -78,6 +80,7 @@ const mainHandler = async (req: Request) => {
     }
 
     logger.info('Processing advanced prompt generation', {
+      userId: user.id,
       hasLyrics: !!currentLyrics,
       tagsCount: styleRecommendations.tags?.length || 0,
       instrumentsCount: styleRecommendations.instruments?.length || 0,
