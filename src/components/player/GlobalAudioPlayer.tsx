@@ -140,7 +140,10 @@ const GlobalAudioPlayer = memo(() => {
     }
   );
 
-  if (!currentTrack) return null;
+  // ✅ FIX: Не рендерить если нет трека ИЛИ нет аудио
+  if (!currentTrack || !currentTrack.audio_url) {
+    return null;
+  }
 
   // Mobile: Use mini player + full screen player
   if (isMobile) {

@@ -197,38 +197,94 @@ export async function downloadAndUploadCover(
   supabase: SupabaseClient
 ): Promise<string> {
   import('../_shared/logger.ts').then(({ logger }) => {
-    logger.info('Downloading cover from external URL', { trackId, fileName });
+    logger.info('Downloading cover from external URL', { 
+      trackId, 
+      fileName,
+      urlPreview: coverUrl.substring(0, 80)
+    });
   });
   
   try {
-    const response = await downloadWithRetry(coverUrl);
-    const coverBlob = await response.blob();
+    // ✅ FIX: Увеличиваем таймаут до 30 секунд для больших изображений
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 секунд
     
-    const path = `${userId}/${trackId}/${fileName}`;
+    let response: Response;
+    try {
+      response = await fetch(coverUrl, { 
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Albert3-Muse-Synth-Studio/1.0',
+        }
+      });
+      clearTimeout(timeoutId);
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      throw fetchError;
+    }
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const coverBlob = await response.blob();
+    const originalType = coverBlob.type || 'image/jpeg';
+    
+    import('../_shared/logger.ts').then(({ logger }) => {
+      logger.info('Cover downloaded', {
+        trackId,
+        sizeMB: (coverBlob.size / 1024 / 1024).toFixed(2),
+        contentType: originalType
+      });
+    });
+    
+    // ✅ Определяем правильное расширение файла
+    const ext = originalType.split('/')[1] || 'jpg';
+    const finalFileName = fileName.replace(/\.\w+$/, `.${ext}`);
+    const path = `${userId}/${trackId}/${finalFileName}`;
     
     const { data, error } = await uploadWithRetry(
       supabase,
       'tracks-covers',
       path,
       coverBlob,
-      coverBlob.type || 'image/jpeg'
+      originalType
     );
     
-    if (error) throw error;
+    if (error) {
+      import('../_shared/logger.ts').then(({ logger }) => {
+        logger.error('Storage upload failed, using original URL', { 
+          error, 
+          trackId,
+          errorMessage: error && typeof error === 'object' && 'message' in error ? error.message : String(error)
+        });
+      });
+      return coverUrl; // ✅ Fallback к оригинальному URL
+    }
     
     const { data: { publicUrl } } = supabase.storage
       .from('tracks-covers')
       .getPublicUrl(path);
     
     import('../_shared/logger.ts').then(({ logger }) => {
-      logger.info('Cover uploaded successfully', { trackId, fileName });
+      logger.info('✅ Cover uploaded to storage', { 
+        trackId, 
+        fileName: finalFileName,
+        storageUrlPreview: publicUrl.substring(0, 80)
+      });
     });
     return publicUrl;
   } catch (error) {
     import('../_shared/logger.ts').then(({ logger }) => {
-      logger.error('Failed to upload cover', { error, trackId, fileName });
+      logger.error('Failed to download/upload cover', { 
+        error, 
+        trackId, 
+        fileName,
+        errorMessage: error instanceof Error ? error.message : String(error)
+      });
+      logger.warn('Falling back to original URL', { trackId });
     });
-    return coverUrl; // Fallback to original URL
+    return coverUrl; // ✅ Fallback к оригинальному URL
   }
 }
 

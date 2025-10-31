@@ -142,6 +142,15 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
         playTrack: (track) => {
           const state = get();
           
+          // ✅ FIX: Проверить что audio_url существует
+          if (!track.audio_url) {
+            console.error('Cannot play track without audio URL', {
+              trackId: track.id,
+              title: track.title,
+            });
+            return;
+          }
+          
           // If same track, just resume
           if (state.currentTrack?.id === track.id) {
             set({ isPlaying: true });

@@ -286,22 +286,47 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
     
     // ✅ Save additional variants as track_versions if multiple clips exist
     if (normalized.clips.length > 1) {
-      const trackRecord = await this.supabase
-        .from('tracks')
-        .select('id, user_id, title')
-        .eq('mureka_task_id', taskId)
-        .single();
+      // ✅ FIX: Retry logic для поиска трека
+      let trackRecord = null;
+      let retries = 0;
+      const MAX_RETRIES = 3;
       
-      if (trackRecord.data) {
+      while (!trackRecord && retries < MAX_RETRIES) {
+        const { data, error } = await this.supabase
+          .from('tracks')
+          .select('id, user_id, title')
+          .eq('mureka_task_id', taskId)
+          .maybeSingle(); // ✅ Не бросает ошибку если нет записи
+        
+        if (!data && !error) {
+          logger.info(`⏳ [MUREKA] Track not found yet, retry ${retries + 1}/${MAX_RETRIES}`, { taskId });
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Подождать 1 секунду
+          retries++;
+          continue;
+        }
+        
+        if (error) {
+          logger.error('❌ [MUREKA] Error fetching track', { error, taskId });
+          throw error;
+        }
+        
+        trackRecord = { data, error: null };
+      }
+      
+      if (!trackRecord || !trackRecord.data) {
+        logger.error(`⚠️ [MUREKA] Track not found after ${MAX_RETRIES} retries`, { taskId });
+        // Продолжаем с одной версией
+      } else {
+        const trackData = trackRecord.data;
         const additionalClips = normalized.clips.slice(1);
         
         logger.info('💾 [MUREKA] Saving additional track variants', {
-          trackId: trackRecord.data.id,
+          trackId: trackData.id,
           variantsCount: additionalClips.length,
         });
         
         const versionsToInsert = additionalClips.map((clip, index) => ({
-          parent_track_id: trackRecord.data.id,
+          parent_track_id: trackData.id,
           variant_index: index + 1, // Start from 1 (main track is variant 0)
           is_preferred_variant: false,
           is_primary_variant: false,
@@ -315,7 +340,7 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
             mureka_clip_id: clip.id,
             created_at: clip.created_at,
             tags: clip.tags,
-            title: clip.title || clip.name || `${trackRecord.data.title || 'Track'} (V${index + 2})`,
+            title: clip.title || clip.name || `${trackData.title || 'Track'} (V${index + 2})`,
           },
         }));
         
@@ -327,17 +352,15 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
           logger.error('❌ [MUREKA] Failed to save track versions', {
             error: versionsError,
             errorMessage: versionsError.message,
-            trackId: trackRecord.data.id,
+            trackId: trackData.id,
             versionsCount: versionsToInsert.length,
           });
         } else {
           logger.info('✅ [MUREKA] Track versions saved successfully', {
-            trackId: trackRecord.data.id,
+            trackId: trackData.id,
             versionsCount: versionsToInsert.length,
           });
         }
-      } else {
-        logger.error('⚠️ [MUREKA] Track not found for versions', { taskId });
       }
     }
 
