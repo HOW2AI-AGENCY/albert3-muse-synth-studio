@@ -87,38 +87,87 @@ serve(async (req) => {
     const murekaClient = createMurekaClient({ apiKey: murekaApiKey });
 
     // 5. Create description record (без загрузки файла)
-    const { data: description, error: insertError } = await supabaseAdmin
+    const { data: description, error: upsertError } = await supabaseAdmin
       .from('song_descriptions')
-      .insert({
+      .upsert({
         user_id: user.id,
         track_id: trackId,
         audio_file_url: track.audio_url,
         status: 'processing',
-      })
+        ai_description: null,
+        detected_genre: null,
+        detected_mood: null,
+        tempo_bpm: null,
+        key_signature: null,
+        detected_instruments: [],
+        energy_level: null,
+        danceability: null,
+        valence: null,
+        error_message: null,
+      }, { onConflict: 'track_id' })
       .select('id')
       .single();
 
-    if (insertError || !description) {
+    if (upsertError || !description) {
       throw new Error('Failed to create description record');
     }
 
     // 6. Call Mureka describe API (используем прямой URL, НЕ загружаем файл)
     logger.info('🎼 Calling Mureka describe API', { audioUrl: track.audio_url });
-    const describeResponse = await murekaClient.describeSong({ url: track.audio_url });
-    const task_id = describeResponse.data.task_id;
+    const describeResponse: any = await murekaClient.describeSong({ url: track.audio_url });
 
-    await supabaseAdmin
-      .from('song_descriptions')
-      .update({ mureka_task_id: task_id })
-      .eq('id', description.id);
+    // Handle both response shapes: task-based or immediate description
+    let task_id: string | null = null;
+    if (describeResponse?.data?.task_id) {
+      task_id = describeResponse.data.task_id;
+    } else if (typeof describeResponse?.task_id === 'string') {
+      task_id = describeResponse.task_id as string;
+    }
 
-    logger.info('✅ Description task created', {
-      descriptionId: description?.id,
-      taskId: task_id,
-    });
+    if (task_id) {
+      await supabaseAdmin
+        .from('song_descriptions')
+        .update({ mureka_task_id: task_id })
+        .eq('id', description.id);
+
+      logger.info('✅ Description task created', {
+        descriptionId: description?.id,
+        taskId: task_id,
+      });
+    } else {
+      // Immediate description response - update record and finish
+      const desc = describeResponse?.data?.description || describeResponse;
+      const ai_description = desc?.text || desc?.description || null;
+      const detected_genre = desc?.genre || (Array.isArray(desc?.genres) ? desc.genres[0] : null);
+      const detected_mood = desc?.mood || (Array.isArray(desc?.tags) ? desc.tags[0] : null);
+      const detected_instruments = desc?.instruments || desc?.instrument || [];
+
+      await supabaseAdmin
+        .from('song_descriptions')
+        .update({
+          status: 'completed',
+          ai_description,
+          detected_genre,
+          detected_mood,
+          tempo_bpm: desc?.tempo_bpm ?? null,
+          key_signature: desc?.key ?? null,
+          detected_instruments,
+          energy_level: desc?.energy_level ?? null,
+          danceability: desc?.danceability ?? null,
+          valence: desc?.valence ?? null,
+          metadata: describeResponse,
+        })
+        .eq('id', description.id);
+
+      logger.info('✅ Description completed immediately (no task_id)', {
+        descriptionId: description?.id,
+        genre: detected_genre,
+        mood: detected_mood,
+      });
+    }
 
     // 9. Background polling
-    async function pollDescription(attemptNumber = 0): Promise<void> {
+    async function pollDescription(taskId: string, attemptNumber = 0): Promise<void> {
       if (attemptNumber >= 30) {
         if (description) {
           await supabaseAdmin
@@ -133,7 +182,7 @@ serve(async (req) => {
       }
 
       try {
-        const result = await murekaClient.queryTask(task_id) as MurekaDescriptionResponse;
+        const result = await murekaClient.queryTask(taskId) as MurekaDescriptionResponse;
 
         if (result.data.description && description) {
           await supabaseAdmin
@@ -169,18 +218,20 @@ serve(async (req) => {
             .eq('id', description.id);
 
         } else {
-          setTimeout(() => pollDescription(attemptNumber + 1), 10000);
+          setTimeout(() => pollDescription(taskId, attemptNumber + 1), 10000);
         }
 
       } catch (pollError) {
         logger.error('🔴 Description polling error', { error: pollError });
-        setTimeout(() => pollDescription(attemptNumber + 1), 10000);
+        setTimeout(() => pollDescription(taskId, attemptNumber + 1), 10000);
       }
     }
 
-    pollDescription().catch((err) => {
-      logger.error('🔴 Background description polling failed', { error: err });
-    });
+    if (task_id) {
+      pollDescription(task_id).catch((err) => {
+        logger.error('🔴 Background description polling failed', { error: err });
+      });
+    }
 
     // 10. Return response
     return new Response(
