@@ -1,0 +1,382 @@
+/**
+ * Base Generation Handler
+ * 
+ * Abstract class that provides common logic for music generation:
+ * - Track creation and management
+ * - Idempotency handling
+ * - Polling mechanism
+ * - Storage uploads
+ * - Error handling and logging
+ * 
+ * Provider-specific implementations (Suno, Mureka) extend this class
+ * and implement abstract methods for API calls and response parsing.
+ */
+
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { logger } from "./logger.ts";
+import { findOrCreateTrack } from "./track-helpers.ts";
+import { downloadAndUploadAudio, downloadAndUploadCover, downloadAndUploadVideo } from "./storage.ts";
+import type {
+  BaseGenerationParams,
+  GenerationResponse,
+  ProviderTrackData,
+  PollingConfig,
+  TrackMetadata,
+} from "./types/generation.ts";
+import { DEFAULT_POLLING_CONFIG } from "./types/generation.ts";
+
+export abstract class GenerationHandler<TParams extends BaseGenerationParams = BaseGenerationParams> {
+  protected abstract providerName: 'suno' | 'mureka';
+  protected supabase: SupabaseClient;
+  protected userId: string;
+  
+  constructor(supabase: SupabaseClient, userId: string) {
+    this.supabase = supabase;
+    this.userId = userId;
+  }
+
+  // ============= Abstract Methods (Provider-Specific) =============
+
+  /**
+   * Call the provider's API to start music generation
+   * @returns Task ID from the provider
+   */
+  protected abstract callProviderAPI(params: TParams, trackId: string): Promise<string>;
+
+  /**
+   * Poll the provider's API to check task status
+   * @returns Current status and track data
+   */
+  protected abstract pollTaskStatus(taskId: string): Promise<ProviderTrackData>;
+
+  /**
+   * Validate provider-specific parameters before generation
+   */
+  protected abstract validateProviderParams(params: TParams): Promise<void>;
+
+  /**
+   * Build provider-specific metadata for the track
+   */
+  protected abstract buildMetadata(params: TParams): Record<string, unknown>;
+
+  // ============= Public API =============
+
+  /**
+   * Main generation flow
+   */
+  async generate(params: TParams): Promise<GenerationResponse> {
+    const startTime = Date.now();
+    
+    try {
+      logger.info(`🎵 [${this.providerName.toUpperCase()}] Generation request received`, {
+        userId: this.userId,
+        promptLength: params.prompt.length,
+        hasLyrics: !!params.lyrics,
+        provider: this.providerName,
+      });
+
+      // 1. Validate parameters
+      await this.validateProviderParams(params);
+
+      // 2. Check idempotency
+      const idempotencyKey = params.idempotencyKey || crypto.randomUUID();
+      const existingTrack = await this.checkIdempotency(idempotencyKey);
+      
+      if (existingTrack) {
+        return {
+          success: true,
+          trackId: existingTrack.id,
+          taskId: existingTrack.taskId,
+          message: 'Request already processed (idempotency check)',
+        };
+      }
+
+      // 3. Create track record
+      const { trackId } = await this.createTrackRecord(params, idempotencyKey);
+      
+      logger.info(`✅ [${this.providerName.toUpperCase()}] Track created`, { trackId });
+
+      // 4. Call provider API
+      const taskId = await this.callProviderAPI(params, trackId);
+      
+      logger.info(`✅ [${this.providerName.toUpperCase()}] API call successful`, { 
+        trackId, 
+        taskId,
+        duration: Date.now() - startTime,
+      });
+
+      // 5. Update track with task ID
+      await this.updateTrackTaskId(trackId, taskId);
+
+      // 6. Start background polling
+      this.startPolling(trackId, taskId).catch(err => {
+        logger.error(`🔴 [${this.providerName.toUpperCase()}] Polling error`, { 
+          error: err,
+          trackId,
+          taskId,
+        });
+      });
+
+      return {
+        success: true,
+        trackId,
+        taskId,
+        message: 'Generation started successfully',
+      };
+
+    } catch (error) {
+      logger.error(`🔴 [${this.providerName.toUpperCase()}] Generation failed`, { 
+        error,
+        userId: this.userId,
+        duration: Date.now() - startTime,
+      });
+      
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  // ============= Protected Helper Methods =============
+
+  /**
+   * Check if this request was already processed (idempotency)
+   */
+  protected async checkIdempotency(idempotencyKey: string): Promise<{ id: string; taskId?: string } | null> {
+    const { data: existingTrack } = await this.supabase
+      .from('tracks')
+      .select('id, status, metadata')
+      .eq('idempotency_key', idempotencyKey)
+      .eq('user_id', this.userId)
+      .maybeSingle();
+
+    if (existingTrack) {
+      const taskId = (existingTrack.metadata as any)?.suno_task_id || 
+                     (existingTrack.metadata as any)?.mureka_task_id;
+      
+      logger.info(`🔁 [${this.providerName.toUpperCase()}] Idempotent request detected`, {
+        trackId: existingTrack.id,
+        status: existingTrack.status,
+        taskId,
+      });
+      
+      return { id: existingTrack.id, taskId };
+    }
+
+    return null;
+  }
+
+  /**
+   * Create or find track record in database
+   */
+  protected async createTrackRecord(params: TParams, idempotencyKey: string): Promise<{ trackId: string }> {
+    const metadata = this.buildMetadata(params);
+
+    const { trackId } = await findOrCreateTrack(this.supabase, this.userId, {
+      trackId: params.trackId,
+      title: params.title,
+      prompt: params.prompt,
+      lyrics: params.lyrics,
+      hasVocals: params.hasVocals,
+      styleTags: params.styleTags,
+      provider: this.providerName,
+      requestMetadata: metadata,
+      idempotencyKey,
+    });
+
+    return { trackId };
+  }
+
+  /**
+   * Update track with provider task ID
+   */
+  protected async updateTrackTaskId(trackId: string, taskId: string): Promise<void> {
+    const taskIdField = this.providerName === 'suno' ? 'suno_task_id' : 'mureka_task_id';
+    
+    await this.supabase
+      .from('tracks')
+      .update({
+        suno_id: taskId,
+        status: 'processing',
+        metadata: {
+          [taskIdField]: taskId,
+          started_at: new Date().toISOString(),
+          polling_attempts: 0,
+        },
+      })
+      .eq('id', trackId);
+  }
+
+  /**
+   * Start polling the provider API for completion
+   */
+  protected async startPolling(
+    trackId: string, 
+    taskId: string,
+    config: PollingConfig = DEFAULT_POLLING_CONFIG as PollingConfig
+  ): Promise<void> {
+    let attemptNumber = 0;
+
+    const poll = async (): Promise<void> => {
+      if (attemptNumber >= config.maxAttempts) {
+        await this.handlePollingTimeout(trackId, taskId);
+        return;
+      }
+
+      try {
+        const trackData = await this.pollTaskStatus(taskId);
+        
+        // Update polling metadata
+        await this.supabase
+          .from('tracks')
+          .update({
+            metadata: {
+              polling_attempts: attemptNumber + 1,
+              last_poll_at: new Date().toISOString(),
+            },
+          })
+          .eq('id', trackId);
+
+        logger.info(`🔍 [${this.providerName.toUpperCase()}] Poll attempt ${attemptNumber + 1}/${config.maxAttempts}`, {
+          trackId,
+          taskId,
+          status: trackData.status,
+        });
+
+        if (trackData.status === 'completed') {
+          await this.handleCompletedTrack(trackId, trackData);
+          return;
+        }
+
+        if (trackData.status === 'failed') {
+          await this.handleFailedTrack(trackId, trackData.error || 'Generation failed');
+          return;
+        }
+
+        // Continue polling
+        attemptNumber++;
+        setTimeout(poll, config.intervalMs);
+
+      } catch (error) {
+        logger.error(`🔴 [${this.providerName.toUpperCase()}] Polling error`, {
+          error,
+          trackId,
+          taskId,
+          attempt: attemptNumber + 1,
+        });
+        
+        // Retry polling after error
+        attemptNumber++;
+        setTimeout(poll, config.intervalMs);
+      }
+    };
+
+    // Start polling
+    setTimeout(poll, config.intervalMs);
+  }
+
+  /**
+   * Handle successfully completed track
+   */
+  protected async handleCompletedTrack(trackId: string, trackData: ProviderTrackData): Promise<void> {
+    logger.info(`✅ [${this.providerName.toUpperCase()}] Track completed`, { trackId });
+
+    // Upload media to storage
+    let finalAudioUrl = trackData.audio_url;
+    let finalCoverUrl = trackData.cover_url;
+    let finalVideoUrl = trackData.video_url;
+
+    try {
+      if (trackData.audio_url) {
+        finalAudioUrl = await downloadAndUploadAudio(
+          trackData.audio_url,
+          this.userId,
+          trackId,
+          'main.mp3',
+          this.supabase
+        );
+        logger.info(`📥 [${this.providerName.toUpperCase()}] Audio uploaded to storage`, { trackId });
+      }
+
+      if (trackData.cover_url) {
+        finalCoverUrl = await downloadAndUploadCover(
+          trackData.cover_url,
+          this.userId,
+          trackId,
+          'cover.webp',
+          this.supabase
+        );
+        logger.info(`🖼️ [${this.providerName.toUpperCase()}] Cover uploaded to storage`, { trackId });
+      }
+
+      if (trackData.video_url) {
+        finalVideoUrl = await downloadAndUploadVideo(
+          trackData.video_url,
+          this.userId,
+          trackId,
+          'video.mp4',
+          this.supabase
+        );
+        logger.info(`🎬 [${this.providerName.toUpperCase()}] Video uploaded to storage`, { trackId });
+      }
+    } catch (uploadError) {
+      logger.error(`⚠️ [${this.providerName.toUpperCase()}] Media upload failed, using external URLs`, {
+        error: uploadError,
+        trackId,
+      });
+    }
+
+    // Update track as completed
+    await this.supabase
+      .from('tracks')
+      .update({
+        status: 'completed',
+        audio_url: finalAudioUrl,
+        cover_url: finalCoverUrl,
+        video_url: finalVideoUrl,
+        duration: trackData.duration,
+        metadata: {
+          completed_at: new Date().toISOString(),
+        },
+      })
+      .eq('id', trackId);
+
+    logger.info(`🎉 [${this.providerName.toUpperCase()}] Track finalized`, { trackId });
+  }
+
+  /**
+   * Handle failed track
+   */
+  protected async handleFailedTrack(trackId: string, errorMessage: string): Promise<void> {
+    logger.error(`❌ [${this.providerName.toUpperCase()}] Track failed`, {
+      trackId,
+      error: errorMessage,
+    });
+
+    await this.supabase
+      .from('tracks')
+      .update({
+        status: 'failed',
+        error_message: errorMessage,
+        metadata: {
+          failed_at: new Date().toISOString(),
+        },
+      })
+      .eq('id', trackId);
+  }
+
+  /**
+   * Handle polling timeout
+   */
+  protected async handlePollingTimeout(trackId: string, taskId: string): Promise<void> {
+    const errorMessage = `${this.providerName} generation timeout after ${DEFAULT_POLLING_CONFIG.timeoutMs / 60000} minutes`;
+    
+    logger.error(`⏱️ [${this.providerName.toUpperCase()}] Polling timeout`, {
+      trackId,
+      taskId,
+    });
+
+    await this.handleFailedTrack(trackId, errorMessage);
+  }
+}
