@@ -545,11 +545,13 @@ export type Database = {
           detected_mood: string | null
           energy_level: number | null
           error_message: string | null
+          fal_request_id: string | null
           id: string
           key_signature: string | null
           metadata: Json | null
           mureka_file_id: string | null
           mureka_task_id: string | null
+          provider: string | null
           status: string
           tempo_bpm: number | null
           track_id: string | null
@@ -567,11 +569,13 @@ export type Database = {
           detected_mood?: string | null
           energy_level?: number | null
           error_message?: string | null
+          fal_request_id?: string | null
           id?: string
           key_signature?: string | null
           metadata?: Json | null
           mureka_file_id?: string | null
           mureka_task_id?: string | null
+          provider?: string | null
           status?: string
           tempo_bpm?: number | null
           track_id?: string | null
@@ -589,11 +593,13 @@ export type Database = {
           detected_mood?: string | null
           energy_level?: number | null
           error_message?: string | null
+          fal_request_id?: string | null
           id?: string
           key_signature?: string | null
           metadata?: Json | null
           mureka_file_id?: string | null
           mureka_task_id?: string | null
+          provider?: string | null
           status?: string
           tempo_bpm?: number | null
           track_id?: string | null
@@ -618,10 +624,12 @@ export type Database = {
           created_at: string
           error_message: string | null
           external_ids: Json | null
+          fal_request_id: string | null
           id: string
           metadata: Json | null
           mureka_file_id: string | null
           mureka_task_id: string | null
+          provider: string | null
           recognized_album: string | null
           recognized_artist: string | null
           recognized_title: string | null
@@ -636,10 +644,12 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           external_ids?: Json | null
+          fal_request_id?: string | null
           id?: string
           metadata?: Json | null
           mureka_file_id?: string | null
           mureka_task_id?: string | null
+          provider?: string | null
           recognized_album?: string | null
           recognized_artist?: string | null
           recognized_title?: string | null
@@ -654,10 +664,12 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           external_ids?: Json | null
+          fal_request_id?: string | null
           id?: string
           metadata?: Json | null
           mureka_file_id?: string | null
           mureka_task_id?: string | null
+          provider?: string | null
           recognized_album?: string | null
           recognized_artist?: string | null
           recognized_title?: string | null
