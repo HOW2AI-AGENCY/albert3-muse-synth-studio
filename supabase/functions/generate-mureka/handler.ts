@@ -145,8 +145,12 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
   protected async callProviderAPI(params: MurekaGenerationParams, trackId: string): Promise<string> {
     const murekaClient = createMurekaClient({ apiKey: this.apiKey });
 
+    // ✅ FIX: Ensure lyrics are not empty for Mureka API
+    // If no lyrics provided, generate a default prompt-based placeholder
+    const lyrics = params.lyrics?.trim() || `[Instrumental]\n${params.prompt || 'Music'}`;
+
     const generatePayload = {
-      lyrics: params.lyrics || '',
+      lyrics,
       prompt: params.prompt || undefined,
       model: params.modelVersion || 'auto',
       n: 2, // Generate 2 variants
