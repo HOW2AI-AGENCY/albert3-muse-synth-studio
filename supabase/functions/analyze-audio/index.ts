@@ -66,9 +66,17 @@ async function mainHandler(req: Request): Promise<Response> {
 
     // Upload to Mureka
     const formData = new FormData();
-    formData.append('file', audioBlob, 'reference.mp3');
-    // ✅ CRITICAL: Add 'purpose' parameter (required by Mureka API)
-    // Using 'audio' purpose for general audio analysis
+    const contentType = (audioBlob as any).type || 'application/octet-stream';
+    const ext = contentType.includes('mpeg') ? 'mp3'
+      : contentType.includes('wav') ? 'wav'
+      : contentType.includes('ogg') ? 'ogg'
+      : contentType.includes('flac') ? 'flac'
+      : contentType.includes('aac') ? 'aac'
+      : contentType.includes('m4a') ? 'm4a'
+      : 'bin';
+    const normalized = new Blob([audioBlob], { type: contentType });
+    formData.append('file', normalized, `reference.${ext}`);
+    // REQUIRED by Mureka API
     formData.append('purpose', 'audio');
 
     logger.info('[analyze-audio] Uploading to Mureka API');

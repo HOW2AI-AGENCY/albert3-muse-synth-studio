@@ -727,7 +727,7 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
       return makeRequest(
         options.recognizeEndpoint || '/v1/song/recognize',
         'POST',
-        { audio_file: payload.audio_file, file_id: payload.audio_file }
+        { audio_file: payload.audio_file, file_id: payload.audio_file, id: payload.audio_file }
       );
     },
 
@@ -762,7 +762,7 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
       return makeRequest(
         options.describeEndpoint || '/v1/song/describe',
         'POST',
-        { audio_file: payload.audio_file, file_id: payload.audio_file }
+        { audio_file: payload.audio_file, file_id: payload.audio_file, id: payload.audio_file }
       );
     },
 
