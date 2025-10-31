@@ -16,8 +16,6 @@ import { StyleRecommendationsPanel } from "./StyleRecommendationsPanel";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 const usePlayTrack = () => useAudioPlayerStore(state => state.playTrack);
 import { AnalyticsService } from "@/services/analytics.service";
-import { useAdvancedPromptGenerator } from "@/hooks/useAdvancedPromptGenerator";
-import { toast } from "@/hooks/use-toast";
 interface Track {
   id: string;
   title: string;
@@ -249,39 +247,6 @@ export const DetailPanelContent = ({
     setSelectedVersionId(rightId);
     setComparisonRightId(leftId);
   }, []);
-  const { isPending: isGeneratingPrompt } = useAdvancedPromptGenerator({
-    onSuccess: (result) => {
-      // Update title if track title is generic/empty
-      if (!title || title === "Untitled" || title.includes("Track")) {
-        const words = result.enhancedPrompt.split(' ').slice(0, 5).join(' ');
-        setTitle(words.length > 50 ? words.substring(0, 47) + '...' : words);
-      }
-      
-      // Update genre/mood from meta-tags
-      const styleMeta = result.metaTags.find(t => t.toLowerCase().includes('style'));
-      if (styleMeta) {
-        setGenre(styleMeta.replace(/^style:\s*/i, '').trim());
-      }
-      
-      const moodMeta = result.metaTags.find(t => t.toLowerCase().includes('mood'));
-      if (moodMeta) {
-        setMood(moodMeta.replace(/^mood:\s*/i, '').trim());
-      }
-      
-      toast({
-        title: "Продвинутый промпт создан!",
-        description: "Данные обновлены. Используйте их для генерации музыки.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Ошибка генерации",
-        description: error.message || "Не удалось создать промпт. Попробуйте позже.",
-      });
-    }
-  });
-
   const handleTagsApply = (tags: string[]) => {
     if (!tags.length) {
       return;
@@ -373,14 +338,8 @@ export const DetailPanelContent = ({
                   context={track.prompt} 
                   currentTags={track.style_tags ?? []} 
                   onApplyTags={handleTagsApply}
-                  onGenerateAdvancedPrompt={(result) => {
-                    // Note: This is a simplified handler - full implementation would require
-                    // access to the parent WorkspaceGenerate component's prompt/lyrics state
-                    console.log('Advanced prompt generated:', result);
-                  }}
                   currentPrompt={track.prompt}
                   currentLyrics={track.lyrics}
-                  isGeneratingPrompt={isGeneratingPrompt}
                 />
               </CardContent>
             </Card>

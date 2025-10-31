@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { MUSIC_STYLES, getCategoryName, getRelatedStyles, getStyleById } from "@/data/music-styles";
 import { useStyleRecommendations } from "@/services/ai/style-recommendations";
 import type { StyleRecommendationRequest } from "@/types/styles";
-import type { AdvancedPromptResult } from "@/services/ai/advanced-prompt-generator";
+import type { AdvancedPromptRequest } from "@/services/ai/advanced-prompt-generator";
 const normaliseTag = (tag: string) => tag.trim().toLowerCase();
 const normaliseToId = (tag: string) => normaliseTag(tag).replace(/\s+/g, "-");
 const findStyleForTag = (tag: string) => {
@@ -22,7 +22,7 @@ const findStyleForTag = (tag: string) => {
 interface StyleRecommendationsPanelProps extends StyleRecommendationRequest {
   className?: string;
   onApplyTags?: (tags: string[]) => void;
-  onGenerateAdvancedPrompt?: (result: AdvancedPromptResult) => void;
+  onGenerateAdvancedPrompt?: (request: AdvancedPromptRequest) => void;
   currentPrompt?: string;
   currentLyrics?: string;
   isGeneratingPrompt?: boolean;
@@ -111,27 +111,33 @@ export const StyleRecommendationsPanel = ({
 
       {hasInput && !isPending && !isError && data && <div className="space-y-6">
           <div className="space-y-3">
-            <div className="flex items-center justify-between gap-2">
+            <div className="space-y-2">
               <h4 className="text-sm font-semibold">Рекомендованные теги</h4>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={() => onApplyTags?.(recommendedTags)} 
                   disabled={recommendedTags.length === 0 || !onApplyTags}
+                  className="flex-1 min-w-[120px]"
                 >
                   Применить теги
                 </Button>
-                {onGenerateAdvancedPrompt && currentPrompt && (
+                {onGenerateAdvancedPrompt && currentPrompt && data && (
                   <Button 
                     variant="default" 
                     size="sm"
-                    onClick={() => onGenerateAdvancedPrompt({ 
-                      enhancedPrompt: currentPrompt,
-                      formattedLyrics: currentLyrics || '',
-                      metaTags: []
-                    })}
-                    disabled={!data || isGeneratingPrompt}
+                    onClick={() => {
+                      onGenerateAdvancedPrompt({
+                        styleRecommendations: data,
+                        currentPrompt,
+                        currentLyrics,
+                        genre: undefined,
+                        mood
+                      });
+                    }}
+                    disabled={isGeneratingPrompt}
+                    className="flex-1 min-w-[140px]"
                   >
                     {isGeneratingPrompt ? (
                       <>
