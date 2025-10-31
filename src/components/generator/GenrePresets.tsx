@@ -144,13 +144,13 @@ export function GenrePresets({ onSelect }: GenrePresetsProps) {
   };
   
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-1.5 px-0.5">
+    <div className="space-y-3">
+      <div className="flex items-center gap-1.5 px-1">
         <Music className="w-3.5 h-3.5 text-muted-foreground" />
         <h3 className="text-xs font-medium">Жанровые пресеты</h3>
       </div>
       
-      <div className="relative -mx-2 sm:mx-0 px-6 sm:px-8">
+      <div className="relative px-10 sm:px-12">
         <Carousel
           opts={{
             align: "start",
@@ -159,11 +159,11 @@ export function GenrePresets({ onSelect }: GenrePresetsProps) {
           }}
           className="w-full"
         >
-          <CarouselContent className="-ml-2">
+          <CarouselContent className="-ml-3">
             {GENRE_PRESETS.map((preset) => {
               const Icon = preset.icon;
               return (
-                <CarouselItem key={preset.id} className="pl-2 basis-[min(280px,85vw)] sm:basis-[240px] md:basis-[45%] lg:basis-1/3">
+                <CarouselItem key={preset.id} className="pl-3 basis-[280px] sm:basis-[260px] md:basis-[48%] lg:basis-1/3">
                   <Card
                     className={cn(
                       "cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] hover:shadow-md border-muted/50 h-full",
@@ -172,24 +172,24 @@ export function GenrePresets({ onSelect }: GenrePresetsProps) {
                     )}
                     onClick={() => handlePresetClick(preset)}
                   >
-                    <CardContent className="p-2.5 sm:p-3">
-                      <div className="flex items-start gap-2">
-                        <div className="p-1.5 rounded-lg bg-background/50 shrink-0">
-                          <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <CardContent className="p-3 sm:p-3.5">
+                      <div className="flex items-start gap-2.5">
+                        <div className="p-2 rounded-lg bg-background/50 shrink-0">
+                          <Icon className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-xs sm:text-sm font-semibold mb-1 truncate">{preset.name}</h4>
-                          <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2 mb-1.5">
+                          <h4 className="text-sm font-semibold mb-1.5 truncate">{preset.name}</h4>
+                          <p className="text-[11px] text-muted-foreground line-clamp-2 mb-2">
                             {preset.description}
                           </p>
                           <div className="flex flex-wrap gap-1">
                             {preset.styleTags.slice(0, 2).map((tag) => (
-                              <Badge key={tag} variant="secondary" className="text-[9px] sm:text-[10px] px-1 py-0 h-4">
+                              <Badge key={tag} variant="secondary" className="text-[10px] px-1.5 py-0.5 h-5">
                                 {tag}
                               </Badge>
                             ))}
                             {preset.styleTags.length > 2 && (
-                              <Badge variant="outline" className="text-[9px] sm:text-[10px] px-1 py-0 h-4">
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 h-5">
                                 +{preset.styleTags.length - 2}
                               </Badge>
                             )}
@@ -202,8 +202,8 @@ export function GenrePresets({ onSelect }: GenrePresetsProps) {
               );
             })}
           </CarouselContent>
-          <CarouselPrevious className="absolute left-0 top-1/2 -translate-y-1/2 h-7 w-7 sm:h-8 sm:w-8 shadow-lg" />
-          <CarouselNext className="absolute right-0 top-1/2 -translate-y-1/2 h-7 w-7 sm:h-8 sm:w-8 shadow-lg" />
+          <CarouselPrevious className="absolute left-1 top-1/2 -translate-y-1/2 h-8 w-8 shadow-md border-border/50 bg-background/95 hover:bg-accent" />
+          <CarouselNext className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 shadow-md border-border/50 bg-background/95 hover:bg-accent" />
         </Carousel>
       </div>
     </div>
