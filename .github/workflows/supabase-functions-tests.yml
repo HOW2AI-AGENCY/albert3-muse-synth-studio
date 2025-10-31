@@ -52,13 +52,30 @@ jobs:
           set +a
           npm run db:seed
 
-      - name: Run generate-suno tests
+      - name: Run Edge Functions tests
         run: |
           set -a
           source supabase/.env
           set +a
           cd supabase/functions
           deno task test
+
+      - name: Run Unit tests
+        run: npm run test:unit
+
+      - name: Run E2E tests
+        run: |
+          npm run build
+          npx playwright install --with-deps
+          npm run test:e2e
+
+      - name: Upload test coverage
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/coverage-final.json
+          flags: unittests
+          name: codecov-umbrella
 
       - name: Stop Supabase stack
         if: always()
