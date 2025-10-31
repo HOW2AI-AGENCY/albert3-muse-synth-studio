@@ -145,51 +145,51 @@ export function GenrePresets({ onSelect }: GenrePresetsProps) {
   
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-1.5 px-1">
-        <Music className="w-3.5 h-3.5 text-muted-foreground" />
-        <h3 className="text-xs font-medium">Жанровые пресеты</h3>
+      <div className="flex items-center gap-2 px-1">
+        <Music className="w-4 h-4 text-muted-foreground" />
+        <h3 className="text-sm font-medium">Жанровые пресеты</h3>
       </div>
       
-      <div className="relative">
+      <div className="relative -mx-1 sm:mx-0">
         <Carousel
           opts={{
             align: "start",
             loop: false,
             slidesToScroll: 1,
           }}
-          className="w-full"
+          className="w-full px-10 sm:px-12"
         >
-          <CarouselContent className="-ml-2 md:-ml-3">
+          <CarouselContent className="-ml-2 sm:-ml-3">
             {GENRE_PRESETS.map((preset) => {
               const Icon = preset.icon;
               return (
-                <CarouselItem key={preset.id} className="pl-2 md:pl-3 basis-[280px] sm:basis-[260px] md:basis-[48%] lg:basis-1/3">
+                <CarouselItem key={preset.id} className="pl-2 sm:pl-3 basis-[min(280px,calc(100vw-120px))] sm:basis-[260px] md:basis-[48%] lg:basis-1/3">
                   <Card
                     className={cn(
                       "cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] hover:shadow-md border-muted/50 h-full",
-                      "bg-gradient-to-br",
+                      "bg-gradient-to-br min-h-[120px] sm:min-h-[130px]",
                       preset.color
                     )}
                     onClick={() => handlePresetClick(preset)}
                   >
-                    <CardContent className="p-3 sm:p-3.5">
-                      <div className="flex items-start gap-2.5">
-                        <div className="p-2 rounded-lg bg-background/50 shrink-0">
-                          <Icon className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+                    <CardContent className="p-3.5 sm:p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2.5 rounded-lg bg-background/50 shrink-0">
+                          <Icon className="w-5 h-5 sm:w-5 sm:h-5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-semibold mb-1.5 truncate">{preset.name}</h4>
-                          <p className="text-[11px] text-muted-foreground line-clamp-2 mb-2">
+                          <h4 className="text-sm sm:text-base font-semibold mb-1.5 truncate leading-tight">{preset.name}</h4>
+                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mb-2 leading-relaxed">
                             {preset.description}
                           </p>
-                          <div className="flex flex-wrap gap-1">
+                          <div className="flex flex-wrap gap-1.5">
                             {preset.styleTags.slice(0, 2).map((tag) => (
-                              <Badge key={tag} variant="secondary" className="text-[10px] px-1.5 py-0.5 h-5">
+                              <Badge key={tag} variant="secondary" className="text-[11px] sm:text-xs px-2 py-0.5 h-6">
                                 {tag}
                               </Badge>
                             ))}
                             {preset.styleTags.length > 2 && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 h-5">
+                              <Badge variant="outline" className="text-[11px] sm:text-xs px-2 py-0.5 h-6">
                                 +{preset.styleTags.length - 2}
                               </Badge>
                             )}
@@ -202,8 +202,8 @@ export function GenrePresets({ onSelect }: GenrePresetsProps) {
               );
             })}
           </CarouselContent>
-          <CarouselPrevious className="absolute -left-3 md:-left-4 top-1/2 -translate-y-1/2 h-8 w-8 md:h-9 md:w-9 shadow-lg border-border/50 bg-background/95 hover:bg-accent z-10" />
-          <CarouselNext className="absolute -right-3 md:-right-4 top-1/2 -translate-y-1/2 h-8 w-8 md:h-9 md:w-9 shadow-lg border-border/50 bg-background/95 hover:bg-accent z-10" />
+          <CarouselPrevious className="absolute left-0 top-1/2 -translate-y-1/2 h-9 w-9 sm:h-10 sm:w-10 shadow-lg border-border/50 bg-background/95 hover:bg-accent disabled:opacity-50" />
+          <CarouselNext className="absolute right-0 top-1/2 -translate-y-1/2 h-9 w-9 sm:h-10 sm:w-10 shadow-lg border-border/50 bg-background/95 hover:bg-accent disabled:opacity-50" />
         </Carousel>
       </div>
     </div>
