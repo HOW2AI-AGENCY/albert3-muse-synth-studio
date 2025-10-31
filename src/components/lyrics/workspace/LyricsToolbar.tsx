@@ -134,7 +134,7 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
 
   return (
     <div className={cn(
-      "flex items-center gap-2 p-2 border-b bg-muted/30",
+      "flex items-center gap-2 p-2 border-b bg-muted/30 w-full min-w-0 overflow-x-auto whitespace-nowrap scrollbar-minimal",
       compact && "p-1.5"
     )}>
       {/* View Mode Toggle */}

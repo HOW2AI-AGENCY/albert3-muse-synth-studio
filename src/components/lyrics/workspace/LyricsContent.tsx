@@ -82,11 +82,11 @@ export const LyricsContent: React.FC<LyricsContentProps> = ({
       .join('\n\n');
 
     return (
-      <ScrollArea className="flex-1 p-4 w-full">
+      <ScrollArea className="flex-1 p-4 w-full min-w-0 overflow-auto scrollbar-styled">
         <Textarea
           value={rawText}
           readOnly={readOnly}
-          className="w-full min-h-[500px] font-mono text-sm resize-none"
+          className="w-full max-w-full min-w-0 min-h-[500px] font-mono text-sm resize-none break-words"
           placeholder="Enter lyrics in Suno format..."
         />
       </ScrollArea>
@@ -95,8 +95,8 @@ export const LyricsContent: React.FC<LyricsContentProps> = ({
 
   // Visual mode
   return (
-    <ScrollArea className="flex-1 w-full">
-      <div className={cn("p-4 space-y-4 w-full max-w-full", compact && "p-2 space-y-2")}>
+    <ScrollArea className="flex-1 w-full min-w-0 overflow-auto scrollbar-styled">
+      <div className={cn("p-4 space-y-4 w-full max-w-full min-w-0", compact && "p-2 space-y-2")}>
         {/* Global Tags */}
         {showTags && document.globalTags.length > 0 && (
           <GlobalTagsBar
@@ -116,7 +116,7 @@ export const LyricsContent: React.FC<LyricsContentProps> = ({
           </div>
         ) : readOnly || !showSectionControls ? (
           // Static list without drag-and-drop
-          <div className="space-y-3">
+          <div className="space-y-3 w-full max-w-full min-w-0">
             {document.sections.map((section) => (
               <LyricsSection
                 key={section.id}
@@ -143,7 +143,7 @@ export const LyricsContent: React.FC<LyricsContentProps> = ({
               items={document.sections.map(s => s.id)}
               strategy={verticalListSortingStrategy}
             >
-              <div className="space-y-3">
+              <div className="space-y-3 w-full max-w-full min-w-0">
                 {document.sections.map((section) => (
                   <LyricsSection
                     key={section.id}

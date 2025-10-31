@@ -153,7 +153,7 @@ export const LyricsWorkspace = memo<LyricsWorkspaceProps>(({
 
   return (
     <>
-      <div className={cn("flex flex-col h-full w-full", className)}>
+      <div className={cn("flex flex-col h-full w-full min-w-0 overflow-hidden", className)}>
         <LyricsToolbar
           mode={mode}
           viewMode={viewMode}
@@ -170,22 +170,24 @@ export const LyricsWorkspace = memo<LyricsWorkspaceProps>(({
           compact={compact}
         />
 
-        <LyricsContent
-          mode={mode}
-          viewMode={viewMode}
-          document={document}
-          onDocumentChange={handleDocumentChange}
-          onSectionUpdate={handleSectionUpdate}
-          onSectionDelete={handleSectionDelete}
-          onReorder={handleReorder}
-          onAddTag={handleAddTag}
-          onRemoveTag={handleRemoveTag}
-          onGlobalTagsChange={handleGlobalTagsChange}
-          showTags={showTags}
-          showSectionControls={showSectionControls}
-          readOnly={readOnly}
-          compact={compact}
-        />
+        <div className="flex-1 min-h-0 overflow-auto scrollbar-styled">
+          <LyricsContent
+            mode={mode}
+            viewMode={viewMode}
+            document={document}
+            onDocumentChange={handleDocumentChange}
+            onSectionUpdate={handleSectionUpdate}
+            onSectionDelete={handleSectionDelete}
+            onReorder={handleReorder}
+            onAddTag={handleAddTag}
+            onRemoveTag={handleRemoveTag}
+            onGlobalTagsChange={handleGlobalTagsChange}
+            showTags={showTags}
+            showSectionControls={showSectionControls}
+            readOnly={readOnly}
+            compact={compact}
+          />
+        </div>
       </div>
 
       {/* Section Preset Dialog */}

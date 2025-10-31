@@ -104,14 +104,14 @@ export const LyricsSection: React.FC<LyricsSectionProps> = ({
         ref={setNodeRef}
         style={style}
         className={cn(
-          "transition-all duration-200",
+          "transition-all duration-200 min-w-0",
           isDragging && "shadow-lg ring-2 ring-primary",
           compact && "text-sm"
         )}
       >
         {/* Header */}
         <div className={cn(
-          "flex items-center gap-2 p-3 border-b bg-muted/30",
+          "flex items-center gap-2 p-3 border-b bg-muted/30 min-w-0",
           compact && "p-2 gap-1.5"
         )}>
           {showControls && !readOnly && (
@@ -148,8 +148,8 @@ export const LyricsSection: React.FC<LyricsSectionProps> = ({
           ) : (
             <button
               onClick={() => !readOnly && setIsEditingTitle(true)}
-              className={cn(
-                "flex-1 text-left font-semibold hover:text-primary transition-colors",
+                className={cn(
+                "flex-1 text-left font-semibold hover:text-primary transition-colors min-w-0 truncate",
                 readOnly && "cursor-default hover:text-current",
                 compact && "text-sm"
               )}
@@ -227,7 +227,7 @@ export const LyricsSection: React.FC<LyricsSectionProps> = ({
               onChange={(e) => handleLinesChange(e.target.value)}
               placeholder="Введите текст..."
               className={cn(
-                "min-h-[120px] resize-none font-mono text-sm",
+                "w-full max-w-full min-w-0 min-h-[120px] resize-none font-mono text-sm break-words",
                 compact && "min-h-[100px] text-xs"
               )}
               readOnly={readOnly}
