@@ -251,17 +251,52 @@ serve(async (req: Request): Promise<Response> => {
           }
           
         } catch (error) {
-          logger.error('🔴 Error checking Mureka track', { 
-            trackId: track.id,
-            error: error instanceof Error ? error.message : String(error)
-          });
-          
-          results.push({ 
-            trackId: track.id, 
-            action: 'error',
-            provider: 'mureka',
-            error: error instanceof Error ? error.message : String(error)
-          });
+          const errMsg = (() => {
+            try {
+              if (error instanceof Error) return error.message;
+              if (typeof error === 'object') return JSON.stringify(error);
+              return String(error);
+            } catch {
+              return String(error);
+            }
+          })();
+          logger.error('🔴 Error checking Mureka track', { trackId: track.id, error: errMsg });
+
+          const isNotFound = errMsg.includes('404') || errMsg.toLowerCase().includes('not found') || errMsg.includes('All retry attempts failed');
+
+          if (isNotFound) {
+            await supabaseAdmin
+              .from('tracks')
+              .update({
+                status: 'failed',
+                error_message: errMsg,
+                metadata: {
+                  ...metadata,
+                  sync_check_at: new Date().toISOString(),
+                  sync_status: 'failed',
+                  sync_error: errMsg
+                }
+              })
+              .eq('id', track.id);
+
+            logger.info('✅ Mureka track marked as failed due to 404/not found', { trackId: track.id });
+            results.push({ trackId: track.id, action: 'marked_failed', provider: 'mureka', error: errMsg });
+          } else {
+            // Just annotate metadata so the job can revisit later
+            await supabaseAdmin
+              .from('tracks')
+              .update({
+                metadata: {
+                  ...metadata,
+                  sync_check_at: new Date().toISOString(),
+                  sync_status: 'error',
+                  sync_error: errMsg
+                }
+              })
+              .eq('id', track.id);
+
+            results.push({ trackId: track.id, action: 'error', provider: 'mureka', error: errMsg });
+          }
         }
         
         continue;
