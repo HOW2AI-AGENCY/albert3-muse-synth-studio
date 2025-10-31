@@ -17,6 +17,7 @@ import { StyleRecommendationsPanel } from "./StyleRecommendationsPanel";
 import { EnhancedPromptPreviewDialog, type EnhancedPromptData } from "@/components/ai-recommendations";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 const usePlayTrack = () => useAudioPlayerStore(state => state.playTrack);
+import { useGenerationPrefillStore } from "@/stores/useGenerationPrefillStore";
 import { AnalyticsService } from "@/services/analytics.service";
 import { useAdvancedPromptGenerator } from "@/hooks/useAdvancedPromptGenerator";
 import { supabase } from "@/integrations/supabase/client";
@@ -411,18 +412,22 @@ export const DetailPanelContent = ({
     }
   }, [track, queryClient]);
 
+  const setPendingGeneration = useGenerationPrefillStore(
+    state => state.setPendingGeneration
+  );
+
   const handleUseForNewGeneration = useCallback((editedData: EnhancedPromptData) => {
-    // Save to localStorage for generator page
-    const generationData = {
+    // ✅ Use Zustand store instead of localStorage
+    setPendingGeneration({
       prompt: editedData.enhanced.prompt,
       lyrics: editedData.enhanced.lyrics,
       title: `${track.title} (ENH)`,
       tags: editedData.enhanced.tags.join(', '),
       genre: genre || track.genre,
       mood: mood || track.mood,
-    };
-    
-    localStorage.setItem('pendingEnhancedGeneration', JSON.stringify(generationData));
+      sourceTrackId: track.id,
+      sourceType: 'enhanced',
+    });
     
     toast({
       title: "Переход к генератору",
@@ -431,7 +436,7 @@ export const DetailPanelContent = ({
     
     setPreviewData(null);
     navigate('/workspace/generate');
-  }, [track, genre, mood, navigate]);
+  }, [track, genre, mood, navigate, setPendingGeneration]);
   const createdAtToDisplay = activeVersion?.created_at ?? track.created_at;
   const durationToDisplay = activeVersion?.duration ?? track.duration_seconds;
   const extractArtist = (metadata?: Record<string, unknown> | null) => {

@@ -7,6 +7,7 @@ import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
 import { useAudioUpload } from '@/hooks/useAudioUpload';
 import { useBoostStyle } from '@/hooks/useBoostStyle';
+import { useGenerationPrefillStore } from '@/stores/useGenerationPrefillStore';
 import { AudioPreviewDialog } from '@/components/audio/AudioPreviewDialog';
 import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog';
 import { MurekaLyricsVariantDialog } from '@/components/lyrics/MurekaLyricsVariantDialog';
@@ -135,49 +136,43 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     }
   }, [selectedProvider, setProvider]);
 
-  // ✅ NEW: Check for pending enhanced generation from Advanced Prompt Generator
+  // ✅ REFACTORED: Use Zustand store instead of localStorage
+  const consumePendingGeneration = useGenerationPrefillStore(
+    state => state.consumePendingGeneration
+  );
+
   useEffect(() => {
-    const pendingEnhanced = localStorage.getItem('pendingEnhancedGeneration');
-    if (pendingEnhanced) {
-      try {
-        const enhancedData = JSON.parse(pendingEnhanced);
-        
-        logger.info('🎯 [ENHANCED] Loading enhanced generation data', 'MusicGeneratorV2', {
-          hasPrompt: !!enhancedData.prompt,
-          hasLyrics: !!enhancedData.lyrics,
-          hasTitle: !!enhancedData.title,
-        });
-        
-        // Переключаем на расширенную форму (custom mode)
-        setMode('custom');
-        
-        // Автозаполнение формы улучшенными данными
-        setParams(prev => ({
-          ...prev,
-          prompt: enhancedData.prompt || prev.prompt,
-          lyrics: enhancedData.lyrics || prev.lyrics,
-          title: enhancedData.title || prev.title,
-          tags: enhancedData.tags || prev.tags,
-        }));
-        
-        // Также обновляем debounced значения
-        setDebouncedPrompt(enhancedData.prompt || '');
-        setDebouncedLyrics(enhancedData.lyrics || '');
-        
-        // Очищаем после использования
-        localStorage.removeItem('pendingEnhancedGeneration');
-        
-        sonnerToast.success('AI промпт загружен', {
-          description: 'Форма заполнена улучшенными данными. Готово к генерации!',
-        });
-        
-      } catch (error) {
-        logger.error('[ENHANCED] Failed to load enhanced data', error as Error, 'MusicGeneratorV2');
-        localStorage.removeItem('pendingEnhancedGeneration');
-        sonnerToast.error('Не удалось загрузить улучшенный промпт');
-      }
+    const pending = consumePendingGeneration();
+    
+    if (pending) {
+      logger.info('🎯 [PREFILL] Loading prefilled generation data', 'MusicGeneratorV2', {
+        sourceType: pending.sourceType,
+        hasPrompt: !!pending.prompt,
+        hasLyrics: !!pending.lyrics,
+        hasTitle: !!pending.title,
+      });
+      
+      // Switch to custom mode
+      setMode('custom');
+      
+      // Autofill form with prefilled data
+      setParams(prev => ({
+        ...prev,
+        prompt: pending.prompt || prev.prompt,
+        lyrics: pending.lyrics || prev.lyrics,
+        title: pending.title || prev.title,
+        tags: pending.tags || prev.tags,
+      }));
+      
+      // Update debounced values
+      setDebouncedPrompt(pending.prompt || '');
+      setDebouncedLyrics(pending.lyrics || '');
+      
+      sonnerToast.success('Данные загружены', {
+        description: `Источник: ${pending.sourceType === 'enhanced' ? 'AI улучшение' : pending.sourceType}`,
+      });
     }
-  }, []);
+  }, [consumePendingGeneration]);
 
 
   // Generation params
