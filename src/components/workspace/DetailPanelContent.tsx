@@ -16,6 +16,10 @@ import { StyleRecommendationsPanel } from "./StyleRecommendationsPanel";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 const usePlayTrack = () => useAudioPlayerStore(state => state.playTrack);
 import { AnalyticsService } from "@/services/analytics.service";
+import { useAdvancedPromptGenerator } from "@/hooks/useAdvancedPromptGenerator";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "@/hooks/use-toast";
 interface Track {
   id: string;
   title: string;
@@ -247,12 +251,69 @@ export const DetailPanelContent = ({
     setSelectedVersionId(rightId);
     setComparisonRightId(leftId);
   }, []);
-  const handleTagsApply = (tags: string[]) => {
-    if (!tags.length) {
-      return;
+  const queryClient = useQueryClient();
+
+  const handleTagsApply = useCallback(async (tags: string[]) => {
+    if (!tags.length) return;
+    
+    const existingTags = track.style_tags || [];
+    const uniqueTags = Array.from(new Set([...existingTags, ...tags]));
+    
+    const { error } = await supabase
+      .from('tracks')
+      .update({ style_tags: uniqueTags })
+      .eq('id', track.id);
+      
+    if (!error) {
+      toast({
+        title: "Теги применены",
+        description: `Добавлено ${tags.length} новых тегов стиля`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['track', track.id] });
+    } else {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось применить теги",
+        variant: "destructive",
+      });
     }
-    setMood(tags.slice(0, 3).join(", "));
-  };
+  }, [track.id, track.style_tags, queryClient]);
+
+  const { mutate: generateAdvanced, isPending: isGeneratingPrompt } = useAdvancedPromptGenerator({
+    onSuccess: async (result) => {
+      const { error } = await supabase
+        .from('tracks')
+        .update({
+          prompt: result.enhancedPrompt,
+          lyrics: result.formattedLyrics || track.lyrics,
+        })
+        .eq('id', track.id);
+        
+      if (!error) {
+        toast({
+          title: "AI промпт применен!",
+          description: `Обновлено: промпт (${result.enhancedPrompt.length} символов), ${result.formattedLyrics ? `лирика (${result.formattedLyrics.split('\n').length} строк)` : 'без лирики'}`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['track', track.id] });
+      } else {
+        toast({
+          title: "Ошибка",
+          description: "Не удалось применить промпт",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: (error) => {
+      const errorMessage = error.message;
+      toast({
+        title: "Ошибка AI генерации",
+        description: errorMessage.includes('402') 
+          ? 'Недостаточно AI кредитов' 
+          : 'Попробуйте позже',
+        variant: "destructive",
+      });
+    }
+  });
   const createdAtToDisplay = activeVersion?.created_at ?? track.created_at;
   const durationToDisplay = activeVersion?.duration ?? track.duration_seconds;
   const extractArtist = (metadata?: Record<string, unknown> | null) => {
@@ -338,6 +399,8 @@ export const DetailPanelContent = ({
                   context={track.prompt} 
                   currentTags={track.style_tags ?? []} 
                   onApplyTags={handleTagsApply}
+                  onGenerateAdvancedPrompt={(request) => generateAdvanced(request)}
+                  isGeneratingPrompt={isGeneratingPrompt}
                   currentPrompt={track.prompt}
                   currentLyrics={track.lyrics}
                 />

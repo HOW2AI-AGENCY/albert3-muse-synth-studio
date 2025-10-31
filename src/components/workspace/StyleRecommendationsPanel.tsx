@@ -111,49 +111,49 @@ export const StyleRecommendationsPanel = ({
 
       {hasInput && !isPending && !isError && data && <div className="space-y-6">
           <div className="space-y-3">
-            <div className="space-y-2">
-              <h4 className="text-sm font-semibold">Рекомендованные теги</h4>
-              <div className="flex flex-wrap gap-2">
+            <h4 className="text-sm font-semibold">Рекомендованные теги</h4>
+            
+            <div className="flex flex-wrap gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onApplyTags?.(recommendedTags)} 
+                disabled={recommendedTags.length === 0 || !onApplyTags}
+                className="flex-1 sm:flex-initial min-w-[120px]"
+              >
+                Применить теги
+              </Button>
+              {onGenerateAdvancedPrompt && currentPrompt && data && (
                 <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => onApplyTags?.(recommendedTags)} 
-                  disabled={recommendedTags.length === 0 || !onApplyTags}
-                  className="flex-1 min-w-[120px]"
+                  variant="default" 
+                  size="sm"
+                  onClick={() => {
+                    onGenerateAdvancedPrompt({
+                      styleRecommendations: data,
+                      currentPrompt,
+                      currentLyrics,
+                      genre,
+                      mood
+                    });
+                  }}
+                  disabled={isGeneratingPrompt}
+                  className="flex-1 sm:flex-initial min-w-[140px]"
                 >
-                  Применить теги
+                  {isGeneratingPrompt ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Генерация...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Создать промпт
+                    </>
+                  )}
                 </Button>
-                {onGenerateAdvancedPrompt && currentPrompt && data && (
-                  <Button 
-                    variant="default" 
-                    size="sm"
-                    onClick={() => {
-                      onGenerateAdvancedPrompt({
-                        styleRecommendations: data,
-                        currentPrompt,
-                        currentLyrics,
-                        genre: undefined,
-                        mood
-                      });
-                    }}
-                    disabled={isGeneratingPrompt}
-                    className="flex-1 min-w-[140px]"
-                  >
-                    {isGeneratingPrompt ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Генерация...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Создать промпт
-                      </>
-                    )}
-                  </Button>
-                )}
-              </div>
+              )}
             </div>
+            
             {recommendedTags.length > 0 ? <div className="flex flex-wrap gap-1.5">
                 {recommendedTags.map(tag => <Badge key={tag} variant="secondary" className="text-xs px-2 py-1">
                     {tag}
