@@ -2,6 +2,7 @@ import { memo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ReferenceAudioLibrary } from './ReferenceAudioLibrary';
 import { Upload, X, Loader2, Music, Mic, Trash2 } from '@/utils/iconImports';
 import { cn } from '@/lib/utils';
 import { ReferenceTrackSelector } from './ReferenceTrackSelector';
@@ -172,9 +173,9 @@ export const AudioReferenceSection = memo(({
           )}
         </div>
       ) : (
-        <Tabs defaultValue="upload" className="w-full">
+        <Tabs defaultValue="library" className="w-full">
           <TabsList className="grid w-full grid-cols-3 h-8">
-            <TabsTrigger value="track" className="text-xs">
+            <TabsTrigger value="library" className="text-xs">
               <Music className="h-3 w-3 mr-1" />
               Библиотека
             </TabsTrigger>
@@ -188,19 +189,18 @@ export const AudioReferenceSection = memo(({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="track" className="mt-2">
-            <Button
-              variant="outline"
-              className="w-full h-16 border-dashed"
-              onClick={() => setTrackSelectorOpen(true)}
-              disabled={isGenerating}
-            >
-              <Music className="h-5 w-5 mr-2" />
-              <div className="text-left">
-                <div className="text-xs font-medium">Выбрать из библиотеки</div>
-                <div className="text-[10px] text-muted-foreground">Ваши готовые треки</div>
-              </div>
-            </Button>
+          <TabsContent value="library" className="mt-2">
+            <ReferenceAudioLibrary
+              onSelect={({ url, fileName }) => {
+                // Store URL directly for immediate use
+                onSelectTrack?.({
+                  id: url,
+                  audio_url: url,
+                  title: fileName
+                });
+              }}
+              selectedUrl={referenceAudioUrl}
+            />
           </TabsContent>
 
           <TabsContent value="upload" className="mt-2">
