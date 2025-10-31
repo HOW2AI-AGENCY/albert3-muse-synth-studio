@@ -348,8 +348,40 @@ export class GenerationService {
     }
     logger.info('[STEP 2 ✓] User authenticated', context, { userId: user.id });
 
-    // 3. ✅ Проверка дублирующих запросов
-    logger.debug('[STEP 3] Checking for duplicate requests...', context);
+    // 3. ✅ SECURITY: Проверка rate limiting
+    logger.debug('[STEP 3] Checking rate limit...', context);
+    try {
+      const { generationRateLimiter } = await import('@/middleware/rateLimiter');
+      const rateLimitResult = await generationRateLimiter.check();
+      
+      if (!rateLimitResult.allowed) {
+        const waitTime = Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000);
+        const errorMsg = `Слишком много запросов. Подождите ${waitTime} секунд.`;
+        
+        logger.warn('[STEP 3 FAILED] Rate limit exceeded', context, {
+          userId: user.id,
+          remaining: rateLimitResult.remaining,
+          resetAt: new Date(rateLimitResult.resetAt).toISOString(),
+          waitTime,
+        });
+        
+        throw new Error(errorMsg);
+      }
+      
+      logger.info('[STEP 3 ✓] Rate limit check passed', context, {
+        remaining: rateLimitResult.remaining,
+        resetAt: new Date(rateLimitResult.resetAt).toISOString(),
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Слишком много запросов')) {
+        throw error;
+      }
+      // Rate limiter initialization failed, continue without it (log warning)
+      logger.warn('[STEP 3] Rate limiter unavailable, continuing', context, { error });
+    }
+
+    // 4. ✅ Проверка дублирующих запросов
+    logger.debug('[STEP 4] Checking for duplicate requests...', context);
     const duplicateTrackId = checkDuplicateRequest(request);
     if (duplicateTrackId) {
       logger.info('⚡ Returning cached track for duplicate request', context, { trackId: duplicateTrackId });

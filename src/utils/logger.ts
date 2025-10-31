@@ -287,6 +287,21 @@ export const logger = new Logger();
  * @returns A masked version of the string.
  */
 const maskString = (value: string): string => {
+  // ✅ SECURITY: Проверяем на паттерны API keys/tokens
+  const sensitivePatterns = [
+    /sk-[\w-]+/gi,           // OpenAI keys
+    /mureka_[\w-]+/gi,       // Mureka keys
+    /suno_[\w-]+/gi,         // Suno keys
+    /bearer\s+[\w-]+/gi,     // Bearer tokens
+    /^ey[\w-]+\.[\w-]+\.[\w-]+$/gi, // JWT tokens
+  ];
+  
+  for (const pattern of sensitivePatterns) {
+    if (pattern.test(value)) {
+      return '[REDACTED]';
+    }
+  }
+  
   if (value.length <= 6) {
     return `${value[0] ?? "*"}***${value[value.length - 1] ?? "*"}`;
   }
@@ -305,7 +320,12 @@ export const maskObject = (data?: Record<string, unknown>): Record<string, unkno
     return undefined;
   }
 
-  const sensitiveKeywords = ["token", "key", "secret", "password", "authorization", "cookie", "credential"];
+  // ✅ SECURITY: Расширенный список чувствительных ключей
+  const sensitiveKeywords = [
+    "token", "key", "secret", "password", "authorization", "cookie", "credential",
+    "api_key", "apikey", "api-key", "auth", "bearer", "jwt",
+    "lovable_api_key", "suno_api_key", "mureka_api_key", "openai_api_key"
+  ];
 
   const maskValue = (value: unknown, keyPath: string[]): unknown => {
     if (Array.isArray(value)) {
