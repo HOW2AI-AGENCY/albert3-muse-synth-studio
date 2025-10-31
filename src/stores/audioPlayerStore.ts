@@ -264,7 +264,7 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
         // VERSION ACTIONS
         // ==========================================
         switchToVersion: (versionId) => {
-          const { availableVersions, currentTrack, isPlaying } = get();
+          const { availableVersions, currentTrack, isPlaying, currentTime } = get();
           
           if (!currentTrack) {
             logError('Cannot switch version: no current track', new Error('No current track'), 'audioPlayerStore');
@@ -303,14 +303,15 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             toId: versionId,
             versionNumber: version.versionNumber,
             isMasterVersion: version.isMasterVersion,
+            preservedTime: currentTime,
           });
           
-          // ✅ Меняем трек и сбрасываем время
+          // ✅ FIX 2: Сохраняем currentTime при переключении версий
           set({
             currentTrack: newTrack,
             currentVersionIndex: versionIndex,
-            currentTime: 0,
-            isPlaying, // Сохраняем состояние воспроизведения
+            currentTime, // ✅ Восстанавливаем позицию воспроизведения
+            isPlaying, // ✅ Сохраняем состояние воспроизведения
           });
         },
         
@@ -318,11 +319,28 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
           try {
             logInfo('Loading versions for track', 'audioPlayerStore', { trackId });
             
-            // Загружаем все версии трека
-            const allVersions = await getTrackWithVersions(trackId);
+            // ✅ FIX 1: Проверяем, является ли trackId версией
+            const supabase = (await import('@/integrations/supabase/client')).supabase;
+            const { data: versionCheck } = await supabase
+              .from('track_versions')
+              .select('parent_track_id')
+              .eq('id', trackId)
+              .maybeSingle();
+            
+            // Если это версия, загружаем версии для parent трека
+            const parentId = versionCheck?.parent_track_id || trackId;
+            
+            logInfo('Loading versions', 'audioPlayerStore', { 
+              requestedTrackId: trackId,
+              resolvedParentId: parentId,
+              isVersion: !!versionCheck?.parent_track_id,
+            });
+            
+            // Загружаем все версии родительского трека
+            const allVersions = await getTrackWithVersions(parentId);
             
             if (allVersions.length === 0) {
-              logInfo('No versions found', 'audioPlayerStore', { trackId });
+              logInfo('No versions found', 'audioPlayerStore', { parentId });
               set({ availableVersions: [], currentVersionIndex: -1 });
               return;
             }
@@ -346,7 +364,7 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               : 0;
             
             logInfo('Versions loaded', 'audioPlayerStore', { 
-              trackId, 
+              parentId, 
               count: versions.length,
               masterVersionId: masterVersion?.id,
               currentVersionIndex,
