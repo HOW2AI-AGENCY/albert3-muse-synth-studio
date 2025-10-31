@@ -668,6 +668,71 @@ export type Database = {
         }
         Relationships: []
       }
+      track_archiving_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          original_audio_url: string | null
+          original_cover_url: string | null
+          original_video_url: string | null
+          started_at: string | null
+          status: string
+          storage_audio_url: string | null
+          storage_cover_url: string | null
+          storage_video_url: string | null
+          track_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          original_audio_url?: string | null
+          original_cover_url?: string | null
+          original_video_url?: string | null
+          started_at?: string | null
+          status?: string
+          storage_audio_url?: string | null
+          storage_cover_url?: string | null
+          storage_video_url?: string | null
+          track_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          original_audio_url?: string | null
+          original_cover_url?: string | null
+          original_video_url?: string | null
+          started_at?: string | null
+          status?: string
+          storage_audio_url?: string | null
+          storage_cover_url?: string | null
+          storage_video_url?: string | null
+          track_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_archiving_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       track_likes: {
         Row: {
           created_at: string
@@ -855,6 +920,9 @@ export type Database = {
       }
       tracks: {
         Row: {
+          archive_scheduled_at: string | null
+          archived_at: string | null
+          archived_to_storage: boolean | null
           audio_url: string | null
           cover_url: string | null
           created_at: string
@@ -881,6 +949,9 @@ export type Database = {
           provider: string | null
           reference_audio_url: string | null
           status: string
+          storage_audio_url: string | null
+          storage_cover_url: string | null
+          storage_video_url: string | null
           style_tags: string[] | null
           suno_id: string | null
           title: string
@@ -890,6 +961,9 @@ export type Database = {
           view_count: number | null
         }
         Insert: {
+          archive_scheduled_at?: string | null
+          archived_at?: string | null
+          archived_to_storage?: boolean | null
           audio_url?: string | null
           cover_url?: string | null
           created_at?: string
@@ -916,6 +990,9 @@ export type Database = {
           provider?: string | null
           reference_audio_url?: string | null
           status?: string
+          storage_audio_url?: string | null
+          storage_cover_url?: string | null
+          storage_video_url?: string | null
           style_tags?: string[] | null
           suno_id?: string | null
           title: string
@@ -925,6 +1002,9 @@ export type Database = {
           view_count?: number | null
         }
         Update: {
+          archive_scheduled_at?: string | null
+          archived_at?: string | null
+          archived_to_storage?: boolean | null
           audio_url?: string | null
           cover_url?: string | null
           created_at?: string
@@ -951,6 +1031,9 @@ export type Database = {
           provider?: string | null
           reference_audio_url?: string | null
           status?: string
+          storage_audio_url?: string | null
+          storage_cover_url?: string | null
+          storage_video_url?: string | null
           style_tags?: string[] | null
           suno_id?: string | null
           title?: string
@@ -1076,6 +1159,16 @@ export type Database = {
         }
         Relationships: []
       }
+      archive_statistics: {
+        Row: {
+          archive_percentage: number | null
+          expired_tracks: number | null
+          pending_archive: number | null
+          total_archived: number | null
+          urgent_archive_needed: number | null
+        }
+        Relationships: []
+      }
       user_stats: {
         Row: {
           email: string | null
@@ -1102,6 +1195,19 @@ export type Database = {
         Args: { _amount: number; _user_id: string }
         Returns: undefined
       }
+      get_tracks_needing_archiving: {
+        Args: { _limit?: number }
+        Returns: {
+          audio_url: string
+          cover_url: string
+          created_at: string
+          days_until_expiry: number
+          title: string
+          track_id: string
+          user_id: string
+          video_url: string
+        }[]
+      }
       get_user_mureka_stats: {
         Args: { user_uuid: string }
         Returns: {
@@ -1125,6 +1231,15 @@ export type Database = {
       }
       increment_play_count: { Args: { track_id: string }; Returns: undefined }
       increment_view_count: { Args: { track_id: string }; Returns: undefined }
+      mark_track_archived: {
+        Args: {
+          _storage_audio_url: string
+          _storage_cover_url?: string
+          _storage_video_url?: string
+          _track_id: string
+        }
+        Returns: undefined
+      }
       refresh_analytics_views: { Args: never; Returns: undefined }
     }
     Enums: {
