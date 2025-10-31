@@ -392,8 +392,19 @@ serve(async (req) => {
     const pollInterval = 10000; // 10 seconds
     const maxAttempts = 60; // 10 minutes max
 
+    // ✅ Start Sentry transaction for polling
+    const pollingTransaction = sentryClient.startTransaction('mureka-polling');
+
     async function pollMurekaCompletion(attemptNumber = 0): Promise<void> {
+      // ✅ Add Sentry breadcrumb for each attempt
+      sentryClient.captureMessage(`Mureka polling attempt ${attemptNumber + 1}/${maxAttempts}`, 'info', {
+        tags: { provider: 'mureka', trackId: finalTrackId, taskId: task_id },
+      });
+
       if (attemptNumber >= maxAttempts) {
+        pollingTransaction.setStatus('deadline_exceeded');
+        pollingTransaction.finish();
+        
         await supabaseAdmin
           .from('tracks')
           .update({
@@ -402,10 +413,15 @@ serve(async (req) => {
           })
           .eq('id', finalTrackId);
         
+        const timeoutError = new Error('Max polling attempts reached');
         logger.error('⏱️ Mureka polling timeout', {
-          error: new Error('Max attempts reached'),
+          error: timeoutError,
           trackId: finalTrackId,
           taskId: task_id,
+        });
+        
+        sentryClient.captureException(timeoutError, {
+          tags: { provider: 'mureka', stage: 'polling_timeout', trackId: finalTrackId },
         });
         return;
       }
@@ -427,6 +443,7 @@ serve(async (req) => {
         logger.info('🔍 Mureka poll attempt', {
           attempt: attemptNumber + 1,
           taskId: task_id,
+          responseCode: queryResult.code,
         });
 
         const clips = queryResult.data?.clips;
@@ -443,40 +460,80 @@ serve(async (req) => {
             if (audioUrl) {
               logger.info('📥 Downloading audio from external URL', { trackId: finalTrackId, urlPreview: audioUrl.slice(0, 60) });
               const audioRes = await fetch(audioUrl);
+              
+              if (!audioRes.ok) {
+                throw new Error(`Audio download failed: ${audioRes.status} ${audioRes.statusText}`);
+              }
+              
               const audioBuf = new Uint8Array(await audioRes.arrayBuffer());
               const audioPath = `${userId}/${finalTrackId}/main.mp3`;
-              logger.info('📤 Uploading audio to storage', { bucket: 'tracks-audio', path: audioPath });
+              logger.info('📤 Uploading audio to storage', { bucket: 'tracks-audio', path: audioPath, size: audioBuf.length });
+              
               const { error: audioUpErr } = await supabaseAdmin.storage
                 .from('tracks-audio')
                 .upload(audioPath, audioBuf, { contentType: 'audio/mpeg', upsert: true });
+                
               if (audioUpErr) {
-                logger.error('Audio upload failed', { error: audioUpErr });
+                logger.error('Audio upload failed', { error: audioUpErr, audioPath, audioUrl: audioUrl.slice(0, 100) });
+                sentryClient.captureException(audioUpErr instanceof Error ? audioUpErr : new Error(String(audioUpErr)), {
+                  tags: { provider: 'mureka', stage: 'audio_upload', trackId: finalTrackId },
+                });
               } else {
                 const { data: pub } = supabaseAdmin.storage.from('tracks-audio').getPublicUrl(audioPath);
                 finalAudioUrl = pub.publicUrl;
-                logger.info('✅ Audio uploaded', { trackId: finalTrackId, urlPreview: finalAudioUrl?.slice(0, 60) });
+                logger.info('✅ Audio uploaded successfully', { 
+                  trackId: finalTrackId, 
+                  publicUrl: finalAudioUrl,
+                  storagePath: audioPath,
+                  originalUrl: audioUrl.slice(0, 60)
+                });
               }
             }
 
             if (coverUrl) {
               logger.info('📥 Downloading cover from external URL', { trackId: finalTrackId, urlPreview: coverUrl.slice(0, 60) });
               const coverRes = await fetch(coverUrl);
+              
+              if (!coverRes.ok) {
+                throw new Error(`Cover download failed: ${coverRes.status} ${coverRes.statusText}`);
+              }
+              
               const coverBuf = new Uint8Array(await coverRes.arrayBuffer());
               const coverPath = `${userId}/${finalTrackId}/cover.jpg`;
-              logger.info('📤 Uploading cover to storage', { bucket: 'tracks-covers', path: coverPath });
+              logger.info('📤 Uploading cover to storage', { bucket: 'tracks-covers', path: coverPath, size: coverBuf.length });
+              
               const { error: coverUpErr } = await supabaseAdmin.storage
                 .from('tracks-covers')
                 .upload(coverPath, coverBuf, { contentType: 'image/jpeg', upsert: true });
+                
               if (coverUpErr) {
-                logger.error('Cover upload failed', { error: coverUpErr });
+                logger.error('Cover upload failed', { error: coverUpErr, coverPath, coverUrl: coverUrl.slice(0, 100) });
+                sentryClient.captureException(coverUpErr instanceof Error ? coverUpErr : new Error(String(coverUpErr)), {
+                  tags: { provider: 'mureka', stage: 'cover_upload', trackId: finalTrackId },
+                });
               } else {
                 const { data: pub } = supabaseAdmin.storage.from('tracks-covers').getPublicUrl(coverPath);
                 finalCoverUrl = pub.publicUrl;
-                logger.info('✅ Cover uploaded', { trackId: finalTrackId, urlPreview: finalCoverUrl?.slice(0, 60) });
+                logger.info('✅ Cover uploaded successfully', { 
+                  trackId: finalTrackId, 
+                  publicUrl: finalCoverUrl,
+                  storagePath: coverPath,
+                  originalUrl: coverUrl.slice(0, 60)
+                });
               }
             }
           } catch (uploadErr) {
-            logger.error('🔴 Media upload error', { error: uploadErr, trackId: finalTrackId });
+            const uploadError = uploadErr instanceof Error ? uploadErr : new Error(String(uploadErr));
+            logger.error('🔴 Media upload error', { 
+              error: uploadError, 
+              trackId: finalTrackId,
+              audioUrl: audioUrl?.slice(0, 100), 
+              coverUrl: coverUrl?.slice(0, 100),
+            });
+            
+            sentryClient.captureException(uploadError, {
+              tags: { provider: 'mureka', stage: 'media_upload', trackId: finalTrackId },
+            });
           }
 
           await supabaseAdmin

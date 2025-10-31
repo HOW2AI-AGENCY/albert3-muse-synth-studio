@@ -145,12 +145,23 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
 
       const isCachedResult = result.taskId === 'cached';
 
-      toast({
-        title: isCachedResult ? '⚡ Трек найден!' : '🎵 Генерация началась!',
-        description: isCachedResult 
-          ? 'Используется ранее созданный трек с такими же параметрами.' 
-          : 'Ваш трек создаётся. Это может занять около минуты...',
-      });
+      if (isCachedResult) {
+        // Show toast with info about cached track
+        toast({
+          title: '⚡ Трек найден!',
+          description: 'Используется ранее созданный трек с такими же параметрами. Откройте Библиотеку для просмотра.',
+        });
+        
+        // Log option to force new generation
+        logger.info('Cached track returned. User can force new generation by adding forceNew: true', 'useGenerateMusic', {
+          cachedTrackId: result.trackId,
+        });
+      } else {
+        toast({
+          title: '🎵 Генерация началась!',
+          description: 'Ваш трек создаётся. Это может занять около минуты...',
+        });
+      }
 
       // Setup realtime updates only for new generations
       setupSubscription(result.trackId, isCachedResult);

@@ -54,6 +54,9 @@ export interface GenerationRequest {
   customMode?: boolean;
   isBGM?: boolean;
   idempotencyKey?: string;
+  
+  // ✅ Force new generation (skip cache)
+  forceNew?: boolean;
 }
 
 export interface GenerationResult {
@@ -119,6 +122,12 @@ function generateRequestHash(request: GenerationRequest): string {
  * Проверка дублирующих запросов
  */
 function checkDuplicateRequest(request: GenerationRequest): string | null {
+  // ✅ Skip cache if forceNew flag is set
+  if (request.forceNew) {
+    logger.info('Skipping duplicate check - forceNew flag enabled', 'GenerationService');
+    return null;
+  }
+  
   const hash = generateRequestHash(request);
   const cached = requestCache.get(hash);
   

@@ -247,6 +247,17 @@ export const useAudioPlayback = () => {
                               errorCode === 3 ? 'MEDIA_ELEMENT_ERROR: Decode error' :
                               errorCode === 4 ? 'MEDIA_ELEMENT_ERROR: Format error' : 
                               'MEDIA_ELEMENT_ERROR: Unknown error';
+              
+              // ✅ Log detailed audio error for debugging
+              logError('Audio element error during load', new Error(errorName), 'useAudioPlayback', {
+                trackId: normalizedTrack.id,
+                audioUrl: audioUrl.slice(0, 100),
+                errorCode,
+                errorMessage: error?.message,
+                networkState: audioRef.current?.networkState,
+                readyState: audioRef.current?.readyState,
+              });
+              
               reject(new Error(`Audio load failed: ${errorName}`));
             };
             
