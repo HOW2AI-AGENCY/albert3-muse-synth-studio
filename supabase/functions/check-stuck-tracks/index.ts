@@ -61,7 +61,7 @@ serve(async (req: Request): Promise<Response> => {
       .from('tracks')
       .select('id, title, prompt, user_id, provider, created_at, metadata, status, suno_task_id, mureka_task_id')
       .eq('status', 'processing')
-      .not('metadata->callback_error', 'is', null)
+      .filter('metadata->>callback_error', 'not.is', null)
       .limit(10);
     
     if (!errorTracksErr && errorTracks && errorTracks.length > 0) {
