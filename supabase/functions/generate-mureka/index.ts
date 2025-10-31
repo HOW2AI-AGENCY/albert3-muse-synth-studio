@@ -17,7 +17,7 @@ import { findOrCreateTrack } from "../_shared/track-helpers.ts";
 import { createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { sentryClient } from "../_shared/sentry.ts";
-import { normalizeMurekaLyricsResponse } from "../_shared/mureka-normalizers.ts";
+import { normalizeMurekaLyricsResponse, normalizeMurekaMusicResponse } from "../_shared/mureka-normalizers.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { validateAndParse, uuidSchema } from "../_shared/zod-schemas.ts";
 
@@ -347,12 +347,15 @@ serve(async (req) => {
       model: generatePayload.model
     });
 
-    const response = await murekaClient.generateSong(generatePayload);
-    const task_id = response.data.task_id;
+    const rawResponse = await murekaClient.generateSong(generatePayload);
+    const normalizedMusic = normalizeMurekaMusicResponse(rawResponse);
 
-    if (!task_id) {
-      throw new Error('Mureka API did not return task_id');
+    if (!normalizedMusic.success || !normalizedMusic.taskId) {
+      const errMsg = normalizedMusic.error || 'Mureka API did not return task_id';
+      throw new Error(errMsg);
     }
+
+    const task_id = normalizedMusic.taskId;
 
     // 6. Update track with Mureka task ID
     await supabaseAdmin
