@@ -173,9 +173,9 @@ export const TagPalette: React.FC<TagPaletteProps> = ({
 
       {/* Category Tabs */}
       <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="w-full">
-        <div className="relative -mx-1 px-1 pb-2">
+        <div className="relative -mx-1 px-1 pb-1.5">
           <div className="w-full overflow-x-auto scrollbar-minimal">
-            <TabsList className="inline-flex w-auto min-w-full h-auto p-1 bg-muted/50 gap-1">
+            <TabsList className="inline-flex w-auto min-w-full h-7 p-0.5 bg-muted/50 gap-0.5">
               {categories.map(([key, def]) => {
                 const IconComponent = iconMap[def.icon] || Music;
                 return (
@@ -183,8 +183,8 @@ export const TagPalette: React.FC<TagPaletteProps> = ({
                     key={key} 
                     value={key} 
                     className={cn(
-                      "flex items-center gap-1 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2",
-                      "text-[10px] sm:text-xs font-medium whitespace-nowrap flex-shrink-0",
+                      "flex items-center gap-1 px-2 py-1",
+                      "text-[10px] font-medium whitespace-nowrap flex-shrink-0 h-6",
                       "data-[state=active]:bg-background data-[state=active]:shadow-sm"
                     )}
                   >

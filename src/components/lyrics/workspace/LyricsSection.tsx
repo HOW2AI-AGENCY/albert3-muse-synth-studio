@@ -111,8 +111,8 @@ export const LyricsSection: React.FC<LyricsSectionProps> = ({
       >
         {/* Header */}
         <div className={cn(
-          "flex items-center gap-2 p-3 border-b bg-muted/30 min-w-0",
-          compact && "p-2 gap-1.5"
+          "flex items-center gap-2 p-1.5 border-b bg-muted/30 min-w-0",
+          compact && "p-1"
         )}>
           {showControls && !readOnly && (
             <button
@@ -207,7 +207,7 @@ export const LyricsSection: React.FC<LyricsSectionProps> = ({
         </div>
 
         {!isCollapsed && (
-          <div className={cn("p-4 space-y-4", compact && "p-3 space-y-3")}>
+          <div className={cn("p-2 space-y-2", compact && "p-1.5 space-y-1.5")}>
             {/* Tags */}
             {showTags && section.tags.length > 0 && (
               <div className="flex flex-wrap gap-2">

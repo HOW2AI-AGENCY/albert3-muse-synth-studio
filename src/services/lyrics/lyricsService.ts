@@ -28,7 +28,7 @@ export async function saveLyrics(
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      logger.error('User not authenticated', { error: authError });
+      if (authError) logger.error('User not authenticated', authError);
       throw new Error('Требуется авторизация');
     }
 
@@ -42,7 +42,7 @@ export async function saveLyrics(
         .single();
 
       if (fetchError || !existingTrack) {
-        logger.error('Track not found or unauthorized', { error: fetchError, trackId });
+        logger.error('Track not found or unauthorized', fetchError);
         throw new Error('Трек не найден или нет доступа');
       }
 
@@ -55,11 +55,11 @@ export async function saveLyrics(
         .eq('id', trackId);
 
       if (updateError) {
-        logger.error('Failed to update track lyrics', { error: updateError, trackId });
+        logger.error('Failed to update track lyrics', updateError);
         throw new Error('Не удалось обновить лирику');
       }
 
-      logger.info('Lyrics updated successfully', { trackId, title: existingTrack.title });
+      logger.info('Lyrics updated successfully', existingTrack.title);
 
       return {
         success: true,
@@ -80,12 +80,12 @@ export async function saveLyrics(
         });
 
         if (titleError) {
-          logger.warn('Failed to generate title, using default', { error: titleError });
+          logger.warn('Failed to generate title, using default', titleError);
         } else if (titleData?.title) {
           title = titleData.title;
         }
       } catch (titleError) {
-        logger.warn('Error generating title, using default', { error: titleError });
+        logger.warn('Error generating title, using default');
       }
     }
 
@@ -110,11 +110,11 @@ export async function saveLyrics(
       .single();
 
     if (createError) {
-      logger.error('Failed to create draft track', { error: createError });
+      logger.error('Failed to create draft track', createError);
       throw new Error('Не удалось создать трек');
     }
 
-    logger.info('Draft track created successfully', { trackId: newTrack.id, title: newTrack.title });
+    logger.info('Draft track created successfully', newTrack.title);
 
     return {
       success: true,
@@ -124,7 +124,9 @@ export async function saveLyrics(
     };
 
   } catch (error) {
-    logger.error('Error in saveLyrics', error);
+    if (error instanceof Error) {
+      logger.error('Error in saveLyrics', error);
+    }
     throw error;
   }
 }

@@ -136,3 +136,9 @@ verify_jwt = false
 
 [functions.enhance-generation-prompt]
 verify_jwt = false
+
+[functions.generate-track-title]
+verify_jwt = true
+
+[functions.generate-lyrics-ai]
+verify_jwt = true

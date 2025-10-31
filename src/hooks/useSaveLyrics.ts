@@ -37,7 +37,7 @@ export function useSaveLyrics(): UseSaveLyricsReturn {
         description: result.message,
       });
 
-      logger.info('Lyrics saved successfully via hook', { trackId: result.trackId });
+      logger.info('Lyrics saved successfully via hook');
       return result;
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Неизвестная ошибка');
@@ -49,7 +49,7 @@ export function useSaveLyrics(): UseSaveLyricsReturn {
         variant: 'destructive'
       });
 
-      logger.error('Error saving lyrics via hook', err);
+      logger.error('Error saving lyrics via hook', error);
       return null;
     } finally {
       setIsSaving(false);

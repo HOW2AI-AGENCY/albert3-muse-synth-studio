@@ -12,6 +12,7 @@ export interface LyricsWorkspaceProps {
   onChange?: (value: string) => void;
   onGenerate?: () => void;
   onGenerateLyrics?: (lyrics: string) => void;
+  onSave?: (lyrics: string) => Promise<void>;
   readOnly?: boolean;
   showAITools?: boolean;
   showTags?: boolean;
@@ -26,6 +27,7 @@ export const LyricsWorkspace = memo<LyricsWorkspaceProps>(({
   onChange,
   onGenerate,
   onGenerateLyrics,
+  onSave,
   readOnly = false,
   showAITools = false,
   showTags = true,
@@ -166,6 +168,8 @@ export const LyricsWorkspace = memo<LyricsWorkspaceProps>(({
           onGenerate={onGenerate}
           onGenerateLyrics={onGenerateLyrics}
           onAddSection={handleAddSection}
+          onSave={onSave}
+          currentLyrics={value}
           readOnly={readOnly}
           compact={compact}
         />

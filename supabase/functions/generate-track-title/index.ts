@@ -1,8 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { createCorsHeaders } from "../_shared/cors.ts";
 import { logger } from "../_shared/logger.ts";
 
 serve(async (req) => {
+  const corsHeaders = createCorsHeaders(req);
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -11,7 +13,7 @@ serve(async (req) => {
     const { lyrics, prompt } = await req.json();
     
     if (!lyrics && !prompt) {
-      logger.error('No lyrics or prompt provided', 'generate-track-title');
+      logger.error('No lyrics or prompt provided');
       return new Response(
         JSON.stringify({ error: 'Требуется текст лирики или промпт' }), 
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -20,7 +22,7 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
-      logger.error('LOVABLE_API_KEY not configured', 'generate-track-title');
+      logger.error('LOVABLE_API_KEY not configured');
       return new Response(
         JSON.stringify({ error: 'AI сервис не настроен' }), 
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -39,7 +41,7 @@ ${content.slice(0, 500)}
 
 Название (на русском, до 50 символов):`;
 
-    logger.info('Generating track title with Lovable AI', 'generate-track-title', { contentLength: content.length });
+    logger.info('Generating track title with Lovable AI', { contentLength: content.length });
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -59,7 +61,7 @@ ${content.slice(0, 500)}
 
     if (!response.ok) {
       const errorText = await response.text();
-      logger.error('Lovable AI error', 'generate-track-title', { status: response.status, error: errorText });
+      logger.error('Lovable AI error', { status: response.status, error: errorText });
       
       if (response.status === 429) {
         return new Response(
@@ -77,7 +79,7 @@ ${content.slice(0, 500)}
       
       // Fallback при ошибках AI
       const fallbackTitle = generateFallbackTitle(content);
-      logger.warn('Using fallback title generation', 'generate-track-title', { fallbackTitle });
+      logger.warn('Using fallback title generation', { fallbackTitle });
       return new Response(
         JSON.stringify({ title: fallbackTitle, source: 'fallback' }), 
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -102,10 +104,10 @@ ${content.slice(0, 500)}
     // Если AI вернул пустое название - используем fallback
     if (!title) {
       title = generateFallbackTitle(content);
-      logger.warn('AI returned empty title, using fallback', 'generate-track-title', { fallbackTitle: title });
+      logger.warn('AI returned empty title, using fallback', { fallbackTitle: title });
     }
 
-    logger.info('Track title generated successfully', 'generate-track-title', { title });
+    logger.info('Track title generated successfully', { title });
 
     return new Response(
       JSON.stringify({ title, source: 'ai' }), 
@@ -113,7 +115,7 @@ ${content.slice(0, 500)}
     );
 
   } catch (error) {
-    logger.error('Error in generate-track-title', error, 'generate-track-title');
+    logger.error('Error in generate-track-title', { error });
     
     // Fallback при неожиданных ошибках
     const fallbackTitle = generateFallbackTitle('');
