@@ -702,6 +702,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "track_likes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_stats"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       track_retry_attempts: {
@@ -960,6 +967,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tracks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_stats"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       user_roles: {
@@ -1041,7 +1055,43 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      analytics_generations_daily: {
+        Row: {
+          avg_generation_time_seconds: number | null
+          count: number | null
+          date: string | null
+          provider: string | null
+          status: string | null
+          unique_users: number | null
+        }
+        Relationships: []
+      }
+      analytics_top_genres: {
+        Row: {
+          avg_plays: number | null
+          genre: string | null
+          total_plays: number | null
+          track_count: number | null
+          unique_creators: number | null
+        }
+        Relationships: []
+      }
+      user_stats: {
+        Row: {
+          email: string | null
+          full_name: string | null
+          last_track_created: string | null
+          total_downloads: number | null
+          total_likes: number | null
+          total_plays: number | null
+          total_tracks: number | null
+          total_views: number | null
+          tracks_last_30_days: number | null
+          tracks_last_7_days: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       decrement_production_credits: {
@@ -1075,6 +1125,7 @@ export type Database = {
       }
       increment_play_count: { Args: { track_id: string }; Returns: undefined }
       increment_view_count: { Args: { track_id: string }; Returns: undefined }
+      refresh_analytics_views: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
