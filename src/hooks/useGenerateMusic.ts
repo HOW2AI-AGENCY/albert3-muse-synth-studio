@@ -6,6 +6,8 @@
 import { useState, useCallback, useRef } from 'react';
 import { GenerationService, GenerationRequest } from '@/services/generation';
 import { logger } from '@/utils/logger';
+import { rateLimiter, RATE_LIMIT_CONFIGS, formatResetTime } from '@/utils/rateLimiter';
+import { supabase } from '@/integrations/supabase/client';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { MusicProvider } from '@/config/provider-models';
 
@@ -112,6 +114,32 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
         variant: 'destructive' 
       });
       return false;
+    }
+
+    // ✅ Rate limiting check
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const rateLimit = rateLimiter.check(user.id, RATE_LIMIT_CONFIGS.GENERATION);
+      
+      if (!rateLimit.allowed) {
+        const resetTime = formatResetTime(rateLimit.resetAt);
+        logger.warn('[HOOK] Rate limit exceeded', 'useGenerateMusic', {
+          userId: user.id,
+          resetAt: rateLimit.resetAt,
+        });
+        
+        toast({
+          title: '⏱️ Превышен лимит запросов',
+          description: `Вы можете создать не более ${RATE_LIMIT_CONFIGS.GENERATION.maxRequests} треков в минуту. Попробуйте снова через ${resetTime}.`,
+          variant: 'destructive',
+        });
+        return false;
+      }
+      
+      logger.info('[HOOK] Rate limit OK', 'useGenerateMusic', {
+        remaining: rateLimit.remaining,
+        resetAt: new Date(rateLimit.resetAt).toISOString(),
+      });
     }
 
     // Debounce protection
