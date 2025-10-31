@@ -13,6 +13,10 @@ import { PerformanceMonitorWidget } from "@/components/dev/PerformanceMonitorWid
 import { SentryFeedbackButton } from "@/components/SentryFeedbackButton";
 import { toast } from "sonner";
 import { reportWebVitals, logMetric } from "@/utils/web-vitals";
+import { 
+  preconnectExternalResources, 
+  setupResourceHints 
+} from "@/utils/bundleOptimization";
 
 // Оптимизированная конфигурация React Query
 const queryClient = new QueryClient({
@@ -44,6 +48,12 @@ const App = () => {
     if (import.meta.env.DEV) {
       reportWebVitals(logMetric);
     }
+  }, []);
+
+  // ✅ Setup performance optimizations
+  useEffect(() => {
+    preconnectExternalResources();
+    setupResourceHints();
   }, []);
 
   useEffect(() => {

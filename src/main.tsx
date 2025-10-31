@@ -135,19 +135,4 @@ if (typeof window !== 'undefined') {
   }
 }
 
-// Предзагрузка критических роутов после загрузки
-const preloadCriticalRoutes = async () => {
-  if (typeof window === 'undefined') return;
-  
-  const { preloadCriticalRoutes: preload } = await import('@/utils/bundleOptimization');
-  preload();
-};
-
 createRoot(document.getElementById('root')!).render(<App />);
-
-// Запускаем предзагрузку с задержкой
-setTimeout(() => {
-  preloadCriticalRoutes().catch((error) => {
-    logger.error('Failed to preload critical routes', error, 'BundleOptimization');
-  });
-}, 1000);

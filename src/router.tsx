@@ -2,11 +2,12 @@ import { Suspense } from "react";
 import { createBrowserRouter } from "react-router-dom";
 import { createLazyComponent } from "./utils/lazyImports";
 
-import Landing from "./pages/Landing";
-import Auth from "./pages/Auth";
-import NotFound from "./pages/NotFound";
-import ProtectedRoute from "./components/ProtectedRoute";
-import WorkspaceLayout from "./components/workspace/WorkspaceLayout";
+// ✅ FIX: Lazy load all pages for optimal bundle splitting
+const Landing = createLazyComponent(() => import("./pages/Landing"), "Landing");
+const Auth = createLazyComponent(() => import("./pages/Auth"), "Auth");
+const NotFound = createLazyComponent(() => import("./pages/NotFound"), "NotFound");
+const ProtectedRoute = createLazyComponent(() => import("./components/ProtectedRoute"), "ProtectedRoute");
+const WorkspaceLayout = createLazyComponent(() => import("./components/workspace/WorkspaceLayout"), "WorkspaceLayout");
 
 // ========== LAZY ROUTES (Code Splitting) with Error Handling ==========
 // Critical path - minimal chunks
@@ -42,8 +43,22 @@ const LoadingSpinner = () => (
 
 export const router = createBrowserRouter(
   [
-    { path: "/", element: <Landing /> },
-    { path: "/auth", element: <Auth /> },
+    { 
+      path: "/", 
+      element: (
+        <Suspense fallback={<LoadingSpinner />}>
+          <Landing />
+        </Suspense>
+      )
+    },
+    { 
+      path: "/auth", 
+      element: (
+        <Suspense fallback={<LoadingSpinner />}>
+          <Auth />
+        </Suspense>
+      )
+    },
     {
       path: "/debug/edge-functions",
       element: (
@@ -55,9 +70,11 @@ export const router = createBrowserRouter(
     {
       path: "/workspace",
       element: (
-        <ProtectedRoute>
-          <WorkspaceLayout />
-        </ProtectedRoute>
+        <Suspense fallback={<LoadingSpinner />}>
+          <ProtectedRoute>
+            <WorkspaceLayout />
+          </ProtectedRoute>
+        </Suspense>
       ),
       children: [
         {
@@ -158,13 +175,30 @@ export const router = createBrowserRouter(
         },
       ],
     },
-    { path: "*", element: <NotFound /> },
+    { 
+      path: "*", 
+      element: (
+        <Suspense fallback={<LoadingSpinner />}>
+          <NotFound />
+        </Suspense>
+      )
+    },
   ],
   {
     future: {
       v7_relativeSplatPath: true,
+      v7_fetcherPersist: true,  // ✅ Better navigation state
     },
   }
 );
+
+// ✅ Preload critical routes on app start (after 2s idle)
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    // Preload most visited routes
+    import("./pages/workspace/Generate");
+    import("./pages/workspace/Library");
+  }, 2000);
+}
 
 export default router;
