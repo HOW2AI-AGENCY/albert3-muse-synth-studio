@@ -1,4 +1,4 @@
-# 🎵 Albert3 Muse Synth Studio v3.0.0-alpha.2
+# 🎵 Albert3 Muse Synth Studio v3.0.0-alpha.3
 
 <div align="center">
 
