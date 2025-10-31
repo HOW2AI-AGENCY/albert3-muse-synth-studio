@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LyricsWorkspace } from '../workspace/LyricsWorkspace';
 
 describe('LyricsWorkspace', () => {
@@ -8,6 +8,7 @@ describe('LyricsWorkspace', () => {
   const mockOnSave = vi.fn();
 
   const defaultProps = {
+    mode: 'edit' as const,
     value: '[Verse]\nTest lyrics content\n\n[Chorus]\nTest chorus',
     onChange: mockOnChange,
     onGenerate: mockOnGenerate,
@@ -113,6 +114,6 @@ describe('LyricsWorkspace', () => {
   it('should support adding tags when enabled', () => {
     render(<LyricsWorkspace {...defaultProps} showTags={true} />);
     
-    expect(screen.getByPlaceholder(/Add tag/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Add tag/i)).toBeInTheDocument();
   });
 });
