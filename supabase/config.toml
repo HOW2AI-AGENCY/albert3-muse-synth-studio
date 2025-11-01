@@ -178,5 +178,11 @@ verify_jwt = false
 [functions.export-wav]
 verify_jwt = true
 
-[functions.wav-callback]
+[functions.get-timestamped-lyrics]
+verify_jwt = true
+
+[functions.replace-section]
+verify_jwt = true
+
+[functions.replace-section-callback]
 verify_jwt = false

@@ -47,6 +47,13 @@ export type Database = {
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "analytics_events_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
         ]
       }
       app_settings: {
@@ -180,6 +187,13 @@ export type Database = {
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "callback_logs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
         ]
       }
       lyrics_generation_log: {
@@ -291,6 +305,13 @@ export type Database = {
             columns: ["track_id"]
             isOneToOne: false
             referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lyrics_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
             referencedColumns: ["id"]
           },
         ]
@@ -695,6 +716,13 @@ export type Database = {
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "song_descriptions_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: true
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
         ]
       }
       song_recognitions: {
@@ -820,6 +848,13 @@ export type Database = {
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "suno_personas_source_track_id_fkey"
+            columns: ["source_track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
         ]
       }
       track_archiving_jobs: {
@@ -885,6 +920,13 @@ export type Database = {
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "track_archiving_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
         ]
       }
       track_likes: {
@@ -912,6 +954,13 @@ export type Database = {
             columns: ["track_id"]
             isOneToOne: false
             referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_likes_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
             referencedColumns: ["id"]
           },
           {
@@ -956,6 +1005,89 @@ export type Database = {
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "track_retry_attempts_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      track_section_replacements: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          negative_tags: string | null
+          parent_track_id: string
+          prompt: string
+          replaced_end_s: number
+          replaced_start_s: number
+          replacement_audio_url: string | null
+          status: string
+          suno_task_id: string | null
+          tags: string
+          updated_at: string | null
+          version_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          negative_tags?: string | null
+          parent_track_id: string
+          prompt: string
+          replaced_end_s: number
+          replaced_start_s: number
+          replacement_audio_url?: string | null
+          status?: string
+          suno_task_id?: string | null
+          tags: string
+          updated_at?: string | null
+          version_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          negative_tags?: string | null
+          parent_track_id?: string
+          prompt?: string
+          replaced_end_s?: number
+          replaced_start_s?: number
+          replacement_audio_url?: string | null
+          status?: string
+          suno_task_id?: string | null
+          tags?: string
+          updated_at?: string | null
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_section_replacements_parent_track_id_fkey"
+            columns: ["parent_track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_section_replacements_parent_track_id_fkey"
+            columns: ["parent_track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_section_replacements_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "track_versions"
+            referencedColumns: ["id"]
+          },
         ]
       }
       track_stems: {
@@ -998,6 +1130,13 @@ export type Database = {
             columns: ["track_id"]
             isOneToOne: false
             referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_stems_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
             referencedColumns: ["id"]
           },
           {
@@ -1061,6 +1200,13 @@ export type Database = {
             columns: ["parent_track_id"]
             isOneToOne: false
             referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_versions_parent_track_id_fkey"
+            columns: ["parent_track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
             referencedColumns: ["id"]
           },
         ]
@@ -1287,11 +1433,44 @@ export type Database = {
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "wav_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      tracks_with_timestamped_lyrics: {
+        Row: {
+          audio_url: string | null
+          has_timestamped_lyrics: boolean | null
+          id: string | null
+          lyrics: string | null
+          timestamped_lyrics: Json | null
+          title: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          has_timestamped_lyrics?: never
+          id?: string | null
+          lyrics?: string | null
+          timestamped_lyrics?: never
+          title?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          has_timestamped_lyrics?: never
+          id?: string | null
+          lyrics?: string | null
+          timestamped_lyrics?: never
+          title?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       decrement_production_credits: {
