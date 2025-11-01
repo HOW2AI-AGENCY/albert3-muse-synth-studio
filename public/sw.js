@@ -1,294 +1,176 @@
-// Service Worker для кэширования аудио файлов
-const CACHE_NAME = 'albert-muse-audio-cache-v1';
-const AUDIO_CACHE_NAME = 'albert-muse-audio-files-v1';
-const STATIC_CACHE_NAME = 'albert-muse-static-v1';
+// Service Worker for Albert3 Muse Synth Studio
+// Version 2.4.0 - Week 3: Smart Loading & Caching
 
-// Файлы для кэширования при установке
-const STATIC_FILES = [
+const CACHE_VERSION = 'v2.4.0';
+const CACHE_NAME = `albert3-cache-${CACHE_VERSION}`;
+
+// Static assets to cache on install
+const STATIC_CACHE_URLS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/favicon.ico'
 ];
 
-// Максимальный размер кэша аудио файлов (100MB)
-const MAX_AUDIO_CACHE_SIZE = 100 * 1024 * 1024;
-// Максимальное количество аудио файлов в кэше
-const MAX_AUDIO_FILES = 50;
+// Audio files cache (separate from static)
+const AUDIO_CACHE_NAME = `albert3-audio-${CACHE_VERSION}`;
 
-// Установка Service Worker
+// API responses cache
+const API_CACHE_NAME = `albert3-api-${CACHE_VERSION}`;
+
+// Cache strategies
+const CACHE_STRATEGIES = {
+  cacheFirst: 'cache-first',
+  networkFirst: 'network-first',
+  staleWhileRevalidate: 'stale-while-revalidate',
+};
+
+// Install event - cache static assets
 self.addEventListener('install', (event) => {
-  console.log('[SW] Установка Service Worker');
-  
-  event.waitUntil((async () => {
-    try {
-      const cache = await caches.open(STATIC_CACHE_NAME);
-      console.log('[SW] Кэширование статических файлов');
-      try {
-        // Пытаемся закэшировать все сразу
-        await cache.addAll(STATIC_FILES);
-      } catch (e) {
-        // Если какая-то запись недоступна, пробуем по одной и не падаем
-        console.warn('[SW] addAll не удалось, кэшируем по одному:', e);
-        for (const url of STATIC_FILES) {
-          try {
-            const resp = await fetch(url, { cache: 'no-store' });
-            if (resp.ok) {
-              await cache.put(url, resp.clone());
-            } else {
-              console.warn('[SW] Пропуск файла (не ok):', url, resp.status);
-            }
-          } catch (singleErr) {
-            console.warn('[SW] Пропуск файла (ошибка):', url, singleErr);
-          }
-        }
-      }
-      console.log('[SW] Service Worker установлен');
-    } finally {
-      await self.skipWaiting();
-    }
-  })());
-});
-
-// Активация Service Worker
-self.addEventListener('activate', (event) => {
-  console.log('[SW] Активация Service Worker');
+  console.log('[SW] Installing service worker...');
   
   event.waitUntil(
-    caches.keys()
-      .then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cacheName) => {
-            // Удаляем старые кэши
-            if (cacheName !== CACHE_NAME && 
-                cacheName !== AUDIO_CACHE_NAME && 
-                cacheName !== STATIC_CACHE_NAME) {
-              console.log('[SW] Удаление старого кэша:', cacheName);
-              return caches.delete(cacheName);
-            }
-          })
-        );
-      })
-      .then(() => {
-        console.log('[SW] Service Worker активирован');
-        return self.clients.claim();
-      })
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('[SW] Caching static assets');
+      return cache.addAll(STATIC_CACHE_URLS);
+    }).then(() => {
+      console.log('[SW] Service worker installed');
+      return self.skipWaiting();
+    })
   );
 });
 
-// Перехват запросов
+// Activate event - clean up old caches
+self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating service worker...');
+  
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME && 
+              cacheName !== AUDIO_CACHE_NAME && 
+              cacheName !== API_CACHE_NAME) {
+            console.log('[SW] Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => {
+      console.log('[SW] Service worker activated');
+      return self.clients.claim();
+    })
+  );
+});
+
+// Fetch event - implement caching strategies
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Пропускаем не-GET и префлайт запросы
+  // Skip non-GET requests
   if (request.method !== 'GET') {
-    event.respondWith(fetch(request));
     return;
   }
 
-  // Явно пропускаем Supabase API-запросы (кроме явных аудио по расширению)
-  if (url.hostname.endsWith('supabase.co') && !isAudioFileByExtension(request.url)) {
-    event.respondWith(fetch(request));
+  // Skip chrome-extension and other non-http requests
+  if (!url.protocol.startsWith('http')) {
     return;
   }
 
-  // Кэшируем только аудио файлы по расширению
-  if (isAudioFileByExtension(request.url)) {
-    event.respondWith(handleAudioRequest(request));
+  // Strategy 1: Audio files - Cache First with Network Fallback
+  if (request.url.includes('.mp3') || request.url.includes('.wav') || request.url.includes('/audio/')) {
+    event.respondWith(cacheFirstStrategy(request, AUDIO_CACHE_NAME));
+    return;
   }
-  // Кэшируем статические файлы
-  else if (isStaticFile(request.url)) {
-    event.respondWith(handleStaticRequest(request));
+
+  // Strategy 2: API calls - Network First with Cache Fallback
+  if (url.hostname.includes('supabase.co')) {
+    event.respondWith(networkFirstStrategy(request, API_CACHE_NAME));
+    return;
   }
-  // Остальные запросы проходят без кэширования
-  else {
-    event.respondWith(fetch(request));
+
+  // Strategy 3: Static assets - Stale While Revalidate
+  if (request.destination === 'image' || 
+      request.destination === 'style' || 
+      request.destination === 'script') {
+    event.respondWith(staleWhileRevalidateStrategy(request, CACHE_NAME));
+    return;
   }
+
+  // Default: Network First
+  event.respondWith(networkFirstStrategy(request, CACHE_NAME));
 });
 
-// Проверка, является ли файл аудио
-function isAudioFileByExtension(url) {
-  const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac'];
-  const u = url.toLowerCase();
-  return audioExtensions.some(ext => u.includes(ext));
-}
-
-// Проверка, является ли файл статическим
-function isStaticFile(url) {
-  const staticExtensions = ['.js', '.css', '.html', '.png', '.jpg', '.svg', '.ico'];
-  return staticExtensions.some(ext => url.includes(ext)) || url.endsWith('/');
-}
-
-// Обработка запросов аудио файлов
-async function handleAudioRequest(request) {
-  const cache = await caches.open(AUDIO_CACHE_NAME);
-  const cachedResponse = await cache.match(request);
+// Cache First Strategy
+async function cacheFirstStrategy(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
   
-  if (cachedResponse) {
-    console.log('[SW] Аудио файл найден в кэше:', request.url);
-    return cachedResponse;
+  if (cached) {
+    console.log('[SW] Cache hit:', request.url);
+    return cached;
   }
-  
+
   try {
-    console.log('[SW] Загрузка аудио файла:', request.url);
-    const response = await fetch(request, { cache: 'no-store' });
-
+    const response = await fetch(request);
     if (response.ok) {
-      const contentType = (response.headers.get('content-type') || '').toLowerCase();
-      if (contentType.startsWith('audio/')) {
-        // Проверяем размер кэша перед добавлением
-        await manageCacheSize();
-        // Кэшируем только аудио контент
-        await cache.put(request, response.clone());
-        console.log('[SW] Аудио файл добавлен в кэш:', request.url);
-      }
+      cache.put(request, response.clone());
     }
-
     return response;
   } catch (error) {
-    console.error('[SW] Ошибка загрузки аудио файла:', error);
-    
-    // Возвращаем кэшированную версию, если есть
-    const fallbackResponse = await cache.match(request);
-    if (fallbackResponse) {
-      return fallbackResponse;
-    }
-    
-    // Возвращаем ошибку
-    return new Response('Аудио файл недоступен', { 
-      status: 503, 
-      statusText: 'Service Unavailable' 
-    });
+    console.error('[SW] Fetch failed:', error);
+    throw error;
   }
 }
 
-// Обработка запросов статических файлов
-async function handleStaticRequest(request) {
-  const cache = await caches.open(STATIC_CACHE_NAME);
-  const cachedResponse = await cache.match(request);
-  
-  if (cachedResponse) {
-    return cachedResponse;
-  }
+// Network First Strategy
+async function networkFirstStrategy(request, cacheName) {
+  const cache = await caches.open(cacheName);
   
   try {
     const response = await fetch(request);
     if (response.ok) {
-      const responseToCache = response.clone();
-      await cache.put(request, responseToCache);
+      cache.put(request, response.clone());
     }
     return response;
   } catch (error) {
-    console.error('[SW] Ошибка загрузки статического файла:', error);
-    return new Response('Файл недоступен', { 
-      status: 503, 
-      statusText: 'Service Unavailable' 
-    });
+    console.log('[SW] Network failed, trying cache:', request.url);
+    const cached = await cache.match(request);
+    if (cached) {
+      return cached;
+    }
+    throw error;
   }
 }
 
-// Управление размером кэша
-async function manageCacheSize() {
-  const cache = await caches.open(AUDIO_CACHE_NAME);
-  const keys = await cache.keys();
+// Stale While Revalidate Strategy
+async function staleWhileRevalidateStrategy(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
   
-  if (keys.length >= MAX_AUDIO_FILES) {
-    console.log('[SW] Превышен лимит файлов в кэше, удаляем старые');
-    
-    // Удаляем 10% самых старых файлов
-    const filesToDelete = Math.ceil(keys.length * 0.1);
-    for (let i = 0; i < filesToDelete; i++) {
-      await cache.delete(keys[i]);
+  const fetchPromise = fetch(request).then((response) => {
+    if (response.ok) {
+      cache.put(request, response.clone());
     }
-  }
-  
-  // Проверяем общий размер кэша (приблизительно)
-  let totalSize = 0;
-  const responses = await Promise.all(
-    keys.slice(0, 10).map(key => cache.match(key))
-  );
-  
-  responses.forEach(response => {
-    if (response && response.headers.get('content-length')) {
-      totalSize += parseInt(response.headers.get('content-length'));
-    }
+    return response;
   });
-  
-  // Если размер превышен, удаляем файлы
-  if (totalSize * (keys.length / 10) > MAX_AUDIO_CACHE_SIZE) {
-    console.log('[SW] Превышен размер кэша, очищаем старые файлы');
-    const filesToDelete = Math.ceil(keys.length * 0.2);
-    for (let i = 0; i < filesToDelete; i++) {
-      await cache.delete(keys[i]);
-    }
-  }
+
+  return cached || fetchPromise;
 }
 
-// Обработка сообщений от основного потока
+// Message handling for cache management
 self.addEventListener('message', (event) => {
-  const { type, data } = event.data;
+  if (event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
   
-  switch (type) {
-    case 'CACHE_AUDIO':
-      cacheAudioFile(data.url);
-      break;
-    case 'CLEAR_CACHE':
-      clearAudioCache();
-      break;
-    case 'GET_CACHE_INFO':
-      getCacheInfo().then(info => {
-        event.ports[0].postMessage(info);
-      });
-      break;
+  if (event.data.type === 'CLEAR_CACHE') {
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => caches.delete(cacheName))
+        );
+      })
+    );
   }
 });
-
-// Принудительное кэширование аудио файла
-async function cacheAudioFile(url) {
-  try {
-    const cache = await caches.open(AUDIO_CACHE_NAME);
-    const response = await fetch(url, { cache: 'no-store' });
-
-    if (response.ok) {
-      const contentType = (response.headers.get('content-type') || '').toLowerCase();
-      if (contentType.startsWith('audio/')) {
-        await manageCacheSize();
-        await cache.put(url, response);
-        console.log('[SW] Файл принудительно добавлен в кэш:', url);
-      } else {
-        console.log('[SW] Принудительное кэширование пропущено: не аудио', url);
-      }
-    }
-  } catch (error) {
-    console.error('[SW] Ошибка принудительного кэширования:', error);
-  }
-}
-
-// Очистка кэша аудио файлов
-async function clearAudioCache() {
-  try {
-    await caches.delete(AUDIO_CACHE_NAME);
-    console.log('[SW] Кэш аудио файлов очищен');
-  } catch (error) {
-    console.error('[SW] Ошибка очистки кэша:', error);
-  }
-}
-
-// Получение информации о кэше
-async function getCacheInfo() {
-  try {
-    const cache = await caches.open(AUDIO_CACHE_NAME);
-    const keys = await cache.keys();
-    
-    return {
-      fileCount: keys.length,
-      maxFiles: MAX_AUDIO_FILES,
-      maxSize: MAX_AUDIO_CACHE_SIZE,
-      files: keys.map(key => key.url)
-    };
-  } catch (error) {
-    console.error('[SW] Ошибка получения информации о кэше:', error);
-    return { fileCount: 0, maxFiles: MAX_AUDIO_FILES, maxSize: MAX_AUDIO_CACHE_SIZE, files: [] };
-  }
-}

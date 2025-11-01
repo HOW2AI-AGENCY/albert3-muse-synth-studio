@@ -51,9 +51,16 @@ if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
   });
 }
 
-// Инициализируем Service Worker
+// Инициализируем Service Worker (старый)
 initServiceWorker().catch((error) => {
   logger.error('Failed to register service worker', error, 'ServiceWorker');
+});
+
+// Регистрируем новый SW для Week 3 оптимизаций
+import('@/utils/serviceWorkerRegistration').then(({ registerServiceWorker }) => {
+  registerServiceWorker().catch((error) => {
+    logger.error('Failed to register Week 3 service worker', error, 'ServiceWorker');
+  });
 });
 
 const registerWebVitals = async () => {
