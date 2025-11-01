@@ -117,7 +117,7 @@ export const createCorsHeaders = (requestOrOrigin?: Request | string | null) => 
   const headers: Record<string, string> = {
     'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-app-environment',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-app-environment, x-correlation-id',
     'Access-Control-Max-Age': '86400',
   };
 
