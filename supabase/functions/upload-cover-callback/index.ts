@@ -8,6 +8,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { createSupabaseAdminClient } from "../_shared/supabase.ts";
 import { logger } from "../_shared/logger.ts";
+import type { SunoCallbackPayload, CallbackType } from "../_shared/types/callbacks.ts";
+import { getDetailedErrorMessage } from "../_shared/types/callbacks.ts";
 
 const corsHeaders = createCorsHeaders({} as Request);
 
@@ -17,7 +19,7 @@ serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    const body = await req.json();
+    const body: SunoCallbackPayload = await req.json();
     logger.info('[UPLOAD-COVER-CALLBACK] Received callback', { body });
 
     const { code, msg, data: callbackData } = body;
@@ -50,57 +52,121 @@ serve(async (req: Request): Promise<Response> => {
 
     const track = tracks[0];
 
-    // Handle different callback stages
-    if (code === 200 && callbackType === 'complete' && musicData && musicData.length > 0) {
-      const music = musicData[0];
-      
-      logger.info('[UPLOAD-COVER-CALLBACK] Upload-cover completed', {
-        trackId: track.id,
-        taskId,
-        audioUrl: music.audio_url
-      });
+    // Handle successful callback
+    if (code === 200) {
+      switch (callbackType as CallbackType) {
+        case 'text':
+          // Stage 1: Text/lyrics generated (33% progress)
+          logger.info('[UPLOAD-COVER-CALLBACK] Text generation completed', {
+            trackId: track.id,
+            taskId
+          });
 
-      await supabase
-        .from('tracks')
-        .update({
-          status: 'completed',
-          audio_url: music.audio_url,
-          cover_url: music.image_url,
-          video_url: music.video_url,
-          lyrics: music.prompt,
-          duration: music.duration ? Math.floor(music.duration) : null,
-          duration_seconds: music.duration ? Math.floor(music.duration) : null,
-          metadata: {
-            ...track.metadata,
-            suno_audio_id: music.id,
-            model_name: music.model_name,
-            tags: music.tags,
-            create_time: music.createTime
+          await supabase.from('tracks').update({
+            status: 'processing',
+            progress_percent: 33,
+            metadata: {
+              ...track.metadata,
+              stage: 'text_generated',
+              stage_timestamp: new Date().toISOString()
+            }
+          }).eq('id', track.id);
+          break;
+
+        case 'first':
+          // Stage 2: First track ready (66% progress)
+          if (musicData && musicData.length > 0) {
+            const music = musicData[0];
+            
+            logger.info('[UPLOAD-COVER-CALLBACK] First track ready', {
+              trackId: track.id,
+              taskId,
+              audioUrl: music.audio_url
+            });
+
+            await supabase.from('tracks').update({
+              status: 'processing',
+              progress_percent: 66,
+              audio_url: music.audio_url,
+              cover_url: music.image_url,
+              duration: music.duration ? Math.floor(music.duration) : null,
+              metadata: {
+                ...track.metadata,
+                stage: 'first_track_ready',
+                stage_timestamp: new Date().toISOString(),
+                preview_audio_id: music.id
+              }
+            }).eq('id', track.id);
           }
-        })
-        .eq('id', track.id);
+          break;
 
-    } else if (code !== 200 || callbackType === 'error') {
-      logger.error('[UPLOAD-COVER-CALLBACK] Upload-cover failed', {
+        case 'complete':
+          // Stage 3: All tracks completed (100% progress)
+          if (musicData && musicData.length > 0) {
+            const music = musicData[0];
+            
+            logger.info('[UPLOAD-COVER-CALLBACK] Upload-cover completed', {
+              trackId: track.id,
+              taskId,
+              audioUrl: music.audio_url
+            });
+
+            await supabase.from('tracks').update({
+              status: 'completed',
+              progress_percent: 100,
+              audio_url: music.audio_url,
+              cover_url: music.image_url,
+              video_url: music.video_url,
+              lyrics: music.prompt,
+              duration: music.duration ? Math.floor(music.duration) : null,
+              duration_seconds: music.duration ? Math.floor(music.duration) : null,
+              metadata: {
+                ...track.metadata,
+                suno_audio_id: music.id,
+                model_name: music.model_name,
+                tags: music.tags,
+                create_time: music.createTime,
+                stage: 'completed',
+                stage_timestamp: new Date().toISOString()
+              }
+            }).eq('id', track.id);
+          }
+          break;
+
+        case 'error':
+          logger.error('[UPLOAD-COVER-CALLBACK] Callback reported error', {
+            trackId: track.id,
+            taskId,
+            msg
+          });
+
+          await supabase.from('tracks').update({
+            status: 'failed',
+            error_message: msg || 'Callback reported error'
+          }).eq('id', track.id);
+          break;
+      }
+    } else {
+      // Handle error codes (400, 451, 500)
+      const detailedError = getDetailedErrorMessage(code, msg);
+      
+      logger.error('[UPLOAD-COVER-CALLBACK] Task failed', {
         trackId: track.id,
         taskId,
         code,
-        msg
+        msg,
+        detailedError
       });
 
-      await supabase
-        .from('tracks')
-        .update({
-          status: 'failed',
-          error_message: msg || 'Upload-cover failed'
-        })
-        .eq('id', track.id);
-    } else if (callbackType === 'text' || callbackType === 'first') {
-      logger.info('[UPLOAD-COVER-CALLBACK] Intermediate stage', {
-        trackId: track.id,
-        callbackType
-      });
-      // Keep status as 'processing' for intermediate stages
+      await supabase.from('tracks').update({
+        status: 'failed',
+        error_message: detailedError,
+        metadata: {
+          ...track.metadata,
+          error_code: code,
+          error_timestamp: new Date().toISOString()
+        }
+      }).eq('id', track.id);
     }
 
     return new Response(JSON.stringify({ status: 'received' }), {

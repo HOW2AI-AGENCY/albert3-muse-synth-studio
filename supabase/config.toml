@@ -166,6 +166,9 @@ verify_jwt = false
 [functions.upload-cover-callback]
 verify_jwt = false
 
+[functions.add-instrumental-callback]
+verify_jwt = false
+
 [functions.export-wav]
 verify_jwt = true
 

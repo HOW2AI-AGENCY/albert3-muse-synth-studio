@@ -1,7 +1,12 @@
 /**
- * Upload and Extend Audio Callback Handler
+ * Add Instrumental Callback Handler
  * 
- * Receives callbacks from Suno API when upload-extend tasks complete
+ * Receives callbacks from Suno API when add-instrumental tasks complete
+ * Handles three callback stages:
+ * - "text": Text/lyrics generation completed (33% progress)
+ * - "first": First track ready (66% progress)
+ * - "complete": All tracks completed (100% progress)
+ * - "error": Task failed
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -20,13 +25,13 @@ serve(async (req: Request): Promise<Response> => {
 
   try {
     const body: SunoCallbackPayload = await req.json();
-    logger.info('[UPLOAD-EXTEND-CALLBACK] Received callback', { body });
+    logger.info('[ADD-INSTRUMENTAL-CALLBACK] Received callback', { body });
 
     const { code, msg, data: callbackData } = body;
     const { task_id: taskId, callbackType, data: musicData } = callbackData || {};
 
     if (!taskId) {
-      logger.error('[UPLOAD-EXTEND-CALLBACK] Missing taskId in callback');
+      logger.error('[ADD-INSTRUMENTAL-CALLBACK] Missing taskId in callback');
       return new Response(JSON.stringify({ status: 'error', error: 'Missing taskId' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -43,7 +48,7 @@ serve(async (req: Request): Promise<Response> => {
       .limit(1);
 
     if (findError || !tracks || tracks.length === 0) {
-      logger.error('[UPLOAD-EXTEND-CALLBACK] Track not found', { taskId, error: findError });
+      logger.error('[ADD-INSTRUMENTAL-CALLBACK] Track not found', { taskId, error: findError });
       return new Response(JSON.stringify({ status: 'error', error: 'Track not found' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -57,7 +62,7 @@ serve(async (req: Request): Promise<Response> => {
       switch (callbackType as CallbackType) {
         case 'text':
           // Stage 1: Text/lyrics generated (33% progress)
-          logger.info('[UPLOAD-EXTEND-CALLBACK] Text generation completed', {
+          logger.info('[ADD-INSTRUMENTAL-CALLBACK] Text generation completed', {
             trackId: track.id,
             taskId
           });
@@ -78,7 +83,7 @@ serve(async (req: Request): Promise<Response> => {
           if (musicData && musicData.length > 0) {
             const music = musicData[0];
             
-            logger.info('[UPLOAD-EXTEND-CALLBACK] First track ready', {
+            logger.info('[ADD-INSTRUMENTAL-CALLBACK] First track ready', {
               trackId: track.id,
               taskId,
               audioUrl: music.audio_url
@@ -105,7 +110,7 @@ serve(async (req: Request): Promise<Response> => {
           if (musicData && musicData.length > 0) {
             const music = musicData[0];
             
-            logger.info('[UPLOAD-EXTEND-CALLBACK] Upload-extend completed', {
+            logger.info('[ADD-INSTRUMENTAL-CALLBACK] Add-instrumental completed', {
               trackId: track.id,
               taskId,
               audioUrl: music.audio_url
@@ -134,7 +139,7 @@ serve(async (req: Request): Promise<Response> => {
           break;
 
         case 'error':
-          logger.error('[UPLOAD-EXTEND-CALLBACK] Callback reported error', {
+          logger.error('[ADD-INSTRUMENTAL-CALLBACK] Callback reported error', {
             trackId: track.id,
             taskId,
             msg
@@ -150,7 +155,7 @@ serve(async (req: Request): Promise<Response> => {
       // Handle error codes (400, 451, 500)
       const detailedError = getDetailedErrorMessage(code, msg);
       
-      logger.error('[UPLOAD-EXTEND-CALLBACK] Task failed', {
+      logger.error('[ADD-INSTRUMENTAL-CALLBACK] Task failed', {
         trackId: track.id,
         taskId,
         code,
@@ -175,7 +180,7 @@ serve(async (req: Request): Promise<Response> => {
     });
 
   } catch (error) {
-    logger.error('[UPLOAD-EXTEND-CALLBACK] Error processing callback', { error });
+    logger.error('[ADD-INSTRUMENTAL-CALLBACK] Error processing callback', { error });
     return new Response(JSON.stringify({ status: 'error', error: String(error) }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
