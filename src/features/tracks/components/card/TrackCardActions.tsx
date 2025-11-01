@@ -21,6 +21,7 @@ import {
   Mic2,
   UserPlus,
   FileAudio,
+  User,
 } from '@/utils/iconImports';
 import { cn } from '@/lib/utils';
 import { useConvertToWav } from '@/hooks/useConvertToWav';
@@ -55,6 +56,7 @@ interface TrackCardActionsProps {
   onExtend?: (trackId: string) => void;
   onCover?: (trackId: string) => void;
   onAddVocal?: (trackId: string) => void;
+  onCreatePersona?: (trackId: string) => void;
 }
 
 const WavConvertMenuItem = React.memo(({
@@ -116,6 +118,7 @@ export const TrackCardActions = React.memo(({
   onExtend,
   onCover,
   onAddVocal,
+  onCreatePersona,
 }: TrackCardActionsProps) => {
   const isMurekaTrack = trackMetadata?.provider === 'mureka';
   const isSunoTrack = !isMurekaTrack;
@@ -286,6 +289,22 @@ export const TrackCardActions = React.memo(({
                     isMaster: true,
                   })})`}
               </DropdownMenuItem>
+            )}
+
+            {isSunoTrack && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCreatePersona?.(trackId);
+                  }}
+                  disabled={!onCreatePersona}
+                >
+                  <User className="w-4 h-4 mr-2 text-primary" />
+                  Создать персону
+                </DropdownMenuItem>
+              </>
             )}
           </DropdownMenuContent>
         </DropdownMenu>

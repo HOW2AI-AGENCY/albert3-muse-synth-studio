@@ -124,7 +124,8 @@ export {
   UserPlus,
   ExternalLink,
   History,
-  Folder
+  Folder,
+  Lock
 } from 'lucide-react';
 
 // Charts & Analytics
