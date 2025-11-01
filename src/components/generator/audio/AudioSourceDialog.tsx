@@ -200,6 +200,32 @@ export const AudioSourceDialog = memo(({
 
           {/* Record Tab */}
           <TabsContent value="record" className="space-y-4 py-4">
+            {/* Warning for iframe context */}
+            {typeof window !== 'undefined' && window.top !== window.self && (
+              <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg space-y-2">
+                <p className="text-sm text-yellow-600 dark:text-yellow-500">
+                  ⚠️ Микрофон может блокироваться во встроенном окне
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => window.open(window.location.href, '_blank')}
+                  className="w-full"
+                >
+                  Открыть в новой вкладке
+                </Button>
+              </div>
+            )}
+            
+            {/* Warning for non-secure context */}
+            {typeof window !== 'undefined' && !window.isSecureContext && (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <p className="text-sm text-red-600 dark:text-red-500">
+                  🔒 Требуется HTTPS для доступа к микрофону
+                </p>
+              </div>
+            )}
+            
             <div className="flex flex-col items-center justify-center gap-4 py-8">
               <div className={cn(
                 "h-24 w-24 rounded-full flex items-center justify-center transition-all",
