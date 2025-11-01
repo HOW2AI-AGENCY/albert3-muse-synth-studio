@@ -1,6 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "react-router-dom";
 import { useEffect, Suspense } from "react";
@@ -73,18 +72,16 @@ const App = () => {
   return (
     <GlobalErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <AppLayout>
-            <Suspense fallback={<FullPageSpinner />}>
-              <Toaster />
-              <Sonner />
-              <RouterProvider router={router} />
-              <GlobalAudioPlayer />
-              <PerformanceMonitorWidget />
-              <SentryFeedbackButton />
-            </Suspense>
-          </AppLayout>
-        </TooltipProvider>
+        <AppLayout>
+          <Suspense fallback={<FullPageSpinner />}>
+            <Toaster />
+            <Sonner />
+            <RouterProvider router={router} />
+            <GlobalAudioPlayer />
+            <PerformanceMonitorWidget />
+            <SentryFeedbackButton />
+          </Suspense>
+        </AppLayout>
       </QueryClientProvider>
     </GlobalErrorBoundary>
   );
