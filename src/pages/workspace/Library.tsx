@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,8 @@ import { normalizeTrack } from "@/utils/trackNormalizer";
 import { getTrackWithVersions } from "@/features/tracks/api/trackVersions";
 import { primeTrackVersionsCache } from "@/features/tracks/hooks/useTrackVersions";
 import type { AudioPlayerTrack } from "@/types/track";
+import { useAdaptiveGrid } from '@/hooks/useAdaptiveGrid';
+import { VirtualizedTrackGrid } from '@/components/tracks/VirtualizedTrackGrid';
 
 type ViewMode = 'grid' | 'list' | 'optimized';
 type SortBy = 'created_at' | 'title' | 'duration' | 'like_count';
@@ -91,6 +93,25 @@ const Library: React.FC = () => {
   
   const [createPersonaDialogOpen, setCreatePersonaDialogOpen] = useState(false);
   const [selectedTrackForPersona, setSelectedTrackForPersona] = useState<DisplayTrack | null>(null);
+  
+  // Container width tracking for adaptive grid
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  // Measure container width
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    
+    resizeObserver.observe(containerRef.current);
+    
+    return () => resizeObserver.disconnect();
+  }, []);
   
   // Сохранение настроек просмотра
   useEffect(() => {
@@ -294,6 +315,10 @@ const Library: React.FC = () => {
   //   }
   // }, [toast, refreshTracks]);
 
+
+  // Calculate grid parameters
+  const gridParams = useAdaptiveGrid(containerWidth);
+  const shouldVirtualize = filteredAndSortedTracks.length > 50;
 
   const handleShare = useCallback(async (trackId: string) => {
     try {
@@ -621,44 +646,56 @@ const Library: React.FC = () => {
       ) : (
         <>
           {viewMode === 'grid' && (
-            <div 
-              className="grid gap-4 sm:gap-5 md:gap-6 lg:gap-8"
-              style={{
-                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))'
-              }}
-            >
-              {filteredAndSortedTracks.map((track) => (
-                <div key={track.id} className="relative" aria-busy={loadingTrackId === track.id}>
-                  <TrackCard
-                    track={normalizeTrack(track)}
-                    onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
-                    onShare={() => handleShare(track.id)}
-                    onSeparateStems={() => handleSeparateStems(track.id)}
-                    onExtend={() => handleExtend(track.id)}
-                    onCover={() => handleCover(track.id)}
-                    onAddVocal={() => handleAddVocal(track.id)}
-                    onCreatePersona={() => handleCreatePersona(track.id)}
-                    onRetry={handleRetry}
-                    onDelete={handleDelete}
-                  />
-                  {loadingTrackId === track.id && (
-                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-3xl bg-background/80 backdrop-blur-sm">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                      <span className="text-xs font-medium text-muted-foreground">Загрузка версий…</span>
+            <div ref={containerRef} className="w-full">
+              {shouldVirtualize ? (
+                <VirtualizedTrackGrid
+                  tracks={filteredAndSortedTracks}
+                  columns={gridParams.columns}
+                  gap={gridParams.gap}
+                  cardWidth={gridParams.cardWidth}
+                  onTrackPlay={handleTrackPlay}
+                  onShare={handleShare}
+                  onSeparateStems={handleSeparateStems}
+                  onExtend={handleExtend}
+                  onCover={handleCover}
+                  onAddVocal={handleAddVocal}
+                  onCreatePersona={handleCreatePersona}
+                  onRetry={handleRetry}
+                  onDelete={handleDelete}
+                />
+              ) : (
+                <div 
+                  className="grid"
+                  style={{
+                    gridTemplateColumns: `repeat(${gridParams.columns}, minmax(280px, ${gridParams.cardWidth}px))`,
+                    gap: `${gridParams.gap}px`,
+                    justifyContent: 'center'
+                  }}
+                >
+                  {filteredAndSortedTracks.map((track) => (
+                    <div key={track.id} className="relative" style={{ maxWidth: `${gridParams.cardWidth}px` }} aria-busy={loadingTrackId === track.id}>
+                      <TrackCard
+                        track={normalizeTrack(track)}
+                        onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
+                        onShare={() => handleShare(track.id)}
+                        onSeparateStems={() => handleSeparateStems(track.id)}
+                        onExtend={() => handleExtend(track.id)}
+                        onCover={() => handleCover(track.id)}
+                        onAddVocal={() => handleAddVocal(track.id)}
+                        onCreatePersona={() => handleCreatePersona(track.id)}
+                        onRetry={handleRetry}
+                        onDelete={handleDelete}
+                      />
+                      {loadingTrackId === track.id && (
+                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-3xl bg-background/80 backdrop-blur-sm">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                          <span className="text-xs font-medium text-muted-foreground">Загрузка версий…</span>
+                        </div>
+                      )}
                     </div>
-      )}
-
-      {deleteDialogOpen && selectedTrackForDelete && (
-        <LazyTrackDeleteDialog
-          open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
-          trackId={selectedTrackForDelete.id}
-          trackTitle={selectedTrackForDelete.title}
-          onConfirm={confirmDelete}
-        />
-      )}
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
           )}
           

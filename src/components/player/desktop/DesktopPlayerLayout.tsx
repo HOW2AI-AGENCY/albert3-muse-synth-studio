@@ -67,7 +67,7 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
 
   return (
     <div
-      className={`fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:bottom-6 md:max-w-md transition-all duration-500 ease-out ${
+      className={`fixed bottom-6 left-6 right-6 sm:bottom-6 sm:left-6 sm:right-6 md:bottom-8 md:right-8 md:left-auto md:w-[420px] lg:bottom-10 lg:right-10 transition-all duration-500 ease-out ${
         isVisible 
           ? 'translate-y-0 opacity-100 scale-100' 
           : 'translate-y-24 opacity-0 scale-95 pointer-events-none'
@@ -75,34 +75,34 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
       style={{ zIndex: 9999 }}
     >
       {/* Compact floating card with modern design */}
-      <div className="relative rounded-2xl overflow-hidden border-2 border-white/10 shadow-2xl shadow-black/40 hover:shadow-glow-primary transition-shadow duration-300 group">
+      <div className="relative rounded-2xl overflow-hidden border-2 border-primary/20 shadow-2xl shadow-black/60 hover:shadow-primary/20 hover:border-primary/30 transition-all duration-300 group">
         {/* Strong contrast background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900/98 via-gray-800/95 to-gray-900/98 backdrop-blur-2xl" />
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 opacity-50 group-hover:opacity-70 transition-opacity duration-500" />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/98 via-slate-900/98 to-slate-950/98 backdrop-blur-3xl backdrop-saturate-150" />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/8 via-accent/5 to-primary/8 opacity-50 group-hover:opacity-70 transition-opacity duration-500" />
         
         {/* Top accent line with animation */}
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent opacity-60" />
         <div className="absolute top-0 left-1/4 right-1/4 h-0.5 bg-primary shadow-glow-primary animate-pulse" />
         
         {/* Outer glow effect */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 blur-2xl opacity-50 group-hover:opacity-70 transition-opacity duration-500 -z-10" />
+        <div className="absolute -inset-2 bg-gradient-radial from-primary/15 via-accent/10 to-transparent blur-3xl opacity-60 group-hover:opacity-80 transition-opacity duration-500 -z-10" />
 
-        <div className="relative px-4 py-3">
+        <div className="relative px-3 py-2.5 space-y-2.5">
           {/* Close button */}
           <Button
             size="icon"
             variant="ghost"
             onClick={handleClose}
-            className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 hover:bg-destructive/20 hover:text-destructive transition-all duration-200 z-10"
+            className="absolute top-1.5 right-1.5 h-5 w-5 opacity-0 group-hover:opacity-100 hover:bg-destructive/20 hover:text-destructive transition-all duration-200 z-10"
             title="Закрыть плеер"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-3 w-3" />
           </Button>
 
           {/* Track Info - Compact */}
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-2.5">
             <div className="relative group/cover">
-              <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 flex-shrink-0 shadow-md hover:shadow-lg transition-all duration-300 group-hover/cover:scale-105">
+              <div className="relative w-11 h-11 rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 flex-shrink-0 shadow-md hover:shadow-lg transition-all duration-300 group-hover/cover:scale-105">
                 {track.cover_url ? (
                   <img
                     src={track.cover_url}
@@ -131,27 +131,27 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
             
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <h4 className="font-semibold text-sm truncate text-foreground hover:text-primary transition-colors duration-200">
+                <h4 className="font-semibold text-xs truncate text-foreground hover:text-primary transition-colors duration-200">
                   {track.title}
                 </h4>
                 {hasVersions && (
-                  <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 border-primary/30">
+                  <Badge variant="outline" className="text-[8px] px-1 py-0 h-3.5 border-primary/30">
                     V{track.versionNumber ?? currentVersionIndex + 1}
                   </Badge>
                 )}
               </div>
               {track.style_tags && track.style_tags.length > 0 ? (
-                <p className="text-[10px] text-muted-foreground/70 truncate mt-0.5">
+                <p className="text-[9px] text-muted-foreground/70 truncate mt-0.5">
                   {track.style_tags.slice(0, 2).join(', ')}
                 </p>
               ) : (
-                <p className="text-[10px] text-muted-foreground/70 mt-0.5">AI Generated</p>
+                <p className="text-[9px] text-muted-foreground/70 mt-0.5">AI Generated</p>
               )}
             </div>
           </div>
 
           {/* Progress Bar - Compact */}
-          <div className="mb-3">
+          <div className="space-y-1">
             <ProgressBar 
               currentTime={currentTime}
               duration={duration}
@@ -173,23 +173,23 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
             />
 
             {/* Volume Control - Compact */}
-            <div className="flex items-center gap-1.5 min-w-[140px]">
+            <div className="flex items-center gap-1.5 min-w-[120px]">
               <Button
                 size="icon"
                 variant="ghost"
                 onClick={toggleMute}
-                className="h-7 w-7 hover:bg-primary/10 hover:scale-110 transition-all duration-200 group/vol"
+                className="h-6 w-6 hover:bg-primary/10 hover:scale-110 transition-all duration-200 group/vol"
                 title={isMuted ? 'Включить звук' : 'Выключить звук'}
               >
                 {isMuted || volume === 0 ? (
-                  <VolumeX className="h-3.5 w-3.5 group-hover/vol:text-primary transition-colors duration-200" />
+                  <VolumeX className="h-3 w-3 group-hover/vol:text-primary transition-colors duration-200" />
                 ) : volume < 0.5 ? (
-                  <Volume1 className="h-3.5 w-3.5 group-hover/vol:text-primary transition-colors duration-200" />
+                  <Volume1 className="h-3 w-3 group-hover/vol:text-primary transition-colors duration-200" />
                 ) : (
-                  <Volume2 className="h-3.5 w-3.5 group-hover/vol:text-primary transition-colors duration-200" />
+                  <Volume2 className="h-3 w-3 group-hover/vol:text-primary transition-colors duration-200" />
                 )}
               </Button>
-              <div className="flex-1 min-w-[80px] max-w-[100px]">
+              <div className="flex-1 min-w-[70px] max-w-[90px]">
                 <Slider
                   value={[isMuted ? 0 : volume]}
                   max={1}
@@ -199,7 +199,7 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
                   className="cursor-pointer hover:scale-y-125 transition-transform duration-200"
                 />
               </div>
-              <span className="text-[10px] font-medium text-muted-foreground/70 tabular-nums w-7 text-right">
+              <span className="text-[9px] font-medium text-muted-foreground/70 tabular-nums w-6 text-right">
                 {Math.round((isMuted ? 0 : volume) * 100)}%
               </span>
             </div>
