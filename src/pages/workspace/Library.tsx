@@ -621,7 +621,12 @@ const Library: React.FC = () => {
       ) : (
         <>
           {viewMode === 'grid' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div 
+              className="grid gap-4 sm:gap-5 md:gap-6 lg:gap-8"
+              style={{
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))'
+              }}
+            >
               {filteredAndSortedTracks.map((track) => (
                 <div key={track.id} className="relative" aria-busy={loadingTrackId === track.id}>
                   <TrackCard

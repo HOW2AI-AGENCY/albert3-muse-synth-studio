@@ -72,12 +72,12 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
           ? 'translate-y-0 opacity-100 scale-100' 
           : 'translate-y-24 opacity-0 scale-95 pointer-events-none'
       }`}
-      style={{ zIndex: 'var(--z-desktop-player)' }}
+      style={{ zIndex: 9999 }}
     >
       {/* Compact floating card with modern design */}
-      <div className="relative rounded-2xl overflow-hidden shadow-2xl hover:shadow-glow-primary transition-shadow duration-300 group">
-        {/* Animated gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-background/98 via-background/95 to-background/98 backdrop-blur-2xl" />
+      <div className="relative rounded-2xl overflow-hidden border-2 border-white/10 shadow-2xl shadow-black/40 hover:shadow-glow-primary transition-shadow duration-300 group">
+        {/* Strong contrast background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900/98 via-gray-800/95 to-gray-900/98 backdrop-blur-2xl" />
         <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 opacity-50 group-hover:opacity-70 transition-opacity duration-500" />
         
         {/* Top accent line with animation */}
@@ -85,7 +85,7 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
         <div className="absolute top-0 left-1/4 right-1/4 h-0.5 bg-primary shadow-glow-primary animate-pulse" />
         
         {/* Outer glow effect */}
-        <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10" />
+        <div className="absolute -inset-1 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 blur-2xl opacity-50 group-hover:opacity-70 transition-opacity duration-500 -z-10" />
 
         <div className="relative px-4 py-3">
           {/* Close button */}
