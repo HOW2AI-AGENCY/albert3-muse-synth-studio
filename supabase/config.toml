@@ -153,3 +153,15 @@ verify_jwt = true
     SENTRY_ENVIRONMENT = "development"
     SENTRY_RELEASE = "local"
     SENTRY_TRACES_SAMPLE_RATE = "0.0"
+
+[functions.upload-and-extend]
+verify_jwt = true
+
+[functions.upload-and-cover]
+verify_jwt = true
+
+[functions.export-wav]
+verify_jwt = true
+
+[functions.wav-callback]
+verify_jwt = false
