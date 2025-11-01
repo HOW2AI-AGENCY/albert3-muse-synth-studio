@@ -10,6 +10,7 @@ import { AudioPreviewDialog } from '@/components/audio/AudioPreviewDialog';
 import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog';
 import { MurekaLyricsVariantDialog } from '@/components/lyrics/MurekaLyricsVariantDialog';
 import { PromptHistoryDialog } from '@/components/generator/PromptHistoryDialog';
+import { PersonaPickerDialog } from '@/components/generator/PersonaPickerDialog';
 import { EnhancedPromptPreview } from '@/components/generator/EnhancedPromptPreview';
 import { supabase } from '@/integrations/supabase/client';
 import { toast as sonnerToast } from 'sonner';
@@ -85,6 +86,9 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
 
   // ✅ REFACTORED: Consolidated state management
   const state = useGeneratorState(selectedProvider);
+  
+  // Persona dialog state
+  const [personaDialogOpen, setPersonaDialogOpen] = useState(false);
   
   // ✅ REFACTORED: Auto-loaders
   useStemReferenceLoader(state, selectedProvider, handleProviderChange);
@@ -431,6 +435,19 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
         lyricsLineCount={lyricsLineCount}
         rateLimitRemaining={rateLimitState.remaining}
         rateLimitMax={rateLimitState.max}
+        onPersonaClick={() => setPersonaDialogOpen(true)}
+        onAudioUpload={(e) => {
+          audioUpload.handleAudioFileSelect(e);
+          // Auto-switch to custom mode when audio is uploaded
+          if (state.mode === 'simple') {
+            state.setMode('custom');
+            toast({
+              title: "Переключено в расширенный режим",
+              description: "Для работы с референсным аудио требуется расширенный режим",
+            });
+          }
+        }}
+        hasPersona={!!state.params.personaId}
       />
 
       {/* Main Content */}
@@ -548,6 +565,22 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
             state.setParam('tags', historyItem.style_tags.join(', '));
           }
           state.setHistoryDialogOpen(false);
+        }}
+      />
+
+      <PersonaPickerDialog
+        open={personaDialogOpen}
+        onOpenChange={setPersonaDialogOpen}
+        selectedPersonaId={state.params.personaId ?? null}
+        onSelectPersona={(personaId) => {
+          state.setParam('personaId', personaId);
+          setPersonaDialogOpen(false);
+          if (personaId) {
+            toast({
+              title: "Персона выбрана",
+              description: "Музыкальная персона будет применена к генерации",
+            });
+          }
         }}
       />
     </motion.div>

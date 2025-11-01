@@ -18,6 +18,15 @@ export const useAnalysisMapper = (state: UseGeneratorStateReturn) => {
       hasLyricsInRecognition: !!result.recognition?.metadata?.lyrics_text
     });
 
+    // ✅ Auto-switch to custom mode when analysis completes
+    if (state.mode === 'simple') {
+      state.setMode('custom');
+      logger.info('🔄 [ANALYSIS] Auto-switched to custom mode', 'AnalysisMapper');
+      sonnerToast.info('Режим изменён', {
+        description: 'Переключено в расширенный режим для применения анализа'
+      });
+    }
+
     const updates: any = {};
 
     // ✅ 1. Применяем description (жанр, настроение, инструменты) → в prompt/tags
@@ -32,7 +41,10 @@ export const useAnalysisMapper = (state: UseGeneratorStateReturn) => {
       ].filter(Boolean);
 
       if (tags.length > 0) {
-        updates.tags = tags.join(', ');
+        // Merge with existing tags
+        const existingTags = state.params.tags.split(',').map(t => t.trim()).filter(Boolean);
+        const uniqueTags = Array.from(new Set([...existingTags, ...tags]));
+        updates.tags = uniqueTags.join(', ');
         state.setParam('tags', updates.tags);
       }
 
