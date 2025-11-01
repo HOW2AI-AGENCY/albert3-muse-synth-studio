@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useState, useRef } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
@@ -25,6 +25,7 @@ import { getProviderModels, getDefaultModel, type MusicProvider as ProviderType 
 import { CompactHeader } from '@/components/generator/CompactHeader';
 import { QuickActionsBar } from '@/components/generator/QuickActionsBar';
 import { InspoProjectDialog, type InspoProject } from '@/components/generator/InspoProjectDialog';
+import { AudioSourceDialog } from '@/components/generator/audio/AudioSourceDialog';
 import { SimpleModeCompact } from '@/components/generator/forms/SimpleModeCompact';
 import { CompactCustomForm } from '@/components/generator/forms/CompactCustomForm';
 import { 
@@ -63,7 +64,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   // Dialog states
   const [personaDialogOpen, setPersonaDialogOpen] = useState(false);
   const [inspoDialogOpen, setInspoDialogOpen] = useState(false);
-  const audioInputRef = useRef<HTMLInputElement>(null);
+  const [audioSourceDialogOpen, setAudioSourceDialogOpen] = useState(false);
   
   // ✅ REFACTORED: Auto-loaders
   useStemReferenceLoader(state, selectedProvider, handleProviderChange);
@@ -419,23 +420,37 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       />
 
       {/* Quick Actions Bar */}
-      <QuickActionsBar
-        hasAudio={!!state.params.referenceFileName}
-        hasPersona={!!state.params.personaId}
-        hasInspo={!!state.params.inspoProjectId}
-        onAudioClick={() => audioInputRef.current?.click()}
-        onPersonaClick={() => setPersonaDialogOpen(true)}
-        onInspoClick={() => setInspoDialogOpen(true)}
-        isGenerating={isGenerating}
-      />
+        <QuickActionsBar
+          hasAudio={!!state.params.referenceFileName}
+          hasPersona={!!state.params.personaId}
+          hasInspo={!!state.params.inspoProjectId}
+          onAudioClick={() => setAudioSourceDialogOpen(true)}
+          onPersonaClick={() => setPersonaDialogOpen(true)}
+          onInspoClick={() => setInspoDialogOpen(true)}
+          isGenerating={isGenerating}
+        />
 
-      {/* Hidden audio input */}
-      <input
-        ref={audioInputRef}
-        type="file"
-        accept="audio/*"
-        onChange={(e) => audioUpload.handleAudioFileSelect(e)}
-        className="hidden"
+      {/* Audio Source Dialog */}
+      <AudioSourceDialog
+        open={audioSourceDialogOpen}
+        onOpenChange={setAudioSourceDialogOpen}
+        onAudioSelect={(url, fileName) => {
+          state.setParam('referenceAudioUrl', url);
+          state.setParam('referenceFileName', fileName);
+        }}
+        onRecordComplete={() => {
+          // Optional: handle recording completion
+        }}
+        onTrackSelect={(track) => {
+          // Optional: handle track selection metadata
+          if (track.style_tags?.length > 0) {
+            const existingTags = state.params.tags || '';
+            const newTags = existingTags 
+              ? `${existingTags}, ${track.style_tags.join(', ')}`
+              : track.style_tags.join(', ');
+            state.setParam('tags', newTags);
+          }
+        }}
       />
 
       {/* Main Content */}
