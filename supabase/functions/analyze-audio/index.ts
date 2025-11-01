@@ -135,6 +135,7 @@ async function mainHandler(req: Request): Promise<Response> {
     logger.info('[analyze-audio] File uploaded to Mureka', { fileId, fileSize });
 
     // Analyze using Mureka Song Description API
+    // ✅ FIX: Mureka describe endpoint требует "url", а не "audio_file"
     logger.info('[analyze-audio] Requesting song description from Mureka');
     const descriptionResponse = await fetch('https://api.mureka.ai/v1/song/describe', {
       method: 'POST',
@@ -142,7 +143,7 @@ async function mainHandler(req: Request): Promise<Response> {
         'Authorization': `Bearer ${MUREKA_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ audio_file: fileId }),
+      body: JSON.stringify({ url: audioUrl }),
     });
 
     if (!descriptionResponse.ok) {
