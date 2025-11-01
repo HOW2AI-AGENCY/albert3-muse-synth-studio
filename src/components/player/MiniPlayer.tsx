@@ -14,6 +14,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { getVersionLabel } from "@/utils/versionLabels";
+import { cn } from "@/lib/utils";
 
 interface MiniPlayerProps {
   onExpand: () => void;
@@ -87,7 +88,10 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
         className="p-3"
       >
         {/* Album Art */}
-        <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 flex-shrink-0 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 group">
+        <div className={cn(
+          "relative rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 flex-shrink-0 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 group",
+          "w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16"
+        )}>
           {currentTrack.cover_url ? (
             <img
               key={currentTrack.id}
@@ -131,10 +135,10 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
           {hasVersions && (
             <Sheet>
               <SheetTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="relative h-8 w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="icon-button-touch relative hover:bg-primary/10 hover:scale-105 transition-all duration-200"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <List className="h-4 w-4" />
@@ -185,7 +189,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
                 size="icon"
                 variant="ghost"
                 onClick={handlePrevious}
-                className="h-11 w-11 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+                className="icon-button-touch hover:bg-primary/10 hover:scale-105 transition-all duration-200"
               >
                 <SkipBack className="h-4 w-4" />
               </Button>
@@ -199,7 +203,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
                 size="icon"
                 variant="default"
                 onClick={handlePlayPause}
-                className="h-11 w-11 rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-200 hover:scale-105"
+                className="h-14 w-14 min-h-[56px] min-w-[56px] rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-200 hover:scale-105 touch-optimized"
               >
                 {isPlaying ? (
                   <Pause className="h-5 w-5" />
@@ -217,7 +221,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
                 size="icon"
                 variant="ghost"
                 onClick={handleNext}
-                className="h-11 w-11 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+                className="icon-button-touch hover:bg-primary/10 hover:scale-105 transition-all duration-200"
               >
                 <SkipForward className="h-4 w-4" />
               </Button>
@@ -231,7 +235,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
                 size="icon"
                 variant="ghost"
                 onClick={handleClose}
-                className="h-11 w-11 hover:bg-destructive/20 hover:scale-105 transition-all duration-200"
+                className="icon-button-touch hover:bg-destructive/20 hover:scale-105 transition-all duration-200"
               >
                 <X className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors" />
               </Button>

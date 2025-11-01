@@ -435,12 +435,14 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       {/* Main Content */}
       <ScrollArea className={cn(
         "flex-grow",
-        isMobile && "max-h-[calc(90vh-120px)]"
+        isMobile && "max-h-[var(--generator-max-height-mobile)]"
       )}>
-        <div className={cn(
-          "space-y-2",
-          isMobile ? "p-3" : "p-2.5"
-        )}>
+        <div 
+          className="space-y-2"
+          style={{
+            padding: isMobile ? 'var(--spacing-card-padding)' : 'var(--space-2_5, 0.625rem)'
+          }}
+        >
           {/* Enhanced Prompt Preview */}
           {state.enhancedPrompt && (
             <div className="px-1">

@@ -41,9 +41,16 @@ const MinimalSidebar = ({
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 hidden h-full border-r border-border/60 bg-background/95 backdrop-blur lg:flex transition-all duration-300",
-        isExpanded ? "w-52" : "w-14"
+        "fixed left-0 top-0 hidden h-full border-r border-border/60 bg-background/95 backdrop-blur transition-all duration-300",
+        "lg:flex md:w-16",
+        isExpanded ? "lg:w-52 md:w-48" : "lg:w-14 md:w-16"
       )}
+      style={{
+        zIndex: 'var(--z-sidebar)',
+        width: isExpanded 
+          ? 'var(--sidebar-width-expanded, 13rem)' 
+          : 'var(--sidebar-width-collapsed, 3.5rem)'
+      }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       aria-label="Навигация по рабочему пространству"

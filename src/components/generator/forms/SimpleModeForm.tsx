@@ -115,8 +115,7 @@ export const SimpleModeForm = memo(({
           value={params.title}
           onChange={(e) => onParamChange('title', e.target.value)}
           className={cn(
-            "text-sm",
-            isMobile ? "h-10 text-base" : "h-9"
+            isMobile ? "h-10 text-base mobile-no-zoom" : "h-9 text-sm"
           )}
           disabled={isGenerating}
           maxLength={80}

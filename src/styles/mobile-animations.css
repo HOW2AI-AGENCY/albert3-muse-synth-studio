@@ -1,0 +1,20 @@
+/* Mobile-optimized animation variables */
+:root {
+  --hover-lift-offset: -4px;
+  --tap-scale: 0.98;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --hover-lift-offset: -2px;
+    --tap-scale: 0.96;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --hover-lift-offset: 0px;
+    --tap-scale: 1;
+  }
+}

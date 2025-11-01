@@ -87,7 +87,11 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
               onFocus={() => item.preload?.()}
               className={({ isActive: navActive }) =>
                 cn(
-                  "relative flex flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-2 py-2 text-[10px] font-medium transition min-h-[44px]",
+                  "relative flex flex-1 flex-col items-center justify-center rounded-md font-medium transition touch-optimized",
+                  "gap-[var(--mobile-spacing-xs)]",
+                  "px-[var(--mobile-spacing-sm)] py-[var(--mobile-spacing-sm)]",
+                  "text-[var(--mobile-font-xs)] md:text-[var(--mobile-font-sm)]",
+                  "min-h-[var(--mobile-touch-min)]",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                   "hover:bg-muted/50",
                   (isActive || navActive) ? "text-primary" : "text-muted-foreground"
