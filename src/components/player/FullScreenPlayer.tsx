@@ -197,10 +197,10 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
                     >
                       <div className="flex items-center gap-2 w-full">
                         <span className="flex-1">
-                          {version.isOriginal ? 'Оригинал' : `Версия ${version.versionNumber}`}
+                          V{version.versionNumber || idx + 1}
                         </span>
                         {version.isMasterVersion && (
-                          <Star className="h-3 w-3 fill-yellow-500 text-yellow-500 animate-pulse" />
+                          <Star className="h-3 w-3 fill-amber-500 text-amber-500 animate-pulse" />
                         )}
                       </div>
                     </DropdownMenuItem>
@@ -241,9 +241,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
             {/* Индикатор текущей версии */}
             {hasVersions && (
               <Badge variant="secondary" className="text-sm animate-scale-in">
-                {currentTrack.isOriginal 
-                  ? 'Оригинал' 
-                  : `V${currentTrack.versionNumber ?? currentVersionIndex + 1}`}
+                V{currentTrack.versionNumber ?? currentVersionIndex + 1}
               </Badge>
             )}
           </div>

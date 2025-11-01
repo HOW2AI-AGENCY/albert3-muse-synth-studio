@@ -36,14 +36,12 @@ export interface AudioPlayerTrack {
   parentTrackId?: string;
   versionNumber?: number;
   isMasterVersion?: boolean;
-  isOriginal?: boolean; // ✅ Унифицировано с TrackWithVersions
   sourceVersionNumber?: number | null;
 }
 
 export interface TrackVersion {
   id: string;
   versionNumber: number;
-  isOriginal: boolean; // ✅ Унифицировано
   isMasterVersion: boolean;
   audio_url?: string;
   cover_url?: string;
@@ -309,7 +307,6 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             duration: version.duration || currentTrack.duration,
             versionNumber: version.versionNumber,
             isMasterVersion: version.isMasterVersion,
-            isOriginal: version.isOriginal,
             parentTrackId: currentTrack.parentTrackId || currentTrack.id,
             title: version.title,
           };
@@ -365,7 +362,6 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             const versions: TrackVersion[] = allVersions.map((v) => ({
               id: v.id,
               versionNumber: v.versionNumber,
-              isOriginal: v.isOriginal,
               isMasterVersion: v.isMasterVersion,
               audio_url: v.audio_url,
               cover_url: v.cover_url,

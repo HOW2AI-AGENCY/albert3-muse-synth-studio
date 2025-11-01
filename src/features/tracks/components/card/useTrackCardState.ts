@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useCurrentTrack, useIsPlaying, useAudioPlayerStore } from '@/stores/audioPlayerStore';
 import { useTrackLike, useTrackVersions } from '@/features/tracks/hooks';
 import { useToast } from '@/hooks/use-toast';
-import { logInfo } from '@/utils/logger';
 
 interface Track {
   id: string;
@@ -52,13 +51,28 @@ export const useTrackCardState = (track: Track) => {
     return validVersions;
   }, [mainVersion, versions]);
 
-  // ✅ FIX: Синхронизировать selectedVersionIndex с текущим треком в плеере
+  // ✅ FIX: Синхронизация с плеером
   useEffect(() => {
-    if (!currentTrack || !allVersions.length) return;
+    if (!currentTrack || !allVersions.length) {
+      // ✅ Если трек неактивен, возвращаемся к мастер-версии
+      const masterIndex = allVersions.findIndex(v => v.isMasterVersion);
+      if (masterIndex !== -1 && masterIndex !== selectedVersionIndex) {
+        setSelectedVersionIndex(masterIndex);
+      }
+      return;
+    }
     
     const isCurrentTrack = currentTrack.parentTrackId === track.id || currentTrack.id === track.id;
-    if (!isCurrentTrack) return;
+    if (!isCurrentTrack) {
+      // ✅ Если трек неактивен, возвращаемся к мастер-версии
+      const masterIndex = allVersions.findIndex(v => v.isMasterVersion);
+      if (masterIndex !== -1 && masterIndex !== selectedVersionIndex) {
+        setSelectedVersionIndex(masterIndex);
+      }
+      return;
+    }
     
+    // ✅ Если трек активен, синхронизируем с плеером
     const currentVersionInAllVersions = allVersions.findIndex(
       v => v.id === currentTrack.id
     );
@@ -67,23 +81,6 @@ export const useTrackCardState = (track: Track) => {
       setSelectedVersionIndex(currentVersionInAllVersions);
     }
   }, [currentTrack, track.id, allVersions, selectedVersionIndex]);
-
-  // Auto-switch to master version
-  useEffect(() => {
-    const isTrackPlaying = currentTrack?.parentTrackId === track.id || currentTrack?.id === track.id;
-    if (masterVersion && !isTrackPlaying && allVersions.length > 0) {
-      const masterIndex = allVersions.findIndex((v) => v.id === masterVersion.id);
-      if (masterIndex !== -1 && masterIndex !== selectedVersionIndex) {
-        logInfo('Auto-switching to master version', 'TrackCard', {
-          trackId: track.id,
-          masterVersionId: masterVersion.id,
-          fromIndex: selectedVersionIndex,
-          toIndex: masterIndex,
-        });
-        setSelectedVersionIndex(masterIndex);
-      }
-    }
-  }, [masterVersion?.id, track.id]);
 
   // Displayed version
   const displayedVersion = useMemo(() => {
@@ -96,22 +93,21 @@ export const useTrackCardState = (track: Track) => {
         audio_url: track.audio_url,
         cover_url: track.cover_url,
         duration: track.duration,
-        versionNumber: 0,
-        isOriginal: true,
+        versionNumber: 1,
         isMasterVersion: false,
         parentTrackId: track.id,
       }
     );
   }, [allVersions, selectedVersionIndex, mainVersion, track]);
 
-  // Operation target
+  // ✅ FIX: Контекстное меню применяется к displayedVersion
   const operationTargetId = useMemo(() => {
-    return masterVersion?.id || mainVersion?.id || track.id;
-  }, [masterVersion, mainVersion, track.id]);
+    return displayedVersion.id;
+  }, [displayedVersion.id]);
 
   const operationTargetVersion = useMemo(() => {
-    return masterVersion || mainVersion || displayedVersion;
-  }, [masterVersion, mainVersion, displayedVersion]);
+    return displayedVersion;
+  }, [displayedVersion]);
 
   const isCurrentTrack = currentTrack?.id === displayedVersion.id;
   const playButtonDisabled = track.status !== 'completed' || !displayedVersion.audio_url;
@@ -137,7 +133,6 @@ export const useTrackCardState = (track: Track) => {
         parentTrackId: track.id,
         versionNumber: displayedVersion.versionNumber,
         isMasterVersion: displayedVersion.isMasterVersion,
-        isOriginalVersion: displayedVersion.isOriginal,
       };
       playTrack(audioTrack);
     },

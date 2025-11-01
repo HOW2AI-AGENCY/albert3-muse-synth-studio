@@ -66,8 +66,7 @@ export const SimpleVersionSelector: React.FC<SimpleVersionSelectorProps> = ({
       <div className={cn("flex items-center gap-2", className)}>
         <Badge variant="outline" className="text-xs">
           {getVersionLabel({
-            versionNumber: version.variant_index,
-            isOriginal: version.is_original,
+            versionNumber: version.variant_index + 1,
             isMaster: version.is_preferred_variant,
           })}
         </Badge>
@@ -116,8 +115,7 @@ export const SimpleVersionSelector: React.FC<SimpleVersionSelectorProps> = ({
                 )}
                 <span>
                   {getVersionLabel({
-                    versionNumber: selectedVersion.variant_index,
-                    isOriginal: selectedVersion.is_original,
+                    versionNumber: selectedVersion.variant_index + 1,
                     isMaster: selectedVersion.is_preferred_variant,
                   })}
                 </span>
@@ -136,8 +134,7 @@ export const SimpleVersionSelector: React.FC<SimpleVersionSelectorProps> = ({
                 )}
                 <span>
                   {getVersionLabel({
-                    versionNumber: version.variant_index,
-                    isOriginal: version.is_original,
+                    versionNumber: version.variant_index + 1,
                     isMaster: version.is_preferred_variant,
                   })}
                 </span>

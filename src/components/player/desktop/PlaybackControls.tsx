@@ -1,7 +1,7 @@
 /**
  * Playback controls for desktop player
  */
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { Play, Pause, SkipBack, SkipForward, List, Star } from '@/utils/iconImports';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,10 +13,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { PlayerQueue } from '../PlayerQueue';
+import { useVersionNavigation } from '@/hooks/useVersionNavigation';
+import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
 
 interface Version {
   id: string;
-  isOriginal?: boolean;
   versionNumber?: number;
   isMasterVersion?: boolean;
 }
@@ -27,8 +28,6 @@ interface PlaybackControlsProps {
   availableVersions: Version[];
   currentVersionIndex: number;
   onTogglePlayPause: () => void;
-  onPlayPrevious: () => void;
-  onPlayNext: () => void;
   onSwitchVersion: (versionId: string) => void;
 }
 
@@ -38,17 +37,29 @@ export const PlaybackControls = memo(({
   availableVersions,
   currentVersionIndex,
   onTogglePlayPause,
-  onPlayPrevious,
-  onPlayNext,
   onSwitchVersion,
 }: PlaybackControlsProps) => {
+  const { handleNext, handlePrevious } = useVersionNavigation();
+  const currentTime = useAudioPlayerStore((state) => state.currentTime);
+  const seekTo = useAudioPlayerStore((state) => state.seekTo);
+
+  const onPreviousClick = useCallback(() => {
+    const result = handlePrevious(currentTime);
+    if (result === 'restart') {
+      seekTo(0);
+    }
+  }, [handlePrevious, currentTime, seekTo]);
+
+  const onNextClick = useCallback(() => {
+    handleNext();
+  }, [handleNext]);
   return (
     <div className="flex items-center gap-4">
       <Button
         size="icon"
         variant="ghost"
-        onClick={onPlayPrevious}
-        title="Предыдущий трек (←)"
+        onClick={onPreviousClick}
+        title={hasVersions ? "Предыдущая версия (←)" : "Предыдущий трек (←)"}
         className="icon-button-touch hover:bg-primary/10 hover:scale-110 transition-all duration-200 group"
       >
         <SkipBack className="h-5 w-5 group-hover:text-primary transition-colors duration-200" />
@@ -72,8 +83,8 @@ export const PlaybackControls = memo(({
       <Button
         size="icon"
         variant="ghost"
-        onClick={onPlayNext}
-        title="Следующий трек (→)"
+        onClick={onNextClick}
+        title={hasVersions ? "Следующая версия (→)" : "Следующий трек (→)"}
         className="icon-button-touch hover:bg-primary/10 hover:scale-110 transition-all duration-200 group"
       >
         <SkipForward className="h-5 w-5 group-hover:text-primary transition-colors duration-200" />
@@ -109,14 +120,10 @@ export const PlaybackControls = memo(({
                   >
                     <div className="flex items-center gap-2 w-full">
                       <span className="flex-1">
-                        {version.isOriginal 
-                          ? 'Оригинал' 
-                          : version.versionNumber 
-                            ? `Вариант ${version.versionNumber}` 
-                            : `Версия ${idx + 1}`}
+                        V{version.versionNumber || idx + 1}
                       </span>
                       {version.isMasterVersion && (
-                        <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+                        <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
                       )}
                     </div>
                   </DropdownMenuItem>

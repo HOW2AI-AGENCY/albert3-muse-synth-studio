@@ -89,13 +89,12 @@ export default function Favorites() {
           parentTrackId: version.parentTrackId ?? track.id,
           versionNumber: version.versionNumber,
           isMasterVersion: version.isMasterVersion,
-          isOriginalVersion: version.isOriginal,
           sourceVersionNumber: version.sourceVersionNumber,
         };
       };
 
       const audioTracks = tracksWithVersions.map(toAudioTrack).filter((t): t is NonNullable<typeof t> => t !== null);
-      const masterOrMain = tracksWithVersions.find(t => t.isMasterVersion) || tracksWithVersions.find(t => t.isOriginal) || tracksWithVersions[0];
+      const masterOrMain = tracksWithVersions.find(t => t.isMasterVersion) || tracksWithVersions[0];
       const masterAudio = masterOrMain ? toAudioTrack(masterOrMain) : null;
 
       if (masterAudio && audioTracks.length > 0) {

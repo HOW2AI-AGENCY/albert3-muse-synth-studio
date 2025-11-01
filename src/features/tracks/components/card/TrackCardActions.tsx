@@ -29,7 +29,6 @@ import { getVersionShortLabel } from '@/utils/versionLabels';
 interface Version {
   id: string;
   versionNumber: number;
-  isOriginal: boolean;
   isMasterVersion: boolean;
 }
 
@@ -199,7 +198,6 @@ export const TrackCardActions = React.memo(({
               {masterVersion && masterVersion.id !== trackId &&
                 `(${getVersionShortLabel({
                   versionNumber: masterVersion.versionNumber,
-                  isOriginal: masterVersion.isOriginal,
                   isMaster: true,
                 })})`}
             </DropdownMenuItem>
@@ -220,7 +218,6 @@ export const TrackCardActions = React.memo(({
                     {masterVersion && masterVersion.id !== trackId &&
                       `(${getVersionShortLabel({
                         versionNumber: masterVersion.versionNumber,
-                        isOriginal: masterVersion.isOriginal,
                         isMaster: true,
                       })})`}
                   </DropdownMenuItem>
@@ -247,7 +244,6 @@ export const TrackCardActions = React.memo(({
                     {masterVersion && masterVersion.id !== trackId &&
                       `(${getVersionShortLabel({
                         versionNumber: masterVersion.versionNumber,
-                        isOriginal: masterVersion.isOriginal,
                         isMaster: true,
                       })})`}
                   </DropdownMenuItem>
@@ -271,7 +267,6 @@ export const TrackCardActions = React.memo(({
                 {masterVersion && masterVersion.id !== trackId &&
                   `(${getVersionShortLabel({
                     versionNumber: masterVersion.versionNumber,
-                    isOriginal: masterVersion.isOriginal,
                     isMaster: true,
                   })})`}
               </DropdownMenuItem>

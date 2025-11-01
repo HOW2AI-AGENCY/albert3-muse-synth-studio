@@ -169,7 +169,6 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
                         <span className="flex-1 text-left">
                           {getVersionLabel({
                             versionNumber: version.versionNumber,
-                            isOriginal: version.isOriginal,
                             isMaster: version.isMasterVersion,
                           })}
                         </span>

@@ -10,7 +10,6 @@ interface Track {
   title: string;
   cover_url?: string | null;
   style_tags?: string[] | null;
-  isOriginal?: boolean;
   versionNumber?: number;
 }
 
@@ -24,10 +23,8 @@ interface TrackInfoProps {
 export const TrackInfo = memo(({ track, isPlaying, hasVersions, currentVersionIndex }: TrackInfoProps) => {
   const versionLabel = useMemo(() => {
     if (!hasVersions) return null;
-    return track.isOriginal 
-      ? 'Оригинал' 
-      : `V${track.versionNumber ?? currentVersionIndex + 1}`;
-  }, [hasVersions, track.isOriginal, track.versionNumber, currentVersionIndex]);
+    return `V${track.versionNumber ?? currentVersionIndex + 1}`;
+  }, [hasVersions, track.versionNumber, currentVersionIndex]);
 
   return (
     <div className="flex items-center gap-4 min-w-0 flex-1 max-w-xs">

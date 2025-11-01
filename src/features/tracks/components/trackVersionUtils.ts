@@ -33,9 +33,7 @@ export const buildAudioPlayerTrack = (
   trackId: string
 ): AudioPlayerTrack => ({
   id: version.id,
-  title: version.is_primary_variant 
-    ? 'Оригинал' 
-    : `Вариант ${version.variant_index}`,
+  title: `V${version.variant_index + 1}`,
   audio_url: version.audio_url || '',
   cover_url: version.cover_url,
   duration: version.duration,
@@ -43,8 +41,7 @@ export const buildAudioPlayerTrack = (
   style_tags: [],
   lyrics: version.lyrics,
   parentTrackId: trackId,
-  versionNumber: version.is_primary_variant ? 0 : version.variant_index,
+  versionNumber: version.variant_index + 1,
   isMasterVersion: version.is_preferred_variant,
-  isOriginal: Boolean(version.is_primary_variant),
   sourceVersionNumber: version.source_variant_index ?? null,
 });

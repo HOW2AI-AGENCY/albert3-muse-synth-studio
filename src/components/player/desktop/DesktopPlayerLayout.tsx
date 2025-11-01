@@ -30,8 +30,6 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
   const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
   const seekTo = useAudioPlayerStore((state) => state.seekTo);
   const setVolume = useAudioPlayerStore((state) => state.setVolume);
-  const playNext = useAudioPlayerStore((state) => state.playNext);
-  const playPrevious = useAudioPlayerStore((state) => state.playPrevious);
   const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
 
   // Volume control state
@@ -95,8 +93,6 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
               availableVersions={availableVersions}
               currentVersionIndex={currentVersionIndex}
               onTogglePlayPause={togglePlayPause}
-              onPlayPrevious={playPrevious}
-              onPlayNext={playNext}
               onSwitchVersion={switchToVersion}
             />
             <ProgressBar 

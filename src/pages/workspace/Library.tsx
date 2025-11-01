@@ -209,7 +209,6 @@ const Library: React.FC = () => {
               parentTrackId: version.parentTrackId,
               versionNumber: version.versionNumber,
               isMasterVersion: version.isMasterVersion,
-              isOriginalVersion: version.isOriginal,
               sourceVersionNumber: version.sourceVersionNumber,
             },
           };
@@ -217,7 +216,6 @@ const Library: React.FC = () => {
         .filter((entry): entry is NonNullable<typeof entry> => entry !== null && entry.audio !== null);
 
       const masterEntry = playableVersionEntries.find(entry => entry.version.isMasterVersion) ??
-        playableVersionEntries.find(entry => entry.version.isOriginal) ??
         playableVersionEntries[0] ??
         null;
 

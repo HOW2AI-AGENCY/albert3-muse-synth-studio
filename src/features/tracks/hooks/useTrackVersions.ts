@@ -40,7 +40,7 @@ const getAdditionalVersionsCount = (versions: TrackWithVersions[] | undefined): 
     return 0;
   }
 
-  return versions.filter(version => !version.isOriginal && !!version.audio_url).length;
+  return versions.filter(version => !!version.audio_url).length;
 };
 
 const notifyListeners = (trackId: string, versions: TrackWithVersions[]) => {
@@ -300,14 +300,11 @@ export function useTrackVersions(
   
   // ===== Вычисляемые свойства =====
   
-  /** Определяем основную версию трека */
-  const mainVersion =
-    allVersions.find(version => version.isOriginal) ??
-    allVersions.find(version => version.id === trackId) ??
-    null;
+  /** Определяем основную версию трека (первая версия) */
+  const mainVersion = allVersions[0] ?? null;
 
-  /** Дополнительные версии без основной */
-  const versions = allVersions.filter(version => !version.isOriginal);
+  /** Дополнительные версии без первой */
+  const versions = allVersions.slice(1);
 
   const versionCount = versions.length;
 

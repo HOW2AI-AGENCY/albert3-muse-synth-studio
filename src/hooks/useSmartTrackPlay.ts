@@ -46,13 +46,13 @@ export const useSmartTrackPlay = () => {
       return masterVersion;
     }
 
-    // 2. Ищем оригинал
-    const originalVersion = versions.find(v => v.versionNumber === 0 || v.isOriginal === true);
-    if (originalVersion && originalVersion.audio_url) {
-      logInfo('Selected original version', 'useSmartTrackPlay', { 
-        versionId: originalVersion.id 
+    // 2. Ищем первую версию
+    const firstVersion = versions[0];
+    if (firstVersion && firstVersion.audio_url) {
+      logInfo('Selected first version', 'useSmartTrackPlay', { 
+        versionId: firstVersion.id 
       });
-      return originalVersion;
+      return firstVersion;
     }
 
     // 3. Первая доступная версия с audio_url
@@ -122,7 +122,6 @@ export const useSmartTrackPlay = () => {
         parentTrackId: selectedVersion.parentTrackId,
         versionNumber: selectedVersion.versionNumber,
         isMasterVersion: selectedVersion.isMasterVersion,
-        isOriginal: selectedVersion.versionNumber === 0 || selectedVersion.isOriginal === true,
       };
 
       // Воспроизводим

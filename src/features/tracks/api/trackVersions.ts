@@ -232,12 +232,10 @@ function isSunoDataArray(data: unknown): data is SunoTrackData[] {
 export interface TrackWithVersions {
   id: string;
   parentTrackId: string;
-  /** Порядковый номер версии в интерфейсе (0 для оригинала, 1+ для версий) */
+  /** Отображаемый номер версии в UI (1, 2, 3...) */
   versionNumber: number;
-  /** Исходный номер версии из БД (может начинаться с 0 или 1 в зависимости от источника) */
+  /** Исходный номер версии из БД (variant_index: 0, 1, 2...) */
   sourceVersionNumber: number | null;
-  /** Признак того, что запись описывает оригинальный трек */
-  isOriginal: boolean;
   /** Признак мастер-версии */
   isMasterVersion: boolean;
   title: string;
@@ -285,13 +283,10 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
 
     const normalizedVersions: TrackWithVersions[] = [];
 
-    const hasExplicitMaster = versions?.some(version => version.is_preferred_variant) ?? false;
-
     const pushVersion = (payload: {
       id: string;
       sourceVersionNumber: number | null;
       isMasterVersion: boolean;
-      isOriginal: boolean;
       title: string;
       audio_url?: string | null;
       cover_url?: string | null;
@@ -303,17 +298,14 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       suno_id?: string | null;
       status?: string | null;
     }) => {
-      // ✅ ИСПРАВЛЕНО: Правильная логика versionNumber
-      const versionNumber = payload.isOriginal 
-        ? 0 // Оригинал = 0
-        : (payload.sourceVersionNumber ?? normalizedVersions.length); // Версии используют sourceVersionNumber
+      // ✅ НОВАЯ ЛОГИКА: versionNumber = sourceVersionNumber + 1 (1, 2, 3...)
+      const versionNumber = (payload.sourceVersionNumber ?? 0) + 1;
       
       normalizedVersions.push({
         id: payload.id,
         parentTrackId: mainTrack.id,
         versionNumber,
         sourceVersionNumber: payload.sourceVersionNumber,
-        isOriginal: payload.isOriginal,
         isMasterVersion: payload.isMasterVersion,
         title: payload.title,
         audio_url: payload.audio_url ?? undefined,
@@ -331,22 +323,7 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       });
     };
 
-    pushVersion({
-      id: mainTrack.id,
-      sourceVersionNumber: 0,
-      isMasterVersion: hasExplicitMaster ? false : true,
-      isOriginal: true,
-      title: mainTrack.title,
-      audio_url: mainTrack.audio_url,
-      cover_url: mainTrack.cover_url,
-      video_url: mainTrack.video_url,
-      duration: mainTrack.duration ?? mainTrack.duration_seconds ?? null,
-      lyrics: mainTrack.lyrics,
-      metadata: (mainTrack.metadata as TrackMetadata | null) ?? null,
-      created_at: mainTrack.created_at,
-      suno_id: mainTrack.suno_id,
-      status: mainTrack.status,
-    });
+    // ✅ УДАЛЕНО: Не добавляем mainTrack как версию
 
     if (versions && versions.length > 0) {
       versions.forEach((version: TrackVersionRow) => {
@@ -354,7 +331,6 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
           id: version.id,
           sourceVersionNumber: version.variant_index ?? null,
           isMasterVersion: Boolean(version.is_preferred_variant),
-          isOriginal: false,
           title: mainTrack.title,
           audio_url: version.audio_url ?? null,
           cover_url: version.cover_url ?? mainTrack.cover_url ?? null,
@@ -391,10 +367,9 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
           
           pushVersion({
             id: versionData.id,
-            sourceVersionNumber: index + 1,
+            sourceVersionNumber: index,
             isMasterVersion: false,
-            isOriginal: false,
-            title: `${mainTrack.title} (V${index + 1})`,
+            title: mainTrack.title,
             audio_url: audioUrl,
             cover_url: versionData.image_url ?? mainTrack.cover_url ?? null,
             video_url: versionData.video_url ?? null,
@@ -424,16 +399,12 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
 export function getMasterVersion(tracks: TrackWithVersions[]): TrackWithVersions | null {
   if (!tracks || tracks.length === 0) return null;
 
-  // Find the version marked as master
+  // ✅ Найти версию с isMasterVersion: true
   const master = tracks.find(t => t.isMasterVersion);
+  if (master) return master;
 
-  // Return master or оригинал
-  if (master) {
-    return master;
-  }
-
-  const original = tracks.find(track => track.isOriginal);
-  return original ?? tracks[0];
+  // ✅ Fallback: первая версия
+  return tracks[0];
 }
 
 /**
@@ -444,5 +415,5 @@ export function hasMultipleVersions(tracks: TrackWithVersions[]): boolean {
     return false;
   }
 
-  return tracks.some(track => !track.isOriginal);
+  return tracks.length > 1;
 }
