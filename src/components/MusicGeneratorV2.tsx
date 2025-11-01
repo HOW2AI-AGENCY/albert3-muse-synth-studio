@@ -18,7 +18,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import { getProviderModels, getDefaultModel, type MusicProvider as ProviderType } from '@/config/provider-models';
-import { rateLimiter, RATE_LIMIT_CONFIGS } from '@/utils/rateLimiter';
+
 // Auto-enhancement removed per user request
 
 // Modular components & hooks
@@ -49,29 +49,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   
   const currentModels = getProviderModels(selectedProvider as ProviderType);
   const { savePrompt } = usePromptHistory();
-  
-  // Rate limit tracking
-  const [rateLimitState, setRateLimitState] = useState<{ remaining: number; max: number }>({
-    remaining: RATE_LIMIT_CONFIGS.GENERATION.maxRequests,
-    max: RATE_LIMIT_CONFIGS.GENERATION.maxRequests,
-  });
-  
-  useEffect(() => {
-    const checkRateLimit = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const limit = rateLimiter.check(user.id, RATE_LIMIT_CONFIGS.GENERATION);
-        setRateLimitState({
-          remaining: limit.remaining,
-          max: RATE_LIMIT_CONFIGS.GENERATION.maxRequests,
-        });
-      }
-    };
-    
-    checkRateLimit();
-    const interval = setInterval(checkRateLimit, 5000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Provider change handler with correct typing
   const handleProviderChange = useCallback((provider: string) => {
@@ -368,7 +345,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   }, [handleGenerate, isGenerating]);
 
   const tempAudioUrl = state.pendingAudioFile ? URL.createObjectURL(state.pendingAudioFile) : '';
-  const lyricsLineCount = state.params.lyrics ? state.params.lyrics.split('\n').filter(l => l.trim()).length : 0;
   const isMobile = useIsMobile();
 
   return (
@@ -382,20 +358,15 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Compact Header - Phase 1 */}
+      {/* Compact Header */}
       <CompactHeader
         selectedProvider={selectedProvider as 'suno' | 'mureka'}
-        onProviderChange={handleProviderChange}
         mode={state.mode}
         onModeChange={state.setMode}
         modelVersion={state.params.modelVersion}
         onModelChange={(version) => state.setParam('modelVersion', version)}
         availableModels={[...currentModels]}
         isGenerating={isGenerating}
-        referenceFileName={state.params.referenceFileName}
-        lyricsLineCount={lyricsLineCount}
-        rateLimitRemaining={rateLimitState.remaining}
-        rateLimitMax={rateLimitState.max}
       />
 
       {/* Main Content */}
