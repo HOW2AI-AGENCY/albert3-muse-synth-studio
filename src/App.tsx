@@ -10,7 +10,7 @@ import GlobalAudioPlayer from "./components/player/GlobalAudioPlayer";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PerformanceMonitorWidget } from "@/components/dev/PerformanceMonitorWidget";
 import { SentryFeedbackButton } from "@/components/SentryFeedbackButton";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 import { reportWebVitals, logMetric } from "@/utils/web-vitals";
 import { 
   preconnectExternalResources, 
@@ -60,7 +60,8 @@ const App = () => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail as { url?: string; method?: string; status?: number } | undefined;
       if (detail && import.meta.env.DEV) {
-        toast.warning("Внешний GET 401 к get-balance", {
+        toast({
+          title: "Внешний GET 401 к get-balance",
           description: `Метод: ${detail.method ?? "GET"}. Проверьте расширения браузера или внешние запросы.`,
         });
       }

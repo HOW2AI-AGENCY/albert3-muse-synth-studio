@@ -49,6 +49,8 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     force: true,
     include: [
+      'react',
+      'react-dom',
       '@radix-ui/react-checkbox',
       '@radix-ui/react-dialog',
       '@radix-ui/react-dropdown-menu',
@@ -80,6 +82,11 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // Force a single React copy across the app and deps
+      react: path.resolve(__dirname, "./node_modules/react/index.js"),
+      "react/jsx-runtime": path.resolve(__dirname, "./node_modules/react/jsx-runtime.js"),
+      "react-dom": path.resolve(__dirname, "./node_modules/react-dom/index.js"),
+      "react-dom/client": path.resolve(__dirname, "./node_modules/react-dom/client.js"),
     },
     dedupe: ["react", "react-dom", "@radix-ui/react-tooltip"],
   },
