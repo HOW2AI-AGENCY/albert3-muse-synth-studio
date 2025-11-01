@@ -1,17 +1,14 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthForm } from "@/components/AuthForm";
 import { Music } from "@/utils/iconImports";
 
 const Auth = () => {
-  const navigate = useNavigate();
-
   useEffect(() => {
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate("/workspace/dashboard");
+        window.location.assign("/workspace/dashboard");
       }
     });
 
@@ -20,12 +17,12 @@ const Auth = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
-        navigate("/workspace/dashboard");
+        window.location.assign("/workspace/dashboard");
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
