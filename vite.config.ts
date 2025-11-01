@@ -24,28 +24,7 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Enhanced vendor chunking for better caching
-          'vendor-ui': [
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-select',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-toast',
-            '@radix-ui/react-tooltip',
-            '@radix-ui/react-slider',
-            '@radix-ui/react-scroll-area',
-            '@radix-ui/react-avatar',
-            '@radix-ui/react-checkbox',
-            '@radix-ui/react-switch',
-          ],
-          'vendor-charts': ['recharts'],
-          'vendor-motion': ['framer-motion'],
-          'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-query': ['@tanstack/react-query', '@tanstack/react-virtual'],
-          'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
-          'vendor-dnd': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
-        },
+        manualChunks: undefined, // Let Vite handle chunking automatically to prevent React duplication
       },
     },
     chunkSizeWarningLimit: 1000,
@@ -86,10 +65,6 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      
-      
-      
-      
     },
     dedupe: [
       "react",
