@@ -15,7 +15,7 @@ interface SimpleModeFormProps {
   params: GenerationParams;
   onParamChange: <K extends keyof GenerationParams>(key: K, value: GenerationParams[K]) => void;
   onBoostPrompt: () => void;
-  onGenerate: () => void;
+  onGenerate: (forceNew?: boolean) => void;
   isBoosting: boolean;
   isGenerating: boolean;
   showPresets: boolean;
@@ -38,9 +38,11 @@ export const SimpleModeForm = memo(({
 }: SimpleModeFormProps) => {
   const isMobile = useIsMobile();
   
-  const handleGenerate = useCallback((e: React.FormEvent) => {
+  const handleGenerate = useCallback((e: React.MouseEvent<HTMLButtonElement> | React.FormEvent) => {
     e.preventDefault();
-    onGenerate();
+    const native = (e as any).nativeEvent || e;
+    const force = !!(native && (native.altKey || native.metaKey));
+    onGenerate(force);
   }, [onGenerate]);
 
   const handleApplyTags = useCallback((newTags: string[]) => {

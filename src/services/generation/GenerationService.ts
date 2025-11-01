@@ -382,16 +382,30 @@ export class GenerationService {
 
     // 4. ✅ Проверка дублирующих запросов
     logger.debug('[STEP 4] Checking for duplicate requests...', context);
-    const duplicateTrackId = checkDuplicateRequest(request);
-    if (duplicateTrackId) {
-      logger.info('⚡ Returning cached track for duplicate request', context, { trackId: duplicateTrackId });
-      return {
-        success: true,
-        trackId: duplicateTrackId,
-        taskId: 'cached',
-        provider: request.provider,
-        message: 'Используется ранее созданный трек',
-      };
+    const cachedId = checkDuplicateRequest(request);
+    if (cachedId) {
+      // Проверяем, что кэшированный трек действительно завершён
+      const { data: cachedTrack } = await supabase
+        .from('tracks')
+        .select('status')
+        .eq('id', cachedId)
+        .maybeSingle();
+
+      if (cachedTrack?.status === 'completed') {
+        logger.info('⚡ Returning cached COMPLETED track', context, { trackId: cachedId });
+        return {
+          success: true,
+          trackId: cachedId,
+          taskId: 'cached',
+          provider: request.provider,
+          message: 'Используется ранее созданный трек',
+        };
+      }
+
+      logger.warn('Cached track is not completed. Ignoring cache and generating new', context, {
+        trackId: cachedId,
+        status: cachedTrack?.status || 'unknown',
+      });
     }
 
     logger.info('[STEP 3 ✓] No duplicate found, proceeding with generation', context);

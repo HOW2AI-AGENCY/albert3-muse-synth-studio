@@ -109,7 +109,7 @@ export const TrackSyncStatus = ({ track }: TrackSyncStatusProps) => {
       )}
       
       {/* ✅ TASK D: Recovery actions */}
-      {ageMinutes > 10 && (
+      {ageMinutes > 3 && (
         <div className="flex gap-2">
           <Button
             size="sm"
@@ -121,7 +121,7 @@ export const TrackSyncStatus = ({ track }: TrackSyncStatusProps) => {
             Проверить
           </Button>
           
-          {ageMinutes > 15 && (
+          {ageMinutes > 5 && (
             <Button
               size="sm"
               variant="destructive"
