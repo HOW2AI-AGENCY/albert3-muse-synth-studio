@@ -18,6 +18,7 @@ import type { AdvancedPromptResult } from '@/services/ai/advanced-prompt-generat
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
+import type { MusicProvider } from '@/config/provider-models';
 
 const AudioDescriber = lazy(() => import('@/components/audio/AudioDescriber').then(m => ({ default: m.AudioDescriber })));
 
@@ -68,6 +69,9 @@ export const CustomModeForm = memo(({
   onDebouncedLyricsChange,
 }: CustomModeFormProps) => {
   const isMobile = useIsMobile();
+  
+  // ✅ Get provider type
+  const currentProvider = (params.provider || 'suno') as MusicProvider;
   
   const handleGenerate = useCallback((e: React.MouseEvent<HTMLButtonElement> | React.FormEvent) => {
     e.preventDefault();
@@ -278,6 +282,7 @@ export const CustomModeForm = memo(({
           </AccordionTrigger>
           <AccordionContent className="pt-2 pb-3">
             <AdvancedControls
+              provider={(params.provider || 'suno') as MusicProvider}
               vocalGender={params.vocalGender}
               audioWeight={params.audioWeight}
               styleWeight={params.styleWeight}
@@ -379,6 +384,7 @@ export const CustomModeForm = memo(({
             </AccordionTrigger>
             <AccordionContent className="pt-2 pb-3">
               <AdvancedControls
+                provider={currentProvider}
                 vocalGender={params.vocalGender}
                 audioWeight={params.audioWeight}
                 styleWeight={params.styleWeight}
