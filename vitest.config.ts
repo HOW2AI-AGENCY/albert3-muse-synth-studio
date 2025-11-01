@@ -1,42 +1,37 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react-swc';
-import tsconfigPaths from 'vite-tsconfig-paths';
 import path from 'path';
 
 export default defineConfig({
-  plugins: [react(), tsconfigPaths()],
-  resolve: {
-    alias: {
-      '@sentry/react': path.resolve(__dirname, 'src/test/mocks/sentry-react.ts'),
-    },
-  },
+  plugins: [react()],
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
-    exclude: [
-      'node_modules/',
-      'supabase/functions/**', // Exclude Deno tests from Vitest execution
-      'tests/e2e/**', // Exclude Playwright E2E tests
-    ],
+    setupFiles: ['./tests/setup.ts'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov'],
+      include: ['src/**/*.{ts,tsx}'],
       exclude: [
-        'node_modules/',
-        'src/test/',
-        '**/*.d.ts',
-        '**/*.config.*',
-        '**/mockData',
-        '**/dist',
-        'supabase/functions/**', // Also exclude from coverage
+        'src/**/*.d.ts',
+        'src/**/*.config.ts',
+        'src/main.tsx',
+        'src/integrations/**',
+        'src/vite-env.d.ts',
       ],
       thresholds: {
-        lines: 60,
-        statements: 60,
-        functions: 55,
-        branches: 40,
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80,
       },
+    },
+    include: ['tests/unit/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['node_modules', 'dist', 'tests/e2e'],
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
     },
   },
 });
