@@ -7,10 +7,10 @@ import {
   BarChart3,
   Settings,
 } from "@/utils/iconImports";
-import {
-  preloadDashboard,
-  preloadGenerate,
-} from "@/utils/lazyImports";
+// Lightweight preloading to keep UX fast without extra lazy layer
+declare const __vite__import: any;
+export const preloadDashboard = () => import('@/pages/workspace/Dashboard');
+export const preloadGenerate = () => import('@/pages/workspace/Generate');
 
 export type WorkspaceNavRole = "admin";
 
