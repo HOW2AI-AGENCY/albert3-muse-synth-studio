@@ -1,8 +1,8 @@
+import React, { useEffect, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "react-router-dom";
-import { useEffect, Suspense } from "react";
 import { GlobalErrorBoundary } from "@/components/errors/GlobalErrorBoundary";
 import { FullPageSpinner } from "@/components/ui/loading-states";
 import router from "./router";
