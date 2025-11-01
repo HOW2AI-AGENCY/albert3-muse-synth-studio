@@ -45,19 +45,27 @@ export const useTrackCardState = (track: Track) => {
     checkStems();
   }, [track.id]);
 
-  // Sync with player
-  useEffect(() => {
-    if (currentTrack?.parentTrackId === track.id || currentTrack?.id === track.id) {
-      const playingVersionNumber = currentTrack.versionNumber ?? 0;
-      setSelectedVersionIndex(playingVersionNumber);
-    }
-  }, [currentTrack, track.id]);
-
   // All versions
   const allVersions = useMemo(() => {
     if (!mainVersion) return [];
     return [mainVersion, ...versions];
   }, [mainVersion, versions]);
+
+  // ✅ FIX: Синхронизировать selectedVersionIndex с текущим треком в плеере
+  useEffect(() => {
+    if (!currentTrack || !allVersions.length) return;
+    
+    const isCurrentTrack = currentTrack.parentTrackId === track.id || currentTrack.id === track.id;
+    if (!isCurrentTrack) return;
+    
+    const currentVersionInAllVersions = allVersions.findIndex(
+      v => v.id === currentTrack.id
+    );
+    
+    if (currentVersionInAllVersions !== -1 && currentVersionInAllVersions !== selectedVersionIndex) {
+      setSelectedVersionIndex(currentVersionInAllVersions);
+    }
+  }, [currentTrack, track.id, allVersions, selectedVersionIndex]);
 
   // Auto-switch to master version
   useEffect(() => {

@@ -109,7 +109,11 @@ export const PlaybackControls = memo(({
                   >
                     <div className="flex items-center gap-2 w-full">
                       <span className="flex-1">
-                        {version.isOriginal ? 'Оригинал' : `Вариант ${version.versionNumber}`}
+                        {version.isOriginal 
+                          ? 'Оригинал' 
+                          : version.versionNumber 
+                            ? `Вариант ${version.versionNumber}` 
+                            : `Версия ${idx + 1}`}
                       </span>
                       {version.isMasterVersion && (
                         <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />

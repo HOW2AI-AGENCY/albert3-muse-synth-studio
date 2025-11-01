@@ -1,6 +1,7 @@
 import React from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Clock, Split } from '@/utils/iconImports';
+import { Badge } from '@/components/ui/badge';
+import { Clock, Split, Star, Heart } from '@/utils/iconImports';
 import { TrackProgressBar } from '@/components/tracks/TrackProgressBar';
 import { formatDuration } from '@/utils/formatters';
 
@@ -9,10 +10,14 @@ interface TrackCardInfoProps {
   prompt?: string;
   duration?: number;
   versionCount: number;
+  selectedVersionIndex: number;
   hasStems: boolean;
   status: string;
   progressPercent?: number | null;
   createdAt: string;
+  likeCount?: number;
+  isMasterVersion?: boolean;
+  onVersionChange?: (index: number) => void;
 }
 
 export const TrackCardInfo = React.memo(({
@@ -20,10 +25,14 @@ export const TrackCardInfo = React.memo(({
   prompt,
   duration,
   versionCount,
+  selectedVersionIndex,
   hasStems,
   status,
   progressPercent,
   createdAt,
+  likeCount,
+  isMasterVersion,
+  onVersionChange,
 }: TrackCardInfoProps) => {
   const formattedDuration = duration ? formatDuration(duration) : null;
 
@@ -43,8 +52,30 @@ export const TrackCardInfo = React.memo(({
                 <TooltipContent>Доступны стемы</TooltipContent>
               </Tooltip>
             )}
+            {isMasterVersion && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500 shrink-0" />
+                </TooltipTrigger>
+                <TooltipContent>Мастер-версия</TooltipContent>
+              </Tooltip>
+            )}
           </div>
-          {versionCount > 0}
+          
+          {/* ✅ FIX: Переключатель версий */}
+          {versionCount > 1 && onVersionChange && (
+            <Badge 
+              variant="secondary" 
+              className="cursor-pointer hover:bg-primary/20 transition-colors shrink-0 select-none"
+              onClick={(e) => {
+                e.stopPropagation();
+                const nextIndex = (selectedVersionIndex + 1) % versionCount;
+                onVersionChange(nextIndex);
+              }}
+            >
+              {selectedVersionIndex + 1}/{versionCount}
+            </Badge>
+          )}
         </div>
         
         <p className="text-xs text-muted-foreground mb-1.5 line-clamp-1">{prompt}</p>
@@ -66,6 +97,14 @@ export const TrackCardInfo = React.memo(({
             <div className="flex items-center gap-1">
               <Clock className="w-3 h-3" />
               <span>{formattedDuration}</span>
+            </div>
+          )}
+          
+          {/* ✅ FIX: Отображение лайков */}
+          {likeCount !== undefined && likeCount > 0 && (
+            <div className="flex items-center gap-1">
+              <Heart className="w-3 h-3" />
+              <span>{likeCount}</span>
             </div>
           )}
         </div>

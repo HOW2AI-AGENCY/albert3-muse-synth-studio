@@ -230,6 +230,9 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               currentTime: 0,
               duration: nextTrack.duration || 0,
             });
+            
+            // ✅ FIX: Загрузить версии для нового трека
+            get().loadVersions(nextTrack.parentTrackId || nextTrack.id);
           }
         },
 
@@ -252,6 +255,9 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               currentTime: 0,
               duration: prevTrack.duration || 0,
             });
+            
+            // ✅ FIX: Загрузить версии для нового трека
+            get().loadVersions(prevTrack.parentTrackId || prevTrack.id);
           } else {
             // Just restart current track
             set({ currentTime: 0 });

@@ -173,10 +173,14 @@ const TrackCardComponent = ({
             prompt={track.prompt}
             duration={displayedVersion.duration || track.duration}
             versionCount={versionCount}
+            selectedVersionIndex={selectedVersionIndex}
             hasStems={hasStems}
             status={track.status}
             progressPercent={track.progress_percent}
             createdAt={track.created_at}
+            likeCount={track.like_count}
+            isMasterVersion={displayedVersion.isMasterVersion}
+            onVersionChange={handleVersionChange}
           />
 
           <TrackCardActions
