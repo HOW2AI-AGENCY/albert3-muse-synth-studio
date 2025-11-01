@@ -5,6 +5,7 @@ import { ErrorBoundary } from "@/components/error/ErrorBoundary";
 import { GeneratorErrorFallback } from "@/components/error/GeneratorErrorFallback";
 import { TrackListErrorFallback } from "@/components/error/TrackListErrorFallback";
 import { FullPageSpinner } from "@/components/ui/loading-states";
+import { ProjectProvider } from "@/contexts/ProjectContext";
 
 // Critical routes - direct imports (no lazy loading)
 import Landing from "./pages/Landing";
@@ -55,7 +56,9 @@ export const router = createBrowserRouter(
       path: "/workspace",
       element: (
         <ProtectedRoute>
-          <WorkspaceLayout />
+          <ProjectProvider>
+            <WorkspaceLayout />
+          </ProjectProvider>
         </ProtectedRoute>
       ),
       children: [

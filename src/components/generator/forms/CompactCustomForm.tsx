@@ -17,6 +17,9 @@ import type { AdvancedPromptResult } from '@/services/ai/advanced-prompt-generat
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ProjectSelector } from '@/components/generator/ProjectSelector';
+import { useState } from 'react';
+import { CreateProjectDialog } from '@/components/projects/CreateProjectDialog';
 
 const AudioDescriber = lazy(() => import('@/components/audio/AudioDescriber').then(m => ({ default: m.AudioDescriber })));
 
@@ -54,6 +57,7 @@ export const CompactCustomForm = memo(({
   const isMobile = useIsMobile();
   const lyricsLineCount = debouncedLyrics.split('\n').filter(l => l.trim()).length;
   const tagsCount = params.tags.split(',').filter(t => t.trim()).length;
+  const [createProjectOpen, setCreateProjectOpen] = useState(false);
 
   const handleQuickTagAdd = useCallback((tag: string) => {
     const existingTags = params.tags.split(',').map(t => t.trim()).filter(Boolean);
@@ -148,6 +152,15 @@ export const CompactCustomForm = memo(({
               </Button>
             )}
           </div>
+        </div>
+
+        {/* Project Selector */}
+        <div className="px-2">
+          <ProjectSelector
+            selectedProjectId={params.activeProjectId || null}
+            onProjectSelect={(projectId) => onParamChange('activeProjectId', projectId)}
+            onCreateProject={() => setCreateProjectOpen(true)}
+          />
         </div>
 
         {/* Title */}
@@ -348,20 +361,15 @@ export const CompactCustomForm = memo(({
       </div>
 
       {/* Sticky Footer */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-border/20 bg-background/95 backdrop-blur-sm">
-        <div className="flex items-center gap-2">
-          {/* Save to selector (future) */}
-          <div className="flex-1 text-xs text-muted-foreground">
-            Save to: <span className="font-medium">My Workspace</span>
-          </div>
-          
+      <div className="absolute bottom-0 left-0 right-0 border-t border-border/20 bg-background/95 backdrop-blur-sm">
+        <div className="p-3 flex items-center gap-2">
           {/* Create Button */}
           <Button
             onClick={onGenerate}
             disabled={isGenerating || (!debouncedPrompt.trim() && !debouncedLyrics.trim())}
             size="lg"
             className={cn(
-              "px-8 gap-2 font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70",
+              "w-full gap-2 font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70",
               isMobile ? "h-12 text-base" : "h-10 text-sm"
             )}
           >
@@ -370,6 +378,12 @@ export const CompactCustomForm = memo(({
           </Button>
         </div>
       </div>
+
+      {/* Create Project Dialog */}
+      <CreateProjectDialog 
+        open={createProjectOpen} 
+        onOpenChange={setCreateProjectOpen} 
+      />
     </div>
   );
 });

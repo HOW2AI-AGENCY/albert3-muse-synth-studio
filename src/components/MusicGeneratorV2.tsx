@@ -255,6 +255,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       referenceTrackId: state.params.referenceTrackId || undefined,
       provider: selectedProvider,
       personaId: state.params.personaId || undefined,
+      projectId: state.params.activeProjectId || undefined, // ✅ НОВОЕ: передаём project_id
     };
 
     // Save to history

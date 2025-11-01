@@ -58,7 +58,9 @@ export const generateSunoSchema = z.object({
   referenceAudioUrl: httpsUrlSchema.optional(),
   referenceTrackId: uuidSchema.optional(),
   idempotencyKey: uuidSchema.optional(),
-  wait_audio: z.boolean().optional()
+  wait_audio: z.boolean().optional(),
+  projectId: uuidSchema.optional(), // ✅ НОВОЕ: ID проекта
+  personaId: uuidSchema.optional(), // ✅ НОВОЕ: ID персоны (уже есть в хендлере)
 });
 
 // ✅ extend-track request schema

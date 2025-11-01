@@ -3,7 +3,7 @@ import { logger } from './logger.ts';
 export async function findOrCreateTrack(
   supabaseAdmin: any,
   userId: string,
-  { trackId, title, prompt, lyrics, hasVocals, styleTags, requestMetadata, idempotencyKey, provider }: {
+  { trackId, title, prompt, lyrics, hasVocals, styleTags, requestMetadata, idempotencyKey, provider, projectId }: {
     trackId?: string;
     title?: string;
     prompt?: string;
@@ -13,6 +13,7 @@ export async function findOrCreateTrack(
     requestMetadata: Record<string, unknown>;
     idempotencyKey?: string;
     provider?: string;
+    projectId?: string; // ✅ НОВОЕ: поддержка project_id
   }
 ): Promise<{ trackId: string; track: any }> {
   if (trackId) {
@@ -108,6 +109,7 @@ export async function findOrCreateTrack(
       style_tags: styleTags ?? null,
       metadata: requestMetadata,
       idempotency_key: idempotencyKey,
+      project_id: projectId ?? null, // ✅ НОВОЕ: сохраняем project_id
     })
     .select('*')
     .single();

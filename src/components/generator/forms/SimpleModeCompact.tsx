@@ -172,18 +172,14 @@ export const SimpleModeCompact = memo(({
       </div>
 
       {/* Sticky Footer */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-border/20 bg-background/95 backdrop-blur-sm">
-        <div className="flex items-center gap-2">
-          <div className="flex-1 text-xs text-muted-foreground">
-            Save to: <span className="font-medium">My Workspace</span>
-          </div>
-          
+      <div className="absolute bottom-0 left-0 right-0 border-t border-border/20 bg-background/95 backdrop-blur-sm">
+        <div className="p-3 flex items-center gap-2">
           <Button
             onClick={onGenerate}
             disabled={isGenerating || (!debouncedPrompt.trim() && !params.lyrics.trim())}
             size="lg"
             className={cn(
-              "px-8 gap-2 font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20",
+              "w-full gap-2 font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20",
               isMobile ? "h-12 text-base" : "h-10 text-sm"
             )}
           >
