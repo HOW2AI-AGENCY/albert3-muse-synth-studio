@@ -83,7 +83,6 @@ export function GenerateWithDialogs({ children, tracks }: GenerateWithDialogsPro
             improved_prompt: selectedTrack.improved_prompt,
             cover_url: selectedTrack.cover_url,
             style_tags: selectedTrack.style_tags,
-            ai_description: selectedTrack.ai_description,
             metadata: selectedTrack.metadata,
           }}
           onSuccess={() => {

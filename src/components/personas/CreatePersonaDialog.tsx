@@ -14,6 +14,8 @@ import { Switch } from '@/components/ui/switch';
 import { Loader2, Sparkles } from '@/utils/iconImports';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { getAIDescription } from '@/types/track-metadata';
+import type { TrackMetadata } from '@/types/track-metadata';
 
 // ============================================================================
 // TYPES
@@ -30,8 +32,7 @@ export interface CreatePersonaDialogProps {
     lyrics?: string | null;
     prompt?: string | null;
     improved_prompt?: string | null;
-    metadata?: Record<string, any> | null;
-    ai_description?: string | null;
+    metadata?: TrackMetadata | null;
   };
   musicIndex?: number;
   onSuccess?: (persona: unknown) => void;
@@ -60,9 +61,9 @@ export const CreatePersonaDialog = ({
       let styleDescription = '';
 
       // ПРИОРИТЕТ 1: AI-описание из metadata (автоматически синхронизировано из song_descriptions)
-      const metadataDescription = track.metadata?.ai_description;
-      if (metadataDescription && typeof metadataDescription === 'string') {
-        styleDescription = metadataDescription;
+      const aiDesc = getAIDescription(track.metadata);
+      if (aiDesc) {
+        styleDescription = aiDesc;
       }
       // ПРИОРИТЕТ 2: Промпт, используемый при генерации
       else {

@@ -153,6 +153,55 @@ export const analyzeReferenceAudioSchema = z.object({
   trackId: uuidSchema.optional()
 });
 
+// ✅ Track metadata schema (JSONB validation)
+export const trackMetadataSchema = z.object({
+  // Suno-specific
+  suno_id: z.string().optional(),
+  suno_task_id: z.string().optional(),
+  model_version: z.string().optional(),
+  negative_tags: z.string().optional(),
+  vocal_gender: z.enum(['m', 'f']).optional(),
+  style_weight: z.number().min(0).max(100).optional(),
+  weirdness_constraint: z.number().min(0).max(100).optional(),
+  audio_weight: z.number().min(0).max(100).optional(),
+  reference_audio_url: httpsUrlSchema.optional(),
+  custom_mode: z.boolean().optional(),
+  
+  // Mureka-specific
+  mureka_task_id: z.string().optional(),
+  is_bgm: z.boolean().optional(),
+  reference_file_id: z.string().optional(),
+  
+  // AI Description
+  ai_description: z.string().optional(),
+  detected_genre: z.string().optional(),
+  detected_mood: z.string().optional(),
+  detected_instruments: z.array(z.string()).optional(),
+  tempo_bpm: z.number().positive().optional(),
+  key_signature: z.string().optional(),
+  energy_level: z.number().min(0).max(100).optional(),
+  danceability: z.number().min(0).max(100).optional(),
+  valence: z.number().min(0).max(100).optional(),
+  description_updated_at: z.string().optional(),
+  description_migrated_at: z.string().optional(),
+  
+  // Extension/Cover
+  extended_from: uuidSchema.optional(),
+  continue_at: z.number().min(0).optional(),
+  extension_prompt: z.string().optional(),
+  is_cover: z.boolean().optional(),
+  reference_track_id: uuidSchema.optional(),
+  
+  // Analysis
+  analyzed_bpm: z.number().positive().optional(),
+  analyzed_key: z.string().optional(),
+  spectral_features: z.record(z.number()).optional(),
+  analyzed_at: z.string().optional(),
+  
+  // Timestamps
+  completed_at: z.string().optional(),
+}).passthrough(); // Allow additional fields
+
 // ✅ Helper function to validate and parse
 export function validateAndParse<T>(
   schema: z.ZodSchema<T>,

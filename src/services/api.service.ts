@@ -8,15 +8,17 @@ import type { Database } from "@/integrations/supabase/types";
 import { ApiError, handlePostgrestError, ensureData, handleSupabaseFunctionError } from "@/services/api/errors";
 import { logInfo, logError, logDebug, logWarn, maskObject } from "@/utils/logger";
 import { retryWithBackoff, RETRY_CONFIGS, CircuitBreaker } from "@/utils/retryWithBackoff";
+import type { TrackMetadata } from "@/types/track-metadata";
 
 type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
 
 export type TrackStatus = "pending" | "processing" | "completed" | "failed";
 
-export type Track = TrackRow & {
+export type Track = Omit<TrackRow, 'metadata'> & {
   status: TrackStatus;
   style?: string | null;
   mureka_task_id?: string | null;
+  metadata: TrackMetadata | null;
 };
 
 const isTrackStatus = (status: TrackRow["status"]): status is TrackStatus =>
@@ -37,7 +39,9 @@ export const mapTrackRowToTrack = (track: TrackRow): Track => ({
   archive_scheduled_at: track.archive_scheduled_at ?? null,
   archived_at: track.archived_at ?? null,
   // Mureka task ID (optional)
-  mureka_task_id: (track as any).mureka_task_id ?? null,
+  mureka_task_id: track.mureka_task_id ?? null,
+  // Typed metadata
+  metadata: track.metadata as TrackMetadata | null,
 });
 
 export interface ImprovePromptRequest {

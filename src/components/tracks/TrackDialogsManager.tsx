@@ -72,7 +72,7 @@ export function TrackDialogsManager({
             title: selectedTrackForExtend.title,
             duration: selectedTrackForExtend.duration ?? undefined,
             prompt: selectedTrackForExtend.prompt,
-            style_tags: selectedTrackForExtend.style_tags as any,
+            style_tags: selectedTrackForExtend.style_tags ?? [],
           }}
         />
       )}
@@ -98,8 +98,8 @@ export function TrackDialogsManager({
             prompt: selectedTrackForPersona.prompt,
             improved_prompt: selectedTrackForPersona.improved_prompt,
             cover_url: selectedTrackForPersona.cover_url,
-            style_tags: selectedTrackForPersona.style_tags as any,
-            metadata: selectedTrackForPersona.metadata as any,
+            style_tags: selectedTrackForPersona.style_tags ?? [],
+            metadata: selectedTrackForPersona.metadata,
           }}
           onSuccess={() => {
             onSuccess();
