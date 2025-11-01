@@ -15,8 +15,7 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          // ❌ УДАЛЕНО 'vendor-react' - конфликтует с dedupe
-          // React должен управляться через dedupe, не через manualChunks
+          // Enhanced vendor chunking for better caching
           'vendor-ui': [
             '@radix-ui/react-dialog',
             '@radix-ui/react-dropdown-menu',
@@ -40,18 +39,18 @@ export default defineConfig(({ mode }) => ({
       },
     },
     chunkSizeWarningLimit: 1000,
-    sourcemap: false,
-    minify: 'terser',
-    terserOptions: {
+    sourcemap: mode === 'development',
+    minify: mode === 'production' ? 'terser' : false, // Only use terser in production
+    terserOptions: mode === 'production' ? {
       compress: {
-        drop_console: true, // Remove console.* in production
+        drop_console: true,
         drop_debugger: true,
         pure_funcs: ['console.log', 'console.info', 'console.debug'],
       },
       format: {
-        comments: false, // Remove comments
+        comments: false,
       },
-    },
+    } : undefined,
     commonjsOptions: {
       include: [/node_modules/],
     },
