@@ -9,8 +9,11 @@
  * Background polling обновляет статусы задач до их завершения.
  * 
  * @module analyze-reference-audio
- * @version 1.0.0
- * @since 2025-10-15
+ * @version 2.0.0
+ * @since 2025-11-01
+ * @changelog
+ * - v2.0.0: Switched from Fal.AI to Mureka API (2025-11-01)
+ * - v1.0.0: Initial Fal.AI implementation (2025-10-15)
  * 
  * @example
  * ```typescript
@@ -27,7 +30,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { logger, withSentry } from "../_shared/logger.ts";
-import { createFalClient, FalApiError } from "../_shared/fal.ts";
+import { createMurekaClient, MurekaApiError } from "../_shared/mureka.ts";
 import {
   createSupabaseAdminClient,
   createSupabaseUserClient,
@@ -115,121 +118,100 @@ const mainHandler = async (req: Request): Promise<Response> => {
     });
 
     // ============================================================================
-    // 🔒 Валидация формата аудио (Mureka поддерживает только MP3 и M4A)
+    // 🔒 Check Mureka API Key
     // ============================================================================
     
-    const supportedFormats = ['mp3', 'm4a'];
-    const urlLower = audioUrl.toLowerCase();
-    const hasValidExtension = supportedFormats.some(fmt => 
-      urlLower.includes(`.${fmt}`) || urlLower.includes(`/${fmt}/`)
-    );
+    const MUREKA_API_KEY = Deno.env.get('MUREKA_API_KEY');
+    if (!MUREKA_API_KEY) {
+      logger.error('[ANALYZE-REF] 🔴 MUREKA_API_KEY not configured');
+      return new Response(
+        JSON.stringify({ error: 'MUREKA_API_KEY not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const murekaClient = createMurekaClient({ apiKey: MUREKA_API_KEY });
+    const supabaseAdmin = createSupabaseAdminClient();
+
+    // ============================================================================
+    // STEP 1: Download and Upload Audio to Mureka
+    // ============================================================================
     
-    if (!hasValidExtension) {
-      logger.warn('[ANALYZE-REF] ❌ Unsupported audio format', { audioUrl: audioUrl.substring(0, 100) });
+    logger.info('[ANALYZE-REF] 📥 Downloading audio from URL');
+
+    let audioBlob: Blob;
+    try {
+      const audioResponse = await fetch(audioUrl);
+      if (!audioResponse.ok) {
+        throw new Error(`Failed to download audio: ${audioResponse.status} ${audioResponse.statusText}`);
+      }
+      audioBlob = await audioResponse.blob();
+      
+      if (!audioBlob || audioBlob.size === 0) {
+        throw new Error('Downloaded audio file is empty');
+      }
+      
+      logger.info('[ANALYZE-REF] ✅ Audio downloaded', { sizeBytes: audioBlob.size });
+    } catch (downloadError) {
+      logger.error('[ANALYZE-REF] 🔴 Audio download failed', {
+        error: downloadError instanceof Error ? downloadError.message : String(downloadError),
+        audioUrl: audioUrl.substring(0, 100)
+      });
+      
       return new Response(
         JSON.stringify({ 
-          error: 'Unsupported audio format. Mureka API supports only MP3 and M4A files.',
-          supportedFormats: supportedFormats
+          error: 'Failed to download audio file. Please check if the URL is accessible.',
+          details: downloadError instanceof Error ? downloadError.message : 'Unknown error'
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    logger.info('[ANALYZE-REF] ✅ Audio format validated', { urlSample: audioUrl.substring(0, 100) });
-
-    // ✅ Check Fal.AI API key
-    const FAL_API_KEY = Deno.env.get('FAL_API_KEY');
-    if (!FAL_API_KEY) {
-      throw new Error('FAL_API_KEY not configured');
-    }
-
-    const falClient = createFalClient({ apiKey: FAL_API_KEY });
-    const supabaseAdmin = createSupabaseAdminClient();
-
-    // ============================================================================
-    // STEP 1: Validate audio URL format
-    // ============================================================================
+    logger.info('[ANALYZE-REF] 📤 Uploading audio to Mureka');
     
-    logger.info('[ANALYZE-REF] 🎵 Starting Fal.AI audio analysis', { 
-      url: audioUrl.substring(0, 100) 
-    });
-
-    // Fal.AI работает напрямую с URL - валидация формата не требуется
-
-    // ============================================================================
-    // STEP 2: Запуск Song Recognition через Fal.AI
-    // ============================================================================
-
-    logger.info('[ANALYZE-REF] 🔍 Starting Fal.AI song recognition');
+    const uploadResult = await murekaClient.uploadFile(audioBlob, { purpose: 'audio' });
+    const murekaFileId = uploadResult.data.file_id;
     
-    const recognitionPrompt = `Analyze this audio and extract the following information in a structured format:
+    logger.info('[ANALYZE-REF] ✅ Audio uploaded to Mureka', { 
+      fileId: murekaFileId,
+      fileSize: uploadResult.data.file_size
+    });
+
+    // ============================================================================
+    // STEP 2: Запуск Song Recognition через Mureka
+    // ============================================================================
+
+    logger.info('[ANALYZE-REF] 🔍 Starting Mureka song recognition');
     
-SONG METADATA:
-- Title: [song title]
-- Artist: [artist name]
-- Album: [album name if identifiable]
-- Release Date: [year or full date if known]
-
-MUSIC CHARACTERISTICS:
-- Genre: [primary genre]
-- Mood: [overall mood/vibe]
-- Tempo BPM: [estimated beats per minute]
-- Key Signature: [musical key if identifiable]
-- Instruments: [list of prominent instruments]
-
-AUDIO QUALITY:
-- Confidence: [how confident you are in the identification, 0-1 scale]
-
-Format the response clearly with each field on a new line.`;
-
-    const recognitionTask = await falClient.startAnalysis({
-      audio_url: audioUrl,
-      prompt: recognitionPrompt,
-      detailed_analysis: true
+    const recognitionResult = await murekaClient.recognizeSong({
+      audio_file: murekaFileId
     });
 
-    logger.info('[ANALYZE-REF] ✅ Fal.AI recognition task created', { 
-      requestId: recognitionTask.request_id,
-      status: recognitionTask.status
+    const recognitionTaskId = recognitionResult.data.task_id;
+
+    logger.info('[ANALYZE-REF] ✅ Mureka recognition task created', { 
+      taskId: recognitionTaskId
     });
 
     // ============================================================================
-    // STEP 3: Запуск Song Description через Fal.AI (параллельно)
+    // STEP 3: Запуск Song Description через Mureka (параллельно)
     // ============================================================================
 
-    logger.info('[ANALYZE-REF] 📖 Starting Fal.AI song description');
+    logger.info('[ANALYZE-REF] 📖 Starting Mureka song description');
     
-    const descriptionPrompt = `Analyze this audio track and provide detailed information:
-
-MUSICAL ANALYSIS:
-- Genre: [specific genre classification]
-- Mood: [emotional mood/atmosphere]
-- Tempo BPM: [estimated beats per minute as number]
-- Key Signature: [musical key]
-
-INSTRUMENTATION:
-- Instruments: [list all identifiable instruments]
-
-AUDIO CHARACTERISTICS:
-- Energy Level: [1-10 scale]
-- Danceability: [1-10 scale] 
-- Valence: [1-10 scale, emotional positivity]
-
-Provide all details in a clear, structured format.`;
-
-    const descriptionTask = await falClient.startAnalysis({
-      audio_url: audioUrl,
-      prompt: descriptionPrompt,
-      detailed_analysis: true
+    const descriptionResult = await murekaClient.describeSong({
+      audio_file: murekaFileId
     });
 
-    logger.info('[ANALYZE-REF] ✅ Both Fal.AI tasks initiated', {
-      recognitionRequestId: recognitionTask.request_id,
-      descriptionRequestId: descriptionTask.request_id
+    const descriptionTaskId = descriptionResult.data.task_id;
+
+    logger.info('[ANALYZE-REF] ✅ Both Mureka tasks initiated', {
+      recognitionTaskId,
+      descriptionTaskId
     });
 
     // ============================================================================
-    // STEP 4: Создание записей в БД (с Fal.AI request_id)
+    // STEP 4: Создание записей в БД (с Mureka task_id)
     // ============================================================================
 
     // 4.1 Create song_recognitions record
@@ -238,12 +220,12 @@ Provide all details in a clear, structured format.`;
       .insert({
         user_id: userId,
         audio_file_url: audioUrl,
-        fal_request_id: recognitionTask.request_id,
-        provider: 'fal',
+        mureka_file_id: murekaFileId,
+        mureka_task_id: recognitionTaskId,
+        provider: 'mureka',
         status: 'processing',
         metadata: {
-          fal_status: recognitionTask.status,
-          queue_position: recognitionTask.queue_position,
+          mureka_task_id: recognitionTaskId,
           initiated_at: new Date().toISOString()
         }
       })
@@ -266,12 +248,12 @@ Provide all details in a clear, structured format.`;
         user_id: userId,
         track_id: trackId ?? null,
         audio_file_url: audioUrl,
-        fal_request_id: descriptionTask.request_id,
-        provider: 'fal',
+        mureka_file_id: murekaFileId,
+        mureka_task_id: descriptionTaskId,
+        provider: 'mureka',
         status: 'processing',
         metadata: {
-          fal_status: descriptionTask.status,
-          queue_position: descriptionTask.queue_position,
+          mureka_task_id: descriptionTaskId,
           initiated_at: new Date().toISOString()
         }
       })
@@ -288,22 +270,23 @@ Provide all details in a clear, structured format.`;
     });
 
     // ============================================================================
-    // STEP 5: Background polling для обеих Fal.AI задач
+    // STEP 5: Background polling для обеих Mureka задач
     // ============================================================================
 
     // ✅ Используем Promise без await для background execution
-    pollFalAnalysis(
-      recognitionTask.request_id,
-      descriptionTask.request_id,
+    pollMurekaAnalysis(
+      recognitionTaskId,
+      descriptionTaskId,
       recognitionRecord.id,
-      descriptionRecord.id
+      descriptionRecord.id,
+      murekaFileId
     ).catch((error) => {
       logger.error('[ANALYZE-REF] Background polling error', { 
         error: error instanceof Error ? error.message : String(error) 
       });
     });
 
-    logger.info('[ANALYZE-REF] 🚀 Fal.AI background polling started');
+    logger.info('[ANALYZE-REF] 🚀 Mureka background polling started');
 
     // ============================================================================
     // STEP 6: Return response
@@ -313,15 +296,16 @@ Provide all details in a clear, structured format.`;
       success: true,
       recognitionId: recognitionRecord.id,
       descriptionId: descriptionRecord.id,
-      uploadedFileId: recognitionTask.request_id, // Используем Fal request_id
+      uploadedFileId: murekaFileId,
       analysis: undefined
     };
 
-    logger.info('[ANALYZE-REF] ✨ Request completed (Fal.AI)', {
+    logger.info('[ANALYZE-REF] ✨ Request completed (Mureka)', {
       recognitionId: recognitionRecord.id,
       descriptionId: descriptionRecord.id,
-      recognitionRequestId: recognitionTask.request_id,
-      descriptionRequestId: descriptionTask.request_id
+      murekaFileId,
+      recognitionTaskId,
+      descriptionTaskId
     });
 
     return new Response(
@@ -344,7 +328,7 @@ Provide all details in a clear, structured format.`;
       );
     }
 
-    if (error instanceof FalApiError) {
+    if (error instanceof MurekaApiError) {
       const status = error.statusCode ?? 500;
       return new Response(
         JSON.stringify({
@@ -368,86 +352,38 @@ Provide all details in a clear, structured format.`;
 };
 
 // ============================================================================
-// BACKGROUND POLLING FUNCTION (Fal.AI)
+// BACKGROUND POLLING FUNCTION (Mureka)
 // ============================================================================
 
 /**
- * Парсит AI-ответ Fal.AI в структурированные данные
- */
-function parseFalOutput(output: string): { recognition?: any; description?: any } {
-  const result: { recognition?: any; description?: any } = {};
-  
-  // Парсинг recognition данных
-  const titleMatch = output.match(/Title:\s*(.+)/i);
-  const artistMatch = output.match(/Artist:\s*(.+)/i);
-  const albumMatch = output.match(/Album:\s*(.+)/i);
-  const releaseDateMatch = output.match(/Release Date:\s*(.+)/i);
-  const confidenceMatch = output.match(/Confidence:\s*([\d.]+)/i);
-  
-  if (titleMatch || artistMatch) {
-    result.recognition = {
-      title: titleMatch?.[1]?.trim() || 'Unknown',
-      artist: artistMatch?.[1]?.trim() || 'Unknown',
-      album: albumMatch?.[1]?.trim(),
-      release_date: releaseDateMatch?.[1]?.trim(),
-      confidence: confidenceMatch ? parseFloat(confidenceMatch[1]) : 0.5
-    };
-  }
-  
-  // Парсинг description данных
-  const genreMatch = output.match(/Genre:\s*(.+)/i);
-  const moodMatch = output.match(/Mood:\s*(.+)/i);
-  const tempoMatch = output.match(/Tempo BPM:\s*(\d+)/i);
-  const keyMatch = output.match(/Key Signature:\s*(.+)/i);
-  const instrumentsMatch = output.match(/Instruments:\s*(.+)/i);
-  const energyMatch = output.match(/Energy Level:\s*(\d+)/i);
-  const danceMatch = output.match(/Danceability:\s*(\d+)/i);
-  const valenceMatch = output.match(/Valence:\s*(\d+)/i);
-  
-  if (genreMatch || moodMatch) {
-    result.description = {
-      text: output,
-      genre: genreMatch?.[1]?.trim(),
-      mood: moodMatch?.[1]?.trim(),
-      tempo_bpm: tempoMatch ? parseInt(tempoMatch[1]) : undefined,
-      key: keyMatch?.[1]?.trim(),
-      instruments: instrumentsMatch?.[1]?.split(',').map(i => i.trim()) || [],
-      energy_level: energyMatch ? parseInt(energyMatch[1]) : undefined,
-      danceability: danceMatch ? parseInt(danceMatch[1]) : undefined,
-      valence: valenceMatch ? parseInt(valenceMatch[1]) : undefined
-    };
-  }
-  
-  return result;
-}
-
-/**
- * Опрашивает Fal.AI API для получения результатов обеих задач
+ * Опрашивает Mureka API для получения результатов обеих задач
  * Обновляет записи в БД по мере готовности результатов
  */
-async function pollFalAnalysis(
-  recognitionRequestId: string,
-  descriptionRequestId: string,
+async function pollMurekaAnalysis(
+  recognitionTaskId: string,
+  descriptionTaskId: string,
   recognitionId: string,
-  descriptionId: string
+  descriptionId: string,
+  murekaFileId: string
 ): Promise<void> {
-  const FAL_API_KEY = Deno.env.get('FAL_API_KEY');
-  if (!FAL_API_KEY) {
-    logger.error('[ANALYZE-REF-POLL] FAL_API_KEY not configured');
+  const MUREKA_API_KEY = Deno.env.get('MUREKA_API_KEY');
+  if (!MUREKA_API_KEY) {
+    logger.error('[ANALYZE-REF-POLL] MUREKA_API_KEY not configured');
     return;
   }
 
-  const falClient = createFalClient({ apiKey: FAL_API_KEY });
+  const murekaClient = createMurekaClient({ apiKey: MUREKA_API_KEY });
   const supabaseAdmin = createSupabaseAdminClient();
 
   const MAX_ATTEMPTS = 60; // 60 * 5s = 5 минут максимум
   const POLL_INTERVAL_MS = 5000; // 5 секунд
 
-  logger.info('[ANALYZE-REF-POLL] 🔄 Fal.AI background polling started', {
-    recognitionRequestId,
-    descriptionRequestId,
+  logger.info('[ANALYZE-REF-POLL] 🔄 Mureka background polling started', {
+    recognitionTaskId,
+    descriptionTaskId,
     recognitionId: recognitionId.substring(0, 8),
-    descriptionId: descriptionId.substring(0, 8)
+    descriptionId: descriptionId.substring(0, 8),
+    murekaFileId
   });
 
   let recognitionCompleted = false;
@@ -456,7 +392,7 @@ async function pollFalAnalysis(
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
 
-    logger.debug(`[ANALYZE-REF-POLL] Fal.AI attempt ${attempt}/${MAX_ATTEMPTS}`, {
+    logger.debug(`[ANALYZE-REF-POLL] Mureka attempt ${attempt}/${MAX_ATTEMPTS}`, {
       recognitionCompleted,
       descriptionCompleted
     });
@@ -467,60 +403,65 @@ async function pollFalAnalysis(
     
     if (!recognitionCompleted) {
       try {
-        const recogStatus = await falClient.checkStatus(recognitionRequestId, true);
+        // Mureka Recognition API возвращает результаты напрямую (нет polling endpoint)
+        // Используем прямой вызов /v1/song/recognize снова
+        const recogResult = await murekaClient.recognizeSong({
+          audio_file: murekaFileId
+        });
         
-        logger.debug('[ANALYZE-REF-POLL] Recognition status', { 
-          requestId: recognitionRequestId,
-          status: recogStatus.status,
-          queuePosition: recogStatus.queue_position
+        logger.debug('[ANALYZE-REF-POLL] Recognition result', { 
+          taskId: recognitionTaskId,
+          hasResult: !!recogResult.data.result
         });
 
-        if (recogStatus.status === 'COMPLETED') {
-          const result = await falClient.getResult(recognitionRequestId);
-          const parsed = parseFalOutput(result.output);
+        if (recogResult.data.result) {
+          const result = recogResult.data.result;
 
-          if (parsed.recognition) {
-            await supabaseAdmin
-              .from('song_recognitions')
-              .update({
-                status: 'completed',
-                recognized_title: parsed.recognition.title,
-                recognized_artist: parsed.recognition.artist,
-                recognized_album: parsed.recognition.album,
-                release_date: parsed.recognition.release_date,
-                confidence_score: parsed.recognition.confidence,
-                metadata: {
-                  completed_at: new Date().toISOString(),
-                  fal_output: result.output,
-                  provider: 'fal'
-                }
-              })
-              .eq('id', recognitionId);
+          await supabaseAdmin
+            .from('song_recognitions')
+            .update({
+              status: 'completed',
+              recognized_title: result.title,
+              recognized_artist: result.artist,
+              recognized_album: result.album,
+              release_date: result.release_date,
+              confidence_score: result.confidence,
+              external_ids: result.external_ids || {},
+              metadata: {
+                completed_at: new Date().toISOString(),
+                mureka_result: result,
+                provider: 'mureka'
+              }
+            })
+            .eq('id', recognitionId);
 
-            logger.info('[ANALYZE-REF-POLL] ✅ Fal.AI recognition completed', {
-              recognitionId: recognitionId.substring(0, 8),
-              title: parsed.recognition.title,
-              artist: parsed.recognition.artist
-            });
+          logger.info('[ANALYZE-REF-POLL] ✅ Mureka recognition completed', {
+            recognitionId: recognitionId.substring(0, 8),
+            title: result.title,
+            artist: result.artist
+          });
 
-            recognitionCompleted = true;
-          } else {
-            logger.warn('[ANALYZE-REF-POLL] ⚠️ Could not parse recognition from Fal.AI output');
-            await supabaseAdmin
-              .from('song_recognitions')
-              .update({
-                status: 'failed',
-                error_message: 'Failed to parse AI output',
-                metadata: { fal_output: result.output }
-              })
-              .eq('id', recognitionId);
-            recognitionCompleted = true;
-          }
+          recognitionCompleted = true;
+        } else {
+          // Задача еще обрабатывается
+          logger.debug('[ANALYZE-REF-POLL] Recognition still processing');
         }
       } catch (error) {
         logger.error('[ANALYZE-REF-POLL] Recognition polling error', { 
           error: error instanceof Error ? error.message : String(error) 
         });
+        
+        // Если ошибка - помечаем как failed
+        if (attempt >= MAX_ATTEMPTS - 5) { // Начинаем фейлить за 5 попыток до конца
+          await supabaseAdmin
+            .from('song_recognitions')
+            .update({
+              status: 'failed',
+              error_message: error instanceof Error ? error.message : 'Recognition failed'
+            })
+            .eq('id', recognitionId);
+          recognitionCompleted = true;
+        }
       }
     }
 
@@ -530,70 +471,72 @@ async function pollFalAnalysis(
     
     if (!descriptionCompleted) {
       try {
-        const descStatus = await falClient.checkStatus(descriptionRequestId, true);
+        const descResult = await murekaClient.describeSong({
+          audio_file: murekaFileId
+        });
         
-        logger.debug('[ANALYZE-REF-POLL] Description status', { 
-          requestId: descriptionRequestId,
-          status: descStatus.status,
-          queuePosition: descStatus.queue_position
+        logger.debug('[ANALYZE-REF-POLL] Description result', { 
+          taskId: descriptionTaskId,
+          hasDescription: !!descResult.data.description
         });
 
-        if (descStatus.status === 'COMPLETED') {
-          const result = await falClient.getResult(descriptionRequestId);
-          const parsed = parseFalOutput(result.output);
+        if (descResult.data.description) {
+          const desc = descResult.data.description;
 
-          if (parsed.description) {
-            await supabaseAdmin
-              .from('song_descriptions')
-              .update({
-                status: 'completed',
-                ai_description: parsed.description.text,
-                detected_genre: parsed.description.genre,
-                detected_mood: parsed.description.mood,
-                detected_instruments: parsed.description.instruments,
-                tempo_bpm: parsed.description.tempo_bpm,
-                key_signature: parsed.description.key,
-                energy_level: parsed.description.energy_level,
-                danceability: parsed.description.danceability,
-                valence: parsed.description.valence,
-                metadata: {
-                  completed_at: new Date().toISOString(),
-                  fal_output: result.output,
-                  provider: 'fal'
-                }
-              })
-              .eq('id', descriptionId);
+          await supabaseAdmin
+            .from('song_descriptions')
+            .update({
+              status: 'completed',
+              ai_description: desc.text,
+              detected_genre: desc.genre,
+              detected_mood: desc.mood,
+              detected_instruments: desc.instruments || [],
+              tempo_bpm: desc.tempo_bpm,
+              key_signature: desc.key,
+              energy_level: desc.energy_level,
+              danceability: desc.danceability,
+              valence: desc.valence,
+              metadata: {
+                completed_at: new Date().toISOString(),
+                mureka_description: desc,
+                provider: 'mureka'
+              }
+            })
+            .eq('id', descriptionId);
 
-            logger.info('[ANALYZE-REF-POLL] ✅ Fal.AI description completed', {
-              descriptionId: descriptionId.substring(0, 8),
-              genre: parsed.description.genre,
-              mood: parsed.description.mood
-            });
+          logger.info('[ANALYZE-REF-POLL] ✅ Mureka description completed', {
+            descriptionId: descriptionId.substring(0, 8),
+            genre: desc.genre,
+            mood: desc.mood
+          });
 
-            descriptionCompleted = true;
-          } else {
-            logger.warn('[ANALYZE-REF-POLL] ⚠️ Could not parse description from Fal.AI output');
-            await supabaseAdmin
-              .from('song_descriptions')
-              .update({
-                status: 'failed',
-                error_message: 'Failed to parse AI output',
-                metadata: { fal_output: result.output }
-              })
-              .eq('id', descriptionId);
-            descriptionCompleted = true;
-          }
+          descriptionCompleted = true;
+        } else {
+          // Задача еще обрабатывается
+          logger.debug('[ANALYZE-REF-POLL] Description still processing');
         }
       } catch (error) {
         logger.error('[ANALYZE-REF-POLL] Description polling error', { 
           error: error instanceof Error ? error.message : String(error) 
         });
+        
+        // Если ошибка - помечаем как failed
+        if (attempt >= MAX_ATTEMPTS - 5) {
+          await supabaseAdmin
+            .from('song_descriptions')
+            .update({
+              status: 'failed',
+              error_message: error instanceof Error ? error.message : 'Description failed'
+            })
+            .eq('id', descriptionId);
+          descriptionCompleted = true;
+        }
       }
     }
 
     // ✅ Завершаем, если обе задачи готовы
     if (recognitionCompleted && descriptionCompleted) {
-      logger.info('[ANALYZE-REF-POLL] 🎉 Both Fal.AI tasks completed', {
+      logger.info('[ANALYZE-REF-POLL] 🎉 Both Mureka tasks completed', {
         recognitionId: recognitionId.substring(0, 8),
         descriptionId: descriptionId.substring(0, 8),
         attempts: attempt
@@ -603,7 +546,7 @@ async function pollFalAnalysis(
   }
 
   // ⚠️ Timeout - обе задачи не завершились за MAX_ATTEMPTS
-  logger.warn('[ANALYZE-REF-POLL] ⏰ Fal.AI polling timeout', {
+  logger.warn('[ANALYZE-REF-POLL] ⏰ Mureka polling timeout', {
     recognitionCompleted,
     descriptionCompleted,
     maxAttempts: MAX_ATTEMPTS
@@ -614,7 +557,7 @@ async function pollFalAnalysis(
       .from('song_recognitions')
       .update({
         status: 'failed',
-        error_message: 'Polling timeout - Fal.AI task did not complete in time'
+        error_message: 'Polling timeout - Mureka task did not complete in time'
       })
       .eq('id', recognitionId);
   }
@@ -624,7 +567,7 @@ async function pollFalAnalysis(
       .from('song_descriptions')
       .update({
         status: 'failed',
-        error_message: 'Polling timeout - Fal.AI task did not complete in time'
+        error_message: 'Polling timeout - Mureka task did not complete in time'
       })
       .eq('id', descriptionId);
   }
