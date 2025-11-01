@@ -59,9 +59,10 @@ export const CreatePersonaDialog = ({
     if (open && track) {
       let styleDescription = '';
 
-      // ПРИОРИТЕТ 1: AI-описание из Mureka (если было создано)
-      if (track.ai_description) {
-        styleDescription = track.ai_description;
+      // ПРИОРИТЕТ 1: AI-описание из metadata (автоматически синхронизировано из song_descriptions)
+      const metadataDescription = track.metadata?.ai_description;
+      if (metadataDescription && typeof metadataDescription === 'string') {
+        styleDescription = metadataDescription;
       }
       // ПРИОРИТЕТ 2: Промпт, используемый при генерации
       else {
