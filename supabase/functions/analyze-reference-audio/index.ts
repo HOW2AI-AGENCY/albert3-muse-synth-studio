@@ -31,10 +31,7 @@ import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { logger, withSentry } from "../_shared/logger.ts";
 import { createMurekaClient, MurekaApiError } from "../_shared/mureka.ts";
-import {
-  createSupabaseAdminClient,
-  createSupabaseUserClient,
-} from "../_shared/supabase.ts";
+import { createSupabaseAdminClient } from "../_shared/supabase.ts";
 import { validateRequest, validationSchemas, ValidationException } from "../_shared/validation.ts";
 
 // ============================================================================
@@ -94,30 +91,16 @@ const mainHandler = async (req: Request): Promise<Response> => {
       timestamp: new Date().toISOString()
     });
 
-    // ✅ Get JWT token from Authorization header
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      logger.error('🔴 [ANALYZE-REF] Missing Authorization header');
+    // ✅ Use userId from middleware (withRateLimit)
+    const userId = req.headers.get('X-User-Id');
+    if (!userId) {
+      logger.error('[ANALYZE-REF] Missing X-User-Id from middleware');
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: 'Unauthorized - missing user context' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    const token = authHeader.replace('Bearer ', '');
-    const supabaseUser = createSupabaseUserClient(token);
-    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
-
-    if (authError || !user) {
-      logger.error('🔴 [ANALYZE-REF] Invalid token', { authError });
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const userId = user.id;
-    logger.info(`[ANALYZE-REF] ✅ User authenticated: userId=${userId.substring(0, 8)}...`);
+    logger.info(`[ANALYZE-REF] ✅ User authenticated via middleware: userId=${userId.substring(0, 8)}...`);
 
     // ✅ Validate request body
     const body = await validateRequest(req, validationSchemas.analyzeReferenceAudio) as AnalyzeReferenceAudioRequest;
