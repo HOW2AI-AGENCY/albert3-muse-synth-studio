@@ -1,6 +1,5 @@
 import { Coins, Loader2, AlertCircle } from "@/utils/iconImports";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { useProviderBalance } from "@/hooks/useProviderBalance";
 
 export const SunoBalanceDisplay = () => {
@@ -8,53 +7,51 @@ export const SunoBalanceDisplay = () => {
 
   if (isLoading) {
     return (
-      <Badge variant="outline" className="gap-1 text-[10px]">
-        <Loader2 className="w-2.5 h-2.5 animate-spin" />
-        <span>Загрузка...</span>
-      </Badge>
+      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/30">
+        <Loader2 className="h-3.5 w-3.5 text-muted-foreground animate-spin" />
+        <span className="text-xs text-muted-foreground font-medium">...</span>
+      </div>
     );
   }
 
   if (error || !balance) {
     return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Badge variant="outline" className="gap-1 text-[10px] text-destructive border-destructive/50">
-            <AlertCircle className="w-2.5 h-2.5" />
-            <span>Ошибка</span>
-          </Badge>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" className="text-xs">
-          <p>{error || 'Не удалось загрузить баланс'}</p>
-        </TooltipContent>
-      </Tooltip>
+      <div 
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/30" 
+        title="Suno API не настроен"
+      >
+        <AlertCircle className="h-3.5 w-3.5 text-muted-foreground" />
+        <span className="text-xs text-muted-foreground font-medium">—</span>
+      </div>
     );
   }
 
   const creditsLeft = balance.balance || 0;
-  const isLowBalance = creditsLeft < 10;
-  const isZeroBalance = creditsLeft === 0;
+  const isLow = creditsLeft <= 5;
+  const isZero = creditsLeft === 0;
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Badge 
-          variant={isZeroBalance ? "destructive" : isLowBalance ? "outline" : "secondary"} 
-          className={`gap-1 text-[10px] ${isLowBalance && !isZeroBalance ? 'border-yellow-500/50 text-yellow-600 dark:text-yellow-400' : ''}`}
-        >
-          <Coins className="w-2.5 h-2.5" />
-          <span>{creditsLeft} {balance.currency === 'credits' ? 'кредитов' : balance.currency}</span>
-        </Badge>
-      </TooltipTrigger>
-      <TooltipContent side="bottom" className="text-xs">
-        {isZeroBalance ? (
-          <p className="text-destructive">❌ Недостаточно кредитов для генерации</p>
-        ) : isLowBalance ? (
-          <p className="text-yellow-600 dark:text-yellow-400">⚠️ Низкий баланс Suno</p>
-        ) : (
-          <p>💰 Баланс Suno: {creditsLeft} кредитов</p>
-        )}
-      </TooltipContent>
-    </Tooltip>
+    <div 
+      className={cn(
+        "flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-colors",
+        isZero 
+          ? "bg-destructive/10" 
+          : isLow 
+            ? "bg-warning/10" 
+            : "bg-primary/10"
+      )}
+      title={`Suno баланс: ${creditsLeft} кредитов`}
+    >
+      <Coins className={cn(
+        "h-3.5 w-3.5",
+        isZero ? "text-destructive" : isLow ? "text-warning" : "text-primary"
+      )} />
+      <span className={cn(
+        "text-xs font-bold tabular-nums",
+        isZero ? "text-destructive" : isLow ? "text-warning" : "text-primary"
+      )}>
+        {creditsLeft}
+      </span>
+    </div>
   );
 };

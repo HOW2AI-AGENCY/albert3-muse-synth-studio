@@ -360,7 +360,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     >
       {/* Compact Header */}
       <CompactHeader
-        selectedProvider={selectedProvider as 'suno' | 'mureka'}
         mode={state.mode}
         onModeChange={state.setMode}
         modelVersion={state.params.modelVersion}

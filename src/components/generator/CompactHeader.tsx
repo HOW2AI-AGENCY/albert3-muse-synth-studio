@@ -2,13 +2,11 @@ import { memo } from 'react';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MurekaBalanceDisplay } from '@/components/mureka/MurekaBalanceDisplay';
 import { SunoBalanceDisplay } from '@/components/mureka/SunoBalanceDisplay';
 import type { GeneratorMode } from './types/generator.types';
 import type { ModelVersion } from '@/config/provider-models';
 
 interface CompactHeaderProps {
-  selectedProvider: 'suno' | 'mureka';
   mode: GeneratorMode;
   onModeChange: (mode: GeneratorMode) => void;
   modelVersion: string;
@@ -18,7 +16,6 @@ interface CompactHeaderProps {
 }
 
 export const CompactHeader = memo(({
-  selectedProvider,
   mode,
   onModeChange,
   modelVersion,
@@ -28,26 +25,25 @@ export const CompactHeader = memo(({
 }: CompactHeaderProps) => {
   return (
     <div 
-      className="flex items-center justify-between border-b border-border/20 bg-background/95 backdrop-blur-sm px-6"
-      style={{ minHeight: 'var(--generator-header-height, 56px)' }}
+      className="flex items-center justify-between border-b border-border/10 bg-background/95 backdrop-blur-sm px-8 py-2"
+      style={{ minHeight: 'var(--generator-header-height, 48px)' }}
     >
-      {/* Left: Provider Balance */}
-      <div className="flex items-center min-w-[140px]">
-        {selectedProvider === 'mureka' && <MurekaBalanceDisplay />}
-        {selectedProvider === 'suno' && <SunoBalanceDisplay />}
+      {/* Left: Provider Balance - Compact */}
+      <div className="flex items-center min-w-[100px]">
+        <SunoBalanceDisplay />
       </div>
 
-      {/* Center: Mode Tabs */}
+      {/* Center: Mode Tabs - Compact */}
       <RadioGroup
         value={mode}
         onValueChange={(v) => onModeChange(v as GeneratorMode)}
-        className="flex items-center gap-0 bg-background/50 border border-border/40 rounded-lg p-0.5"
+        className="flex items-center gap-0 bg-muted/20 border border-border/30 rounded-md p-0.5"
       >
         <div className="flex items-center">
           <RadioGroupItem value="simple" id="mode-simple" className="peer sr-only" />
           <Label 
             htmlFor="mode-simple" 
-            className="px-6 py-2 text-sm font-medium cursor-pointer rounded-md transition-all peer-data-[state=checked]:bg-primary/10 peer-data-[state=checked]:text-primary peer-data-[state=checked]:shadow-sm"
+            className="px-5 py-1.5 text-xs font-medium cursor-pointer rounded-sm transition-all peer-data-[state=checked]:bg-background peer-data-[state=checked]:text-foreground peer-data-[state=checked]:shadow-sm text-muted-foreground hover:text-foreground"
           >
             Simple
           </Label>
@@ -56,22 +52,22 @@ export const CompactHeader = memo(({
           <RadioGroupItem value="custom" id="mode-custom" className="peer sr-only" />
           <Label 
             htmlFor="mode-custom" 
-            className="px-6 py-2 text-sm font-medium cursor-pointer rounded-md transition-all peer-data-[state=checked]:bg-primary/10 peer-data-[state=checked]:text-primary peer-data-[state=checked]:shadow-sm"
+            className="px-5 py-1.5 text-xs font-medium cursor-pointer rounded-sm transition-all peer-data-[state=checked]:bg-background peer-data-[state=checked]:text-foreground peer-data-[state=checked]:shadow-sm text-muted-foreground hover:text-foreground"
           >
             Custom
           </Label>
         </div>
       </RadioGroup>
 
-      {/* Right: Model Select */}
-      <div className="flex items-center min-w-[140px] justify-end">
+      {/* Right: Model Select - Compact */}
+      <div className="flex items-center min-w-[100px] justify-end">
         <Select value={modelVersion} onValueChange={onModelChange} disabled={isGenerating}>
-          <SelectTrigger className="h-9 w-32 text-sm border-border/40 bg-background/50 font-medium">
+          <SelectTrigger className="h-8 w-28 text-xs border-border/30 bg-muted/20 font-medium">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-background">
             {availableModels.map((m) => (
-              <SelectItem key={m.value} value={m.value} className="text-sm">
+              <SelectItem key={m.value} value={m.value} className="text-xs">
                 {m.label}
               </SelectItem>
             ))}
