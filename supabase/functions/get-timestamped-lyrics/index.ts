@@ -4,21 +4,24 @@
  * 
  * @version 1.0.0
  * @since 2025-11-02
+ * @security JWT required, Zod validation, rate limiting
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { createSupabaseAdminClient } from "../_shared/supabase.ts";
 import { logger } from "../_shared/logger.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const SUNO_API_KEY = Deno.env.get("SUNO_API_KEY");
 const SUNO_API_BASE_URL = "https://api.sunoapi.org";
 
-interface TimestampedLyricsRequest {
-  taskId: string;
-  audioId?: string;
-  musicIndex?: 0 | 1;
-}
+// ✅ Zod validation schema
+const requestSchema = z.object({
+  taskId: z.string().min(1).max(100),
+  audioId: z.string().min(1).max(100).optional(),
+  musicIndex: z.union([z.literal(0), z.literal(1)]).optional(),
+});
 
 interface AlignedWord {
   word: string;
@@ -43,24 +46,42 @@ serve(async (req) => {
   }
 
   try {
+    // ✅ Authentication check (X-User-Id set by JWT middleware)
+    const userId = req.headers.get('X-User-Id');
+    if (!userId) {
+      logger.error('[GET-TIMESTAMPED-LYRICS] Missing X-User-Id from middleware');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - missing user context' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    logger.info(`[GET-TIMESTAMPED-LYRICS] ✅ User: ${userId.substring(0, 8)}...`);
+
     // Validate API key
     if (!SUNO_API_KEY) {
       throw new Error("SUNO_API_KEY is not configured");
     }
 
-    // Parse request body
-    const body: TimestampedLyricsRequest = await req.json();
-    const { taskId, audioId, musicIndex } = body;
-
-    // Validate required fields
-    if (!taskId) {
+    // Parse and validate request body
+    const rawBody = await req.json();
+    
+    // ✅ Validate input with Zod
+    const validation = requestSchema.safeParse(rawBody);
+    if (!validation.success) {
+      logger.error('[GET-TIMESTAMPED-LYRICS] Validation failed', { errors: validation.error.format() });
       return new Response(
-        JSON.stringify({ error: "taskId is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ 
+          error: 'Validation failed', 
+          details: validation.error.format() 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    logger.info("[get-timestamped-lyrics] Fetching timestamped lyrics", {
+    const { taskId, audioId, musicIndex } = validation.data;
+
+    logger.info("[GET-TIMESTAMPED-LYRICS] Fetching timestamped lyrics", {
       taskId,
       audioId,
       musicIndex,
@@ -75,7 +96,7 @@ serve(async (req) => {
       .single();
 
     if (track?.metadata?.timestamped_lyrics) {
-      logger.info("[get-timestamped-lyrics] Returning cached timestamped lyrics", { trackId: track.id });
+      logger.info("[GET-TIMESTAMPED-LYRICS] Returning cached timestamped lyrics", { trackId: track.id });
       return new Response(
         JSON.stringify({
           success: true,
@@ -109,7 +130,7 @@ serve(async (req) => {
     if (!sunoResponse.ok) {
       const errorText = await sunoResponse.text();
       logger.error(
-        `[get-timestamped-lyrics] Suno API error: ${errorText} (status: ${sunoResponse.status}, taskId: ${taskId})`,
+        `[GET-TIMESTAMPED-LYRICS] Suno API error: ${errorText} (status: ${sunoResponse.status}, taskId: ${taskId})`,
         new Error(errorText)
       );
 
@@ -138,7 +159,7 @@ serve(async (req) => {
 
     if (sunoData.code !== 200) {
       logger.error(
-        `[get-timestamped-lyrics] Suno API returned error: ${sunoData.msg} (code: ${sunoData.code}, taskId: ${taskId})`,
+        `[GET-TIMESTAMPED-LYRICS] Suno API returned error: ${sunoData.msg} (code: ${sunoData.code}, taskId: ${taskId})`,
         new Error(sunoData.msg)
       );
       return new Response(
@@ -164,7 +185,7 @@ serve(async (req) => {
         })
         .eq("id", track.id);
 
-      logger.info("[get-timestamped-lyrics] Cached timestamped lyrics in DB", { trackId: track.id });
+      logger.info("[GET-TIMESTAMPED-LYRICS] Cached timestamped lyrics in DB", { trackId: track.id });
     }
 
     return new Response(
@@ -176,7 +197,7 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    logger.error("[get-timestamped-lyrics] Unexpected error", error as Error);
+    logger.error("[GET-TIMESTAMPED-LYRICS] Unexpected error", error as Error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

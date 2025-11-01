@@ -4,28 +4,31 @@
  * 
  * @version 1.0.0
  * @since 2025-11-02
+ * @security JWT required, Zod validation, ownership check, rate limiting
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
-import { createSupabaseAdminClient, createSupabaseUserClient } from "../_shared/supabase.ts";
+import { createSupabaseAdminClient } from "../_shared/supabase.ts";
 import { logger } from "../_shared/logger.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const SUNO_API_KEY = Deno.env.get("SUNO_API_KEY");
 const SUNO_API_BASE_URL = "https://api.sunoapi.org";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 
-interface ReplaceSectionRequest {
-  trackId: string;
-  taskId: string;
-  musicIndex: 0 | 1;
-  prompt: string;
-  tags: string;
-  title: string;
-  negativeTags?: string;
-  infillStartS: number;
-  infillEndS: number;
-}
+// ✅ Zod validation schema
+const requestSchema = z.object({
+  trackId: z.string().uuid(),
+  taskId: z.string().min(1).max(100),
+  musicIndex: z.union([z.literal(0), z.literal(1)]),
+  prompt: z.string().min(1).max(1000).trim(),
+  tags: z.string().min(1).max(200),
+  title: z.string().min(1).max(200),
+  negativeTags: z.string().max(200).optional(),
+  infillStartS: z.number().min(0).max(300),
+  infillEndS: z.number().min(5).max(300),
+});
 
 serve(async (req) => {
   const corsHeaders = createCorsHeaders(req);
@@ -35,33 +38,39 @@ serve(async (req) => {
   }
 
   try {
-    // Get user from auth header
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    // ✅ Authentication check (X-User-Id set by JWT middleware)
+    const userId = req.headers.get('X-User-Id');
+    if (!userId) {
+      logger.error('[REPLACE-SECTION] Missing X-User-Id from middleware');
       return new Response(
-        JSON.stringify({ error: "Authorization required" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: 'Unauthorized - missing user context' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const token = authHeader.replace("Bearer ", "");
-    const supabaseUser = createSupabaseUserClient(token);
-    const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
-
-    if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Invalid authentication" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    logger.info(`[REPLACE-SECTION] ✅ User: ${userId.substring(0, 8)}...`);
 
     // Validate API key
     if (!SUNO_API_KEY) {
       throw new Error("SUNO_API_KEY is not configured");
     }
 
-    // Parse request body
-    const body: ReplaceSectionRequest = await req.json();
+    // Parse and validate request body
+    const rawBody = await req.json();
+    
+    // ✅ Validate input with Zod
+    const validation = requestSchema.safeParse(rawBody);
+    if (!validation.success) {
+      logger.error('[REPLACE-SECTION] Validation failed', { errors: validation.error.format() });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Validation failed', 
+          details: validation.error.format() 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const {
       trackId,
       taskId,
@@ -72,32 +81,9 @@ serve(async (req) => {
       negativeTags,
       infillStartS,
       infillEndS,
-    } = body;
+    } = validation.data;
 
-    // Validate required fields
-    if (!trackId || !taskId || musicIndex === undefined || !prompt || !tags || !title || 
-        infillStartS === undefined || infillEndS === undefined) {
-      return new Response(
-        JSON.stringify({ error: "Missing required fields" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Validate time range
-    if (infillStartS < 0) {
-      return new Response(
-        JSON.stringify({ error: "infillStartS must be >= 0" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (infillEndS <= infillStartS) {
-      return new Response(
-        JSON.stringify({ error: "infillEndS must be > infillStartS" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
+    // Additional validation
     const sectionDuration = infillEndS - infillStartS;
     if (sectionDuration < 5) {
       return new Response(
@@ -113,16 +99,16 @@ serve(async (req) => {
       );
     }
 
-    logger.info("[replace-section] Starting section replacement", {
+    logger.info("[REPLACE-SECTION] Starting section replacement", {
       trackId,
       taskId,
       musicIndex,
       infillStartS,
       infillEndS,
-      userId: user.id,
+      userId: userId.substring(0, 8),
     });
 
-    // Verify track ownership
+    // ✅ Verify track ownership
     const supabase = createSupabaseAdminClient();
     const { data: track, error: trackError } = await supabase
       .from("tracks")
@@ -137,9 +123,10 @@ serve(async (req) => {
       );
     }
 
-    if (track.user_id !== user.id) {
+    if (track.user_id !== userId) {
+      logger.error("[REPLACE-SECTION] Unauthorized - user does not own track");
       return new Response(
-        JSON.stringify({ error: "Unauthorized to modify this track" }),
+        JSON.stringify({ error: "Unauthorized - you do not own this track" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -172,7 +159,7 @@ serve(async (req) => {
       .single();
 
     if (replacementError) {
-      logger.error("[replace-section] Failed to create replacement record", replacementError);
+      logger.error("[REPLACE-SECTION] Failed to create replacement record", replacementError);
       return new Response(
         JSON.stringify({ error: "Failed to create replacement record" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -208,7 +195,7 @@ serve(async (req) => {
     if (!sunoResponse.ok) {
       const errorText = await sunoResponse.text();
       logger.error(
-        `[replace-section] Suno API error: ${errorText} (status: ${sunoResponse.status})`,
+        `[REPLACE-SECTION] Suno API error: ${errorText} (status: ${sunoResponse.status})`,
         new Error(errorText)
       );
 
@@ -245,7 +232,7 @@ serve(async (req) => {
 
     if (sunoData.code !== 200) {
       logger.error(
-        `[replace-section] Suno API returned error: ${sunoData.msg} (code: ${sunoData.code})`,
+        `[REPLACE-SECTION] Suno API returned error: ${sunoData.msg} (code: ${sunoData.code})`,
         new Error(sunoData.msg)
       );
 
@@ -274,7 +261,7 @@ serve(async (req) => {
       })
       .eq("id", replacement.id);
 
-    logger.info("[replace-section] Section replacement submitted", {
+    logger.info("[REPLACE-SECTION] Section replacement submitted", {
       replacementId: replacement.id,
       sunoTaskId: newTaskId,
     });
@@ -288,7 +275,7 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    logger.error("[replace-section] Unexpected error", error as Error);
+    logger.error("[REPLACE-SECTION] Unexpected error", error as Error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

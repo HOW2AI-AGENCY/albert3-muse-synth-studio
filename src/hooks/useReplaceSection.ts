@@ -64,7 +64,26 @@ export const useReplaceSection = (): UseReplaceSectionReturn => {
 
       if (fetchError) throw fetchError;
 
-      setReplacements(data || []);
+      // Type-safe mapping from database to interface
+      const typedData: TrackSectionReplacement[] = (data || []).map(row => ({
+        id: row.id,
+        parent_track_id: row.parent_track_id,
+        version_id: row.version_id,
+        replaced_start_s: row.replaced_start_s,
+        replaced_end_s: row.replaced_end_s,
+        prompt: row.prompt,
+        tags: row.tags,
+        negative_tags: row.negative_tags,
+        suno_task_id: row.suno_task_id,
+        replacement_audio_url: row.replacement_audio_url,
+        status: row.status as 'pending' | 'processing' | 'completed' | 'failed',
+        error_message: row.error_message,
+        metadata: (row.metadata as Record<string, any>) || {},
+        created_at: row.created_at || new Date().toISOString(),
+        updated_at: row.updated_at || new Date().toISOString(),
+      }));
+
+      setReplacements(typedData);
     } catch (err) {
       logger.error('Failed to load replacements', err as Error, 'useReplaceSection');
     }

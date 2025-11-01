@@ -54,8 +54,10 @@ export const useTimestampedLyrics = (
           .eq('id', trackId)
           .single();
 
-        if (track?.metadata?.timestamped_lyrics) {
-          setTimestampedLyrics(track.metadata.timestamped_lyrics);
+        // Type-safe metadata access
+        const metadata = track?.metadata as Record<string, any> | null;
+        if (metadata?.timestamped_lyrics) {
+          setTimestampedLyrics(metadata.timestamped_lyrics as TimestampedLyricsData);
         }
       } catch (err) {
         logger.error('Failed to load cached timestamped lyrics', err as Error, 'useTimestampedLyrics');
