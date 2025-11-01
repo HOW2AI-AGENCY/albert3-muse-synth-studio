@@ -1,6 +1,5 @@
 import React from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
 import { Clock, Split, Star, Heart } from '@/utils/iconImports';
 import { TrackProgressBar } from '@/components/tracks/TrackProgressBar';
 import { formatDuration } from '@/utils/formatters';
@@ -9,8 +8,8 @@ interface TrackCardInfoProps {
   title: string;
   prompt?: string;
   duration?: number;
-  versionCount: number;
-  selectedVersionIndex: number;
+  versionCount?: number;
+  selectedVersionIndex?: number;
   hasStems: boolean;
   status: string;
   progressPercent?: number | null;
@@ -24,15 +23,12 @@ export const TrackCardInfo = React.memo(({
   title,
   prompt,
   duration,
-  versionCount,
-  selectedVersionIndex,
   hasStems,
   status,
   progressPercent,
   createdAt,
   likeCount,
   isMasterVersion,
-  onVersionChange,
 }: TrackCardInfoProps) => {
   const formattedDuration = duration ? formatDuration(duration) : null;
 
@@ -62,20 +58,7 @@ export const TrackCardInfo = React.memo(({
             )}
           </div>
           
-          {/* ✅ FIX: Переключатель версий */}
-          {versionCount > 1 && onVersionChange && (
-            <Badge 
-              variant="secondary" 
-              className="cursor-pointer hover:bg-primary/20 transition-colors shrink-0 select-none"
-              onClick={(e) => {
-                e.stopPropagation();
-                const nextIndex = (selectedVersionIndex + 1) % versionCount;
-                onVersionChange(nextIndex);
-              }}
-            >
-              {selectedVersionIndex + 1}/{versionCount}
-            </Badge>
-          )}
+          {/* ✅ REMOVED: Дублирующий переключатель версий - используется только верхний в TrackVariantSelector */}
         </div>
         
         <p className="text-xs text-muted-foreground mb-1.5 line-clamp-1">{prompt}</p>

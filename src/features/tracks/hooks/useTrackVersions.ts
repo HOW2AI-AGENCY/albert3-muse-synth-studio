@@ -34,12 +34,13 @@ const inFlightRequests = new Map<string, Promise<TrackWithVersions[]>>();
 
 const getCacheKey = (trackId: string) => trackId;
 
+// ✅ FIX: Считаем только версии с audio_url
 const getAdditionalVersionsCount = (versions: TrackWithVersions[] | undefined): number => {
   if (!versions) {
     return 0;
   }
 
-  return versions.filter(version => !version.isOriginal).length;
+  return versions.filter(version => !version.isOriginal && !!version.audio_url).length;
 };
 
 const notifyListeners = (trackId: string, versions: TrackWithVersions[]) => {

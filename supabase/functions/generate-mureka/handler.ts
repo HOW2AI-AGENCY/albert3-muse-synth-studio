@@ -340,7 +340,7 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
       
       const existingIndexes = new Set((existingVariants || []).map(v => v.variant_index));
       
-      // ✅ Create versions for ALL clips (primary = variant_index 0)
+      // ✅ FIX: Создаём версии для всех клипов с правильной логикой мастер-версии
       const versionsToInsert = normalized.clips
         .map((clip, index) => {
           const variantIndex = index;
@@ -358,13 +358,17 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
             ? (clip.duration > 1000 ? Math.floor(clip.duration / 1000) : clip.duration)
             : null;
           
+          // ✅ FIX: Первый клип (варинат 0) - мастер, остальные - нет
+          const isMaster = variantIndex === 0;
+          
           return {
             parent_track_id: trackData.id,
             variant_index: variantIndex,
-            is_preferred_variant: variantIndex === 0, // Primary is preferred by default
-            is_primary_variant: variantIndex === 0,
+            is_preferred_variant: isMaster,
+            is_primary_variant: isMaster,
             audio_url: clip.audio_url || null,
-            cover_url: clip.image_url || clip.cover_url || null,
+            // ✅ FIX: Используем fallback для обложки если её нет
+            cover_url: clip.image_url || clip.cover_url || primaryClip.image_url || primaryClip.cover_url || null,
             video_url: clip.video_url || null,
             lyrics: clip.lyrics || null,
             duration: durationInSeconds,
@@ -431,7 +435,11 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
     return {
       status: 'completed',
       audio_url: audioUrl,
-      cover_url: primaryClip.image_url || primaryClip.cover_url || undefined,
+      // ✅ FIX: Добавляем надёжный fallback для cover - используем любую доступную обложку
+      cover_url: primaryClip.image_url || primaryClip.cover_url || 
+                 normalized.clips.find(c => c.image_url || c.cover_url)?.image_url ||
+                 normalized.clips.find(c => c.image_url || c.cover_url)?.cover_url ||
+                 undefined,
       video_url: primaryClip.video_url || undefined,
       duration: durationInSeconds,
       title: primaryClip.title || primaryClip.name || 'Generated Track',

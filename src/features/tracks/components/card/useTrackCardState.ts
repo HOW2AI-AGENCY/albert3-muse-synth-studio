@@ -45,10 +45,11 @@ export const useTrackCardState = (track: Track) => {
     checkStems();
   }, [track.id]);
 
-  // All versions
+  // ✅ FIX: Фильтруем только версии с audio_url
   const allVersions = useMemo(() => {
     if (!mainVersion) return [];
-    return [mainVersion, ...versions];
+    const validVersions = [mainVersion, ...versions].filter(v => !!v.audio_url);
+    return validVersions;
   }, [mainVersion, versions]);
 
   // ✅ FIX: Синхронизировать selectedVersionIndex с текущим треком в плеере
