@@ -396,11 +396,16 @@ const mainHandler = async (req: Request) => {
         });
       }
 
-      if (successfulTracks.length > 1) {
-        for (let i = 1; i < successfulTracks.length; i++) {
+      // ✅ FIX: Создаём ВСЕ версии, включая primary (index 0)
+      // Suno всегда генерирует 2 варианта: [0] = первый, [1] = второй
+      if (successfulTracks.length > 0) {
+        console.log(`[suno-callback] Creating ${successfulTracks.length} track versions`);
+        
+        for (let i = 0; i < successfulTracks.length; i++) {
           const versionTrack = successfulTracks[i];
           const versionExternalAudioUrl = versionTrack.audioUrl || versionTrack.audio_url
             || versionTrack.stream_audio_url || versionTrack.source_stream_audio_url;
+          
           if (!versionExternalAudioUrl) {
             console.warn(`[suno-callback] Version ${i} missing audio URL, skipping`);
             continue;
@@ -442,14 +447,17 @@ const mainHandler = async (req: Request) => {
             suno_task_id: taskId,
           };
 
-          // ✅ ALWAYS INSERT new versions (never update) - each callback creates new variants
+          // ✅ FIX: Правильная логика variant_index и флагов
+          // variant_index: 0 = первая версия (primary), 1 = вторая версия
+          // is_primary_variant: true только для variant_index === 0
+          // is_preferred_variant: по умолчанию true для primary (первой версии)
           const { error: versionError } = await supabase
             .from("track_versions")
             .insert({
               parent_track_id: track.id,
               variant_index: i,
-              is_preferred_variant: i === 0, // First variant is preferred
-              is_primary_variant: i === 0, // First variant is primary
+              is_primary_variant: i === 0,
+              is_preferred_variant: i === 0, // Primary по умолчанию предпочитаемая
               suno_id: sanitizeText(versionTrack.id),
               audio_url: versionAudioUrl,
               video_url: versionVideoUrl,
@@ -460,9 +468,13 @@ const mainHandler = async (req: Request) => {
             });
 
           if (versionError) {
-            console.error(`[suno-callback] Error inserting version ${i}:`, versionError);
+            console.error(`[suno-callback] Error inserting version ${i}:`, versionError, {
+              parent_track_id: track.id,
+              variant_index: i,
+              is_primary_variant: i === 0,
+            });
           } else {
-            console.log(`[suno-callback] Version ${i} created successfully`);
+            console.log(`[suno-callback] ✅ Version ${i} (${i === 0 ? 'PRIMARY' : 'ALTERNATE'}) created successfully`);
           }
         }
       }

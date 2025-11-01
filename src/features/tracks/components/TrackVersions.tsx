@@ -241,7 +241,9 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                         <div className="min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-medium text-sm">
-                              {version.is_primary_variant ? 'Первичный' : `Вариант ${version.variant_index}`}
+                              {version.is_primary_variant 
+                                ? 'Оригинал' 
+                                : `Вариант ${version.variant_index}`}
                             </span>
                             {version.is_preferred_variant && (
                               <Badge variant="default" className="gap-1 text-xs">
@@ -304,7 +306,9 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
           <AlertDialogHeader>
             <AlertDialogTitle>Удалить версию?</AlertDialogTitle>
             <AlertDialogDescription>
-              Вы собираетесь удалить {versionToDelete?.is_primary_variant ? 'первичный вариант' : `вариант ${versionToDelete?.variant_index}`}.
+              Вы собираетесь удалить {versionToDelete?.is_primary_variant 
+                ? 'оригинальную версию' 
+                : `вариант ${versionToDelete?.variant_index}`}.
               {versionToDelete?.is_preferred_variant && !versionToDelete?.is_primary_variant && (
                 <span className="block mt-2 text-orange-500 font-medium">
                   ⚠️ Это главная версия. Статус главной будет присвоен другой версии.

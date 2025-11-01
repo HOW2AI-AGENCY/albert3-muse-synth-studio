@@ -401,12 +401,11 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
         });
       }
       
-      // ✅ FIX: Создаём версии ТОЛЬКО для дополнительных клипов (не primary)
-      // Primary clip данные идут в основной track через finalizePrimaryTrack
+      // ✅ FIX: Создаём ВСЕ версии, включая primary (variant_index=0)
+      // Mureka: clips[0] = primary (variant_index=0), clips[1+] = alternates (variant_index=1+)
       const versionsToInsert = normalized.clips
-        .slice(1) // ✅ Пропускаем первый клип (он идёт в основной track)
-        .map((clip, arrayIndex) => {
-          const variantIndex = arrayIndex + 1; // ✅ Начинаем с 1, т.к. 0 - это primary track
+        .map((clip, clipIndex) => {
+          const variantIndex = clipIndex; // 0 = primary, 1+ = alternates
           
           if (existingIndexes.has(variantIndex)) {
             logger.info(`⏭️ [MUREKA] Variant ${variantIndex} already exists, skipping`, {
@@ -424,8 +423,8 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
           return {
             parent_track_id: trackData.id,
             variant_index: variantIndex,
-            is_primary_variant: false,
-            is_preferred_variant: false,
+            is_primary_variant: variantIndex === 0,
+            is_preferred_variant: variantIndex === 0, // Primary по умолчанию предпочитаемая
             audio_url: clip.audio_url || null,
             // ✅ FIX: Используем глобальный fallback для обложки + Mureka placeholder
             cover_url: clip.image_url || clip.cover_url || fallbackCoverUrl || '/images/mureka-placeholder.webp',
@@ -437,30 +436,33 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
               mureka_clip_id: clip.id,
               source: 'mureka',
               created_at: clip.created_at,
-              variant_type: 'alternate',
+              variant_type: variantIndex === 0 ? 'primary' : 'alternate',
             },
           };
         })
         .filter(Boolean);
       
       if (versionsToInsert.length === 0) {
-        logger.info('ℹ️ [MUREKA] No additional variants to save (only primary track)', { trackId: trackData.id });
+        logger.info('ℹ️ [MUREKA] No track versions to save', { trackId: trackData.id });
       } else {
         const { error: versionsError } = await this.supabase
           .from('track_versions')
           .insert(versionsToInsert);
         
         if (versionsError) {
-          logger.error('❌ [MUREKA] Failed to save additional track versions', {
+          logger.error('❌ [MUREKA] Failed to save track versions', {
             error: versionsError,
             errorMessage: versionsError.message,
             trackId: trackData.id,
             versionsCount: versionsToInsert.length,
+            errorDetails: versionsError.details,
+            errorHint: versionsError.hint,
           });
         } else {
-          logger.info('✅ [MUREKA] Additional track versions saved', {
+          logger.info('✅ [MUREKA] Track versions saved', {
             trackId: trackData.id,
-            versionsCount: versionsToInsert.length,
+            totalVersions: versionsToInsert.length,
+            primaryIncluded: versionsToInsert.some(v => v?.is_primary_variant),
           });
         }
       }
