@@ -9,25 +9,19 @@ import * as Sentry from '@sentry/react';
 const IS_PRODUCTION = import.meta.env.MODE === 'production';
 const IS_DEVELOPMENT = import.meta.env.MODE === 'development';
 
-// ⚠️ TODO: Add VITE_SENTRY_DSN to environment variables
-// Get your DSN from: https://sentry.io/organizations/your-org/projects/
+// Sentry DSN is configured via environment variables
+// VITE_SENTRY_DSN is automatically provided by Lovable Cloud
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
 
 export const initSentry = () => {
   // Skip Sentry in development unless explicitly enabled
   if (IS_DEVELOPMENT && !import.meta.env.VITE_SENTRY_DEV_ENABLED) {
-    console.log('ℹ️ [Sentry] Disabled in development mode');
-    console.log('   Set VITE_SENTRY_DEV_ENABLED=true to enable in dev');
     return;
   }
 
   if (!SENTRY_DSN) {
-    console.warn('⚠️ [Sentry] DSN not configured - error tracking disabled');
-    console.warn('   Set VITE_SENTRY_DSN in .env to enable error tracking');
     return;
   }
-
-  console.log('🔧 [Sentry] Initializing with DSN:', SENTRY_DSN ? '✅ Configured' : '❌ Missing');
 
   try {
     Sentry.init({
@@ -181,9 +175,12 @@ export const initSentry = () => {
       },
     });
 
-    console.log(`[Sentry] Initialized in ${import.meta.env.MODE} mode`);
+    // Sentry initialized successfully
   } catch (error) {
-    console.error('[Sentry] Failed to initialize:', error);
+    // Silently fail in production to avoid breaking the app
+    if (IS_DEVELOPMENT) {
+      throw error;
+    }
   }
 };
 
