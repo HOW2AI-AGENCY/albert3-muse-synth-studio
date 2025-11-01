@@ -182,6 +182,7 @@
     --z-bottom-tab-bar: 40;
     --z-fab: 50;
     --z-mini-player: 60;
+    --z-desktop-player: 60;
     --z-dropdown: 1000;
     --z-sticky: 1020;
     --z-fixed: 1030;
@@ -201,6 +202,26 @@
     --spacing-input-padding-x: var(--space-3);
     --spacing-input-padding-y: var(--space-2);
     --generator-max-height-mobile: calc(100vh - 180px);
+    
+    /* ===== TOUCH TARGETS (WCAG AAA) ===== */
+    --mobile-touch-min: 44px;
+    --desktop-touch-min: 40px;
+    
+    /* ===== SIDEBAR DIMENSIONS ===== */
+    --sidebar-width-expanded: 13rem;
+    --sidebar-width-collapsed: 3.5rem;
+    
+    /* ===== MOBILE SPACING ===== */
+    --mobile-spacing-xs: var(--space-1);
+    --mobile-spacing-sm: var(--space-2);
+    --mobile-spacing-md: var(--space-3);
+    --mobile-spacing-lg: var(--space-4);
+    
+    /* ===== MOBILE TYPOGRAPHY ===== */
+    --mobile-font-xs: 0.75rem;
+    --mobile-font-sm: 0.875rem;
+    --mobile-font-base: 1rem;
+    --mobile-font-lg: 1.125rem;
 
     /* ===== ГРАДИЕНТЫ ===== */
     --gradient-primary: linear-gradient(135deg, hsl(var(--color-accent-purple)) 0%, hsl(var(--color-accent-pink)) 100%);
