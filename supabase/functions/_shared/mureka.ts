@@ -226,6 +226,7 @@ export interface MurekaRecognitionResponse {
 export interface MurekaSongDescriptionPayload {
   /** ЛИБО ID загруженного файла, ЛИБО публичный URL */
   audio_file?: string;
+  file_id?: string;
   url?: string;
 }
 
@@ -816,23 +817,37 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
      * ```
      */
     async describeSong(payload: MurekaSongDescriptionPayload): Promise<MurekaDescriptionResponse> {
-      logger.info('📖 [MUREKA] Describing song', { 
-        has_audio_file: !!payload.audio_file,
-        has_url: !!payload.url
+      // Умное определение параметра на основе доступных полей
+      let requestBody: Record<string, string>;
+      let parameterUsed: string;
+      
+      if (payload.url) {
+        requestBody = { url: payload.url };
+        parameterUsed = 'url';
+      } else if (payload.audio_file) {
+        requestBody = { audio_file: payload.audio_file };
+        parameterUsed = 'audio_file';
+      } else if (payload.file_id) {
+        requestBody = { file_id: payload.file_id };
+        parameterUsed = 'file_id';
+      } else {
+        throw new MurekaApiError('describeSong requires one of: audio_file, file_id, or url', 400, '{}');
+      }
+      
+      logger.info('📖 [MUREKA-DESCRIBE] Initiating song description', { 
+        parameterUsed,
+        value: requestBody[parameterUsed]
       });
       
-      const body: Record<string, string> = payload.audio_file
-        ? { audio_file: payload.audio_file }
-        : payload.url ? { url: payload.url } : {};
-      
-      if (Object.keys(body).length === 0) {
-        throw new MurekaApiError('describeSong requires either audio_file or url', 400, '{}');
-      }
+      logger.debug('📖 [MUREKA-DESCRIBE] Request payload', {
+        endpoint: options.describeEndpoint || '/v1/song/describe',
+        body: JSON.stringify(requestBody)
+      });
       
       return makeRequest(
         options.describeEndpoint || '/v1/song/describe',
         'POST',
-        body
+        requestBody
       );
     },
 
