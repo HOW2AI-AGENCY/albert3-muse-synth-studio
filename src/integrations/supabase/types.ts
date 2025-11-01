@@ -339,6 +339,86 @@ export type Database = {
           },
         ]
       }
+      music_projects: {
+        Row: {
+          completed_tracks: number | null
+          concept_description: string | null
+          cover_url: string | null
+          created_at: string | null
+          description: string | null
+          genre: string | null
+          id: string
+          is_public: boolean | null
+          mood: string | null
+          name: string
+          persona_id: string | null
+          planned_tracks: Json | null
+          project_type: Database["public"]["Enums"]["project_type"]
+          story_theme: string | null
+          style_tags: string[] | null
+          tempo_range: Json | null
+          total_duration: number | null
+          total_tracks: number | null
+          updated_at: string | null
+          user_id: string
+          visual_references: string[] | null
+        }
+        Insert: {
+          completed_tracks?: number | null
+          concept_description?: string | null
+          cover_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          genre?: string | null
+          id?: string
+          is_public?: boolean | null
+          mood?: string | null
+          name: string
+          persona_id?: string | null
+          planned_tracks?: Json | null
+          project_type?: Database["public"]["Enums"]["project_type"]
+          story_theme?: string | null
+          style_tags?: string[] | null
+          tempo_range?: Json | null
+          total_duration?: number | null
+          total_tracks?: number | null
+          updated_at?: string | null
+          user_id: string
+          visual_references?: string[] | null
+        }
+        Update: {
+          completed_tracks?: number | null
+          concept_description?: string | null
+          cover_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          genre?: string | null
+          id?: string
+          is_public?: boolean | null
+          mood?: string | null
+          name?: string
+          persona_id?: string | null
+          planned_tracks?: Json | null
+          project_type?: Database["public"]["Enums"]["project_type"]
+          story_theme?: string | null
+          style_tags?: string[] | null
+          tempo_range?: Json | null
+          total_duration?: number | null
+          total_tracks?: number | null
+          updated_at?: string | null
+          user_id?: string
+          visual_references?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "music_projects_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "suno_personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1013,6 +1093,7 @@ export type Database = {
           mureka_task_id: string | null
           play_count: number | null
           progress_percent: number | null
+          project_id: string | null
           prompt: string
           provider: string | null
           reference_audio_url: string | null
@@ -1055,6 +1136,7 @@ export type Database = {
           mureka_task_id?: string | null
           play_count?: number | null
           progress_percent?: number | null
+          project_id?: string | null
           prompt: string
           provider?: string | null
           reference_audio_url?: string | null
@@ -1097,6 +1179,7 @@ export type Database = {
           mureka_task_id?: string | null
           play_count?: number | null
           progress_percent?: number | null
+          project_id?: string | null
           prompt?: string
           provider?: string | null
           reference_audio_url?: string | null
@@ -1113,6 +1196,13 @@ export type Database = {
           view_count?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "tracks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "music_projects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tracks_user_id_fkey"
             columns: ["user_id"]
@@ -1302,6 +1392,13 @@ export type Database = {
     Enums: {
       app_role: "admin" | "moderator" | "user"
       lyrics_job_status: "pending" | "processing" | "completed" | "failed"
+      project_type:
+        | "single"
+        | "ep"
+        | "album"
+        | "soundtrack"
+        | "instrumental"
+        | "custom"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1431,6 +1528,14 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "moderator", "user"],
       lyrics_job_status: ["pending", "processing", "completed", "failed"],
+      project_type: [
+        "single",
+        "ep",
+        "album",
+        "soundtrack",
+        "instrumental",
+        "custom",
+      ],
     },
   },
 } as const

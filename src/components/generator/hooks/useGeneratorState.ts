@@ -94,6 +94,7 @@ export const useGeneratorState = (
     personaId: null, // ✅ НОВОЕ: персона по умолчанию не выбрана
     inspoProjectId: null, // ✅ НОВОЕ: проект-вдохновение
     inspoProjectName: null, // ✅ НОВОЕ: название проекта
+    activeProjectId: null, // ✅ НОВОЕ: активный проект
   });
 
   const setParam = useCallback(<K extends keyof GenerationParams>(key: K, value: GenerationParams[K]) => {

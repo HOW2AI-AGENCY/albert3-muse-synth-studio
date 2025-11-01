@@ -26,6 +26,7 @@ export interface GenerationParams {
   personaId?: string | null; // ✅ НОВОЕ: ID музыкальной персоны
   inspoProjectId?: string | null; // ✅ НОВОЕ: ID проекта-вдохновения
   inspoProjectName?: string | null; // ✅ НОВОЕ: Название проекта
+  activeProjectId?: string | null; // ✅ НОВОЕ: Активный проект (для связи с треком)
   // ✅ Данные из анализа референса
   analyzedGenre?: string;
   analyzedMood?: string;

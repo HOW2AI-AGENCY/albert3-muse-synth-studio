@@ -16,12 +16,13 @@ import { cn } from '@/lib/utils';
 
 export interface InspoProject {
   id: string;
-  title: string;
+  name: string; // Changed from title to name for projects
   style_tags: string[];
   genre?: string;
   mood?: string;
   cover_url?: string;
-  prompt?: string;
+  concept_description?: string | null;
+  persona_id?: string | null;
 }
 
 interface InspoProjectDialogProps {
@@ -52,7 +53,7 @@ export const InspoProjectDialog = memo(({
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       const filtered = projects.filter(p =>
-        p.title.toLowerCase().includes(query) ||
+        p.name.toLowerCase().includes(query) ||
         p.style_tags?.some(tag => tag.toLowerCase().includes(query)) ||
         p.genre?.toLowerCase().includes(query) ||
         p.mood?.toLowerCase().includes(query)
@@ -70,11 +71,10 @@ export const InspoProjectDialog = memo(({
       if (!user) return;
 
       const { data, error } = await supabase
-        .from('tracks')
-        .select('id, title, style_tags, genre, mood, cover_url, prompt')
+        .from('music_projects')
+        .select('id, name, style_tags, genre, mood, cover_url, concept_description, persona_id')
         .eq('user_id', user.id)
-        .eq('status', 'completed')
-        .order('created_at', { ascending: false })
+        .order('updated_at', { ascending: false })
         .limit(50);
 
       if (error) throw error;
@@ -140,7 +140,7 @@ export const InspoProjectDialog = memo(({
                     {project.cover_url ? (
                       <img
                         src={project.cover_url}
-                        alt={project.title}
+                        alt={project.name}
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -152,7 +152,7 @@ export const InspoProjectDialog = memo(({
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm truncate">{project.title}</h4>
+                    <h4 className="font-medium text-sm truncate">{project.name}</h4>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {project.style_tags?.slice(0, 3).map((tag, i) => (
                         <span

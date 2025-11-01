@@ -6,8 +6,8 @@ import { Upload, Mic, FolderOpen, Music } from 'lucide-react';
 import { useAudioUpload } from '@/hooks/useAudioUpload';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useToast } from '@/hooks/use-toast';
-import { ReferenceAudioLibrary } from './ReferenceAudioLibrary';
-import { ReferenceTrackSelector } from './ReferenceTrackSelector';
+import { ReferenceAudioLibraryInline } from './ReferenceAudioLibraryInline';
+import { ReferenceTrackSelectorInline } from './ReferenceTrackSelectorInline';
 import { cn } from '@/lib/utils';
 
 interface AudioSourceDialogProps {
@@ -253,18 +253,18 @@ export const AudioSourceDialog = memo(({
 
           {/* Library Tab */}
           <TabsContent value="library" className="py-4">
-            <ReferenceAudioLibrary
-              onSelect={(audio) => handleLibrarySelect(audio.url, audio.fileName)}
-              selectedUrl={null}
+            <ReferenceAudioLibraryInline
+              onSelect={(url, fileName) => handleLibrarySelect(url, fileName)}
             />
           </TabsContent>
 
           {/* Tracks Tab */}
           <TabsContent value="tracks" className="py-4">
-            <ReferenceTrackSelector
-              open={activeTab === 'tracks'}
-              onClose={() => {}}
-              onSelect={handleTrackSelect}
+            <ReferenceTrackSelectorInline
+              onSelect={(trackId, trackTitle) => {
+                // Get full track data from query
+                handleTrackSelect({ id: trackId, title: trackTitle, audio_url: '' });
+              }}
             />
           </TabsContent>
         </Tabs>
