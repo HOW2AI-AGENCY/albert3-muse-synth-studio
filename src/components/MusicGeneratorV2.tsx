@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
@@ -23,6 +23,8 @@ import { getProviderModels, getDefaultModel, type MusicProvider as ProviderType 
 
 // Modular components & hooks
 import { CompactHeader } from '@/components/generator/CompactHeader';
+import { QuickActionsBar } from '@/components/generator/QuickActionsBar';
+import { InspoProjectDialog, type InspoProject } from '@/components/generator/InspoProjectDialog';
 import { SimpleModeCompact } from '@/components/generator/forms/SimpleModeCompact';
 import { CompactCustomForm } from '@/components/generator/forms/CompactCustomForm';
 import { 
@@ -58,8 +60,10 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   // ✅ REFACTORED: Consolidated state management
   const state = useGeneratorState(selectedProvider);
   
-  // Persona dialog state
+  // Dialog states
   const [personaDialogOpen, setPersonaDialogOpen] = useState(false);
+  const [inspoDialogOpen, setInspoDialogOpen] = useState(false);
+  const audioInputRef = useRef<HTMLInputElement>(null);
   
   // ✅ REFACTORED: Auto-loaders
   useStemReferenceLoader(state, selectedProvider, handleProviderChange);
@@ -332,6 +336,50 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     setTimeout(() => handleGenerate(), 100);
   }, [state, handleGenerate]);
 
+  // Inspo project selection handler
+  const handleSelectInspo = useCallback((project: InspoProject) => {
+    const newTags = project.style_tags?.join(', ') || '';
+    state.setParam('tags', newTags);
+    state.setParam('inspoProjectId', project.id);
+    state.setParam('inspoProjectName', project.title);
+    
+    logger.info('Inspiration project applied', 'MusicGeneratorV2', {
+      projectId: project.id,
+      tags: newTags,
+    });
+    
+    sonnerToast.success('✨ Вдохновение применено', {
+      description: `Используем стиль "${project.title}"`,
+      duration: 3000,
+    });
+    
+    setInspoDialogOpen(false);
+  }, [state]);
+
+  // Auto-switch to Custom Mode when advanced features are used
+  useEffect(() => {
+    const hasAdvancedFeatures = 
+      !!state.params.referenceAudioUrl || 
+      !!state.params.personaId;
+    
+    if (hasAdvancedFeatures && state.mode === 'simple') {
+      logger.info('Auto-switching to Custom Mode (advanced features detected)', 'MusicGeneratorV2');
+      state.setMode('custom');
+      
+      toast({
+        title: 'Переключено на Custom Mode',
+        description: 'Для Audio/Persona требуется Custom Mode',
+        duration: 3000,
+      });
+    }
+  }, [
+    state.params.referenceAudioUrl, 
+    state.params.personaId, 
+    state.mode, 
+    state.setMode, 
+    toast
+  ]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -366,6 +414,28 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
         onModelChange={(version) => state.setParam('modelVersion', version)}
         availableModels={[...currentModels]}
         isGenerating={isGenerating}
+        hasAudio={!!state.params.referenceFileName}
+        hasPersona={!!state.params.personaId}
+      />
+
+      {/* Quick Actions Bar */}
+      <QuickActionsBar
+        hasAudio={!!state.params.referenceFileName}
+        hasPersona={!!state.params.personaId}
+        hasInspo={!!state.params.inspoProjectId}
+        onAudioClick={() => audioInputRef.current?.click()}
+        onPersonaClick={() => setPersonaDialogOpen(true)}
+        onInspoClick={() => setInspoDialogOpen(true)}
+        isGenerating={isGenerating}
+      />
+
+      {/* Hidden audio input */}
+      <input
+        ref={audioInputRef}
+        type="file"
+        accept="audio/*"
+        onChange={(e) => audioUpload.handleAudioFileSelect(e)}
+        className="hidden"
       />
 
       {/* Main Content */}
@@ -411,10 +481,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               onParamChange={state.setParam}
               onGenerate={handleGenerate}
               onOpenLyricsDialog={() => state.setLyricsDialogOpen(true)}
-              onAudioUpload={(e) => {
-                audioUpload.handleAudioFileSelect(e);
-              }}
-              onPersonaClick={() => setPersonaDialogOpen(true)}
               onOpenHistory={() => state.setHistoryDialogOpen(true)}
               onBoostPrompt={handleBoostPrompt}
               isBoosting={state.isEnhancing}
@@ -479,6 +545,13 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
           }
           state.setHistoryDialogOpen(false);
         }}
+      />
+
+      <InspoProjectDialog
+        open={inspoDialogOpen}
+        onOpenChange={setInspoDialogOpen}
+        selectedProjectId={state.params.inspoProjectId ?? null}
+        onSelectProject={handleSelectInspo}
       />
 
       <PersonaPickerDialog

@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useRef, lazy, Suspense } from 'react';
+import { memo, useCallback, lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -27,8 +27,6 @@ interface CompactCustomFormProps {
   onParamChange: <K extends keyof GenerationParams>(key: K, value: GenerationParams[K]) => void;
   onGenerate: () => void;
   onOpenLyricsDialog: () => void;
-  onAudioUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onPersonaClick: () => void;
   onOpenHistory?: () => void;
   onBoostPrompt?: () => void;
   isBoosting?: boolean;
@@ -44,8 +42,6 @@ export const CompactCustomForm = memo(({
   onParamChange,
   onGenerate,
   onOpenLyricsDialog,
-  onAudioUpload,
-  onPersonaClick,
   onOpenHistory,
   onBoostPrompt,
   isBoosting = false,
@@ -55,7 +51,6 @@ export const CompactCustomForm = memo(({
   onDebouncedPromptChange,
   onDebouncedLyricsChange,
 }: CompactCustomFormProps) => {
-  const audioInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
   const lyricsLineCount = debouncedLyrics.split('\n').filter(l => l.trim()).length;
   const tagsCount = params.tags.split(',').filter(t => t.trim()).length;
@@ -172,47 +167,60 @@ export const CompactCustomForm = memo(({
           />
         </div>
 
-        {/* Quick Actions Row */}
-        <div className="grid grid-cols-2 gap-2 p-2 border border-accent/40 rounded-lg bg-accent/5">
-          {/* Audio Upload Button */}
-          <Button
-            variant={params.referenceFileName ? "default" : "outline"}
-            size="sm"
-            onClick={() => audioInputRef.current?.click()}
-            disabled={isGenerating}
-            className={cn(
-              "h-9 gap-2 text-xs font-medium",
-              params.referenceFileName && "bg-accent/20 border-accent"
+        {/* Selected Resources Info */}
+        {(params.referenceFileName || params.personaId || params.inspoProjectName) && (
+          <div className="p-2 space-y-1 border border-accent/40 rounded-lg bg-accent/5">
+            {params.referenceFileName && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Upload className="h-3 w-3" />
+                <span className="flex-1 truncate">Audio: {params.referenceFileName}</span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-4 w-4 hover:text-destructive" 
+                  onClick={() => {
+                    onParamChange('referenceAudioUrl', null);
+                    onParamChange('referenceFileName', null);
+                    onParamChange('referenceTrackId', null);
+                  }}
+                >
+                  ×
+                </Button>
+              </div>
             )}
-          >
-            <Upload className="h-4 w-4" />
-            {params.referenceFileName ? 'Audio ✓' : '+ Audio'}
-          </Button>
-          <input
-            ref={audioInputRef}
-            type="file"
-            accept="audio/*"
-            onChange={onAudioUpload}
-            className="hidden"
-          />
-
-          {/* Persona Button */}
-          {params.provider === 'suno' && (
-            <Button
-              variant={params.personaId ? "default" : "outline"}
-              size="sm"
-              onClick={onPersonaClick}
-              disabled={isGenerating}
-              className={cn(
-                "h-9 gap-2 text-xs font-medium",
-                params.personaId && "bg-accent/20 border-accent"
-              )}
-            >
-              <User className="h-4 w-4" />
-              {params.personaId ? 'Persona ✓' : '+ Persona'}
-            </Button>
-          )}
-        </div>
+            {params.personaId && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <User className="h-3 w-3" />
+                <span className="flex-1">Persona: Active</span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-4 w-4 hover:text-destructive" 
+                  onClick={() => onParamChange('personaId', null)}
+                >
+                  ×
+                </Button>
+              </div>
+            )}
+            {params.inspoProjectName && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Sparkles className="h-3 w-3" />
+                <span className="flex-1 truncate">Inspo: {params.inspoProjectName}</span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-4 w-4 hover:text-destructive" 
+                  onClick={() => {
+                    onParamChange('inspoProjectId', null);
+                    onParamChange('inspoProjectName', null);
+                  }}
+                >
+                  ×
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Lyrics Section */}
         <Collapsible defaultOpen={!!debouncedLyrics}>

@@ -1,7 +1,8 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { SunoBalanceDisplay } from '@/components/mureka/SunoBalanceDisplay';
 import type { GeneratorMode } from './types/generator.types';
 import type { ModelVersion } from '@/config/provider-models';
@@ -13,6 +14,8 @@ interface CompactHeaderProps {
   onModelChange: (version: string) => void;
   availableModels: ModelVersion[];
   isGenerating: boolean;
+  hasAudio?: boolean;
+  hasPersona?: boolean;
 }
 
 export const CompactHeader = memo(({
@@ -22,7 +25,20 @@ export const CompactHeader = memo(({
   onModelChange,
   availableModels,
   isGenerating,
+  hasAudio = false,
+  hasPersona = false,
 }: CompactHeaderProps) => {
+  const advancedResourcesCount = [hasAudio, hasPersona].filter(Boolean).length;
+
+  const handleModeChange = useCallback((newMode: GeneratorMode) => {
+    if (newMode === 'simple' && (hasAudio || hasPersona)) {
+      const confirmed = window.confirm(
+        'Переключение на Simple Mode скроет Advanced Options (Audio, Persona). Продолжить?'
+      );
+      if (!confirmed) return;
+    }
+    onModeChange(newMode);
+  }, [hasAudio, hasPersona, onModeChange]);
   return (
     <div 
       className="flex items-center justify-between gap-2 sm:gap-4 md:gap-6 border-b border-border/10 bg-background/95 backdrop-blur-sm px-3 sm:px-4 md:px-6 lg:px-8 py-1.5 sm:py-2"
@@ -36,7 +52,7 @@ export const CompactHeader = memo(({
       {/* Center: Mode Tabs - Adaptive */}
       <RadioGroup
         value={mode}
-        onValueChange={(v) => onModeChange(v as GeneratorMode)}
+        onValueChange={(v) => handleModeChange(v as GeneratorMode)}
         className="flex items-center gap-0 bg-muted/20 border border-border/30 rounded p-0.5"
       >
         <div className="flex items-center">
@@ -48,7 +64,7 @@ export const CompactHeader = memo(({
             Simple
           </Label>
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center gap-1">
           <RadioGroupItem value="custom" id="mode-custom" className="peer sr-only" />
           <Label 
             htmlFor="mode-custom" 
@@ -56,6 +72,11 @@ export const CompactHeader = memo(({
           >
             Custom
           </Label>
+          {mode === 'custom' && advancedResourcesCount > 0 && (
+            <Badge variant="secondary" className="h-4 px-1 text-[9px] font-medium">
+              +{advancedResourcesCount}
+            </Badge>
+          )}
         </div>
       </RadioGroup>
 

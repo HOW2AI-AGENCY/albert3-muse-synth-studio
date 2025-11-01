@@ -24,14 +24,6 @@ interface SimpleModeCompactProps {
   onDebouncedPromptChange: (value: string) => void;
 }
 
-const QUICK_PRESETS = [
-  { label: 'Electronic', tags: 'electronic, edm, energetic' },
-  { label: 'Chill', tags: 'chill, lofi, ambient, relaxing' },
-  { label: 'Rock', tags: 'rock, guitar, energetic' },
-  { label: 'Jazz', tags: 'jazz, smooth, instrumental' },
-  { label: 'Classical', tags: 'classical, orchestral, elegant' },
-];
-
 export const SimpleModeCompact = memo(({
   params,
   onParamChange,
@@ -49,11 +41,6 @@ export const SimpleModeCompact = memo(({
     const uniqueTags = Array.from(new Set([...existingTags, ...newTags]));
     onParamChange('tags', uniqueTags.join(', '));
   }, [params.tags, onParamChange]);
-
-  const handlePresetClick = (preset: typeof QUICK_PRESETS[0]) => {
-    onParamChange('tags', preset.tags);
-    onDebouncedPromptChange(`${preset.label} music`);
-  };
 
   return (
     <div className="flex flex-col h-full">
@@ -131,25 +118,6 @@ export const SimpleModeCompact = memo(({
             ))}
           </div>
         )}
-
-        {/* Quick Presets */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground">Quick Presets</label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {QUICK_PRESETS.map((preset) => (
-              <Button
-                key={preset.label}
-                variant="outline"
-                size="sm"
-                onClick={() => handlePresetClick(preset)}
-                className="h-8 text-xs"
-                disabled={isGenerating}
-              >
-                {preset.label}
-              </Button>
-            ))}
-          </div>
-        </div>
 
         {/* Title Input */}
         <div className="space-y-1.5">

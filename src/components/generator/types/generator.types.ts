@@ -24,6 +24,8 @@ export interface GenerationParams {
   provider: string;
   trackId?: string;
   personaId?: string | null; // ✅ НОВОЕ: ID музыкальной персоны
+  inspoProjectId?: string | null; // ✅ НОВОЕ: ID проекта-вдохновения
+  inspoProjectName?: string | null; // ✅ НОВОЕ: Название проекта
   // ✅ Данные из анализа референса
   analyzedGenre?: string;
   analyzedMood?: string;
