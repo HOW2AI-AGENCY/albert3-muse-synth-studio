@@ -13,13 +13,16 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     rollupOptions: {
-      // Simplified during debugging: let Vite decide chunking to prevent duplicated React
-      output: {},
+      output: {
+        manualChunks: undefined, // Let Vite handle chunking
+      },
     },
-    chunkSizeWarningLimit: 800, // Снижен с 1000
-    sourcemap: false, // Отключаем sourcemaps в production для уменьшения размера
+    chunkSizeWarningLimit: 800,
+    sourcemap: false,
+    commonjsOptions: {
+      include: [/node_modules/],
+    },
   },
-  optimizeDeps: {},
   plugins: [
     react(),
     mode === "development" && false && componentTagger(),
@@ -46,6 +49,7 @@ export default defineConfig(({ mode }) => ({
       "react-router": path.resolve(__dirname, "node_modules/react-router"),
       "react-router-dom": path.resolve(__dirname, "node_modules/react-router-dom"),
     },
+    mainFields: ["browser", "module", "main"],
     dedupe: [
       "react",
       "react-dom",

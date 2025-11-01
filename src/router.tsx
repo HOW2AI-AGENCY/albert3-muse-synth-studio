@@ -1,196 +1,109 @@
-import { Suspense } from "react";
 import { createBrowserRouter } from "react-router-dom";
-import { createLazyComponent } from "./utils/lazyImports";
 import WorkspaceLayout from "./components/workspace/WorkspaceLayout";
 
-// ✅ FIX: Lazy load all pages for optimal bundle splitting
-const Landing = createLazyComponent(() => import("./pages/Landing"), "Landing");
-const Auth = createLazyComponent(() => import("./pages/Auth"), "Auth");
-const NotFound = createLazyComponent(() => import("./pages/NotFound"), "NotFound");
-const ProtectedRoute = createLazyComponent(() => import("./components/ProtectedRoute"), "ProtectedRoute");
+// ⚠️ TEMPORARY: Direct imports for debugging React instance issues
+// Will re-enable lazy loading after fixing multiple React instances problem
+import Landing from "./pages/Landing";
+import Auth from "./pages/Auth";
+import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
 
-// ========== LAZY ROUTES (Code Splitting) with Error Handling ==========
-// Critical path - minimal chunks
-const Dashboard = createLazyComponent(() => import("./pages/workspace/Dashboard"), "Dashboard");
-const Generate = createLazyComponent(() => import("./pages/workspace/Generate"), "Generate");
-const Library = createLazyComponent(() => import("./pages/workspace/Library"), "Library");
+// Workspace routes - direct imports
+import Dashboard from "./pages/workspace/Dashboard";
+import Generate from "./pages/workspace/Generate";
+import Library from "./pages/workspace/Library";
+import Favorites from "./pages/workspace/Favorites";
+import Settings from "./pages/workspace/Settings";
+import Profile from "./pages/workspace/Profile";
+import Analytics from "./pages/workspace/Analytics";
+import Metrics from "./pages/workspace/Metrics";
+import Admin from "./pages/workspace/Admin";
+import Monitoring from "./pages/workspace/Monitoring";
+import LyricsLibrary from "./pages/workspace/LyricsLibrary";
+import AudioLibrary from "./pages/workspace/AudioLibrary";
+import Personas from "./pages/workspace/Personas";
+import EdgeFunctionsDebug from "./pages/debug/EdgeFunctionsDebug";
 
-// Secondary routes - separate chunks
-const Favorites = createLazyComponent(() => import("./pages/workspace/Favorites"), "Favorites");
-const Settings = createLazyComponent(() => import("./pages/workspace/Settings"), "Settings");
-const Profile = createLazyComponent(() => import("./pages/workspace/Profile"), "Profile");
-
-// Heavy routes - isolated chunks (recharts)
-const Analytics = createLazyComponent(() => import("./pages/workspace/Analytics"), "Analytics");
-const Metrics = createLazyComponent(() => import("./pages/workspace/Metrics"), "Metrics");
-
-// Admin routes - separate chunk
-const Admin = createLazyComponent(() => import("./pages/workspace/Admin"), "Admin");
-const Monitoring = createLazyComponent(() => import("./pages/workspace/Monitoring"), "Monitoring");
-
-// Library routes - Sprint 30 & Sprint 31
-const LyricsLibrary = createLazyComponent(() => import("./pages/workspace/LyricsLibrary"), "LyricsLibrary");
-const AudioLibrary = createLazyComponent(() => import("./pages/workspace/AudioLibrary"), "AudioLibrary");
-const Personas = createLazyComponent(() => import("./pages/workspace/Personas"), "Personas");
-
-// Debug route
-const EdgeFunctionsDebug = createLazyComponent(() => import("./pages/debug/EdgeFunctionsDebug"), "EdgeFunctionsDebug");
-
-const LoadingSpinner = () => (
-  <div className="flex items-center justify-center min-h-[200px]">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-  </div>
-);
 
 export const router = createBrowserRouter(
   [
     { 
       path: "/", 
-      element: (
-        <Suspense fallback={<LoadingSpinner />}>
-          <Landing />
-        </Suspense>
-      )
+      element: <Landing />
     },
     { 
       path: "/auth", 
-      element: (
-        <Suspense fallback={<LoadingSpinner />}>
-          <Auth />
-        </Suspense>
-      )
+      element: <Auth />
     },
     {
       path: "/debug/edge-functions",
-      element: (
-        <Suspense fallback={<LoadingSpinner />}>
-          <EdgeFunctionsDebug />
-        </Suspense>
-      ),
+      element: <EdgeFunctionsDebug />
     },
     {
       path: "/workspace",
       element: (
-        <Suspense fallback={<LoadingSpinner />}>
-          <ProtectedRoute>
-            <WorkspaceLayout />
-          </ProtectedRoute>
-        </Suspense>
+        <ProtectedRoute>
+          <WorkspaceLayout />
+        </ProtectedRoute>
       ),
       children: [
         {
           path: "dashboard",
-          element: (
-            <Suspense fallback={<LoadingSpinner />}>
-              <Dashboard />
-            </Suspense>
-          ),
+          element: <Dashboard />
         },
         {
           path: "generate",
-          element: (
-            <Suspense fallback={<LoadingSpinner />}>
-              <Generate />
-            </Suspense>
-          ),
+          element: <Generate />
         },
         {
           path: "library",
-          element: (
-            <Suspense fallback={<LoadingSpinner />}>
-              <Library />
-            </Suspense>
-          ),
+          element: <Library />
         },
         {
           path: "favorites",
-          element: (
-            <Suspense fallback={<LoadingSpinner />}>
-              <Favorites />
-            </Suspense>
-          ),
+          element: <Favorites />
         },
         {
           path: "analytics",
-          element: (
-            <Suspense fallback={<LoadingSpinner />}>
-              <Analytics />
-            </Suspense>
-          ),
+          element: <Analytics />
         },
         {
           path: "metrics",
-          element: (
-            <Suspense fallback={<LoadingSpinner />}>
-              <Metrics />
-            </Suspense>
-          ),
+          element: <Metrics />
         },
         {
           path: "settings",
-          element: (
-            <Suspense fallback={<LoadingSpinner />}>
-              <Settings />
-            </Suspense>
-          ),
+          element: <Settings />
         },
         {
           path: "profile",
-          element: (
-            <Suspense fallback={<LoadingSpinner />}>
-              <Profile />
-            </Suspense>
-          ),
+          element: <Profile />
         },
         {
           path: "admin",
-          element: (
-            <Suspense fallback={<LoadingSpinner />}>
-              <Admin />
-            </Suspense>
-          ),
+          element: <Admin />
         },
         {
           path: "monitoring",
-          element: (
-            <Suspense fallback={<LoadingSpinner />}>
-              <Monitoring />
-            </Suspense>
-          ),
+          element: <Monitoring />
         },
         {
           path: "lyrics-library",
-          element: (
-            <Suspense fallback={<LoadingSpinner />}>
-              <LyricsLibrary />
-            </Suspense>
-          ),
+          element: <LyricsLibrary />
         },
         {
           path: "audio-library",
-          element: (
-            <Suspense fallback={<LoadingSpinner />}>
-              <AudioLibrary />
-            </Suspense>
-          ),
+          element: <AudioLibrary />
         },
         {
           path: "personas",
-          element: (
-            <Suspense fallback={<LoadingSpinner />}>
-              <Personas />
-            </Suspense>
-          ),
+          element: <Personas />
         },
       ],
     },
     { 
       path: "*", 
-      element: (
-        <Suspense fallback={<LoadingSpinner />}>
-          <NotFound />
-        </Suspense>
-      )
+      element: <NotFound />
     },
   ],
   {
@@ -200,14 +113,5 @@ export const router = createBrowserRouter(
     },
   }
 );
-
-// ✅ Preload critical routes on app start (after 2s idle)
-if (typeof window !== 'undefined') {
-  setTimeout(() => {
-    // Preload most visited routes
-    import("./pages/workspace/Generate");
-    import("./pages/workspace/Library");
-  }, 2000);
-}
 
 export default router;

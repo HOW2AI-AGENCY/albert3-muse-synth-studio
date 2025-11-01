@@ -1,5 +1,4 @@
 import { useState, useEffect, Suspense, lazy } from "react";
-import React from "react";
 import { motion } from "framer-motion";
 import { MusicGeneratorV2 } from "@/components/MusicGeneratorV2";
 import { TracksList } from "@/components/TracksList";
@@ -43,16 +42,6 @@ const Generate = () => {
 
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1023px)");
-  
-  // React identity probe (dev only)
-  useEffect(() => {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const root = (window as any).__reactRoot;
-      // eslint-disable-next-line no-console
-      console.log("[Probe] Generate React.version:", React.version, "root==react:", root === React, "url:", import.meta.url);
-    } catch {}
-  }, []);
 
   useEffect(() => {
     const getUser = async () => {
