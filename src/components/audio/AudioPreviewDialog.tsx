@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import React from "react";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,16 @@ export const AudioPreviewDialog = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.75);
+
+  // React identity probe (dev only)
+  useEffect(() => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const root = (window as any).__reactRoot;
+      // eslint-disable-next-line no-console
+      console.log("[Probe] AudioPreviewDialog React.version:", React.version, "root==react:", root === React, "url:", import.meta.url);
+    } catch {}
+  }, []);
 
   useEffect(() => {
     const audio = audioRef.current;

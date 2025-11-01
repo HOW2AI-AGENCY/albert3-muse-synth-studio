@@ -19,22 +19,10 @@ export default defineConfig(({ mode }) => ({
     chunkSizeWarningLimit: 800, // Снижен с 1000
     sourcemap: false, // Отключаем sourcemaps в production для уменьшения размера
   },
-  optimizeDeps: {
-    include: [
-      "react",
-      "react-dom",
-      "react-dom/client",
-      "react/jsx-runtime",
-      "react/jsx-dev-runtime",
-      "react-router",
-      "react-router-dom",
-      "scheduler",
-      "sonner"
-    ],
-  },
+  optimizeDeps: {},
   plugins: [
     react(),
-    mode === "development" && componentTagger(),
+    mode === "development" && false && componentTagger(),
     tsconfigPaths(),
     mode !== "development" && process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT
       ? sentryVitePlugin({
