@@ -407,11 +407,6 @@ async function pollMurekaAnalysis(
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
 
-    logger.debug(`[ANALYZE-REF-POLL] Mureka attempt ${attempt}/${MAX_ATTEMPTS}`, {
-      recognitionCompleted,
-      descriptionCompleted
-    });
-
     // ============================================================================
     // Poll Recognition Task FIRST (sequential to avoid rate limit)
     // ============================================================================
@@ -425,13 +420,6 @@ async function pollMurekaAnalysis(
         // ✅ Mureka возвращает данные напрямую в data (не в data.result!)
         const hasData = recogResult?.data && typeof recogResult.data === 'object';
         const responseData = recogResult.data as any; // Type assertion для динамической проверки
-        
-        logger.debug('[ANALYZE-REF-POLL] Recognition raw response', { 
-          taskId: recognitionTaskId,
-          hasData,
-          dataKeys: hasData ? Object.keys(recogResult.data).join(', ') : 'none',
-          dataPreview: hasData ? JSON.stringify(recogResult.data).substring(0, 200) : 'empty'
-        });
 
         // ✅ Mureka recognize возвращает lyrics_sections с транскрипцией
         if (hasData && responseData.lyrics_sections && Array.isArray(responseData.lyrics_sections)) {
@@ -496,8 +484,6 @@ async function pollMurekaAnalysis(
           }
 
           recognitionCompleted = true;
-        } else {
-          logger.debug('[ANALYZE-REF-POLL] Lyrics extraction still processing');
         }
       } catch (error) {
         logger.error('[ANALYZE-REF-POLL] Recognition polling error', { 
@@ -517,7 +503,6 @@ async function pollMurekaAnalysis(
         }
       }
     }
-
     // ============================================================================
     // Poll Description Task AFTER recognition (sequential to avoid rate limit)
     // ============================================================================
@@ -531,13 +516,6 @@ async function pollMurekaAnalysis(
         // ✅ Mureka возвращает данные напрямую в data (не в data.description!)
         const hasData = descResult?.data && typeof descResult.data === 'object';
         const responseData = descResult.data as any; // Type assertion для динамической проверки
-        
-        logger.debug('[ANALYZE-REF-POLL] Description raw response', { 
-          taskId: descriptionTaskId,
-          hasData,
-          dataKeys: hasData ? Object.keys(descResult.data).join(', ') : 'none',
-          dataPreview: hasData ? JSON.stringify(descResult.data).substring(0, 200) : 'empty'
-        });
 
         // ✅ Проверяем наличие результата описания
         // Mureka возвращает genres, instrument, tags, description прямо в data
@@ -611,8 +589,6 @@ async function pollMurekaAnalysis(
           }
 
           descriptionCompleted = true;
-        } else {
-          logger.debug('[ANALYZE-REF-POLL] Description still processing');
         }
       } catch (error) {
         logger.error('[ANALYZE-REF-POLL] Description polling error', { 
@@ -632,7 +608,6 @@ async function pollMurekaAnalysis(
         }
       }
     }
-
     // ✅ Завершаем, если обе задачи готовы
     if (recognitionCompleted && descriptionCompleted) {
       logger.info('[ANALYZE-REF-POLL] 🎉 Both Mureka tasks completed', {
