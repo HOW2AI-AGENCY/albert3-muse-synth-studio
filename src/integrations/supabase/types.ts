@@ -680,6 +680,68 @@ export type Database = {
         }
         Relationships: []
       }
+      suno_personas: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string | null
+          description: string
+          id: string
+          is_public: boolean | null
+          last_used_at: string | null
+          metadata: Json | null
+          name: string
+          source_music_index: number | null
+          source_suno_task_id: string | null
+          source_track_id: string | null
+          suno_persona_id: string
+          updated_at: string | null
+          usage_count: number | null
+          user_id: string
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string | null
+          description: string
+          id?: string
+          is_public?: boolean | null
+          last_used_at?: string | null
+          metadata?: Json | null
+          name: string
+          source_music_index?: number | null
+          source_suno_task_id?: string | null
+          source_track_id?: string | null
+          suno_persona_id: string
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id: string
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          is_public?: boolean | null
+          last_used_at?: string | null
+          metadata?: Json | null
+          name?: string
+          source_music_index?: number | null
+          source_suno_task_id?: string | null
+          source_track_id?: string | null
+          suno_persona_id?: string
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suno_personas_source_track_id_fkey"
+            columns: ["source_track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       track_archiving_jobs: {
         Row: {
           completed_at: string | null
