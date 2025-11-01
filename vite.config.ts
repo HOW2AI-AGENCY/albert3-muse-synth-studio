@@ -19,7 +19,19 @@ export default defineConfig(({ mode }) => ({
     chunkSizeWarningLimit: 800, // Снижен с 1000
     sourcemap: false, // Отключаем sourcemaps в production для уменьшения размера
   },
-  optimizeDeps: {},
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "react-dom/client",
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime",
+      "react-router",
+      "react-router-dom",
+      "scheduler",
+      "sonner"
+    ],
+  },
   plugins: [
     react(),
     mode === "development" && componentTagger(),
