@@ -571,9 +571,23 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
+        // ✅ LOG: Фактический ответ от Suno lyrics API
+        logger.debug("🔍 Suno lyrics raw response", {
+          endpoint,
+          json: JSON.stringify(json),
+          jsonKeys: json && typeof json === 'object' ? Object.keys(json) : []
+        });
+
         const { taskId, jobId } = parseTaskId(json);
 
         if (typeof taskId !== "string" || !taskId) {
+          // ✅ ENHANCED ERROR: Детальная информация для отладки
+          logger.error("❌ Failed to extract taskId from lyrics response", {
+            endpoint,
+            responseStructure: json && typeof json === 'object' ? Object.keys(json) : [],
+            fullResponse: JSON.stringify(json).substring(0, 500)
+          });
+          
           throw new SunoApiError("Suno lyrics response did not include a task identifier", {
             endpoint,
             status: response.status,
@@ -581,6 +595,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
+        logger.info("✅ Lyrics taskId extracted", { taskId, jobId, endpoint });
         return { taskId, jobId: jobId ?? null, rawResponse: json, endpoint };
       } catch (error) {
         const sunoError = error instanceof SunoApiError
