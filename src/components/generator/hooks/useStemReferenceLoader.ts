@@ -40,7 +40,7 @@ export const useStemReferenceLoader = (
       
       // Switch to Suno if needed (Mureka doesn't support reference audio)
       if (selectedProvider === 'mureka') {
-        setProvider('suno' as any);
+        setProvider('suno');
       }
       
       // Auto-fill form from reference stem

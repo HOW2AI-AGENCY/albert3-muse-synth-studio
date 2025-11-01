@@ -54,11 +54,16 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const { balance: sunoBalance } = useProviderBalance();
   const { savePrompt } = usePromptHistory();
 
+  // Provider change handler with correct typing
+  const handleProviderChange = useCallback((provider: string) => {
+    setProvider(provider as ProviderType);
+  }, [setProvider]);
+
   // ✅ REFACTORED: Consolidated state management
   const state = useGeneratorState(selectedProvider);
   
   // ✅ REFACTORED: Auto-loaders
-  useStemReferenceLoader(state, selectedProvider, setProvider);
+  useStemReferenceLoader(state, selectedProvider, handleProviderChange);
   usePendingGenerationLoader(state);
   
   // ✅ REFACTORED: Audio handling
@@ -416,7 +421,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       {/* Header */}
       <GeneratorHeader
         selectedProvider={selectedProvider as 'suno' | 'mureka'}
-        onProviderChange={(provider) => setProvider(provider as any)}
+        onProviderChange={handleProviderChange}
         mode={state.mode}
         onModeChange={state.setMode}
         modelVersion={state.params.modelVersion}
