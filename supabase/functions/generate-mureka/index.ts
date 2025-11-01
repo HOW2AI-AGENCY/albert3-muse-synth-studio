@@ -144,7 +144,7 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // 3. Transform to handler params
+    // 5. Transform to handler params
     const body = validation.data;
     const params: MurekaGenerationParams = {
       trackId: body.trackId,
@@ -158,7 +158,7 @@ serve(async (req: Request): Promise<Response> => {
       isBGM: body.isBGM,
     };
 
-    // 4. Initialize handler and generate
+    // 6. Initialize handler and generate
     const murekaApiKey = Deno.env.get('MUREKA_API_KEY');
     if (!murekaApiKey) {
       throw new Error('MUREKA_API_KEY not configured');
@@ -174,7 +174,7 @@ serve(async (req: Request): Promise<Response> => {
     
     const result = await handler.generate(params);
 
-    // 5. Return response with rate limit headers
+    // 7. Return response with rate limit headers
     return new Response(
       JSON.stringify(result),
       { 
