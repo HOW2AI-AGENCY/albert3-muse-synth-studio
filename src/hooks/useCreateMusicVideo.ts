@@ -26,14 +26,14 @@ export const useCreateMusicVideo = () => {
 
   return useMutation({
     mutationFn: async (params: CreateMusicVideoParams) => {
-      logInfo('Creating music video', 'useCreateMusicVideo', params);
+      logInfo('Creating music video', 'useCreateMusicVideo', { params });
 
       const { data, error } = await supabase.functions.invoke('create-music-video', {
         body: params
       });
 
       if (error) {
-        logError('Failed to create music video', error, 'useCreateMusicVideo', params);
+        logError('Failed to create music video', error, 'useCreateMusicVideo', { params });
         throw error;
       }
 

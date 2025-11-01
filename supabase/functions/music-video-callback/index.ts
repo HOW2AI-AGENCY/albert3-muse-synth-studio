@@ -6,7 +6,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createSupabaseAdminClient } from "../_shared/supabase.ts";
 import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
-import { logInfo, logError, logWarn } from "../_shared/logger.ts";
+import { logger } from "../_shared/logger.ts";
 import { musicVideoCallbackSchema, validateAndParse } from "../_shared/zod-schemas.ts";
 
 serve(async (req) => {
@@ -20,7 +20,8 @@ serve(async (req) => {
     // ✅ 1. Parse and validate callback payload
     const body = await req.json();
     
-    logInfo('Received music video callback', 'music-video-callback', { 
+    logger.info('Received music video callback', { 
+      function: 'music-video-callback',
       code: body.code,
       taskId: body.data?.task_id 
     });
@@ -28,7 +29,7 @@ serve(async (req) => {
     const validationResult = validateAndParse(musicVideoCallbackSchema, body);
     
     if (!validationResult.success) {
-      logError('Invalid callback payload', validationResult.errors, 'music-video-callback', { body });
+      logger.error('Invalid callback payload', { function: 'music-video-callback', body, errors: validationResult.errors });
       return new Response(
         JSON.stringify({ error: "Invalid payload" }),
         { status: 400, headers: corsHeaders }
@@ -47,7 +48,7 @@ serve(async (req) => {
       .filter('metadata->>video_task_id', 'eq', videoTaskId);
 
     if (findError || !tracks || tracks.length === 0) {
-      logWarn('Track not found for video task', 'music-video-callback', { videoTaskId });
+      logger.warn('Track not found for video task', { function: 'music-video-callback', videoTaskId });
       return new Response(
         JSON.stringify({ status: 'received', message: 'Track not found' }),
         { status: 200, headers: corsHeaders }
@@ -58,7 +59,8 @@ serve(async (req) => {
 
     // ✅ 3. Handle successful video generation
     if (code === 200 && videoUrl) {
-      logInfo('Video generation succeeded', 'music-video-callback', {
+      logger.info('Video generation succeeded', {
+        function: 'music-video-callback',
         trackId: track.id,
         videoTaskId,
         videoUrl
@@ -83,17 +85,20 @@ serve(async (req) => {
           link: `/workspace/library?track=${track.id}`
         });
 
-      logInfo('Track updated with video URL', 'music-video-callback', {
+      logger.info('Track updated with video URL', {
+        function: 'music-video-callback',
         trackId: track.id,
         videoUrl
       });
     }
     // ✅ 4. Handle video generation failure
     else {
-      logError('Video generation failed', new Error(msg || 'Unknown error'), 'music-video-callback', {
+      logger.error('Video generation failed', {
+        function: 'music-video-callback',
         trackId: track.id,
         videoTaskId,
-        code
+        code,
+        error: msg || 'Unknown error'
       });
 
       let errorMessage = 'Не удалось создать видео';
@@ -131,7 +136,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    logError('Music video callback error', error as Error, 'music-video-callback');
+    logger.error('Music video callback error', { function: 'music-video-callback', error });
     
     // Always return 200 to acknowledge receipt
     return new Response(

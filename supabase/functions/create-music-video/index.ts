@@ -75,7 +75,7 @@ serve(async (req) => {
       .single();
 
     if (trackError || !track) {
-      logError('Track not found', trackError || new Error('Track missing'), 'create-music-video', { trackId });
+      logger.error('Track not found', { function: 'create-music-video', trackId, error: trackError });
       return new Response(
         JSON.stringify({ error: "Track not found" }),
         { status: 404, headers: corsHeaders }
@@ -83,7 +83,8 @@ serve(async (req) => {
     }
 
     if (track.user_id !== userId) {
-      logError('Unauthorized track access', new Error('User does not own track'), 'create-music-video', {
+      logger.error('Unauthorized track access', {
+        function: 'create-music-video',
         trackId,
         userId,
         trackUserId: track.user_id
@@ -99,7 +100,8 @@ serve(async (req) => {
     const existingVideoStatus = track.metadata?.video_status;
     
     if (existingVideoTaskId && (existingVideoStatus === 'PENDING' || existingVideoStatus === 'SUCCESS')) {
-      logInfo('Video already exists or in progress', 'create-music-video', {
+      logger.info('Video already exists or in progress', {
+        function: 'create-music-video',
         trackId,
         videoTaskId: existingVideoTaskId,
         status: existingVideoStatus
@@ -117,7 +119,7 @@ serve(async (req) => {
     // ✅ 5. Get task ID from metadata
     const taskId = track.suno_id || track.metadata?.suno_task_id;
     if (!taskId) {
-      logError('Suno task ID not found', new Error('Missing suno_task_id'), 'create-music-video', { trackId });
+      logger.error('Suno task ID not found', { function: 'create-music-video', trackId });
       return new Response(
         JSON.stringify({ error: "Track was not generated via Suno AI" }),
         { status: 400, headers: corsHeaders }
@@ -128,7 +130,7 @@ serve(async (req) => {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const callBackUrl = `${SUPABASE_URL}/functions/v1/music-video-callback`;
 
-    logInfo('Calling Suno MP4 API', 'create-music-video', { taskId, audioId, callBackUrl });
+    logger.info('Calling Suno MP4 API', { function: 'create-music-video', taskId, audioId, callBackUrl });
 
     // ✅ 7. Call Suno API to create music video
     const sunoResponse = await fetch('https://api.sunoapi.org/api/v1/mp4/generate', {
@@ -149,7 +151,7 @@ serve(async (req) => {
     const sunoData = await sunoResponse.json();
 
     if (!sunoResponse.ok) {
-      logError('Suno API error', new Error(`Status: ${sunoResponse.status}`), 'create-music-video', { sunoData });
+      logger.error('Suno API error', { function: 'create-music-video', status: sunoResponse.status, sunoData });
       
       // Handle specific error codes
       if (sunoResponse.status === 429) {
@@ -182,7 +184,8 @@ serve(async (req) => {
       p_video_status: 'PENDING'
     });
 
-    logInfo('Music video generation started', 'create-music-video', {
+    logger.info('Music video generation started', {
+      function: 'create-music-video',
       trackId,
       videoTaskId,
       userId
@@ -198,7 +201,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    logError('Failed to create music video', error as Error, 'create-music-video');
+    logger.error('Failed to create music video', { function: 'create-music-video', error });
     
     return new Response(
       JSON.stringify({ 
