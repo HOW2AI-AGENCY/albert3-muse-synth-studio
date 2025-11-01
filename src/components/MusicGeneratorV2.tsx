@@ -5,7 +5,6 @@ import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
 import { useGenerateMusic } from '@/hooks/useGenerateMusic';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
-import { useBoostStyle } from '@/hooks/useBoostStyle';
 import { AudioPreviewDialog } from '@/components/audio/AudioPreviewDialog';
 import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog';
 import { MurekaLyricsVariantDialog } from '@/components/lyrics/MurekaLyricsVariantDialog';
@@ -15,7 +14,6 @@ import { EnhancedPromptPreview } from '@/components/generator/EnhancedPromptPrev
 import { supabase } from '@/integrations/supabase/client';
 import { toast as sonnerToast } from 'sonner';
 import { usePromptHistory } from '@/hooks/usePromptHistory';
-import { useProviderBalance } from '@/hooks/useProviderBalance';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
@@ -25,15 +23,13 @@ import { rateLimiter, RATE_LIMIT_CONFIGS } from '@/utils/rateLimiter';
 
 // Modular components & hooks
 import { CompactHeader } from '@/components/generator/CompactHeader';
-import { SimpleModeForm } from '@/components/generator/forms/SimpleModeForm';
-import { CustomModeForm } from '@/components/generator/forms/CustomModeForm';
-import type { GenrePreset } from '@/components/generator/types/generator.types';
+import { SimpleModeCompact } from '@/components/generator/forms/SimpleModeCompact';
+import { CompactCustomForm } from '@/components/generator/forms/CompactCustomForm';
 import { 
   useGeneratorState,
   useStemReferenceLoader,
   usePendingGenerationLoader,
   useAudioUploadHandler,
-  useAnalysisMapper,
 } from '@/components/generator/hooks';
 
 interface MusicGeneratorV2Props {
@@ -52,8 +48,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   });
   
   const currentModels = getProviderModels(selectedProvider as ProviderType);
-  const { boostStyle, isBoosting } = useBoostStyle();
-  const { balance: sunoBalance } = useProviderBalance();
   const { savePrompt } = usePromptHistory();
   
   // Rate limit tracking
@@ -96,9 +90,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   
   // ✅ REFACTORED: Audio handling
   const audioUpload = useAudioUploadHandler(state);
-  
-  // ✅ REFACTORED: Analysis mapping
-  const { handleAnalysisComplete } = useAnalysisMapper(state);
 
   // Debounce effects
   useEffect(() => {
@@ -186,54 +177,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     });
   }, [selectedProvider, toast, state.setParams]);
 
-  // Boost prompt handler
-  const handleBoostPrompt = useCallback(async () => {
-    if (!state.params.prompt.trim()) {
-      toast({
-        title: 'Введите описание',
-        description: 'Сначала заполните поле с описанием музыки',
-        variant: 'destructive'
-      });
-      return;
-    }
-    
-    toast({
-      title: '✨ Улучшаем промпт...',
-      description: 'AI обрабатывает ваше описание',
-    });
-    
-    logger.info('✨ [BOOST] Improving prompt:', state.params.prompt.substring(0, 50));
-    const boosted = await boostStyle(state.params.prompt);
-    
-    if (boosted) {
-      state.setParam('prompt', boosted);
-      state.setDebouncedPrompt(boosted);
-      toast({
-        title: '✅ Промпт улучшен',
-        description: 'AI добавил детали для лучшего результата',
-      });
-      logger.info('✅ [BOOST] Prompt improved');
-    } else {
-      toast({
-        title: 'Не удалось улучшить',
-        description: 'Попробуйте еще раз или используйте текущее описание',
-        variant: 'destructive'
-      });
-    }
-  }, [state.params.prompt, boostStyle, state.setParam, state.setDebouncedPrompt, toast]);
-
-
-  // Preset handler
-  const handlePresetSelect = useCallback((preset: GenrePreset) => {
-    state.setParams(prev => ({
-      ...prev,
-      prompt: preset.promptSuggestion,
-      tags: preset.styleTags.join(', '),
-    }));
-    state.setDebouncedPrompt(preset.promptSuggestion);
-    state.setShowPresets(false);
-  }, [state]);
-
   // Handle Mureka lyrics variant selection
   const handleMurekaLyricsSelect = useCallback(async (lyrics: string, variantId: string) => {
     if (!state.murekaLyricsDialog.trackId) return;
@@ -272,26 +215,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
 
   const handleGenerate = useCallback(async () => {
     vibrate('heavy');
-
-    // Pre-flight balance check for Suno
-    if (selectedProvider === 'suno') {
-      const credits = sunoBalance?.balance || 0;
-      if (credits === 0) {
-        toast({
-          title: '❌ Недостаточно кредитов',
-          description: 'У вас закончились кредиты Suno. Пополните баланс для продолжения.',
-          variant: 'destructive'
-        });
-        return;
-      }
-      if (credits < 10) {
-        toast({
-          title: '⚠️ Низкий баланс',
-          description: `У вас осталось ${credits} кредитов Suno`,
-          duration: 3000,
-        });
-      }
-    }
 
     // Validation
     const hasPrompt = state.params.prompt.trim().length > 0;
@@ -349,6 +272,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       referenceAudioUrl: state.params.referenceAudioUrl || undefined,
       referenceTrackId: state.params.referenceTrackId || undefined,
       provider: selectedProvider,
+      personaId: state.params.personaId || undefined,
     };
 
     // Save to history
@@ -379,7 +303,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       state.setDebouncedPrompt('');
       state.setDebouncedLyrics('');
     }
-  }, [state, generate, toast, vibrate, selectedProvider, sunoBalance, savePrompt]);
+  }, [state, generate, toast, vibrate, selectedProvider, savePrompt]);
 
   // Enhanced prompt handlers
   const handleEnhancedPromptAccept = useCallback((finalPrompt: string) => {
@@ -477,38 +401,27 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
           )}
 
           {state.mode === 'simple' ? (
-            <SimpleModeForm
+            <SimpleModeCompact
               params={state.params}
               onParamChange={state.setParam}
-              onBoostPrompt={handleBoostPrompt}
               onGenerate={handleGenerate}
-              isBoosting={isBoosting}
               isGenerating={isGenerating || state.isEnhancing}
-              showPresets={state.showPresets}
-              onPresetSelect={handlePresetSelect}
               debouncedPrompt={state.debouncedPrompt}
               onDebouncedPromptChange={state.setDebouncedPrompt}
             />
           ) : (
-            <CustomModeForm
+            <CompactCustomForm
               params={state.params}
               onParamChange={state.setParam}
-              onBoostPrompt={handleBoostPrompt}
               onGenerate={handleGenerate}
               onOpenLyricsDialog={() => state.setLyricsDialogOpen(true)}
-              onOpenHistory={() => state.setHistoryDialogOpen(true)}
-              onAudioFileSelect={audioUpload.handleAudioFileSelect}
-              onRemoveAudio={audioUpload.handleRemoveAudio}
-              onSelectReferenceTrack={audioUpload.handleSelectReferenceTrack}
-              onManualAnalyze={audioUpload.handleManualAnalyze}
-              onRecordComplete={audioUpload.handleRecordComplete}
-              onAnalysisComplete={handleAnalysisComplete}
-              isBoosting={isBoosting}
+              onAudioUpload={(e) => {
+                audioUpload.handleAudioFileSelect(e);
+                // Auto-switch already handled in CompactHeader
+              }}
+              onPersonaClick={() => setPersonaDialogOpen(true)}
               isGenerating={isGenerating || state.isEnhancing}
-              isUploading={audioUpload.isUploading}
-              debouncedPrompt={state.debouncedPrompt}
               debouncedLyrics={state.debouncedLyrics}
-              onDebouncedPromptChange={state.setDebouncedPrompt}
               onDebouncedLyricsChange={state.setDebouncedLyrics}
             />
           )}
