@@ -94,6 +94,7 @@ export type Database = {
           id: string
           is_favorite: boolean | null
           last_used_at: string | null
+          project_id: string | null
           recognized_song_id: string | null
           source_metadata: Json | null
           source_type: string
@@ -115,6 +116,7 @@ export type Database = {
           id?: string
           is_favorite?: boolean | null
           last_used_at?: string | null
+          project_id?: string | null
           recognized_song_id?: string | null
           source_metadata?: Json | null
           source_type: string
@@ -136,6 +138,7 @@ export type Database = {
           id?: string
           is_favorite?: boolean | null
           last_used_at?: string | null
+          project_id?: string | null
           recognized_song_id?: string | null
           source_metadata?: Json | null
           source_type?: string
@@ -145,6 +148,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "audio_library_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "music_projects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "audio_library_recognized_song_id_fkey"
             columns: ["recognized_song_id"]
@@ -569,6 +579,7 @@ export type Database = {
           language: string | null
           last_used_at: string | null
           mood: string | null
+          project_id: string | null
           prompt: string | null
           search_vector: unknown
           tags: string[] | null
@@ -589,6 +600,7 @@ export type Database = {
           language?: string | null
           last_used_at?: string | null
           mood?: string | null
+          project_id?: string | null
           prompt?: string | null
           search_vector?: unknown
           tags?: string[] | null
@@ -609,6 +621,7 @@ export type Database = {
           language?: string | null
           last_used_at?: string | null
           mood?: string | null
+          project_id?: string | null
           prompt?: string | null
           search_vector?: unknown
           tags?: string[] | null
@@ -624,6 +637,13 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "lyrics_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_lyrics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "music_projects"
             referencedColumns: ["id"]
           },
           {
