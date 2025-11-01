@@ -340,6 +340,24 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
       
       const existingIndexes = new Set((existingVariants || []).map(v => v.variant_index));
       
+      // ✅ FIX: Global cover fallback - search across all clips
+      const findAnyCoverUrl = (): string | null => {
+        for (const clip of normalized.clips) {
+          if (clip.image_url) return clip.image_url;
+          if (clip.cover_url) return clip.cover_url;
+        }
+        return null;
+      };
+      
+      const fallbackCoverUrl = findAnyCoverUrl();
+      
+      if (!fallbackCoverUrl) {
+        logger.warn('⚠️ [MUREKA] No cover image in any clip', {
+          taskId,
+          clipsCount: normalized.clips.length,
+        });
+      }
+      
       // ✅ FIX: Создаём версии для всех клипов с правильной логикой мастер-версии
       const versionsToInsert = normalized.clips
         .map((clip, index) => {
@@ -358,17 +376,15 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
             ? (clip.duration > 1000 ? Math.floor(clip.duration / 1000) : clip.duration)
             : null;
           
-          // ✅ FIX: Первый клип (варинат 0) - мастер, остальные - нет
-          const isMaster = variantIndex === 0;
-          
           return {
             parent_track_id: trackData.id,
             variant_index: variantIndex,
-            is_preferred_variant: isMaster,
-            is_primary_variant: isMaster,
+            // ✅ FIX: is_primary_variant только для первого, is_preferred_variant - false (выберет юзер)
+            is_primary_variant: variantIndex === 0,
+            is_preferred_variant: false,
             audio_url: clip.audio_url || null,
-            // ✅ FIX: Используем fallback для обложки если её нет
-            cover_url: clip.image_url || clip.cover_url || primaryClip.image_url || primaryClip.cover_url || null,
+            // ✅ FIX: Используем глобальный fallback для обложки
+            cover_url: clip.image_url || clip.cover_url || fallbackCoverUrl || null,
             video_url: clip.video_url || null,
             lyrics: clip.lyrics || null,
             duration: durationInSeconds,
@@ -402,6 +418,15 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
             trackId: trackData.id,
             versionsCount: versionsToInsert.length,
           });
+          
+          // ✅ FIX: После вставки установить первую версию как preferred
+          await this.supabase
+            .from('track_versions')
+            .update({ is_preferred_variant: true })
+            .eq('parent_track_id', trackData.id)
+            .eq('variant_index', 0);
+            
+          logger.info('✅ [MUREKA] Set first variant as preferred', { trackId: trackData.id });
         }
       }
     }

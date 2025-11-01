@@ -86,7 +86,35 @@ serve(async (req: Request): Promise<Response> => {
       limit: rateLimitResult.limit 
     });
 
-    // 3. Parse and validate request
+    // 3. Check for active Mureka generations (concurrent_request_limit: 1)
+    const { data: activeGenerations, error: checkError } = await supabaseAdmin
+      .from('tracks')
+      .select('id, title')
+      .eq('user_id', user.id)
+      .eq('provider', 'mureka')
+      .eq('status', 'processing')
+      .limit(1);
+    
+    if (!checkError && activeGenerations && activeGenerations.length > 0) {
+      logger.warn('🔴 User has active Mureka generation', {
+        userId: user.id,
+        activeTrackId: activeGenerations[0].id,
+      });
+      
+      return new Response(
+        JSON.stringify({
+          error: 'У вас уже есть активная генерация Mureka. Пожалуйста, дождитесь её завершения.',
+          errorCode: 'MUREKA_CONCURRENT_LIMIT',
+          activeTrackId: activeGenerations[0].id,
+          activeTrackTitle: activeGenerations[0].title,
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    logger.info('✅ No active Mureka generations for user', { userId: user.id });
+
+    // 4. Parse and validate request
     const rawBody = await req.json();
 
     const generateMurekaSchema = z.object({
