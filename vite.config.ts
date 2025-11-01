@@ -83,7 +83,18 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-    dedupe: ["react", "react-dom"],
+    dedupe: [
+      "react", 
+      "react-dom",
+      "react/jsx-runtime",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-select",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-tooltip",
+      "@radix-ui/react-popover",
+      "@radix-ui/react-slot",
+    ],
   },
   test: {
     globals: true,
