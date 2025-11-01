@@ -19,12 +19,25 @@ export default defineConfig(({ mode }) => ({
       '@tanstack/react-query',
     ],
     exclude: [],
-    force: true,
   },
   build: {
     rollupOptions: {
       output: {
-        manualChunks: undefined, // Let Vite handle chunking automatically to prevent React duplication
+        manualChunks: (id) => {
+          // Critical: Keep React in a single vendor chunk to prevent duplication
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor-react';
+            }
+            if (id.includes('@tanstack/react-query') || id.includes('zustand')) {
+              return 'vendor-state';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'vendor-ui';
+            }
+            return 'vendor';
+          }
+        },
       },
     },
     chunkSizeWarningLimit: 1000,
@@ -65,14 +78,19 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "react": "react",
+      "react-dom": "react-dom",
     },
     dedupe: [
       "react",
       "react-dom",
       "react/jsx-runtime",
       "react/jsx-dev-runtime",
-      "zustand", // CRITICAL: dedupe zustand to prevent store duplication
+      "zustand",
     ],
+  },
+  ssr: {
+    noExternal: ['react', 'react-dom'],
   },
   test: {
     globals: true,
