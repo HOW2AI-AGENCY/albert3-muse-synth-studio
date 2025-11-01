@@ -1,10 +1,11 @@
 /**
- * Player visibility animation logic
+ * Player visibility and expansion state
  */
 import { useState, useEffect } from 'react';
 
 export const usePlayerVisibility = (currentTrack: any) => {
   const [isVisible, setIsVisible] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     if (currentTrack) {
@@ -14,5 +15,5 @@ export const usePlayerVisibility = (currentTrack: any) => {
     }
   }, [currentTrack]);
 
-  return { isVisible };
+  return { isVisible, isExpanded, setIsExpanded };
 };

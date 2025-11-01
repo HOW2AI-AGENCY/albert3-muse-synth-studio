@@ -7,7 +7,7 @@ import { useEffect, Suspense } from "react";
 import { GlobalErrorBoundary } from "@/components/errors/GlobalErrorBoundary";
 import { FullPageSpinner } from "@/components/ui/loading-states";
 import router from "./router";
-import { GlobalAudioPlayer } from "./components/player/GlobalAudioPlayer";
+import GlobalAudioPlayer from "./components/player/GlobalAudioPlayer";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PerformanceMonitorWidget } from "@/components/dev/PerformanceMonitorWidget";
 import { SentryFeedbackButton } from "@/components/SentryFeedbackButton";
