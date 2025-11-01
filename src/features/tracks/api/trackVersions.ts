@@ -323,9 +323,48 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       });
     };
 
-    // ✅ УДАЛЕНО: Не добавляем mainTrack как версию
-
-    if (versions && versions.length > 0) {
+    // ✅ ИСПРАВЛЕНИЕ: Добавить mainTrack как версию V1, если нужно
+    if (!versions || versions.length === 0) {
+      // Случай 1: Нет версий в track_versions → добавить mainTrack как V1
+      if (mainTrack.audio_url) {
+        pushVersion({
+          id: mainTrack.id,
+          sourceVersionNumber: 0,
+          isMasterVersion: true,
+          title: mainTrack.title,
+          audio_url: mainTrack.audio_url,
+          cover_url: mainTrack.cover_url ?? null,
+          video_url: mainTrack.video_url ?? null,
+          duration: mainTrack.duration ?? mainTrack.duration_seconds ?? null,
+          lyrics: mainTrack.lyrics ?? null,
+          metadata: (mainTrack.metadata as TrackMetadata | null) ?? null,
+          created_at: mainTrack.created_at ?? null,
+          suno_id: mainTrack.suno_id ?? null,
+          status: mainTrack.status ?? 'completed',
+        });
+      }
+    } else if (versions.length === 1 && (versions[0].variant_index ?? 0) >= 1) {
+      // Случай 2: Есть 1 версия с variant_index >= 1 (Mureka)
+      // → добавить mainTrack как V1 (variant_index: 0)
+      if (mainTrack.audio_url) {
+        pushVersion({
+          id: mainTrack.id,
+          sourceVersionNumber: 0,
+          isMasterVersion: false, // Версия из track_versions — мастер
+          title: mainTrack.title,
+          audio_url: mainTrack.audio_url,
+          cover_url: mainTrack.cover_url ?? null,
+          video_url: mainTrack.video_url ?? null,
+          duration: mainTrack.duration ?? mainTrack.duration_seconds ?? null,
+          lyrics: mainTrack.lyrics ?? null,
+          metadata: (mainTrack.metadata as TrackMetadata | null) ?? null,
+          created_at: mainTrack.created_at ?? null,
+          suno_id: mainTrack.suno_id ?? null,
+          status: mainTrack.status ?? 'completed',
+        });
+      }
+      
+      // Добавить версию из track_versions
       versions.forEach((version: TrackVersionRow) => {
         pushVersion({
           id: version.id,
@@ -343,7 +382,33 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
           status: 'completed',
         });
       });
-    } else if (
+    } else {
+      // Случай 3: Несколько версий (Suno) → добавить все из track_versions
+      versions.forEach((version: TrackVersionRow) => {
+        pushVersion({
+          id: version.id,
+          sourceVersionNumber: version.variant_index ?? null,
+          isMasterVersion: Boolean(version.is_preferred_variant),
+          title: mainTrack.title,
+          audio_url: version.audio_url ?? null,
+          cover_url: version.cover_url ?? mainTrack.cover_url ?? null,
+          video_url: version.video_url ?? null,
+          duration: version.duration ?? null,
+          lyrics: version.lyrics ?? null,
+          metadata: (version.metadata as TrackMetadata | null) ?? null,
+          created_at: version.created_at ?? null,
+          suno_id: version.suno_id ?? null,
+          status: 'completed',
+        });
+      });
+    }
+
+    // ✅ Сортировка по sourceVersionNumber (0 → 1 → 2...)
+    normalizedVersions.sort((a, b) => 
+      (a.sourceVersionNumber ?? 0) - (b.sourceVersionNumber ?? 0)
+    );
+
+    if (
       mainTrack.metadata &&
       typeof mainTrack.metadata === 'object' &&
       'suno_data' in mainTrack.metadata &&

@@ -68,8 +68,8 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
     }
   }, [currentVersionIndex, allVersions, setMasterVersion, isSettingMaster, isLoading, toast]);
 
-  // Не показываем селектор если нет дополнительных версий
-  if (isLoading || versionCount === 0) {
+  // ✅ FIX: Не показываем селектор если меньше 2 версий
+  if (isLoading || allVersions.length < 2) {
     return null;
   }
 

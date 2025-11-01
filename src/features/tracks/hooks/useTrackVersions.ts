@@ -34,13 +34,14 @@ const inFlightRequests = new Map<string, Promise<TrackWithVersions[]>>();
 
 const getCacheKey = (trackId: string) => trackId;
 
-// ✅ FIX: Считаем только версии с audio_url
+// ✅ FIX: Считаем ВСЕ версии с audio_url минус 1 (мастер-версия)
 const getAdditionalVersionsCount = (versions: TrackWithVersions[] | undefined): number => {
-  if (!versions) {
+  if (!versions || versions.length === 0) {
     return 0;
   }
 
-  return versions.filter(version => !!version.audio_url).length;
+  // Возвращаем количество версий минус 1 (без мастер-версии)
+  return Math.max(0, versions.filter(v => !!v.audio_url).length - 1);
 };
 
 const notifyListeners = (trackId: string, versions: TrackWithVersions[]) => {
@@ -299,24 +300,26 @@ export function useTrackVersions(
   }, [trackId, autoLoad, loadVersions]);
   
   // ===== Вычисляемые свойства =====
-  
-  /** Определяем основную версию трека (первая версия) */
+
+  /** Мастер-версия трека */
+  const masterVersion = getMasterVersion(allVersions);
+
+  /** Основная версия трека (первая по порядку) */
   const mainVersion = allVersions[0] ?? null;
 
-  /** Дополнительные версии без первой */
-  const versions = allVersions.slice(1);
+  /** Дополнительные версии (все кроме мастер-версии) */
+  const versions = masterVersion
+    ? allVersions.filter(v => v.id !== masterVersion.id)
+    : allVersions.slice(1);
 
   const versionCount = versions.length;
 
   const totalVersionCount = allVersions.length;
 
-  /** Мастер-версия трека */
-  const masterVersion = getMasterVersion(allVersions);
+  /** Есть ли несколько версий (хотя бы 2) */
+  const hasVersions = allVersions.length > 1;
 
-  /** Есть ли несколько версий */
-  const hasVersions = versionCount > 0;
-
-  /** Количество дополнительных версий (без учёта оригинала) */
+  /** Количество дополнительных версий (без учёта мастер-версии) */
   const additionalVersionCount = versionCount;
 
   /**
