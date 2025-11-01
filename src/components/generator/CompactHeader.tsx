@@ -25,25 +25,25 @@ export const CompactHeader = memo(({
 }: CompactHeaderProps) => {
   return (
     <div 
-      className="flex items-center justify-between border-b border-border/10 bg-background/95 backdrop-blur-sm px-8 py-2"
-      style={{ minHeight: 'var(--generator-header-height, 48px)' }}
+      className="flex items-center justify-between gap-2 sm:gap-4 md:gap-6 border-b border-border/10 bg-background/95 backdrop-blur-sm px-3 sm:px-4 md:px-6 lg:px-8 py-1.5 sm:py-2"
+      style={{ minHeight: 'var(--generator-header-height, 44px)' }}
     >
-      {/* Left: Provider Balance - Compact */}
-      <div className="flex items-center min-w-[100px]">
+      {/* Left: Provider Balance - Adaptive */}
+      <div className="flex items-center flex-shrink-0">
         <SunoBalanceDisplay />
       </div>
 
-      {/* Center: Mode Tabs - Compact */}
+      {/* Center: Mode Tabs - Adaptive */}
       <RadioGroup
         value={mode}
         onValueChange={(v) => onModeChange(v as GeneratorMode)}
-        className="flex items-center gap-0 bg-muted/20 border border-border/30 rounded-md p-0.5"
+        className="flex items-center gap-0 bg-muted/20 border border-border/30 rounded p-0.5"
       >
         <div className="flex items-center">
           <RadioGroupItem value="simple" id="mode-simple" className="peer sr-only" />
           <Label 
             htmlFor="mode-simple" 
-            className="px-5 py-1.5 text-xs font-medium cursor-pointer rounded-sm transition-all peer-data-[state=checked]:bg-background peer-data-[state=checked]:text-foreground peer-data-[state=checked]:shadow-sm text-muted-foreground hover:text-foreground"
+            className="px-2.5 sm:px-3 md:px-4 py-1 text-[10px] sm:text-xs font-medium cursor-pointer rounded-sm transition-all peer-data-[state=checked]:bg-background peer-data-[state=checked]:text-foreground peer-data-[state=checked]:shadow-sm text-muted-foreground hover:text-foreground whitespace-nowrap"
           >
             Simple
           </Label>
@@ -52,17 +52,17 @@ export const CompactHeader = memo(({
           <RadioGroupItem value="custom" id="mode-custom" className="peer sr-only" />
           <Label 
             htmlFor="mode-custom" 
-            className="px-5 py-1.5 text-xs font-medium cursor-pointer rounded-sm transition-all peer-data-[state=checked]:bg-background peer-data-[state=checked]:text-foreground peer-data-[state=checked]:shadow-sm text-muted-foreground hover:text-foreground"
+            className="px-2.5 sm:px-3 md:px-4 py-1 text-[10px] sm:text-xs font-medium cursor-pointer rounded-sm transition-all peer-data-[state=checked]:bg-background peer-data-[state=checked]:text-foreground peer-data-[state=checked]:shadow-sm text-muted-foreground hover:text-foreground whitespace-nowrap"
           >
             Custom
           </Label>
         </div>
       </RadioGroup>
 
-      {/* Right: Model Select - Compact */}
-      <div className="flex items-center min-w-[100px] justify-end">
+      {/* Right: Model Select - Adaptive */}
+      <div className="flex items-center flex-shrink-0">
         <Select value={modelVersion} onValueChange={onModelChange} disabled={isGenerating}>
-          <SelectTrigger className="h-8 w-28 text-xs border-border/30 bg-muted/20 font-medium">
+          <SelectTrigger className="h-7 w-20 sm:w-24 md:w-28 text-[10px] sm:text-xs border-border/30 bg-muted/20 font-medium">
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-background">

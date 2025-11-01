@@ -7,9 +7,9 @@ export const SunoBalanceDisplay = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/30">
-        <Loader2 className="h-3.5 w-3.5 text-muted-foreground animate-spin" />
-        <span className="text-xs text-muted-foreground font-medium">...</span>
+      <div className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-muted/30">
+        <Loader2 className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground animate-spin" />
+        <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">...</span>
       </div>
     );
   }
@@ -17,11 +17,11 @@ export const SunoBalanceDisplay = () => {
   if (error || !balance) {
     return (
       <div 
-        className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/30" 
+        className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-muted/30" 
         title="Suno API не настроен"
       >
-        <AlertCircle className="h-3.5 w-3.5 text-muted-foreground" />
-        <span className="text-xs text-muted-foreground font-medium">—</span>
+        <AlertCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-muted-foreground" />
+        <span className="text-[10px] sm:text-xs text-muted-foreground font-medium">—</span>
       </div>
     );
   }
@@ -33,7 +33,7 @@ export const SunoBalanceDisplay = () => {
   return (
     <div 
       className={cn(
-        "flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-colors",
+        "flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded transition-colors",
         isZero 
           ? "bg-destructive/10" 
           : isLow 
@@ -43,11 +43,11 @@ export const SunoBalanceDisplay = () => {
       title={`Suno баланс: ${creditsLeft} кредитов`}
     >
       <Coins className={cn(
-        "h-3.5 w-3.5",
+        "h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0",
         isZero ? "text-destructive" : isLow ? "text-warning" : "text-primary"
       )} />
       <span className={cn(
-        "text-xs font-bold tabular-nums",
+        "text-[10px] sm:text-xs font-bold tabular-nums",
         isZero ? "text-destructive" : isLow ? "text-warning" : "text-primary"
       )}>
         {creditsLeft}
