@@ -41,9 +41,9 @@ const WorkspaceLayout = () => {
           <WorkspaceHeader className="safe-area-inset lg:block hidden" />
 
           <main
-            className="workspace-main flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-background scrollbar-styled"
+            className="workspace-main flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-background scrollbar-styled will-change-transform"
             style={{
-              paddingBottom: 'var(--workspace-bottom-offset)'
+              paddingBottom: 'calc(var(--workspace-bottom-offset) + env(safe-area-inset-bottom, 0px))'
             }}
           >
             <Outlet />

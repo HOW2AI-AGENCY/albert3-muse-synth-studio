@@ -104,6 +104,29 @@
     box-shadow: var(--shadow-glow-accent);
   }
 
+  .icon-button-touch {
+    min-height: var(--mobile-touch-min);
+    min-width: var(--mobile-touch-min);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  @media (min-width: 768px) {
+    .icon-button-touch {
+      min-height: var(--mobile-touch-optimal);
+      min-width: var(--mobile-touch-optimal);
+    }
+  }
+
+  .touch-optimized {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   .card-glass {
     @apply bg-card/50 backdrop-blur-xl border border-border/50;
   }

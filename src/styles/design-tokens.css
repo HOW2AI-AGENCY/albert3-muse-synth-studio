@@ -168,25 +168,39 @@
     --transition-opacity: opacity var(--duration-fast) var(--ease-out);
 
     /* ===== БРЕЙКПОИНТЫ (для JS) ===== */
-    --breakpoint-xs: 320px;
+    --breakpoint-xs: 375px;
     --breakpoint-sm: 640px;
     --breakpoint-md: 768px;
     --breakpoint-lg: 1024px;
     --breakpoint-xl: 1280px;
     --breakpoint-2xl: 1536px;
     --breakpoint-3xl: 1920px;
-    --breakpoint-4xl: 2560px;
+    --breakpoint-4k: 2560px;
 
     /* ===== Z-INDEX СЛОИ ===== */
+    --z-sidebar: 40;
+    --z-bottom-tab-bar: 40;
+    --z-fab: 50;
+    --z-mini-player: 60;
     --z-dropdown: 1000;
     --z-sticky: 1020;
     --z-fixed: 1030;
     --z-modal-backdrop: 1040;
     --z-modal: 1050;
+    --z-fullscreen-player: 1050;
     --z-popover: 1060;
     --z-tooltip: 1070;
     --z-toast: 1080;
     --z-maximum: 2147483647;
+    
+    /* ===== SEMANTIC SPACING ===== */
+    --spacing-card-padding: var(--space-4);
+    --spacing-card-gap: var(--space-3);
+    --spacing-button-padding-x: var(--space-4);
+    --spacing-button-padding-y: var(--space-2);
+    --spacing-input-padding-x: var(--space-3);
+    --spacing-input-padding-y: var(--space-2);
+    --generator-max-height-mobile: calc(100vh - 180px);
 
     /* ===== ГРАДИЕНТЫ ===== */
     --gradient-primary: linear-gradient(135deg, hsl(var(--color-accent-purple)) 0%, hsl(var(--color-accent-pink)) 100%);
@@ -251,6 +265,11 @@
       --font-size-display: var(--font-size-2xl); /* 20px */
       --font-size-heading: var(--font-size-xl); /* 18px */
       --radius-default: var(--radius-md); /* 8px */
+      --spacing-card-padding: var(--space-3);
+      --spacing-card-gap: var(--space-2);
+      --spacing-button-padding-x: var(--space-3);
+      --spacing-input-padding-x: var(--space-2);
+      --generator-max-height-mobile: calc(100vh - var(--workspace-header-height, 56px) - var(--bottom-tab-bar-height));
     }
   }
 

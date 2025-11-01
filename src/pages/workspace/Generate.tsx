@@ -273,10 +273,11 @@ const Generate = () => {
                   >
                     <Button
                       size="lg"
-                      className="fixed right-6 h-14 w-14 rounded-full shadow-lg glow-primary-strong bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary z-50"
+                      className="fixed right-6 h-14 w-14 rounded-full shadow-lg glow-primary-strong bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary touch-optimized"
                       style={{ 
                         bottom: 'calc(var(--bottom-tab-bar-height) + 1rem)',
-                        position: 'fixed'
+                        position: 'fixed',
+                        zIndex: 'var(--z-fab)'
                       }}
                       aria-label="Создать музыку"
                     >

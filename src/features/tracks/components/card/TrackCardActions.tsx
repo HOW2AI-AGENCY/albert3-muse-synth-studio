@@ -127,14 +127,14 @@ export const TrackCardActions = React.memo(({
           <Button
             variant="ghost"
             size="icon"
-            className="w-6 h-6"
+            className="icon-button-touch"
             onClick={(e) => {
               e.stopPropagation();
               onLikeClick();
             }}
             aria-label={isLiked ? 'Убрать из избранного' : 'В избранное'}
           >
-            <Heart className={cn('w-3 h-3', isLiked && 'fill-red-500 text-red-500')} />
+            <Heart className={cn('w-4 h-4', isLiked && 'fill-red-500 text-red-500')} />
           </Button>
         </TooltipTrigger>
         <TooltipContent>{isLiked ? 'Убрать из избранного' : 'В избранное'}</TooltipContent>
@@ -146,11 +146,11 @@ export const TrackCardActions = React.memo(({
             <Button
               variant="ghost"
               size="icon"
-              className="w-6 h-6"
+              className="icon-button-touch"
               onClick={(e) => e.stopPropagation()}
               aria-label="Опции"
             >
-              <MoreVertical className="w-3 h-3" />
+              <MoreVertical className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 z-[200]">
