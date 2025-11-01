@@ -58,9 +58,8 @@ export const VirtualizedTrackGrid = ({
   return (
     <div
       ref={parentRef}
-      className="overflow-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent"
+      className="w-full h-full overflow-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent"
       style={{ 
-        height: 'calc(100vh - 200px)',
         contain: 'strict'
       }}
     >

@@ -98,13 +98,19 @@ const Library: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
-  // Measure container width
+  // Measure container width with initial value
   useEffect(() => {
     if (!containerRef.current) return;
     
+    // Set initial width
+    setContainerWidth(containerRef.current.clientWidth);
+    
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        setContainerWidth(entry.contentRect.width);
+        const width = entry.contentRect.width;
+        if (width > 0) {
+          setContainerWidth(width);
+        }
       }
     });
     
@@ -647,31 +653,32 @@ const Library: React.FC = () => {
         <>
           {viewMode === 'grid' && (
             <div ref={containerRef} className="w-full">
-              {shouldVirtualize ? (
-                <VirtualizedTrackGrid
-                  tracks={filteredAndSortedTracks}
-                  columns={gridParams.columns}
-                  gap={gridParams.gap}
-                  cardWidth={gridParams.cardWidth}
-                  onTrackPlay={handleTrackPlay}
-                  onShare={handleShare}
-                  onSeparateStems={handleSeparateStems}
-                  onExtend={handleExtend}
-                  onCover={handleCover}
-                  onAddVocal={handleAddVocal}
-                  onCreatePersona={handleCreatePersona}
-                  onRetry={handleRetry}
-                  onDelete={handleDelete}
-                />
-              ) : (
-                <div 
-                  className="grid"
-                  style={{
-                    gridTemplateColumns: `repeat(${gridParams.columns}, minmax(280px, ${gridParams.cardWidth}px))`,
-                    gap: `${gridParams.gap}px`,
-                    justifyContent: 'center'
-                  }}
-                >
+              <div className="w-full" style={{ height: 'calc(100vh - 280px)' }}>
+                {shouldVirtualize ? (
+                  <VirtualizedTrackGrid
+                    tracks={filteredAndSortedTracks}
+                    columns={gridParams.columns}
+                    gap={gridParams.gap}
+                    cardWidth={gridParams.cardWidth}
+                    onTrackPlay={handleTrackPlay}
+                    onShare={handleShare}
+                    onSeparateStems={handleSeparateStems}
+                    onExtend={handleExtend}
+                    onCover={handleCover}
+                    onAddVocal={handleAddVocal}
+                    onCreatePersona={handleCreatePersona}
+                    onRetry={handleRetry}
+                    onDelete={handleDelete}
+                  />
+                ) : (
+                  <div 
+                    className="grid overflow-auto h-full scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent"
+                    style={{
+                      gridTemplateColumns: `repeat(${gridParams.columns}, minmax(280px, ${gridParams.cardWidth}px))`,
+                      gap: `${gridParams.gap}px`,
+                      justifyContent: 'center'
+                    }}
+                  >
                   {filteredAndSortedTracks.map((track) => (
                     <div key={track.id} className="relative" style={{ maxWidth: `${gridParams.cardWidth}px` }} aria-busy={loadingTrackId === track.id}>
                       <TrackCard
@@ -694,8 +701,9 @@ const Library: React.FC = () => {
                       )}
                     </div>
                   ))}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
           
