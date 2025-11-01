@@ -442,27 +442,57 @@ const mainHandler = async (req: Request) => {
             suno_task_id: taskId,
           };
 
-          // ✅ FIX: Use INSERT instead of UPSERT to create unique versions
-          const { error: versionError } = await supabase
+          // ✅ Check if version already exists (prevent duplicates from retry callbacks)
+          const { data: existingVersion } = await supabase
             .from("track_versions")
-            .insert({
-              parent_track_id: track.id,
-              variant_index: i,
-              is_preferred_variant: false,
-              is_primary_variant: false,
-              suno_id: sanitizeText(versionTrack.id),
-              audio_url: versionAudioUrl,
-              video_url: versionVideoUrl,
-              cover_url: versionCoverUrl,
-              lyrics: sanitizeText(versionTrack.prompt || versionTrack.lyric || versionTrack.lyrics),
-              duration: Math.round(versionTrack.duration || versionTrack.duration_seconds || 0),
-              metadata: versionMetadata,
-            });
+            .select("id")
+            .eq("parent_track_id", track.id)
+            .eq("variant_index", i)
+            .maybeSingle();
 
-          if (versionError) {
-            console.error(`[suno-callback] Error saving version ${i}:`, versionError);
+          if (existingVersion) {
+            // Update existing version
+            const { error: versionError } = await supabase
+              .from("track_versions")
+              .update({
+                suno_id: sanitizeText(versionTrack.id),
+                audio_url: versionAudioUrl,
+                video_url: versionVideoUrl,
+                cover_url: versionCoverUrl,
+                lyrics: sanitizeText(versionTrack.prompt || versionTrack.lyric || versionTrack.lyrics),
+                duration: Math.round(versionTrack.duration || versionTrack.duration_seconds || 0),
+                metadata: versionMetadata,
+              })
+              .eq("id", existingVersion.id);
+
+            if (versionError) {
+              console.error(`[suno-callback] Error updating version ${i}:`, versionError);
+            } else {
+              console.log(`[suno-callback] Version ${i} updated successfully`);
+            }
           } else {
-            console.log(`[suno-callback] Version ${i} saved/updated successfully`);
+            // Insert new version
+            const { error: versionError } = await supabase
+              .from("track_versions")
+              .insert({
+                parent_track_id: track.id,
+                variant_index: i,
+                is_preferred_variant: false,
+                is_primary_variant: false,
+                suno_id: sanitizeText(versionTrack.id),
+                audio_url: versionAudioUrl,
+                video_url: versionVideoUrl,
+                cover_url: versionCoverUrl,
+                lyrics: sanitizeText(versionTrack.prompt || versionTrack.lyric || versionTrack.lyrics),
+                duration: Math.round(versionTrack.duration || versionTrack.duration_seconds || 0),
+                metadata: versionMetadata,
+              });
+
+            if (versionError) {
+              console.error(`[suno-callback] Error inserting version ${i}:`, versionError);
+            } else {
+              console.log(`[suno-callback] Version ${i} created successfully`);
+            }
           }
         }
       }

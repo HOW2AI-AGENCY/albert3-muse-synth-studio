@@ -435,9 +435,9 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
             suno_id: clip.id || null,
             metadata: {
               mureka_clip_id: clip.id,
+              source: 'mureka',
               created_at: clip.created_at,
-              tags: clip.tags,
-              title: clip.title || clip.name || `${trackData.title || 'Track'} (V${variantIndex + 1})`,
+              variant_type: 'alternate',
             },
           };
         })
@@ -492,16 +492,20 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
       ? (primaryClip.duration > 1000 ? Math.floor(primaryClip.duration / 1000) : primaryClip.duration)
       : 0;
 
-    // ✅ STREAMING: Include streaming URL in metadata for real-time preview
+    // ✅ STREAMING: Include minimal metadata (avoid large objects that break Realtime parsing)
     const metadata: Record<string, unknown> = {
       mureka_clip_id: primaryClip.id,
+      mureka_task_id: taskId,
+      source: 'mureka',
+      provider: 'mureka',
       created_at: primaryClip.created_at,
-      tags: primaryClip.tags,
+      completed_at: new Date().toISOString(),
     };
     
     // Add streaming URL if available (temporary preview during generation)
     if (hasStreamingPreview && streamingUrl) {
       metadata.stream_audio_url = streamingUrl;
+      metadata.streaming_available = true;
       logger.info('🎬 [MUREKA] Streaming URL available for preview', {
         taskId,
         streamUrl: streamingUrl.substring(0, 100),
