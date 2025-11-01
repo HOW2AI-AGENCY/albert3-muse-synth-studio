@@ -112,6 +112,22 @@
     --space-24: 6rem;     /* 96px */
     --space-32: 8rem;     /* 128px */
 
+    /* === PHASE 1: Density Scale & Generator Tokens === */
+    --density-compact: 0.75;         /* 75% of default */
+    --density-normal: 1;             /* 100% - default */
+    --density-comfortable: 1.25;     /* 125% */
+
+    /* Form Control Heights */
+    --control-height-xs: 1.75rem;    /* 28px - ultra compact */
+    --control-height-sm: 2rem;       /* 32px - compact */
+    --control-height-md: 2.25rem;    /* 36px - normal */
+    --control-height-lg: 2.5rem;     /* 40px - comfortable */
+
+    /* Generator Specific Tokens */
+    --generator-header-height: 3.25rem;  /* 52px - compact header */
+    --generator-section-gap: 0.625rem;   /* 10px - tight spacing */
+    --generator-field-gap: 0.5rem;       /* 8px - minimal vertical gap */
+
     /* Радиусы скругления (Более строгие) */
     --radius-none: 0;
     --radius-sm: 0.125rem;    /* 2px */

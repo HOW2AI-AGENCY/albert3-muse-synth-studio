@@ -23,7 +23,7 @@ import { rateLimiter, RATE_LIMIT_CONFIGS } from '@/utils/rateLimiter';
 // Auto-enhancement removed per user request
 
 // Modular components & hooks
-import { GeneratorHeader } from '@/components/generator/GeneratorHeader';
+import { CompactHeader } from '@/components/generator/CompactHeader';
 import { SimpleModeForm } from '@/components/generator/forms/SimpleModeForm';
 import { CustomModeForm } from '@/components/generator/forms/CustomModeForm';
 import type { GenrePreset } from '@/components/generator/types/generator.types';
@@ -417,8 +417,8 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Header */}
-      <GeneratorHeader
+      {/* Compact Header - Phase 1 */}
+      <CompactHeader
         selectedProvider={selectedProvider as 'suno' | 'mureka'}
         onProviderChange={handleProviderChange}
         mode={state.mode}
