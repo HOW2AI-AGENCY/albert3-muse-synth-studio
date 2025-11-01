@@ -49,7 +49,7 @@ export const PlaybackControls = memo(({
         variant="ghost"
         onClick={onPlayPrevious}
         title="Предыдущий трек (←)"
-        className="h-10 w-10 hover:bg-primary/10 hover:scale-110 transition-all duration-200 group"
+        className="icon-button-touch hover:bg-primary/10 hover:scale-110 transition-all duration-200 group"
       >
         <SkipBack className="h-5 w-5 group-hover:text-primary transition-colors duration-200" />
       </Button>
@@ -59,7 +59,7 @@ export const PlaybackControls = memo(({
         variant="default"
         onClick={onTogglePlayPause}
         title={isPlaying ? "Пауза (Space)" : "Воспроизвести (Space)"}
-        className="h-14 w-14 rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-300 hover:scale-110 group relative overflow-hidden"
+        className="min-h-[56px] min-w-[56px] h-14 w-14 rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-300 hover:scale-110 group relative overflow-hidden touch-optimized"
       >
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
         {isPlaying ? (
@@ -74,7 +74,7 @@ export const PlaybackControls = memo(({
         variant="ghost"
         onClick={onPlayNext}
         title="Следующий трек (→)"
-        className="h-10 w-10 hover:bg-primary/10 hover:scale-110 transition-all duration-200 group"
+        className="icon-button-touch hover:bg-primary/10 hover:scale-110 transition-all duration-200 group"
       >
         <SkipForward className="h-5 w-5 group-hover:text-primary transition-colors duration-200" />
       </Button>
@@ -88,7 +88,7 @@ export const PlaybackControls = memo(({
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="relative h-10 w-10 hover:bg-primary/10 hover:scale-110 transition-all duration-200"
+                  className="relative icon-button-touch hover:bg-primary/10 hover:scale-110 transition-all duration-200"
                   title={`${availableVersions.length} версий`}
                 >
                   <List className="h-5 w-5" />

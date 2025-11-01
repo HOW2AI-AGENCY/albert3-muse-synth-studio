@@ -33,7 +33,7 @@ export const VolumeControl = memo(({
               variant="ghost"
               onClick={onToggleMute}
               title={isMuted ? 'Включить звук' : 'Выключить звук'}
-              className="h-10 w-10 hover:bg-primary/10 hover:scale-110 transition-all duration-200 group"
+              className="icon-button-touch hover:bg-primary/10 hover:scale-110 transition-all duration-200 group"
             >
               {isMuted || volume === 0 ? (
                 <VolumeX className="h-5 w-5 group-hover:text-primary transition-colors duration-200" />
@@ -70,7 +70,7 @@ export const VolumeControl = memo(({
             size="icon"
             variant="ghost"
             onClick={onClose}
-            className="h-10 w-10 hover:bg-destructive/10 hover:text-destructive hover:scale-110 transition-all duration-200"
+            className="icon-button-touch hover:bg-destructive/10 hover:text-destructive hover:scale-110 transition-all duration-200"
           >
             <X className="h-5 w-5" />
           </Button>

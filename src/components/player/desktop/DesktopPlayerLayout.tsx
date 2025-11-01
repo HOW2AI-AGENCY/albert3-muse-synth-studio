@@ -60,11 +60,12 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
 
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 z-[60] transition-all duration-500 ease-out ${
+      className={`fixed bottom-0 left-0 right-0 transition-all duration-500 ease-out ${
         isVisible 
           ? 'translate-y-0 opacity-100' 
           : 'translate-y-full opacity-0'
       }`}
+      style={{ zIndex: 'var(--z-desktop-player)' }}
     >
       {/* Background blur and gradient */}
       <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/90 to-background/80 backdrop-blur-xl" />

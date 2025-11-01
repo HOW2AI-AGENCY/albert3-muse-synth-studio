@@ -117,11 +117,12 @@ const TrackCardComponent = ({
       variants={fadeInUp}
       initial="initial"
       animate="animate"
-      whileHover={{ y: -4 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ y: 'var(--hover-lift-offset, -4px)' }}
+      whileTap={{ scale: 'var(--tap-scale, 0.98)' }}
       role="article"
       aria-label={`Трек ${track.title}`}
       tabIndex={0}
+      className="touch-optimized"
     >
       <Card
         className={cn(
