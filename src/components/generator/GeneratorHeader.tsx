@@ -96,7 +96,7 @@ export const GeneratorHeader = memo(({
             {lyricsLineCount} строк
           </Badge>
         )}
-        {rateLimitRemaining !== undefined && rateLimitMax && (
+        {rateLimitRemaining !== undefined && rateLimitMax && rateLimitRemaining <= 2 && (
           <Badge 
             variant={rateLimitRemaining < 3 ? "destructive" : "outline"} 
             className="h-5 text-[10px] px-2"
