@@ -305,6 +305,43 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     }
   }, [state, generate, toast, vibrate, selectedProvider, savePrompt]);
 
+  // Prompt boost handler
+  const handleBoostPrompt = useCallback(async () => {
+    if (!state.params.prompt.trim()) return;
+    
+    state.setIsEnhancing(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('improve-prompt', {
+        body: { 
+          prompt: state.params.prompt,
+          provider: selectedProvider 
+        }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.enhancedPrompt) {
+        state.setParam('prompt', data.enhancedPrompt);
+        state.setDebouncedPrompt(data.enhancedPrompt);
+        
+        sonnerToast.success('Промпт улучшен!', {
+          description: 'AI применил рекомендации',
+          duration: 2000
+        });
+      }
+    } catch (error) {
+      logger.error('Failed to boost prompt', error as Error);
+      toast({
+        variant: 'destructive',
+        title: 'Ошибка улучшения',
+        description: 'Не удалось улучшить промпт. Попробуйте позже.'
+      });
+    } finally {
+      state.setIsEnhancing(false);
+    }
+  }, [state, selectedProvider, toast]);
+
   // Enhanced prompt handlers
   const handleEnhancedPromptAccept = useCallback((finalPrompt: string) => {
     state.setParam('prompt', finalPrompt);
@@ -392,6 +429,8 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               params={state.params}
               onParamChange={state.setParam}
               onGenerate={handleGenerate}
+              onBoostPrompt={handleBoostPrompt}
+              isBoosting={state.isEnhancing}
               isGenerating={isGenerating || state.isEnhancing}
               debouncedPrompt={state.debouncedPrompt}
               onDebouncedPromptChange={state.setDebouncedPrompt}
@@ -404,11 +443,15 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               onOpenLyricsDialog={() => state.setLyricsDialogOpen(true)}
               onAudioUpload={(e) => {
                 audioUpload.handleAudioFileSelect(e);
-                // Auto-switch already handled in CompactHeader
               }}
               onPersonaClick={() => setPersonaDialogOpen(true)}
+              onOpenHistory={() => state.setHistoryDialogOpen(true)}
+              onBoostPrompt={handleBoostPrompt}
+              isBoosting={state.isEnhancing}
               isGenerating={isGenerating || state.isEnhancing}
+              debouncedPrompt={state.debouncedPrompt}
               debouncedLyrics={state.debouncedLyrics}
+              onDebouncedPromptChange={state.setDebouncedPrompt}
               onDebouncedLyricsChange={state.setDebouncedLyrics}
             />
           )}

@@ -1,16 +1,25 @@
-import React, { memo, useCallback, useRef } from 'react';
+import React, { memo, useCallback, useRef, lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
-import { Upload, User, ChevronDown, Music, Sparkles, Plus } from '@/utils/iconImports';
+import { Upload, User, ChevronDown, Music, Sparkles, Plus, History } from '@/utils/iconImports';
 import { LyricsInput } from '@/components/lyrics/legacy/LyricsInput';
 import { StyleTagsInput } from './StyleTagsInput';
 import { AdvancedControls } from './AdvancedControls';
+import { StyleRecommendationsInline } from '@/components/generator/StyleRecommendationsInline';
+import { PromptCharacterCounter } from '@/components/generator/PromptCharacterCounter';
 import type { GenerationParams } from '../types/generator.types';
 import type { MusicProvider } from '@/config/provider-models';
+import type { AdvancedPromptResult } from '@/services/ai/advanced-prompt-generator';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
+import { useIsMobile } from '@/hooks/use-mobile';
+
+const AudioDescriber = lazy(() => import('@/components/audio/AudioDescriber').then(m => ({ default: m.AudioDescriber })));
+
+const MAX_PROMPT_LENGTH = 500;
 
 interface CompactCustomFormProps {
   params: GenerationParams;
@@ -19,8 +28,13 @@ interface CompactCustomFormProps {
   onOpenLyricsDialog: () => void;
   onAudioUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onPersonaClick: () => void;
+  onOpenHistory?: () => void;
+  onBoostPrompt?: () => void;
+  isBoosting?: boolean;
   isGenerating: boolean;
+  debouncedPrompt: string;
   debouncedLyrics: string;
+  onDebouncedPromptChange: (value: string) => void;
   onDebouncedLyricsChange: (value: string) => void;
 }
 
@@ -31,11 +45,17 @@ export const CompactCustomForm = memo(({
   onOpenLyricsDialog,
   onAudioUpload,
   onPersonaClick,
+  onOpenHistory,
+  onBoostPrompt,
+  isBoosting = false,
   isGenerating,
+  debouncedPrompt,
   debouncedLyrics,
+  onDebouncedPromptChange,
   onDebouncedLyricsChange,
 }: CompactCustomFormProps) => {
   const audioInputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
   const lyricsLineCount = debouncedLyrics.split('\n').filter(l => l.trim()).length;
   const tagsCount = params.tags.split(',').filter(t => t.trim()).length;
 
@@ -48,10 +68,106 @@ export const CompactCustomForm = memo(({
     }
   }, [params.tags, onParamChange]);
 
+  const handleApplyTags = useCallback((newTags: string[]) => {
+    const existingTags = params.tags.split(',').map(t => t.trim()).filter(Boolean);
+    const uniqueTags = Array.from(new Set([...existingTags, ...newTags]));
+    onParamChange('tags', uniqueTags.join(', '));
+  }, [params.tags, onParamChange]);
+
+  const handleAdvancedPromptGenerated = useCallback((result: AdvancedPromptResult) => {
+    logger.info('Advanced prompt applied to form', 'CompactCustomForm', {
+      promptLength: result.enhancedPrompt.length,
+      lyricsLength: result.formattedLyrics.length,
+      metaTagsCount: result.metaTags.length,
+    });
+
+    onParamChange('prompt', result.enhancedPrompt);
+    onDebouncedPromptChange(result.enhancedPrompt);
+
+    if (result.formattedLyrics.trim()) {
+      onParamChange('lyrics', result.formattedLyrics);
+      onDebouncedLyricsChange(result.formattedLyrics);
+    }
+
+    const styleMeta = result.metaTags.find(t => t.toLowerCase().includes('style'));
+    if (styleMeta) {
+      const styleValue = styleMeta.replace(/^style:\s*/i, '').trim();
+      const existingTags = params.tags.split(',').map(t => t.trim()).filter(Boolean);
+      const newStyleTags = styleValue.split(',').map(t => t.trim()).filter(Boolean);
+      const uniqueTags = Array.from(new Set([...existingTags, ...newStyleTags]));
+      onParamChange('tags', uniqueTags.join(', '));
+    }
+  }, [params.tags, onParamChange, onDebouncedPromptChange, onDebouncedLyricsChange]);
+
   return (
     <div className="flex flex-col h-full">
       {/* Main Content - Scrollable */}
       <div className="flex-1 overflow-y-auto space-y-2 pb-20">
+        {/* Prompt with AI Boost & History */}
+        <div className="space-y-1.5 p-2">
+          <div className="flex items-center justify-between">
+            <PromptCharacterCounter 
+              currentLength={debouncedPrompt.length} 
+              maxLength={MAX_PROMPT_LENGTH}
+            />
+            {onOpenHistory && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onOpenHistory}
+                disabled={isGenerating}
+                className="h-6 px-2 text-[10px] gap-1"
+              >
+                <History className="h-3 w-3" />
+                История
+              </Button>
+            )}
+          </div>
+          <div className="relative">
+            <Input
+              placeholder="Опишите стиль, жанр, настроение..."
+              value={debouncedPrompt}
+              onChange={(e) => {
+                if (e.target.value.length <= MAX_PROMPT_LENGTH) {
+                  onDebouncedPromptChange(e.target.value);
+                }
+              }}
+              disabled={isGenerating}
+              className={cn("pr-10", isMobile ? "h-10 text-base" : "h-9 text-sm")}
+              maxLength={MAX_PROMPT_LENGTH}
+            />
+            {onBoostPrompt && debouncedPrompt.trim() && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 text-primary hover:text-primary hover:bg-primary/10"
+                onClick={onBoostPrompt}
+                disabled={isBoosting || isGenerating}
+                title="Улучшить промпт с помощью AI"
+              >
+                <Sparkles className={cn("h-3.5 w-3.5", isBoosting && "animate-spin")} />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Title */}
+        <div className="space-y-1 p-2">
+          <Label htmlFor="custom-title" className="text-xs font-medium">
+            Название
+          </Label>
+          <Input
+            id="custom-title"
+            type="text"
+            placeholder="Авто-генерация если пусто"
+            value={params.title}
+            onChange={(e) => onParamChange('title', e.target.value)}
+            className={cn(isMobile ? "h-10 text-base" : "h-8 text-sm")}
+            disabled={isGenerating}
+            maxLength={80}
+          />
+        </div>
+
         {/* Quick Actions Row */}
         <div className="grid grid-cols-2 gap-2 p-2 border border-accent/40 rounded-lg bg-accent/5">
           {/* Audio Upload Button */}
@@ -129,7 +245,7 @@ export const CompactCustomForm = memo(({
           </CollapsibleContent>
         </Collapsible>
 
-        {/* Styles Section */}
+        {/* Styles Section with AI Recommendations */}
         <Collapsible defaultOpen={tagsCount > 0}>
           <CollapsibleTrigger className="flex items-center justify-between w-full p-2 hover:bg-accent/5 rounded-md transition-colors group">
             <div className="flex items-center gap-2 text-sm font-medium">
@@ -143,6 +259,17 @@ export const CompactCustomForm = memo(({
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-2 space-y-2">
+            {/* AI Recommendations */}
+            {debouncedPrompt.length >= 10 && (
+              <StyleRecommendationsInline
+                prompt={debouncedPrompt}
+                currentTags={params.tags.split(',').map(t => t.trim()).filter(Boolean)}
+                lyrics={params.lyrics}
+                onApplyTags={handleApplyTags}
+                onAdvancedPromptGenerated={handleAdvancedPromptGenerated}
+              />
+            )}
+
             <StyleTagsInput
               tags={params.tags}
               negativeTags={params.negativeTags}
@@ -167,6 +294,16 @@ export const CompactCustomForm = memo(({
                 </Button>
               ))}
             </div>
+
+            {/* AudioDescriber if reference exists */}
+            {params.referenceAudioUrl && (
+              <Suspense fallback={<div className="text-xs text-muted-foreground">Загрузка анализатора...</div>}>
+                <AudioDescriber 
+                  audioUrl={params.referenceAudioUrl} 
+                  onDescriptionGenerated={(description) => onParamChange('prompt', description)}
+                />
+              </Suspense>
+            )}
           </CollapsibleContent>
         </Collapsible>
 
@@ -177,23 +314,6 @@ export const CompactCustomForm = memo(({
             <span className="text-sm font-medium">Advanced Options</span>
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-2 space-y-3">
-            {/* Song Title */}
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground flex items-center gap-1">
-                <Music className="h-3 w-3" />
-                Song Title (Optional)
-              </label>
-              <Input
-                type="text"
-                placeholder="Auto-generated if empty"
-                value={params.title}
-                onChange={(e) => onParamChange('title', e.target.value)}
-                className="h-8 text-sm"
-                disabled={isGenerating}
-                maxLength={80}
-              />
-            </div>
-
             {/* Advanced Controls */}
             <AdvancedControls
               provider={params.provider as MusicProvider}
@@ -226,12 +346,15 @@ export const CompactCustomForm = memo(({
           {/* Create Button */}
           <Button
             onClick={onGenerate}
-            disabled={isGenerating || (!params.prompt.trim() && !debouncedLyrics.trim())}
+            disabled={isGenerating || (!debouncedPrompt.trim() && !debouncedLyrics.trim())}
             size="lg"
-            className="h-10 px-8 gap-2 font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+            className={cn(
+              "px-8 gap-2 font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70",
+              isMobile ? "h-12 text-base" : "h-10 text-sm"
+            )}
           >
             <Music className="h-4 w-4" />
-            {isGenerating ? 'Creating...' : 'Create'}
+            {isGenerating ? 'Генерация музыки...' : 'Создать музыку'}
           </Button>
         </div>
       </div>
