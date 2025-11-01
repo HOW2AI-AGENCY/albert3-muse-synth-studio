@@ -85,6 +85,8 @@ export interface MurekaTrack {
   url?: string;
   /** URL аудиофайла (legacy format) */
   audio_url?: string;
+  /** URL стриминга (при статусе streaming) */
+  stream_url?: string;
   /** URL FLAC файла (API v7) */
   flac_url?: string;
   /** URL обложки (опционально) */

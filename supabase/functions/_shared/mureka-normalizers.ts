@@ -179,22 +179,26 @@ export function normalizeMurekaMusicResponse(
       
       const rawClips = (dataObj.choices || dataObj.clips || dataObj.data || []) as any[];
       
-      // ✅ TRANSFORM: Normalize audio URL with fallback chain (url → audio_url → flac_url)
+      // ✅ TRANSFORM: Normalize audio URL with fallback chain (url → audio_url → stream_url → flac_url)
       const clips = rawClips.map((clip: any, index: number) => {
-        const audioUrl = clip.url || clip.audio_url || clip.flac_url || '';
+        // ✅ FIX: Support stream_url for streaming phase
+        const audioUrl = clip.url || clip.audio_url || clip.stream_url || clip.flac_url || '';
         
         logger.info(`🎧 [MUREKA-NORMALIZER] Clip ${index} audio URL detection`, {
           clipId: clip.id,
           hasUrl: !!clip.url,
           hasAudioUrl: !!clip.audio_url,
+          hasStreamUrl: !!clip.stream_url, // ✅ NEW: Log stream_url presence
           hasFlacUrl: !!clip.flac_url,
           selectedUrl: audioUrl ? audioUrl.substring(0, 80) : 'NONE',
+          isStreaming: !!clip.stream_url && !clip.audio_url, // ✅ NEW: Flag streaming
           allClipFields: Object.keys(clip),
         });
         
         return {
           ...clip,
           audio_url: audioUrl,
+          is_streaming: !!clip.stream_url && !clip.audio_url, // ✅ NEW: Mark as streaming
         };
       });
       
@@ -257,21 +261,25 @@ export function normalizeMurekaMusicResponse(
     // ✅ FIX: Type-safe extraction of clips
     const rawClips = (directResponse.choices || directResponse.clips || directResponse.data || []) as any[];
     
-    // ✅ TRANSFORM: Normalize audio URL with fallback chain (url → audio_url → flac_url)
+    // ✅ TRANSFORM: Normalize audio URL with fallback chain (url → audio_url → stream_url → flac_url)
     const clips = rawClips.map((clip: any, index: number) => {
-      const audioUrl = clip.url || clip.audio_url || clip.flac_url || '';
+      // ✅ FIX: Support stream_url for streaming phase
+      const audioUrl = clip.url || clip.audio_url || clip.stream_url || clip.flac_url || '';
       
       logger.info(`🎧 [MUREKA-NORMALIZER] Direct clip ${index} audio URL detection`, {
         clipId: clip.id,
         hasUrl: !!clip.url,
         hasAudioUrl: !!clip.audio_url,
+        hasStreamUrl: !!clip.stream_url, // ✅ NEW: Log stream_url presence
         hasFlacUrl: !!clip.flac_url,
         selectedUrl: audioUrl ? audioUrl.substring(0, 80) : 'NONE',
+        isStreaming: !!clip.stream_url && !clip.audio_url, // ✅ NEW: Flag streaming
       });
       
       return {
         ...clip,
         audio_url: audioUrl,
+        is_streaming: !!clip.stream_url && !clip.audio_url, // ✅ NEW: Mark as streaming
       };
     });
     

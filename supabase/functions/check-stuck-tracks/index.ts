@@ -182,13 +182,42 @@ serve(async (req: Request): Promise<Response> => {
           const rawStatus = (queryResult.data as any)?.status;
           const clips = queryResult.data?.clips || queryResult.data?.choices || [];
           
-          // ✅ FIX: Mureka API v7 uses 'url' instead of 'audio_url'
+          // ✅ FIX: Mureka API v7 uses 'url' and 'stream_url' (streaming phase)
           const mainClip = clips[0];
-          const hasAudioUrl = mainClip && (mainClip.url || mainClip.audio_url);
+          const hasAudioUrl = mainClip && (mainClip.url || mainClip.audio_url || mainClip.stream_url);
+          const isStreaming = mainClip && mainClip.stream_url && !mainClip.url && !mainClip.audio_url;
           
-          if (queryResult.code === 200 && clips.length > 0 && hasAudioUrl) {
+          // ✅ FIX: Don't mark as failed if still streaming
+          if (isStreaming && (rawStatus === 'streaming' || rawStatus === 'running')) {
+            logger.info('🎵 Track is streaming, keeping as processing', { 
+              trackId: track.id, 
+              status: rawStatus,
+              hasStreamUrl: !!mainClip?.stream_url
+            });
+            
+            await supabaseAdmin
+              .from('tracks')
+              .update({
+                metadata: {
+                  ...metadata,
+                  sync_check_at: new Date().toISOString(),
+                  sync_status: 'streaming',
+                }
+              })
+              .eq('id', track.id);
+            
+            results.push({ 
+              trackId: track.id, 
+              action: 'still_streaming',
+              provider: 'mureka',
+              status: rawStatus 
+            });
+            continue; // Skip to next track
+          }
+          
+          if (queryResult.code === 200 && clips.length > 0 && hasAudioUrl && !isStreaming) {
             const clip = mainClip;
-            const audioUrlFromApi = clip.url || clip.audio_url; // Support both formats
+            const audioUrlFromApi = clip.url || clip.audio_url; // Support both formats (NOT stream_url for final save)
             
             // Download and upload to storage
             const { downloadAndUploadAudio, downloadAndUploadCover } = 
