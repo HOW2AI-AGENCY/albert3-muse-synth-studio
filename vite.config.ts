@@ -56,6 +56,7 @@ export default defineConfig(({ mode }) => ({
       '@radix-ui/react-select',
       'framer-motion',
       '@tanstack/react-query',
+      'sonner',
     ],
   },
   plugins: [
@@ -80,6 +81,7 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    dedupe: ["react", "react-dom"],
   },
   test: {
     globals: true,
