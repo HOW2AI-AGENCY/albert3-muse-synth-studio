@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/utils/logger";
 import { Copy, Check, FileText, Loader2 } from "@/utils/iconImports";
-import { StructuredLyrics } from "./legacy/StructuredLyrics";
+import { CompactStructuredLyrics } from "./CompactStructuredLyrics";
 
 interface LyricsVariant {
   id: string;
@@ -116,73 +116,81 @@ export function LyricsVariantsPanel({ jobId, onSelect }: LyricsVariantsPanelProp
   }
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between mb-4">
+    <Card className="p-3 max-h-[70vh] flex flex-col">
+      <div className="flex items-center justify-between mb-3 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <FileText className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold">Варианты текста</h3>
-          <Badge variant="secondary">{variants.length}</Badge>
+          <FileText className="w-4 h-4 text-primary" />
+          <h3 className="font-medium text-sm">Варианты текста</h3>
+          <Badge variant="secondary" className="h-5 text-xs">{variants.length}</Badge>
         </div>
       </div>
 
-      <Tabs defaultValue="0" className="w-full">
-        <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${variants.length}, 1fr)` }}>
+      <Tabs defaultValue="0" className="flex-1 flex flex-col overflow-hidden">
+        <TabsList className="grid w-full flex-shrink-0 h-9 mb-2" style={{ gridTemplateColumns: `repeat(${variants.length}, 1fr)` }}>
           {variants.map((variant, index) => (
-            <TabsTrigger key={variant.id} value={index.toString()}>
-              Вариант {index + 1}
+            <TabsTrigger key={variant.id} value={index.toString()} className="text-xs px-2">
+              #{index + 1}
             </TabsTrigger>
           ))}
         </TabsList>
 
         {variants.map((variant, index) => (
-          <TabsContent key={variant.id} value={index.toString()} className="space-y-3">
+          <TabsContent 
+            key={variant.id} 
+            value={index.toString()} 
+            className="flex-1 flex flex-col overflow-hidden mt-0 space-y-0"
+          >
             {variant.status === 'complete' && variant.content ? (
               <>
                 {variant.title && (
-                  <div className="text-center pb-2 border-b mb-3">
-                    <h4 className="font-semibold text-lg">{variant.title}</h4>
+                  <div className="text-center pb-2 border-b mb-2 flex-shrink-0">
+                    <h4 className="font-medium text-sm">{variant.title}</h4>
                   </div>
                 )}
                 
-                <StructuredLyrics lyrics={variant.content} />
+                <div className="flex-1 overflow-y-auto pr-2 mb-2 min-h-0">
+                  <CompactStructuredLyrics lyrics={variant.content} />
+                </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-shrink-0 pt-2 border-t">
                   <Button
                     variant="outline"
-                    className="flex-1"
+                    size="sm"
+                    className="flex-1 h-8 text-xs"
                     onClick={() => copyToClipboard(variant.content!, index)}
                   >
                     {copiedIndex === index ? (
                       <>
-                        <Check className="mr-2 h-4 w-4" />
+                        <Check className="mr-1 h-3 w-3" />
                         Скопировано
                       </>
                     ) : (
                       <>
-                        <Copy className="mr-2 h-4 w-4" />
+                        <Copy className="mr-1 h-3 w-3" />
                         Копировать
                       </>
                     )}
                   </Button>
                   {onSelect && (
                     <Button
-                      className="flex-1"
+                      size="sm"
+                      className="flex-1 h-8 text-xs"
                       onClick={() => onSelect(variant)}
                     >
-                      Применить к треку
+                      Применить
                     </Button>
                   )}
                 </div>
               </>
             ) : variant.status === 'failed' ? (
-              <div className="p-4 text-center text-destructive">
-                <p className="font-semibold mb-1">Ошибка генерации</p>
-                <p className="text-sm">{variant.error_message || 'Неизвестная ошибка'}</p>
+              <div className="p-3 text-center text-destructive">
+                <p className="font-medium text-sm mb-1">Ошибка генерации</p>
+                <p className="text-xs">{variant.error_message || 'Неизвестная ошибка'}</p>
               </div>
             ) : (
-              <div className="p-8 text-center">
-                <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground mb-3" />
-                <p className="text-sm text-muted-foreground">Генерация...</p>
+              <div className="p-6 text-center">
+                <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground mb-2" />
+                <p className="text-xs text-muted-foreground">Генерация...</p>
               </div>
             )}
           </TabsContent>
