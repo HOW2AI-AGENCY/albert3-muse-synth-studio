@@ -497,6 +497,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               onParamChange={state.setParam}
               onGenerate={handleGenerate}
               onBoostPrompt={handleBoostPrompt}
+              onOpenHistory={() => state.setHistoryDialogOpen(true)}
               isBoosting={state.isEnhancing}
               isGenerating={isGenerating || state.isEnhancing}
               debouncedPrompt={state.debouncedPrompt}
