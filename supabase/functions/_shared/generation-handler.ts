@@ -393,13 +393,23 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
       });
     }
 
-    // ✅ FIX: Get existing track data for title fallback
+    // ✅ FIX: Get existing track data for title fallback and metadata merge
     const { data: existingTrack } = await this.supabase
       .from('tracks')
-      .select('title, prompt')
+      .select('title, prompt, metadata')
       .eq('id', trackId)
       .single();
 
+    // ✅ STREAMING: Merge provider metadata with existing metadata
+    const existingMetadata = existingTrack?.metadata && typeof existingTrack.metadata === 'object' 
+      ? existingTrack.metadata as Record<string, unknown> 
+      : {};
+    const finalMetadata = {
+      ...existingMetadata,
+      ...trackData.metadata, // Include streaming URLs and other provider-specific data
+      completed_at: new Date().toISOString(),
+    };
+    
     // Prepare update object
     const updateData: any = {
       status: 'completed',
@@ -407,9 +417,7 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
       cover_url: finalCoverUrl,
       video_url: finalVideoUrl,
       duration: trackData.duration,
-      metadata: {
-        completed_at: new Date().toISOString(),
-      },
+      metadata: finalMetadata, // ✅ Include merged metadata with streaming support
     };
 
     // ✅ FIX: Title fallback chain: provider → existing → truncated prompt

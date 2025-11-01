@@ -193,6 +193,7 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
       prompt: params.prompt || undefined,
       model: params.modelVersion || 'auto',
       n: 2, // Generate 2 variants
+      stream: true, // ✅ Enable streaming for real-time audio preview
     };
 
     logger.info('🎵 [MUREKA] Calling generateSong API', { 
@@ -265,6 +266,8 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
 
     logger.info('🔍 [MUREKA] Raw query result received', { 
       taskId,
+      status: rawQueryResult.data?.status,
+      hasStreamUrl: !!(rawQueryResult.data?.choices?.[0]?.url || rawQueryResult.data?.clips?.[0]?.url),
       rawResultType: typeof rawQueryResult,
       rawResultKeys: rawQueryResult && typeof rawQueryResult === 'object' ? Object.keys(rawQueryResult) : [],
       rawResultPreview: JSON.stringify(rawQueryResult).substring(0, 800),
@@ -315,12 +318,18 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
 
     const primaryClip = normalized.clips[0];
     
+    // ✅ STREAMING: Detect if streaming URL is available (temporary preview)
+    const streamingUrl = primaryClip.url || primaryClip.audio_url;
+    const hasStreamingPreview = !!streamingUrl && streamingUrl.includes('stream');
+    
     logger.info('🎵 [MUREKA] Primary clip detailed data', {
       taskId,
       clipId: primaryClip.id,
       hasAudioUrl: !!primaryClip.audio_url,
       audioUrl: primaryClip.audio_url?.substring(0, 100),
       audioUrlLength: primaryClip.audio_url?.length,
+      hasStreamingUrl: hasStreamingPreview,
+      streamingUrl: hasStreamingPreview ? streamingUrl?.substring(0, 100) : null,
       hasCoverUrl: !!(primaryClip.image_url || primaryClip.cover_url),
       coverUrl: (primaryClip.image_url || primaryClip.cover_url)?.substring(0, 80),
       title: primaryClip.title || primaryClip.name,
@@ -483,6 +492,22 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
       ? (primaryClip.duration > 1000 ? Math.floor(primaryClip.duration / 1000) : primaryClip.duration)
       : 0;
 
+    // ✅ STREAMING: Include streaming URL in metadata for real-time preview
+    const metadata: Record<string, unknown> = {
+      mureka_clip_id: primaryClip.id,
+      created_at: primaryClip.created_at,
+      tags: primaryClip.tags,
+    };
+    
+    // Add streaming URL if available (temporary preview during generation)
+    if (hasStreamingPreview && streamingUrl) {
+      metadata.stream_audio_url = streamingUrl;
+      logger.info('🎬 [MUREKA] Streaming URL available for preview', {
+        taskId,
+        streamUrl: streamingUrl.substring(0, 100),
+      });
+    }
+    
     return {
       status: 'completed',
       audio_url: audioUrl,
@@ -495,6 +520,7 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
       duration: durationInSeconds,
       // ✅ FIX: Используем реальное название из API, fallback на оригинальный title из track
       title: primaryClip.title || primaryClip.name || undefined,
+      metadata, // ✅ Include streaming metadata
     };
   }
 

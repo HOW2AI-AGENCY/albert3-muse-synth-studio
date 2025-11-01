@@ -75,6 +75,7 @@ export interface ProviderTrackData {
   duration?: number;
   title?: string;
   error?: string;
+  metadata?: Record<string, unknown>; // ✅ Optional metadata for streaming URLs, etc.
 }
 
 // ============= Polling Types =============

@@ -125,13 +125,13 @@ export class SunoGenerationHandler extends GenerationHandler<SunoGenerationParam
     const customMode = params.customMode ?? (params.lyrics ? true : false);
 
     // Build Suno API payload
-    // ✅ CRITICAL FIX: Use correct parameter name for instrumental mode
+    // ✅ CRITICAL FIX: Default model V5 + correct parameter name for instrumental mode
     const sunoPayload: SunoGenerationPayload = {
       prompt: customMode ? (params.lyrics || '') : (params.prompt || ''),
       tags: params.styleTags || [],
       title: params.title || 'Generated Track',
       make_instrumental: !params.hasVocals, // ← Convert hasVocals to make_instrumental
-      model: (params.modelVersion as SunoGenerationPayload['model']) || 'V5',
+      model: (params.modelVersion as SunoGenerationPayload['model']) || 'V5', // ← Default V5
       customMode: customMode,
       callBackUrl: this.callbackUrl ?? undefined,
       ...(params.negativeTags ? { negativeTags: params.negativeTags } : {}),

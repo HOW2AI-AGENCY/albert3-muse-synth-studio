@@ -442,12 +442,14 @@ const mainHandler = async (req: Request) => {
             suno_task_id: taskId,
           };
 
+          // ✅ FIX: Use INSERT instead of UPSERT to create unique versions
           const { error: versionError } = await supabase
             .from("track_versions")
-            .upsert({
+            .insert({
               parent_track_id: track.id,
-              variant_index: i, // ✅ FIX: Используем правильное имя колонки
-              is_preferred_variant: false, // ✅ FIX: Используем правильное имя колонки
+              variant_index: i,
+              is_preferred_variant: false,
+              is_primary_variant: false,
               suno_id: sanitizeText(versionTrack.id),
               audio_url: versionAudioUrl,
               video_url: versionVideoUrl,
@@ -455,7 +457,7 @@ const mainHandler = async (req: Request) => {
               lyrics: sanitizeText(versionTrack.prompt || versionTrack.lyric || versionTrack.lyrics),
               duration: Math.round(versionTrack.duration || versionTrack.duration_seconds || 0),
               metadata: versionMetadata,
-            }, { onConflict: "parent_track_id,variant_index" }); // ✅ FIX: Обновлен onConflict
+            });
 
           if (versionError) {
             console.error(`[suno-callback] Error saving version ${i}:`, versionError);
