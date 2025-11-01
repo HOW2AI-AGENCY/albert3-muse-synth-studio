@@ -342,10 +342,19 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
       return result;
     }
   }
+
+  // ✅ НОВОЕ: Формат 2a.1 - data как строка (taskId строкой)
+  if ('data' in record && typeof (record as any).data === 'string') {
+    const candidate = normaliseString((record as any).data);
+    if (candidate) {
+      logger.info('Found taskId in data string');
+      return { taskId: candidate, jobId: normaliseString((record as any).jobId || (record as any).job_id) ?? null };
+    }
+  }
   
   // Формат 2b: Массив с data/results (callback ответы)
-  if ('data' in record && Array.isArray(record.data) && record.data.length > 0) {
-    const first = record.data[0];
+  if ('data' in record && Array.isArray((record as any).data) && (record as any).data.length > 0) {
+    const first = (record as any).data[0];
     if (first && typeof first === 'object') {
       const result = parseTaskId(first);
       if (result.taskId) {
