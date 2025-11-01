@@ -67,8 +67,44 @@ export const useTracks = (refreshTrigger?: number, _options?: UseTracksOptions) 
 
       lastUserIdRef.current = user.id;
 
-      // Загружаем треки из БД (ApiService больше не дублирует кэширование)
-      const userTracks = await ApiService.getUserTracks(user.id);
+      // ✅ ОПТИМИЗАЦИЯ: Загружаем треки с JOINами вместо N+1 запросов
+      logInfo('Loading tracks with optimized query', 'useTracks', { userId: user.id });
+      
+      const { data: tracksData, error } = await supabase
+        .from('tracks')
+        .select(`
+          *,
+          track_versions!track_versions_parent_track_id_fkey (
+            id,
+            variant_index,
+            audio_url,
+            cover_url,
+            duration,
+            is_primary_variant,
+            is_preferred_variant
+          ),
+          track_stems (
+            id,
+            stem_type,
+            audio_url,
+            separation_mode
+          ),
+          profiles!tracks_user_id_fkey (
+            id,
+            full_name,
+            avatar_url
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        logError('Failed to load tracks', error as Error, 'useTracks', { userId: user.id });
+        throw error;
+      }
+
+      // Преобразуем данные в Track[] формат
+      const userTracks: Track[] = (tracksData || []).map(mapTrackRowToTrack);
       
       // Кэшируем загруженные треки в IndexedDB
       const tracksToCache: Omit<CachedTrack, 'cached_at'>[] = userTracks
