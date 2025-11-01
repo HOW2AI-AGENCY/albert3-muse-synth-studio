@@ -9,12 +9,14 @@
  * @since 2025-10-15
  */
 
-import { memo } from 'react';
+import { memo, useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Music, Sparkles, Check, AlertCircle } from '@/utils/iconImports';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Loader2, Music, Sparkles, Check, AlertCircle, ChevronDown, Copy, FileText } from '@/utils/iconImports';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import type { SongRecognition, SongDescription } from '@/hooks/useReferenceAnalysis';
 
 // ============================================================================
@@ -60,6 +62,36 @@ export const ReferenceAnalysisCard = memo(({
   onApplyAll,
   className
 }: ReferenceAnalysisCardProps) => {
+  // ============================================================================
+  // STATE
+  // ============================================================================
+
+  const [isLyricsExpanded, setIsLyricsExpanded] = useState(false);
+
+  // ============================================================================
+  // COMPUTED: Lyrics Data
+  // ============================================================================
+
+  const metadata = recognition?.metadata as Record<string, unknown> | undefined;
+  const lyricsText = typeof metadata?.lyrics_text === 'string' ? metadata.lyrics_text : undefined;
+  const lyricsLines = lyricsText?.split('\n').filter(line => line.trim()) || [];
+  const lyricsPreview = lyricsLines.slice(0, 3).join('\n');
+  const hasMoreLyrics = lyricsLines.length > 3;
+
+  // ============================================================================
+  // HANDLERS
+  // ============================================================================
+
+  const handleCopyLyrics = useCallback(() => {
+    if (!lyricsText) return;
+    
+    navigator.clipboard.writeText(lyricsText).then(() => {
+      toast.success('Текст скопирован в буфер обмена');
+    }).catch(() => {
+      toast.error('Не удалось скопировать текст');
+    });
+  }, [lyricsText]);
+
   // ============================================================================
   // RENDER: Loading State
   // ============================================================================
@@ -201,6 +233,70 @@ export const ReferenceAnalysisCard = memo(({
                 </Button>
               )}
             </div>
+
+            {/* Lyrics Section */}
+            {lyricsText && lyricsLines.length > 0 && (
+              <Collapsible
+                open={isLyricsExpanded}
+                onOpenChange={setIsLyricsExpanded}
+                className="border-t border-border/50 pt-2 mt-2"
+              >
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Текст песни
+                    </span>
+                    <Badge variant="outline" className="text-[10px] h-4 px-1.5">
+                      {lyricsLines.length} {lyricsLines.length === 1 ? 'строка' : lyricsLines.length < 5 ? 'строки' : 'строк'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                      onClick={handleCopyLyrics}
+                      title="Скопировать текст"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-2 text-[10px]"
+                      >
+                        {isLyricsExpanded ? 'Скрыть' : 'Показать'}
+                        <ChevronDown className={cn(
+                          "h-3 w-3 ml-1 transition-transform",
+                          isLyricsExpanded && "rotate-180"
+                        )} />
+                      </Button>
+                    </CollapsibleTrigger>
+                  </div>
+                </div>
+
+                {/* Preview (first 3 lines) */}
+                {!isLyricsExpanded && lyricsPreview && (
+                  <div className="text-xs text-muted-foreground/80 leading-relaxed whitespace-pre-wrap font-mono bg-muted/30 rounded p-2">
+                    {lyricsPreview}
+                    {hasMoreLyrics && (
+                      <span className="text-muted-foreground/50 italic">
+                        {'\n'}...
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Full lyrics */}
+                <CollapsibleContent className="space-y-0">
+                  <div className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap font-mono bg-muted/30 rounded p-2 max-h-64 overflow-y-auto">
+                    {lyricsText}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
           </div>
         )}
 
