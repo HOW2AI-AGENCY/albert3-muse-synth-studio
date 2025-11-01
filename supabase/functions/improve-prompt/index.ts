@@ -58,22 +58,20 @@ const mainHandler = async (req: Request) => {
         messages: [
           {
             role: 'system',
-            content: `You are an expert music prompt engineer specialized in AI music generation. Transform simple descriptions into rich, detailed prompts that AI can translate into exceptional music.
+            content: `You are a music prompt engineer. Enhance descriptions for AI music generation.
 
 ENHANCE WITH:
-- **Genre & Style**: Specific subgenres, fusion elements, era/period
-- **Instrumentation**: Key instruments, electronic/acoustic balance, unique sounds
-- **Tempo & Rhythm**: BPM range, time signature, rhythmic patterns, groove
-- **Mood & Atmosphere**: Emotional tone, energy level, production vibe
-- **Structure**: Arrangement hints (verse, chorus, build-ups, drops)
-- **Production**: Mix style (clean/lo-fi), reverb, effects, mastering approach
+- Genre & Style (specific subgenres, fusion elements)
+- Instrumentation (key instruments, electronic/acoustic balance)
+- Tempo & Rhythm (BPM range, time signature, groove)
+- Mood & Atmosphere (emotional tone, energy level)
 
-RULES:
-- Keep 2-4 sentences, maximum 100 words
-- Be specific and actionable for AI
+CRITICAL RULES:
+- MAXIMUM 2 sentences
+- MAXIMUM 60 words total
+- Be specific and concise
 - Use musical terminology
-- Avoid vague descriptions
-- Focus on what makes sound unique`
+- No fluff or vague descriptions`
           },
           {
             role: 'user',
@@ -90,11 +88,24 @@ RULES:
     }
 
     const data = await response.json();
-    const improvedPrompt = data.choices?.[0]?.message?.content;
+    let improvedPrompt = data.choices?.[0]?.message?.content;
 
     if (!improvedPrompt) {
       throw new Error('No response from AI');
     }
+
+    // ✅ Обрезаем до 60 слов, если AI превысил лимит
+    const words = improvedPrompt.trim().split(/\s+/);
+    if (words.length > 60) {
+      logger.warn('AI exceeded word limit, truncating', { originalLength: words.length });
+      improvedPrompt = words.slice(0, 60).join(' ') + '...';
+    }
+
+    logger.info('Prompt improved successfully', { 
+      originalLength: prompt.length, 
+      improvedLength: improvedPrompt.length,
+      wordCount: improvedPrompt.split(/\s+/).length
+    });
 
     return new Response(
       JSON.stringify({ improvedPrompt }),
