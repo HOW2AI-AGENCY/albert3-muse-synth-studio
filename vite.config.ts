@@ -32,13 +32,7 @@ export default defineConfig(({ mode }) => ({
     },
     chunkSizeWarningLimit: 800,
     sourcemap: true,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
-    },
+    minify: 'esbuild',
   },
   plugins: [
     react(),

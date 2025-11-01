@@ -1,9 +1,9 @@
+/* Импорт системы дизайн-токенов - ДОЛЖЕН быть ПЕРЕД @tailwind */
+@import './styles/design-tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Импорт системы дизайн-токенов */
-@import './styles/design-tokens.css';
 
 @layer base {
   :root {
