@@ -26,16 +26,32 @@ export default defineConfig(({ mode }) => ({
             '@radix-ui/react-tooltip',
             '@radix-ui/react-slider',
             '@radix-ui/react-scroll-area',
+            '@radix-ui/react-avatar',
+            '@radix-ui/react-checkbox',
+            '@radix-ui/react-switch',
           ],
           'vendor-charts': ['recharts'],
           'vendor-motion': ['framer-motion'],
           'vendor-supabase': ['@supabase/supabase-js'],
           'vendor-query': ['@tanstack/react-query', '@tanstack/react-virtual'],
+          'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
+          'vendor-dnd': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
         },
       },
     },
-    chunkSizeWarningLimit: 800,
+    chunkSizeWarningLimit: 1000,
     sourcemap: false,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true, // Remove console.* in production
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug'],
+      },
+      format: {
+        comments: false, // Remove comments
+      },
+    },
     commonjsOptions: {
       include: [/node_modules/],
     },

@@ -1,6 +1,6 @@
 import { useState, useEffect, Suspense, lazy } from "react";
 import { motion } from "framer-motion";
-import { MusicGeneratorV2 } from "@/components/MusicGeneratorV2";
+import { LazyMusicGeneratorV2 } from "@/components/LazyComponents";
 import { TracksList } from "@/components/TracksList";
 const DetailPanel = lazy(() => import("@/features/tracks/ui/DetailPanel").then(m => ({ default: m.DetailPanel })));
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -120,7 +120,9 @@ const Generate = () => {
         >
           <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
             <div className="h-full p-1">
-              <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
+              <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+                <LazyMusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
+              </Suspense>
             </div>
           </ResizablePanel>
 
@@ -189,7 +191,9 @@ const Generate = () => {
         >
           <ResizablePanel defaultSize={40} minSize={30} maxSize={50}>
             <div className="h-full p-1">
-              <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
+              <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+                <LazyMusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
+              </Suspense>
             </div>
           </ResizablePanel>
           <ResizableHandle withHandle />
@@ -319,7 +323,9 @@ const Generate = () => {
                 <div className="w-12 h-1 bg-muted-foreground/20 rounded-full" />
               </div>
               <div className="p-4 h-full overflow-y-auto">
-                <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
+                <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+                  <LazyMusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
+                </Suspense>
               </div>
             </DrawerContent>
           </Drawer>
