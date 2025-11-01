@@ -3,10 +3,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 
-interface AddVocalParams {
-  trackId: string;
-  vocalText?: string;
-  vocalStyle?: string;
+interface AddVocalParams extends Record<string, unknown> {
+  uploadUrl: string;
+  prompt: string;
+  title: string;
+  negativeTags: string;
+  style: string;
+  vocalGender?: 'm' | 'f';
+  styleWeight?: number;
+  weirdnessConstraint?: number;
+  audioWeight?: number;
+  model?: 'V4_5PLUS' | 'V5';
+  trackId?: string;
 }
 
 export const useAddVocal = () => {
@@ -16,29 +24,22 @@ export const useAddVocal = () => {
   const addVocal = async (params: AddVocalParams) => {
     setIsGenerating(true);
     try {
-      logger.info(`🎤 [ADD-VOCAL] Starting vocal generation for track: ${params.trackId}`);
+      logger.info(`🎤 [ADD-VOCAL] Starting vocal generation`, 'useAddVocal', params);
 
-      // Получаем данные инструментального трека
-      const { data: track, error: trackError } = await supabase
-        .from('tracks')
-        .select('audio_url, title, style_tags, prompt')
-        .eq('id', params.trackId)
-        .single();
-
-      if (trackError || !track?.audio_url) {
-        throw new Error('Трек не найден или не имеет аудио');
-      }
-
-      // Используем create-cover endpoint с вокалом
-      const { data, error } = await supabase.functions.invoke('create-cover', {
+      // Call new add-vocals endpoint
+      const { data, error } = await supabase.functions.invoke('add-vocals', {
         body: {
-          referenceAudioUrl: track.audio_url,
-          referenceTrackId: params.trackId,
-          prompt: params.vocalText || track.prompt || `Vocal version of ${track.title}`,
-          tags: params.vocalStyle || track.style_tags?.join(', ') || 'vocal',
-          title: `${track.title} (Vocal)`,
-          make_instrumental: false,  // ✅ С вокалом
-          customMode: true
+          uploadUrl: params.uploadUrl,
+          prompt: params.prompt,
+          title: params.title,
+          negativeTags: params.negativeTags,
+          style: params.style,
+          vocalGender: params.vocalGender,
+          styleWeight: params.styleWeight,
+          weirdnessConstraint: params.weirdnessConstraint,
+          audioWeight: params.audioWeight,
+          model: params.model || 'V4_5PLUS',
+          trackId: params.trackId
         }
       });
 

@@ -169,6 +169,12 @@ verify_jwt = false
 [functions.add-instrumental-callback]
 verify_jwt = false
 
+[functions.add-vocals]
+verify_jwt = true
+
+[functions.add-vocals-callback]
+verify_jwt = false
+
 [functions.export-wav]
 verify_jwt = true
 
