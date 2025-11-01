@@ -233,7 +233,6 @@ const mainHandler = async (req: Request): Promise<Response> => {
         provider: 'mureka',
         status: 'processing',
         metadata: {
-          mureka_task_id: recognitionTaskId,
           initiated_at: new Date().toISOString()
         }
       })
@@ -261,7 +260,6 @@ const mainHandler = async (req: Request): Promise<Response> => {
         provider: 'mureka',
         status: 'processing',
         metadata: {
-          mureka_task_id: descriptionTaskId,
           initiated_at: new Date().toISOString()
         }
       })
