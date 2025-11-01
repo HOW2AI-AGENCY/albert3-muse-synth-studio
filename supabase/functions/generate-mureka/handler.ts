@@ -356,10 +356,12 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
         });
       }
       
-      // ✅ FIX: Создаём версии для всех клипов с правильной логикой мастер-версии
+      // ✅ FIX: Создаём версии ТОЛЬКО для дополнительных клипов (не primary)
+      // Primary clip данные идут в основной track через finalizePrimaryTrack
       const versionsToInsert = normalized.clips
-        .map((clip, index) => {
-          const variantIndex = index;
+        .slice(1) // ✅ Пропускаем первый клип (он идёт в основной track)
+        .map((clip, arrayIndex) => {
+          const variantIndex = arrayIndex + 1; // ✅ Начинаем с 1, т.к. 0 - это primary track
           
           if (existingIndexes.has(variantIndex)) {
             logger.info(`⏭️ [MUREKA] Variant ${variantIndex} already exists, skipping`, {
@@ -377,12 +379,11 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
           return {
             parent_track_id: trackData.id,
             variant_index: variantIndex,
-            // ✅ FIX: is_primary_variant только для первого, is_preferred_variant - false (выберет юзер)
-            is_primary_variant: variantIndex === 0,
+            is_primary_variant: false,
             is_preferred_variant: false,
             audio_url: clip.audio_url || null,
-            // ✅ FIX: Используем глобальный fallback для обложки
-            cover_url: clip.image_url || clip.cover_url || fallbackCoverUrl || null,
+            // ✅ FIX: Используем глобальный fallback для обложки + Mureka placeholder
+            cover_url: clip.image_url || clip.cover_url || fallbackCoverUrl || '/images/mureka-placeholder.webp',
             video_url: clip.video_url || null,
             lyrics: clip.lyrics || null,
             duration: durationInSeconds,
@@ -391,40 +392,31 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
               mureka_clip_id: clip.id,
               created_at: clip.created_at,
               tags: clip.tags,
-              title: clip.title || clip.name || `${trackData.title || 'Track'} (V${index + 1})`,
+              title: clip.title || clip.name || `${trackData.title || 'Track'} (V${variantIndex + 1})`,
             },
           };
         })
         .filter(Boolean);
       
       if (versionsToInsert.length === 0) {
-        logger.info('ℹ️ [MUREKA] All variants already exist', { trackId: trackData.id });
+        logger.info('ℹ️ [MUREKA] No additional variants to save (only primary track)', { trackId: trackData.id });
       } else {
         const { error: versionsError } = await this.supabase
           .from('track_versions')
           .insert(versionsToInsert);
         
         if (versionsError) {
-          logger.error('❌ [MUREKA] Failed to save track versions', {
+          logger.error('❌ [MUREKA] Failed to save additional track versions', {
             error: versionsError,
             errorMessage: versionsError.message,
             trackId: trackData.id,
             versionsCount: versionsToInsert.length,
           });
         } else {
-          logger.info('✅ [MUREKA] Track versions saved', {
+          logger.info('✅ [MUREKA] Additional track versions saved', {
             trackId: trackData.id,
             versionsCount: versionsToInsert.length,
           });
-          
-          // ✅ FIX: После вставки установить первую версию как preferred
-          await this.supabase
-            .from('track_versions')
-            .update({ is_preferred_variant: true })
-            .eq('parent_track_id', trackData.id)
-            .eq('variant_index', 0);
-            
-          logger.info('✅ [MUREKA] Set first variant as preferred', { trackId: trackData.id });
         }
       }
     }
@@ -458,14 +450,15 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
     return {
       status: 'completed',
       audio_url: audioUrl,
-      // ✅ FIX: Добавляем надёжный fallback для cover - используем любую доступную обложку
+      // ✅ FIX: Надёжный fallback для cover с Mureka placeholder
       cover_url: primaryClip.image_url || primaryClip.cover_url || 
                  normalized.clips.find(c => c.image_url || c.cover_url)?.image_url ||
                  normalized.clips.find(c => c.image_url || c.cover_url)?.cover_url ||
-                 undefined,
+                 '/images/mureka-placeholder.webp',
       video_url: primaryClip.video_url || undefined,
       duration: durationInSeconds,
-      title: primaryClip.title || primaryClip.name || 'Generated Track',
+      // ✅ FIX: Используем реальное название из API, fallback на оригинальный title из track
+      title: primaryClip.title || primaryClip.name || undefined,
     };
   }
 
