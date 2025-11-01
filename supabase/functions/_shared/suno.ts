@@ -314,9 +314,15 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
   }
 
   const normaliseString = (value: unknown): string | undefined => {
-    if (typeof value !== "string") return undefined;
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : undefined;
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : undefined;
+    }
+    if (typeof value === "number") {
+      const s = String(value);
+      return s.length > 0 ? s : undefined;
+    }
+    return undefined;
   };
 
   const TASK_ID_KEYS = ["taskId", "task_id", "id"] as const;
@@ -376,9 +382,37 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
     }
   }
   
-  // ✅ PHASE 1.2 OPTIMIZATION: Removed recursive BFS parsing
-  // Suno API always returns deterministic structure, no need for expensive search
-  // All taskId/jobId extraction is done in the deterministic section above (lines 303-351)
+  // Fallback: deep scan for fields like taskId/task_id anywhere in payload
+  try {
+    const queue: unknown[] = [record];
+    const seen = new Set<unknown>();
+    let foundTask: string | undefined;
+    let foundJob: string | undefined;
+    while (queue.length) {
+      const node = queue.shift() as any;
+      if (!node || typeof node !== 'object' || seen.has(node)) continue;
+      seen.add(node);
+
+      for (const [k, v] of Object.entries(node)) {
+        const key = String(k).toLowerCase();
+        const candidate = normaliseString(v as unknown);
+        if (!foundTask && (key === 'taskid' || key === 'task_id' || key === 'task-id' || key === 'task')) {
+          if (candidate) { foundTask = candidate; }
+        }
+        if (!foundJob && (key === 'jobid' || key === 'job_id' || key === 'job-id')) {
+          if (candidate) { foundJob = candidate; }
+        }
+        if (v && typeof v === 'object') queue.push(v);
+      }
+
+      if (foundTask) {
+        logger.info('Found taskId via deep scan');
+        return { taskId: foundTask, jobId: foundJob ?? null };
+      }
+    }
+  } catch {
+    // ignore
+  }
   
   return {};
 };
@@ -581,7 +615,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
         }
 
         // ✅ LOG: Фактический ответ от Suno lyrics API
-        logger.debug("🔍 Suno lyrics raw response", {
+        logger.info("🔍 Suno lyrics raw response", {
           endpoint,
           json: JSON.stringify(json),
           jsonKeys: json && typeof json === 'object' ? Object.keys(json) : []
