@@ -15,7 +15,6 @@ import {
   Share2,
   Globe,
   Sparkles,
-  Search,
   Split,
   Expand,
   Mic2,
@@ -51,7 +50,6 @@ interface TrackCardActionsProps {
   onShareClick: () => void;
   onTogglePublic: () => void;
   onDescribeTrack?: (trackId: string) => void;
-  onRecognizeTrack?: (trackId: string) => void;
   onSeparateStems?: (trackId: string) => void;
   onExtend?: (trackId: string) => void;
   onCover?: (trackId: string) => void;
@@ -113,7 +111,6 @@ export const TrackCardActions = React.memo(({
   onShareClick,
   onTogglePublic,
   onDescribeTrack,
-  onRecognizeTrack,
   onSeparateStems,
   onExtend,
   onCover,
@@ -187,17 +184,6 @@ export const TrackCardActions = React.memo(({
             >
               <Sparkles className="w-4 h-4 mr-2 text-primary" />
               AI Описание
-            </DropdownMenuItem>
-
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                onRecognizeTrack?.(trackId);
-              }}
-              disabled={!onRecognizeTrack || !operationTargetVersion.audio_url}
-            >
-              <Search className="w-4 h-4 mr-2 text-primary" />
-              Распознать песню
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
@@ -291,15 +277,14 @@ export const TrackCardActions = React.memo(({
               </DropdownMenuItem>
             )}
 
-            {isSunoTrack && (
+            {isSunoTrack && onCreatePersona && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
-                    onCreatePersona?.(trackId);
+                    onCreatePersona(trackId);
                   }}
-                  disabled={!onCreatePersona}
                 >
                   <User className="w-4 h-4 mr-2 text-primary" />
                   Создать персону

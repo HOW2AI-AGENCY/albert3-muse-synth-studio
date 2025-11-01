@@ -198,7 +198,7 @@ const TracksListComponent = ({
 
   return (
     <AITrackActionsContainer>
-      {({ onDescribeTrack, onRecognizeTrack }) => (
+      {({ onDescribeTrack }) => (
         <div className="space-y-4" ref={containerRef}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-semibold tracking-tight">
@@ -243,7 +243,6 @@ const TracksListComponent = ({
                       onCover={onCover ? () => onCover(track.id) : undefined}
                       onCreatePersona={onCreatePersona ? () => onCreatePersona(track.id) : undefined}
                       onDescribeTrack={() => onDescribeTrack(track.id)}
-                      onRecognizeTrack={() => onRecognizeTrack(track.id)}
                     />
                   </StaggerItem>
                 ))}

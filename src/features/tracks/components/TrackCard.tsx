@@ -41,7 +41,6 @@ interface TrackCardProps {
   onSeparateStems?: (trackId: string) => void;
   onAddVocal?: (trackId: string) => void;
   onDescribeTrack?: (trackId: string) => void;
-  onRecognizeTrack?: (trackId: string) => void;
   onCreatePersona?: (trackId: string) => void;
   className?: string;
 }
@@ -70,7 +69,6 @@ const TrackCardComponent = ({
   onSeparateStems,
   onAddVocal,
   onDescribeTrack,
-  onRecognizeTrack,
   onCreatePersona,
   className,
 }: TrackCardProps) => {
@@ -200,7 +198,6 @@ const TrackCardComponent = ({
             onShareClick={handleShareClick}
             onTogglePublic={handleTogglePublic}
             onDescribeTrack={onDescribeTrack}
-            onRecognizeTrack={onRecognizeTrack}
             onSeparateStems={onSeparateStems}
             onExtend={onExtend}
             onCover={onCover}
