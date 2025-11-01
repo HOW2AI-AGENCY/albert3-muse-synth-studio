@@ -175,6 +175,12 @@ verify_jwt = true
 [functions.add-vocals-callback]
 verify_jwt = false
 
+[functions.create-music-video]
+verify_jwt = true
+
+[functions.music-video-callback]
+verify_jwt = false
+
 [functions.export-wav]
 verify_jwt = true
 

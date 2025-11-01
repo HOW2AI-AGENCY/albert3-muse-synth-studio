@@ -202,6 +202,24 @@ export const trackMetadataSchema = z.object({
   completed_at: z.string().optional(),
 }).passthrough(); // Allow additional fields
 
+// ✅ create-music-video request schema
+export const createMusicVideoSchema = z.object({
+  trackId: uuidSchema,
+  audioId: z.string().min(1),
+  author: z.string().max(50).optional(),
+  domainName: z.string().max(50).optional()
+});
+
+// ✅ music-video callback payload schema
+export const musicVideoCallbackSchema = z.object({
+  code: z.number(),
+  msg: z.string().optional(),
+  data: z.object({
+    task_id: z.string(),
+    video_url: httpsUrlSchema.optional().nullable()
+  })
+});
+
 // ✅ Helper function to validate and parse
 export function validateAndParse<T>(
   schema: z.ZodSchema<T>,
