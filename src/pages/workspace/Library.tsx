@@ -23,7 +23,8 @@ import {
   LazyExtendTrackDialog, 
   LazyCreateCoverDialog,
   LazyTrackDeleteDialog,
-  LazyAddVocalDialog
+  LazyAddVocalDialog,
+  LazyCreatePersonaDialog
 } from "@/components/LazyDialogs";
 import { useTracks } from "@/hooks/useTracks";
 import { useToast } from "@/hooks/use-toast";
@@ -87,6 +88,9 @@ const Library: React.FC = () => {
   
   const [addVocalDialogOpen, setAddVocalDialogOpen] = useState(false);
   const [selectedTrackForVocal, setSelectedTrackForVocal] = useState<string | null>(null);
+  
+  const [createPersonaDialogOpen, setCreatePersonaDialogOpen] = useState(false);
+  const [selectedTrackForPersona, setSelectedTrackForPersona] = useState<DisplayTrack | null>(null);
   
   // Сохранение настроек просмотра
   useEffect(() => {
@@ -448,6 +452,14 @@ const Library: React.FC = () => {
     setAddVocalDialogOpen(true);
   }, []);
 
+  const handleCreatePersona = useCallback((trackId: string) => {
+    const track = tracks.find(t => t.id === trackId);
+    if (!track) return;
+    
+    setSelectedTrackForPersona(convertToDisplayTrack(track));
+    setCreatePersonaDialogOpen(true);
+  }, [tracks]);
+
   // Уникальные статусы для фильтра
   const availableStatuses = useMemo(() => {
     const statuses = new Set(tracks.map(track => track.status));
@@ -622,6 +634,7 @@ const Library: React.FC = () => {
                     onExtend={() => handleExtend(track.id)}
                     onCover={() => handleCover(track.id)}
                     onAddVocal={() => handleAddVocal(track.id)}
+                    onCreatePersona={() => handleCreatePersona(track.id)}
                     onRetry={handleRetry}
                     onDelete={handleDelete}
                   />
@@ -724,6 +737,21 @@ const Library: React.FC = () => {
           trackId={selectedTrackForVocal}
           onSuccess={() => {
             refreshTracks();
+          }}
+        />
+      )}
+
+      {createPersonaDialogOpen && selectedTrackForPersona && (
+        <LazyCreatePersonaDialog
+          open={createPersonaDialogOpen}
+          onOpenChange={setCreatePersonaDialogOpen}
+          track={{
+            id: selectedTrackForPersona.id,
+            title: selectedTrackForPersona.title,
+          }}
+          onSuccess={() => {
+            setCreatePersonaDialogOpen(false);
+            setSelectedTrackForPersona(null);
           }}
         />
       )}

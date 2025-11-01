@@ -10,6 +10,7 @@ import {
   Activity,
   FileText,
   Music,
+  User,
 } from "@/utils/iconImports";
 import {
   preloadDashboard,
@@ -67,6 +68,12 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     label: "Аудио",
     path: "/workspace/audio-library",
     icon: Music,
+  },
+  {
+    id: "personas",
+    label: "Персоны",
+    path: "/workspace/personas",
+    icon: User,
   },
   {
     id: "favorites",

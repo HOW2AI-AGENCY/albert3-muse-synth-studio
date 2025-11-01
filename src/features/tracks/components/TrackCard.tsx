@@ -42,6 +42,7 @@ interface TrackCardProps {
   onAddVocal?: (trackId: string) => void;
   onDescribeTrack?: (trackId: string) => void;
   onRecognizeTrack?: (trackId: string) => void;
+  onCreatePersona?: (trackId: string) => void;
   className?: string;
 }
 
@@ -70,6 +71,7 @@ const TrackCardComponent = ({
   onAddVocal,
   onDescribeTrack,
   onRecognizeTrack,
+  onCreatePersona,
   className,
 }: TrackCardProps) => {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -203,6 +205,7 @@ const TrackCardComponent = ({
             onExtend={onExtend}
             onCover={onCover}
             onAddVocal={onAddVocal}
+            onCreatePersona={onCreatePersona}
           />
         </CardContent>
       </Card>
