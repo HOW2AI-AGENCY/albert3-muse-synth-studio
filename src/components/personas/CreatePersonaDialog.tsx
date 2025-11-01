@@ -30,6 +30,8 @@ export interface CreatePersonaDialogProps {
     lyrics?: string | null;
     prompt?: string | null;
     improved_prompt?: string | null;
+    metadata?: Record<string, any> | null;
+    ai_description?: string | null;
   };
   musicIndex?: number;
   onSuccess?: (persona: unknown) => void;
@@ -55,11 +57,27 @@ export const CreatePersonaDialog = ({
   // Автоматически извлекаем стиль из трека при открытии
   useEffect(() => {
     if (open && track) {
-      // Извлекаем описание стиля из трека
-      const styleDescription = track.style_tags?.join(', ') || 
-                              track.improved_prompt || 
-                              track.prompt || 
-                              '';
+      let styleDescription = '';
+
+      // ПРИОРИТЕТ 1: AI-описание из Mureka (если было создано)
+      if (track.ai_description) {
+        styleDescription = track.ai_description;
+      }
+      // ПРИОРИТЕТ 2: Промпт из метаданных генерации
+      else if (track.metadata?.tags) {
+        styleDescription = track.metadata.tags;
+      }
+      else if (track.improved_prompt) {
+        styleDescription = track.improved_prompt;
+      }
+      else if (track.prompt) {
+        styleDescription = track.prompt;
+      }
+      // ПРИОРИТЕТ 3: Теги стиля
+      else if (track.style_tags?.length) {
+        styleDescription = track.style_tags.join(', ');
+      }
+
       setDescription(styleDescription);
       setName(track.title || '');
       setIsPublic(false);
