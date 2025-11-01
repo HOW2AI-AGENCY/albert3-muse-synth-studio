@@ -178,21 +178,27 @@ serve(async (req: Request): Promise<Response> => {
             clipsCount: queryResult.data?.clips?.length || 0
           });
 
-          // Handle Mureka response
+          // ✅ FIX: Handle Mureka response - support both v7 API formats
           const rawStatus = (queryResult.data as any)?.status;
-          const clips = queryResult.data?.clips || queryResult.data?.choices || [];
+          const clips = queryResult.data?.clips || [];
+          const choices = queryResult.data?.choices || [];
           
-          // ✅ FIX: Mureka API v7 uses 'url' and 'stream_url' (streaming phase)
-          const mainClip = clips[0];
-          const hasAudioUrl = mainClip && (mainClip.url || mainClip.audio_url || mainClip.stream_url);
-          const isStreaming = mainClip && mainClip.stream_url && !mainClip.url && !mainClip.audio_url;
+          // ✅ Проверяем СНАЧАЛА choices (новый формат), потом clips (legacy)
+          const tracksToCheck = choices.length > 0 ? choices : clips;
+          const mainClip = tracksToCheck[0];
           
-          // ✅ FIX: Don't mark as failed if still streaming
+          // ✅ FIX: Определяем streaming фазу
+          const hasStreamUrl = mainClip && (mainClip.stream_url);
+          const hasFinalAudioUrl = mainClip && (mainClip.url || mainClip.audio_url);
+          const isStreaming = hasStreamUrl && !hasFinalAudioUrl;
+          
+          // ✅ ВАЖНО: НЕ маркировать как failed если streaming
           if (isStreaming && (rawStatus === 'streaming' || rawStatus === 'running')) {
             logger.info('🎵 Track is streaming, keeping as processing', { 
               trackId: track.id, 
               status: rawStatus,
-              hasStreamUrl: !!mainClip?.stream_url
+              hasStreamUrl: !!hasStreamUrl,
+              hasChoices: choices.length > 0
             });
             
             await supabaseAdmin
@@ -215,7 +221,8 @@ serve(async (req: Request): Promise<Response> => {
             continue; // Skip to next track
           }
           
-          if (queryResult.code === 200 && clips.length > 0 && hasAudioUrl && !isStreaming) {
+          // ✅ Успешное завершение - есть финальный audio_url
+          if (queryResult.code === 200 && tracksToCheck.length > 0 && hasFinalAudioUrl && !isStreaming) {
             const clip = mainClip;
             const audioUrlFromApi = clip.url || clip.audio_url; // Support both formats (NOT stream_url for final save)
             
@@ -274,7 +281,8 @@ serve(async (req: Request): Promise<Response> => {
               provider: 'mureka'
             });
             
-          } else if (queryResult.code !== 200 || rawStatus === 'failed') {
+          // ✅ Фейл только если явная ошибка от API
+          } else if (queryResult.code !== 200 || rawStatus === 'failed' || rawStatus === 'timeouted' || rawStatus === 'cancelled') {
             logger.info('🔍 Attempting to mark Mureka track as failed', { 
               trackId: track.id, 
               provider: 'mureka',
@@ -313,8 +321,8 @@ serve(async (req: Request): Promise<Response> => {
               error: queryResult.msg
             });
             
+          // ✅ Все остальные случаи - ещё processing
           } else {
-            // Still processing
             await supabaseAdmin
               .from('tracks')
               .update({

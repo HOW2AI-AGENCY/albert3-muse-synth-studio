@@ -418,6 +418,7 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
       video_url: finalVideoUrl,
       duration: trackData.duration,
       metadata: finalMetadata, // ✅ Include merged metadata with streaming support
+      error_message: null, // ✅ FIX: Очистить error_message при успехе
     };
 
     // ✅ FIX: Title fallback chain: provider → existing → truncated prompt

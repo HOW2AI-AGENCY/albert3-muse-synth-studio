@@ -146,6 +146,8 @@ export class SunoGenerationHandler extends GenerationHandler<SunoGenerationParam
       trackId, 
       customMode,
       promptType: customMode ? 'lyrics' : 'style_description',
+      hasCallbackUrl: !!this.callbackUrl, // ✅ ADD: Проверка callback
+      callbackUrl: this.callbackUrl ? this.callbackUrl.substring(0, 50) : 'NONE' // ✅ ADD
     });
 
     const result = await sunoClient.generateTrack(sunoPayload);
