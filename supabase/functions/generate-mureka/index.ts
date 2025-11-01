@@ -89,10 +89,11 @@ serve(async (req: Request): Promise<Response> => {
     // 3. Check for active Mureka generations (concurrent_request_limit: 1)
     const { data: activeGenerations, error: checkError } = await supabaseAdmin
       .from('tracks')
-      .select('id, title')
+      .select('id, title, mureka_task_id')
       .eq('user_id', user.id)
       .eq('provider', 'mureka')
       .eq('status', 'processing')
+      .not('mureka_task_id', 'is', null)
       .limit(1);
     
     if (!checkError && activeGenerations && activeGenerations.length > 0) {

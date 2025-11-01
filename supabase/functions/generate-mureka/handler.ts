@@ -188,14 +188,12 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
         rawResponse,
       });
       
-      // Manual extraction from raw response
+      // Manual extraction from raw response - support snake_case and camelCase
       if (typeof rawResponse === 'object' && rawResponse !== null) {
         const anyResponse = rawResponse as any;
-        if (anyResponse.task_id) {
-          taskId = anyResponse.task_id;
-        } else if (anyResponse.data?.task_id) {
-          taskId = anyResponse.data.task_id;
-        }
+        taskId = anyResponse.task_id || anyResponse.taskId ||
+                 anyResponse.data?.task_id || anyResponse.data?.taskId ||
+                 undefined;
       }
       
       if (!taskId) {
