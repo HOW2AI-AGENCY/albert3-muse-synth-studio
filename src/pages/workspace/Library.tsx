@@ -795,6 +795,16 @@ const Library: React.FC = () => {
           }}
         />
       )}
+
+      {deleteDialogOpen && selectedTrackForDelete && (
+        <LazyTrackDeleteDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          trackId={selectedTrackForDelete.id}
+          trackTitle={selectedTrackForDelete.title}
+          onConfirm={confirmDelete}
+        />
+      )}
     </div>
   );
 };
