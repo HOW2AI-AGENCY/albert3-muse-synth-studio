@@ -172,17 +172,12 @@ export interface MurekaLyricsResponse {
 
 /**
  * Payload для распознавания песни
+ * ✅ Согласно документации Mureka API требуется upload_audio_id
  * @interface MurekaSongRecognitionPayload
  */
 export interface MurekaSongRecognitionPayload {
-  /** ID аудиофайла из /v1/files/upload */
-  audio_file?: string;
-  /** Альтернативное поле (backward compatibility) */
-  upload_audio_id?: string;
-  /** Прямое поле file_id (некоторые версии API) */
-  file_id?: string;
-  /** Публичный URL аудио (fallback) */
-  url?: string;
+  /** ID загруженного аудиофайла (REQUIRED) */
+  upload_audio_id: string;
 }
 
 /**
@@ -221,13 +216,12 @@ export interface MurekaRecognitionResponse {
 
 /**
  * Payload для AI-описания трека
+ * ✅ Согласно документации Mureka API требуется url
  * @interface MurekaSongDescriptionPayload
  */
 export interface MurekaSongDescriptionPayload {
-  /** ЛИБО ID загруженного файла, ЛИБО публичный URL */
-  audio_file?: string;
-  file_id?: string;
-  url?: string;
+  /** URL аудиофайла (REQUIRED) */
+  url: string;
 }
 
 /**
@@ -738,15 +732,16 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
     // ========================================================================
     
     /**
-     * Распознавание песни по аудиофайлу (Shazam-like)
+     * Распознавание песни по upload_audio_id (Shazam-like)
+     * ✅ Согласно документации Mureka API
      * 
-     * @param {MurekaSongRecognitionPayload} payload - ID загруженного файла
+     * @param {MurekaSongRecognitionPayload} payload - Upload audio ID
      * @returns {Promise<MurekaRecognitionResponse>} Результат распознавания
      * 
      * @example
      * ```typescript
      * const result = await client.recognizeSong({
-     *   audio_file: uploadedFileId
+     *   upload_audio_id: uploadedFileId
      * });
      * 
      * if (result.data.result) {
@@ -756,40 +751,19 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
      * ```
      */
     async recognizeSong(payload: MurekaSongRecognitionPayload): Promise<MurekaRecognitionResponse> {
-      // Умное определение параметра на основе доступных полей
-      let requestBody: Record<string, string>;
-      let parameterUsed: string;
-      
-      if (payload.url) {
-        requestBody = { url: payload.url };
-        parameterUsed = 'url';
-      } else if (payload.audio_file) {
-        requestBody = { audio_file: payload.audio_file };
-        parameterUsed = 'audio_file';
-      } else if (payload.upload_audio_id) {
-        requestBody = { upload_audio_id: payload.upload_audio_id };
-        parameterUsed = 'upload_audio_id';
-      } else if (payload.file_id) {
-        requestBody = { file_id: payload.file_id };
-        parameterUsed = 'file_id';
-      } else {
-        throw new MurekaApiError('recognizeSong requires one of: audio_file, upload_audio_id, file_id, or url', 400, '{}');
-      }
-      
       logger.info('🔍 [MUREKA-RECOGNIZE] Initiating song recognition', { 
-        parameterUsed,
-        value: requestBody[parameterUsed]
+        upload_audio_id: payload.upload_audio_id
       });
       
       logger.debug('🔍 [MUREKA-RECOGNIZE] Request payload', {
         endpoint: options.recognizeEndpoint || '/v1/song/recognize',
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify({ upload_audio_id: payload.upload_audio_id })
       });
       
       return makeRequest(
         options.recognizeEndpoint || '/v1/song/recognize',
         'POST',
-        requestBody
+        { upload_audio_id: payload.upload_audio_id }
       );
     },
 
@@ -798,15 +772,15 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
     // ========================================================================
     
     /**
-     * AI-анализ и описание трека
+     * AI-анализ и описание трека по URL
      * 
-     * @param {MurekaSongDescriptionPayload} payload - ID загруженного файла
+     * @param {MurekaSongDescriptionPayload} payload - URL аудиофайла
      * @returns {Promise<MurekaDescriptionResponse>} AI-описание трека
      * 
      * @example
      * ```typescript
      * const result = await client.describeSong({
-     *   audio_file: uploadedFileId
+     *   url: 'https://cdn.mureka.cn/audio.mp3'
      * });
      * 
      * if (result.data.description) {
@@ -817,37 +791,19 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
      * ```
      */
     async describeSong(payload: MurekaSongDescriptionPayload): Promise<MurekaDescriptionResponse> {
-      // Умное определение параметра на основе доступных полей
-      let requestBody: Record<string, string>;
-      let parameterUsed: string;
-      
-      if (payload.url) {
-        requestBody = { url: payload.url };
-        parameterUsed = 'url';
-      } else if (payload.audio_file) {
-        requestBody = { audio_file: payload.audio_file };
-        parameterUsed = 'audio_file';
-      } else if (payload.file_id) {
-        requestBody = { file_id: payload.file_id };
-        parameterUsed = 'file_id';
-      } else {
-        throw new MurekaApiError('describeSong requires one of: audio_file, file_id, or url', 400, '{}');
-      }
-      
       logger.info('📖 [MUREKA-DESCRIBE] Initiating song description', { 
-        parameterUsed,
-        value: requestBody[parameterUsed]
+        url: payload.url
       });
       
       logger.debug('📖 [MUREKA-DESCRIBE] Request payload', {
         endpoint: options.describeEndpoint || '/v1/song/describe',
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify({ url: payload.url })
       });
       
       return makeRequest(
         options.describeEndpoint || '/v1/song/describe',
         'POST',
-        requestBody
+        { url: payload.url }
       );
     },
 

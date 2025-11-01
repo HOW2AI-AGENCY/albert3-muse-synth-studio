@@ -65,12 +65,27 @@ serve(async (req) => {
 
     const murekaClient = createMurekaClient({ apiKey: murekaApiKey });
 
-    // 4. Create recognition record (без загрузки файла)
+    // 4. Download audio and upload to Mureka
+    logger.info('📥 Downloading audio file');
+    const audioResponse = await fetch(audioUrl);
+    if (!audioResponse.ok) {
+      throw new Error(`Failed to download audio: ${audioResponse.status}`);
+    }
+    const audioBlob = await audioResponse.blob();
+    
+    logger.info('📤 Uploading to Mureka');
+    const uploadResult = await murekaClient.uploadFile(audioBlob, { purpose: 'audio' });
+    const murekaFileId = uploadResult.data.file_id;
+    
+    logger.info('✅ Audio uploaded', { fileId: murekaFileId });
+
+    // 5. Create recognition record
     const { data: recognition, error: insertError } = await supabaseAdmin
       .from('song_recognitions')
       .insert({
         user_id: user.id,
         audio_file_url: audioUrl,
+        mureka_file_id: murekaFileId,
         status: 'processing',
       })
       .select('id')
@@ -80,9 +95,9 @@ serve(async (req) => {
       throw new Error('Failed to create recognition record');
     }
 
-    // 5. Call Mureka recognition API (используем прямой URL, НЕ загружаем файл)
-    logger.info('🎵 Calling Mureka recognition API with URL', { audioUrl });
-    const recognizeResponse = await murekaClient.recognizeSong({ url: audioUrl });
+    // 6. Call Mureka recognition API with upload_audio_id
+    logger.info('🎵 Calling Mureka recognition API', { upload_audio_id: murekaFileId });
+    const recognizeResponse = await murekaClient.recognizeSong({ upload_audio_id: murekaFileId });
     
     if (recognizeResponse.code !== 200 || !recognizeResponse.data?.task_id) {
       throw new Error(`Mureka recognition failed: ${recognizeResponse.msg}`);
@@ -90,7 +105,7 @@ serve(async (req) => {
     
     const task_id = recognizeResponse.data.task_id;
 
-    // 6. Update record with task ID
+    // 7. Update record with task ID
     await supabaseAdmin
       .from('song_recognitions')
       .update({ mureka_task_id: task_id })

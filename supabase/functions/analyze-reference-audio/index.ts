@@ -183,8 +183,9 @@ const mainHandler = async (req: Request): Promise<Response> => {
 
     logger.info('[ANALYZE-REF] 🔍 Starting Mureka song recognition');
     
+    // ✅ recognizeSong требует upload_audio_id (согласно документации)
     const recognitionResult = await murekaClient.recognizeSong({
-      url: audioUrl
+      upload_audio_id: murekaFileId
     });
 
     const recognitionTaskId = recognitionResult.data.task_id;
@@ -199,6 +200,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
 
     logger.info('[ANALYZE-REF] 📖 Starting Mureka song description');
     
+    // ✅ describeSong требует url (согласно документации)
     const descriptionResult = await murekaClient.describeSong({
       url: audioUrl
     });
@@ -408,7 +410,7 @@ async function pollMurekaAnalysis(
         // Mureka Recognition API возвращает результаты напрямую (нет polling endpoint)
         // Используем прямой вызов /v1/song/recognize снова
         const recogResult = await murekaClient.recognizeSong({
-          url: audioUrl
+          upload_audio_id: murekaFileId
         });
         
         logger.debug('[ANALYZE-REF-POLL] Recognition result', { 
