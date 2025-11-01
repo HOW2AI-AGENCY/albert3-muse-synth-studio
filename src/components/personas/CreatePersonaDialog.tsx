@@ -63,19 +63,9 @@ export const CreatePersonaDialog = ({
       if (track.ai_description) {
         styleDescription = track.ai_description;
       }
-      // ПРИОРИТЕТ 2: Промпт из метаданных генерации
-      else if (track.metadata?.tags) {
-        styleDescription = track.metadata.tags;
-      }
-      else if (track.improved_prompt) {
-        styleDescription = track.improved_prompt;
-      }
-      else if (track.prompt) {
-        styleDescription = track.prompt;
-      }
-      // ПРИОРИТЕТ 3: Теги стиля
-      else if (track.style_tags?.length) {
-        styleDescription = track.style_tags.join(', ');
+      // ПРИОРИТЕТ 2: Промпт, используемый при генерации
+      else {
+        styleDescription = track.improved_prompt || track.prompt || '';
       }
 
       setDescription(styleDescription);
