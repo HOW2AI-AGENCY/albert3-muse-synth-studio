@@ -1,4 +1,3 @@
-import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { onCLS, onFID, onFCP, onLCP, onTTFB } from 'web-vitals';
 import * as Sentry from '@sentry/react';
