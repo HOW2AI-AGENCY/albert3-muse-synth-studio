@@ -359,19 +359,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
         lyricsLineCount={lyricsLineCount}
         rateLimitRemaining={rateLimitState.remaining}
         rateLimitMax={rateLimitState.max}
-        onPersonaClick={() => setPersonaDialogOpen(true)}
-        onAudioUpload={(e) => {
-          audioUpload.handleAudioFileSelect(e);
-          // Auto-switch to custom mode when audio is uploaded
-          if (state.mode === 'simple') {
-            state.setMode('custom');
-            toast({
-              title: "Переключено в расширенный режим",
-              description: "Для работы с референсным аудио требуется расширенный режим",
-            });
-          }
-        }}
-        hasPersona={!!state.params.personaId}
       />
 
       {/* Main Content */}

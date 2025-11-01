@@ -1,10 +1,9 @@
-import React, { memo, useRef } from 'react';
+import { memo } from 'react';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { FileAudio, FileText, User, Upload } from '@/utils/iconImports';
+import { FileAudio, FileText } from '@/utils/iconImports';
 import { MurekaBalanceDisplay } from '@/components/mureka/MurekaBalanceDisplay';
 import { SunoBalanceDisplay } from '@/components/mureka/SunoBalanceDisplay';
 import type { GeneratorMode } from './types/generator.types';
@@ -25,9 +24,6 @@ interface CompactHeaderProps {
   lyricsLineCount: number;
   rateLimitRemaining?: number;
   rateLimitMax?: number;
-  onPersonaClick?: () => void;
-  onAudioUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  hasPersona?: boolean;
 }
 
 export const CompactHeader = memo(({
@@ -43,11 +39,7 @@ export const CompactHeader = memo(({
   lyricsLineCount,
   rateLimitRemaining,
   rateLimitMax,
-  onPersonaClick,
-  onAudioUpload,
-  hasPersona,
 }: CompactHeaderProps) => {
-  const audioInputRef = useRef<HTMLInputElement>(null);
   return (
     <div 
       className="flex flex-col border-b border-border/20 bg-background/95 backdrop-blur-sm"
@@ -110,7 +102,7 @@ export const CompactHeader = memo(({
         </div>
       </div>
 
-      {/* Row 2: Mode, Persona, Audio Upload */}
+      {/* Row 2: Mode */}
       <div className="flex items-center justify-between gap-2 px-2 sm:px-3 py-1.5">
         <div className="flex items-center gap-2 flex-1">
           {/* Mode Toggle */}
@@ -138,50 +130,6 @@ export const CompactHeader = memo(({
               </Label>
             </div>
           </RadioGroup>
-
-          {/* Persona Button (Suno only) */}
-          {selectedProvider === 'suno' && onPersonaClick && (
-            <Button
-              variant={hasPersona ? "secondary" : "outline"}
-              size="sm"
-              onClick={onPersonaClick}
-              className="h-7 px-2 gap-1 text-xs"
-            >
-              <User className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Персона</span>
-              {hasPersona && (
-                <Badge variant="default" className="h-4 px-1 text-[9px] ml-1">✓</Badge>
-              )}
-            </Button>
-          )}
-
-          {/* Audio Upload Button */}
-          {onAudioUpload && (
-            <>
-              <input
-                ref={audioInputRef}
-                type="file"
-                accept="audio/*"
-                onChange={onAudioUpload}
-                className="hidden"
-              />
-              <Button
-                variant={referenceFileName ? "secondary" : "outline"}
-                size="sm"
-                onClick={() => audioInputRef.current?.click()}
-                className="h-7 px-2 gap-1 text-xs"
-                disabled={isGenerating}
-              >
-                <Upload className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">
-                  {referenceFileName ? 'Изменить аудио' : 'Загрузить аудио'}
-                </span>
-                <span className="sm:hidden">
-                  {referenceFileName ? 'Изм' : 'Аудио'}
-                </span>
-              </Button>
-            </>
-          )}
         </div>
 
         {/* Right: Info Badges */}
