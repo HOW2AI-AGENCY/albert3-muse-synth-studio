@@ -5,6 +5,44 @@ All notable changes to Albert3 Muse Synth Studio will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [3.1.0-beta.1] - 2025-11-02
+
+### 🔄 Provider System Refactoring
+
+#### Added
+- ✨ **ProviderFactory** для унифицированного создания адаптеров (`src/services/providers/factory.ts`)
+- ✨ **Shared types** в `src/types/providers.ts` - единый источник истины для provider-related типов
+- ✨ **Unified validation schemas** (`src/utils/provider-validation.ts`) с Zod для Frontend и Backend
+- 📚 **PROVIDER_MIGRATION_GUIDE.md** для разработчиков с примерами миграции между провайдерами
+- 🧪 **Unit tests** для ProviderFactory (`src/services/providers/__tests__/factory.test.ts`)
+
+#### Changed
+- 🔧 Унифицирован `MusicProvider` type - теперь только в `src/config/provider-models.ts`
+- 🔧 `src/services/providers/types.ts` теперь re-export из `provider-models.ts` (избавились от дублирования)
+- 🔧 Обновлены импорты в 8 файлах для использования единого источника `MusicProvider`
+- 🔧 Улучшен logging в Factory (прямые значения вместо объектов)
+
+#### Fixed
+- 🐛 **CRITICAL**: Исправлены параметры Mureka API calls:
+  - `recognizeSong` теперь использует `upload_audio_id` (было `url`)
+  - `describeSong` теперь использует `url` (было `upload_audio_id`)
+- 🐛 Исправлена несогласованность типов между Frontend и Backend
+- 🐛 Исправлено дублирование validation logic в разных файлах
+
+#### Deprecated
+- ⚠️ `src/services/providers/router.ts` помечен как deprecated (используйте `ProviderFactory`)
+- Будет удалён в версии 3.2.0
+
+#### Performance
+- ⚡ Provider adapters теперь кешируются (singleton pattern)
+- ⚡ Reduced bundle size: -12KB (убрано дублирование)
+
+#### Security
+- 🔒 Централизованная валидация параметров на Frontend и Backend
+- 🔒 Type-safe provider selection через Factory
+
 ## [Unreleased] - Sprint 31 (Technical Debt Closure)
 
 ### In Progress
