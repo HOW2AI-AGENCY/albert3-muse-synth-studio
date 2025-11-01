@@ -405,38 +405,45 @@ async function pollMurekaAnalysis(
     });
 
     // ============================================================================
-    // Poll Recognition Task
+    // Poll Recognition Task FIRST (sequential to avoid rate limit)
     // ============================================================================
     
     if (!recognitionCompleted) {
       try {
-        // Mureka Recognition API возвращает результаты напрямую (нет polling endpoint)
-        // Используем прямой вызов /v1/song/recognize снова
         const recogResult = await murekaClient.recognizeSong({
           upload_audio_id: murekaFileId
         });
         
-        logger.debug('[ANALYZE-REF-POLL] Recognition result', { 
+        // ✅ Mureka возвращает данные напрямую в data (не в data.result!)
+        const hasData = recogResult?.data && typeof recogResult.data === 'object';
+        const responseData = recogResult.data as any; // Type assertion для динамической проверки
+        
+        logger.debug('[ANALYZE-REF-POLL] Recognition raw response', { 
           taskId: recognitionTaskId,
-          hasResult: !!recogResult.data.result
+          hasData,
+          dataKeys: hasData ? Object.keys(recogResult.data).join(', ') : 'none',
+          dataPreview: hasData ? JSON.stringify(recogResult.data).substring(0, 200) : 'empty'
         });
 
-        if (recogResult.data.result) {
-          const result = recogResult.data.result;
-
+        // ✅ Проверяем, есть ли распознанные данные
+        // Mureka может возвращать либо lyrics_sections, либо track info
+        if (hasData && (responseData.duration || responseData.lyrics_sections)) {
+          // Это lyrics/transcription результат - не то что нужно для recognition
+          logger.debug('[ANALYZE-REF-POLL] Got lyrics data, recognition not ready yet');
+        } else if (hasData && responseData.title) {
+          // ✅ Это действительно recognition результат
           await supabaseAdmin
             .from('song_recognitions')
             .update({
               status: 'completed',
-              recognized_title: result.title,
-              recognized_artist: result.artist,
-              recognized_album: result.album,
-              release_date: result.release_date,
-              confidence_score: result.confidence,
-              external_ids: result.external_ids || {},
+              recognized_title: responseData.title || null,
+              recognized_artist: responseData.artist || null,
+              recognized_album: responseData.album || null,
+              confidence_score: responseData.confidence || null,
+              external_ids: responseData.external_ids || {},
               metadata: {
                 completed_at: new Date().toISOString(),
-                mureka_result: result,
+                mureka_result: responseData,
                 provider: 'mureka'
               }
             })
@@ -444,13 +451,12 @@ async function pollMurekaAnalysis(
 
           logger.info('[ANALYZE-REF-POLL] ✅ Mureka recognition completed', {
             recognitionId: recognitionId.substring(0, 8),
-            title: result.title,
-            artist: result.artist
+            title: responseData.title,
+            artist: responseData.artist
           });
 
           recognitionCompleted = true;
         } else {
-          // Задача еще обрабатывается
           logger.debug('[ANALYZE-REF-POLL] Recognition still processing');
         }
       } catch (error) {
@@ -458,8 +464,8 @@ async function pollMurekaAnalysis(
           error: error instanceof Error ? error.message : String(error) 
         });
         
-        // Если ошибка - помечаем как failed
-        if (attempt >= MAX_ATTEMPTS - 5) { // Начинаем фейлить за 5 попыток до конца
+        // Если ошибка - помечаем как failed за 5 попыток до конца
+        if (attempt >= MAX_ATTEMPTS - 5) {
           await supabaseAdmin
             .from('song_recognitions')
             .update({
@@ -473,39 +479,54 @@ async function pollMurekaAnalysis(
     }
 
     // ============================================================================
-    // Poll Description Task
+    // Poll Description Task AFTER recognition (sequential to avoid rate limit)
     // ============================================================================
     
-    if (!descriptionCompleted) {
+    if (!descriptionCompleted && recognitionCompleted) {
       try {
         const descResult = await murekaClient.describeSong({
           url: audioUrl
         });
         
-        logger.debug('[ANALYZE-REF-POLL] Description result', { 
+        // ✅ Mureka возвращает данные напрямую в data (не в data.description!)
+        const hasData = descResult?.data && typeof descResult.data === 'object';
+        const responseData = descResult.data as any; // Type assertion для динамической проверки
+        
+        logger.debug('[ANALYZE-REF-POLL] Description raw response', { 
           taskId: descriptionTaskId,
-          hasDescription: !!descResult.data.description
+          hasData,
+          dataKeys: hasData ? Object.keys(descResult.data).join(', ') : 'none',
+          dataPreview: hasData ? JSON.stringify(descResult.data).substring(0, 200) : 'empty'
         });
 
-        if (descResult.data.description) {
-          const desc = descResult.data.description;
+        // ✅ Проверяем наличие результата описания
+        // Mureka возвращает genres, instrument, tags, description прямо в data
+        if (hasData && (responseData.genres || responseData.description || responseData.instrument)) {
+          // Формируем genre из массива genres
+          const genre = Array.isArray(responseData.genres) ? responseData.genres.join(', ') : null;
+          
+          // Формируем mood из tags
+          const mood = Array.isArray(responseData.tags) ? responseData.tags.slice(0, 3).join(', ') : null;
+          
+          // Формируем список инструментов
+          const instruments = Array.isArray(responseData.instrument) ? responseData.instrument : [];
 
           await supabaseAdmin
             .from('song_descriptions')
             .update({
               status: 'completed',
-              ai_description: desc.text,
-              detected_genre: desc.genre,
-              detected_mood: desc.mood,
-              detected_instruments: desc.instruments || [],
-              tempo_bpm: desc.tempo_bpm,
-              key_signature: desc.key,
-              energy_level: desc.energy_level,
-              danceability: desc.danceability,
-              valence: desc.valence,
+              ai_description: responseData.description || null,
+              detected_genre: genre,
+              detected_mood: mood,
+              detected_instruments: instruments,
+              tempo_bpm: responseData.tempo_bpm || null,
+              key_signature: responseData.key || null,
+              energy_level: responseData.energy_level || null,
+              danceability: responseData.danceability || null,
+              valence: responseData.valence || null,
               metadata: {
                 completed_at: new Date().toISOString(),
-                mureka_description: desc,
+                mureka_description: responseData,
                 provider: 'mureka'
               }
             })
@@ -513,13 +534,12 @@ async function pollMurekaAnalysis(
 
           logger.info('[ANALYZE-REF-POLL] ✅ Mureka description completed', {
             descriptionId: descriptionId.substring(0, 8),
-            genre: desc.genre,
-            mood: desc.mood
+            genre,
+            mood
           });
 
           descriptionCompleted = true;
         } else {
-          // Задача еще обрабатывается
           logger.debug('[ANALYZE-REF-POLL] Description still processing');
         }
       } catch (error) {
