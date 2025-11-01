@@ -57,7 +57,7 @@ initServiceWorker().catch((error) => {
 });
 
 // Регистрируем новый SW для Week 3 оптимизаций
-import('@/utils/serviceWorkerRegistration').then(({ registerServiceWorker }) => {
+import('@/utils/registerServiceWorker').then(({ registerServiceWorker }) => {
   registerServiceWorker().catch((error) => {
     logger.error('Failed to register Week 3 service worker', error, 'ServiceWorker');
   });
