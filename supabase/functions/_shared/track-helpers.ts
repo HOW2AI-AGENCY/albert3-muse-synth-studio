@@ -35,22 +35,44 @@ export async function findOrCreateTrack(
     return { trackId, track: existingTrack };
   }
 
-  // ✅ Generate intelligent title fallback
-  const generateTitle = () => {
+  // ✅ Generate AI title if not provided (with fallback)
+  const generateTitle = async () => {
     if (title) return title;
     
-    // Extract meaningful title from prompt
+    // Try AI title generation for Mureka
+    if (provider === 'mureka') {
+      try {
+        const { data: titleData, error: titleError } = await supabaseAdmin.functions.invoke('generate-track-title', {
+          body: {
+            prompt: prompt || 'Untitled Track',
+            lyrics: lyrics || undefined,
+            styleTags: styleTags || undefined,
+            provider: 'mureka'
+          }
+        });
+
+        if (!titleError && titleData?.title) {
+          logger.info('✅ [TRACK-HELPERS] AI-generated title', { title: titleData.title });
+          return titleData.title;
+        }
+      } catch (error) {
+        logger.warn('⚠️ [TRACK-HELPERS] Failed to generate AI title, using fallback', { 
+          error: error instanceof Error ? error.message : String(error) 
+        });
+      }
+    }
+    
+    // Fallback: Extract from prompt
     if (prompt) {
-      // Take first 50 chars, clean up
       const cleaned = prompt
-        .replace(/[^\w\s-]/gi, '') // Remove special chars
+        .replace(/[^\w\s-]/gi, '')
         .trim()
         .slice(0, 50);
       
       if (cleaned) return cleaned;
     }
     
-    // Fallback with timestamp
+    // Final fallback with timestamp
     const timestamp = new Date().toLocaleString('ru-RU', {
       day: '2-digit',
       month: '2-digit',
@@ -60,11 +82,13 @@ export async function findOrCreateTrack(
     return `Трек ${timestamp}`;
   };
 
+  const generatedTitle = await generateTitle();
+
   const { data: newTrack, error: createError } = await supabaseAdmin
     .from('tracks')
     .insert({
       user_id: userId,
-      title: generateTitle(),
+      title: generatedTitle,
       prompt: prompt || 'Untitled Track',
       provider: provider || 'suno',
       status: 'processing',

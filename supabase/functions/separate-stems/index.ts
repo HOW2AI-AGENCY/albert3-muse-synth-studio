@@ -192,10 +192,13 @@ const mainHandler = async (req: Request) => {
         audio_file: trackRecord.audio_url,
       });
 
-      stemTaskId = murekaResult.taskId;
+      stemTaskId = murekaResult.taskId; // This is the ZIP URL
       stemEndpoint = murekaResult.endpoint;
 
-      logger.info('[MUREKA-STEM] Task created', { stemTaskId, trackId });
+      logger.info('[MUREKA-STEM] ZIP created (ready to download)', { 
+        zipUrl: stemTaskId, 
+        trackId 
+      });
 
     } else {
       // === SUNO STEM SEPARATION ===

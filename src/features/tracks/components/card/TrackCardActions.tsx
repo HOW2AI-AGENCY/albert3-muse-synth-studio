@@ -206,7 +206,7 @@ export const TrackCardActions = React.memo(({
               disabled={!onSeparateStems || !operationTargetVersion.audio_url}
             >
               <Split className="w-4 h-4 mr-2" />
-              Разделить на стемы{' '}
+              {isMurekaTrack ? 'Скачать стемы архивом' : 'Разделить на стемы'}{' '}
               {masterVersion && masterVersion.id !== trackId &&
                 `(${getVersionShortLabel({
                   versionNumber: masterVersion.versionNumber,
@@ -215,22 +215,32 @@ export const TrackCardActions = React.memo(({
                 })})`}
             </DropdownMenuItem>
 
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                onExtend?.(operationTargetId);
-              }}
-              disabled={!onExtend || !operationTargetVersion.audio_url}
-            >
-              <Expand className="w-4 h-4 mr-2" />
-              Расширить трек{' '}
-              {masterVersion && masterVersion.id !== trackId &&
-                `(${getVersionShortLabel({
-                  versionNumber: masterVersion.versionNumber,
-                  isOriginal: masterVersion.isOriginal,
-                  isMaster: true,
-                })})`}
-            </DropdownMenuItem>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isSunoTrack) onExtend?.(operationTargetId);
+                    }}
+                    disabled={!onExtend || isMurekaTrack || !operationTargetVersion.audio_url}
+                    className={isMurekaTrack ? 'opacity-50' : ''}
+                  >
+                    <Expand className="w-4 h-4 mr-2" />
+                    Расширить трек{' '}
+                    {masterVersion && masterVersion.id !== trackId &&
+                      `(${getVersionShortLabel({
+                        versionNumber: masterVersion.versionNumber,
+                        isOriginal: masterVersion.isOriginal,
+                        isMaster: true,
+                      })})`}
+                  </DropdownMenuItem>
+                </div>
+              </TooltipTrigger>
+              {isMurekaTrack && (
+                <TooltipContent side="left">Расширение доступно только для Suno треков</TooltipContent>
+              )}
+            </Tooltip>
 
             <Tooltip>
               <TooltipTrigger asChild>

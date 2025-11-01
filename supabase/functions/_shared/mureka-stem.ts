@@ -10,13 +10,16 @@ export interface MurekaStemAsset {
 }
 
 export interface MurekaStemResult {
-  taskId: string;
+  taskId: string; // ZIP URL for direct download
+  zipUrl?: string;
+  expiresAt?: number;
   rawResponse: unknown;
   endpoint: string;
 }
 
 export interface MurekaStemQueryResult {
   taskId: string;
+  zipUrl?: string; // Direct ZIP download URL
   assets: MurekaStemAsset[];
   status: 'pending' | 'processing' | 'completed' | 'failed';
   rawResponse: unknown;
@@ -69,7 +72,7 @@ export const createMurekaStemClient = (options: CreateMurekaStemClientOptions) =
       const response = await fetchImpl(endpoint, {
         method: 'POST',
         headers: buildMurekaHeaders(apiKey),
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ url: payload.audio_file }),
       });
 
       const rawText = await response.text();
@@ -94,21 +97,22 @@ export const createMurekaStemClient = (options: CreateMurekaStemClientOptions) =
         });
       }
 
-      // Mureka response: { task_id: "xxx" }
-      const taskId = json.task_id || json.taskId;
+      // ✅ Mureka returns ZIP directly: { zip_url: "https://...", expires_at: 123456 }
+      const zipUrl = json.zip_url;
+      const expiresAt = json.expires_at;
       
-      if (!taskId) {
-        throw new MurekaApiError("No task_id in Mureka stem response", {
+      if (!zipUrl) {
+        throw new MurekaApiError("No zip_url in Mureka stem response", {
           endpoint,
           status: response.status,
           body: rawText,
         });
       }
 
-      logger.info('✅ [MUREKA-STEM] Stem separation task created', { taskId });
+      logger.info('✅ [MUREKA-STEM] Stem ZIP created', { zipUrl, expiresAt });
 
       return {
-        taskId,
+        taskId: zipUrl, // Use ZIP URL as taskId for download
         rawResponse: json,
         endpoint,
       };
@@ -125,68 +129,18 @@ export const createMurekaStemClient = (options: CreateMurekaStemClientOptions) =
     }
   };
 
-  const queryStemTask = async (taskId: string): Promise<MurekaStemQueryResult> => {
-    const endpoint = `https://api.mureka.ai/v1/song/stem/${taskId}`;
-    
-    try {
-      logger.debug('🔍 [MUREKA-STEM] Querying task status', { taskId });
+  const queryStemTask = async (zipUrl: string): Promise<MurekaStemQueryResult> => {
+    // ✅ For Mureka, taskId IS the zip_url - stems are ready immediately
+    logger.debug('✅ [MUREKA-STEM] Mureka returns ZIP directly, no polling needed', { zipUrl });
 
-      const response = await fetchImpl(endpoint, {
-        method: 'GET',
-        headers: buildMurekaHeaders(apiKey),
-      });
-
-      const rawText = await response.text();
-      let json: any;
-      
-      try {
-        json = JSON.parse(rawText);
-      } catch (parseError) {
-        throw new MurekaApiError("Unable to parse Mureka stem query response", {
-          endpoint,
-          status: response.status,
-          body: rawText,
-          cause: parseError,
-        });
-      }
-
-      if (!response.ok) {
-        throw new MurekaApiError(`Mureka stem query failed with status ${response.status}`, {
-          endpoint,
-          status: response.status,
-          body: rawText,
-        });
-      }
-
-      // Normalize Mureka response to standard format
-      const status = normalizeMurekaStatus(json.status);
-      const assets = parseMurekaStemAssets(json);
-
-      logger.debug('✅ [MUREKA-STEM] Task status retrieved', { 
-        taskId, 
-        status, 
-        assetsCount: assets.length 
-      });
-
-      return {
-        taskId,
-        assets,
-        status,
-        rawResponse: json,
-        endpoint,
-        errorMessage: json.error_message || json.errorMessage,
-      };
-    } catch (error) {
-      if (error instanceof MurekaApiError) throw error;
-      
-      throw new MurekaApiError(
-        error instanceof Error ? error.message : "Unknown error during Mureka stem query",
-        {
-          endpoint,
-          cause: error,
-        }
-      );
-    }
+    return {
+      taskId: zipUrl,
+      zipUrl: zipUrl,
+      assets: [], // No individual assets, only ZIP
+      status: 'completed',
+      rawResponse: { zip_url: zipUrl },
+      endpoint: 'https://api.mureka.ai/v1/song/stem',
+    };
   };
 
   return {
