@@ -43,6 +43,8 @@ export interface AnalyzeAudioParams {
   audioUrl: string;
   /** ID трека (опционально) */
   trackId?: string;
+  /** ID файла в audio_library (опционально) */
+  audioLibraryId?: string;
 }
 
 /**
@@ -124,7 +126,8 @@ export function useReferenceAnalysis() {
     mutationFn: async (params: AnalyzeAudioParams) => {
       logger.info('🔍 [ANALYZE] Starting reference audio analysis', 'useReferenceAnalysis', {
         audioUrl: params.audioUrl.substring(0, 100),
-        trackId: params.trackId
+        trackId: params.trackId,
+        audioLibraryId: params.audioLibraryId
       });
 
       // ✅ Проверяем сессию перед вызовом

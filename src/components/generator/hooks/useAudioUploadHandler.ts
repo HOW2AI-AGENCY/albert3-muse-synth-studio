@@ -56,10 +56,11 @@ export const useAudioUploadHandler = (state: UseGeneratorStateReturn) => {
     });
   }, [state, toast]);
 
-  const handleManualAnalyze = useCallback(async (audioUrl: string) => {
+  const handleManualAnalyze = useCallback(async (audioUrl: string, audioLibraryId?: string) => {
     try {
       logger.info('🔍 [MANUAL-ANALYSIS] Starting analysis', 'AudioUploadHandler', {
-        audioUrl: audioUrl.substring(0, 50)
+        audioUrl: audioUrl.substring(0, 50),
+        audioLibraryId: audioLibraryId ?? 'null'
       });
 
       // ✅ Получаем токен для авторизации
@@ -69,7 +70,7 @@ export const useAudioUploadHandler = (state: UseGeneratorStateReturn) => {
       }
 
       const { data, error } = await supabase.functions.invoke('analyze-reference-audio', {
-        body: { audioUrl },
+        body: { audioUrl, audioLibraryId },
         headers: {
           Authorization: `Bearer ${session.access_token}`
         }
@@ -79,7 +80,8 @@ export const useAudioUploadHandler = (state: UseGeneratorStateReturn) => {
 
       logger.info('✅ [MANUAL-ANALYSIS] Analysis started', 'AudioUploadHandler', {
         recognitionId: data?.recognitionId,
-        descriptionId: data?.descriptionId
+        descriptionId: data?.descriptionId,
+        audioLibraryId: audioLibraryId ?? 'null'
       });
 
       toast({

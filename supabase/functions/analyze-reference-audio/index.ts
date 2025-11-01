@@ -43,6 +43,8 @@ interface AnalyzeReferenceAudioRequest {
   audioUrl: string;
   /** ID трека (опционально) */
   trackId?: string;
+  /** ID файла в audio_library (опционально) */
+  audioLibraryId?: string;
 }
 
 interface AnalyzeReferenceAudioResponse {
@@ -104,11 +106,12 @@ const mainHandler = async (req: Request): Promise<Response> => {
 
     // ✅ Validate request body
     const body = await validateRequest(req, validationSchemas.analyzeReferenceAudio) as AnalyzeReferenceAudioRequest;
-    const { audioUrl, trackId } = body;
+    const { audioUrl, trackId, audioLibraryId } = body;
 
     logger.info('[ANALYZE-REF] 📋 Request details', { 
       audioUrl: audioUrl.substring(0, 100),
       trackId: trackId ?? 'null',
+      audioLibraryId: audioLibraryId ?? 'null',
       userId: userId.substring(0, 8)
     });
 
@@ -285,7 +288,10 @@ const mainHandler = async (req: Request): Promise<Response> => {
       recognitionRecord.id,
       descriptionRecord.id,
       murekaFileId,
-      audioUrl
+      audioUrl,
+      audioLibraryId ?? null,
+      trackId ?? null,
+      userId
     ).catch((error) => {
       logger.error('[ANALYZE-REF] Background polling error', { 
         error: error instanceof Error ? error.message : String(error) 
@@ -364,6 +370,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
 /**
  * Опрашивает Mureka API для получения результатов обеих задач
  * Обновляет записи в БД по мере готовности результатов
+ * Привязывает результаты к audio_library и tracks
  */
 async function pollMurekaAnalysis(
   recognitionTaskId: string,
@@ -371,7 +378,10 @@ async function pollMurekaAnalysis(
   recognitionId: string,
   descriptionId: string,
   murekaFileId: string,
-  audioUrl: string
+  audioUrl: string,
+  audioLibraryId: string | null,
+  trackId: string | null,
+  userId: string
 ): Promise<void> {
   const MUREKA_API_KEY = Deno.env.get('MUREKA_API_KEY');
   if (!MUREKA_API_KEY) {
@@ -455,6 +465,28 @@ async function pollMurekaAnalysis(
             artist: responseData.artist
           });
 
+          // ✅ Обновляем audio_library (привязываем результат распознавания)
+          if (audioLibraryId) {
+            try {
+              await supabaseAdmin
+                .from('audio_library')
+                .update({
+                  recognized_song_id: recognitionId,
+                  analysis_status: 'completed'
+                })
+                .eq('id', audioLibraryId)
+                .eq('user_id', userId);
+              
+              logger.info('[ANALYZE-REF-POLL] ✅ Audio library updated with recognition', {
+                audioLibraryId: audioLibraryId.substring(0, 8)
+              });
+            } catch (error) {
+              logger.error('[ANALYZE-REF-POLL] Failed to update audio_library', {
+                error: error instanceof Error ? error.message : String(error)
+              });
+            }
+          }
+
           recognitionCompleted = true;
         } else {
           logger.debug('[ANALYZE-REF-POLL] Recognition still processing');
@@ -537,6 +569,38 @@ async function pollMurekaAnalysis(
             genre,
             mood
           });
+
+          // ✅ Обновляем audio_library (добавляем данные анализа)
+          if (audioLibraryId) {
+            try {
+              await supabaseAdmin
+                .from('audio_library')
+                .update({
+                  analysis_data: {
+                    genre,
+                    mood,
+                    instruments,
+                    tempo_bpm: responseData.tempo_bpm || null,
+                    key_signature: responseData.key || null,
+                    energy_level: responseData.energy_level || null,
+                    danceability: responseData.danceability || null,
+                    description: responseData.description || null,
+                    analyzed_at: new Date().toISOString()
+                  },
+                  analysis_status: 'completed'
+                })
+                .eq('id', audioLibraryId)
+                .eq('user_id', userId);
+              
+              logger.info('[ANALYZE-REF-POLL] ✅ Audio library updated with description', {
+                audioLibraryId: audioLibraryId.substring(0, 8)
+              });
+            } catch (error) {
+              logger.error('[ANALYZE-REF-POLL] Failed to update audio_library with description', {
+                error: error instanceof Error ? error.message : String(error)
+              });
+            }
+          }
 
           descriptionCompleted = true;
         } else {
