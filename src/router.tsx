@@ -1,13 +1,13 @@
 import { Suspense } from "react";
 import { createBrowserRouter } from "react-router-dom";
 import { createLazyComponent } from "./utils/lazyImports";
+import WorkspaceLayout from "./components/workspace/WorkspaceLayout";
 
 // ✅ FIX: Lazy load all pages for optimal bundle splitting
 const Landing = createLazyComponent(() => import("./pages/Landing"), "Landing");
 const Auth = createLazyComponent(() => import("./pages/Auth"), "Auth");
 const NotFound = createLazyComponent(() => import("./pages/NotFound"), "NotFound");
 const ProtectedRoute = createLazyComponent(() => import("./components/ProtectedRoute"), "ProtectedRoute");
-const WorkspaceLayout = createLazyComponent(() => import("./components/workspace/WorkspaceLayout"), "WorkspaceLayout");
 
 // ========== LAZY ROUTES (Code Splitting) with Error Handling ==========
 // Critical path - minimal chunks
