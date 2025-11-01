@@ -51,7 +51,10 @@ export const PromptHistoryItem = React.memo(({
         item.is_template && 'border-amber-500/50'
       )}
     >
-      <CardHeader className="pb-2">
+      <CardHeader 
+        className="pb-2 cursor-pointer"
+        onClick={() => onSelect(item)}
+      >
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium line-clamp-2 mb-1">
@@ -75,14 +78,20 @@ export const PromptHistoryItem = React.memo(({
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-7 w-7 p-0"
+                className="h-7 w-7 p-0 hover:bg-amber-500/20 hover:text-amber-500"
                 onClick={(e) => {
                   e.stopPropagation();
                   onStartSaveTemplate(item.id);
                 }}
+                title="Сохранить как шаблон"
               >
                 <Star className="w-3.5 h-3.5" />
               </Button>
+            )}
+            {item.is_template && (
+              <div className="h-7 w-7 flex items-center justify-center">
+                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+              </div>
             )}
             <Button
               size="sm"
@@ -92,6 +101,7 @@ export const PromptHistoryItem = React.memo(({
                 e.stopPropagation();
                 onDelete(item.id);
               }}
+              title="Удалить"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </Button>
