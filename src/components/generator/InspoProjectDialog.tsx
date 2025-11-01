@@ -1,13 +1,18 @@
-import { memo, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { memo, useState, useEffect } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card } from '@/components/ui/card';
-import { Search, Plus, Sparkles } from '@/utils/iconImports';
-import { ProjectWizardDialog } from '@/components/projects/ProjectWizardDialog';
-import { useMusicProjects } from '@/hooks/useMusicProjects';
-import type { MusicProject } from '@/types/project.types';
+import { Button } from '@/components/ui/button';
+import { Search, Music } from '@/utils/iconImports';
+import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
+import { cn } from '@/lib/utils';
 
 export interface InspoProject {
   id: string;
@@ -23,160 +28,160 @@ export interface InspoProject {
 interface InspoProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedProjectId?: string | null;
-  onSelectProject?: (project: InspoProject) => void;
-  onSelect?: (project: InspoProject) => void; // Alias for backward compatibility
+  selectedProjectId: string | null;
+  onSelectProject: (project: InspoProject) => void;
 }
 
 export const InspoProjectDialog = memo(({
   open,
   onOpenChange,
-  onSelect,
+  selectedProjectId,
+  onSelectProject,
 }: InspoProjectDialogProps) => {
+  const [projects, setProjects] = useState<InspoProject[]>([]);
+  const [filteredProjects, setFilteredProjects] = useState<InspoProject[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [wizardOpen, setWizardOpen] = useState(false);
-  const { projects: musicProjects, isLoading: projectsLoading } = useMusicProjects();
-  
-  const handleSelect = onSelect;
+  const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    if (open) {
+      loadProjects();
+    }
+  }, [open]);
 
-  const handleProjectCreated = (project: MusicProject) => {
-    if (handleSelect) {
-      handleSelect({
-        id: project.id,
-        name: project.name,
-        style_tags: project.style_tags || [],
-        genre: project.genre || undefined,
-        mood: project.mood || undefined,
-        concept_description: project.concept_description,
-      });
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const filtered = projects.filter(p =>
+        p.name.toLowerCase().includes(query) ||
+        p.style_tags?.some(tag => tag.toLowerCase().includes(query)) ||
+        p.genre?.toLowerCase().includes(query) ||
+        p.mood?.toLowerCase().includes(query)
+      );
+      setFilteredProjects(filtered);
+    } else {
+      setFilteredProjects(projects);
+    }
+  }, [searchQuery, projects]);
+
+  const loadProjects = async () => {
+    setIsLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('music_projects')
+        .select('id, name, style_tags, genre, mood, cover_url, concept_description, persona_id')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+
+      setProjects(data as InspoProject[]);
+      setFilteredProjects(data as InspoProject[]);
+      
+      logger.info('Loaded inspiration projects', 'InspoProjectDialog', { count: data.length });
+    } catch (error) {
+      logger.error('Failed to load projects', error as Error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[700px] max-h-[85vh]">
-          <DialogHeader>
-            <DialogTitle>Проекты и Вдохновение</DialogTitle>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px] max-h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Выбрать проект для вдохновения</DialogTitle>
+          <DialogDescription>
+            Выберите трек, чтобы использовать его стиль и настроение
+          </DialogDescription>
+        </DialogHeader>
 
-          <Tabs defaultValue="projects" className="flex-1">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="projects">Мои Проекты</TabsTrigger>
-              <TabsTrigger value="create">Создать</TabsTrigger>
-            </TabsList>
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Поиск по названию, стилю, жанру..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
 
-            {/* Projects Tab */}
-            <TabsContent value="projects" className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Поиск проектов..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-
-              <ScrollArea className="h-[400px]">
-                {projectsLoading ? (
-                  <div className="text-center py-8 text-muted-foreground">Загрузка проектов...</div>
-                ) : musicProjects.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p className="mb-2">Нет сохраненных проектов</p>
-                    <p className="text-sm">Создайте первый проект во вкладке "Создать"</p>
+        {/* Projects List */}
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : filteredProjects.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Music className="h-12 w-12 text-muted-foreground/50 mb-4" />
+              <p className="text-sm text-muted-foreground">
+                {searchQuery ? 'Ничего не найдено' : 'У вас пока нет завершенных треков'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2 pb-4">
+              {filteredProjects.map((project) => (
+                <button
+                  key={project.id}
+                  onClick={() => onSelectProject(project)}
+                  className={cn(
+                    "w-full flex items-start gap-3 p-3 rounded-lg border border-border/50 hover:border-primary/50 hover:bg-accent/5 transition-all text-left",
+                    selectedProjectId === project.id && "border-primary bg-primary/5"
+                  )}
+                >
+                  {/* Cover */}
+                  <div className="flex-shrink-0 w-12 h-12 rounded bg-muted/50 overflow-hidden">
+                    {project.cover_url ? (
+                      <img
+                        src={project.cover_url}
+                        alt={project.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Music className="h-5 w-5 text-muted-foreground/50" />
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-3">
-                    {musicProjects
-                      .filter(p => 
-                        !searchQuery || 
-                        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        p.genre?.toLowerCase().includes(searchQuery.toLowerCase())
-                      )
-                      .map((project) => (
-                        <Card
-                          key={project.id}
-                          className="p-4 hover:bg-accent cursor-pointer transition-colors"
-                          onClick={() => handleProjectCreated(project)}
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-sm truncate">{project.name}</h4>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {project.style_tags?.slice(0, 3).map((tag, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-primary/10 text-primary"
                         >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h4 className="font-semibold">{project.name}</h4>
-                              {project.description && (
-                                <p className="text-sm text-muted-foreground mt-1">{project.description}</p>
-                              )}
-                              <div className="flex flex-wrap gap-2 mt-2">
-                                {project.genre && (
-                                  <span className="px-2 py-1 bg-primary/10 text-primary rounded text-xs">
-                                    {project.genre}
-                                  </span>
-                                )}
-                                {project.mood && (
-                                  <span className="px-2 py-1 bg-secondary/10 text-secondary-foreground rounded text-xs">
-                                    {project.mood}
-                                  </span>
-                                )}
-                                {project.style_tags?.slice(0, 3).map((tag, i) => (
-                                  <span key={i} className="px-2 py-1 bg-muted rounded text-xs">
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </Card>
+                          {tag}
+                        </span>
                       ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </TabsContent>
-
-            {/* Create Tab */}
-            <TabsContent value="create" className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 py-4">
-                <Card className="p-6 hover:bg-accent cursor-pointer transition-colors" onClick={() => setWizardOpen(true)}>
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
-                      <Sparkles className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg">AI Мастер</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Создайте детальный проект с помощью AI: концепция, треклист, стиль
-                      </p>
+                      {project.style_tags && project.style_tags.length > 3 && (
+                        <span className="text-[10px] text-muted-foreground">
+                          +{project.style_tags.length - 3}
+                        </span>
+                      )}
                     </div>
                   </div>
-                </Card>
+                </button>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
 
-                <Card className="p-6 hover:bg-accent cursor-pointer transition-colors opacity-60">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center">
-                      <Plus className="w-6 h-6" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg">Пустой проект</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Создайте проект с нуля и заполните детали вручную
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">(скоро)</p>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
-
-      {/* Project Wizard */}
-      <ProjectWizardDialog
-        open={wizardOpen}
-        onOpenChange={setWizardOpen}
-        onProjectCreated={handleProjectCreated}
-      />
-    </>
+        <div className="flex justify-end gap-2 pt-2 border-t">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Отмена
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 });
 

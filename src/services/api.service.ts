@@ -5,9 +5,9 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import { handlePostgrestError, handleSupabaseFunctionError } from "@/services/api/errors";
-import { logError, logWarn } from "@/utils/logger";
-import { retryWithBackoff, RETRY_CONFIGS } from "@/utils/retryWithBackoff";
+import { ApiError, handlePostgrestError, ensureData, handleSupabaseFunctionError } from "@/services/api/errors";
+import { logInfo, logError, logDebug, logWarn, maskObject } from "@/utils/logger";
+import { retryWithBackoff, RETRY_CONFIGS, CircuitBreaker } from "@/utils/retryWithBackoff";
 import type { TrackMetadata } from "@/types/track-metadata";
 
 type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
@@ -109,6 +109,17 @@ export type ProviderBalanceResponse = {
 /**
  * API Service - handles all backend communication
  */
+const isSupportedGenerateProvider = (
+  value: unknown
+): value is NonNullable<GenerateMusicRequest["provider"]> =>
+  value === "suno" || value === "replicate" || value === "mureka";
+
+// Circuit breakers для различных провайдеров
+const circuitBreakers = {
+  suno: new CircuitBreaker(5, 60000),
+  mureka: new CircuitBreaker(5, 60000),
+  replicate: new CircuitBreaker(5, 60000),
+};
 
 export class ApiService {
   /**
@@ -150,6 +161,182 @@ export class ApiService {
     }
 
     return data;
+  }
+
+  /**
+   * Start music generation process
+   * @deprecated Use GenerationService.generate() instead
+   */
+  static async generateMusic(
+    request: GenerateMusicRequest
+  ): Promise<GenerateMusicResponse> {
+    const context = "ApiService.generateMusic";
+    // --- Укрепление и логирование ---
+    const provider = isSupportedGenerateProvider(request.provider) ? request.provider : "suno";
+    const functionName =
+      provider === "suno"
+        ? "generate-suno"
+        : provider === "mureka"
+          ? "generate-mureka"
+          : "generate-music";
+
+    try {
+      const normalizedPrompt = request.prompt?.trim() ?? '';
+      const lyrics = request.lyrics ?? undefined;
+      const styleTags =
+        request.styleTags
+          ?.map((tag) => tag?.trim())
+          .filter((tag): tag is string => Boolean(tag)) ?? [];
+      const promptForSuno = request.customMode ? (lyrics ?? normalizedPrompt) : normalizedPrompt;
+
+      const resolvedTitle = (() => {
+        const explicitTitle = request.title?.trim();
+        if (explicitTitle) return explicitTitle;
+        const fallbackSource = normalizedPrompt || lyrics || '';
+        return fallbackSource ? fallbackSource.substring(0, 50) : 'Generated Track';
+      })();
+
+      const makeInstrumental = request.makeInstrumental ?? request.hasVocals === false;
+
+      const payload: Record<string, unknown> = provider === "mureka"
+        ? {
+            trackId: request.trackId,
+            title: resolvedTitle,
+            prompt: normalizedPrompt,
+            lyrics,
+            styleTags: styleTags.length ? styleTags : undefined,
+            hasVocals: request.hasVocals,
+            isBGM: makeInstrumental ? true : undefined,
+            modelVersion: request.modelVersion,
+          }
+        : {
+            trackId: request.trackId,
+            title: resolvedTitle,
+            prompt: promptForSuno,
+            tags: styleTags,
+            lyrics,
+            hasVocals: request.hasVocals,
+            make_instrumental: makeInstrumental,
+            model_version: request.modelVersion,
+            customMode: request.customMode,
+            referenceAudioUrl: request.referenceAudioUrl,
+          };
+
+      // --- Опциональные параметры с валидацией/нормализацией ---
+      const trimmedNegativeTags = request.negativeTags?.trim();
+      if (provider !== "mureka" && trimmedNegativeTags) {
+        payload.negativeTags = trimmedNegativeTags;
+      }
+
+      if (provider !== "mureka" && (request.vocalGender === 'm' || request.vocalGender === 'f')) {
+        payload.vocalGender = request.vocalGender;
+      }
+
+      const clamp = (val: number) => Math.max(0, Math.min(1, val));
+
+      if (provider !== "mureka") {
+        if (typeof request.styleWeight === 'number' && !Number.isNaN(request.styleWeight)) {
+          payload.styleWeight = clamp(request.styleWeight);
+        }
+        if (typeof request.weirdnessConstraint === 'number' && !Number.isNaN(request.weirdnessConstraint)) {
+          payload.weirdnessConstraint = clamp(request.weirdnessConstraint);
+        }
+        if (typeof request.audioWeight === 'number' && !Number.isNaN(request.audioWeight)) {
+          payload.audioWeight = clamp(request.audioWeight);
+        }
+      }
+
+      logInfo(`🎵 [API Service] Starting music generation`, context, { provider, functionName });
+      logDebug(`📤 [API Service] Sending payload to ${functionName}`, context, {
+        ...maskObject(payload),
+        // Явно логируем нечувствительные метаданные для быстрой диагностики
+        promptLength: normalizedPrompt.length,
+        lyricsLength: lyrics?.length ?? 0,
+        tagsCount: styleTags.length,
+        hasTrackId: !!payload.trackId,
+      });
+
+      logInfo('⏳ [API Service] Invoking edge function...', context);
+      
+      // Используем retry logic с circuit breaker
+      const circuitBreaker = circuitBreakers[provider];
+      const { data, error } = await retryWithBackoff(
+        () => circuitBreaker.execute(() => 
+          supabase.functions.invoke<GenerateMusicResponse>(
+            functionName,
+            { body: payload }
+          )
+        ),
+        {
+          ...RETRY_CONFIGS.critical,
+          onRetry: (error, attempt, delayMs) => {
+            logWarn(
+              `Music generation request failed, retrying...`,
+              context,
+              {
+                provider,
+                attempt,
+                delayMs,
+                error: error.message,
+              }
+            );
+          },
+        }
+      );
+
+      // --- Обработка ошибок ---
+      if (error) {
+        logError('🔴 [API Service] Edge function invocation failed', error, context, {
+          provider,
+          functionName,
+        });
+
+        let userMessage = error.message || "Не удалось запустить генерацию музыки";
+        // Проверяем на частые клиентские проблемы, которые маскируются под сетевые ошибки
+        if (error.message.toLowerCase().includes('failed to fetch')) {
+          userMessage = "Сетевая ошибка при вызове функции. Возможно, проблема с CORS. Проверьте консоль браузера на наличие ошибок, связанных с 'no-cors'.";
+        } else if (error.message?.includes('429') || error.message?.includes('Rate limit')) {
+          userMessage = 'Превышен лимит запросов. Пожалуйста, подождите немного';
+        } else if (error.message?.includes('402') || error.message?.includes('Payment')) {
+          userMessage = 'Недостаточно средств. Пополните баланс API';
+        }
+
+        throw new ApiError(userMessage, {
+          context,
+          payload: { provider, functionName },
+          cause: error,
+        });
+      }
+
+      // --- Обработка ответа ---
+      if (!data) {
+        const err = new Error('No data in response from edge function');
+        logError('🔴 [API Service] Empty response from server', err, context, { provider, functionName });
+        throw new ApiError('Сервер вернул пустой ответ. Не удалось подтвердить запуск генерации.', {
+          context,
+          payload: { provider, functionName },
+          cause: err,
+        });
+      }
+
+      logInfo('✅ [API Service] Edge function returned successfully', context, {
+        provider,
+        functionName,
+        data: data ? { success: true } : undefined,
+      });
+
+      return data;
+
+    } catch (e) {
+      const error = e instanceof Error ? e : new Error(String(e));
+      logError('🆘 [API Service] Unhandled exception in generateMusic', error, context, {
+        provider,
+        functionName,
+      });
+
+      // Перевыбрасываем ошибку, чтобы она была обработана выше
+      throw error;
+    }
   }
 
   /**
@@ -245,6 +432,48 @@ export class ApiService {
     return true;
   }
 
+  /**
+   * Create a new track record
+   * @deprecated Use GenerationService.generate() instead (creates track automatically)
+   */
+  static async createTrack(
+    userId: string,
+    title: string,
+    prompt: string,
+    provider: string = 'replicate',
+    lyrics?: string,
+    hasVocals?: boolean,
+    styleTags?: string[]
+  ): Promise<Track> {
+    const context = "ApiService.createTrack";
+    const { data, error } = await supabase
+      .from("tracks")
+      .insert({
+        user_id: userId,
+        title: title.substring(0, 100),
+        prompt: prompt,
+        status: "pending",
+        provider,
+        lyrics,
+        has_vocals: hasVocals,
+        style_tags: styleTags,
+      })
+      .select()
+      .single();
+
+    handlePostgrestError(error, "Failed to create track", context, {
+      userId,
+      provider,
+      hasLyrics: Boolean(lyrics),
+    });
+
+    const record = ensureData(data, "Failed to create track", context, {
+      userId,
+      provider,
+    });
+
+    return mapTrackRowToTrack(record);
+  }
 
   /**
    * Get all tracks for the current user with caching support

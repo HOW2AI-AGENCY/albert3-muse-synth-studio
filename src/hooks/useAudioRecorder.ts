@@ -4,10 +4,7 @@ import { logger } from '@/utils/logger';
 
 const MAX_RECORDING_TIME = 60; // seconds
 
-export const useAudioRecorder = (
-  onRecordComplete?: (url: string) => void,
-  uploadAudio?: (file: File) => Promise<string | null>
-) => {
+export const useAudioRecorder = (onRecordComplete?: (url: string) => void) => {
   const { toast } = useToast();
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -32,45 +29,23 @@ export const useAudioRecorder = (
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
+          sampleRate: 44100,
         },
       });
 
       streamRef.current = stream;
 
-      // Create cross-browser AudioContext
-      const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContextClass) {
-        throw new Error('AudioContext not supported');
-      }
-      
-      const audioContext = new AudioContextClass();
-      audioContextRef.current = audioContext;
-      
-      // Resume AudioContext (required in some browsers)
-      if (audioContext.state === 'suspended') {
-        await audioContext.resume();
-      }
-      
-      const source = audioContext.createMediaStreamSource(stream);
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 2048;
-      analyserRef.current = analyser;
-      source.connect(analyser);
+      // AudioContext for visualization
+      audioContextRef.current = new AudioContext();
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = 2048;
+      source.connect(analyserRef.current);
 
-      // Select best MIME type for MediaRecorder
-      const mimeTypeCandidates = [
-        'audio/webm;codecs=opus',
-        'audio/webm',
-        'audio/mp4;codecs=mp4a.40.2',
-        'audio/mp4',
-        'audio/aac',
-      ];
-      
-      const mimeType = mimeTypeCandidates.find(type => 
-        (window as any).MediaRecorder?.isTypeSupported?.(type)
-      ) || 'audio/webm';
-      
-      logger.info('MediaRecorder MIME type', 'useAudioRecorder', { selected: mimeType });
+      // MediaRecorder for recording
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : 'audio/webm';
 
       mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
 
@@ -94,76 +69,57 @@ export const useAudioRecorder = (
           mimeType
         });
         
-        // Auto-upload to Supabase Storage if upload function is provided
-        if (uploadAudio) {
-          try {
-            const fileName = `recording-${Date.now()}.webm`;
-            const file = new File([blob], fileName, { type: blob.type });
+        // Auto-upload to Supabase Storage
+        try {
+          const { useAudioUpload } = await import('@/hooks/useAudioUpload');
+          const { uploadAudio: uploadFn } = useAudioUpload();
+          
+          const fileName = `recording-${Date.now()}.webm`;
+          const file = new File([blob], fileName, { type: blob.type });
+          
+          logger.info('Auto-uploading recording', 'useAudioRecorder', { fileName, size: blob.size });
+          
+          const uploadedUrl = await uploadFn(file);
+          
+          if (uploadedUrl) {
+            setAudioUrl(uploadedUrl);
+            logger.info('Recording uploaded successfully', 'useAudioRecorder', { url: uploadedUrl.substring(0, 50) });
             
-            logger.info('Auto-uploading recording', 'useAudioRecorder', { fileName, size: blob.size });
+            // Notify parent component
+            onRecordComplete?.(uploadedUrl);
             
-            const uploadedUrl = await uploadAudio(file);
-            
-            if (uploadedUrl) {
-              setAudioUrl(uploadedUrl);
-              logger.info('Recording uploaded successfully', 'useAudioRecorder', { url: uploadedUrl.substring(0, 50) });
-              
-              // Notify parent component
-              onRecordComplete?.(uploadedUrl);
-              
-              toast({
-                title: '🎤 Запись загружена',
-                description: 'Аудио готово к использованию',
-              });
-            } else {
-              // Fallback to blob URL if upload fails
-              const blobUrl = URL.createObjectURL(blob);
-              setAudioUrl(blobUrl);
-              logger.warn('Upload failed, using blob URL', 'useAudioRecorder');
-              
-              toast({
-                title: '⚠️ Ошибка загрузки',
-                description: 'Используется локальная копия. Повторите попытку.',
-                variant: 'destructive',
-              });
-            }
-          } catch (error) {
-            logger.error('Auto-upload error', error instanceof Error ? error : undefined, 'useAudioRecorder');
-            // Fallback to blob URL
+            toast({
+              title: '🎤 Запись загружена',
+              description: 'Аудио готово к использованию',
+            });
+          } else {
+            // Fallback to blob URL if upload fails
             const blobUrl = URL.createObjectURL(blob);
             setAudioUrl(blobUrl);
+            logger.warn('Upload failed, using blob URL', 'useAudioRecorder');
             
             toast({
               title: '⚠️ Ошибка загрузки',
-              description: 'Используется локальная копия. Проверьте подключение.',
+              description: 'Используется локальная копия. Повторите попытку.',
               variant: 'destructive',
             });
           }
-        } else {
-          // No upload function provided, use blob URL
+        } catch (error) {
+          logger.error('Auto-upload error', error instanceof Error ? error : undefined, 'useAudioRecorder');
+          // Fallback to blob URL
           const blobUrl = URL.createObjectURL(blob);
           setAudioUrl(blobUrl);
-          onRecordComplete?.(blobUrl);
+          
+          toast({
+            title: '⚠️ Ошибка загрузки',
+            description: 'Используется локальная копия. Проверьте подключение.',
+            variant: 'destructive',
+          });
         }
       };
 
       mediaRecorderRef.current.start(100);
       setIsRecording(true);
-      
-      logger.info('Recording started', 'useAudioRecorder', {
-        mimeType: mediaRecorderRef.current.mimeType,
-        state: mediaRecorderRef.current.state
-      });
-      
-      // Fallback validator: ensure recording actually started
-      setTimeout(() => {
-        if (mediaRecorderRef.current?.state !== 'recording') {
-          logger.error('Recording failed to start', new Error('MediaRecorder state check failed'), 'useAudioRecorder');
-          setError('Не удалось начать запись. Попробуйте еще раз.');
-          setIsRecording(false);
-          stream.getTracks().forEach(track => track.stop());
-        }
-      }, 500);
 
       // Timer
       timerRef.current = setInterval(() => {
@@ -181,37 +137,18 @@ export const useAudioRecorder = (
         });
       }, 1000);
 
+      logger.info('Recording started');
     } catch (err) {
-      const error = err as Error;
-      logger.error('Failed to start recording', error, 'useAudioRecorder', {
-        errorName: error.name,
-        errorMessage: error.message
-      });
-      
-      // Provide user-friendly error messages
-      let errorMessage = 'Не удалось получить доступ к микрофону';
-      if (error.name === 'NotAllowedError') {
-        errorMessage = 'Доступ к микрофону запрещен. Разрешите доступ в настройках браузера.';
-      } else if (error.name === 'NotFoundError') {
-        errorMessage = 'Микрофон не найден. Проверьте подключение устройства.';
-      } else if (error.name === 'NotReadableError') {
-        errorMessage = 'Микрофон занят другим приложением.';
-      } else if (error.name === 'OverconstrainedError') {
-        errorMessage = 'Параметры записи не поддерживаются вашим устройством.';
-      } else if (error.name === 'SecurityError' || !window.isSecureContext) {
-        errorMessage = 'Микрофон доступен только через HTTPS.';
-      }
-      
+      const errorMessage = err instanceof Error ? err.message : 'Не удалось получить доступ к микрофону';
       setError(errorMessage);
-      setIsRecording(false);
-      
+      logger.error('Recording error', err instanceof Error ? err : undefined);
       toast({
         title: 'Ошибка записи',
         description: errorMessage,
         variant: 'destructive',
       });
     }
-  }, [toast, uploadAudio, onRecordComplete]);
+  }, [toast]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current?.state === 'recording') {

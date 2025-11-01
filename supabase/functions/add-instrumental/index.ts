@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
       negativeTags: body.negativeTags,
       tags: body.tags,
       model: body.model || 'V4_5PLUS',
-      callBackUrl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/add-instrumental-callback`
+      callBackUrl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/suno-callback`
     };
 
     if (body.vocalGender) sunoPayload.vocalGender = body.vocalGender;
@@ -123,7 +123,6 @@ Deno.serve(async (req) => {
         prompt: `Add instrumental to: ${body.title}`,
         status: 'processing',
         provider: 'suno',
-        suno_id: taskId,
         model_name: body.model || 'V4_5PLUS',
         has_vocals: false, // Result will be instrumental
         style_tags: body.tags.split(',').map(t => t.trim()),

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,8 +39,6 @@ import { normalizeTrack } from "@/utils/trackNormalizer";
 import { getTrackWithVersions } from "@/features/tracks/api/trackVersions";
 import { primeTrackVersionsCache } from "@/features/tracks/hooks/useTrackVersions";
 import type { AudioPlayerTrack } from "@/types/track";
-import { useAdaptiveGrid } from '@/hooks/useAdaptiveGrid';
-import { VirtualizedTrackGrid } from '@/components/tracks/VirtualizedTrackGrid';
 
 type ViewMode = 'grid' | 'list' | 'optimized';
 type SortBy = 'created_at' | 'title' | 'duration' | 'like_count';
@@ -93,34 +91,6 @@ const Library: React.FC = () => {
   
   const [createPersonaDialogOpen, setCreatePersonaDialogOpen] = useState(false);
   const [selectedTrackForPersona, setSelectedTrackForPersona] = useState<DisplayTrack | null>(null);
-  
-  // Container width tracking for adaptive grid
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(0);
-
-  // Measure container width with immediate initialization (FIX: prevents 0-width flash)
-  useEffect(() => {
-    if (!containerRef.current) return;
-    
-    // ✅ FIX: Immediately set initial width to prevent single-column flash
-    const initialWidth = containerRef.current.clientWidth;
-    if (initialWidth > 0) {
-      setContainerWidth(initialWidth);
-    }
-    
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const width = entry.contentRect.width;
-        if (width > 0) {
-          setContainerWidth(width);
-        }
-      }
-    });
-    
-    resizeObserver.observe(containerRef.current);
-    
-    return () => resizeObserver.disconnect();
-  }, []);
   
   // Сохранение настроек просмотра
   useEffect(() => {
@@ -324,10 +294,6 @@ const Library: React.FC = () => {
   //   }
   // }, [toast, refreshTracks]);
 
-
-  // Calculate grid parameters
-  const gridParams = useAdaptiveGrid(containerWidth);
-  const shouldVirtualize = filteredAndSortedTracks.length > 50;
 
   const handleShare = useCallback(async (trackId: string) => {
     try {
@@ -655,58 +621,39 @@ const Library: React.FC = () => {
       ) : (
         <>
           {viewMode === 'grid' && (
-            <div ref={containerRef} className="w-full">
-              <div className="w-full" style={{ height: 'calc(100vh - 280px)' }}>
-                {shouldVirtualize ? (
-                  <VirtualizedTrackGrid
-                    tracks={filteredAndSortedTracks}
-                    columns={gridParams.columns}
-                    gap={gridParams.gap}
-                    cardWidth={gridParams.cardWidth}
-                    onTrackPlay={handleTrackPlay}
-                    onShare={handleShare}
-                    onSeparateStems={handleSeparateStems}
-                    onExtend={handleExtend}
-                    onCover={handleCover}
-                    onAddVocal={handleAddVocal}
-                    onCreatePersona={handleCreatePersona}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredAndSortedTracks.map((track) => (
+                <div key={track.id} className="relative" aria-busy={loadingTrackId === track.id}>
+                  <TrackCard
+                    track={normalizeTrack(track)}
+                    onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
+                    onShare={() => handleShare(track.id)}
+                    onSeparateStems={() => handleSeparateStems(track.id)}
+                    onExtend={() => handleExtend(track.id)}
+                    onCover={() => handleCover(track.id)}
+                    onAddVocal={() => handleAddVocal(track.id)}
+                    onCreatePersona={() => handleCreatePersona(track.id)}
                     onRetry={handleRetry}
                     onDelete={handleDelete}
                   />
-                ) : (
-                  <div 
-                    className="grid overflow-auto h-full scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent"
-                    style={{
-                      gridTemplateColumns: `repeat(${gridParams.columns}, minmax(280px, ${gridParams.cardWidth}px))`,
-                      gap: `${gridParams.gap}px`,
-                      justifyContent: 'center'
-                    }}
-                  >
-                  {filteredAndSortedTracks.map((track) => (
-                    <div key={track.id} className="relative" style={{ maxWidth: `${gridParams.cardWidth}px` }} aria-busy={loadingTrackId === track.id}>
-                      <TrackCard
-                        track={normalizeTrack(track)}
-                        onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
-                        onShare={() => handleShare(track.id)}
-                        onSeparateStems={() => handleSeparateStems(track.id)}
-                        onExtend={() => handleExtend(track.id)}
-                        onCover={() => handleCover(track.id)}
-                        onAddVocal={() => handleAddVocal(track.id)}
-                        onCreatePersona={() => handleCreatePersona(track.id)}
-                        onRetry={handleRetry}
-                        onDelete={handleDelete}
-                      />
-                      {loadingTrackId === track.id && (
-                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-3xl bg-background/80 backdrop-blur-sm">
-                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                          <span className="text-xs font-medium text-muted-foreground">Загрузка версий…</span>
-                        </div>
-                      )}
+                  {loadingTrackId === track.id && (
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-3xl bg-background/80 backdrop-blur-sm">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      <span className="text-xs font-medium text-muted-foreground">Загрузка версий…</span>
                     </div>
-                  ))}
-                  </div>
-                )}
-              </div>
+      )}
+
+      {deleteDialogOpen && selectedTrackForDelete && (
+        <LazyTrackDeleteDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          trackId={selectedTrackForDelete.id}
+          trackTitle={selectedTrackForDelete.title}
+          onConfirm={confirmDelete}
+        />
+      )}
+                </div>
+              ))}
             </div>
           )}
           
@@ -804,16 +751,6 @@ const Library: React.FC = () => {
             setCreatePersonaDialogOpen(false);
             setSelectedTrackForPersona(null);
           }}
-        />
-      )}
-
-      {deleteDialogOpen && selectedTrackForDelete && (
-        <LazyTrackDeleteDialog
-          open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
-          trackId={selectedTrackForDelete.id}
-          trackTitle={selectedTrackForDelete.title}
-          onConfirm={confirmDelete}
         />
       )}
     </div>

@@ -3,7 +3,7 @@ import { logger } from './logger.ts';
 export async function findOrCreateTrack(
   supabaseAdmin: any,
   userId: string,
-  { trackId, title, prompt, lyrics, hasVocals, styleTags, requestMetadata, idempotencyKey, provider, projectId }: {
+  { trackId, title, prompt, lyrics, hasVocals, styleTags, requestMetadata, idempotencyKey, provider }: {
     trackId?: string;
     title?: string;
     prompt?: string;
@@ -13,7 +13,6 @@ export async function findOrCreateTrack(
     requestMetadata: Record<string, unknown>;
     idempotencyKey?: string;
     provider?: string;
-    projectId?: string; // ✅ НОВОЕ: поддержка project_id
   }
 ): Promise<{ trackId: string; track: any }> {
   if (trackId) {
@@ -40,8 +39,8 @@ export async function findOrCreateTrack(
   const generateTitle = async () => {
     if (title) return title;
     
-    // Try AI title generation for Mureka and Suno
-    if (provider === 'mureka' || provider === 'suno') {
+    // Try AI title generation for Mureka
+    if (provider === 'mureka') {
       try {
         const { data: titleData, error: titleError } = await supabaseAdmin.functions.invoke('generate-track-title', {
           body: {
@@ -65,33 +64,22 @@ export async function findOrCreateTrack(
     
     // Fallback: Extract from prompt
     if (prompt) {
-      // Remove service words and special characters, support Cyrillic
       const cleaned = prompt
-        .replace(/\b(music|track|song|create|generate|трек|музыка|песня|создай|сгенерируй)\b/gi, '')
-        .replace(/[^\wА-Яа-яЁё\s-]/g, ' ')
+        .replace(/[^\w\s-]/gi, '')
         .trim()
-        .replace(/\s+/g, ' ')
-        .slice(0, 60);
+        .slice(0, 50);
       
-      if (cleaned.length > 3) {
-        // Capitalize first letter
-        return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-      }
+      if (cleaned) return cleaned;
     }
     
-    // Final fallback with genre and timestamp
+    // Final fallback with timestamp
     const timestamp = new Date().toLocaleString('ru-RU', {
       day: '2-digit',
       month: '2-digit',
       hour: '2-digit',
       minute: '2-digit'
     });
-    
-    const genre = styleTags && styleTags.length > 0 
-      ? styleTags[0].charAt(0).toUpperCase() + styleTags[0].slice(1)
-      : 'Music';
-    
-    return `${genre} ${timestamp}`;
+    return `Трек ${timestamp}`;
   };
 
   const generatedTitle = await generateTitle();
@@ -109,7 +97,6 @@ export async function findOrCreateTrack(
       style_tags: styleTags ?? null,
       metadata: requestMetadata,
       idempotency_key: idempotencyKey,
-      project_id: projectId ?? null, // ✅ НОВОЕ: сохраняем project_id
     })
     .select('*')
     .single();

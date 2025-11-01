@@ -5,7 +5,7 @@ import { VirtualizedTracksList } from "./tracks/VirtualizedTracksList";
 import { ViewSwitcher } from "./tracks/ViewSwitcher";
 import { TrackListSkeleton } from "@/components/skeletons";
 import { StaggerContainer, StaggerItem } from "@/components/animations/OptimizedMotion";
-import { Track } from "@/services/api.service";
+import { Track, ApiService } from "@/services/api.service";
 import { Music } from "@/utils/iconImports";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
@@ -116,15 +116,16 @@ const TracksListComponent = ({
 
       toast({ title: "Повторная генерация", description: "Запускаем генерацию заново..." });
 
-      const provider = track.provider === 'suno' || track.provider === 'mureka'
+      const provider = track.provider === 'suno' || track.provider === 'replicate' || track.provider === 'mureka'
         ? track.provider
         : 'suno';
 
-      const { GenerationService } = await import('@/services/generation');
-      await GenerationService.generate({
+      await ApiService.generateMusic({
+        trackId: track.id,
+        userId: user.id,
         title: track.title,
         prompt: track.prompt,
-        provider: provider as any,
+        provider,
         lyrics: track.lyrics || undefined,
         hasVocals: track.has_vocals ?? false,
         styleTags: track.style_tags || undefined,

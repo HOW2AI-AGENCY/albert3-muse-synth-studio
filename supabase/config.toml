@@ -49,9 +49,6 @@ verify_jwt = true
 [functions.analyze-audio]
 verify_jwt = true
 
-[functions.ai-project-wizard]
-verify_jwt = true
-
 [functions.analyze-reference-audio]
 verify_jwt = true
 
@@ -153,42 +150,3 @@ verify_jwt = true
     SENTRY_ENVIRONMENT = "development"
     SENTRY_RELEASE = "local"
     SENTRY_TRACES_SAMPLE_RATE = "0.0"
-
-[functions.upload-and-extend]
-verify_jwt = true
-
-[functions.upload-and-cover]
-verify_jwt = true
-
-[functions.upload-extend-callback]
-verify_jwt = false
-
-[functions.upload-cover-callback]
-verify_jwt = false
-
-[functions.add-instrumental-callback]
-verify_jwt = false
-
-[functions.add-vocals]
-verify_jwt = true
-
-[functions.add-vocals-callback]
-verify_jwt = false
-
-[functions.create-music-video]
-verify_jwt = true
-
-[functions.music-video-callback]
-verify_jwt = false
-
-[functions.export-wav]
-verify_jwt = true
-
-[functions.get-timestamped-lyrics]
-verify_jwt = true
-
-[functions.replace-section]
-verify_jwt = true
-
-[functions.replace-section-callback]
-verify_jwt = false

@@ -23,36 +23,16 @@ export async function generateAdvancedPrompt(
   request: AdvancedPromptRequest
 ): Promise<AdvancedPromptResult> {
   try {
-    // Check authentication before calling the function
-    const { data: { session }, error: authError } = await supabase.auth.getSession();
-    
-    if (authError || !session) {
-      throw new Error('Вы должны быть авторизованы для использования этой функции');
-    }
-
     const { data, error } = await supabase.functions.invoke('generate-advanced-prompt', {
-      body: request,
-      headers: {
-        Authorization: `Bearer ${session.access_token}`
-      }
+      body: request
     });
 
     if (error) {
-      // Handle specific error codes
-      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
-        throw new Error('Сессия истекла. Пожалуйста, войдите снова.');
-      }
-      if (error.message?.includes('429')) {
-        throw new Error('Слишком много запросов. Попробуйте позже.');
-      }
-      if (error.message?.includes('402')) {
-        throw new Error('Недостаточно AI-кредитов. Пополните баланс.');
-      }
-      throw new Error(error.message || 'Не удалось сгенерировать промпт');
+      throw new Error(error.message || 'Failed to generate advanced prompt');
     }
 
     if (!data?.result) {
-      throw new Error('Некорректный ответ от AI-сервиса');
+      throw new Error('Invalid response from AI service');
     }
 
     return data.result;

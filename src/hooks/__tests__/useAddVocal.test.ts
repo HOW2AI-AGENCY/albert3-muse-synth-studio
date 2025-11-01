@@ -23,9 +23,24 @@ describe('useAddVocal', () => {
     vi.clearAllMocks();
   });
 
-  it('should call add-vocals with correct parameters', async () => {
+  it('should fetch track data before calling create-cover', async () => {
+    const mockTrack = {
+      audio_url: 'https://example.com/track.mp3',
+      title: 'Test Track',
+      style_tags: ['rock', 'energetic'],
+      prompt: 'energetic rock music'
+    };
+
+    (supabase.from as any).mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: mockTrack, error: null })
+        })
+      })
+    });
+
     (supabase.functions.invoke as any).mockResolvedValue({
-      data: { success: true, taskId: 'test-task-id' },
+      data: { success: true, trackId: 'test-id' },
       error: null
     });
 
@@ -33,51 +48,59 @@ describe('useAddVocal', () => {
 
     await waitFor(async () => {
       await result.current.addVocal({ 
-        uploadUrl: 'https://example.com/instrumental.mp3',
-        prompt: 'Calm piano track with soothing vocals',
-        title: 'Test Track (Vocal)',
-        negativeTags: 'Heavy Metal',
-        style: 'Jazz',
-        vocalGender: 'm',
-        model: 'V5'
+        trackId: 'test-track-id',
+        vocalText: 'Add vocals to this track',
+        vocalStyle: 'pop'
       });
     });
 
-    expect(supabase.functions.invoke).toHaveBeenCalledWith('add-vocals', {
+    expect(supabase.from).toHaveBeenCalledWith('tracks');
+    expect(supabase.functions.invoke).toHaveBeenCalledWith('create-cover', {
       body: expect.objectContaining({
-        uploadUrl: 'https://example.com/instrumental.mp3',
-        prompt: 'Calm piano track with soothing vocals',
-        title: 'Test Track (Vocal)',
-        negativeTags: 'Heavy Metal',
-        style: 'Jazz',
-        vocalGender: 'm',
-        model: 'V5'
+        referenceAudioUrl: mockTrack.audio_url,
+        referenceTrackId: 'test-track-id',
+        make_instrumental: false
       })
     });
   });
 
-  it('should handle API errors', async () => {
-    (supabase.functions.invoke as any).mockResolvedValue({
-      data: null,
-      error: { message: 'API error' }
+  it('should handle missing track error', async () => {
+    (supabase.from as any).mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ 
+            data: null, 
+            error: { message: 'Track not found' }
+          })
+        })
+      })
     });
 
     const { result } = renderHook(() => useAddVocal());
 
     await expect(
-      result.current.addVocal({ 
-        uploadUrl: 'https://example.com/audio.mp3',
-        prompt: 'test',
-        title: 'test',
-        negativeTags: 'test',
-        style: 'test'
-      })
+      result.current.addVocal({ trackId: 'non-existent-id' })
     ).rejects.toThrow();
   });
 
-  it('should include optional parameters when provided', async () => {
+  it('should use create-cover with correct parameters', async () => {
+    const mockTrack = {
+      audio_url: 'https://example.com/instrumental.mp3',
+      title: 'Instrumental Track',
+      style_tags: ['electronic'],
+      prompt: 'electronic music'
+    };
+
+    (supabase.from as any).mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: mockTrack, error: null })
+        })
+      })
+    });
+
     (supabase.functions.invoke as any).mockResolvedValue({
-      data: { success: true, taskId: 'test-task-id' },
+      data: { success: true },
       error: null
     });
 
@@ -85,27 +108,22 @@ describe('useAddVocal', () => {
 
     await waitFor(async () => {
       await result.current.addVocal({ 
-        uploadUrl: 'https://example.com/audio.mp3',
-        prompt: 'test prompt',
-        title: 'Test Title',
-        negativeTags: 'Heavy Metal',
-        style: 'Jazz',
-        vocalGender: 'f',
-        styleWeight: 0.7,
-        weirdnessConstraint: 0.3,
-        audioWeight: 0.8,
-        model: 'V4_5PLUS'
+        trackId: 'test-id',
+        vocalText: 'Custom vocal text',
+        vocalStyle: 'jazz'
       });
     });
 
-    expect(supabase.functions.invoke).toHaveBeenCalledWith('add-vocals', {
-      body: expect.objectContaining({
-        vocalGender: 'f',
-        styleWeight: 0.7,
-        weirdnessConstraint: 0.3,
-        audioWeight: 0.8,
-        model: 'V4_5PLUS'
-      })
+    expect(supabase.functions.invoke).toHaveBeenCalledWith('create-cover', {
+      body: {
+        referenceAudioUrl: mockTrack.audio_url,
+        referenceTrackId: 'test-id',
+        prompt: 'Custom vocal text',
+        tags: 'jazz',
+        title: 'Instrumental Track (Vocal)',
+        make_instrumental: false,
+        customMode: true
+      }
     });
   });
 });

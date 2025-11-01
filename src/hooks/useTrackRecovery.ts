@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { ApiService } from '@/services/api.service';
 import { logInfo, logError } from '@/utils/logger';
 
 interface UseTrackRecoveryOptions {
@@ -190,11 +191,12 @@ export const useTrackRecovery = (
           }
 
           // Повторно отправляем запрос на генерацию
-          const { GenerationService } = await import('@/services/generation');
-          await GenerationService.generate({
+          await ApiService.generateMusic({
+            trackId: track.id,
+            userId,
             title: track.title,
             prompt: track.prompt,
-            provider: (track.provider as any) || 'suno',
+            provider: (track.provider as 'replicate' | 'suno') || 'suno',
             lyrics: track.lyrics || undefined,
             hasVocals: track.has_vocals ?? false,
             styleTags: track.style_tags || undefined,

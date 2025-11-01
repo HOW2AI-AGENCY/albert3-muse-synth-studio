@@ -14,6 +14,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 import { performanceMonitor } from '@/utils/performanceMonitor';
+import { generateMusic as routeToProvider } from '@/services/providers/router';
+import type { GenerateOptions } from '@/services/providers/router';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 // Re-export unified MusicProvider type
@@ -421,21 +423,27 @@ export class GenerationService {
       const performanceId = `generation-${trackId}`;
       performanceMonitor.startTimer(performanceId, 'GenerationService');
 
-      // 7. Вызов Edge Function напрямую
-      logger.info('[STEP 5] Invoking provider edge function', context, {
+      // 7. Подготовка параметров для провайдера
+      const providerParams: GenerateOptions = {
+        ...request,
+        provider: request.provider,
+        trackId,
+        correlationId, // ✅ Pass correlation ID to provider
+      };
+
+      // 8. Вызов провайдера
+      logger.info('[STEP 5] Invoking provider', context, {
         correlationId,
         provider: request.provider,
         trackId,
+        paramsPreview: {
+          hasLyrics: !!providerParams.lyrics,
+          hasStyleTags: !!providerParams.styleTags?.length,
+          customMode: providerParams.customMode,
+        },
       });
 
-      const functionName = request.provider === 'suno' ? 'generate-suno' : 'generate-mureka';
-      const { data: result, error: invokeError } = await supabase.functions.invoke(functionName, {
-        body: { ...request, trackId, correlationId }
-      });
-
-      if (invokeError || !result) {
-        throw new Error(invokeError?.message || 'Provider invocation failed');
-      }
+      const result = await routeToProvider(providerParams);
       
       logger.info('[STEP 5 ✓] Provider responded successfully', context, {
         correlationId,

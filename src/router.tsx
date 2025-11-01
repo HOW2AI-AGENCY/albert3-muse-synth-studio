@@ -1,34 +1,24 @@
 import { createBrowserRouter } from "react-router-dom";
-import { Suspense } from "react";
 import WorkspaceLayout from "./components/workspace/WorkspaceLayout";
 import { ErrorBoundary } from "@/components/error/ErrorBoundary";
 import { GeneratorErrorFallback } from "@/components/error/GeneratorErrorFallback";
 import { TrackListErrorFallback } from "@/components/error/TrackListErrorFallback";
-import { FullPageSpinner } from "@/components/ui/loading-states";
-import { ProjectProvider } from "@/contexts/ProjectContext";
 
-// Critical routes - direct imports (no lazy loading)
+// ⚠️ TEMPORARY: Direct imports for debugging React instance issues
+// Will re-enable lazy loading after fixing multiple React instances problem
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-// Phase 1 Optimization: Lazy load workspace routes
-import { 
-  LazyDashboard,
-  LazyGenerate,
-  LazyLibrary,
-  LazyFavorites,
-  LazyAnalytics,
-  LazySettings,
-} from "./utils/lazyPages";
-
-// New hub pages
-import Projects from "./pages/workspace/Projects";
-import MonitoringHub from "./pages/workspace/MonitoringHub";
-
-// Still direct imports (will lazy load in Phase 2)
+// Workspace routes - direct imports
+import Dashboard from "./pages/workspace/Dashboard";
+import Generate from "./pages/workspace/Generate";
+import Library from "./pages/workspace/Library";
+import Favorites from "./pages/workspace/Favorites";
+import Settings from "./pages/workspace/Settings";
 import Profile from "./pages/workspace/Profile";
+import Analytics from "./pages/workspace/Analytics";
 import Metrics from "./pages/workspace/Metrics";
 import Admin from "./pages/workspace/Admin";
 import Monitoring from "./pages/workspace/Monitoring";
@@ -56,63 +46,37 @@ export const router = createBrowserRouter(
       path: "/workspace",
       element: (
         <ProtectedRoute>
-          <ProjectProvider>
-            <WorkspaceLayout />
-          </ProjectProvider>
+          <WorkspaceLayout />
         </ProtectedRoute>
       ),
       children: [
         {
           path: "dashboard",
-          element: (
-            <Suspense fallback={<FullPageSpinner />}>
-              <LazyDashboard />
-            </Suspense>
-          )
+          element: <Dashboard />
         },
         {
           path: "generate",
           element: (
             <ErrorBoundary fallback={(error, reset) => <GeneratorErrorFallback error={error} reset={reset} />}>
-              <Suspense fallback={<FullPageSpinner />}>
-                <LazyGenerate />
-              </Suspense>
+              <Generate />
             </ErrorBoundary>
           )
-        },
-        {
-          path: "projects",
-          element: <Projects />
-        },
-        {
-          path: "monitoring-hub",
-          element: <MonitoringHub />
         },
         {
           path: "library",
           element: (
             <ErrorBoundary fallback={(error, reset) => <TrackListErrorFallback error={error} reset={reset} />}>
-              <Suspense fallback={<FullPageSpinner />}>
-                <LazyLibrary />
-              </Suspense>
+              <Library />
             </ErrorBoundary>
           )
         },
         {
           path: "favorites",
-          element: (
-            <Suspense fallback={<FullPageSpinner />}>
-              <LazyFavorites />
-            </Suspense>
-          )
+          element: <Favorites />
         },
         {
           path: "analytics",
-          element: (
-            <Suspense fallback={<FullPageSpinner />}>
-              <LazyAnalytics />
-            </Suspense>
-          )
+          element: <Analytics />
         },
         {
           path: "metrics",
@@ -120,11 +84,7 @@ export const router = createBrowserRouter(
         },
         {
           path: "settings",
-          element: (
-            <Suspense fallback={<FullPageSpinner />}>
-              <LazySettings />
-            </Suspense>
-          )
+          element: <Settings />
         },
         {
           path: "profile",

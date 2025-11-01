@@ -58,9 +58,7 @@ export const generateSunoSchema = z.object({
   referenceAudioUrl: httpsUrlSchema.optional(),
   referenceTrackId: uuidSchema.optional(),
   idempotencyKey: uuidSchema.optional(),
-  wait_audio: z.boolean().optional(),
-  projectId: uuidSchema.optional(), // ✅ НОВОЕ: ID проекта
-  personaId: uuidSchema.optional(), // ✅ НОВОЕ: ID персоны (уже есть в хендлере)
+  wait_audio: z.boolean().optional()
 });
 
 // ✅ extend-track request schema
@@ -203,24 +201,6 @@ export const trackMetadataSchema = z.object({
   // Timestamps
   completed_at: z.string().optional(),
 }).passthrough(); // Allow additional fields
-
-// ✅ create-music-video request schema
-export const createMusicVideoSchema = z.object({
-  trackId: uuidSchema,
-  audioId: z.string().min(1),
-  author: z.string().max(50).optional(),
-  domainName: z.string().max(50).optional()
-});
-
-// ✅ music-video callback payload schema
-export const musicVideoCallbackSchema = z.object({
-  code: z.number(),
-  msg: z.string().optional(),
-  data: z.object({
-    task_id: z.string(),
-    video_url: httpsUrlSchema.optional().nullable()
-  })
-});
 
 // ✅ Helper function to validate and parse
 export function validateAndParse<T>(

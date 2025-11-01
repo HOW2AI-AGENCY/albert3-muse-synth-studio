@@ -184,7 +184,6 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
       provider: this.providerName,
       requestMetadata: metadata,
       idempotencyKey,
-      projectId: (params as any).projectId, // ✅ НОВОЕ: передаём project_id
     });
 
     return { trackId };

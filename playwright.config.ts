@@ -1,79 +1,78 @@
+import { readFileSync, existsSync } from 'node:fs';
+
 import { defineConfig, devices } from '@playwright/test';
 
-/**
- * Playwright Configuration for Albert3 Muse Synth Studio
- * E2E Testing Setup - Week 1, Phase 1.1
- */
+function loadEnvFile(path: string, override = false) {
+  if (!existsSync(path)) {
+    return;
+  }
+
+  const lines = readFileSync(path, 'utf8').split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) {
+      continue;
+    }
+
+    const separatorIndex = trimmed.indexOf('=');
+    if (separatorIndex === -1) {
+      continue;
+    }
+
+    const key = trimmed.slice(0, separatorIndex).trim();
+    let value = trimmed.slice(separatorIndex + 1).trim();
+
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+
+    value = value.replace(/\\n/g, '\n');
+
+    if (!override && process.env[key] !== undefined) {
+      continue;
+    }
+
+    process.env[key] = value;
+  }
+}
+
+loadEnvFile('.env.e2e', true);
+loadEnvFile('.env');
+
 export default defineConfig({
   testDir: './tests/e2e',
-  
-  // Maximum time one test can run
-  timeout: 30 * 1000,
-  
-  // Run tests in files in parallel
-  fullyParallel: true,
-  
-  // Fail the build on CI if you accidentally left test.only
-  forbidOnly: !!process.env.CI,
-  
-  // Retry on CI only
-  retries: process.env.CI ? 2 : 0,
-  
-  // Opt out of parallel tests on CI
-  workers: process.env.CI ? 1 : undefined,
-  
-  // Reporter to use
-  reporter: [
-    ['html'],
-    ['list'],
-    process.env.CI ? ['github'] : ['list']
-  ],
-  
-  // Shared settings for all the projects below
-  use: {
-    // Base URL to use in actions like `await page.goto('/')`
-    baseURL: 'http://localhost:8080',
-    
-    // Collect trace when retrying the failed test
-    trace: 'on-first-retry',
-    
-    // Screenshot on failure
-    screenshot: 'only-on-failure',
-    
-    // Video on failure
-    video: 'retain-on-failure',
+  timeout: 60_000,
+  expect: {
+    timeout: 10_000,
   },
-
-  // Configure projects for major browsers
+  fullyParallel: false,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 1 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  globalSetup: './tests/e2e/global-setup.ts',
+  reporter: process.env.CI
+    ? [['github'], ['html', { outputFolder: 'tests/e2e/artifacts/html-report', open: 'never' }]]
+    : [['list']],
+  outputDir: 'tests/e2e/artifacts',
+  use: {
+    baseURL: 'http://127.0.0.1:5173',
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+    viewport: { width: 1280, height: 720 },
+  },
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-    // Mobile viewports
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
-    },
   ],
-
-  // Run your local dev server before starting the tests
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:8080',
+    command: 'npm run dev -- --host 127.0.0.1 --port 5173',
+    url: 'http://127.0.0.1:5173',
     reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
+    timeout: 120_000,
+    stdout: 'pipe',
+    stderr: 'pipe',
   },
 });

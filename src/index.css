@@ -668,27 +668,4 @@
   .app-card--compact .app-card__body {
     @apply px-4 pb-3 space-y-2 text-sm;
   }
-
-  /* Smooth scrolling for virtualized lists */
-  .scrollbar-thin {
-    scrollbar-width: thin;
-  }
-  
-  .scrollbar-thumb-primary\/20::-webkit-scrollbar-thumb {
-    background-color: hsl(var(--primary) / 0.2);
-  }
-  
-  .scrollbar-track-transparent::-webkit-scrollbar-track {
-    background-color: transparent;
-  }
-
-  /* Radial gradient utility */
-  .bg-gradient-radial {
-    background-image: radial-gradient(circle, var(--tw-gradient-stops));
-  }
-
-  .border-gradient {
-    border: 2px solid;
-    border-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent))) 1;
-  }
 }

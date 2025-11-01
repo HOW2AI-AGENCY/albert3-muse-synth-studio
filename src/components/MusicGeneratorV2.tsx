@@ -255,7 +255,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       referenceTrackId: state.params.referenceTrackId || undefined,
       provider: selectedProvider,
       personaId: state.params.personaId || undefined,
-      projectId: state.params.activeProjectId || undefined, // ✅ НОВОЕ: передаём project_id
     };
 
     // Save to history
@@ -342,18 +341,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const handleSelectInspo = useCallback((project: InspoProject) => {
     const newTags = project.style_tags?.join(', ') || '';
     state.setParam('tags', newTags);
-    
-    // Apply concept to prompt if available
-    const conceptPrompt = (project as any).concept_description || '';
-    if (conceptPrompt) {
-      const existingPrompt = state.params.prompt.trim();
-      const combinedPrompt = existingPrompt 
-        ? `${existingPrompt}\n\nКонцепция: ${conceptPrompt}`
-        : conceptPrompt;
-      state.setParam('prompt', combinedPrompt);
-      state.setDebouncedPrompt(combinedPrompt);
-    }
-    
     state.setParam('inspoProjectId', project.id);
     state.setParam('inspoProjectName', project.name);
     
@@ -362,8 +349,8 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       tags: newTags,
     });
     
-    sonnerToast.success('✨ Проект применён', {
-      description: `Используем стиль и концепцию "${project.name}"`,
+    sonnerToast.success('✨ Вдохновение применено', {
+      description: `Используем стиль "${project.name}"`,
       duration: 3000,
     });
     
@@ -498,7 +485,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               onParamChange={state.setParam}
               onGenerate={handleGenerate}
               onBoostPrompt={handleBoostPrompt}
-              onOpenHistory={() => state.setHistoryDialogOpen(true)}
               isBoosting={state.isEnhancing}
               isGenerating={isGenerating || state.isEnhancing}
               debouncedPrompt={state.debouncedPrompt}

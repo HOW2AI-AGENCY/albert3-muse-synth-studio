@@ -599,9 +599,8 @@ serve(async (req: Request): Promise<Response> => {
                   .from('track_versions')
                   .upsert({
                     parent_track_id: track.id,
-                    variant_index: i,
-                    is_primary_variant: false,
-                    is_preferred_variant: false,
+                    version_number: i,
+                    is_master: false,
                     suno_id: versionTrack.id || null,
                     audio_url: versionAudioUrl,
                     video_url: versionVideoUrl,
@@ -613,7 +612,7 @@ serve(async (req: Request): Promise<Response> => {
                       generated_via: 'stuck-sync',
                       suno_task_id: taskId,
                     }
-                  }, { onConflict: 'parent_track_id,variant_index' });
+                  }, { onConflict: 'parent_track_id,version_number' });
                 
                 if (versionError) {
                   logger.error(`Error saving version ${i}`, { error: versionError, trackId: track.id });
