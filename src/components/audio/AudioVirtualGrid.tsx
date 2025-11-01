@@ -8,7 +8,7 @@
  * - Memory usage: -80%
  */
 
-import { useRef } from 'react';
+import React, { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { AudioCard } from './AudioCard';
 import type { AudioLibraryItem } from '@/hooks/useAudioLibrary';
@@ -20,12 +20,12 @@ interface AudioVirtualGridProps {
   selectedId?: string | null;
 }
 
-export const AudioVirtualGrid = ({
+export const AudioVirtualGrid = React.memo<AudioVirtualGridProps>(({
   items,
   columns = 3,
   onSelect,
   selectedId,
-}: AudioVirtualGridProps) => {
+}) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
   const rowVirtualizer = useVirtualizer({
@@ -80,4 +80,6 @@ export const AudioVirtualGrid = ({
       </div>
     </div>
   );
-};
+});
+
+AudioVirtualGrid.displayName = 'AudioVirtualGrid';
