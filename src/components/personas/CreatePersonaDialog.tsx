@@ -89,9 +89,8 @@ export const CreatePersonaDialog = ({
 
       if (error) throw error;
 
-      const boosted = data?.boostedStyle || data?.result || data?.boosted_style;
-      if (typeof boosted === 'string' && boosted.trim()) {
-        setDescription(boosted);
+      if (data?.result && typeof data.result === 'string' && data.result.trim()) {
+        setDescription(data.result);
         toast.success('Описание улучшено через Suno AI');
       } else {
         throw new Error('Не удалось получить улучшенное описание');
