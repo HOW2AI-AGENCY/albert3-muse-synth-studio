@@ -44,16 +44,39 @@ serve(async (req: Request): Promise<Response> => {
     // 2. Parse request
     const body = await req.json();
     const {
-      audioFileUrl,
+      uploadUrl,
       prompt,
+      style,
       title,
-      tags,
-      model = 'V5'
+      customMode = true,
+      instrumental = false,
+      personaId,
+      model = 'V5',
+      negativeTags,
+      vocalGender,
+      styleWeight,
+      weirdnessConstraint,
+      audioWeight
     } = body;
 
-    if (!audioFileUrl || !prompt) {
+    // Validate required fields based on customMode
+    if (!uploadUrl) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: audioFileUrl, prompt' }),
+        JSON.stringify({ error: 'Missing required field: uploadUrl' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (customMode && !instrumental && !prompt) {
+      return new Response(
+        JSON.stringify({ error: 'prompt is required when customMode is true and instrumental is false' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!customMode && !prompt) {
+      return new Response(
+        JSON.stringify({ error: 'prompt is required in non-custom mode' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -65,14 +88,22 @@ serve(async (req: Request): Promise<Response> => {
       .insert({
         user_id: user.id,
         title: title || 'Cover Track',
-        prompt,
+        prompt: prompt || '',
         status: 'pending',
         provider: 'suno',
         model_name: model,
-        style_tags: tags || [],
+        style_tags: style ? [style] : [],
         metadata: {
           upload_cover: true,
-          reference_audio_url: audioFileUrl
+          reference_audio_url: uploadUrl,
+          custom_mode: customMode,
+          instrumental,
+          persona_id: personaId,
+          negative_tags: negativeTags,
+          vocal_gender: vocalGender,
+          style_weight: styleWeight,
+          weirdness_constraint: weirdnessConstraint,
+          audio_weight: audioWeight
         }
       })
       .select()
@@ -95,13 +126,15 @@ serve(async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const normalisedSupabaseUrl = supabaseUrl ? supabaseUrl.replace(/\/$/, "") : null;
     const callbackUrl = normalisedSupabaseUrl
-      ? `${normalisedSupabaseUrl}/functions/v1/suno-callback`
+      ? `${normalisedSupabaseUrl}/functions/v1/upload-cover-callback`
       : undefined;
 
     logger.info('Calling Suno Upload & Cover API', {
       trackId: track.id,
-      audioFileUrl,
-      model
+      uploadUrl,
+      model,
+      customMode,
+      instrumental
     });
 
     const headers = {
@@ -109,14 +142,28 @@ serve(async (req: Request): Promise<Response> => {
       'Content-Type': 'application/json'
     };
 
-    const uploadCoverPayload = {
-      uploadUrl: audioFileUrl,
-      prompt,
-      tags: tags || [],
-      title: title || 'Cover Track',
+    const uploadCoverPayload: Record<string, unknown> = {
+      uploadUrl,
+      customMode,
+      instrumental,
       model,
       callBackUrl: callbackUrl
     };
+
+    // Add fields based on customMode
+    if (customMode) {
+      if (style) uploadCoverPayload.style = style;
+      if (title) uploadCoverPayload.title = title;
+      if (!instrumental && prompt) uploadCoverPayload.prompt = prompt;
+      if (personaId) uploadCoverPayload.personaId = personaId;
+      if (negativeTags) uploadCoverPayload.negativeTags = negativeTags;
+      if (vocalGender) uploadCoverPayload.vocalGender = vocalGender;
+      if (styleWeight !== undefined) uploadCoverPayload.styleWeight = styleWeight;
+      if (weirdnessConstraint !== undefined) uploadCoverPayload.weirdnessConstraint = weirdnessConstraint;
+      if (audioWeight !== undefined) uploadCoverPayload.audioWeight = audioWeight;
+    } else {
+      uploadCoverPayload.prompt = prompt;
+    }
 
     const response = await fetch('https://api.sunoapi.org/api/v1/generate/upload-cover', {
       method: 'POST',

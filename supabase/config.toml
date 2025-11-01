@@ -160,6 +160,12 @@ verify_jwt = true
 [functions.upload-and-cover]
 verify_jwt = true
 
+[functions.upload-extend-callback]
+verify_jwt = false
+
+[functions.upload-cover-callback]
+verify_jwt = false
+
 [functions.export-wav]
 verify_jwt = true
 
