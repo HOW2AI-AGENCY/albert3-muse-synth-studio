@@ -3,7 +3,7 @@ import { TrackCard } from "@/features/tracks/components/TrackCard";
 import { TrackListItem } from "@/features/tracks/components/TrackListItem";
 import { VirtualizedTracksList } from "./tracks/VirtualizedTracksList";
 import { ViewSwitcher } from "./tracks/ViewSwitcher";
-import { LoadingSkeleton as Skeleton } from "./ui/LoadingSkeleton";
+import { TrackListSkeleton } from "@/components/skeletons";
 import { StaggerContainer, StaggerItem } from "@/components/animations/OptimizedMotion";
 import { Track, ApiService } from "@/services/api.service";
 import { Music } from "@/utils/iconImports";
@@ -177,23 +177,7 @@ const TracksListComponent = ({
   }, [deleteTrack, toast]);
 
   if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-7 w-48" />
-          <Skeleton className="h-9 w-24" />
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-3">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="space-y-2">
-              <Skeleton className="aspect-square w-full" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    return <TrackListSkeleton count={12} />;
   }
 
   if (tracks.length === 0) {

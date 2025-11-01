@@ -16,7 +16,7 @@ import {
 } from "@/utils/iconImports";
 import { TrackCard, TrackListItem } from "@/features/tracks";
 import { OptimizedTrackList } from "@/components/OptimizedTrackList";
-import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
+import { TrackListSkeleton } from "@/components/skeletons";
 import { TrackStatusMonitor } from "@/components/TrackStatusMonitor";
 import { 
   LazySeparateStemsDialog, 
@@ -457,29 +457,7 @@ const Library: React.FC = () => {
   if (isLoading) {
     return (
       <div className="space-y-6 p-6">
-        <div className="flex items-center justify-between">
-          <LoadingSkeleton width="200px" height="32px" />
-          <LoadingSkeleton width="120px" height="32px" />
-        </div>
-        
-        <div className="flex gap-4">
-          <LoadingSkeleton width="300px" height="40px" />
-          <LoadingSkeleton width="100px" height="40px" />
-        </div>
-
-        {viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <LoadingSkeleton key={i} variant="rectangular" height="300px" />
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <LoadingSkeleton key={i} variant="track-item" />
-            ))}
-          </div>
-        )}
+        <TrackListSkeleton count={viewMode === 'grid' ? 8 : 10} />
       </div>
     );
   }
