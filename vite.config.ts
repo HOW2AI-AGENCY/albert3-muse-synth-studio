@@ -15,8 +15,8 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Vendor chunking для оптимизации bundle size
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // ❌ УДАЛЕНО 'vendor-react' - конфликтует с dedupe
+          // React должен управляться через dedupe, не через manualChunks
           'vendor-ui': [
             '@radix-ui/react-dialog',
             '@radix-ui/react-dropdown-menu',
