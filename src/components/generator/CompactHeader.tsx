@@ -42,108 +42,100 @@ export const CompactHeader = memo(({
 }: CompactHeaderProps) => {
   return (
     <div 
-      className="flex flex-col border-b border-border/20 bg-background/95 backdrop-blur-sm"
+      className="flex items-center justify-between border-b border-border/20 bg-background/95 backdrop-blur-sm px-4 sm:px-6"
       style={{ minHeight: 'var(--generator-header-height, 52px)' }}
     >
-      {/* Row 1: Provider, Model, Balance */}
-      <div className="flex items-center justify-between gap-2 px-2 sm:px-3 py-1.5 border-b border-border/10">
-        <div className="flex items-center gap-2 flex-1">
-          {/* Provider */}
-          <Select 
-            value={selectedProvider} 
-            onValueChange={onProviderChange} 
-            disabled={isGenerating}
-          >
-            <SelectTrigger className="h-7 w-24 text-xs border-border/40 bg-background">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-background">
-              {(Object.keys(PROVIDERS) as MusicProvider[]).map((provider) => {
-                const config = PROVIDERS[provider];
-                return (
-                  <SelectItem key={provider} value={provider} className="text-xs">
-                    {config.displayName}
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-
-          {/* Model */}
-          <Select value={modelVersion} onValueChange={onModelChange}>
-            <SelectTrigger className="h-7 w-16 text-[10px] border-border/40 bg-background">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-background">
-              {availableModels.map((m) => (
-                <SelectItem key={m.value} value={m.value} className="text-[10px]">
-                  {m.label}
+      {/* Left: Provider & Model */}
+      <div className="flex items-center gap-3">
+        <Select 
+          value={selectedProvider} 
+          onValueChange={onProviderChange} 
+          disabled={isGenerating}
+        >
+          <SelectTrigger className="h-8 w-28 text-xs border-border/40 bg-background/50">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-background">
+            {(Object.keys(PROVIDERS) as MusicProvider[]).map((provider) => {
+              const config = PROVIDERS[provider];
+              return (
+                <SelectItem key={provider} value={provider} className="text-xs">
+                  {config.displayName}
                 </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              );
+            })}
+          </SelectContent>
+        </Select>
+
+        <Select value={modelVersion} onValueChange={onModelChange}>
+          <SelectTrigger className="h-8 w-20 text-xs border-border/40 bg-background/50">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-background">
+            {availableModels.map((m) => (
+              <SelectItem key={m.value} value={m.value} className="text-xs">
+                {m.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Center: Mode Tabs */}
+      <RadioGroup
+        value={mode}
+        onValueChange={(v) => onModeChange(v as GeneratorMode)}
+        className="flex items-center gap-1 bg-muted/30 rounded-lg p-1"
+      >
+        <div className="flex items-center">
+          <RadioGroupItem value="simple" id="mode-simple" className="peer sr-only" />
+          <Label 
+            htmlFor="mode-simple" 
+            className="px-4 py-1.5 text-xs font-medium cursor-pointer rounded-md transition-all peer-data-[state=checked]:bg-background peer-data-[state=checked]:shadow-sm"
+          >
+            Simple
+          </Label>
         </div>
+        <div className="flex items-center">
+          <RadioGroupItem value="custom" id="mode-custom" className="peer sr-only" />
+          <Label 
+            htmlFor="mode-custom" 
+            className="px-4 py-1.5 text-xs font-medium cursor-pointer rounded-md transition-all peer-data-[state=checked]:bg-background peer-data-[state=checked]:shadow-sm"
+          >
+            Custom
+          </Label>
+        </div>
+      </RadioGroup>
 
-        {/* Balance + Status */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center">
-            {selectedProvider === 'mureka' && <MurekaBalanceDisplay />}
-            {selectedProvider === 'suno' && <SunoBalanceDisplay />}
+      {/* Right: Balance & Info */}
+      <div className="flex items-center gap-3">
+        {(referenceFileName || lyricsLineCount > 0) && (
+          <div className="flex items-center gap-1.5">
+            {referenceFileName && (
+              <Badge variant="secondary" className="h-6 text-[10px] gap-1 px-2 bg-secondary/50">
+                <FileAudio className="h-3 w-3" />
+                <span className="hidden sm:inline">Ref</span>
+              </Badge>
+            )}
+            {lyricsLineCount > 0 && (
+              <Badge variant="secondary" className="h-6 text-[10px] gap-1 px-2 bg-secondary/50">
+                <FileText className="h-3 w-3" />
+                <span className="hidden sm:inline">{lyricsLineCount}</span>
+              </Badge>
+            )}
           </div>
+        )}
 
+        <div className="flex items-center gap-2">
+          {selectedProvider === 'mureka' && <MurekaBalanceDisplay />}
+          {selectedProvider === 'suno' && <SunoBalanceDisplay />}
+          
           {rateLimitRemaining !== undefined && rateLimitMax && rateLimitRemaining <= 2 && (
             <Badge 
               variant={rateLimitRemaining < 3 ? "destructive" : "outline"} 
-              className="h-5 text-[9px] px-1.5"
+              className="h-6 text-[10px] px-2"
             >
               {rateLimitRemaining}/{rateLimitMax}
-            </Badge>
-          )}
-        </div>
-      </div>
-
-      {/* Row 2: Mode */}
-      <div className="flex items-center justify-between gap-2 px-2 sm:px-3 py-1.5">
-        <div className="flex items-center gap-2 flex-1">
-          {/* Mode Toggle */}
-          <RadioGroup
-            value={mode}
-            onValueChange={(v) => onModeChange(v as GeneratorMode)}
-            className="flex items-center gap-2"
-          >
-            <div className="flex items-center gap-1.5">
-              <RadioGroupItem value="simple" id="mode-simple" className="h-3.5 w-3.5" />
-              <Label 
-                htmlFor="mode-simple" 
-                className="text-xs font-medium cursor-pointer leading-none"
-              >
-                Простой
-              </Label>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <RadioGroupItem value="custom" id="mode-custom" className="h-3.5 w-3.5" />
-              <Label 
-                htmlFor="mode-custom" 
-                className="text-xs font-medium cursor-pointer leading-none"
-              >
-                Расширенный
-              </Label>
-            </div>
-          </RadioGroup>
-        </div>
-
-        {/* Right: Info Badges */}
-        <div className="flex items-center gap-1">
-          {referenceFileName && (
-            <Badge variant="secondary" className="h-5 text-[9px] gap-0.5 px-1.5 bg-secondary/50">
-              <FileAudio className="h-2.5 w-2.5" />
-              <span className="hidden lg:inline">Ref</span>
-            </Badge>
-          )}
-          {lyricsLineCount > 0 && (
-            <Badge variant="secondary" className="h-5 text-[9px] gap-0.5 px-1.5 bg-secondary/50">
-              <FileText className="h-2.5 w-2.5" />
-              {lyricsLineCount}
             </Badge>
           )}
         </div>
