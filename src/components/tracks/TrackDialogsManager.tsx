@@ -1,7 +1,8 @@
 import { 
   LazySeparateStemsDialog, 
   LazyExtendTrackDialog, 
-  LazyCreateCoverDialog 
+  LazyCreateCoverDialog,
+  LazyCreatePersonaDialog
 } from "@/components/LazyDialogs";
 import type { Track } from "@/services/api.service";
 
@@ -22,6 +23,11 @@ interface TrackDialogsManagerProps {
   setCoverOpen: (open: boolean) => void;
   selectedTrackForCover: { id: string; title: string } | null;
   
+  // Persona Dialog
+  createPersonaOpen: boolean;
+  setCreatePersonaOpen: (open: boolean) => void;
+  selectedTrackForPersona: { id: string; title: string } | null;
+  
   // Callbacks
   onSuccess: () => void;
 }
@@ -37,6 +43,9 @@ export function TrackDialogsManager({
   coverOpen,
   setCoverOpen,
   selectedTrackForCover,
+  createPersonaOpen,
+  setCreatePersonaOpen,
+  selectedTrackForPersona,
   onSuccess,
 }: TrackDialogsManagerProps) {
   return (
@@ -75,6 +84,21 @@ export function TrackDialogsManager({
           track={{
             id: selectedTrackForCover.id,
             title: selectedTrackForCover.title,
+          }}
+        />
+      )}
+      
+      {createPersonaOpen && selectedTrackForPersona && (
+        <LazyCreatePersonaDialog
+          open={createPersonaOpen}
+          onOpenChange={setCreatePersonaOpen}
+          track={{
+            id: selectedTrackForPersona.id,
+            title: selectedTrackForPersona.title,
+          }}
+          onSuccess={() => {
+            onSuccess();
+            setCreatePersonaOpen(false);
           }}
         />
       )}

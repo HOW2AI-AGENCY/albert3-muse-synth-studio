@@ -37,6 +37,8 @@ const Generate = () => {
   const [selectedTrackForExtend, setSelectedTrackForExtend] = useState<Track | null>(null);
   const [coverOpen, setCoverOpen] = useState(false);
   const [selectedTrackForCover, setSelectedTrackForCover] = useState<{ id: string; title: string } | null>(null);
+  const [createPersonaOpen, setCreatePersonaOpen] = useState(false);
+  const [selectedTrackForPersona, setSelectedTrackForPersona] = useState<{ id: string; title: string } | null>(null);
 
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1023px)");
@@ -101,6 +103,13 @@ const Generate = () => {
     setCoverOpen(true);
   };
 
+  const handleCreatePersona = (trackId: string) => {
+    const t = tracks.find(tr => tr.id === trackId);
+    if (!t) return;
+    setSelectedTrackForPersona({ id: t.id, title: t.title });
+    setCreatePersonaOpen(true);
+  };
+
   // Desktop: 3-panel resizable layout
   if (isDesktop) {
     return (
@@ -127,6 +136,7 @@ const Generate = () => {
                 onSeparateStems={handleSeparateStems}
                 onExtend={handleExtend}
                 onCover={handleCover}
+                onCreatePersona={handleCreatePersona}
                 onSelect={setSelectedTrack}
               />
             </div>
@@ -160,6 +170,9 @@ const Generate = () => {
           coverOpen={coverOpen}
           setCoverOpen={setCoverOpen}
           selectedTrackForCover={selectedTrackForCover}
+          createPersonaOpen={createPersonaOpen}
+          setCreatePersonaOpen={setCreatePersonaOpen}
+          selectedTrackForPersona={selectedTrackForPersona}
           onSuccess={refreshTracks}
         />
       </div>
@@ -190,6 +203,7 @@ const Generate = () => {
                 onSeparateStems={handleSeparateStems}
                 onExtend={handleExtend}
                 onCover={handleCover}
+                onCreatePersona={handleCreatePersona}
                 onSelect={setSelectedTrack}
               />
             </div>
@@ -207,6 +221,9 @@ const Generate = () => {
           coverOpen={coverOpen}
           setCoverOpen={setCoverOpen}
           selectedTrackForCover={selectedTrackForCover}
+          createPersonaOpen={createPersonaOpen}
+          setCreatePersonaOpen={setCreatePersonaOpen}
+          selectedTrackForPersona={selectedTrackForPersona}
           onSuccess={refreshTracks}
         />
 
@@ -240,6 +257,7 @@ const Generate = () => {
           onSeparateStems={handleSeparateStems}
           onExtend={handleExtend}
           onCover={handleCover}
+          onCreatePersona={handleCreatePersona}
           onSelect={setSelectedTrack}
         />
       </div>
@@ -255,6 +273,9 @@ const Generate = () => {
         coverOpen={coverOpen}
         setCoverOpen={setCoverOpen}
         selectedTrackForCover={selectedTrackForCover}
+        createPersonaOpen={createPersonaOpen}
+        setCreatePersonaOpen={setCreatePersonaOpen}
+        selectedTrackForPersona={selectedTrackForPersona}
         onSuccess={refreshTracks}
       />
 

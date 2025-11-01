@@ -25,6 +25,7 @@ interface VirtualizedTracksListProps {
   onSeparateStems?: (trackId: string) => void;
   onExtend?: (trackId: string) => void;
   onCover?: (trackId: string) => void;
+  onCreatePersona?: (trackId: string) => void;
 }
 
 const CARD_WIDTH = 200;
@@ -42,6 +43,7 @@ export const VirtualizedTracksList: React.FC<VirtualizedTracksListProps> = ({
   onSeparateStems,
   onExtend,
   onCover,
+  onCreatePersona,
 }) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -106,6 +108,7 @@ export const VirtualizedTracksList: React.FC<VirtualizedTracksListProps> = ({
                   onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
                   onExtend={onExtend ? () => onExtend(track.id) : undefined}
                   onCover={onCover ? () => onCover(track.id) : undefined}
+                  onCreatePersona={onCreatePersona ? () => onCreatePersona(track.id) : undefined}
                 />
               ))}
             </div>

@@ -22,6 +22,7 @@ interface TracksListProps {
   onSeparateStems?: (trackId: string) => void;
   onExtend?: (trackId: string) => void;
   onCover?: (trackId: string) => void;
+  onCreatePersona?: (trackId: string) => void;
   onSelect?: (track: Track) => void;
 }
 
@@ -33,6 +34,7 @@ const TracksListComponent = ({
   onSeparateStems,
   onExtend,
   onCover,
+  onCreatePersona,
   onSelect,
 }: TracksListProps) => {
   const playTrackWithQueue = useAudioPlayerStore((state) => state.playTrackWithQueue);
@@ -208,7 +210,7 @@ const TracksListComponent = ({
           {viewMode === 'grid' ? (
             tracks.length > 50 && containerDimensions.width > 0 ? (
               // Use virtualization for large lists
-              <VirtualizedTracksList
+                <VirtualizedTracksList
                 tracks={tracks}
                 containerWidth={containerDimensions.width}
                 containerHeight={containerDimensions.height}
@@ -219,6 +221,7 @@ const TracksListComponent = ({
                 onSeparateStems={onSeparateStems}
                 onExtend={onExtend}
                 onCover={onCover}
+                onCreatePersona={onCreatePersona}
               />
             ) : (
               // Regular grid for smaller lists with stagger animations
@@ -238,6 +241,7 @@ const TracksListComponent = ({
                       onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
                       onExtend={onExtend ? () => onExtend(track.id) : undefined}
                       onCover={onCover ? () => onCover(track.id) : undefined}
+                      onCreatePersona={onCreatePersona ? () => onCreatePersona(track.id) : undefined}
                       onDescribeTrack={() => onDescribeTrack(track.id)}
                       onRecognizeTrack={() => onRecognizeTrack(track.id)}
                     />
