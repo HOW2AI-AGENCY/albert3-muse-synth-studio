@@ -3,6 +3,7 @@
  * Modern, compact floating player with animations
  */
 import { memo, useState, useCallback, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import type { AudioPlayerTrack } from '@/stores/audioPlayerStore';
 import { useAudioPlayerStore, useIsPlaying, useVolume } from '@/stores/audioPlayerStore';
 import { usePlayerVisibility } from '../hooks/usePlayerVisibility';
@@ -115,6 +116,23 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                
+                {/* Pulsating border when playing */}
+                {isPlaying && (
+                  <motion.div
+                    className="absolute inset-0 rounded-lg border-2 border-primary pointer-events-none"
+                    initial={{ opacity: 0 }}
+                    animate={{ 
+                      opacity: [0.5, 1, 0.5],
+                      scale: [1, 1.05, 1]
+                    }}
+                    transition={{ 
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                  />
+                )}
                 
                 {/* Playing indicator */}
                 {isPlaying && (
