@@ -14,7 +14,7 @@ export async function registerServiceWorker() {
   try {
     const registration = await navigator.serviceWorker.register('/sw.js');
 
-    logger.info('Service Worker registered', { scope: registration.scope });
+    logger.info('Service Worker registered', 'registerServiceWorker', { scope: registration.scope });
 
     // Handle updates
     registration.addEventListener('updatefound', () => {
@@ -25,7 +25,7 @@ export async function registerServiceWorker() {
       newWorker.addEventListener('statechange', () => {
         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
           // New service worker available
-          logger.info('New Service Worker available');
+          logger.info('New Service Worker available', 'registerServiceWorker');
           
           // Notify user
           if (confirm('Доступна новая версия приложения. Обновить?')) {
@@ -38,7 +38,7 @@ export async function registerServiceWorker() {
 
     // Handle controller change
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      logger.info('Service Worker controller changed');
+      logger.info('Service Worker controller changed', 'registerServiceWorker');
     });
 
   } catch (error) {
@@ -50,7 +50,7 @@ export function unregisterServiceWorker() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.ready.then((registration) => {
       registration.unregister();
-      logger.info('Service Worker unregistered');
+      logger.info('Service Worker unregistered', 'registerServiceWorker');
     });
   }
 }
