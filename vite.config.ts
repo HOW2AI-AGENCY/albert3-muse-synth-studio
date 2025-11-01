@@ -11,6 +11,15 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'zustand',
+      '@tanstack/react-query',
+    ],
+    exclude: [],
+  },
   build: {
     rollupOptions: {
       output: {
@@ -76,20 +85,13 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      react: path.resolve(__dirname, "node_modules/react"),
-      "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
-      "react-router": path.resolve(__dirname, "node_modules/react-router"),
-      "react-router-dom": path.resolve(__dirname, "node_modules/react-router-dom"),
     },
-    mainFields: ["browser", "module", "main"],
     dedupe: [
       "react",
       "react-dom",
-      "react-dom/client",
       "react/jsx-runtime",
       "react/jsx-dev-runtime",
-      "react-router",
-      "react-router-dom",
+      "zustand", // CRITICAL: dedupe zustand to prevent store duplication
     ],
   },
   test: {
