@@ -13,6 +13,7 @@ import { StyleTagsInput } from './StyleTagsInput';
 import { StyleRecommendationsInline } from '@/components/generator/StyleRecommendationsInline';
 import { AudioReferenceSection } from '../audio/AudioReferenceSection';
 import { PromptCharacterCounter } from '@/components/generator/PromptCharacterCounter';
+import { PersonaSelector } from '@/components/generator/PersonaSelector';
 import type { GenerationParams } from '../types/generator.types';
 import type { AdvancedPromptResult } from '@/services/ai/advanced-prompt-generator';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -221,6 +222,25 @@ export const CustomModeForm = memo(({
               />
             </AccordionContent>
           </AccordionItem>
+
+          {/* Suno Persona Section */}
+          {params.provider === 'suno' && (
+            <AccordionItem value="persona" className="border-border/30">
+              <AccordionTrigger className="text-xs font-medium py-2 hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <Music className="h-3.5 w-3.5" />
+                  <span>Музыкальная персона {params.personaId && '(выбрана)'}</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 pb-3">
+                <PersonaSelector
+                  value={params.personaId || null}
+                  onChange={(personaId) => onParamChange('personaId', personaId)}
+                  disabled={isGenerating}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          )}
 
         {/* Audio Reference Section */}
         <AccordionItem value="audio" className="border-border/30">

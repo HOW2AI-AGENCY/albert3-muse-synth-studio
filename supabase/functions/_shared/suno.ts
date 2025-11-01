@@ -12,6 +12,7 @@ export interface SunoGenerationPayload {
   audioWeight?: number;
   callBackUrl?: string;
   referenceAudioUrl?: string;
+  personaId?: string; // ✅ НОВОЕ: ID Suno Persona
 }
 
 export interface SunoLyricsPayload {

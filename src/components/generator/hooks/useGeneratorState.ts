@@ -91,6 +91,7 @@ export const useGeneratorState = (
     lyricsWeight: 70,
     weirdnessConstraint: 10,
     provider: selectedProvider,
+    personaId: null, // ✅ НОВОЕ: персона по умолчанию не выбрана
   });
 
   const setParam = useCallback(<K extends keyof GenerationParams>(key: K, value: GenerationParams[K]) => {

@@ -134,6 +134,7 @@ export class SunoGenerationHandler extends GenerationHandler<SunoGenerationParam
       model: (params.modelVersion as SunoGenerationPayload['model']) || 'V5', // ← Default V5
       customMode: customMode,
       callBackUrl: this.callbackUrl ?? undefined,
+      personaId: params.personaId ?? undefined, // ✅ НОВОЕ: Поддержка персоны
       ...(params.negativeTags ? { negativeTags: params.negativeTags } : {}),
       ...(params.vocalGender ? { vocalGender: params.vocalGender } : {}),
       ...(params.styleWeight !== undefined ? { styleWeight: Number(params.styleWeight.toFixed(2)) } : {}),
@@ -146,8 +147,9 @@ export class SunoGenerationHandler extends GenerationHandler<SunoGenerationParam
       trackId, 
       customMode,
       promptType: customMode ? 'lyrics' : 'style_description',
-      hasCallbackUrl: !!this.callbackUrl, // ✅ ADD: Проверка callback
-      callbackUrl: this.callbackUrl ? this.callbackUrl.substring(0, 50) : 'NONE' // ✅ ADD
+      hasCallbackUrl: !!this.callbackUrl,
+      hasPersona: !!params.personaId, // ✅ НОВОЕ: Логирование персоны
+      personaId: params.personaId || 'NONE' // ✅ НОВОЕ
     });
 
     const result = await sunoClient.generateTrack(sunoPayload);
