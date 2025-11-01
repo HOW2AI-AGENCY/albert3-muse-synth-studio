@@ -98,12 +98,15 @@ const Library: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
-  // Measure container width with initial value
+  // Measure container width with immediate initialization (FIX: prevents 0-width flash)
   useEffect(() => {
     if (!containerRef.current) return;
     
-    // Set initial width
-    setContainerWidth(containerRef.current.clientWidth);
+    // ✅ FIX: Immediately set initial width to prevent single-column flash
+    const initialWidth = containerRef.current.clientWidth;
+    if (initialWidth > 0) {
+      setContainerWidth(initialWidth);
+    }
     
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
