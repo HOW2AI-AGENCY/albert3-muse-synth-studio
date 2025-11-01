@@ -15,31 +15,15 @@ export default defineConfig(({ mode }) => ({
     include: [
       'react',
       'react-dom',
-      'zustand',
+      'react-router',
+      'react-router-dom',
       '@tanstack/react-query',
+      'zustand',
     ],
     exclude: [],
   },
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks: (id) => {
-          // Critical: Keep React in a single vendor chunk to prevent duplication
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'vendor-react';
-            }
-            if (id.includes('@tanstack/react-query') || id.includes('zustand')) {
-              return 'vendor-state';
-            }
-            if (id.includes('@radix-ui')) {
-              return 'vendor-ui';
-            }
-            return 'vendor';
-          }
-        },
-      },
-    },
+    rollupOptions: {},
     chunkSizeWarningLimit: 1000,
     sourcemap: mode === 'development',
     minify: mode === 'production' ? 'terser' : false, // Only use terser in production
@@ -78,19 +62,17 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "react": "react",
-      "react-dom": "react-dom",
     },
     dedupe: [
       "react",
       "react-dom",
       "react/jsx-runtime",
       "react/jsx-dev-runtime",
+      "react-router",
+      "react-router-dom",
+      "@tanstack/react-query",
       "zustand",
     ],
-  },
-  ssr: {
-    noExternal: ['react', 'react-dom'],
   },
   test: {
     globals: true,

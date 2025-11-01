@@ -1,8 +1,8 @@
-import { useState, useEffect, Suspense, lazy } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { LazyMusicGeneratorV2 } from "@/components/LazyComponents";
+import { MusicGeneratorV2 } from "@/components/MusicGeneratorV2";
 import { TracksList } from "@/components/TracksList";
-const DetailPanel = lazy(() => import("@/features/tracks/ui/DetailPanel").then(m => ({ default: m.DetailPanel })));
+import { DetailPanel } from "@/features/tracks/ui/DetailPanel";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -120,9 +120,7 @@ const Generate = () => {
         >
           <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
             <div className="h-full p-1">
-              <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
-                <LazyMusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
-              </Suspense>
+              <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
             </div>
           </ResizablePanel>
 
@@ -148,14 +146,12 @@ const Generate = () => {
             <>
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
-                <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
-                  <DetailPanel
-                    track={normalizeTrack(selectedTrack)}
-                    onClose={handleCloseDetail}
-                    onUpdate={refreshTracks}
-                    onDelete={handleDelete}
-                  />
-                </Suspense>
+                <DetailPanel
+                  track={normalizeTrack(selectedTrack)}
+                  onClose={handleCloseDetail}
+                  onUpdate={refreshTracks}
+                  onDelete={handleDelete}
+                />
               </ResizablePanel>
             </>
           )}
@@ -191,9 +187,7 @@ const Generate = () => {
         >
           <ResizablePanel defaultSize={40} minSize={30} maxSize={50}>
             <div className="h-full p-1">
-              <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
-                <LazyMusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
-              </Suspense>
+              <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
             </div>
           </ResizablePanel>
           <ResizableHandle withHandle />
@@ -234,14 +228,12 @@ const Generate = () => {
         <Sheet open={!!selectedTrack} onOpenChange={(open) => !open && handleCloseDetail()}>
           <SheetContent side="right" className="w-full sm:w-[500px] p-0 border-l">
             {selectedTrack && (
-              <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
-                <DetailPanel
-                  track={normalizeTrack(selectedTrack)}
-                  onClose={handleCloseDetail}
-                  onUpdate={refreshTracks}
-                  onDelete={handleDelete}
-                />
-              </Suspense>
+              <DetailPanel
+                track={normalizeTrack(selectedTrack)}
+                onClose={handleCloseDetail}
+                onUpdate={refreshTracks}
+                onDelete={handleDelete}
+              />
             )}
           </SheetContent>
         </Sheet>
@@ -323,9 +315,7 @@ const Generate = () => {
                 <div className="w-12 h-1 bg-muted-foreground/20 rounded-full" />
               </div>
               <div className="p-4 h-full overflow-y-auto">
-                <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
-                  <LazyMusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
-                </Suspense>
+                <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
               </div>
             </DrawerContent>
           </Drawer>
@@ -343,15 +333,13 @@ const Generate = () => {
           </div>
           
           {selectedTrack && (
-            <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
-              <DetailPanel
-                track={normalizeTrack(selectedTrack)}
-                onClose={handleCloseDetail}
-                onUpdate={refreshTracks}
-                onDelete={handleDelete}
-                variant="mobile"
-              />
-            </Suspense>
+            <DetailPanel
+              track={normalizeTrack(selectedTrack)}
+              onClose={handleCloseDetail}
+              onUpdate={refreshTracks}
+              onDelete={handleDelete}
+              variant="mobile"
+            />
           )}
         </DrawerContent>
       </Drawer>
