@@ -6,7 +6,11 @@ interface Track {
   title: string;
   duration?: number;
   prompt?: string;
+  improved_prompt?: string;
   style_tags?: string[];
+  cover_url?: string | null;
+  ai_description?: string | null;
+  metadata?: Record<string, any> | null;
 }
 
 interface GenerateWithDialogsProps {
@@ -75,6 +79,12 @@ export function GenerateWithDialogs({ children, tracks }: GenerateWithDialogsPro
           track={{
             id: selectedTrack.id,
             title: selectedTrack.title,
+            prompt: selectedTrack.prompt,
+            improved_prompt: selectedTrack.improved_prompt,
+            cover_url: selectedTrack.cover_url,
+            style_tags: selectedTrack.style_tags,
+            ai_description: selectedTrack.ai_description,
+            metadata: selectedTrack.metadata,
           }}
           onSuccess={() => {
             setCreatePersonaDialogOpen(false);

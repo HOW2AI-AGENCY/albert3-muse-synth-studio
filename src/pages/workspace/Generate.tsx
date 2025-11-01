@@ -38,7 +38,7 @@ const Generate = () => {
   const [coverOpen, setCoverOpen] = useState(false);
   const [selectedTrackForCover, setSelectedTrackForCover] = useState<{ id: string; title: string } | null>(null);
   const [createPersonaOpen, setCreatePersonaOpen] = useState(false);
-  const [selectedTrackForPersona, setSelectedTrackForPersona] = useState<{ id: string; title: string } | null>(null);
+  const [selectedTrackForPersona, setSelectedTrackForPersona] = useState<Track | null>(null);
 
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1023px)");
@@ -106,7 +106,7 @@ const Generate = () => {
   const handleCreatePersona = (trackId: string) => {
     const t = tracks.find(tr => tr.id === trackId);
     if (!t) return;
-    setSelectedTrackForPersona({ id: t.id, title: t.title });
+    setSelectedTrackForPersona(t);
     setCreatePersonaOpen(true);
   };
 

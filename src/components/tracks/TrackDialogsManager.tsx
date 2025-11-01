@@ -26,7 +26,7 @@ interface TrackDialogsManagerProps {
   // Persona Dialog
   createPersonaOpen: boolean;
   setCreatePersonaOpen: (open: boolean) => void;
-  selectedTrackForPersona: { id: string; title: string } | null;
+  selectedTrackForPersona: Track | null;
   
   // Callbacks
   onSuccess: () => void;
@@ -95,6 +95,12 @@ export function TrackDialogsManager({
           track={{
             id: selectedTrackForPersona.id,
             title: selectedTrackForPersona.title,
+            prompt: selectedTrackForPersona.prompt,
+            improved_prompt: selectedTrackForPersona.improved_prompt,
+            cover_url: selectedTrackForPersona.cover_url,
+            style_tags: selectedTrackForPersona.style_tags as any,
+            ai_description: (selectedTrackForPersona.metadata as any)?.ai_description,
+            metadata: selectedTrackForPersona.metadata as any,
           }}
           onSuccess={() => {
             onSuccess();
