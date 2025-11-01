@@ -19,7 +19,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import { getProviderModels, getDefaultModel, type MusicProvider as ProviderType } from '@/config/provider-models';
-import { enhancePrompt, isEnhancementEnabled } from '@/services/ai/prompt-enhancement';
+// Auto-enhancement removed per user request
 
 // Modular components & hooks
 import { GeneratorHeader } from '@/components/generator/GeneratorHeader';
@@ -244,31 +244,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
 
   const handleGenerate = useCallback(async () => {
     vibrate('heavy');
-
-    // Check if AI enhancement is enabled
-    if (isEnhancementEnabled() && state.params.prompt.trim() && !state.enhancedPrompt) {
-      state.setIsEnhancing(true);
-      try {
-        const result = await enhancePrompt({
-          prompt: state.params.prompt,
-          genre: state.params.tags.split(',')[0]?.trim(),
-          mood: '',
-          tags: state.params.tags,
-          provider: selectedProvider as 'suno' | 'mureka',
-        });
-        
-        state.setEnhancedPrompt({
-          enhanced: result.enhancedPrompt,
-          addedElements: result.addedElements,
-          reasoning: result.reasoning,
-        });
-        state.setIsEnhancing(false);
-        return;
-      } catch (error) {
-        logger.error('Failed to enhance prompt', error as Error);
-        state.setIsEnhancing(false);
-      }
-    }
 
     // Pre-flight balance check for Suno
     if (selectedProvider === 'suno') {
