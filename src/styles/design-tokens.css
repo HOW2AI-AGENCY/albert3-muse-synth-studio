@@ -1,431 +1,155 @@
-/* 
- * 🎨 Система дизайн-токенов Albert3 Muse Synth Studio
- * Современная, компактная система дизайн-токенов.
- * Версия: 2.1.0 (Компактный редизайн)
+/**
+ * Design Tokens - Albert3 Muse Synth Studio
+ * Централизованная система токенов для UI Density, spacing и controls
  */
 
 :root {
-    /* ===== ЦВЕТОВАЯ ПАЛИТРА ===== */
-    
-    /* Основные цвета */
-    --color-primary-50: 248 250 252;
-    --color-primary-100: 241 245 249;
-    --color-primary-200: 226 232 240;
-    --color-primary-300: 203 213 225;
-    --color-primary-400: 148 163 184;
-    --color-primary-500: 100 116 139;
-    --color-primary-600: 71 85 105;
-    --color-primary-700: 51 65 85;
-    --color-primary-800: 30 41 59;
-    --color-primary-900: 15 23 42;
-    --color-primary-950: 2 6 23;
-
-    /* Акцентные цвета */
-    --color-accent-purple: 262 83% 58%;
-    --color-accent-blue: 189 94% 43%;
-    --color-accent-pink: 330 81% 60%;
-    --color-accent-green: 142 76% 36%;
-    --color-accent-orange: 25 95% 53%;
-    --color-accent-red: 0 84% 60%;
-
-    /* Семантические цвета */
-    --color-success: 142 76% 36%;
-    --color-warning: 45 93% 47%;
-    --color-error: 0 84% 60%;
-    --color-info: 217 91% 60%;
-
-    /* Нейтральные цвета */
-    --color-neutral-0: 0 0% 100%;
-    --color-neutral-50: 210 20% 98%;
-    --color-neutral-100: 220 14% 96%;
-    --color-neutral-200: 220 13% 91%;
-    --color-neutral-300: 216 12% 84%;
-    --color-neutral-400: 218 11% 65%;
-    --color-neutral-500: 220 9% 46%;
-    --color-neutral-600: 215 14% 34%;
-    --color-neutral-700: 217 19% 27%;
-    --color-neutral-800: 215 28% 17%;
-    --color-neutral-900: 222 84% 5%;
-    --color-neutral-950: 229 84% 2%;
-
-    /* Темная тема */
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-    --surface: 217 33% 17%;
-    --surface-variant: 215 25% 27%;
-    --outline: 217 11% 65%;
-    --outline-variant: 215 25% 27%;
-
-    /* ===== ТИПОГРАФИКА (КОМПАКТНАЯ ВЕРСИЯ) ===== */
-    
-    /* Размеры шрифтов (Более компактная шкала) */
-    --font-size-xs: 0.75rem;      /* 12px */
-    --font-size-sm: 0.8125rem;    /* 13px */
-    --font-size-base: 0.875rem;     /* 14px */
-    --font-size-lg: 1rem;        /* 16px */
-    --font-size-xl: 1.125rem;     /* 18px */
-    --font-size-2xl: 1.25rem;     /* 20px */
-    --font-size-3xl: 1.5rem;      /* 24px */
-    --font-size-4xl: 1.875rem;    /* 30px */
-    --font-size-5xl: 2.25rem;     /* 36px */
-    --font-size-6xl: 3rem;        /* 48px */
-
-    /* Высота строк */
-    --line-height-tight: 1.2;
-    --line-height-snug: 1.3;
-    --line-height-normal: 1.4;
-    --line-height-relaxed: 1.6;
-    --line-height-loose: 1.8;
-
-    /* Веса шрифтов */
-    --font-weight-thin: 100;
-    --font-weight-light: 300;
-    --font-weight-normal: 400;
-    --font-weight-medium: 500;
-    --font-weight-semibold: 600;
-    --font-weight-bold: 700;
-    --font-weight-extrabold: 800;
-    --font-weight-black: 900;
-
-    /* Семейства шрифтов */
-    --font-family-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    --font-family-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
-    
-    /* PHASE 1.1: Дополнительные размеры шрифтов */
-    --font-size-2xs: 0.625rem; /* 10px */
-
-    /* ===== ПРОСТРАНСТВО И РАЗМЕРЫ (КОМПАКТНАЯ ВЕРСИЯ) ===== */
-    
-    /* Отступы (4px базовая сетка) */
-    --space-0: 0;
-    --space-1: 0.25rem;   /* 4px */
-    --space-2: 0.5rem;    /* 8px */
-    --space-3: 0.75rem;   /* 12px */
-    --space-4: 1rem;      /* 16px */
-    --space-5: 1.25rem;   /* 20px */
-    --space-6: 1.5rem;    /* 24px */
-    --space-8: 2rem;      /* 32px */
-    --space-10: 2.5rem;   /* 40px */
-    --space-12: 3rem;     /* 48px */
-    --space-16: 4rem;     /* 64px */
-    --space-20: 5rem;     /* 80px */
-    --space-24: 6rem;     /* 96px */
-    --space-32: 8rem;     /* 128px */
-
-    /* === PHASE 1: Density Scale & Generator Tokens === */
-    --density-compact: 0.75;         /* 75% of default */
-    --density-normal: 1;             /* 100% - default */
-    --density-comfortable: 1.25;     /* 125% */
-
-    /* Form Control Heights */
-    --control-height-xs: 1.75rem;    /* 28px - ultra compact */
-    --control-height-sm: 2rem;       /* 32px - compact */
-    --control-height-md: 2.25rem;    /* 36px - normal */
-    --control-height-lg: 2.5rem;     /* 40px - comfortable */
-
-    /* Generator Specific Tokens */
-    --generator-header-height: 3.25rem;  /* 52px - compact header */
-    --generator-section-gap: 0.625rem;   /* 10px - tight spacing */
-    --generator-field-gap: 0.5rem;       /* 8px - minimal vertical gap */
-
-    /* Радиусы скругления (Более строгие) */
-    --radius-none: 0;
-    --radius-sm: 0.125rem;    /* 2px */
-    --radius-base: 0.25rem;   /* 4px */
-    --radius-md: 0.375rem;    /* 6px */
-    --radius-lg: 0.5rem;      /* 8px */
-    --radius-xl: 0.75rem;     /* 12px */
-    --radius-2xl: 1rem;       /* 16px */
-    --radius-3xl: 1.25rem;    /* 20px */
-    --radius-full: 9999px;
-
-    /* ===== ТЕНИ И ЭФФЕКТЫ ===== */
-    
-    /* Тени Material Design */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-base: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-
-    /* Светящиеся тени */
-    --shadow-glow-primary: 0 0 20px hsl(var(--color-accent-purple) / 0.3);
-    --shadow-glow-secondary: 0 0 20px hsl(var(--color-accent-blue) / 0.3);
-    --shadow-glow-accent: 0 0 20px hsl(var(--color-accent-pink) / 0.3);
-    --shadow-glow-success: 0 0 20px hsl(var(--color-success) / 0.3);
-    --shadow-glow-error: 0 0 20px hsl(var(--color-error) / 0.3);
-
-    /* ===== АНИМАЦИИ И ПЕРЕХОДЫ ===== */
-    
-    /* Длительности */
-    --duration-instant: 0ms;
-    --duration-fast: 150ms;
-    --duration-normal: 300ms;
-    --duration-slow: 500ms;
-    --duration-slower: 750ms;
-
-    /* Кривые анимации */
-    --ease-linear: linear;
-    --ease-in: cubic-bezier(0.4, 0, 1, 1);
-    --ease-out: cubic-bezier(0, 0, 0.2, 1);
-    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-    --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
-    --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
-
-    /* Готовые переходы */
-    --transition-fast: all var(--duration-fast) var(--ease-out);
-    --transition-normal: all var(--duration-normal) var(--ease-out);
-    --transition-slow: all var(--duration-slow) var(--ease-out);
-    --transition-colors: color var(--duration-fast) var(--ease-out), 
-                        background-color var(--duration-fast) var(--ease-out),
-                        border-color var(--duration-fast) var(--ease-out);
-    --transition-transform: transform var(--duration-normal) var(--ease-out);
-    --transition-opacity: opacity var(--duration-fast) var(--ease-out);
-
-    /* ===== БРЕЙКПОИНТЫ (для JS) ===== */
-    --breakpoint-xs: 375px;
-    --breakpoint-sm: 640px;
-    --breakpoint-md: 768px;
-    --breakpoint-lg: 1024px;
-    --breakpoint-xl: 1280px;
-    --breakpoint-2xl: 1536px;
-    --breakpoint-3xl: 1920px;
-    --breakpoint-4k: 2560px;
-
-    /* ===== Z-INDEX СЛОИ ===== */
-    --z-sidebar: 40;
-    --z-bottom-tab-bar: 40;
-    --z-fab: 50;
-    --z-mini-player: 60;
-    --z-desktop-player: 60;
-    --z-dropdown: 1000;
-    --z-sticky: 1020;
-    --z-fixed: 1030;
-    --z-modal-backdrop: 1040;
-    --z-modal: 1050;
-    --z-fullscreen-player: 1050;
-    --z-popover: 1060;
-    --z-tooltip: 1070;
-    --z-toast: 1080;
-    --z-maximum: 2147483647;
-    
-    /* ===== SEMANTIC SPACING ===== */
-    --spacing-card-padding: var(--space-4);
-    --spacing-card-gap: var(--space-3);
-    --spacing-button-padding-x: var(--space-4);
-    --spacing-button-padding-y: var(--space-2);
-    --spacing-input-padding-x: var(--space-3);
-    --spacing-input-padding-y: var(--space-2);
-    --generator-max-height-mobile: calc(100vh - 180px);
-    
-    /* ===== TOUCH TARGETS (WCAG AAA) ===== */
-    --mobile-touch-min: 44px;
-    --desktop-touch-min: 40px;
-    
-    /* ===== SIDEBAR DIMENSIONS ===== */
-    --sidebar-width-expanded: 13rem;
-    --sidebar-width-collapsed: 3.5rem;
-    
-    /* ===== MOBILE SPACING ===== */
-    --mobile-spacing-xs: var(--space-1);
-    --mobile-spacing-sm: var(--space-2);
-    --mobile-spacing-md: var(--space-3);
-    --mobile-spacing-lg: var(--space-4);
-    
-    /* ===== MOBILE TYPOGRAPHY ===== */
-    --mobile-font-xs: 0.75rem;
-    --mobile-font-sm: 0.875rem;
-    --mobile-font-base: 1rem;
-    --mobile-font-lg: 1.125rem;
-
-    /* ===== ГРАДИЕНТЫ ===== */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--color-accent-purple)) 0%, hsl(var(--color-accent-pink)) 100%);
-    --gradient-secondary: linear-gradient(135deg, hsl(var(--color-accent-blue)) 0%, hsl(var(--color-accent-purple)) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(var(--color-success)) 0%, hsl(var(--color-accent-blue)) 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(222 47% 8%) 100%);
-    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-
-    /* ===== РАЗМЕРЫ КОМПОНЕНТОВ (КОМПАКТНАЯ ВЕРСИЯ) ===== */
-    
-    /* Высоты элементов управления */
-    --height-control-sm: 1.75rem;   /* 28px */
-    --height-control-md: 2rem;      /* 32px */
-    --height-control-lg: 2.5rem;    /* 40px */
-    --height-control-xl: 3rem;      /* 48px */
-
-    /* Размеры иконок */
-    --icon-xs: 0.75rem;   /* 12px */
-    --icon-sm: 1rem;      /* 16px */
-    --icon-md: 1.125rem;  /* 18px */
-    --icon-lg: 1.25rem;   /* 20px */
-    --icon-xl: 1.5rem;    /* 24px */
-    --icon-2xl: 2rem;     /* 32px */
-
-    /* Ширины контейнеров */
-    --container-xs: 20rem;     /* 320px */
-    --container-sm: 24rem;     /* 384px */
-    --container-md: 28rem;     /* 448px */
-    --container-lg: 32rem;     /* 512px */
-    --container-xl: 36rem;     /* 576px */
-    --container-2xl: 42rem;    /* 672px */
-    --container-3xl: 48rem;    /* 768px */
-    --container-4xl: 56rem;    /* 896px */
-    --container-5xl: 64rem;    /* 1024px */
-    --container-6xl: 72rem;    /* 1152px */
-    --container-7xl: 80rem;    /* 1280px */
-
-    /* ===== CARD HIERARCHY ===== */
-    --card-primary-border: hsl(var(--outline) / 0.8);
-    --card-primary-shadow: var(--shadow-md);
-
-    --card-secondary-bg: hsl(var(--surface-variant) / 0.3);
-    --card-secondary-border: hsl(var(--outline) / 0.5);
-    --card-secondary-shadow: var(--shadow-sm);
-
-    --card-tertiary-bg: transparent;
-    --card-tertiary-border: hsl(var(--outline) / 0.3);
-    --card-tertiary-shadow: none;
-
-    /* ===== INTERACTIVE STATES ===== */
-    --interactive-hover-bg: hsl(var(--color-accent-purple) / 0.05);
-    --interactive-active-bg: hsl(var(--color-accent-purple) / 0.1);
-    --interactive-focus-ring: 0 0 0 3px hsl(var(--color-accent-purple) / 0.3);
-  }
-
-  /* ===== АДАПТИВНЫЕ ТОКЕНЫ (КОМПАКТНАЯ ВЕРСИЯ) ===== */
+  /* ============================================
+     SPACING TOKENS - UI Density System
+     ============================================ */
   
-  /* Мобильные устройства (320px - 767px) */
-  @media (max-width: 767px) {
-    :root {
-      --space-container: var(--space-3); /* 12px */
-      --font-size-display: var(--font-size-2xl); /* 20px */
-      --font-size-heading: var(--font-size-xl); /* 18px */
-      --radius-default: var(--radius-md); /* 8px */
-      --spacing-card-padding: var(--space-3);
-      --spacing-card-gap: var(--space-2);
-      --spacing-button-padding-x: var(--space-3);
-      --spacing-input-padding-x: var(--space-2);
-      --generator-max-height-mobile: calc(100vh - var(--workspace-header-height, 56px) - var(--bottom-tab-bar-height));
-    }
-  }
-
-  /* Планшеты (768px - 1023px) */
-  @media (min-width: 768px) and (max-width: 1023px) {
-    :root {
-      --space-container: var(--space-4); /* 16px */
-      --font-size-display: var(--font-size-3xl); /* 24px */
-      --font-size-heading: var(--font-size-2xl); /* 20px */
-      --radius-default: var(--radius-lg); /* 10px */
-    }
-  }
-
-  /* Десктоп (1024px+) */
-  @media (min-width: 1024px) {
-    :root {
-      --space-container: var(--space-5); /* 20px */
-      --font-size-display: var(--font-size-4xl); /* 30px */
-      --font-size-heading: var(--font-size-3xl); /* 24px */
-      --radius-default: var(--radius-lg); /* 10px */
-    }
-  }
-
-  /* 4K и выше (2560px+) */
-  @media (min-width: 2560px) {
-    :root {
-      --space-container: var(--space-6); /* 24px */
-      --font-size-display: var(--font-size-5xl); /* 36px */
-      --font-size-heading: var(--font-size-4xl); /* 30px */
-    }
-  }
-
-/* ===== УТИЛИТАРНЫЕ КЛАССЫ ===== */
-  /* Быстрые переходы */
-  .transition-fast { transition: var(--transition-fast); }
-  .transition-normal { transition: var(--transition-normal); }
-  .transition-slow { transition: var(--transition-slow); }
-  .transition-colors { transition: var(--transition-colors); }
-  .transition-transform { transition: var(--transition-transform); }
-  .transition-opacity { transition: var(--transition-opacity); }
-
-  /* Светящиеся эффекты */
-  .glow-primary { box-shadow: var(--shadow-glow-primary); }
-  .glow-secondary { box-shadow: var(--shadow-glow-secondary); }
-  .glow-accent { box-shadow: var(--shadow-glow-accent); }
-  .glow-success { box-shadow: var(--shadow-glow-success); }
-  .glow-error { box-shadow: var(--shadow-glow-error); }
-
-  /* Градиентные тексты */
-  .text-gradient-primary {
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .text-gradient-secondary {
-    background: var(--gradient-secondary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  /* Стеклянный эффект */
-  .glass-effect {
-    background: var(--gradient-glass);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  /* Безопасные зоны для мобильных устройств */
-  .safe-top { padding-top: env(safe-area-inset-top); }
-  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-  .safe-left { padding-left: env(safe-area-inset-left); }
-  .safe-right { padding-right: env(safe-area-inset-right); }
-  .safe-area { 
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-  }
-
-  /* Скрытие скроллбара */
-  .hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* Тактильная обратная связь */
-  .haptic-light { 
-    cursor: pointer;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-  }
+  /* Compact Mode - Минимальные отступы для максимальной информационной плотности */
+  --space-compact-xs: 0.25rem;   /* 4px */
+  --space-compact-sm: 0.5rem;    /* 8px */
+  --space-compact-md: 0.75rem;   /* 12px */
+  --space-compact-lg: 1rem;      /* 16px */
+  --space-compact-xl: 1.25rem;   /* 20px */
   
-  .haptic-medium {
-    cursor: pointer;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    transform: scale(1);
-    transition: transform var(--duration-fast) var(--ease-out);
-  }
+  /* Comfortable Mode - Стандартные отступы для комфортного использования */
+  --space-comfortable-xs: 0.5rem;   /* 8px */
+  --space-comfortable-sm: 0.75rem;  /* 12px */
+  --space-comfortable-md: 1rem;     /* 16px */
+  --space-comfortable-lg: 1.5rem;   /* 24px */
+  --space-comfortable-xl: 2rem;     /* 32px */
   
-  .haptic-medium:active {
-    transform: scale(0.98);
-  }
+  /* ============================================
+     CONTROL HEIGHTS
+     ============================================ */
+  
+  --control-height-compact: 2.25rem;      /* 36px - Input, Button */
+  --control-height-comfortable: 2.75rem;  /* 44px - Touch-friendly */
+  
+  --control-height-sm-compact: 1.75rem;      /* 28px - Small controls */
+  --control-height-sm-comfortable: 2rem;     /* 32px */
+  
+  --control-height-lg-compact: 2.75rem;      /* 44px - Large controls */
+  --control-height-lg-comfortable: 3rem;     /* 48px */
+  
+  /* ============================================
+     CARD & CONTAINER PADDING
+     ============================================ */
+  
+  --card-padding-compact: var(--space-compact-md);         /* 12px */
+  --card-padding-comfortable: var(--space-comfortable-lg); /* 24px */
+  
+  --container-padding-compact: var(--space-compact-lg);         /* 16px */
+  --container-padding-comfortable: var(--space-comfortable-xl); /* 32px */
+  
+  /* ============================================
+     GAP TOKENS (для Grid/Flex)
+     ============================================ */
+  
+  --gap-compact-xs: var(--space-compact-xs);   /* 4px */
+  --gap-compact-sm: var(--space-compact-sm);   /* 8px */
+  --gap-compact-md: var(--space-compact-md);   /* 12px */
+  --gap-compact-lg: var(--space-compact-lg);   /* 16px */
+  
+  --gap-comfortable-xs: var(--space-comfortable-xs);   /* 8px */
+  --gap-comfortable-sm: var(--space-comfortable-sm);   /* 12px */
+  --gap-comfortable-md: var(--space-comfortable-md);   /* 16px */
+  --gap-comfortable-lg: var(--space-comfortable-lg);   /* 24px */
+  
+  /* ============================================
+     АКТИВНЫЕ ТОКЕНЫ (меняются через data-density)
+     ============================================ */
+  
+  --space-xs: var(--space-comfortable-xs);
+  --space-sm: var(--space-comfortable-sm);
+  --space-md: var(--space-comfortable-md);
+  --space-lg: var(--space-comfortable-lg);
+  --space-xl: var(--space-comfortable-xl);
+  
+  --gap-xs: var(--gap-comfortable-xs);
+  --gap-sm: var(--gap-comfortable-sm);
+  --gap-md: var(--gap-comfortable-md);
+  --gap-lg: var(--gap-comfortable-lg);
+  
+  --control-height: var(--control-height-comfortable);
+  --control-height-sm: var(--control-height-sm-comfortable);
+  --control-height-lg: var(--control-height-lg-comfortable);
+  
+  --card-padding: var(--card-padding-comfortable);
+  --container-padding: var(--container-padding-comfortable);
+}
 
-  .haptic-heavy {
-    cursor: pointer;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    transform: scale(1);
-    transition: transform var(--duration-fast) var(--ease-out);
-  }
+/* ============================================
+   DENSITY MODES - Переключение через data-density
+   ============================================ */
+
+[data-density="compact"] {
+  --space-xs: var(--space-compact-xs);
+  --space-sm: var(--space-compact-sm);
+  --space-md: var(--space-compact-md);
+  --space-lg: var(--space-compact-lg);
+  --space-xl: var(--space-compact-xl);
   
-  .haptic-heavy:active {
-    transform: scale(0.95);
-  }
+  --gap-xs: var(--gap-compact-xs);
+  --gap-sm: var(--gap-compact-sm);
+  --gap-md: var(--gap-compact-md);
+  --gap-lg: var(--gap-compact-lg);
+  
+  --control-height: var(--control-height-compact);
+  --control-height-sm: var(--control-height-sm-compact);
+  --control-height-lg: var(--control-height-lg-compact);
+  
+  --card-padding: var(--card-padding-compact);
+  --container-padding: var(--container-padding-compact);
+}
+
+[data-density="comfortable"] {
+  --space-xs: var(--space-comfortable-xs);
+  --space-sm: var(--space-comfortable-sm);
+  --space-md: var(--space-comfortable-md);
+  --space-lg: var(--space-comfortable-lg);
+  --space-xl: var(--space-comfortable-xl);
+  
+  --gap-xs: var(--gap-comfortable-xs);
+  --gap-sm: var(--gap-comfortable-sm);
+  --gap-md: var(--gap-comfortable-md);
+  --gap-lg: var(--gap-comfortable-lg);
+  
+  --control-height: var(--control-height-comfortable);
+  --control-height-sm: var(--control-height-sm-comfortable);
+  --control-height-lg: var(--control-height-lg-comfortable);
+  
+  --card-padding: var(--card-padding-comfortable);
+  --container-padding: var(--container-padding-comfortable);
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Применение токенов к стандартным Tailwind классам */
+.space-x-xs > * + * { margin-left: var(--space-xs); }
+.space-x-sm > * + * { margin-left: var(--space-sm); }
+.space-x-md > * + * { margin-left: var(--space-md); }
+.space-x-lg > * + * { margin-left: var(--space-lg); }
+
+.space-y-xs > * + * { margin-top: var(--space-xs); }
+.space-y-sm > * + * { margin-top: var(--space-sm); }
+.space-y-md > * + * { margin-top: var(--space-md); }
+.space-y-lg > * + * { margin-top: var(--space-lg); }
+
+.gap-xs { gap: var(--gap-xs); }
+.gap-sm { gap: var(--gap-sm); }
+.gap-md { gap: var(--gap-md); }
+.gap-lg { gap: var(--gap-lg); }
+
+.p-card { padding: var(--card-padding); }
+.p-container { padding: var(--container-padding); }
+
+/* Control heights */
+.h-control { height: var(--control-height); }
+.h-control-sm { height: var(--control-height-sm); }
+.h-control-lg { height: var(--control-height-lg); }

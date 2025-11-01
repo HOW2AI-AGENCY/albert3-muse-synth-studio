@@ -10,6 +10,7 @@ import GlobalAudioPlayer from "./components/player/GlobalAudioPlayer";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PerformanceMonitorWidget } from "@/components/dev/PerformanceMonitorWidget";
 import { SentryFeedbackButton } from "@/components/SentryFeedbackButton";
+import { DensityProvider } from "@/contexts/DensityContext";
 import { toast } from "@/hooks/use-toast";
 import { reportWebVitals, logMetric } from "@/utils/web-vitals";
 import { 
@@ -74,16 +75,18 @@ const App = () => {
     <GlobalErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider delayDuration={200}>
-          <AppLayout>
-            <Suspense fallback={<FullPageSpinner />}>
-              <Toaster />
-              
-              <RouterProvider router={router} />
-              <GlobalAudioPlayer />
-              <PerformanceMonitorWidget />
-              <SentryFeedbackButton />
-            </Suspense>
-          </AppLayout>
+          <DensityProvider>
+            <AppLayout>
+              <Suspense fallback={<FullPageSpinner />}>
+                <Toaster />
+                
+                <RouterProvider router={router} />
+                <GlobalAudioPlayer />
+                <PerformanceMonitorWidget />
+                <SentryFeedbackButton />
+              </Suspense>
+            </AppLayout>
+          </DensityProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </GlobalErrorBoundary>

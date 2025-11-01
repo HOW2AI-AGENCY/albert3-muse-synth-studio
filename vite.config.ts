@@ -14,13 +14,30 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: undefined, // Let Vite handle chunking
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor-react';
+            }
+            if (id.includes('@tanstack')) {
+              return 'vendor-query';
+            }
+            if (id.includes('lucide-react') || id.includes('@radix-ui')) {
+              return 'vendor-ui';
+            }
+            return 'vendor';
+          }
+        },
       },
     },
     chunkSizeWarningLimit: 800,
-    sourcemap: false,
-    commonjsOptions: {
-      include: [/node_modules/],
+    sourcemap: true,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
     },
   },
   plugins: [
@@ -44,12 +61,7 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      react: path.resolve(__dirname, "node_modules/react"),
-      "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
-      "react-router": path.resolve(__dirname, "node_modules/react-router"),
-      "react-router-dom": path.resolve(__dirname, "node_modules/react-router-dom"),
     },
-    mainFields: ["browser", "module", "main"],
     dedupe: [
       "react",
       "react-dom",
@@ -58,6 +70,18 @@ export default defineConfig(({ mode }) => ({
       "react/jsx-dev-runtime",
       "react-router",
       "react-router-dom",
+      "@tanstack/react-query",
+      "zustand",
+    ],
+  },
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "react-router",
+      "react-router-dom",
+      "@tanstack/react-query",
+      "zustand",
     ],
   },
   test: {
