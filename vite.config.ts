@@ -13,54 +13,13 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     rollupOptions: {
-      output: {
-        manualChunks: {
-          // Core dependencies
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          
-          // UI framework (Radix UI components)
-          'ui-vendor': [
-            '@radix-ui/react-dialog', 
-            '@radix-ui/react-dropdown-menu', 
-            '@radix-ui/react-select',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-tooltip',
-            '@radix-ui/react-popover'
-          ],
-          
-          // Data fetching
-          'query-vendor': ['@tanstack/react-query'],
-          
-          // Heavy visualization libraries (lazy loaded on demand)
-          'animation-vendor': ['framer-motion'],
-          'chart-vendor': ['recharts'],
-          
-          // Supabase
-          'supabase-vendor': ['@supabase/supabase-js'],
-          
-          // Icons (tree-shaken via iconImports.ts)
-          'icons-vendor': ['lucide-react'],
-        },
-      },
+      // Simplified during debugging: let Vite decide chunking to prevent duplicated React
+      output: {},
     },
     chunkSizeWarningLimit: 800, // Снижен с 1000
     sourcemap: false, // Отключаем sourcemaps в production для уменьшения размера
   },
-  optimizeDeps: {
-    force: true,
-    include: [
-      'react',
-      'react-dom',
-      '@radix-ui/react-checkbox',
-      '@radix-ui/react-dialog',
-      '@radix-ui/react-dropdown-menu',
-      '@radix-ui/react-tooltip',
-      '@radix-ui/react-select',
-      'framer-motion',
-      '@tanstack/react-query',
-      'sonner',
-    ],
-  },
+  optimizeDeps: {},
   plugins: [
     react(),
     mode === "development" && componentTagger(),
@@ -84,19 +43,13 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
     dedupe: [
-      "react", 
+      "react",
       "react-dom",
+      "react-dom/client",
       "react/jsx-runtime",
-      "react-router-dom",
+      "react/jsx-dev-runtime",
       "react-router",
-      "scheduler",
-      "@radix-ui/react-dialog",
-      "@radix-ui/react-dropdown-menu",
-      "@radix-ui/react-select",
-      "@radix-ui/react-tabs",
-      "@radix-ui/react-tooltip",
-      "@radix-ui/react-popover",
-      "@radix-ui/react-slot",
+      "react-router-dom",
     ],
   },
   test: {
