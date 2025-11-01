@@ -62,8 +62,17 @@ export const useAudioUploadHandler = (state: UseGeneratorStateReturn) => {
         audioUrl: audioUrl.substring(0, 50)
       });
 
+      // ✅ Получаем токен для авторизации
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Необходима авторизация');
+      }
+
       const { data, error } = await supabase.functions.invoke('analyze-reference-audio', {
-        body: { audioUrl }
+        body: { audioUrl },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
       if (error) throw error;

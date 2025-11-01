@@ -135,8 +135,16 @@ export function useReferenceAnalysis() {
         throw new Error('Необходима авторизация для анализа аудио');
       }
 
+      logger.info('🔐 [ANALYZE] Session acquired', 'useReferenceAnalysis', {
+        hasAccessToken: !!session.access_token,
+        userId: session.user?.id.substring(0, 8)
+      });
+
       const { data, error } = await supabase.functions.invoke('analyze-reference-audio', {
-        body: params
+        body: params,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
       if (error) {
