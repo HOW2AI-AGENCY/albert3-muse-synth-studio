@@ -20,6 +20,8 @@ interface GeneratorHeaderProps {
   isGenerating: boolean;
   referenceFileName: string | null;
   lyricsLineCount: number;
+  rateLimitRemaining?: number;
+  rateLimitMax?: number;
 }
 
 export const GeneratorHeader = memo(({
@@ -33,6 +35,8 @@ export const GeneratorHeader = memo(({
   isGenerating,
   referenceFileName,
   lyricsLineCount,
+  rateLimitRemaining,
+  rateLimitMax,
 }: GeneratorHeaderProps) => {
   return (
     <div className="p-2 sm:p-2.5 border-b border-border/20 space-y-1.5 sm:space-y-2">
@@ -90,6 +94,14 @@ export const GeneratorHeader = memo(({
           <Badge variant="secondary" className="h-5 text-[10px] gap-1 px-2">
             <FileText className="h-2.5 w-2.5" />
             {lyricsLineCount} строк
+          </Badge>
+        )}
+        {rateLimitRemaining !== undefined && rateLimitMax && (
+          <Badge 
+            variant={rateLimitRemaining < 3 ? "destructive" : "outline"} 
+            className="h-5 text-[10px] px-2"
+          >
+            {rateLimitRemaining}/{rateLimitMax} запросов
           </Badge>
         )}
       </div>

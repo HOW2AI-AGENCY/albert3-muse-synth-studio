@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
@@ -19,6 +19,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import { getProviderModels, getDefaultModel, type MusicProvider as ProviderType } from '@/config/provider-models';
+import { rateLimiter, RATE_LIMIT_CONFIGS } from '@/utils/rateLimiter';
 // Auto-enhancement removed per user request
 
 // Modular components & hooks
@@ -53,6 +54,29 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const { boostStyle, isBoosting } = useBoostStyle();
   const { balance: sunoBalance } = useProviderBalance();
   const { savePrompt } = usePromptHistory();
+  
+  // Rate limit tracking
+  const [rateLimitState, setRateLimitState] = useState<{ remaining: number; max: number }>({
+    remaining: RATE_LIMIT_CONFIGS.GENERATION.maxRequests,
+    max: RATE_LIMIT_CONFIGS.GENERATION.maxRequests,
+  });
+  
+  useEffect(() => {
+    const checkRateLimit = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const limit = rateLimiter.check(user.id, RATE_LIMIT_CONFIGS.GENERATION);
+        setRateLimitState({
+          remaining: limit.remaining,
+          max: RATE_LIMIT_CONFIGS.GENERATION.maxRequests,
+        });
+      }
+    };
+    
+    checkRateLimit();
+    const interval = setInterval(checkRateLimit, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Provider change handler with correct typing
   const handleProviderChange = useCallback((provider: string) => {
@@ -405,6 +429,8 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
         isGenerating={isGenerating}
         referenceFileName={state.params.referenceFileName}
         lyricsLineCount={lyricsLineCount}
+        rateLimitRemaining={rateLimitState.remaining}
+        rateLimitMax={rateLimitState.max}
       />
 
       {/* Main Content */}
