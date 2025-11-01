@@ -17,14 +17,14 @@ export const useMusicProjects = () => {
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ['music-projects'],
     queryFn: async () => {
-      logger.info('[useMusicProjects] Fetching projects');
+      logger.info('Fetching projects', 'useMusicProjects');
       const { data, error } = await supabase
         .from('music_projects')
         .select('*')
         .order('updated_at', { ascending: false });
       
       if (error) {
-        logger.error('[useMusicProjects] Failed to fetch projects', error);
+        logger.error('Failed to fetch projects', error as Error, 'useMusicProjects');
         throw error;
       }
       
@@ -35,7 +35,7 @@ export const useMusicProjects = () => {
   // Create project
   const createProject = useMutation({
     mutationFn: async (params: CreateProjectParams) => {
-      logger.info('[useMusicProjects] Creating project', { name: params.name });
+      logger.info('Creating project', 'useMusicProjects', { name: params.name });
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -59,7 +59,7 @@ export const useMusicProjects = () => {
       });
     },
     onError: (error) => {
-      logger.error('[useMusicProjects] Failed to create project', error);
+      logger.error('Failed to create project', error as Error, 'useMusicProjects');
       toast({
         title: 'Ошибка создания',
         description: 'Не удалось создать проект',
@@ -71,7 +71,7 @@ export const useMusicProjects = () => {
   // Update project
   const updateProject = useMutation({
     mutationFn: async ({ id, ...params }: UpdateProjectParams) => {
-      logger.info('[useMusicProjects] Updating project', { id });
+      logger.info('Updating project', 'useMusicProjects', { id });
       const { data, error } = await supabase
         .from('music_projects')
         .update(params)
@@ -90,7 +90,7 @@ export const useMusicProjects = () => {
       });
     },
     onError: (error) => {
-      logger.error('[useMusicProjects] Failed to update project', error);
+      logger.error('Failed to update project', error as Error, 'useMusicProjects');
       toast({
         title: 'Ошибка обновления',
         description: 'Не удалось сохранить изменения',
@@ -102,7 +102,7 @@ export const useMusicProjects = () => {
   // Delete project
   const deleteProject = useMutation({
     mutationFn: async (id: string) => {
-      logger.info('[useMusicProjects] Deleting project', { id });
+      logger.info('Deleting project', 'useMusicProjects', { id });
       const { error } = await supabase
         .from('music_projects')
         .delete()
@@ -118,7 +118,7 @@ export const useMusicProjects = () => {
       });
     },
     onError: (error) => {
-      logger.error('[useMusicProjects] Failed to delete project', error);
+      logger.error('Failed to delete project', error as Error, 'useMusicProjects');
       toast({
         title: 'Ошибка удаления',
         description: 'Не удалось удалить проект',

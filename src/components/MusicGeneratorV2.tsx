@@ -342,7 +342,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     const newTags = project.style_tags?.join(', ') || '';
     state.setParam('tags', newTags);
     state.setParam('inspoProjectId', project.id);
-    state.setParam('inspoProjectName', project.title);
+    state.setParam('inspoProjectName', project.name);
     
     logger.info('Inspiration project applied', 'MusicGeneratorV2', {
       projectId: project.id,
@@ -350,7 +350,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     });
     
     sonnerToast.success('✨ Вдохновение применено', {
-      description: `Используем стиль "${project.title}"`,
+      description: `Используем стиль "${project.name}"`,
       duration: 3000,
     });
     

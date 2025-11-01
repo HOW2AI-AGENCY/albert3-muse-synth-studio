@@ -40,6 +40,8 @@ export const mapTrackRowToTrack = (track: TrackRow): Track => ({
   archived_at: track.archived_at ?? null,
   // Mureka task ID (optional)
   mureka_task_id: track.mureka_task_id ?? null,
+  // Project ID (optional)
+  project_id: track.project_id ?? null,
   // Typed metadata
   metadata: track.metadata as TrackMetadata | null,
 });
@@ -523,7 +525,8 @@ export class ApiService {
           storage_video_url,
           archive_scheduled_at,
           archived_at,
-          mureka_task_id
+          mureka_task_id,
+          project_id
         `)
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
