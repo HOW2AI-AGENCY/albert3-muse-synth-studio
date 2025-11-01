@@ -297,7 +297,7 @@ export const getProviderBalance = async (provider: MusicProvider): Promise<Provi
     switch (provider) {
       case 'suno': {
         const { data, error } = await retryWithBackoff(
-          () => supabase.functions.invoke('get-balance', {}),
+          () => supabase.functions.invoke('get-balance', { body: { provider: 'suno' } }),
           RETRY_CONFIGS.fast
         );
 
