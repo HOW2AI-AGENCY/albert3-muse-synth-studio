@@ -120,7 +120,10 @@ export const SeparateStemsDialog = ({
     setSelectedMode(mode);
     setShowResults(false);
     setViewMode(null);
+    
+    // ✅ generateStems теперь обрабатывает ZIP для Mureka автоматически
     await generateStems(mode);
+    
     setSelectedMode(null);
   };
 
@@ -365,6 +368,7 @@ export const SeparateStemsDialog = ({
                   )}
                 </h3>
                 <p className="text-xs text-muted-foreground">
+                  {/* ✅ Динамический текст для разных провайдеров */}
                   Разделить на 2 стема: чистый вокал и инструментальная часть
                 </p>
               </div>
@@ -441,6 +445,7 @@ export const SeparateStemsDialog = ({
                   )}
                 </h3>
                 <p className="text-xs text-muted-foreground">
+                  {/* ✅ Mureka возвращает ZIP-архив со всеми стемами */}
                   Разделить на 8+ стемов: вокал, ударные, бас, гитара и др.
                 </p>
               </div>
