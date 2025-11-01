@@ -151,7 +151,9 @@ serve(async (req) => {
       );
     }
 
-    if (data.data.successFlag !== '1') {
+    // Check for failure - Suno API returns "成功" (success in Chinese) on success
+    // Only error if we have an explicit error message or error code
+    if (data.data.errorCode || data.data.errorMessage) {
       logger.error('Suno generation failed in boost-style', {
         successFlag: data.data.successFlag,
         errorMessage: data.data.errorMessage,
