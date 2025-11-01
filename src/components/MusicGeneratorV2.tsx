@@ -18,7 +18,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import { getProviderModels, getDefaultModel, type MusicProvider as ProviderType } from '@/config/provider-models';
-import { validateAllInstances } from '@/utils/runtimeIdentity';
 
 // Auto-enhancement removed per user request
 
@@ -41,11 +40,6 @@ interface MusicGeneratorV2Props {
 }
 
 const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) => {
-  // ✅ Validate React/Router instances (dev-only)
-  useEffect(() => {
-    validateAllInstances('MusicGeneratorV2');
-  }, []);
-
   const { selectedProvider, setProvider } = useMusicGenerationStore();
   const { toast } = useToast();
   const { vibrate } = useHapticFeedback();

@@ -15,15 +15,38 @@ export default defineConfig(({ mode }) => ({
     include: [
       'react',
       'react-dom',
-      'react-router',
-      'react-router-dom',
-      '@tanstack/react-query',
       'zustand',
+      '@tanstack/react-query',
     ],
     exclude: [],
   },
   build: {
-    rollupOptions: {},
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Enhanced vendor chunking for better caching
+          'vendor-ui': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-toast',
+            '@radix-ui/react-tooltip',
+            '@radix-ui/react-slider',
+            '@radix-ui/react-scroll-area',
+            '@radix-ui/react-avatar',
+            '@radix-ui/react-checkbox',
+            '@radix-ui/react-switch',
+          ],
+          'vendor-charts': ['recharts'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-query': ['@tanstack/react-query', '@tanstack/react-virtual'],
+          'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
+          'vendor-dnd': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
+        },
+      },
+    },
     chunkSizeWarningLimit: 1000,
     sourcemap: mode === 'development',
     minify: mode === 'production' ? 'terser' : false, // Only use terser in production
@@ -68,10 +91,7 @@ export default defineConfig(({ mode }) => ({
       "react-dom",
       "react/jsx-runtime",
       "react/jsx-dev-runtime",
-      "react-router",
-      "react-router-dom",
-      "@tanstack/react-query",
-      "zustand",
+      "zustand", // CRITICAL: dedupe zustand to prevent store duplication
     ],
   },
   test: {

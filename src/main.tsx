@@ -9,10 +9,6 @@ import { AnalyticsService } from './services/analytics.service';
 import type { Metric } from 'web-vitals';
 import { logger } from './utils/logger';
 import { initSentry } from './utils/sentry';
-import { validateAllInstances } from './utils/runtimeIdentity';
-
-// ✅ Validate React/Router instances (dev-only)
-validateAllInstances('main.tsx');
 
 // ✅ Initialize Sentry FIRST (with enhanced config from utils/sentry.ts)
 initSentry();
