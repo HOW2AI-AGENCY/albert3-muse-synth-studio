@@ -53,9 +53,9 @@ export const useAudioRecorder = (
       
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 2048;
       analyserRef.current = analyser;
-      analyserRef.current.fftSize = 2048;
-      source.connect(analyserRef.current);
+      source.connect(analyser);
 
       // Select best MIME type for MediaRecorder
       const mimeTypeCandidates = [
