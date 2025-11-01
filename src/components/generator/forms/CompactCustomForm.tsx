@@ -1,6 +1,7 @@
 import React, { memo, useCallback, useRef, lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
@@ -124,7 +125,7 @@ export const CompactCustomForm = memo(({
             )}
           </div>
           <div className="relative">
-            <Input
+            <Textarea
               placeholder="Опишите стиль, жанр, настроение..."
               value={debouncedPrompt}
               onChange={(e) => {
@@ -133,14 +134,17 @@ export const CompactCustomForm = memo(({
                 }
               }}
               disabled={isGenerating}
-              className={cn("pr-10", isMobile ? "h-10 text-base" : "h-9 text-sm")}
+              className={cn(
+                "pr-10 resize-y min-h-[80px] max-h-[300px]", 
+                isMobile ? "text-base" : "text-sm"
+              )}
               maxLength={MAX_PROMPT_LENGTH}
             />
             {onBoostPrompt && debouncedPrompt.trim() && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 text-primary hover:text-primary hover:bg-primary/10"
+                className="absolute right-1 top-2 h-6 w-6 text-primary hover:text-primary hover:bg-primary/10"
                 onClick={onBoostPrompt}
                 disabled={isBoosting || isGenerating}
                 title="Улучшить промпт с помощью AI"
