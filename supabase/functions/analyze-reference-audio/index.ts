@@ -433,50 +433,60 @@ async function pollMurekaAnalysis(
           dataPreview: hasData ? JSON.stringify(recogResult.data).substring(0, 200) : 'empty'
         });
 
-        // ✅ Проверяем, есть ли распознанные данные
-        // Mureka может возвращать либо lyrics_sections, либо track info
-        if (hasData && (responseData.duration || responseData.lyrics_sections)) {
-          // Это lyrics/transcription результат - не то что нужно для recognition
-          logger.debug('[ANALYZE-REF-POLL] Got lyrics data, recognition not ready yet');
-        } else if (hasData && responseData.title) {
-          // ✅ Это действительно recognition результат
+        // ✅ Mureka recognize возвращает lyrics_sections с транскрипцией
+        if (hasData && responseData.lyrics_sections && Array.isArray(responseData.lyrics_sections)) {
+          // Извлекаем текст из lyrics_sections
+          const lyricsText = responseData.lyrics_sections
+            .flatMap((section: any) => 
+              section.lines?.map((line: any) => line.text).filter(Boolean) || []
+            )
+            .join('\n');
+          
+          const duration = responseData.duration || null;
+
           await supabaseAdmin
             .from('song_recognitions')
             .update({
               status: 'completed',
-              recognized_title: responseData.title || null,
-              recognized_artist: responseData.artist || null,
-              recognized_album: responseData.album || null,
-              confidence_score: responseData.confidence || null,
-              external_ids: responseData.external_ids || {},
+              recognized_title: lyricsText ? 'Extracted Lyrics' : null,
+              confidence_score: lyricsText ? 1.0 : null,
               metadata: {
                 completed_at: new Date().toISOString(),
-                mureka_result: responseData,
+                lyrics_extracted: !!lyricsText,
+                lyrics_text: lyricsText,
+                duration,
                 provider: 'mureka'
               }
             })
             .eq('id', recognitionId);
 
-          logger.info('[ANALYZE-REF-POLL] ✅ Mureka recognition completed', {
+          logger.info('[ANALYZE-REF-POLL] ✅ Mureka lyrics extraction completed', {
             recognitionId: recognitionId.substring(0, 8),
-            title: responseData.title,
-            artist: responseData.artist
+            lyricsLength: lyricsText.length,
+            sectionsCount: responseData.lyrics_sections.length
           });
 
-          // ✅ Обновляем audio_library (привязываем результат распознавания)
-          if (audioLibraryId) {
+          // ✅ Обновляем audio_library (привязываем результат извлечения lyrics)
+          if (audioLibraryId && lyricsText) {
             try {
               await supabaseAdmin
                 .from('audio_library')
                 .update({
                   recognized_song_id: recognitionId,
-                  analysis_status: 'completed'
+                  analysis_status: 'completed',
+                  analysis_data: {
+                    lyrics_extracted: true,
+                    lyrics_text: lyricsText,
+                    duration,
+                    analyzed_at: new Date().toISOString()
+                  }
                 })
                 .eq('id', audioLibraryId)
                 .eq('user_id', userId);
               
-              logger.info('[ANALYZE-REF-POLL] ✅ Audio library updated with recognition', {
-                audioLibraryId: audioLibraryId.substring(0, 8)
+              logger.info('[ANALYZE-REF-POLL] ✅ Audio library updated with lyrics', {
+                audioLibraryId: audioLibraryId.substring(0, 8),
+                lyricsLength: lyricsText.length
               });
             } catch (error) {
               logger.error('[ANALYZE-REF-POLL] Failed to update audio_library', {
@@ -487,7 +497,7 @@ async function pollMurekaAnalysis(
 
           recognitionCompleted = true;
         } else {
-          logger.debug('[ANALYZE-REF-POLL] Recognition still processing');
+          logger.debug('[ANALYZE-REF-POLL] Lyrics extraction still processing');
         }
       } catch (error) {
         logger.error('[ANALYZE-REF-POLL] Recognition polling error', { 

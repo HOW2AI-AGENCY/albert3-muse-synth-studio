@@ -12,63 +12,86 @@ export const useAnalysisMapper = (state: UseGeneratorStateReturn) => {
     recognition: any;
     description: any;
   }) => {
-    const { mapAnalysisToGenerationParams } = await import('@/utils/analysis-mapper');
-    
-    logger.info('🔍 [ANALYSIS] Analysis completed', 'AnalysisMapper', {
+    logger.info('🔍 [ANALYSIS] Processing analysis results', 'AnalysisMapper', {
       hasRecognition: !!result.recognition,
-      hasDescription: !!result.description
+      hasDescription: !!result.description,
+      hasLyricsInRecognition: !!result.recognition?.metadata?.lyrics_text
     });
 
-    // Use mapper to get updates
-    const mappingResult = mapAnalysisToGenerationParams(
-      result.recognition,
-      result.description,
-      state.params
-    );
+    const updates: any = {};
 
-    // Apply updates
-    if (Object.keys(mappingResult.updates).length > 0) {
-      // Apply title
-      if (mappingResult.updates.title) {
-        state.setParam('title', mappingResult.updates.title);
+    // ✅ 1. Применяем description (жанр, настроение, инструменты) → в prompt/tags
+    if (result.description) {
+      const desc = result.description;
+      
+      // Формируем style tags из жанра и настроения
+      const tags = [
+        desc.detected_genre,
+        desc.detected_mood,
+        ...(desc.detected_instruments || []).slice(0, 2)
+      ].filter(Boolean);
+
+      if (tags.length > 0) {
+        updates.tags = tags.join(', ');
+        state.setParam('tags', updates.tags);
       }
 
-      // Apply tags
-      if (mappingResult.updates.tags) {
-        state.setParam('tags', mappingResult.updates.tags);
+      // Формируем prompt из AI описания
+      if (desc.ai_description) {
+        updates.prompt = desc.ai_description;
+        state.setParam('prompt', desc.ai_description);
+        state.setDebouncedPrompt(desc.ai_description);
+      } else if (desc.detected_genre || desc.detected_mood) {
+        const parts = [
+          desc.detected_genre && `${desc.detected_genre} track`,
+          desc.detected_mood && `with ${desc.detected_mood} mood`,
+          desc.tempo_bpm && `at ${desc.tempo_bpm} BPM`
+        ].filter(Boolean);
+        
+        updates.prompt = parts.join(' ');
+        state.setParam('prompt', updates.prompt);
+        state.setDebouncedPrompt(updates.prompt);
       }
 
-      // Apply prompt
-      if (mappingResult.updates.prompt) {
-        state.setParam('prompt', mappingResult.updates.prompt);
-        state.setDebouncedPrompt(mappingResult.updates.prompt);
-      }
+      // Сохраняем analyzed data для отображения
+      state.setParams(prev => ({
+        ...prev,
+        analyzedGenre: desc.detected_genre,
+        analyzedMood: desc.detected_mood,
+        analyzedTempo: desc.tempo_bpm,
+        analyzedInstruments: desc.detected_instruments,
+        analyzedDescription: desc.ai_description,
+      }));
 
-      // Save analyzed data for indication
-      if (result.description?.detected_genre) {
-        state.setParams(prev => ({
-          ...prev,
-          analyzedGenre: result.description.detected_genre,
-          analyzedMood: result.description.detected_mood,
-          analyzedTempo: result.description.tempo_bpm,
-          analyzedInstruments: result.description.detected_instruments,
-          analyzedDescription: result.description.ai_description,
-        }));
-      }
-
-      logger.info('✅ [AUTO-APPLY] Analysis applied to form', 'AnalysisMapper', {
-        appliedFields: mappingResult.appliedFields,
-        skippedFields: mappingResult.skippedFields
+      logger.info('✅ [ANALYSIS] Description applied', 'AnalysisMapper', {
+        genre: desc.detected_genre,
+        mood: desc.detected_mood,
+        tempo: desc.tempo_bpm
       });
 
-      sonnerToast.success('Анализ применён', {
-        description: `Обновлено: ${mappingResult.appliedFields.join(', ')}`,
-        duration: 4000,
+      sonnerToast.success('📊 Описание применено', {
+        description: `${desc.detected_genre || 'Unknown'} · ${desc.detected_mood || 'Unknown'}${desc.tempo_bpm ? ` · ${desc.tempo_bpm} BPM` : ''}`
       });
     }
 
-    // Try to find lyrics in DB by title
-    if (result.recognition?.recognized_title && !state.params.lyrics.trim()) {
+    // ✅ 2. Применяем recognition (извлечённые lyrics) → в поле lyrics
+    if (result.recognition?.metadata?.lyrics_text) {
+      const lyricsText = result.recognition.metadata.lyrics_text;
+      
+      updates.lyrics = lyricsText;
+      state.setParam('lyrics', lyricsText);
+      state.setDebouncedLyrics(lyricsText);
+
+      logger.info('✅ [ANALYSIS] Lyrics extracted and applied', 'AnalysisMapper', {
+        lyricsLength: lyricsText.length,
+        linesCount: lyricsText.split('\n').length
+      });
+
+      sonnerToast.success('📝 Текст извлечён', {
+        description: `${lyricsText.split('\n').filter(Boolean).length} строк текста применено`
+      });
+    } else if (result.recognition?.recognized_title && !state.params.lyrics.trim()) {
+      // Fallback: попытка найти lyrics в БД по названию (старая логика)
       try {
         const searchTitle = result.recognition.recognized_title.toLowerCase();
         const { data: tracksWithLyrics } = await supabase
@@ -83,23 +106,21 @@ export const useAnalysisMapper = (state: UseGeneratorStateReturn) => {
           state.setParam('lyrics', tracksWithLyrics.lyrics);
           state.setDebouncedLyrics(tracksWithLyrics.lyrics);
           
-          logger.info('✅ [AUTO-APPLY] Lyrics found in database', 'AnalysisMapper', {
+          logger.info('✅ [ANALYSIS] Lyrics found in database', 'AnalysisMapper', {
             sourceTrack: tracksWithLyrics.title
           });
           
           sonnerToast.success('Лирика найдена', {
             description: 'Текст песни загружен из библиотеки',
           });
-        } else {
-          logger.info('💡 [AUTO-APPLY] Lyrics not found', 'AnalysisMapper');
-          sonnerToast.info('Совет', {
-            description: 'Лирика не найдена. Используйте "Генерировать текст" для создания',
-            duration: 5000,
-          });
         }
       } catch (error) {
-        logger.warn('[AUTO-APPLY] Failed to find lyrics', 'AnalysisMapper', { error: String(error) });
+        logger.warn('[ANALYSIS] Failed to find lyrics', 'AnalysisMapper', { error: String(error) });
       }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      logger.warn('⚠️ [ANALYSIS] No data to apply', 'AnalysisMapper');
     }
   }, [state]);
 
