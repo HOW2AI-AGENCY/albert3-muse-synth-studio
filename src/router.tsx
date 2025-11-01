@@ -22,6 +22,10 @@ import {
   LazySettings,
 } from "./utils/lazyPages";
 
+// New hub pages
+import Projects from "./pages/workspace/Projects";
+import MonitoringHub from "./pages/workspace/MonitoringHub";
+
 // Still direct imports (will lazy load in Phase 2)
 import Profile from "./pages/workspace/Profile";
 import Metrics from "./pages/workspace/Metrics";
@@ -72,6 +76,14 @@ export const router = createBrowserRouter(
               </Suspense>
             </ErrorBoundary>
           )
+        },
+        {
+          path: "projects",
+          element: <Projects />
+        },
+        {
+          path: "monitoring-hub",
+          element: <MonitoringHub />
         },
         {
           path: "library",
