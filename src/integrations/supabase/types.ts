@@ -1567,6 +1567,16 @@ export type Database = {
         Returns: undefined
       }
       refresh_analytics_views: { Args: never; Returns: undefined }
+      update_track_video_metadata: {
+        Args: {
+          p_track_id: string
+          p_video_error?: string
+          p_video_status?: string
+          p_video_task_id?: string
+          p_video_url?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
