@@ -41,12 +41,40 @@ export const useImprovePrompt = ({ toast }: UseImprovePromptOptions) => {
     try {
       const response = await ApiService.improvePrompt({ prompt: promptToImprove });
       
-      toast({
-        title: '✨ Промпт улучшен!',
-        description: 'Ваше описание было оптимизировано с помощью AI.',
-      });
+      // ✅ FIX: Truncate improved prompt to 500 characters
+      let improvedPrompt = response.improvedPrompt;
       
-      return response.improvedPrompt;
+      if (improvedPrompt.length > 500) {
+        // Smart truncation: try to cut at sentence/word boundary
+        improvedPrompt = improvedPrompt.slice(0, 497);
+        const lastPeriod = improvedPrompt.lastIndexOf('.');
+        const lastSpace = improvedPrompt.lastIndexOf(' ');
+        
+        if (lastPeriod > 400) {
+          improvedPrompt = improvedPrompt.slice(0, lastPeriod + 1);
+        } else if (lastSpace > 400) {
+          improvedPrompt = improvedPrompt.slice(0, lastSpace) + '...';
+        } else {
+          improvedPrompt = improvedPrompt + '...';
+        }
+        
+        logger.warn('Improved prompt truncated to 500 chars', undefined, { 
+          original: response.improvedPrompt.length,
+          truncated: improvedPrompt.length,
+        });
+        
+        toast({
+          title: '✨ Промпт улучшен и сокращён',
+          description: 'Описание оптимизировано и обрезано до лимита 500 символов.',
+        });
+      } else {
+        toast({
+          title: '✨ Промпт улучшен!',
+          description: 'Ваше описание было оптимизировано с помощью AI.',
+        });
+      }
+      
+      return improvedPrompt;
     } catch (error) {
       logger.error('Ошибка при улучшении промпта', error as Error);
       

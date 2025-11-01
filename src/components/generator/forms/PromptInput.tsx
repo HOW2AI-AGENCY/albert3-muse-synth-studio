@@ -18,6 +18,7 @@ interface PromptInputProps {
   label?: string;
   rows?: number;
   minHeight?: string;
+  maxLength?: number;
 }
 
 export const PromptInput = memo(({
@@ -33,6 +34,7 @@ export const PromptInput = memo(({
   label = "Описание музыки",
   rows = 2,
   minHeight = "60px",
+  maxLength,
 }: PromptInputProps) => {
   // ✅ Адаптивный плейсхолдер в зависимости от режима
   const effectivePlaceholder = customMode
@@ -57,6 +59,7 @@ export const PromptInput = memo(({
           className={`min-h-[${minHeight}] sm:min-h-[70px] text-sm resize-none transition-all duration-200 ${onBoost ? 'pr-10' : ''}`}
           disabled={isGenerating}
           rows={rows}
+          maxLength={maxLength}
           aria-label="Промпт для генерации музыки"
         />
         {onBoost && value.trim() && (

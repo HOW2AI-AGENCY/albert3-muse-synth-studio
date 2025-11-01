@@ -30,6 +30,39 @@ export const useManualSyncTrack = () => {
         id: `sync-${trackId}`,
       });
 
+      // ✅ FIX: Check if track is stuck without task_id
+      const { data: trackData } = await supabase
+        .from('tracks')
+        .select('id, status, created_at, mureka_task_id, provider')
+        .eq('id', trackId)
+        .single();
+
+      if (trackData) {
+        const ageMinutes = (Date.now() - new Date(trackData.created_at).getTime()) / (1000 * 60);
+        const taskId = trackData.mureka_task_id;
+
+        // ✅ If no task_id and older than 3 minutes → mark as failed
+        if (!taskId && ageMinutes > 3 && (trackData.status === 'pending' || trackData.status === 'processing')) {
+          logger.warn('Track stuck without task_id, marking as failed', undefined, { trackId, ageMinutes });
+          
+          await supabase
+            .from('tracks')
+            .update({
+              status: 'failed',
+              error_message: 'Генерация не началась (нет task_id). Попробуйте ещё раз.',
+            })
+            .eq('id', trackId);
+
+          toast.dismiss(`sync-${trackId}`);
+          
+          return {
+            success: true,
+            action: 'marked_failed',
+            message: 'Трек помечен как неудачный. Нажмите "Повторить" для новой попытки.',
+          };
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke<ManualSyncResponse>(
         'check-stuck-tracks',
         {

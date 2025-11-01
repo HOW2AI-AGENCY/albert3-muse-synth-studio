@@ -81,20 +81,32 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
       
       logger.info(`✅ [MUREKA] Track created`, { trackId });
 
-      // 4. Generate lyrics if needed
+      // 4. Generate lyrics if needed (with soft fallback)
       let finalLyrics = params.lyrics;
       if (params.hasVocals !== false && (!finalLyrics || finalLyrics.trim().length === 0)) {
-        const lyricsResult = await this.generateLyrics(trackId, params.prompt);
-        
-        if (!lyricsResult.success) {
-          return lyricsResult;
+        try {
+          const lyricsResult = await this.generateLyrics(trackId, params.prompt);
+          
+          if (!lyricsResult.success) {
+            // ✅ FIX: Soft fallback - don't fail entire generation
+            logger.warn('⚠️ [MUREKA] Lyrics generation failed, using placeholder', {
+              trackId,
+              error: lyricsResult.error,
+            });
+            finalLyrics = `[Instrumental]\n${params.prompt || 'Music'}`;
+          } else if (lyricsResult.requiresLyricsSelection) {
+            return lyricsResult;
+          } else {
+            finalLyrics = lyricsResult.lyrics;
+          }
+        } catch (lyricsError) {
+          // ✅ FIX: Catch lyrics errors and continue with placeholder
+          logger.warn('⚠️ [MUREKA] Lyrics generation error, using placeholder', {
+            trackId,
+            error: lyricsError instanceof Error ? lyricsError.message : String(lyricsError),
+          });
+          finalLyrics = `[Instrumental]\n${params.prompt || 'Music'}`;
         }
-
-        if (lyricsResult.requiresLyricsSelection) {
-          return lyricsResult;
-        }
-
-        finalLyrics = lyricsResult.lyrics;
       } else if (params.hasVocals === false) {
         logger.info('🎼 Instrumental mode, skipping lyrics generation');
         finalLyrics = undefined;
@@ -109,11 +121,33 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
         duration: Date.now() - startTime,
       });
 
-      // 6. Update track with task ID and WAIT for confirmation
+      // 6. Update track with task ID
       await this.updateTrackTaskId(trackId, taskId);
       
-      // ✅ FIX: Wait 500ms to ensure DB update is fully committed before polling
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // ✅ FIX: Verify taskId was saved to DB before polling (up to 3 retries)
+      let taskIdConfirmed = false;
+      for (let i = 0; i < 3; i++) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const { data } = await this.supabase
+          .from('tracks')
+          .select('mureka_task_id')
+          .eq('id', trackId)
+          .single();
+        
+        if (data?.mureka_task_id === taskId) {
+          taskIdConfirmed = true;
+          logger.info(`✅ [MUREKA] Task ID confirmed in DB`, { trackId, taskId, attempt: i + 1 });
+          break;
+        }
+        
+        logger.warn(`⚠️ [MUREKA] Task ID not yet in DB, retry ${i + 1}/3`, { trackId, taskId });
+      }
+      
+      if (!taskIdConfirmed) {
+        logger.error(`🔴 [MUREKA] Failed to confirm task ID in DB`, { trackId, taskId });
+        throw new Error('Failed to save task ID to database');
+      }
 
       // 7. Start background polling
       this.startPolling(trackId, taskId).catch(err => {
@@ -122,6 +156,8 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
           trackId,
           taskId,
         });
+        // ✅ FIX: Mark as failed on polling error
+        this.handleFailedTrack(trackId, err instanceof Error ? err.message : String(err)).catch(() => {});
       });
 
       return {

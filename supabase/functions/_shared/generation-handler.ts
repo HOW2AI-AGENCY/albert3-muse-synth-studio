@@ -346,7 +346,8 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
         logger.warn(`⚠️ [${this.providerName.toUpperCase()}] No audio_url in trackData`, { trackId });
       }
 
-      if (trackData.cover_url) {
+      // ✅ FIX: Skip download for placeholder images (relative paths)
+      if (trackData.cover_url && !trackData.cover_url.startsWith('/')) {
         logger.info(`🖼️ [${this.providerName.toUpperCase()}] Starting cover upload`, { 
           trackId,
           coverUrlPreview: trackData.cover_url.substring(0, 80)
@@ -362,6 +363,13 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
         logger.info(`✅ [${this.providerName.toUpperCase()}] Cover uploaded to storage`, { 
           trackId,
           finalUrlPreview: finalCoverUrl?.substring(0, 80)
+        });
+      } else if (trackData.cover_url) {
+        // ✅ Use placeholder as-is (relative path)
+        finalCoverUrl = trackData.cover_url;
+        logger.info(`🖼️ [${this.providerName.toUpperCase()}] Using placeholder cover`, { 
+          trackId,
+          coverUrl: finalCoverUrl,
         });
       } else {
         logger.warn(`⚠️ [${this.providerName.toUpperCase()}] No cover_url in trackData`, { trackId });
@@ -385,6 +393,13 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
       });
     }
 
+    // ✅ FIX: Get existing track data for title fallback
+    const { data: existingTrack } = await this.supabase
+      .from('tracks')
+      .select('title, prompt')
+      .eq('id', trackId)
+      .single();
+
     // Prepare update object
     const updateData: any = {
       status: 'completed',
@@ -397,12 +412,22 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
       },
     };
 
-    // Update title if provided by provider
+    // ✅ FIX: Title fallback chain: provider → existing → truncated prompt
     if (trackData.title) {
       updateData.title = trackData.title;
-      logger.info(`📝 [${this.providerName.toUpperCase()}] Updating title from provider`, { 
+      logger.info(`📝 [${this.providerName.toUpperCase()}] Using title from provider`, { 
         trackId, 
         title: trackData.title 
+      });
+    } else if (!existingTrack?.title || existingTrack.title.trim() === '') {
+      // Only update if existing title is empty
+      const fallbackTitle = existingTrack?.prompt 
+        ? existingTrack.prompt.slice(0, 50).replace(/\s+\S*$/, '') + (existingTrack.prompt.length > 50 ? '...' : '')
+        : 'Untitled Track';
+      updateData.title = fallbackTitle;
+      logger.info(`📝 [${this.providerName.toUpperCase()}] Using fallback title`, { 
+        trackId, 
+        title: fallbackTitle 
       });
     }
 
@@ -474,11 +499,14 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
    * Handle polling timeout
    */
   protected async handlePollingTimeout(trackId: string, taskId: string): Promise<void> {
-    const errorMessage = `${this.providerName} generation timeout after ${DEFAULT_POLLING_CONFIG.timeoutMs / 60000} minutes`;
+    // ✅ FIX: Shorter timeout (2 minutes instead of default)
+    const timeoutMinutes = 2;
+    const errorMessage = `${this.providerName} generation timeout after ${timeoutMinutes} minutes`;
     
     logger.error(`⏱️ [${this.providerName.toUpperCase()}] Polling timeout`, {
       trackId,
       taskId,
+      timeoutMinutes,
     });
 
     await this.handleFailedTrack(trackId, errorMessage);

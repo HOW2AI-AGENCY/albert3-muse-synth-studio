@@ -12,6 +12,7 @@ import { AdvancedControls } from './AdvancedControls';
 import { StyleTagsInput } from './StyleTagsInput';
 import { StyleRecommendationsInline } from '@/components/generator/StyleRecommendationsInline';
 import { AudioReferenceSection } from '../audio/AudioReferenceSection';
+import { PromptCharacterCounter } from '@/components/generator/PromptCharacterCounter';
 import type { GenerationParams } from '../types/generator.types';
 import type { AdvancedPromptResult } from '@/services/ai/advanced-prompt-generator';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -19,6 +20,8 @@ import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 
 const AudioDescriber = lazy(() => import('@/components/audio/AudioDescriber').then(m => ({ default: m.AudioDescriber })));
+
+const MAX_PROMPT_LENGTH = 500;
 
 interface CustomModeFormProps {
   params: GenerationParams;
@@ -112,7 +115,11 @@ export const CustomModeForm = memo(({
     <>
       {/* Prompt with Boost & History */}
       <div className="space-y-1">
-        <div className="flex items-center justify-end mb-1">
+        <div className="flex items-center justify-between mb-1">
+          <PromptCharacterCounter 
+            currentLength={debouncedPrompt.length} 
+            maxLength={MAX_PROMPT_LENGTH}
+          />
           <Button
             variant="ghost"
             size="sm"
@@ -126,7 +133,12 @@ export const CustomModeForm = memo(({
         </div>
         <PromptInput
           value={debouncedPrompt}
-          onChange={onDebouncedPromptChange}
+          onChange={(value) => {
+            // ✅ Truncate at 500 characters
+            if (value.length <= MAX_PROMPT_LENGTH) {
+              onDebouncedPromptChange(value);
+            }
+          }}
           onBoost={onBoostPrompt}
           isBoosting={isBoosting}
           isGenerating={isGenerating}
@@ -137,6 +149,7 @@ export const CustomModeForm = memo(({
           placeholder="Опишите стиль, жанр, настроение..."
           rows={isMobile ? 2 : 3}
           minHeight={isMobile ? "60px" : "80px"}
+          maxLength={MAX_PROMPT_LENGTH}
         />
       </div>
 

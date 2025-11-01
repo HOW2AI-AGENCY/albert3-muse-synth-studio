@@ -7,9 +7,12 @@ import { Music, Info } from '@/utils/iconImports';
 import { GenrePresets } from '@/components/generator/GenrePresets';
 import { PromptInput } from './PromptInput';
 import { StyleRecommendationsInline } from '@/components/generator/StyleRecommendationsInline';
+import { PromptCharacterCounter } from '@/components/generator/PromptCharacterCounter';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import type { GenerationParams, GenrePreset } from '../types/generator.types';
+
+const MAX_PROMPT_LENGTH = 500;
 
 interface SimpleModeFormProps {
   params: GenerationParams;
@@ -59,16 +62,31 @@ export const SimpleModeForm = memo(({
       )}
 
       {/* Song Description with Boost */}
-      <PromptInput
-        value={debouncedPrompt}
-        onChange={onDebouncedPromptChange}
-        onBoost={onBoostPrompt}
-        isBoosting={isBoosting}
-        isGenerating={isGenerating}
-        isRequired
-        hasLyrics={!!params.lyrics.trim()}
-        customMode={false}
-      />
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs font-medium">Описание музыки</Label>
+          <PromptCharacterCounter 
+            currentLength={debouncedPrompt.length} 
+            maxLength={MAX_PROMPT_LENGTH}
+          />
+        </div>
+        <PromptInput
+          value={debouncedPrompt}
+          onChange={(value) => {
+            // ✅ Truncate at 500 characters
+            if (value.length <= MAX_PROMPT_LENGTH) {
+              onDebouncedPromptChange(value);
+            }
+          }}
+          onBoost={onBoostPrompt}
+          isBoosting={isBoosting}
+          isGenerating={isGenerating}
+          isRequired
+          hasLyrics={!!params.lyrics.trim()}
+          customMode={false}
+          maxLength={MAX_PROMPT_LENGTH}
+        />
+      </div>
 
       {/* ✅ NEW: Подсказка при наличии лирики */}
       {params.lyrics.trim() && (
