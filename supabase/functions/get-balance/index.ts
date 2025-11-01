@@ -299,15 +299,43 @@ export const handler = async (req: Request): Promise<Response> => {
     }
     const token = authHeader.replace('Bearer ', '');
 
+    // ✅ FIX: Validate JWT using service role (admin) client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return new Response(JSON.stringify({ error: 'Supabase credentials not configured' }), {
+        status: 500,
+        headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Create admin client for JWT validation
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+
+    if (userError || !user) {
+      logger.warn('JWT validation failed', { error: userError?.message });
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Rate limiting
-    const userId = token.substring(0, 20);
     const { allowed, headers: rateLimitHeaders } = checkRateLimit(
-      userId, 
+      user.id, 
       rateLimitConfigs.balance
     );
 
     if (!allowed) {
-      logger.warn('Rate limit exceeded for balance check', { userId });
+      logger.warn('Rate limit exceeded for balance check', { userId: user.id });
       return new Response(
         JSON.stringify({ 
           error: 'Too many requests. Please try again later.' 
@@ -322,27 +350,6 @@ export const handler = async (req: Request): Promise<Response> => {
           } 
         }
       );
-    }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY");
-
-    if (!supabaseUrl || !supabaseKey) {
-      return new Response(JSON.stringify({ error: 'Supabase credentials not configured' }), {
-        status: 500,
-        headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, ...securityHeaders, 'Content-Type': 'application/json' },
-      });
     }
 
     const url = new URL(req.url);
