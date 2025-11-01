@@ -131,9 +131,7 @@ export async function checkSunoHealth(): Promise<ServiceHealthStatus> {
  */
 export async function checkMurekaHealth(): Promise<ServiceHealthStatus> {
   try {
-    const { data, error } = await supabase.functions.invoke('get-balance', {
-      body: { provider: 'mureka' }
-    });
+    const { data, error } = await supabase.functions.invoke('get-mureka-balance');
 
     if (error) throw error;
 
