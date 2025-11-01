@@ -1,5 +1,6 @@
 /**
  * Константы моделей для различных музыкальных провайдеров
+ * ✅ SINGLE SOURCE OF TRUTH для типа MusicProvider
  */
 
 export type MusicProvider = 'suno' | 'mureka';

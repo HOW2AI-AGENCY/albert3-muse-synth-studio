@@ -3,7 +3,9 @@
  * Unified abstraction layer for music generation providers
  */
 
-export type MusicProvider = 'suno' | 'mureka';
+// ✅ Re-export MusicProvider from single source of truth
+export type { MusicProvider } from '@/config/provider-models';
+import type { MusicProvider } from '@/config/provider-models';
 
 export interface ProviderCapabilities {
   generateMusic: boolean;

@@ -1,7 +1,7 @@
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { MusicProvider } from '@/services/providers/types';
+import type { MusicProvider } from '@/config/provider-models';
 import { PROVIDERS } from '@/services/providers/registry';
 
 interface ProviderSelectorProps {

@@ -4,7 +4,7 @@
  */
 
 import { create } from 'zustand';
-import { MusicProvider } from '@/services/providers';
+import type { MusicProvider } from '@/config/provider-models';
 
 interface MusicGenerationState {
   selectedProvider: MusicProvider;
