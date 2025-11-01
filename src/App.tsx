@@ -1,6 +1,6 @@
 import { useEffect, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
-
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "react-router-dom";
 import { GlobalErrorBoundary } from "@/components/errors/GlobalErrorBoundary";
@@ -73,16 +73,18 @@ const App = () => {
   return (
     <GlobalErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <AppLayout>
-          <Suspense fallback={<FullPageSpinner />}>
-            <Toaster />
-            
-            <RouterProvider router={router} />
-            <GlobalAudioPlayer />
-            <PerformanceMonitorWidget />
-            <SentryFeedbackButton />
-          </Suspense>
-        </AppLayout>
+        <TooltipProvider delayDuration={200}>
+          <AppLayout>
+            <Suspense fallback={<FullPageSpinner />}>
+              <Toaster />
+              
+              <RouterProvider router={router} />
+              <GlobalAudioPlayer />
+              <PerformanceMonitorWidget />
+              <SentryFeedbackButton />
+            </Suspense>
+          </AppLayout>
+        </TooltipProvider>
       </QueryClientProvider>
     </GlobalErrorBoundary>
   );

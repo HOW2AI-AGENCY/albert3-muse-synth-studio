@@ -1,5 +1,8 @@
 import { createBrowserRouter } from "react-router-dom";
 import WorkspaceLayout from "./components/workspace/WorkspaceLayout";
+import { ErrorBoundary } from "@/components/error/ErrorBoundary";
+import { GeneratorErrorFallback } from "@/components/error/GeneratorErrorFallback";
+import { TrackListErrorFallback } from "@/components/error/TrackListErrorFallback";
 
 // ⚠️ TEMPORARY: Direct imports for debugging React instance issues
 // Will re-enable lazy loading after fixing multiple React instances problem
@@ -53,11 +56,19 @@ export const router = createBrowserRouter(
         },
         {
           path: "generate",
-          element: <Generate />
+          element: (
+            <ErrorBoundary fallback={(error, reset) => <GeneratorErrorFallback error={error} reset={reset} />}>
+              <Generate />
+            </ErrorBoundary>
+          )
         },
         {
           path: "library",
-          element: <Library />
+          element: (
+            <ErrorBoundary fallback={(error, reset) => <TrackListErrorFallback error={error} reset={reset} />}>
+              <Library />
+            </ErrorBoundary>
+          )
         },
         {
           path: "favorites",
