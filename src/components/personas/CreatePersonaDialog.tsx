@@ -4,7 +4,7 @@
  * @since 2025-11-01
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,8 @@ export interface CreatePersonaDialogProps {
     cover_url?: string | null;
     style_tags?: string[] | null;
     lyrics?: string | null;
+    prompt?: string | null;
+    improved_prompt?: string | null;
   };
   musicIndex?: number;
   onSuccess?: (persona: unknown) => void;
@@ -45,22 +47,52 @@ export const CreatePersonaDialog = ({
   onSuccess,
 }: CreatePersonaDialogProps) => {
   const [isCreating, setIsCreating] = useState(false);
-  const [name, setName] = useState(track.title || '');
+  const [isBoosting, setIsBoosting] = useState(false);
+  const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isPublic, setIsPublic] = useState(false);
 
-  // Auto-suggest description based on track metadata
-  const suggestDescription = () => {
-    const tags = track.style_tags?.join(', ') || '';
-    const hasLyrics = track.lyrics && track.lyrics.trim().length > 0;
-    
-    const suggestions = [
-      tags && `Музыкальный стиль: ${tags}`,
-      hasLyrics ? 'С вокалом' : 'Инструментальная музыка',
-      'Подходит для генерации треков в похожем стиле',
-    ].filter(Boolean);
+  // Автоматически извлекаем стиль из трека при открытии
+  useEffect(() => {
+    if (open && track) {
+      // Извлекаем описание стиля из трека
+      const styleDescription = track.style_tags?.join(', ') || 
+                              track.improved_prompt || 
+                              track.prompt || 
+                              '';
+      setDescription(styleDescription);
+      setName(track.title || '');
+      setIsPublic(false);
+    }
+  }, [open, track]);
 
-    setDescription(suggestions.join('. ') + '.');
+  // Улучшение описания через Suno boost-style
+  const boostDescription = async () => {
+    if (!description.trim()) {
+      toast.error('Введите описание для улучшения');
+      return;
+    }
+
+    setIsBoosting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('boost-style', {
+        body: { content: description }
+      });
+
+      if (error) throw error;
+
+      if (data?.boostedStyle) {
+        setDescription(data.boostedStyle);
+        toast.success('Описание улучшено через Suno AI');
+      } else {
+        throw new Error('Не удалось получить улучшенное описание');
+      }
+    } catch (error) {
+      console.error('[BOOST-STYLE] Error:', error);
+      toast.error('Ошибка улучшения описания');
+    } finally {
+      setIsBoosting(false);
+    }
   };
 
   const handleCreate = async () => {
@@ -199,11 +231,21 @@ export const CreatePersonaDialog = ({
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={suggestDescription}
+                onClick={boostDescription}
+                disabled={isBoosting || !description.trim()}
                 className="h-7 text-xs"
               >
-                <Sparkles className="h-3 w-3 mr-1" />
-                Предложить
+                {isBoosting ? (
+                  <>
+                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    Улучшение...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    Улучшить
+                  </>
+                )}
               </Button>
             </div>
             <Textarea
