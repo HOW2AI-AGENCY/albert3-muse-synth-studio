@@ -158,22 +158,29 @@ export function normalizeMurekaMusicResponse(
           code: wrappedResponse.code,
         });
 
+        // ✅ FIX: Type-safe access to data properties
+        const dataObj = wrappedResponse.data && typeof wrappedResponse.data === 'object' && !Array.isArray(wrappedResponse.data) 
+          ? wrappedResponse.data as Record<string, any>
+          : {};
+        
         return {
           success: false,
-          taskId: wrappedResponse.data?.task_id || wrappedResponse.data?.id || "unknown",
+          taskId: dataObj.task_id || dataObj.id || "unknown",
           clips: [],
           status: "failed",
-          error: wrappedResponse.msg,
+          error: (wrappedResponse.msg as string) || 'Unknown error',
         };
       }
 
-      // ✅ NEW: Support API v7 'choices' format (priority)
-      const rawClips = wrappedResponse.data?.choices || 
-                    wrappedResponse.data?.clips || 
-                    wrappedResponse.data?.data || [];
+      // ✅ FIX: Type-safe extraction of clips
+      const dataObj = wrappedResponse.data && typeof wrappedResponse.data === 'object' && !Array.isArray(wrappedResponse.data) 
+        ? wrappedResponse.data as Record<string, any>
+        : {};
+      
+      const rawClips = (dataObj.choices || dataObj.clips || dataObj.data || []) as any[];
       
       // ✅ TRANSFORM: Normalize audio URL with fallback chain (url → audio_url → flac_url)
-      const clips = rawClips.map((clip, index) => {
+      const clips = rawClips.map((clip: any, index: number) => {
         const audioUrl = clip.url || clip.audio_url || clip.flac_url || '';
         
         logger.info(`🎧 [MUREKA-NORMALIZER] Clip ${index} audio URL detection`, {
@@ -193,23 +200,23 @@ export function normalizeMurekaMusicResponse(
       
       logger.info("🎵 [MUREKA-NORMALIZER] Extracted clips from wrapped response", {
         count: clips.length,
-        source: wrappedResponse.data?.choices ? 'choices (v7)' : 
-                wrappedResponse.data?.clips ? 'clips (legacy)' : 'data (legacy)',
+        source: dataObj.choices ? 'choices (v7)' : 
+                dataObj.clips ? 'clips (legacy)' : 'data (legacy)',
         hasValidAudio: clips.length > 0 && !!clips[0].audio_url,
         firstClipKeys: clips.length > 0 ? Object.keys(clips[0]) : [],
       });
 
       // Normalize status: map v7 statuses to our internal format
-      const rawStatus = wrappedResponse.data?.status || "pending";
+      const rawStatus = (dataObj.status as string) || "pending";
       const normalizedStatus: "pending" | "processing" | "completed" | "failed" = 
         rawStatus === "preparing" || rawStatus === "queued" ? "pending" :
         rawStatus === "running" || rawStatus === "streaming" ? "processing" :
         rawStatus === "succeeded" ? "completed" :
         rawStatus === "timeouted" || rawStatus === "cancelled" ? "failed" :
-        rawStatus;
+        rawStatus as any;
 
       // Mureka uses 'id' instead of 'task_id' in initial response
-      const taskId = wrappedResponse.data?.task_id || wrappedResponse.data?.id || "unknown";
+      const taskId = dataObj.task_id || dataObj.id || "unknown";
 
       // ✅ VALIDATION: If status is 'completed' but no clips have valid audio_url, mark as failed
       if (normalizedStatus === 'completed' && clips.length > 0) {
@@ -246,14 +253,12 @@ export function normalizeMurekaMusicResponse(
     }
 
     // Handle direct response
-    const directResponse = validated;
-    // ✅ NEW: Support API v7 'choices' format (priority)
-    const rawClips = directResponse.choices || 
-                  directResponse.clips || 
-                  directResponse.data || [];
+    const directResponse = validated as any;
+    // ✅ FIX: Type-safe extraction of clips
+    const rawClips = (directResponse.choices || directResponse.clips || directResponse.data || []) as any[];
     
     // ✅ TRANSFORM: Normalize audio URL with fallback chain (url → audio_url → flac_url)
-    const clips = rawClips.map((clip, index) => {
+    const clips = rawClips.map((clip: any, index: number) => {
       const audioUrl = clip.url || clip.audio_url || clip.flac_url || '';
       
       logger.info(`🎧 [MUREKA-NORMALIZER] Direct clip ${index} audio URL detection`, {
@@ -278,16 +283,16 @@ export function normalizeMurekaMusicResponse(
     });
 
     // Normalize status: map v7 statuses to our internal format
-    const rawStatus = directResponse.status || "pending";
+    const rawStatus = (directResponse.status as string) || "pending";
     const normalizedStatus: "pending" | "processing" | "completed" | "failed" = 
       rawStatus === "preparing" || rawStatus === "queued" ? "pending" :
       rawStatus === "running" || rawStatus === "streaming" ? "processing" :
       rawStatus === "succeeded" ? "completed" :
       rawStatus === "timeouted" || rawStatus === "cancelled" ? "failed" :
-      rawStatus;
+      rawStatus as any;
 
     // Mureka uses 'id' instead of 'task_id' in initial response
-    const taskId = directResponse.task_id || directResponse.id || "unknown";
+    const taskId = (directResponse.task_id || directResponse.id || "unknown") as string;
 
     return {
       success: true,

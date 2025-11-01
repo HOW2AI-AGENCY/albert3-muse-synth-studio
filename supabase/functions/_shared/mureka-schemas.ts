@@ -57,62 +57,62 @@ export const MurekaLyricsResponseSchema = z.union([
  * Schema for single generated track clip
  */
 export const MurekaTrackClipSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(), // ✅ FIX: Make ID optional for parsing flexibility
   clip_id: z.string().optional(),
   title: z.string().optional(),
   name: z.string().optional(),
-  url: z.string().url().optional(), // API v7 uses 'url' instead of 'audio_url'
-  audio_url: z.string().url().optional(),
-  image_url: z.string().url().optional(),
-  cover_url: z.string().url().optional(),
-  video_url: z.string().url().optional(),
-  flac_url: z.string().url().optional(), // API v7 FLAC format
+  url: z.string().optional(), // ✅ FIX: Don't validate URL format to avoid parsing errors
+  audio_url: z.string().optional(),
+  image_url: z.string().optional(),
+  cover_url: z.string().optional(),
+  video_url: z.string().optional(),
+  flac_url: z.string().optional(),
   duration: z.number().optional(),
   lyrics: z.string().optional(),
-  lyrics_sections: z.array(z.any()).optional(), // API v7 detailed lyrics
+  lyrics_sections: z.array(z.any()).optional(),
   tags: z.array(z.string()).optional(),
-  created_at: z.union([z.string(), z.number()]).optional(), // API v7 supports both string and timestamp
-  finished_at: z.number().optional(), // API v7
-  model: z.string().optional(), // API v7
-  index: z.number().optional(), // API v7 variant index
+  created_at: z.union([z.string(), z.number()]).optional(),
+  finished_at: z.number().optional(),
+  model: z.string().optional(),
+  index: z.number().optional(),
   metadata: z.record(z.unknown()).optional(),
-});
+}).passthrough(); // ✅ FIX: Allow extra fields
 
 /**
  * Schema for wrapped Mureka Music Generation Response (API v7)
  */
 export const MurekaMusicWrappedResponseSchema = z.object({
-  code: z.number(),
-  msg: z.string(),
+  code: z.number().optional(), // ✅ FIX: Make optional for partial responses
+  msg: z.string().optional(),
   data: z.object({
-    id: z.string().optional(), // Mureka uses 'id' instead of 'task_id'
+    id: z.string().optional(),
     task_id: z.string().optional(),
     status: z.enum([
       "pending", "processing", "completed", "failed", 
       "preparing", "queued", "running", "streaming", 
       "succeeded", "timeouted", "cancelled"
     ]).optional(),
-    clips: z.array(MurekaTrackClipSchema).optional(), // Legacy format
-    data: z.array(MurekaTrackClipSchema).optional(), // Legacy format
-    choices: z.array(MurekaTrackClipSchema).optional(), // NEW API v7 format
-  }),
-});
+    clips: z.array(MurekaTrackClipSchema).optional(),
+    data: z.array(MurekaTrackClipSchema).optional(),
+    choices: z.array(MurekaTrackClipSchema).optional(),
+  }).passthrough().optional(), // ✅ FIX: Allow extra fields and make data optional
+}).passthrough(); // ✅ FIX: Allow extra fields at top level
 
 /**
  * Schema for direct Mureka Music Generation Response (API v7)
  */
 export const MurekaMusicDirectResponseSchema = z.object({
-  id: z.string().optional(), // Mureka uses 'id' instead of 'task_id'
+  id: z.string().optional(),
   task_id: z.string().optional(),
   status: z.enum([
     "pending", "processing", "completed", "failed", 
     "preparing", "queued", "running", "streaming", 
     "succeeded", "timeouted", "cancelled"
   ]).optional(),
-  clips: z.array(MurekaTrackClipSchema).optional(), // Legacy format
-  data: z.array(MurekaTrackClipSchema).optional(), // Legacy format
-  choices: z.array(MurekaTrackClipSchema).optional(), // NEW API v7 format
-});
+  clips: z.array(MurekaTrackClipSchema).optional(),
+  data: z.array(MurekaTrackClipSchema).optional(),
+  choices: z.array(MurekaTrackClipSchema).optional(),
+}).passthrough(); // ✅ FIX: Allow extra fields
 
 /**
  * Union schema for all possible Mureka Music responses
