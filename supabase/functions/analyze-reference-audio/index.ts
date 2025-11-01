@@ -91,21 +91,33 @@ const mainHandler = async (req: Request): Promise<Response> => {
   try {
     logger.info('🎵 [ANALYZE-REF] Handler entry', {
       method: req.method,
-      hasXUserId: !!req.headers.get('X-User-Id'),
       timestamp: new Date().toISOString()
     });
 
-    // ✅ Extract userId from X-User-Id header (set by middleware)
-    const userId = req.headers.get('X-User-Id');
-    if (!userId) {
-      logger.error('🔴 [ANALYZE-REF] Missing X-User-Id header from middleware');
+    // ✅ Get JWT token from Authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      logger.error('🔴 [ANALYZE-REF] Missing Authorization header');
       return new Response(
-        JSON.stringify({ error: 'Unauthorized - missing user context' }),
+        JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    logger.info(`[ANALYZE-REF] ✅ User context from middleware: userId=${userId.substring(0, 8)}...`);
+    const token = authHeader.replace('Bearer ', '');
+    const supabaseUser = createSupabaseUserClient(token);
+    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
+
+    if (authError || !user) {
+      logger.error('🔴 [ANALYZE-REF] Invalid token', { authError });
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = user.id;
+    logger.info(`[ANALYZE-REF] ✅ User authenticated: userId=${userId.substring(0, 8)}...`);
 
     // ✅ Validate request body
     const body = await validateRequest(req, validationSchemas.analyzeReferenceAudio) as AnalyzeReferenceAudioRequest;
@@ -188,10 +200,13 @@ const mainHandler = async (req: Request): Promise<Response> => {
       upload_audio_id: murekaFileId
     });
 
-    const recognitionTaskId = recognitionResult.data.task_id;
+    // ✅ Безопасная обработка: task_id может быть undefined
+    const recognitionTaskId = recognitionResult?.data?.task_id || `mureka-recog-${Date.now()}`;
 
     logger.info('[ANALYZE-REF] ✅ Mureka recognition task created', { 
-      taskId: recognitionTaskId
+      taskId: recognitionTaskId,
+      hasTaskId: !!recognitionResult?.data?.task_id,
+      responseCode: recognitionResult.code
     });
 
     // ============================================================================
@@ -205,11 +220,16 @@ const mainHandler = async (req: Request): Promise<Response> => {
       url: audioUrl
     });
 
-    const descriptionTaskId = descriptionResult.data.task_id;
+    // ✅ Безопасная обработка: task_id может быть undefined
+    const descriptionTaskId = descriptionResult?.data?.task_id || `mureka-desc-${Date.now()}`;
 
     logger.info('[ANALYZE-REF] ✅ Both Mureka tasks initiated', {
       recognitionTaskId,
-      descriptionTaskId
+      descriptionTaskId,
+      hasRecognitionTaskId: !!recognitionResult?.data?.task_id,
+      hasDescriptionTaskId: !!descriptionResult?.data?.task_id,
+      recognitionCode: recognitionResult.code,
+      descriptionCode: descriptionResult.code
     });
 
     // ============================================================================
