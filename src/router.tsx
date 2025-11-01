@@ -1,24 +1,29 @@
 import { createBrowserRouter } from "react-router-dom";
+import { Suspense } from "react";
 import WorkspaceLayout from "./components/workspace/WorkspaceLayout";
 import { ErrorBoundary } from "@/components/error/ErrorBoundary";
 import { GeneratorErrorFallback } from "@/components/error/GeneratorErrorFallback";
 import { TrackListErrorFallback } from "@/components/error/TrackListErrorFallback";
+import { FullPageSpinner } from "@/components/ui/loading-states";
 
-// ⚠️ TEMPORARY: Direct imports for debugging React instance issues
-// Will re-enable lazy loading after fixing multiple React instances problem
+// Critical routes - direct imports (no lazy loading)
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-// Workspace routes - direct imports
-import Dashboard from "./pages/workspace/Dashboard";
-import Generate from "./pages/workspace/Generate";
-import Library from "./pages/workspace/Library";
-import Favorites from "./pages/workspace/Favorites";
-import Settings from "./pages/workspace/Settings";
+// Phase 1 Optimization: Lazy load workspace routes
+import { 
+  LazyDashboard,
+  LazyGenerate,
+  LazyLibrary,
+  LazyFavorites,
+  LazyAnalytics,
+  LazySettings,
+} from "./utils/lazyPages";
+
+// Still direct imports (will lazy load in Phase 2)
 import Profile from "./pages/workspace/Profile";
-import Analytics from "./pages/workspace/Analytics";
 import Metrics from "./pages/workspace/Metrics";
 import Admin from "./pages/workspace/Admin";
 import Monitoring from "./pages/workspace/Monitoring";
@@ -52,13 +57,19 @@ export const router = createBrowserRouter(
       children: [
         {
           path: "dashboard",
-          element: <Dashboard />
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <LazyDashboard />
+            </Suspense>
+          )
         },
         {
           path: "generate",
           element: (
             <ErrorBoundary fallback={(error, reset) => <GeneratorErrorFallback error={error} reset={reset} />}>
-              <Generate />
+              <Suspense fallback={<FullPageSpinner />}>
+                <LazyGenerate />
+              </Suspense>
             </ErrorBoundary>
           )
         },
@@ -66,17 +77,27 @@ export const router = createBrowserRouter(
           path: "library",
           element: (
             <ErrorBoundary fallback={(error, reset) => <TrackListErrorFallback error={error} reset={reset} />}>
-              <Library />
+              <Suspense fallback={<FullPageSpinner />}>
+                <LazyLibrary />
+              </Suspense>
             </ErrorBoundary>
           )
         },
         {
           path: "favorites",
-          element: <Favorites />
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <LazyFavorites />
+            </Suspense>
+          )
         },
         {
           path: "analytics",
-          element: <Analytics />
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <LazyAnalytics />
+            </Suspense>
+          )
         },
         {
           path: "metrics",
@@ -84,7 +105,11 @@ export const router = createBrowserRouter(
         },
         {
           path: "settings",
-          element: <Settings />
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <LazySettings />
+            </Suspense>
+          )
         },
         {
           path: "profile",
