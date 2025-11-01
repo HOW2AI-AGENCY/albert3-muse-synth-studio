@@ -184,7 +184,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
     logger.info('[ANALYZE-REF] 🔍 Starting Mureka song recognition');
     
     const recognitionResult = await murekaClient.recognizeSong({
-      file_id: murekaFileId
+      url: audioUrl
     });
 
     const recognitionTaskId = recognitionResult.data.task_id;
@@ -200,7 +200,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
     logger.info('[ANALYZE-REF] 📖 Starting Mureka song description');
     
     const descriptionResult = await murekaClient.describeSong({
-      file_id: murekaFileId
+      url: audioUrl
     });
 
     const descriptionTaskId = descriptionResult.data.task_id;
@@ -279,7 +279,8 @@ const mainHandler = async (req: Request): Promise<Response> => {
       descriptionTaskId,
       recognitionRecord.id,
       descriptionRecord.id,
-      murekaFileId
+      murekaFileId,
+      audioUrl
     ).catch((error) => {
       logger.error('[ANALYZE-REF] Background polling error', { 
         error: error instanceof Error ? error.message : String(error) 
@@ -364,7 +365,8 @@ async function pollMurekaAnalysis(
   descriptionTaskId: string,
   recognitionId: string,
   descriptionId: string,
-  murekaFileId: string
+  murekaFileId: string,
+  audioUrl: string
 ): Promise<void> {
   const MUREKA_API_KEY = Deno.env.get('MUREKA_API_KEY');
   if (!MUREKA_API_KEY) {
@@ -406,7 +408,7 @@ async function pollMurekaAnalysis(
         // Mureka Recognition API возвращает результаты напрямую (нет polling endpoint)
         // Используем прямой вызов /v1/song/recognize снова
         const recogResult = await murekaClient.recognizeSong({
-          file_id: murekaFileId
+          url: audioUrl
         });
         
         logger.debug('[ANALYZE-REF-POLL] Recognition result', { 
@@ -472,7 +474,7 @@ async function pollMurekaAnalysis(
     if (!descriptionCompleted) {
       try {
         const descResult = await murekaClient.describeSong({
-          file_id: murekaFileId
+          url: audioUrl
         });
         
         logger.debug('[ANALYZE-REF-POLL] Description result', { 
