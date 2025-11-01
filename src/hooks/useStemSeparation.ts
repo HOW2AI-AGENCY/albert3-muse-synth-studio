@@ -77,6 +77,8 @@ export const useStemSeparation = ({
         const { data: response, error } = await supabase.functions.invoke<{
           success?: boolean;
           taskId?: string;
+          zipUrl?: string;
+          provider?: string;
           error?: string;
         }>("separate-stems", {
           body: requestBody,
@@ -96,6 +98,7 @@ export const useStemSeparation = ({
         }
 
         const targetTaskId = response?.taskId;
+        const isMureka = response?.provider === 'mureka';
 
         if (!response?.success || !targetTaskId) {
           throw new Error("Сервис не вернул идентификатор задачи разделения стемов");
@@ -110,10 +113,44 @@ export const useStemSeparation = ({
               separationMode: mode,
               versionId: versionId || null,
               taskId: targetTaskId,
+              provider: isMureka ? 'mureka' : 'suno',
             },
           });
         });
 
+        if (isMureka) {
+          // ✅ Mureka returns ZIP immediately
+          toast.success("Стемы готовы! Скачивание ZIP-архива начнется сейчас.");
+          
+          // Download ZIP archive
+          const zipUrl = targetTaskId; // taskId IS the zip URL for Mureka
+          const link = document.createElement('a');
+          link.href = zipUrl;
+          link.download = `stems-${trackId}.zip`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          import('@/services/analytics.service').then(({ AnalyticsService }) => {
+            AnalyticsService.recordEvent({
+              eventType: 'stem_separation_completed',
+              trackId,
+              metadata: {
+                separationMode: mode,
+                versionId: versionId || null,
+                taskId: targetTaskId,
+                provider: 'mureka',
+                downloadType: 'zip_archive',
+              },
+            });
+          });
+
+          setIsGenerating(false);
+          onSuccess?.();
+          return;
+        }
+
+        // ✅ Suno flow (existing logic)
         toast.success(
           mode === "separate_vocal"
             ? "Запущено разделение на вокал и инструментал"
