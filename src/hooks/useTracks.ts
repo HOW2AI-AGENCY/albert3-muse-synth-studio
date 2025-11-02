@@ -99,12 +99,9 @@ export const useTracks = (refreshTrigger?: number, options?: UseTracksOptions) =
         `)
         .eq('user_id', user.id);
 
-      // Фильтр по проекту
+      // Фильтр по проекту (если передан, показываем только треки этого проекта)
       if (projectId) {
         query = query.eq('project_id', projectId);
-      } else {
-        // Если проект не выбран, показываем только треки без проекта
-        query = query.is('project_id', null);
       }
 
       const { data: tracksData, error } = await query.order('created_at', { ascending: false });
@@ -156,7 +153,7 @@ export const useTracks = (refreshTrigger?: number, options?: UseTracksOptions) =
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [toast, projectId]);
 
   const deleteTrack = async (trackId: string) => {
     try {
