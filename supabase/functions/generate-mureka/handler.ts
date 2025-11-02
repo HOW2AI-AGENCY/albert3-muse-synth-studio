@@ -14,6 +14,7 @@ import { createMurekaClient } from "../_shared/mureka.ts";
 import { normalizeMurekaLyricsResponse, normalizeMurekaMusicResponse } from "../_shared/mureka-normalizers.ts";
 import { logger } from "../_shared/logger.ts";
 import { sentryClient } from "../_shared/sentry.ts";
+import { addLanguageHint } from "../_shared/language-detector.ts";
 import type { MurekaGenerationParams, ProviderTrackData, GenerationResponse } from "../_shared/types/generation.ts";
 
 export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationParams> {
@@ -548,12 +549,13 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
     
     try {
       const murekaClient = createMurekaClient({ apiKey: this.apiKey });
-      const isCyrillic = /[А-Яа-яЁё]/.test(prompt || '');
-      const explicitLangHint = /(language\s*:)|\b(english|английск)|(russian|русск)/i.test(prompt || '');
-      const promptWithLang = isCyrillic && !explicitLangHint
-        ? `${prompt}\nЯзык: русский. Сгенерируй текст песни на русском.`
-        : prompt;
-      const lyricsResult = await murekaClient.generateLyrics({ prompt: promptWithLang });
+      
+      // ✅ Используем утилиту для языковой детекции
+      const promptWithLanguageHint = addLanguageHint(prompt);
+      
+      const lyricsResult = await murekaClient.generateLyrics({ 
+        prompt: promptWithLanguageHint 
+      });
       
       logger.info('🎤 [MUREKA] Lyrics API response received');
       

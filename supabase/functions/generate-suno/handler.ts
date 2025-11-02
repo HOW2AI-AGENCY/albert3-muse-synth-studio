@@ -13,6 +13,7 @@ import { GenerationHandler } from "../_shared/generation-handler.ts";
 import { createSunoClient, type SunoGenerationPayload } from "../_shared/suno.ts";
 import { fetchSunoBalance } from "../_shared/suno-balance.ts";
 import { logger } from "../_shared/logger.ts";
+import { addLanguageHint, isCyrillic } from "../_shared/language-detector.ts";
 import type { SunoGenerationParams, ProviderTrackData } from "../_shared/types/generation.ts";
 
 export class SunoGenerationHandler extends GenerationHandler<SunoGenerationParams> {
@@ -124,38 +125,20 @@ export class SunoGenerationHandler extends GenerationHandler<SunoGenerationParam
     const sunoClient = createSunoClient({ apiKey: this.apiKey });
     const customMode = params.customMode ?? (params.lyrics ? true : false);
 
-    // Build Suno API payload
-    // ✅ CRITICAL FIX: Default model V5 + correct parameter name for instrumental mode
-    // Language and title handling
-    const baseText = customMode ? (params.lyrics || '') : (params.prompt || '');
-    const isCyrillic = /[А-Яа-яЁё]/.test(baseText);
-    const explicitLangHint = /(language\s*:)|\b(english|английск)|(russian|русск)/i.test(baseText);
-    const finalPrompt = !customMode
-      ? `${baseText}${isCyrillic && !explicitLangHint ? '\nЯзык: русский. Пожалуйста, сгенерируй вокал и лирику на русском языке.' : ''}`
-      : baseText;
-    
-    const deriveTitleFromPrompt = (text: string) => {
-      const cleaned = (text || '')
-        .replace(/\[(intro|verse|chorus|bridge|outro)\]/ig, '')
-        .replace(/\b(music|track|song|create|generate|трек|музыка|песня|создай|сгенерируй)\b/ig, '')
-        .replace(/[^\wА-Яа-яЁё\s-]/g, ' ')
-        .trim()
-        .replace(/\s+/g, ' ')
-        .slice(0, 60);
-      if (cleaned.length > 3) return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-      return 'New Track';
-    };
-    const derivedTitle = deriveTitleFromPrompt(params.title || params.prompt || params.lyrics || '');
+    // ✅ Добавляем языковой hint если нужно
+    const promptWithHint = customMode 
+      ? params.lyrics || ''
+      : addLanguageHint(params.prompt || '', params.lyrics);
 
     const sunoPayload: SunoGenerationPayload = {
-      prompt: customMode ? (params.lyrics || '') : finalPrompt,
+      prompt: promptWithHint,
       tags: params.styleTags || [],
-      title: params.title || derivedTitle,
-      make_instrumental: params.hasVocals === false, // ← ensure vocals by default
-      model: (params.modelVersion as SunoGenerationPayload['model']) || 'V5', // ← Default V5
+      title: params.title || undefined, // Title будет извлечён в webhook
+      make_instrumental: params.hasVocals === false,
+      model: (params.modelVersion as SunoGenerationPayload['model']) || 'V5',
       customMode: customMode,
       callBackUrl: this.callbackUrl ?? undefined,
-      personaId: params.personaId ?? undefined, // ✅ НОВОЕ: Поддержка персоны
+      personaId: params.personaId ?? undefined,
       ...(params.negativeTags ? { negativeTags: params.negativeTags } : {}),
       ...(params.vocalGender ? { vocalGender: params.vocalGender } : {}),
       ...(params.styleWeight !== undefined ? { styleWeight: Number(params.styleWeight.toFixed(2)) } : {}),
