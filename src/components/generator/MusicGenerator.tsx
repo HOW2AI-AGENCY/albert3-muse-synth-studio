@@ -303,55 +303,72 @@ export const MusicGenerator = ({
   const advancedResourcesCount = [hasAudio, hasPersona, hasInspo].filter(Boolean).length;
   return <Card className="h-full border-0 shadow-none">
       <CardContent className="p-0 space-y-0">
-        {/* Header with Balance */}
-        <div className="px-4 py-3 border-b bg-card/50 space-y-3">
-          <div className="flex items-center justify-between">
-            
-            
+      {/* Compact Header: Balance | Mode | Model */}
+        <div className="px-4 py-2 border-b bg-card/50">
+          <div className="flex items-center justify-between gap-4">
             {/* Balance Display */}
-            <div className="flex items-center gap-2">
-              {balanceLoading ? <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" /> : balance ? <Badge variant="secondary" className="text-xs">
-                  {balance.balance} кредитов
-                </Badge> : null}
+            <div className="flex items-center gap-2 shrink-0">
+              {balanceLoading ? (
+                <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+              ) : balance ? (
+                <Badge variant="secondary" className="text-xs font-medium px-2 py-0.5">
+                  ♪ {balance.balance}
+                </Badge>
+              ) : null}
             </div>
-          </div>
 
-          {/* Mode Selector */}
-          <div className="flex items-center gap-3">
-            <Label className="text-xs text-muted-foreground shrink-0">Режим:</Label>
-            <RadioGroup value={mode} onValueChange={v => handleModeChange(v as GeneratorMode)} className="flex gap-3" disabled={isGenerating}>
-              <div className="flex items-center gap-1.5">
-                <RadioGroupItem value="simple" id="simple" className="h-3.5 w-3.5" />
-                <Label htmlFor="simple" className="text-xs cursor-pointer">
+            {/* Mode Selector */}
+            <RadioGroup 
+              value={mode} 
+              onValueChange={v => handleModeChange(v as GeneratorMode)} 
+              className="flex gap-1 bg-muted/30 rounded-md p-0.5" 
+              disabled={isGenerating}
+            >
+              <div className="flex items-center">
+                <RadioGroupItem value="simple" id="simple" className="sr-only" />
+                <Label 
+                  htmlFor="simple" 
+                  className={cn(
+                    "text-xs font-medium cursor-pointer px-3 py-1 rounded transition-all",
+                    mode === 'simple' ? "bg-background shadow-sm" : "hover:bg-background/50"
+                  )}
+                >
                   Simple
                 </Label>
               </div>
-              <div className="flex items-center gap-1.5">
-                <RadioGroupItem value="custom" id="custom" className="h-3.5 w-3.5" />
-                <Label htmlFor="custom" className="text-xs cursor-pointer flex items-center gap-1">
+              <div className="flex items-center">
+                <RadioGroupItem value="custom" id="custom" className="sr-only" />
+                <Label 
+                  htmlFor="custom" 
+                  className={cn(
+                    "text-xs font-medium cursor-pointer px-3 py-1 rounded transition-all flex items-center gap-1",
+                    mode === 'custom' ? "bg-background shadow-sm" : "hover:bg-background/50"
+                  )}
+                >
                   Custom
-                  {advancedResourcesCount > 0 && <Badge variant="secondary" className="h-4 px-1 text-[10px]">
+                  {advancedResourcesCount > 0 && (
+                    <Badge variant="secondary" className="h-4 px-1 text-[10px] ml-0.5">
                       {advancedResourcesCount}
-                    </Badge>}
+                    </Badge>
+                  )}
                 </Label>
               </div>
             </RadioGroup>
-          </div>
 
-          {/* Model Selector */}
-          <div className="flex items-center gap-3">
-            <Label className="text-xs text-muted-foreground shrink-0">Модель:</Label>
+            {/* Model Selector */}
             <Select value={modelVersion} onValueChange={setModelVersion} disabled={isGenerating}>
-              <SelectTrigger className="h-7 text-xs">
+              <SelectTrigger className="h-8 text-xs w-[110px] shrink-0">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                {SUNO_MODELS.map(model => <SelectItem key={model.value} value={model.value} className="text-xs">
+              <SelectContent className="z-50 bg-popover">
+                {SUNO_MODELS.map(model => (
+                  <SelectItem key={model.value} value={model.value} className="text-xs">
                     <div className="flex flex-col">
                       <span>{model.label}</span>
                       <span className="text-[10px] text-muted-foreground">{model.description}</span>
                     </div>
-                  </SelectItem>)}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
