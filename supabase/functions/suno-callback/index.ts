@@ -404,13 +404,32 @@ const mainHandler = async (req: Request) => {
       if (successfulTracks.length > 0) {
         console.log(`[suno-callback] Creating ${successfulTracks.length} track versions`);
         
-        for (let i = 0; i < successfulTracks.length; i++) {
-          const versionTrack = successfulTracks[i];
+        // ✅ ВАЖНО: Назначаем variant_index на основе уже существующих версий,
+        // чтобы "first" → 0, а последующие попадали в 1, 2, ... даже если Suno
+        // прислал только один элемент в данном callback
+        const { data: existingVersions } = await supabase
+          .from('track_versions')
+          .select('variant_index')
+          .eq('parent_track_id', track.id);
+
+        const usedIndices = new Set<number>((existingVersions || [])
+          .map((v: any) => v.variant_index)
+          .filter((n: any) => typeof n === 'number'));
+
+        const nextAvailableIndex = () => {
+          let idx = 0;
+          while (usedIndices.has(idx)) idx++;
+          usedIndices.add(idx);
+          return idx;
+        };
+        
+        for (const versionTrack of successfulTracks) {
+          const variantIndex = nextAvailableIndex();
           const versionExternalAudioUrl = versionTrack.audioUrl || versionTrack.audio_url
             || versionTrack.stream_audio_url || versionTrack.source_stream_audio_url;
           
           if (!versionExternalAudioUrl) {
-            console.warn(`[suno-callback] Version ${i} missing audio URL, skipping`);
+            console.warn(`[suno-callback] Version ${variantIndex} missing audio URL, skipping`);
             continue;
           }
 
@@ -418,7 +437,7 @@ const mainHandler = async (req: Request) => {
             versionExternalAudioUrl,
             track.id,
             track.user_id,
-            `version-${i}.mp3`,
+            `version-${variantIndex}.mp3`,
             supabase,
           );
 
@@ -428,7 +447,7 @@ const mainHandler = async (req: Request) => {
               versionCoverUrl,
               track.id,
               track.user_id,
-              `version-${i}-cover.jpg`,
+              `version-${variantIndex}-cover.jpg`,
               supabase,
             );
           }
@@ -439,28 +458,25 @@ const mainHandler = async (req: Request) => {
               versionVideoUrl,
               track.id,
               track.user_id,
-              `version-${i}-video.mp4`,
+              `version-${variantIndex}-video.mp4`,
               supabase,
             );
           }
 
           const versionMetadata = {
             suno_track_data: versionTrack,
-            generated_via: "callback",
+            generated_via: 'callback',
             suno_task_id: taskId,
           };
 
-          // ✅ FIX: Правильная логика variant_index и флагов
-          // variant_index: 0 = первая версия (primary), 1 = вторая версия
-          // is_primary_variant: true только для variant_index === 0
-          // is_preferred_variant: по умолчанию true для primary (первой версии)
+          // ✅ Правильная логика флагов
           const { error: versionError } = await supabase
-            .from("track_versions")
+            .from('track_versions')
             .insert({
               parent_track_id: track.id,
-              variant_index: i,
-              is_primary_variant: i === 0,
-              is_preferred_variant: i === 0, // Primary по умолчанию предпочитаемая
+              variant_index: variantIndex,
+              is_primary_variant: variantIndex === 0,
+              is_preferred_variant: variantIndex === 0, // Primary по умолчанию предпочитаемая
               suno_id: sanitizeText(versionTrack.id),
               audio_url: versionAudioUrl,
               video_url: versionVideoUrl,
@@ -471,18 +487,18 @@ const mainHandler = async (req: Request) => {
             });
 
           if (versionError) {
-            console.error(`[suno-callback] Error inserting version ${i}:`, versionError, {
+            console.error(`[suno-callback] Error inserting version ${variantIndex}:`, versionError, {
               parent_track_id: track.id,
-              variant_index: i,
-              is_primary_variant: i === 0,
+              variant_index: variantIndex,
+              is_primary_variant: variantIndex === 0,
             });
           } else {
-            console.log(`[suno-callback] ✅ Version ${i} (${i === 0 ? 'PRIMARY' : 'ALTERNATE'}) created successfully`);
+            console.log(`[suno-callback] ✅ Version ${variantIndex} (${variantIndex === 0 ? 'PRIMARY' : 'ALTERNATE'}) created successfully`);
           }
         }
       }
 
-      console.log("Suno callback: track completed", {
+      console.log('Suno callback: track completed', {
         taskId,
         trackId: track.id,
         versionsCount: successfulTracks.length,
@@ -490,7 +506,7 @@ const mainHandler = async (req: Request) => {
 
       return new Response(JSON.stringify({ ok: true, versionsCreated: successfulTracks.length }), {
         status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
