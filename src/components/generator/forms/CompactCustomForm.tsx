@@ -232,13 +232,15 @@ export const CompactCustomForm = memo(({
         </div>
 
         {/* Project Drafts Selector - показываем черновики выбранного проекта */}
-        <ProjectDraftsSelector
-          projectId={params.activeProjectId || null}
-          projectName={projects.find(p => p.id === params.activeProjectId)?.name}
-          onDraftSelect={handleTrackSelect}
-          selectedDraftId={params.referenceTrackId || null}
-          disabled={isGenerating}
-        />
+        <div className="p-2">
+          <ProjectDraftsSelector
+            projectId={params.activeProjectId || null}
+            projectName={projects.find(p => p.id === params.activeProjectId)?.name}
+            onDraftSelect={handleTrackSelect}
+            selectedDraftId={params.referenceTrackId || null}
+            disabled={isGenerating}
+          />
+        </div>
 
         {/* Project Selector Dialog */}
         <ProjectSelectorDialog

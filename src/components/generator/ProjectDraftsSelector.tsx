@@ -79,28 +79,26 @@ export const ProjectDraftsSelector: React.FC<ProjectDraftsSelectorProps> = ({
 
   return (
     <>
-      <div className="p-2">
-        <Button
-          variant={selectedDraftId ? "default" : "outline"}
-          onClick={() => setDialogOpen(true)}
-          className="w-full h-10 justify-start gap-2 text-sm"
-          disabled={disabled}
-        >
-          <FileText className="h-4 w-4" />
-          <div className="flex-1 text-left truncate">
-            {selectedDraft ? (
-              <span className="truncate">{selectedDraft.title}</span>
-            ) : (
-              <span>Черновики проекта {projectDrafts.length > 0 && `(${projectDrafts.length})`}</span>
-            )}
-          </div>
-          {projectDrafts.length > 0 && (
-            <Badge variant="secondary" className="text-[10px] ml-auto">
-              {projectDrafts.length}
-            </Badge>
+      <Button
+        variant={selectedDraftId ? "default" : "outline"}
+        onClick={() => setDialogOpen(true)}
+        className="w-full h-10 justify-start gap-2 text-sm"
+        disabled={disabled}
+      >
+        <FileText className="h-4 w-4" />
+        <div className="flex-1 text-left truncate">
+          {selectedDraft ? (
+            <span className="truncate">{selectedDraft.title}</span>
+          ) : (
+            <span>Черновики проекта {projectDrafts.length > 0 && `(${projectDrafts.length})`}</span>
           )}
-        </Button>
-      </div>
+        </div>
+        {projectDrafts.length > 0 && (
+          <Badge variant="secondary" className="text-[10px] ml-auto">
+            {projectDrafts.length}
+          </Badge>
+        )}
+      </Button>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh]">
