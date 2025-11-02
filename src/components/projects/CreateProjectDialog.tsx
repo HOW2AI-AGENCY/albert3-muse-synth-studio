@@ -271,14 +271,19 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
                       <p className="font-medium text-sm mb-2">Треклист ({aiSuggestions.planned_tracks.length} треков):</p>
                       <ScrollArea className="h-64">
                         <div className="space-y-2 pr-4">
-                          {aiSuggestions.planned_tracks.map((track, idx) => (
-                            <div key={idx} className="p-3 bg-background rounded border border-border">
-                              <div className="flex items-start justify-between mb-2">
+                           {aiSuggestions.planned_tracks.map((track, idx) => (
+                            <div key={idx} className="p-3 bg-background rounded border border-border space-y-2">
+                              <div className="flex items-start justify-between">
                                 <span className="font-medium text-sm">{track.order}. {track.title}</span>
                                 <span className="text-xs text-muted-foreground">
                                   {Math.floor(track.duration_target / 60)}:{(track.duration_target % 60).toString().padStart(2, '0')}
                                 </span>
                               </div>
+                              {track.style_prompt && (
+                                <div className="text-xs text-muted-foreground">
+                                  <span className="font-medium">Стиль:</span> {track.style_prompt}
+                                </div>
+                              )}
                               {track.notes && (
                                 <p className="text-xs text-muted-foreground leading-relaxed">{track.notes}</p>
                               )}

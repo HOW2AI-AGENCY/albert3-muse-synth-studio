@@ -11,6 +11,7 @@ import { logger } from '@/utils/logger';
 export interface PlannedTrack {
   order: number;
   title: string;
+  style_prompt: string; // ✅ НОВОЕ: Промпт стиля для генерации
   duration_target: number;
   notes?: string;
 }

@@ -1,27 +1,19 @@
-/**
- * Generate Project Concept Edge Function
- * Uses Lovable AI to generate comprehensive music project concepts
- */
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface GenerateConceptRequest {
-  prompt: string;
-}
-
-Deno.serve(async (req) => {
-  // Handle CORS preflight
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { prompt }: GenerateConceptRequest = await req.json();
-
-    if (!prompt || prompt.trim().length === 0) {
+    const { prompt } = await req.json();
+    
+    if (!prompt || typeof prompt !== 'string') {
       return new Response(
         JSON.stringify({ error: 'Prompt is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -30,93 +22,44 @@ Deno.serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
-      console.error('LOVABLE_API_KEY not configured');
-      return new Response(
-        JSON.stringify({ error: 'AI service not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const systemPrompt = `You are a professional music project planner and A&R specialist. Generate a complete, detailed, and creative music project concept based on the user's description.
+    console.log('[generate-project-concept] Generating full project concept with AI');
 
-CRITICAL REQUIREMENTS:
-1. Output ONLY valid JSON (no markdown, no explanations, no code blocks)
-2. Generate EXACTLY 10-12 planned tracks with detailed descriptions
-3. Fill ALL fields completely and professionally
-4. Be creative, artistic, and industry-standard
-5. Each track must have a unique concept and purpose within the album
+    // System prompt для детальной генерации проекта
+    const systemPrompt = `You are a professional music project planner and creative director.
+Generate complete, production-ready music project concepts with detailed tracklists.
 
-DETAILED FIELD REQUIREMENTS:
+Guidelines:
+- Create compelling, marketable project names
+- Write rich, detailed concept descriptions
+- Generate realistic, creative track titles
+- Provide specific style prompts for each track that can be used for AI music generation
+- Include tempo range, mood, and genre specifics
+- Track notes should describe the musical direction and vibe
+- Duration targets should be realistic (180-240 seconds per track)
 
-**name**: Creative album/project name (5-50 characters)
-  - Should be memorable, evocative, and match the genre/mood
-  - Examples: "Neon Dreams", "Whispers in the Dark", "Electric Horizons"
+Output must use the generate_music_project tool with ALL fields filled.`;
 
-**genre**: Primary genre (be specific)
-  - Examples: "Synthwave", "Indie Rock", "Lo-Fi Hip Hop", "Deep House", "Alternative Pop"
+    const userPrompt = `Create a complete music project concept based on this user request:
 
-**mood**: Overall emotional tone
-  - Examples: "Melancholic & Introspective", "Energetic & Uplifting", "Dark & Atmospheric", "Dreamy & Nostalgic"
+"${prompt}"
 
-**style_tags**: 5-8 specific style descriptors
-  - Include production style, subgenres, influences, sonic characteristics
-  - Examples: ["retro synths", "808 drums", "dreamy vocals", "analog warmth", "cinematic"]
+Generate:
+1. A catchy project name
+2. Detailed concept description (3-5 sentences)
+3. Genre and mood
+4. 5-8 relevant style tags
+5. Story theme or artistic vision
+6. Tempo range
+7. Full tracklist (8-12 tracks) with:
+   - Creative track titles
+   - Style prompts (detailed descriptions for AI music generation)
+   - Target duration
+   - Notes about the track's role in the project`;
 
-**concept_description**: Detailed artistic vision (150-250 words)
-  - Describe the overall theme, story, or concept
-  - Include sonic palette, production approach
-  - Explain the emotional journey
-  - Reference influences or similar artists if relevant
-
-**story_theme**: Central narrative or thematic thread (50-100 words)
-  - What story does the album tell?
-  - What journey does the listener go on?
-  - What emotions or ideas are explored?
-
-**tempo_range**: Realistic BPM range for the genre
-  - { "min": 80, "max": 140 } for example
-  - Should match the genre conventions
-
-**planned_tracks**: Array of 10-12 tracks, each with:
-  - **order**: Track number (1-12)
-  - **title**: Creative, evocative track name (3-60 characters)
-  - **duration_target**: Duration in seconds (180-360)
-    * Intro/Outro: 90-180 seconds
-    * Standard tracks: 180-300 seconds
-    * Epic/Finale: 300-420 seconds
-  - **notes**: DETAILED description (100-200 words) including:
-    * Track's role in the album narrative
-    * Mood and emotional tone
-    * Key musical elements (instruments, production techniques)
-    * Tempo and energy level
-    * Lyrical themes or vocal approach (if applicable)
-    * Production style and sound design
-    * How it transitions from/to other tracks
-
-EXAMPLE TRACK NOTES:
-"Opening track that sets the album's nostalgic, late-night atmosphere. Features warm analog synths layered over a steady 85 BPM groove with crispy 808 drums. Ethereal vocals float above the mix, telling the story of urban isolation. The production emphasizes space and reverb, creating a cinematic soundscape. Builds gradually from minimal intro to full arrangement by 2:00 mark. Perfect gateway into the album's sonic world."
-
-Output format:
-{
-  "name": "Album Name",
-  "genre": "Specific Genre Name",
-  "mood": "Detailed Mood Description",
-  "style_tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
-  "concept_description": "Comprehensive 150-250 word artistic vision and concept...",
-  "story_theme": "Detailed 50-100 word narrative theme...",
-  "tempo_range": { "min": 80, "max": 130 },
-  "planned_tracks": [
-    {
-      "order": 1,
-      "title": "Track Title",
-      "duration_target": 240,
-      "notes": "Detailed 100-200 word description of track's role, mood, instruments, production, themes..."
-    }
-  ]
-}`;
-
-    console.log(`Generating project concept for prompt: "${prompt}"`);
-
+    // Call Lovable AI with structured output via tool calling
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -127,63 +70,148 @@ Output format:
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { 
-            role: 'user', 
-            content: `Generate a detailed, professional music project concept based on this description:\n\n${prompt}\n\nBe creative, artistic, and thorough. Fill all fields with rich, detailed information. Each track should have a unique concept and detailed notes (100-200 words each).` 
+          { role: 'user', content: userPrompt },
+        ],
+        tools: [
+          {
+            type: 'function',
+            function: {
+              name: 'generate_music_project',
+              description: 'Generate a complete music project with full tracklist and metadata',
+              parameters: {
+                type: 'object',
+                properties: {
+                  name: { 
+                    type: 'string',
+                    description: 'Project name - catchy, memorable, relevant to concept'
+                  },
+                  genre: { 
+                    type: 'string',
+                    description: 'Primary music genre (e.g., Electronic, Rock, Jazz)'
+                  },
+                  mood: { 
+                    type: 'string',
+                    description: 'Overall mood (e.g., Energetic, Melancholic, Uplifting)'
+                  },
+                  style_tags: { 
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'Array of 5-8 style tags that describe the musical style'
+                  },
+                  concept_description: { 
+                    type: 'string',
+                    description: 'Detailed project concept (3-5 sentences) explaining the artistic vision'
+                  },
+                  story_theme: { 
+                    type: 'string',
+                    description: 'Narrative or thematic thread connecting all tracks'
+                  },
+                  tempo_range: {
+                    type: 'object',
+                    properties: {
+                      min: { type: 'number', description: 'Minimum BPM' },
+                      max: { type: 'number', description: 'Maximum BPM' }
+                    },
+                    required: ['min', 'max']
+                  },
+                  planned_tracks: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        order: { 
+                          type: 'number',
+                          description: 'Track position in album (1, 2, 3...)'
+                        },
+                        title: { 
+                          type: 'string',
+                          description: 'Creative, memorable track title'
+                        },
+                        style_prompt: {
+                          type: 'string',
+                          description: 'Detailed style description for AI music generation (2-3 sentences describing genre, mood, instruments, tempo, vibe)'
+                        },
+                        duration_target: { 
+                          type: 'number',
+                          description: 'Target duration in seconds (typically 180-240)'
+                        },
+                        notes: { 
+                          type: 'string',
+                          description: 'Additional notes about the track concept, role in the album, or artistic direction'
+                        }
+                      },
+                      required: ['order', 'title', 'style_prompt', 'duration_target']
+                    },
+                    description: 'Complete tracklist (8-12 tracks recommended)'
+                  }
+                },
+                required: [
+                  'name', 
+                  'genre', 
+                  'mood', 
+                  'style_tags', 
+                  'concept_description', 
+                  'story_theme',
+                  'tempo_range',
+                  'planned_tracks'
+                ],
+                additionalProperties: false
+              }
+            }
           }
         ],
-        response_format: { type: 'json_object' },
+        tool_choice: { type: 'function', function: { name: 'generate_music_project' } }
       }),
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: 'Превышен лимит запросов. Попробуйте позже.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: 'Требуется пополнение баланса.' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       const errorText = await response.text();
-      console.error('Lovable AI error:', response.status, errorText);
-      return new Response(
-        JSON.stringify({ error: 'AI generation failed', details: errorText }),
-        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.error('[generate-project-concept] AI error:', response.status, errorText);
+      throw new Error('AI gateway error');
     }
 
-    const data = await response.json();
+    const result = await response.json();
     
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      console.error('Invalid AI response format:', data);
-      return new Response(
-        JSON.stringify({ error: 'Invalid AI response' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Extract tool call result
+    const toolCall = result.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall || toolCall.function.name !== 'generate_music_project') {
+      throw new Error('Invalid AI response format');
     }
 
-    const content = JSON.parse(data.choices[0].message.content);
+    const projectConcept = JSON.parse(toolCall.function.arguments);
     
-    // Validate response structure
-    if (!content.name || !content.planned_tracks || !Array.isArray(content.planned_tracks)) {
-      console.error('Invalid content structure:', content);
-      return new Response(
-        JSON.stringify({ error: 'Invalid project concept structure' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log(`Project concept generated: "${content.name}" with ${content.planned_tracks.length} tracks`);
+    console.log('[generate-project-concept] Project generated:', {
+      name: projectConcept.name,
+      trackCount: projectConcept.planned_tracks?.length || 0
+    });
 
     return new Response(
-      JSON.stringify(content),
+      JSON.stringify(projectConcept),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error('Error in generate-project-concept:', error);
-    
+    console.error('[generate-project-concept] Error:', error);
     return new Response(
       JSON.stringify({ 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error' 
       }),
       { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
   }

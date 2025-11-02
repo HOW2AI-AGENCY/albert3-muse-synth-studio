@@ -8,6 +8,7 @@ export type ProjectType = 'single' | 'ep' | 'album' | 'soundtrack' | 'instrument
 export interface PlannedTrack {
   order: number;
   title: string;
+  style_prompt?: string; // ✅ Промпт стиля для AI генерации
   duration_target?: number;
   notes?: string;
   track_id?: string;

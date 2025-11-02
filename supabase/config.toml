@@ -192,3 +192,9 @@ verify_jwt = true
 
 [functions.replace-section-callback]
 verify_jwt = false
+
+[functions.generate-project-tracklist]
+verify_jwt = true
+
+[functions.generate-project-concept]
+verify_jwt = true
