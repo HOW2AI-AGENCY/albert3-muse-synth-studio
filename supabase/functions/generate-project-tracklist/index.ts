@@ -27,12 +27,35 @@ serve(async (req) => {
     // Admin client for secure DB operations (RLS bypass after we verify the token)
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-    // Verify user from bearer token
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(bearerToken);
-    
-    if (userError || !user) {
-      console.error('Auth error:', userError);
-      throw new Error('Unauthorized');
+    // Decode JWT locally to extract user id (avoid session-dependent getUser())
+    const parts = bearerToken.split('.');
+    if (parts.length !== 3) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    let decoded: any;
+    try {
+      const json = atob(base64);
+      decoded = JSON.parse(json);
+    } catch (e) {
+      console.error('JWT decode failed:', e);
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const userId = decoded?.sub || decoded?.user_id;
+    const exp = decoded?.exp ? Number(decoded.exp) : null;
+    if (!userId || (exp && Date.now() / 1000 > exp)) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const { projectId, projectName, description, genre, mood, projectType, totalTracks } = await req.json();
@@ -113,7 +136,7 @@ ${mood ? `Настроение: ${mood}` : ''}
 
     // Create tracks in DB
     const tracksToInsert = tracklist.tracks.map((track: any) => ({
-      user_id: user.id,
+      user_id: userId,
       project_id: projectId,
       title: track.title,
       prompt: track.prompt,
