@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ProjectSelectorDialog } from '@/components/generator/ProjectSelectorDialog';
+import { ProjectTracksSelector } from '@/components/generator/forms/ProjectTracksSelector';
 import { useState, useCallback } from 'react';
 import { useProjects } from '@/contexts/ProjectContext';
 import { useTracks } from '@/hooks/useTracks';
@@ -192,38 +193,16 @@ export const CompactCustomForm = memo(({
           </div>
         </div>
 
-        {/* Project Selector Button */}
-        <div className="px-2">
-          <Button
-            variant="outline"
-            className="w-full justify-start h-auto p-3"
-            onClick={() => setProjectDialogOpen(true)}
+        {/* Project Tracks Selector - Only shown when project is selected */}
+        {params.activeProjectId && (
+          <ProjectTracksSelector
+            projectId={params.activeProjectId}
+            projectName={projects.find(p => p.id === params.activeProjectId)?.name || 'Проект'}
+            onTrackSelect={handleTrackSelect}
+            selectedTrackId={params.referenceTrackId || null}
             disabled={isGenerating}
-          >
-            <div className="flex items-center gap-2 w-full">
-              <Music className="h-4 w-4 text-muted-foreground" />
-              <div className="flex flex-col items-start gap-1 flex-1 min-w-0">
-                {params.activeProjectId ? (
-                  <>
-                    <span className="font-medium text-sm truncate w-full">
-                      {projects.find(p => p.id === params.activeProjectId)?.name || 'Проект выбран'}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      Нажмите чтобы изменить проект
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span className="font-medium text-sm">Без проекта</span>
-                    <span className="text-xs text-muted-foreground">
-                      Нажмите чтобы выбрать проект
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-          </Button>
-        </div>
+          />
+        )}
 
         {/* Title */}
         <div className="space-y-1 p-2">
