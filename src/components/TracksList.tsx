@@ -24,6 +24,7 @@ interface TracksListProps {
   onCover?: (trackId: string) => void;
   onCreatePersona?: (trackId: string) => void;
   onSelect?: (track: Track) => void;
+  isDetailPanelOpen?: boolean;
 }
 
 const TracksListComponent = ({
@@ -36,6 +37,7 @@ const TracksListComponent = ({
   onCover,
   onCreatePersona,
   onSelect,
+  isDetailPanelOpen = false,
 }: TracksListProps) => {
   const playTrackWithQueue = useAudioPlayerStore((state) => state.playTrackWithQueue);
   const { toast } = useToast();
@@ -74,7 +76,9 @@ const TracksListComponent = ({
   }, []);
 
   // Adaptive grid parameters
-  const { columns, gap, cardWidth } = useAdaptiveGrid(containerDimensions.width);
+  const { columns, gap, cardWidth } = useAdaptiveGrid(containerDimensions.width, { 
+    isDetailPanelOpen 
+  });
 
   const handleViewChange = useCallback((view: 'grid' | 'list') => {
     setViewMode(view);

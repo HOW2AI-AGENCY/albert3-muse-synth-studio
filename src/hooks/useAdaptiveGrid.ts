@@ -14,18 +14,31 @@ export interface AdaptiveGridParams {
   cardWidth: number;
 }
 
-export const useAdaptiveGrid = (containerWidth: number): AdaptiveGridParams => {
+interface UseAdaptiveGridOptions {
+  isDetailPanelOpen?: boolean;
+}
+
+export const useAdaptiveGrid = (
+  containerWidth: number,
+  options: UseAdaptiveGridOptions = {}
+): AdaptiveGridParams => {
+  const { isDetailPanelOpen = false } = options;
+
   return useMemo(() => {
     if (containerWidth === 0) {
       return { columns: 3, gap: 16, cardWidth: CARD_MIN_WIDTH };
     }
 
+    // Determine column constraints based on detail panel state
+    const MIN_COLUMNS = isDetailPanelOpen ? 3 : 3;
+    const MAX_COLUMNS = isDetailPanelOpen ? 3 : 5;
+
     // Calculate optimal number of columns
     const idealColumns = Math.floor(containerWidth / CARD_IDEAL_WIDTH);
-    const minColumns = Math.max(3, Math.floor(containerWidth / CARD_MAX_WIDTH));
-    const maxColumns = Math.min(5, Math.floor(containerWidth / CARD_MIN_WIDTH));
+    const minColumns = Math.max(MIN_COLUMNS, Math.floor(containerWidth / CARD_MAX_WIDTH));
+    const maxColumns = Math.min(MAX_COLUMNS, Math.floor(containerWidth / CARD_MIN_WIDTH));
     
-    const columns = Math.max(3, Math.min(5, Math.max(minColumns, Math.min(idealColumns, maxColumns))));
+    const columns = Math.max(MIN_COLUMNS, Math.min(MAX_COLUMNS, Math.max(minColumns, Math.min(idealColumns, maxColumns))));
     
     // Dynamic gap based on container width
     let gap = 24; // default
@@ -39,5 +52,5 @@ export const useAdaptiveGrid = (containerWidth: number): AdaptiveGridParams => {
     const cardWidth = Math.min(CARD_MAX_WIDTH, availableWidth / columns);
     
     return { columns, gap, cardWidth };
-  }, [containerWidth]);
+  }, [containerWidth, isDetailPanelOpen]);
 };

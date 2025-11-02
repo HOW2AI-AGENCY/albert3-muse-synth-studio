@@ -162,6 +162,7 @@ const Generate = () => {
                 onCover={handleCover}
                 onCreatePersona={handleCreatePersona}
                 onSelect={setSelectedTrack}
+                isDetailPanelOpen={!!selectedTrack}
               />
             </div>
           </ResizablePanel>
