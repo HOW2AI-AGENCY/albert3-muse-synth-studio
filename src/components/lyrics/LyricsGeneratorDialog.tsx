@@ -35,6 +35,7 @@ export function LyricsGeneratorDialog({
 }: LyricsGeneratorDialogProps) {
   const [prompt, setPrompt] = useState(initialPrompt);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedLyrics, setGeneratedLyrics] = useState<string | null>(null);
   const { toast } = useToast();
   const { vibrate } = useHapticFeedback();
 
@@ -60,6 +61,7 @@ export function LyricsGeneratorDialog({
     }
 
     vibrate('light');
+    setGeneratedLyrics(null);
     setIsGenerating(true);
 
     try {
@@ -80,6 +82,7 @@ export function LyricsGeneratorDialog({
 
       // Lovable AI возвращает лирику напрямую
       if (data?.lyrics) {
+        setGeneratedLyrics(data.lyrics);
         if (onGenerated) {
           onGenerated(data.lyrics);
         }
@@ -94,11 +97,8 @@ export function LyricsGeneratorDialog({
 
         toast({
           title: "✨ Текст готов!",
-          description: "Текст добавлен в форму"
+          description: "Посмотрите результат ниже"
         });
-        
-        onOpenChange(false);
-        setPrompt("");
       } else {
         throw new Error('No lyrics generated');
       }
@@ -130,37 +130,53 @@ export function LyricsGeneratorDialog({
         </DialogHeader>
 
         <div className="px-3 sm:px-6 py-4 sm:py-5 space-y-3 sm:space-y-4 overflow-y-auto">
-          <div className="space-y-2.5">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="prompt" className="text-sm font-medium flex items-center gap-1.5">
-                Описание
-                <span className="text-destructive text-xs">*</span>
-              </Label>
-              <div className={`text-xs font-mono tabular-nums transition-colors ${
-                wordCount > MAX_WORDS 
-                  ? 'text-destructive font-semibold' 
-                  : wordCount > MAX_WORDS * 0.8
-                  ? 'text-orange-500'
-                  : 'text-muted-foreground'
-              }`}>
-                {wordCount} / {MAX_WORDS}
+          {generatedLyrics ? (
+            <div className="space-y-2.5">
+              <Label htmlFor="generated" className="text-sm font-medium">Сгенерированный текст</Label>
+              <Textarea
+                id="generated"
+                value={generatedLyrics}
+                readOnly
+                rows={14}
+                className="resize-none text-base sm:text-sm leading-relaxed"
+              />
+              <div className="text-[11px] text-muted-foreground">
+                Текст сгенерирован и сохранён. Вы можете закрыть окно или сгенерировать заново.
               </div>
             </div>
-            <Textarea
-              id="prompt"
-              placeholder="Например: песня о любви в стиле поп-рок, веселая и энергичная, с припевом о преодолении трудностей..."
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              rows={7}
-              className="resize-none text-base sm:text-sm leading-relaxed"
-            />
-            <div className="flex items-start gap-2 text-[11px] text-muted-foreground">
-              <div className="mt-0.5">💡</div>
-              <p>
-                Будьте конкретны: укажите жанр, настроение, тему и структуру песни для лучших результатов
-              </p>
+          ) : (
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="prompt" className="text-sm font-medium flex items-center gap-1.5">
+                  Описание
+                  <span className="text-destructive text-xs">*</span>
+                </Label>
+                <div className={`text-xs font-mono tabular-nums transition-colors ${
+                  wordCount > MAX_WORDS 
+                    ? 'text-destructive font-semibold' 
+                    : wordCount > MAX_WORDS * 0.8
+                    ? 'text-orange-500'
+                    : 'text-muted-foreground'
+                }`}>
+                  {wordCount} / {MAX_WORDS}
+                </div>
+              </div>
+              <Textarea
+                id="prompt"
+                placeholder="Например: песня о любви в стиле поп-рок, веселая и энергичная, с припевом о преодолении трудностей..."
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                rows={7}
+                className="resize-none text-base sm:text-sm leading-relaxed"
+              />
+              <div className="flex items-start gap-2 text-[11px] text-muted-foreground">
+                <div className="mt-0.5">💡</div>
+                <p>
+                  Будьте конкретны: укажите жанр, настроение, тему и структуру песни для лучших результатов
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <DialogFooter className="sticky bottom-0 bg-background border-t px-3 sm:px-6 py-3 sm:py-4 gap-2 sm:gap-2">
