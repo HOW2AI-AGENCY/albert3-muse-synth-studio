@@ -51,17 +51,24 @@ if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
   });
 }
 
-// Инициализируем Service Worker (старый)
-initServiceWorker().catch((error) => {
-  logger.error('Failed to register service worker', error, 'ServiceWorker');
-});
-
-// Регистрируем новый SW для Week 3 оптимизаций
-import('@/utils/registerServiceWorker').then(({ registerServiceWorker }) => {
-  registerServiceWorker().catch((error) => {
-    logger.error('Failed to register Week 3 service worker', error, 'ServiceWorker');
+// Service Worker: production only
+if (import.meta.env.PROD) {
+  // Register SW in production
+  initServiceWorker().catch((error) => {
+    logger.error('Failed to register service worker', error, 'ServiceWorker');
   });
-});
+
+  import('@/utils/registerServiceWorker').then(({ registerServiceWorker }) => {
+    registerServiceWorker().catch((error) => {
+      logger.error('Failed to register service worker', error, 'ServiceWorker');
+    });
+  });
+} else {
+  // Unregister any existing SW in development
+  import('@/utils/registerServiceWorker').then(({ unregisterServiceWorker }) => {
+    unregisterServiceWorker();
+  });
+}
 
 const registerWebVitals = async () => {
   const vitals = await import('web-vitals');

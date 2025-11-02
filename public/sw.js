@@ -1,7 +1,7 @@
 // Service Worker for Albert3 Muse Synth Studio
-// Version 2.4.0 - Week 3: Smart Loading & Caching
+// Version 2.4.1 - Production Only
 
-const CACHE_VERSION = 'v2.4.0';
+const CACHE_VERSION = 'v2.4.1';
 const CACHE_NAME = `albert3-cache-${CACHE_VERSION}`;
 
 // Static assets to cache on install
@@ -77,6 +77,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Skip all dev/Vite requests
+  if (url.pathname.startsWith('/src/') || 
+      url.pathname.startsWith('/node_modules/') ||
+      url.pathname.startsWith('/@vite') ||
+      url.pathname.startsWith('/__vite') ||
+      url.pathname.startsWith('/@react-refresh') ||
+      request.destination === 'document') {
+    return;
+  }
+
   // Strategy 1: Audio files - Cache First with Network Fallback
   if (request.url.includes('.mp3') || request.url.includes('.wav') || request.url.includes('/audio/')) {
     event.respondWith(cacheFirstStrategy(request, AUDIO_CACHE_NAME));
@@ -89,10 +99,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Strategy 3: Static assets - Stale While Revalidate
-  if (request.destination === 'image' || 
-      request.destination === 'style' || 
-      request.destination === 'script') {
+  // Strategy 3: Static assets - Stale While Revalidate (production builds only)
+  if (request.destination === 'image') {
+    event.respondWith(staleWhileRevalidateStrategy(request, CACHE_NAME));
+    return;
+  }
+
+  // Only cache production-built JS/CSS (in /assets/)
+  if ((request.destination === 'script' || request.destination === 'style') && 
+      url.pathname.match(/^\/assets\/.+\.(js|css)$/)) {
     event.respondWith(staleWhileRevalidateStrategy(request, CACHE_NAME));
     return;
   }

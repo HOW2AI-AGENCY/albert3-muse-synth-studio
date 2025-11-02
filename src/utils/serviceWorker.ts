@@ -225,13 +225,16 @@ export const getCacheInfo = async (): Promise<CacheInfo | null> => {
  */
 export const initServiceWorker = async (): Promise<void> => {
   // Регистрируем только в production
-  if (import.meta.env.PROD) {
-    const registered = await serviceWorkerManager.register();
-    if (registered) {
-      logger.info('Service Worker успешно инициализирован', 'SW Manager');
-    }
-  } else {
+  if (!import.meta.env.PROD) {
     logger.info('Service Worker отключен в режиме разработки', 'SW Manager');
+    // Unregister any existing SW
+    await serviceWorkerManager.unregister();
+    return;
+  }
+
+  const registered = await serviceWorkerManager.register();
+  if (registered) {
+    logger.info('Service Worker успешно инициализирован', 'SW Manager');
   }
 };
 

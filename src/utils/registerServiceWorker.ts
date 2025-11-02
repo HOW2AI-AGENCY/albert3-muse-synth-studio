@@ -6,6 +6,12 @@
 import { logger } from './logger';
 
 export async function registerServiceWorker() {
+  // Only register in production
+  if (!import.meta.env.PROD) {
+    logger.info('Service Worker disabled in development', 'registerServiceWorker');
+    return;
+  }
+
   if (!('serviceWorker' in navigator)) {
     logger.warn('Service Workers not supported');
     return;
