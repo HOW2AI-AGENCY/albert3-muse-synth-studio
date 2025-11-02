@@ -197,3 +197,4 @@ export const AudioPreviewDialog = memo(({
 });
 
 AudioPreviewDialog.displayName = 'AudioPreviewDialog';
+export default AudioPreviewDialog;

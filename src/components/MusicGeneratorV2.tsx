@@ -510,17 +510,19 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       </ScrollArea>
 
       {/* Dialogs */}
-      <LazyAudioPreviewDialog
-        open={state.audioPreviewOpen}
-        onOpenChange={(open) => {
-          state.setAudioPreviewOpen(open);
-          if (!open) state.setPendingAudioFile(null);
-        }}
-        onConfirm={audioUpload.handleAudioConfirm}
-        onRemove={audioUpload.handleRemoveAudio}
-        audioUrl={tempAudioUrl}
-        fileName={state.pendingAudioFile?.name || ''}
-      />
+      {state.audioPreviewOpen && !!tempAudioUrl && (
+        <LazyAudioPreviewDialog
+          open={state.audioPreviewOpen}
+          onOpenChange={(open) => {
+            state.setAudioPreviewOpen(open);
+            if (!open) state.setPendingAudioFile(null);
+          }}
+          onConfirm={audioUpload.handleAudioConfirm}
+          onRemove={audioUpload.handleRemoveAudio}
+          audioUrl={tempAudioUrl}
+          fileName={state.pendingAudioFile?.name || ''}
+        />
+      )}
 
       <LyricsGeneratorDialog
         open={state.lyricsDialogOpen}
