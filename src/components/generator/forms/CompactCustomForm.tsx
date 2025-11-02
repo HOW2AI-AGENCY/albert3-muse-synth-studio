@@ -69,25 +69,28 @@ export const CompactCustomForm = memo(({
     const track = allTracks.find(t => t.id === trackId);
     if (!track) return;
 
-    // Use track as reference audio
-    if (track.audio_url) {
-      onParamChange('referenceAudioUrl', track.audio_url);
-      onParamChange('referenceFileName', track.title);
-      onParamChange('referenceTrackId', trackId);
-    }
-    
-    // Auto-fill track title
+    // Auto-fill track title from project planned track
     onParamChange('title', track.title);
     
-    // Optionally copy some metadata
+    // Auto-fill prompt from track's prompt field (style description)
+    if (track.prompt) {
+      onParamChange('prompt', track.prompt);
+      onDebouncedPromptChange(track.prompt);
+    }
+    
+    // Optionally copy style tags
     if (track.style_tags && track.style_tags.length > 0) {
       const currentTags = params.tags.split(',').map(t => t.trim()).filter(Boolean);
       const uniqueTags = Array.from(new Set([...currentTags, ...track.style_tags]));
       onParamChange('tags', uniqueTags.join(', '));
     }
     
-    logger.info('Track selected from project', 'CompactCustomForm', { trackId, trackTitle: track.title });
-  }, [allTracks, params.tags, onParamChange]);
+    logger.info('Track selected from project - autofilled title and prompt', 'CompactCustomForm', { 
+      trackId, 
+      trackTitle: track.title,
+      hasPrompt: !!track.prompt 
+    });
+  }, [allTracks, params.tags, onParamChange, onDebouncedPromptChange]);
 
   const handleQuickTagAdd = useCallback((tag: string) => {
     const existingTags = params.tags.split(',').map(t => t.trim()).filter(Boolean);
@@ -213,6 +216,21 @@ export const CompactCustomForm = memo(({
           </div>
         </div>
 
+        {/* Project Selector Button */}
+        <div className="p-2">
+          <Button
+            variant="outline"
+            onClick={() => setProjectDialogOpen(true)}
+            className="w-full h-9 justify-start gap-2 text-sm"
+            disabled={isGenerating}
+          >
+            <Music className="h-4 w-4" />
+            {params.activeProjectId 
+              ? `Проект: ${projects.find(p => p.id === params.activeProjectId)?.name || 'Выбран'}`
+              : 'Выбрать проект'}
+          </Button>
+        </div>
+
         {/* Project Tracks Selector - Only shown when project is selected */}
         {params.activeProjectId && (
           <ProjectTracksSelector
@@ -223,6 +241,18 @@ export const CompactCustomForm = memo(({
             disabled={isGenerating}
           />
         )}
+
+        {/* Project Selector Dialog */}
+        <ProjectSelectorDialog
+          open={projectDialogOpen}
+          onOpenChange={setProjectDialogOpen}
+          selectedProjectId={params.activeProjectId || null}
+          onProjectSelect={(projectId) => {
+            onParamChange('activeProjectId', projectId);
+            logger.info('Project selected for generation', 'CompactCustomForm', { projectId });
+          }}
+          showTrackSelection={false}
+        />
 
         {/* Selected Resources Info */}
         {(params.referenceFileName || params.personaId || params.inspoProjectName) && (
