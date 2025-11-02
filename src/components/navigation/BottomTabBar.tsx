@@ -18,6 +18,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
   const location = useLocation();
   const { vibrate } = useHapticFeedback();
   const tabBarRef = React.useRef<HTMLElement>(null);
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const handleTabClick = useCallback(() => {
     vibrate("light");
@@ -101,13 +102,17 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
               aria-current={isActive ? "page" : undefined}
             >
               {/* Active indicator */}
-              {isActive && (
+              {isActive && !prefersReducedMotion && (
                 <motion.div
                   className="absolute inset-0 bg-primary/10 rounded-md"
                   layoutId="activeTab"
                   initial={false}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  style={{ willChange: 'transform' }}
                 />
+              )}
+              {isActive && prefersReducedMotion && (
+                <div className="absolute inset-0 bg-primary/10 rounded-md" />
               )}
               
               <motion.div
@@ -121,7 +126,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
                 >
                   <Icon className="h-4 w-4" aria-hidden="true" />
                 </motion.div>
-                <span className="text-[10px] leading-tight font-medium truncate max-w-full">{item.label}</span>
+                <span className="text-[11px] leading-tight font-medium truncate max-w-full">{item.label}</span>
               </motion.div>
             </NavLink>
           );

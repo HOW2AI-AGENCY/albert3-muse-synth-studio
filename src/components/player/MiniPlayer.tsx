@@ -47,13 +47,13 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
 
   const handleNext = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    vibrate('light');
+    vibrate('medium');
     playNext();
   }, [playNext, vibrate]);
 
   const handlePrevious = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    vibrate('light');
+    vibrate('medium');
     playPrevious();
   }, [playPrevious, vibrate]);
 
@@ -90,7 +90,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
         {/* Album Art */}
         <div className={cn(
           "relative rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 flex-shrink-0 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 group",
-          "w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16"
+          "w-14 h-14 md:w-12 md:h-12 lg:w-16 lg:h-16"
         )}>
           {currentTrack.cover_url ? (
             <img
@@ -130,7 +130,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
         </div>
 
         {/* Playback Controls */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-3 md:gap-2 flex-shrink-0">
           {/* Phase 2.3: Versions Sheet для мобильных */}
           {hasVersions && (
             <Sheet>
@@ -202,7 +202,8 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
                 size="icon"
                 variant="default"
                 onClick={handlePlayPause}
-                className="h-14 w-14 min-h-[56px] min-w-[56px] rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-200 hover:scale-105 touch-optimized"
+                className="h-14 w-14 min-h-[56px] min-w-[56px] rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-200 active:scale-95 touch-optimized"
+                style={{ willChange: 'transform' }}
               >
                 {isPlaying ? (
                   <Pause className="h-5 w-5" />
