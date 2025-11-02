@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,28 +12,24 @@ serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('Missing authorization header');
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY');
-    
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Missing Supabase configuration');
-    }
-
-    // Verify user
-    const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: { Authorization: authHeader },
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: { headers: { Authorization: authHeader } }
     });
 
-    if (!userResponse.ok) {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      console.error('Auth error:', userError);
       throw new Error('Unauthorized');
     }
-
-    const user = await userResponse.json();
 
     const { projectId, projectName, description, genre, mood, projectType, totalTracks } = await req.json();
 
@@ -123,24 +120,15 @@ ${mood ? `Настроение: ${mood}` : ''}
       provider: 'suno',
     }));
 
-    const insertResponse = await fetch(`${supabaseUrl}/rest/v1/tracks`, {
-      method: 'POST',
-      headers: {
-        'Authorization': authHeader,
-        'apikey': supabaseKey,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=representation',
-      },
-      body: JSON.stringify(tracksToInsert),
-    });
+    const { data: insertedTracks, error: insertError } = await supabase
+      .from('tracks')
+      .insert(tracksToInsert)
+      .select();
 
-    if (!insertResponse.ok) {
-      const errorText = await insertResponse.text();
-      console.error('Insert error:', errorText);
-      throw new Error('Failed to insert tracks');
+    if (insertError) {
+      console.error('Insert error:', insertError);
+      throw insertError;
     }
-
-    const insertedTracks = await insertResponse.json();
 
     console.log(`Successfully created ${insertedTracks.length} tracks`);
 
