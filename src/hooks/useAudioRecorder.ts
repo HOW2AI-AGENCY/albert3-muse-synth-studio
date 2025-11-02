@@ -4,8 +4,14 @@ import { logger } from '@/utils/logger';
 
 const MAX_RECORDING_TIME = 60; // seconds
 
-export const useAudioRecorder = (onRecordComplete?: (url: string) => void) => {
+interface UseAudioRecorderOptions {
+  onRecordComplete?: (url: string) => void;
+  uploadAudio?: (file: File) => Promise<string | null>;
+}
+
+export const useAudioRecorder = (options?: UseAudioRecorderOptions) => {
   const { toast } = useToast();
+  const { onRecordComplete, uploadAudio } = options || {};
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -69,52 +75,56 @@ export const useAudioRecorder = (onRecordComplete?: (url: string) => void) => {
           mimeType
         });
         
-        // Auto-upload to Supabase Storage
-        try {
-          const { useAudioUpload } = await import('@/hooks/useAudioUpload');
-          const { uploadAudio: uploadFn } = useAudioUpload();
-          
-          const fileName = `recording-${Date.now()}.webm`;
-          const file = new File([blob], fileName, { type: blob.type });
-          
-          logger.info('Auto-uploading recording', 'useAudioRecorder', { fileName, size: blob.size });
-          
-          const uploadedUrl = await uploadFn(file);
-          
-          if (uploadedUrl) {
-            setAudioUrl(uploadedUrl);
-            logger.info('Recording uploaded successfully', 'useAudioRecorder', { url: uploadedUrl.substring(0, 50) });
+        // Auto-upload if uploadAudio function is provided
+        if (uploadAudio) {
+          try {
+            const fileName = `recording-${Date.now()}.webm`;
+            const file = new File([blob], fileName, { type: blob.type });
             
-            // Notify parent component
-            onRecordComplete?.(uploadedUrl);
+            logger.info('Auto-uploading recording', 'useAudioRecorder', { fileName, size: blob.size });
             
-            toast({
-              title: '🎤 Запись загружена',
-              description: 'Аудио готово к использованию',
-            });
-          } else {
-            // Fallback to blob URL if upload fails
+            const uploadedUrl = await uploadAudio(file);
+            
+            if (uploadedUrl) {
+              setAudioUrl(uploadedUrl);
+              logger.info('Recording uploaded successfully', 'useAudioRecorder', { url: uploadedUrl.substring(0, 50) });
+              
+              // Notify parent component
+              onRecordComplete?.(uploadedUrl);
+              
+              toast({
+                title: '🎤 Запись загружена',
+                description: 'Аудио готово к использованию',
+              });
+            } else {
+              // Fallback to blob URL if upload fails
+              const blobUrl = URL.createObjectURL(blob);
+              setAudioUrl(blobUrl);
+              logger.warn('Upload failed, using blob URL', 'useAudioRecorder');
+              
+              toast({
+                title: '⚠️ Ошибка загрузки',
+                description: 'Используется локальная копия. Повторите попытку.',
+                variant: 'destructive',
+              });
+            }
+          } catch (error) {
+            logger.error('Auto-upload error', error instanceof Error ? error : undefined, 'useAudioRecorder');
+            // Fallback to blob URL
             const blobUrl = URL.createObjectURL(blob);
             setAudioUrl(blobUrl);
-            logger.warn('Upload failed, using blob URL', 'useAudioRecorder');
             
             toast({
               title: '⚠️ Ошибка загрузки',
-              description: 'Используется локальная копия. Повторите попытку.',
+              description: 'Используется локальная копия. Проверьте подключение.',
               variant: 'destructive',
             });
           }
-        } catch (error) {
-          logger.error('Auto-upload error', error instanceof Error ? error : undefined, 'useAudioRecorder');
-          // Fallback to blob URL
+        } else {
+          // No upload function provided, use blob URL
           const blobUrl = URL.createObjectURL(blob);
           setAudioUrl(blobUrl);
-          
-          toast({
-            title: '⚠️ Ошибка загрузки',
-            description: 'Используется локальная копия. Проверьте подключение.',
-            variant: 'destructive',
-          });
+          onRecordComplete?.(blobUrl);
         }
       };
 
@@ -148,7 +158,7 @@ export const useAudioRecorder = (onRecordComplete?: (url: string) => void) => {
         variant: 'destructive',
       });
     }
-  }, [toast]);
+  }, [toast, uploadAudio, onRecordComplete]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current?.state === 'recording') {

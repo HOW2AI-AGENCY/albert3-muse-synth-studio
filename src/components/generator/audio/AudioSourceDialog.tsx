@@ -38,7 +38,7 @@ export const AudioSourceDialog = memo(({
     startRecording,
     stopRecording,
     reset: resetRecording,
-  } = useAudioRecorder();
+  } = useAudioRecorder({ uploadAudio });
 
   // Upload handlers
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {

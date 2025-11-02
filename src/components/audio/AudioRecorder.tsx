@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Mic, Trash2, Square } from '@/utils/iconImports';
@@ -17,7 +17,7 @@ const formatTime = (seconds: number): string => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
-export const AudioRecorder = ({ onRecordComplete, onRemove, className }: AudioRecorderProps) => {
+export const AudioRecorder = memo(({ onRecordComplete, onRemove, className }: AudioRecorderProps) => {
   const {
     isRecording,
     audioBlob,
@@ -28,7 +28,7 @@ export const AudioRecorder = ({ onRecordComplete, onRemove, className }: AudioRe
     startRecording,
     stopRecording,
     reset,
-  } = useAudioRecorder(onRecordComplete);
+  } = useAudioRecorder({ onRecordComplete });
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
@@ -195,4 +195,6 @@ export const AudioRecorder = ({ onRecordComplete, onRemove, className }: AudioRe
       </CardContent>
     </Card>
   );
-};
+});
+
+AudioRecorder.displayName = 'AudioRecorder';
