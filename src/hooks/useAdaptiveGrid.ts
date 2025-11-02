@@ -17,15 +17,15 @@ export interface AdaptiveGridParams {
 export const useAdaptiveGrid = (containerWidth: number): AdaptiveGridParams => {
   return useMemo(() => {
     if (containerWidth === 0) {
-      return { columns: 1, gap: 16, cardWidth: CARD_MIN_WIDTH };
+      return { columns: 3, gap: 16, cardWidth: CARD_MIN_WIDTH };
     }
 
     // Calculate optimal number of columns
     const idealColumns = Math.floor(containerWidth / CARD_IDEAL_WIDTH);
-    const minColumns = Math.max(1, Math.floor(containerWidth / CARD_MAX_WIDTH));
-    const maxColumns = Math.max(1, Math.floor(containerWidth / CARD_MIN_WIDTH));
+    const minColumns = Math.max(3, Math.floor(containerWidth / CARD_MAX_WIDTH));
+    const maxColumns = Math.min(5, Math.floor(containerWidth / CARD_MIN_WIDTH));
     
-    const columns = Math.max(minColumns, Math.min(idealColumns, maxColumns));
+    const columns = Math.max(3, Math.min(5, Math.max(minColumns, Math.min(idealColumns, maxColumns))));
     
     // Dynamic gap based on container width
     let gap = 24; // default
