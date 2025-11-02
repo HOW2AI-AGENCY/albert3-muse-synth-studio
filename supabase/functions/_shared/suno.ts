@@ -472,14 +472,12 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
     if (payload.weirdnessConstraint !== undefined) apiPayload.weirdnessConstraint = payload.weirdnessConstraint;
     if (payload.audioWeight !== undefined) apiPayload.audioWeight = payload.audioWeight;
     if (payload.referenceAudioUrl) apiPayload.referenceAudioUrl = payload.referenceAudioUrl;
-    if (payload.personaId) apiPayload.personaId = payload.personaId; // ✅ НОВОЕ: Передаем personaId
 
     // Логирование трансформации для отладки
     logger.debug('Suno payload transformation', {
       before: { make_instrumental: payload.make_instrumental },
       after: { instrumental: apiPayload.instrumental },
-      hasReference: !!payload.referenceAudioUrl,
-      hasPersona: !!payload.personaId
+      hasReference: !!payload.referenceAudioUrl
     });
 
           const response = await fetchImpl(endpoint, {

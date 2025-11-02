@@ -431,29 +431,27 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
         />
 
       {/* Audio Source Dialog */}
-      {audioSourceDialogOpen && (
-        <LazyAudioSourceDialog
-          open={audioSourceDialogOpen}
-          onOpenChange={setAudioSourceDialogOpen}
-          onAudioSelect={(url, fileName) => {
-            state.setParam('referenceAudioUrl', url);
-            state.setParam('referenceFileName', fileName);
-          }}
-          onRecordComplete={() => {
-            // Optional: handle recording completion
-          }}
-          onTrackSelect={(track) => {
-            // Optional: handle track selection metadata
-            if (track.style_tags?.length > 0) {
-              const existingTags = state.params.tags || '';
-              const newTags = existingTags 
-                ? `${existingTags}, ${track.style_tags.join(', ')}`
-                : track.style_tags.join(', ');
-              state.setParam('tags', newTags);
-            }
-          }}
-        />
-      )}
+      <LazyAudioSourceDialog
+        open={audioSourceDialogOpen}
+        onOpenChange={setAudioSourceDialogOpen}
+        onAudioSelect={(url, fileName) => {
+          state.setParam('referenceAudioUrl', url);
+          state.setParam('referenceFileName', fileName);
+        }}
+        onRecordComplete={() => {
+          // Optional: handle recording completion
+        }}
+        onTrackSelect={(track) => {
+          // Optional: handle track selection metadata
+          if (track.style_tags?.length > 0) {
+            const existingTags = state.params.tags || '';
+            const newTags = existingTags 
+              ? `${existingTags}, ${track.style_tags.join(', ')}`
+              : track.style_tags.join(', ');
+            state.setParam('tags', newTags);
+          }
+        }}
+      />
 
       {/* Main Content */}
       <ScrollArea className={cn(
