@@ -13,18 +13,22 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('Missing authorization header');
+      return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
+    const bearerToken = authHeader.replace(/^Bearer\s+/i, '');
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Admin client for secure DB operations (RLS bypass after we verify the token)
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+
+    // Verify user from bearer token
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(bearerToken);
     
     if (userError || !user) {
       console.error('Auth error:', userError);
@@ -120,7 +124,7 @@ ${mood ? `Настроение: ${mood}` : ''}
       provider: 'suno',
     }));
 
-    const { data: insertedTracks, error: insertError } = await supabase
+    const { data: insertedTracks, error: insertError } = await supabaseAdmin
       .from('tracks')
       .insert(tracksToInsert)
       .select();
@@ -143,10 +147,12 @@ ${mood ? `Настроение: ${mood}` : ''}
 
   } catch (error) {
     console.error('Error:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    const status = message === 'Unauthorized' || message === 'Missing authorization header' ? 401 : 500;
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: message }),
       { 
-        status: 500, 
+        status, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
