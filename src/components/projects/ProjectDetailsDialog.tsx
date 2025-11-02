@@ -352,6 +352,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                               track={track as any}
                               projectId={project.id}
                               projectName={project.name}
+                              projectDescription={project.concept_description}
                               projectGenre={project.genre}
                               projectMood={project.mood}
                               onLyricsGenerated={() => {
