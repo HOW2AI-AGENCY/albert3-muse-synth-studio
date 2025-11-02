@@ -13,6 +13,7 @@ const Settings = () => {
   const navigate = useNavigate();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
+  const [isMigratingVersions, setIsMigratingVersions] = useState(false);
 
   const handleMigrateTracks = async () => {
     setIsMigrating(true);
@@ -35,6 +36,30 @@ const Settings = () => {
       });
     } finally {
       setIsMigrating(false);
+    }
+  };
+
+  const handleMigrateVersions = async () => {
+    setIsMigratingVersions(true);
+    try {
+      toast.success("Восстановление версий...", {
+        description: "Запрашиваем данные из Suno API",
+      });
+
+      const { data, error } = await supabase.functions.invoke('migrate-track-versions');
+
+      if (error) throw error;
+
+      toast.success("Версии восстановлены", {
+        description: `Треков: ${data?.migrated || 0}, Ошибок: ${data?.failed || 0}`,
+      });
+    } catch (error) {
+      logger.error('Version migration error', error instanceof Error ? error : new Error(String(error)), 'Settings');
+      toast.error("Ошибка восстановления версий", {
+        description: error instanceof Error ? error.message : "Неизвестная ошибка",
+      });
+    } finally {
+      setIsMigratingVersions(false);
     }
   };
 
@@ -131,6 +156,34 @@ const Settings = () => {
 
         {/* Advanced Tab */}
         <TabsContent value="advanced" className="space-y-6 mt-6">
+          {/* Version Recovery Card */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Database className="h-5 w-5 text-primary" />
+                <CardTitle>Восстановление версий</CardTitle>
+              </div>
+              <CardDescription>
+                Запросить из Suno API и восстановить версии для старых треков
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Для треков, у которых нет версий, будет сделан запрос к Suno API по suno_id. 
+                Восстановит обе версии (V1 и V2) где возможно.
+              </p>
+              <Button
+                onClick={handleMigrateVersions}
+                disabled={isMigratingVersions}
+                variant="default"
+                className="gap-2"
+              >
+                <Database className="h-4 w-4" />
+                {isMigratingVersions ? "Восстановление..." : "Восстановить версии"}
+              </Button>
+            </CardContent>
+          </Card>
+
           {/* Storage Migration Card */}
           <Card>
             <CardHeader>
