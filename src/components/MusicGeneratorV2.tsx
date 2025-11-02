@@ -5,7 +5,7 @@ import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
 import { useGenerateMusic } from '@/hooks/useGenerateMusic';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
-import { AudioPreviewDialog } from '@/components/audio/AudioPreviewDialog';
+import { LazyAudioPreviewDialog } from '@/components/LazyDialogs';
 import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog';
 import { MurekaLyricsVariantDialog } from '@/components/lyrics/MurekaLyricsVariantDialog';
 import { PromptHistoryDialog } from '@/components/generator/PromptHistoryDialog';
@@ -510,7 +510,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       </ScrollArea>
 
       {/* Dialogs */}
-      <AudioPreviewDialog
+      <LazyAudioPreviewDialog
         open={state.audioPreviewOpen}
         onOpenChange={(open) => {
           state.setAudioPreviewOpen(open);
