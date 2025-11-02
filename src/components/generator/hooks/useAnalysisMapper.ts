@@ -9,13 +9,16 @@ import type { UseGeneratorStateReturn } from './useGeneratorState';
 
 export const useAnalysisMapper = (state: UseGeneratorStateReturn) => {
   const handleAnalysisComplete = useCallback(async (result: {
-    recognition: any;
-    description: any;
+    recognition?: any;
+    description?: any;
+    flamingo?: any; // ✅ НОВОЕ: результаты Audio Flamingo 3
   }) => {
     logger.info('🔍 [ANALYSIS] Processing analysis results', 'AnalysisMapper', {
       hasRecognition: !!result.recognition,
       hasDescription: !!result.description,
-      hasLyricsInRecognition: !!result.recognition?.metadata?.lyrics_text
+      hasFlamingo: !!result.flamingo,
+      hasLyricsInRecognition: !!result.recognition?.metadata?.lyrics_text,
+      hasLyricsInFlamingo: !!result.flamingo?.parsed?.lyrics
     });
 
     // ✅ Auto-switch to custom mode when analysis completes
@@ -29,8 +32,84 @@ export const useAnalysisMapper = (state: UseGeneratorStateReturn) => {
 
     const updates: any = {};
 
-    // ✅ 1. Применяем description (жанр, настроение, инструменты) → в prompt/tags
-    if (result.description) {
+    // ✅ 1. Приоритет: Flamingo > Description > Recognition
+    // Flamingo даёт самый детальный анализ
+    if (result.flamingo?.parsed) {
+      const flamingo = result.flamingo.parsed;
+      
+      // Формируем style tags из жанра и настроения
+      const tags = [
+        flamingo.genre,
+        flamingo.mood,
+        ...(flamingo.instruments || []).slice(0, 3) // Берём топ-3 инструмента
+      ].filter(Boolean);
+
+      if (tags.length > 0) {
+        const existingTags = state.params.tags.split(',').map(t => t.trim()).filter(Boolean);
+        const uniqueTags = Array.from(new Set([...existingTags, ...tags]));
+        updates.tags = uniqueTags.join(', ');
+        state.setParam('tags', updates.tags);
+      }
+
+      // Формируем промпт из AI описания Flamingo
+      if (flamingo.rawText) {
+        // Берём первые 500 символов как описание
+        const description = flamingo.rawText.substring(0, 500);
+        updates.prompt = description;
+        state.setParam('prompt', description);
+        state.setDebouncedPrompt(description);
+      } else if (flamingo.genre || flamingo.mood) {
+        const parts = [
+          flamingo.genre && `${flamingo.genre} track`,
+          flamingo.mood && `with ${flamingo.mood} mood`,
+          flamingo.tempo_bpm && `at ${flamingo.tempo_bpm} BPM`,
+          flamingo.key && `in ${flamingo.key}`,
+        ].filter(Boolean);
+        
+        updates.prompt = parts.join(' ');
+        state.setParam('prompt', updates.prompt);
+        state.setDebouncedPrompt(updates.prompt);
+      }
+
+      // Сохраняем analyzed data для отображения
+      state.setParams(prev => ({
+        ...prev,
+        analyzedGenre: flamingo.genre,
+        analyzedMood: flamingo.mood,
+        analyzedTempo: flamingo.tempo_bpm,
+        analyzedInstruments: flamingo.instruments,
+        analyzedDescription: flamingo.rawText,
+      }));
+
+      logger.info('✅ [ANALYSIS] Flamingo analysis applied', 'AnalysisMapper', {
+        genre: flamingo.genre,
+        mood: flamingo.mood,
+        tempo: flamingo.tempo_bpm,
+        hasLyrics: !!flamingo.lyrics
+      });
+
+      sonnerToast.success('🎧 Flamingo анализ применён', {
+        description: `${flamingo.genre || 'Unknown'} · ${flamingo.mood || 'Unknown'}${flamingo.tempo_bpm ? ` · ${flamingo.tempo_bpm} BPM` : ''}`
+      });
+
+      // Применяем тексты из Flamingo (если есть)
+      if (flamingo.lyrics && flamingo.lyrics !== 'instrumental') {
+        updates.lyrics = flamingo.lyrics;
+        state.setParam('lyrics', flamingo.lyrics);
+        state.setDebouncedLyrics(flamingo.lyrics);
+
+        logger.info('✅ [ANALYSIS] Flamingo lyrics applied', 'AnalysisMapper', {
+          lyricsLength: flamingo.lyrics.length,
+          linesCount: flamingo.lyrics.split('\n').length
+        });
+
+        sonnerToast.success('📝 Тексты извлечены (Flamingo)', {
+          description: `${flamingo.lyrics.split('\n').filter(Boolean).length} строк текста применено`
+        });
+      }
+    } 
+    // ✅ 2. Fallback на Mureka description
+    else if (result.description) {
       const desc = result.description;
       
       // Формируем style tags из жанра и настроения
@@ -86,8 +165,8 @@ export const useAnalysisMapper = (state: UseGeneratorStateReturn) => {
       });
     }
 
-    // ✅ 2. Применяем recognition (извлечённые lyrics) → в поле lyrics
-    if (result.recognition?.metadata?.lyrics_text) {
+    // ✅ 3. Применяем recognition (извлечённые lyrics) → в поле lyrics (только если нет Flamingo)
+    if (!result.flamingo?.parsed?.lyrics && result.recognition?.metadata?.lyrics_text) {
       const lyricsText = result.recognition.metadata.lyrics_text;
       
       updates.lyrics = lyricsText;
