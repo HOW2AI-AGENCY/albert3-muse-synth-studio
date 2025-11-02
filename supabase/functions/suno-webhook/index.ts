@@ -228,8 +228,40 @@ serve(async (req) => {
         trackId: track.id,
       });
       
+      // Считываем существующие версии
+      const { data: existingVersions } = await supabaseClient
+        .from('track_versions')
+        .select('variant_index, suno_id')
+        .eq('parent_track_id', track.id);
+
+      const usedIndices = new Set<number>((existingVersions || [])
+        .map((v: any) => v.variant_index)
+        .filter((n: any) => typeof n === 'number'));
+      
+      const existingBySunoId = new Map<string, number>();
+      (existingVersions || []).forEach((v: any) => {
+        if (v.suno_id) existingBySunoId.set(String(v.suno_id), v.variant_index);
+      });
+      
       for (let i = 0; i < items.length; i++) {
         const versionTrack = items[i];
+        
+        // Проверяем, существует ли версия с таким suno_id
+        const sunoId = versionTrack.id ? String(versionTrack.id) : '';
+        if (sunoId && existingBySunoId.has(sunoId)) {
+          console.log(`[suno-webhook] ↪︎ Skip existing version for suno_id=${sunoId}`);
+          continue;
+        }
+        
+        // Используем порядковый индекс как variant_index
+        const variantIndex = i;
+        
+        // Не сохраняем primary вариант (index=0) в track_versions — он уже в таблице tracks
+        if (variantIndex === 0) {
+          console.log('[suno-webhook] ↪︎ Primary variant (index 0) kept in tracks table, skipping');
+          continue;
+        }
+        
         const audioUrl = versionTrack.audio_url || versionTrack.stream_audio_url || versionTrack.source_audio_url || null;
         const coverUrl = versionTrack.image_url || versionTrack.source_image_url || null;
         const videoUrl = versionTrack.video_url || null;
@@ -246,9 +278,9 @@ serve(async (req) => {
         
         const versionData = {
           parent_track_id: track.id,
-          variant_index: i,
-          is_primary_variant: i === 0,
-          is_preferred_variant: i === 0,
+          variant_index: variantIndex,
+          is_primary_variant: false,
+          is_preferred_variant: false,
           suno_id: versionTrack.id || null,
           audio_url: audioUrl,
           cover_url: coverUrl,
@@ -272,10 +304,9 @@ serve(async (req) => {
           });
 
         if (versionError) {
-          console.error(`[suno-webhook] ❌ Failed to create version ${i}:`, versionError);
+          console.error(`[suno-webhook] ❌ Failed to create version ${variantIndex}:`, versionError);
         } else {
-          console.log(`[suno-webhook] ✅ Version ${i} created`, {
-            type: i === 0 ? 'PRIMARY' : 'ALTERNATE',
+          console.log(`[suno-webhook] ✅ Alternate version ${variantIndex} created`, {
             title: versionTitle,
             audioUrl: audioUrl?.substring(0, 60),
             duration,
