@@ -5,7 +5,7 @@ import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
 import { useGenerateMusic } from '@/hooks/useGenerateMusic';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
-import { LazyAudioPreviewDialog } from '@/components/LazyDialogs';
+import { LazyAudioPreviewDialog, LazyAudioSourceDialog } from '@/components/LazyDialogs';
 import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog';
 import { MurekaLyricsVariantDialog } from '@/components/lyrics/MurekaLyricsVariantDialog';
 import { PromptHistoryDialog } from '@/components/generator/PromptHistoryDialog';
@@ -25,7 +25,7 @@ import { getProviderModels, getDefaultModel, type MusicProvider as ProviderType 
 import { CompactHeader } from '@/components/generator/CompactHeader';
 import { QuickActionsBar } from '@/components/generator/QuickActionsBar';
 import { InspoProjectDialog, type InspoProject } from '@/components/generator/InspoProjectDialog';
-import { AudioSourceDialog } from '@/components/generator/audio/AudioSourceDialog';
+// AudioSourceDialog now lazy-loaded via LazyDialogs
 import { SimpleModeCompact } from '@/components/generator/forms/SimpleModeCompact';
 import { CompactCustomForm } from '@/components/generator/forms/CompactCustomForm';
 import { 
@@ -431,7 +431,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
         />
 
       {/* Audio Source Dialog */}
-      <AudioSourceDialog
+      <LazyAudioSourceDialog
         open={audioSourceDialogOpen}
         onOpenChange={setAudioSourceDialogOpen}
         onAudioSelect={(url, fileName) => {
