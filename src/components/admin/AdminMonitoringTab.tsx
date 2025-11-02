@@ -1,6 +1,6 @@
 /**
- * 📈 Admin Monitoring Tab
- * Перенесенный функционал из Monitoring.tsx
+ * 📈 Admin Monitoring Tab (Mobile Optimized)
+ * Responsive monitoring dashboard with collapsible sections
  */
 
 import { useState } from 'react';
@@ -11,6 +11,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useServiceHealth } from '@/hooks/useServiceHealth';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { 
   Activity, 
   AlertTriangle, 
@@ -27,6 +35,7 @@ import { ru } from 'date-fns/locale';
 export function AdminMonitoringTab() {
   const [timeRange, setTimeRange] = useState<'1h' | '24h' | '7d'>('24h');
   const { data: healthStatus, isLoading: healthLoading, refetch: refetchHealth } = useServiceHealth();
+  const isMobile = useIsMobile();
 
   const { data: stuckTracks, isLoading: stuckLoading } = useQuery({
     queryKey: ['stuck-tracks'],
@@ -131,13 +140,16 @@ export function AdminMonitoringTab() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className={cn(
+              "flex items-center gap-2",
+              isMobile && "text-lg"
+            )}>
               <Activity className="h-5 w-5" />
               Статус провайдеров
             </CardTitle>
             <Button
               variant="outline"
-              size="sm"
+              size={isMobile ? "icon" : "sm"}
               onClick={() => refetchHealth()}
               disabled={healthLoading}
             >
@@ -146,10 +158,17 @@ export function AdminMonitoringTab() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
+          <div className={cn(
+            "grid gap-4",
+            isMobile ? "grid-cols-1" : "md:grid-cols-2"
+          )}>
+            {/* Suno Status */}
+            <div className={cn(
+              "flex items-center p-4 border rounded-lg",
+              isMobile ? "flex-col items-start gap-2" : "justify-between"
+            )}>
               <div className="flex items-center gap-3">
-                <div className={`h-3 w-3 rounded-full ${
+                <div className={`h-3 w-3 rounded-full shrink-0 ${
                   healthStatus?.suno.status === 'operational' ? 'bg-green-500' :
                   healthStatus?.suno.status === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
                 }`} />
@@ -157,7 +176,7 @@ export function AdminMonitoringTab() {
                   <p className="font-medium">Suno API</p>
                   <p className="text-xs text-muted-foreground">
                     {healthStatus?.suno.lastChecked 
-                      ? `Проверено ${formatDistanceToNow(healthStatus.suno.lastChecked, { addSuffix: true, locale: ru })}`
+                      ? formatDistanceToNow(healthStatus.suno.lastChecked, { addSuffix: true, locale: ru })
                       : 'Загрузка...'}
                   </p>
                 </div>
@@ -170,9 +189,13 @@ export function AdminMonitoringTab() {
               )}
             </div>
 
-            <div className="flex items-center justify-between p-4 border rounded-lg">
+            {/* Mureka Status */}
+            <div className={cn(
+              "flex items-center p-4 border rounded-lg",
+              isMobile ? "flex-col items-start gap-2" : "justify-between"
+            )}>
               <div className="flex items-center gap-3">
-                <div className={`h-3 w-3 rounded-full ${
+                <div className={`h-3 w-3 rounded-full shrink-0 ${
                   healthStatus?.mureka.status === 'operational' ? 'bg-green-500' :
                   healthStatus?.mureka.status === 'degraded' ? 'bg-yellow-500' : 'bg-red-500'
                 }`} />
@@ -180,7 +203,7 @@ export function AdminMonitoringTab() {
                   <p className="font-medium">Mureka API</p>
                   <p className="text-xs text-muted-foreground">
                     {healthStatus?.mureka.lastChecked 
-                      ? `Проверено ${formatDistanceToNow(healthStatus.mureka.lastChecked, { addSuffix: true, locale: ru })}`
+                      ? formatDistanceToNow(healthStatus.mureka.lastChecked, { addSuffix: true, locale: ru })
                       : 'Загрузка...'}
                   </p>
                 </div>
@@ -197,20 +220,30 @@ export function AdminMonitoringTab() {
       </Card>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className={cn(
+        "grid gap-4",
+        isMobile ? "grid-cols-2" : "md:grid-cols-2 lg:grid-cols-4"
+      )}>
         <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Всего генераций</CardDescription>
-            <CardTitle className="text-3xl">
+          <CardHeader className={isMobile ? "pb-1" : "pb-2"}>
+            <CardDescription className={isMobile ? "text-xs" : undefined}>
+              {isMobile ? "Генер." : "Всего генераций"}
+            </CardDescription>
+            <CardTitle className={isMobile ? "text-2xl" : "text-3xl"}>
               {metricsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : generationMetrics?.total || 0}
             </CardTitle>
           </CardHeader>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Успешно завершено</CardDescription>
-            <CardTitle className="text-3xl flex items-center gap-2">
+          <CardHeader className={isMobile ? "pb-1" : "pb-2"}>
+            <CardDescription className={isMobile ? "text-xs" : undefined}>
+              {isMobile ? "Успешно" : "Успешно завершено"}
+            </CardDescription>
+            <CardTitle className={cn(
+              "flex items-center gap-2",
+              isMobile ? "text-2xl" : "text-3xl"
+            )}>
               {metricsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                 <>
                   {generationMetrics?.completed || 0}
@@ -224,12 +257,20 @@ export function AdminMonitoringTab() {
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Средняя длительность</CardDescription>
-            <CardTitle className="text-3xl flex items-center gap-2">
+          <CardHeader className={isMobile ? "pb-1" : "pb-2"}>
+            <CardDescription className={isMobile ? "text-xs" : undefined}>
+              {isMobile ? "Ср. длит." : "Средняя длительность"}
+            </CardDescription>
+            <CardTitle className={cn(
+              "flex items-center gap-2",
+              isMobile ? "text-2xl" : "text-3xl"
+            )}>
               {metricsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : (
                 <>
-                  <Clock className="h-6 w-6 text-muted-foreground" />
+                  <Clock className={cn(
+                    "text-muted-foreground",
+                    isMobile ? "h-5 w-5" : "h-6 w-6"
+                  )} />
                   {generationMetrics?.avgDuration || 0}с
                 </>
               )}
@@ -238,9 +279,14 @@ export function AdminMonitoringTab() {
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Ошибки</CardDescription>
-            <CardTitle className="text-3xl text-destructive">
+          <CardHeader className={isMobile ? "pb-1" : "pb-2"}>
+            <CardDescription className={isMobile ? "text-xs" : undefined}>
+              Ошибки
+            </CardDescription>
+            <CardTitle className={cn(
+              "text-destructive",
+              isMobile ? "text-2xl" : "text-3xl"
+            )}>
               {metricsLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : generationMetrics?.failed || 0}
             </CardTitle>
           </CardHeader>
@@ -249,24 +295,41 @@ export function AdminMonitoringTab() {
 
       {/* Tabs */}
       <Tabs defaultValue="stuck" className="space-y-4">
-        <div className="flex items-center justify-between">
-          <TabsList>
-            <TabsTrigger value="stuck" className="flex items-center gap-2">
+        <div className={cn(
+          "flex items-center gap-2",
+          isMobile ? "flex-col items-stretch" : "justify-between"
+        )}>
+          <TabsList className={isMobile ? "w-full grid grid-cols-2" : undefined}>
+            <TabsTrigger value="stuck" className={cn(
+              "gap-2",
+              isMobile && "text-xs"
+            )}>
               <AlertTriangle className="h-4 w-4" />
-              Застрявшие ({stuckTracks?.length || 0})
+              {isMobile ? "Застряв." : "Застрявшие"} ({stuckTracks?.length || 0})
             </TabsTrigger>
-            <TabsTrigger value="failed" className="flex items-center gap-2">
+            <TabsTrigger value="failed" className={cn(
+              "gap-2",
+              isMobile && "text-xs"
+            )}>
               <AlertTriangle className="h-4 w-4" />
               Ошибки ({failedTracks?.length || 0})
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={exportToCSV}>
+          <div className={cn(
+            "flex items-center gap-2",
+            isMobile && "w-full"
+          )}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={exportToCSV}
+              className={isMobile ? "flex-1" : undefined}
+            >
               <Download className="h-4 w-4 mr-2" />
-              Экспорт CSV
+              {isMobile ? "CSV" : "Экспорт CSV"}
             </Button>
-            <TabsList>
+            <TabsList className={isMobile ? "flex-1" : undefined}>
               <TabsTrigger value="1h" onClick={() => setTimeRange('1h')}>1ч</TabsTrigger>
               <TabsTrigger value="24h" onClick={() => setTimeRange('24h')}>24ч</TabsTrigger>
               <TabsTrigger value="7d" onClick={() => setTimeRange('7d')}>7д</TabsTrigger>
@@ -277,8 +340,12 @@ export function AdminMonitoringTab() {
         <TabsContent value="stuck">
           <Card>
             <CardHeader>
-              <CardTitle>Застрявшие треки</CardTitle>
-              <CardDescription>Треки в обработке более 10 минут</CardDescription>
+              <CardTitle className={isMobile ? "text-lg" : undefined}>
+                Застрявшие треки
+              </CardTitle>
+              {!isMobile && (
+                <CardDescription>Треки в обработке более 10 минут</CardDescription>
+              )}
             </CardHeader>
             <CardContent>
               {stuckLoading ? (
@@ -286,21 +353,43 @@ export function AdminMonitoringTab() {
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : stuckTracks && stuckTracks.length > 0 ? (
-                <div className="space-y-2">
-                  {stuckTracks.map((track) => (
-                    <div key={track.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex-1">
-                        <p className="font-medium">{track.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          ID: {track.id} • {track.provider}
-                        </p>
+                isMobile ? (
+                  <Accordion type="single" collapsible className="w-full">
+                    {stuckTracks.map((track) => (
+                      <AccordionItem key={track.id} value={track.id}>
+                        <AccordionTrigger className="hover:no-underline">
+                          <div className="flex items-center justify-between w-full pr-4">
+                            <span className="font-medium text-sm truncate">{track.title}</span>
+                            <Badge variant="destructive" className="ml-2 shrink-0 text-xs">
+                              {formatDistanceToNow(new Date(track.created_at), { addSuffix: true, locale: ru })}
+                            </Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <p className="text-xs text-muted-foreground">
+                            ID: {track.id} • {track.provider}
+                          </p>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                ) : (
+                  <div className="space-y-2">
+                    {stuckTracks.map((track) => (
+                      <div key={track.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-medium">{track.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            ID: {track.id} • {track.provider}
+                          </p>
+                        </div>
+                        <Badge variant="destructive">
+                          {formatDistanceToNow(new Date(track.created_at), { addSuffix: true, locale: ru })}
+                        </Badge>
                       </div>
-                      <Badge variant="destructive">
-                        {formatDistanceToNow(new Date(track.created_at), { addSuffix: true, locale: ru })}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )
               ) : (
                 <div className="flex flex-col items-center justify-center p-8 text-center">
                   <CheckCircle className="h-12 w-12 text-green-500 mb-2" />
@@ -314,10 +403,14 @@ export function AdminMonitoringTab() {
         <TabsContent value="failed">
           <Card>
             <CardHeader>
-              <CardTitle>Ошибки генерации</CardTitle>
-              <CardDescription>
-                Треки с ошибками за {timeRange === '1h' ? 'час' : timeRange === '24h' ? '24 часа' : '7 дней'}
-              </CardDescription>
+              <CardTitle className={isMobile ? "text-lg" : undefined}>
+                Ошибки генерации
+              </CardTitle>
+              {!isMobile && (
+                <CardDescription>
+                  Треки с ошибками за {timeRange === '1h' ? 'час' : timeRange === '24h' ? '24 часа' : '7 дней'}
+                </CardDescription>
+              )}
             </CardHeader>
             <CardContent>
               {failedLoading ? (
@@ -325,26 +418,55 @@ export function AdminMonitoringTab() {
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : failedTracks && failedTracks.length > 0 ? (
-                <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                  {failedTracks.map((track) => (
-                    <div key={track.id} className="p-3 border rounded-lg space-y-2">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="font-medium">{track.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {track.provider} • {formatDistanceToNow(new Date(track.created_at), { addSuffix: true, locale: ru })}
-                          </p>
+                isMobile ? (
+                  <Accordion type="single" collapsible className="w-full max-h-[400px] overflow-y-auto">
+                    {failedTracks.map((track) => (
+                      <AccordionItem key={track.id} value={track.id}>
+                        <AccordionTrigger className="hover:no-underline">
+                          <div className="flex items-center justify-between w-full pr-4">
+                            <span className="font-medium text-sm truncate">{track.title}</span>
+                            <Badge variant="destructive" className="ml-2 shrink-0 text-xs">
+                              Failed
+                            </Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-2">
+                            <p className="text-xs text-muted-foreground">
+                              {track.provider} • {formatDistanceToNow(new Date(track.created_at), { addSuffix: true, locale: ru })}
+                            </p>
+                            {track.error_message && (
+                              <p className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                                {track.error_message}
+                              </p>
+                            )}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
+                ) : (
+                  <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                    {failedTracks.map((track) => (
+                      <div key={track.id} className="p-3 border rounded-lg space-y-2">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="font-medium">{track.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {track.provider} • {formatDistanceToNow(new Date(track.created_at), { addSuffix: true, locale: ru })}
+                            </p>
+                          </div>
+                          <Badge variant="destructive">Failed</Badge>
                         </div>
-                        <Badge variant="destructive">Failed</Badge>
+                        {track.error_message && (
+                          <p className="text-xs text-destructive bg-destructive/10 p-2 rounded">
+                            {track.error_message}
+                          </p>
+                        )}
                       </div>
-                      {track.error_message && (
-                        <p className="text-xs text-destructive bg-destructive/10 p-2 rounded">
-                          {track.error_message}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )
               ) : (
                 <div className="flex flex-col items-center justify-center p-8 text-center">
                   <CheckCircle className="h-12 w-12 text-green-500 mb-2" />

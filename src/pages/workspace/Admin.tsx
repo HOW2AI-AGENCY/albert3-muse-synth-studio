@@ -1,3 +1,8 @@
+/**
+ * Admin Panel - Mobile Optimized
+ * Responsive admin dashboard with collapsible sections
+ */
+
 import { useEffect, useState } from 'react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +17,14 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { logger } from '@/utils/logger';
 import { AdminMonitoringTab } from '@/components/admin/AdminMonitoringTab';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
 interface AdminStats {
   totalUsers: number;
@@ -40,6 +53,7 @@ export default function Admin() {
   const [creditMode, setCreditMode] = useState<'test' | 'production'>('test');
   const [modeLoading, setModeLoading] = useState(false);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!roleLoading && isAdmin) {
@@ -105,7 +119,6 @@ export default function Admin() {
   const fetchAdminData = async () => {
     setIsLoading(true);
     try {
-      // Получаем статистику
       const [usersRes, tracksRes, publicTracksRes, likesRes] = await Promise.all([
         supabase.from('profiles').select('id', { count: 'exact', head: true }),
         supabase.from('tracks').select('id', { count: 'exact', head: true }),
@@ -120,7 +133,6 @@ export default function Admin() {
         totalLikes: likesRes.count || 0,
       });
 
-      // Получаем последние треки для модерации
       const { data: tracksData } = await supabase
         .from('tracks')
         .select('id, title, user_id, is_public, created_at, like_count')
@@ -128,7 +140,6 @@ export default function Admin() {
         .limit(20);
 
       if (tracksData) {
-        // Получаем email для каждого пользователя
         const tracksWithProfiles = await Promise.all(
           tracksData.map(async (track) => {
             const { data: profile } = await supabase
@@ -165,7 +176,6 @@ export default function Admin() {
 
     try {
       const { error } = await supabase.from('tracks').delete().eq('id', trackId);
-
       if (error) throw error;
 
       toast({
@@ -227,121 +237,240 @@ export default function Admin() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gradient-primary">Панель администратора</h1>
-          <p className="text-muted-foreground mt-1">Управление пользователями и контентом</p>
+    <div className={cn(
+      "container mx-auto space-y-6",
+      isMobile ? "p-4" : "p-6"
+    )}>
+      {/* Header */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <h1 className={cn(
+            "font-bold text-gradient-primary",
+            isMobile ? "text-2xl" : "text-3xl"
+          )}>
+            Админ-панель
+          </h1>
+          <Badge variant="default" className="bg-gradient-primary shrink-0">
+            <Shield className="h-4 w-4 mr-1" />
+            Администратор
+          </Badge>
         </div>
-        <Badge variant="default" className="bg-gradient-primary">
-          <Shield className="h-4 w-4 mr-1" />
-          Администратор
-        </Badge>
+        {!isMobile && (
+          <p className="text-muted-foreground">Управление пользователями и контентом</p>
+        )}
       </div>
 
-      {/* Статистика */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Stats Grid */}
+      <div className={cn(
+        "grid gap-4",
+        isMobile ? "grid-cols-2" : "md:grid-cols-2 lg:grid-cols-4"
+      )}>
         <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Всего пользователей</CardTitle>
+          <CardHeader className={cn(
+            "flex flex-row items-center justify-between space-y-0",
+            isMobile ? "pb-1" : "pb-2"
+          )}>
+            <CardTitle className={isMobile ? "text-xs" : "text-sm"}>
+              {isMobile ? "Польз." : "Всего пользователей"}
+            </CardTitle>
             <Users className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gradient-primary">{stats?.totalUsers || 0}</div>
+            <div className={cn(
+              "font-bold text-gradient-primary",
+              isMobile ? "text-xl" : "text-2xl"
+            )}>
+              {stats?.totalUsers || 0}
+            </div>
           </CardContent>
         </Card>
 
         <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Всего треков</CardTitle>
+          <CardHeader className={cn(
+            "flex flex-row items-center justify-between space-y-0",
+            isMobile ? "pb-1" : "pb-2"
+          )}>
+            <CardTitle className={isMobile ? "text-xs" : "text-sm"}>
+              {isMobile ? "Треки" : "Всего треков"}
+            </CardTitle>
             <Music className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gradient-primary">{stats?.totalTracks || 0}</div>
+            <div className={cn(
+              "font-bold text-gradient-primary",
+              isMobile ? "text-xl" : "text-2xl"
+            )}>
+              {stats?.totalTracks || 0}
+            </div>
           </CardContent>
         </Card>
 
         <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Публичных треков</CardTitle>
+          <CardHeader className={cn(
+            "flex flex-row items-center justify-between space-y-0",
+            isMobile ? "pb-1" : "pb-2"
+          )}>
+            <CardTitle className={isMobile ? "text-xs" : "text-sm"}>
+              {isMobile ? "Публ." : "Публичных треков"}
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gradient-primary">{stats?.publicTracks || 0}</div>
+            <div className={cn(
+              "font-bold text-gradient-primary",
+              isMobile ? "text-xl" : "text-2xl"
+            )}>
+              {stats?.publicTracks || 0}
+            </div>
           </CardContent>
         </Card>
 
         <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Всего лайков</CardTitle>
+          <CardHeader className={cn(
+            "flex flex-row items-center justify-between space-y-0",
+            isMobile ? "pb-1" : "pb-2"
+          )}>
+            <CardTitle className={isMobile ? "text-xs" : "text-sm"}>
+              {isMobile ? "Лайки" : "Всего лайков"}
+            </CardTitle>
             <span className="text-2xl">❤️</span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gradient-primary">{stats?.totalLikes || 0}</div>
+            <div className={cn(
+              "font-bold text-gradient-primary",
+              isMobile ? "text-xl" : "text-2xl"
+            )}>
+              {stats?.totalLikes || 0}
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Tabs */}
       <Tabs defaultValue="tracks" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="tracks">Треки</TabsTrigger>
-          <TabsTrigger value="monitoring">
-            <Activity className="h-4 w-4 mr-2" />
+        <TabsList className={cn(
+          isMobile && "grid grid-cols-3 w-full"
+        )}>
+          <TabsTrigger value="tracks" className={isMobile ? "text-xs" : undefined}>
+            Треки
+          </TabsTrigger>
+          <TabsTrigger value="monitoring" className={cn(
+            "gap-2",
+            isMobile && "text-xs"
+          )}>
+            {!isMobile && <Activity className="h-4 w-4" />}
             Мониторинг
           </TabsTrigger>
-          <TabsTrigger value="settings">Настройки</TabsTrigger>
+          <TabsTrigger value="settings" className={isMobile ? "text-xs" : undefined}>
+            Настройки
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="tracks" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Последние треки</CardTitle>
-              <CardDescription>Управление контентом пользователей</CardDescription>
+              <CardTitle className={isMobile ? "text-lg" : undefined}>
+                Последние треки
+              </CardTitle>
+              {!isMobile && (
+                <CardDescription>Управление контентом пользователей</CardDescription>
+              )}
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {tracks.map((track) => (
-                  <div
-                    key={track.id}
-                    className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium truncate">{track.title}</h4>
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-xs text-muted-foreground">
-                          {track.profiles?.email || 'Unknown'}
-                        </p>
-                        <Badge variant={track.is_public ? 'default' : 'secondary'} className="text-xs">
-                          {track.is_public ? 'Публичный' : 'Приватный'}
-                        </Badge>
-                        {track.like_count > 0 && (
-                          <Badge variant="outline" className="text-xs">
-                            ❤️ {track.like_count}
+              {isMobile ? (
+                <Accordion type="single" collapsible className="w-full">
+                  {tracks.map((track) => (
+                    <AccordionItem key={track.id} value={track.id}>
+                      <AccordionTrigger className="hover:no-underline">
+                        <div className="flex items-center justify-between w-full pr-4">
+                          <span className="font-medium text-sm truncate">
+                            {track.title}
+                          </span>
+                          <Badge 
+                            variant={track.is_public ? 'default' : 'secondary'}
+                            className="text-xs ml-2 shrink-0"
+                          >
+                            {track.is_public ? 'Публ.' : 'Прив.'}
                           </Badge>
-                        )}
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-3 pt-2">
+                          <p className="text-xs text-muted-foreground">
+                            {track.profiles?.email || 'Unknown'}
+                          </p>
+                          {track.like_count > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              ❤️ {track.like_count}
+                            </Badge>
+                          )}
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant={track.is_public ? 'outline' : 'default'}
+                              onClick={() => handleTogglePublic(track.id, track.is_public)}
+                              className="flex-1"
+                            >
+                              {track.is_public ? 'Скрыть' : 'Опубликовать'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDeleteTrack(track.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              ) : (
+                <div className="space-y-3">
+                  {tracks.map((track) => (
+                    <div
+                      key={track.id}
+                      className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium truncate">{track.title}</h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-xs text-muted-foreground">
+                            {track.profiles?.email || 'Unknown'}
+                          </p>
+                          <Badge variant={track.is_public ? 'default' : 'secondary'} className="text-xs">
+                            {track.is_public ? 'Публичный' : 'Приватный'}
+                          </Badge>
+                          {track.like_count > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              ❤️ {track.like_count}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant={track.is_public ? 'outline' : 'default'}
+                          onClick={() => handleTogglePublic(track.id, track.is_public)}
+                        >
+                          {track.is_public ? 'Скрыть' : 'Опубликовать'}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDeleteTrack(track.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant={track.is_public ? 'outline' : 'default'}
-                        onClick={() => handleTogglePublic(track.id, track.is_public)}
-                      >
-                        {track.is_public ? 'Скрыть' : 'Опубликовать'}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDeleteTrack(track.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -351,31 +480,40 @@ export default function Admin() {
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-4">
-          {/* Credit Mode Settings (перенесенные сверху) */}
           <Card className="border-primary/20">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Settings className="h-5 w-5 text-primary" />
-                <CardTitle>Настройки кредитов</CardTitle>
+                <CardTitle className={isMobile ? "text-lg" : undefined}>
+                  Настройки кредитов
+                </CardTitle>
               </div>
-              <CardDescription>
-                Управление режимом работы системы кредитов
-              </CardDescription>
+              {!isMobile && (
+                <CardDescription>
+                  Управление режимом работы системы кредитов
+                </CardDescription>
+              )}
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between space-x-4">
+              <div className={cn(
+                "flex items-center space-x-4",
+                isMobile ? "flex-col items-stretch space-x-0 space-y-4" : "justify-between"
+              )}>
                 <div className="flex-1 space-y-1">
-                  <Label htmlFor="credit-mode" className="text-base">
+                  <Label htmlFor="credit-mode" className={isMobile ? "text-sm" : "text-base"}>
                     Режим работы
                   </Label>
                   <p className="text-sm text-muted-foreground">
                     {creditMode === 'test' 
-                      ? 'Тестовый режим: общий баланс провайдера для всех пользователей' 
-                      : 'Продакшн режим: внутренние кредиты платформы (требует настройки оплаты)'}
+                      ? 'Тестовый: общий баланс провайдера' 
+                      : 'Продакшн: внутренние кредиты'}
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className={`text-sm font-medium ${creditMode === 'test' ? 'text-primary' : 'text-muted-foreground'}`}>
+                <div className="flex items-center gap-3 justify-center">
+                  <span className={cn(
+                    "text-sm font-medium",
+                    creditMode === 'test' ? 'text-primary' : 'text-muted-foreground'
+                  )}>
                     Тест
                   </span>
                   <Switch
@@ -384,15 +522,17 @@ export default function Admin() {
                     onCheckedChange={handleCreditModeChange}
                     disabled={modeLoading}
                   />
-                  <span className={`text-sm font-medium ${creditMode === 'production' ? 'text-primary' : 'text-muted-foreground'}`}>
+                  <span className={cn(
+                    "text-sm font-medium",
+                    creditMode === 'production' ? 'text-primary' : 'text-muted-foreground'
+                  )}>
                     Продакшн
                   </span>
                 </div>
               </div>
               <div className="mt-4 p-4 rounded-lg bg-accent/50">
                 <p className="text-sm text-muted-foreground">
-                  <strong>Внимание:</strong> В тестовом режиме все пользователи используют общий баланс API провайдера. 
-                  В продакшн режиме будут использоваться внутренние кредиты платформы (требует дополнительной настройки системы оплаты).
+                  <strong>Внимание:</strong> В тестовом режиме все пользователи используют общий баланс API провайдера.
                 </p>
               </div>
             </CardContent>
