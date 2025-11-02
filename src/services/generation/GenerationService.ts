@@ -45,13 +45,31 @@ type TrackStatusCallback = (status: 'pending' | 'processing' | 'completed' | 'fa
 
 export class GenerationService {
   private static activeSubscriptions = new Map<string, RealtimeChannel>();
-
+  private static pendingRequests = new Map<string, Promise<GenerationResult>>();
+  
+  /**
+   * Deduplicate identical requests within 5 seconds
+   */
+  private static getRequestKey(request: GenerationRequest): string {
+    return `${request.provider}:${request.prompt}:${request.modelVersion}:${request.idempotencyKey || ''}`;
+  }
   /**
    * Generate music using specified provider
    */
   static async generate(request: GenerationRequest): Promise<GenerationResult> {
     const startTime = Date.now();
     const functionName = request.provider === 'suno' ? 'generate-suno' : 'generate-mureka';
+    const requestKey = this.getRequestKey(request);
+
+    // Check for duplicate in-flight requests
+    const pendingRequest = this.pendingRequests.get(requestKey);
+    if (pendingRequest) {
+      logger.info(`🔄 [GenerationService] Deduplicating request`, 'GenerationService', {
+        provider: request.provider,
+        requestKey,
+      });
+      return pendingRequest;
+    }
 
     logger.info(`🎸 [GenerationService] Invoking ${functionName}`, 'GenerationService', {
       provider: request.provider,
@@ -60,56 +78,67 @@ export class GenerationService {
       modelVersion: request.modelVersion,
     });
 
-    try {
-      const { data, error } = await supabase.functions.invoke(functionName, {
-        body: request,
-      });
+    // Create promise and store it for deduplication
+    const generationPromise = (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke(functionName, {
+          body: request,
+        });
 
-      if (error) {
-        logger.error(`❌ [GenerationService] Edge function error`, error, 'GenerationService', {
+        if (error) {
+          logger.error(`❌ [GenerationService] Edge function error`, error, 'GenerationService', {
+            provider: request.provider,
+            functionName,
+            duration: Date.now() - startTime,
+          });
+          throw new Error(error.message || 'Edge function invocation failed');
+        }
+
+        if (!data || !data.success) {
+          const errorMsg = data?.error || 'Unknown error from edge function';
+          logger.error(`❌ [GenerationService] Generation failed`, new Error(errorMsg), 'GenerationService', {
+            provider: request.provider,
+            response: data,
+            duration: Date.now() - startTime,
+          });
+          throw new Error(errorMsg);
+        }
+
+        logger.info(`✅ [GenerationService] Generation started`, 'GenerationService', {
           provider: request.provider,
-          functionName,
+          trackId: data.trackId,
+          taskId: data.taskId,
           duration: Date.now() - startTime,
         });
-        throw new Error(error.message || 'Edge function invocation failed');
-      }
 
-      if (!data || !data.success) {
-        const errorMsg = data?.error || 'Unknown error from edge function';
-        logger.error(`❌ [GenerationService] Generation failed`, new Error(errorMsg), 'GenerationService', {
+        return {
+          success: true,
+          trackId: data.trackId,
+          taskId: data.taskId,
+          message: data.message,
+        };
+
+      } catch (error) {
+        logger.error(`🔴 [GenerationService] Generation error`, error as Error, 'GenerationService', {
           provider: request.provider,
-          response: data,
           duration: Date.now() - startTime,
         });
-        throw new Error(errorMsg);
+
+        return {
+          success: false,
+          trackId: '',
+          error: error instanceof Error ? error.message : String(error),
+        };
+      } finally {
+        // Remove from pending requests after 5 seconds
+        setTimeout(() => {
+          this.pendingRequests.delete(requestKey);
+        }, 5000);
       }
+    })();
 
-      logger.info(`✅ [GenerationService] Generation started`, 'GenerationService', {
-        provider: request.provider,
-        trackId: data.trackId,
-        taskId: data.taskId,
-        duration: Date.now() - startTime,
-      });
-
-      return {
-        success: true,
-        trackId: data.trackId,
-        taskId: data.taskId,
-        message: data.message,
-      };
-
-    } catch (error) {
-      logger.error(`🔴 [GenerationService] Generation error`, error as Error, 'GenerationService', {
-        provider: request.provider,
-        duration: Date.now() - startTime,
-      });
-
-      return {
-        success: false,
-        trackId: '',
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    this.pendingRequests.set(requestKey, generationPromise);
+    return generationPromise;
   }
 
   /**
