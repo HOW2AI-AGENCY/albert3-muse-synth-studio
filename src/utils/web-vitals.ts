@@ -46,14 +46,54 @@ export const getMetricRating = (name: string, value: number): 'good' | 'needs-im
 };
 
 /**
+ * Send metrics to analytics endpoint
+ */
+const sendToAnalytics = (metric: Metric) => {
+  const body = JSON.stringify({
+    name: metric.name,
+    value: metric.value,
+    rating: metric.rating,
+    delta: metric.delta,
+    id: metric.id,
+    navigationType: metric.navigationType,
+  });
+
+  // Use `navigator.sendBeacon()` if available, falling back to `fetch()`
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon('/api/analytics/web-vitals', body);
+  } else {
+    fetch('/api/analytics/web-vitals', { body, method: 'POST', keepalive: true }).catch(console.error);
+  }
+};
+
+/**
  * Report Web Vitals metrics
  */
 export const reportWebVitals = (onPerfEntry?: MetricCallback) => {
-  if (onPerfEntry && typeof onPerfEntry === 'function') {
-    onCLS(onPerfEntry);
-    onFID(onPerfEntry);
-    onLCP(onPerfEntry);
-    onFCP(onPerfEntry);
-    onTTFB(onPerfEntry);
-  }
+  const callback = onPerfEntry || logMetric;
+  
+  onCLS((metric) => {
+    callback(metric);
+    if (!import.meta.env.DEV) sendToAnalytics(metric);
+  });
+  
+  onFID((metric) => {
+    callback(metric);
+    if (!import.meta.env.DEV) sendToAnalytics(metric);
+  });
+  
+  onLCP((metric) => {
+    callback(metric);
+    if (!import.meta.env.DEV) sendToAnalytics(metric);
+  });
+  
+  onFCP((metric) => {
+    callback(metric);
+    if (!import.meta.env.DEV) sendToAnalytics(metric);
+  });
+  
+  onTTFB((metric) => {
+    callback(metric);
+    if (!import.meta.env.DEV) sendToAnalytics(metric);
+  });
 };
