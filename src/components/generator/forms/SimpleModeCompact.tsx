@@ -51,7 +51,7 @@ export const SimpleModeCompact = memo(({
         {/* Prompt with AI Boost */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <Label className="text-xs font-medium">Описание музыки</Label>
+            <Label htmlFor="music-prompt" className="text-xs font-medium">Описание музыки</Label>
             {onOpenHistory && (
               <Button
                 variant="ghost"
@@ -67,6 +67,7 @@ export const SimpleModeCompact = memo(({
           </div>
           <div className="relative">
             <Textarea
+              id="music-prompt"
               value={debouncedPrompt}
               onChange={(e) => {
                 if (e.target.value.length <= MAX_PROMPT_LENGTH) {
@@ -75,11 +76,13 @@ export const SimpleModeCompact = memo(({
               }}
               placeholder="e.g., Upbeat electronic dance music with energetic synths..."
               className={cn(
-                "min-h-[100px] resize-none text-sm pr-10",
+                "min-h-[100px] resize-none mobile-input pr-10",
                 "focus-visible:ring-1"
               )}
               disabled={isGenerating}
               maxLength={MAX_PROMPT_LENGTH}
+              aria-label="Описание музыки"
+              aria-describedby="prompt-counter"
             />
             {onBoostPrompt && debouncedPrompt.trim() && (
               <Button
@@ -113,10 +116,12 @@ export const SimpleModeCompact = memo(({
               )}
             </div>
             
-            <PromptCharacterCounter 
-              currentLength={debouncedPrompt.length} 
-              maxLength={MAX_PROMPT_LENGTH}
-            />
+            <div id="prompt-counter">
+              <PromptCharacterCounter 
+                currentLength={debouncedPrompt.length} 
+                maxLength={MAX_PROMPT_LENGTH}
+              />
+            </div>
           </div>
         </div>
 
@@ -164,7 +169,7 @@ export const SimpleModeCompact = memo(({
             placeholder="Оставьте пустым для автогенерации"
             value={params.title}
             onChange={(e) => onParamChange('title', e.target.value)}
-            className={cn(isMobile ? "h-10 text-base mobile-no-zoom" : "h-9 text-sm")}
+            className={cn("mobile-input", isMobile ? "h-10" : "h-9")}
             disabled={isGenerating}
             maxLength={80}
           />
@@ -179,9 +184,10 @@ export const SimpleModeCompact = memo(({
             disabled={isGenerating || (!debouncedPrompt.trim() && !params.lyrics.trim())}
             size="lg"
             className={cn(
-              "w-full gap-2 font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20",
+              "w-full gap-2 font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20 touch-target-optimal",
               isMobile ? "h-12 text-base" : "h-10 text-sm"
             )}
+            aria-label={isGenerating ? 'Генерация музыки в процессе' : 'Создать музыку'}
           >
             <Music className="h-4 w-4" />
             {isGenerating ? 'Генерация музыки...' : 'Создать музыку'}

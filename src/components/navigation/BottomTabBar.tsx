@@ -64,13 +64,30 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
       ref={tabBarRef}
       data-bottom-tab-bar="true"
       className={cn(
-        "fixed bottom-0 left-0 right-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur",
+        "fixed bottom-0 left-0 right-0 border-t border-border/60 bg-background/95 backdrop-blur",
         "pb-[env(safe-area-inset-bottom)]",
         "lg:hidden",
         className
       )}
+      style={{ zIndex: 'var(--z-sticky)' }}
       role="navigation"
       aria-label="Основная навигация"
+      onKeyDown={(e) => {
+        const focusableItems = tabBarRef.current?.querySelectorAll('a[href]');
+        if (!focusableItems?.length) return;
+        
+        const currentIndex = Array.from(focusableItems).indexOf(document.activeElement as HTMLAnchorElement);
+        
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          const nextIndex = (currentIndex + 1) % focusableItems.length;
+          (focusableItems[nextIndex] as HTMLElement).focus();
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          const prevIndex = currentIndex <= 0 ? focusableItems.length - 1 : currentIndex - 1;
+          (focusableItems[prevIndex] as HTMLElement).focus();
+        }
+      }}
     >
       <div className="flex items-center justify-around px-0.5">
         {primaryItems.map((item) => {
@@ -88,17 +105,16 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
               onFocus={() => item.preload?.()}
               className={({ isActive: navActive }) =>
                 cn(
-                  "relative flex flex-1 flex-col items-center justify-center rounded-md font-medium transition touch-optimized",
+                  "relative flex flex-1 flex-col items-center justify-center rounded-md font-medium transition touch-optimized touch-target-min",
                   "gap-[var(--mobile-spacing-xs)]",
                   "px-[var(--mobile-spacing-sm)] py-[var(--mobile-spacing-sm)]",
                   "text-[var(--mobile-font-xs)] md:text-[var(--mobile-font-sm)]",
-                  "min-h-[var(--mobile-touch-min)]",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
-                  "hover:bg-muted/50",
+                  "focus-ring",
+                  "hover:bg-muted/50 active:scale-95",
                   (isActive || navActive) ? "text-primary" : "text-muted-foreground"
                 )
               }
-              aria-label={item.label}
+              aria-label={`${item.label}. ${isActive ? 'Текущая страница' : 'Перейти к ' + item.label}`}
               aria-current={isActive ? "page" : undefined}
             >
               {/* Active indicator */}

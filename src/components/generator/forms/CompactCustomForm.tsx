@@ -181,6 +181,7 @@ export const CompactCustomForm = memo(({
           </div>
           <div className="relative">
             <Textarea
+              id="custom-prompt"
               placeholder="Опишите стиль, жанр, настроение..."
               value={debouncedPrompt}
               onChange={(e) => {
@@ -193,6 +194,7 @@ export const CompactCustomForm = memo(({
                 "pr-10 resize-y min-h-[80px] max-h-[300px] mobile-input"
               )}
               maxLength={MAX_PROMPT_LENGTH}
+              aria-label="Описание стиля музыки"
             />
             {onBoostPrompt && debouncedPrompt.trim() && (
               <Tooltip>

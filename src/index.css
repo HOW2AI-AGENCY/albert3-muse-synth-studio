@@ -51,20 +51,31 @@
     --mobile-spacing-lg: 1rem;
     --mobile-spacing-xl: 1.5rem;
     
-    /* Mobile touch targets */
+    /* Mobile touch targets - WCAG 2.1 Level AAA compliant */
     --mobile-touch-min: 44px;
     --mobile-touch-optimal: 48px;
     
-    /* Mobile typography */
+    /* Mobile typography - prevent iOS zoom */
     --mobile-font-xs: 0.625rem;
     --mobile-font-sm: 0.75rem;
-    --mobile-font-base: 1rem;
+    --mobile-font-base: 1rem;  /* 16px minimum to prevent zoom */
     --mobile-font-lg: 1.125rem;
+    
+    /* Mobile input minimum (prevents iOS auto-zoom) */
+    --mobile-input-min: 16px;
 
     /* Dynamic offsets - автоматически обновляются через useWorkspaceOffsets hook */
     --workspace-bottom-offset: 0px;
     --bottom-tab-bar-height: 0px;
     --mini-player-height: 0px;
+    
+    /* Z-index scale (P0 fix: prevent drawer/player conflicts) */
+    --z-dropdown: 50;
+    --z-sticky: 100;
+    --z-drawer: 200;
+    --z-player: 300;
+    --z-modal: 400;
+    --z-toast: 500;
   }
 }
 
@@ -84,9 +95,32 @@
 }
 
 @layer utilities {
-  /* Mobile input optimization - prevents iOS zoom on input fields */
+  /* P0 FIX: Mobile input optimization - prevents iOS zoom on input fields */
   .mobile-input {
-    @apply text-base md:text-sm;
+    font-size: max(16px, 1rem) !important;
+  }
+  
+  @media (min-width: 768px) {
+    .mobile-input {
+      font-size: 0.875rem !important;
+    }
+  }
+  
+  /* P0 FIX: Touch target utilities - WCAG 2.1 compliant */
+  .touch-target-min {
+    min-height: var(--mobile-touch-min);
+    min-width: var(--mobile-touch-min);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .touch-target-optimal {
+    min-height: var(--mobile-touch-optimal);
+    min-width: var(--mobile-touch-optimal);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   /* Disable hover effects on touch devices */

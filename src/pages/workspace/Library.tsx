@@ -16,7 +16,7 @@ import {
 } from "@/utils/iconImports";
 import { TrackCard, TrackListItem } from "@/features/tracks";
 import { OptimizedTrackList } from "@/components/OptimizedTrackList";
-import { TrackListSkeleton } from "@/components/skeletons";
+import { LibrarySkeleton } from "@/components/skeletons/LibrarySkeleton";
 import { TrackStatusMonitor } from "@/components/TrackStatusMonitor";
 import { 
   LazySeparateStemsDialog, 
@@ -510,7 +510,7 @@ const Library: React.FC = () => {
   if (isLoading) {
     return (
       <div className="space-y-6 p-6">
-        <TrackListSkeleton count={viewMode === 'grid' ? 8 : 10} />
+        <LibrarySkeleton />
       </div>
     );
   }

@@ -120,9 +120,17 @@ const TrackCardComponent = React.memo(({
       whileHover={{ y: 'var(--hover-lift-offset, -4px)' }}
       whileTap={{ scale: 'var(--tap-scale, 0.98)' }}
       role="article"
-      aria-label={`Трек ${track.title}`}
+      aria-label={`Трек: ${track.title}. Статус: ${track.status === 'completed' ? 'завершён' : track.status === 'processing' ? 'в обработке' : track.status === 'failed' ? 'ошибка' : 'ожидание'}${track.duration ? `. Длительность: ${Math.floor(track.duration / 60)} минут ${track.duration % 60} секунд` : ''}`}
+      aria-live={track.status === 'processing' || track.status === 'pending' ? 'polite' : undefined}
+      aria-busy={track.status === 'processing' || track.status === 'pending'}
       tabIndex={0}
-      className="touch-optimized"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
+      className="touch-optimized focus-ring"
     >
       <Card
         className={cn(
