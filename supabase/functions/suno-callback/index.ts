@@ -404,27 +404,9 @@ const mainHandler = async (req: Request) => {
       if (successfulTracks.length > 0) {
         console.log(`[suno-callback] Creating ${successfulTracks.length} track versions`);
         
-        // ✅ ВАЖНО: Назначаем variant_index на основе уже существующих версий,
-        // чтобы "first" → 0, а последующие попадали в 1, 2, ... даже если Suno
-        // прислал только один элемент в данном callback
-        const { data: existingVersions } = await supabase
-          .from('track_versions')
-          .select('variant_index')
-          .eq('parent_track_id', track.id);
-
-        const usedIndices = new Set<number>((existingVersions || [])
-          .map((v: any) => v.variant_index)
-          .filter((n: any) => typeof n === 'number'));
-
-        const nextAvailableIndex = () => {
-          let idx = 0;
-          while (usedIndices.has(idx)) idx++;
-          usedIndices.add(idx);
-          return idx;
-        };
-        
-        for (const versionTrack of successfulTracks) {
-          const variantIndex = nextAvailableIndex();
+        for (let i = 0; i < successfulTracks.length; i++) {
+          const versionTrack = successfulTracks[i];
+          const variantIndex = i;
           const versionExternalAudioUrl = versionTrack.audioUrl || versionTrack.audio_url
             || versionTrack.stream_audio_url || versionTrack.source_stream_audio_url;
           
