@@ -2,21 +2,18 @@ import type { LucideIcon } from "lucide-react";
 import {
   Home,
   Sparkles,
-  Library,
+  Folder,
+  Cloud,
   Heart,
-  BarChart3,
   Settings,
   Shield,
-  Activity,
-  FileText,
-  Music,
-  User,
 } from "@/utils/iconImports";
-import {
-  preloadDashboard,
-  preloadGenerate,
-  preloadLibrary,
-} from "@/utils/lazyImports";
+
+// Preload functions
+const preloadDashboard = () => import("@/pages/workspace/Dashboard");
+const preloadGenerate = () => import("@/pages/workspace/Generate");
+const preloadProjects = () => import("@/pages/workspace/Projects");
+const preloadCloud = () => import("@/pages/workspace/Cloud");
 
 export type WorkspaceNavRole = "admin";
 
@@ -49,31 +46,20 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     isMobilePrimary: true,
   },
   {
-    id: "library",
-    label: "Треки",
-    path: "/workspace/library",
-    icon: Library,
-    preload: preloadLibrary,
+    id: "projects",
+    label: "Проекты",
+    path: "/workspace/projects",
+    icon: Folder,
+    preload: preloadProjects,
     isMobilePrimary: true,
   },
   {
-    id: "lyrics-library",
-    label: "Лирика",
-    path: "/workspace/lyrics-library",
-    icon: FileText,
+    id: "cloud",
+    label: "Облако",
+    path: "/workspace/cloud",
+    icon: Cloud,
+    preload: preloadCloud,
     isMobilePrimary: true,
-  },
-  {
-    id: "audio-library",
-    label: "Аудио",
-    path: "/workspace/audio-library",
-    icon: Music,
-  },
-  {
-    id: "personas",
-    label: "Персоны",
-    path: "/workspace/personas",
-    icon: User,
   },
   {
     id: "favorites",
@@ -88,23 +74,10 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     icon: Settings,
   },
   {
-    id: "analytics",
-    label: "Аналитика",
-    path: "/workspace/analytics",
-    icon: BarChart3,
-  },
-  {
     id: "admin",
     label: "Админ-панель",
     path: "/workspace/admin",
     icon: Shield,
-    roles: ["admin"],
-  },
-  {
-    id: "monitoring",
-    label: "Мониторинг",
-    path: "/workspace/monitoring",
-    icon: Activity,
     roles: ["admin"],
   },
 ];

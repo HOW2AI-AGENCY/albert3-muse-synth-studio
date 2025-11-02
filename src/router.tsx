@@ -25,7 +25,10 @@ import Monitoring from "./pages/workspace/Monitoring";
 import LyricsLibrary from "./pages/workspace/LyricsLibrary";
 import AudioLibrary from "./pages/workspace/AudioLibrary";
 import Personas from "./pages/workspace/Personas";
+import Projects from "./pages/workspace/Projects";
 import EdgeFunctionsDebug from "./pages/debug/EdgeFunctionsDebug";
+import ProjectDetails from "./pages/workspace/projects/ProjectDetails";
+import Cloud from "./pages/workspace/Cloud";
 
 
 export const router = createBrowserRouter(
@@ -109,6 +112,17 @@ export const router = createBrowserRouter(
         {
           path: "personas",
           element: <Personas />
+        },
+        {
+          path: "projects",
+          children: [
+            { index: true, element: <Projects /> },
+            { path: ":projectId", element: <ProjectDetails /> },
+          ]
+        },
+        {
+          path: "cloud",
+          element: <Cloud />
         },
       ],
     },
