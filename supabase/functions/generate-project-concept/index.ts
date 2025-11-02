@@ -37,30 +37,80 @@ Deno.serve(async (req) => {
       );
     }
 
-    const systemPrompt = `You are a professional music project planner AI. Generate a complete and creative music project concept based on user's description.
+    const systemPrompt = `You are a professional music project planner and A&R specialist. Generate a complete, detailed, and creative music project concept based on the user's description.
 
 CRITICAL REQUIREMENTS:
-1. Output ONLY valid JSON (no markdown, no explanations)
-2. Generate EXACTLY 10 planned tracks
-3. Each track must have: order (1-10), title, duration_target (in seconds, 180-300), and notes
-4. Be creative but realistic
-5. Match the user's desired genre and mood
+1. Output ONLY valid JSON (no markdown, no explanations, no code blocks)
+2. Generate EXACTLY 10-12 planned tracks with detailed descriptions
+3. Fill ALL fields completely and professionally
+4. Be creative, artistic, and industry-standard
+5. Each track must have a unique concept and purpose within the album
+
+DETAILED FIELD REQUIREMENTS:
+
+**name**: Creative album/project name (5-50 characters)
+  - Should be memorable, evocative, and match the genre/mood
+  - Examples: "Neon Dreams", "Whispers in the Dark", "Electric Horizons"
+
+**genre**: Primary genre (be specific)
+  - Examples: "Synthwave", "Indie Rock", "Lo-Fi Hip Hop", "Deep House", "Alternative Pop"
+
+**mood**: Overall emotional tone
+  - Examples: "Melancholic & Introspective", "Energetic & Uplifting", "Dark & Atmospheric", "Dreamy & Nostalgic"
+
+**style_tags**: 5-8 specific style descriptors
+  - Include production style, subgenres, influences, sonic characteristics
+  - Examples: ["retro synths", "808 drums", "dreamy vocals", "analog warmth", "cinematic"]
+
+**concept_description**: Detailed artistic vision (150-250 words)
+  - Describe the overall theme, story, or concept
+  - Include sonic palette, production approach
+  - Explain the emotional journey
+  - Reference influences or similar artists if relevant
+
+**story_theme**: Central narrative or thematic thread (50-100 words)
+  - What story does the album tell?
+  - What journey does the listener go on?
+  - What emotions or ideas are explored?
+
+**tempo_range**: Realistic BPM range for the genre
+  - { "min": 80, "max": 140 } for example
+  - Should match the genre conventions
+
+**planned_tracks**: Array of 10-12 tracks, each with:
+  - **order**: Track number (1-12)
+  - **title**: Creative, evocative track name (3-60 characters)
+  - **duration_target**: Duration in seconds (180-360)
+    * Intro/Outro: 90-180 seconds
+    * Standard tracks: 180-300 seconds
+    * Epic/Finale: 300-420 seconds
+  - **notes**: DETAILED description (100-200 words) including:
+    * Track's role in the album narrative
+    * Mood and emotional tone
+    * Key musical elements (instruments, production techniques)
+    * Tempo and energy level
+    * Lyrical themes or vocal approach (if applicable)
+    * Production style and sound design
+    * How it transitions from/to other tracks
+
+EXAMPLE TRACK NOTES:
+"Opening track that sets the album's nostalgic, late-night atmosphere. Features warm analog synths layered over a steady 85 BPM groove with crispy 808 drums. Ethereal vocals float above the mix, telling the story of urban isolation. The production emphasizes space and reverb, creating a cinematic soundscape. Builds gradually from minimal intro to full arrangement by 2:00 mark. Perfect gateway into the album's sonic world."
 
 Output format:
 {
-  "name": "Project Name",
-  "genre": "Genre",
-  "mood": "Mood",
-  "style_tags": ["tag1", "tag2", "tag3"],
-  "concept_description": "Detailed concept description (100-150 words)",
-  "story_theme": "Central theme/story",
-  "tempo_range": { "min": 80, "max": 120 },
+  "name": "Album Name",
+  "genre": "Specific Genre Name",
+  "mood": "Detailed Mood Description",
+  "style_tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
+  "concept_description": "Comprehensive 150-250 word artistic vision and concept...",
+  "story_theme": "Detailed 50-100 word narrative theme...",
+  "tempo_range": { "min": 80, "max": 130 },
   "planned_tracks": [
     {
       "order": 1,
-      "title": "Track Name",
+      "title": "Track Title",
       "duration_target": 240,
-      "notes": "Brief description of mood/style/purpose"
+      "notes": "Detailed 100-200 word description of track's role, mood, instruments, production, themes..."
     }
   ]
 }`;
@@ -77,10 +127,12 @@ Output format:
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: prompt }
+          { 
+            role: 'user', 
+            content: `Generate a detailed, professional music project concept based on this description:\n\n${prompt}\n\nBe creative, artistic, and thorough. Fill all fields with rich, detailed information. Each track should have a unique concept and detailed notes (100-200 words each).` 
+          }
         ],
         response_format: { type: 'json_object' },
-        temperature: 0.9,
       }),
     });
 

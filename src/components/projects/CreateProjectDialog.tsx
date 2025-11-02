@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, Sparkles, FileText } from 'lucide-react';
 import { useAIProjectCreation } from '@/hooks/useAIProjectCreation';
 import { useProjects } from '@/contexts/ProjectContext';
@@ -226,9 +227,8 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
               </>
             ) : (
               <div className="space-y-4">
-                <div className="p-4 bg-muted rounded-lg space-y-3">
+                <div className="p-4 bg-muted rounded-lg space-y-4">
                   <h3 className="font-semibold text-lg">{aiSuggestions.name}</h3>
-                  <p className="text-sm text-muted-foreground">{aiSuggestions.concept_description}</p>
                   
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
@@ -239,17 +239,53 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
                     </div>
                   </div>
 
-                  {aiSuggestions.planned_tracks && (
-                    <div className="mt-3">
-                      <p className="font-medium text-sm mb-2">Треклист ({aiSuggestions.planned_tracks.length}):</p>
-                      <div className="space-y-1 max-h-48 overflow-y-auto">
-                        {aiSuggestions.planned_tracks.map((track, idx) => (
-                          <div key={idx} className="text-xs flex items-center justify-between p-2 bg-background rounded">
-                            <span>{track.order}. {track.title}</span>
-                            <span className="text-muted-foreground">{Math.floor(track.duration_target / 60)}:{(track.duration_target % 60).toString().padStart(2, '0')}</span>
-                          </div>
+                  {aiSuggestions.concept_description && (
+                    <div>
+                      <p className="text-sm font-medium mb-1">Концепция:</p>
+                      <p className="text-sm text-muted-foreground">{aiSuggestions.concept_description}</p>
+                    </div>
+                  )}
+
+                  {aiSuggestions.story_theme && (
+                    <div>
+                      <p className="text-sm font-medium mb-1">Тема:</p>
+                      <p className="text-sm text-muted-foreground">{aiSuggestions.story_theme}</p>
+                    </div>
+                  )}
+
+                  {aiSuggestions.style_tags && aiSuggestions.style_tags.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium mb-2">Стили:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {aiSuggestions.style_tags.map((tag, i) => (
+                          <span key={i} className="px-2 py-1 bg-background rounded text-xs">
+                            {tag}
+                          </span>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {aiSuggestions.planned_tracks && (
+                    <div className="mt-4">
+                      <p className="font-medium text-sm mb-2">Треклист ({aiSuggestions.planned_tracks.length} треков):</p>
+                      <ScrollArea className="h-64">
+                        <div className="space-y-2 pr-4">
+                          {aiSuggestions.planned_tracks.map((track, idx) => (
+                            <div key={idx} className="p-3 bg-background rounded border border-border">
+                              <div className="flex items-start justify-between mb-2">
+                                <span className="font-medium text-sm">{track.order}. {track.title}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {Math.floor(track.duration_target / 60)}:{(track.duration_target % 60).toString().padStart(2, '0')}
+                                </span>
+                              </div>
+                              {track.notes && (
+                                <p className="text-xs text-muted-foreground leading-relaxed">{track.notes}</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
                     </div>
                   )}
                 </div>
