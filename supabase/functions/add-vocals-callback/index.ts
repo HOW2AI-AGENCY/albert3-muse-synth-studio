@@ -6,6 +6,8 @@ import {
   SunoCallbackPayload, 
   getDetailedErrorMessage 
 } from "../_shared/types/callbacks.ts";
+import { parseDuration } from "../_shared/duration-parser.ts";
+
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -92,35 +94,64 @@ serve(async (req: Request) => {
         case 'complete':
           // Stage 3: All vocal tracks completed
           if (musicData && musicData.length > 0) {
-            const music = musicData[0];
+            const first = musicData[0];
+            const durationSec = parseDuration(first.duration);
+
+            // 1) Update main track fields + persist raw Suno variants for fallback
             await supabase.from('tracks').update({
               status: 'completed',
               progress_percent: 100,
-              audio_url: music.audio_url,
-              cover_url: music.image_url,
-              video_url: music.video_url,
-              lyrics: music.prompt,
-              duration: music.duration ? parseFloat(music.duration) : null,
-              duration_seconds: music.duration ? parseFloat(music.duration) : null,
+              audio_url: first.audio_url,
+              cover_url: first.image_url,
+              video_url: first.video_url,
+              lyrics: first.prompt,
+              duration: durationSec,
+              duration_seconds: durationSec,
               has_vocals: true,
               metadata: {
                 ...track.metadata,
-                suno_audio_id: music.id,
-                model_name: music.model_name,
-                tags: music.tags,
-                create_time: music.createTime,
+                suno_audio_id: first.id,
+                model_name: first.model_name,
+                tags: first.tags,
+                create_time: first.createTime,
                 stage: 'completed',
                 stage_timestamp: new Date().toISOString(),
-                source_audio_url: music.source_audio_url,
-                stream_audio_url: music.stream_audio_url
+                source_audio_url: first.source_audio_url,
+                stream_audio_url: first.stream_audio_url,
+                suno_data: musicData, // ✅ keep full variants snapshot for UI fallback
               }
             }).eq('id', track.id);
-            
-            logger.info("[ADD-VOCALS-CALLBACK] Vocal generation completed", { 
-              trackId: track.id,
-              audioId: music.id,
-              duration: music.duration 
-            });
+
+            // 2) Upsert ALL variants into track_versions (0 = primary, 1 = alternate)
+            const versionsPayload = musicData.map((m, i) => ({
+              parent_track_id: track.id,
+              variant_index: i,
+              is_primary_variant: i === 0,
+              is_preferred_variant: i === 0,
+              audio_url: m.audio_url,
+              cover_url: m.image_url,
+              video_url: m.video_url,
+              lyrics: m.prompt,
+              duration: parseDuration(m.duration),
+              suno_id: m.id,
+              metadata: {
+                suno_track_data: m,
+                generated_via: 'add_vocals_callback',
+              },
+            }));
+
+            const { error: versionsError } = await supabase
+              .from('track_versions')
+              .upsert(versionsPayload, { onConflict: 'parent_track_id,variant_index' });
+
+            if (versionsError) {
+              logger.error('[ADD-VOCALS-CALLBACK] Failed to upsert track versions', { error: versionsError });
+            } else {
+              logger.info('[ADD-VOCALS-CALLBACK] Track versions upserted', {
+                trackId: track.id,
+                variants: musicData.length,
+              });
+            }
           }
           break;
 
