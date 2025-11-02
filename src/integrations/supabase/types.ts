@@ -47,6 +47,13 @@ export type Database = {
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "analytics_events_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
         ]
       }
       app_settings: {
@@ -77,6 +84,8 @@ export type Database = {
         Row: {
           analysis_data: Json | null
           analysis_status: string | null
+          bpm: number | null
+          category: string | null
           created_at: string | null
           description: string | null
           duration_seconds: number | null
@@ -86,7 +95,10 @@ export type Database = {
           folder: string | null
           id: string
           is_favorite: boolean | null
+          key: string | null
           last_used_at: string | null
+          parent_folder_id: string | null
+          project_id: string | null
           recognized_song_id: string | null
           source_metadata: Json | null
           source_type: string
@@ -98,6 +110,8 @@ export type Database = {
         Insert: {
           analysis_data?: Json | null
           analysis_status?: string | null
+          bpm?: number | null
+          category?: string | null
           created_at?: string | null
           description?: string | null
           duration_seconds?: number | null
@@ -107,7 +121,10 @@ export type Database = {
           folder?: string | null
           id?: string
           is_favorite?: boolean | null
+          key?: string | null
           last_used_at?: string | null
+          parent_folder_id?: string | null
+          project_id?: string | null
           recognized_song_id?: string | null
           source_metadata?: Json | null
           source_type: string
@@ -119,6 +136,8 @@ export type Database = {
         Update: {
           analysis_data?: Json | null
           analysis_status?: string | null
+          bpm?: number | null
+          category?: string | null
           created_at?: string | null
           description?: string | null
           duration_seconds?: number | null
@@ -128,7 +147,10 @@ export type Database = {
           folder?: string | null
           id?: string
           is_favorite?: boolean | null
+          key?: string | null
           last_used_at?: string | null
+          parent_folder_id?: string | null
+          project_id?: string | null
           recognized_song_id?: string | null
           source_metadata?: Json | null
           source_type?: string
@@ -138,6 +160,27 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "audio_library_parent_folder_id_fkey"
+            columns: ["parent_folder_id"]
+            isOneToOne: false
+            referencedRelation: "cloud_folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audio_library_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "music_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audio_library_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_details"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "audio_library_recognized_song_id_fkey"
             columns: ["recognized_song_id"]
@@ -178,6 +221,63 @@ export type Database = {
             columns: ["track_id"]
             isOneToOne: false
             referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "callback_logs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cloud_folders: {
+        Row: {
+          category: string | null
+          color: string | null
+          created_at: string | null
+          icon: string | null
+          id: string
+          is_favorite: boolean | null
+          metadata: Json | null
+          name: string
+          parent_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          color?: string | null
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          metadata?: Json | null
+          name: string
+          parent_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          color?: string | null
+          created_at?: string | null
+          icon?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          metadata?: Json | null
+          name?: string
+          parent_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cloud_folders_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "cloud_folders"
             referencedColumns: ["id"]
           },
         ]
@@ -293,6 +393,13 @@ export type Database = {
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "lyrics_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
         ]
       }
       lyrics_variants: {
@@ -341,14 +448,17 @@ export type Database = {
       }
       music_projects: {
         Row: {
+          ai_generation_params: Json | null
           completed_tracks: number | null
           concept_description: string | null
           cover_url: string | null
           created_at: string | null
+          created_with_ai: boolean | null
           description: string | null
           genre: string | null
           id: string
           is_public: boolean | null
+          last_activity_at: string | null
           mood: string | null
           name: string
           persona_id: string | null
@@ -364,14 +474,17 @@ export type Database = {
           visual_references: string[] | null
         }
         Insert: {
+          ai_generation_params?: Json | null
           completed_tracks?: number | null
           concept_description?: string | null
           cover_url?: string | null
           created_at?: string | null
+          created_with_ai?: boolean | null
           description?: string | null
           genre?: string | null
           id?: string
           is_public?: boolean | null
+          last_activity_at?: string | null
           mood?: string | null
           name: string
           persona_id?: string | null
@@ -387,14 +500,17 @@ export type Database = {
           visual_references?: string[] | null
         }
         Update: {
+          ai_generation_params?: Json | null
           completed_tracks?: number | null
           concept_description?: string | null
           cover_url?: string | null
           created_at?: string | null
+          created_with_ai?: boolean | null
           description?: string | null
           genre?: string | null
           id?: string
           is_public?: boolean | null
+          last_activity_at?: string | null
           mood?: string | null
           name?: string
           persona_id?: string | null
@@ -485,6 +601,122 @@ export type Database = {
         }
         Relationships: []
       }
+      project_prompts: {
+        Row: {
+          category: string | null
+          content: string
+          created_at: string | null
+          id: string
+          is_favorite: boolean | null
+          last_used_at: string | null
+          metadata: Json | null
+          project_id: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          usage_count: number | null
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          last_used_at?: string | null
+          metadata?: Json | null
+          project_id?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          last_used_at?: string | null
+          metadata?: Json | null
+          project_id?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_prompts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "music_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_prompts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_details"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_tracks: {
+        Row: {
+          added_at: string | null
+          added_by: string | null
+          position: number | null
+          project_id: string
+          track_id: string
+        }
+        Insert: {
+          added_at?: string | null
+          added_by?: string | null
+          position?: number | null
+          project_id: string
+          track_id: string
+        }
+        Update: {
+          added_at?: string | null
+          added_by?: string | null
+          position?: number | null
+          project_id?: string
+          track_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_tracks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "music_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tracks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tracks_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tracks_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prompt_history: {
         Row: {
           created_at: string | null
@@ -548,6 +780,7 @@ export type Database = {
           language: string | null
           last_used_at: string | null
           mood: string | null
+          project_id: string | null
           prompt: string | null
           search_vector: unknown
           tags: string[] | null
@@ -568,6 +801,7 @@ export type Database = {
           language?: string | null
           last_used_at?: string | null
           mood?: string | null
+          project_id?: string | null
           prompt?: string | null
           search_vector?: unknown
           tags?: string[] | null
@@ -588,6 +822,7 @@ export type Database = {
           language?: string | null
           last_used_at?: string | null
           mood?: string | null
+          project_id?: string | null
           prompt?: string | null
           search_vector?: unknown
           tags?: string[] | null
@@ -603,6 +838,20 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "lyrics_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_lyrics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "music_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_lyrics_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_details"
             referencedColumns: ["id"]
           },
           {
@@ -695,6 +944,13 @@ export type Database = {
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "song_descriptions_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: true
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
         ]
       }
       song_recognitions: {
@@ -770,6 +1026,7 @@ export type Database = {
           last_used_at: string | null
           metadata: Json | null
           name: string
+          project_id: string | null
           source_music_index: number | null
           source_suno_task_id: string | null
           source_track_id: string | null
@@ -787,6 +1044,7 @@ export type Database = {
           last_used_at?: string | null
           metadata?: Json | null
           name: string
+          project_id?: string | null
           source_music_index?: number | null
           source_suno_task_id?: string | null
           source_track_id?: string | null
@@ -804,6 +1062,7 @@ export type Database = {
           last_used_at?: string | null
           metadata?: Json | null
           name?: string
+          project_id?: string | null
           source_music_index?: number | null
           source_suno_task_id?: string | null
           source_track_id?: string | null
@@ -814,10 +1073,31 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "suno_personas_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "music_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suno_personas_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_details"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "suno_personas_source_track_id_fkey"
             columns: ["source_track_id"]
             isOneToOne: false
             referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suno_personas_source_track_id_fkey"
+            columns: ["source_track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
             referencedColumns: ["id"]
           },
         ]
@@ -885,6 +1165,13 @@ export type Database = {
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "track_archiving_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
         ]
       }
       track_likes: {
@@ -912,6 +1199,13 @@ export type Database = {
             columns: ["track_id"]
             isOneToOne: false
             referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_likes_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
             referencedColumns: ["id"]
           },
           {
@@ -956,6 +1250,89 @@ export type Database = {
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "track_retry_attempts_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      track_section_replacements: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          negative_tags: string | null
+          parent_track_id: string
+          prompt: string
+          replaced_end_s: number
+          replaced_start_s: number
+          replacement_audio_url: string | null
+          status: string
+          suno_task_id: string | null
+          tags: string
+          updated_at: string | null
+          version_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          negative_tags?: string | null
+          parent_track_id: string
+          prompt: string
+          replaced_end_s: number
+          replaced_start_s: number
+          replacement_audio_url?: string | null
+          status?: string
+          suno_task_id?: string | null
+          tags: string
+          updated_at?: string | null
+          version_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          negative_tags?: string | null
+          parent_track_id?: string
+          prompt?: string
+          replaced_end_s?: number
+          replaced_start_s?: number
+          replacement_audio_url?: string | null
+          status?: string
+          suno_task_id?: string | null
+          tags?: string
+          updated_at?: string | null
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_section_replacements_parent_track_id_fkey"
+            columns: ["parent_track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_section_replacements_parent_track_id_fkey"
+            columns: ["parent_track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_section_replacements_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "track_versions"
+            referencedColumns: ["id"]
+          },
         ]
       }
       track_stems: {
@@ -998,6 +1375,13 @@ export type Database = {
             columns: ["track_id"]
             isOneToOne: false
             referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_stems_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
             referencedColumns: ["id"]
           },
           {
@@ -1061,6 +1445,13 @@ export type Database = {
             columns: ["parent_track_id"]
             isOneToOne: false
             referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "track_versions_parent_track_id_fkey"
+            columns: ["parent_track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
             referencedColumns: ["id"]
           },
         ]
@@ -1204,6 +1595,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tracks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "project_details"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tracks_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -1287,11 +1685,86 @@ export type Database = {
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "wav_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      project_details: {
+        Row: {
+          actual_completed_count: number | null
+          actual_total_duration: number | null
+          actual_track_count: number | null
+          ai_generation_params: Json | null
+          completed_tracks: number | null
+          concept_description: string | null
+          cover_url: string | null
+          created_at: string | null
+          created_with_ai: boolean | null
+          description: string | null
+          genre: string | null
+          genres: string[] | null
+          id: string | null
+          is_public: boolean | null
+          last_activity_at: string | null
+          mood: string | null
+          moods: string[] | null
+          name: string | null
+          persona_id: string | null
+          planned_tracks: Json | null
+          project_type: Database["public"]["Enums"]["project_type"] | null
+          story_theme: string | null
+          style_tags: string[] | null
+          tempo_range: Json | null
+          total_duration: number | null
+          total_tracks: number | null
+          updated_at: string | null
+          user_id: string | null
+          visual_references: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "music_projects_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "suno_personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tracks_with_timestamped_lyrics: {
+        Row: {
+          audio_url: string | null
+          has_timestamped_lyrics: boolean | null
+          id: string | null
+          lyrics: string | null
+          timestamped_lyrics: Json | null
+          title: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          has_timestamped_lyrics?: never
+          id?: string | null
+          lyrics?: string | null
+          timestamped_lyrics?: never
+          title?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          has_timestamped_lyrics?: never
+          id?: string | null
+          lyrics?: string | null
+          timestamped_lyrics?: never
+          title?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       decrement_production_credits: {
@@ -1388,6 +1861,16 @@ export type Database = {
         Returns: undefined
       }
       refresh_analytics_views: { Args: never; Returns: undefined }
+      update_track_video_metadata: {
+        Args: {
+          p_track_id: string
+          p_video_error?: string
+          p_video_status?: string
+          p_video_task_id?: string
+          p_video_url?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
