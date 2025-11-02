@@ -1,0 +1,140 @@
+# CODEOWNERS - Защита критичных файлов
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# =============================================================================
+# 🔒 PROTECTED FILES - Code Review Required
+# =============================================================================
+# Эти файлы критичны для работы приложения и требуют обязательного
+# code review от указанных владельцев перед слиянием изменений.
+
+# -----------------------------------------------------------------------------
+# AI Provider Integrations (CRITICAL)
+# -----------------------------------------------------------------------------
+# Интеграции с AI-провайдерами - сердце приложения
+# Любые изменения могут сломать генерацию музыки для всех пользователей
+
+/supabase/functions/_shared/suno.ts @owner @tech-lead
+/supabase/functions/_shared/mureka.ts @owner @tech-lead
+/supabase/functions/_shared/generation-handler.ts @owner @tech-lead
+/supabase/functions/_shared/suno-balance.ts @owner @tech-lead
+
+# -----------------------------------------------------------------------------
+# Generation Logic (CRITICAL)
+# -----------------------------------------------------------------------------
+# Основная логика генераций
+
+/supabase/functions/generate-suno/ @owner @tech-lead
+/supabase/functions/generate-mureka/ @owner @tech-lead
+/supabase/functions/suno-callback/ @owner @tech-lead
+/supabase/functions/suno-webhook/ @owner @tech-lead
+/supabase/functions/mureka-webhook/ @owner @tech-lead
+
+# -----------------------------------------------------------------------------
+# Shared Utilities (HIGH PRIORITY)
+# -----------------------------------------------------------------------------
+# Общие модули, используемые множеством функций
+
+/supabase/functions/_shared/types/ @owner @tech-lead
+/supabase/functions/_shared/retry.ts @owner @tech-lead
+/supabase/functions/_shared/circuit-breaker.ts @owner @tech-lead
+/supabase/functions/_shared/rate-limit.ts @owner @tech-lead
+/supabase/functions/_shared/logger.ts @owner @tech-lead
+
+# -----------------------------------------------------------------------------
+# Core Types & Configuration (CRITICAL)
+# -----------------------------------------------------------------------------
+# Single Source of Truth для типов и конфигураций
+# Изменения здесь влияют на весь проект
+
+/src/types/providers.ts @owner @tech-lead
+/src/config/provider-models.ts @owner @tech-lead
+/src/services/providers/types.ts @owner @tech-lead
+/src/services/providers/registry.ts @owner @tech-lead
+
+# -----------------------------------------------------------------------------
+# Database Schema & Migrations (CRITICAL)
+# -----------------------------------------------------------------------------
+# Изменения схемы БД требуют тщательной проверки и тестирования
+
+/supabase/migrations/ @owner @database-admin
+/src/integrations/supabase/types.ts @owner @database-admin
+
+# -----------------------------------------------------------------------------
+# Security & Authentication (CRITICAL)
+# -----------------------------------------------------------------------------
+# Файлы безопасности и аутентификации
+
+/supabase/functions/_shared/security.ts @owner @security-team
+/supabase/functions/_shared/webhook-verify.ts @owner @security-team
+/supabase/functions/_shared/cors.ts @owner @security-team
+
+# -----------------------------------------------------------------------------
+# Core Services (HIGH PRIORITY)
+# -----------------------------------------------------------------------------
+# Ключевые сервисы приложения
+
+/src/services/generation/GenerationService.ts @owner @tech-lead
+/src/services/analytics.service.ts @owner @tech-lead
+/src/services/track-operations.logger.ts @owner @tech-lead
+
+# -----------------------------------------------------------------------------
+# Build & Deploy Configuration (MEDIUM PRIORITY)
+# -----------------------------------------------------------------------------
+# Конфигурация сборки и развертывания
+
+/vite.config.ts @owner @devops
+/tailwind.config.ts @owner @frontend-lead
+/tsconfig.json @owner @frontend-lead
+/supabase/config.toml @owner @backend-lead
+
+# -----------------------------------------------------------------------------
+# CI/CD & GitHub Actions (MEDIUM PRIORITY)
+# -----------------------------------------------------------------------------
+# Пайплайны CI/CD
+
+/.github/workflows/ @owner @devops
+
+# -----------------------------------------------------------------------------
+# Documentation (LOW PRIORITY)
+# -----------------------------------------------------------------------------
+# Основная документация проекта
+
+/README.md @owner @tech-lead
+/docs/ARCHITECTURE.md @owner @tech-lead
+/docs/SECURITY.md @owner @security-team
+/CONTRIBUTING.md @owner @tech-lead
+
+# =============================================================================
+# Default Owners
+# =============================================================================
+# Файлы, не указанные выше, требуют review от команды
+
+* @owner
+
+# =============================================================================
+# Notes
+# =============================================================================
+# 
+# Как использовать:
+# 
+# 1. Замените @owner на ваш GitHub username (например: @alexsmith)
+# 2. Добавьте дополнительные роли:
+#    - @tech-lead - технический лидер
+#    - @frontend-lead - лидер frontend
+#    - @backend-lead - лидер backend
+#    - @database-admin - администратор БД
+#    - @security-team - команда безопасности
+#    - @devops - DevOps инженер
+# 
+# 3. Настройте Branch Protection Rules в GitHub:
+#    Settings → Branches → Add rule
+#    - Require pull request reviews before merging
+#    - Require review from Code Owners
+#    - Require status checks to pass
+#    - Require branches to be up to date
+# 
+# Примеры команд:
+# @owner = @alexsmith
+# @tech-lead = @alexsmith @maryjohnson
+# @security-team = @bobwilson
+# 
