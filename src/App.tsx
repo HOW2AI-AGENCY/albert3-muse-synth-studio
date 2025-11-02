@@ -1,4 +1,4 @@
-import { useEffect, Suspense, useState } from "react";
+import { useEffect, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -42,13 +42,6 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  const [isMounted, setIsMounted] = useState(false);
-
-  // Ensure React is fully initialized before rendering TooltipProvider
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   // Monitor Web Vitals in development
   useEffect(() => {
     if (import.meta.env.DEV) {
@@ -76,10 +69,6 @@ const App = () => {
     window.addEventListener("external-get-balance-401", handler as EventListener);
     return () => window.removeEventListener("external-get-balance-401", handler as EventListener);
   }, []);
-
-  if (!isMounted) {
-    return <FullPageSpinner />;
-  }
 
   return (
     <GlobalErrorBoundary>
