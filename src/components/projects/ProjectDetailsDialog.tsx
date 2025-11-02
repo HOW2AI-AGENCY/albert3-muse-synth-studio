@@ -16,8 +16,11 @@ import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Music, Clock, Disc3, Tag, Calendar, TrendingUp } from 'lucide-react';
 import { useTracks } from '@/hooks/useTracks';
+import { useAIProjectCreation } from '@/hooks/useAIProjectCreation';
 import type { Database } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Sparkles } from 'lucide-react';
 
 type MusicProject = Database['public']['Tables']['music_projects']['Row'];
 
@@ -33,6 +36,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
   project,
 }) => {
   const { tracks: allTracks, isLoading } = useTracks();
+  const { generateConcept, isGenerating } = useAIProjectCreation();
 
   // Filter tracks for this project
   const projectTracks = useMemo(() => {
@@ -202,9 +206,23 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                   <Music className="h-5 w-5" />
                   Треки проекта
                 </h3>
-                <Badge variant="secondary">
-                  {completedTracks.length} завершено
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const prompt = `Создай ${project.total_tracks || 10} треков для ${project.project_type || 'альбома'} "${project.name}". ${project.description ? `Описание: ${project.description}.` : ''} ${project.genre ? `Жанр: ${project.genre}.` : ''} ${project.mood ? `Настроение: ${project.mood}.` : ''}`;
+                      await generateConcept(prompt);
+                    }}
+                    disabled={isGenerating}
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    {isGenerating ? 'Генерация...' : 'Генерировать треки AI'}
+                  </Button>
+                  <Badge variant="secondary">
+                    {completedTracks.length} завершено
+                  </Badge>
+                </div>
               </div>
 
               {isLoading ? (
