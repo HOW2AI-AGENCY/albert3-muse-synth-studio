@@ -119,8 +119,10 @@ const Generate = () => {
           className="h-full rounded-lg border"
         >
           <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
-            <div className="h-full p-1">
-              <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
+            <div className="h-full flex items-center justify-center p-1">
+              <div className="w-full max-w-2xl">
+                <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
+              </div>
             </div>
           </ResizablePanel>
 

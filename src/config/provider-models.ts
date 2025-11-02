@@ -8,23 +8,24 @@ export type MusicProvider = 'suno' | 'mureka';
 export interface ModelVersion {
   value: string;
   label: string;
+  description?: string;
   isDefault?: boolean;
   features?: string[];
 }
 
 export const PROVIDER_MODELS = {
   suno: [
-    { value: 'V5', label: 'v5', isDefault: true, features: ['vocals', 'instrumental', 'high-quality'] },
-    { value: 'V4_5PLUS', label: 'v4.5+', isDefault: false, features: ['vocals', 'instrumental'] },
-    { value: 'V4_5', label: 'v4.5', isDefault: false, features: ['vocals', 'instrumental'] },
-    { value: 'V4', label: 'v4', isDefault: false, features: ['vocals', 'instrumental'] },
-    { value: 'V3_5', label: 'v3.5', isDefault: false, features: ['vocals', 'instrumental'] },
+    { value: 'V5', label: 'v5', description: 'Новейшая модель с улучшенным качеством звука и вокала', isDefault: true, features: ['vocals', 'instrumental', 'high-quality'] },
+    { value: 'V4_5PLUS', label: 'v4.5+', description: 'Расширенная версия v4.5 с дополнительными возможностями', isDefault: false, features: ['vocals', 'instrumental'] },
+    { value: 'V4_5', label: 'v4.5', description: 'Стабильная модель с хорошим балансом качества и скорости', isDefault: false, features: ['vocals', 'instrumental'] },
+    { value: 'V4', label: 'v4', description: 'Проверенная модель с надежными результатами', isDefault: false, features: ['vocals', 'instrumental'] },
+    { value: 'V3_5', label: 'v3.5', description: 'Классическая модель для быстрой генерации', isDefault: false, features: ['vocals', 'instrumental'] },
   ],
   mureka: [
-    { value: 'auto', label: 'Auto', isDefault: true, features: ['auto-select'] },
-    { value: 'mureka-6', label: 'v6', isDefault: false, features: ['standard'] },
-    { value: 'mureka-7.5', label: 'v7.5', isDefault: false, features: ['enhanced'] },
-    { value: 'mureka-o1', label: 'O1', isDefault: false, features: ['premium', 'high-quality'] },
+    { value: 'auto', label: 'Auto', description: 'Автоматический выбор лучшей модели', isDefault: true, features: ['auto-select'] },
+    { value: 'mureka-6', label: 'v6', description: 'Стандартная модель для общего использования', isDefault: false, features: ['standard'] },
+    { value: 'mureka-7.5', label: 'v7.5', description: 'Улучшенная модель с повышенной детализацией', isDefault: false, features: ['enhanced'] },
+    { value: 'mureka-o1', label: 'O1', description: 'Премиум модель высочайшего качества', isDefault: false, features: ['premium', 'high-quality'] },
   ],
 } as const satisfies Record<MusicProvider, readonly ModelVersion[]>;
 

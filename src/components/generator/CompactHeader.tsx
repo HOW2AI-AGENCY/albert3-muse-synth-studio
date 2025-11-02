@@ -3,6 +3,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { SunoBalanceDisplay } from '@/components/mureka/SunoBalanceDisplay';
 import type { GeneratorMode } from './types/generator.types';
 import type { ModelVersion } from '@/config/provider-models';
@@ -80,20 +81,34 @@ export const CompactHeader = memo(({
         </div>
       </RadioGroup>
 
-      {/* Right: Model Select - Adaptive */}
+      {/* Right: Model Select - Compact with Tooltip */}
       <div className="flex items-center flex-shrink-0">
-        <Select value={modelVersion} onValueChange={onModelChange} disabled={isGenerating}>
-          <SelectTrigger className="h-7 w-20 sm:w-24 md:w-28 text-[10px] sm:text-xs border-border/30 bg-muted/20 font-medium">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-background">
-            {availableModels.map((m) => (
-              <SelectItem key={m.value} value={m.value} className="text-xs">
-                {m.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div>
+              <Select value={modelVersion} onValueChange={onModelChange} disabled={isGenerating}>
+                <SelectTrigger className="h-7 w-[85px] text-[10px] sm:text-xs border-border/30 bg-muted/20 font-medium">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background">
+                  {availableModels.map((m) => (
+                    <SelectItem key={m.value} value={m.value} className="text-xs">
+                      {m.value}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-xs">
+            <p className="text-xs font-semibold mb-1">
+              {availableModels.find(m => m.value === modelVersion)?.label}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {availableModels.find(m => m.value === modelVersion)?.description}
+            </p>
+          </TooltipContent>
+        </Tooltip>
       </div>
     </div>
   );
