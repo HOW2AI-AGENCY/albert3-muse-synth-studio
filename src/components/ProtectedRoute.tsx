@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { setUserContext } from "@/utils/sentry";
+import { isTelegramWebApp, getTelegramInitData } from "@/utils/telegram/twa";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -11,6 +12,7 @@ interface ProtectedRouteProps {
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const isTWA = isTelegramWebApp();
 
   useEffect(() => {
     // Get initial session
@@ -60,7 +62,11 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  if (!session) {
+  // Allow TWA users with valid initData to bypass auth check temporarily
+  // (session will be set by TelegramAuthProvider)
+  const hasValidTelegramData = isTWA && getTelegramInitData();
+  
+  if (!session && !hasValidTelegramData) {
     return <Navigate to="/auth" replace />;
   }
 

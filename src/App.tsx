@@ -11,6 +11,7 @@ import GlobalAudioPlayer from "./components/player/GlobalAudioPlayer";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PerformanceMonitorWidget } from "@/components/dev/PerformanceMonitorWidget";
 import { SentryFeedbackButton } from "@/components/SentryFeedbackButton";
+import { TelegramAuthProvider } from "@/contexts/TelegramAuthProvider";
 import { toast } from "@/hooks/use-toast";
 import { reportWebVitals, logMetric } from "@/utils/web-vitals";
 import { 
@@ -74,18 +75,20 @@ const App = () => {
   return (
     <GlobalErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider delayDuration={200}>
-          <AppLayout>
-            <Suspense fallback={<FullPageSpinner />}>
-              <Toaster />
-              
-              <RouterProvider router={router} />
-              <GlobalAudioPlayer />
-              <PerformanceMonitorWidget />
-              <SentryFeedbackButton />
-            </Suspense>
-          </AppLayout>
-        </TooltipProvider>
+        <TelegramAuthProvider>
+          <TooltipProvider delayDuration={200}>
+            <AppLayout>
+              <Suspense fallback={<FullPageSpinner />}>
+                <Toaster />
+                
+                <RouterProvider router={router} />
+                <GlobalAudioPlayer />
+                <PerformanceMonitorWidget />
+                <SentryFeedbackButton />
+              </Suspense>
+            </AppLayout>
+          </TooltipProvider>
+        </TelegramAuthProvider>
       </QueryClientProvider>
     </GlobalErrorBoundary>
   );
