@@ -76,6 +76,9 @@ export const CompactCustomForm = memo(({
       onParamChange('referenceTrackId', trackId);
     }
     
+    // Auto-fill track title
+    onParamChange('title', track.title);
+    
     // Optionally copy some metadata
     if (track.style_tags && track.style_tags.length > 0) {
       const currentTags = params.tags.split(',').map(t => t.trim()).filter(Boolean);
@@ -130,6 +133,23 @@ export const CompactCustomForm = memo(({
     <div className="flex flex-col h-full">
       {/* Main Content - Scrollable */}
       <div className="flex-1 overflow-y-auto space-y-2 pb-20">
+        {/* Title - Moved to top */}
+        <div className="space-y-1 p-2">
+          <Label htmlFor="custom-title" className="text-xs font-medium">
+            Название
+          </Label>
+          <Input
+            id="custom-title"
+            type="text"
+            placeholder="Авто-генерация если пусто"
+            value={params.title}
+            onChange={(e) => onParamChange('title', e.target.value)}
+            className={cn(isMobile ? "h-10 text-base" : "h-8 text-sm")}
+            disabled={isGenerating}
+            maxLength={80}
+          />
+        </div>
+
         {/* Prompt with AI Boost & History */}
         <div className="space-y-1.5 p-2">
           <div className="flex items-center justify-between">
@@ -203,23 +223,6 @@ export const CompactCustomForm = memo(({
             disabled={isGenerating}
           />
         )}
-
-        {/* Title */}
-        <div className="space-y-1 p-2">
-          <Label htmlFor="custom-title" className="text-xs font-medium">
-            Название
-          </Label>
-          <Input
-            id="custom-title"
-            type="text"
-            placeholder="Авто-генерация если пусто"
-            value={params.title}
-            onChange={(e) => onParamChange('title', e.target.value)}
-            className={cn(isMobile ? "h-10 text-base" : "h-8 text-sm")}
-            disabled={isGenerating}
-            maxLength={80}
-          />
-        </div>
 
         {/* Selected Resources Info */}
         {(params.referenceFileName || params.personaId || params.inspoProjectName) && (
