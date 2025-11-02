@@ -40,14 +40,15 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
   onOpenChange,
   project,
 }) => {
-  const { tracks: allTracks, isLoading } = useTracks();
+  const { tracks: allTracks, isLoading } = useTracks(undefined, { 
+    projectId: project?.id 
+  });
   const { generateTracklist, isGenerating } = useGenerateProjectTracklist();
 
-  // Filter tracks for this project
+  // Треки уже отфильтрованы по project_id через хук
   const projectTracks = useMemo(() => {
-    if (!project) return [];
-    return allTracks.filter(track => track.project_id === project.id);
-  }, [allTracks, project]);
+    return allTracks;
+  }, [allTracks]);
 
   const completedTracks = useMemo(() => {
     return projectTracks.filter(track => track.status === 'completed');
