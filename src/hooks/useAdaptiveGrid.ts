@@ -30,8 +30,8 @@ export const useAdaptiveGrid = (
     }
 
     // Determine column constraints based on detail panel state
-    const MIN_COLUMNS = isDetailPanelOpen ? 3 : 3;
-    const MAX_COLUMNS = isDetailPanelOpen ? 3 : 5;
+    const MIN_COLUMNS = isDetailPanelOpen ? 5 : 5;
+    const MAX_COLUMNS = isDetailPanelOpen ? 5 : 7;
 
     // Calculate optimal number of columns
     const idealColumns = Math.floor(containerWidth / CARD_IDEAL_WIDTH);
