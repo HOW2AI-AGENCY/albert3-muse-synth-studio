@@ -1,10 +1,9 @@
 import { useState, memo, useCallback, useRef, useEffect, useMemo } from "react";
 import { TrackCard } from "@/features/tracks/components/TrackCard";
 import { TrackListItem } from "@/features/tracks/components/TrackListItem";
-import { VirtualizedTracksList } from "./tracks/VirtualizedTracksList";
+import { VirtualizedTrackGrid } from "./tracks/VirtualizedTrackGrid";
 import { ViewSwitcher } from "./tracks/ViewSwitcher";
 import { TrackListSkeleton } from "@/components/skeletons";
-import { StaggerContainer, StaggerItem } from "@/components/animations/OptimizedMotion";
 import { Track } from "@/services/api.service";
 import { Music } from "@/utils/iconImports";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useManualSyncTrack } from "@/hooks/useManualSyncTrack";
 import { logger } from "@/utils/logger";
 import { AITrackActionsContainer } from "@/components/tracks/AITrackActionsContainer";
+import { useAdaptiveGrid } from "@/hooks/useAdaptiveGrid";
 
 interface TracksListProps {
   tracks: Track[];
@@ -61,9 +61,20 @@ const TracksListComponent = ({
     };
 
     updateDimensions();
+    const resizeObserver = new ResizeObserver(updateDimensions);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+    
     window.addEventListener('resize', updateDimensions);
-    return () => window.removeEventListener('resize', updateDimensions);
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateDimensions);
+    };
   }, []);
+
+  // Adaptive grid parameters
+  const { columns, gap, cardWidth } = useAdaptiveGrid(containerDimensions.width);
 
   const handleViewChange = useCallback((view: 'grid' | 'list') => {
     setViewMode(view);
@@ -208,44 +219,48 @@ const TracksListComponent = ({
 
           {viewMode === 'grid' ? (
             tracks.length > 50 && containerDimensions.width > 0 ? (
-              // Use virtualization for large lists
-                <VirtualizedTracksList
+              // Use virtualization for large lists with adaptive grid
+              <VirtualizedTrackGrid
                 tracks={tracks}
-                containerWidth={containerDimensions.width}
-                containerHeight={containerDimensions.height}
-                onSelect={onSelect}
+                columns={columns}
+                gap={gap}
+                cardWidth={cardWidth}
+                onTrackPlay={onSelect || handlePlay}
                 onShare={handleShare}
-                onRetry={handleRetry}
-                onDelete={handleDelete}
-                onSeparateStems={onSeparateStems}
+                onSeparateStems={onSeparateStems || (() => {})}
                 onExtend={onExtend}
                 onCover={onCover}
+                onAddVocal={undefined}
                 onCreatePersona={onCreatePersona}
+                onRetry={handleRetry}
+                onDelete={handleDelete}
               />
             ) : (
-              // Regular grid for smaller lists with stagger animations
-              <StaggerContainer 
-                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-3"
-                staggerDelay={0.03}
+              // Regular adaptive grid for smaller lists
+              <div 
+                className="grid w-full"
+                style={{
+                  gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+                  gap: `${gap}px`,
+                }}
               >
                 {tracks.map((track) => (
-                  <StaggerItem key={track.id}>
-                    <TrackCard
-                      track={track as any}
-                      onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
-                      onShare={() => handleShare(track.id)}
-                      onRetry={handleRetry}
-                      onSync={handleSync}
-                      onDelete={handleDelete}
-                      onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
-                      onExtend={onExtend ? () => onExtend(track.id) : undefined}
-                      onCover={onCover ? () => onCover(track.id) : undefined}
-                      onCreatePersona={onCreatePersona ? () => onCreatePersona(track.id) : undefined}
-                      onDescribeTrack={() => onDescribeTrack(track.id)}
-                    />
-                  </StaggerItem>
+                  <TrackCard
+                    key={track.id}
+                    track={track as any}
+                    onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
+                    onShare={() => handleShare(track.id)}
+                    onRetry={handleRetry}
+                    onSync={handleSync}
+                    onDelete={handleDelete}
+                    onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
+                    onExtend={onExtend ? () => onExtend(track.id) : undefined}
+                    onCover={onCover ? () => onCover(track.id) : undefined}
+                    onCreatePersona={onCreatePersona ? () => onCreatePersona(track.id) : undefined}
+                    onDescribeTrack={() => onDescribeTrack(track.id)}
+                  />
                 ))}
-              </StaggerContainer>
+              </div>
             )
           ) : (
             <div className="space-y-2">
