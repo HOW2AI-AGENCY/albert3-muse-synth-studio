@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { Music, Clock, Disc3, Tag, Calendar, TrendingUp, Sparkles } from 'lucide-react';
 import { useTracks } from '@/hooks/useTracks';
 import { useGenerateProjectTracklist } from '@/hooks/useGenerateProjectTracklist';
+import { TrackActions } from '@/components/projects/TrackActions';
 import type { Database } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -47,11 +48,23 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
 
   // Треки уже отфильтрованы по project_id через хук
   const projectTracks = useMemo(() => {
-    return allTracks;
+    return allTracks.sort((a, b) => {
+      // Sort by planned_order if exists, otherwise by created_at
+      const orderA = (a.metadata as any)?.planned_order ?? 999;
+      const orderB = (b.metadata as any)?.planned_order ?? 999;
+      return orderA - orderB;
+    });
   }, [allTracks]);
 
   const completedTracks = useMemo(() => {
     return projectTracks.filter(track => track.status === 'completed');
+  }, [projectTracks]);
+
+  const draftTracks = useMemo(() => {
+    // Count tracks that are not completed or failed
+    return projectTracks.filter(track => 
+      track.status !== 'completed' && track.status !== 'failed'
+    );
   }, [projectTracks]);
 
   const formatDuration = (seconds: number) => {
@@ -240,9 +253,16 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                  <Badge variant="secondary">
-                    {completedTracks.length} завершено
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">
+                      {completedTracks.length} завершено
+                    </Badge>
+                    {draftTracks.length > 0 && (
+                      <Badge variant="outline">
+                        {draftTracks.length} черновиков
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -298,12 +318,15 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                               )}
                             </div>
                             <Badge
-                              variant={track.status === 'completed' ? 'default' : 'secondary'}
+                              variant={
+                                track.status === 'completed' ? 'default' : 'secondary'
+                              }
                               className="text-xs flex-shrink-0"
                             >
                               {track.status === 'completed' ? 'Готов' : 
                                track.status === 'processing' ? 'Обработка' : 
-                               track.status === 'pending' ? 'В очереди' : 'Ошибка'}
+                               track.status === 'pending' ? 'В очереди' : 
+                               track.status === 'failed' ? 'Ошибка' : 'Черновик'}
                             </Badge>
                           </div>
 
@@ -320,6 +343,17 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                               </span>
                             )}
                           </div>
+
+                          {/* Track Actions for non-completed Tracks */}
+                          {track.status !== 'completed' && track.status !== 'failed' && (
+                            <TrackActions
+                              track={track as any}
+                              projectId={project.id}
+                              onLyricsGenerated={() => {
+                                // Refresh tracks list
+                              }}
+                            />
+                          )}
                         </div>
                       </div>
                     </Card>

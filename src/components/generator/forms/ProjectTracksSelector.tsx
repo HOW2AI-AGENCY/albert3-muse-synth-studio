@@ -30,9 +30,14 @@ export const ProjectTracksSelector = memo(({
 
   // Filter tracks for the selected project
   const projectTracks = useMemo(() => {
-    return allTracks.filter(
-      (track) => track.project_id === projectId && track.status === 'completed'
-    );
+    return allTracks
+      .filter((track) => track.project_id === projectId)
+      .sort((a, b) => {
+        // Sort by planned_order if exists, otherwise by created_at
+        const orderA = (a.metadata as any)?.planned_order ?? 999;
+        const orderB = (b.metadata as any)?.planned_order ?? 999;
+        return orderA - orderB;
+      });
   }, [allTracks, projectId]);
 
   if (isLoading) {
@@ -54,9 +59,9 @@ export const ProjectTracksSelector = memo(({
           <div className="flex flex-col items-center gap-2 text-center">
             <Music className="h-8 w-8 text-muted-foreground/50" />
             <div>
-              <p className="text-sm font-medium">Нет завершенных треков</p>
+              <p className="text-sm font-medium">В проекте пока нет треков</p>
               <p className="text-xs text-muted-foreground mt-1">
-                В проекте "{projectName}" пока нет готовых треков
+                Создайте треки для проекта "{projectName}"
               </p>
             </div>
           </div>
@@ -111,7 +116,20 @@ export const ProjectTracksSelector = memo(({
 
                 {/* Track Info */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{track.title}</p>
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-medium text-sm truncate">{track.title}</p>
+                    <Badge
+                      variant={
+                        track.status === 'completed' ? 'default' :
+                        track.status === 'processing' ? 'outline' : 'secondary'
+                      }
+                      className="text-[10px] flex-shrink-0"
+                    >
+                      {track.status === 'completed' ? 'Готов' :
+                       track.status === 'processing' ? 'Генерация' :
+                       track.status === 'pending' ? 'В очереди' : 'Черновик'}
+                    </Badge>
+                  </div>
                   <div className="flex items-center gap-2 mt-1">
                     {track.style_tags && track.style_tags.length > 0 && (
                       <Badge variant="outline" className="text-[10px]">
@@ -126,7 +144,7 @@ export const ProjectTracksSelector = memo(({
                   </div>
                 </div>
 
-                {/* Status Indicator */}
+                {/* Selection Indicator */}
                 {selectedTrackId === track.id && (
                   <div className="flex-shrink-0">
                     <Badge variant="default" className="text-[10px]">

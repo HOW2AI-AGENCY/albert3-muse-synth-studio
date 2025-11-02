@@ -15,6 +15,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, Sparkles, FileText } from 'lucide-react';
 import { useAIProjectCreation } from '@/hooks/useAIProjectCreation';
 import { useProjects } from '@/contexts/ProjectContext';
+import { useCreateProjectWithTracks } from '@/hooks/useCreateProjectWithTracks';
 import type { Database } from '@/integrations/supabase/types';
 
 type ProjectType = Database['public']['Enums']['project_type'];
@@ -30,6 +31,7 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 }) => {
   const { createProject } = useProjects();
   const { generateConcept, isGenerating, aiSuggestions, clearSuggestions } = useAIProjectCreation();
+  const { createProjectWithTracks } = useCreateProjectWithTracks();
 
   // Manual mode state
   const [name, setName] = useState('');
@@ -79,24 +81,27 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
 
     setIsCreating(true);
     try {
-      await createProject({
-        name: aiSuggestions.name,
-        description: aiSuggestions.concept_description,
-        project_type: 'album',
-        genre: aiSuggestions.genre,
-        mood: aiSuggestions.mood,
-        style_tags: aiSuggestions.style_tags,
-        concept_description: aiSuggestions.concept_description,
-        story_theme: aiSuggestions.story_theme,
-        tempo_range: JSON.parse(JSON.stringify(aiSuggestions.tempo_range)),
-        planned_tracks: JSON.parse(JSON.stringify(aiSuggestions.planned_tracks)),
-        user_id: '', // Will be set by context
+      // Use the new hook that creates both project and draft tracks
+      await createProjectWithTracks({
+        projectData: {
+          name: aiSuggestions.name,
+          description: aiSuggestions.concept_description,
+          project_type: 'album',
+          genre: aiSuggestions.genre,
+          mood: aiSuggestions.mood,
+          style_tags: aiSuggestions.style_tags,
+          concept_description: aiSuggestions.concept_description,
+          story_theme: aiSuggestions.story_theme,
+          tempo_range: aiSuggestions.tempo_range,
+          planned_tracks: aiSuggestions.planned_tracks,
+        },
+        onSuccess: () => {
+          // Reset
+          setAiPrompt('');
+          clearSuggestions();
+          onOpenChange(false);
+        },
       });
-
-      // Reset
-      setAiPrompt('');
-      clearSuggestions();
-      onOpenChange(false);
     } finally {
       setIsCreating(false);
     }
