@@ -4,6 +4,7 @@
  */
 
 import React, { useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
   onOpenChange,
   project,
 }) => {
+  const queryClient = useQueryClient();
   const { tracks: allTracks, isLoading } = useTracks(undefined, { 
     projectId: project?.id 
   });
@@ -349,8 +351,11 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                             <TrackActions
                               track={track as any}
                               projectId={project.id}
+                              projectName={project.name}
+                              projectGenre={project.genre}
+                              projectMood={project.mood}
                               onLyricsGenerated={() => {
-                                // Refresh tracks list
+                                queryClient.invalidateQueries({ queryKey: ['tracks'] });
                               }}
                             />
                           )}

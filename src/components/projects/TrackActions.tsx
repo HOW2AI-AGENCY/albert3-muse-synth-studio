@@ -15,16 +15,52 @@ type Track = Database['public']['Tables']['tracks']['Row'];
 interface TrackActionsProps {
   track: Track;
   projectId: string;
+  projectName?: string;
+  projectGenre?: string | null;
+  projectMood?: string | null;
   onLyricsGenerated?: () => void;
 }
 
 export const TrackActions: React.FC<TrackActionsProps> = ({
   track,
   projectId,
+  projectName,
+  projectGenre,
+  projectMood,
   onLyricsGenerated,
 }) => {
   const navigate = useNavigate();
   const [lyricsDialogOpen, setLyricsDialogOpen] = useState(false);
+
+  // Формируем контекст для AI генерации лирики
+  const getLyricsPrompt = () => {
+    const parts: string[] = [];
+    
+    // Добавляем промпт стиля трека
+    if (track.prompt) {
+      parts.push(track.prompt);
+    }
+    
+    // Добавляем контекст проекта
+    if (projectName) {
+      parts.push(`Проект: "${projectName}"`);
+    }
+    
+    if (projectGenre) {
+      parts.push(`Жанр: ${projectGenre}`);
+    }
+    
+    if (projectMood) {
+      parts.push(`Настроение: ${projectMood}`);
+    }
+    
+    // Добавляем название трека
+    if (track.title) {
+      parts.push(`Название трека: "${track.title}"`);
+    }
+    
+    return parts.join('. ');
+  };
 
   const handleGenerateLyrics = () => {
     setLyricsDialogOpen(true);
@@ -70,6 +106,7 @@ export const TrackActions: React.FC<TrackActionsProps> = ({
         open={lyricsDialogOpen}
         onOpenChange={setLyricsDialogOpen}
         trackId={track.id}
+        initialPrompt={getLyricsPrompt()}
         onSuccess={() => {
           setLyricsDialogOpen(false);
           onLyricsGenerated?.();

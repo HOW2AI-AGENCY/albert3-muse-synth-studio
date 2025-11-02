@@ -21,6 +21,7 @@ interface LyricsGeneratorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   trackId?: string;
+  initialPrompt?: string;
   onSuccess?: (jobId: string) => void;
   onGenerated?: (lyrics: string) => void;
 }
@@ -31,10 +32,11 @@ export function LyricsGeneratorDialog({
   open, 
   onOpenChange, 
   trackId,
+  initialPrompt = "",
   onSuccess,
   onGenerated
 }: LyricsGeneratorDialogProps) {
-  const [prompt, setPrompt] = useState("");
+  const [prompt, setPrompt] = useState(initialPrompt);
   const [isGenerating, setIsGenerating] = useState(false);
   const [variantSelectorOpen, setVariantSelectorOpen] = useState(false);
   const [showVariants, setShowVariants] = useState(false);
