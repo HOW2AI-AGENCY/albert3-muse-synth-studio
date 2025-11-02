@@ -19,6 +19,7 @@ interface UseTracksOptions {
   pollingInitialDelay?: number;
   pollingMaxDelay?: number;
   projectId?: string;
+  excludeDraftTracks?: boolean; // ✅ НОВОЕ: Исключить draft треки из списка
 }
 
 export const useTracks = (refreshTrigger?: number, options?: UseTracksOptions) => {
@@ -102,6 +103,11 @@ export const useTracks = (refreshTrigger?: number, options?: UseTracksOptions) =
       // Фильтр по проекту (если передан, показываем только треки этого проекта)
       if (projectId) {
         query = query.eq('project_id', projectId);
+      }
+
+      // ✅ НОВОЕ: Фильтр для исключения draft треков (если excludeDraftTracks === true)
+      if (options?.excludeDraftTracks) {
+        query = query.neq('status', 'draft');
       }
 
       const { data: tracksData, error } = await query.order('created_at', { ascending: false });

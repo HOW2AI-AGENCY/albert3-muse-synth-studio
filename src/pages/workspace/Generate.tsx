@@ -28,7 +28,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const Generate = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
-  const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks(undefined, { projectId: selectedProjectId });
+  const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks(undefined, { 
+    projectId: selectedProjectId,
+    excludeDraftTracks: true // ✅ ИСКЛЮЧАЕМ draft треки на главном экране генерации
+  });
   const { projects } = useMusicProjects();
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showGenerator, setShowGenerator] = useState(false);
