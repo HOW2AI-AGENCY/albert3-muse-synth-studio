@@ -1,4 +1,4 @@
-import { memo, useCallback, lazy, Suspense } from 'react';
+import { memo, lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,9 +18,10 @@ import type { AdvancedPromptResult } from '@/services/ai/advanced-prompt-generat
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { ProjectSelector } from '@/components/generator/ProjectSelector';
-import { useState } from 'react';
-import { CreateProjectDialog } from '@/components/projects/CreateProjectDialog';
+import { ProjectSelectorDialog } from '@/components/generator/ProjectSelectorDialog';
+import { useState, useCallback } from 'react';
+import { useProjects } from '@/contexts/ProjectContext';
+import { useTracks } from '@/hooks/useTracks';
 
 const AudioDescriber = lazy(() => import('@/components/audio/AudioDescriber').then(m => ({ default: m.AudioDescriber })));
 
@@ -55,10 +56,34 @@ export const CompactCustomForm = memo(({
   onDebouncedPromptChange,
   onDebouncedLyricsChange,
 }: CompactCustomFormProps) => {
+  const { projects } = useProjects();
   const isMobile = useIsMobile();
   const lyricsLineCount = debouncedLyrics.split('\n').filter(l => l.trim()).length;
   const tagsCount = params.tags.split(',').filter(t => t.trim()).length;
-  const [createProjectOpen, setCreateProjectOpen] = useState(false);
+  const [projectDialogOpen, setProjectDialogOpen] = useState(false);
+
+  const { tracks: allTracks } = useTracks();
+
+  const handleTrackSelect = useCallback((trackId: string) => {
+    const track = allTracks.find(t => t.id === trackId);
+    if (!track) return;
+
+    // Use track as reference audio
+    if (track.audio_url) {
+      onParamChange('referenceAudioUrl', track.audio_url);
+      onParamChange('referenceFileName', track.title);
+      onParamChange('referenceTrackId', trackId);
+    }
+    
+    // Optionally copy some metadata
+    if (track.style_tags && track.style_tags.length > 0) {
+      const currentTags = params.tags.split(',').map(t => t.trim()).filter(Boolean);
+      const uniqueTags = Array.from(new Set([...currentTags, ...track.style_tags]));
+      onParamChange('tags', uniqueTags.join(', '));
+    }
+    
+    logger.info('Track selected from project', 'CompactCustomForm', { trackId, trackTitle: track.title });
+  }, [allTracks, params.tags, onParamChange]);
 
   const handleQuickTagAdd = useCallback((tag: string) => {
     const existingTags = params.tags.split(',').map(t => t.trim()).filter(Boolean);
@@ -167,13 +192,37 @@ export const CompactCustomForm = memo(({
           </div>
         </div>
 
-        {/* Project Selector */}
+        {/* Project Selector Button */}
         <div className="px-2">
-          <ProjectSelector
-            selectedProjectId={params.activeProjectId || null}
-            onProjectSelect={(projectId) => onParamChange('activeProjectId', projectId)}
-            onCreateProject={() => setCreateProjectOpen(true)}
-          />
+          <Button
+            variant="outline"
+            className="w-full justify-start h-auto p-3"
+            onClick={() => setProjectDialogOpen(true)}
+            disabled={isGenerating}
+          >
+            <div className="flex items-center gap-2 w-full">
+              <Music className="h-4 w-4 text-muted-foreground" />
+              <div className="flex flex-col items-start gap-1 flex-1 min-w-0">
+                {params.activeProjectId ? (
+                  <>
+                    <span className="font-medium text-sm truncate w-full">
+                      {projects.find(p => p.id === params.activeProjectId)?.name || 'Проект выбран'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Нажмите чтобы изменить или выбрать трек
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="font-medium text-sm">Без проекта</span>
+                    <span className="text-xs text-muted-foreground">
+                      Нажмите чтобы выбрать проект и треки
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          </Button>
         </div>
 
         {/* Title */}
@@ -392,10 +441,14 @@ export const CompactCustomForm = memo(({
         </div>
       </div>
 
-      {/* Create Project Dialog */}
-      <CreateProjectDialog 
-        open={createProjectOpen} 
-        onOpenChange={setCreateProjectOpen} 
+      {/* Project Selector Dialog */}
+      <ProjectSelectorDialog
+        open={projectDialogOpen}
+        onOpenChange={setProjectDialogOpen}
+        selectedProjectId={params.activeProjectId || null}
+        onProjectSelect={(projectId) => onParamChange('activeProjectId', projectId)}
+        onTrackSelect={handleTrackSelect}
+        showTrackSelection={true}
       />
     </div>
   );
