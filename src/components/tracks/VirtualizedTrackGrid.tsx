@@ -2,7 +2,7 @@
  * Virtualized Track Grid with Adaptive Layout
  * Uses @tanstack/react-virtual for performance optimization
  */
-import { useRef } from 'react';
+import React, { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { TrackCard } from '@/features/tracks/components/TrackCard';
 import { normalizeTrack } from '@/utils/trackNormalizer';
@@ -26,7 +26,7 @@ interface VirtualizedTrackGridProps {
 
 const CARD_HEIGHT = 340; // Approximate TrackCard height
 
-export const VirtualizedTrackGrid = ({
+export const VirtualizedTrackGrid = React.memo(({
   tracks,
   columns,
   gap,
@@ -116,6 +116,19 @@ export const VirtualizedTrackGrid = ({
       </div>
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison for optimization
+  return (
+    prevProps.tracks.length === nextProps.tracks.length &&
+    prevProps.columns === nextProps.columns &&
+    prevProps.gap === nextProps.gap &&
+    prevProps.cardWidth === nextProps.cardWidth &&
+    prevProps.tracks.every((track, i) => 
+      track.id === nextProps.tracks[i]?.id &&
+      track.status === nextProps.tracks[i]?.status &&
+      track.audio_url === nextProps.tracks[i]?.audio_url
+    )
+  );
+});
 
 VirtualizedTrackGrid.displayName = 'VirtualizedTrackGrid';

@@ -30,6 +30,7 @@ import { useTracks } from "@/hooks/useTracks";
 import { useToast } from "@/hooks/use-toast";
 import { useTrackCleanup } from "@/hooks/useTrackCleanup";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
+import { usePrefetchTracks } from "@/hooks/usePrefetchTracks";
 // import { LikesService } from "@/services/likes.service"; // Now handled in TrackCard
 import { supabase } from "@/integrations/supabase/client";
 import { DisplayTrack, convertToAudioPlayerTrack, convertToDisplayTrack, convertToOptimizedTrack } from "@/types/track";
@@ -50,6 +51,7 @@ const Library: React.FC = () => {
   const { tracks, isLoading, refreshTracks } = useTracks();
   const { toast } = useToast();
   const playTrackWithQueue = useAudioPlayerStore((state) => state.playTrackWithQueue);
+  const currentTrack = useAudioPlayerStore((state) => state.currentTrack);
   
   // Get current user
   const [userId, setUserId] = useState<string | undefined>(undefined);
@@ -328,6 +330,13 @@ const Library: React.FC = () => {
   // Calculate grid parameters
   const gridParams = useAdaptiveGrid(containerWidth);
   const shouldVirtualize = filteredAndSortedTracks.length > 50;
+  
+  // Prefetch adjacent tracks
+  usePrefetchTracks(
+    filteredAndSortedTracks.map(t => convertToDisplayTrack(t)),
+    currentTrack?.id ?? null,
+    { enabled: true, prefetchCount: 3 }
+  );
 
   const handleShare = useCallback(async (trackId: string) => {
     try {

@@ -57,7 +57,7 @@ const getGradientByTrackId = (trackId: string) => {
   return gradients[index];
 };
 
-const TrackCardComponent = ({
+const TrackCardComponent = React.memo(({
   track,
   onShare,
   onClick,
@@ -208,7 +208,7 @@ const TrackCardComponent = ({
       </Card>
     </motion.div>
   );
-};
+});
 
 const MemoizedTrackCard = React.memo(TrackCardComponent, (prevProps, nextProps) => {
   return (
