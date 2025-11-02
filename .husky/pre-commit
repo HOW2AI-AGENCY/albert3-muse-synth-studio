@@ -2,16 +2,21 @@
 . "$(dirname "$0")/_/husky.sh"
 
 # ============================================
-# Pre-commit Hook - CSS Contract Validation
+# Pre-commit Hook - Multi-System Validation
 # ============================================
 
 echo "🔍 Running pre-commit checks..."
+echo ""
 
-# Check if CSS files changed
+VALIDATION_PASSED=true
+
+# ============================================
+# 1. CSS Contract Validation
+# ============================================
+
 CSS_FILES_CHANGED=$(git diff --cached --name-only | grep -E "(index\.css|design-tokens\.css|tailwind\.config\.ts)")
 
 if [ -n "$CSS_FILES_CHANGED" ]; then
-  echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "📊 CSS files changed, validating contract..."
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -22,26 +27,65 @@ if [ -n "$CSS_FILES_CHANGED" ]; then
   done
   echo ""
   
-  # Run validation script
   if ! bash scripts/validate-css-contract.sh; then
+    VALIDATION_PASSED=false
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "❌ COMMIT BLOCKED"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo ""
-    echo "CSS Contract validation failed!"
-    echo "Please fix the duplicate variables before committing."
-    echo ""
+    echo "❌ CSS Contract validation failed!"
     echo "Read: docs/design-system/CSS_VARIABLE_CONTRACT.md"
     echo ""
-    exit 1
+  else
+    echo "✅ CSS Contract validation passed"
+    echo ""
   fi
-  
-  echo ""
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo "✅ CSS Contract validation passed"
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo ""
 fi
+
+# ============================================
+# 2. Generation System Contract Validation
+# ============================================
+
+GEN_FILES_CHANGED=$(git diff --cached --name-only | grep -E "(services/generation|services/providers|provider-validation\.ts|generation-errors\.ts|supabase/functions/_shared/types/generation\.ts|supabase/functions/generate-)")
+
+if [ -n "$GEN_FILES_CHANGED" ]; then
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🎵 Generation system files changed, validating contract..."
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "Changed files:"
+  echo "$GEN_FILES_CHANGED" | while read -r file; do
+    echo "  - $file"
+  done
+  echo ""
+  
+  if ! bash scripts/validate-generation-contract.sh; then
+    VALIDATION_PASSED=false
+    echo ""
+    echo "❌ Generation System Contract validation failed!"
+    echo "Read: docs/generation-system/DATA_CONTRACT.md"
+    echo ""
+  else
+    echo "✅ Generation System Contract validation passed"
+    echo ""
+  fi
+fi
+
+# ============================================
+# Final Result
+# ============================================
+
+if [ "$VALIDATION_PASSED" = false ]; then
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "❌ COMMIT BLOCKED"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "One or more validation checks failed."
+  echo "Please fix the errors above before committing."
+  echo ""
+  exit 1
+fi
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✅ All pre-commit validations passed!"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
 
 exit 0

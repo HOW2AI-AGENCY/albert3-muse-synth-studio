@@ -306,6 +306,198 @@ git commit -m "fix(css): remove duplicate CSS variables"
 
 ---
 
+## 🎵 Music Generation System Changes Checklist
+
+### Before Modifying Generation-Related Code
+
+⚠️ **CRITICAL**: The music generation system has a strict data contract between frontend, backend, and providers.
+
+**Files affected by Generation System Contract**:
+- `src/utils/provider-validation.ts` - Frontend validation
+- `src/services/providers/types.ts` - Frontend types
+- `src/services/providers/adapters/*.adapter.ts` - Provider adapters
+- `supabase/functions/_shared/types/generation.ts` - Backend types
+- `supabase/functions/_shared/zod-schemas.ts` - Backend validation
+- `supabase/functions/generate-*/**` - Edge functions
+
+### Step-by-Step Process
+
+1. **Read the Contract**
+   ```bash
+   cat docs/generation-system/DATA_CONTRACT.md
+   ```
+
+2. **Identify the Layer You're Modifying**
+   - **Frontend validation** → `src/utils/provider-validation.ts`
+   - **Frontend types** → `src/services/providers/types.ts`
+   - **Provider adapters** → `src/services/providers/adapters/*.adapter.ts`
+   - **Backend types** → `supabase/functions/_shared/types/generation.ts`
+   - **Backend validation** → `supabase/functions/_shared/zod-schemas.ts`
+   - **Edge functions** → `supabase/functions/generate-*/**`
+
+3. **Update ALL Related Layers**
+   
+   Example: Adding a new parameter `duration`
+   
+   ```typescript
+   // 1. Frontend validation (provider-validation.ts)
+   const baseGenerationSchema = z.object({
+     // ... existing params
+     duration: z.number().min(30).max(240).optional(),
+   });
+   
+   // 2. Frontend types (providers/types.ts)
+   export interface GenerationParams {
+     // ... existing params
+     duration?: number;
+   }
+   
+   // 3. Backend types (_shared/types/generation.ts)
+   export interface BaseGenerationParams {
+     // ... existing params
+     duration?: number;
+   }
+   
+   // 4. Backend validation (_shared/zod-schemas.ts)
+   export const baseGenerationSchema = z.object({
+     // ... existing params
+     duration: z.number().min(30).max(240).optional(),
+   });
+   
+   // 5. Provider adapters (*.adapter.ts)
+   const payload = {
+     // ... existing params
+     duration: params.duration,
+   };
+   ```
+
+4. **Check Provider-Specific Constraints**
+   - **Suno**: `styleTags` → `tags` transformation required
+   - **Mureka**: Prompt max 500 chars (auto-truncated)
+   - **Mureka**: Max 1 concurrent generation per user
+
+5. **Validate Locally**
+   ```bash
+   bash scripts/validate-generation-contract.sh
+   ```
+
+6. **Add/Update Tests**
+   - Unit tests for adapters
+   - Integration tests for full flow
+   
+   Example test:
+   ```typescript
+   it('passes new parameter to edge function', async () => {
+     const request: GenerationRequest = {
+       provider: 'suno',
+       prompt: 'Test',
+       duration: 120,
+     };
+     
+     await GenerationService.generate(request);
+     
+     expect(invokeMock).toHaveBeenCalledWith('generate-suno', {
+       body: expect.objectContaining({ duration: 120 })
+     });
+   });
+   ```
+
+7. **Test End-to-End**
+   - Open `/workspace/generate` route
+   - Test Suno generation
+   - Test Mureka generation
+   - Verify error handling (429, 402, 500)
+   - Check console logs for warnings
+
+8. **Update Documentation**
+   - Update `DATA_CONTRACT.md` parameter tables
+   - Add entries to "Known Issues & Gotchas" if needed
+   - Update API documentation if public-facing
+
+### Common Pitfalls to Avoid
+
+❌ **WRONG**: Updating only frontend
+```typescript
+// Frontend
+interface GenerationParams {
+  newParam: string;  // Added here
+}
+
+// Backend - forgot to add!
+// → Runtime error: parameter not recognized
+```
+
+✅ **CORRECT**: Update all layers
+```typescript
+// Frontend validation
+newParam: z.string().max(100)
+
+// Frontend types
+newParam?: string;
+
+// Backend types
+newParam?: string;
+
+// Backend validation
+newParam: z.string().max(100).optional()
+
+// Provider adapter
+newParam: params.newParam,
+```
+
+❌ **WRONG**: Ignoring provider constraints
+```typescript
+// Sending 3000-char prompt to Mureka
+const params = { prompt: longPrompt };  // ❌ Mureka max is 500 chars!
+```
+
+✅ **CORRECT**: Respecting provider limits
+```typescript
+// Mureka adapter automatically truncates
+if (params.provider === 'mureka') {
+  validatedPrompt = params.prompt.slice(0, 500);
+}
+```
+
+### Validation Tools
+
+| Tool | Purpose | When to Use |
+|------|---------|-------------|
+| `scripts/validate-generation-contract.sh` | Detect inconsistencies | Before commit |
+| `.husky/pre-commit` | Auto-validate | On every commit |
+| GitHub Actions | CI validation | On every PR |
+
+### Emergency Fix
+
+If you accidentally broke the generation system contract:
+
+```bash
+# 1. Identify issues
+bash scripts/validate-generation-contract.sh
+
+# 2. Check error output
+# Common issues:
+# - Missing parameter in backend types
+# - Missing validation in Zod schemas
+# - Missing transformation in adapters
+
+# 3. Fix all layers
+# Update all 6 layers mentioned above
+
+# 4. Verify fix
+bash scripts/validate-generation-contract.sh
+
+# 5. Test manually
+npm run dev
+# Go to /workspace/generate
+# Try generating music with both Suno and Mureka
+
+# 6. Commit fix
+git commit -m "fix(generation): synchronize parameter schemas across layers"
+```
+
+---
+
 ## 📚 Documentation
 
 ### When to Update Documentation
