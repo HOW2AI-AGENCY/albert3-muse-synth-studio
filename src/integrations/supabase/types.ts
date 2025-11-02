@@ -747,6 +747,39 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_buckets: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          last_refill: number
+          last_request: number | null
+          tokens: number
+          updated_at: string
+          window_start: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          last_refill: number
+          last_request?: number | null
+          tokens?: number
+          updated_at?: string
+          window_start: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          last_refill?: number
+          last_request?: number | null
+          tokens?: number
+          updated_at?: string
+          window_start?: number
+        }
+        Relationships: []
+      }
       saved_lyrics: {
         Row: {
           content: string
@@ -1683,6 +1716,10 @@ export type Database = {
       }
     }
     Functions: {
+      batch_increment_counter: {
+        Args: { amounts: number[]; field_name: string; track_ids: string[] }
+        Returns: undefined
+      }
       decrement_production_credits: {
         Args: { _amount: number; _user_id: string }
         Returns: undefined
@@ -1757,6 +1794,16 @@ export type Database = {
           total_tracks: number
           updated_at: string
           user_id: string
+        }[]
+      }
+      get_project_stats: {
+        Args: { p_project_id: string }
+        Returns: {
+          completed: number
+          failed: number
+          processing: number
+          total: number
+          total_duration: number
         }[]
       }
       get_tracks_needing_archiving: {
