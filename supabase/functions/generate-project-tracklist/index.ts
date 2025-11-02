@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,16 +16,23 @@ serve(async (req) => {
       throw new Error('Missing authorization header');
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY');
+    
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase configuration');
+    }
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
+    // Verify user
+    const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: { Authorization: authHeader },
+    });
+
+    if (!userResponse.ok) {
       throw new Error('Unauthorized');
     }
+
+    const user = await userResponse.json();
 
     const { projectId, projectName, description, genre, mood, projectType, totalTracks } = await req.json();
 
@@ -35,7 +41,9 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    // Генерируем треклист через AI
+    console.log('Generating tracklist for project:', projectName);
+
+    // AI prompt
     const aiPrompt = `Ты музыкальный продюсер. Создай детальный треклист для ${projectType || 'альбома'} "${projectName}".
 
 Контекст проекта:
@@ -88,7 +96,7 @@ ${mood ? `Настроение: ${mood}` : ''}
       throw new Error('No content in AI response');
     }
 
-    // Извлекаем JSON из markdown блока если есть
+    // Extract JSON from markdown if needed
     const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || content.match(/```\s*([\s\S]*?)\s*```/);
     if (jsonMatch) {
       content = jsonMatch[1];
@@ -100,7 +108,9 @@ ${mood ? `Настроение: ${mood}` : ''}
       throw new Error('Invalid tracklist format');
     }
 
-    // Создаем треки в БД
+    console.log(`Creating ${tracklist.tracks.length} tracks in database`);
+
+    // Create tracks in DB
     const tracksToInsert = tracklist.tracks.map((track: any) => ({
       user_id: user.id,
       project_id: projectId,
@@ -113,15 +123,26 @@ ${mood ? `Настроение: ${mood}` : ''}
       provider: 'suno',
     }));
 
-    const { data: insertedTracks, error: insertError } = await supabase
-      .from('tracks')
-      .insert(tracksToInsert)
-      .select();
+    const insertResponse = await fetch(`${supabaseUrl}/rest/v1/tracks`, {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+        'apikey': supabaseKey,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+      },
+      body: JSON.stringify(tracksToInsert),
+    });
 
-    if (insertError) {
-      console.error('Insert error:', insertError);
-      throw insertError;
+    if (!insertResponse.ok) {
+      const errorText = await insertResponse.text();
+      console.error('Insert error:', errorText);
+      throw new Error('Failed to insert tracks');
     }
+
+    const insertedTracks = await insertResponse.json();
+
+    console.log(`Successfully created ${insertedTracks.length} tracks`);
 
     return new Response(
       JSON.stringify({ 
@@ -135,7 +156,7 @@ ${mood ? `Настроение: ${mood}` : ''}
   } catch (error) {
     console.error('Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
