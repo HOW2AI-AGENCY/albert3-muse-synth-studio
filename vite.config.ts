@@ -11,20 +11,12 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
-  optimizeDeps: {
-    include: [
-      'react',
-      'react-dom',
-      'zustand',
-      '@tanstack/react-query',
-    ],
-    exclude: [],
-  },
   build: {
     rollupOptions: {
       output: {
         manualChunks: {
-          // Enhanced vendor chunking for better caching
+          // ❌ УДАЛЕНО 'vendor-react' - конфликтует с dedupe
+          // React должен управляться через dedupe, не через manualChunks
           'vendor-ui': [
             '@radix-ui/react-dialog',
             '@radix-ui/react-dropdown-menu',
@@ -34,32 +26,16 @@ export default defineConfig(({ mode }) => ({
             '@radix-ui/react-tooltip',
             '@radix-ui/react-slider',
             '@radix-ui/react-scroll-area',
-            '@radix-ui/react-avatar',
-            '@radix-ui/react-checkbox',
-            '@radix-ui/react-switch',
           ],
           'vendor-charts': ['recharts'],
           'vendor-motion': ['framer-motion'],
           'vendor-supabase': ['@supabase/supabase-js'],
           'vendor-query': ['@tanstack/react-query', '@tanstack/react-virtual'],
-          'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
-          'vendor-dnd': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
         },
       },
     },
-    chunkSizeWarningLimit: 1000,
-    sourcemap: mode === 'development',
-    minify: mode === 'production' ? 'terser' : false, // Only use terser in production
-    terserOptions: mode === 'production' ? {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info', 'console.debug'],
-      },
-      format: {
-        comments: false,
-      },
-    } : undefined,
+    chunkSizeWarningLimit: 800,
+    sourcemap: false,
     commonjsOptions: {
       include: [/node_modules/],
     },
@@ -85,13 +61,20 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      react: path.resolve(__dirname, "node_modules/react"),
+      "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
+      "react-router": path.resolve(__dirname, "node_modules/react-router"),
+      "react-router-dom": path.resolve(__dirname, "node_modules/react-router-dom"),
     },
+    mainFields: ["browser", "module", "main"],
     dedupe: [
       "react",
       "react-dom",
+      "react-dom/client",
       "react/jsx-runtime",
       "react/jsx-dev-runtime",
-      "zustand", // CRITICAL: dedupe zustand to prevent store duplication
+      "react-router",
+      "react-router-dom",
     ],
   },
   test: {
