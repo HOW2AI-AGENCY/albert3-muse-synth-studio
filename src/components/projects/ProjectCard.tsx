@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Music, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { Music, MoreVertical, Edit, Trash2, Clock, Disc3 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type MusicProject = Database['public']['Tables']['music_projects']['Row'];
@@ -38,29 +38,36 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   };
 
   return (
-    <Card className="group hover:border-primary/50 transition-all cursor-pointer">
-      <CardHeader onClick={onClick} className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <Music className="h-4 w-4 text-primary shrink-0" />
-              <h3 className="font-semibold truncate">{project.name}</h3>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="secondary" className="text-xs">
-                {project.project_type || 'single'}
-              </Badge>
-              {project.total_tracks && project.total_tracks > 0 && (
-                <span className="text-xs text-muted-foreground">
-                  {project.total_tracks} треков
-                </span>
-              )}
-            </div>
+    <Card className="group hover:border-primary/50 transition-all cursor-pointer overflow-hidden">
+      {/* Cover Image */}
+      <div 
+        onClick={onClick} 
+        className="relative h-48 bg-gradient-to-br from-primary/20 via-primary/10 to-background overflow-hidden"
+      >
+        {project.cover_url ? (
+          <img 
+            src={project.cover_url} 
+            alt={project.name}
+            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Music className="h-16 w-16 text-primary/30" />
           </div>
-          
+        )}
+        
+        {/* Overlay with project type badge */}
+        <div className="absolute top-3 left-3">
+          <Badge variant="secondary" className="backdrop-blur-sm bg-background/80">
+            {project.project_type || 'single'}
+          </Badge>
+        </div>
+        
+        {/* Actions Menu */}
+        <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 backdrop-blur-sm bg-background/80 hover:bg-background/90">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -89,16 +96,53 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+      </div>
 
-        {project.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
-            {project.description}
-          </p>
+      <CardHeader onClick={onClick} className="pb-3 space-y-3">
+        <div>
+          <h3 className="font-semibold text-lg truncate mb-1">{project.name}</h3>
+          {project.description && (
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {project.description}
+            </p>
+          )}
+        </div>
+
+        {/* Stats row */}
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          {project.total_tracks !== null && project.total_tracks !== undefined && project.total_tracks > 0 && (
+            <div className="flex items-center gap-1.5">
+              <Disc3 className="h-4 w-4" />
+              <span>{project.total_tracks} {project.total_tracks === 1 ? 'трек' : 'треков'}</span>
+            </div>
+          )}
+          {project.total_duration && project.total_duration > 0 && (
+            <div className="flex items-center gap-1.5">
+              <Clock className="h-4 w-4" />
+              <span>{formatDuration(project.total_duration)}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Style tags */}
+        {project.style_tags && project.style_tags.length > 0 && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {project.style_tags.slice(0, 4).map((tag, index) => (
+              <Badge key={index} variant="outline" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+            {project.style_tags.length > 4 && (
+              <Badge variant="outline" className="text-xs">
+                +{project.style_tags.length - 4}
+              </Badge>
+            )}
+          </div>
         )}
       </CardHeader>
 
-      <CardContent onClick={onClick} className="pb-3">
-        {project.total_tracks && project.total_tracks > 0 && (
+      {project.total_tracks && project.total_tracks > 0 && (
+        <CardContent onClick={onClick} className="pt-0 pb-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Прогресс</span>
@@ -109,35 +153,17 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
               {project.completed_tracks || 0}/{project.total_tracks} завершено
             </div>
           </div>
-        )}
+        </CardContent>
+      )}
 
-        {project.style_tags && project.style_tags.length > 0 && (
-          <div className="flex items-center gap-1 flex-wrap mt-3">
-            {project.style_tags.slice(0, 3).map((tag, index) => (
-              <Badge key={index} variant="outline" className="text-xs">
-                {tag}
-              </Badge>
-            ))}
-            {project.style_tags.length > 3 && (
-              <Badge variant="outline" className="text-xs">
-                +{project.style_tags.length - 3}
-              </Badge>
-            )}
+      {project.genre && (
+        <CardFooter onClick={onClick} className="pt-0 pb-4">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">Жанр:</span>
+            <Badge variant="secondary">{project.genre}</Badge>
           </div>
-        )}
-      </CardContent>
-
-      <CardFooter onClick={onClick} className="pt-0 flex items-center justify-between text-xs text-muted-foreground">
-        {project.total_duration && project.total_duration > 0 ? (
-          <span>⏱️ {formatDuration(project.total_duration)}</span>
-        ) : (
-          <span>Нет треков</span>
-        )}
-        
-        {project.genre && (
-          <span>🎼 {project.genre}</span>
-        )}
-      </CardFooter>
+        </CardFooter>
+      )}
     </Card>
   );
 };
