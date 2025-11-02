@@ -1,4 +1,4 @@
-import { memo, useState, useRef, useCallback } from 'react';
+import * as React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -18,17 +18,17 @@ interface AudioSourceDialogProps {
   onTrackSelect?: (track: any) => void;
 }
 
-export const AudioSourceDialog = memo(({
+export const AudioSourceDialog = React.memo(({
   open,
   onOpenChange,
   onAudioSelect,
   onRecordComplete,
   onTrackSelect,
 }: AudioSourceDialogProps) => {
-  const [activeTab, setActiveTab] = useState<'upload' | 'record' | 'library' | 'tracks'>('upload');
+  const [activeTab, setActiveTab] = React.useState<'upload' | 'record' | 'library' | 'tracks'>('upload');
   const { uploadAudio, isUploading } = useAudioUpload();
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   
   const {
     isRecording,
@@ -41,7 +41,7 @@ export const AudioSourceDialog = memo(({
   } = useAudioRecorder(undefined, uploadAudio);
 
   // Upload handlers
-  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = React.useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -64,7 +64,7 @@ export const AudioSourceDialog = memo(({
   }, [uploadAudio, onAudioSelect, onOpenChange, toast]);
 
   // Recording handlers
-  const handleStartRecording = useCallback(async () => {
+  const handleStartRecording = React.useCallback(async () => {
     try {
       await startRecording();
     } catch (error) {
@@ -76,11 +76,11 @@ export const AudioSourceDialog = memo(({
     }
   }, [startRecording, toast]);
 
-  const handleStopRecording = useCallback(() => {
+  const handleStopRecording = React.useCallback(() => {
     stopRecording();
   }, [stopRecording]);
 
-  const handleUseRecording = useCallback(async () => {
+  const handleUseRecording = React.useCallback(async () => {
     if (!audioBlob || !recordedAudioUrl) return;
 
     // Upload recorded audio
@@ -106,7 +106,7 @@ export const AudioSourceDialog = memo(({
   }, [audioBlob, recordedAudioUrl, uploadAudio, onAudioSelect, onRecordComplete, onOpenChange, resetRecording, toast]);
 
   // Library handlers
-  const handleLibrarySelect = useCallback((url: string, fileName: string) => {
+  const handleLibrarySelect = React.useCallback((url: string, fileName: string) => {
     onAudioSelect(url, fileName);
     onOpenChange(false);
     
@@ -118,7 +118,7 @@ export const AudioSourceDialog = memo(({
   }, [onAudioSelect, onOpenChange, toast]);
 
   // Track selector handlers
-  const handleTrackSelect = useCallback((track: any) => {
+  const handleTrackSelect = React.useCallback((track: any) => {
     if (track.audio_url) {
       onAudioSelect(track.audio_url, track.title || 'Untitled Track');
       

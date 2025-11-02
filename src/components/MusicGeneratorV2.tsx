@@ -447,14 +447,14 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       <AudioSourceDialog
         open={audioSourceDialogOpen}
         onOpenChange={setAudioSourceDialogOpen}
-        onAudioSelect={(url, fileName) => {
+        onAudioSelect={(url: string, fileName: string) => {
           state.setParam('referenceAudioUrl', url);
           state.setParam('referenceFileName', fileName);
         }}
         onRecordComplete={() => {
           // Optional: handle recording completion
         }}
-        onTrackSelect={(track) => {
+        onTrackSelect={(track: any) => {
           // Optional: handle track selection metadata
           if (track.style_tags?.length > 0) {
             const existingTags = state.params.tags || '';

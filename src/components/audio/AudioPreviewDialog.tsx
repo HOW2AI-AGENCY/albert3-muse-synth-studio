@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import * as React from 'react';
 import {
   Dialog,
   DialogContent,
@@ -28,13 +28,13 @@ export const AudioPreviewDialog = ({
   onConfirm,
   onRemove,
 }: AudioPreviewDialogProps) => {
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(0.75);
+  const audioRef = React.useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = React.useState(false);
+  const [currentTime, setCurrentTime] = React.useState(0);
+  const [duration, setDuration] = React.useState(0);
+  const [volume, setVolume] = React.useState(0.75);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
@@ -53,7 +53,7 @@ export const AudioPreviewDialog = ({
     };
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume;
     }
