@@ -33,17 +33,17 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const url = new URL(req.url);
-  const path = url.pathname;
-
   try {
     const GOOGLE_AI_API_KEY = Deno.env.get('GOOGLE_AI_API_KEY');
     if (!GOOGLE_AI_API_KEY) {
       throw new Error('GOOGLE_AI_API_KEY not configured');
     }
 
+    const url = new URL(req.url);
+    const path = url.pathname;
+
     // Route: WebSocket stream
-    if (path.includes('/stream')) {
+    if (path.endsWith('/stream') || url.searchParams.has('sessionId')) {
       const sessionId = url.searchParams.get('sessionId');
       if (!sessionId) {
         return new Response(
@@ -111,8 +111,8 @@ serve(async (req) => {
       return response;
     }
 
-    // Route: Initialize session
-    if (path.includes('/connect')) {
+    // Route: Initialize session (default POST request)
+    if (req.method === 'POST' && !path.endsWith('/stream') && !path.endsWith('/update-prompts')) {
       const { initialPrompts } = await req.json() as ConnectRequest;
 
       if (!initialPrompts || !Array.isArray(initialPrompts)) {
@@ -143,7 +143,7 @@ serve(async (req) => {
     }
 
     // Route: Update prompts (non-WebSocket)
-    if (path.includes('/update-prompts')) {
+    if (path.endsWith('/update-prompts')) {
       const { sessionId, prompts } = await req.json() as UpdatePromptsRequest;
 
       if (!sessionId || !prompts) {
