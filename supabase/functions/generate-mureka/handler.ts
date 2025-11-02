@@ -82,32 +82,29 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
       
       logger.info(`✅ [MUREKA] Track created`, { trackId });
 
-      // 4. Generate lyrics if needed (with soft fallback)
+      // 4. Generate lyrics if needed (NO soft fallback - fail fast)
       let finalLyrics = params.lyrics;
       if (params.hasVocals !== false && (!finalLyrics || finalLyrics.trim().length === 0)) {
-        try {
-          const lyricsResult = await this.generateLyrics(trackId, params.prompt);
-          
-          if (!lyricsResult.success) {
-            // ✅ FIX: Soft fallback - don't fail entire generation
-            logger.warn('⚠️ [MUREKA] Lyrics generation failed, using placeholder', {
-              trackId,
-              error: lyricsResult.error,
-            });
-            finalLyrics = `[Instrumental]\n${params.prompt || 'Music'}`;
-          } else if (lyricsResult.requiresLyricsSelection) {
-            return lyricsResult;
-          } else {
-            finalLyrics = lyricsResult.lyrics;
-          }
-        } catch (lyricsError) {
-          // ✅ FIX: Catch lyrics errors and continue with placeholder
-          logger.warn('⚠️ [MUREKA] Lyrics generation error, using placeholder', {
+        const lyricsResult = await this.generateLyrics(trackId, params.prompt);
+        
+        if (!lyricsResult.success) {
+          // ✅ P0 FIX: NO soft fallback - throw error to expose real issues
+          const errorMsg = lyricsResult.error || 'Lyrics generation failed';
+          logger.error('🔴 [MUREKA] Lyrics generation failed', new Error(errorMsg), 'MurekaHandler', {
             trackId,
-            error: lyricsError instanceof Error ? lyricsError.message : String(lyricsError),
+            error: lyricsResult.error,
           });
-          finalLyrics = `[Instrumental]\n${params.prompt || 'Music'}`;
+          
+          // Mark track as failed
+          await this.handleFailedTrack(trackId, `Lyrics generation failed: ${errorMsg}`);
+          throw new Error(`Lyrics generation failed: ${errorMsg}`);
         }
+        
+        if (lyricsResult.requiresLyricsSelection) {
+          return lyricsResult;
+        }
+        
+        finalLyrics = lyricsResult.lyrics;
       } else if (params.hasVocals === false) {
         logger.info('🎼 Instrumental mode, skipping lyrics generation');
         finalLyrics = undefined;

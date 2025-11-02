@@ -242,16 +242,41 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
 
   /**
    * Start polling the provider API for completion
+   * ✅ P0 FIX: Added MAX_PROCESSING_TIME to prevent stuck tracks (especially Mureka)
    */
   protected async startPolling(
     trackId: string, 
     taskId: string,
     config: PollingConfig = DEFAULT_POLLING_CONFIG as PollingConfig
   ): Promise<void> {
+    const MAX_PROCESSING_TIME = 10 * 60 * 1000; // ✅ 10 minutes max for all providers
+    const pollingStartTime = Date.now();
     let attemptNumber = 0;
 
     const poll = async (): Promise<void> => {
+      const elapsedTime = Date.now() - pollingStartTime;
+
+      // ✅ P0 FIX: Check timeout FIRST
+      if (elapsedTime > MAX_PROCESSING_TIME) {
+        logger.error(`🔴 [${this.providerName.toUpperCase()}] Processing timeout reached`, {
+          trackId,
+          taskId,
+          attempts: attemptNumber,
+          elapsedTimeMinutes: Math.round(elapsedTime / 60000),
+          maxMinutes: 10,
+        });
+        // Mark as failed directly with custom message
+        await this.handleFailedTrack(trackId, `${this.providerName} generation timeout after ${Math.round(elapsedTime / 60000)} minutes (max: 10 min)`);
+        return;
+      }
+
       if (attemptNumber >= config.maxAttempts) {
+        logger.warn(`⚠️ [${this.providerName.toUpperCase()}] Max polling attempts reached`, {
+          trackId,
+          taskId,
+          attempts: attemptNumber,
+          elapsedTimeMinutes: Math.round(elapsedTime / 60000),
+        });
         await this.handlePollingTimeout(trackId, taskId);
         return;
       }
@@ -266,6 +291,7 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
             metadata: {
               polling_attempts: attemptNumber + 1,
               last_poll_at: new Date().toISOString(),
+              elapsed_time_ms: elapsedTime,
             },
           })
           .eq('id', trackId);
@@ -274,6 +300,7 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
           trackId,
           taskId,
           status: trackData.status,
+          elapsedSeconds: Math.round(elapsedTime / 1000),
         });
 
         if (trackData.status === 'completed') {
@@ -296,6 +323,7 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
           trackId,
           taskId,
           attempt: attemptNumber + 1,
+          elapsedSeconds: Math.round(elapsedTime / 1000),
         });
         
         // Retry polling after error

@@ -35,7 +35,7 @@ serve(async (req: Request): Promise<Response> => {
       throw new Error('SUNO_API_KEY not configured');
     }
 
-    // Найти все треки в processing старше 10 минут (если trackIds не переданы)
+    // ✅ P0 FIX: Check tracks older than 10 minutes (aligned with Mureka timeout)
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
 
     let query = supabaseAdmin
