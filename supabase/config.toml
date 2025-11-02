@@ -198,3 +198,6 @@ verify_jwt = true
 
 [functions.generate-project-concept]
 verify_jwt = true
+
+[functions.prompt-dj-lyria-stream]
+verify_jwt = false

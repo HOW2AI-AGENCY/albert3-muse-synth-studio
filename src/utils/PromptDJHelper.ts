@@ -58,7 +58,7 @@ export class PromptDJHelper extends EventTarget {
 
       // Establish WebSocket connection
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'qycfsepwguaiwcquwwbw';
-      const wsUrl = `wss://${projectId}.supabase.co/functions/v1/prompt-dj-lyria-stream/stream?sessionId=${this.sessionId}`;
+      const wsUrl = `wss://${projectId}.functions.supabase.co/functions/v1/prompt-dj-lyria-stream/stream?sessionId=${this.sessionId}`;
       
       this.ws = new WebSocket(wsUrl);
 
