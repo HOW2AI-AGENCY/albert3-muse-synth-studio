@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Upload, User, Sparkles } from '@/utils/iconImports';
+import { Upload, User, Sparkles, Wand2 } from '@/utils/iconImports';
 import { cn } from '@/lib/utils';
 
 interface QuickActionsBarProps {
@@ -11,6 +11,7 @@ interface QuickActionsBarProps {
   onAudioClick: () => void;
   onPersonaClick: () => void;
   onInspoClick: () => void;
+  onPromptDjClick?: () => void;
   isGenerating: boolean;
 }
 
@@ -21,10 +22,11 @@ export const QuickActionsBar = memo(({
   onAudioClick,
   onPersonaClick,
   onInspoClick,
+  onPromptDjClick,
   isGenerating,
 }: QuickActionsBarProps) => {
   return (
-    <div className="grid grid-cols-3 gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 border-b border-border/10 bg-background/95 backdrop-blur-sm">
+    <div className="grid grid-cols-4 gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 border-b border-border/10 bg-background/95 backdrop-blur-sm">
       
         {/* Audio Button */}
         <Tooltip>
@@ -97,6 +99,28 @@ export const QuickActionsBar = memo(({
             <p>Выбрать проект для вдохновения</p>
           </TooltipContent>
         </Tooltip>
+
+        {/* Prompt DJ Button */}
+        {onPromptDjClick && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onPromptDjClick}
+                disabled={isGenerating}
+                className="h-8 sm:h-9 gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-medium transition-all touch-target-min"
+              >
+                <Wand2 className="h-3 sm:h-4 w-3 sm:w-4" />
+                <span className="hidden xs:inline">Prompt DJ</span>
+                <span className="xs:hidden">DJ</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="text-xs">
+              <p>Создать сэмплы с помощью AI</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
       
     </div>
   );
