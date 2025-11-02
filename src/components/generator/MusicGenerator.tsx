@@ -377,21 +377,6 @@ export const MusicGenerator = ({
         {/* Quick Actions Bar */}
         <div className="flex items-center gap-2 px-3 py-2 border-b bg-background/95">
           <TooltipProvider>
-            {/* History Button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" onClick={() => setHistoryDialogOpen(true)} disabled={isGenerating} className="h-8 text-xs gap-1.5">
-                  <History className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">История</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs">
-                <p>Открыть историю промптов</p>
-              </TooltipContent>
-            </Tooltip>
-
-            <div className="flex-1" />
-
             {/* Audio Button */}
             <Tooltip>
               <TooltipTrigger asChild>
@@ -442,14 +427,55 @@ export const MusicGenerator = ({
         // Simple Mode
         <>
               <div className="space-y-2">
+                {/* Label + History Button */}
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm">Опишите музыку</Label>
-                  {prompt.trim().length > 10 && <Button variant="ghost" size="sm" onClick={handleBoostPrompt} disabled={isGenerating} className="h-6 text-xs gap-1">
-                      <Wand2 className="h-3 w-3" />
-                      Улучшить
-                    </Button>}
+                  <Label className="text-sm font-medium">Опишите музыку</Label>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setHistoryDialogOpen(true)} 
+                    disabled={isGenerating} 
+                    className="h-7 text-xs gap-1.5"
+                  >
+                    <History className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">История</span>
+                  </Button>
                 </div>
-                <Textarea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="Энергичная электронная музыка для тренировки" className="min-h-[120px] resize-none" disabled={isGenerating} />
+
+                {/* Resizable Textarea with AI Button + Character Counter */}
+                <div className="relative">
+                  <Textarea 
+                    value={prompt} 
+                    onChange={e => setPrompt(e.target.value)} 
+                    placeholder="Энергичная электронная музыка для тренировки" 
+                    className="min-h-[120px] resize-y pr-20" 
+                    disabled={isGenerating}
+                    maxLength={500}
+                  />
+                  
+                  {/* Bottom Controls Row */}
+                  <div className="flex items-center justify-between mt-1">
+                    {/* AI Boost Button (Left) */}
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleBoostPrompt} 
+                      disabled={isGenerating || !prompt.trim()} 
+                      className="h-7 text-xs gap-1.5"
+                    >
+                      <Wand2 className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Улучшить стиль</span>
+                    </Button>
+
+                    {/* Character Counter (Right) */}
+                    <div className={cn(
+                      "text-xs tabular-nums",
+                      prompt.length > 450 ? "text-destructive font-medium" : "text-muted-foreground"
+                    )}>
+                      {prompt.length}/500
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Style Recommendations */}
