@@ -55,8 +55,6 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      react: path.resolve(__dirname, "node_modules/react"),
-      "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
     },
     dedupe: [
       "react",
@@ -79,16 +77,14 @@ export default defineConfig(({ mode }) => ({
       "react-dom",
       "react-dom/client",
       "react/jsx-runtime",
+      "react/jsx-dev-runtime",
       "react-router",
       "react-router-dom",
       "@tanstack/react-query",
       "@radix-ui/react-tooltip",
       "zustand",
     ],
-    exclude: [],
-    esbuildOptions: {
-      target: 'es2020',
-    },
+    force: true,
   },
   test: {
     globals: true,
