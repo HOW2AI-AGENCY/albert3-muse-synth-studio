@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Replicate from "https://esm.sh/replicate@0.25.2";
 import { logger } from "../_shared/logger.ts";
 
 const corsHeaders = {
@@ -33,8 +32,6 @@ async function mainHandler(req: Request): Promise<Response> {
   }
 
   try {
-    const replicate = new Replicate({ auth: REPLICATE_API_KEY });
-
     // Определяем промпты в зависимости от типа анализа
     const prompts = {
       full: `Analyze this audio in detail and provide:
@@ -66,19 +63,53 @@ Be specific (e.g., "electric guitar", "synthesizer pad", "808 bass", "acoustic d
       promptLength: prompt.length
     });
 
-    // Запускаем анализ через Audio Flamingo 3
-    const output = await replicate.run(
-      "zsxkib/audio-flamingo-3",
-      {
+    // Запускаем анализ через Replicate API напрямую
+    const response = await fetch('https://api.replicate.com/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${REPLICATE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        version: 'zsxkib/audio-flamingo-3',
         input: {
           audio: audioUrl,
           prompt: prompt,
-          enable_thinking: true,  // Включаем цепочку рассуждений для точности
-          temperature: 0.1,       // Низкая температура для фактического анализа
-          max_length: 2048,       // Максимальная длина ответа
+          enable_thinking: true,
+          temperature: 0.1,
+          max_length: 2048,
         }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Replicate API error: ${response.statusText}`);
+    }
+
+    const prediction = await response.json();
+    
+    // Ожидаем завершения предсказания
+    let output = '';
+    let predictionUrl = prediction.urls?.get || `https://api.replicate.com/v1/predictions/${prediction.id}`;
+    
+    for (let i = 0; i < 60; i++) { // Максимум 60 попыток (5 минут)
+      await new Promise(resolve => setTimeout(resolve, 5000)); // Ждём 5 секунд
+      
+      const statusResponse = await fetch(predictionUrl, {
+        headers: {
+          'Authorization': `Bearer ${REPLICATE_API_KEY}`,
+        }
+      });
+      
+      const status = await statusResponse.json();
+      
+      if (status.status === 'succeeded') {
+        output = status.output;
+        break;
+      } else if (status.status === 'failed') {
+        throw new Error(`Replicate prediction failed: ${status.error}`);
       }
-    ) as string;
+    }
 
     logger.info('[analyze-audio-flamingo] Analysis complete', {
       outputLength: output?.length || 0,
