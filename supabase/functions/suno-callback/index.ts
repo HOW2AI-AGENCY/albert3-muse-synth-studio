@@ -218,7 +218,7 @@ const mainHandler = async (req: Request) => {
       const externalVideoUrl = mainTrack.video_url || mainTrack.videoUrl;
       
       // ✅ FIX: Сохраняем точное значение duration (decimal) без округления
-      const duration = parseFloat(mainTrack.duration || mainTrack.duration_seconds || 0);
+      const duration = Number((mainTrack as any).duration ?? (mainTrack as any).duration_seconds ?? 0);
       
       const sanitizedTitle = sanitizeText(mainTrack.title) || "Generated Track";
       const sanitizedLyrics = sanitizeText(mainTrack.prompt || mainTrack.lyric || mainTrack.lyrics);

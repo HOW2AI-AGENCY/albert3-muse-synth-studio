@@ -94,7 +94,7 @@ serve(async (req: Request): Promise<Response> => {
               progress_percent: 66,
               audio_url: music.audio_url,
               cover_url: music.image_url,
-              duration: music.duration ? parseFloat(music.duration) : null,
+               duration: typeof music.duration === 'number' ? Math.round(music.duration) : null,
               metadata: {
                 ...track.metadata,
                 stage: 'first_track_ready',
@@ -123,8 +123,8 @@ serve(async (req: Request): Promise<Response> => {
               cover_url: music.image_url,
               video_url: music.video_url,
               lyrics: music.prompt,
-              duration: music.duration ? parseFloat(music.duration) : null,
-              duration_seconds: music.duration ? parseFloat(music.duration) : null,
+               duration: typeof music.duration === 'number' ? Math.round(music.duration) : null,
+               duration_seconds: typeof music.duration === 'number' ? Math.round(music.duration) : null,
               metadata: {
                 ...track.metadata,
                 suno_audio_id: music.id,
