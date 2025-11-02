@@ -580,26 +580,28 @@ export const MusicGenerator = ({ onTrackGenerated }: MusicGeneratorProps) => {
           onSelect={handleHistorySelect}
         />
 
-        <LazyAudioSourceDialog
-          open={audioSourceDialogOpen}
-          onOpenChange={setAudioSourceDialogOpen}
-          onAudioSelect={handleAudioSelect}
-          onRecordComplete={(_blob, url) => {
-            setReferenceAudioUrl(url);
-            setReferenceFileName('Запись.mp3');
-            setAudioSourceDialogOpen(false);
-          }}
-          onTrackSelect={(track) => {
-            if (track.audio_url) {
-              setReferenceAudioUrl(track.audio_url);
-              setReferenceFileName(track.title || 'Выбранный трек');
-            }
-            if (track.style_tags?.length) {
-              const newTags = track.style_tags.join(', ');
-              setTags(newTags);
-            }
-          }}
-        />
+        {audioSourceDialogOpen && (
+          <LazyAudioSourceDialog
+            open={audioSourceDialogOpen}
+            onOpenChange={setAudioSourceDialogOpen}
+            onAudioSelect={handleAudioSelect}
+            onRecordComplete={(_blob, url) => {
+              setReferenceAudioUrl(url);
+              setReferenceFileName('Запись.mp3');
+              setAudioSourceDialogOpen(false);
+            }}
+            onTrackSelect={(track) => {
+              if (track.audio_url) {
+                setReferenceAudioUrl(track.audio_url);
+                setReferenceFileName(track.title || 'Выбранный трек');
+              }
+              if (track.style_tags?.length) {
+                const newTags = track.style_tags.join(', ');
+                setTags(newTags);
+              }
+            }}
+          />
+        )}
 
         <PersonaPickerDialog
           open={personaDialogOpen}
