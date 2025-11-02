@@ -1,38 +1,75 @@
-/* Импорт системы дизайн-токенов - ДОЛЖЕН быть ПЕРЕД @tailwind */
-@import './styles/design-tokens.css';
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
+    /* Базовые цветовые переменные в HSL формате */
+    --color-neutral-0: 0 0% 100%;
+    --color-neutral-50: 210 20% 98%;
+    --color-neutral-100: 220 14% 96%;
+    --color-neutral-200: 220 13% 91%;
+    --color-neutral-300: 216 12% 84%;
+    --color-neutral-400: 218 11% 65%;
+    --color-neutral-500: 220 9% 46%;
+    --color-neutral-600: 215 14% 34%;
+    --color-neutral-700: 217 19% 27%;
+    --color-neutral-800: 215 28% 17%;
+    --color-neutral-900: 222 47% 11%;
+    --color-neutral-950: 229 84% 5%;
+
+    --color-accent-purple: 262 83% 58%;
+    --color-accent-blue: 189 94% 43%;
+    --color-accent-pink: 330 81% 60%;
+    --color-accent-green: 142 76% 36%;
+    --color-accent-orange: 25 95% 53%;
+    --color-accent-red: 0 84% 60%;
+
+    --color-success: 142 76% 36%;
+    --color-warning: 38 92% 50%;
+    --color-error: 0 84% 60%;
+    --color-info: 199 89% 48%;
+
+    --surface: 222 47% 11%;
+    --surface-variant: 217 19% 27%;
+    --outline: 216 12% 84%;
+    --outline-variant: 218 11% 65%;
+
+    --radius-none: 0;
+    --radius-sm: 0.25rem;
+    --radius-base: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-2xl: 1.5rem;
+    --radius-3xl: 2rem;
+    --radius-full: 9999px;
+
     /* Совместимость с существующими компонентами */
-    --background: var(--color-neutral-900);
-    --foreground: var(--color-neutral-50);
-    --card: var(--surface);
-    --card-foreground: var(--foreground);
-    --popover: var(--surface);
-    --popover-foreground: var(--foreground);
-    --primary: var(--color-accent-purple);
-    --primary-foreground: var(--foreground);
-    --secondary: var(--surface-variant);
-    --secondary-foreground: var(--foreground);
-    --muted: var(--color-neutral-700);
-    --muted-foreground: var(--color-neutral-400);
-    --accent: var(--color-accent-blue);
-    --accent-foreground: var(--foreground);
-    --destructive: var(--color-error);
-    --destructive-foreground: var(--foreground);
-    --border: var(--outline-variant);
-    --input: var(--surface-variant);
-    --ring: var(--color-accent-purple);
-    --radius: var(--radius-lg);
-    --chart-1: var(--color-accent-blue);
-    --chart-2: var(--color-accent-green);
-    --chart-3: var(--color-accent-orange);
-    --chart-4: var(--color-accent-purple);
-    --chart-5: var(--color-accent-pink);
+    --background: 222 47% 11%;
+    --foreground: 210 20% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 20% 98%;
+    --popover: 217 19% 27%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 210 20% 98%;
+    --secondary: 217 19% 27%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 217 19% 27%;
+    --muted-foreground: 218 11% 65%;
+    --accent: 189 94% 43%;
+    --accent-foreground: 210 20% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 218 11% 65%;
+    --input: 217 19% 27%;
+    --ring: 262 83% 58%;
+    --radius: 0.75rem;
+    --chart-1: 189 94% 43%;
+    --chart-2: 142 76% 36%;
+    --chart-3: 25 95% 53%;
+    --chart-4: 262 83% 58%;
+    --chart-5: 330 81% 60%;
 
     --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(330 81% 60%) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(189 94% 43%) 0%, hsl(262 83% 58%) 100%);
@@ -61,7 +98,7 @@
     --mobile-font-base: 1rem;
     --mobile-font-lg: 1.125rem;
 
-    /* Dynamic offsets - автоматически обновляются через useWorkspaceOffsets hook */
+    /* Dynamic offsets */
     --workspace-bottom-offset: 0px;
     --bottom-tab-bar-height: 0px;
     --mini-player-height: 0px;
