@@ -404,9 +404,24 @@ const mainHandler = async (req: Request) => {
       if (successfulTracks.length > 0) {
         console.log(`[suno-callback] Creating ${successfulTracks.length} track versions`);
         
-        for (let i = 0; i < successfulTracks.length; i++) {
-          const versionTrack = successfulTracks[i];
-          const variantIndex = i;
+        // Выясняем занятые индексы, чтобы корректно назначать variant_index при частичных коллбеках
+        const { data: existingVersions } = await supabase
+          .from('track_versions')
+          .select('variant_index')
+          .eq('parent_track_id', track.id);
+        const used = new Set<number>((existingVersions || [])
+          .map((v: any) => v.variant_index)
+          .filter((n: any) => typeof n === 'number'));
+
+        const nextIndex = () => {
+          let idx = 0;
+          while (used.has(idx)) idx++;
+          used.add(idx);
+          return idx;
+        };
+        
+        for (const versionTrack of successfulTracks) {
+          const variantIndex = nextIndex();
           const versionExternalAudioUrl = versionTrack.audioUrl || versionTrack.audio_url
             || versionTrack.stream_audio_url || versionTrack.source_stream_audio_url;
           
@@ -451,14 +466,13 @@ const mainHandler = async (req: Request) => {
             suno_task_id: taskId,
           };
 
-          // ✅ Правильная логика флагов
           const { error: versionError } = await supabase
             .from('track_versions')
-            .insert({
+            .upsert({
               parent_track_id: track.id,
               variant_index: variantIndex,
               is_primary_variant: variantIndex === 0,
-              is_preferred_variant: variantIndex === 0, // Primary по умолчанию предпочитаемая
+              is_preferred_variant: variantIndex === 0,
               suno_id: sanitizeText(versionTrack.id),
               audio_url: versionAudioUrl,
               video_url: versionVideoUrl,
@@ -466,16 +480,16 @@ const mainHandler = async (req: Request) => {
               lyrics: sanitizeText(versionTrack.prompt || versionTrack.lyric || versionTrack.lyrics),
               duration: Math.round(versionTrack.duration || versionTrack.duration_seconds || 0),
               metadata: versionMetadata,
-            });
+            }, { onConflict: 'parent_track_id,variant_index' });
 
           if (versionError) {
-            console.error(`[suno-callback] Error inserting version ${variantIndex}:`, versionError, {
+            console.error(`[suno-callback] Error upserting version ${variantIndex}:`, versionError, {
               parent_track_id: track.id,
               variant_index: variantIndex,
               is_primary_variant: variantIndex === 0,
             });
           } else {
-            console.log(`[suno-callback] ✅ Version ${variantIndex} (${variantIndex === 0 ? 'PRIMARY' : 'ALTERNATE'}) created successfully`);
+            console.log(`[suno-callback] ✅ Version ${variantIndex} (${variantIndex === 0 ? 'PRIMARY' : 'ALTERNATE'}) saved`);
           }
         }
       }
