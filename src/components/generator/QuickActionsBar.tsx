@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Upload, User, Sparkles } from '@/utils/iconImports';
 import { cn } from '@/lib/utils';
 
@@ -25,7 +25,7 @@ export const QuickActionsBar = memo(({
 }: QuickActionsBarProps) => {
   return (
     <div className="grid grid-cols-3 gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 border-b border-border/10 bg-background/95 backdrop-blur-sm">
-      <TooltipProvider>
+      
         {/* Audio Button */}
         <Tooltip>
           <TooltipTrigger asChild>
@@ -97,7 +97,7 @@ export const QuickActionsBar = memo(({
             <p>Выбрать проект для вдохновения</p>
           </TooltipContent>
         </Tooltip>
-      </TooltipProvider>
+      
     </div>
   );
 });
