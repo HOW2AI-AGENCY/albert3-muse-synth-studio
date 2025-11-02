@@ -4,9 +4,9 @@
  */
 import { useMemo } from 'react';
 
-const CARD_MIN_WIDTH = 280;
-const CARD_MAX_WIDTH = 360;
-const CARD_IDEAL_WIDTH = 320;
+const CARD_MIN_WIDTH = 220;
+const CARD_MAX_WIDTH = 280;
+const CARD_IDEAL_WIDTH = 250;
 
 export interface AdaptiveGridParams {
   columns: number;
