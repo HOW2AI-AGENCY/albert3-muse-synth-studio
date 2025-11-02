@@ -18,6 +18,7 @@ import { PersonaPickerDialog } from '@/components/generator/PersonaPickerDialog'
 import { InspoProjectDialog, type InspoProject } from '@/components/generator/InspoProjectDialog';
 import { LazyAudioSourceDialog } from '@/components/LazyDialogs';
 import { StyleRecommendationsInline } from '@/components/generator/StyleRecommendationsInline';
+import { LyricsWorkspace } from '@/components/lyrics/workspace/LyricsWorkspace';
 interface MusicGeneratorProps {
   onTrackGenerated?: () => void;
 }
@@ -58,6 +59,7 @@ export const MusicGenerator = ({
 
   // Custom mode
   const [title, setTitle] = useState('');
+  const [stylePrompt, setStylePrompt] = useState(''); // NEW: Style description for Custom Mode
   const [lyrics, setLyrics] = useState('');
   const [tags, setTags] = useState('');
 
@@ -238,7 +240,7 @@ export const MusicGenerator = ({
         prompt: prompt.trim(),
         modelVersion
       } : {
-        prompt: prompt.trim() || title.trim(),
+        prompt: stylePrompt.trim() || title.trim(),
         title: title.trim(),
         lyrics: lyrics.trim(),
         tags: tags.trim(),
@@ -256,7 +258,7 @@ export const MusicGenerator = ({
         try {
           await supabase.from('prompt_history').insert({
             user_id: user.id,
-            prompt: prompt.trim() || title.trim(),
+            prompt: mode === 'simple' ? prompt.trim() : stylePrompt.trim() || title.trim(),
             lyrics: lyrics.trim() || null,
             style_tags: styleTags.length > 0 ? styleTags : null,
             provider: 'suno',
@@ -279,6 +281,7 @@ export const MusicGenerator = ({
       // Reset form
       setPrompt('');
       setTitle('');
+      setStylePrompt('');
       setLyrics('');
       setTags('');
       setReferenceAudioUrl(null);
@@ -519,19 +522,64 @@ export const MusicGenerator = ({
                   </Button>
                 </div>}
 
+              {/* Title */}
               <div className="space-y-2">
-                <Label className="text-sm">Название</Label>
-                <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Моя песня" disabled={isGenerating} />
+                <Label className="text-sm font-medium">Название</Label>
+                <Input 
+                  value={title} 
+                  onChange={e => setTitle(e.target.value)} 
+                  placeholder="Моя песня" 
+                  disabled={isGenerating} 
+                />
               </div>
 
+              {/* Style Prompt */}
               <div className="space-y-2">
-                <Label className="text-sm">Текст песни</Label>
-                <Textarea value={lyrics} onChange={e => setLyrics(e.target.value)} placeholder="[Verse]&#10;Текст первого куплета...&#10;&#10;[Chorus]&#10;Текст припева..." className="min-h-[150px] font-mono text-sm resize-none" disabled={isGenerating} />
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">Описание стиля</Label>
+                  <div className={cn(
+                    "text-xs tabular-nums",
+                    stylePrompt.length > 450 ? "text-destructive font-medium" : "text-muted-foreground"
+                  )}>
+                    {stylePrompt.length}/500
+                  </div>
+                </div>
+                <Textarea 
+                  value={stylePrompt} 
+                  onChange={e => setStylePrompt(e.target.value)} 
+                  placeholder="Энергичная электронная музыка, танцевальный бит, женский вокал..."
+                  className="min-h-[80px] resize-y" 
+                  disabled={isGenerating}
+                  maxLength={500}
+                />
               </div>
 
+              {/* Lyrics with LyricsWorkspace */}
               <div className="space-y-2">
-                <Label className="text-sm">Теги стилей</Label>
-                <Input value={tags} onChange={e => setTags(e.target.value)} placeholder="pop, energetic, female vocals" disabled={isGenerating} />
+                <Label className="text-sm font-medium">Структура песни</Label>
+                <div className="border rounded-lg overflow-hidden bg-background/50">
+                  <LyricsWorkspace
+                    mode="edit"
+                    value={lyrics}
+                    onChange={setLyrics}
+                    showAITools={false}
+                    showTags={true}
+                    showSectionControls={true}
+                    compact={true}
+                    className="min-h-[200px]"
+                  />
+                </div>
+              </div>
+
+              {/* Style Tags */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Теги стилей</Label>
+                <Input 
+                  value={tags} 
+                  onChange={e => setTags(e.target.value)} 
+                  placeholder="pop, energetic, female vocals" 
+                  disabled={isGenerating} 
+                />
               </div>
             </>}
 
