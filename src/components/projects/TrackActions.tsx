@@ -112,7 +112,7 @@ export const TrackActions: React.FC<TrackActionsProps> = ({
         onOpenChange={setLyricsDialogOpen}
         trackId={track.id}
         initialPrompt={getLyricsPrompt()}
-        onSuccess={() => {
+        onGenerated={() => {
           setLyricsDialogOpen(false);
           onLyricsGenerated?.();
         }}

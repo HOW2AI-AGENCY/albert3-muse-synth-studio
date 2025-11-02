@@ -14,33 +14,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/utils/logger";
 import { Loader2, FileText } from "@/utils/iconImports";
-import { LyricsVariantSelectorDialog } from "@/components/lyrics/LyricsVariantSelector";
-import { LyricsVariantsPanel } from "@/components/lyrics/LyricsVariantsPanel";
 
 interface LyricsGeneratorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   trackId?: string;
   initialPrompt?: string;
-  onSuccess?: (jobId: string) => void;
   onGenerated?: (lyrics: string) => void;
 }
 
-const MAX_WORDS = 200;
+const MAX_WORDS = 500; // Увеличен лимит для Lovable AI
 
 export function LyricsGeneratorDialog({ 
   open, 
   onOpenChange, 
   trackId,
   initialPrompt = "",
-  onSuccess,
   onGenerated
 }: LyricsGeneratorDialogProps) {
   const [prompt, setPrompt] = useState(initialPrompt);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [variantSelectorOpen, setVariantSelectorOpen] = useState(false);
-  const [showVariants, setShowVariants] = useState(false);
-  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const wordCount = prompt.trim().split(/\s+/).filter(Boolean).length;
@@ -69,10 +62,10 @@ export function LyricsGeneratorDialog({
     try {
       logger.info(`✍️ [LYRICS] Generating lyrics: ${prompt.substring(0, 50)}...`);
 
-      const { data, error } = await supabase.functions.invoke('generate-lyrics', {
+      // Используем Lovable AI вместо Suno для генерации лирики (нет лимита на длину промпта)
+      const { data, error } = await supabase.functions.invoke('generate-lyrics-ai', {
         body: {
-          prompt: prompt.trim(),
-          ...(trackId && { trackId })
+          prompt: prompt.trim()
         }
       });
 
@@ -80,97 +73,31 @@ export function LyricsGeneratorDialog({
         throw error;
       }
 
-      logger.info(`✅ [LYRICS] Lyrics generation started:`, data);
+      logger.info(`✅ [LYRICS] Lyrics generation completed`, data);
 
-      // Poll for results
-      if (data?.jobId) {
-        setCurrentJobId(data.jobId);
-        logger.info(`⏳ [LYRICS] Polling for job ${data.jobId}...`);
-        
-        toast({
-          title: "Генерация началась",
-          description: "Получаем результаты..."
-        });
-
-        // Poll every 3 seconds for max 30 seconds
-        let attempts = 0;
-        const maxAttempts = 10;
-        const pollInterval = setInterval(async () => {
-          attempts++;
-          
-          try {
-            const { data: jobData, error: jobError } = await supabase
-              .from('lyrics_jobs')
-              .select('*, lyrics_variants(*)')
-              .eq('id', data.jobId)
-              .single();
-
-            if (jobError) throw jobError;
-
-            logger.info(`📊 [LYRICS] Poll attempt ${attempts}/${maxAttempts}, status: ${jobData.status}`);
-
-            if (jobData.status === 'completed' && jobData.lyrics_variants?.length > 0) {
-              clearInterval(pollInterval);
-              
-              logger.info(`✅ [LYRICS] Got ${jobData.lyrics_variants.length} variants`);
-              
-              // If multiple variants, show new UI
-              if (jobData.lyrics_variants.length > 1) {
-                setShowVariants(true);
-                toast({
-                  title: "✨ Текст готов!",
-                  description: `Получено ${jobData.lyrics_variants.length} вариантов. Выберите лучший!`
-                });
-              } else {
-                // Auto-select single variant
-                const firstVariant = jobData.lyrics_variants[0];
-                if (onGenerated && firstVariant.content) {
-                  onGenerated(firstVariant.content);
-                }
-                toast({
-                  title: "✨ Текст готов!",
-                  description: "Текст добавлен в форму"
-                });
-                onOpenChange(false);
-                setPrompt("");
-              }
-            } else if (jobData.status === 'failed') {
-              clearInterval(pollInterval);
-              logger.error(`❌ [LYRICS] Generation failed`, new Error(jobData.error_message || 'Generation failed'), `[LYRICS]`, {
-                jobId: data.jobId,
-                attempts
-              });
-              throw new Error(jobData.error_message || 'Генерация не удалась');
-            } else if (attempts >= maxAttempts) {
-              clearInterval(pollInterval);
-              logger.error(`❌ [LYRICS] Timeout reached`, new Error('Timeout'), `[LYRICS]`, {
-                jobId: data.jobId,
-                maxAttempts,
-                lastStatus: jobData.status
-              });
-              throw new Error('Превышено время ожидания');
-            }
-          } catch (pollError) {
-            clearInterval(pollInterval);
-            logger.error(`❌ [LYRICS] Polling error:`, pollError instanceof Error ? pollError : undefined);
-            toast({
-              variant: "destructive",
-              title: "Ошибка",
-              description: pollError instanceof Error ? pollError.message : "Не удалось получить результаты"
-            });
-          }
-        }, 3000);
-
-        if (onSuccess) {
-          onSuccess(data.jobId);
+      // Lovable AI возвращает лирику напрямую
+      if (data?.lyrics) {
+        if (onGenerated) {
+          onGenerated(data.lyrics);
         }
-      } else {
+        
+        // Сохраняем лирику в трек, если указан trackId
+        if (trackId) {
+          await supabase
+            .from('tracks')
+            .update({ lyrics: data.lyrics })
+            .eq('id', trackId);
+        }
+
         toast({
-          title: "Генерация началась",
-          description: "Текст песни будет готов через 10-30 секунд"
+          title: "✨ Текст готов!",
+          description: "Текст добавлен в форму"
         });
+        
         onOpenChange(false);
         setPrompt("");
+      } else {
+        throw new Error('No lyrics generated');
       }
     } catch (error) {
       logger.error(`❌ [LYRICS] Error generating lyrics:`, error instanceof Error ? error : undefined);
@@ -185,134 +112,82 @@ export function LyricsGeneratorDialog({
   };
 
   return (
-    <>
-      <Dialog open={open && !showVariants} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[540px] gap-0 p-0">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b">
-            <DialogTitle className="flex items-center gap-2.5 text-lg">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <FileText className="w-4 h-4 text-primary" />
-              </div>
-              Генерация текста песни
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground mt-1.5">
-              Опишите настроение, тему и стиль — AI создаст несколько вариантов
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="px-6 py-5 space-y-4">
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="prompt" className="text-sm font-medium flex items-center gap-1.5">
-                  Описание
-                  <span className="text-destructive text-xs">*</span>
-                </Label>
-                <div className={`text-xs font-mono tabular-nums transition-colors ${
-                  wordCount > MAX_WORDS 
-                    ? 'text-destructive font-semibold' 
-                    : wordCount > MAX_WORDS * 0.8
-                    ? 'text-orange-500'
-                    : 'text-muted-foreground'
-                }`}>
-                  {wordCount} / {MAX_WORDS}
-                </div>
-              </div>
-              <Textarea
-                id="prompt"
-                placeholder="Например: песня о любви в стиле поп-рок, веселая и энергичная, с припевом о преодолении трудностей..."
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                rows={7}
-                className="resize-none text-sm leading-relaxed"
-              />
-              <div className="flex items-start gap-2 text-[11px] text-muted-foreground">
-                <div className="mt-0.5">💡</div>
-                <p>
-                  Будьте конкретны: укажите жанр, настроение, тему и структуру песни для лучших результатов
-                </p>
-              </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[540px] gap-0 p-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+          <DialogTitle className="flex items-center gap-2.5 text-lg">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <FileText className="w-4 h-4 text-primary" />
             </div>
-          </div>
-
-          <DialogFooter className="px-6 pb-6 pt-0 gap-2 sm:gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => onOpenChange(false)} 
-              disabled={isGenerating}
-              className="flex-1 sm:flex-none"
-            >
-              Отмена
-            </Button>
-            <Button 
-              onClick={handleGenerate} 
-              disabled={isGenerating || !prompt.trim() || wordCount > MAX_WORDS}
-              className="flex-1 sm:flex-none gap-2"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Генерация...</span>
-                </>
-              ) : (
-                <>
-                  <FileText className="h-4 w-4" />
-                  <span>Сгенерировать</span>
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-    <LyricsVariantSelectorDialog
-      open={variantSelectorOpen}
-      onOpenChange={setVariantSelectorOpen}
-      jobId={currentJobId || ''}
-      onSelect={(lyrics) => {
-        if (onGenerated) {
-          onGenerated(lyrics);
-        }
-        setVariantSelectorOpen(false);
-        onOpenChange(false);
-        setPrompt("");
-      }}
-    />
-
-    {/* Новый UI для выбора вариантов лирики */}
-    <Dialog open={showVariants} onOpenChange={(open) => {
-      if (!open) {
-        setShowVariants(false);
-        onOpenChange(false);
-        setPrompt("");
-      }
-    }}>
-      <DialogContent className="sm:max-w-[800px] max-h-[80vh]">
-        <DialogHeader>
-          <DialogTitle>Выберите вариант лирики</DialogTitle>
-          <DialogDescription>
-            AI сгенерировал несколько вариантов. Выберите наиболее подходящий.
+            Генерация текста песни
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground mt-1.5">
+            Опишите настроение, тему и стиль — AI создаст текст песни
           </DialogDescription>
         </DialogHeader>
-        
-        {currentJobId && (
-          <LyricsVariantsPanel 
-            jobId={currentJobId}
-            onSelect={(variant) => {
-              if (variant.content && onGenerated) {
-                onGenerated(variant.content);
-                setShowVariants(false);
-                onOpenChange(false);
-                setPrompt("");
-                toast({
-                  title: '✅ Лирика выбрана',
-                  description: 'Вариант добавлен в форму генерации'
-                });
-              }
-            }}
-          />
-        )}
+
+        <div className="px-6 py-5 space-y-4">
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="prompt" className="text-sm font-medium flex items-center gap-1.5">
+                Описание
+                <span className="text-destructive text-xs">*</span>
+              </Label>
+              <div className={`text-xs font-mono tabular-nums transition-colors ${
+                wordCount > MAX_WORDS 
+                  ? 'text-destructive font-semibold' 
+                  : wordCount > MAX_WORDS * 0.8
+                  ? 'text-orange-500'
+                  : 'text-muted-foreground'
+              }`}>
+                {wordCount} / {MAX_WORDS}
+              </div>
+            </div>
+            <Textarea
+              id="prompt"
+              placeholder="Например: песня о любви в стиле поп-рок, веселая и энергичная, с припевом о преодолении трудностей..."
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              rows={7}
+              className="resize-none text-sm leading-relaxed"
+            />
+            <div className="flex items-start gap-2 text-[11px] text-muted-foreground">
+              <div className="mt-0.5">💡</div>
+              <p>
+                Будьте конкретны: укажите жанр, настроение, тему и структуру песни для лучших результатов
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="px-6 pb-6 pt-0 gap-2 sm:gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)} 
+            disabled={isGenerating}
+            className="flex-1 sm:flex-none"
+          >
+            Отмена
+          </Button>
+          <Button 
+            onClick={handleGenerate} 
+            disabled={isGenerating || !prompt.trim() || wordCount > MAX_WORDS}
+            className="flex-1 sm:flex-none gap-2"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Генерация...</span>
+              </>
+            ) : (
+              <>
+                <FileText className="h-4 w-4" />
+                <span>Сгенерировать</span>
+              </>
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
-    </>
   );
 }
