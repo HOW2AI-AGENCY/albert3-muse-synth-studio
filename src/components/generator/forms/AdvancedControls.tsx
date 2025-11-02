@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Slider } from '@/components/ui/slider';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from '@/utils/iconImports';
@@ -57,24 +57,26 @@ export const AdvancedControls = memo(({
       
       {/* Vocal Gender - только для Suno */}
       {features.vocalGenderSelection && (
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           <Label className="text-xs font-medium">Тип вокала</Label>
-          <Select 
+          <ToggleGroup 
+            type="single"
             value={vocalGender} 
-            onValueChange={(v) => onVocalGenderChange(v as VocalGender)}
+            onValueChange={(v) => v && onVocalGenderChange(v as VocalGender)}
             disabled={isGenerating}
+            className="justify-start gap-1.5"
           >
-            <SelectTrigger className="h-8 text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {VOCAL_GENDER_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value} className="text-sm">
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            {VOCAL_GENDER_OPTIONS.map((option) => (
+              <ToggleGroupItem 
+                key={option.value} 
+                value={option.value} 
+                className="h-8 px-3 text-xs data-[state=on]:bg-primary/20 data-[state=on]:text-primary data-[state=on]:border-primary/50"
+                disabled={isGenerating}
+              >
+                {option.label}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
         </div>
       )}
 

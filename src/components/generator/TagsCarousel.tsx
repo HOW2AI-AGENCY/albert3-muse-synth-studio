@@ -39,7 +39,7 @@ export const TagsCarousel = ({ onTagClick, disabled = false }: TagsCarouselProps
         {/* Left fade gradient */}
         <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-secondary/20 to-transparent pointer-events-none z-10 rounded-l-md" />
         
-        <ScrollArea className="w-full max-w-full whitespace-nowrap rounded-md border border-border/40 bg-secondary/20 p-1 sm:p-1.5">
+        <ScrollArea className="w-full max-w-full whitespace-nowrap rounded-md border-2 border-primary/30 bg-secondary/20 p-1 sm:p-1.5">
           <div className="flex gap-1 sm:gap-1.5 pb-2">
             {INSPIRATION_TAGS.map((tag) => (
               <Button
