@@ -133,7 +133,7 @@ export const CompactCustomForm = memo(({
   }, [params.tags, onParamChange, onDebouncedPromptChange, onDebouncedLyricsChange]);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full pb-safe">
       {/* Main Content - Scrollable */}
       <div className="flex-1 overflow-y-auto space-y-2 pb-20">
         {/* Title - Moved to top */}
@@ -147,7 +147,7 @@ export const CompactCustomForm = memo(({
             placeholder="Авто-генерация если пусто"
             value={params.title}
             onChange={(e) => onParamChange('title', e.target.value)}
-            className={cn(isMobile ? "h-10 text-base" : "h-8 text-sm")}
+            className={cn("mobile-input", isMobile ? "h-11" : "h-8")}
             disabled={isGenerating}
             maxLength={80}
           />
@@ -190,8 +190,7 @@ export const CompactCustomForm = memo(({
               }}
               disabled={isGenerating}
               className={cn(
-                "pr-10 resize-y min-h-[80px] max-h-[300px]", 
-                isMobile ? "text-base" : "text-sm"
+                "pr-10 resize-y min-h-[80px] max-h-[300px] mobile-input"
               )}
               maxLength={MAX_PROMPT_LENGTH}
             />
@@ -221,7 +220,7 @@ export const CompactCustomForm = memo(({
           <Button
             variant="outline"
             onClick={() => setProjectDialogOpen(true)}
-            className="w-full h-9 justify-start gap-2 text-sm"
+            className={cn("w-full justify-start gap-2 text-sm", isMobile ? "h-11" : "h-9")}
             disabled={isGenerating}
           >
             <Music className="h-4 w-4" />
@@ -311,7 +310,10 @@ export const CompactCustomForm = memo(({
 
         {/* Lyrics Section */}
         <Collapsible defaultOpen={!!debouncedLyrics}>
-          <CollapsibleTrigger className="flex items-center justify-between w-full p-2 hover:bg-accent/5 rounded-md transition-colors group">
+          <CollapsibleTrigger className={cn(
+            "flex items-center justify-between w-full hover:bg-accent/5 rounded-md transition-colors group",
+            isMobile ? "p-3" : "p-2"
+          )}>
             <div className="flex items-center gap-2 text-sm font-medium">
               <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
               <span>Lyrics</span>
@@ -328,7 +330,10 @@ export const CompactCustomForm = memo(({
                 e.stopPropagation();
                 onOpenLyricsDialog();
               }}
-              className="h-6 px-2 text-[10px] gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              className={cn(
+                "h-6 px-2 text-[10px] gap-1 transition-opacity",
+                isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+              )}
             >
               <Sparkles className="h-3 w-3" />
               Generate
@@ -346,7 +351,10 @@ export const CompactCustomForm = memo(({
 
         {/* Styles Section with AI Recommendations */}
         <Collapsible defaultOpen={tagsCount > 0}>
-          <CollapsibleTrigger className="flex items-center justify-between w-full p-2 hover:bg-accent/5 rounded-md transition-colors group">
+          <CollapsibleTrigger className={cn(
+            "flex items-center justify-between w-full hover:bg-accent/5 rounded-md transition-colors group",
+            isMobile ? "p-3" : "p-2"
+          )}>
             <div className="flex items-center gap-2 text-sm font-medium">
               <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
               <span>Styles</span>
@@ -408,7 +416,10 @@ export const CompactCustomForm = memo(({
 
         {/* Advanced Options */}
         <Collapsible>
-          <CollapsibleTrigger className="flex items-center gap-2 w-full p-2 hover:bg-accent/5 rounded-md transition-colors group">
+          <CollapsibleTrigger className={cn(
+            "flex items-center gap-2 w-full hover:bg-accent/5 rounded-md transition-colors group",
+            isMobile ? "p-3" : "p-2"
+          )}>
             <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
             <span className="text-sm font-medium">Advanced Options</span>
           </CollapsibleTrigger>

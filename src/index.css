@@ -84,6 +84,11 @@
 }
 
 @layer utilities {
+  /* Mobile input optimization - prevents iOS zoom on input fields */
+  .mobile-input {
+    @apply text-base md:text-sm;
+  }
+
   .text-gradient-primary {
     @apply bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent;
   }
