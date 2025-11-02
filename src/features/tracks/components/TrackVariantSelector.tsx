@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Star, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTrackVersions } from '@/features/tracks/hooks';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -81,61 +81,57 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
   return (
     <div className="flex items-center gap-1">
       {/* Кнопка установки мастер-версии */}
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSetMaster}
-              disabled={isMasterVersion || isSettingMaster}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSetMaster}
+            disabled={isMasterVersion || isSettingMaster}
+            className={cn(
+              "h-7 w-7 p-0",
+              "transition-all duration-200",
+              isMasterVersion 
+                ? "text-amber-500 hover:text-amber-600" 
+                : "text-muted-foreground hover:text-amber-500 opacity-60 hover:opacity-100"
+            )}
+          >
+            <Star 
               className={cn(
-                "h-7 w-7 p-0",
-                "transition-all duration-200",
-                isMasterVersion 
-                  ? "text-amber-500 hover:text-amber-600" 
-                  : "text-muted-foreground hover:text-amber-500 opacity-60 hover:opacity-100"
-              )}
-            >
-              <Star 
-                className={cn(
-                  "h-4 w-4",
-                  isMasterVersion && "fill-current"
-                )} 
-              />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="left">
-            {isMasterVersion ? 'Мастер-версия' : 'Установить как мастер-версию'}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+                "h-4 w-4",
+                isMasterVersion && "fill-current"
+              )} 
+            />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="left">
+          {isMasterVersion ? 'Мастер-версия' : 'Установить как мастер-версию'}
+        </TooltipContent>
+      </Tooltip>
 
       {/* Переключатель версий */}
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleNextVersion}
-              className={cn(
-                "h-7 px-2.5 gap-1.5 text-xs font-semibold",
-                "bg-background/95 hover:bg-background backdrop-blur-md",
-                "border border-border/50 shadow-lg",
-                "transition-all duration-200 hover:scale-105 active:scale-95",
-                className
-              )}
-            >
-              <span className="tabular-nums">{displayIndex}/{totalVersions}</span>
-              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="left">
-            <p>Переключить вариант трека</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleNextVersion}
+            className={cn(
+              "h-7 px-2.5 gap-1.5 text-xs font-semibold",
+              "bg-background/95 hover:bg-background backdrop-blur-md",
+              "border border-border/50 shadow-lg",
+              "transition-all duration-200 hover:scale-105 active:scale-95",
+              className
+            )}
+          >
+            <span className="tabular-nums">{displayIndex}/{totalVersions}</span>
+            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="left">
+          <p>Переключить вариант трека</p>
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 };

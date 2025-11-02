@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { getVersionLabel } from '@/utils/versionLabels';
 
@@ -78,27 +78,25 @@ export const SimpleVersionSelector: React.FC<SimpleVersionSelectorProps> = ({
     <div className={cn("flex items-center gap-2", className)}>
       {/* Быстрая кнопка "Играть мастер" */}
       {showPlayMasterButton && masterVersion && onPlayMaster && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPlayMaster();
-                }}
-                className="h-8 px-2"
-              >
-                <Star className="h-3.5 w-3.5 mr-1 fill-primary text-primary" />
-                <Play className="h-3.5 w-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              Воспроизвести мастер-версию
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onPlayMaster();
+              }}
+              className="h-8 px-2"
+            >
+              <Star className="h-3.5 w-3.5 mr-1 fill-primary text-primary" />
+              <Play className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            Воспроизвести мастер-версию
+          </TooltipContent>
+        </Tooltip>
       )}
 
       {/* Селектор версий */}

@@ -1,7 +1,7 @@
 import { Download, Heart, Music2, Play, Share2 } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 interface CompactTrackHeroProps {
@@ -86,51 +86,49 @@ export const CompactTrackHero = ({
 
         {/* Horizontal Action Row with Inline Counters */}
         <div className="flex items-center gap-1">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="gap-1 h-9 px-3"
-                  onClick={onLike}
-                >
-                  <Heart className={cn("h-4 w-4", isLiked && "fill-current text-red-500")} />
-                  <span className="text-xs tabular-nums">{formatCount(likeCount)}</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{isLiked ? "Убрать из избранного" : "В избранное"}</TooltipContent>
-            </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="gap-1 h-9 px-3"
+                onClick={onLike}
+              >
+                <Heart className={cn("h-4 w-4", isLiked && "fill-current text-red-500")} />
+                <span className="text-xs tabular-nums">{formatCount(likeCount)}</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{isLiked ? "Убрать из избранного" : "В избранное"}</TooltipContent>
+          </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button size="sm" variant="ghost" className="gap-1 h-9 px-3">
-                  <Play className="h-4 w-4" />
-                  <span className="text-xs tabular-nums">{formatCount(track.play_count)}</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Прослушиваний</TooltipContent>
-            </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button size="sm" variant="ghost" className="gap-1 h-9 px-3">
+                <Play className="h-4 w-4" />
+                <span className="text-xs tabular-nums">{formatCount(track.play_count)}</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Прослушиваний</TooltipContent>
+          </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button size="sm" variant="ghost" className="gap-1 h-9 px-3" onClick={onDownload}>
-                  <Download className="h-4 w-4" />
-                  <span className="text-xs tabular-nums">{formatCount(track.download_count)}</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Скачать MP3</TooltipContent>
-            </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button size="sm" variant="ghost" className="gap-1 h-9 px-3" onClick={onDownload}>
+                <Download className="h-4 w-4" />
+                <span className="text-xs tabular-nums">{formatCount(track.download_count)}</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Скачать MP3</TooltipContent>
+          </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button size="sm" variant="ghost" className="gap-1 h-9 px-3" onClick={onShare}>
-                  <Share2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Поделиться</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button size="sm" variant="ghost" className="gap-1 h-9 px-3" onClick={onShare}>
+                <Share2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Поделиться</TooltipContent>
+          </Tooltip>
         </div>
 
         {/* Primary CTA Button */}

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrackVersions, TrackVersionComparison, TrackStemsPanel, useTrackLike } from "@/features/tracks";
 import type { TrackVersionMetadata } from "@/features/tracks/components/TrackVersionMetadataPanel";
@@ -475,9 +475,8 @@ export const DetailPanelContent = ({
     return undefined;
   };
   const artist = extractArtist(track.metadata) ?? "Неизвестный артист";
-  return <TooltipProvider delayDuration={500}>
-      {/* Compact Track Hero - Vertical Layout */}
-      <CompactTrackHero track={track} activeVersion={activeVersion ? {
+  return (<>
+  <CompactTrackHero track={track} activeVersion={activeVersion ? {
       variant_index: activeVersion.variant_index,
       created_at: activeVersion.created_at,
       duration: activeVersion.duration
@@ -733,7 +732,8 @@ export const DetailPanelContent = ({
         onUseForNewGeneration={handleUseForNewGeneration}
         isApplying={isApplyingToTrack}
       />
-    </TooltipProvider>;
+    </>
+  );
 };
 interface StatsItemProps {
   icon: LucideIcon;
