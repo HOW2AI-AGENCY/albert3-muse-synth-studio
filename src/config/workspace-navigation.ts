@@ -7,6 +7,7 @@ import {
   BarChart3,
   Settings,
   Wand2,
+  Headphones,
 } from "@/utils/iconImports";
 import {
   preloadDashboard,
@@ -48,6 +49,13 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     label: "Prompt DJ",
     path: "/workspace/prompt-dj",
     icon: Wand2,
+    isMobilePrimary: true,
+  },
+  {
+    id: "studio",
+    label: "Studio",
+    path: "/workspace/studio",
+    icon: Headphones,
     isMobilePrimary: true,
   },
   {
