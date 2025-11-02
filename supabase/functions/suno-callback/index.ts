@@ -135,8 +135,8 @@ const mainHandler = async (req: Request) => {
     // Find the track by metadata.suno_task_id
     const { data: track, error: findErr } = await supabase
       .from("tracks")
-      .select("id, title, prompt, status, user_id, metadata")
-      .contains("metadata", { suno_task_id: taskId })
+      .select("id, title, prompt, status, user_id, metadata, suno_id")
+      .or(`suno_id.eq.${taskId},metadata->>suno_task_id.eq.${taskId}`)
       .maybeSingle();
 
     if (findErr) {

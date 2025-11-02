@@ -285,10 +285,20 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
         const trackData = await this.pollTaskStatus(taskId);
         
         // Update polling metadata
+        // Merge polling metadata with existing metadata instead of overwriting
+        const { data: metaTrack } = await this.supabase
+          .from('tracks')
+          .select('metadata')
+          .eq('id', trackId)
+          .single();
+        const existingMeta = (metaTrack?.metadata && typeof metaTrack.metadata === 'object')
+          ? (metaTrack.metadata as Record<string, unknown>)
+          : {};
         await this.supabase
           .from('tracks')
           .update({
             metadata: {
+              ...existingMeta,
               polling_attempts: attemptNumber + 1,
               last_poll_at: new Date().toISOString(),
               elapsed_time_ms: elapsedTime,

@@ -5,7 +5,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { createHmac } from 'https://deno.land/std@0.177.0/node/crypto.ts';
+// Using Web Crypto API for HMAC verification
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,35 +27,53 @@ interface RequestBody {
 }
 
 /**
- * Verify Telegram initData using HMAC-SHA256
+ * Verify Telegram initData using Web Crypto HMAC-SHA256
  */
-function verifyTelegramInitData(initData: string, botToken: string): boolean {
+async function verifyTelegramInitData(initData: string, botToken: string): Promise<boolean> {
   try {
     const urlParams = new URLSearchParams(initData);
-    const hash = urlParams.get('hash');
-    
-    if (!hash) return false;
-    
+    const providedHash = urlParams.get('hash');
+    if (!providedHash) return false;
+
     // Remove hash from params
     urlParams.delete('hash');
-    
+
     // Sort params alphabetically and create data-check-string
     const dataCheckString = Array.from(urlParams.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, value]) => `${key}=${value}`)
       .join('\n');
-    
-    // Create secret key from bot token
-    const secretKey = createHmac('sha256', 'WebAppData')
-      .update(botToken)
-      .digest();
-    
-    // Create HMAC hash
-    const calculatedHash = createHmac('sha256', secretKey)
-      .update(dataCheckString)
-      .digest('hex');
-    
-    return calculatedHash === hash;
+
+    const enc = new TextEncoder();
+
+    // secret_key = HMAC_SHA256(key="WebAppData", data=botToken)
+    const webAppKey = await crypto.subtle.importKey(
+      'raw',
+      enc.encode('WebAppData'),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const secretRaw = await crypto.subtle.sign('HMAC', webAppKey, enc.encode(botToken));
+
+    // calculated_hash = HMAC_SHA256(key=secret_key, data=data_check_string)
+    const secretKey = await crypto.subtle.importKey(
+      'raw',
+      secretRaw,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const calcRaw = await crypto.subtle.sign('HMAC', secretKey, enc.encode(dataCheckString));
+
+    const toHex = (buf: ArrayBuffer) => Array.from(new Uint8Array(buf))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    const calculatedHash = toHex(calcRaw);
+
+    // Compare case-insensitive
+    return calculatedHash.toLowerCase() === providedHash.toLowerCase();
   } catch (error) {
     console.error('❌ [TELEGRAM-AUTH] Verification error:', error);
     return false;
@@ -90,7 +108,7 @@ serve(async (req) => {
     console.log(`🔐 [TELEGRAM-AUTH] Verifying user: ${user.id} (${user.first_name})`);
 
     // Verify initData signature
-    const isValid = verifyTelegramInitData(initData, botToken);
+    const isValid = await verifyTelegramInitData(initData, botToken);
     if (!isValid) {
       console.error('❌ [TELEGRAM-AUTH] Invalid initData signature');
       return new Response(
