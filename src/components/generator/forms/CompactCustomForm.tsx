@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ProjectSelectorDialog } from '@/components/generator/ProjectSelectorDialog';
-import { ProjectTracksSelector } from '@/components/generator/forms/ProjectTracksSelector';
+import { ProjectDraftsSelector } from '@/components/generator/ProjectDraftsSelector';
 import { useState, useCallback } from 'react';
 import { useProjects } from '@/contexts/ProjectContext';
 import { useTracks } from '@/hooks/useTracks';
@@ -231,16 +231,14 @@ export const CompactCustomForm = memo(({
           </Button>
         </div>
 
-        {/* Project Tracks Selector - показываем когда выбран проект */}
-        {params.activeProjectId && (
-          <ProjectTracksSelector
-            projectId={params.activeProjectId}
-            projectName={projects.find(p => p.id === params.activeProjectId)?.name || 'Проект'}
-            onTrackSelect={handleTrackSelect}
-            selectedTrackId={params.referenceTrackId || null}
-            disabled={isGenerating}
-          />
-        )}
+        {/* Project Drafts Selector - показываем черновики выбранного проекта */}
+        <ProjectDraftsSelector
+          projectId={params.activeProjectId || null}
+          projectName={projects.find(p => p.id === params.activeProjectId)?.name}
+          onDraftSelect={handleTrackSelect}
+          selectedDraftId={params.referenceTrackId || null}
+          disabled={isGenerating}
+        />
 
         {/* Project Selector Dialog */}
         <ProjectSelectorDialog
