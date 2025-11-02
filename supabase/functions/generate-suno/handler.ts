@@ -126,11 +126,32 @@ export class SunoGenerationHandler extends GenerationHandler<SunoGenerationParam
 
     // Build Suno API payload
     // ✅ CRITICAL FIX: Default model V5 + correct parameter name for instrumental mode
+    // Language and title handling
+    const baseText = customMode ? (params.lyrics || '') : (params.prompt || '');
+    const isCyrillic = /[А-Яа-яЁё]/.test(baseText);
+    const explicitLangHint = /(language\s*:)|\b(english|английск)|(russian|русск)/i.test(baseText);
+    const finalPrompt = !customMode
+      ? `${baseText}${isCyrillic && !explicitLangHint ? '\nЯзык: русский. Пожалуйста, сгенерируй вокал и лирику на русском языке.' : ''}`
+      : baseText;
+    
+    const deriveTitleFromPrompt = (text: string) => {
+      const cleaned = (text || '')
+        .replace(/\[(intro|verse|chorus|bridge|outro)\]/ig, '')
+        .replace(/\b(music|track|song|create|generate|трек|музыка|песня|создай|сгенерируй)\b/ig, '')
+        .replace(/[^\wА-Яа-яЁё\s-]/g, ' ')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .slice(0, 60);
+      if (cleaned.length > 3) return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+      return 'New Track';
+    };
+    const derivedTitle = deriveTitleFromPrompt(params.title || params.prompt || params.lyrics || '');
+
     const sunoPayload: SunoGenerationPayload = {
-      prompt: customMode ? (params.lyrics || '') : (params.prompt || ''),
+      prompt: customMode ? (params.lyrics || '') : finalPrompt,
       tags: params.styleTags || [],
-      title: params.title || 'Generated Track',
-      make_instrumental: !params.hasVocals, // ← Convert hasVocals to make_instrumental
+      title: params.title || derivedTitle,
+      make_instrumental: params.hasVocals === false, // ← ensure vocals by default
       model: (params.modelVersion as SunoGenerationPayload['model']) || 'V5', // ← Default V5
       customMode: customMode,
       callBackUrl: this.callbackUrl ?? undefined,

@@ -15,13 +15,16 @@ const corsHeaders = {
 
 interface SunoWebhookPayload {
   taskId: string;
-  stage: 'submit' | 'processing' | 'complete';
+  stage: 'submit' | 'processing' | 'first' | 'complete';
   data?: Array<{
     id?: string;
     audioUrl?: string;
     audio_url?: string;
+    stream_audio_url?: string;
+    source_stream_audio_url?: string;
     coverUrl?: string;
     image_url?: string;
+    source_image_url?: string;
     videoUrl?: string;
     video_url?: string;
     duration?: number;
@@ -68,6 +71,13 @@ serve(async (req) => {
 
     // Обработка разных стадий
     let updateData: Record<string, unknown> = {};
+
+    // Нормализуем массив треков из разных форматов Suno
+    const items = Array.isArray(payload.data)
+      ? payload.data
+      : (payload as any)?.data?.data && Array.isArray((payload as any).data.data)
+        ? (payload as any).data.data
+        : [];
     
     switch (payload.stage) {
       case 'submit':
@@ -83,7 +93,32 @@ serve(async (req) => {
           progress_percent: 50,
         };
         break;
-        
+      
+      case 'first': {
+        // Первый из двух вариантов сгенерирован
+        const firstTrack: any = items?.[0];
+        updateData = {
+          status: 'processing',
+          progress_percent: 75,
+        };
+        // Если уже есть аудио для первого варианта, обновим родительский трек для быстрых предпросмотров
+        if (firstTrack) {
+          const audioUrl = firstTrack.audioUrl || firstTrack.audio_url || firstTrack.stream_audio_url || firstTrack.source_stream_audio_url || null;
+          const coverUrl = firstTrack.coverUrl || firstTrack.image_url || firstTrack.source_image_url || null;
+          const videoUrl = firstTrack.videoUrl || firstTrack.video_url || null;
+          const duration = typeof firstTrack.duration === 'number' ? Math.round(firstTrack.duration) :
+                           (typeof firstTrack.duration_seconds === 'number' ? Math.round(firstTrack.duration_seconds) : null);
+          Object.assign(updateData, {
+            audio_url: audioUrl,
+            cover_url: coverUrl,
+            video_url: videoUrl,
+            duration,
+            duration_seconds: duration,
+          });
+        }
+        break;
+      }
+      
       case 'complete':
         if (payload.error) {
           updateData = {
@@ -91,21 +126,23 @@ serve(async (req) => {
             error_message: payload.error.message,
             progress_percent: 0,
           };
-        } else if (payload.data && Array.isArray(payload.data) && payload.data.length > 0) {
-          const mainTrack = payload.data[0];
+        } else if (items.length > 0) {
+          const mainTrack: any = items[0];
+          const audioUrl = mainTrack.audioUrl || mainTrack.audio_url || mainTrack.stream_audio_url || mainTrack.source_stream_audio_url || null;
+          const coverUrl = mainTrack.coverUrl || mainTrack.image_url || mainTrack.source_image_url || null;
+          const videoUrl = mainTrack.videoUrl || mainTrack.video_url || null;
+          const duration = typeof mainTrack.duration === 'number' ? Math.round(mainTrack.duration) :
+                           (typeof mainTrack.duration_seconds === 'number' ? Math.round(mainTrack.duration_seconds) : null);
           updateData = {
             status: 'completed',
             progress_percent: 100,
-            audio_url: mainTrack.audioUrl || mainTrack.audio_url || null,
-            cover_url: mainTrack.coverUrl || mainTrack.image_url || null,
-            video_url: mainTrack.videoUrl || mainTrack.video_url || null,
-            duration: typeof mainTrack.duration === 'number' ? Math.round(mainTrack.duration) : 
-                     (typeof mainTrack.duration_seconds === 'number' ? Math.round(mainTrack.duration_seconds) : null),
-            duration_seconds: typeof mainTrack.duration === 'number' ? Math.round(mainTrack.duration) : 
-                             (typeof mainTrack.duration_seconds === 'number' ? Math.round(mainTrack.duration_seconds) : null),
+            audio_url: audioUrl,
+            cover_url: coverUrl,
+            video_url: videoUrl,
+            duration,
+            duration_seconds: duration,
             lyrics: mainTrack.lyrics || mainTrack.prompt || null,
           };
-          
           // Обновляем title только если его нет
           if (mainTrack.title && !track.title) {
             updateData.title = mainTrack.title;
@@ -131,11 +168,16 @@ serve(async (req) => {
     console.log(`[suno-webhook] Track updated successfully: ${track.id} -> ${payload.stage}`);
 
     // ✅ Создаём версии для всех треков из Suno (обычно 2 варианта)
-    if (payload.stage === 'complete' && payload.data && Array.isArray(payload.data) && payload.data.length > 0) {
-      console.log(`[suno-webhook] Creating ${payload.data.length} track versions`);
+    if ((payload.stage === 'complete' || payload.stage === 'first') && items.length > 0) {
+      console.log(`[suno-webhook] Creating ${items.length} track versions (stage=${payload.stage})`);
       
-      for (let i = 0; i < payload.data.length; i++) {
-        const versionTrack = payload.data[i];
+      for (let i = 0; i < items.length; i++) {
+        const versionTrack: any = items[i];
+        const audioUrl = versionTrack.audioUrl || versionTrack.audio_url || versionTrack.stream_audio_url || versionTrack.source_stream_audio_url || null;
+        const coverUrl = versionTrack.coverUrl || versionTrack.image_url || versionTrack.source_image_url || null;
+        const videoUrl = versionTrack.videoUrl || versionTrack.video_url || null;
+        const duration = typeof versionTrack.duration === 'number' ? Math.round(versionTrack.duration) : 
+                         (typeof versionTrack.duration_seconds === 'number' ? Math.round(versionTrack.duration_seconds) : null);
         
         const versionData = {
           parent_track_id: track.id,
@@ -143,12 +185,11 @@ serve(async (req) => {
           is_primary_variant: i === 0,
           is_preferred_variant: i === 0,
           suno_id: versionTrack.id || null,
-          audio_url: versionTrack.audioUrl || versionTrack.audio_url || null,
-          cover_url: versionTrack.coverUrl || versionTrack.image_url || null,
-          video_url: versionTrack.videoUrl || versionTrack.video_url || null,
+          audio_url: audioUrl,
+          cover_url: coverUrl,
+          video_url: videoUrl,
           lyrics: versionTrack.lyrics || versionTrack.prompt || null,
-          duration: typeof versionTrack.duration === 'number' ? Math.round(versionTrack.duration) : 
-                   (typeof versionTrack.duration_seconds === 'number' ? Math.round(versionTrack.duration_seconds) : null),
+          duration: duration,
           metadata: {
             suno_track_data: versionTrack,
             generated_via: 'webhook',

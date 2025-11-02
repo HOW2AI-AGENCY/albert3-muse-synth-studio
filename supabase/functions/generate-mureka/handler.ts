@@ -548,7 +548,12 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
     
     try {
       const murekaClient = createMurekaClient({ apiKey: this.apiKey });
-      const lyricsResult = await murekaClient.generateLyrics({ prompt });
+      const isCyrillic = /[А-Яа-яЁё]/.test(prompt || '');
+      const explicitLangHint = /(language\s*:)|\b(english|английск)|(russian|русск)/i.test(prompt || '');
+      const promptWithLang = isCyrillic && !explicitLangHint
+        ? `${prompt}\nЯзык: русский. Сгенерируй текст песни на русском.`
+        : prompt;
+      const lyricsResult = await murekaClient.generateLyrics({ prompt: promptWithLang });
       
       logger.info('🎤 [MUREKA] Lyrics API response received');
       
