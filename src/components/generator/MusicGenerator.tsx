@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Loader2, Music, Sparkles, Upload, User, History, Wand2 } from 'lucide-react';
+import { Loader2, Sparkles, Upload, User, History, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useProviderBalance } from '@/hooks/useProviderBalance';
 import { supabase } from '@/integrations/supabase/client';
@@ -248,6 +248,23 @@ export const MusicGenerator = ({
         personaId: selectedPersonaId || undefined,
         inspoProjectId: selectedProjectId || undefined
       };
+      
+      // Save to history after successful generation start
+      const styleTags = tags.split(',').map(t => t.trim()).filter(Boolean);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        try {
+          await supabase.from('prompt_history').insert({
+            user_id: user.id,
+            prompt: prompt.trim() || title.trim(),
+            lyrics: lyrics.trim() || null,
+            style_tags: styleTags.length > 0 ? styleTags : null,
+            provider: 'suno',
+          });
+        } catch (historyErr) {
+          console.error('Failed to save prompt history:', historyErr);
+        }
+      }
       const {
         error
       } = await supabase.functions.invoke('generate-suno', {
