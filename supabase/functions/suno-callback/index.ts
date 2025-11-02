@@ -404,14 +404,19 @@ const mainHandler = async (req: Request) => {
       if (successfulTracks.length > 0) {
         console.log(`[suno-callback] Creating ${successfulTracks.length} track versions`);
         
-        // Выясняем занятые индексы, чтобы корректно назначать variant_index при частичных коллбеках
+        // Считываем существующие версии, чтобы не дублировать и корректно назначать индексы
         const { data: existingVersions } = await supabase
           .from('track_versions')
-          .select('variant_index')
+          .select('variant_index, suno_id')
           .eq('parent_track_id', track.id);
+
         const used = new Set<number>((existingVersions || [])
           .map((v: any) => v.variant_index)
           .filter((n: any) => typeof n === 'number'));
+        const bySunoId = new Map<string, number>();
+        (existingVersions || []).forEach((v: any) => {
+          if (v.suno_id) bySunoId.set(String(v.suno_id), v.variant_index);
+        });
 
         const nextIndex = () => {
           let idx = 0;
@@ -420,8 +425,27 @@ const mainHandler = async (req: Request) => {
           return idx;
         };
         
-        for (const versionTrack of successfulTracks) {
-          const variantIndex = nextIndex();
+        for (let i = 0; i < successfulTracks.length; i++) {
+          const versionTrack = successfulTracks[i];
+          const preferredIndex = i; // порядок Suno сохраняем как базовый индекс
+
+          // Если версия с таким suno_id уже существует — пропускаем
+          const vtId = versionTrack.id ? String(versionTrack.id) : '';
+          if (vtId && bySunoId.has(vtId)) {
+            console.log(`[suno-callback] ↪︎ Skip existing version for suno_id=${vtId} at index ${bySunoId.get(vtId)}`);
+            continue;
+          }
+
+          // Выбираем индекс: сначала предпочтительный, иначе первый свободный
+          const variantIndex = used.has(preferredIndex) ? nextIndex() : preferredIndex;
+          used.add(variantIndex);
+
+          // Не сохраняем primary (variantIndex=0) в track_versions — он уже в таблице tracks
+          if (variantIndex === 0) {
+            console.log('[suno-callback] ↪︎ Primary variant (index 0) kept in tracks table, skipping track_versions');
+            continue;
+          }
+
           const versionExternalAudioUrl = versionTrack.audioUrl || versionTrack.audio_url
             || versionTrack.stream_audio_url || versionTrack.source_stream_audio_url;
           
