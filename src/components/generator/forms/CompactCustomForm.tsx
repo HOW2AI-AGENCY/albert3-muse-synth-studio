@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Upload, User, ChevronDown, Music, Sparkles, Plus, History } from '@/utils/iconImports';
 import { LyricsInput } from '@/components/lyrics/legacy/LyricsInput';
 import { StyleTagsInput } from './StyleTagsInput';
@@ -111,16 +112,22 @@ export const CompactCustomForm = memo(({
               maxLength={MAX_PROMPT_LENGTH}
             />
             {onOpenHistory && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onOpenHistory}
-                disabled={isGenerating}
-                className="h-6 px-2 text-[10px] gap-1"
-              >
-                <History className="h-3 w-3" />
-                История
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onOpenHistory}
+                    disabled={isGenerating}
+                    className="h-6 w-6"
+                  >
+                    <History className="h-3 w-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p className="text-xs">История промптов</p>
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
           <div className="relative">
@@ -140,16 +147,22 @@ export const CompactCustomForm = memo(({
               maxLength={MAX_PROMPT_LENGTH}
             />
             {onBoostPrompt && debouncedPrompt.trim() && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-1 top-2 h-6 w-6 text-primary hover:text-primary hover:bg-primary/10"
-                onClick={onBoostPrompt}
-                disabled={isBoosting || isGenerating}
-                title="Улучшить промпт с помощью AI"
-              >
-                <Sparkles className={cn("h-3.5 w-3.5", isBoosting && "animate-spin")} />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-2 h-6 w-6 text-primary hover:text-primary hover:bg-primary/10"
+                    onClick={onBoostPrompt}
+                    disabled={isBoosting || isGenerating}
+                  >
+                    <Sparkles className={cn("h-3.5 w-3.5", isBoosting && "animate-spin")} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p className="text-xs">Улучшить промпт с помощью AI</p>
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
         </div>
