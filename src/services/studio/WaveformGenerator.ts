@@ -1,38 +1,20 @@
-import { openDB, DBSchema, IDBPDatabase } from 'idb';
+// Simplified waveform generator without idb dependency
 
-interface WaveformDB extends DBSchema {
-  waveforms: {
-    key: string;
-    value: {
-      url: string;
-      peaks: number[];
-      duration: number;
-      generatedAt: number;
-    };
-  };
+interface WaveformCache {
+  url: string;
+  peaks: number[];
+  duration: number;
+  generatedAt: number;
 }
 
-const DB_NAME = 'waveform-cache';
-const STORE_NAME = 'waveforms';
-const DB_VERSION = 1;
 const CACHE_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export class WaveformGenerator {
-  private db: IDBPDatabase<WaveformDB> | null = null;
+  private cache: Map<string, WaveformCache> = new Map();
   private audioContext: AudioContext | null = null;
 
   async init() {
-    try {
-      this.db = await openDB<WaveformDB>(DB_NAME, DB_VERSION, {
-        upgrade(db) {
-          if (!db.objectStoreNames.contains(STORE_NAME)) {
-            db.createObjectStore(STORE_NAME);
-          }
-        },
-      });
-    } catch (error) {
-      console.warn('IndexedDB not available, caching disabled:', error);
-    }
+    // No initialization needed with Map-based cache
   }
 
   private getAudioContext(): AudioContext {
@@ -108,55 +90,34 @@ export class WaveformGenerator {
   }
 
   private async getFromCache(url: string): Promise<{ peaks: number[]; duration: number } | null> {
-    if (!this.db) return null;
+    const cached = this.cache.get(url);
+    
+    if (cached && Date.now() - cached.generatedAt < CACHE_EXPIRY_MS) {
+      return {
+        peaks: cached.peaks,
+        duration: cached.duration,
+      };
+    }
 
-    try {
-      const cached = await this.db.get(STORE_NAME, url);
-      
-      if (cached && Date.now() - cached.generatedAt < CACHE_EXPIRY_MS) {
-        return {
-          peaks: cached.peaks,
-          duration: cached.duration,
-        };
-      }
-
-      // Remove expired cache
-      if (cached) {
-        await this.db.delete(STORE_NAME, url);
-      }
-    } catch (error) {
-      console.warn('Cache read failed:', error);
+    // Remove expired cache
+    if (cached) {
+      this.cache.delete(url);
     }
 
     return null;
   }
 
   private async saveToCache(url: string, peaks: number[]): Promise<void> {
-    if (!this.db) return;
-
-    try {
-      await this.db.put(STORE_NAME, {
-        url,
-        peaks,
-        duration: peaks.length,
-        generatedAt: Date.now(),
-      }, url);
-    } catch (error) {
-      console.warn('Cache save failed:', error);
-    }
+    this.cache.set(url, {
+      url,
+      peaks,
+      duration: peaks.length,
+      generatedAt: Date.now(),
+    });
   }
 
   async clearCache() {
-    if (!this.db) return;
-    
-    try {
-      const keys = await this.db.getAllKeys(STORE_NAME);
-      for (const key of keys) {
-        await this.db.delete(STORE_NAME, key);
-      }
-    } catch (error) {
-      console.error('Failed to clear cache:', error);
-    }
+    this.cache.clear();
   }
 
   dispose() {
@@ -164,10 +125,7 @@ export class WaveformGenerator {
       this.audioContext.close();
       this.audioContext = null;
     }
-    if (this.db) {
-      this.db.close();
-      this.db = null;
-    }
+    this.cache.clear();
   }
 }
 

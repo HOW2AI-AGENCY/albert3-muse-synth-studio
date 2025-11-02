@@ -5,6 +5,7 @@ import { logger } from '@/utils/logger';
 
 export interface StudioTrack {
   id: string;
+  trackId?: string | null;
   name: string;
   audioUrl: string;
   volume: number;
@@ -13,9 +14,15 @@ export interface StudioTrack {
   solo: boolean;
   color: string;
   duration: number;
+  startTime?: number;
+  trimStart?: number;
+  trimEnd?: number;
+  effects?: any[];
+  automation?: Record<string, any>;
   isStem?: boolean;
   stemType?: string;
   parentTrackId?: string;
+  audioElement?: HTMLAudioElement | null;
 }
 
 export const useStudioSession = () => {

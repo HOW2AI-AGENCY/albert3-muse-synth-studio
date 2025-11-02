@@ -103,22 +103,21 @@ export class ProjectSerializer {
       pan: Number(t.pan),
       color: t.color || '#3b82f6',
       duration: 0, // Will be loaded from audio
-      muted: t.muted,
-      solo: t.solo,
+      muted: t.muted ?? false,
+      solo: t.solo ?? false,
       isStem: false,
-      stemType: null,
       effects: t.effects as any[] || [],
-      automation: t.automation || {},
+      automation: (typeof t.automation === 'object' && t.automation !== null) ? t.automation as Record<string, any> : {},
       audioElement: null,
     }));
 
     return {
       id: project.id,
       name: project.name,
-      bpm: project.bpm,
-      time_signature: project.time_signature,
-      snap_enabled: project.snap_enabled,
-      snap_to: project.snap_to as any,
+      bpm: project.bpm ?? 120,
+      time_signature: project.time_signature ?? '4/4',
+      snap_enabled: project.snap_enabled ?? true,
+      snap_to: (project.snap_to as any) ?? 'beat',
       tracks: studioTracks,
     };
   }
@@ -140,7 +139,7 @@ export class ProjectSerializer {
     return (data || []).map(p => ({
       id: p.id,
       name: p.name,
-      updated_at: p.updated_at,
+      updated_at: p.updated_at ?? new Date().toISOString(),
       track_count: (p.studio_project_tracks as any[])[0]?.count || 0,
     }));
   }
