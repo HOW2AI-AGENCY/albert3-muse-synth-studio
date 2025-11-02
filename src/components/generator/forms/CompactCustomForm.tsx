@@ -231,7 +231,7 @@ export const CompactCustomForm = memo(({
           </Button>
         </div>
 
-        {/* Project Tracks Selector - Only shown when project is selected */}
+        {/* Project Tracks Selector - показываем когда выбран проект */}
         {params.activeProjectId && (
           <ProjectTracksSelector
             projectId={params.activeProjectId}
