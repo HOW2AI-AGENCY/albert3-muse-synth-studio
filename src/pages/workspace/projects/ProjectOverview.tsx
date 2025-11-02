@@ -8,12 +8,18 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { CreateProjectDialog } from '@/components/projects/CreateProjectDialog';
+import { ProjectDetailsDialog } from '@/components/projects/ProjectDetailsDialog';
 import { useProjects } from '@/contexts/ProjectContext';
 import { TrackListSkeleton } from '@/components/skeletons';
+import type { Database } from '@/integrations/supabase/types';
+
+type MusicProject = Database['public']['Tables']['music_projects']['Row'];
 
 export const ProjectOverview: React.FC = () => {
-  const { projects, isLoading, deleteProject, setSelectedProject } = useProjects();
+  const { projects, isLoading, deleteProject } = useProjects();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<MusicProject | null>(null);
 
   if (isLoading) {
     return <TrackListSkeleton count={6} />;
@@ -62,7 +68,10 @@ export const ProjectOverview: React.FC = () => {
           <ProjectCard
             key={project.id}
             project={project}
-            onClick={() => setSelectedProject(project)}
+            onOpenDetails={() => {
+              setSelectedProject(project);
+              setDetailsDialogOpen(true);
+            }}
             onDelete={() => {
               if (confirm(`Удалить проект "${project.name}"?`)) {
                 deleteProject(project.id);
@@ -73,6 +82,12 @@ export const ProjectOverview: React.FC = () => {
       </div>
 
       <CreateProjectDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
+      
+      <ProjectDetailsDialog
+        open={detailsDialogOpen}
+        onOpenChange={setDetailsDialogOpen}
+        project={selectedProject}
+      />
     </div>
   );
 };

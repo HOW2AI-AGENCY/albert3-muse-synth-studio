@@ -19,6 +19,7 @@ interface ProjectCardProps {
   onClick?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onOpenDetails?: () => void;
 }
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({
@@ -26,6 +27,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   onClick,
   onEdit,
   onDelete,
+  onOpenDetails,
 }) => {
   const completionPercent = project.total_tracks && project.total_tracks > 0
     ? Math.round((project.completed_tracks || 0) / project.total_tracks * 100)
@@ -37,11 +39,19 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleCardClick = () => {
+    if (onOpenDetails) {
+      onOpenDetails();
+    } else if (onClick) {
+      onClick();
+    }
+  };
+
   return (
     <Card className="group hover:border-primary/50 transition-all cursor-pointer overflow-hidden">
       {/* Cover Image */}
       <div 
-        onClick={onClick} 
+        onClick={handleCardClick}
         className="relative h-48 bg-gradient-to-br from-primary/20 via-primary/10 to-background overflow-hidden"
       >
         {project.cover_url ? (
@@ -98,7 +108,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         </div>
       </div>
 
-      <CardHeader onClick={onClick} className="pb-3 space-y-3">
+      <CardHeader onClick={handleCardClick} className="pb-3 space-y-3">
         <div>
           <h3 className="font-semibold text-lg truncate mb-1">{project.name}</h3>
           {project.description && (
@@ -142,7 +152,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       </CardHeader>
 
       {project.total_tracks && project.total_tracks > 0 && (
-        <CardContent onClick={onClick} className="pt-0 pb-4">
+        <CardContent onClick={handleCardClick} className="pt-0 pb-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Прогресс</span>
@@ -157,7 +167,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       )}
 
       {project.genre && (
-        <CardFooter onClick={onClick} className="pt-0 pb-4">
+        <CardFooter onClick={handleCardClick} className="pt-0 pb-4">
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">Жанр:</span>
             <Badge variant="secondary">{project.genre}</Badge>
