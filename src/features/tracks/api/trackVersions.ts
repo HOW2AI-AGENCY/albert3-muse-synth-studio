@@ -384,6 +384,30 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       });
     } else {
       // Случай 3: Несколько версий (Suno) → добавить все из track_versions
+      
+      // ✅ FIX: Проверить, есть ли версия с variant_index: 0
+      const hasVariantZero = versions.some(v => (v.variant_index ?? -1) === 0);
+      
+      if (!hasVariantZero && mainTrack.audio_url) {
+        // Если нет версии с variant_index: 0, добавить mainTrack как V1
+        pushVersion({
+          id: mainTrack.id,
+          sourceVersionNumber: 0,
+          isMasterVersion: false, // Мастер-версия определяется из track_versions
+          title: mainTrack.title,
+          audio_url: mainTrack.audio_url,
+          cover_url: mainTrack.cover_url ?? null,
+          video_url: mainTrack.video_url ?? null,
+          duration: mainTrack.duration ?? mainTrack.duration_seconds ?? null,
+          lyrics: mainTrack.lyrics ?? null,
+          metadata: (mainTrack.metadata as TrackMetadata | null) ?? null,
+          created_at: mainTrack.created_at ?? null,
+          suno_id: mainTrack.suno_id ?? null,
+          status: mainTrack.status ?? 'completed',
+        });
+      }
+      
+      // Добавить все версии из track_versions
       versions.forEach((version: TrackVersionRow) => {
         pushVersion({
           id: version.id,
@@ -402,6 +426,16 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
         });
       });
     }
+
+    // ✅ Логирование для отладки
+    logInfo('Track versions loaded', 'trackVersions', {
+      trackId,
+      dbVersionsCount: versions?.length || 0,
+      normalizedVersionsCount: normalizedVersions.length,
+      case: !versions || versions.length === 0 ? 1 : 
+            versions.length === 1 && (versions[0].variant_index ?? 0) >= 1 ? 2 : 3,
+      hasMainTrackAudio: !!mainTrack.audio_url,
+    });
 
     // ✅ Сортировка по sourceVersionNumber (0 → 1 → 2...)
     normalizedVersions.sort((a, b) => 
