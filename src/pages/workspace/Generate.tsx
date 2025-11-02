@@ -95,7 +95,7 @@ const Generate = () => {
     return (
       <div className="h-full flex gap-4 p-4">
         {/* Generator sidebar */}
-        <div className="w-96 flex-shrink-0 border rounded-lg bg-card">
+        <div className="w-96 h-full flex-shrink-0 border rounded-lg bg-card overflow-y-auto">
           <MusicGenerator onTrackGenerated={handleTrackGenerated} />
         </div>
 
