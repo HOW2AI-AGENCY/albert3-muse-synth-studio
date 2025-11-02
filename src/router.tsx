@@ -27,6 +27,9 @@ import {
 import Projects from "./pages/workspace/Projects";
 import MonitoringHub from "./pages/workspace/MonitoringHub";
 
+// Studio page
+import { Studio } from "./pages/workspace/Studio";
+
 // Still direct imports (will lazy load in Phase 2)
 import Profile from "./pages/workspace/Profile";
 import Metrics from "./pages/workspace/Metrics";
@@ -84,6 +87,10 @@ export const router = createBrowserRouter(
         {
           path: "projects",
           element: <Projects />
+        },
+        {
+          path: "studio",
+          element: <Studio />
         },
         {
           path: "monitoring-hub",
