@@ -99,7 +99,10 @@ export const InspoProjectDialog = memo(({
                         <Card
                           key={project.id}
                           className="p-4 hover:bg-accent cursor-pointer transition-colors"
-                          onClick={() => handleProjectCreated(project)}
+                          onClick={() => {
+                            handleProjectCreated(project);
+                            onOpenChange(false);
+                          }}
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
