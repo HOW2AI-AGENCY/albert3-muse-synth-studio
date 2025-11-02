@@ -21,7 +21,7 @@ export default defineConfig({
     ],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov'],
       exclude: [
         'node_modules/',
         'src/test/',
@@ -29,13 +29,14 @@ export default defineConfig({
         '**/*.config.*',
         '**/mockData',
         '**/dist',
-        'supabase/functions/**', // Also exclude from coverage
+        'supabase/functions/**',
+        'src/integrations/supabase/types.ts',
       ],
       thresholds: {
-        lines: 60,
-        statements: 60,
-        functions: 55,
-        branches: 40,
+        lines: 80,
+        statements: 80,
+        functions: 75,
+        branches: 70,
       },
     },
   },
