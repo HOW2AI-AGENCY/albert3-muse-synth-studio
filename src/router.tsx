@@ -26,8 +26,6 @@ import {
 // New hub pages
 import Projects from "./pages/workspace/Projects";
 import MonitoringHub from "./pages/workspace/MonitoringHub";
-import PromptDj from "./pages/workspace/PromptDj";
-import { Studio } from "./pages/workspace/Studio";
 
 // Still direct imports (will lazy load in Phase 2)
 import Profile from "./pages/workspace/Profile";
@@ -81,18 +79,6 @@ export const router = createBrowserRouter(
               </Suspense>
             </ErrorBoundary>
           )
-        },
-        {
-          path: "prompt-dj",
-          element: <PromptDj />
-        },
-        {
-          path: "studio",
-          element: <Studio />
-        },
-        {
-          path: "studio/:trackId",
-          element: <Studio />
         },
         {
           path: "projects",

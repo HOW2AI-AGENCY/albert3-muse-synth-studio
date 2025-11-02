@@ -28,7 +28,7 @@ import { InspoProjectDialog } from '@/components/generator/InspoProjectDialog';
 import { AudioSourceDialog } from '@/components/generator/audio/AudioSourceDialog';
 import { SimpleModeCompact } from '@/components/generator/forms/SimpleModeCompact';
 import { CompactCustomForm } from '@/components/generator/forms/CompactCustomForm';
-import { PromptDjDialog } from '@/components/prompt-dj';
+
 import { 
   useGeneratorState,
   useStemReferenceLoader,
@@ -66,7 +66,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const [personaDialogOpen, setPersonaDialogOpen] = useState(false);
   const [inspoDialogOpen, setInspoDialogOpen] = useState(false);
   const [audioSourceDialogOpen, setAudioSourceDialogOpen] = useState(false);
-  const [promptDjDialogOpen, setPromptDjDialogOpen] = useState(false);
   
   // ✅ REFACTORED: Auto-loaders
   useStemReferenceLoader(state, selectedProvider, handleProviderChange);
@@ -429,7 +428,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
           onAudioClick={() => setAudioSourceDialogOpen(true)}
           onPersonaClick={() => setPersonaDialogOpen(true)}
           onInspoClick={() => setInspoDialogOpen(true)}
-          onPromptDjClick={() => setPromptDjDialogOpen(true)}
           isGenerating={isGenerating}
         />
 
@@ -586,20 +584,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               description: "Музыкальная персона будет применена к генерации",
             });
           }
-        }}
-      />
-
-      <PromptDjDialog
-        open={promptDjDialogOpen}
-        onOpenChange={setPromptDjDialogOpen}
-        onSampleCreated={(url, fileName) => {
-          state.setParam('referenceAudioUrl', url);
-          state.setParam('referenceFileName', fileName);
-          setPromptDjDialogOpen(false);
-          toast({
-            title: "🎛️ Сэмпл создан",
-            description: `"${fileName}" добавлен как референсное аудио`,
-          });
         }}
       />
     </motion.div>
