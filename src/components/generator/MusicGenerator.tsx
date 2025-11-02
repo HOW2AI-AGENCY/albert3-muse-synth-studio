@@ -8,11 +8,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Loader2, Music, Sparkles, Upload, User } from 'lucide-react';
+import { Loader2, Music, Sparkles, Upload, User, History, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useProviderBalance } from '@/hooks/useProviderBalance';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { PromptHistoryDialog } from '@/components/generator/PromptHistoryDialog';
+import { PersonaPickerDialog } from '@/components/generator/PersonaPickerDialog';
+import { InspoProjectDialog, type InspoProject } from '@/components/generator/InspoProjectDialog';
+import { LazyAudioSourceDialog } from '@/components/LazyDialogs';
+import { StyleRecommendationsInline } from '@/components/generator/StyleRecommendationsInline';
 
 interface MusicGeneratorProps {
   onTrackGenerated?: () => void;
@@ -43,20 +48,141 @@ export const MusicGenerator = ({ onTrackGenerated }: MusicGeneratorProps) => {
   const [lyrics, setLyrics] = useState('');
   const [tags, setTags] = useState('');
 
-  // Quick actions
-  const [hasAudio, setHasAudio] = useState(false);
-  const [hasPersona, setHasPersona] = useState(false);
-  const [hasInspo, setHasInspo] = useState(false);
+  // Quick actions states
+  const [referenceAudioUrl, setReferenceAudioUrl] = useState<string | null>(null);
+  const [referenceFileName, setReferenceFileName] = useState<string | null>(null);
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [selectedProjectName, setSelectedProjectName] = useState<string | null>(null);
+
+  // Dialog states
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [audioSourceDialogOpen, setAudioSourceDialogOpen] = useState(false);
+  const [personaDialogOpen, setPersonaDialogOpen] = useState(false);
+  const [inspoDialogOpen, setInspoDialogOpen] = useState(false);
+
+  // Computed states
+  const hasAudio = !!referenceAudioUrl;
+  const hasPersona = !!selectedPersonaId;
+  const hasInspo = !!selectedProjectId;
 
   const handleModeChange = useCallback((newMode: GeneratorMode) => {
-    if (newMode === 'simple' && (hasAudio || hasPersona)) {
+    if (newMode === 'simple' && (hasAudio || hasPersona || hasInspo)) {
       const confirmed = window.confirm(
-        'Переключение на Simple Mode скроет настройки Audio и Persona. Продолжить?'
+        'Переключение на Simple Mode очистит Audio, Persona и Project. Продолжить?'
       );
       if (!confirmed) return;
+      
+      // Clear all advanced resources
+      setReferenceAudioUrl(null);
+      setReferenceFileName(null);
+      setSelectedPersonaId(null);
+      setSelectedProjectId(null);
+      setSelectedProjectName(null);
     }
     setMode(newMode);
-  }, [hasAudio, hasPersona]);
+  }, [hasAudio, hasPersona, hasInspo]);
+
+  // Auto-switch to Custom Mode when advanced resources are selected
+  const switchToCustomMode = useCallback(() => {
+    if (mode === 'simple') {
+      setMode('custom');
+      toast({
+        title: "Переключено в Custom Mode",
+        description: "Для использования расширенных функций",
+        duration: 2000,
+      });
+    }
+  }, [mode, toast]);
+
+  // Audio handlers
+  const handleAudioClick = useCallback(() => {
+    switchToCustomMode();
+    setAudioSourceDialogOpen(true);
+  }, [switchToCustomMode]);
+
+  const handleAudioSelect = useCallback((url: string, fileName: string) => {
+    setReferenceAudioUrl(url);
+    setReferenceFileName(fileName);
+    setAudioSourceDialogOpen(false);
+    toast({
+      title: "Референс добавлен",
+      description: fileName,
+    });
+  }, [toast]);
+
+  const handleRemoveAudio = useCallback(() => {
+    setReferenceAudioUrl(null);
+    setReferenceFileName(null);
+  }, []);
+
+  // Persona handlers
+  const handlePersonaClick = useCallback(() => {
+    switchToCustomMode();
+    setPersonaDialogOpen(true);
+  }, [switchToCustomMode]);
+
+  const handleSelectPersona = useCallback((personaId: string | null) => {
+    setSelectedPersonaId(personaId);
+    setPersonaDialogOpen(false);
+    if (personaId) {
+      toast({
+        title: "Персона выбрана",
+        description: "Голос будет применён к треку",
+      });
+    }
+  }, [toast]);
+
+  // Project handlers
+  const handleInspoClick = useCallback(() => {
+    switchToCustomMode();
+    setInspoDialogOpen(true);
+  }, [switchToCustomMode]);
+
+  const handleSelectInspo = useCallback((project: InspoProject) => {
+    setSelectedProjectId(project.id);
+    setSelectedProjectName(project.name);
+    
+    // Apply project tags to form
+    if (project.style_tags?.length > 0) {
+      const newTags = project.style_tags.join(', ');
+      setTags(newTags);
+    }
+    
+    setInspoDialogOpen(false);
+    toast({
+      title: "Проект выбран",
+      description: project.name,
+    });
+  }, [toast]);
+
+  // History handlers
+  const handleHistorySelect = useCallback((item: any) => {
+    if (item.prompt) setPrompt(item.prompt);
+    if (item.lyrics) setLyrics(item.lyrics);
+    if (item.style_tags?.length) setTags(item.style_tags.join(', '));
+    setHistoryDialogOpen(false);
+  }, []);
+
+  // Style improvement
+  const handleApplyTags = useCallback((newTags: string[]) => {
+    const existingTags = tags.split(',').map(t => t.trim()).filter(Boolean);
+    const combined = [...new Set([...existingTags, ...newTags])];
+    setTags(combined.join(', '));
+  }, [tags]);
+
+  const handleAdvancedPromptGenerated = useCallback((result: { enhancedPrompt: string; metaTags?: string[] }) => {
+    setPrompt(result.enhancedPrompt);
+    if (result.metaTags && result.metaTags.length > 0) {
+      const existingTags = tags.split(',').map(t => t.trim()).filter(Boolean);
+      const combined = [...new Set([...existingTags, ...result.metaTags])];
+      setTags(combined.join(', '));
+    }
+    toast({
+      title: "Промпт улучшен",
+      description: "Применён расширенный промпт с AI рекомендациями",
+    });
+  }, [toast, tags]);
 
   const handleGenerate = async () => {
     if (!prompt.trim() && !title.trim()) {
@@ -83,6 +209,9 @@ export const MusicGenerator = ({ onTrackGenerated }: MusicGeneratorProps) => {
             tags: tags.trim(),
             customMode: true,
             modelVersion,
+            referenceAudioUrl: referenceAudioUrl || undefined,
+            personaId: selectedPersonaId || undefined,
+            inspoProjectId: selectedProjectId || undefined,
           };
 
       const { error } = await supabase.functions.invoke('generate-suno', {
@@ -101,6 +230,11 @@ export const MusicGenerator = ({ onTrackGenerated }: MusicGeneratorProps) => {
       setTitle('');
       setLyrics('');
       setTags('');
+      setReferenceAudioUrl(null);
+      setReferenceFileName(null);
+      setSelectedPersonaId(null);
+      setSelectedProjectId(null);
+      setSelectedProjectName(null);
 
       if (onTrackGenerated) {
         onTrackGenerated();
@@ -117,7 +251,7 @@ export const MusicGenerator = ({ onTrackGenerated }: MusicGeneratorProps) => {
     }
   };
 
-  const advancedResourcesCount = [hasAudio, hasPersona].filter(Boolean).length;
+  const advancedResourcesCount = [hasAudio, hasPersona, hasInspo].filter(Boolean).length;
 
   return (
     <Card className="h-full border-0 shadow-none">
@@ -193,27 +327,49 @@ export const MusicGenerator = ({ onTrackGenerated }: MusicGeneratorProps) => {
         </div>
 
         {/* Quick Actions Bar */}
-        <div className="grid grid-cols-3 gap-2 px-3 py-2 border-b bg-background/95">
+        <div className="flex items-center gap-2 px-3 py-2 border-b bg-background/95">
           <TooltipProvider>
+            {/* History Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setHistoryDialogOpen(true)}
+                  disabled={isGenerating}
+                  className="h-8 text-xs gap-1.5"
+                >
+                  <History className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">История</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">
+                <p>Открыть историю промптов</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <div className="flex-1" />
+
             {/* Audio Button */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant={hasAudio ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setHasAudio(!hasAudio)}
-                  disabled={isGenerating || mode === 'simple'}
+                  onClick={handleAudioClick}
+                  disabled={isGenerating}
                   className={cn(
                     "h-8 text-xs gap-1.5",
                     hasAudio && "bg-primary text-primary-foreground"
                   )}
                 >
                   <Upload className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Аудио</span>
+                  <span className="hidden sm:inline">+ Аудио</span>
+                  <span className="sm:hidden">+</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs">
-                <p>Загрузить референсное аудио</p>
+                <p>Загрузить/записать/выбрать референс</p>
               </TooltipContent>
             </Tooltip>
 
@@ -223,15 +379,16 @@ export const MusicGenerator = ({ onTrackGenerated }: MusicGeneratorProps) => {
                 <Button
                   variant={hasPersona ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setHasPersona(!hasPersona)}
-                  disabled={isGenerating || mode === 'simple'}
+                  onClick={handlePersonaClick}
+                  disabled={isGenerating}
                   className={cn(
                     "h-8 text-xs gap-1.5",
                     hasPersona && "bg-primary text-primary-foreground"
                   )}
                 >
                   <User className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Персона</span>
+                  <span className="hidden sm:inline">+ Персона</span>
+                  <span className="sm:hidden">+</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs">
@@ -239,13 +396,13 @@ export const MusicGenerator = ({ onTrackGenerated }: MusicGeneratorProps) => {
               </TooltipContent>
             </Tooltip>
 
-            {/* Inspo Button */}
+            {/* Project Button */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant={hasInspo ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setHasInspo(!hasInspo)}
+                  onClick={handleInspoClick}
                   disabled={isGenerating}
                   className={cn(
                     "h-8 text-xs gap-1.5",
@@ -253,7 +410,8 @@ export const MusicGenerator = ({ onTrackGenerated }: MusicGeneratorProps) => {
                   )}
                 >
                   <Sparkles className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Проект</span>
+                  <span className="hidden sm:inline">+ Проект</span>
+                  <span className="sm:hidden">+</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs">
@@ -269,7 +427,20 @@ export const MusicGenerator = ({ onTrackGenerated }: MusicGeneratorProps) => {
             // Simple Mode
             <>
               <div className="space-y-2">
-                <Label className="text-sm">Опишите музыку</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm">Опишите музыку</Label>
+                  {prompt.trim().length > 10 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {/* TODO: Boost prompt */}}
+                      className="h-6 text-xs gap-1"
+                    >
+                      <Wand2 className="h-3 w-3" />
+                      Улучшить
+                    </Button>
+                  )}
+                </div>
                 <Textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
@@ -278,10 +449,77 @@ export const MusicGenerator = ({ onTrackGenerated }: MusicGeneratorProps) => {
                   disabled={isGenerating}
                 />
               </div>
+
+              {/* Style Recommendations */}
+              {prompt.trim().length > 10 && (
+                <StyleRecommendationsInline
+                  prompt={prompt}
+                  currentTags={tags.split(',').map(t => t.trim()).filter(Boolean)}
+                  onApplyTags={handleApplyTags}
+                  onAdvancedPromptGenerated={handleAdvancedPromptGenerated}
+                />
+              )}
             </>
           ) : (
             // Custom Mode
             <>
+              {/* Reference Audio Badge */}
+              {hasAudio && (
+                <div className="flex items-center justify-between p-2 rounded-lg bg-primary/5 border border-primary/20">
+                  <div className="flex items-center gap-2">
+                    <Upload className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-xs text-foreground/80">{referenceFileName}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemoveAudio}
+                    className="h-6 px-2 text-xs"
+                  >
+                    Удалить
+                  </Button>
+                </div>
+              )}
+
+              {/* Persona Badge */}
+              {hasPersona && (
+                <div className="flex items-center justify-between p-2 rounded-lg bg-primary/5 border border-primary/20">
+                  <div className="flex items-center gap-2">
+                    <User className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-xs text-foreground/80">Персона выбрана</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedPersonaId(null)}
+                    className="h-6 px-2 text-xs"
+                  >
+                    Удалить
+                  </Button>
+                </div>
+              )}
+
+              {/* Project Badge */}
+              {hasInspo && selectedProjectName && (
+                <div className="flex items-center justify-between p-2 rounded-lg bg-primary/5 border border-primary/20">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-xs text-foreground/80">{selectedProjectName}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedProjectId(null);
+                      setSelectedProjectName(null);
+                    }}
+                    className="h-6 px-2 text-xs"
+                  >
+                    Удалить
+                  </Button>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label className="text-sm">Название</Label>
                 <Input
@@ -334,6 +572,48 @@ export const MusicGenerator = ({ onTrackGenerated }: MusicGeneratorProps) => {
             )}
           </Button>
         </div>
+
+        {/* Dialogs */}
+        <PromptHistoryDialog
+          open={historyDialogOpen}
+          onOpenChange={setHistoryDialogOpen}
+          onSelect={handleHistorySelect}
+        />
+
+        <LazyAudioSourceDialog
+          open={audioSourceDialogOpen}
+          onOpenChange={setAudioSourceDialogOpen}
+          onAudioSelect={handleAudioSelect}
+          onRecordComplete={(_blob, url) => {
+            setReferenceAudioUrl(url);
+            setReferenceFileName('Запись.mp3');
+            setAudioSourceDialogOpen(false);
+          }}
+          onTrackSelect={(track) => {
+            if (track.audio_url) {
+              setReferenceAudioUrl(track.audio_url);
+              setReferenceFileName(track.title || 'Выбранный трек');
+            }
+            if (track.style_tags?.length) {
+              const newTags = track.style_tags.join(', ');
+              setTags(newTags);
+            }
+          }}
+        />
+
+        <PersonaPickerDialog
+          open={personaDialogOpen}
+          onOpenChange={setPersonaDialogOpen}
+          selectedPersonaId={selectedPersonaId}
+          onSelectPersona={handleSelectPersona}
+        />
+
+        <InspoProjectDialog
+          open={inspoDialogOpen}
+          onOpenChange={setInspoDialogOpen}
+          selectedProjectId={selectedProjectId}
+          onSelectProject={handleSelectInspo}
+        />
       </CardContent>
     </Card>
   );
