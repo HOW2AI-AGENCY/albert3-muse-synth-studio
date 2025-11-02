@@ -5,12 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Music, Shield, TrendingUp, Trash2, Settings } from 'lucide-react';
+import { Users, Music, Shield, TrendingUp, Trash2, Settings, Activity } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { logger } from '@/utils/logger';
+import { AdminMonitoringTab } from '@/components/admin/AdminMonitoringTab';
 
 interface AdminStats {
   totalUsers: number;
@@ -238,53 +239,6 @@ export default function Admin() {
         </Badge>
       </div>
 
-      {/* Credit Mode Settings */}
-      <Card className="border-primary/20">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Settings className="h-5 w-5 text-primary" />
-            <CardTitle>Настройки кредитов</CardTitle>
-          </div>
-          <CardDescription>
-            Управление режимом работы системы кредитов
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between space-x-4">
-            <div className="flex-1 space-y-1">
-              <Label htmlFor="credit-mode" className="text-base">
-                Режим работы
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                {creditMode === 'test' 
-                  ? 'Тестовый режим: общий баланс провайдера для всех пользователей' 
-                  : 'Продакшн режим: внутренние кредиты платформы (требует настройки оплаты)'}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className={`text-sm font-medium ${creditMode === 'test' ? 'text-primary' : 'text-muted-foreground'}`}>
-                Тест
-              </span>
-              <Switch
-                id="credit-mode"
-                checked={creditMode === 'production'}
-                onCheckedChange={handleCreditModeChange}
-                disabled={modeLoading}
-              />
-              <span className={`text-sm font-medium ${creditMode === 'production' ? 'text-primary' : 'text-muted-foreground'}`}>
-                Продакшн
-              </span>
-            </div>
-          </div>
-          <div className="mt-4 p-4 rounded-lg bg-accent/50">
-            <p className="text-sm text-muted-foreground">
-              <strong>Внимание:</strong> В тестовом режиме все пользователи используют общий баланс API провайдера. 
-              В продакшн режиме будут использоваться внутренние кредиты платформы (требует дополнительной настройки системы оплаты).
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Статистика */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="hover:shadow-lg transition-shadow">
@@ -328,10 +282,15 @@ export default function Admin() {
         </Card>
       </div>
 
-      {/* Модерация */}
+      {/* Tabs */}
       <Tabs defaultValue="tracks" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="tracks">Модерация треков</TabsTrigger>
+          <TabsTrigger value="tracks">Треки</TabsTrigger>
+          <TabsTrigger value="monitoring">
+            <Activity className="h-4 w-4 mr-2" />
+            Мониторинг
+          </TabsTrigger>
+          <TabsTrigger value="settings">Настройки</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tracks" className="space-y-4">
@@ -382,6 +341,59 @@ export default function Admin() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="monitoring" className="space-y-4">
+          <AdminMonitoringTab />
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-4">
+          {/* Credit Mode Settings (перенесенные сверху) */}
+          <Card className="border-primary/20">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-primary" />
+                <CardTitle>Настройки кредитов</CardTitle>
+              </div>
+              <CardDescription>
+                Управление режимом работы системы кредитов
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between space-x-4">
+                <div className="flex-1 space-y-1">
+                  <Label htmlFor="credit-mode" className="text-base">
+                    Режим работы
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    {creditMode === 'test' 
+                      ? 'Тестовый режим: общий баланс провайдера для всех пользователей' 
+                      : 'Продакшн режим: внутренние кредиты платформы (требует настройки оплаты)'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`text-sm font-medium ${creditMode === 'test' ? 'text-primary' : 'text-muted-foreground'}`}>
+                    Тест
+                  </span>
+                  <Switch
+                    id="credit-mode"
+                    checked={creditMode === 'production'}
+                    onCheckedChange={handleCreditModeChange}
+                    disabled={modeLoading}
+                  />
+                  <span className={`text-sm font-medium ${creditMode === 'production' ? 'text-primary' : 'text-muted-foreground'}`}>
+                    Продакшн
+                  </span>
+                </div>
+              </div>
+              <div className="mt-4 p-4 rounded-lg bg-accent/50">
+                <p className="text-sm text-muted-foreground">
+                  <strong>Внимание:</strong> В тестовом режиме все пользователи используют общий баланс API провайдера. 
+                  В продакшн режиме будут использоваться внутренние кредиты платформы (требует дополнительной настройки системы оплаты).
+                </p>
               </div>
             </CardContent>
           </Card>
