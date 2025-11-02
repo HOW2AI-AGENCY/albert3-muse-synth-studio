@@ -14,13 +14,18 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Music, Clock, Disc3, Tag, Calendar, TrendingUp } from 'lucide-react';
+import { Music, Clock, Disc3, Tag, Calendar, TrendingUp, Sparkles } from 'lucide-react';
 import { useTracks } from '@/hooks/useTracks';
-import { useAIProjectCreation } from '@/hooks/useAIProjectCreation';
+import { useGenerateProjectTracklist } from '@/hooks/useGenerateProjectTracklist';
 import type { Database } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Sparkles } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 type MusicProject = Database['public']['Tables']['music_projects']['Row'];
 
@@ -36,7 +41,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
   project,
 }) => {
   const { tracks: allTracks, isLoading } = useTracks();
-  const { generateConcept, isGenerating } = useAIProjectCreation();
+  const { generateTracklist, isGenerating } = useGenerateProjectTracklist();
 
   // Filter tracks for this project
   const projectTracks = useMemo(() => {
@@ -207,18 +212,33 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                   Треки проекта
                 </h3>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={async () => {
-                      const prompt = `Создай ${project.total_tracks || 10} треков для ${project.project_type || 'альбома'} "${project.name}". ${project.description ? `Описание: ${project.description}.` : ''} ${project.genre ? `Жанр: ${project.genre}.` : ''} ${project.mood ? `Настроение: ${project.mood}.` : ''}`;
-                      await generateConcept(prompt);
-                    }}
-                    disabled={isGenerating}
-                  >
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    {isGenerating ? 'Генерация...' : 'Генерировать треки AI'}
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={async () => {
+                            await generateTracklist({
+                              id: project.id,
+                              name: project.name,
+                              description: project.description,
+                              genre: project.genre,
+                              mood: project.mood,
+                              project_type: project.project_type,
+                              total_tracks: project.total_tracks,
+                            });
+                          }}
+                          disabled={isGenerating}
+                        >
+                          <Sparkles className={cn("h-4 w-4", isGenerating && "animate-pulse")} />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Сгенерировать треклист</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <Badge variant="secondary">
                     {completedTracks.length} завершено
                   </Badge>
