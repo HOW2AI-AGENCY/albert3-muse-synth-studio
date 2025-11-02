@@ -256,12 +256,6 @@ serve(async (req) => {
         // Используем порядковый индекс как variant_index
         const variantIndex = i;
         
-        // Не сохраняем primary вариант (index=0) в track_versions — он уже в таблице tracks
-        if (variantIndex === 0) {
-          console.log('[suno-webhook] ↪︎ Primary variant (index 0) kept in tracks table, skipping');
-          continue;
-        }
-        
         const audioUrl = versionTrack.audio_url || versionTrack.stream_audio_url || versionTrack.source_audio_url || null;
         const coverUrl = versionTrack.image_url || versionTrack.source_image_url || null;
         const videoUrl = versionTrack.video_url || null;
@@ -279,8 +273,8 @@ serve(async (req) => {
         const versionData = {
           parent_track_id: track.id,
           variant_index: variantIndex,
-          is_primary_variant: false,
-          is_preferred_variant: false,
+          is_primary_variant: variantIndex === 0,
+          is_preferred_variant: variantIndex === 0,
           suno_id: versionTrack.id || null,
           audio_url: audioUrl,
           cover_url: coverUrl,

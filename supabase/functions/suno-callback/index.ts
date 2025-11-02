@@ -440,12 +440,6 @@ const mainHandler = async (req: Request) => {
           const variantIndex = used.has(preferredIndex) ? nextIndex() : preferredIndex;
           used.add(variantIndex);
 
-          // Не сохраняем primary (variantIndex=0) в track_versions — он уже в таблице tracks
-          if (variantIndex === 0) {
-            console.log('[suno-callback] ↪︎ Primary variant (index 0) kept in tracks table, skipping track_versions');
-            continue;
-          }
-
           const versionExternalAudioUrl = versionTrack.audioUrl || versionTrack.audio_url
             || versionTrack.stream_audio_url || versionTrack.source_stream_audio_url;
           
