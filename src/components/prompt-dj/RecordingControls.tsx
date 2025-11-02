@@ -24,9 +24,13 @@ export const RecordingControls = memo(({
   onStopRecording,
 }: RecordingControlsProps) => {
   return (
-    <div className="flex items-center gap-2 p-4 border-t">
+    <div className="flex items-center gap-3 p-4">
       {!isConnected ? (
-        <Button onClick={onConnect} className="flex-1 touch-target-min">
+        <Button 
+          onClick={onConnect} 
+          className="flex-1 bg-gradient-primary hover:opacity-90 transition-opacity touch-optimized"
+          size="lg"
+        >
           <Play className="w-4 h-4 mr-2" />
           Подключиться
         </Button>
@@ -35,7 +39,8 @@ export const RecordingControls = memo(({
           <Button 
             onClick={onDisconnect} 
             variant="destructive"
-            className="flex-1 touch-target-min"
+            className="flex-1 touch-optimized"
+            size="lg"
           >
             <Square className="w-4 h-4 mr-2" />
             Отключиться
@@ -46,7 +51,8 @@ export const RecordingControls = memo(({
               onClick={onStartRecording}
               variant="secondary"
               disabled={playbackState !== 'playing'}
-              className="touch-target-min"
+              className="touch-optimized"
+              size="lg"
             >
               <Mic className="w-4 h-4 mr-2" />
               Записать
@@ -55,21 +61,25 @@ export const RecordingControls = memo(({
             <Button 
               onClick={onStopRecording}
               variant="destructive"
-              className="touch-target-min"
+              className="touch-optimized animate-pulse"
+              size="lg"
             >
               <Square className="w-4 h-4 mr-2" />
-              Стоп
+              Сохранить
             </Button>
           )}
         </>
       )}
 
       {/* Playback State Indicator */}
-      <Badge variant={
-        playbackState === 'playing' ? 'default' :
-        playbackState === 'loading' ? 'secondary' :
-        'outline'
-      }>
+      <Badge 
+        variant={
+          playbackState === 'playing' ? 'default' :
+          playbackState === 'loading' ? 'secondary' :
+          'outline'
+        }
+        className="text-sm px-3 py-1.5"
+      >
         {playbackState === 'playing' ? '🎵 Играет' :
          playbackState === 'loading' ? '⏳ Загрузка' :
          '⏸️ Остановлено'}

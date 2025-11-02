@@ -6,6 +6,7 @@ import {
   Heart,
   BarChart3,
   Settings,
+  Wand2,
 } from "@/utils/iconImports";
 import {
   preloadDashboard,
@@ -40,6 +41,13 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     path: "/workspace/generate",
     icon: Sparkles,
     preload: preloadGenerate,
+    isMobilePrimary: true,
+  },
+  {
+    id: "prompt-dj",
+    label: "Prompt DJ",
+    path: "/workspace/prompt-dj",
+    icon: Wand2,
     isMobilePrimary: true,
   },
   {

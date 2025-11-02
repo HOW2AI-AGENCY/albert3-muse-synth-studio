@@ -49,10 +49,14 @@ export const WeightKnob = memo(({ value, audioLevel, onChange, isActive }: Weigh
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
   return (
-    <div className="relative w-16 h-16" ref={knobRef}>
+    <div className="relative w-16 h-16 touch-optimized" ref={knobRef}>
       {/* Пульсирующее гало */}
       <motion.div
-        className="absolute inset-0 rounded-full bg-primary/20 blur-xl"
+        className="absolute inset-0 rounded-full blur-xl"
+        style={{
+          background: 'radial-gradient(circle, hsl(var(--primary) / 0.3) 0%, transparent 70%)',
+          boxShadow: 'var(--shadow-glow-primary)',
+        }}
         animate={{
           scale: 1 + audioLevel * 0.3,
           opacity: audioLevel * 0.6,
@@ -63,10 +67,16 @@ export const WeightKnob = memo(({ value, audioLevel, onChange, isActive }: Weigh
       {/* Ручка */}
       <motion.div
         className={cn(
-          "relative w-full h-full rounded-full border-4 cursor-ns-resize transition-colors",
-          isActive ? "border-primary bg-primary/5" : "border-muted bg-background",
+          "relative w-full h-full rounded-full border-4 cursor-ns-resize transition-all",
+          "bg-gradient-to-br from-surface to-surface-variant",
+          isActive 
+            ? "border-primary shadow-lg" 
+            : "border-border hover:border-accent",
           isDragging && "scale-95"
         )}
+        style={{
+          boxShadow: isActive ? 'var(--shadow-glow-primary)' : 'none',
+        }}
         onMouseDown={handleMouseDown}
         whileHover={{ scale: 1.05 }}
         role="slider"
@@ -75,14 +85,18 @@ export const WeightKnob = memo(({ value, audioLevel, onChange, isActive }: Weigh
         aria-valuenow={Math.round(value * 100)}
         aria-label="Вес промпта"
       >
-        {/* Индикатор уровня */}
+        {/* Индикатор уровня с градиентом */}
         <div 
-          className="absolute bottom-0 left-0 right-0 bg-primary/30 rounded-b-full transition-all"
-          style={{ height: `${value * 100}%` }}
+          className="absolute bottom-0 left-0 right-0 rounded-b-full transition-all"
+          style={{ 
+            height: `${value * 100}%`,
+            background: 'var(--gradient-primary)',
+            opacity: isActive ? 0.8 : 0.3,
+          }}
         />
         
         {/* Значение */}
-        <div className="absolute inset-0 flex items-center justify-center text-xs font-bold">
+        <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-foreground">
           {Math.round(value * 100)}%
         </div>
       </motion.div>
