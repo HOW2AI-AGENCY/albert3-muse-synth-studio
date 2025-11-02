@@ -6,10 +6,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Music, Loader2 } from 'lucide-react';
+import { Sparkles, Music } from 'lucide-react';
 import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
 type Track = Database['public']['Tables']['tracks']['Row'];
@@ -34,68 +32,43 @@ export const TrackActions: React.FC<TrackActionsProps> = ({
   onLyricsGenerated,
 }) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [lyricsDialogOpen, setLyricsDialogOpen] = useState(false);
-  const [generatedPrompt, setGeneratedPrompt] = useState('');
-  const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
 
-  const handleGenerateLyrics = async () => {
-    setIsGeneratingPrompt(true);
+  // Формируем промпт на основе контекста проекта и трека
+  const getLyricsPrompt = () => {
+    const parts: string[] = [];
     
-    try {
-      // Вызываем Edge Function для генерации промпта
-      const { data, error } = await supabase.functions.invoke('generate-lyrics-prompt', {
-        body: {
-          projectName,
-          projectDescription,
-          projectGenre,
-          projectMood,
-          trackTitle: track.title,
-          trackStylePrompt: track.prompt,
-        }
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data?.error) {
-        if (data.error.includes('лимит')) {
-          toast({
-            title: 'Лимит запросов',
-            description: 'Превышен лимит запросов к AI. Попробуйте позже.',
-            variant: 'destructive',
-          });
-        } else if (data.error.includes('кредитов')) {
-          toast({
-            title: 'Недостаточно кредитов',
-            description: 'Пополните баланс Lovable AI.',
-            variant: 'destructive',
-          });
-        } else {
-          throw new Error(data.error);
-        }
-        return;
-      }
-
-      // Устанавливаем сгенерированный промпт
-      setGeneratedPrompt(data.prompt);
-      setLyricsDialogOpen(true);
-
-      toast({
-        title: '✨ Промпт готов',
-        description: 'AI создал промпт на основе контекста проекта',
-      });
-    } catch (error) {
-      console.error('Error generating lyrics prompt:', error);
-      toast({
-        title: 'Ошибка генерации промпта',
-        description: 'Не удалось создать промпт. Попробуйте еще раз.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsGeneratingPrompt(false);
+    // Добавляем контекст проекта
+    if (projectName) {
+      parts.push(`Проект: "${projectName}"`);
     }
+    
+    if (projectDescription) {
+      parts.push(`Концепция: ${projectDescription}`);
+    }
+    
+    if (projectGenre) {
+      parts.push(`Жанр: ${projectGenre}`);
+    }
+    
+    if (projectMood) {
+      parts.push(`Настроение: ${projectMood}`);
+    }
+    
+    // Добавляем контекст трека
+    if (track.title) {
+      parts.push(`Трек: "${track.title}"`);
+    }
+    
+    if (track.prompt) {
+      parts.push(`Стиль: ${track.prompt}`);
+    }
+    
+    return parts.join('. ');
+  };
+
+  const handleGenerateLyrics = () => {
+    setLyricsDialogOpen(true);
   };
 
   const handleGenerateTrack = () => {
@@ -121,14 +94,9 @@ export const TrackActions: React.FC<TrackActionsProps> = ({
           size="sm" 
           variant="outline"
           onClick={handleGenerateLyrics}
-          disabled={isGeneratingPrompt}
         >
-          {isGeneratingPrompt ? (
-            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-          ) : (
-            <Sparkles className="h-3 w-3 mr-1" />
-          )}
-          {isGeneratingPrompt ? 'Создаём промпт...' : 'Создать лирику'}
+          <Sparkles className="h-3 w-3 mr-1" />
+          Создать лирику
         </Button>
         <Button 
           size="sm"
@@ -143,10 +111,9 @@ export const TrackActions: React.FC<TrackActionsProps> = ({
         open={lyricsDialogOpen}
         onOpenChange={setLyricsDialogOpen}
         trackId={track.id}
-        initialPrompt={generatedPrompt}
+        initialPrompt={getLyricsPrompt()}
         onSuccess={() => {
           setLyricsDialogOpen(false);
-          setGeneratedPrompt('');
           onLyricsGenerated?.();
         }}
       />
