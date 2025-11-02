@@ -209,14 +209,14 @@ export const CompactCustomForm = memo(({
                       {projects.find(p => p.id === params.activeProjectId)?.name || 'Проект выбран'}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      Нажмите чтобы изменить или выбрать трек
+                      Нажмите чтобы изменить проект
                     </span>
                   </>
                 ) : (
                   <>
                     <span className="font-medium text-sm">Без проекта</span>
                     <span className="text-xs text-muted-foreground">
-                      Нажмите чтобы выбрать проект и треки
+                      Нажмите чтобы выбрать проект
                     </span>
                   </>
                 )}
@@ -446,7 +446,7 @@ export const CompactCustomForm = memo(({
         open={projectDialogOpen}
         onOpenChange={setProjectDialogOpen}
         selectedProjectId={params.activeProjectId || null}
-        onProjectSelect={(projectId) => onParamChange('activeProjectId', projectId)}
+        onProjectSelect={(projectId) => onParamChange('activeProjectId', projectId || null)}
         onTrackSelect={handleTrackSelect}
         showTrackSelection={true}
       />

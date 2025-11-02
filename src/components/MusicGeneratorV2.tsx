@@ -24,7 +24,7 @@ import { getProviderModels, getDefaultModel, type MusicProvider as ProviderType 
 // Modular components & hooks
 import { CompactHeader } from '@/components/generator/CompactHeader';
 import { QuickActionsBar } from '@/components/generator/QuickActionsBar';
-import { InspoProjectDialog, type InspoProject } from '@/components/generator/InspoProjectDialog';
+import { InspoProjectDialog } from '@/components/generator/InspoProjectDialog';
 import { AudioSourceDialog } from '@/components/generator/audio/AudioSourceDialog';
 import { SimpleModeCompact } from '@/components/generator/forms/SimpleModeCompact';
 import { CompactCustomForm } from '@/components/generator/forms/CompactCustomForm';
@@ -339,31 +339,17 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   }, [state, handleGenerate]);
 
   // Inspo project selection handler
-  const handleSelectInspo = useCallback((project: InspoProject) => {
-    const newTags = project.style_tags?.join(', ') || '';
-    state.setParam('tags', newTags);
-    
-    // Apply concept to prompt if available
-    const conceptPrompt = (project as any).concept_description || '';
-    if (conceptPrompt) {
-      const existingPrompt = state.params.prompt.trim();
-      const combinedPrompt = existingPrompt 
-        ? `${existingPrompt}\n\nКонцепция: ${conceptPrompt}`
-        : conceptPrompt;
-      state.setParam('prompt', combinedPrompt);
-      state.setDebouncedPrompt(combinedPrompt);
-    }
-    
-    state.setParam('inspoProjectId', project.id);
-    state.setParam('inspoProjectName', project.name);
+  const handleSelectInspo = useCallback((projectId: string, projectName: string) => {
+    state.setParam('inspoProjectId', projectId);
+    state.setParam('inspoProjectName', projectName);
     
     logger.info('Inspiration project applied', 'MusicGeneratorV2', {
-      projectId: project.id,
-      tags: newTags,
+      projectId,
+      projectName,
     });
     
     sonnerToast.success('✨ Проект применён', {
-      description: `Используем стиль и концепцию "${project.name}"`,
+      description: `Используем стиль и концепцию "${projectName}"`,
       duration: 3000,
     });
     

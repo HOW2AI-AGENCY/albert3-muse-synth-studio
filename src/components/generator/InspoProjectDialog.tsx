@@ -8,6 +8,7 @@ import { Search, Plus, Sparkles } from '@/utils/iconImports';
 import { ProjectWizardDialog } from '@/components/projects/ProjectWizardDialog';
 import { useMusicProjects } from '@/hooks/useMusicProjects';
 import type { MusicProject } from '@/types/project.types';
+import { cn } from '@/lib/utils';
 
 export interface InspoProject {
   id: string;
@@ -24,33 +25,28 @@ interface InspoProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   selectedProjectId?: string | null;
-  onSelectProject?: (project: InspoProject) => void;
-  onSelect?: (project: InspoProject) => void; // Alias for backward compatibility
+  onSelectProject: (projectId: string, projectName: string) => void;
 }
 
 export const InspoProjectDialog = memo(({
   open,
   onOpenChange,
-  onSelect,
+  selectedProjectId,
+  onSelectProject,
 }: InspoProjectDialogProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [wizardOpen, setWizardOpen] = useState(false);
   const { projects: musicProjects, isLoading: projectsLoading } = useMusicProjects();
-  
-  const handleSelect = onSelect;
 
+  const handleProjectClick = (project: MusicProject) => {
+    onSelectProject(project.id, project.name);
+    onOpenChange(false);
+  };
 
   const handleProjectCreated = (project: MusicProject) => {
-    if (handleSelect) {
-      handleSelect({
-        id: project.id,
-        name: project.name,
-        style_tags: project.style_tags || [],
-        genre: project.genre || undefined,
-        mood: project.mood || undefined,
-        concept_description: project.concept_description,
-      });
-    }
+    onSelectProject(project.id, project.name);
+    setWizardOpen(false);
+    onOpenChange(false);
   };
 
   return (
@@ -98,11 +94,11 @@ export const InspoProjectDialog = memo(({
                       .map((project) => (
                         <Card
                           key={project.id}
-                          className="p-4 hover:bg-accent cursor-pointer transition-colors"
-                          onClick={() => {
-                            handleProjectCreated(project);
-                            onOpenChange(false);
-                          }}
+                          className={cn(
+                            "p-4 hover:bg-accent cursor-pointer transition-colors",
+                            selectedProjectId === project.id && "border-primary bg-primary/5"
+                          )}
+                          onClick={() => handleProjectClick(project)}
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
