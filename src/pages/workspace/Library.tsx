@@ -671,7 +671,6 @@ const Library: React.FC = () => {
                     tracks={filteredAndSortedTracks}
                     columns={gridParams.columns}
                     gap={gridParams.gap}
-                    cardWidth={gridParams.cardWidth}
                     onTrackPlay={handleTrackPlay}
                     onShare={handleShare}
                     onSeparateStems={handleSeparateStems}

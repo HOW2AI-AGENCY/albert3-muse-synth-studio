@@ -12,7 +12,6 @@ interface VirtualizedTrackGridProps {
   tracks: Track[];
   columns: number;
   gap: number;
-  cardWidth: number;
   onTrackPlay: (track: any) => void;
   onShare: (trackId: string) => void;
   onSeparateStems: (trackId: string) => void;
@@ -30,7 +29,6 @@ export const VirtualizedTrackGrid = React.memo(({
   tracks,
   columns,
   gap,
-  cardWidth,
   onTrackPlay,
   onShare,
   onSeparateStems,
@@ -43,16 +41,21 @@ export const VirtualizedTrackGrid = React.memo(({
 }: VirtualizedTrackGridProps) => {
   const parentRef = useRef<HTMLDivElement>(null);
   
-  // Calculate number of rows
+  // Calculate number of rows based on current columns
   const rowCount = Math.ceil(tracks.length / columns);
   const rowHeight = CARD_HEIGHT + gap;
   
-  // Create virtualizer
+  // Create virtualizer with key dependencies
   const rowVirtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => parentRef.current,
     estimateSize: () => rowHeight,
-    overscan: 2,
+    overscan: 3, // Increased for smoother scrolling
+    // CRITICAL: Forces recalculation when columns/gap change
+    measureElement:
+      typeof window !== 'undefined' && 'ResizeObserver' in window
+        ? (element) => element.getBoundingClientRect().height
+        : undefined,
   });
 
   return (
@@ -85,16 +88,15 @@ export const VirtualizedTrackGrid = React.memo(({
               }}
             >
               <div
-                className="grid"
+                className="grid w-full px-4"
                 style={{
-                  gridTemplateColumns: `repeat(${columns}, ${cardWidth}px)`,
+                  gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
                   gap: `${gap}px`,
-                  justifyContent: 'center',
                   height: '100%',
                 }}
               >
                 {rowTracks.map((track) => (
-                  <div key={track.id} style={{ maxWidth: `${cardWidth}px` }}>
+                  <div key={track.id}>
                     <TrackCard
                       track={normalizeTrack(track)}
                       onClick={() => onTrackPlay(track)}
@@ -117,18 +119,20 @@ export const VirtualizedTrackGrid = React.memo(({
     </div>
   );
 }, (prevProps, nextProps) => {
-  // Custom comparison for optimization
-  return (
+  // FIXED: Return true to PREVENT re-render, false to ALLOW re-render
+  // Re-render if ANY of these conditions are FALSE (changed)
+  const shouldNotUpdate = (
     prevProps.tracks.length === nextProps.tracks.length &&
     prevProps.columns === nextProps.columns &&
     prevProps.gap === nextProps.gap &&
-    prevProps.cardWidth === nextProps.cardWidth &&
     prevProps.tracks.every((track, i) => 
       track.id === nextProps.tracks[i]?.id &&
       track.status === nextProps.tracks[i]?.status &&
       track.audio_url === nextProps.tracks[i]?.audio_url
     )
   );
+  
+  return shouldNotUpdate;
 });
 
 VirtualizedTrackGrid.displayName = 'VirtualizedTrackGrid';

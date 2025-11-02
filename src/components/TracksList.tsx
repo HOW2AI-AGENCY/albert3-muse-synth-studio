@@ -55,6 +55,8 @@ const TracksListComponent = ({
 
   // Track container dimensions for virtualization
   useEffect(() => {
+    if (!containerRef.current) return;
+    
     const updateDimensions = () => {
       if (containerRef.current) {
         const { width, height } = containerRef.current.getBoundingClientRect();
@@ -62,21 +64,23 @@ const TracksListComponent = ({
       }
     };
 
+    // Initial measurement
     updateDimensions();
-    const resizeObserver = new ResizeObserver(updateDimensions);
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
-    }
     
-    window.addEventListener('resize', updateDimensions);
+    // Use ResizeObserver for precise tracking
+    const resizeObserver = new ResizeObserver(() => {
+      updateDimensions();
+    });
+    
+    resizeObserver.observe(containerRef.current);
+    
     return () => {
       resizeObserver.disconnect();
-      window.removeEventListener('resize', updateDimensions);
     };
   }, []);
 
-  // Adaptive grid parameters
-  const { columns, gap, cardWidth } = useAdaptiveGrid(containerDimensions.width, { 
+  // Adaptive grid parameters (cardWidth used only for non-virtualized grid)
+  const { columns, gap } = useAdaptiveGrid(containerDimensions.width, { 
     isDetailPanelOpen 
   });
 
@@ -228,7 +232,6 @@ const TracksListComponent = ({
                 tracks={tracks}
                 columns={columns}
                 gap={gap}
-                cardWidth={cardWidth}
                 onTrackPlay={onSelect || handlePlay}
                 onShare={handleShare}
                 onSeparateStems={onSeparateStems || (() => {})}
