@@ -89,6 +89,13 @@
     @apply text-base md:text-sm;
   }
 
+  /* Disable hover effects on touch devices */
+  @media (hover: hover) and (pointer: fine) {
+    .hover-desktop-only:hover {
+      /* Hover styles only apply on desktop */
+    }
+  }
+
   .text-gradient-primary {
     @apply bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent;
   }
@@ -141,10 +148,13 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .card-modern:hover {
-    @apply border-primary/30 shadow-xl;
-    transform: translateY(-2px);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), var(--shadow-glow-primary);
+  /* Only apply hover effect on devices with hover capability */
+  @media (hover: hover) and (pointer: fine) {
+    .card-modern:hover {
+      @apply border-primary/30 shadow-xl;
+      transform: translateY(-2px);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), var(--shadow-glow-primary);
+    }
   }
 
   .button-modern {
@@ -159,13 +169,16 @@
     transition: transform 0.6s ease;
   }
 
-  .button-modern:hover::before {
-    transform: translateX(100%);
-  }
+  /* Only apply hover effects on desktop */
+  @media (hover: hover) and (pointer: fine) {
+    .button-modern:hover::before {
+      transform: translateX(100%);
+    }
 
-  .button-modern:hover {
-    @apply scale-105;
-    box-shadow: var(--shadow-glow-primary);
+    .button-modern:hover {
+      @apply scale-105;
+      box-shadow: var(--shadow-glow-primary);
+    }
   }
 
   .animate-pulse-glow {
@@ -192,18 +205,25 @@
     @apply transition-all duration-300;
   }
 
-  .hover-lift:hover {
-    @apply -translate-y-1 shadow-lg;
+  /* Only apply hover lift on desktop */
+  @media (hover: hover) and (pointer: fine) {
+    .hover-lift:hover {
+      @apply -translate-y-1 shadow-lg;
+    }
   }
 
   .interactive-element {
     @apply transition-all duration-200 ease-out;
   }
 
-  .interactive-element:hover {
-    @apply scale-105;
+  /* Only apply hover scale on desktop */
+  @media (hover: hover) and (pointer: fine) {
+    .interactive-element:hover {
+      @apply scale-105;
+    }
   }
 
+  /* Mobile: Only apply active state */
   .interactive-element:active {
     @apply scale-95;
   }

@@ -346,6 +346,9 @@ const config: Config = {
         "spin-slow": "spin-slow 3s linear infinite",
         "wiggle": "wiggle 1s ease-in-out infinite",
         "float": "float 3s ease-in-out infinite",
+        // Mobile-optimized animations (reduced motion on mobile)
+        "fade-in-mobile": "fade-in 0.2s ease-out",
+        "scale-in-mobile": "scale-in 0.15s ease-out",
       },
     },
   },
