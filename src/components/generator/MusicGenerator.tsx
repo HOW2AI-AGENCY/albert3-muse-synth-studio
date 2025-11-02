@@ -25,19 +25,19 @@ interface MusicGeneratorProps {
 type GeneratorMode = 'simple' | 'custom';
 const SUNO_MODELS = [{
   value: 'V5',
-  label: 'V5 (Latest)',
-  description: 'Новейшая модель'
+  label: 'v5',
+  description: 'Новейшая модель с улучшенным качеством'
 }, {
   value: 'V4_5PLUS',
-  label: 'V4.5 Plus',
-  description: 'Улучшенная V4.5'
+  label: 'v4.5+',
+  description: 'Улучшенная версия 4.5'
 }, {
   value: 'V4_5',
-  label: 'V4.5',
+  label: 'v4.5',
   description: 'Стабильная версия'
 }, {
   value: 'V4',
-  label: 'V4',
+  label: 'v4',
   description: 'Проверенная версия'
 }] as const;
 export const MusicGenerator = ({
@@ -304,7 +304,8 @@ export const MusicGenerator = ({
     }
   };
   const advancedResourcesCount = [hasAudio, hasPersona, hasInspo].filter(Boolean).length;
-  return <Card className="h-full border-0 shadow-none">
+  return <div className="flex items-center justify-center w-full h-full p-4">
+    <Card className="w-full max-w-2xl border-0 shadow-lg">{/* Centered card with max width */}
       <CardContent className="p-0 space-y-0">
       {/* Compact Header: Balance | Mode | Model */}
         <div className="px-4 py-2 border-b bg-card/50">
@@ -358,22 +359,37 @@ export const MusicGenerator = ({
               </div>
             </RadioGroup>
 
-            {/* Model Selector */}
-            <Select value={modelVersion} onValueChange={setModelVersion} disabled={isGenerating}>
-              <SelectTrigger className="h-8 text-xs w-[110px] shrink-0">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="z-50 bg-popover">
-                {SUNO_MODELS.map(model => (
-                  <SelectItem key={model.value} value={model.value} className="text-xs">
-                    <div className="flex flex-col">
-                      <span>{model.label}</span>
-                      <span className="text-[10px] text-muted-foreground">{model.description}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Model Selector - Compact with Tooltip */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Select value={modelVersion} onValueChange={setModelVersion} disabled={isGenerating}>
+                      <SelectTrigger className="h-8 text-xs w-[85px] shrink-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="z-50 bg-popover">
+                        {SUNO_MODELS.map(model => (
+                          <SelectItem key={model.value} value={model.value} className="text-xs">
+                            <div className="flex items-center gap-2">
+                              <span>{model.label}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs max-w-[200px]">
+                  <p className="font-medium mb-1">
+                    {SUNO_MODELS.find(m => m.value === modelVersion)?.label}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {SUNO_MODELS.find(m => m.value === modelVersion)?.description}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
 
@@ -433,16 +449,24 @@ export const MusicGenerator = ({
                 {/* Label + History Button */}
                 <div className="flex items-center justify-between">
                   <Label className="text-sm font-medium">Опишите музыку</Label>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setHistoryDialogOpen(true)} 
-                    disabled={isGenerating} 
-                    className="h-7 text-xs gap-1.5"
-                  >
-                    <History className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">История</span>
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setHistoryDialogOpen(true)} 
+                          disabled={isGenerating} 
+                          className="h-7 w-7 p-0"
+                        >
+                          <History className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="left" className="text-xs">
+                        <p>История промптов</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
 
                 {/* Resizable Textarea with AI Button + Character Counter */}
@@ -458,17 +482,25 @@ export const MusicGenerator = ({
                   
                   {/* Bottom Controls Row */}
                   <div className="flex items-center justify-between mt-1">
-                    {/* AI Boost Button (Left) */}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={handleBoostPrompt} 
-                      disabled={isGenerating || !prompt.trim()} 
-                      className="h-7 text-xs gap-1.5"
-                    >
-                      <Wand2 className="h-3.5 w-3.5" />
-                      <span className="hidden sm:inline">Улучшить стиль</span>
-                    </Button>
+                    {/* AI Boost Button (Left) - Icon Only */}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={handleBoostPrompt} 
+                            disabled={isGenerating || !prompt.trim()} 
+                            className="h-7 w-7 p-0"
+                          >
+                            <Wand2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="text-xs">
+                          <p>Улучшить стиль с помощью AI</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
 
                     {/* Character Counter (Right) */}
                     <div className={cn(
@@ -616,5 +648,6 @@ export const MusicGenerator = ({
 
         <InspoProjectDialog open={inspoDialogOpen} onOpenChange={setInspoDialogOpen} selectedProjectId={selectedProjectId} onSelectProject={handleSelectInspo} />
       </CardContent>
-    </Card>;
+    </Card>
+  </div>;
 };
