@@ -113,7 +113,7 @@ export const TrackActions: React.FC<TrackActionsProps> = ({
         trackId={track.id}
         initialPrompt={getLyricsPrompt()}
         onGenerated={() => {
-          setLyricsDialogOpen(false);
+          // Диалог сам закроется после успешной генерации
           onLyricsGenerated?.();
         }}
       />
