@@ -12,7 +12,7 @@ export interface Project {
   user_id: string;
   name: string;
   description?: string;
-  project_type: 'single' | 'ep' | 'album' | 'mixtape';
+  project_type: 'single' | 'ep' | 'album' | 'soundtrack' | 'custom' | 'instrumental';
   cover_url?: string;
   is_public: boolean;
   created_with_ai: boolean;
@@ -29,7 +29,6 @@ export interface Project {
 }
 
 export const useProjects = () => {
-  const { toast } = useToast();
 
   const { data: projects, isLoading, error } = useQuery({
     queryKey: ['projects'],
@@ -52,7 +51,6 @@ export const useProjects = () => {
 };
 
 export const useProject = (projectId: string | undefined) => {
-  const { toast } = useToast();
 
   const { data: project, isLoading, error } = useQuery({
     queryKey: ['project', projectId],
@@ -92,10 +90,14 @@ export const useCreateProject = () => {
 
   return useMutation({
     mutationFn: async (projectData: Partial<Project>) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const { data, error } = await supabase
         .from('music_projects')
         .insert({
-          name: projectData.name,
+          name: projectData.name || 'Новый проект',
+          user_id: user.id,
           description: projectData.description,
           project_type: projectData.project_type || 'single',
           cover_url: projectData.cover_url,

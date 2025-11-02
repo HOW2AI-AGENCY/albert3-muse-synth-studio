@@ -1,20 +1,12 @@
-import { ReactNode, useEffect } from "react";
-import { useUserPreferences } from "@/hooks/useUserPreferences";
+import { ReactNode } from "react";
 
 interface AppLayoutProps {
   children: ReactNode;
 }
 
 /**
- * Корневой layout приложения с интеграцией персонализации
+ * Корневой layout приложения
  */
 export const AppLayout = ({ children }: AppLayoutProps) => {
-  const { applyPreferences } = useUserPreferences();
-
-  // Применяем пользовательские настройки при монтировании
-  useEffect(() => {
-    applyPreferences();
-  }, [applyPreferences]);
-
   return <>{children}</>;
 };

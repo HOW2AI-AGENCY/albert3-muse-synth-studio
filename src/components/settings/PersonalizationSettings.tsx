@@ -2,7 +2,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
-import { useUserPreferences, AccentColor, DensityMode } from '@/hooks/useUserPreferences';
+import { useUserPreferences, AccentColor } from '@/hooks/useUserPreferences';
+import { useDensity } from '@/contexts/DensityContext';
 import { Check } from '@/utils/iconImports';
 import { cn } from '@/lib/utils';
 
@@ -13,18 +14,18 @@ const accentColors: Array<{ value: AccentColor; label: string; preview: string }
   { value: 'pink', label: 'Розовый', preview: 'bg-[hsl(330,81%,60%)]' },
 ];
 
-const densityModes: Array<{ value: DensityMode; label: string; description: string }> = [
+const densityModes = [
   { value: 'compact', label: 'Компактный', description: 'Больше контента на экране' },
   { value: 'comfortable', label: 'Комфортный', description: 'Сбалансированный вид (по умолчанию)' },
-  { value: 'spacious', label: 'Просторный', description: 'Больше пространства, лучше читаемость' },
-];
+] as const;
 
 /**
  * Компонент настроек персонализации
  * Позволяет выбрать accent color и density mode
  */
 export const PersonalizationSettings = () => {
-  const { preferences, setAccentColor, setDensityMode, resetPreferences } = useUserPreferences();
+  const { preferences, setAccentColor, resetPreferences } = useUserPreferences();
+  const { density, setDensity } = useDensity();
 
   return (
     <div className="space-y-6">
@@ -75,8 +76,8 @@ export const PersonalizationSettings = () => {
         </CardHeader>
         <CardContent>
           <RadioGroup
-            value={preferences.densityMode}
-            onValueChange={(value) => setDensityMode(value as DensityMode)}
+            value={density}
+            onValueChange={(value) => setDensity(value as 'compact' | 'comfortable')}
             className="space-y-3"
           >
             {densityModes.map((mode) => (
@@ -85,7 +86,7 @@ export const PersonalizationSettings = () => {
                 className={cn(
                   'flex items-start gap-3 p-4 rounded-lg border-2 transition-all cursor-pointer',
                   'hover:border-primary/50',
-                  preferences.densityMode === mode.value
+                  density === mode.value
                     ? 'border-primary bg-primary/5'
                     : 'border-border'
                 )}

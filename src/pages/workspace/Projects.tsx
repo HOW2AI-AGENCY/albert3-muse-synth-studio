@@ -5,12 +5,12 @@
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Grid3x3, List, Search, Filter, FolderPlus, Sparkles } from '@/utils/iconImports';
+import { Plus, Grid3X3, List, Search, Folder, Sparkles, SlidersHorizontal } from '@/utils/iconImports';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -81,7 +81,7 @@ export default function Projects() {
         <PageHeader
           title="Проекты"
           description="Ваши музыкальные проекты и коллекции"
-          icon={FolderPlus}
+          icon={Folder}
         />
 
         <div className="flex flex-col sm:flex-row gap-2">
@@ -127,7 +127,7 @@ export default function Projects() {
         {/* Filter */}
         <Select value={filterType} onValueChange={setFilterType}>
           <SelectTrigger className="w-full sm:w-32">
-            <Filter className="w-4 h-4 mr-2" />
+            <SlidersHorizontal className="w-4 h-4 mr-2" />
             <SelectValue placeholder="Тип" />
           </SelectTrigger>
           <SelectContent>
@@ -148,7 +148,7 @@ export default function Projects() {
               onClick={() => setViewMode('grid')}
               className="px-3"
             >
-              <Grid3x3 className="w-4 h-4" />
+              <Grid3X3 className="w-4 h-4" />
             </Button>
             <Button
               variant={viewMode === 'list' ? 'default' : 'ghost'}
@@ -167,7 +167,7 @@ export default function Projects() {
         <EmptyState
           title={searchQuery ? "Ничего не найдено" : "Нет проектов"}
           description={searchQuery ? "Попробуйте изменить поисковый запрос" : "Создайте свой первый музыкальный проект"}
-          icon={<FolderPlus className="w-12 h-12" />}
+          icon={<Folder className="w-12 h-12" />}
           action={
             <Button onClick={() => navigate('/workspace/projects/create')} className="gap-2">
               <Plus className="w-4 h-4" />
