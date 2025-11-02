@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/utils/logger";
 import { Loader2, FileText } from "@/utils/iconImports";
+import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 
 interface LyricsGeneratorDialogProps {
   open: boolean;
@@ -35,6 +36,7 @@ export function LyricsGeneratorDialog({
   const [prompt, setPrompt] = useState(initialPrompt);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
+  const { vibrate } = useHapticFeedback();
 
   const wordCount = prompt.trim().split(/\s+/).filter(Boolean).length;
 
@@ -57,6 +59,7 @@ export function LyricsGeneratorDialog({
       return;
     }
 
+    vibrate('light');
     setIsGenerating(true);
 
     try {
@@ -113,8 +116,8 @@ export function LyricsGeneratorDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[540px] gap-0 p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-[540px] max-h-[80vh] gap-0 p-0 pb-safe">
+        <DialogHeader className="px-3 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b">
           <DialogTitle className="flex items-center gap-2.5 text-lg">
             <div className="p-2 rounded-lg bg-primary/10">
               <FileText className="w-4 h-4 text-primary" />
@@ -126,7 +129,7 @@ export function LyricsGeneratorDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="px-6 py-5 space-y-4">
+        <div className="px-3 sm:px-6 py-4 sm:py-5 space-y-3 sm:space-y-4 overflow-y-auto">
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
               <Label htmlFor="prompt" className="text-sm font-medium flex items-center gap-1.5">
@@ -149,7 +152,7 @@ export function LyricsGeneratorDialog({
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               rows={7}
-              className="resize-none text-sm leading-relaxed"
+              className="resize-none text-base sm:text-sm leading-relaxed"
             />
             <div className="flex items-start gap-2 text-[11px] text-muted-foreground">
               <div className="mt-0.5">💡</div>
@@ -160,19 +163,20 @@ export function LyricsGeneratorDialog({
           </div>
         </div>
 
-        <DialogFooter className="px-6 pb-6 pt-0 gap-2 sm:gap-2">
+        <DialogFooter className="sticky bottom-0 bg-background border-t px-3 sm:px-6 py-3 sm:py-4 gap-2 sm:gap-2">
           <Button 
             variant="outline" 
             onClick={() => onOpenChange(false)} 
             disabled={isGenerating}
-            className="flex-1 sm:flex-none"
+            className="flex-1 sm:flex-none h-11 sm:h-10"
           >
             Отмена
           </Button>
           <Button 
             onClick={handleGenerate} 
             disabled={isGenerating || !prompt.trim() || wordCount > MAX_WORDS}
-            className="flex-1 sm:flex-none gap-2"
+            className="flex-1 sm:flex-none gap-2 h-11 sm:h-10"
+            style={{ touchAction: 'manipulation' }}
           >
             {isGenerating ? (
               <>

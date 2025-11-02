@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { FileText, Search, Music2, AlertCircle } from 'lucide-react';
 import { useTracks } from '@/hooks/useTracks';
 import { cn } from '@/lib/utils';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
 interface ProjectDraftsSelectorProps {
   projectId: string | null;
@@ -37,6 +38,7 @@ export const ProjectDraftsSelector: React.FC<ProjectDraftsSelectorProps> = ({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const { tracks: allTracks } = useTracks();
+  const { vibrate } = useHapticFeedback();
 
   // Фильтруем черновики проекта (статус pending, processing)
   const projectDrafts = useMemo(() => {
@@ -61,6 +63,7 @@ export const ProjectDraftsSelector: React.FC<ProjectDraftsSelectorProps> = ({
   const selectedDraft = projectDrafts.find(d => d.id === selectedDraftId);
 
   const handleDraftClick = (trackId: string) => {
+    vibrate('light');
     onDraftSelect(trackId);
     setDialogOpen(false);
     setSearchQuery('');
@@ -101,18 +104,18 @@ export const ProjectDraftsSelector: React.FC<ProjectDraftsSelectorProps> = ({
       </Button>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+        <DialogContent className="max-w-[calc(100vw-2rem)] md:max-w-2xl max-h-[75vh] md:max-h-[85vh] pb-safe">
+          <DialogHeader className="px-3 md:px-6">
+            <DialogTitle className="flex items-center gap-2 text-base md:text-lg">
               <FileText className="h-5 w-5 text-primary" />
               Черновики проекта
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs md:text-sm">
               Проект: <span className="font-medium text-foreground">{projectName || 'Неизвестный'}</span>
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-3 md:space-y-4 px-3 md:px-6">
             {/* Поиск */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -120,12 +123,12 @@ export const ProjectDraftsSelector: React.FC<ProjectDraftsSelectorProps> = ({
                 placeholder="Поиск черновиков..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-11 text-base md:h-10 md:text-sm"
               />
             </div>
 
             {/* Список черновиков */}
-            <ScrollArea className="h-[450px] pr-4">
+            <ScrollArea className="h-[40vh] md:h-[450px] pr-2 md:pr-4">
               {filteredDrafts.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <AlertCircle className="h-12 w-12 text-muted-foreground/30 mb-4" />
@@ -145,12 +148,13 @@ export const ProjectDraftsSelector: React.FC<ProjectDraftsSelectorProps> = ({
                       key={draft.id}
                       onClick={() => handleDraftClick(draft.id)}
                       className={cn(
-                        "group relative flex flex-col gap-3 p-4 rounded-lg border-2 transition-all text-left w-full",
+                        "group relative flex flex-col gap-3 p-3 md:p-4 rounded-lg border-2 transition-all text-left w-full active:scale-[0.98]",
                         "hover:border-primary/50 hover:shadow-md hover:bg-accent/30",
                         selectedDraftId === draft.id 
                           ? "border-primary bg-primary/5 shadow-lg" 
                           : "border-border bg-card"
                       )}
+                      style={{ touchAction: 'manipulation' }}
                     >
                       {/* Заголовок и статус */}
                       <div className="flex items-start justify-between gap-3">
@@ -222,11 +226,11 @@ export const ProjectDraftsSelector: React.FC<ProjectDraftsSelectorProps> = ({
             </ScrollArea>
 
             {/* Футер */}
-            <div className="flex items-center justify-between pt-4 border-t">
+            <div className="flex items-center justify-between pt-3 md:pt-4 px-3 md:px-6 pb-3 md:pb-0 border-t">
               <p className="text-xs text-muted-foreground">
                 {filteredDrafts.length} {filteredDrafts.length === 1 ? 'черновик' : 'черновиков'}
               </p>
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              <Button variant="outline" onClick={() => setDialogOpen(false)} className="h-10 md:h-9">
                 Закрыть
               </Button>
             </div>
