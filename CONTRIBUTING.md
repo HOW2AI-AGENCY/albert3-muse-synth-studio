@@ -210,6 +210,102 @@ npm run test:watch    # Watch mode
 npm run test:coverage # Coverage report
 ```
 
+## 🎨 CSS Changes Checklist
+
+### Before Modifying CSS Files
+
+⚠️ **CRITICAL**: CSS variables are strictly controlled to prevent duplicates and conflicts.
+
+**Files affected by CSS Variable Contract**:
+- `src/index.css` - Base tokens (spacing, colors, fonts)
+- `src/styles/design-tokens.css` - Density tokens (compact/comfortable)
+- `tailwind.config.ts` - Tailwind configuration
+
+### Step-by-Step Process
+
+1. **Read the Contract**
+   ```bash
+   cat docs/design-system/CSS_VARIABLE_CONTRACT.md
+   ```
+
+2. **Determine Which File to Modify**
+   - **Base tokens** (spacing, colors, fonts) → `src/index.css`
+   - **Density tokens** (compact/comfortable) → `src/styles/design-tokens.css`
+   - **Tailwind utilities** → `tailwind.config.ts` (references only)
+
+3. **Make Changes**
+   - Add/modify variables in the appropriate file
+   - **NEVER** duplicate variables between files
+
+4. **Validate Locally**
+   ```bash
+   bash scripts/validate-css-contract.sh
+   ```
+
+5. **Test the App**
+   - Open `/workspace/generate` route
+   - Verify no visual regressions
+   - Check browser console for errors
+
+6. **Commit Changes**
+   ```bash
+   git add .
+   git commit -m "style: update spacing tokens"
+   # Pre-commit hook will auto-validate
+   ```
+
+### Common Pitfalls to Avoid
+
+❌ **WRONG**: Duplicating variables
+```css
+/* index.css */
+--space-4: 1rem;
+
+/* design-tokens.css */
+--space-4: 1.2rem; /* ❌ Duplicate! */
+```
+
+✅ **CORRECT**: Use separate namespaces
+```css
+/* index.css */
+--space-4: 1rem;
+
+/* design-tokens.css */
+--space-compact-md: 0.75rem; /* ✅ Unique namespace */
+```
+
+### Validation Tools
+
+| Tool | Purpose | When to Use |
+|------|---------|-------------|
+| `scripts/validate-css-contract.sh` | Detect duplicates | Before commit |
+| `.husky/pre-commit` | Auto-validate | On every commit |
+| GitHub Actions | CI validation | On every PR |
+
+### Emergency Fix
+
+If you accidentally broke the CSS contract:
+
+```bash
+# 1. Identify duplicates
+bash scripts/validate-css-contract.sh
+
+# 2. Remove duplicates from design-tokens.css
+# (Keep base tokens only in index.css)
+
+# 3. Verify fix
+bash scripts/validate-css-contract.sh
+
+# 4. Test app
+npm run dev
+# Open /workspace/generate
+
+# 5. Commit fix
+git commit -m "fix(css): remove duplicate CSS variables"
+```
+
+---
+
 ## 📚 Documentation
 
 ### When to Update Documentation
@@ -218,12 +314,14 @@ npm run test:coverage # Coverage report
 - Changing API contracts
 - Updating configuration
 - Fixing bugs that affect usage
+- **Modifying CSS variables** (update `CSS_VARIABLE_CONTRACT.md`)
 
 ### Where to Add Documentation
 
 - **API Changes**: `docs/api/`
 - **Architecture**: `docs/architecture/`
 - **User Guide**: `docs/user-guide/`
+- **Design System**: `docs/design-system/`
 - **Troubleshooting**: `docs/TROUBLESHOOTING.md`
 
 ## 🐛 Reporting Bugs

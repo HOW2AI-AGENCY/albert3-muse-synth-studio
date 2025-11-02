@@ -1,0 +1,47 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# ============================================
+# Pre-commit Hook - CSS Contract Validation
+# ============================================
+
+echo "🔍 Running pre-commit checks..."
+
+# Check if CSS files changed
+CSS_FILES_CHANGED=$(git diff --cached --name-only | grep -E "(index\.css|design-tokens\.css|tailwind\.config\.ts)")
+
+if [ -n "$CSS_FILES_CHANGED" ]; then
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "📊 CSS files changed, validating contract..."
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "Changed files:"
+  echo "$CSS_FILES_CHANGED" | while read -r file; do
+    echo "  - $file"
+  done
+  echo ""
+  
+  # Run validation script
+  if ! bash scripts/validate-css-contract.sh; then
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "❌ COMMIT BLOCKED"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo "CSS Contract validation failed!"
+    echo "Please fix the duplicate variables before committing."
+    echo ""
+    echo "Read: docs/design-system/CSS_VARIABLE_CONTRACT.md"
+    echo ""
+    exit 1
+  fi
+  
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "✅ CSS Contract validation passed"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+fi
+
+exit 0
