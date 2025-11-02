@@ -5,7 +5,7 @@ import { useTracks } from '@/hooks/useTracks';
 
 export const useGenerateProjectTracklist = () => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const { refetch } = useTracks();
+  const { refreshTracks } = useTracks();
 
   const generateTracklist = async (project: {
     id: string;
@@ -40,7 +40,7 @@ export const useGenerateProjectTracklist = () => {
       }
 
       // Refresh tracks list
-      await refetch();
+      await refreshTracks();
 
       toast.success(`Создано ${data.count} треков для проекта`, { id: 'generating-tracklist' });
       return data.tracks;

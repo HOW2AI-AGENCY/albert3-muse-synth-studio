@@ -23,9 +23,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { normalizeTrack } from "@/utils/trackNormalizer";
 import type { Track } from "@/services/api.service";
 import { TrackDialogsManager } from "@/components/tracks/TrackDialogsManager";
+import { useMusicProjects } from "@/hooks/useMusicProjects";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Generate = () => {
-  const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks();
+  const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
+  const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks(undefined, { projectId: selectedProjectId });
+  const { projects } = useMusicProjects();
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showGenerator, setShowGenerator] = useState(false);
   const [userId, setUserId] = useState<string | undefined>();
@@ -130,6 +134,21 @@ const Generate = () => {
 
           <ResizablePanel defaultSize={selectedTrack ? 45 : 75} minSize={30}>
             <div className="h-full overflow-y-auto p-4">
+              <div className="mb-4">
+                <Select value={selectedProjectId || "all"} onValueChange={(value) => setSelectedProjectId(value === "all" ? undefined : value)}>
+                  <SelectTrigger className="w-full max-w-xs">
+                    <SelectValue placeholder="Все треки" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Все треки</SelectItem>
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <TracksList
                 tracks={tracks}
                 isLoading={isLoading}
@@ -197,6 +216,21 @@ const Generate = () => {
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={60} minSize={50}>
             <div className="h-full overflow-y-auto p-4">
+              <div className="mb-4">
+                <Select value={selectedProjectId || "all"} onValueChange={(value) => setSelectedProjectId(value === "all" ? undefined : value)}>
+                  <SelectTrigger className="w-full max-w-xs">
+                    <SelectValue placeholder="Все треки" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Все треки</SelectItem>
+                    {projects.map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <TracksList
                 tracks={tracks}
                 isLoading={isLoading}
@@ -251,6 +285,21 @@ const Generate = () => {
   return (
     <div className="h-full bg-background flex flex-col">
       <div className="flex-1 overflow-y-auto workspace-main p-4 pb-24">
+        <div className="mb-4">
+          <Select value={selectedProjectId || "all"} onValueChange={(value) => setSelectedProjectId(value === "all" ? undefined : value)}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Все треки" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Все треки</SelectItem>
+              {projects.map((project) => (
+                <SelectItem key={project.id} value={project.id}>
+                  {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <TracksList
           tracks={tracks}
           isLoading={isLoading}

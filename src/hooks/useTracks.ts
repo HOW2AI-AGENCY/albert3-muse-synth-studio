@@ -18,9 +18,11 @@ interface UseTracksOptions {
   pollingEnabled?: boolean;
   pollingInitialDelay?: number;
   pollingMaxDelay?: number;
+  projectId?: string;
 }
 
-export const useTracks = (refreshTrigger?: number, _options?: UseTracksOptions) => {
+export const useTracks = (refreshTrigger?: number, options?: UseTracksOptions) => {
+  const projectId = options?.projectId;
   const [tracks, setTracks] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -68,9 +70,9 @@ export const useTracks = (refreshTrigger?: number, _options?: UseTracksOptions) 
       lastUserIdRef.current = user.id;
 
       // ✅ ОПТИМИЗАЦИЯ: Загружаем треки с JOINами вместо N+1 запросов
-      logInfo('Loading tracks with optimized query', 'useTracks', { userId: user.id });
+      logInfo('Loading tracks with optimized query', 'useTracks', { userId: user.id, projectId });
       
-      const { data: tracksData, error } = await supabase
+      let query = supabase
         .from('tracks')
         .select(`
           *,
@@ -95,8 +97,17 @@ export const useTracks = (refreshTrigger?: number, _options?: UseTracksOptions) 
             avatar_url
           )
         `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .eq('user_id', user.id);
+
+      // Фильтр по проекту
+      if (projectId) {
+        query = query.eq('project_id', projectId);
+      } else {
+        // Если проект не выбран, показываем только треки без проекта
+        query = query.is('project_id', null);
+      }
+
+      const { data: tracksData, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
         logError('Failed to load tracks', error as Error, 'useTracks', { userId: user.id });
@@ -171,7 +182,7 @@ export const useTracks = (refreshTrigger?: number, _options?: UseTracksOptions) 
 
   useEffect(() => {
     loadTracks();
-  }, [loadTracks, refreshTrigger]);
+  }, [loadTracks, refreshTrigger, projectId]);
 
   // Realtime updates: reflect INSERT/UPDATE/DELETE immediately
   useEffect(() => {
