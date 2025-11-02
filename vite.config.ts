@@ -11,28 +11,58 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'zustand',
+      '@tanstack/react-query',
+    ],
+    exclude: [],
+  },
   build: {
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
-              return 'vendor-react';
-            }
-            if (id.includes('@tanstack')) {
-              return 'vendor-query';
-            }
-            if (id.includes('lucide-react') || id.includes('@radix-ui')) {
-              return 'vendor-ui';
-            }
-            return 'vendor';
-          }
+        manualChunks: {
+          // Enhanced vendor chunking for better caching
+          'vendor-ui': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-toast',
+            '@radix-ui/react-tooltip',
+            '@radix-ui/react-slider',
+            '@radix-ui/react-scroll-area',
+            '@radix-ui/react-avatar',
+            '@radix-ui/react-checkbox',
+            '@radix-ui/react-switch',
+          ],
+          'vendor-charts': ['recharts'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-query': ['@tanstack/react-query', '@tanstack/react-virtual'],
+          'vendor-forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
+          'vendor-dnd': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
         },
       },
     },
-    chunkSizeWarningLimit: 800,
-    sourcemap: true,
-    minify: 'esbuild',
+    chunkSizeWarningLimit: 1000,
+    sourcemap: mode === 'development',
+    minify: mode === 'production' ? 'terser' : false, // Only use terser in production
+    terserOptions: mode === 'production' ? {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug'],
+      },
+      format: {
+        comments: false,
+      },
+    } : undefined,
+    commonjsOptions: {
+      include: [/node_modules/],
+    },
   },
   plugins: [
     react(),
@@ -59,32 +89,10 @@ export default defineConfig(({ mode }) => ({
     dedupe: [
       "react",
       "react-dom",
-      "react-dom/client",
       "react/jsx-runtime",
       "react/jsx-dev-runtime",
-      "react-router",
-      "react-router-dom",
-      "@tanstack/react-query",
-      "@radix-ui/react-tooltip",
-      "@radix-ui/react-dialog",
-      "@radix-ui/react-slot",
-      "zustand",
+      "zustand", // CRITICAL: dedupe zustand to prevent store duplication
     ],
-  },
-  optimizeDeps: {
-    include: [
-      "react",
-      "react-dom",
-      "react-dom/client",
-      "react/jsx-runtime",
-      "react/jsx-dev-runtime",
-      "react-router",
-      "react-router-dom",
-      "@tanstack/react-query",
-      "@radix-ui/react-tooltip",
-      "zustand",
-    ],
-    force: true,
   },
   test: {
     globals: true,

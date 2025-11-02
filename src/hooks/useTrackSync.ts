@@ -189,7 +189,10 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
               });
               
               reconnectTimeoutId = setTimeout(() => {
+                // ✅ CRITICAL FIX: Предотвращаем бесконечную рекурсию
+                // Проверяем, что канал ещё не создан и не идёт подписка
                 if (isMounted && !channelRef.current && !isSubscribing) {
+                  isSubscribing = true; // Блокируем повторный вызов
                   setupChannelWithRetry();
                 }
               }, delay);

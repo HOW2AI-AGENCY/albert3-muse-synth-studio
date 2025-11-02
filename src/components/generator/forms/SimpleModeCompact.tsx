@@ -4,7 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Music, Sparkles, Info } from '@/utils/iconImports';
+import { Music, Sparkles, Info, History } from '@/utils/iconImports';
 import { StyleRecommendationsInline } from '@/components/generator/StyleRecommendationsInline';
 import { PromptCharacterCounter } from '@/components/generator/PromptCharacterCounter';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -18,6 +18,7 @@ interface SimpleModeCompactProps {
   onParamChange: <K extends keyof GenerationParams>(key: K, value: GenerationParams[K]) => void;
   onGenerate: () => void;
   onBoostPrompt?: () => void;
+  onOpenHistory?: () => void;
   isBoosting?: boolean;
   isGenerating: boolean;
   debouncedPrompt: string;
@@ -29,6 +30,7 @@ export const SimpleModeCompact = memo(({
   onParamChange,
   onGenerate,
   onBoostPrompt,
+  onOpenHistory,
   isBoosting = false,
   isGenerating,
   debouncedPrompt,
@@ -50,10 +52,18 @@ export const SimpleModeCompact = memo(({
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label className="text-xs font-medium">Описание музыки</Label>
-            <PromptCharacterCounter 
-              currentLength={debouncedPrompt.length} 
-              maxLength={MAX_PROMPT_LENGTH}
-            />
+            {onOpenHistory && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                onClick={onOpenHistory}
+                disabled={isGenerating}
+              >
+                <History className="h-3.5 w-3.5" />
+                История
+              </Button>
+            )}
           </div>
           <div className="relative">
             <Textarea
@@ -83,6 +93,30 @@ export const SimpleModeCompact = memo(({
                 <Sparkles className={cn("h-3.5 w-3.5", isBoosting && "animate-spin")} />
               </Button>
             )}
+          </div>
+          
+          {/* Контролы под формой ввода */}
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center gap-2">
+              {onBoostPrompt && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1.5 text-xs"
+                  onClick={onBoostPrompt}
+                  disabled={isBoosting || isGenerating || !debouncedPrompt.trim()}
+                  title="Улучшить промпт с помощью AI"
+                >
+                  <Sparkles className={cn("h-3 w-3", isBoosting && "animate-spin")} />
+                  {isBoosting ? 'Улучшение...' : 'AI улучшение'}
+                </Button>
+              )}
+            </div>
+            
+            <PromptCharacterCounter 
+              currentLength={debouncedPrompt.length} 
+              maxLength={MAX_PROMPT_LENGTH}
+            />
           </div>
         </div>
 
@@ -138,18 +172,14 @@ export const SimpleModeCompact = memo(({
       </div>
 
       {/* Sticky Footer */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-border/20 bg-background/95 backdrop-blur-sm">
-        <div className="flex items-center gap-2">
-          <div className="flex-1 text-xs text-muted-foreground">
-            Save to: <span className="font-medium">My Workspace</span>
-          </div>
-          
+      <div className="absolute bottom-0 left-0 right-0 border-t border-border/20 bg-background/95 backdrop-blur-sm">
+        <div className="p-3 flex items-center gap-2">
           <Button
             onClick={onGenerate}
             disabled={isGenerating || (!debouncedPrompt.trim() && !params.lyrics.trim())}
             size="lg"
             className={cn(
-              "px-8 gap-2 font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20",
+              "w-full gap-2 font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20",
               isMobile ? "h-12 text-base" : "h-10 text-sm"
             )}
           >

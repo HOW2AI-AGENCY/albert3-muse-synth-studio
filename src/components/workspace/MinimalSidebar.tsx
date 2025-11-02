@@ -3,12 +3,11 @@ import { NavLink, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
 import type { WorkspaceNavItem } from "@/config/workspace-navigation";
 import { useProviderBalance } from "@/hooks/useProviderBalance";
 import { UserProfileDropdown } from "./UserProfileDropdown";
 import { NotificationsDropdown } from "./NotificationsDropdown";
-import { useEffect, useState, memo } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface MinimalSidebarProps {
@@ -20,9 +19,9 @@ interface MinimalSidebarProps {
 }
 
 const baseLinkClasses =
-  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200";
+  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition";
 
-const MinimalSidebar = memo(({
+const MinimalSidebar = ({
   isExpanded,
   onMouseEnter,
   onMouseLeave,
@@ -39,147 +38,82 @@ const MinimalSidebar = memo(({
     });
   }, []);
 
-
   return (
-    <motion.aside
-      initial={false}
-      animate={{ 
-        width: isExpanded ? 'var(--sidebar-width-expanded, 13rem)' : 'var(--sidebar-width-collapsed, 3.5rem)',
-      }}
-      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+    <aside
       className={cn(
-        "fixed left-0 top-0 hidden h-full border-r border-border/40 backdrop-blur-xl transition-all duration-300",
-        "lg:flex md:w-16 shadow-lg",
-        "bg-gradient-to-b from-background/98 via-background/95 to-background/98"
+        "fixed left-0 top-0 hidden h-full border-r border-border/60 bg-background/95 backdrop-blur transition-all duration-300",
+        "lg:flex md:w-16",
+        isExpanded ? "lg:w-52 md:w-48" : "lg:w-14 md:w-16"
       )}
       style={{
         zIndex: 'var(--z-sidebar)',
+        width: isExpanded 
+          ? 'var(--sidebar-width-expanded, 13rem)' 
+          : 'var(--sidebar-width-collapsed, 3.5rem)'
       }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       aria-label="Навигация по рабочему пространству"
     >
-      <div className="flex w-full flex-col gap-6 px-3 py-6 relative">
-        {/* Animated background glow */}
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-        
+      <div className="flex w-full flex-col gap-6 px-3 py-6">
         {onClose && (
           <Button
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="absolute right-2 top-2 h-8 w-8 rounded-md hover:bg-destructive/10 hover:text-destructive transition-colors"
+            className="absolute right-2 top-2 h-8 w-8 rounded-md"
             aria-label="Закрыть меню"
           >
             <X className="h-4 w-4" />
           </Button>
         )}
 
-        {/* Logo */}
-        <motion.div 
-          className="flex items-center justify-center"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 text-primary shadow-sm">
+        <div className="flex items-center justify-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-md border border-border/60 bg-card text-primary">
             <Sparkles className="h-5 w-5" aria-hidden="true" />
-            <div className="absolute inset-0 rounded-lg bg-primary/5 blur-sm" />
           </div>
-        </motion.div>
+        </div>
 
-
-        {/* Navigation */}
-        <nav className="flex flex-1 flex-col gap-1.5 relative" role="menubar">
-          {items.map((item, index) => {
+        <nav className="flex flex-1 flex-col gap-1" role="menubar">
+          {items.map((item) => {
             const Icon = item.icon;
             const isActive =
               location.pathname === item.path ||
               location.pathname.startsWith(`${item.path}/`);
 
             return (
-              <motion.div
+              <NavLink
                 key={item.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05, type: 'spring', stiffness: 300, damping: 25 }}
+                to={item.path}
+                onClick={onClose}
+                onPointerEnter={() => item.preload?.()}
+                onFocus={() => item.preload?.()}
+                title={isExpanded ? undefined : item.label}
+                className={({ isActive: navActive }) =>
+                  cn(
+                    baseLinkClasses,
+                    "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                    !isExpanded && "justify-center px-2",
+                    (isActive || navActive) &&
+                      "bg-primary/10 text-foreground hover:bg-primary/15"
+                  )
+                }
+                role="menuitem"
+                aria-current={isActive ? "page" : undefined}
               >
-                <NavLink
-                  to={item.path}
-                  onClick={onClose}
-                  onPointerEnter={() => item.preload?.()}
-                  onFocus={() => item.preload?.()}
-                  title={isExpanded ? undefined : item.label}
-                  className={({ isActive: navActive }) =>
-                    cn(
-                      baseLinkClasses,
-                      "group relative overflow-hidden",
-                      "text-muted-foreground hover:text-foreground",
-                      !isExpanded && "justify-center px-2",
-                      (isActive || navActive)
-                        ? "bg-primary/10 text-primary shadow-sm border border-primary/20"
-                        : "hover:bg-muted/80 border border-transparent"
-                    )
-                  }
-                  role="menuitem"
-                  aria-current={isActive ? "page" : undefined}
-                >
-                  {/* Hover gradient */}
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent opacity-0 group-hover:opacity-100"
-                    initial={false}
-                    transition={{ duration: 0.3 }}
-                  />
-                  
-                  {/* Active indicator */}
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeNavItem"
-                      className="absolute left-0 top-0 h-full w-1 bg-primary rounded-r"
-                      initial={false}
-                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                    />
-                  )}
-                  
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="relative z-10"
-                  >
-                    <Icon className="h-5 w-5" aria-hidden="true" />
-                  </motion.div>
-                  
-                  <AnimatePresence>
-                    {isExpanded && (
-                      <motion.span
-                        initial={{ opacity: 0, width: 0 }}
-                        animate={{ opacity: 1, width: 'auto' }}
-                        exit={{ opacity: 0, width: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="truncate relative z-10"
-                      >
-                        {item.label}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </NavLink>
-              </motion.div>
+                <Icon className="h-5 w-5" aria-hidden="true" />
+                {isExpanded && <span className="truncate">{item.label}</span>}
+              </NavLink>
             );
           })}
         </nav>
 
-
-        {/* Bottom section */}
-        <div className="mt-auto space-y-3">
+        <div className="mt-auto space-y-2">
           {/* Notifications & Credits */}
-          <motion.div 
-            className={cn(
-              "flex items-center gap-2",
-              !isExpanded && "flex-col"
-            )}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
+          <div className={cn(
+            "flex items-center gap-2",
+            !isExpanded && "flex-col"
+          )}>
             {/* Notifications */}
             <div className={cn(
               "flex-shrink-0",
@@ -189,73 +123,45 @@ const MinimalSidebar = memo(({
             </div>
 
             {/* Credits Display */}
-            <motion.div 
+            <div 
               className={cn(
-                "flex items-center gap-2 rounded-lg border border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 p-2 text-sm flex-1 shadow-sm",
+                "flex items-center gap-2 rounded-md border border-border/60 bg-muted/50 p-2 text-sm flex-1",
                 !isExpanded && "justify-center w-full"
               )}
               title={isExpanded ? undefined : `Кредиты: ${balance?.balance ?? 0}`}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
             >
               <Coins className="h-4 w-4 text-primary flex-shrink-0" aria-hidden="true" />
-              <AnimatePresence>
-                {isExpanded && (
-                  <motion.div
-                    initial={{ opacity: 0, width: 0 }}
-                    animate={{ opacity: 1, width: 'auto' }}
-                    exit={{ opacity: 0, width: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {balanceLoading ? (
-                      <Skeleton className="h-4 w-10" />
-                    ) : (
-                      <span className="font-semibold text-primary">{balance?.balance ?? 0}</span>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          </motion.div>
-
+              {isExpanded && (
+                balanceLoading ? (
+                  <Skeleton className="h-4 w-10" />
+                ) : (
+                  <span className="font-medium">{balance?.balance ?? 0}</span>
+                )
+              )}
+            </div>
+          </div>
 
           {/* Profile Button */}
-          <motion.div 
-            className={cn(
-              "flex items-center gap-2 rounded-lg border border-border/40 bg-muted/50 p-2",
-              !isExpanded && "justify-center"
+          <div className={cn(
+            "flex items-center gap-2",
+            !isExpanded && "justify-center"
+          )}>
+            {isExpanded && (
+              <div className="hidden min-w-0 flex-col items-start lg:flex flex-1">
+                <span className="truncate text-sm font-medium w-full">
+                  {userEmail.split("@")[0] || "Пользователь"}
+                </span>
+                <span className="truncate text-xs text-muted-foreground w-full" title={userEmail}>
+                  {userEmail}
+                </span>
+              </div>
             )}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-            whileHover={{ backgroundColor: 'hsl(var(--muted))' }}
-          >
-            <AnimatePresence>
-              {isExpanded && (
-                <motion.div 
-                  className="hidden min-w-0 flex-col items-start lg:flex flex-1"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <span className="truncate text-sm font-medium w-full">
-                    {userEmail.split("@")[0] || "Пользователь"}
-                  </span>
-                  <span className="truncate text-xs text-muted-foreground w-full" title={userEmail}>
-                    {userEmail}
-                  </span>
-                </motion.div>
-              )}
-            </AnimatePresence>
             <UserProfileDropdown userEmail={userEmail} />
-          </motion.div>
+          </div>
         </div>
       </div>
-    </motion.aside>
+    </aside>
   );
-});
-
-MinimalSidebar.displayName = 'MinimalSidebar';
+};
 
 export default MinimalSidebar;

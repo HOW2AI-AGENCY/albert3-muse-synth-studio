@@ -27,25 +27,102 @@ interface UseGenerateMusicOptions {
 
 const AUTO_CLEANUP_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 const DEBOUNCE_DELAY = 2000; // 2 seconds
+const POLLING_INTERVAL = 10000; // 10 seconds
+const MAX_POLLING_DURATION = 10 * 60 * 1000; // 10 minutes
 
 export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGenerateMusicOptions) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const subscriptionRef = useRef<RealtimeChannel | null>(null);
   const cleanupTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingStartTimeRef = useRef<number>(0);
   const lastGenerationTimeRef = useRef<number>(0);
+  const currentTrackIdRef = useRef<string | null>(null);
 
-  // Cleanup subscription and timer
+  // Cleanup subscription, timers and polling
   const cleanup = useCallback(() => {
     if (cleanupTimerRef.current) {
       clearTimeout(cleanupTimerRef.current);
       cleanupTimerRef.current = null;
     }
     
+    if (pollingTimerRef.current) {
+      clearTimeout(pollingTimerRef.current);
+      pollingTimerRef.current = null;
+    }
+    
     if (subscriptionRef.current) {
       subscriptionRef.current.unsubscribe();
       subscriptionRef.current = null;
     }
+    
+    currentTrackIdRef.current = null;
+    pollingStartTimeRef.current = 0;
   }, []);
+
+  // Polling fallback for stuck tracks
+  const startPolling = useCallback((trackId: string) => {
+    if (!trackId) return;
+    
+    pollingStartTimeRef.current = Date.now();
+    currentTrackIdRef.current = trackId;
+    
+    const pollTrack = async () => {
+      const elapsedTime = Date.now() - pollingStartTimeRef.current;
+      
+      // Stop polling if max duration exceeded
+      if (elapsedTime > MAX_POLLING_DURATION) {
+        logger.warn('Polling timeout reached', 'useGenerateMusic', { trackId, elapsedTime });
+        cleanup();
+        return;
+      }
+      
+      try {
+        const { data: track, error } = await supabase
+          .from('tracks')
+          .select('id, title, status, error_message')
+          .eq('id', trackId)
+          .single();
+        
+        if (error) throw error;
+        
+        if (track?.status === 'completed') {
+          logger.info('✅ Track completed (polling)', 'useGenerateMusic', { trackId });
+          toast({
+            title: '✅ Трек готов!',
+            description: `Ваш трек "${track.title}" успешно сгенерирован.`,
+          });
+          onSuccess?.();
+          cleanup();
+          return;
+        } else if (track?.status === 'failed') {
+          logger.error('❌ Track failed (polling)', new Error('Track generation failed'), 'useGenerateMusic', { 
+            trackId,
+            errorMessage: track.error_message 
+          });
+          toast({
+            title: '❌ Ошибка генерации',
+            description: track.error_message || 'Произошла ошибка при обработке вашего трека.',
+            variant: 'destructive',
+          });
+          cleanup();
+          return;
+        }
+        
+        // Continue polling if still processing
+        if (track?.status === 'processing' || track?.status === 'pending') {
+          pollingTimerRef.current = setTimeout(pollTrack, POLLING_INTERVAL);
+        }
+      } catch (error) {
+        logger.error('Polling error', error as Error, 'useGenerateMusic', { trackId });
+        // Continue polling despite errors
+        pollingTimerRef.current = setTimeout(pollTrack, POLLING_INTERVAL);
+      }
+    };
+    
+    // Start first poll
+    pollTrack();
+  }, [cleanup, toast, onSuccess]);
 
   // Setup realtime subscription for track status
   const setupSubscription = useCallback((trackId: string, isCached: boolean = false) => {
@@ -77,12 +154,20 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
 
     subscriptionRef.current = subscription;
 
-    // Auto-cleanup after timeout
+    // Auto-cleanup after timeout, then start polling as fallback
     cleanupTimerRef.current = setTimeout(() => {
-      logger.warn('Auto-cleaning stale subscription after 5 minutes');
-      cleanup();
+      logger.warn('Auto-cleaning stale subscription after 5 minutes, starting polling fallback', 'useGenerateMusic', { trackId });
+      
+      // Unsubscribe from realtime
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
+      }
+      
+      // Start polling as fallback
+      startPolling(trackId);
     }, AUTO_CLEANUP_TIMEOUT);
-  }, [cleanup, toast, onSuccess]);
+  }, [cleanup, toast, onSuccess, startPolling]);
 
   // Main generation function
   const generate = useCallback(async (options: GenerationRequest): Promise<boolean> => {

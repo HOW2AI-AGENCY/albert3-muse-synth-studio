@@ -2,18 +2,15 @@ import type { LucideIcon } from "lucide-react";
 import {
   Home,
   Sparkles,
-  Folder,
-  Cloud,
+  Library,
   Heart,
+  BarChart3,
   Settings,
-  Shield,
 } from "@/utils/iconImports";
-
-// Preload functions
-const preloadDashboard = () => import("@/pages/workspace/Dashboard");
-const preloadGenerate = () => import("@/pages/workspace/Generate");
-const preloadProjects = () => import("@/pages/workspace/Projects");
-const preloadCloud = () => import("@/pages/workspace/Cloud");
+import {
+  preloadDashboard,
+  preloadGenerate,
+} from "@/utils/lazyImports";
 
 export type WorkspaceNavRole = "admin";
 
@@ -49,16 +46,7 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     id: "projects",
     label: "Проекты",
     path: "/workspace/projects",
-    icon: Folder,
-    preload: preloadProjects,
-    isMobilePrimary: true,
-  },
-  {
-    id: "cloud",
-    label: "Облако",
-    path: "/workspace/cloud",
-    icon: Cloud,
-    preload: preloadCloud,
+    icon: Library,
     isMobilePrimary: true,
   },
   {
@@ -68,17 +56,16 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     icon: Heart,
   },
   {
+    id: "monitoring-hub",
+    label: "Мониторинг",
+    path: "/workspace/monitoring-hub",
+    icon: BarChart3,
+  },
+  {
     id: "settings",
     label: "Настройки",
     path: "/workspace/settings",
     icon: Settings,
-  },
-  {
-    id: "admin",
-    label: "Админ-панель",
-    path: "/workspace/admin",
-    icon: Shield,
-    roles: ["admin"],
   },
 ];
 

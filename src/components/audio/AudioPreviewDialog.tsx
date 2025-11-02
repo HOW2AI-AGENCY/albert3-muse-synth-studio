@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, memo, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,7 @@ interface AudioPreviewDialogProps {
   onRemove: () => void;
 }
 
-export const AudioPreviewDialog = memo(({
+export const AudioPreviewDialog = ({
   open,
   onOpenChange,
   audioUrl,
@@ -34,19 +34,13 @@ export const AudioPreviewDialog = memo(({
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.75);
 
-  const updateTime = useCallback(() => {
-    if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
-  }, []);
-  
-  const updateDuration = useCallback(() => {
-    if (audioRef.current) setDuration(audioRef.current.duration);
-  }, []);
-  
-  const handleEnded = useCallback(() => setIsPlaying(false), []);
-
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+
+    const updateTime = () => setCurrentTime(audio.currentTime);
+    const updateDuration = () => setDuration(audio.duration);
+    const handleEnded = () => setIsPlaying(false);
 
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('loadedmetadata', updateDuration);
@@ -57,7 +51,7 @@ export const AudioPreviewDialog = memo(({
       audio.removeEventListener('loadedmetadata', updateDuration);
       audio.removeEventListener('ended', handleEnded);
     };
-  }, [updateTime, updateDuration, handleEnded]);
+  }, []);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -190,11 +184,8 @@ export const AudioPreviewDialog = memo(({
           >
             Использовать
           </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
-});
-
-AudioPreviewDialog.displayName = 'AudioPreviewDialog';
-export default AudioPreviewDialog;
+};

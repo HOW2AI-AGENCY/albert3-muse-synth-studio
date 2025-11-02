@@ -23,10 +23,15 @@ export const ReferenceAudioLibraryInline = ({ onSelect }: ReferenceAudioLibraryI
   const { data: audioLibrary = [], isLoading } = useQuery({
     queryKey: ['audio-library'],
     queryFn: async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user?.user) return [];
+      
       const { data, error } = await supabase
         .from('audio_library')
         .select('*')
-        .order('created_at', { ascending: false });
+        .eq('user_id', user.user.id)
+        .order('updated_at', { ascending: false })
+        .limit(50);
       
       if (error) throw error;
       return data;

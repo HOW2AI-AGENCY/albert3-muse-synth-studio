@@ -6,9 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { logger } from "@/utils/logger";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings as SettingsIcon, User, LogOut, Bell, Shield, Palette, Database, BarChart3 } from "@/utils/iconImports";
+import { Settings as SettingsIcon, User, LogOut, Bell, Shield, Palette, Database } from "@/utils/iconImports";
 import { PersonalizationSettings } from "@/components/settings/PersonalizationSettings";
-import { AnalyticsTab } from "@/components/settings/AnalyticsTab";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -66,7 +65,7 @@ const Settings = () => {
       </div>
 
       <Tabs defaultValue="appearance" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="appearance" className="gap-2">
             <Palette className="h-4 w-4" />
             <span className="hidden sm:inline">Внешний вид</span>
@@ -74,10 +73,6 @@ const Settings = () => {
           <TabsTrigger value="profile" className="gap-2">
             <User className="h-4 w-4" />
             <span className="hidden sm:inline">Профиль</span>
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="gap-2">
-            <BarChart3 className="h-4 w-4" />
-            <span className="hidden sm:inline">Аналитика</span>
           </TabsTrigger>
           <TabsTrigger value="notifications" className="gap-2">
             <Bell className="h-4 w-4" />
@@ -112,11 +107,6 @@ const Settings = () => {
               </p>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        {/* Analytics Tab */}
-        <TabsContent value="analytics" className="space-y-6 mt-6">
-          <AnalyticsTab />
         </TabsContent>
 
         {/* Notifications Tab */}

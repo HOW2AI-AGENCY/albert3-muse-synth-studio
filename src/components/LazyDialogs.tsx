@@ -32,12 +32,6 @@ const AddInstrumentalDialogComponent = lazy(() =>
 const CreatePersonaDialogComponent = lazy(() =>
   import('@/components/personas/CreatePersonaDialog').then(m => ({ default: m.CreatePersonaDialog }))
 );
-const AudioPreviewDialogComponent = lazy(() => 
-  import('@/components/audio/AudioPreviewDialog').then(m => ({ default: m.AudioPreviewDialog }))
-);
-const AudioSourceDialogComponent = lazy(() => 
-  import('@/components/generator/audio/AudioSourceDialog').then(m => ({ default: m.AudioSourceDialog }))
-);
 
 // Skeleton для диалогов
 const DialogSkeleton = () => (
@@ -101,17 +95,5 @@ export const LazyAddInstrumentalDialog = (props: ComponentProps<typeof AddInstru
 export const LazyCreatePersonaDialog = (props: ComponentProps<typeof CreatePersonaDialogComponent>) => (
   <Suspense fallback={<DialogSkeleton />}>
     <CreatePersonaDialogComponent {...props} />
-  </Suspense>
-);
-
-export const LazyAudioPreviewDialog = (props: ComponentProps<typeof AudioPreviewDialogComponent>) => (
-  <Suspense fallback={<DialogSkeleton />}>
-    <AudioPreviewDialogComponent {...props} />
-  </Suspense>
-);
-
-export const LazyAudioSourceDialog = (props: ComponentProps<typeof AudioSourceDialogComponent>) => (
-  <Suspense fallback={<DialogSkeleton />}>
-    <AudioSourceDialogComponent {...props} />
   </Suspense>
 );

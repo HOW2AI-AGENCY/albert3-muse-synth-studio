@@ -5,7 +5,7 @@ import { useMusicGenerationStore } from '@/stores/useMusicGenerationStore';
 import { useGenerateMusic } from '@/hooks/useGenerateMusic';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
-import { LazyAudioPreviewDialog, LazyAudioSourceDialog } from '@/components/LazyDialogs';
+import { AudioPreviewDialog } from '@/components/audio/AudioPreviewDialog';
 import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog';
 import { MurekaLyricsVariantDialog } from '@/components/lyrics/MurekaLyricsVariantDialog';
 import { PromptHistoryDialog } from '@/components/generator/PromptHistoryDialog';
@@ -25,7 +25,7 @@ import { getProviderModels, getDefaultModel, type MusicProvider as ProviderType 
 import { CompactHeader } from '@/components/generator/CompactHeader';
 import { QuickActionsBar } from '@/components/generator/QuickActionsBar';
 import { InspoProjectDialog, type InspoProject } from '@/components/generator/InspoProjectDialog';
-// AudioSourceDialog now lazy-loaded via LazyDialogs
+import { AudioSourceDialog } from '@/components/generator/audio/AudioSourceDialog';
 import { SimpleModeCompact } from '@/components/generator/forms/SimpleModeCompact';
 import { CompactCustomForm } from '@/components/generator/forms/CompactCustomForm';
 import { 
@@ -255,6 +255,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       referenceTrackId: state.params.referenceTrackId || undefined,
       provider: selectedProvider,
       personaId: state.params.personaId || undefined,
+      projectId: state.params.activeProjectId || undefined, // ✅ НОВОЕ: передаём project_id
     };
 
     // Save to history
@@ -341,6 +342,18 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const handleSelectInspo = useCallback((project: InspoProject) => {
     const newTags = project.style_tags?.join(', ') || '';
     state.setParam('tags', newTags);
+    
+    // Apply concept to prompt if available
+    const conceptPrompt = (project as any).concept_description || '';
+    if (conceptPrompt) {
+      const existingPrompt = state.params.prompt.trim();
+      const combinedPrompt = existingPrompt 
+        ? `${existingPrompt}\n\nКонцепция: ${conceptPrompt}`
+        : conceptPrompt;
+      state.setParam('prompt', combinedPrompt);
+      state.setDebouncedPrompt(combinedPrompt);
+    }
+    
     state.setParam('inspoProjectId', project.id);
     state.setParam('inspoProjectName', project.name);
     
@@ -349,8 +362,8 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       tags: newTags,
     });
     
-    sonnerToast.success('✨ Вдохновение применено', {
-      description: `Используем стиль "${project.name}"`,
+    sonnerToast.success('✨ Проект применён', {
+      description: `Используем стиль и концепцию "${project.name}"`,
       duration: 3000,
     });
     
@@ -431,7 +444,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
         />
 
       {/* Audio Source Dialog */}
-      <LazyAudioSourceDialog
+      <AudioSourceDialog
         open={audioSourceDialogOpen}
         onOpenChange={setAudioSourceDialogOpen}
         onAudioSelect={(url, fileName) => {
@@ -485,6 +498,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               onParamChange={state.setParam}
               onGenerate={handleGenerate}
               onBoostPrompt={handleBoostPrompt}
+              onOpenHistory={() => state.setHistoryDialogOpen(true)}
               isBoosting={state.isEnhancing}
               isGenerating={isGenerating || state.isEnhancing}
               debouncedPrompt={state.debouncedPrompt}
@@ -510,19 +524,17 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
       </ScrollArea>
 
       {/* Dialogs */}
-      {state.audioPreviewOpen && !!tempAudioUrl && (
-        <LazyAudioPreviewDialog
-          open={state.audioPreviewOpen}
-          onOpenChange={(open) => {
-            state.setAudioPreviewOpen(open);
-            if (!open) state.setPendingAudioFile(null);
-          }}
-          onConfirm={audioUpload.handleAudioConfirm}
-          onRemove={audioUpload.handleRemoveAudio}
-          audioUrl={tempAudioUrl}
-          fileName={state.pendingAudioFile?.name || ''}
-        />
-      )}
+      <AudioPreviewDialog
+        open={state.audioPreviewOpen}
+        onOpenChange={(open) => {
+          state.setAudioPreviewOpen(open);
+          if (!open) state.setPendingAudioFile(null);
+        }}
+        onConfirm={audioUpload.handleAudioConfirm}
+        onRemove={audioUpload.handleRemoveAudio}
+        audioUrl={tempAudioUrl}
+        fileName={state.pendingAudioFile?.name || ''}
+      />
 
       <LyricsGeneratorDialog
         open={state.lyricsDialogOpen}

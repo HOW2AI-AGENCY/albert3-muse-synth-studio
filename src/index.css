@@ -1,3 +1,4 @@
+/* Импорт системы дизайн-токенов */
 @import './styles/design-tokens.css';
 
 @tailwind base;
@@ -6,72 +7,32 @@
 
 @layer base {
   :root {
-    /* Базовые цветовые переменные в HSL формате */
-    --color-neutral-0: 0 0% 100%;
-    --color-neutral-50: 210 20% 98%;
-    --color-neutral-100: 220 14% 96%;
-    --color-neutral-200: 220 13% 91%;
-    --color-neutral-300: 216 12% 84%;
-    --color-neutral-400: 218 11% 65%;
-    --color-neutral-500: 220 9% 46%;
-    --color-neutral-600: 215 14% 34%;
-    --color-neutral-700: 217 19% 27%;
-    --color-neutral-800: 215 28% 17%;
-    --color-neutral-900: 222 47% 11%;
-    --color-neutral-950: 229 84% 5%;
-
-    --color-accent-purple: 262 83% 58%;
-    --color-accent-blue: 189 94% 43%;
-    --color-accent-pink: 330 81% 60%;
-    --color-accent-green: 142 76% 36%;
-    --color-accent-orange: 25 95% 53%;
-    --color-accent-red: 0 84% 60%;
-
-    --color-success: 142 76% 36%;
-    --color-warning: 38 92% 50%;
-    --color-error: 0 84% 60%;
-    --color-info: 199 89% 48%;
-
-    --surface: 222 47% 11%;
-    --surface-variant: 217 19% 27%;
-    --outline: 216 12% 84%;
-    --outline-variant: 218 11% 65%;
-
-    --radius-none: 0;
-    --radius-sm: 0.25rem;
-    --radius-base: 0.5rem;
-    --radius-lg: 0.75rem;
-    --radius-xl: 1rem;
-    --radius-2xl: 1.5rem;
-    --radius-3xl: 2rem;
-    --radius-full: 9999px;
-
     /* Совместимость с существующими компонентами */
-    --background: 222 47% 11%;
-    --foreground: 210 20% 98%;
-    --card: 222 47% 11%;
-    --card-foreground: 210 20% 98%;
-    --popover: 217 19% 27%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 262 83% 58%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 217 19% 27%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 217 19% 27%;
-    --muted-foreground: 218 11% 65%;
-    --accent: 189 94% 43%;
-    --accent-foreground: 210 20% 98%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 218 11% 65%;
-    --input: 217 19% 27%;
-    --ring: 262 83% 58%;
-    --radius: 0.75rem;
-    --chart-1: 189 94% 43%;
-    --chart-2: 142 76% 36%;
-    --chart-3: 25 95% 53%;
-    --chart-4: 262 83% 58%;
-    --chart-5: 330 81% 60%;
+    --background: var(--color-neutral-900);
+    --foreground: var(--color-neutral-50);
+    --card: var(--surface);
+    --card-foreground: var(--foreground);
+    --popover: var(--surface);
+    --popover-foreground: var(--foreground);
+    --primary: var(--color-accent-purple);
+    --primary-foreground: var(--foreground);
+    --secondary: var(--surface-variant);
+    --secondary-foreground: var(--foreground);
+    --muted: var(--color-neutral-700);
+    --muted-foreground: var(--color-neutral-400);
+    --accent: var(--color-accent-blue);
+    --accent-foreground: var(--foreground);
+    --destructive: var(--color-error);
+    --destructive-foreground: var(--foreground);
+    --border: var(--outline-variant);
+    --input: var(--surface-variant);
+    --ring: var(--color-accent-purple);
+    --radius: var(--radius-lg);
+    --chart-1: var(--color-accent-blue);
+    --chart-2: var(--color-accent-green);
+    --chart-3: var(--color-accent-orange);
+    --chart-4: var(--color-accent-purple);
+    --chart-5: var(--color-accent-pink);
 
     --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(330 81% 60%) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(189 94% 43%) 0%, hsl(262 83% 58%) 100%);
@@ -100,122 +61,10 @@
     --mobile-font-base: 1rem;
     --mobile-font-lg: 1.125rem;
 
-    /* Dynamic offsets */
+    /* Dynamic offsets - автоматически обновляются через useWorkspaceOffsets hook */
     --workspace-bottom-offset: 0px;
     --bottom-tab-bar-height: 0px;
     --mini-player-height: 0px;
-
-    /* Spacing tokens for Tailwind (referenced in tailwind.config.ts) */
-    --space-0: 0;
-    --space-1: 0.25rem;
-    --space-2: 0.5rem;
-    --space-3: 0.75rem;
-    --space-4: 1rem;
-    --space-5: 1.25rem;
-    --space-6: 1.5rem;
-    --space-8: 2rem;
-    --space-10: 2.5rem;
-    --space-12: 3rem;
-    --space-16: 4rem;
-    --space-20: 5rem;
-    --space-24: 6rem;
-    --space-32: 8rem;
-    --space-container: 1rem;
-
-    /* Font sizes for Tailwind */
-    --font-size-2xs: 0.625rem;
-    --font-size-xs: 0.75rem;
-    --font-size-sm: 0.875rem;
-    --font-size-base: 1rem;
-    --font-size-lg: 1.125rem;
-    --font-size-xl: 1.25rem;
-    --font-size-2xl: 1.5rem;
-    --font-size-3xl: 1.875rem;
-    --font-size-4xl: 2.25rem;
-    --font-size-5xl: 3rem;
-    --font-size-6xl: 3.75rem;
-    --font-size-display: 4rem;
-    --font-size-heading: 2rem;
-
-    /* Font family */
-    --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-    --font-family-mono: 'Monaco', 'Courier New', monospace;
-
-    /* Font weights */
-    --font-weight-thin: 100;
-    --font-weight-light: 300;
-    --font-weight-normal: 400;
-    --font-weight-medium: 500;
-    --font-weight-semibold: 600;
-    --font-weight-bold: 700;
-    --font-weight-extrabold: 800;
-    --font-weight-black: 900;
-
-    /* Line heights */
-    --line-height-tight: 1.25;
-    --line-height-snug: 1.375;
-    --line-height-normal: 1.5;
-    --line-height-relaxed: 1.625;
-    --line-height-loose: 2;
-
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-base: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-
-    /* Z-index layers */
-    --z-dropdown: 1000;
-    --z-sticky: 1020;
-    --z-fixed: 1030;
-    --z-modal-backdrop: 1040;
-    --z-modal: 1050;
-    --z-popover: 1060;
-    --z-tooltip: 1070;
-    --z-toast: 1080;
-    --z-maximum: 9999;
-
-    /* Control heights */
-    --height-control-sm: 2rem;
-    --height-control-md: 2.5rem;
-    --height-control-lg: 3rem;
-    --height-control-xl: 3.5rem;
-
-    /* Icon sizes */
-    --icon-xs: 1rem;
-    --icon-sm: 1.25rem;
-    --icon-md: 1.5rem;
-    --icon-lg: 2rem;
-    --icon-xl: 2.5rem;
-    --icon-2xl: 3rem;
-
-    /* Container widths */
-    --container-xs: 20rem;
-    --container-sm: 24rem;
-    --container-md: 28rem;
-    --container-lg: 32rem;
-    --container-xl: 36rem;
-    --container-2xl: 42rem;
-    --container-3xl: 48rem;
-    --container-4xl: 56rem;
-    --container-5xl: 64rem;
-    --container-6xl: 72rem;
-    --container-7xl: 80rem;
-
-    /* Primary color palette (HSL values for tailwind.config.ts) */
-    --color-primary-50: 250 245 255;
-    --color-primary-100: 243 232 255;
-    --color-primary-200: 233 213 255;
-    --color-primary-300: 216 180 254;
-    --color-primary-400: 192 132 252;
-    --color-primary-500: 168 85 247;
-    --color-primary-600: 147 51 234;
-    --color-primary-700: 126 34 206;
-    --color-primary-800: 107 33 168;
-    --color-primary-900: 88 28 135;
-    --color-primary-950: 59 7 100;
   }
 }
 
@@ -818,5 +667,28 @@
 
   .app-card--compact .app-card__body {
     @apply px-4 pb-3 space-y-2 text-sm;
+  }
+
+  /* Smooth scrolling for virtualized lists */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-thumb-primary\/20::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--primary) / 0.2);
+  }
+  
+  .scrollbar-track-transparent::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+
+  /* Radial gradient utility */
+  .bg-gradient-radial {
+    background-image: radial-gradient(circle, var(--tw-gradient-stops));
+  }
+
+  .border-gradient {
+    border: 2px solid;
+    border-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent))) 1;
   }
 }

@@ -70,9 +70,31 @@ export const useAudioUpload = () => {
 
       logger.info(`✅ [UPLOAD] Audio uploaded successfully: ${publicUrl}`);
 
+      // Save to audio_library
+      try {
+        const { error: dbError } = await supabase
+          .from('audio_library')
+          .insert({
+            user_id: user.id,
+            file_name: file.name,
+            file_url: publicUrl,
+            file_size: file.size,
+            source_type: 'upload',
+            usage_count: 0,
+          });
+
+        if (dbError) {
+          logger.error(`⚠️ [UPLOAD] Failed to save to audio_library: ${dbError.message}`);
+        } else {
+          logger.info(`✅ [UPLOAD] Saved to audio_library`);
+        }
+      } catch (dbError) {
+        logger.error(`⚠️ [UPLOAD] Database error: ${dbError instanceof Error ? dbError.message : 'Unknown'}`);
+      }
+
       toast({
         title: 'Аудио загружено',
-        description: 'Файл успешно загружен и готов к использованию'
+        description: 'Файл успешно загружен и сохранён в библиотеку'
       });
 
       return publicUrl;
