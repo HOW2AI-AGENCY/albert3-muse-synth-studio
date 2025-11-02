@@ -16,14 +16,20 @@ const corsHeaders = {
 interface SunoWebhookPayload {
   taskId: string;
   stage: 'submit' | 'processing' | 'complete';
-  data?: {
+  data?: Array<{
+    id?: string;
     audioUrl?: string;
+    audio_url?: string;
     coverUrl?: string;
+    image_url?: string;
     videoUrl?: string;
+    video_url?: string;
     duration?: number;
+    duration_seconds?: number;
     lyrics?: string;
+    prompt?: string;
     title?: string;
-  };
+  }>;
   error?: {
     code: string;
     message: string;
@@ -85,20 +91,24 @@ serve(async (req) => {
             error_message: payload.error.message,
             progress_percent: 0,
           };
-        } else if (payload.data) {
+        } else if (payload.data && Array.isArray(payload.data) && payload.data.length > 0) {
+          const mainTrack = payload.data[0];
           updateData = {
             status: 'completed',
             progress_percent: 100,
-            audio_url: payload.data.audioUrl || null,
-            cover_url: payload.data.coverUrl || null,
-            video_url: payload.data.videoUrl || null,
-            duration: payload.data.duration || null,
-            lyrics: payload.data.lyrics || null,
+            audio_url: mainTrack.audioUrl || mainTrack.audio_url || null,
+            cover_url: mainTrack.coverUrl || mainTrack.image_url || null,
+            video_url: mainTrack.videoUrl || mainTrack.video_url || null,
+            duration: typeof mainTrack.duration === 'number' ? Math.round(mainTrack.duration) : 
+                     (typeof mainTrack.duration_seconds === 'number' ? Math.round(mainTrack.duration_seconds) : null),
+            duration_seconds: typeof mainTrack.duration === 'number' ? Math.round(mainTrack.duration) : 
+                             (typeof mainTrack.duration_seconds === 'number' ? Math.round(mainTrack.duration_seconds) : null),
+            lyrics: mainTrack.lyrics || mainTrack.prompt || null,
           };
           
           // Обновляем title только если его нет
-          if (payload.data.title && !track.title) {
-            updateData.title = payload.data.title;
+          if (mainTrack.title && !track.title) {
+            updateData.title = mainTrack.title;
           }
         }
         break;
@@ -120,6 +130,47 @@ serve(async (req) => {
 
     console.log(`[suno-webhook] Track updated successfully: ${track.id} -> ${payload.stage}`);
 
+    // ✅ Создаём версии для всех треков из Suno (обычно 2 варианта)
+    if (payload.stage === 'complete' && payload.data && Array.isArray(payload.data) && payload.data.length > 0) {
+      console.log(`[suno-webhook] Creating ${payload.data.length} track versions`);
+      
+      for (let i = 0; i < payload.data.length; i++) {
+        const versionTrack = payload.data[i];
+        
+        const versionData = {
+          parent_track_id: track.id,
+          variant_index: i,
+          is_primary_variant: i === 0,
+          is_preferred_variant: i === 0,
+          suno_id: versionTrack.id || null,
+          audio_url: versionTrack.audioUrl || versionTrack.audio_url || null,
+          cover_url: versionTrack.coverUrl || versionTrack.image_url || null,
+          video_url: versionTrack.videoUrl || versionTrack.video_url || null,
+          lyrics: versionTrack.lyrics || versionTrack.prompt || null,
+          duration: typeof versionTrack.duration === 'number' ? Math.round(versionTrack.duration) : 
+                   (typeof versionTrack.duration_seconds === 'number' ? Math.round(versionTrack.duration_seconds) : null),
+          metadata: {
+            suno_track_data: versionTrack,
+            generated_via: 'webhook',
+            suno_task_id: payload.taskId,
+          },
+        };
+
+        const { error: versionError } = await supabaseClient
+          .from('track_versions')
+          .upsert(versionData, {
+            onConflict: 'parent_track_id,variant_index',
+            ignoreDuplicates: false,
+          });
+
+        if (versionError) {
+          console.error(`[suno-webhook] Error creating version ${i}:`, versionError);
+        } else {
+          console.log(`[suno-webhook] ✅ Version ${i} (${i === 0 ? 'PRIMARY' : 'ALTERNATE'}) created`);
+        }
+      }
+    }
+
     // Логируем callback
     await supabaseClient
       .from('callback_logs')
@@ -133,7 +184,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         trackId: track.id,
-        stage: payload.stage 
+        stage: payload.stage,
+        versionsCreated: payload.data?.length || 0,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
