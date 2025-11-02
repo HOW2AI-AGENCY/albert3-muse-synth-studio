@@ -1,0 +1,68 @@
+# Label configuration for auto-labeler
+
+# Frontend changes
+'frontend':
+  - changed-files:
+    - any-glob-to-any-file: 'src/**/*'
+
+# Backend changes
+'backend':
+  - changed-files:
+    - any-glob-to-any-file: 'supabase/functions/**/*'
+
+# Database changes
+'database':
+  - changed-files:
+    - any-glob-to-any-file: 'supabase/migrations/**/*'
+
+# Documentation changes
+'documentation':
+  - changed-files:
+    - any-glob-to-any-file: ['docs/**/*', '*.md']
+
+# UI/UX changes
+'ui/ux':
+  - changed-files:
+    - any-glob-to-any-file: 
+      - 'src/components/ui/**/*'
+      - 'src/components/**/*.tsx'
+
+# Protected files (require special review)
+'protected-files':
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'supabase/functions/_shared/suno.ts'
+      - 'supabase/functions/_shared/mureka.ts'
+      - 'src/types/providers.ts'
+      - 'src/config/provider-models.ts'
+
+# Dependencies
+'dependencies':
+  - changed-files:
+    - any-glob-to-any-file: ['package.json', 'package-lock.json']
+
+# CI/CD
+'ci/cd':
+  - changed-files:
+    - any-glob-to-any-file: '.github/workflows/**/*'
+
+# Bug fixes
+'bug':
+  - head-branch: ['^fix', 'fix\\/.*', 'bugfix\\/.*', 'hotfix\\/.*']
+
+# Features
+'feature':
+  - head-branch: ['^feat', 'feature\\/.*', 'feat\\/.*']
+
+# Refactoring
+'refactor':
+  - head-branch: ['^refactor', 'refactor\\/.*']
+
+# Performance
+'performance':
+  - head-branch: ['^perf', 'perf\\/.*', 'performance\\/.*']
+
+# Tests
+'tests':
+  - changed-files:
+    - any-glob-to-any-file: ['**/*.test.ts', '**/*.test.tsx', 'supabase/functions/tests/**/*']
