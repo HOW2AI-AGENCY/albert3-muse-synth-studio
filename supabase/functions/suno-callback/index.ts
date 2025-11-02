@@ -216,7 +216,10 @@ const mainHandler = async (req: Request) => {
         || mainTrack.stream_audio_url || mainTrack.source_stream_audio_url;
       const externalCoverUrl = mainTrack.image_url || mainTrack.image_large_url || mainTrack.imageUrl;
       const externalVideoUrl = mainTrack.video_url || mainTrack.videoUrl;
-      const duration = Math.round(mainTrack.duration || mainTrack.duration_seconds || 0);
+      
+      // ✅ FIX: Сохраняем точное значение duration (decimal) без округления
+      const duration = parseFloat(mainTrack.duration || mainTrack.duration_seconds || 0);
+      
       const sanitizedTitle = sanitizeText(mainTrack.title) || "Generated Track";
       const sanitizedLyrics = sanitizeText(mainTrack.prompt || mainTrack.lyric || mainTrack.lyrics);
       const sanitizedModelName = sanitizeText(mainTrack.model || mainTrack.model_name);

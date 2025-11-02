@@ -73,7 +73,7 @@ serve(async (req: Request) => {
               progress_percent: 66,
               audio_url: music.audio_url,
               cover_url: music.image_url,
-              duration: music.duration ? Math.floor(music.duration) : null,
+              duration: music.duration ? parseFloat(music.duration) : null,
               metadata: {
                 ...track.metadata,
                 stage: 'first_track_ready',
@@ -100,8 +100,8 @@ serve(async (req: Request) => {
               cover_url: music.image_url,
               video_url: music.video_url,
               lyrics: music.prompt,
-              duration: music.duration ? Math.floor(music.duration) : null,
-              duration_seconds: music.duration ? Math.floor(music.duration) : null,
+              duration: music.duration ? parseFloat(music.duration) : null,
+              duration_seconds: music.duration ? parseFloat(music.duration) : null,
               has_vocals: true,
               metadata: {
                 ...track.metadata,
