@@ -36,6 +36,7 @@ import LyricsLibrary from "./pages/workspace/LyricsLibrary";
 import AudioLibrary from "./pages/workspace/AudioLibrary";
 import Personas from "./pages/workspace/Personas";
 import EdgeFunctionsDebug from "./pages/debug/EdgeFunctionsDebug";
+import { PromptDJPage } from "./pages/workspace/PromptDJPage";
 
 
 export const router = createBrowserRouter(
@@ -149,6 +150,14 @@ export const router = createBrowserRouter(
         {
           path: "personas",
           element: <Personas />
+        },
+        {
+          path: "prompt-dj",
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <PromptDJPage />
+            </Suspense>
+          )
         },
       ],
     },
