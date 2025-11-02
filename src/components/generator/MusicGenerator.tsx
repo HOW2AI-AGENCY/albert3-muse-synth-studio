@@ -184,6 +184,37 @@ export const MusicGenerator = ({ onTrackGenerated }: MusicGeneratorProps) => {
     });
   }, [toast, tags]);
 
+  // Boost prompt handler
+  const handleBoostPrompt = useCallback(async () => {
+    if (!prompt.trim()) return;
+
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('improve-prompt', {
+        body: { prompt: prompt.trim() }
+      });
+
+      if (error) throw error;
+
+      if (data?.improvedPrompt) {
+        setPrompt(data.improvedPrompt);
+        toast({
+          title: "Промпт улучшен",
+          description: "AI расширил описание музыки",
+        });
+      }
+    } catch (error) {
+      console.error('Boost prompt error:', error);
+      toast({
+        title: "Ошибка улучшения",
+        description: error instanceof Error ? error.message : "Попробуйте ещё раз",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [prompt, toast]);
+
   const handleGenerate = async () => {
     if (!prompt.trim() && !title.trim()) {
       toast({
@@ -433,7 +464,8 @@ export const MusicGenerator = ({ onTrackGenerated }: MusicGeneratorProps) => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => {/* TODO: Boost prompt */}}
+                      onClick={handleBoostPrompt}
+                      disabled={isGenerating}
                       className="h-6 text-xs gap-1"
                     >
                       <Wand2 className="h-3 w-3" />
