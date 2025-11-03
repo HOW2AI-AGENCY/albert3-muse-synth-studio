@@ -128,22 +128,6 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start h-auto p-3",
-                            !selectedProjectId && "border-primary bg-primary/5"
-                          )}
-                          onClick={() => onProjectSelect(null)}
-                        >
-                          <div className="flex flex-col items-start gap-1">
-                            <span className="font-medium">Без проекта</span>
-                            <span className="text-xs text-muted-foreground">
-                              Не привязывать к проекту
-                            </span>
-                          </div>
-                        </Button>
-
                         {filteredProjects.map((project) => (
                           <Button
                             key={project.id}
@@ -232,13 +216,25 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                 )}
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                  Отмена
+              <div className="flex justify-between items-center gap-2 pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    onProjectSelect(null);
+                    onOpenChange(false);
+                  }}
+                  className="gap-2"
+                >
+                  Без проекта
                 </Button>
-                <Button onClick={() => onOpenChange(false)} disabled={!selectedProjectId}>
-                  Выбрать
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => onOpenChange(false)}>
+                    Отмена
+                  </Button>
+                  <Button onClick={() => onOpenChange(false)} disabled={!selectedProjectId}>
+                    Выбрать
+                  </Button>
+                </div>
               </div>
             </TabsContent>
 

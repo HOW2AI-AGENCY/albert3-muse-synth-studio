@@ -26,7 +26,6 @@ import { getProviderModels, getDefaultModel, type MusicProvider as ProviderType 
 // Modular components & hooks
 import { CompactHeader } from '@/components/generator/CompactHeader';
 import { QuickActionsBar } from '@/components/generator/QuickActionsBar';
-import { InspoProjectDialog } from '@/components/generator/InspoProjectDialog';
 import { AudioSourceDialog } from '@/components/generator/audio/AudioSourceDialog';
 import { SimpleModeCompact } from '@/components/generator/forms/SimpleModeCompact';
 import { CompactCustomForm } from '@/components/generator/forms/CompactCustomForm';
@@ -68,7 +67,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   // Dialog states
   const [personaDialogOpen, setPersonaDialogOpen] = useState(false);
   const [projectDialogOpen, setProjectDialogOpen] = useState(false);
-  const [inspoDialogOpen, setInspoDialogOpen] = useState(false);
   const [audioSourceDialogOpen, setAudioSourceDialogOpen] = useState(false);
   
   // ✅ REFACTORED: Auto-loaders
@@ -344,24 +342,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
     setTimeout(() => handleGenerate(), 100);
   }, [state, handleGenerate]);
 
-  // Inspo project selection handler
-  const handleSelectInspo = useCallback((projectId: string, projectName: string) => {
-    state.setParam('inspoProjectId', projectId);
-    state.setParam('inspoProjectName', projectName);
-    
-    logger.info('Inspiration project applied', 'MusicGeneratorV2', {
-      projectId,
-      projectName,
-    });
-    
-    sonnerToast.success('✨ Проект применён', {
-      description: `Используем стиль и концепцию "${projectName}"`,
-      duration: 3000,
-    });
-    
-    setInspoDialogOpen(false);
-  }, [state]);
-
   // Auto-switch to Custom Mode when advanced features are used
   useEffect(() => {
     const hasAdvancedFeatures = 
@@ -428,7 +408,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
           hasAudio={!!state.params.referenceFileName}
           hasPersona={!!state.params.personaId}
           hasProject={!!state.params.activeProjectId}
-          hasInspo={!!state.params.inspoProjectId}
           onAudioClick={() => setAudioSourceDialogOpen(true)}
           onPersonaClick={() => setPersonaDialogOpen(true)}
           onProjectClick={() => {
@@ -436,9 +415,13 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
             // Автопереход в custom mode при клике на кнопку проекта
             if (state.mode === 'simple') {
               state.setMode('custom');
+              toast({
+                title: 'Переключено на Custom Mode',
+                description: 'Выбор проекта и трека доступен в продвинутом режиме',
+                duration: 3000,
+              });
             }
           }}
-          onInspoClick={() => setInspoDialogOpen(true)}
           isGenerating={isGenerating}
         />
 
@@ -574,13 +557,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
           }
           state.setHistoryDialogOpen(false);
         }}
-      />
-
-      <InspoProjectDialog
-        open={inspoDialogOpen}
-        onOpenChange={setInspoDialogOpen}
-        selectedProjectId={state.params.inspoProjectId ?? null}
-        onSelectProject={handleSelectInspo}
       />
 
       <PersonaPickerDialog

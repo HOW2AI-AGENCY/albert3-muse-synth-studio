@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Upload, User, ChevronDown, Music, Sparkles, Plus, History } from '@/utils/iconImports';
+import { Upload, User, ChevronDown, Music, Sparkles, Plus, History, Check } from '@/utils/iconImports';
 import { LyricsInput } from '@/components/lyrics/legacy/LyricsInput';
 import { StyleTagsInput } from './StyleTagsInput';
 import { StyleRecommendationsInline } from '@/components/generator/StyleRecommendationsInline';
@@ -252,66 +252,78 @@ export const CompactCustomForm = memo(({
           </div>
         </div>
 
-        {/* Active Project Display - ПОКАЗЫВАЕМ ТОЛЬКО ЕСЛИ ПРОЕКТ ВЫБРАН */}
+        {/* Active Project Display - Enhanced Design */}
         {params.activeProjectId && selectedProject && (
-          <div className="p-2 space-y-2">
-            {/* Project Info with Remove Button */}
-            <div className="flex items-center justify-between gap-2 p-2 rounded-lg border border-primary/30 bg-primary/5">
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                <Music className="h-4 w-4 text-primary flex-shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-primary truncate">
-                    {selectedProject.name}
-                  </p>
-                  {selectedProject.genre && (
-                    <p className="text-[10px] text-muted-foreground">
-                      {selectedProject.genre}
+          <div className="p-3 space-y-3">
+            {/* Project Info Card with Gradient */}
+            <div className="relative overflow-hidden rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-3 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
+                    <Music className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-primary truncate mb-0.5">
+                      {selectedProject.name}
                     </p>
-                  )}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {selectedProject.genre && (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                          {selectedProject.genre}
+                        </Badge>
+                      )}
+                      {selectedProject.persona_id && (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 gap-1 bg-primary/5 border-primary/20">
+                          <User className="h-2.5 w-2.5" />
+                          Персона
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive flex-shrink-0 transition-colors"
+                  onClick={() => {
+                    onParamChange('activeProjectId', null);
+                    onParamChange('referenceTrackId', null);
+                    toast({
+                      title: "Проект удален",
+                      description: "Привязка к проекту отменена",
+                    });
+                  }}
+                >
+                  ×
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 hover:text-destructive flex-shrink-0"
-                onClick={() => {
-                  onParamChange('activeProjectId', null);
-                  onParamChange('referenceTrackId', null);
-                  toast({
-                    title: "Проект удален",
-                    description: "Привязка к проекту отменена",
-                  });
-                }}
-              >
-                ×
-              </Button>
             </div>
 
-            {/* Track Picker Button */}
+            {/* Track Picker Button - Enhanced Design */}
             <Button
-              variant="outline"
+              variant={params.referenceTrackId ? "default" : "outline"}
               onClick={() => setTrackPickerOpen(true)}
               className={cn(
-                "w-full justify-start gap-2 text-sm font-medium",
-                isMobile ? "h-11" : "h-9",
-                params.referenceTrackId && "border-primary bg-primary/5"
+                "w-full justify-start gap-3 text-sm font-medium transition-all",
+                isMobile ? "h-11 px-3" : "h-10 px-4",
+                params.referenceTrackId && "bg-primary/10 border-primary/30 text-primary hover:bg-primary/20"
               )}
               disabled={isGenerating}
             >
-              <Music className="h-4 w-4" />
+              <div className={cn(
+                "p-1.5 rounded-md transition-colors",
+                params.referenceTrackId ? "bg-primary/20" : "bg-accent"
+              )}>
+                <Music className="h-3.5 w-3.5" />
+              </div>
               {params.referenceTrackId ? (
-                <span className="truncate">
-                  Трек: {allTracks.find(t => t.id === params.referenceTrackId)?.title || 'Выбран'}
+                <span className="truncate flex-1 text-left">
+                  {allTracks.find(t => t.id === params.referenceTrackId)?.title || 'Трек выбран'}
                 </span>
               ) : (
-                'Выбрать трек'
+                <span className="flex-1 text-left">Выбрать трек из проекта</span>
               )}
-              {selectedProject.persona_id && (
-                <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0 gap-1">
-                  <User className="h-3 w-3" />
-                  Персона
-                </Badge>
-              )}
+              {params.referenceTrackId && <Check className="h-4 w-4 ml-auto flex-shrink-0" />}
             </Button>
 
             {/* Track Picker Dialog */}
@@ -326,7 +338,7 @@ export const CompactCustomForm = memo(({
         )}
 
         {/* Selected Resources Info */}
-        {(params.referenceFileName || params.personaId || params.inspoProjectName) && (
+        {(params.referenceFileName || params.personaId) && (
           <div className="p-2 space-y-1 border border-accent/40 rounded-lg bg-accent/5">
             {params.referenceFileName && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -355,23 +367,6 @@ export const CompactCustomForm = memo(({
                   size="icon" 
                   className="h-4 w-4 hover:text-destructive" 
                   onClick={() => onParamChange('personaId', null)}
-                >
-                  ×
-                </Button>
-              </div>
-            )}
-            {params.inspoProjectName && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Sparkles className="h-3 w-3" />
-                <span className="flex-1 truncate">Inspo: {params.inspoProjectName}</span>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-4 w-4 hover:text-destructive" 
-                  onClick={() => {
-                    onParamChange('inspoProjectId', null);
-                    onParamChange('inspoProjectName', null);
-                  }}
                 >
                   ×
                 </Button>
