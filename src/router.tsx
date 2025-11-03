@@ -29,6 +29,7 @@ import MonitoringHub from "./pages/workspace/MonitoringHub";
 
 // Studio page
 import { Studio } from "./pages/workspace/Studio";
+import { DAW } from "./pages/workspace/DAW";
 
 // Still direct imports (will lazy load in Phase 2)
 import Profile from "./pages/workspace/Profile";
@@ -91,6 +92,10 @@ export const router = createBrowserRouter(
         {
           path: "studio",
           element: <Studio />
+        },
+        {
+          path: "daw",
+          element: <DAW />
         },
         {
           path: "monitoring-hub",
