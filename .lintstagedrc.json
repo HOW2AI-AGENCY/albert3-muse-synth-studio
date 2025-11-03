@@ -1,0 +1,9 @@
+{
+  "*.{ts,tsx}": [
+    "eslint --fix",
+    "tsx scripts/validate-protected-files.ts"
+  ],
+  ".protectedrc.json": [
+    "tsx scripts/validate-protected-files.ts"
+  ]
+}
