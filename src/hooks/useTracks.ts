@@ -190,11 +190,19 @@ export const useTracks = (refreshTrigger?: number, options?: UseTracksOptions) =
   // Realtime updates: reflect INSERT/UPDATE/DELETE immediately
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    let isSubscribed = false;
 
     const handlePayload = (payload: RealtimePostgresChangesPayload<TrackRow>) => {
+      // ✅ FIX: Проверяем, что подписка активна перед обновлением
+      if (!isSubscribed) return;
+
       if (payload.eventType === 'INSERT' && payload.new) {
         const newTrack = mapTrackRowToTrack(payload.new);
-        setTracks((prev) => [newTrack, ...prev]);
+        setTracks((prev) => {
+          // ✅ FIX: Проверяем дубликаты перед добавлением
+          if (prev.some(t => t.id === newTrack.id)) return prev;
+          return [newTrack, ...prev];
+        });
       } else if (payload.eventType === 'UPDATE' && payload.new) {
         const updated = mapTrackRowToTrack(payload.new);
         setTracks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
@@ -207,22 +215,36 @@ export const useTracks = (refreshTrigger?: number, options?: UseTracksOptions) =
     const setup = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      // ✅ FIX: Уникальный канал с timestamp для предотвращения конфликтов
+      const channelName = `tracks-user-${user.id}-${Date.now()}`;
+      
       channel = supabase
-        .channel(`tracks-user-${user.id}`)
+        .channel(channelName)
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'tracks', filter: `user_id=eq.${user.id}` },
           handlePayload
         )
-        .subscribe();
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            isSubscribed = true;
+            logInfo('Realtime subscription active', 'useTracks', { channelName });
+          }
+        });
     };
 
     setup();
 
     return () => {
-      if (channel) supabase.removeChannel(channel);
+      isSubscribed = false;
+      if (channel) {
+        supabase.removeChannel(channel).then(() => {
+          logInfo('Realtime channel removed', 'useTracks');
+        });
+      }
     };
-  }, []);
+  }, []); // ✅ FIX: Убираем зависимости для предотвращения переподписок
 
   const [isPolling, setIsPolling] = useState(false);
 

@@ -12,7 +12,7 @@ import { StyleTagsInput } from './StyleTagsInput';
 import { StyleRecommendationsInline } from '@/components/generator/StyleRecommendationsInline';
 import { PromptCharacterCounter } from '@/components/generator/PromptCharacterCounter';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
-import { Slider } from '@/components/ui/slider';
+import { CompactSlider } from '@/components/ui/compact-slider';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { GenerationParams } from '../types/generator.types';
 import { VOCAL_GENDER_OPTIONS } from '../types/generator.types';
@@ -140,9 +140,12 @@ export const CompactCustomForm = memo(({
       <div className="flex-1 overflow-y-auto space-y-2 pb-20">
         {/* Title - Moved to top */}
         <div className="space-y-1 p-2">
-          <Label htmlFor="custom-title" className="text-xs font-medium">
-            Название
-          </Label>
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor="custom-title" className="text-xs font-medium">
+              Название
+            </Label>
+            <InfoTooltip content="Укажите название вашего трека" />
+          </div>
           <Input
             id="custom-title"
             type="text"
@@ -432,101 +435,38 @@ export const CompactCustomForm = memo(({
             <div className="space-y-4">
               {/* Audio Weight - с Info Tooltip */}
               {params.referenceFileName && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs flex items-center gap-1.5">
-                      Влияние референса
-                      <InfoTooltip 
-                        content={
-                          <div className="space-y-1">
-                            <p className="font-semibold">Audio Weight (0-100%)</p>
-                            <p className="text-xs">Определяет, насколько сильно сгенерированный трек будет похож на референсное аудио.</p>
-                            <ul className="text-xs list-disc list-inside mt-2 space-y-0.5">
-                              <li><strong>0-30%:</strong> Лёгкое влияние стиля</li>
-                              <li><strong>30-70%:</strong> Сбалансированное влияние</li>
-                              <li><strong>70-100%:</strong> Максимальное копирование</li>
-                            </ul>
-                          </div>
-                        }
-                      />
-                    </Label>
-                    <span className="text-xs text-muted-foreground">{params.audioWeight}%</span>
-                  </div>
-                  <Slider
-                    value={[params.audioWeight]}
-                    onValueChange={([v]: number[]) => onParamChange('audioWeight', v)}
-                    min={0}
-                    max={100}
-                    step={5}
-                    className="touch-target-optimal"
-                    disabled={isGenerating}
-                  />
-                </div>
+                <CompactSlider
+                  label="Влияние референса"
+                  value={[params.audioWeight]}
+                  onValueChange={([v]: number[]) => onParamChange('audioWeight', v)}
+                  min={0}
+                  max={100}
+                  step={5}
+                  disabled={isGenerating}
+                />
               )}
 
               {/* Style Weight - с Info Tooltip */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs flex items-center gap-1.5">
-                    Влияние стиля
-                    <InfoTooltip 
-                      content={
-                        <div className="space-y-1">
-                          <p className="font-semibold">Style Weight (0-100%)</p>
-                          <p className="text-xs">Контролирует, насколько AI следует указанным тегам стиля.</p>
-                          <ul className="text-xs list-disc list-inside mt-2 space-y-0.5">
-                            <li><strong>0-30%:</strong> Свободная интерпретация</li>
-                            <li><strong>30-70%:</strong> Умеренное следование стилю</li>
-                            <li><strong>70-100%:</strong> Строгое следование тегам</li>
-                          </ul>
-                          <p className="text-xs mt-2 text-muted-foreground">💡 Рекомендуется: 60-80% для баланса</p>
-                        </div>
-                      }
-                    />
-                  </Label>
-                  <span className="text-xs text-muted-foreground">{params.styleWeight}%</span>
-                </div>
-                <Slider
-                  value={[params.styleWeight]}
-                  onValueChange={([v]: number[]) => onParamChange('styleWeight', v)}
-                  min={0}
-                  max={100}
-                  step={5}
-                  disabled={isGenerating}
-                />
-              </div>
+              <CompactSlider
+                label="Влияние стиля"
+                value={[params.styleWeight]}
+                onValueChange={([v]: number[]) => onParamChange('styleWeight', v)}
+                min={0}
+                max={100}
+                step={5}
+                disabled={isGenerating}
+              />
 
               {/* Weirdness Constraint - с Info Tooltip */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs flex items-center gap-1.5">
-                    Креативность
-                    <InfoTooltip 
-                      content={
-                        <div className="space-y-1">
-                          <p className="font-semibold">Weirdness Constraint</p>
-                          <p className="text-xs">Уровень экспериментальности в генерации.</p>
-                          <ul className="text-xs list-disc list-inside mt-2 space-y-0.5">
-                            <li><strong>0-20%:</strong> Традиционное звучание</li>
-                            <li><strong>20-50%:</strong> Умеренные эксперименты</li>
-                            <li><strong>50-100%:</strong> Авангардный стиль</li>
-                          </ul>
-                          <p className="text-xs mt-2 text-muted-foreground">⚠️ Высокие значения могут дать неожиданные результаты</p>
-                        </div>
-                      }
-                    />
-                  </Label>
-                  <span className="text-xs text-muted-foreground">{params.weirdnessConstraint}%</span>
-                </div>
-                <Slider
-                  value={[params.weirdnessConstraint]}
-                  onValueChange={([v]: number[]) => onParamChange('weirdnessConstraint', v)}
-                  min={0}
-                  max={100}
-                  step={5}
-                  disabled={isGenerating}
-                />
-              </div>
+              <CompactSlider
+                label="Креативность"
+                value={[params.weirdnessConstraint]}
+                onValueChange={([v]: number[]) => onParamChange('weirdnessConstraint', v)}
+                min={0}
+                max={100}
+                step={5}
+                disabled={isGenerating}
+              />
 
               {/* Vocal Gender - только для Suno */}
               <div className="space-y-1.5">

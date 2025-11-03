@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Music, Sparkles, Info, History } from '@/utils/iconImports';
 import { StyleRecommendationsInline } from '@/components/generator/StyleRecommendationsInline';
 import { PromptCharacterCounter } from '@/components/generator/PromptCharacterCounter';
+import { InfoTooltip } from '@/components/ui/info-tooltip';
 import type { GenerationParams } from '../types/generator.types';
 import { cn } from '@/lib/utils';
 
@@ -48,9 +49,10 @@ export const SimpleModeCompact = memo(({
         {/* Prompt with AI Boost */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <div className="w-1 h-5 bg-gradient-to-b from-primary to-primary/50 rounded-full" />
               <Label htmlFor="music-prompt" className="text-sm font-semibold">Описание музыки</Label>
+              <InfoTooltip content="Опишите желаемую музыку: жанр, настроение, инструменты. Чем детальнее, тем лучше результат." />
             </div>
             {onOpenHistory && (
               <Button
@@ -162,10 +164,13 @@ export const SimpleModeCompact = memo(({
 
         {/* Title Input */}
         <div className="space-y-1.5 pt-2 border-t border-border/30">
-          <Label htmlFor="title" className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-            Название трека
-            <span className="text-[10px] text-muted-foreground/70">(опционально)</span>
-          </Label>
+          <div className="flex items-center gap-1.5">
+            <Label htmlFor="title" className="text-xs font-medium text-muted-foreground">
+              Название трека
+              <span className="text-[10px] text-muted-foreground/70 ml-1">(опционально)</span>
+            </Label>
+            <InfoTooltip content="Укажите название трека. Если не заполнить, AI создаст название автоматически." />
+          </div>
           <Input
             id="title"
             type="text"

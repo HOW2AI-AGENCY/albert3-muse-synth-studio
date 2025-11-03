@@ -80,8 +80,8 @@ export const GeneratorTour = () => {
 
   useEffect(() => {
     if (!hasSeenTour) {
-      // Запуск через 1 секунду после маунта
-      const timer = setTimeout(() => setRunTour(true), 1000);
+      // Запуск через 1.5 секунды после маунта (для загрузки DOM)
+      const timer = setTimeout(() => setRunTour(true), 1500);
       return () => clearTimeout(timer);
     }
   }, [hasSeenTour]);
@@ -105,23 +105,57 @@ export const GeneratorTour = () => {
       continuous
       showProgress
       showSkipButton
+      disableScrolling={false}
+      spotlightClicks={false}
+      disableOverlayClose={false}
       callback={handleJoyrideCallback}
       styles={{
         options: {
           primaryColor: 'hsl(var(--primary))',
           zIndex: 10000,
+          arrowColor: 'hsl(var(--popover))',
+          backgroundColor: 'hsl(var(--popover))',
+          textColor: 'hsl(var(--popover-foreground))',
+          overlayColor: 'rgba(0, 0, 0, 0.6)',
         },
         tooltip: {
           borderRadius: 'var(--radius)',
-          padding: '1rem',
+          padding: '0',
+          maxWidth: '400px',
+          fontSize: '14px',
+          backgroundColor: 'hsl(var(--popover))',
+          color: 'hsl(var(--popover-foreground))',
+          boxShadow: '0 10px 40px -10px rgba(0, 0, 0, 0.4)',
+        },
+        tooltipContainer: {
+          textAlign: 'left',
+        },
+        tooltipContent: {
+          padding: '1rem 1.25rem',
         },
         buttonNext: {
           backgroundColor: 'hsl(var(--primary))',
           borderRadius: 'var(--radius)',
-          padding: '0.5rem 1rem',
+          padding: '0.5rem 1.25rem',
+          fontSize: '14px',
+          fontWeight: '500',
+          outline: 'none',
+          border: 'none',
+        },
+        buttonBack: {
+          color: 'hsl(var(--muted-foreground))',
+          marginRight: '0.5rem',
+          fontSize: '14px',
         },
         buttonSkip: {
           color: 'hsl(var(--muted-foreground))',
+          fontSize: '14px',
+        },
+        buttonClose: {
+          color: 'hsl(var(--muted-foreground))',
+        },
+        spotlight: {
+          borderRadius: 'var(--radius)',
         },
       }}
       locale={{
