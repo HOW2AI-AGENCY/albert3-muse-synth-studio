@@ -12,7 +12,14 @@ import {
 import {
   preloadDashboard,
   preloadGenerate,
-} from "@/utils/lazyImports";
+  preloadProjects,
+  preloadMonitoringHub,
+  preloadStudio,
+  preloadDAW,
+  preloadFavorites,
+  preloadSettings,
+  preloadPromptDJPage,
+} from "@/utils/lazyPages";
 
 export type WorkspaceNavRole = "admin";
 
@@ -49,6 +56,7 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     label: "Prompt DJ",
     path: "/workspace/prompt-dj",
     icon: Wand2,
+    preload: () => { void preloadPromptDJPage(); },
     isMobilePrimary: true,
   },
   {
@@ -56,6 +64,7 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     label: "Studio",
     path: "/workspace/studio",
     icon: Headphones,
+    preload: () => { void preloadStudio(); },
     isMobilePrimary: true,
   },
   {
@@ -63,6 +72,7 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     label: "DAW",
     path: "/workspace/daw",
     icon: Headphones,
+    preload: () => { void preloadDAW(); },
     isMobilePrimary: true,
   },
   {
@@ -70,6 +80,7 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     label: "Проекты",
     path: "/workspace/projects",
     icon: Library,
+    preload: () => { void preloadProjects(); },
     isMobilePrimary: true,
   },
   {
@@ -77,18 +88,21 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     label: "Избранное",
     path: "/workspace/favorites",
     icon: Heart,
+    preload: () => { void preloadFavorites(); },
   },
   {
     id: "monitoring-hub",
     label: "Мониторинг",
     path: "/workspace/monitoring-hub",
     icon: BarChart3,
+    preload: () => { void preloadMonitoringHub(); },
   },
   {
     id: "settings",
     label: "Настройки",
     path: "/workspace/settings",
     icon: Settings,
+    preload: () => { void preloadSettings(); },
   },
 ];
 

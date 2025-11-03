@@ -10,6 +10,14 @@ import { Page, expect } from '@playwright/test';
 export async function waitForPageLoad(page: Page) {
   await page.waitForLoadState('networkidle');
   await page.waitForLoadState('domcontentloaded');
+  const spinner = page.locator('[data-testid="full-page-spinner"]');
+  if (await spinner.count()) {
+    try {
+      await spinner.first().waitFor({ state: 'detached', timeout: 10000 });
+    } catch {
+      // Ignore timeout - spinner may represent ongoing background loading
+    }
+  }
 }
 
 /**
