@@ -116,7 +116,7 @@ export const useMusicGenerator = (onTrackGenerated?: () => void) => {
 
         return newParams;
       });
-    }, [selectedProvider, toast, state.setParams]);
+    }, [selectedProvider]);
 
     const handleProviderChange = useCallback((provider: string) => {
         setProvider(provider as ProviderType);
