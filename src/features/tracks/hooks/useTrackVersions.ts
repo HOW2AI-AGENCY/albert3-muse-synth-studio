@@ -34,13 +34,16 @@ const inFlightRequests = new Map<string, Promise<TrackWithVersions[]>>();
 
 const getCacheKey = (trackId: string) => trackId;
 
-// ✅ FIX: Считаем только дополнительные версии (с variant_index >= 1)
+/**
+ * ✅ FIX: Считаем только дополнительные версии (variant_index >= 1)
+ * Основная версия (variant_index: 0) НЕ учитывается
+ */
 const getAdditionalVersionsCount = (versions: TrackWithVersions[] | undefined): number => {
   if (!versions || versions.length === 0) {
     return 0;
   }
 
-  // Считаем версии с variant_index >= 1 (дополнительные версии)
+  // Считаем версии с sourceVersionNumber >= 1 (исключая основную версию с sourceVersionNumber === 0)
   return versions.filter(v => 
     v.audio_url && 
     v.sourceVersionNumber !== null && 
@@ -312,10 +315,14 @@ export function useTrackVersions(
   const mainVersion = allVersions[0] ?? null;
 
   /** 
-   * ✅ FIX: Дополнительные версии = все версии кроме основной (variant_index: 0)
+   * ✅ FIX: Дополнительные версии = все версии кроме основной (sourceVersionNumber === 0)
    * НЕ исключаем masterVersion, потому что он может быть дополнительной версией!
+   * Фильтруем только по sourceVersionNumber >= 1 (аналогично getAdditionalVersionsCount)
    */
-  const versions = allVersions.filter(v => v.sourceVersionNumber !== 0);
+  const versions = allVersions.filter(v => 
+    v.sourceVersionNumber !== null && 
+    v.sourceVersionNumber >= 1
+  );
 
   const versionCount = versions.length;
 
