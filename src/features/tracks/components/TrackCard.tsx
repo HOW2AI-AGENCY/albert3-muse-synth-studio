@@ -140,7 +140,7 @@ const TrackCardComponent = React.memo(({
           )}
 
           <TrackCardCover
-            coverUrl={displayedVersion.cover_url || track.cover_url}
+            coverUrl={(displayedVersion.cover_url || track.cover_url) ?? undefined}
             title={displayedVersion.title || track.title}
             gradient={gradient}
             hasVocals={track.has_vocals}

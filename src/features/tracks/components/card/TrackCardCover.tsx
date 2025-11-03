@@ -7,10 +7,10 @@ import { TrackVariantSelector } from '../TrackVariantSelector';
 import { cn } from '@/lib/utils';
 
 interface TrackCardCoverProps {
-  coverUrl?: string;
+  coverUrl?: string | null;
   title: string;
   gradient: string;
-  hasVocals?: boolean;
+  hasVocals?: boolean | null;
   hasReferenceAudio?: boolean;
   isCompleted: boolean;
   trackId: string;

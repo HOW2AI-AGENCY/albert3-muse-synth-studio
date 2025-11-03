@@ -7,14 +7,14 @@ import { formatDuration } from '@/utils/formatters';
 interface TrackCardInfoProps {
   title: string;
   prompt?: string;
-  duration?: number;
+  duration?: number | null;
   versionCount?: number;
   selectedVersionIndex?: number;
   hasStems: boolean;
   status: string;
   progressPercent?: number | null;
   createdAt: string;
-  likeCount?: number;
+  likeCount?: number | null;
   isMasterVersion?: boolean;
   onVersionChange?: (index: number) => void;
 }
@@ -84,7 +84,7 @@ export const TrackCardInfo = React.memo(({
           )}
           
           {/* ✅ FIX: Отображение лайков */}
-          {likeCount !== undefined && likeCount > 0 && (
+          {likeCount !== null && likeCount !== undefined && likeCount > 0 && (
             <div className="flex items-center gap-1">
               <Heart className="w-3 h-3" />
               <span>{likeCount}</span>

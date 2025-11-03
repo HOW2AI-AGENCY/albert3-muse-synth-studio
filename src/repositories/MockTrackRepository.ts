@@ -106,17 +106,23 @@ export class MockTrackRepository implements ITrackRepository {
 
   async incrementPlayCount(id: string): Promise<void> {
     const track = this.tracks.find(t => t.id === id);
-    if (track) track.play_count++;
+    if (track) {
+      track.play_count = (track.play_count ?? 0) + 1;
+    }
   }
 
   async incrementLikeCount(id: string): Promise<void> {
     const track = this.tracks.find(t => t.id === id);
-    if (track) track.like_count++;
+    if (track) {
+      track.like_count = (track.like_count ?? 0) + 1;
+    }
   }
 
   async decrementLikeCount(id: string): Promise<void> {
     const track = this.tracks.find(t => t.id === id);
-    if (track) track.like_count = Math.max(0, track.like_count - 1);
+    if (track) {
+      track.like_count = Math.max(0, (track.like_count ?? 0) - 1);
+    }
   }
 
   subscribe(_trackId: string, _callback: (track: Track) => void): () => void {

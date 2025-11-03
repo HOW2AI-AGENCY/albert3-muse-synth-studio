@@ -82,7 +82,7 @@ export const GenerationProgress = React.memo(({
 GenerationProgress.displayName = 'GenerationProgress';
 
 interface FailedStateProps {
-  message?: string;
+  message?: string | null;
   trackId: string;
   onRetry?: (trackId: string) => void;
   onDelete?: (trackId: string) => void;

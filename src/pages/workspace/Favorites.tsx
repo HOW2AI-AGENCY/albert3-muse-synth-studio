@@ -183,11 +183,15 @@ export default function Favorites() {
             <TrackCard
               track={{
                 id: track.id,
+                user_id: track.user_id,
                 title: track.title,
+                prompt: '',
                 audio_url: track.audio_url ?? undefined,
                 cover_url: track.cover_url ?? undefined,
                 status: isTrackStatus(track.status) ? track.status : 'completed',
+                provider: 'suno',
                 created_at: track.created_at,
+                updated_at: track.created_at,
                 style_tags: track.style_tags ?? undefined,
                 duration: track.duration ?? undefined,
                 like_count: track.like_count ?? undefined,

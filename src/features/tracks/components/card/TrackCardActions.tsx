@@ -36,8 +36,8 @@ interface TrackCardActionsProps {
   trackId: string;
   trackStatus: string;
   trackMetadata?: Record<string, any> | null;
-  isPublic?: boolean;
-  hasVocals?: boolean;
+  isPublic?: boolean | null;
+  hasVocals?: boolean | null;
   isLiked: boolean;
   masterVersion: Version | null;
   operationTargetId: string;

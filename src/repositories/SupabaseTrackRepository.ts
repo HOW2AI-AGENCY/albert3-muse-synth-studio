@@ -138,21 +138,21 @@ export class SupabaseTrackRepository implements ITrackRepository {
     const track = await this.findById(id);
     if (!track) return;
     
-    await this.update(id, { play_count: track.play_count + 1 });
+    await this.update(id, { play_count: (track.play_count ?? 0) + 1 });
   }
 
   async incrementLikeCount(id: string): Promise<void> {
     const track = await this.findById(id);
     if (!track) return;
     
-    await this.update(id, { like_count: track.like_count + 1 });
+    await this.update(id, { like_count: (track.like_count ?? 0) + 1 });
   }
 
   async decrementLikeCount(id: string): Promise<void> {
     const track = await this.findById(id);
     if (!track) return;
     
-    await this.update(id, { like_count: Math.max(0, track.like_count - 1) });
+    await this.update(id, { like_count: Math.max(0, (track.like_count ?? 0) - 1) });
   }
 
   subscribe(trackId: string, callback: (track: Track) => void): () => void {
