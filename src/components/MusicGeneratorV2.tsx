@@ -26,9 +26,11 @@ import { getProviderModels, getDefaultModel, type MusicProvider as ProviderType 
 import { CompactHeader } from '@/components/generator/CompactHeader';
 import { QuickActionsBar } from '@/components/generator/QuickActionsBar';
 import { InspoProjectDialog } from '@/components/generator/InspoProjectDialog';
+import { ProjectSelectorDialog } from '@/components/generator/ProjectSelectorDialog';
 import { AudioSourceDialog } from '@/components/generator/audio/AudioSourceDialog';
 import { SimpleModeCompact } from '@/components/generator/forms/SimpleModeCompact';
 import { CompactCustomForm } from '@/components/generator/forms/CompactCustomForm';
+import { useProjects } from '@/contexts/ProjectContext';
 
 import { 
   useGeneratorState,
@@ -45,6 +47,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const { selectedProvider, setProvider } = useMusicGenerationStore();
   const { toast } = useToast();
   const { vibrate } = useHapticFeedback();
+  const { projects } = useProjects(); // ✅ НОВОЕ
   
   const { generate, isGenerating } = useGenerateMusic({ 
     provider: selectedProvider as ProviderType, 
@@ -68,6 +71,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   const [personaDialogOpen, setPersonaDialogOpen] = useState(false);
   const [inspoDialogOpen, setInspoDialogOpen] = useState(false);
   const [audioSourceDialogOpen, setAudioSourceDialogOpen] = useState(false);
+  const [projectDialogOpen, setProjectDialogOpen] = useState(false); // ✅ НОВОЕ
   
   // ✅ REFACTORED: Auto-loaders
   useStemReferenceLoader(state, selectedProvider, handleProviderChange);
@@ -426,9 +430,19 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
           hasAudio={!!state.params.referenceFileName}
           hasPersona={!!state.params.personaId}
           hasInspo={!!state.params.inspoProjectId}
+          hasProject={!!state.params.activeProjectId}
+          projectName={projects.find(p => p.id === state.params.activeProjectId)?.name}
           onAudioClick={() => setAudioSourceDialogOpen(true)}
           onPersonaClick={() => setPersonaDialogOpen(true)}
           onInspoClick={() => setInspoDialogOpen(true)}
+          onProjectClick={() => {
+            setProjectDialogOpen(true);
+            // ✅ АВТОМАТИЧЕСКИ ПЕРЕКЛЮЧАЕМ В CUSTOM MODE
+            if (state.params.activeProjectId) {
+              state.setMode('custom');
+              logger.info('Auto-switched to custom mode - project clicked', 'MusicGeneratorV2');
+            }
+          }}
           isGenerating={isGenerating}
         />
 
@@ -587,6 +601,29 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
             });
           }
         }}
+      />
+
+      {/* ✅ НОВЫЙ ДИАЛОГ - Выбор активного проекта */}
+      <ProjectSelectorDialog
+        open={projectDialogOpen}
+        onOpenChange={setProjectDialogOpen}
+        selectedProjectId={state.params.activeProjectId || null}
+        onProjectSelect={(projectId) => {
+          state.setParam('activeProjectId', projectId);
+          
+          // ✅ АВТОМАТИЧЕСКИ ПЕРЕКЛЮЧАЕМ В CUSTOM MODE
+          if (projectId) {
+            state.setMode('custom');
+            logger.info('Auto-switched to custom mode after project selection', 'MusicGeneratorV2', { projectId });
+            toast({
+              title: "Проект выбран",
+              description: "Форма переключена в продвинутый режим",
+            });
+          }
+          
+          setProjectDialogOpen(false);
+        }}
+        showTrackSelection={false}
       />
 
       <GeneratorTour />
