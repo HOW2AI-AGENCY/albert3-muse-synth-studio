@@ -88,10 +88,14 @@ export const CompactCustomForm = memo(({
       onDebouncedPromptChange(track.prompt);
     }
     
-    // 3. Заполняем лирику (если она была сгенерирована)
+    // 3. ✅ Заполняем лирику с правильным дебаунсингом
     if (track.lyrics) {
       onParamChange('lyrics', track.lyrics);
       onDebouncedLyricsChange(track.lyrics);
+      
+      logger.info('Lyrics auto-filled from track', 'CompactCustomForm', { 
+        lyricsLength: track.lyrics.length 
+      });
     }
     
     // 4. Копируем теги стилей
@@ -652,7 +656,6 @@ export const CompactCustomForm = memo(({
           </Button>
         </div>
       </div>
-
     </div>
   );
 });

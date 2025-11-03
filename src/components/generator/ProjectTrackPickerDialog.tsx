@@ -164,7 +164,7 @@ export const ProjectTrackPickerDialog = ({
         </div>
 
         {/* Tracks List - improved design */}
-        <ScrollArea className="flex-1 px-6">
+        <ScrollArea className="flex-1 px-6 h-[450px]">
           {filteredTracks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <div className="p-4 rounded-full bg-accent/50 mb-4">
