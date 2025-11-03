@@ -10,11 +10,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/utils/logger";
-import { Loader2, FileText } from "@/utils/iconImports";
+import { Loader2, FileText, Edit2, Copy } from "lucide-react";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
+import { cn } from "@/lib/utils";
 
 interface LyricsGeneratorDialogProps {
   open: boolean;
@@ -36,10 +38,13 @@ export function LyricsGeneratorDialog({
   const [prompt, setPrompt] = useState(initialPrompt);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedLyrics, setGeneratedLyrics] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editPrompt, setEditPrompt] = useState("");
   const { toast } = useToast();
   const { vibrate } = useHapticFeedback();
 
   const wordCount = prompt.trim().split(/\s+/).filter(Boolean).length;
+  const editWordCount = editPrompt.trim().split(/\s+/).filter(Boolean).length;
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -111,10 +116,75 @@ export function LyricsGeneratorDialog({
     }
   };
 
+  const handleEditWithAI = async () => {
+    if (!editPrompt.trim() || !generatedLyrics) {
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: "Введите описание правок"
+      });
+      return;
+    }
+
+    if (editWordCount > MAX_WORDS) {
+      toast({
+        variant: "destructive",
+        title: "Слишком длинный промпт",
+        description: `Максимум ${MAX_WORDS} слов. Текущее количество: ${editWordCount}`
+      });
+      return;
+    }
+
+    vibrate('light');
+    setIsGenerating(true);
+
+    try {
+      logger.info(`✏️ [LYRICS] Editing lyrics with AI: ${editPrompt.substring(0, 50)}...`);
+
+      const { data, error } = await supabase.functions.invoke('generate-lyrics-ai', {
+        body: {
+          prompt: `Edit the following lyrics based on this instruction: "${editPrompt}"\n\nOriginal lyrics:\n${generatedLyrics}`,
+          trackId: trackId,
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.lyrics) {
+        setGeneratedLyrics(data.lyrics);
+        
+        if (onGenerated) {
+          onGenerated(data.lyrics);
+        }
+
+        toast({
+          title: "✨ Текст отредактирован!",
+          description: trackId 
+            ? "Изменения автоматически сохранены в трек"
+            : "Посмотрите обновленный результат"
+        });
+
+        setIsEditMode(false);
+        setEditPrompt("");
+      } else {
+        throw new Error('No edited lyrics generated');
+      }
+    } catch (error) {
+      logger.error(`❌ [LYRICS] Error editing lyrics:`, error instanceof Error ? error : undefined);
+      toast({
+        variant: "destructive",
+        title: "Ошибка",
+        description: error instanceof Error ? error.message : "Не удалось отредактировать текст"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-[540px] max-h-[80vh] gap-0 p-0 pb-safe">
-        <DialogHeader className="px-3 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-[540px] max-h-[85vh] flex flex-col gap-0 p-0 pb-safe">
+        <DialogHeader className="px-3 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b flex-shrink-0">
           <DialogTitle className="flex items-center gap-2.5 text-lg">
             <div className="p-2 rounded-lg bg-primary/10">
               <FileText className="w-4 h-4 text-primary" />
@@ -126,9 +196,9 @@ export function LyricsGeneratorDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="px-3 sm:px-6 py-4 sm:py-5 space-y-3 sm:space-y-4 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-5 space-y-3 sm:space-y-4">
           {generatedLyrics ? (
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               <Label htmlFor="generated" className="text-sm font-medium">Сгенерированный текст</Label>
               <Textarea
                 id="generated"
@@ -137,26 +207,74 @@ export function LyricsGeneratorDialog({
                 rows={14}
                 className="resize-none text-base sm:text-sm leading-relaxed font-mono"
               />
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-[11px] text-muted-foreground">
-                  {trackId 
-                    ? "Текст автоматически сохранён в трек. Вы можете закрыть окно или сгенерировать заново."
-                    : "Текст сгенерирован. Вы можете скопировать его или сгенерировать заново."}
+              
+              {/* Edit Mode Form */}
+              {isEditMode && (
+                <div className="space-y-2 p-3 border border-primary/20 rounded-lg bg-primary/5">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="edit-prompt" className="text-sm font-medium flex items-center gap-1.5">
+                      Описание правок
+                      <span className="text-destructive text-xs">*</span>
+                    </Label>
+                    <div className={cn(
+                      "text-xs font-mono tabular-nums transition-colors",
+                      editWordCount > MAX_WORDS 
+                        ? 'text-destructive font-semibold' 
+                        : editWordCount > MAX_WORDS * 0.8
+                        ? 'text-orange-500'
+                        : 'text-muted-foreground'
+                    )}>
+                      {editWordCount} / {MAX_WORDS}
+                    </div>
+                  </div>
+                  <Input
+                    id="edit-prompt"
+                    placeholder="Например: сделай припев более энергичным, добавь рифмы в первом куплете..."
+                    value={editPrompt}
+                    onChange={(e) => setEditPrompt(e.target.value)}
+                    className="text-sm"
+                  />
+                  <div className="flex gap-2 pt-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsEditMode(false);
+                        setEditPrompt("");
+                      }}
+                      disabled={isGenerating}
+                      className="flex-1 h-8"
+                    >
+                      Отмена
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleEditWithAI}
+                      disabled={isGenerating || !editPrompt.trim() || editWordCount > MAX_WORDS}
+                      className="flex-1 h-8 gap-2"
+                    >
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          <span>Применение...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Edit2 className="h-3 w-3" />
+                          <span>Применить</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    navigator.clipboard.writeText(generatedLyrics);
-                    toast({
-                      title: "Скопировано!",
-                      description: "Текст песни скопирован в буфер обмена",
-                    });
-                  }}
-                  className="text-xs h-7"
-                >
-                  Копировать
-                </Button>
+              )}
+
+              <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                <span>
+                  {trackId 
+                    ? "Текст автоматически сохранён в трек"
+                    : "Текст сгенерирован"}
+                </span>
               </div>
             </div>
           ) : (
@@ -166,13 +284,14 @@ export function LyricsGeneratorDialog({
                   Описание
                   <span className="text-destructive text-xs">*</span>
                 </Label>
-                <div className={`text-xs font-mono tabular-nums transition-colors ${
+                <div className={cn(
+                  "text-xs font-mono tabular-nums transition-colors",
                   wordCount > MAX_WORDS 
                     ? 'text-destructive font-semibold' 
                     : wordCount > MAX_WORDS * 0.8
                     ? 'text-orange-500'
                     : 'text-muted-foreground'
-                }`}>
+                )}>
                   {wordCount} / {MAX_WORDS}
                 </div>
               </div>
@@ -194,33 +313,78 @@ export function LyricsGeneratorDialog({
           )}
         </div>
 
-        <DialogFooter className="sticky bottom-0 bg-background border-t px-3 sm:px-6 py-3 sm:py-4 gap-2 sm:gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)} 
-            disabled={isGenerating}
-            className="flex-1 sm:flex-none h-11 sm:h-10"
-          >
-            Отмена
-          </Button>
-          <Button 
-            onClick={handleGenerate} 
-            disabled={isGenerating || !prompt.trim() || wordCount > MAX_WORDS}
-            className="flex-1 sm:flex-none gap-2 h-11 sm:h-10"
-            style={{ touchAction: 'manipulation' }}
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Генерация...</span>
-              </>
-            ) : (
-              <>
-                <FileText className="h-4 w-4" />
-                <span>Сгенерировать</span>
-              </>
-            )}
-          </Button>
+        <DialogFooter className="flex-shrink-0 bg-background border-t px-3 sm:px-6 py-3 sm:py-4 gap-2">
+          {generatedLyrics ? (
+            <>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  navigator.clipboard.writeText(generatedLyrics);
+                  toast({
+                    title: "Скопировано!",
+                    description: "Текст песни скопирован в буфер обмена",
+                  });
+                }}
+                disabled={isGenerating}
+                className="flex-1 sm:flex-none h-11 sm:h-10 gap-2"
+              >
+                <Copy className="h-4 w-4" />
+                <span>Копировать</span>
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  if (!isEditMode) {
+                    setIsEditMode(true);
+                  }
+                }}
+                disabled={isGenerating || isEditMode}
+                className="flex-1 sm:flex-none h-11 sm:h-10 gap-2"
+              >
+                <Edit2 className="h-4 w-4" />
+                <span>Редактировать с AI</span>
+              </Button>
+              <Button 
+                onClick={() => {
+                  setGeneratedLyrics(null);
+                  setIsEditMode(false);
+                  setEditPrompt("");
+                }}
+                disabled={isGenerating}
+                className="flex-1 sm:flex-none h-11 sm:h-10"
+              >
+                Создать заново
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button 
+                variant="outline" 
+                onClick={() => onOpenChange(false)} 
+                disabled={isGenerating}
+                className="flex-1 sm:flex-none h-11 sm:h-10"
+              >
+                Отмена
+              </Button>
+              <Button 
+                onClick={handleGenerate} 
+                disabled={isGenerating || !prompt.trim() || wordCount > MAX_WORDS}
+                className="flex-1 sm:flex-none gap-2 h-11 sm:h-10"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Генерация...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4" />
+                    <span>Сгенерировать</span>
+                  </>
+                )}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
