@@ -167,21 +167,26 @@ const Generate = () => {
             </div>
           </ResizablePanel>
 
-          {selectedTrack && (
-            <>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={30} minSize={25} maxSize={40}>
-                <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
-                  <DetailPanel
-                    track={normalizeTrack(selectedTrack)}
-                    onClose={handleCloseDetail}
-                    onUpdate={refreshTracks}
-                    onDelete={handleDelete}
-                  />
-                </Suspense>
-              </ResizablePanel>
-            </>
-          )}
+          {/* ✅ FIX: Всегда рендерим третью панель, но управляем размером */}
+          <ResizableHandle withHandle className={!selectedTrack ? "hidden" : ""} />
+          
+          <ResizablePanel 
+            defaultSize={selectedTrack ? 30 : 0} 
+            minSize={selectedTrack ? 25 : 0} 
+            maxSize={selectedTrack ? 40 : 0}
+            className={!selectedTrack ? "hidden" : ""}
+          >
+            {selectedTrack && (
+              <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+                <DetailPanel
+                  track={normalizeTrack(selectedTrack)}
+                  onClose={handleCloseDetail}
+                  onUpdate={refreshTracks}
+                  onDelete={handleDelete}
+                />
+              </Suspense>
+            )}
+          </ResizablePanel>
         </ResizablePanelGroup>
 
         <TrackDialogsManager
