@@ -89,6 +89,15 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
+  /* Улучшение доступности: добавляем глобальное состояние фокуса для всех интерактивных элементов */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold tracking-tight;
   }

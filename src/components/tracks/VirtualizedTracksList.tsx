@@ -13,9 +13,11 @@ import { useRef, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Track } from '@/services/api.service';
 import { TrackCard } from '@/features/tracks/components/TrackCard';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 interface VirtualizedTracksListProps {
   tracks: Track[];
+  isLoading?: boolean;
   containerWidth: number;
   containerHeight: number;
   onShare?: (trackId: string) => void;
@@ -44,6 +46,7 @@ export const VirtualizedTracksList: React.FC<VirtualizedTracksListProps> = ({
   onExtend,
   onCover,
   onCreatePersona,
+  isLoading,
 }) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +56,7 @@ export const VirtualizedTracksList: React.FC<VirtualizedTracksListProps> = ({
   }, [containerWidth]);
 
   // Calculate row count
-  const rowCount = Math.ceil(tracks.length / columnCount);
+  const rowCount = Math.ceil((isLoading ? 12 : tracks.length) / columnCount);
 
   // Create virtualizer for rows
   const rowVirtualizer = useVirtualizer({
@@ -63,8 +66,8 @@ export const VirtualizedTracksList: React.FC<VirtualizedTracksListProps> = ({
     overscan: 2, // Render 2 extra rows for smooth scrolling
   });
 
-  if (tracks.length === 0) {
-    return null;
+  if (!isLoading && tracks.length === 0) {
+    return null; // Or some empty state component
   }
 
   return (
@@ -97,20 +100,28 @@ export const VirtualizedTracksList: React.FC<VirtualizedTracksListProps> = ({
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >
-              {rowTracks.map((track) => (
-                <TrackCard
-                  key={track.id}
-                  track={track as any}
-                  onClick={onSelect ? () => onSelect(track) : undefined}
-                  onShare={onShare ? () => onShare(track.id) : undefined}
-                  onRetry={onRetry}
-                  onDelete={onDelete}
-                  onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
-                  onExtend={onExtend ? () => onExtend(track.id) : undefined}
-                  onCover={onCover ? () => onCover(track.id) : undefined}
-                  onCreatePersona={onCreatePersona ? () => onCreatePersona(track.id) : undefined}
-                />
-              ))}
+                {isLoading
+                  ? Array.from({ length: columnCount }).map((_, i) => (
+                      <Skeleton key={i} className="h-[280px] w-[200px]" />
+                    ))
+                  : rowTracks.map((track) => (
+                      <TrackCard
+                        key={track.id}
+                        track={track as any}
+                        onClick={onSelect ? () => onSelect(track) : undefined}
+                        onShare={onShare ? () => onShare(track.id) : undefined}
+                        onRetry={onRetry}
+                        onDelete={onDelete}
+                        onSeparateStems={
+                          onSeparateStems ? () => onSeparateStems(track.id) : undefined
+                        }
+                        onExtend={onExtend ? () => onExtend(track.id) : undefined}
+                        onCover={onCover ? () => onCover(track.id) : undefined}
+                        onCreatePersona={
+                          onCreatePersona ? () => onCreatePersona(track.id) : undefined
+                        }
+                      />
+                    ))}
             </div>
           );
         })}

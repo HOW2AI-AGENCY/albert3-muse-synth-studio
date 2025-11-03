@@ -1,0 +1,57 @@
+[
+  {
+    "id": "TASK-001",
+    "title": "Обновить зависимости и устранить уязвимости",
+    "description": "Запустить 'npm audit' и обновить все пакеты до последних стабильных версий, устраняя уязвимости.",
+    "files": ["package.json", "package-lock.json"],
+    "risk": "Средний",
+    "estimate": "3 дня",
+    "deps": [],
+    "acceptanceCriteria": "npm audit не находит уязвимостей. Все тесты проходят.",
+    "flags": ["security"]
+  },
+  {
+    "id": "TASK-002",
+    "title": "Создать SSOT для дизайн-токенов",
+    "description": "Создать файл 'src/styles/tokens.json' и настроить 'tailwind.config.js' для его использования.",
+    "files": ["src/styles/tokens.json", "tailwind.config.js"],
+    "risk": "Низкий",
+    "estimate": "2 дня",
+    "deps": [],
+    "acceptanceCriteria": "Переменные Tailwind (цвета, отступы) генерируются из tokens.json.",
+    "flags": ["ui", "refactoring"]
+  },
+  {
+    "id": "TASK-003",
+    "title": "Интегрировать Axe в E2E-тесты",
+    "description": "Добавить пакет 'axe-core' и настроить E2E-тесты для проверки страниц на соответствие WCAG 2.2 AA.",
+    "files": ["tests/e2e/"],
+    "risk": "Низкий",
+    "estimate": "2 дня",
+    "deps": [],
+    "acceptanceCriteria": "E2E-тесты падают при обнаружении нарушений доступности.",
+    "flags": ["testing", "a11y"]
+  },
+  {
+    "id": "TASK-004",
+    "title": "Добавить Lighthouse в CI",
+    "description": "Настроить CI-пайплайн для запуска Lighthouse на каждой сборке и установки пороговых значений для метрик.",
+    "files": [".github/workflows/ci.yml"],
+    "risk": "Средний",
+    "estimate": "3 дня",
+    "deps": [],
+    "acceptanceCriteria": "Merge-реквест блокируется, если метрики Lighthouse ниже пороговых.",
+    "flags": ["ci", "performance"]
+  },
+  {
+    "id": "TASK-005",
+    "title": "Стабилизировать E2E-тесты",
+    "description": "Использовать Docker Compose для управления зависимыми сервисами (Supabase) в E2E-тестах.",
+    "files": ["tests/e2e/", "docker-compose.e2e.yml"],
+    "risk": "Высокий",
+    "estimate": "5 дней",
+    "deps": ["TASK-001"],
+    "acceptanceCriteria": "E2E-тесты запускаются одной командой и стабильно проходят.",
+    "flags": ["devex", "testing"]
+  }
+]
