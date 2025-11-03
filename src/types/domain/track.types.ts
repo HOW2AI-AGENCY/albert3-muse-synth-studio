@@ -1,0 +1,209 @@
+/**
+ * 🔒 CRITICAL: PROTECTED FILE - DO NOT MODIFY WITHOUT TEAM LEAD APPROVAL
+ * 
+ * Single Source of Truth for Track-related types
+ * Used by: Components, Hooks, Services, Database
+ * 
+ * @version 1.0.0
+ * @protected
+ * @critical
+ * @author Team Lead
+ */
+
+import type { Database } from '@/integrations/supabase/types';
+
+/**
+ * Raw database track type (from Supabase)
+ */
+export type DatabaseTrack = Database['public']['Tables']['tracks']['Row'];
+
+/**
+ * Domain model for Track (used in business logic)
+ */
+export interface Track {
+  id: string;
+  user_id: string;
+  title: string;
+  prompt: string;
+  improved_prompt?: string | null;
+  audio_url?: string | null;
+  cover_url?: string | null;
+  video_url?: string | null;
+  status: string;
+  error_message?: string | null;
+  provider: string;
+  lyrics?: string | null;
+  style_tags?: string[] | null;
+  genre?: string | null;
+  mood?: string | null;
+  has_vocals: boolean;
+  has_stems: boolean;
+  is_public: boolean;
+  duration?: number | null;
+  duration_seconds?: number | null;
+  play_count: number;
+  like_count: number;
+  download_count: number;
+  view_count: number;
+  suno_id?: string | null;
+  mureka_task_id?: string | null;
+  model_name?: string | null;
+  idempotency_key?: string | null;
+  metadata?: Record<string, any> | null;
+  created_at: string;
+  updated_at: string;
+  archive_scheduled_at?: string | null;
+  archived_at?: string | null;
+  archived_to_storage?: boolean | null;
+}
+
+/**
+ * View model for displaying tracks in UI
+ */
+export interface DisplayTrack extends Track {
+  isLiked?: boolean;
+  isPlaying?: boolean;
+  formattedDuration?: string;
+  formattedDate?: string;
+  artistName?: string;
+  genreLabel?: string;
+}
+
+/**
+ * Track model for audio player
+ */
+export interface AudioPlayerTrack {
+  id: string;
+  title: string;
+  audio_url: string;
+  cover_url?: string;
+  duration?: number;
+  artist?: string;
+}
+
+/**
+ * Track version (variant)
+ */
+export interface TrackVersion {
+  id: string;
+  parent_track_id: string;
+  variant_index: number;
+  is_primary_variant: boolean | null;
+  is_preferred_variant: boolean | null;
+  audio_url?: string | null;
+  cover_url?: string | null;
+  video_url?: string | null;
+  lyrics?: string | null;
+  duration?: number | null;
+  suno_id?: string | null;
+  metadata?: Record<string, any> | null;
+  created_at: string;
+}
+
+/**
+ * Track stem (separated audio)
+ */
+export interface TrackStem {
+  id: string;
+  track_id: string;
+  version_id?: string | null;
+  stem_type: string;
+  separation_mode: string;
+  audio_url: string;
+  suno_task_id?: string | null;
+  metadata?: Record<string, any> | null;
+  created_at: string;
+}
+
+/**
+ * Track filters for querying
+ */
+export interface TrackFilters {
+  provider?: string;
+  status?: string;
+  has_vocals?: boolean;
+  is_public?: boolean;
+  genre?: string;
+  mood?: string;
+  search?: string;
+  sortBy?: 'created_at' | 'play_count' | 'like_count' | 'title';
+  sortOrder?: 'asc' | 'desc';
+}
+
+/**
+ * Conversion utilities
+ */
+export const trackConverters = {
+  /**
+   * Convert database track to domain track
+   */
+  toDomain(dbTrack: DatabaseTrack): Track {
+    return {
+      ...dbTrack,
+      has_vocals: dbTrack.has_vocals ?? false,
+      has_stems: dbTrack.has_stems ?? false,
+      is_public: dbTrack.is_public ?? false,
+      play_count: dbTrack.play_count ?? 0,
+      like_count: dbTrack.like_count ?? 0,
+      download_count: dbTrack.download_count ?? 0,
+      view_count: dbTrack.view_count ?? 0,
+      provider: dbTrack.provider ?? 'suno',
+      status: dbTrack.status ?? 'pending',
+      metadata: dbTrack.metadata as Record<string, any> | null,
+    };
+  },
+
+  /**
+   * Convert domain track to display track
+   */
+  toDisplay(track: Track, options: { isLiked?: boolean; isPlaying?: boolean } = {}): DisplayTrack {
+    return {
+      ...track,
+      isLiked: options.isLiked,
+      isPlaying: options.isPlaying,
+      formattedDuration: track.duration_seconds ? formatDuration(track.duration_seconds) : undefined,
+      formattedDate: formatDate(track.created_at),
+      genreLabel: track.genre || 'Unknown',
+    };
+  },
+
+  /**
+   * Convert track to audio player track
+   */
+  toAudioPlayer(track: Track): AudioPlayerTrack | null {
+    if (!track.audio_url) return null;
+    
+    return {
+      id: track.id,
+      title: track.title,
+      audio_url: track.audio_url,
+      cover_url: track.cover_url || undefined,
+      duration: track.duration_seconds || undefined,
+    };
+  },
+};
+
+/**
+ * Helper: Format duration in seconds to MM:SS
+ */
+function formatDuration(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+/**
+ * Helper: Format date to human-readable string
+ */
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  
+  if (diffMins < 60) return `${diffMins} мин назад`;
+  if (diffMins < 1440) return `${Math.floor(diffMins / 60)} ч назад`;
+  if (diffMins < 10080) return `${Math.floor(diffMins / 1440)} дн назад`;
+  
+  return date.toLocaleDateString('ru-RU');
+}

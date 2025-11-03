@@ -1,8 +1,14 @@
 /**
+ * ⚠️ DEPRECATED: Use `useResponsiveGrid` instead
+ * 
+ * @deprecated This hook is deprecated and will be removed in v3.0.0
+ * @see src/hooks/useResponsiveGrid.ts
+ * 
  * Hook for calculating adaptive grid parameters
  * Dynamically adjusts columns, gaps, and card widths based on container width
  */
 import { useMemo } from 'react';
+import { BREAKPOINTS } from '@/config/breakpoints.config';
 
 const CARD_MIN_WIDTH = 220;
 const CARD_MAX_WIDTH = 280;
@@ -40,11 +46,11 @@ export const useAdaptiveGrid = (
     
     const columns = Math.max(MIN_COLUMNS, Math.min(MAX_COLUMNS, Math.max(minColumns, Math.min(idealColumns, maxColumns))));
     
-    // Dynamic gap based on container width
+    // Dynamic gap based on container width (using centralized breakpoints)
     let gap = 24; // default
-    if (containerWidth < 640) gap = 16;
-    else if (containerWidth < 1024) gap = 20;
-    else if (containerWidth < 1536) gap = 24;
+    if (containerWidth < BREAKPOINTS.sm) gap = 16;
+    else if (containerWidth < BREAKPOINTS.lg) gap = 20;
+    else if (containerWidth < BREAKPOINTS['2xl']) gap = 24;
     else gap = 32;
     
     // Calculate actual card width

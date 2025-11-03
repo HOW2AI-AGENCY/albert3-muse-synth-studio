@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "version": "1.0.0",
+  "description": "Protected files configuration - requires Team Lead approval for modifications",
+  "protected": {
+    "files": [
+      "src/config/breakpoints.config.ts",
+      "src/types/domain/track.types.ts",
+      "src/types/providers.ts",
+      "src/config/provider-models.ts",
+      "src/services/providers/types.ts",
+      "src/integrations/supabase/types.ts",
+      "src/hooks/useResponsiveGrid.ts",
+      "src/repositories/interfaces/TrackRepository.ts",
+      "docs/PROTECTED_FILES.md"
+    ],
+    "patterns": [
+      "supabase/functions/_shared/suno.ts",
+      "supabase/functions/_shared/mureka.ts",
+      "supabase/functions/_shared/generation-handler.ts",
+      "supabase/functions/generate-*/**",
+      "supabase/functions/suno-*/**",
+      "supabase/migrations/**"
+    ],
+    "rules": {
+      "requireApproval": true,
+      "requireTests": true,
+      "requireDocumentation": true,
+      "preventRename": true,
+      "preventDelete": true
+    }
+  },
+  "deprecated": {
+    "files": [
+      {
+        "path": "src/hooks/use-mobile.tsx",
+        "replacement": "src/hooks/useBreakpoints.ts",
+        "migration": "Use `const { isMobile } = useBreakpoints()` instead of `useIsMobile()`",
+        "deprecatedSince": "2025-11-03",
+        "removeAfter": "2025-12-01"
+      }
+    ]
+  },
+  "monitoring": {
+    "enabled": true,
+    "notifyOn": ["edit", "rename", "delete"],
+    "notifyChannels": ["console", "log-file"]
+  }
+}
