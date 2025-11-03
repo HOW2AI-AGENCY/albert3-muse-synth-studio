@@ -1,25 +1,32 @@
 import * as React from "react";
 import * as SliderPrimitive from "@radix-ui/react-slider";
 import { cn } from "@/lib/utils";
+import { InfoTooltip } from "./info-tooltip";
 
 interface CompactSliderProps extends React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root> {
   label?: string;
   showValue?: boolean;
+  tooltipContent?: React.ReactNode;
 }
 
 const CompactSlider = React.forwardRef<
   React.ElementRef<typeof SliderPrimitive.Root>,
   CompactSliderProps
->(({ className, label, showValue = true, ...props }, ref) => {
+>(({ className, label, showValue = true, tooltipContent, ...props }, ref) => {
   const value = props.value?.[0] ?? props.defaultValue?.[0] ?? 0;
 
   return (
     <div className="space-y-1.5">
       {label && (
         <div className="flex items-center justify-between">
-          <label className="text-xs font-medium text-muted-foreground">
-            {label}
-          </label>
+          <div className="flex items-center gap-1.5">
+            <label className="text-xs font-medium text-muted-foreground">
+              {label}
+            </label>
+            {tooltipContent && (
+              <InfoTooltip content={tooltipContent} />
+            )}
+          </div>
           {showValue && (
             <span className="text-xs font-semibold text-foreground tabular-nums">
               {value}
@@ -39,7 +46,7 @@ const CompactSlider = React.forwardRef<
           <SliderPrimitive.Range className="absolute h-full bg-primary" />
         </SliderPrimitive.Track>
         <SliderPrimitive.Thumb
-          className="block h-4 w-4 rounded-full border-2 border-primary bg-background shadow-sm ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 hover:scale-110"
+          className="block h-4 w-4 rounded-full border-2 border-primary bg-background shadow-sm ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 hover:scale-110 active:scale-105"
           aria-label={label || props['aria-label']}
         />
       </SliderPrimitive.Root>

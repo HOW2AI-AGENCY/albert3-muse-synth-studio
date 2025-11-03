@@ -161,10 +161,13 @@ export const CompactCustomForm = memo(({
         {/* Prompt with AI Boost & History */}
         <div className="space-y-1.5 p-2">
           <div className="flex items-center justify-between">
-            <PromptCharacterCounter 
-              currentLength={debouncedPrompt.length} 
-              maxLength={MAX_PROMPT_LENGTH}
-            />
+            <div className="flex items-center gap-1.5">
+              <PromptCharacterCounter 
+                currentLength={debouncedPrompt.length} 
+                maxLength={MAX_PROMPT_LENGTH}
+              />
+              <InfoTooltip content="Опишите стиль, жанр, настроение, темп и инструменты. Чем детальнее описание, тем точнее результат." />
+            </div>
             {onOpenHistory && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -324,6 +327,20 @@ export const CompactCustomForm = memo(({
             <div className="flex items-center gap-2 text-sm font-medium">
               <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
               <span>Lyrics</span>
+              <InfoTooltip 
+                content={
+                  <div className="space-y-1">
+                    <p className="font-semibold">Формат текста</p>
+                    <p className="text-xs">Используйте структурные теги:</p>
+                    <ul className="text-xs list-disc list-inside mt-1 space-y-0.5">
+                      <li>[Verse], [Verse 1], [Verse 2]</li>
+                      <li>[Chorus], [Pre-Chorus]</li>
+                      <li>[Bridge], [Outro], [Intro]</li>
+                    </ul>
+                    <p className="text-xs mt-2 text-muted-foreground">💡 Если оставить пустым, AI создаст текст автоматически</p>
+                  </div>
+                }
+              />
               {lyricsLineCount > 0 && (
                 <Badge variant="secondary" className="h-5 text-[10px] px-1.5">
                   {lyricsLineCount} lines
@@ -365,6 +382,20 @@ export const CompactCustomForm = memo(({
             <div className="flex items-center gap-2 text-sm font-medium">
               <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
               <span>Styles</span>
+              <InfoTooltip 
+                content={
+                  <div className="space-y-1">
+                    <p className="font-semibold">Теги стилей</p>
+                    <p className="text-xs">Укажите жанр, настроение, темп через запятую</p>
+                    <p className="text-xs mt-2">Примеры:</p>
+                    <ul className="text-xs list-disc list-inside space-y-0.5">
+                      <li>pop, energetic, uplifting, 120bpm</li>
+                      <li>ambient, calm, ethereal, slow</li>
+                      <li>rock, electric guitar, drums, powerful</li>
+                    </ul>
+                  </div>
+                }
+              />
               {tagsCount > 0 && (
                 <Badge variant="secondary" className="h-5 text-[10px] px-1.5">
                   {tagsCount}
@@ -443,6 +474,17 @@ export const CompactCustomForm = memo(({
                   max={100}
                   step={5}
                   disabled={isGenerating}
+                  tooltipContent={
+                    <div className="space-y-1">
+                      <p className="font-semibold text-sm">Audio Weight (0-100%)</p>
+                      <p className="text-xs text-muted-foreground">Насколько сильно сгенерированный трек будет похож на референсное аудио.</p>
+                      <ul className="text-xs list-disc list-inside mt-2 space-y-0.5 text-muted-foreground">
+                        <li><strong>0-30%:</strong> Лёгкое влияние стиля</li>
+                        <li><strong>30-70%:</strong> Сбалансированное влияние</li>
+                        <li><strong>70-100%:</strong> Максимальное копирование</li>
+                      </ul>
+                    </div>
+                  }
                 />
               )}
 
@@ -455,6 +497,18 @@ export const CompactCustomForm = memo(({
                 max={100}
                 step={5}
                 disabled={isGenerating}
+                tooltipContent={
+                  <div className="space-y-1">
+                    <p className="font-semibold text-sm">Style Weight (0-100%)</p>
+                    <p className="text-xs text-muted-foreground">Насколько AI следует указанным тегам стиля.</p>
+                    <ul className="text-xs list-disc list-inside mt-2 space-y-0.5 text-muted-foreground">
+                      <li><strong>0-30%:</strong> Свободная интерпретация</li>
+                      <li><strong>30-70%:</strong> Умеренное следование</li>
+                      <li><strong>70-100%:</strong> Строгое следование</li>
+                    </ul>
+                    <p className="text-xs mt-2 text-primary">💡 Рекомендуется: 60-80%</p>
+                  </div>
+                }
               />
 
               {/* Weirdness Constraint - с Info Tooltip */}
@@ -466,11 +520,39 @@ export const CompactCustomForm = memo(({
                 max={100}
                 step={5}
                 disabled={isGenerating}
+                tooltipContent={
+                  <div className="space-y-1">
+                    <p className="font-semibold text-sm">Weirdness Constraint</p>
+                    <p className="text-xs text-muted-foreground">Уровень экспериментальности в генерации.</p>
+                    <ul className="text-xs list-disc list-inside mt-2 space-y-0.5 text-muted-foreground">
+                      <li><strong>0-20%:</strong> Традиционное звучание</li>
+                      <li><strong>20-50%:</strong> Умеренные эксперименты</li>
+                      <li><strong>50-100%:</strong> Авангардный стиль</li>
+                    </ul>
+                    <p className="text-xs mt-2 text-destructive">⚠️ Высокие значения: неожиданные результаты</p>
+                  </div>
+                }
               />
 
               {/* Vocal Gender - только для Suno */}
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium">Тип вокала</Label>
+                <div className="flex items-center gap-1.5">
+                  <Label className="text-xs font-medium">Тип вокала</Label>
+                  <InfoTooltip 
+                    content={
+                      <div className="space-y-1">
+                        <p className="font-semibold">Vocal Gender</p>
+                        <p className="text-xs">Выберите предпочтительный тип вокала:</p>
+                        <ul className="text-xs list-disc list-inside mt-1 space-y-0.5">
+                          <li><strong>Любой:</strong> AI выберет автоматически</li>
+                          <li><strong>Мужской:</strong> Низкий/средний регистр</li>
+                          <li><strong>Женский:</strong> Высокий регистр</li>
+                        </ul>
+                        <p className="text-xs mt-2 text-muted-foreground">⚠️ Доступно только для Suno AI</p>
+                      </div>
+                    }
+                  />
+                </div>
                 <ToggleGroup 
                   type="single"
                   value={params.vocalGender} 
