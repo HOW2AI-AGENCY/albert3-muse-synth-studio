@@ -34,14 +34,18 @@ const inFlightRequests = new Map<string, Promise<TrackWithVersions[]>>();
 
 const getCacheKey = (trackId: string) => trackId;
 
-// ✅ FIX: Считаем ВСЕ версии с audio_url минус 1 (мастер-версия)
+// ✅ FIX: Считаем только дополнительные версии (с variant_index >= 1)
 const getAdditionalVersionsCount = (versions: TrackWithVersions[] | undefined): number => {
   if (!versions || versions.length === 0) {
     return 0;
   }
 
-  // Возвращаем количество версий минус 1 (без мастер-версии)
-  return Math.max(0, versions.filter(v => !!v.audio_url).length - 1);
+  // Считаем версии с variant_index >= 1 (дополнительные версии)
+  return versions.filter(v => 
+    v.audio_url && 
+    v.sourceVersionNumber !== null && 
+    v.sourceVersionNumber >= 1
+  ).length;
 };
 
 const notifyListeners = (trackId: string, versions: TrackWithVersions[]) => {
@@ -301,16 +305,17 @@ export function useTrackVersions(
   
   // ===== Вычисляемые свойства =====
 
-  /** Мастер-версия трека */
+  /** Мастер-версия трека (версия с is_preferred_variant: true) */
   const masterVersion = getMasterVersion(allVersions);
 
-  /** Основная версия трека (первая по порядку) */
+  /** Основная версия трека (первая по порядку, variant_index: 0) */
   const mainVersion = allVersions[0] ?? null;
 
-  /** Дополнительные версии (все кроме мастер-версии) */
-  const versions = masterVersion
-    ? allVersions.filter(v => v.id !== masterVersion.id)
-    : allVersions.slice(1);
+  /** 
+   * ✅ FIX: Дополнительные версии = все версии кроме основной (variant_index: 0)
+   * НЕ исключаем masterVersion, потому что он может быть дополнительной версией!
+   */
+  const versions = allVersions.filter(v => v.sourceVersionNumber !== 0);
 
   const versionCount = versions.length;
 
@@ -319,7 +324,7 @@ export function useTrackVersions(
   /** Есть ли несколько версий (хотя бы 2) */
   const hasVersions = allVersions.length > 1;
 
-  /** Количество дополнительных версий (без учёта мастер-версии) */
+  /** Количество дополнительных версий (без учёта основной версии с variant_index: 0) */
   const additionalVersionCount = versionCount;
 
   /**
