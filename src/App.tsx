@@ -18,8 +18,12 @@ import { trackPerformanceMetric } from "@/utils/sentry-enhanced";
 
 // ✅ Lazy load heavy components
 const LazyGlobalAudioPlayer = lazy(() => import("./components/player/GlobalAudioPlayer"));
-const LazyPerformanceMonitorWidget = lazy(() => import("@/components/dev/PerformanceMonitorWidget").then(m => ({ default: m.PerformanceMonitorWidget })));
-const LazySentryFeedbackButton = lazy(() => import("@/components/SentryFeedbackButton").then(m => ({ default: m.SentryFeedbackButton })));
+const LazyPerformanceMonitorWidget = lazy(() => 
+  import("@/components/dev/PerformanceMonitorWidget").then(m => ({ default: m.PerformanceMonitorWidget }))
+);
+const LazySentryFeedbackButton = lazy(() => 
+  import("@/components/SentryFeedbackButton").then(m => ({ default: m.SentryFeedbackButton }))
+);
 
 // Оптимизированная конфигурация React Query
 const queryClient = new QueryClient({

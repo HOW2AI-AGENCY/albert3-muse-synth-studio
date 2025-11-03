@@ -12,17 +12,17 @@ export const LazyAnalytics = lazy(() => import('@/pages/workspace/Analytics'));
 export const LazySettings = lazy(() => import('@/pages/workspace/Settings'));
 
 // ===== HEAVY COMPONENTS =====
+// DetailPanel не экспортируется как default, поэтому используется .then()
 export const LazyDetailPanel = lazy(() => 
   import('@/features/tracks/ui/DetailPanel').then(m => ({ default: m.DetailPanel }))
 );
 
+// MusicGeneratorV2 экспортируется как именованный экспорт
 export const LazyMusicGeneratorV2 = lazy(() => 
   import('@/components/MusicGeneratorV2').then(m => ({ default: m.MusicGeneratorV2 }))
 );
 
-export const LazyGlobalAudioPlayer = lazy(() => 
-  import('@/components/player/GlobalAudioPlayer')
-);
+export const LazyGlobalAudioPlayer = lazy(() => import('@/components/player/GlobalAudioPlayer'));
 
 // ===== PRELOADING FUNCTIONS =====
 export const preloadDetailPanel = () => import('@/features/tracks/ui/DetailPanel');
