@@ -1,4 +1,4 @@
-import { useState, useEffect, Suspense, lazy } from "react";
+import { useState, Suspense, lazy } from "react";
 import { motion } from "framer-motion";
 import { MusicGeneratorV2 } from "@/components/MusicGeneratorV2";
 import { TracksList } from "@/components/TracksList";
@@ -19,23 +19,32 @@ import {
 import { useTracks } from "@/hooks/useTracks";
 import { useTrackSync } from "@/hooks/useTrackSync";
 import { useTrackRecovery } from "@/hooks/useTrackRecovery";
-import { supabase } from "@/integrations/supabase/client";
 import { normalizeTrack } from "@/utils/trackNormalizer";
 import type { Track } from "@/services/api.service";
 import { TrackDialogsManager } from "@/components/tracks/TrackDialogsManager";
 import { useMusicProjects } from "@/hooks/useMusicProjects";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Generate = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
-  const { tracks, isLoading, deleteTrack, refreshTracks } = useTracks(undefined, { 
+  const { userId } = useAuth();
+  const {
+    tracks,
+    isLoading,
+    deleteTrack,
+    refreshTracks,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useTracks(undefined, {
     projectId: selectedProjectId,
-    excludeDraftTracks: true // ✅ ИСКЛЮЧАЕМ draft треки на главном экране генерации
+    excludeDraftTracks: true,
+    pageSize: 25,
   });
   const { projects } = useMusicProjects();
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showGenerator, setShowGenerator] = useState(false);
-  const [userId, setUserId] = useState<string | undefined>();
 
   // Dialog states
   const [separateStemsOpen, setSeparateStemsOpen] = useState(false);
@@ -49,14 +58,6 @@ const Generate = () => {
 
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1023px)");
-
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUserId(user?.id);
-    };
-    getUser();
-  }, []);
 
   useTrackSync(userId, {
     onTrackCompleted: refreshTracks,
@@ -164,6 +165,17 @@ const Generate = () => {
                 onSelect={setSelectedTrack}
                 isDetailPanelOpen={!!selectedTrack}
               />
+              {hasNextPage && (
+                <div className="mt-4 flex justify-center">
+                  <Button
+                    variant="outline"
+                    onClick={() => fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                  >
+                    {isFetchingNextPage ? "Загрузка..." : "Загрузить ещё"}
+                  </Button>
+                </div>
+              )}
             </div>
           </ResizablePanel>
 
@@ -251,6 +263,17 @@ const Generate = () => {
                 onCreatePersona={handleCreatePersona}
                 onSelect={setSelectedTrack}
               />
+              {hasNextPage && (
+                <div className="mt-4 flex justify-center">
+                  <Button
+                    variant="outline"
+                    onClick={() => fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                  >
+                    {isFetchingNextPage ? "Загрузка..." : "Загрузить ещё"}
+                  </Button>
+                </div>
+              )}
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
@@ -320,6 +343,17 @@ const Generate = () => {
           onCreatePersona={handleCreatePersona}
           onSelect={setSelectedTrack}
         />
+        {hasNextPage && (
+          <div className="mt-4 flex justify-center">
+            <Button
+              variant="outline"
+              onClick={() => fetchNextPage()}
+              disabled={isFetchingNextPage}
+            >
+              {isFetchingNextPage ? "Загрузка..." : "Загрузить ещё"}
+            </Button>
+          </div>
+        )}
       </div>
 
       <TrackDialogsManager

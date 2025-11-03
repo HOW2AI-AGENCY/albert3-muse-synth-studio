@@ -1,81 +1,79 @@
 /**
- * Custom hook for managing user tracks
- * Handles data fetching and track operations with caching support
+ * Custom hook for managing user tracks with pagination support
+ * Integrates TanStack Query, Supabase realtime, and IndexedDB caching service
  */
 
-import { useCallback, useEffect, useState, useRef } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { ApiService, Track, mapTrackRowToTrack } from "@/services/api.service";
-import { supabase } from "@/integrations/supabase/client";
-import { trackCacheIDB, CachedTrack } from "@/features/tracks";
-import type { Database } from "@/integrations/supabase/types";
-import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
-import { logger, logInfo, logError, logWarn } from "@/utils/logger";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
+import { ApiService, type Track, mapTrackRowToTrack } from '@/services/api.service';
+import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { logger, logError, logInfo } from '@/utils/logger';
+import { useAuth } from '@/contexts/AuthContext';
+import { trackCacheService } from '@/services/track-cache.service';
 
-type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
+type TrackRow = Database['public']['Tables']['tracks']['Row'];
 
 interface UseTracksOptions {
   pollingEnabled?: boolean;
   pollingInitialDelay?: number;
   pollingMaxDelay?: number;
   projectId?: string;
-  excludeDraftTracks?: boolean; // ✅ НОВОЕ: Исключить draft треки из списка
+  excludeDraftTracks?: boolean;
+  pageSize?: number;
 }
 
-export const useTracks = (refreshTrigger?: number, options?: UseTracksOptions) => {
-  const projectId = options?.projectId;
-  const [tracks, setTracks] = useState<Track[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface TracksPage {
+  cursor: number;
+  tracks: Track[];
+  hasMore: boolean;
+  totalCount: number | null;
+}
+
+const DEFAULT_PAGE_SIZE = 20;
+const PROCESSING_TRACK_WINDOW_MS = 2 * 60 * 1000; // 2 minutes
+const STUCK_TRACK_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
+const STUCK_TRACK_CHECK_INTERVAL_MS = 2 * 60 * 1000; // 2 minutes
+
+export const useTracks = (refreshTrigger?: number, options: UseTracksOptions = {}) => {
+  const projectId = options.projectId;
+  const excludeDraftTracks = options.excludeDraftTracks ?? false;
+  const pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE;
+  const pollingEnabled = options.pollingEnabled !== false;
+
   const { toast } = useToast();
-  const lastUserIdRef = useRef<string | null>(null);
-  const hasTracksRef = useRef(false);
+  const queryClient = useQueryClient();
+  const { userId, isLoading: isAuthLoading } = useAuth();
+  const [isPolling, setIsPolling] = useState(false);
 
-  const loadTracks = useCallback(async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
+  const queryKey = useMemo(
+    () => ['tracks', userId ?? 'guest', projectId ?? null, excludeDraftTracks, pageSize],
+    [userId, projectId, excludeDraftTracks, pageSize]
+  );
 
-      // ✅ FIX: Всегда очищаем треки при отсутствии пользователя
-      if (!user) {
-        logInfo('No user found, clearing tracks and cache', 'useTracks');
-        setTracks([]);
-        hasTracksRef.current = false;
-        lastUserIdRef.current = null;
-        
-        // ✅ FIX: Очищаем IndexedDB для предотвращения утечки данных
-        try {
-          await trackCacheIDB.clearAll();
-        } catch (cacheError) {
-          logWarn('Failed to clear track cache', 'useTracks', { error: cacheError });
-        }
-        
-        return;
+  useEffect(() => {
+    void trackCacheService.setActiveUser(userId ?? null);
+
+    if (!userId) {
+      queryClient.removeQueries({ queryKey });
+    }
+  }, [userId, queryClient, queryKey]);
+
+  const fetchTracksPage = useCallback(
+    async ({ pageParam = 0, signal }: { pageParam?: number; signal?: AbortSignal }) => {
+      if (!userId) {
+        return { cursor: pageParam, tracks: [], hasMore: false, totalCount: 0 } satisfies TracksPage;
       }
 
-      // ✅ FIX: Проверяем смену пользователя и очищаем старые данные
-      if (lastUserIdRef.current && lastUserIdRef.current !== user.id) {
-        logInfo('User changed, clearing previous user data', 'useTracks', {
-          oldUserId: lastUserIdRef.current,
-          newUserId: user.id,
-        });
-        setTracks([]);
-        hasTracksRef.current = false;
-        
-        // Очищаем кэш предыдущего пользователя
-        try {
-          await trackCacheIDB.clearAll();
-        } catch (cacheError) {
-          logWarn('Failed to clear track cache on user switch', 'useTracks', { error: cacheError });
-        }
-      }
+      const from = pageParam * pageSize;
+      const to = from + pageSize - 1;
 
-      lastUserIdRef.current = user.id;
-
-      // ✅ ОПТИМИЗАЦИЯ: Загружаем треки с JOINами вместо N+1 запросов
-      logInfo('Loading tracks with optimized query', 'useTracks', { userId: user.id, projectId });
-      
-      let query = supabase
+      let builder = supabase
         .from('tracks')
-        .select(`
+        .select(
+          `
           *,
           track_versions!track_versions_parent_track_id_fkey (
             id,
@@ -97,236 +95,283 @@ export const useTracks = (refreshTrigger?: number, options?: UseTracksOptions) =
             full_name,
             avatar_url
           )
-        `)
-        .eq('user_id', user.id);
+        `,
+          { count: 'exact' }
+        )
+        .eq('user_id', userId);
 
-      // Фильтр по проекту (если передан, показываем только треки этого проекта)
       if (projectId) {
-        query = query.eq('project_id', projectId);
+        builder = builder.eq('project_id', projectId);
       }
 
-      // ✅ НОВОЕ: Фильтр для исключения draft треков (если excludeDraftTracks === true)
-      if (options?.excludeDraftTracks) {
-        query = query.neq('status', 'draft');
+      if (excludeDraftTracks) {
+        builder = builder.neq('status', 'draft');
       }
 
-      const { data: tracksData, error } = await query.order('created_at', { ascending: false });
+      builder = builder.order('created_at', { ascending: false }).range(from, to);
+
+      if (signal) {
+        builder = builder.abortSignal(signal);
+      }
+
+      const { data, error, count } = await builder;
 
       if (error) {
-        logError('Failed to load tracks', error as Error, 'useTracks', { userId: user.id });
-        throw error;
+        logError('Failed to load tracks', error as Error, 'useTracks', { userId });
+        throw error instanceof Error ? error : new Error('Failed to load tracks');
       }
 
-      // Преобразуем данные в Track[] формат
-      const userTracks: Track[] = (tracksData || []).map(mapTrackRowToTrack);
-      
-      // Кэшируем загруженные треки в IndexedDB
-      const tracksToCache: Omit<CachedTrack, 'cached_at'>[] = userTracks
-        .filter(track => track.audio_url)
-        .map(track => ({
-          id: track.id,
-          title: track.title,
-          artist: 'AI Generated',
-          audio_url: track.audio_url!,
-          image_url: track.cover_url || undefined,
-          duration: track.duration_seconds || undefined,
-          genre: track.style_tags?.join(', ') || undefined,
-          created_at: track.created_at,
-        }));
+      const tracks = (data || []).map(mapTrackRowToTrack);
+      await trackCacheService.cacheTracks(userId, tracks);
 
-      if (tracksToCache.length > 0) {
-        await trackCacheIDB.setTracks(tracksToCache);
-      }
-      // Обновляем список, но не затираем ранее загруженные данные пустым ответом
-      if (userTracks.length === 0 && hasTracksRef.current) {
-        logWarn('Empty track list from API; keeping previous tracks', 'useTracks', { userId: user.id });
-      } else {
-        setTracks(userTracks);
-        hasTracksRef.current = userTracks.length > 0;
-      }
-      
-      logInfo('Tracks loaded successfully', 'useTracks', {
-        count: userTracks.length,
-        userId: user.id,
+      const totalCount = typeof count === 'number' ? count : null;
+      const hasMore = totalCount !== null ? to + 1 < totalCount : tracks.length === pageSize;
+
+      logInfo('Tracks page loaded', 'useTracks', {
+        page: pageParam,
+        count: tracks.length,
+        hasMore,
       });
-    } catch (error) {
-      logError("Error loading tracks", error as Error, 'useTracks');
-      toast({
-        title: "Ошибка загрузки",
-        description: "Не удалось загрузить треки",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+
+      return {
+        cursor: pageParam,
+        tracks,
+        hasMore,
+        totalCount,
+      } satisfies TracksPage;
+    },
+    [excludeDraftTracks, pageSize, projectId, userId]
+  );
+
+  const {
+    data,
+    error,
+    isLoading: isQueryLoading,
+    isFetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = useInfiniteQuery<TracksPage, Error>({
+    queryKey,
+    queryFn: ({ pageParam, signal }) => fetchTracksPage({ pageParam, signal }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.cursor + 1 : undefined),
+    enabled: Boolean(userId),
+    staleTime: 30_000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (typeof refreshTrigger === 'number') {
+      void refetch();
     }
-  }, [toast, projectId]);
-
-  const deleteTrack = async (trackId: string) => {
-    try {
-      await ApiService.deleteTrack(trackId);
-      setTracks((currentTracks) => currentTracks.filter((t) => t.id !== trackId));
-
-      // Удаляем трек из IndexedDB кэша
-      await trackCacheIDB.removeTrack(trackId);
-      
-      toast({
-        title: "Трек удалён",
-        description: "Ваш трек был успешно удалён",
-      });
-    } catch (error) {
-      logError("Error deleting track", error as Error, 'useTracks', { trackId });
-      toast({
-        title: "Ошибка удаления",
-        description: "Не удалось удалить трек",
-        variant: "destructive",
-      });
-    }
-  };
+  }, [refreshTrigger, refetch]);
 
   useEffect(() => {
-    loadTracks();
-  }, [loadTracks, refreshTrigger, projectId]);
+    if (!error) return;
 
-  // Realtime updates: reflect INSERT/UPDATE/DELETE immediately
-  useEffect(() => {
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    let isSubscribed = false;
+    toast({
+      title: 'Ошибка загрузки',
+      description: error.message || 'Не удалось загрузить треки',
+      variant: 'destructive',
+    });
+  }, [error, toast]);
 
-    const handlePayload = (payload: RealtimePostgresChangesPayload<TrackRow>) => {
-      // ✅ FIX: Проверяем, что подписка активна перед обновлением
-      if (!isSubscribed) return;
-
-      if (payload.eventType === 'INSERT' && payload.new) {
-        const newTrack = mapTrackRowToTrack(payload.new);
-        setTracks((prev) => {
-          // ✅ FIX: Проверяем дубликаты перед добавлением
-          if (prev.some(t => t.id === newTrack.id)) return prev;
-          return [newTrack, ...prev];
-        });
-      } else if (payload.eventType === 'UPDATE' && payload.new) {
-        const updated = mapTrackRowToTrack(payload.new);
-        setTracks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
-      } else if (payload.eventType === 'DELETE' && payload.old) {
-        const removedId = payload.old.id;
-        setTracks((prev) => prev.filter((t) => t.id !== removedId));
-      }
-    };
-
-    const setup = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // ✅ FIX: Уникальный канал с timestamp для предотвращения конфликтов
-      const channelName = `tracks-user-${user.id}-${Date.now()}`;
-      
-      channel = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'tracks', filter: `user_id=eq.${user.id}` },
-          handlePayload
-        )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            isSubscribed = true;
-            logInfo('Realtime subscription active', 'useTracks', { channelName });
-          }
-        });
-    };
-
-    setup();
-
-    return () => {
-      isSubscribed = false;
-      if (channel) {
-        supabase.removeChannel(channel).then(() => {
-          logInfo('Realtime channel removed', 'useTracks');
-        });
-      }
-    };
-  }, []); // ✅ FIX: Убираем зависимости для предотвращения переподписок
-
-  const [isPolling, setIsPolling] = useState(false);
-
-  // Fallback polling while there are processing tracks
-  useEffect(() => {
-    const shouldPoll = tracks.some(track =>
-      track.status === 'processing' ||
-      track.status === 'pending' ||
-      (track.status === 'completed' && !track.audio_url)
-    );
-    setIsPolling(shouldPoll);
-  }, [tracks]);
+  const tracks = useMemo(
+    () => data?.pages.flatMap((page) => page.tracks) ?? [],
+    [data]
+  );
 
   useEffect(() => {
-    if (!isPolling) {
+    if (!pollingEnabled) {
+      setIsPolling(false);
       return;
     }
 
-    // ✅ Adaptive polling: быстрее если есть новые треки (< 2 мин)
+    const shouldPoll = tracks.some(
+      (track) =>
+        track.status === 'processing' ||
+        track.status === 'pending' ||
+        (track.status === 'completed' && !track.audio_url)
+    );
+
+    setIsPolling(shouldPoll);
+  }, [tracks, pollingEnabled]);
+
+  useEffect(() => {
+    if (!pollingEnabled || !isPolling) {
+      return;
+    }
+
     const getPollingInterval = () => {
-      const newTracks = tracks.filter(t => {
-        const age = Date.now() - new Date(t.created_at).getTime();
-        return (t.status === 'processing' || t.status === 'pending') && age < 2 * 60 * 1000; // < 2 minutes
+      const recentProcessingTracks = tracks.filter((track) => {
+        const age = Date.now() - new Date(track.created_at).getTime();
+        return (
+          (track.status === 'processing' || track.status === 'pending') &&
+          age < PROCESSING_TRACK_WINDOW_MS
+        );
       });
-      
-      return newTracks.length > 0 ? 3000 : 5000; // 3s for new, 5s for old
+
+      return recentProcessingTracks.length > 0 ? 3000 : 5000;
     };
 
     const pollingInterval = getPollingInterval();
-    
+
     logInfo('Starting polling for track updates', 'useTracks', {
-      processingCount: tracks.filter(t => t.status === 'processing').length,
+      processingCount: tracks.filter((t) => t.status === 'processing').length,
       pollingInterval,
     });
-    
+
     const interval = setInterval(() => {
       logger.debug('Polling for track updates', 'useTracks');
-      loadTracks();
+      void refetch();
     }, pollingInterval);
 
     return () => {
       logInfo('Stopping polling', 'useTracks');
       clearInterval(interval);
     };
-  }, [isPolling, tracks, loadTracks]);
+  }, [isPolling, tracks, pollingEnabled, refetch]);
 
-  // ✅ Auto-check stuck tracks every 2 minutes
   useEffect(() => {
-    if (!tracks.some(t => t.status === 'processing')) return;
-    
+    if (!tracks.some((t) => t.status === 'processing')) return;
+
     const checkStuckInterval = setInterval(async () => {
-      const processingTracks = tracks.filter(t => t.status === 'processing');
-      const stuckTracks = processingTracks.filter(t => {
+      const processingTracks = tracks.filter((t) => t.status === 'processing');
+      const stuckTracks = processingTracks.filter((t) => {
         const age = Date.now() - new Date(t.created_at).getTime();
-        return age > 10 * 60 * 1000; // older than 10 minutes
+        return age > STUCK_TRACK_THRESHOLD_MS;
       });
-      
-      if (stuckTracks.length > 0) {
-        logInfo('Auto-checking stuck tracks', 'useTracks', { count: stuckTracks.length });
-        
-        try {
-          await supabase.functions.invoke('check-stuck-tracks', {
-            body: { trackIds: stuckTracks.map(t => t.id) }
-          });
-          
-          // Reload tracks after sync
-          setTimeout(() => loadTracks(), 3000);
-        } catch (error) {
-          logError('Failed to check stuck tracks', error as Error, 'useTracks', {
-            trackIds: stuckTracks.map(t => t.id)
-          });
-        }
+
+      if (stuckTracks.length === 0) return;
+
+      logInfo('Auto-checking stuck tracks', 'useTracks', { count: stuckTracks.length });
+
+      try {
+        await supabase.functions.invoke('check-stuck-tracks', {
+          body: { trackIds: stuckTracks.map((t) => t.id) },
+        });
+
+        setTimeout(() => {
+          void refetch();
+        }, 3000);
+      } catch (invokeError) {
+        logError('Failed to check stuck tracks', invokeError as Error, 'useTracks', {
+          trackIds: stuckTracks.map((t) => t.id),
+        });
       }
-    }, 2 * 60 * 1000); // every 2 minutes
-    
+    }, STUCK_TRACK_CHECK_INTERVAL_MS);
+
     return () => clearInterval(checkStuckInterval);
-  }, [tracks, loadTracks]);
+  }, [tracks, refetch]);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    let isSubscribed = true;
+
+    const channelName = `tracks-user-${userId}-${Date.now()}`;
+
+    const handlePayload = (payload: RealtimePostgresChangesPayload<TrackRow>) => {
+      if (!isSubscribed) return;
+
+      const candidate = (payload.new as TrackRow | null) ?? (payload.old as TrackRow | null);
+
+      if (projectId && candidate?.project_id !== projectId) {
+        return;
+      }
+
+      if (excludeDraftTracks && payload.new && (payload.new as TrackRow).status === 'draft') {
+        return;
+      }
+
+      queryClient.invalidateQueries({ queryKey });
+    };
+
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tracks', filter: `user_id=eq.${userId}` },
+        handlePayload
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          logInfo('Realtime subscription active', 'useTracks', { channelName });
+        }
+      });
+
+    return () => {
+      isSubscribed = false;
+      supabase.removeChannel(channel).then(() => {
+        logInfo('Realtime channel removed', 'useTracks');
+      });
+    };
+  }, [userId, projectId, excludeDraftTracks, queryClient, queryKey]);
+
+  const deleteTrack = useCallback(
+    async (trackId: string) => {
+      try {
+        await ApiService.deleteTrack(trackId);
+
+        queryClient.setQueryData<InfiniteData<TracksPage>>(queryKey, (old) => {
+          if (!old) return old;
+
+          const nextPages = old.pages.map((page) => ({
+            ...page,
+            tracks: page.tracks.filter((track) => track.id !== trackId),
+          }));
+
+          return { ...old, pages: nextPages };
+        });
+
+        await trackCacheService.removeTrack(trackId);
+
+        toast({
+          title: 'Трек удалён',
+          description: 'Ваш трек был успешно удалён',
+        });
+      } catch (deleteError) {
+        logError('Error deleting track', deleteError as Error, 'useTracks', { trackId });
+        toast({
+          title: 'Ошибка удаления',
+          description: 'Не удалось удалить трек',
+          variant: 'destructive',
+        });
+        throw deleteError;
+      }
+    },
+    [queryClient, queryKey, toast]
+  );
+
+  const refreshTracks = useCallback(() => refetch({ cancelRefetch: false }), [refetch]);
+
+  const totalCount = useMemo(() => {
+    if (!data?.pages?.length) {
+      return null;
+    }
+
+    for (let i = data.pages.length - 1; i >= 0; i--) {
+      const page = data.pages[i];
+      if (page.totalCount !== null) {
+        return page.totalCount;
+      }
+    }
+
+    return null;
+  }, [data]);
 
   return {
     tracks,
-    isLoading,
+    isLoading: isAuthLoading || isQueryLoading,
+    isFetching,
+    isFetchingNextPage,
+    hasNextPage: Boolean(hasNextPage),
+    fetchNextPage,
     deleteTrack,
-    refreshTracks: loadTracks,
+    refreshTracks,
+    totalCount,
+    error,
   };
 };
