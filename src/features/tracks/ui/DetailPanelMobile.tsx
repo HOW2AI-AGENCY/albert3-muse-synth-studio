@@ -96,25 +96,40 @@ export const DetailPanelMobile = ({ track, onClose, onDelete }: DetailPanelMobil
   };
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="p-3 space-y-3">
-        {/* Compact header */}
-        <div className="flex items-start gap-3">
-          <LazyImage 
-            src={track.cover_url || '/placeholder.svg'}
-            alt={track.title}
-            className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
-          />
-          <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-bold truncate">{track.title}</h2>
-            <p className="text-xs text-muted-foreground">
-              {track.duration_seconds ? formatDuration(track.duration_seconds) : '—'}
-            </p>
-            {track.genre && (
-              <Badge variant="secondary" className="text-xs mt-1">
-                {track.genre}
-              </Badge>
+    <div className="flex-1 overflow-y-auto bg-gradient-to-b from-background to-background/95">
+      <div className="p-4 space-y-4">
+        {/* Enhanced Compact Header */}
+        <div className="flex items-start gap-3 bg-card/50 backdrop-blur-sm border border-border/40 rounded-xl p-3 shadow-md">
+          <div className="relative flex-shrink-0">
+            <LazyImage 
+              src={track.cover_url || '/placeholder.svg'}
+              alt={track.title}
+              className="w-20 h-20 rounded-lg object-cover shadow-lg border-2 border-border/60"
+            />
+            {track.status === "completed" && (
+              <div className="absolute -top-1 -right-1 bg-success rounded-full p-1">
+                <span className="text-[10px]">✅</span>
+              </div>
             )}
+          </div>
+          
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <h2 className="text-lg font-bold truncate bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+              {track.title}
+            </h2>
+            <div className="flex items-center gap-2 flex-wrap">
+              {track.duration_seconds && (
+                <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                  <span>⏱️</span>
+                  {formatDuration(track.duration_seconds)}
+                </span>
+              )}
+              {track.genre && (
+                <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-semibold">
+                  {track.genre}
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
         

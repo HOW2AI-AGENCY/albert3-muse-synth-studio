@@ -338,25 +338,32 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete, variant = 'des
       role="complementary"
       aria-label="Панель деталей трека"
     >
-      {/* Header */}
-      <div className="app-panel__header sticky top-0 z-10 bg-background/95 backdrop-blur shrink-0">
+      {/* Header - Enhanced Design */}
+      <div className="app-panel__header sticky top-0 z-10 bg-gradient-to-r from-background via-background to-background/95 backdrop-blur-md border-b border-border/40 shadow-sm shrink-0">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <Badge
             variant={track.status === "completed" ? "default" : "secondary"}
-            className="app-chip text-[11px] shrink-0"
+            className="app-chip text-[11px] shrink-0 font-semibold shadow-sm"
           >
             {track.status === "completed" ? "✅ Готов" : "⏳ В процессе"}
           </Badge>
-          <h3 className="text-base font-semibold truncate" title={track.title}>
-            {track.title}
-          </h3>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-base font-bold truncate bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text" title={track.title}>
+              {track.title}
+            </h3>
+            {track.style_tags && track.style_tags.length > 0 && (
+              <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                {track.style_tags.slice(0, 2).join(' • ')}
+              </p>
+            )}
+          </div>
         </div>
         {onClose && (
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={onClose}
-            className="shrink-0"
+            className="shrink-0 hover:bg-destructive/10 hover:text-destructive transition-colors"
             aria-label="Закрыть панель деталей"
           >
             <X className="h-5 w-5" />
@@ -364,71 +371,79 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete, variant = 'des
         )}
       </div>
 
-      {/* Tabs Navigation - Sticky with animated indicator */}
+      {/* Tabs Navigation - Enhanced Sticky Design */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border/30 mx-4 mt-2 shrink-0">
-          <TabsList className="relative grid w-full grid-cols-4 h-11 bg-transparent">
+        <div className="sticky top-0 z-20 bg-gradient-to-b from-background via-background/98 to-background/95 backdrop-blur-lg border-b border-border/40 mx-4 mt-2 shrink-0 shadow-sm">
+          <TabsList className="relative grid w-full grid-cols-4 h-12 bg-muted/30 rounded-lg p-1">
             <TabsTrigger 
               value="overview" 
               className={cn(
-                "gap-1.5 min-h-[44px] relative transition-colors",
-                "flex flex-col sm:flex-row items-center justify-center",
-                activeTab === "overview" && "text-primary"
+                "gap-1.5 min-h-[44px] relative transition-all duration-200",
+                "flex flex-col sm:flex-row items-center justify-center rounded-md",
+                "data-[state=active]:bg-background data-[state=active]:shadow-md",
+                activeTab === "overview" && "text-primary font-semibold"
               )}
             >
               <Info className="w-4 h-4 shrink-0" />
-              <span className="text-[10px] sm:text-xs">Обзор</span>
+              <span className="text-[10px] sm:text-xs font-medium">Обзор</span>
             </TabsTrigger>
             <TabsTrigger 
               value="versions" 
               className={cn(
-                "gap-1.5 min-h-[44px] relative transition-colors",
-                "flex flex-col sm:flex-row items-center justify-center",
-                activeTab === "versions" && "text-primary"
+                "gap-1.5 min-h-[44px] relative transition-all duration-200",
+                "flex flex-col sm:flex-row items-center justify-center rounded-md",
+                "data-[state=active]:bg-background data-[state=active]:shadow-md",
+                activeTab === "versions" && "text-primary font-semibold"
               )}
             >
               <GitBranch className="w-4 h-4 shrink-0" />
-              <span className="text-[10px] sm:text-xs">Версии</span>
+              <span className="text-[10px] sm:text-xs font-medium">Версии</span>
               {state.data.versions.length > 1 && (
-                <Badge className="absolute -top-1 -right-1 h-4 px-1 text-[9px]">{state.data.versions.length}</Badge>
+                <Badge className="absolute -top-1 -right-1 h-5 min-w-5 px-1 text-[9px] font-bold shadow-sm">
+                  {state.data.versions.length}
+                </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger 
               value="stems" 
               className={cn(
-                "gap-1.5 min-h-[44px] relative transition-colors",
-                "flex flex-col sm:flex-row items-center justify-center",
-                activeTab === "stems" && "text-primary"
+                "gap-1.5 min-h-[44px] relative transition-all duration-200",
+                "flex flex-col sm:flex-row items-center justify-center rounded-md",
+                "data-[state=active]:bg-background data-[state=active]:shadow-md",
+                activeTab === "stems" && "text-primary font-semibold"
               )}
             >
               <Music4 className="w-4 h-4 shrink-0" />
-              <span className="text-[10px] sm:text-xs">Стемы</span>
+              <span className="text-[10px] sm:text-xs font-medium">Стемы</span>
               {state.data.stems.length > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-4 px-1 text-[9px]">{state.data.stems.length}</Badge>
+                <Badge className="absolute -top-1 -right-1 h-5 min-w-5 px-1 text-[9px] font-bold shadow-sm">
+                  {state.data.stems.length}
+                </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger 
               value="details" 
               className={cn(
-                "gap-1.5 min-h-[44px] relative transition-colors",
-                "flex flex-col sm:flex-row items-center justify-center",
-                activeTab === "details" && "text-primary"
+                "gap-1.5 min-h-[44px] relative transition-all duration-200",
+                "flex flex-col sm:flex-row items-center justify-center rounded-md",
+                "data-[state=active]:bg-background data-[state=active]:shadow-md",
+                activeTab === "details" && "text-primary font-semibold"
               )}
             >
               <Info className="w-4 h-4 shrink-0" />
-              <span className="text-[10px] sm:text-xs">Детали</span>
+              <span className="text-[10px] sm:text-xs font-medium">Детали</span>
             </TabsTrigger>
             
-            {/* Animated indicator */}
+            {/* Animated glow indicator */}
             <div
               className={cn(
-                "absolute bottom-0 h-0.5 bg-primary transition-all duration-300 ease-out",
-                activeTab === "overview" && "left-0 w-1/4",
-                activeTab === "versions" && "left-1/4 w-1/4",
-                activeTab === "stems" && "left-1/2 w-1/4",
-                activeTab === "details" && "left-3/4 w-1/4"
+                "absolute bottom-0 h-1 bg-gradient-to-r from-primary/50 via-primary to-primary/50 transition-all duration-300 ease-out rounded-full",
+                activeTab === "overview" && "left-1 w-[calc(25%-0.5rem)]",
+                activeTab === "versions" && "left-[calc(25%+0.125rem)] w-[calc(25%-0.5rem)]",
+                activeTab === "stems" && "left-[calc(50%+0.125rem)] w-[calc(25%-0.5rem)]",
+                activeTab === "details" && "left-[calc(75%+0.125rem)] w-[calc(25%-0.5rem)]"
               )}
-              style={{ boxShadow: 'var(--shadow-glow-primary)' }}
+              style={{ boxShadow: '0 0 8px var(--primary), 0 0 4px var(--primary)' }}
             />
           </TabsList>
         </div>

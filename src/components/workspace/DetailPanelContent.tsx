@@ -475,25 +475,36 @@ export const DetailPanelContent = ({
     return undefined;
   };
   const artist = extractArtist(track.metadata) ?? "Неизвестный артист";
-  return (<>
-  <CompactTrackHero track={track} activeVersion={activeVersion ? {
-      variant_index: activeVersion.variant_index,
-      created_at: activeVersion.created_at,
-      duration: activeVersion.duration
-    } : null} artist={artist} isLiked={isLiked} likeCount={likeCount} onLike={toggleLike} onDownload={onDownload} onShare={onShare} onOpenPlayer={() => {
-      playTrack({
-        id: track.id,
-        title: track.title,
-        audio_url: track.audio_url || '',
-        cover_url: track.cover_url,
-        duration: track.duration || track.duration_seconds,
-        status: track.status as "completed" | "failed" | "pending" | "processing" || "completed",
-        style_tags: track.style_tags || [],
-        lyrics: track.lyrics
-      });
-    }} />
+  return (
+    <div className="space-y-4">
+      <CompactTrackHero 
+        track={track} 
+        activeVersion={activeVersion ? {
+          variant_index: activeVersion.variant_index,
+          created_at: activeVersion.created_at,
+          duration: activeVersion.duration
+        } : null} 
+        artist={artist} 
+        isLiked={isLiked} 
+        likeCount={likeCount} 
+        onLike={toggleLike} 
+        onDownload={onDownload} 
+        onShare={onShare} 
+        onOpenPlayer={() => {
+          playTrack({
+            id: track.id,
+            title: track.title,
+            audio_url: track.audio_url || '',
+            cover_url: track.cover_url,
+            duration: track.duration || track.duration_seconds,
+            status: track.status as "completed" | "failed" | "pending" | "processing" || "completed",
+            style_tags: track.style_tags || [],
+            lyrics: track.lyrics
+          });
+        }} 
+      />
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {/* Overview Tab Content */}
         {tabView === "overview" && <>
             {/* Metadata Card */}
@@ -732,7 +743,7 @@ export const DetailPanelContent = ({
         onUseForNewGeneration={handleUseForNewGeneration}
         isApplying={isApplyingToTrack}
       />
-    </>
+    </div>
   );
 };
 interface StatsItemProps {
