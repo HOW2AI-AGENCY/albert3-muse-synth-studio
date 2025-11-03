@@ -6,8 +6,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Music } from 'lucide-react';
+import { Sparkles, Music, FileText } from 'lucide-react';
 import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog';
+import { TrackLyricsViewDialog } from '@/components/lyrics/TrackLyricsViewDialog';
 import type { Database } from '@/integrations/supabase/types';
 
 type Track = Database['public']['Tables']['tracks']['Row'];
@@ -33,6 +34,7 @@ export const TrackActions: React.FC<TrackActionsProps> = ({
 }) => {
   const navigate = useNavigate();
   const [lyricsDialogOpen, setLyricsDialogOpen] = useState(false);
+  const [lyricsViewOpen, setLyricsViewOpen] = useState(false);
 
   // Формируем промпт на основе контекста проекта и трека
   const getLyricsPrompt = () => {
@@ -67,8 +69,14 @@ export const TrackActions: React.FC<TrackActionsProps> = ({
     return parts.join('. ');
   };
 
-  const handleGenerateLyrics = () => {
-    setLyricsDialogOpen(true);
+  const handleLyricsClick = () => {
+    if (track.lyrics) {
+      // Если лирика есть, открываем просмотр
+      setLyricsViewOpen(true);
+    } else {
+      // Если лирики нет, открываем генератор
+      setLyricsDialogOpen(true);
+    }
   };
 
   const handleGenerateTrack = () => {
@@ -92,11 +100,21 @@ export const TrackActions: React.FC<TrackActionsProps> = ({
       <div className="flex gap-2 mt-2">
         <Button 
           size="sm" 
-          variant="outline"
-          onClick={handleGenerateLyrics}
+          variant={track.lyrics ? "default" : "outline"}
+          onClick={handleLyricsClick}
+          className="transition-all"
         >
-          <Sparkles className="h-3 w-3 mr-1" />
-          Создать лирику
+          {track.lyrics ? (
+            <>
+              <FileText className="h-3 w-3 mr-1" />
+              Просмотр лирики
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-3 w-3 mr-1" />
+              Создать лирику
+            </>
+          )}
         </Button>
         <Button 
           size="sm"
@@ -113,9 +131,15 @@ export const TrackActions: React.FC<TrackActionsProps> = ({
         trackId={track.id}
         initialPrompt={getLyricsPrompt()}
         onGenerated={() => {
-          // Диалог сам закроется после успешной генерации
           onLyricsGenerated?.();
         }}
+      />
+
+      <TrackLyricsViewDialog
+        open={lyricsViewOpen}
+        onOpenChange={setLyricsViewOpen}
+        track={track}
+        onLyricsUpdated={onLyricsGenerated}
       />
     </>
   );

@@ -321,14 +321,19 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                             </div>
                             <Badge
                               variant={
-                                track.status === 'completed' ? 'default' : 'secondary'
+                                track.status === 'completed' ? 'default' : 
+                                track.lyrics ? 'default' : 'secondary'
                               }
-                              className="text-xs flex-shrink-0"
+                              className={cn(
+                                "text-xs flex-shrink-0 transition-all",
+                                track.lyrics && track.status !== 'completed' && "animate-pulse"
+                              )}
                             >
                               {track.status === 'completed' ? 'Готов' : 
                                track.status === 'processing' ? 'Обработка' : 
+                               track.lyrics ? 'Черновик' :
                                track.status === 'pending' ? 'В очереди' : 
-                               track.status === 'failed' ? 'Ошибка' : 'Черновик'}
+                               track.status === 'failed' ? 'Ошибка' : 'В очереди'}
                             </Badge>
                           </div>
 
