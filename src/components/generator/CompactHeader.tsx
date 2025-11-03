@@ -42,6 +42,7 @@ export const CompactHeader = memo(({
   }, [hasAudio, hasPersona, onModeChange]);
   return (
     <div 
+      data-tour="header"
       className="flex items-center justify-between gap-2 sm:gap-4 md:gap-6 border-b border-border/10 bg-background/95 backdrop-blur-sm px-3 sm:px-4 md:px-6 lg:px-8 py-1.5 sm:py-2"
       style={{ minHeight: 'var(--generator-header-height, 44px)' }}
     >
@@ -52,6 +53,7 @@ export const CompactHeader = memo(({
 
       {/* Center: Mode Tabs - Adaptive */}
       <RadioGroup
+        data-tour="mode-selector"
         value={mode}
         onValueChange={(v) => handleModeChange(v as GeneratorMode)}
         className="flex items-center gap-0 bg-muted/20 border border-border/30 rounded p-0.5"

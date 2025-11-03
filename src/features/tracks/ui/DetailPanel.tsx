@@ -371,48 +371,52 @@ export const DetailPanel = ({ track, onClose, onUpdate, onDelete, variant = 'des
             <TabsTrigger 
               value="overview" 
               className={cn(
-                "text-xs gap-1.5 min-h-[44px] relative transition-colors",
+                "gap-1.5 min-h-[44px] relative transition-colors",
+                "flex flex-col sm:flex-row items-center justify-center",
                 activeTab === "overview" && "text-primary"
               )}
             >
-              <Info className="w-4 h-4" />
-              <span className="hidden sm:inline">Обзор</span>
+              <Info className="w-4 h-4 shrink-0" />
+              <span className="text-[10px] sm:text-xs">Обзор</span>
             </TabsTrigger>
             <TabsTrigger 
               value="versions" 
               className={cn(
-                "text-xs gap-1.5 min-h-[44px] relative transition-colors",
+                "gap-1.5 min-h-[44px] relative transition-colors",
+                "flex flex-col sm:flex-row items-center justify-center",
                 activeTab === "versions" && "text-primary"
               )}
             >
-              <GitBranch className="w-4 h-4" />
-              <span className="hidden sm:inline">Версии</span>
+              <GitBranch className="w-4 h-4 shrink-0" />
+              <span className="text-[10px] sm:text-xs">Версии</span>
               {state.data.versions.length > 1 && (
-                <Badge className="ml-1 h-4 px-1 text-[10px]">{state.data.versions.length}</Badge>
+                <Badge className="absolute -top-1 -right-1 h-4 px-1 text-[9px]">{state.data.versions.length}</Badge>
               )}
             </TabsTrigger>
             <TabsTrigger 
               value="stems" 
               className={cn(
-                "text-xs gap-1.5 min-h-[44px] relative transition-colors",
+                "gap-1.5 min-h-[44px] relative transition-colors",
+                "flex flex-col sm:flex-row items-center justify-center",
                 activeTab === "stems" && "text-primary"
               )}
             >
-              <Music4 className="w-4 h-4" />
-              <span className="hidden sm:inline">Стемы</span>
+              <Music4 className="w-4 h-4 shrink-0" />
+              <span className="text-[10px] sm:text-xs">Стемы</span>
               {state.data.stems.length > 0 && (
-                <Badge className="ml-1 h-4 px-1 text-[10px]">{state.data.stems.length}</Badge>
+                <Badge className="absolute -top-1 -right-1 h-4 px-1 text-[9px]">{state.data.stems.length}</Badge>
               )}
             </TabsTrigger>
             <TabsTrigger 
               value="details" 
               className={cn(
-                "text-xs gap-1.5 min-h-[44px] relative transition-colors",
+                "gap-1.5 min-h-[44px] relative transition-colors",
+                "flex flex-col sm:flex-row items-center justify-center",
                 activeTab === "details" && "text-primary"
               )}
             >
-              <Info className="w-4 h-4" />
-              <span className="hidden sm:inline">Детали</span>
+              <Info className="w-4 h-4 shrink-0" />
+              <span className="text-[10px] sm:text-xs">Детали</span>
             </TabsTrigger>
             
             {/* Animated indicator */}

@@ -11,6 +11,7 @@ import { MurekaLyricsVariantDialog } from '@/components/lyrics/MurekaLyricsVaria
 import { PromptHistoryDialog } from '@/components/generator/PromptHistoryDialog';
 import { PersonaPickerDialog } from '@/components/generator/PersonaPickerDialog';
 import { EnhancedPromptPreview } from '@/components/generator/EnhancedPromptPreview';
+import { GeneratorTour } from '@/components/onboarding/GeneratorTour';
 import { supabase } from '@/integrations/supabase/client';
 import { toast as sonnerToast } from 'sonner';
 import { usePromptHistory } from '@/hooks/usePromptHistory';
@@ -586,6 +587,8 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
           }
         }}
       />
+
+      <GeneratorTour />
     </motion.div>
   );
 };

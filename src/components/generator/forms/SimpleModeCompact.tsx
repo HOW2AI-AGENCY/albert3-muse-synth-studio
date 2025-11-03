@@ -7,7 +7,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Music, Sparkles, Info, History } from '@/utils/iconImports';
 import { StyleRecommendationsInline } from '@/components/generator/StyleRecommendationsInline';
 import { PromptCharacterCounter } from '@/components/generator/PromptCharacterCounter';
-import { useIsMobile } from '@/hooks/use-mobile';
 import type { GenerationParams } from '../types/generator.types';
 import { cn } from '@/lib/utils';
 
@@ -36,8 +35,6 @@ export const SimpleModeCompact = memo(({
   debouncedPrompt,
   onDebouncedPromptChange,
 }: SimpleModeCompactProps) => {
-  const isMobile = useIsMobile();
-
   const handleApplyTags = useCallback((newTags: string[]) => {
     const existingTags = params.tags.split(',').map(t => t.trim()).filter(Boolean);
     const uniqueTags = Array.from(new Set([...existingTags, ...newTags]));
@@ -50,8 +47,11 @@ export const SimpleModeCompact = memo(({
       <div className="flex-1 overflow-y-auto space-y-3 pb-20 p-3">
         {/* Prompt with AI Boost */}
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="music-prompt" className="text-xs font-medium">Описание музыки</Label>
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-5 bg-gradient-to-b from-primary to-primary/50 rounded-full" />
+              <Label htmlFor="music-prompt" className="text-sm font-semibold">Описание музыки</Label>
+            </div>
             {onOpenHistory && (
               <Button
                 variant="ghost"
@@ -68,16 +68,17 @@ export const SimpleModeCompact = memo(({
           <div className="relative">
             <Textarea
               id="music-prompt"
+              data-tour="prompt-input"
               value={debouncedPrompt}
               onChange={(e) => {
                 if (e.target.value.length <= MAX_PROMPT_LENGTH) {
                   onDebouncedPromptChange(e.target.value);
                 }
               }}
-              placeholder="e.g., Upbeat electronic dance music with energetic synths..."
+              placeholder="e.g., Спокойный лоу-фай бит с джазовым пианино..."
               className={cn(
-                "min-h-[100px] resize-none mobile-input pr-10",
-                "focus-visible:ring-1"
+                "min-h-[120px] resize-none mobile-input pr-10 text-base",
+                "focus-visible:ring-2 focus-visible:ring-primary"
               )}
               disabled={isGenerating}
               maxLength={MAX_PROMPT_LENGTH}
@@ -103,9 +104,10 @@ export const SimpleModeCompact = memo(({
             <div className="flex items-center gap-2">
               {onBoostPrompt && (
                 <Button
+                  data-tour="ai-boost"
                   variant="outline"
                   size="sm"
-                  className="h-7 gap-1.5 text-xs"
+                  className="h-7 gap-1.5 text-xs bg-primary/5 border-primary/20 hover:bg-primary/10"
                   onClick={onBoostPrompt}
                   disabled={isBoosting || isGenerating || !debouncedPrompt.trim()}
                   title="Улучшить промпт с помощью AI"
@@ -159,9 +161,10 @@ export const SimpleModeCompact = memo(({
         )}
 
         {/* Title Input */}
-        <div className="space-y-1.5">
-          <Label htmlFor="title" className="text-xs font-medium text-muted-foreground">
-            Название трека <span className="text-[10px]">(опционально)</span>
+        <div className="space-y-1.5 pt-2 border-t border-border/30">
+          <Label htmlFor="title" className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+            Название трека
+            <span className="text-[10px] text-muted-foreground/70">(опционально)</span>
           </Label>
           <Input
             id="title"
@@ -169,7 +172,7 @@ export const SimpleModeCompact = memo(({
             placeholder="Оставьте пустым для автогенерации"
             value={params.title}
             onChange={(e) => onParamChange('title', e.target.value)}
-            className={cn("mobile-input", isMobile ? "h-10" : "h-9")}
+            className={cn("mobile-input text-sm h-9")}
             disabled={isGenerating}
             maxLength={80}
           />
@@ -177,15 +180,16 @@ export const SimpleModeCompact = memo(({
       </div>
 
       {/* Sticky Footer */}
-      <div className="absolute bottom-0 left-0 right-0 border-t border-border/20 bg-background/95 backdrop-blur-sm">
-        <div className="p-3 flex items-center gap-2">
+      <div className="sticky bottom-0 left-0 right-0 z-10 border-t border-border/20 bg-background/95 backdrop-blur-sm mt-4">
+        <div className="p-3 safe-area-bottom">
           <Button
+            data-tour="generate-button"
             onClick={onGenerate}
             disabled={isGenerating || (!debouncedPrompt.trim() && !params.lyrics.trim())}
             size="lg"
             className={cn(
               "w-full gap-2 font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20 touch-target-optimal",
-              isMobile ? "h-12 text-base" : "h-10 text-sm"
+              "min-h-[48px]"
             )}
             aria-label={isGenerating ? 'Генерация музыки в процессе' : 'Создать музыку'}
           >
