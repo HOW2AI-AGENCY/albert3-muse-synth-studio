@@ -1,7 +1,7 @@
 /**
  * Consolidated state management for MusicGeneratorV2
  */
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import type { GenerationParams, GeneratorMode } from '@/components/generator/types/generator.types';
 
 export interface GeneratorState {
@@ -104,14 +104,6 @@ export const useGeneratorState = (
   // Debounced state for textarea inputs
   const [debouncedPrompt, setDebouncedPrompt] = useState(params.prompt);
   const [debouncedLyrics, setDebouncedLyrics] = useState(params.lyrics);
-
-  useEffect(() => {
-    setParams(prev => ({
-      ...prev,
-      provider: selectedProvider,
-      modelVersion: selectedProvider === 'mureka' ? 'auto' : 'V5',
-    }));
-  }, [selectedProvider]);
 
   return {
     // State

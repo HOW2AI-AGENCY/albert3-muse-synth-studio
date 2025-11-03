@@ -90,7 +90,7 @@ Be specific (e.g., "electric guitar", "synthesizer pad", "808 bass", "acoustic d
     
     // Ожидаем завершения предсказания
     let output = '';
-    const predictionUrl = prediction.urls?.get || `https://api.replicate.com/v1/predictions/${prediction.id}`;
+    let predictionUrl = prediction.urls?.get || `https://api.replicate.com/v1/predictions/${prediction.id}`;
     
     for (let i = 0; i < 60; i++) { // Максимум 60 попыток (5 минут)
       await new Promise(resolve => setTimeout(resolve, 5000)); // Ждём 5 секунд
