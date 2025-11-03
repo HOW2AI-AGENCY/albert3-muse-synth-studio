@@ -1,6 +1,10 @@
 import React from 'react';
 
-export const Timeline: React.FC = () => {
+interface TimelineProps {
+  playbackPosition: number;
+}
+
+export const Timeline: React.FC<TimelineProps> = ({ playbackPosition }) => {
   return (
     <div className="relative h-12 bg-surface border-b border-border">
       {/* Ruler */}
@@ -15,6 +19,11 @@ export const Timeline: React.FC = () => {
           </div>
         ))}
       </div>
+      {/* Playback Marker */}
+      <div
+        className="absolute top-0 left-0 w-0.5 h-full bg-red-500"
+        style={{ transform: `translateX(${playbackPosition * 60}px)` }} // 60px per second
+      />
     </div>
   );
 };
