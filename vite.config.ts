@@ -77,9 +77,4 @@ export default defineConfig(({ mode }) => ({
       "react-router-dom",
     ],
   },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
-  },
 }));
