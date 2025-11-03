@@ -15,6 +15,7 @@ import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { MurekaGenerationHandler } from "./handler.ts";
 import type { MurekaGenerationParams } from "../_shared/types/generation.ts";
 import { checkRateLimit, rateLimitConfigs, createRateLimitHeaders } from "../_shared/rate-limit.ts";
+import { sanitizePrompt, sanitizeLyrics, sanitizeTitle, sanitizeStyleTags } from "../_shared/sanitization.ts";
 
 const corsHeaders = {
   ...createCorsHeaders(),
@@ -145,38 +146,14 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // 5. Transform to handler params with prompt truncation
+    // 5. Transform to handler params with sanitization
     const body = validation.data;
-    
-    // ✅ FIX: Truncate prompt to 500 characters
-    let validatedPrompt = body.prompt;
-    if (body.prompt.length > 500) {
-      logger.warn('⚠️ Prompt exceeds 500 chars, truncating', { 
-        originalLength: body.prompt.length,
-        provider: 'mureka',
-      });
-      
-      // Smart truncation at sentence/word boundary
-      validatedPrompt = body.prompt.slice(0, 497);
-      const lastPeriod = validatedPrompt.lastIndexOf('.');
-      const lastSpace = validatedPrompt.lastIndexOf(' ');
-      
-      if (lastPeriod > 400) {
-        validatedPrompt = validatedPrompt.slice(0, lastPeriod + 1);
-      } else if (lastSpace > 400) {
-        validatedPrompt = validatedPrompt.slice(0, lastSpace) + '...';
-      } else {
-        validatedPrompt = validatedPrompt + '...';
-      }
-      
-      logger.info('✅ Prompt truncated', { newLength: validatedPrompt.length });
-    }
     
     const params: MurekaGenerationParams = {
       trackId: body.trackId,
-      title: body.title,
-      prompt: validatedPrompt,
-      lyrics: body.lyrics,
+      title: body.title ? sanitizeTitle(body.title) : undefined,
+      prompt: sanitizePrompt(body.prompt),
+      lyrics: body.lyrics ? sanitizeLyrics(body.lyrics) : undefined,
       styleTags: body.styleTags,
       hasVocals: body.hasVocals,
       modelVersion: body.modelVersion,

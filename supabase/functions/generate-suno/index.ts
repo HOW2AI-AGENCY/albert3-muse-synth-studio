@@ -13,6 +13,7 @@ import { logger } from "../_shared/logger.ts";
 import { validateAndParse, generateSunoSchema } from "../_shared/zod-schemas.ts";
 import { SunoGenerationHandler } from "./handler.ts";
 import type { SunoGenerationParams } from "../_shared/types/generation.ts";
+import { sanitizePrompt, sanitizeLyrics, sanitizeTitle, sanitizeStyleTags } from "../_shared/sanitization.ts";
 
 serve(async (req: Request): Promise<Response> => {
   const corsHeaders = {
@@ -64,21 +65,21 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // 3. Transform to handler params
+    // 3. Transform to handler params with sanitization
     const body = validation.data;
     const params: SunoGenerationParams = {
       trackId: body.trackId,
-      title: body.title,
-      prompt: body.prompt || '',
-      lyrics: body.lyrics,
-      styleTags: body.tags,
+      title: body.title ? sanitizeTitle(body.title) : undefined,
+      prompt: sanitizePrompt(body.prompt || ''),
+      lyrics: body.lyrics ? sanitizeLyrics(body.lyrics) : undefined,
+      styleTags: body.tags ? sanitizeStyleTags(body.tags) : undefined,
       hasVocals: body.hasVocals,
       modelVersion: body.model_version,
       idempotencyKey: body.idempotencyKey,
       make_instrumental: body.make_instrumental,
       wait_audio: body.wait_audio,
       customMode: body.customMode,
-      negativeTags: body.negativeTags,
+      negativeTags: body.negativeTags ? sanitizeStyleTags(body.negativeTags) : undefined,
       vocalGender: body.vocalGender,
       styleWeight: body.styleWeight,
       weirdnessConstraint: body.weirdnessConstraint,
