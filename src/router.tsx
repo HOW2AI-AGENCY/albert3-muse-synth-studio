@@ -13,34 +13,28 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-// Phase 1 Optimization: Lazy load workspace routes
-import { 
+// Lazy-loaded workspace routes
+import {
   LazyDashboard,
   LazyGenerate,
   LazyLibrary,
   LazyFavorites,
   LazyAnalytics,
   LazySettings,
+  LazyProjects,
+  LazyMonitoringHub,
+  LazyStudio,
+  LazyDAW,
+  LazyProfile,
+  LazyMetrics,
+  LazyAdmin,
+  LazyMonitoring,
+  LazyLyricsLibrary,
+  LazyAudioLibrary,
+  LazyPersonas,
+  LazyPromptDJPage,
+  LazyEdgeFunctionsDebug,
 } from "./utils/lazyPages";
-
-// New hub pages
-import Projects from "./pages/workspace/Projects";
-import MonitoringHub from "./pages/workspace/MonitoringHub";
-
-// Studio page
-import { Studio } from "./pages/workspace/Studio";
-import { DAW } from "./pages/workspace/DAW";
-
-// Still direct imports (will lazy load in Phase 2)
-import Profile from "./pages/workspace/Profile";
-import Metrics from "./pages/workspace/Metrics";
-import Admin from "./pages/workspace/Admin";
-import Monitoring from "./pages/workspace/Monitoring";
-import LyricsLibrary from "./pages/workspace/LyricsLibrary";
-import AudioLibrary from "./pages/workspace/AudioLibrary";
-import Personas from "./pages/workspace/Personas";
-import EdgeFunctionsDebug from "./pages/debug/EdgeFunctionsDebug";
-import { PromptDJPage } from "./pages/workspace/PromptDJPage";
 
 
 export const router = createBrowserRouter(
@@ -55,7 +49,11 @@ export const router = createBrowserRouter(
     },
     {
       path: "/debug/edge-functions",
-      element: <EdgeFunctionsDebug />
+      element: (
+        <Suspense fallback={<FullPageSpinner />}>
+          <LazyEdgeFunctionsDebug />
+        </Suspense>
+      )
     },
     {
       path: "/workspace",
@@ -87,19 +85,35 @@ export const router = createBrowserRouter(
         },
         {
           path: "projects",
-          element: <Projects />
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <LazyProjects />
+            </Suspense>
+          )
         },
         {
           path: "studio",
-          element: <Studio />
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <LazyStudio />
+            </Suspense>
+          )
         },
         {
           path: "daw",
-          element: <DAW />
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <LazyDAW />
+            </Suspense>
+          )
         },
         {
           path: "monitoring-hub",
-          element: <MonitoringHub />
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <LazyMonitoringHub />
+            </Suspense>
+          )
         },
         {
           path: "library",
@@ -129,7 +143,11 @@ export const router = createBrowserRouter(
         },
         {
           path: "metrics",
-          element: <Metrics />
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <LazyMetrics />
+            </Suspense>
+          )
         },
         {
           path: "settings",
@@ -141,33 +159,57 @@ export const router = createBrowserRouter(
         },
         {
           path: "profile",
-          element: <Profile />
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <LazyProfile />
+            </Suspense>
+          )
         },
         {
           path: "admin",
-          element: <Admin />
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <LazyAdmin />
+            </Suspense>
+          )
         },
         {
           path: "monitoring",
-          element: <Monitoring />
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <LazyMonitoring />
+            </Suspense>
+          )
         },
         {
           path: "lyrics-library",
-          element: <LyricsLibrary />
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <LazyLyricsLibrary />
+            </Suspense>
+          )
         },
         {
           path: "audio-library",
-          element: <AudioLibrary />
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <LazyAudioLibrary />
+            </Suspense>
+          )
         },
         {
           path: "personas",
-          element: <Personas />
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <LazyPersonas />
+            </Suspense>
+          )
         },
         {
           path: "prompt-dj",
           element: (
             <Suspense fallback={<FullPageSpinner />}>
-              <PromptDJPage />
+              <LazyPromptDJPage />
             </Suspense>
           )
         },

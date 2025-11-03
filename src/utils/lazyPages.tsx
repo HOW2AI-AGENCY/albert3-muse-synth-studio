@@ -73,6 +73,71 @@ export const LazyDashboard = createLazyPage(
   'Dashboard'
 );
 
+export const LazyProjects = createLazyPage(
+  () => import('../pages/workspace/Projects'),
+  'Projects'
+);
+
+export const LazyMonitoringHub = createLazyPage(
+  () => import('../pages/workspace/MonitoringHub'),
+  'MonitoringHub'
+);
+
+export const LazyStudio = createLazyPage(
+  () => import('../pages/workspace/Studio').then(module => ({ default: module.Studio })),
+  'Studio'
+);
+
+export const LazyDAW = createLazyPage(
+  () => import('../pages/workspace/DAW').then(module => ({ default: module.DAW })),
+  'DAW'
+);
+
+export const LazyProfile = createLazyPage(
+  () => import('../pages/workspace/Profile'),
+  'Profile'
+);
+
+export const LazyMetrics = createLazyPage(
+  () => import('../pages/workspace/Metrics'),
+  'Metrics'
+);
+
+export const LazyAdmin = createLazyPage(
+  () => import('../pages/workspace/Admin'),
+  'Admin'
+);
+
+export const LazyMonitoring = createLazyPage(
+  () => import('../pages/workspace/Monitoring'),
+  'Monitoring'
+);
+
+export const LazyLyricsLibrary = createLazyPage(
+  () => import('../pages/workspace/LyricsLibrary'),
+  'LyricsLibrary'
+);
+
+export const LazyAudioLibrary = createLazyPage(
+  () => import('../pages/workspace/AudioLibrary'),
+  'AudioLibrary'
+);
+
+export const LazyPersonas = createLazyPage(
+  () => import('../pages/workspace/Personas'),
+  'Personas'
+);
+
+export const LazyPromptDJPage = createLazyPage(
+  () => import('../pages/workspace/PromptDJPage').then(module => ({ default: module.PromptDJPage })),
+  'PromptDJPage'
+);
+
+export const LazyEdgeFunctionsDebug = createLazyPage(
+  () => import('../pages/debug/EdgeFunctionsDebug'),
+  'EdgeFunctionsDebug'
+);
+
 /**
  * Lazy-loaded компоненты для дополнительной оптимизации
  */
@@ -87,3 +152,11 @@ export const preloadGenerate = () => import('../pages/workspace/Generate');
 export const preloadLibrary = () => import('../pages/workspace/Library');
 export const preloadDashboard = () => import('../pages/workspace/Dashboard');
 export const preloadMusicGenerator = () => import('../components/MusicGeneratorV2');
+export const preloadProjects = () => import('../pages/workspace/Projects');
+export const preloadMonitoringHub = () => import('../pages/workspace/MonitoringHub');
+export const preloadStudio = () => import('../pages/workspace/Studio');
+export const preloadDAW = () => import('../pages/workspace/DAW');
+export const preloadFavorites = () => import('../pages/workspace/Favorites');
+export const preloadAnalytics = () => import('../pages/workspace/Analytics');
+export const preloadSettings = () => import('../pages/workspace/Settings');
+export const preloadPromptDJPage = () => import('../pages/workspace/PromptDJPage');

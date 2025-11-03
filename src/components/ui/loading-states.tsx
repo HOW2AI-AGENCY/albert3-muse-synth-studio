@@ -35,7 +35,7 @@ interface FullPageSpinnerProps {
 
 export const FullPageSpinner = ({ text = 'Загрузка...' }: FullPageSpinnerProps) => {
   return (
-    <div className="flex min-h-screen items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center" data-testid="full-page-spinner">
       <Spinner size="lg" text={text} />
     </div>
   );
