@@ -9,6 +9,12 @@ import { AnalyticsService } from './services/analytics.service';
 import type { Metric } from 'web-vitals';
 import { logger } from './utils/logger';
 import { initSentry } from './utils/sentry';
+import { injectBreakpointsCSSVars } from './utils/injectBreakpointsCSSVars';
+
+// ✅ Inject breakpoint CSS variables BEFORE rendering
+if (typeof document !== 'undefined') {
+  injectBreakpointsCSSVars();
+}
 
 // ✅ Initialize Sentry FIRST (with enhanced config from utils/sentry.ts)
 initSentry();

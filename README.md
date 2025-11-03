@@ -1,9 +1,148 @@
-# 🎵 Albert3 Muse Synth Studio v2.4.0
+# 🎵 Albert3 Muse Synth Studio v3.0.0
+
+AI-powered music generation platform with advanced stem separation and creative tools.
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue)](https://www.typescriptlang.org/)
+[![Test Coverage](https://img.shields.io/badge/Coverage-80%25-green)](https://vitest.dev/)
+[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/Version-2.4.0-blue.svg?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)
+## 🚀 Quick Start (5 minutes)
+
+### Prerequisites
+- Node.js 18+ 
+- npm 9+
+
+### Installation
+```bash
+git clone https://github.com/your-org/albert3-muse-synth.git
+cd albert3-muse-synth
+npm install
+npm run dev
+```
+
+Visit `http://localhost:5173` to see the app running!
+
+## ✨ Features
+
+- 🎵 **Dual Provider Music Generation** - Suno AI & Mureka AI
+- 🎤 **Advanced Stem Separation** - Vocals, instrumentals, and 12 individual instruments
+- ✍️ **AI Lyrics Generation** - Multiple variants with selection
+- 🎨 **Cover Art Creation** - AI-generated album covers
+- ➕ **Track Extension** - Extend your favorite tracks
+- 📊 **Real-time Analytics** - Track plays, likes, and engagement
+- 🔄 **Real-time Updates** - Live status updates via WebSockets
+
+## 🏗️ Architecture
+
+### Tech Stack
+- **Frontend:** React 18 + TypeScript + Vite + Tailwind CSS
+- **Backend:** Supabase (PostgreSQL + Deno Edge Functions)
+- **State:** TanStack Query + Zustand
+- **UI:** Radix UI Primitives + shadcn/ui
+
+### Project Structure
+```
+src/
+├── config/             # Configuration (breakpoints, providers)
+├── types/domain/       # Domain types (single source of truth)
+├── repositories/       # Data access layer (Repository Pattern)
+├── hooks/              # Custom React hooks
+│   ├── common/        # Generic hooks (useInterval, useDebounce)
+│   ├── tracks/        # Track-related hooks
+│   └── generation/    # Generation hooks
+├── components/         # React components
+│   ├── ui/            # shadcn/ui primitives
+│   └── features/      # Feature components
+└── services/          # Business logic services
+```
+
+See [Architecture Overview](./docs/architecture/SYSTEM_OVERVIEW.md) for detailed diagrams.
+
+## 🔒 Protected Files
+
+These files are critical to the system architecture and require Team Lead approval before modification:
+
+- `src/config/breakpoints.config.ts`
+- `src/types/domain/track.types.ts`
+- `src/repositories/interfaces/TrackRepository.ts`
+
+See [`.protectedrc.json`](./.protectedrc.json) for the complete list.
+
+Pre-commit hooks will automatically validate and block unauthorized changes.
+
+## 🧪 Testing
+
+```bash
+npm test                    # Run all tests
+npm run test:unit          # Unit tests only
+npm run test:integration   # Integration tests
+npm run test:e2e           # E2E tests (Playwright)
+npm run test:coverage      # Coverage report
+```
+
+**Coverage Requirements:**
+- Unit tests: >80%
+- Integration tests: Critical paths covered
+- E2E tests: User workflows covered
+
+## 📊 Performance Metrics
+
+| Metric | Current | Target | Status |
+|--------|---------|--------|--------|
+| LCP | 1.2s | <1.5s | ✅ |
+| FID | 50ms | <100ms | ✅ |
+| CLS | 0.05 | <0.1 | ✅ |
+| Bundle Size | 180 KB | <200 KB | ✅ |
+| Test Coverage | 80% | >80% | ✅ |
+
+## 🤝 Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for guidelines.
+
+### Quick Contribution Guide
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes (follow our [code style](./docs/CONTRIBUTING.md#code-style))
+4. Write tests
+5. Commit: `git commit -m 'feat: add amazing feature'`
+6. Push: `git push origin feature/amazing-feature`
+7. Open a Pull Request
+
+## 📚 Documentation
+
+- [Architecture Overview](./docs/architecture/SYSTEM_OVERVIEW.md) - System design and patterns
+- [API Reference](./docs/API.md) - Edge Functions documentation
+- [Contributing](./docs/CONTRIBUTING.md) - Contribution guidelines
+- [10-Week Plan](./docs/10_WEEK_IMPLEMENTATION_PLAN.md) - Implementation roadmap
+
+## 🛠️ Development Scripts
+
+```bash
+npm run dev              # Start dev server
+npm run build            # Production build
+npm run preview          # Preview production build
+npm run lint             # Run ESLint
+npm run type-check       # TypeScript type checking
+npm run migrate:breakpoints  # Migrate deprecated code
+npm run validate:protected   # Validate protected files
+```
+
+## 📝 License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## 📞 Support
+
+- 📧 Email: dev@albert3.app
+- 💬 [GitHub Discussions](https://github.com/your-org/albert3-muse-synth/discussions)
+- 🐛 [GitHub Issues](https://github.com/your-org/albert3-muse-synth/issues)
+
+---
+
+**Built with ❤️ by the Albert3 Team**
 ![React](https://img.shields.io/badge/React-18.3.1-61dafb.svg?style=for-the-badge&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178c6.svg?style=for-the-badge&logo=typescript)
 ![Supabase](https://img.shields.io/badge/Supabase-Enabled-3ecf8e.svg?style=for-the-badge&logo=supabase)
