@@ -16,10 +16,10 @@ const CompactSlider = React.forwardRef<
   const value = props.value?.[0] ?? props.defaultValue?.[0] ?? 0;
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1">
       {label && (
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <label className="text-xs font-medium text-muted-foreground">
               {label}
             </label>
@@ -28,7 +28,7 @@ const CompactSlider = React.forwardRef<
             )}
           </div>
           {showValue && (
-            <span className="text-xs font-semibold text-foreground tabular-nums">
+            <span className="text-[10px] font-mono text-muted-foreground bg-muted/40 px-1.5 py-0.5 rounded tabular-nums">
               {value}
             </span>
           )}

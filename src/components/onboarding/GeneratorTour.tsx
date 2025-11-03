@@ -127,7 +127,10 @@ export const GeneratorTour = () => {
   const [runTour, setRunTour] = useState(false);
 
   useEffect(() => {
-    if (!hasSeenTour) {
+    // Skip auto-start on mobile
+    const isMobile = window.innerWidth < 768;
+    
+    if (!hasSeenTour && !isMobile) {
       // Запуск через 1.5 секунды после маунта (для загрузки DOM)
       const timer = setTimeout(() => setRunTour(true), 1500);
       return () => clearTimeout(timer);

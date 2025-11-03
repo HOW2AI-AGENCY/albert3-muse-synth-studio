@@ -139,6 +139,7 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
         <TrackActionsMenu
           trackId={track.id}
           trackStatus={track.status}
+          hasVocals={track.has_vocals ?? true}
           trackMetadata={{ provider: 'suno' }}
           variant="minimal"
           onDownload={onDownload}
