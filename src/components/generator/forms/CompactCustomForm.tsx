@@ -43,6 +43,7 @@ interface CompactCustomFormProps {
   debouncedLyrics: string;
   onDebouncedPromptChange: (value: string) => void;
   onDebouncedLyricsChange: (value: string) => void;
+  onModeChange?: (mode: 'simple' | 'custom') => void; // ✅ Добавлено для переключения режима
 }
 
 export const CompactCustomForm = memo(({
@@ -58,6 +59,7 @@ export const CompactCustomForm = memo(({
   debouncedLyrics,
   onDebouncedPromptChange,
   onDebouncedLyricsChange,
+  onModeChange, // ✅ Добавлено
 }: CompactCustomFormProps) => {
   const { projects } = useProjects();
   const isMobile = useIsMobile();
@@ -259,23 +261,21 @@ export const CompactCustomForm = memo(({
           </Button>
         </div>
 
-        {/* Track Picker Button - показываем только когда проект выбран */}
+        {/* Track Picker Button - ПОКАЗЫВАЕМ ТОЛЬКО ЕСЛИ ПРОЕКТ ВЫБРАН */}
         {params.activeProjectId && (
           <div className="p-2">
             <Button
               variant="outline"
               onClick={() => setTrackPickerOpen(true)}
               className={cn(
-                "w-full justify-start gap-2 text-sm",
+                "w-full justify-start gap-2 text-sm font-medium",
                 isMobile ? "h-11" : "h-9",
-                params.referenceTrackId && "border-primary"
+                params.referenceTrackId && "border-primary bg-primary/5"
               )}
               disabled={isGenerating}
             >
               <Music className="h-4 w-4" />
-              {params.referenceTrackId 
-                ? 'Трек выбран • Изменить'
-                : 'Выбрать трек из проекта'}
+              Выбрать трек
               {selectedProject?.persona_id && (
                 <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0 gap-1">
                   <User className="h-3 w-3" />
@@ -293,6 +293,13 @@ export const CompactCustomForm = memo(({
           selectedProjectId={params.activeProjectId || null}
           onProjectSelect={(projectId) => {
             onParamChange('activeProjectId', projectId);
+            
+            // ✅ АВТОМАТИЧЕСКИ ПЕРЕКЛЮЧАЕМ В ПРОДВИНУТЫЙ РЕЖИМ
+            if (projectId && onModeChange) {
+              onModeChange('custom');
+              logger.info('Auto-switched to custom mode after project selection', 'CompactCustomForm', { projectId });
+            }
+            
             logger.info('Project selected for generation', 'CompactCustomForm', { projectId });
           }}
           showTrackSelection={false}

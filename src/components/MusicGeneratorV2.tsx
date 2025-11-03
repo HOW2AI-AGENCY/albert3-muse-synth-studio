@@ -507,6 +507,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
               debouncedLyrics={state.debouncedLyrics}
               onDebouncedPromptChange={state.setDebouncedPrompt}
               onDebouncedLyricsChange={state.setDebouncedLyrics}
+              onModeChange={state.setMode}
             />
           )}
         </div>
