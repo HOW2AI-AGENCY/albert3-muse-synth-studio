@@ -24,7 +24,9 @@ import { ProjectSelectorDialog } from '@/components/generator/ProjectSelectorDia
 import { ProjectTrackPickerDialog } from '@/components/generator/ProjectTrackPickerDialog';
 import { useState, useCallback } from 'react';
 import { useProjects } from '@/contexts/ProjectContext';
+import { useTracks } from '@/hooks/useTracks';
 import type { Track } from '@/types/domain/track.types';
+import { useToast } from '@/hooks/use-toast';
 
 const AudioDescriber = lazy(() => import('@/components/audio/AudioDescriber').then(m => ({ default: m.AudioDescriber })));
 
@@ -62,6 +64,8 @@ export const CompactCustomForm = memo(({
   onModeChange, // ✅ Добавлено
 }: CompactCustomFormProps) => {
   const { projects } = useProjects();
+  const { tracks: allTracks } = useTracks();
+  const { toast } = useToast();
   const isMobile = useIsMobile();
   const lyricsLineCount = debouncedLyrics.split('\n').filter(l => l.trim()).length;
   const tagsCount = params.tags.split(',').filter(t => t.trim()).length;
@@ -77,9 +81,6 @@ export const CompactCustomForm = memo(({
       hasPrompt: !!track.prompt,
       hasLyrics: !!track.lyrics,
     });
-
-    // Автоматически переходим в продвинутый режим (если есть функция)
-    // onParamChange('mode', 'custom'); // если нужно
 
     // 1. Заполняем заголовок
     onParamChange('title', track.title);
@@ -113,7 +114,15 @@ export const CompactCustomForm = memo(({
 
     // Сохраняем ссылку на выбранный трек
     onParamChange('referenceTrackId', track.id);
-  }, [params.tags, selectedProject, onParamChange, onDebouncedPromptChange, onDebouncedLyricsChange]);
+
+    // Toast уведомление
+    toast({
+      title: "Трек загружен",
+      description: `"${track.title}" загружен в форму генерации`,
+    });
+
+    setTrackPickerOpen(false);
+  }, [params.tags, selectedProject, onParamChange, onDebouncedPromptChange, onDebouncedLyricsChange, toast]);
 
   const handleQuickTagAdd = useCallback((tag: string) => {
     const existingTags = params.tags.split(',').map(t => t.trim()).filter(Boolean);
@@ -275,7 +284,13 @@ export const CompactCustomForm = memo(({
               disabled={isGenerating}
             >
               <Music className="h-4 w-4" />
-              Выбрать трек
+              {params.referenceTrackId ? (
+                <span className="truncate">
+                  Трек: {allTracks.find(t => t.id === params.referenceTrackId)?.title || 'Выбран'}
+                </span>
+              ) : (
+                'Выбрать трек'
+              )}
               {selectedProject?.persona_id && (
                 <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0 gap-1">
                   <User className="h-3 w-3" />
@@ -371,8 +386,8 @@ export const CompactCustomForm = memo(({
           </div>
         )}
 
-        {/* Lyrics Section */}
-        <Collapsible defaultOpen={!!debouncedLyrics}>
+        {/* Lyrics Section - ВСЕГДА РАСКРЫТА В CUSTOM MODE */}
+        <Collapsible defaultOpen={true}>
           <CollapsibleTrigger className={cn(
             "flex items-center justify-between w-full hover:bg-accent/5 rounded-md transition-colors group",
             isMobile ? "p-3" : "p-2"
