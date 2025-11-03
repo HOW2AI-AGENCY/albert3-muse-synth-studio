@@ -10,6 +10,7 @@ import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog
 import { MurekaLyricsVariantDialog } from '@/components/lyrics/MurekaLyricsVariantDialog';
 import { PromptHistoryDialog } from '@/components/generator/PromptHistoryDialog';
 import { PersonaPickerDialog } from '@/components/generator/PersonaPickerDialog';
+import { ProjectSelectorDialog } from '@/components/generator/ProjectSelectorDialog';
 import { EnhancedPromptPreview } from '@/components/generator/EnhancedPromptPreview';
 import { GeneratorTour } from '@/components/onboarding/GeneratorTour';
 import { supabase } from '@/integrations/supabase/client';
@@ -66,6 +67,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   
   // Dialog states
   const [personaDialogOpen, setPersonaDialogOpen] = useState(false);
+  const [projectDialogOpen, setProjectDialogOpen] = useState(false);
   const [inspoDialogOpen, setInspoDialogOpen] = useState(false);
   const [audioSourceDialogOpen, setAudioSourceDialogOpen] = useState(false);
   
@@ -425,9 +427,17 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
         <QuickActionsBar
           hasAudio={!!state.params.referenceFileName}
           hasPersona={!!state.params.personaId}
+          hasProject={!!state.params.activeProjectId}
           hasInspo={!!state.params.inspoProjectId}
           onAudioClick={() => setAudioSourceDialogOpen(true)}
           onPersonaClick={() => setPersonaDialogOpen(true)}
+          onProjectClick={() => {
+            setProjectDialogOpen(true);
+            // Автопереход в custom mode при клике на кнопку проекта
+            if (state.mode === 'simple') {
+              state.setMode('custom');
+            }
+          }}
           onInspoClick={() => setInspoDialogOpen(true)}
           isGenerating={isGenerating}
         />
@@ -587,6 +597,29 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
             });
           }
         }}
+      />
+
+      <ProjectSelectorDialog
+        open={projectDialogOpen}
+        onOpenChange={setProjectDialogOpen}
+        selectedProjectId={state.params.activeProjectId ?? null}
+        onProjectSelect={(projectId) => {
+          state.setParam('activeProjectId', projectId);
+          setProjectDialogOpen(false);
+          
+          // Автопереход в custom mode при выборе проекта
+          if (projectId && state.mode === 'simple') {
+            state.setMode('custom');
+          }
+          
+          if (projectId) {
+            toast({
+              title: "Проект выбран",
+              description: "Проект будет использован для генерации",
+            });
+          }
+        }}
+        showTrackSelection={false}
       />
 
       <GeneratorTour />

@@ -20,7 +20,6 @@ import type { AdvancedPromptResult } from '@/services/ai/advanced-prompt-generat
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { ProjectSelectorDialog } from '@/components/generator/ProjectSelectorDialog';
 import { ProjectTrackPickerDialog } from '@/components/generator/ProjectTrackPickerDialog';
 import { useState, useCallback } from 'react';
 import { useProjects } from '@/contexts/ProjectContext';
@@ -61,7 +60,6 @@ export const CompactCustomForm = memo(({
   debouncedLyrics,
   onDebouncedPromptChange,
   onDebouncedLyricsChange,
-  onModeChange, // ✅ Добавлено
 }: CompactCustomFormProps) => {
   const { projects } = useProjects();
   const { tracks: allTracks } = useTracks();
@@ -69,7 +67,6 @@ export const CompactCustomForm = memo(({
   const isMobile = useIsMobile();
   const lyricsLineCount = debouncedLyrics.split('\n').filter(l => l.trim()).length;
   const tagsCount = params.tags.split(',').filter(t => t.trim()).length;
-  const [projectDialogOpen, setProjectDialogOpen] = useState(false);
   const [trackPickerOpen, setTrackPickerOpen] = useState(false);
 
   const selectedProject = projects.find(p => p.id === params.activeProjectId);
@@ -255,24 +252,42 @@ export const CompactCustomForm = memo(({
           </div>
         </div>
 
-        {/* Project Selector Button */}
-        <div className="p-2">
-          <Button
-            variant="outline"
-            onClick={() => setProjectDialogOpen(true)}
-            className={cn("w-full justify-start gap-2 text-sm", isMobile ? "h-11" : "h-9")}
-            disabled={isGenerating}
-          >
-            <Music className="h-4 w-4" />
-            {params.activeProjectId 
-              ? `Проект: ${selectedProject?.name || 'Выбран'}`
-              : 'Выбрать проект'}
-          </Button>
-        </div>
+        {/* Active Project Display - ПОКАЗЫВАЕМ ТОЛЬКО ЕСЛИ ПРОЕКТ ВЫБРАН */}
+        {params.activeProjectId && selectedProject && (
+          <div className="p-2 space-y-2">
+            {/* Project Info with Remove Button */}
+            <div className="flex items-center justify-between gap-2 p-2 rounded-lg border border-primary/30 bg-primary/5">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <Music className="h-4 w-4 text-primary flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-primary truncate">
+                    {selectedProject.name}
+                  </p>
+                  {selectedProject.genre && (
+                    <p className="text-[10px] text-muted-foreground">
+                      {selectedProject.genre}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 hover:text-destructive flex-shrink-0"
+                onClick={() => {
+                  onParamChange('activeProjectId', null);
+                  onParamChange('referenceTrackId', null);
+                  toast({
+                    title: "Проект удален",
+                    description: "Привязка к проекту отменена",
+                  });
+                }}
+              >
+                ×
+              </Button>
+            </div>
 
-        {/* Track Picker Button - ПОКАЗЫВАЕМ ТОЛЬКО ЕСЛИ ПРОЕКТ ВЫБРАН */}
-        {params.activeProjectId && (
-          <div className="p-2">
+            {/* Track Picker Button */}
             <Button
               variant="outline"
               onClick={() => setTrackPickerOpen(true)}
@@ -291,44 +306,23 @@ export const CompactCustomForm = memo(({
               ) : (
                 'Выбрать трек'
               )}
-              {selectedProject?.persona_id && (
+              {selectedProject.persona_id && (
                 <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0 gap-1">
                   <User className="h-3 w-3" />
                   Персона
                 </Badge>
               )}
             </Button>
+
+            {/* Track Picker Dialog */}
+            <ProjectTrackPickerDialog
+              open={trackPickerOpen}
+              onOpenChange={setTrackPickerOpen}
+              projectId={params.activeProjectId}
+              onTrackSelect={handleTrackSelect}
+              selectedTrackId={params.referenceTrackId || null}
+            />
           </div>
-        )}
-
-        {/* Project Selector Dialog */}
-        <ProjectSelectorDialog
-          open={projectDialogOpen}
-          onOpenChange={setProjectDialogOpen}
-          selectedProjectId={params.activeProjectId || null}
-          onProjectSelect={(projectId) => {
-            onParamChange('activeProjectId', projectId);
-            
-            // ✅ АВТОМАТИЧЕСКИ ПЕРЕКЛЮЧАЕМ В ПРОДВИНУТЫЙ РЕЖИМ
-            if (projectId && onModeChange) {
-              onModeChange('custom');
-              logger.info('Auto-switched to custom mode after project selection', 'CompactCustomForm', { projectId });
-            }
-            
-            logger.info('Project selected for generation', 'CompactCustomForm', { projectId });
-          }}
-          showTrackSelection={false}
-        />
-
-        {/* Track Picker Dialog */}
-        {params.activeProjectId && (
-          <ProjectTrackPickerDialog
-            open={trackPickerOpen}
-            onOpenChange={setTrackPickerOpen}
-            projectId={params.activeProjectId}
-            onTrackSelect={handleTrackSelect}
-            selectedTrackId={params.referenceTrackId || null}
-          />
         )}
 
         {/* Selected Resources Info */}
