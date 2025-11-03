@@ -328,8 +328,11 @@ export function useTrackVersions(
 
   const totalVersionCount = allVersions.length;
 
-  /** Есть ли несколько версий (хотя бы 2) */
-  const hasVersions = allVersions.length > 1;
+  /** 
+   * ✅ FIX: Есть ли дополнительные версии (кроме основной)
+   * Должно быть согласовано с versions (которые отфильтрованы по sourceVersionNumber >= 1)
+   */
+  const hasVersions = versionCount > 0;
 
   /** Количество дополнительных версий (без учёта основной версии с variant_index: 0) */
   const additionalVersionCount = versionCount;
