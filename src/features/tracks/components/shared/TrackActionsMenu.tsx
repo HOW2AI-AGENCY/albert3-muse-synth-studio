@@ -33,11 +33,11 @@ interface TrackActionsMenuProps {
   isLiked?: boolean;
   operationTargetId?: string;
   
-  // Actions
-  onLikeClick: () => void;
-  onDownloadClick: () => void;
-  onShareClick: () => void;
-  onTogglePublic: () => void;
+  // Actions (все опциональные для гибкости)
+  onLikeClick?: () => void;
+  onDownloadClick?: () => void;
+  onShareClick?: () => void;
+  onTogglePublic?: () => void;
   onDescribeTrack?: (trackId: string) => void;
   onSeparateStems?: (trackId: string) => void;
   onExtend?: (trackId: string) => void;
@@ -46,6 +46,11 @@ interface TrackActionsMenuProps {
   onCreatePersona?: (trackId: string) => void;
   onSync?: (trackId: string) => void;
   onRetry?: (trackId: string) => void;
+  onDelete?: (trackId: string) => void;
+  
+  // Aliases для совместимости с TrackListItem
+  onDownload?: () => void;
+  onShare?: () => void;
   
   // Display variant
   variant?: 'full' | 'compact' | 'minimal';
@@ -72,12 +77,21 @@ export const TrackActionsMenu = memo(({
   onCreatePersona,
   onSync,
   onRetry,
+  onDelete,
+  onDownload, // alias
+  onShare, // alias
   variant = 'full',
   className,
 }: TrackActionsMenuProps) => {
+  // Resolve aliases
+  const finalOnDownloadClick = onDownloadClick || onDownload;
+  const finalOnShareClick = onShareClick || onShare;
   const showExtended = variant === 'full';
   const isMurekaTrack = trackMetadata?.provider === 'mureka';
   const isSunoTrack = !isMurekaTrack;
+  
+  // Suppress unused warnings (will be used in future refactor)
+  void onDelete;
 
   return (
     <div className={cn('flex items-center gap-1', className)}>
@@ -112,7 +126,7 @@ export const TrackActionsMenu = memo(({
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={onDownloadClick}
+                onClick={finalOnDownloadClick}
                 className="h-8 w-8"
               >
                 <Download className="w-4 h-4" />
@@ -126,7 +140,7 @@ export const TrackActionsMenu = memo(({
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={onShareClick}
+                onClick={finalOnShareClick}
                 className="h-8 w-8"
               >
                 <Share2 className="w-4 h-4" />

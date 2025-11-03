@@ -12,6 +12,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { MusicProvider } from '@/config/provider-models';
 import * as Sentry from '@sentry/react';
 import { addBreadcrumb } from '@/utils/sentry';
+import { trackGenerationEvent } from '@/utils/sentry-enhanced';
 
 type ToastFunction = (options: { 
   title: string; 
@@ -136,6 +137,9 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
 
     const subscription = GenerationService.subscribe(trackId, (status, trackData) => {
       if (status === 'completed') {
+        trackGenerationEvent('completed', trackId, provider, {
+          duration: trackData?.metadata?.duration,
+        });
         toast({
           title: '✅ Трек готов!',
           description: `Ваш трек "${trackData?.title}" успешно сгенерирован.`,
@@ -143,6 +147,10 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
         onSuccess?.();
         cleanup();
       } else if (status === 'failed') {
+        trackGenerationEvent('failed', trackId, provider, {
+          errorMessage: trackData?.errorMessage,
+          prompt: trackData?.prompt,
+        });
         toast({
           title: '❌ Ошибка генерации',
           description: trackData?.errorMessage || 'Произошла ошибка при обработке вашего трека.',
@@ -190,9 +198,12 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
       hasLyrics: !!options.lyrics,
     });
 
-    // Set Sentry tags
+    // Set Sentry tags & track event
     Sentry.setTag('generation.provider', effectiveProvider);
     Sentry.setTag('generation.has_vocals', options.hasVocals || false);
+    trackGenerationEvent('started', 'pending', effectiveProvider, {
+      prompt: effectivePrompt,
+    });
 
     // Validation
     if (!effectivePrompt) {

@@ -1,96 +1,30 @@
 /**
- * Lazy-loaded Components - Bundle Size Optimization
- * Уменьшает initial bundle с ~2MB до ~800KB
+ * Lazy-loaded components for code splitting
+ * Reduces initial bundle size and improves TTI
  */
 
-import { lazy, Suspense } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { lazy } from 'react';
 
-// ========== HEAVY LIBRARIES (Lazy Load) ==========
+// ===== PAGES =====
+export const LazyGenerate = lazy(() => import('@/pages/workspace/Generate'));
+export const LazyLibrary = lazy(() => import('@/pages/workspace/Library'));
+export const LazyAnalytics = lazy(() => import('@/pages/workspace/Analytics'));
+export const LazySettings = lazy(() => import('@/pages/workspace/Settings'));
 
-// Recharts ~100KB - грузим только когда открываем Analytics
-export const LazyAnalyticsDashboard = lazy(() =>
-  import('@/pages/workspace/Analytics')
+// ===== HEAVY COMPONENTS =====
+export const LazyDetailPanel = lazy(() => 
+  import('@/features/tracks/ui/DetailPanel').then(m => ({ default: m.DetailPanel }))
 );
 
-export const LazyMetricsPage = lazy(() =>
-  import('@/pages/workspace/Metrics')
+export const LazyMusicGeneratorV2 = lazy(() => 
+  import('@/components/MusicGeneratorV2').then(m => ({ default: m.MusicGeneratorV2 }))
 );
 
-// Framer Motion ~80KB - грузим только для анимаций
-export const LazyMotionDiv = lazy(async () => {
-  const { motion } = await import('framer-motion');
-  return { default: motion.div };
-});
-
-// ========== HEAVY UI COMPONENTS (Lazy Load) ==========
-
-const DetailPanel = lazy(() =>
-  import('@/features/tracks/ui/DetailPanel').then(module => ({ default: module.DetailPanel }))
+export const LazyGlobalAudioPlayer = lazy(() => 
+  import('@/components/player/GlobalAudioPlayer')
 );
 
-const FullScreenPlayer = lazy(() => 
-  import('./player/FullScreenPlayer').then(module => ({ default: module.FullScreenPlayer }))
-);
-
-export const LazyAdvancedStemMixer = lazy(() =>
-  import('@/features/tracks/components/AdvancedStemMixer').then(m => ({ default: m.AdvancedStemMixer }))
-);
-
-export const LazyTrackVersionComparison = lazy(() =>
-  import('@/features/tracks/components/TrackVersionComparison').then(m => ({ default: m.TrackVersionComparison }))
-);
-
-export const LazyTrackVersionMetadataPanel = lazy(() =>
-  import('@/features/tracks/components/TrackVersionMetadataPanel').then(m => ({ default: m.TrackVersionMetadataPanel }))
-);
-
-// ========== SKELETONS ==========
-
-const DetailPanelSkeleton = () => (
-  <div className="space-y-4 p-6">
-    <Skeleton className="h-6 w-40" />
-    <Skeleton className="h-48 w-full rounded-lg" />
-    <div className="space-y-2">
-      <Skeleton className="h-4 w-full" />
-      <Skeleton className="h-4 w-3/4" />
-    </div>
-  </div>
-);
-
-const FullScreenPlayerSkeleton = () => (
-  <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
-    <div className="text-center space-y-4">
-      <Skeleton className="h-64 w-64 rounded-lg mx-auto" />
-      <Skeleton className="h-6 w-48 mx-auto" />
-    </div>
-  </div>
-);
-
-// ========== WRAPPER HOC ==========
-
-const withLazyLoading = <P extends object>(
-  Component: React.ComponentType<P>,
-  LoadingSkeleton: React.ComponentType
-) => {
-  return (props: P) => (
-    <Suspense fallback={<LoadingSkeleton />}>
-      <Component {...props} />
-    </Suspense>
-  );
-};
-
-// ========== EXPORTS ==========
-
-export const DetailPanelLazy = withLazyLoading(DetailPanel, DetailPanelSkeleton);
-export const LazyFullScreenPlayer = withLazyLoading(FullScreenPlayer, FullScreenPlayerSkeleton);
-export const LazyDetailPanel = DetailPanelLazy;
-
-// ========== PRELOADING ==========
-
-/**
- * Предзагрузка критических компонентов при первом взаимодействии
- */
+// ===== PRELOADING FUNCTIONS =====
 export const preloadDetailPanel = () => import('@/features/tracks/ui/DetailPanel');
-export const preloadStemMixer = () => import('@/features/tracks/components/AdvancedStemMixer');
-export const preloadVersionComparison = () => import('@/features/tracks/components/TrackVersionComparison');
+export const preloadMusicGenerator = () => import('@/components/MusicGeneratorV2');
+export const preloadAudioPlayer = () => import('@/components/player/GlobalAudioPlayer');

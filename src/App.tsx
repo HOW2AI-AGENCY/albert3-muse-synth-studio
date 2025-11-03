@@ -1,16 +1,12 @@
-import { useEffect, Suspense } from "react";
+import { useEffect, Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "react-router-dom";
 import { GlobalErrorBoundary } from "@/components/errors/GlobalErrorBoundary";
 import { FullPageSpinner } from "@/components/ui/loading-states";
 import router from "./router";
-import GlobalAudioPlayer from "./components/player/GlobalAudioPlayer";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { PerformanceMonitorWidget } from "@/components/dev/PerformanceMonitorWidget";
-import { SentryFeedbackButton } from "@/components/SentryFeedbackButton";
 import { TelegramAuthProvider } from "@/contexts/TelegramAuthProvider";
 import { toast } from "@/hooks/use-toast";
 import { reportWebVitals, logMetric } from "@/utils/web-vitals";
@@ -18,6 +14,12 @@ import {
   preconnectExternalResources, 
   setupResourceHints 
 } from "@/utils/bundleOptimization";
+import { trackPerformanceMetric } from "@/utils/sentry-enhanced";
+
+// ✅ Lazy load heavy components
+const LazyGlobalAudioPlayer = lazy(() => import("./components/player/GlobalAudioPlayer"));
+const LazyPerformanceMonitorWidget = lazy(() => import("@/components/dev/PerformanceMonitorWidget").then(m => ({ default: m.PerformanceMonitorWidget })));
+const LazySentryFeedbackButton = lazy(() => import("@/components/SentryFeedbackButton").then(m => ({ default: m.SentryFeedbackButton })));
 
 // Оптимизированная конфигурация React Query
 const queryClient = new QueryClient({
@@ -44,11 +46,29 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  // Monitor Web Vitals in development
+  // Monitor Web Vitals and track to Sentry
   useEffect(() => {
-    if (import.meta.env.DEV) {
-      reportWebVitals(logMetric);
-    }
+    const startTime = performance.now();
+    
+    reportWebVitals((metric) => {
+      logMetric(metric);
+      
+      // Track to Sentry in production
+      if (import.meta.env.PROD) {
+        trackPerformanceMetric(
+          metric.name === 'LCP' ? 'bundle_load' : 
+          metric.name === 'FCP' ? 'bundle_load' : 'component_render',
+          metric.value,
+          { metric: metric.name }
+        );
+      }
+    });
+
+    // Track initial bundle load time
+    window.addEventListener('load', () => {
+      const loadTime = performance.now() - startTime;
+      trackPerformanceMetric('bundle_load', loadTime, { type: 'initial' });
+    });
   }, []);
 
   // ✅ Setup performance optimizations
@@ -80,11 +100,22 @@ const App = () => {
             <AppLayout>
               <Suspense fallback={<FullPageSpinner />}>
                 <Toaster />
-                
                 <RouterProvider router={router} />
-                <GlobalAudioPlayer />
-                <PerformanceMonitorWidget />
-                <SentryFeedbackButton />
+                
+                {/* ✅ Lazy load heavy components */}
+                <Suspense fallback={null}>
+                  <LazyGlobalAudioPlayer />
+                </Suspense>
+                
+                {import.meta.env.DEV && (
+                  <Suspense fallback={null}>
+                    <LazyPerformanceMonitorWidget />
+                  </Suspense>
+                )}
+                
+                <Suspense fallback={null}>
+                  <LazySentryFeedbackButton />
+                </Suspense>
               </Suspense>
             </AppLayout>
           </TooltipProvider>

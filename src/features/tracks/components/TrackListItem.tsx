@@ -1,31 +1,10 @@
 import React, { useState, useCallback, memo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  Play,
-  Pause,
-  Heart,
-  Download,
-  Share2,
-  Music,
-  Headphones,
-  AlertTriangle,
-  Loader2,
-  RefreshCw,
-  Trash2,
-  Split,
-  MoreVertical,
-} from "@/utils/iconImports";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Music, Headphones, AlertTriangle, Loader2, Play, Pause } from "@/utils/iconImports";
 import { useCurrentTrack, useIsPlaying, useAudioPlayerStore } from "@/stores/audioPlayerStore";
-import { useTrackLike } from "@/features/tracks/hooks";
 import { cn } from "@/lib/utils";
 import { formatDuration } from "@/utils/formatters";
+import { TrackActionsMenu } from "@/features/tracks/components/shared/TrackActionsMenu";
 
 // Упрощенный интерфейс, аналогичный TrackCard
 interface Track {
@@ -58,7 +37,6 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
   const currentTrack = useCurrentTrack();
   const isPlaying = useIsPlaying();
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
-  const { isLiked, toggleLike } = useTrackLike(track.id, track.like_count || 0);
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   
@@ -87,44 +65,6 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
       status: track.status,
     });
   }, [playButtonDisabled, playTrack, track]);
-
-  const handleLikeClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    toggleLike();
-  }, [toggleLike]);
-
-  const handleDownloadClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    onDownload?.();
-  }, [onDownload]);
-
-  const handleShareClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    onShare?.();
-  }, [onShare]);
-
-  const handleRetryClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    onRetry?.(track.id);
-  }, [onRetry, track.id]);
-
-  const handleSyncClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    onSync?.(track.id);
-  }, [onSync, track.id]);
-
-  const handleDeleteClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    onDelete?.(track.id);
-  }, [onDelete, track.id]);
-
-  const handleSeparateStemsClick = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    onSeparateStems?.(track.id);
-  }, [onSeparateStems, track.id]);
-
-  const isStuck = track.created_at &&
-    (Date.now() - new Date(track.created_at).getTime()) > 5 * 60 * 1000; // 5 минут
 
   const formattedDuration = track.duration ? formatDuration(track.duration) : null;
 
@@ -191,122 +131,23 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
       </div>
 
       <div className={cn(
-        "flex items-center gap-1 transition-opacity duration-200",
+        "flex items-center gap-0.5 transition-opacity duration-200",
         isHovered || isCurrentTrack ? "opacity-100" : "opacity-0 group-focus-within:opacity-100"
-      )}>
-        {/* Processing/Pending: Show Sync button */}
-        {(track.status === 'processing' || track.status === 'pending') && isStuck && onSync && onDelete ? (
-          <>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="w-7 h-7" 
-                  onClick={handleSyncClick}
-                  aria-label="Обновить статус"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Обновить статус</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="w-7 h-7 text-destructive hover:text-destructive" 
-                  onClick={handleDeleteClick}
-                  aria-label="Удалить трек"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Удалить</TooltipContent>
-            </Tooltip>
-          </>
-        ) : track.status === 'failed' && onRetry && onDelete ? (
-          /* Failed: Show Retry button */
-          <>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="w-7 h-7" 
-                  onClick={handleRetryClick}
-                  aria-label="Повторить генерацию"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Повторить</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="w-7 h-7 text-destructive hover:text-destructive" 
-                  onClick={handleDeleteClick}
-                  aria-label="Удалить трек"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Удалить</TooltipContent>
-            </Tooltip>
-          </>
-        ) : (
-          <>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="w-7 h-7" onClick={handleLikeClick} aria-label={isLiked ? "Убрать из избранного" : "В избранное"}>
-                  <Heart className={cn("w-3.5 h-3.5", isLiked && "fill-red-500 text-red-500")} />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{isLiked ? "Убрать из избранного" : "В избранное"}</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="w-7 h-7" onClick={handleDownloadClick} disabled={playButtonDisabled} aria-label="Скачать">
-                  <Download className="w-3.5 h-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Скачать</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="w-7 h-7" onClick={handleShareClick} aria-label="Поделиться">
-                  <Share2 className="w-3.5 h-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Поделиться</TooltipContent>
-            </Tooltip>
-            {track.status === 'completed' && onSeparateStems && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="w-7 h-7" 
-                    aria-label="Дополнительно"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <MoreVertical className="w-3.5 h-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 z-[200]">
-                  <DropdownMenuItem onClick={handleSeparateStemsClick}>
-                    <Split className="w-4 h-4 mr-2" />
-                    Разделить на стемы
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </>
-        )}
+      )}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <TrackActionsMenu
+          trackId={track.id}
+          trackStatus={track.status}
+          trackMetadata={{ provider: 'suno' }}
+          variant="minimal"
+          onDownload={onDownload}
+          onShare={onShare}
+          onRetry={onRetry}
+          onSync={onSync}
+          onDelete={onDelete}
+          onSeparateStems={onSeparateStems}
+        />
       </div>
     </div>
   );
