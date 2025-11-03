@@ -312,7 +312,7 @@ export function useTrackVersions(
   const masterVersion = getMasterVersion(allVersions);
 
   /** Основная версия трека (первая по порядку, variant_index: 0) */
-  const mainVersion = allVersions[0] ?? null;
+  const mainVersion = allVersions.find(v => v.sourceVersionNumber === 0) ?? allVersions[0] ?? null;
 
   /** 
    * ✅ FIX: Дополнительные версии = все версии кроме основной (sourceVersionNumber === 0)
