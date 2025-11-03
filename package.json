@@ -12,6 +12,9 @@
     "docs:validate": "tsx scripts/docs/validate.ts",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:unit": "vitest run --coverage=false",
+    "test:coverage": "vitest run",
     "test:e2e": "playwright test",
     "db:seed": "supabase db reset",
     "validate:protected": "node scripts/validate-protected-files.mjs"
