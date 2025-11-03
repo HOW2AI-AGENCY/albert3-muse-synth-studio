@@ -8,7 +8,7 @@ import { Timeline } from '@/components/daw/Timeline';
 import { TrackLane } from '@/components/daw/TrackLane';
 import { TrackInfoPanel } from '@/components/daw/TrackInfoPanel';
 import { Track } from '@/types/daw';
-import { PlaybackService } from '@/services/playbackService';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 const initialTracksData: Track[] = [
   {
@@ -37,17 +37,11 @@ const initialTracksData: Track[] = [
   },
 ];
 
-const playbackService = new PlaybackService();
-
 export const DAW: React.FC = () => {
   const [tracks, setTracks] = useState<Track[]>(initialTracksData);
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>('1');
   const [playbackPosition, setPlaybackPosition] = useState(0);
-
-  useEffect(() => {
-    playbackService.subscribe(setPlaybackPosition);
-    return () => playbackService.unsubscribe();
-  }, []);
+  const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   const handleVolumeChange = (trackId: string, newVolume: number) => {
     setTracks(currentTracks =>
@@ -60,14 +54,14 @@ export const DAW: React.FC = () => {
   return (
     <div className="h-screen w-screen flex flex-col bg-background text-foreground">
       <div className="h-16 border-b border-border flex items-center px-4 space-x-4">
-        <button onClick={() => playbackService.play()}>Play</button>
-        <button onClick={() => playbackService.pause()}>Pause</button>
-        <button onClick={() => playbackService.stop()}>Stop</button>
+        <button>Play</button>
+        <button>Pause</button>
+        <button>Stop</button>
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        <ResizablePanelGroup direction="horizontal">
-          <ResizablePanel defaultSize={20} minSize={15} maxSize={30}>
+        <ResizablePanelGroup direction={isDesktop ? 'horizontal' : 'vertical'}>
+          <ResizablePanel defaultSize={isDesktop ? 20 : 30} minSize={15} maxSize={isDesktop ? 30 : 40}>
             <TrackInfoPanel
               track={selectedTrack}
               onVolumeChange={(newVolume) => {
@@ -78,7 +72,7 @@ export const DAW: React.FC = () => {
             />
           </ResizablePanel>
           <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={80}>
+          <ResizablePanel defaultSize={isDesktop ? 80 : 70}>
             <div className="h-full flex flex-col">
               <Timeline playbackPosition={playbackPosition} />
               <div className="flex-1 overflow-y-auto">
