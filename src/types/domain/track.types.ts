@@ -31,7 +31,7 @@ export interface Track {
   video_url?: string | null;
   status: string;
   error_message?: string | null;
-  provider: string;
+  provider: string | null;
   lyrics?: string | null;
   style_tags?: string[] | null;
   genre?: string | null;
@@ -41,6 +41,7 @@ export interface Track {
   is_public: boolean;
   duration?: number | null;
   duration_seconds?: number | null;
+  progress_percent?: number | null;
   play_count: number;
   like_count: number;
   download_count: number;
@@ -76,9 +77,15 @@ export interface AudioPlayerTrack {
   id: string;
   title: string;
   audio_url: string;
-  cover_url?: string;
-  duration?: number;
+  cover_url?: string | null | undefined;
+  duration?: number | null | undefined;
   artist?: string;
+  status?: string;
+  style_tags?: string[];
+  lyrics?: string;
+  parentTrackId?: string;
+  versionNumber?: number;
+  isMasterVersion?: boolean;
 }
 
 /**

@@ -14,7 +14,7 @@ import { EnhancedPromptPreview } from '@/components/generator/EnhancedPromptPrev
 import { supabase } from '@/integrations/supabase/client';
 import { toast as sonnerToast } from 'sonner';
 import { usePromptHistory } from '@/hooks/usePromptHistory';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useBreakpoints } from '@/hooks/useBreakpoints';
 import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import { getProviderModels, getDefaultModel, type MusicProvider as ProviderType } from '@/config/provider-models';
@@ -53,6 +53,7 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   
   const currentModels = getProviderModels(selectedProvider as ProviderType);
   const { savePrompt } = usePromptHistory();
+  const { isMobile } = useBreakpoints();
 
   // Provider change handler with correct typing
   const handleProviderChange = useCallback((provider: string) => {
@@ -395,7 +396,6 @@ const MusicGeneratorV2Component = ({ onTrackGenerated }: MusicGeneratorV2Props) 
   }, [handleGenerate, isGenerating]);
 
   const tempAudioUrl = state.pendingAudioFile ? URL.createObjectURL(state.pendingAudioFile) : '';
-  const isMobile = useIsMobile();
 
   return (
     <motion.div 

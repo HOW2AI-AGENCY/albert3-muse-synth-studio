@@ -2,19 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useCurrentTrack, useIsPlaying, useAudioPlayerStore } from '@/stores/audioPlayerStore';
 import { useTrackLike, useTrackVersions } from '@/features/tracks/hooks';
 import { useToast } from '@/hooks/use-toast';
-
-interface Track {
-  id: string;
-  title: string;
-  audio_url?: string;
-  cover_url?: string;
-  duration?: number;
-  status: string;
-  style_tags?: string[];
-  like_count?: number;
-  is_public?: boolean;
-  metadata?: Record<string, any> | null;
-}
+import type { Track } from '@/types/domain/track.types';
 
 export const useTrackCardState = (track: Track) => {
   const { toast } = useToast();
@@ -125,8 +113,8 @@ export const useTrackCardState = (track: Track) => {
         id: displayedVersion.id,
         title: displayedVersion.title || track.title,
         audio_url: displayedVersion.audio_url || '',
-        cover_url: displayedVersion.cover_url || track.cover_url,
-        duration: displayedVersion.duration || track.duration,
+        cover_url: displayedVersion.cover_url || track.cover_url || null,
+        duration: displayedVersion.duration || track.duration || null,
         status: 'completed' as const,
         style_tags: track.style_tags || [],
         lyrics: displayedVersion.lyrics,

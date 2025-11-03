@@ -1,29 +1,26 @@
+/**
+ * ✅ REFACTORED: Pure presentation component (v2.0.0)
+ * 
+ * Separated UI from business logic
+ * Uses centralized types from domain layer
+ * 
+ * @version 2.0.0
+ */
 import React, { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { fadeInUp } from '@/utils/animations';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 import { cn } from '@/lib/utils';
-import { TrackCardCover } from './card/TrackCardCover';
-import { TrackCardInfo } from './card/TrackCardInfo';
-import { TrackCardActions } from './card/TrackCardActions';
-import { GenerationProgress, FailedState } from './card/TrackCardStates';
-import { useTrackCardState } from './card/useTrackCardState';
+import { TrackCardCover } from '../components/card/TrackCardCover';
+import { TrackCardInfo } from '../components/card/TrackCardInfo';
+import { TrackCardActions } from '../components/card/TrackCardActions';
+import { GenerationProgress, FailedState } from '../components/card/TrackCardStates';
+import { useTrackCard, type TrackCardCallbacks } from '../hooks/useTrackCard';
 import type { Track } from '@/types/domain/track.types';
 
-interface TrackCardProps {
+interface TrackCardProps extends TrackCardCallbacks {
   track: Track;
-  onShare?: () => void;
-  onClick?: () => void;
-  onRetry?: (trackId: string) => void;
-  onSync?: (trackId: string) => void;
-  onDelete?: (trackId: string) => void;
-  onExtend?: (trackId: string) => void;
-  onCover?: (trackId: string) => void;
-  onSeparateStems?: (trackId: string) => void;
-  onAddVocal?: (trackId: string) => void;
-  onDescribeTrack?: (trackId: string) => void;
-  onCreatePersona?: (trackId: string) => void;
   className?: string;
 }
 
@@ -39,20 +36,13 @@ const getGradientByTrackId = (trackId: string) => {
   return gradients[index];
 };
 
+/**
+ * Pure presentation component - receives all logic from useTrackCard hook
+ */
 const TrackCardComponent = React.memo(({
   track,
-  onShare,
-  onClick,
-  onRetry,
-  onSync,
-  onDelete,
-  onExtend,
-  onCover,
-  onSeparateStems,
-  onAddVocal,
-  onDescribeTrack,
-  onCreatePersona,
   className,
+  ...callbacks
 }: TrackCardProps) => {
   const cardRef = useRef<HTMLDivElement>(null);
   
@@ -77,7 +67,10 @@ const TrackCardComponent = React.memo(({
     handleLikeClick,
     handleDownloadClick,
     handleTogglePublic,
-  } = useTrackCardState(track);
+    handleShareClick,
+    handleCardClick,
+    handleKeyDown,
+  } = useTrackCard(track, callbacks);
 
   useEffect(() => {
     const element = cardRef.current;
@@ -88,10 +81,6 @@ const TrackCardComponent = React.memo(({
   }, [setIsVisible]);
 
   const gradient = getGradientByTrackId(track.id);
-
-  const handleShareClick = () => {
-    onShare?.();
-  };
 
   return (
     <motion.div
@@ -106,12 +95,7 @@ const TrackCardComponent = React.memo(({
       aria-live={track.status === 'processing' || track.status === 'pending' ? 'polite' : undefined}
       aria-busy={track.status === 'processing' || track.status === 'pending'}
       tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onClick?.();
-        }
-      }}
+      onKeyDown={handleKeyDown}
       className="touch-optimized focus-ring"
     >
       <Card
@@ -122,25 +106,25 @@ const TrackCardComponent = React.memo(({
           isCurrentTrack && 'ring-2 ring-primary/80 shadow-glow-primary-strong',
           className
         )}
-        onClick={onClick}
+        onClick={handleCardClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         <div className="relative aspect-square bg-gradient-to-br from-gray-800 to-gray-900">
           {(track.status === 'processing' || track.status === 'pending') && (
-            <GenerationProgress track={track} onSync={onSync} onDelete={onDelete} />
+            <GenerationProgress track={track} onSync={callbacks.onSync} onDelete={callbacks.onDelete} />
           )}
           {track.status === 'failed' && (
             <FailedState
               message={track.error_message}
               trackId={track.id}
-              onRetry={onRetry}
-              onDelete={onDelete}
+              onRetry={callbacks.onRetry}
+              onDelete={callbacks.onDelete}
             />
           )}
 
           <TrackCardCover
-            coverUrl={displayedVersion.cover_url || track.cover_url}
+            coverUrl={(displayedVersion.cover_url || track.cover_url) ?? undefined}
             title={displayedVersion.title || track.title}
             gradient={gradient}
             hasVocals={track.has_vocals}
@@ -161,12 +145,12 @@ const TrackCardComponent = React.memo(({
           <TrackCardInfo
             title={displayedVersion.title || track.title}
             prompt={track.prompt}
-            duration={displayedVersion.duration || track.duration}
+            duration={displayedVersion.duration || track.duration || undefined}
             versionCount={versionCount}
             selectedVersionIndex={selectedVersionIndex}
             hasStems={hasStems}
             status={track.status}
-            progressPercent={track.progress_percent}
+            progressPercent={track.progress_percent ?? undefined}
             createdAt={track.created_at}
             likeCount={track.like_count}
             isMasterVersion={displayedVersion.isMasterVersion}
@@ -187,12 +171,12 @@ const TrackCardComponent = React.memo(({
             onDownloadClick={handleDownloadClick}
             onShareClick={handleShareClick}
             onTogglePublic={handleTogglePublic}
-            onDescribeTrack={onDescribeTrack}
-            onSeparateStems={onSeparateStems}
-            onExtend={onExtend}
-            onCover={onCover}
-            onAddVocal={onAddVocal}
-            onCreatePersona={onCreatePersona}
+            onDescribeTrack={callbacks.onDescribeTrack}
+            onSeparateStems={callbacks.onSeparateStems}
+            onExtend={callbacks.onExtend}
+            onCover={callbacks.onCover}
+            onAddVocal={callbacks.onAddVocal}
+            onCreatePersona={callbacks.onCreatePersona}
           />
         </CardContent>
       </Card>
