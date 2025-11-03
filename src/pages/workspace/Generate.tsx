@@ -23,6 +23,7 @@ import { normalizeTrack } from "@/utils/trackNormalizer";
 import type { Track } from "@/services/api.service";
 import { TrackDialogsManager } from "@/components/tracks/TrackDialogsManager";
 import { useMusicProjects } from "@/hooks/useMusicProjects";
+import { useTrackOperations } from "@/hooks/tracks/useTrackOperations";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -43,6 +44,7 @@ const Generate = () => {
     pageSize: 25,
   });
   const { projects } = useMusicProjects();
+  const trackOperations = useTrackOperations();
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showGenerator, setShowGenerator] = useState(false);
 
@@ -164,6 +166,7 @@ const Generate = () => {
                 onCreatePersona={handleCreatePersona}
                 onSelect={setSelectedTrack}
                 isDetailPanelOpen={!!selectedTrack}
+                trackOperations={trackOperations}
               />
               {hasNextPage && (
                 <div className="mt-4 flex justify-center">
@@ -262,6 +265,7 @@ const Generate = () => {
                 onCover={handleCover}
                 onCreatePersona={handleCreatePersona}
                 onSelect={setSelectedTrack}
+                trackOperations={trackOperations}
               />
               {hasNextPage && (
                 <div className="mt-4 flex justify-center">
@@ -342,6 +346,7 @@ const Generate = () => {
           onCover={handleCover}
           onCreatePersona={handleCreatePersona}
           onSelect={setSelectedTrack}
+          trackOperations={trackOperations}
         />
         {hasNextPage && (
           <div className="mt-4 flex justify-center">

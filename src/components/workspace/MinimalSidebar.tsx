@@ -7,8 +7,7 @@ import type { WorkspaceNavItem } from "@/config/workspace-navigation";
 import { useProviderBalance } from "@/hooks/useProviderBalance";
 import { UserProfileDropdown } from "./UserProfileDropdown";
 import { NotificationsDropdown } from "./NotificationsDropdown";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MinimalSidebarProps {
   isExpanded: boolean;
@@ -30,13 +29,8 @@ const MinimalSidebar = ({
 }: MinimalSidebarProps) => {
   const location = useLocation();
   const { balance, isLoading: balanceLoading } = useProviderBalance();
-  const [userEmail, setUserEmail] = useState<string>("");
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user?.email) setUserEmail(user.email);
-    });
-  }, []);
+  const { user } = useAuth();
+  const userEmail = user?.email ?? "";
 
   return (
     <aside

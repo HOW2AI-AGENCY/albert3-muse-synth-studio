@@ -8,11 +8,11 @@ import { Track } from "@/services/api.service";
 import { Music } from "@/utils/iconImports";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
-import { supabase } from "@/integrations/supabase/client";
 import { useManualSyncTrack } from "@/hooks/useManualSyncTrack";
 import { logger } from "@/utils/logger";
 import { AITrackActionsContainer } from "@/components/tracks/AITrackActionsContainer";
 import { useAdaptiveGrid } from "@/hooks/useAdaptiveGrid";
+import type { TrackOperations } from "@/hooks/tracks/useTrackOperations";
 
 interface TracksListProps {
   tracks: Track[];
@@ -25,6 +25,7 @@ interface TracksListProps {
   onCreatePersona?: (trackId: string) => void;
   onSelect?: (track: Track) => void;
   isDetailPanelOpen?: boolean;
+  trackOperations: TrackOperations;
 }
 
 const TracksListComponent = ({
@@ -38,6 +39,7 @@ const TracksListComponent = ({
   onCreatePersona,
   onSelect,
   isDetailPanelOpen = false,
+  trackOperations,
 }: TracksListProps) => {
   const playTrackWithQueue = useAudioPlayerStore((state) => state.playTrackWithQueue);
   const { toast } = useToast();
@@ -125,47 +127,12 @@ const TracksListComponent = ({
   const handleRetry = useCallback(async (trackId: string) => {
     const track = tracks.find(t => t.id === trackId);
     if (!track) return;
-    
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast({ title: "Ошибка", description: "Необходима авторизация", variant: "destructive" });
-        return;
-      }
 
-      toast({ title: "Повторная генерация", description: "Запускаем генерацию заново..." });
-
-      const provider = track.provider === 'suno' || track.provider === 'mureka'
-        ? track.provider
-        : 'suno';
-
-      const { GenerationService } = await import('@/services/generation');
-      await GenerationService.generate({
-        title: track.title,
-        prompt: track.prompt,
-        provider: provider as any,
-        lyrics: track.lyrics || undefined,
-        hasVocals: track.has_vocals ?? false,
-        styleTags: track.style_tags || undefined,
-      });
-
-      refreshTracks();
-      toast({ title: "Успешно", description: "Генерация перезапущена" });
-    } catch (error) {
-      import('@/utils/logger').then(({ logError }) => {
-        logError('Track retry failed', error as Error, 'TracksList', {
-          trackId,
-          title: track.title,
-          provider: track.provider
-        });
-      });
-      toast({ 
-        title: "Ошибка", 
-        description: error instanceof Error ? error.message : "Не удалось перезапустить генерацию", 
-        variant: "destructive" 
-      });
-    }
-  }, [tracks, toast, refreshTracks]);
+    await trackOperations.retryTrackGeneration({
+      track,
+      onSuccess: refreshTracks,
+    });
+  }, [trackOperations, tracks, refreshTracks]);
 
   const handleSync = useCallback(async (trackId: string) => {
     try {
