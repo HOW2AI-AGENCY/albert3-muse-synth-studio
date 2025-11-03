@@ -12,6 +12,9 @@
       "src/integrations/supabase/types.ts",
       "src/hooks/useResponsiveGrid.ts",
       "src/repositories/interfaces/TrackRepository.ts",
+      "src/features/tracks/api/trackVersions.ts",
+      "src/features/tracks/hooks/useTrackVersions.ts",
+      "src/hooks/useTrackVersions.ts",
       "docs/PROTECTED_FILES.md"
     ],
     "patterns": [

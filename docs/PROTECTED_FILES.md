@@ -12,6 +12,11 @@
 - `src/repositories/SupabaseTrackRepository.ts` **[NEW]** - Supabase имплементация
 - `src/repositories/MockTrackRepository.ts` **[NEW]** - Mock для тестов
 
+### 🎵 Track Versioning System (PROTECTED - v3.0.0)
+- `src/features/tracks/api/trackVersions.ts` **[NEW]** - API для версий треков
+- `src/features/tracks/hooks/useTrackVersions.ts` **[NEW]** - Хук управления версиями
+- `src/hooks/useTrackVersions.ts` **[LEGACY]** - Старый хук (re-export)
+
 ### 🎨 Responsive System (PROTECTED - v2.0.0)
 - `src/hooks/useResponsiveGrid.ts` **[NEW]** - Адвансированная адаптивная сетка
 - `src/hooks/useBreakpoints.ts` **[UPDATED]** - Централизованные breakpoints
