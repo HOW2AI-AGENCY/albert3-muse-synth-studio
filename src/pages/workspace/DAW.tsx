@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   ResizableHandle,
   ResizablePanel,
@@ -39,8 +39,8 @@ const initialTracksData: Track[] = [
 
 export const DAW: React.FC = () => {
   const [tracks, setTracks] = useState<Track[]>(initialTracksData);
-  const [selectedTrackId, setSelectedTrackId] = useState<string | null>('1');
-  const [playbackPosition, setPlaybackPosition] = useState(0);
+  const [selectedTrackId] = useState<string | null>('1');
+  const [playbackPosition] = useState(0);
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   const handleVolumeChange = (trackId: string, newVolume: number) => {

@@ -1,12 +1,11 @@
 export class PlaybackService {
-  private audioContext: AudioContext;
   private isPlaying: boolean = false;
   private playbackPosition: number = 0;
   private intervalId: number | null = null;
   private onTimeUpdate: ((time: number) => void) | null = null;
 
   constructor() {
-    this.audioContext = new AudioContext();
+    // Initialize service
   }
 
   play() {
