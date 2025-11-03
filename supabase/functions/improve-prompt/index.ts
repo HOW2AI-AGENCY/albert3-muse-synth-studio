@@ -1,11 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
-import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { createSecurityHeaders } from "../_shared/security.ts";
+import { createCorsHeaders } from "../_shared/cors.ts";
 import { logger } from "../_shared/logger.ts";
 import { improvePromptSchema, validateAndParse } from "../_shared/zod-schemas.ts";
+import { rateLimitMiddleware, RateLimitPresets, addRateLimitHeaders } from "../_shared/rate-limiter.ts";
 
-const mainHandler = async (req: Request) => {
+const handler = async (req: Request) => {
   const corsHeaders = {
     ...createCorsHeaders(),
     ...createSecurityHeaders()
@@ -22,6 +23,26 @@ const mainHandler = async (req: Request) => {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // ✅ NEW: Rate limiting
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    );
+    
+    const rateLimitResult = await rateLimitMiddleware(
+      req,
+      RateLimitPresets.PROMPT_IMPROVEMENT,
+      supabaseClient
+    );
+
+    if (!rateLimitResult.allowed) {
+      const headers = addRateLimitHeaders(new Headers(corsHeaders), rateLimitResult);
+      return new Response(
+        JSON.stringify({ error: rateLimitResult.message }),
+        { status: 429, headers }
       );
     }
 
@@ -107,9 +128,13 @@ CRITICAL RULES:
       wordCount: improvedPrompt.split(/\s+/).length
     });
 
+    // ✅ NEW: Add rate limit headers to success response
+    const headers = addRateLimitHeaders(new Headers(corsHeaders), rateLimitResult);
+    headers.set('Content-Type', 'application/json');
+
     return new Response(
       JSON.stringify({ improvedPrompt }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers }
     );
 
   } catch (error) {
@@ -120,11 +145,5 @@ CRITICAL RULES:
     );
   }
 };
-
-const handler = withRateLimit(mainHandler, {
-  maxRequests: 20,
-  windowMinutes: 1,
-  endpoint: 'improve-prompt'
-});
 
 serve(handler);

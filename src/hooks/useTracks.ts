@@ -29,10 +29,20 @@ export const useTracks = (refreshTrigger?: number, options?: UseTracksOptions) =
   const { toast } = useToast();
   const lastUserIdRef = useRef<string | null>(null);
   const hasTracksRef = useRef(false);
+  
+  // ✅ NEW: Query deduplication - prevent multiple simultaneous requests
+  const loadingPromiseRef = useRef<Promise<void> | null>(null);
 
   const loadTracks = useCallback(async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
+    // ✅ NEW: Query deduplication - reuse existing promise
+    if (loadingPromiseRef.current) {
+      logInfo('Deduplicating loadTracks request', 'useTracks');
+      return loadingPromiseRef.current;
+    }
+
+    const loadPromise = (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
 
       // ✅ FIX: Всегда очищаем треки при отсутствии пользователя
       if (!user) {
@@ -149,17 +159,22 @@ export const useTracks = (refreshTrigger?: number, options?: UseTracksOptions) =
         count: userTracks.length,
         userId: user.id,
       });
-    } catch (error) {
-      logError("Error loading tracks", error as Error, 'useTracks');
-      toast({
-        title: "Ошибка загрузки",
-        description: "Не удалось загрузить треки",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast, projectId]);
+      } catch (error) {
+        logError("Error loading tracks", error as Error, 'useTracks');
+        toast({
+          title: "Ошибка загрузки",
+          description: "Не удалось загрузить треки",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+        loadingPromiseRef.current = null; // ✅ NEW: Clear promise after completion
+      }
+    })();
+
+    loadingPromiseRef.current = loadPromise;
+    return loadPromise;
+  }, [toast, projectId, options?.excludeDraftTracks]);
 
   const deleteTrack = async (trackId: string) => {
     try {
