@@ -1,121 +1,216 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import {
+  createCorsHeaders,
+  handleCorsPreflightRequest,
+} from "../_shared/cors.ts";
+import { createSecurityHeaders } from "../_shared/security.ts";
+import { logger } from "../_shared/logger.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  ...createCorsHeaders(),
+  ...createSecurityHeaders(),
 };
 
-serve(async (req) => {
+interface GenerateLyricsAIRequest {
+  prompt: string;
+  trackId?: string;
+}
+
+interface GenerateLyricsAIResponse {
+  success: boolean;
+  lyrics: string;
+  jobId?: string;
+}
+
+serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return handleCorsPreflightRequest(req);
   }
 
   try {
-    const { prompt, style, mood, language = "English" } = await req.json();
-    
+    const { prompt, trackId } = await req.json() as GenerateLyricsAIRequest;
+
     if (!prompt?.trim()) {
       return new Response(
         JSON.stringify({ error: "Prompt is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
       );
     }
+
+    logger.info("🎵 [LYRICS-AI] Generating lyrics with Lovable AI", {
+      promptLength: prompt.length,
+      hasTrackId: !!trackId,
+    });
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "AI service not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      throw new Error("LOVABLE_API_KEY not configured");
     }
 
-    // Формируем детальный промпт для AI
-    const systemPrompt = `You are a professional songwriter and lyricist. Generate high-quality, creative song lyrics based on the user's request. 
-    
-Format requirements:
-- Use standard song structure markers: [Intro], [Verse], [Pre-Chorus], [Chorus], [Bridge], [Outro]
-- Each section should be clearly separated
-- Include natural rhyming and rhythm
-- Make lyrics emotionally engaging and authentic
-- Write in ${language} language
-${style ? `- Style: ${style}` : ''}
-${mood ? `- Mood/Emotion: ${mood}` : ''}
+    // Системный промпт для генерации качественной лирики
+    const systemPrompt = `You are a professional lyrics writer. Create song lyrics based on the user's description.
 
-Return ONLY the lyrics with structure markers, no additional commentary.`;
+IMPORTANT RULES:
+1. Use proper song structure with tags: [Verse 1], [Verse 2], [Chorus], [Pre-Chorus], [Bridge], [Outro], [Intro]
+2. Each verse should be 4-8 lines
+3. Chorus should be catchy and memorable (3-6 lines)
+4. Use rhyme schemes but keep them natural
+5. Match the mood, style and theme from the description
+6. Write in the language specified or detected from the prompt (Russian or English)
+7. Be creative but appropriate
+8. Output ONLY the lyrics with structure tags, no additional commentary
 
-    const userPrompt = `Write song lyrics about: ${prompt}
+Example format:
+[Verse 1]
+Line 1
+Line 2
+Line 3
+Line 4
 
-Create complete, professional lyrics with multiple verses, chorus, and appropriate structure.`;
+[Pre-Chorus]
+Line 1
+Line 2
 
-    
-    
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+[Chorus]
+Line 1
+Line 2
+Line 3
+
+[Verse 2]
+...`;
+
+    // Вызов Lovable AI Gateway
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-flash", // Быстрая модель для генерации текста
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt }
+          { role: "user", content: prompt },
         ],
-        temperature: 0.8,
-        max_tokens: 2000
+        temperature: 0.8, // Креативность
+        max_tokens: 1500, // Достаточно для полной песни
       }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      
-      if (response.status === 429) {
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      logger.error("❌ [LYRICS-AI] AI Gateway error", {
+        status: aiResponse.status,
+        error: errorText,
+      });
+
+      // Handle rate limiting
+      if (aiResponse.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Превышен лимит запросов. Пожалуйста, попробуйте позже." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Недостаточно средств. Пополните баланс Lovable AI." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ 
+            error: "Слишком много запросов. Пожалуйста, подождите минуту и попробуйте снова." 
+          }),
+          {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
         );
       }
 
-      return new Response(
-        JSON.stringify({ error: "Failed to generate lyrics" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      // Handle payment required
+      if (aiResponse.status === 402) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Недостаточно кредитов для AI генерации. Пополните баланс в настройках." 
+          }),
+          {
+            status: 402,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      throw new Error(`AI Gateway error: ${aiResponse.status}`);
     }
 
-    const data = await response.json();
-    const generatedLyrics = data.choices?.[0]?.message?.content;
+    const aiData = await aiResponse.json();
+    const generatedLyrics = aiData.choices?.[0]?.message?.content;
 
     if (!generatedLyrics) {
-      return new Response(
-        JSON.stringify({ error: "No lyrics generated" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      throw new Error("No lyrics generated from AI");
     }
 
-    console.log("Lyrics generated successfully");
+    logger.info("✅ [LYRICS-AI] Lyrics generated successfully", {
+      lyricsLength: generatedLyrics.length,
+      lyricsLines: generatedLyrics.split('\n').length,
+    });
 
-    return new Response(
-      JSON.stringify({ 
-        lyrics: generatedLyrics,
-        success: true 
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    // Автоматически сохраняем результат в трек, если указан trackId
+    let jobId: string | undefined;
+    if (trackId) {
+      try {
+        // Используем Supabase service role для обновления трека
+        const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+        const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
+        if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+          const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/tracks?id=eq.${trackId}`, {
+            method: "PATCH",
+            headers: {
+              "apikey": SUPABASE_SERVICE_ROLE_KEY,
+              "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+              "Content-Type": "application/json",
+              "Prefer": "return=minimal",
+            },
+            body: JSON.stringify({
+              lyrics: generatedLyrics,
+              updated_at: new Date().toISOString(),
+            }),
+          });
+
+          if (updateResponse.ok) {
+            logger.info("💾 [LYRICS-AI] Lyrics auto-saved to track", { trackId });
+          } else {
+            logger.warn("⚠️ [LYRICS-AI] Failed to auto-save lyrics", {
+              trackId,
+              status: updateResponse.status,
+            });
+          }
+        }
+      } catch (saveError) {
+        logger.error("❌ [LYRICS-AI] Error auto-saving lyrics", {
+          error: saveError instanceof Error ? saveError.message : String(saveError),
+        });
+        // Не прерываем выполнение, лирика все равно возвращается
+      }
+    }
+
+    const response: GenerateLyricsAIResponse = {
+      success: true,
+      lyrics: generatedLyrics,
+      jobId,
+    };
+
+    return new Response(JSON.stringify(response), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error) {
-    console.error("Error in generate-lyrics-ai:", error);
+    logger.error("❌ [LYRICS-AI] Error", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Unknown error" 
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Internal server error",
       }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   }
 });

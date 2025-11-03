@@ -65,12 +65,13 @@ export function LyricsGeneratorDialog({
     setIsGenerating(true);
 
     try {
-      logger.info(`✍️ [LYRICS] Generating lyrics: ${prompt.substring(0, 50)}...`);
+      logger.info(`✍️ [LYRICS] Generating lyrics with AI: ${prompt.substring(0, 50)}...`);
 
-      // Используем Lovable AI вместо Suno для генерации лирики (нет лимита на длину промпта)
+      // Используем Lovable AI для генерации лирики
       const { data, error } = await supabase.functions.invoke('generate-lyrics-ai', {
         body: {
-          prompt: prompt.trim()
+          prompt: prompt.trim(),
+          trackId: trackId, // Передаем trackId для автосохранения
         }
       });
 
@@ -83,21 +84,17 @@ export function LyricsGeneratorDialog({
       // Lovable AI возвращает лирику напрямую
       if (data?.lyrics) {
         setGeneratedLyrics(data.lyrics);
+        
+        // Передаем лирику в callback
         if (onGenerated) {
           onGenerated(data.lyrics);
-        }
-        
-        // Сохраняем лирику в трек, если указан trackId
-        if (trackId) {
-          await supabase
-            .from('tracks')
-            .update({ lyrics: data.lyrics })
-            .eq('id', trackId);
         }
 
         toast({
           title: "✨ Текст готов!",
-          description: "Посмотрите результат ниже"
+          description: trackId 
+            ? "Текст сгенерирован и автоматически сохранен в трек"
+            : "Посмотрите результат ниже"
         });
       } else {
         throw new Error('No lyrics generated');
@@ -136,12 +133,30 @@ export function LyricsGeneratorDialog({
               <Textarea
                 id="generated"
                 value={generatedLyrics}
-                readOnly
+                onChange={(e) => setGeneratedLyrics(e.target.value)}
                 rows={14}
-                className="resize-none text-base sm:text-sm leading-relaxed"
+                className="resize-none text-base sm:text-sm leading-relaxed font-mono"
               />
-              <div className="text-[11px] text-muted-foreground">
-                Текст сгенерирован и сохранён. Вы можете закрыть окно или сгенерировать заново.
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-[11px] text-muted-foreground">
+                  {trackId 
+                    ? "Текст автоматически сохранён в трек. Вы можете закрыть окно или сгенерировать заново."
+                    : "Текст сгенерирован. Вы можете скопировать его или сгенерировать заново."}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(generatedLyrics);
+                    toast({
+                      title: "Скопировано!",
+                      description: "Текст песни скопирован в буфер обмена",
+                    });
+                  }}
+                  className="text-xs h-7"
+                >
+                  Копировать
+                </Button>
               </div>
             </div>
           ) : (
