@@ -59,17 +59,17 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     isMobilePrimary: true,
   },
   {
-    id: "daw",
-    label: "DAW",
-    path: "/workspace/daw",
-    icon: Headphones,
-    isMobilePrimary: true,
-  },
-  {
     id: "projects",
     label: "Проекты",
     path: "/workspace/projects",
     icon: Library,
+    isMobilePrimary: true,
+  },
+  {
+    id: "daw",
+    label: "DAW",
+    path: "/workspace/daw",
+    icon: Headphones,
     isMobilePrimary: true,
   },
   {
