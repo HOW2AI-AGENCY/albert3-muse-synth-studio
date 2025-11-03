@@ -8,6 +8,7 @@ import { FullPageSpinner } from "@/components/ui/loading-states";
 import router from "./router";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { TelegramAuthProvider } from "@/contexts/TelegramAuthProvider";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { reportWebVitals, logMetric } from "@/utils/web-vitals";
 import { 
@@ -100,29 +101,31 @@ const App = () => {
     <GlobalErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TelegramAuthProvider>
-          <TooltipProvider delayDuration={200}>
-            <AppLayout>
-              <Suspense fallback={<FullPageSpinner />}>
-                <Toaster />
-                <RouterProvider router={router} />
-                
-                {/* ✅ Lazy load heavy components */}
-                <Suspense fallback={null}>
-                  <LazyGlobalAudioPlayer />
-                </Suspense>
-                
-                {import.meta.env.DEV && (
+          <AuthProvider>
+            <TooltipProvider delayDuration={200}>
+              <AppLayout>
+                <Suspense fallback={<FullPageSpinner />}>
+                  <Toaster />
+                  <RouterProvider router={router} />
+
+                  {/* ✅ Lazy load heavy components */}
                   <Suspense fallback={null}>
-                    <LazyPerformanceMonitorWidget />
+                    <LazyGlobalAudioPlayer />
                   </Suspense>
-                )}
-                
-                <Suspense fallback={null}>
-                  <LazySentryFeedbackButton />
+
+                  {import.meta.env.DEV && (
+                    <Suspense fallback={null}>
+                      <LazyPerformanceMonitorWidget />
+                    </Suspense>
+                  )}
+
+                  <Suspense fallback={null}>
+                    <LazySentryFeedbackButton />
+                  </Suspense>
                 </Suspense>
-              </Suspense>
-            </AppLayout>
-          </TooltipProvider>
+              </AppLayout>
+            </TooltipProvider>
+          </AuthProvider>
         </TelegramAuthProvider>
       </QueryClientProvider>
     </GlobalErrorBoundary>

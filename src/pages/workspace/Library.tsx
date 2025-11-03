@@ -42,25 +42,28 @@ import { primeTrackVersionsCache } from "@/features/tracks/hooks/useTrackVersion
 import type { AudioPlayerTrack } from "@/types/track";
 import { useAdaptiveGrid } from '@/hooks/useAdaptiveGrid';
 import { VirtualizedTrackGrid } from '@/components/tracks/VirtualizedTrackGrid';
+import { useAuth } from "@/contexts/AuthContext";
 
 type ViewMode = 'grid' | 'list' | 'optimized';
 type SortBy = 'created_at' | 'title' | 'duration' | 'like_count';
 type SortOrder = 'asc' | 'desc';
 
 const Library: React.FC = () => {
-  const { tracks, isLoading, refreshTracks } = useTracks();
+  const {
+    tracks,
+    isLoading,
+    refreshTracks,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    deleteTrack,
+  } = useTracks(undefined, { pageSize: 30 });
   const { toast } = useToast();
   const playTrackWithQueue = useAudioPlayerStore((state) => state.playTrackWithQueue);
   const currentTrack = useAudioPlayerStore((state) => state.currentTrack);
-  
+
   // Get current user
-  const [userId, setUserId] = useState<string | undefined>(undefined);
-  
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserId(session?.user?.id);
-    });
-  }, []);
+  const { userId } = useAuth();
   
   // Automatic cleanup of failed tracks
   useTrackCleanup(userId, refreshTracks);
@@ -464,29 +467,14 @@ const Library: React.FC = () => {
     if (!selectedTrackForDelete) return;
 
     try {
-      await supabase
-        .from('tracks')
-        .delete()
-        .eq('id', selectedTrackForDelete.id);
-
-      toast({
-        title: "✅ Трек удален",
-        description: `"${selectedTrackForDelete.title}" удален из библиотеки`,
-      });
-
-      await refreshTracks();
+      await deleteTrack(selectedTrackForDelete.id);
       setSelectedTrackForDelete(null);
-      
+
       logger.info('Track deleted', `trackId: ${selectedTrackForDelete.id}, title: ${selectedTrackForDelete.title}`);
     } catch (error) {
       logger.error('Failed to delete track', error instanceof Error ? error : new Error(`trackId: ${selectedTrackForDelete.id}`));
-      toast({
-        title: "Ошибка",
-        description: "Не удалось удалить трек",
-        variant: "destructive",
-      });
     }
-  }, [selectedTrackForDelete, toast, refreshTracks]);
+  }, [selectedTrackForDelete, deleteTrack]);
 
   const handleAddVocal = useCallback((trackId: string) => {
     setSelectedTrackForVocal(trackId);
@@ -748,6 +736,19 @@ const Library: React.FC = () => {
             />
           )}
         </>
+      )}
+
+      {hasNextPage && filteredAndSortedTracks.length > 0 && (
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            className="min-w-[200px]"
+          >
+            {isFetchingNextPage ? "Загрузка..." : "Загрузить ещё"}
+          </Button>
+        </div>
       )}
 
       {/* Диалоги */}
