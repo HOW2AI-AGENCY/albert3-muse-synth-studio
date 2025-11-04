@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useTimestampedLyrics } from '@/hooks/useTimestampedLyrics';
-import { useCurrentTrack, useCurrentTime } from '@/stores/audioPlayerStore';
+import { useCurrentTrack, useAudioPlayerStore } from '@/stores/audioPlayerStore';
 import { cn } from '@/lib/utils';
 
 interface LyricsDisplayProps {
@@ -10,7 +10,7 @@ interface LyricsDisplayProps {
 
 export const LyricsDisplay: React.FC<LyricsDisplayProps> = ({ taskId, audioId }) => {
   const { data: lyricsData, isLoading, isError } = useTimestampedLyrics({ taskId, audioId });
-  const currentTime = useCurrentTime();
+  const currentTime = useAudioPlayerStore((state) => state.currentTime);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
