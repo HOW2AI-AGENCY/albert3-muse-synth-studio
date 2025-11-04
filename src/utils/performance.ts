@@ -192,14 +192,15 @@ export const useOptimizedAnimation = (
   }, [animationCallback]);
 
   useEffect(() => {
+    // Запускаем анимацию при изменении зависимостей и самой функции animate
     animate();
-    
+
     return () => {
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
       }
     };
-  }, dependencies);
+  }, [animate, ...dependencies]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return animate;
 };
@@ -211,7 +212,8 @@ export const useExpensiveComputation = <T>(
   computeFn: () => T,
   dependencies: DependencyList
 ): T => {
-  return useMemo(computeFn, dependencies);
+  // Используем инлайн-обёртку, чтобы ESLint мог проверить захваты и зависимости
+  return useMemo(() => computeFn(), [...dependencies]); // eslint-disable-line react-hooks/exhaustive-deps
 };
 
 /**

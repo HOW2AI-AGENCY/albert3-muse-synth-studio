@@ -2,7 +2,7 @@ import { memo, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { fadeInUp } from '@/utils/animations';
-import { withErrorBoundary } from '@/components/ErrorBoundary';
+import { withErrorBoundary } from '@/hoc/withErrorBoundary'; // Updated import path
 import { cn } from '@/lib/utils';
 import { TrackCardCover } from './card/TrackCardCover';
 import { TrackCardInfo } from './card/TrackCardInfo';
@@ -218,7 +218,7 @@ const MemoizedTrackCard = memo(TrackCardComponent, (prevProps: TrackCardProps, n
 });
 
 const TrackCardWithErrorBoundary = withErrorBoundary(MemoizedTrackCard);
-TrackCardWithErrorBoundary.displayName = 'TrackCard';
+MemoizedTrackCard.displayName = 'TrackCard';
 export { TrackCardWithErrorBoundary as TrackCard };
 
 // Inject keyframes for fade-in animation once

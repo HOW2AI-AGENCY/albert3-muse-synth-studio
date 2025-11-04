@@ -10,7 +10,7 @@ import React, { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { fadeInUp } from '@/utils/animations';
-import { withErrorBoundary } from '@/components/ErrorBoundary';
+import { withErrorBoundary } from '@/hoc/withErrorBoundary';
 import { cn } from '@/lib/utils';
 import { TrackCardCover } from '../components/card/TrackCardCover';
 import { TrackCardInfo } from '../components/card/TrackCardInfo';

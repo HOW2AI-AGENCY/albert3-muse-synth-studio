@@ -1,3 +1,0 @@
-**/*
-!src/features/tracks/api/trackVersions.ts
-!tests/unit/hooks/useTrackVersions.test.ts

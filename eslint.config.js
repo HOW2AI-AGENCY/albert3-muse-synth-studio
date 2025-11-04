@@ -70,4 +70,16 @@ export default tseslint.config(
       "@typescript-eslint/naming-convention": "off",
     },
   },
+  // Перенос правил из .eslintignore: в flat-конфиге нельзя использовать отрицательные шаблоны (!pattern),
+  // поэтому вместо "игнорировать всё, кроме конкретных файлов" мы явно настраиваем отдельный блок для нужных файлов.
+  // Это сохраняет намерение: гарантировать проверку для указанных путей, не ломая общие проверки проекта.
+  {
+    files: [
+      "src/features/tracks/api/trackVersions.ts",
+      "tests/unit/hooks/useTrackVersions.test.ts",
+    ],
+    rules: {
+      // Наследуем общие правила без ослабления
+    },
+  },
 );

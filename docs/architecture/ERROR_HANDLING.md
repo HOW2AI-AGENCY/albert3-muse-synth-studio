@@ -86,6 +86,8 @@ function App() {
 </ErrorBoundary>
 
 // Или использовать HOC
+import { withErrorBoundary } from '@/hoc/withErrorBoundary';
+
 const SafeComponent = withErrorBoundary(CriticalComponent, {
   fallback: <LoadingSpinner />,
   onError: (error, errorInfo) => {

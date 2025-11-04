@@ -23,8 +23,3 @@ export const LazyMusicGeneratorV2 = lazy(() =>
 );
 
 export const LazyGlobalAudioPlayer = lazy(() => import('@/components/player/GlobalAudioPlayer'));
-
-// ===== PRELOADING FUNCTIONS =====
-export const preloadDetailPanel = () => import('@/features/tracks/ui/DetailPanel');
-export const preloadMusicGenerator = () => import('@/components/MusicGeneratorV2');
-export const preloadAudioPlayer = () => import('@/components/player/GlobalAudioPlayer');
