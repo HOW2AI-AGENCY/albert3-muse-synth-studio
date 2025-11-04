@@ -104,11 +104,6 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
     return limitWords(finalPrompt, 200);
   };
 
-  const pollLyricsJob = async (_jobId: string): Promise<string> => {
-    // Legacy lyrics system removed - this functionality has been deprecated
-    throw new Error('Lyrics generation system has been deprecated. Please use the new lyrics generation dialog.');
-  };
-
   const generateLyrics = async () => {
     if (!theme.trim() || !mood.trim() || !genre.trim()) {
       toast({
@@ -149,12 +144,10 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
         description: "Ожидаем ответ от Suno...",
       });
 
-      await pollLyricsJob(response.jobId);
-      
-      // Show variant selector instead of auto-applying first variant
+      // ✅ FIX: Show variant selector without polling (legacy system removed)
       setGeneratedJobId(response.jobId);
       setShowVariantSelector(true);
-      
+
       toast({
         title: "✨ Лирика создана!",
         description: "Выберите один из вариантов текста",
@@ -235,7 +228,7 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
 
   return (
     <>
-      <Card className="card-glass p-6 space-y-4">
+      <Card className="card-glass p-4 sm:p-6 space-y-3 sm:space-y-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Music2 className="h-5 w-5 text-primary" />
@@ -393,7 +386,7 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
                     placeholder="Примеры артистов или песен для вдохновения..."
                     value={references}
                     onChange={(e) => setReferences(e.target.value)}
-                    className="min-h-[80px]"
+                    className="min-h-[60px] sm:min-h-[80px]"
                     disabled={isGenerating}
                   />
                 </div>
@@ -417,7 +410,7 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
                     placeholder="Введите или вставьте текст вашей песни..."
                     value={lyrics}
                     onChange={(e) => onLyricsChange(e.target.value)}
-                    className="min-h-[300px] font-mono text-sm"
+                    className="min-h-[200px] sm:min-h-[300px] font-mono text-sm"
                   />
                 </div>
 
@@ -456,7 +449,7 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
                   <Textarea
                     value={lyrics}
                     onChange={(e) => onLyricsChange(e.target.value)}
-                    className="min-h-[150px] font-mono text-sm"
+                    className="min-h-[120px] sm:min-h-[150px] font-mono text-sm"
                     placeholder="Сгенерированный или введенный вручную текст песни появится здесь..."
                   />
                 )}
