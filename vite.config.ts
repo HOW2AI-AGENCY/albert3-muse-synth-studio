@@ -7,6 +7,8 @@ import { sentryVitePlugin } from "@sentry/vite-plugin";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // Разрешаем встраивание только в продакшене; в dev убираем блокировки iframe
+  // чтобы корректно работать в редакторах, использующих iframe (например, Lovable)
   server: {
     host: "::",
     port: 8080,
@@ -27,14 +29,16 @@ export default defineConfig(({ mode }) => ({
         "connect-src 'self' http: ws: https://qycfsepwguaiwcquwwbw.supabase.co wss://qycfsepwguaiwcquwwbw.supabase.co https://*.sentry.io https://sentry.io",
         "font-src 'self' data:",
         "media-src 'self' https: blob:",
-        "frame-ancestors 'none'",
+        // В dev НЕ указываем frame-ancestors, чтобы разрешить встраивание в iframe редакторов
+        mode === 'development' ? null : "frame-ancestors 'none'",
         "base-uri 'self'",
         "form-action 'self'",
         "object-src 'none'",
         'upgrade-insecure-requests'
-      ].join('; '),
+      ].filter(Boolean).join('; '),
       // Прочие security headers
-      'X-Frame-Options': 'DENY',
+      // В dev НЕ отправляем X-Frame-Options, чтобы разрешить встраивание в iframe
+      ...(mode === 'development' ? {} : { 'X-Frame-Options': 'DENY' }),
       'X-Content-Type-Options': 'nosniff',
       'X-XSS-Protection': '1; mode=block',
       'Referrer-Policy': 'strict-origin-when-cross-origin',
