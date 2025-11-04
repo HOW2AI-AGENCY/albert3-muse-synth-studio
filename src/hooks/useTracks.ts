@@ -271,7 +271,7 @@ export const useTracks = (refreshTrigger?: number, options: UseTracksOptions = {
 
     let isSubscribed = true;
 
-    const channelName = `tracks-user-${userId}-${Date.now()}`;
+    const channelName = `tracks-user-${userId}-project-${projectId ?? 'all'}`;
 
     const handlePayload = (payload: RealtimePostgresChangesPayload<TrackRow>) => {
       if (!isSubscribed) return;

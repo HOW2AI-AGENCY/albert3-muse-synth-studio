@@ -130,6 +130,8 @@ const config: Config = {
         '24': 'var(--space-24)',
         '32': 'var(--space-32)',
         'container': 'var(--space-container)',
+        'sidebar-expanded': 'var(--sidebar-width-expanded)',
+        'sidebar-collapsed': 'var(--sidebar-width-collapsed)',
       },
       fontSize: {
         '2xs': 'var(--font-size-2xs, 0.625rem)',
