@@ -3,9 +3,6 @@
  * Displays all versions of a track (main + variants)
  */
 
-import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useTrackVersions } from '@/hooks/useTrackVersions';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,52 +17,10 @@ interface TrackVersionsProps {
 }
 
 export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
-  const { data: versions = [], isLoading: versionsLoading } = useTrackVersions(trackId);
+  const { data: allVersions = [], isLoading } = useTrackVersions(trackId);
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
   const currentTrack = useAudioPlayerStore((state) => state.currentTrack);
-  
-  const { data: mainTrack, isLoading: mainTrackLoading } = useQuery({
-    queryKey: ['track', trackId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('tracks')
-        .select('*')
-        .eq('id', trackId)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!trackId,
-  });
-  
-  // ✅ Построить список всех версий (main + variants)
-  const allVersions = useMemo(() => {
-    if (!mainTrack) return versions;
-    
-    const mainVersion = {
-      id: mainTrack.id,
-      parent_track_id: mainTrack.id,
-      variant_index: 0,
-      version_number: 0,
-      audio_url: mainTrack.audio_url,
-      cover_url: mainTrack.cover_url,
-      title: mainTrack.title,
-      duration: mainTrack.duration_seconds,
-      is_preferred_variant: true,
-      is_primary_variant: true,
-      lyrics: mainTrack.lyrics,
-      metadata: mainTrack.metadata,
-      suno_id: null,
-      video_url: mainTrack.video_url,
-      created_at: mainTrack.created_at,
-    };
-    
-    return [mainVersion, ...versions];
-  }, [mainTrack, versions]);
-  
-  const isLoading = versionsLoading || mainTrackLoading;
-  
+
   if (isLoading) {
     return (
       <div className="space-y-2">
@@ -76,14 +31,14 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
       </div>
     );
   }
-  
+
   if (allVersions.length === 0) {
     return null;
   }
-  
+
   const handlePlayVersion = (version: typeof allVersions[0]) => {
     if (!version.audio_url) return;
-    
+
     playTrack({
       id: version.id,
       title: version.title || 'Untitled',
@@ -94,20 +49,20 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
       versionNumber: version.variant_index || version.version_number || 0,
     });
   };
-  
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">Версии ({allVersions.length})</h3>
       </div>
-      
+
       <div className="space-y-2">
-        {allVersions.map((version, index) => {
-          const isMain = index === 0;
+        {allVersions.map((version) => {
+          const isMain = version.is_primary_variant;
           const isPlaying = currentTrack?.id === version.id;
-          
+
           return (
-            <Card 
+            <Card
               key={version.id}
               className={`transition-all duration-200 hover:shadow-md ${
                 isPlaying ? 'ring-2 ring-primary' : ''
