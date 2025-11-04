@@ -36,8 +36,8 @@ const MinimalSidebar = ({
     <aside
       className={cn(
         "fixed left-0 top-0 hidden h-full border-r border-border/60 bg-background/95 backdrop-blur transition-all duration-300",
-        "lg:flex md:w-16",
-        isExpanded ? "lg:w-52 md:w-48" : "lg:w-14 md:w-16"
+        "lg:flex",
+        isExpanded ? "lg:w-52 md:w-52" : "lg:w-14 md:w-14"
       )}
       style={{
         zIndex: 'var(--z-sidebar)',

@@ -61,13 +61,13 @@ const Generate = () => {
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1023px)");
 
-  useTrackSync(userId, {
+  useTrackSync(userId || undefined, {
     onTrackCompleted: refreshTracks,
     onTrackFailed: refreshTracks,
     enabled: true,
   });
 
-  useTrackRecovery(userId, refreshTracks, {
+  useTrackRecovery(userId || undefined, refreshTracks, {
     enabled: true,
     checkIntervalMs: 60000,
     pendingThresholdMs: 120000,
@@ -93,28 +93,28 @@ const Generate = () => {
   };
 
   const handleSeparateStems = (trackId: string) => {
-    const t = tracks.find(tr => tr.id === trackId);
+    const t = tracks.find((tr: Track) => tr.id === trackId);
     if (!t) return;
     setSelectedTrackForStems({ id: t.id, title: t.title });
     setSeparateStemsOpen(true);
   };
 
   const handleExtend = (trackId: string) => {
-    const t = tracks.find(tr => tr.id === trackId);
+    const t = tracks.find((tr: Track) => tr.id === trackId);
     if (!t) return;
     setSelectedTrackForExtend(t);
     setExtendOpen(true);
   };
 
   const handleCover = (trackId: string) => {
-    const t = tracks.find(tr => tr.id === trackId);
+    const t = tracks.find((tr: Track) => tr.id === trackId);
     if (!t) return;
     setSelectedTrackForCover({ id: t.id, title: t.title });
     setCoverOpen(true);
   };
 
   const handleCreatePersona = (trackId: string) => {
-    const t = tracks.find(tr => tr.id === trackId);
+    const t = tracks.find((tr: Track) => tr.id === trackId);
     if (!t) return;
     setSelectedTrackForPersona(t);
     setCreatePersonaOpen(true);
@@ -147,7 +147,7 @@ const Generate = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Все треки</SelectItem>
-                    {projects.map((project) => (
+                    {projects.map((project: { id: string; name: string }) => (
                       <SelectItem key={project.id} value={project.id}>
                         {project.name}
                       </SelectItem>
@@ -247,7 +247,7 @@ const Generate = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Все треки</SelectItem>
-                    {projects.map((project) => (
+                    {projects.map((project: { id: string; name: string }) => (
                       <SelectItem key={project.id} value={project.id}>
                         {project.name}
                       </SelectItem>
@@ -320,15 +320,15 @@ const Generate = () => {
   // Mobile: List with FAB and Drawers
   return (
     <div className="h-full bg-background flex flex-col">
-      <div className="flex-1 overflow-y-auto workspace-main p-4 pb-24">
+      <div className="flex-1 overflow-y-auto workspace-main p-4">
         <div className="mb-4">
-          <Select value={selectedProjectId || "all"} onValueChange={(value) => setSelectedProjectId(value === "all" ? undefined : value)}>
+          <Select value={selectedProjectId || "all"} onValueChange={(value: string) => setSelectedProjectId(value === "all" ? undefined : value)}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Все треки" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Все треки</SelectItem>
-              {projects.map((project) => (
+              {projects.map((project: { id: string; name: string }) => (
                 <SelectItem key={project.id} value={project.id}>
                   {project.name}
                 </SelectItem>

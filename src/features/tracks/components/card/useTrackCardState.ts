@@ -81,7 +81,9 @@ export const useTrackCardState = (track: Track) => {
           setSelectedVersionIndex(parsed);
         }
       }
-    } catch {}
+    } catch {
+      // Silently ignore localStorage read errors
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [track.id]);
 
@@ -89,7 +91,9 @@ export const useTrackCardState = (track: Track) => {
     try {
       const key = `track:selectedVersion:${track.id}`;
       localStorage.setItem(key, String(selectedVersionIndex));
-    } catch {}
+    } catch {
+      // Silently ignore localStorage write errors
+    }
   }, [track.id, selectedVersionIndex]);
 
   // Displayed version
