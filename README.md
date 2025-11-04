@@ -162,10 +162,10 @@ const generateTrack = async () => {
 <summary>Пример: Получение версий трека (нажмите для просмотра)</summary>
 
 ```typescript
-import { useTrackVersions } from '@/hooks/useTrackVersions';
+import { useTrackVersions } from '@/hooks';
 
 const TrackVersionsComponent = ({ trackId }: { trackId: string }) => {
-  const { data: versions, isLoading } = useTrackVersions(trackId);
+  const { allVersions: versions, isLoading } = useTrackVersions(trackId);
 
   if (isLoading) return <p>Загрузка версий...</p>;
 
