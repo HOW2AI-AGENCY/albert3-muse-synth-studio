@@ -1,9 +1,9 @@
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  ResponsiveDialog as Dialog,
+  ResponsiveDialogContent as DialogContent,
+  ResponsiveDialogHeader as DialogHeader,
+  ResponsiveDialogTitle as DialogTitle,
+} from '@/components/ui/responsive-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { History, Star, Clock, Sparkles } from '@/utils/iconImports';
 import {
@@ -24,11 +24,11 @@ interface PromptHistoryDialogProps {
   }) => void;
 }
 
-export function PromptHistoryDialog({
+export const PromptHistoryDialog = ({
   open,
   onOpenChange,
   onSelect,
-}: PromptHistoryDialogProps) {
+}: PromptHistoryDialogProps): JSX.Element => {
   const state = usePromptHistoryState();
 
   const handleSelect = (item: any) => {
@@ -119,4 +119,4 @@ export function PromptHistoryDialog({
       </DialogContent>
     </Dialog>
   );
-}
+};
