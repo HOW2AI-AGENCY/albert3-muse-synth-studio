@@ -27,7 +27,7 @@ interface LikedTrack {
   view_count: number | null;
 }
 
-export default function Favorites() {
+const Favorites = () => {
   const [likedTracks, setLikedTracks] = useState<LikedTrack[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const playTrackWithQueue = useAudioPlayerStore((state) => state.playTrackWithQueue);
@@ -205,4 +205,6 @@ export default function Favorites() {
       </div>
     </div>
   );
-}
+};
+
+export default Favorites;

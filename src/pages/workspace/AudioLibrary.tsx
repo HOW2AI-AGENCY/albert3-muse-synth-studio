@@ -18,7 +18,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { UploadExtendDialog } from '@/components/tracks/UploadExtendDialog';
 import { AddInstrumentalDialog } from '@/components/tracks/AddInstrumentalDialog';
 
-export default function AudioLibrary() {
+const AudioLibrary = () => {
   const [activeTab, setActiveTab] = useState('library');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
@@ -335,4 +335,6 @@ export default function AudioLibrary() {
       />
     </div>
   );
-}
+};
+
+export default AudioLibrary;

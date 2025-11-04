@@ -11,7 +11,7 @@ interface AudioDescriberProps {
   disabled?: boolean;
 }
 
-export function AudioDescriber({ audioUrl, onDescriptionGenerated, disabled }: AudioDescriberProps) {
+export const AudioDescriber = ({ audioUrl, onDescriptionGenerated, disabled }: AudioDescriberProps) => {
   const [isDescribing, setIsDescribing] = useState(false);
   const { toast } = useToast();
 
@@ -70,4 +70,4 @@ export function AudioDescriber({ audioUrl, onDescriptionGenerated, disabled }: A
       {isDescribing ? 'Описываем...' : 'Описать музыку'}
     </Button>
   );
-}
+};

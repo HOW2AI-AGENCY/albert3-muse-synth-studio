@@ -10,7 +10,7 @@ interface TrackListErrorFallbackProps {
   reset: () => void;
 }
 
-export function TrackListErrorFallback({ error, reset }: TrackListErrorFallbackProps) {
+export const TrackListErrorFallback = ({ error, reset }: TrackListErrorFallbackProps) => {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4">
       <div className="p-4 mb-4 rounded-full bg-destructive/10">
@@ -37,6 +37,6 @@ export function TrackListErrorFallback({ error, reset }: TrackListErrorFallbackP
       </button>
     </div>
   );
-}
+};
 
 TrackListErrorFallback.displayName = 'TrackListErrorFallback';

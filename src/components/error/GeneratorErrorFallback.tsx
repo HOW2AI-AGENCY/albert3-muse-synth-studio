@@ -10,7 +10,7 @@ interface GeneratorErrorFallbackProps {
   reset: () => void;
 }
 
-export function GeneratorErrorFallback({ error, reset }: GeneratorErrorFallbackProps) {
+export const GeneratorErrorFallback = ({ error, reset }: GeneratorErrorFallbackProps) => {
   return (
     <div className="flex flex-col items-center justify-center p-8 border border-destructive/20 rounded-lg bg-destructive/5">
       <AlertCircle className="h-12 w-12 text-destructive mb-4" />
@@ -50,6 +50,6 @@ export function GeneratorErrorFallback({ error, reset }: GeneratorErrorFallbackP
       </div>
     </div>
   );
-}
+};
 
 GeneratorErrorFallback.displayName = 'GeneratorErrorFallback';

@@ -10,7 +10,7 @@ interface PlayerErrorFallbackProps {
   reset: () => void;
 }
 
-export function PlayerErrorFallback({ error, reset }: PlayerErrorFallbackProps) {
+export const PlayerErrorFallback = ({ error, reset }: PlayerErrorFallbackProps) => {
   return (
     <div className="flex items-center justify-center p-4 bg-destructive/5 border border-destructive/20 rounded-lg">
       <div className="flex items-center gap-3">
@@ -34,6 +34,6 @@ export function PlayerErrorFallback({ error, reset }: PlayerErrorFallbackProps) 
       </div>
     </div>
   );
-}
+};
 
 PlayerErrorFallback.displayName = 'PlayerErrorFallback';
