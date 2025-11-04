@@ -30,6 +30,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
+import { logger } from '@/utils/logger';
 
 type Track = Database['public']['Tables']['tracks']['Row'];
 
@@ -81,7 +82,9 @@ export const TrackLyricsViewDialog: React.FC<TrackLyricsViewDialogProps> = ({
       setIsEditing(false);
       onLyricsUpdated?.();
     } catch (error) {
-      console.error('Error saving lyrics:', error);
+      logger.error('Failed to save lyrics', error instanceof Error ? error : undefined, 'TrackLyricsViewDialog', {
+        trackId: track.id,
+      });
       toast({
         title: 'Ошибка',
         description: 'Не удалось сохранить лирику',
@@ -105,7 +108,7 @@ export const TrackLyricsViewDialog: React.FC<TrackLyricsViewDialogProps> = ({
 
       setTimeout(() => setIsCopied(false), 2000);
     } catch (error) {
-      console.error('Error copying:', error);
+      logger.error('Failed to copy lyrics', error instanceof Error ? error : undefined, 'TrackLyricsViewDialog');
       toast({
         title: 'Ошибка',
         description: 'Не удалось скопировать текст',
@@ -139,7 +142,9 @@ export const TrackLyricsViewDialog: React.FC<TrackLyricsViewDialogProps> = ({
         onLyricsUpdated?.();
       }
     } catch (error: any) {
-      console.error('Error editing with AI:', error);
+      logger.error('Failed to edit lyrics with AI', error instanceof Error ? error : undefined, 'TrackLyricsViewDialog', {
+        trackId: track.id,
+      });
       toast({
         title: 'Ошибка',
         description: error.message || 'Не удалось отредактировать лирику',

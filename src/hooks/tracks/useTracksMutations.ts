@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { getTrackRepository } from '@/repositories';
 import type { Track } from '@/types/domain/track.types';
+import { logger } from '@/utils/logger';
 
 /**
  * Track mutation operations (create, update, delete)
@@ -22,7 +23,7 @@ export const useTracksMutations = () => {
       toast.success('Трек удалён');
     },
     onError: (error) => {
-      console.error('Delete track error:', error);
+      logger.error('Delete track failed', error instanceof Error ? error : undefined, 'useTracksMutations');
       toast.error('Ошибка при удалении трека');
     },
   });
@@ -35,7 +36,7 @@ export const useTracksMutations = () => {
       toast.success('Трек обновлён');
     },
     onError: (error) => {
-      console.error('Update track error:', error);
+      logger.error('Update track failed', error instanceof Error ? error : undefined, 'useTracksMutations');
       toast.error('Ошибка при обновлении трека');
     },
   });
