@@ -193,22 +193,29 @@
     --breakpoint-3xl: 1920px;
     --breakpoint-4k: 2560px;
 
-    /* ===== Z-INDEX СЛОИ ===== */
+    /* ===== Z-INDEX СЛОИ (UNIFIED SYSTEM) ===== */
+    /* Base layers (0-99): Static elements, backgrounds */
+    --z-base: 0;
     --z-sidebar: 40;
-    --z-bottom-tab-bar: 40;
-    --z-fab: 50;
-    --z-mini-player: 60;
-    --z-desktop-player: 60;
-    --z-dropdown: 1000;
-    --z-sticky: 1020;
-    --z-fixed: 1030;
-    --z-modal-backdrop: 1040;
-    --z-modal: 1050;
-    --z-fullscreen-player: 1050;
-    --z-popover: 1060;
-    --z-tooltip: 1070;
-    --z-toast: 1080;
-    --z-maximum: 2147483647;
+    --z-bottom-nav: 50;              /* Bottom navigation bar (unified name) */
+    --z-mini-player: 60;             /* Mini player - above navigation */
+    --z-desktop-player: 60;          /* Desktop player - same level as mini */
+    --z-fab: 70;                     /* Floating action buttons - above player */
+
+    /* Interactive layers (100-999): Dropdowns, sticky elements, drawers */
+    --z-dropdown: 100;               /* Dropdown menus */
+    --z-sticky: 110;                 /* Sticky positioned elements */
+    --z-drawer: 200;                 /* Side drawers, navigation drawers */
+
+    /* Overlay layers (1000+): Modals, sheets, popovers, tooltips */
+    --z-modal-backdrop: 1000;        /* Modal backdrop/overlay */
+    --z-modal: 1010;                 /* Modal dialogs */
+    --z-sheet: 1020;                 /* Bottom sheets */
+    --z-fullscreen-player: 1030;     /* Fullscreen player */
+    --z-popover: 1040;               /* Popovers and context menus */
+    --z-tooltip: 1050;               /* Tooltips */
+    --z-toast: 1060;                 /* Toast notifications */
+    --z-maximum: 2147483647;         /* Maximum z-index value */
     
     /* ===== SEMANTIC SPACING ===== */
     --spacing-card-padding: var(--space-4);

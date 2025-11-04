@@ -183,9 +183,10 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
       <div
         ref={overlayRef}
         className={cn(
-          'fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300',
+          'fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300',
           isDrawerOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         )}
+        style={{ zIndex: 'var(--z-drawer)' }} /* Use unified z-index system */
         onClick={closeDrawer}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -196,11 +197,12 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
       <div
         ref={drawerRef}
         className={cn(
-          'fixed top-0 left-0 h-full w-80 bg-surface border-r border-outline-variant z-50',
+          'fixed top-0 left-0 h-full w-80 bg-surface border-r border-outline-variant',
           'transform transition-transform duration-300 ease-out',
           'shadow-elevation-3',
           isDrawerOpen ? 'translate-x-0' : '-translate-x-full'
         )}
+        style={{ zIndex: 'var(--z-drawer)' }} /* Use unified z-index system */
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -235,11 +237,12 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
       {/* Bottom Tab Bar */}
       <nav
         className={cn(
-          'fixed bottom-0 left-0 right-0 z-30',
+          'fixed bottom-0 left-0 right-0',
           'bg-surface/95 backdrop-blur-md border-t border-outline-variant',
           'safe-area-bottom',
           className
         )}
+        style={{ zIndex: 'var(--z-bottom-nav)' }} /* Use unified z-index system */
       >
         <div className="flex items-center justify-around px-2 py-1">
           {/* Menu Button */}

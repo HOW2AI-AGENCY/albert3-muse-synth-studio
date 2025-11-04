@@ -68,14 +68,9 @@
     --workspace-bottom-offset: 0px;
     --bottom-tab-bar-height: 0px;
     --mini-player-height: 0px;
-    
-    /* Z-index scale (P0 fix: prevent drawer/player conflicts) */
-    --z-dropdown: 50;
-    --z-sticky: 100;
-    --z-drawer: 200;
-    --z-player: 300;
-    --z-modal: 400;
-    --z-toast: 500;
+
+    /* Z-index system is now unified in design-tokens.css */
+    /* Use CSS variables from design-tokens.css: --z-bottom-nav, --z-mini-player, --z-drawer, etc. */
   }
 }
 

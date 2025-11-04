@@ -25,3 +25,6 @@
 ## 📞 Support
 - **Email**: support@albert3.app
 - **Discord**: [Join Server](https://discord.gg/albert3)
+
+## 📱 Mobile UI
+- [Mobile UI Improvement Plan](./MOBILE_UI_IMPROVEMENT_PLAN.md) — План улучшений мобильного интерфейса
