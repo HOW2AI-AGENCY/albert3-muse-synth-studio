@@ -15,8 +15,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Music, Clock, Disc3, Calendar, TrendingUp, Sparkles } from '@/utils/iconImports';
-import { Tag } from 'lucide-react';
+import { Music, Clock, Disc3, Calendar, TrendingUp, Sparkles, Tag } from '@/utils/iconImports';
 import { useTracks } from '@/hooks/useTracks';
 import { useGenerateProjectTracklist } from '@/hooks/useGenerateProjectTracklist';
 import { TrackActions } from '@/components/projects/TrackActions';
@@ -102,22 +101,27 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0">
-        <DialogHeader className="px-6 pt-6 pb-4">
+      <DialogContent className={cn(
+        "w-[calc(100vw-2rem)] lg:w-[calc(100vw-4rem)] xl:w-[calc(100vw-6rem)] max-w-none",
+        "h-[92vh] sm:h-[85vh]",
+        "p-0",
+        "transition-all"
+      )}>
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
           <DialogTitle className="text-2xl">{project.name}</DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[calc(90vh-100px)]">
-          <div className="px-6 pb-6 space-y-6">
+        <ScrollArea className="h-[calc(92vh-72px)] sm:h-[calc(85vh-96px)] overflow-y-auto">
+          <div className="px-4 sm:px-6 pb-[calc(env(safe-area-inset-bottom)+1rem)] space-y-6 max-w-[1600px] mx-auto">
             {/* Cover and Basic Info */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
               {/* Cover Image */}
               <div className="md:col-span-1">
                 {project.cover_url ? (
                   <img
                     src={project.cover_url}
                     alt={project.name}
-                    className="w-full aspect-square object-cover rounded-lg"
+                    className="w-full max-w-full aspect-square object-cover rounded-lg"
                   />
                 ) : (
                   <div className="w-full aspect-square bg-gradient-to-br from-primary/20 via-primary/10 to-background rounded-lg flex items-center justify-center">
@@ -127,7 +131,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
               </div>
 
               {/* Project Info */}
-              <div className="md:col-span-2 space-y-4">
+              <div className="md:col-span-2 space-y-4 min-w-0">
                 {/* Type and Stats */}
                 <div className="flex items-center gap-3 flex-wrap">
                   <Badge variant="secondary" className="text-sm">
@@ -200,7 +204,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                 )}
 
                 {/* Statistics */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 pt-4">
                   <Card className="p-3">
                     <div className="flex items-center gap-2 text-muted-foreground mb-1">
                       <Disc3 className="h-4 w-4" />
