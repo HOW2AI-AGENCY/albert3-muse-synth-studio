@@ -376,7 +376,7 @@ interface UseAnimationOptions {
   onComplete?: () => void;
 }
 
-export const useAnimation = (options: UseAnimationOptions = {}) => {
+const useAnimation = (options: UseAnimationOptions = {}) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const elementRef = useRef<HTMLElement | null>(null);
   const animationRef = useRef<Animation | null>(null);
@@ -521,13 +521,4 @@ export const ModalAnimation: React.FC<{
   );
 };
 
-export default {
-  SmoothAnimation,
-  AnimatedTransition,
-  AnimatedList,
-  useAnimation,
-  ButtonPressAnimation,
-  LoadingAnimation,
-  CardRevealAnimation,
-  ModalAnimation,
-};
+// Убрали default-экспорт для соответствия правилу react-refresh/only-export-components

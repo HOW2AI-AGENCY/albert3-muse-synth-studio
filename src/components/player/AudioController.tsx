@@ -112,10 +112,7 @@ export const AudioController = () => {
         updateCurrentTime(0);
         lastLoadedTrackIdRef.current = currentTrack.id;
         
-        // Автовоспроизведение при смене трека
-        if (isPlaying) {
-          await safePlay();
-        }
+        // Автовоспроизведение при смене трека будет вызвано через обработчик loadedmetadata
       } catch (error) {
         // ✅ Retry logic for network/temporary errors
         const isRetryableError = error instanceof Error && (
@@ -165,6 +162,20 @@ export const AudioController = () => {
     isSettingSourceRef.current = true;
     loadAudioWithRetry();
 
+    // Add a listener for 'loadedmetadata' to trigger playback
+    const handleLoadedMetadataAndPlay = () => {
+      updateDuration(audio.duration || 0);
+      logger.info('Audio metadata loaded', 'AudioController', {
+        duration: audio.duration,
+        trackId: currentTrack?.id
+      });
+      if (isPlaying) {
+        safePlay(); // Only play if `isPlaying` is true
+      }
+    };
+
+    audio.addEventListener('loadedmetadata', handleLoadedMetadataAndPlay);
+
     // Очистка при смене трека/размонтировании
     return () => {
       if (retryTimeoutIdRef.current) {
@@ -172,8 +183,9 @@ export const AudioController = () => {
         retryTimeoutIdRef.current = null;
       }
       isSettingSourceRef.current = false;
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadataAndPlay);
     };
-  }, [currentTrack?.audio_url, currentTrack?.id, audioRef, isPlaying, pause, updateCurrentTime, safePlay]);
+  }, [currentTrack?.audio_url, currentTrack?.id, audioRef, isPlaying, pause, updateCurrentTime, updateDuration, safePlay]);
 
   // ============= ГРОМКОСТЬ =============
   useEffect(() => {
@@ -192,11 +204,11 @@ export const AudioController = () => {
       updateCurrentTime(audio.currentTime);
     };
 
+    // handleLoadedMetadata is now handled in the track loading useEffect for playback
     const handleLoadedMetadata = () => {
-      updateDuration(audio.duration || 0);
-      logger.info('Audio metadata loaded', 'AudioController', { 
+      logger.info('Audio metadata loaded (secondary listener)', 'AudioController', {
         duration: audio.duration,
-        trackId: currentTrack?.id 
+        trackId: currentTrack?.id
       });
     };
 

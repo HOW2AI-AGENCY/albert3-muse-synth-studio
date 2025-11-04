@@ -1,56 +1,11 @@
 import React, { useMemo } from 'react';
-import { motion, MotionProps, Variants } from 'framer-motion';
+import { motion, MotionProps } from 'framer-motion';
+import { fadeInVariants, slideUpVariants, scaleInVariants, staggerItemVariants } from './variants';
 
 /**
- * Оптимизированные пресеты анимаций для повторного использования
- * Используют GPU-ускоренные свойства (transform, opacity)
+ * Оптимизированные пресеты анимаций перенесены в './variants.ts'
+ * Файл компонента экспортирует только React-компоненты для соблюдения react-refresh правил.
  */
-
-export const fadeInVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: { 
-    opacity: 1,
-    transition: { duration: 0.2 }
-  }
-};
-
-export const slideUpVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: { duration: 0.3 }
-  }
-};
-
-export const scaleInVariants: Variants = {
-  hidden: { opacity: 0, scale: 0.95 },
-  visible: { 
-    opacity: 1, 
-    scale: 1,
-    transition: { duration: 0.2 }
-  }
-};
-
-export const staggerContainerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.05,
-      delayChildren: 0.1
-    }
-  }
-};
-
-export const staggerItemVariants: Variants = {
-  hidden: { opacity: 0, y: 10 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: { duration: 0.2 }
-  }
-};
 
 interface OptimizedMotionProps extends MotionProps {
   children: React.ReactNode;

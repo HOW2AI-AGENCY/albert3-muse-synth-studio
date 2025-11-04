@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +20,7 @@ export const TrackStatusMonitor = ({ userId }: { userId: string }) => {
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
 
-  const loadProcessingTracks = async () => {
+  const loadProcessingTracks = useCallback(async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -38,9 +38,9 @@ export const TrackStatusMonitor = ({ userId }: { userId: string }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
 
-  const checkStuckTracks = async () => {
+  const checkStuckTracks = useCallback(async () => {
     setChecking(true);
     try {
       const { data, error } = await supabase.functions.invoke('check-stuck-tracks');
@@ -58,7 +58,7 @@ export const TrackStatusMonitor = ({ userId }: { userId: string }) => {
     } finally {
       setChecking(false);
     }
-  };
+  }, [loadProcessingTracks]);
 
   useEffect(() => {
     loadProcessingTracks();
@@ -67,7 +67,7 @@ export const TrackStatusMonitor = ({ userId }: { userId: string }) => {
     const interval = setInterval(loadProcessingTracks, 30000);
     
     return () => clearInterval(interval);
-  }, [userId]);
+  }, [loadProcessingTracks]);
 
   if (tracks.length === 0 && !loading) {
     return null;

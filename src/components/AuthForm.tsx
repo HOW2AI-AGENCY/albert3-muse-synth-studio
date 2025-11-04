@@ -133,6 +133,7 @@ export const AuthForm = () => {
                 onChange={(e) => setSignInPassword(e.target.value)}
                 required
                 disabled={isLoading}
+                autoComplete="current-password"
               />
             </div>
             <Button type="submit" className="w-full" variant="hero" disabled={isSigningIn}>
@@ -173,6 +174,7 @@ export const AuthForm = () => {
                 required
                 minLength={8}
                 disabled={isLoading}
+                autoComplete="new-password"
               />
               <p className="text-xs text-muted-foreground px-1">
                 Не менее 8 символов, включая заглавные, строчные буквы и цифры.
