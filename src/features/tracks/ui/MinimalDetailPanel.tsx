@@ -114,7 +114,7 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Compact Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b bg-card/50 shrink-0">
+      <div className="flex items-center justify-between px-3 py-2 border-b bg-card/50 shrink-0">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <Badge 
             variant={track.status === "completed" ? "default" : "secondary"}
@@ -133,11 +133,11 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
 
       {/* Scrollable Content */}
       <ScrollArea className="flex-1">
-        <div className="p-4 space-y-3">
+        <div className="p-3 space-y-2.5">
           {/* Hero Section - Compact */}
-          <div className="flex gap-3">
+          <div className="flex gap-2.5">
             {track.cover_url && (
-              <div className="w-20 h-20 rounded-lg overflow-hidden border-2 border-border/40 shrink-0 shadow-md">
+              <div className="w-20 h-20 rounded-lg overflow-hidden border border-border/40 shrink-0 shadow-sm">
                 <img src={track.cover_url} alt={track.title} className="w-full h-full object-cover" />
               </div>
             )}
@@ -190,14 +190,14 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
           >
             {/* Info & Settings */}
             <AccordionItem value="info" className="border rounded-lg px-3">
-              <AccordionTrigger className="py-3 hover:no-underline">
+              <AccordionTrigger className="py-2.5 hover:no-underline">
                 <div className="flex items-center gap-2">
                   <Info className="h-4 w-4" />
                   <span className="text-sm font-medium">Информация</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="space-y-3 pb-3">
-                <div className="space-y-2">
+              <AccordionContent className="space-y-2.5 pb-3">
+                <div className="space-y-1.5">
                   <Label htmlFor="title" className="text-xs">Название</Label>
                   <Input
                     id="title"
@@ -207,41 +207,35 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="genre" className="text-xs">Жанр</Label>
-                    <Input
-                      id="genre"
-                      value={genre}
-                      onChange={(e) => setGenre(e.target.value)}
-                      placeholder="Rock"
-                      className="h-8 text-sm"
-                    />
+                {/* Теги из информации генерации вместо полей жанра/настроения */}
+                {track.style_tags && track.style_tags.length > 0 && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Теги</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {track.style_tags.map((tag) => (
+                        <Badge key={tag} variant="secondary" className="text-[10px] h-4 px-1.5">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="mood" className="text-xs">Настроение</Label>
-                    <Input
-                      id="mood"
-                      value={mood}
-                      onChange={(e) => setMood(e.target.value)}
-                      placeholder="Energetic"
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                </div>
+                )}
 
                 <div className="flex items-center justify-between">
                   <Label htmlFor="public" className="text-xs">Публичный доступ</Label>
                   <Switch id="public" checked={isPublic} onCheckedChange={setIsPublic} />
                 </div>
 
+                {/* Второстепенная информация свернута и компактна */}
                 {track.prompt && (
-                  <div className="space-y-1">
-                    <Label className="text-xs">Промпт</Label>
-                    <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded max-h-20 overflow-y-auto">
-                      {track.prompt}
-                    </p>
-                  </div>
+                  <details className="rounded border bg-muted/30">
+                    <summary className="text-xs px-2 py-1.5 cursor-pointer select-none">Показать промпт</summary>
+                    <div className="px-2 pb-2">
+                      <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded max-h-24 overflow-y-auto">
+                        {track.prompt}
+                      </p>
+                    </div>
+                  </details>
                 )}
 
                 <Button onClick={handleSave} disabled={isSaving} size="sm" className="w-full h-8">
@@ -252,7 +246,7 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
 
             {/* Versions */}
             <AccordionItem value="versions" className="border rounded-lg px-3">
-              <AccordionTrigger className="py-3 hover:no-underline">
+              <AccordionTrigger className="py-2.5 hover:no-underline">
                 <div className="flex items-center gap-2">
                   <Music className="h-4 w-4" />
                   <span className="text-sm font-medium">Версии</span>
@@ -281,13 +275,13 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
             {/* Lyrics */}
             {track.lyrics && (
               <AccordionItem value="lyrics" className="border rounded-lg px-3">
-                <AccordionTrigger className="py-3 hover:no-underline">
+                <AccordionTrigger className="py-2.5 hover:no-underline">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">📝 Текст</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-3">
-                  <pre className="text-xs whitespace-pre-wrap bg-muted/50 p-3 rounded max-h-60 overflow-y-auto">
+                  <pre className="text-xs whitespace-pre-wrap bg-muted/50 p-2.5 rounded max-h-60 overflow-y-auto">
                     {track.lyrics}
                   </pre>
                 </AccordionContent>
