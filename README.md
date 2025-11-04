@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/albert-app/albert3-muse-synth-studio/main/docs/assets/logo.png" alt="Albert3 Muse Synth Studio Logo" width="150">
+  <img src="docs/assets/logo.png" alt="Albert3 Muse Synth Studio Logo" width="150">
   <h1>Albert3 Muse Synth Studio</h1>
   <p><strong>Профессиональная платформа для AI-генерации музыки</strong></p>
   <p>Интеграция с Suno & Replicate • Версионирование треков • Аналитика в реальном времени</p>
