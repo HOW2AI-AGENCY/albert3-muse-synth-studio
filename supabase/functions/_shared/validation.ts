@@ -19,17 +19,23 @@ export class ValidationException extends Error {
 }
 
 /**
+ * Строгая сигнатура функции-валидатора
+ * Принимает значение и имя поля, возвращает ошибку или null
+ */
+export type ValidatorFn = (value: unknown, fieldName: string) => ValidationError | null;
+
+/**
  * Базовые валидаторы
  */
 export const validators = {
-  required: (value: any, fieldName: string): ValidationError | null => {
+  required: (value: unknown, fieldName: string): ValidationError | null => {
     if (value === undefined || value === null || value === '') {
       return { field: fieldName, message: `${fieldName} обязательно для заполнения` };
     }
     return null;
   },
 
-  string: (value: any, fieldName: string): ValidationError | null => {
+  string: (value: unknown, fieldName: string): ValidationError | null => {
     if (typeof value !== 'string') {
       return { field: fieldName, message: `${fieldName} должно быть строкой` };
     }
@@ -50,21 +56,21 @@ export const validators = {
     return null;
   },
 
-  boolean: (value: any, fieldName: string): ValidationError | null => {
+  boolean: (value: unknown, fieldName: string): ValidationError | null => {
     if (typeof value !== 'boolean') {
       return { field: fieldName, message: `${fieldName} должно быть булевым значением` };
     }
     return null;
   },
 
-  array: (value: any, fieldName: string): ValidationError | null => {
+  array: (value: unknown, fieldName: string): ValidationError | null => {
     if (!Array.isArray(value)) {
       return { field: fieldName, message: `${fieldName} должно быть массивом` };
     }
     return null;
   },
 
-  object: (value: any, fieldName: string): ValidationError | null => {
+  object: (value: unknown, fieldName: string): ValidationError | null => {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
       return { field: fieldName, message: `${fieldName} должно быть объектом` };
     }
@@ -142,7 +148,9 @@ export const validationSchemas = {
 /**
  * Validates data according to schema - only validates fields present in data
  */
-export const validateData = (data: any, schema: Record<string, Function[]>): void => {
+export type ValidationSchema = Record<string, ValidatorFn[]>;
+
+export const validateData = (data: Record<string, unknown>, schema: ValidationSchema): void => {
   const errors: ValidationError[] = [];
 
   for (const [fieldName, validatorFunctions] of Object.entries(schema)) {
@@ -196,11 +204,11 @@ export const sanitizeInput = (data: any): any => {
  */
 export const validateRequest = async (
   req: Request,
-  schema: Record<string, Function[]>
-): Promise<any> => {
+  schema: ValidationSchema
+): Promise<Record<string, unknown>> => {
   try {
     const rawData = await req.json();
-    const sanitizedData = sanitizeInput(rawData);
+    const sanitizedData = sanitizeInput(rawData) as Record<string, unknown>;
     validateData(sanitizedData, schema);
     return sanitizedData;
   } catch (error) {

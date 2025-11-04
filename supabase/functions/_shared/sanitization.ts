@@ -16,7 +16,22 @@ export function sanitizeString(input: string, maxLength: number = 5000): string 
   let cleaned = input.trim();
   
   // 2. Remove control characters (except \n, \r, \t)
-  cleaned = cleaned.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '');
+  // Избегаем использования контролов в регулярках (no-control-regex),
+  // выполняем фильтрацию по charCode вручную для прозрачности и безопасности
+  const removeControlChars = (str: string): string => {
+    let out = '';
+    for (let i = 0; i < str.length; i++) {
+      const code = str.charCodeAt(i);
+      // Разрешаем табуляцию (9), перевод строки (10) и возврат каретки (13)
+      const isAllowedWhitespace = code === 9 || code === 10 || code === 13;
+      const isPrintable = (code >= 32 && code !== 127);
+      if (isPrintable || isAllowedWhitespace) {
+        out += str[i];
+      }
+    }
+    return out;
+  };
+  cleaned = removeControlChars(cleaned);
   
   // 3. Remove HTML tags (basic XSS prevention)
   cleaned = cleaned.replace(/<[^>]*>/g, '');

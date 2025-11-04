@@ -14,14 +14,14 @@ interface LyricsDiffViewProps {
   className?: string;
 }
 
-export function LyricsDiffView({
+export const LyricsDiffView = ({
   originalLyrics,
   formattedLyrics,
   editedLyrics,
   onEdit,
   readonly = false,
   className
-}: LyricsDiffViewProps) {
+}: LyricsDiffViewProps) => {
   const displayedLyrics = editedLyrics ?? formattedLyrics;
 
   // Detect Suno meta-tags
@@ -97,4 +97,4 @@ export function LyricsDiffView({
       )}
     </div>
   );
-}
+};

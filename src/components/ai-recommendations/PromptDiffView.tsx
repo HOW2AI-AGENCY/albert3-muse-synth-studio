@@ -14,14 +14,14 @@ interface PromptDiffViewProps {
   className?: string;
 }
 
-export function PromptDiffView({
+export const PromptDiffView = ({
   originalPrompt,
   enhancedPrompt,
   editedPrompt,
   onEdit,
   readonly = false,
   className
-}: PromptDiffViewProps) {
+}: PromptDiffViewProps) => {
   const displayedPrompt = editedPrompt ?? enhancedPrompt;
 
   // Extract what AI added (simple heuristic)
@@ -93,4 +93,4 @@ export function PromptDiffView({
       )}
     </div>
   );
-}
+};

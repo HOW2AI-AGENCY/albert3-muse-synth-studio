@@ -14,14 +14,14 @@ interface TagSelectorProps {
   className?: string;
 }
 
-export function TagSelector({
+export const TagSelector = ({
   recommendedTags,
   currentTags,
   onApply,
   onSelectAll,
   disabled = false,
   className
-}: TagSelectorProps) {
+}: TagSelectorProps) => {
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const descriptionId = useId();
   const statusId = useId();
@@ -207,4 +207,4 @@ export function TagSelector({
       </div>
     </div>
   );
-}
+};

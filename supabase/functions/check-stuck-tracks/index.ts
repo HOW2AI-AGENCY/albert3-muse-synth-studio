@@ -27,8 +27,11 @@ serve(async (req: Request): Promise<Response> => {
       if (body && Array.isArray(body.trackIds)) {
         trackIds = body.trackIds.filter((v: unknown) => typeof v === 'string');
       }
-    } catch (_) {
-      // no body provided
+    } catch (err) {
+      // Логируем отсутствие тела запроса для соответствия правилу no-empty
+      logger.debug('No JSON body provided for check-stuck-tracks', {
+        error: err instanceof Error ? err.message : undefined
+      });
     }
 
     if (!SUNO_API_KEY) {
@@ -48,9 +51,10 @@ serve(async (req: Request): Promise<Response> => {
       query = query.eq('status', 'processing').lt('created_at', tenMinutesAgo);
     }
 
-    let { data: stuckTracks, error: fetchError } = await query
+    const { data: stuckTracksInit, error: fetchError } = await query
       .order('created_at', { ascending: true })
       .limit(20);
+    let stuckTracks = stuckTracksInit;
     
     if (fetchError) {
       throw fetchError;
@@ -700,7 +704,12 @@ serve(async (req: Request): Promise<Response> => {
   } catch (error) {
     const anyErr = error as any;
     let errorJson: string | undefined;
-    try { errorJson = JSON.stringify(anyErr); } catch (_) {}
+    try {
+      errorJson = JSON.stringify(anyErr);
+    } catch (jsonErr) {
+      // Безопасно обрабатываем невозможность сериализации (например, циклические ссылки)
+      errorJson = undefined;
+    }
     const errorMessage = error instanceof Error 
       ? error.message 
       : (anyErr?.message || anyErr?.msg || errorJson || String(anyErr));

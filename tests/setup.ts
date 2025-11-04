@@ -16,6 +16,7 @@ vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     auth: {
       getUser: vi.fn(),
+      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
       signIn: vi.fn(),
       signOut: vi.fn(),
       onAuthStateChange: vi.fn(),

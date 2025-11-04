@@ -43,14 +43,14 @@ interface EnhancedPromptPreviewDialogProps {
   isApplying?: boolean;
 }
 
-export function EnhancedPromptPreviewDialog({
+export const EnhancedPromptPreviewDialog = ({
   open,
   onOpenChange,
   data,
   onApplyToCurrentTrack,
   onUseForNewGeneration,
   isApplying = false
-}: EnhancedPromptPreviewDialogProps) {
+}: EnhancedPromptPreviewDialogProps) => {
   const [editedPrompt, setEditedPrompt] = useState("");
   const [editedLyrics, setEditedLyrics] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -240,4 +240,4 @@ export function EnhancedPromptPreviewDialog({
       </DialogContent>
     </Dialog>
   );
-}
+};

@@ -15,13 +15,13 @@ interface AIErrorAlertProps {
   className?: string;
 }
 
-export function AIErrorAlert({
+export const AIErrorAlert = ({
   error,
   remainingTime,
   onRetry,
   onNavigateToUsage,
   className
-}: AIErrorAlertProps) {
+}: AIErrorAlertProps) => {
   const isRateLimit = error.status === 429;
   const isPaymentRequired = error.status === 402;
   const isServerError = error.status === 500 || error.status === 503;
@@ -137,4 +137,4 @@ export function AIErrorAlert({
       </AlertDescription>
     </Alert>
   );
-}
+};
