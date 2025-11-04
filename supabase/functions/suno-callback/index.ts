@@ -399,11 +399,12 @@ const mainHandler = async (req: Request) => {
         });
       }
 
-      // ✅ FIX: Создаём ВСЕ версии, включая primary (index 0)
-      // Suno всегда генерирует 2 варианта: [0] = первый, [1] = второй
-      if (successfulTracks.length > 0) {
-        console.log(`[suno-callback] Creating ${successfulTracks.length} track versions`);
-        
+      // ✅ FIX: Создаём только ДОПОЛНИТЕЛЬНЫЕ версии (начиная с индекса 1)
+      // Первый вариант (index 0) уже сохранён в основной tracks таблице выше
+      // Suno всегда генерирует 2 варианта: [0] сохранён в tracks, [1] сохраняем в track_versions
+      if (successfulTracks.length > 1) {
+        console.log(`[suno-callback] Creating ${successfulTracks.length - 1} additional track versions`);
+
         // Считываем существующие версии, чтобы не дублировать и корректно назначать индексы
         const { data: existingVersions } = await supabase
           .from('track_versions')
@@ -419,13 +420,14 @@ const mainHandler = async (req: Request) => {
         });
 
         const nextIndex = () => {
-          let idx = 0;
+          let idx = 1; // ✅ FIX: Начинаем с 1, т.к. 0 - это основной трек
           while (used.has(idx)) idx++;
           used.add(idx);
           return idx;
         };
-        
-        for (let i = 0; i < successfulTracks.length; i++) {
+
+        // ✅ FIX: Начинаем с i=1, пропуская первый вариант (он уже в tracks)
+        for (let i = 1; i < successfulTracks.length; i++) {
           const versionTrack = successfulTracks[i];
           const preferredIndex = i; // порядок Suno сохраняем как базовый индекс
 
@@ -489,8 +491,8 @@ const mainHandler = async (req: Request) => {
             .upsert({
               parent_track_id: track.id,
               variant_index: variantIndex,
-              is_primary_variant: variantIndex === 0,
-              is_preferred_variant: variantIndex === 0,
+              is_primary_variant: false, // ✅ FIX: primary variant теперь только в tracks таблице
+              is_preferred_variant: variantIndex === 1, // ✅ FIX: первая дополнительная версия (1) - предпочтительная
               suno_id: sanitizeText(versionTrack.id),
               audio_url: versionAudioUrl,
               video_url: versionVideoUrl,
@@ -504,10 +506,10 @@ const mainHandler = async (req: Request) => {
             console.error(`[suno-callback] Error upserting version ${variantIndex}:`, versionError, {
               parent_track_id: track.id,
               variant_index: variantIndex,
-              is_primary_variant: variantIndex === 0,
+              is_primary_variant: false,
             });
           } else {
-            console.log(`[suno-callback] ✅ Version ${variantIndex} (${variantIndex === 0 ? 'PRIMARY' : 'ALTERNATE'}) saved`);
+            console.log(`[suno-callback] ✅ Additional version ${variantIndex} saved`);
           }
         }
       }
