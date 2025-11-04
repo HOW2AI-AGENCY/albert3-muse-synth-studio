@@ -261,7 +261,6 @@ export interface TrackWithVersions {
  */
 export async function getTrackWithVersions(trackId: string): Promise<TrackWithVersions[]> {
   try {
-    // Load the main track, including its metadata
     const { data: mainTrack, error: trackError } = await supabase
       .from('tracks')
       .select('*')
@@ -271,8 +270,7 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
     if (trackError) throw trackError;
     if (!mainTrack) return [];
 
-    // Load all versions of this track from the dedicated versions table
-    const { data: versions, error: versionsError } = await supabase
+    const { data: dbVersions, error: versionsError } = await supabase
       .from('track_versions')
       .select('*')
       .eq('parent_track_id', trackId)
@@ -281,207 +279,114 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
 
     if (versionsError) throw versionsError;
 
-    const normalizedVersions: TrackWithVersions[] = [];
+    const allVersions = new Map<string, TrackWithVersions>();
 
-    const pushVersion = (payload: {
-      id: string;
-      sourceVersionNumber: number | null;
-      isMasterVersion: boolean;
-      title: string;
-      audio_url?: string | null;
-      cover_url?: string | null;
-      video_url?: string | null;
-      duration?: number | null;
-      lyrics?: string | null;
-      metadata?: TrackMetadata | null;
-      created_at?: string | null;
-      suno_id?: string | null;
-      status?: string | null;
-    }) => {
-      // ✅ НОВАЯ ЛОГИКА: versionNumber = sourceVersionNumber + 1 (1, 2, 3...)
-      const versionNumber = (payload.sourceVersionNumber ?? 0) + 1;
-      
-      normalizedVersions.push({
-        id: payload.id,
-        parentTrackId: mainTrack.id,
-        versionNumber,
-        sourceVersionNumber: payload.sourceVersionNumber,
-        isMasterVersion: payload.isMasterVersion,
-        title: payload.title,
-        audio_url: payload.audio_url ?? undefined,
-        cover_url: payload.cover_url ?? undefined,
-        video_url: payload.video_url ?? undefined,
-        duration: payload.duration ?? undefined,
-        lyrics: payload.lyrics ?? undefined,
-        style_tags: mainTrack.style_tags ?? undefined,
-        artist: undefined,
-        status: payload.status ?? mainTrack.status ?? undefined,
-        user_id: mainTrack.user_id,
-        metadata: payload.metadata ?? ((mainTrack.metadata as TrackMetadata | null) ?? null),
-        suno_id: payload.suno_id ?? mainTrack.suno_id ?? undefined,
-        created_at: payload.created_at ?? mainTrack.created_at ?? undefined,
-      });
-    };
-
-    // ✅ ИСПРАВЛЕНИЕ: Добавить mainTrack как версию V1, если нужно
-    if (!versions || versions.length === 0) {
-      // Случай 1: Нет версий в track_versions → добавить mainTrack как V1
-      if (mainTrack.audio_url) {
-        pushVersion({
-          id: mainTrack.id,
-          sourceVersionNumber: 0,
-          isMasterVersion: true,
-          title: mainTrack.title,
-          audio_url: mainTrack.audio_url,
-          cover_url: mainTrack.cover_url ?? null,
-          video_url: mainTrack.video_url ?? null,
-          duration: mainTrack.duration ?? mainTrack.duration_seconds ?? null,
-          lyrics: mainTrack.lyrics ?? null,
-          metadata: (mainTrack.metadata as TrackMetadata | null) ?? null,
-          created_at: mainTrack.created_at ?? null,
-          suno_id: mainTrack.suno_id ?? null,
-          status: mainTrack.status ?? 'completed',
-        });
-      }
-    } else if (versions.length === 1 && (versions[0].variant_index ?? 0) >= 1) {
-      // Случай 2: Есть 1 версия с variant_index >= 1 (Mureka)
-      // → добавить mainTrack как V1 (variant_index: 0)
-      if (mainTrack.audio_url) {
-        pushVersion({
-          id: mainTrack.id,
-          sourceVersionNumber: 0,
-          isMasterVersion: false, // Версия из track_versions — мастер
-          title: mainTrack.title,
-          audio_url: mainTrack.audio_url,
-          cover_url: mainTrack.cover_url ?? null,
-          video_url: mainTrack.video_url ?? null,
-          duration: mainTrack.duration ?? mainTrack.duration_seconds ?? null,
-          lyrics: mainTrack.lyrics ?? null,
-          metadata: (mainTrack.metadata as TrackMetadata | null) ?? null,
-          created_at: mainTrack.created_at ?? null,
-          suno_id: mainTrack.suno_id ?? null,
-          status: mainTrack.status ?? 'completed',
-        });
-      }
-      
-      // Добавить версию из track_versions
-      versions.forEach((version: TrackVersionRow) => {
-        pushVersion({
-          id: version.id,
-          sourceVersionNumber: version.variant_index ?? null,
-          isMasterVersion: Boolean(version.is_preferred_variant),
-          title: mainTrack.title,
-          audio_url: version.audio_url ?? null,
-          cover_url: version.cover_url ?? mainTrack.cover_url ?? null,
-          video_url: version.video_url ?? null,
-          duration: version.duration ?? null,
-          lyrics: version.lyrics ?? null,
-          metadata: (version.metadata as TrackMetadata | null) ?? null,
-          created_at: version.created_at ?? null,
-          suno_id: version.suno_id ?? null,
-          status: 'completed',
-        });
-      });
-    } else {
-      // Случай 3: Несколько версий (Suno) → добавить все из track_versions
-      
-      // ✅ FIX: Проверить, есть ли версия с variant_index: 0
-      const hasVariantZero = versions.some(v => (v.variant_index ?? -1) === 0);
-      
-      if (!hasVariantZero && mainTrack.audio_url) {
-        // Если нет версии с variant_index: 0, добавить mainTrack как V1
-        pushVersion({
-          id: mainTrack.id,
-          sourceVersionNumber: 0,
-          isMasterVersion: false, // Мастер-версия определяется из track_versions
-          title: mainTrack.title,
-          audio_url: mainTrack.audio_url,
-          cover_url: mainTrack.cover_url ?? null,
-          video_url: mainTrack.video_url ?? null,
-          duration: mainTrack.duration ?? mainTrack.duration_seconds ?? null,
-          lyrics: mainTrack.lyrics ?? null,
-          metadata: (mainTrack.metadata as TrackMetadata | null) ?? null,
-          created_at: mainTrack.created_at ?? null,
-          suno_id: mainTrack.suno_id ?? null,
-          status: mainTrack.status ?? 'completed',
-        });
-      }
-      
-      // Добавить все версии из track_versions
-      versions.forEach((version: TrackVersionRow) => {
-        pushVersion({
-          id: version.id,
-          sourceVersionNumber: version.variant_index ?? null,
-          isMasterVersion: Boolean(version.is_preferred_variant),
-          title: mainTrack.title,
-          audio_url: version.audio_url ?? null,
-          cover_url: version.cover_url ?? mainTrack.cover_url ?? null,
-          video_url: version.video_url ?? null,
-          duration: version.duration ?? null,
-          lyrics: version.lyrics ?? null,
-          metadata: (version.metadata as TrackMetadata | null) ?? null,
-          created_at: version.created_at ?? null,
-          suno_id: version.suno_id ?? null,
-          status: 'completed',
-        });
-      });
-    }
-
-    // ✅ Логирование для отладки
-    logInfo('Track versions loaded', 'trackVersions', {
-      trackId,
-      dbVersionsCount: versions?.length || 0,
-      normalizedVersionsCount: normalizedVersions.length,
-      case: !versions || versions.length === 0 ? 1 : 
-            versions.length === 1 && (versions[0].variant_index ?? 0) >= 1 ? 2 : 3,
-      hasMainTrackAudio: !!mainTrack.audio_url,
-    });
-
-    // ✅ Сортировка по sourceVersionNumber (0 → 1 → 2...)
-    normalizedVersions.sort((a, b) => 
-      (a.sourceVersionNumber ?? 0) - (b.sourceVersionNumber ?? 0)
-    );
-
+    // Fallback: Extract versions from metadata.suno_data
     if (
       mainTrack.metadata &&
       typeof mainTrack.metadata === 'object' &&
       'suno_data' in mainTrack.metadata &&
-      isSunoDataArray(mainTrack.metadata.suno_data)
+      isSunoDataArray(mainTrack.metadata.suno_data) &&
+      mainTrack.metadata.suno_data.length > 0
     ) {
-      const sunoData = mainTrack.metadata.suno_data as SunoTrackData[];
-      if (sunoData.length > 1) {
-        logInfo('Using fallback to extract versions from metadata', 'trackVersions', { trackId });
+      mainTrack.metadata.suno_data.forEach((versionData, index) => {
+        const audioUrl = versionData.audio_url || versionData.stream_audio_url;
+        if (!audioUrl) return;
 
-        sunoData.slice(1).forEach((versionData: SunoTrackData, index: number) => {
-          // ✅ ИСПРАВЛЕНО: Правильный приоритет URL
-          const audioUrl = versionData.audio_url 
-            || versionData.stream_audio_url 
-            || null;
-          
-          // ✅ Пропустить версии без аудио
-          if (!audioUrl) {
-            logInfo('Skipping version without audio', 'trackVersions', { versionId: versionData.id });
-            return;
-          }
-          
-          pushVersion({
-            id: versionData.id,
-            sourceVersionNumber: index,
-            isMasterVersion: false,
-            title: mainTrack.title,
-            audio_url: audioUrl,
-            cover_url: versionData.image_url ?? mainTrack.cover_url ?? null,
-            video_url: versionData.video_url ?? null,
-            duration: versionData.duration ?? null,
-            lyrics: mainTrack.lyrics ?? null,
-            metadata: (mainTrack.metadata as TrackMetadata | null) ?? null,
-            created_at: null,
-            suno_id: null,
-            status: 'completed',
-          });
+        allVersions.set(versionData.id, {
+          id: versionData.id,
+          parentTrackId: mainTrack.id,
+          sourceVersionNumber: index,
+          versionNumber: index + 1,
+          isMasterVersion: false, // will be corrected later
+          title: mainTrack.title,
+          audio_url: audioUrl,
+          cover_url: versionData.image_url || mainTrack.cover_url,
+          video_url: versionData.video_url,
+          duration: versionData.duration,
+          lyrics: mainTrack.lyrics,
+          style_tags: mainTrack.style_tags,
+          artist: mainTrack.artist,
+          status: 'completed',
+          user_id: mainTrack.user_id,
+          metadata: mainTrack.metadata as TrackMetadata | null,
+          suno_id: versionData.id,
+          created_at: mainTrack.created_at,
         });
+      });
+    }
+
+    // Add main track as the first version if it has audio
+    if (mainTrack.audio_url) {
+      allVersions.set(mainTrack.id, {
+        id: mainTrack.id,
+        parentTrackId: mainTrack.id,
+        sourceVersionNumber: 0,
+        versionNumber: 1,
+        isMasterVersion: true, // by default, can be overridden
+        title: mainTrack.title,
+        audio_url: mainTrack.audio_url,
+        cover_url: mainTrack.cover_url,
+        video_url: mainTrack.video_url,
+        duration: mainTrack.duration || mainTrack.duration_seconds,
+        lyrics: mainTrack.lyrics,
+        style_tags: mainTrack.style_tags,
+        artist: mainTrack.artist,
+        status: mainTrack.status,
+        user_id: mainTrack.user_id,
+        metadata: mainTrack.metadata as TrackMetadata | null,
+        suno_id: mainTrack.suno_id,
+        created_at: mainTrack.created_at,
+      });
+    }
+
+    // Process versions from track_versions table (authoritative source)
+    if (dbVersions && dbVersions.length > 0) {
+      dbVersions.forEach(version => {
+        allVersions.set(version.id, {
+          id: version.id,
+          parentTrackId: mainTrack.id,
+          sourceVersionNumber: version.variant_index,
+          versionNumber: (version.variant_index ?? 0) + 1,
+          isMasterVersion: Boolean(version.is_preferred_variant),
+          title: mainTrack.title,
+          audio_url: version.audio_url,
+          cover_url: version.cover_url || mainTrack.cover_url,
+          video_url: version.video_url,
+          duration: version.duration,
+          lyrics: version.lyrics,
+          style_tags: mainTrack.style_tags,
+          artist: mainTrack.artist,
+          status: 'completed',
+          user_id: mainTrack.user_id,
+          metadata: (version.metadata as TrackMetadata | null) || (mainTrack.metadata as TrackMetadata | null),
+          suno_id: version.suno_id,
+          created_at: version.created_at,
+        });
+      });
+    }
+
+    const normalizedVersions = Array.from(allVersions.values());
+
+    // Designate master version
+    const masterVersion = normalizedVersions.find(v => v.isMasterVersion);
+    if (!masterVersion && normalizedVersions.length > 0) {
+      const firstVersionWithAudio = normalizedVersions.find(v => v.audio_url);
+      if (firstVersionWithAudio) {
+        firstVersionWithAudio.isMasterVersion = true;
       }
     }
+
+    normalizedVersions.sort((a, b) => 
+      (a.sourceVersionNumber ?? 0) - (b.sourceVersionNumber ?? 0)
+    );
+
+    logInfo('Track versions loaded', 'trackVersions', {
+      trackId,
+      dbVersionsCount: dbVersions?.length || 0,
+      metadataVersionsCount: (mainTrack.metadata as any)?.suno_data?.length || 0,
+      normalizedVersionsCount: normalizedVersions.length,
+    });
 
     return normalizedVersions;
   } catch (error) {
@@ -491,6 +396,7 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
     return [];
   }
 }
+
 
 /**
  * Gets the master version of a track (or main track if no master is set)
