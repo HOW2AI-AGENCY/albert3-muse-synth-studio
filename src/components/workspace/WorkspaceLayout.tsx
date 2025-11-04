@@ -35,7 +35,7 @@ const WorkspaceLayout = () => {
         <div
           className={cn(
             "flex-1 flex flex-col min-w-0 min-h-[100dvh] transition-all duration-300",
-            isSidebarExpanded ? "ml-0 lg:ml-52" : "ml-0 lg:ml-14"
+            isSidebarExpanded ? "ml-0 lg:ml-sidebar-expanded" : "ml-0 lg:ml-sidebar-collapsed"
           )}
         >
           <WorkspaceHeader className="safe-area-inset lg:block hidden" />

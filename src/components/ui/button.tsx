@@ -20,6 +20,7 @@ const buttonVariants = cva(
         neon: "bg-primary text-primary-foreground shadow-neon hover:shadow-glow transition-all hover:scale-105",
         modern: "bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-xl border border-border/30 hover:border-primary/30 hover:shadow-xl text-foreground",
         glass: "bg-card/20 backdrop-blur-xl border border-border/20 hover:bg-card/30 hover:border-primary/30 text-foreground",
+        fab: "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg glow-primary-strong hover:from-primary/90 hover:to-primary touch-optimized",
       },
       size: {
         default: "h-control-md px-4",
@@ -29,6 +30,7 @@ const buttonVariants = cva(
         icon: "h-control-md w-control-md",
         "icon-sm": "h-control-sm w-control-sm",
         "icon-lg": "h-control-lg w-control-lg",
+        fab: "h-14 w-14 rounded-full",
       },
     },
     defaultVariants: {
