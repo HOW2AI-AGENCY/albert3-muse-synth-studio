@@ -26,7 +26,7 @@ describe('TrackVariantSelector', () => {
     vi.clearAllMocks();
   });
 
-  it('по умолчанию показывает только бейдж количества; по клику раскрывает V1/V2', () => {
+  it('в закрытом состоянии показывает активную версию и метку MASTER; по клику раскрывает V1/V2', () => {
     const onVersionChange = vi.fn();
     render(
       <TrackVariantSelector
@@ -36,16 +36,16 @@ describe('TrackVariantSelector', () => {
       />
     );
 
-    // В свернутом состоянии есть только «бейдж» количества
-    const totalBadge = screen.getByLabelText('Всего версий: 2');
-    expect(totalBadge).toBeInTheDocument();
+    // В свернутом состоянии показывается активная версия и метка MASTER
+    const activeBadge = screen.getByLabelText('Активная версия: V1 (MASTER)');
+    expect(activeBadge).toBeInTheDocument();
 
     // Кнопок V1/V2 пока нет
     expect(screen.queryByRole('button', { name: /версия 1/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /версия 2/i })).toBeNull();
 
     // Клик по бейджу раскрывает переключатель
-    fireEvent.click(totalBadge);
+    fireEvent.click(activeBadge);
     expect(screen.getByRole('button', { name: /версия 1/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /версия 2/i })).toBeInTheDocument();
   });
@@ -61,8 +61,8 @@ describe('TrackVariantSelector', () => {
     );
 
     // Раскрыть переключатель
-    const totalBadge = screen.getByLabelText('Всего версий: 2');
-    fireEvent.click(totalBadge);
+    const activeBadge = screen.getByLabelText('Активная версия: V1 (MASTER)');
+    fireEvent.click(activeBadge);
 
     const versionBtn1 = screen.getByRole('button', { name: /версия 1/i });
     const versionBtn2 = screen.getByRole('button', { name: /версия 2/i });
@@ -84,14 +84,14 @@ describe('TrackVariantSelector', () => {
       />
     );
 
-    const totalBadge = screen.getByLabelText('Всего версий: 2');
+    const activeBadge = screen.getByLabelText('Активная версия: V1 (MASTER)');
     // Открыть клавиатурой
-    fireEvent.keyDown(totalBadge, { key: 'Enter' });
+    fireEvent.keyDown(activeBadge, { key: 'Enter' });
     expect(screen.getByRole('button', { name: /версия 1/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /версия 2/i })).toBeInTheDocument();
 
     // Закрыть Escape
-    fireEvent.keyDown(totalBadge, { key: 'Escape' });
+    fireEvent.keyDown(activeBadge, { key: 'Escape' });
     expect(screen.queryByRole('button', { name: /версия 1/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /версия 2/i })).toBeNull();
   });

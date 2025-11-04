@@ -40,7 +40,7 @@ import { normalizeTrack } from "@/utils/trackNormalizer";
 import { getTrackWithVersions } from "@/features/tracks/api/trackVersions";
 import { primeTrackVersionsCache } from "@/features/tracks/hooks/useTrackVersions";
 import type { AudioPlayerTrack } from "@/types/track";
-import { useAdaptiveGrid } from '@/hooks/useAdaptiveGrid';
+import { useResponsiveGrid } from '@/hooks/useResponsiveGrid';
 import { VirtualizedTrackGrid } from '@/components/tracks/VirtualizedTrackGrid';
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -99,7 +99,7 @@ const Library: React.FC = () => {
   const [createPersonaDialogOpen, setCreatePersonaDialogOpen] = useState(false);
   const [selectedTrackForPersona, setSelectedTrackForPersona] = useState<DisplayTrack | null>(null);
   
-  // Container width tracking for adaptive grid
+  // Container width tracking for responsive grid
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
@@ -330,8 +330,8 @@ const Library: React.FC = () => {
   // }, [toast, refreshTracks]);
 
 
-  // Calculate grid parameters
-  const gridParams = useAdaptiveGrid(containerWidth);
+  // Calculate grid parameters (новая продвинутая версия)
+  const gridParams = useResponsiveGrid(containerWidth);
   const shouldVirtualize = filteredAndSortedTracks.length > 50;
   
   // Prefetch adjacent tracks
@@ -673,7 +673,7 @@ const Library: React.FC = () => {
                   <div 
                     className="grid overflow-auto h-full scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent"
                     style={{
-                      gridTemplateColumns: `repeat(${gridParams.columns}, minmax(280px, ${gridParams.cardWidth}px))`,
+                      gridTemplateColumns: `repeat(${gridParams.columns}, minmax(${gridParams.screenCategory === 'mobile' ? 150 : gridParams.screenCategory === 'tablet' ? 180 : 220}px, ${gridParams.cardWidth}px))`,
                       gap: `${gridParams.gap}px`,
                       justifyContent: 'center'
                     }}

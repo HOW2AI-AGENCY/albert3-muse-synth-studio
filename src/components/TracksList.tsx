@@ -11,7 +11,7 @@ import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { useManualSyncTrack } from "@/hooks/useManualSyncTrack";
 import { logger } from "@/utils/logger";
 import { AITrackActionsContainer } from "@/components/tracks/AITrackActionsContainer";
-import { useAdaptiveGrid } from "@/hooks/useAdaptiveGrid";
+import { useResponsiveGrid } from "@/hooks/useResponsiveGrid";
 import type { TrackOperations } from "@/hooks/tracks/useTrackOperations";
 
 interface TracksListProps {
@@ -81,8 +81,8 @@ const TracksListComponent = ({
     };
   }, []);
 
-  // Adaptive grid parameters (cardWidth used only for non-virtualized grid)
-  const { columns, gap } = useAdaptiveGrid(containerDimensions.width, { 
+  // Responsive grid: мобильным экранам даём 2 колонки и корректные отступы
+  const { columns, gap } = useResponsiveGrid(containerDimensions.width, { 
     isDetailPanelOpen 
   });
 
@@ -90,7 +90,9 @@ const TracksListComponent = ({
     setViewMode(view);
     try {
       localStorage.setItem('tracks-view-mode', view);
-    } catch {}
+    } catch {
+      // Игнорируем ошибки хранения
+    }
   }, []);
 
   // ✅ Мемоизация списка воспроизводимых треков
