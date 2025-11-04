@@ -102,7 +102,8 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
-        "w-[calc(100vw-2rem)] lg:w-[calc(100vw-4rem)] xl:w-[calc(100vw-6rem)] max-w-none",
+        "w-[calc(100vw-2rem)] lg:w-[calc(100vw-4rem)] xl:w-[calc(100vw-6rem)]",
+        "max-w-[1200px]",
         "h-[92vh] sm:h-[85vh]",
         "p-0",
         "transition-all"
@@ -112,7 +113,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
         </DialogHeader>
 
         <ScrollArea className="h-[calc(92vh-72px)] sm:h-[calc(85vh-96px)] overflow-y-auto">
-          <div className="px-4 sm:px-6 pb-[calc(env(safe-area-inset-bottom)+1rem)] space-y-6 max-w-[1600px] mx-auto">
+          <div className="px-4 sm:px-6 pb-[calc(env(safe-area-inset-bottom)+1rem)] space-y-6 max-w-[1100px] mx-auto">
             {/* Cover and Basic Info */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
               {/* Cover Image */}
@@ -317,11 +318,11 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                         <Card
                           key={track.id}
                           className={cn(
-                            "p-4 hover:bg-accent/50 transition-colors",
+                            "p-4 w-full overflow-hidden hover:bg-accent/50 transition-colors",
                             track.status !== 'completed' && "opacity-60"
                           )}
                         >
-                          <div className="flex items-start gap-4">
+                          <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 w-full">
                             {/* Track Number */}
                             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
                               {index + 1}
@@ -343,12 +344,12 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                             </div>
 
                             {/* Track Info */}
-                            <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0 w-full">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex-1 min-w-0">
                                   <h4 className="font-medium truncate">{track.title}</h4>
                                   {track.prompt && (
-                                    <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
+                                    <p className="hidden sm:block text-xs text-muted-foreground line-clamp-1 mt-1">
                                       {track.prompt}
                                     </p>
                                   )}
@@ -372,7 +373,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                               </div>
 
                               {/* Tags and Duration */}
-                              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                              <div className="flex items-center gap-1.5 sm:gap-2 mt-2 flex-wrap">
                                 {track.style_tags && track.style_tags.slice(0, 3).map((tag, i) => (
                                   <Badge key={i} variant="outline" className="text-[10px]">
                                     {tag}
@@ -387,17 +388,19 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
 
                               {/* Track Actions for non-completed Tracks */}
                               {track.status !== 'completed' && track.status !== 'failed' && (
-                                <TrackActions
-                                  track={track as any}
-                                  projectId={project.id}
-                                  projectName={project.name}
-                                  projectDescription={project.concept_description}
-                                  projectGenre={project.genre}
-                                  projectMood={project.mood}
-                                  onLyricsGenerated={() => {
-                                    queryClient.invalidateQueries({ queryKey: ['tracks'] });
-                                  }}
-                                />
+                                <div className="mt-3 sm:mt-2 flex justify-end">
+                                  <TrackActions
+                                    track={track as any}
+                                    projectId={project.id}
+                                    projectName={project.name}
+                                    projectDescription={project.concept_description}
+                                    projectGenre={project.genre}
+                                    projectMood={project.mood}
+                                    onLyricsGenerated={() => {
+                                      queryClient.invalidateQueries({ queryKey: ['tracks'] });
+                                    }}
+                                  />
+                                </div>
                               )}
                             </div>
                           </div>
