@@ -14,6 +14,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Edge Functions: Deno runtime
 - AI Providers: Suno AI, Mureka
 
+## System Requirements
+
+**Node.js Version:**
+- **Minimum:** Node.js 20.19.0+ or 22.12.0+
+- **Recommended:** Node.js 20.19.0 (LTS)
+- **Why:** Vite 7.x requires Node.js 20.19+ for ESM-only distribution and native require(esm) support
+
+**Using nvm (Node Version Manager):**
+```bash
+nvm use                   # Automatically uses version from .nvmrc (20.19.0)
+nvm install               # Install the required version if not present
+```
+
+**Note:** The project will build with Node.js 18.x but will show a warning. For best compatibility and to avoid warnings, use Node.js 20.19+ as specified in `.nvmrc`.
+
 ## Development Commands
 
 ### Frontend
