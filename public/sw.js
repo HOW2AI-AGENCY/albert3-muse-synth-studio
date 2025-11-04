@@ -129,7 +129,7 @@ async function cacheFirstStrategy(request, cacheName) {
   try {
     const response = await fetch(request);
     // Only cache successful responses (status 200-299) and not partial content (status 206)
-    if (response.ok && response.status !== 206) {
+    if (response.status >= 200 && response.status < 300 && response.status !== 206) {
       cache.put(request, response.clone());
     }
     return response;
@@ -146,7 +146,7 @@ async function networkFirstStrategy(request, cacheName) {
   try {
     const response = await fetch(request);
     // Only cache successful responses (status 200-299) and not partial content (status 206)
-    if (response.ok && response.status !== 206) {
+    if (response.status >= 200 && response.status < 300 && response.status !== 206) {
       cache.put(request, response.clone());
     }
     return response;
@@ -166,7 +166,8 @@ async function staleWhileRevalidateStrategy(request, cacheName) {
   const cached = await cache.match(request);
   
   const fetchPromise = fetch(request).then((response) => {
-    if (response.ok) {
+    // Only cache successful responses (status 200-299) and not partial content (status 206)
+    if (response.status >= 200 && response.status < 300 && response.status !== 206) {
       cache.put(request, response.clone());
     }
     return response;
