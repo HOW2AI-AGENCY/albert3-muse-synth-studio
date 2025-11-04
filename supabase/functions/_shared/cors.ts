@@ -6,7 +6,15 @@ const parseAllowedOrigins = (): string[] => {
   const raw = Deno.env.get('CORS_ALLOWED_ORIGINS');
 
   if (!raw) {
-    return ['*'];
+    // ✅ SECURITY: Default to localhost only instead of '*'
+    // For production, set CORS_ALLOWED_ORIGINS env variable with your domains:
+    // Example: "https://albert3.com,https://*.vercel.app,https://albert3-muse-synth-studio.vercel.app"
+    return [
+      'http://localhost:5173',
+      'http://localhost:8080',
+      'http://127.0.0.1:5173',
+      'http://127.0.0.1:8080',
+    ];
   }
 
   return raw
