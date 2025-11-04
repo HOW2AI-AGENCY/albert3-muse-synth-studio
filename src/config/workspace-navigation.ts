@@ -52,6 +52,14 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     isMobilePrimary: true,
   },
   {
+    id: "projects",
+    label: "Проекты",
+    path: "/workspace/projects",
+    icon: Library,
+    preload: () => { void preloadProjects(); },
+    isMobilePrimary: true,
+  },
+  {
     id: "prompt-dj",
     label: "Prompt DJ",
     path: "/workspace/prompt-dj",
@@ -73,14 +81,6 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     path: "/workspace/daw",
     icon: Headphones,
     preload: () => { void preloadDAW(); },
-    isMobilePrimary: true,
-  },
-  {
-    id: "projects",
-    label: "Проекты",
-    path: "/workspace/projects",
-    icon: Library,
-    preload: () => { void preloadProjects(); },
     isMobilePrimary: true,
   },
   {
