@@ -128,7 +128,8 @@ async function cacheFirstStrategy(request, cacheName) {
 
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    // Only cache successful responses (status 200-299) and not partial content (status 206)
+    if (response.ok && response.status !== 206) {
       cache.put(request, response.clone());
     }
     return response;
@@ -144,7 +145,8 @@ async function networkFirstStrategy(request, cacheName) {
   
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    // Only cache successful responses (status 200-299) and not partial content (status 206)
+    if (response.ok && response.status !== 206) {
       cache.put(request, response.clone());
     }
     return response;
