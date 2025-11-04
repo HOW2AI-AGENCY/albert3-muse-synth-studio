@@ -60,15 +60,6 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
     0
   );
 
-  const swipeRef = useSwipeGesture({
-    onSwipeDown: useCallback(() => {
-      vibrate('medium');
-      onMinimize();
-    }, [vibrate, onMinimize]),
-  });
-
-  if (!currentTrack) return null;
-
   const handlePlayPause = useCallback(() => {
     vibrate('light');
     togglePlayPause();
@@ -109,8 +100,8 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: currentTrack.title,
-          text: `Слушай этот трек: ${currentTrack.title}`,
+          title: currentTrack?.title || '', // Use optional chaining for currentTrack
+          text: `Слушай этот трек: ${currentTrack?.title || ''}`, // Use optional chaining
           url: window.location.href,
         });
       } catch (error) {
@@ -123,19 +114,28 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
         description: "Ссылка на трек скопирована в буфер обмена",
       });
     }
-  }, [vibrate, currentTrack.title, toast]);
+  }, [vibrate, currentTrack?.title, toast]); // Add currentTrack to dependencies
 
   const handleDownload = useCallback(() => {
     vibrate('medium');
-    if (currentTrack.audio_url) {
+    if (currentTrack?.audio_url) { // Use optional chaining
       window.open(currentTrack.audio_url, '_blank');
     }
-  }, [vibrate, currentTrack.audio_url]);
+  }, [vibrate, currentTrack?.audio_url]); // Add currentTrack to dependencies
 
   const handleLike = useCallback(() => {
     vibrate(isLiked ? 'light' : 'success');
     toggleLike();
   }, [vibrate, isLiked, toggleLike]);
+
+  const swipeRef = useSwipeGesture({
+    onSwipeDown: useCallback(() => {
+      vibrate('medium');
+      onMinimize();
+    }, [vibrate, onMinimize]),
+  });
+
+  if (!currentTrack) return null;
 
   // const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
