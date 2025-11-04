@@ -10,6 +10,31 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    // Добавляем заголовки безопасности для dev-сервера
+    headers: {
+      // CSP: перенос из index.html в реальные HTTP-заголовки
+      'Content-Security-Policy': [
+        "default-src 'self'",
+        "script-src 'self' 'wasm-unsafe-eval' https://cdn.sentry.com",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' https: data: blob:",
+        "connect-src 'self' https://qycfsepwguaiwcquwwbw.supabase.co wss://qycfsepwguaiwcquwwbw.supabase.co https://*.sentry.io https://sentry.io",
+        "font-src 'self' data:",
+        "media-src 'self' https: blob:",
+        "frame-ancestors 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "object-src 'none'",
+        'upgrade-insecure-requests'
+      ].join('; '),
+      // Прочие security headers
+      'X-Frame-Options': 'DENY',
+      'X-Content-Type-Options': 'nosniff',
+      'X-XSS-Protection': '1; mode=block',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      // Сужаем разрешения браузера
+      'Permissions-Policy': 'geolocation=(), microphone=(), camera=()'
+    }
   },
   build: {
     rollupOptions: {

@@ -4,31 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Security: Content Security Policy -->
-    <meta http-equiv="Content-Security-Policy" content="
-      default-src 'self';
-      script-src 'self' 'wasm-unsafe-eval' https://cdn.sentry.com;
-      style-src 'self' 'unsafe-inline';
-      img-src 'self' https: data: blob:;
-      connect-src 'self'
-        https://qycfsepwguaiwcquwwbw.supabase.co
-        wss://qycfsepwguaiwcquwwbw.supabase.co
-        https://*.sentry.io
-        https://sentry.io;
-      font-src 'self' data:;
-      media-src 'self' https: blob:;
-      frame-ancestors 'none';
-      base-uri 'self';
-      form-action 'self';
-      object-src 'none';
-      upgrade-insecure-requests;
-    ">
-
-    <!-- Additional Security Headers -->
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta http-equiv="X-Frame-Options" content="DENY">
-    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
-    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <!-- Security headers теперь отдаются сервером (см. vite.config.ts: server.headers) -->
 
     <title>MUSIC AI PRO</title>
     <meta name="description" content="ПЛАТФОРМА ДЛЯ ГЕНЕРАЦИИ ИИ МУЗЫКИ">
