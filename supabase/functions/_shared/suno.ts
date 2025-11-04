@@ -563,7 +563,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
               cause: error,
             });
           errors.push(sunoError);
-          console.error("🔴 [SUNO] Generation attempt failed", {
+          logger.error("🔴 [SUNO] Generation attempt failed", {
             endpoint,
             message: sunoError.message,
             status: sunoError.details.status,
@@ -648,7 +648,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
             cause: error,
           });
         errors.push(sunoError);
-        console.error("🔴 [SUNO] Lyrics generation attempt failed", {
+        logger.error("🔴 [SUNO] Lyrics generation attempt failed", {
           endpoint,
           message: sunoError.message,
           status: sunoError.details.status,
@@ -714,7 +714,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
             cause: error,
           });
         errors.push(sunoError);
-        console.error("🔴 [SUNO] Query attempt failed", {
+        logger.error("🔴 [SUNO] Query attempt failed", {
           endpoint: url,
           message: sunoError.message,
           status: sunoError.details.status,
@@ -788,7 +788,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
             cause: error,
           });
         errors.push(sunoError);
-        console.error("🔴 [SUNO] Lyrics query attempt failed", {
+        logger.error("🔴 [SUNO] Lyrics query attempt failed", {
           endpoint: url,
           message: sunoError.message,
           status: sunoError.details.status,
@@ -851,7 +851,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
             cause: error,
           });
         errors.push(sunoError);
-        console.error("🔴 [SUNO] Stem request failed", {
+        logger.error("🔴 [SUNO] Stem request failed", {
           endpoint,
           message: sunoError.message,
           status: sunoError.details.status,
@@ -938,7 +938,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
             cause: error,
           });
         errors.push(sunoError);
-        console.error("🔴 [SUNO] Stem query failed", {
+        logger.error("🔴 [SUNO] Stem query failed", {
           endpoint,
           message: sunoError.message,
           status: sunoError.details.status,
@@ -1013,7 +1013,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
               cause: error,
             });
         errors.push(sunoError);
-        console.error("🔴 [SUNO] WAV conversion request failed", {
+        logger.error("🔴 [SUNO] WAV conversion request failed", {
           endpoint,
           message: sunoError.message,
           status: sunoError.details.status,
@@ -1096,7 +1096,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
               cause: error,
             });
         errors.push(sunoError);
-        console.error("🔴 [SUNO] WAV query failed", {
+        logger.error("🔴 [SUNO] WAV query failed", {
           endpoint,
           message: sunoError.message,
           status: sunoError.details.status,

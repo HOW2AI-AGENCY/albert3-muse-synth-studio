@@ -7,6 +7,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { logger } from '../_shared/logger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -198,7 +199,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('[health-check] Starting health checks...');
+    logger.info('[health-check] Starting health checks...');
     
     // Run all health checks in parallel
     const [dbCheck, sunoCheck, storageCheck] = await Promise.all([
@@ -235,7 +236,7 @@ serve(async (req) => {
       },
     };
 
-    console.log('[health-check] Health check completed', {
+    logger.info('[health-check] Health check completed', {
       status: overallStatus,
       healthy: healthyCount,
       degraded: degradedCount,
@@ -250,7 +251,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('[health-check] Unexpected error:', error);
+    logger.error('[health-check] Unexpected error:', { error });
     
     return new Response(JSON.stringify({
       status: 'down',

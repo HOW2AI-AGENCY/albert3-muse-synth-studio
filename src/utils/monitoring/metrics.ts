@@ -1,3 +1,5 @@
+import { logger } from '../logger';
+
 /**
  * Production Metrics Collection for Monitoring Dashboard
  */
@@ -126,7 +128,7 @@ class MetricsCollector {
         // Could integrate with Sentry, Grafana, or custom endpoint
         console.log(`[Metrics] ${type}:`, metric);
       } catch (error) {
-        console.error('Failed to send metric:', error);
+        logger.error('Failed to send metric:', error as Error, 'MetricsCollector', { type });
       }
     }
   }
