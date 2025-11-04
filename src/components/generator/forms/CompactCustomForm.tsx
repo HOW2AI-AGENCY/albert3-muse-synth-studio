@@ -191,34 +191,6 @@ export const CompactCustomForm = memo(({
 
         {/* Prompt with AI Boost & History */}
         <div className="space-y-1.5 p-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <PromptCharacterCounter 
-                currentLength={debouncedPrompt.length} 
-                maxLength={MAX_PROMPT_LENGTH}
-              />
-              <InfoTooltip content="Опишите стиль, жанр, настроение, темп и инструменты. Чем детальнее описание, тем точнее результат." />
-            </div>
-            {onOpenHistory && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={onOpenHistory}
-                    disabled={isGenerating}
-                    className="touch-target-min"
-                    aria-label="История промптов"
-                  >
-                    <History className="h-4 w-4" aria-hidden="true" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left">
-                  <p className="text-xs">История промптов</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
           <div className="relative">
             <Textarea
               id="custom-prompt"
@@ -231,7 +203,7 @@ export const CompactCustomForm = memo(({
               }}
               disabled={isGenerating}
               className={cn(
-                "pr-10 resize-y min-h-[80px] max-h-[300px] mobile-input"
+                "pr-10 resize-y min-h-[70px] sm:min-h-[80px] max-h-[300px] mobile-input"
               )}
               maxLength={MAX_PROMPT_LENGTH}
               aria-label="Описание стиля музыки"
@@ -252,6 +224,34 @@ export const CompactCustomForm = memo(({
                 </TooltipTrigger>
                 <TooltipContent side="left">
                   <p className="text-xs">Улучшить промпт с помощью AI</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center gap-1.5">
+              <PromptCharacterCounter
+                currentLength={debouncedPrompt.length}
+                maxLength={MAX_PROMPT_LENGTH}
+              />
+              <InfoTooltip content="Опишите стиль, жанр, настроение, темп и инструменты. Чем детальнее описание, тем точнее результат." />
+            </div>
+            {onOpenHistory && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onOpenHistory}
+                    disabled={isGenerating}
+                    className="touch-target-min"
+                    aria-label="История промптов"
+                  >
+                    <History className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p className="text-xs">История промптов</p>
                 </TooltipContent>
               </Tooltip>
             )}
@@ -642,7 +642,7 @@ export const CompactCustomForm = memo(({
 
       {/* Sticky Footer */}
       <div className="absolute bottom-0 left-0 right-0 border-t border-border/20 bg-background/95 backdrop-blur-sm">
-        <div className="p-3 flex items-center gap-2">
+        <div className="p-2 sm:p-3 flex items-center gap-2">
           {/* Create Button */}
           <Button
             onClick={onGenerate}

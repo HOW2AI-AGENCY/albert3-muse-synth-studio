@@ -45,7 +45,7 @@ export const SimpleModeCompact = memo(({
   return (
     <div className="flex flex-col h-full">
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto space-y-3 pb-20 p-3">
+      <div className="flex-1 overflow-y-auto space-y-2 sm:space-y-3 pb-20 p-2 sm:p-3">
         {/* Prompt with AI Boost */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between mb-1">
@@ -80,7 +80,7 @@ export const SimpleModeCompact = memo(({
               }}
               placeholder="e.g., Спокойный лоу-фай бит с джазовым пианино..."
               className={cn(
-                "min-h-[120px] resize-none mobile-input pr-10 text-base",
+                "min-h-[100px] sm:min-h-[120px] resize-none mobile-input pr-10 text-base",
                 "focus-visible:ring-2 focus-visible:ring-primary"
               )}
               disabled={isGenerating}
@@ -90,6 +90,7 @@ export const SimpleModeCompact = memo(({
             />
             {onBoostPrompt && debouncedPrompt.trim() && (
               <Button
+                data-tour="ai-boost"
                 variant="ghost"
                 size="icon"
                 className="absolute right-2 top-2 h-6 w-6 text-primary hover:text-primary hover:bg-primary/10"
@@ -101,29 +102,12 @@ export const SimpleModeCompact = memo(({
               </Button>
             )}
           </div>
-          
+
           {/* Контролы под формой ввода */}
-          <div className="flex items-center justify-between pt-1">
-            <div className="flex items-center gap-2">
-              {onBoostPrompt && (
-                <Button
-                  data-tour="ai-boost"
-                  variant="outline"
-                  size="sm"
-                  className="h-7 gap-1.5 text-xs bg-primary/5 border-primary/20 hover:bg-primary/10"
-                  onClick={onBoostPrompt}
-                  disabled={isBoosting || isGenerating || !debouncedPrompt.trim()}
-                  title="Улучшить промпт с помощью AI"
-                >
-                  <Sparkles className={cn("h-3 w-3", isBoosting && "animate-spin")} />
-                  {isBoosting ? 'Улучшение...' : 'AI улучшение'}
-                </Button>
-              )}
-            </div>
-            
+          <div className="flex items-center justify-end pt-1">
             <div id="prompt-counter">
-              <PromptCharacterCounter 
-                currentLength={debouncedPrompt.length} 
+              <PromptCharacterCounter
+                currentLength={debouncedPrompt.length}
                 maxLength={MAX_PROMPT_LENGTH}
               />
             </div>
@@ -187,7 +171,7 @@ export const SimpleModeCompact = memo(({
 
       {/* Sticky Footer */}
       <div className="sticky bottom-0 left-0 right-0 z-10 border-t border-border/20 bg-background/95 backdrop-blur-sm mt-4">
-        <div className="p-3 safe-area-bottom">
+        <div className="p-2 sm:p-3 safe-area-bottom">
           <Button
             data-tour="generate-button"
             onClick={onGenerate}
