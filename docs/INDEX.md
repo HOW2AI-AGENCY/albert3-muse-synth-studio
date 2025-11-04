@@ -6,6 +6,7 @@
 - [README](../README.md) — Обзор проекта
 - [Development Guide](./DEVELOPMENT.md) — Локальная разработка
 - [Contributing Guide](../CONTRIBUTING.md) — Вклад в проект
+ - [Archive Policy](./ARCHIVE_POLICY.md) — Политика хранения и структура архива
 
 ## 🏗️ Архитектура
 - [Architecture Overview](./ARCHITECTURE.md) — Полная архитектура
@@ -18,6 +19,8 @@
 
 ## 🤖 Automation
 - [GitHub Automation](./GITHUB_AUTOMATION.md) — CI/CD, Dependabot
+ - [Audit Reports](./audit/README.md) — Индекс аудитов и отчётов
+ - [Archive Manifest](../archive/.archive-manifest.json) — Сводная информация по архиву
 
 ## 📞 Support
 - **Email**: support@albert3.app

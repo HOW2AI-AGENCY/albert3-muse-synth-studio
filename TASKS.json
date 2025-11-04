@@ -8,7 +8,10 @@
     "estimate": "3 дня",
     "deps": [],
     "acceptanceCriteria": "npm audit не находит уязвимостей. Все тесты проходят.",
-    "flags": ["security"]
+    "flags": ["security"],
+    "status": "done",
+    "updatedAt": "2025-11-04",
+    "notes": "Обновлены vite 7.1.12, supabase 2.54.11, typescript 5.8.3; включены CSP и строгий CORS."
   },
   {
     "id": "TASK-002",
@@ -19,7 +22,9 @@
     "estimate": "2 дня",
     "deps": [],
     "acceptanceCriteria": "Переменные Tailwind (цвета, отступы) генерируются из tokens.json.",
-    "flags": ["ui", "refactoring"]
+    "flags": ["ui", "refactoring"],
+    "status": "todo",
+    "updatedAt": "2025-11-04"
   },
   {
     "id": "TASK-003",
@@ -30,7 +35,9 @@
     "estimate": "2 дня",
     "deps": [],
     "acceptanceCriteria": "E2E-тесты падают при обнаружении нарушений доступности.",
-    "flags": ["testing", "a11y"]
+    "flags": ["testing", "a11y"],
+    "status": "todo",
+    "updatedAt": "2025-11-04"
   },
   {
     "id": "TASK-004",
@@ -41,7 +48,9 @@
     "estimate": "3 дня",
     "deps": [],
     "acceptanceCriteria": "Merge-реквест блокируется, если метрики Lighthouse ниже пороговых.",
-    "flags": ["ci", "performance"]
+    "flags": ["ci", "performance"],
+    "status": "todo",
+    "updatedAt": "2025-11-04"
   },
   {
     "id": "TASK-005",
@@ -52,6 +61,9 @@
     "estimate": "5 дней",
     "deps": ["TASK-001"],
     "acceptanceCriteria": "E2E-тесты запускаются одной командой и стабильно проходят.",
-    "flags": ["devex", "testing"]
+    "flags": ["devex", "testing"],
+    "status": "in_progress",
+    "updatedAt": "2025-11-04",
+    "notes": "Добавлены критические E2E-флоу (14 тестов). Флак не замечен, настройка Docker Compose в работе."
   }
 ]
