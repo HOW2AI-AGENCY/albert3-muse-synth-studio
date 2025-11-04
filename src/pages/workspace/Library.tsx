@@ -66,7 +66,8 @@ const Library: React.FC = () => {
   const { userId } = useAuth();
   
   // Automatic cleanup of failed tracks
-  useTrackCleanup(userId, refreshTracks);
+  // Ensure userId is string or undefined, not null
+  useTrackCleanup(userId ?? undefined, refreshTracks);
   
   // Состояние UI
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -332,6 +333,8 @@ const Library: React.FC = () => {
 
   // Calculate grid parameters (новая продвинутая версия)
   const gridParams = useResponsiveGrid(containerWidth);
+  // На мобильных ФОРСИРУЕМ ровно 2 колонки по UX-требованию
+  const effectiveColumns = gridParams.screenCategory === 'mobile' ? 2 : gridParams.columns;
   const shouldVirtualize = filteredAndSortedTracks.length > 50;
   
   // Prefetch adjacent tracks
@@ -657,7 +660,7 @@ const Library: React.FC = () => {
                 {shouldVirtualize ? (
                   <VirtualizedTrackGrid
                     tracks={filteredAndSortedTracks}
-                    columns={gridParams.columns}
+                    columns={effectiveColumns}
                     gap={gridParams.gap}
                     onTrackPlay={handleTrackPlay}
                     onShare={handleShare}
@@ -673,7 +676,7 @@ const Library: React.FC = () => {
                   <div 
                     className="grid overflow-auto h-full scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent"
                     style={{
-                      gridTemplateColumns: `repeat(${gridParams.columns}, minmax(${gridParams.screenCategory === 'mobile' ? 150 : gridParams.screenCategory === 'tablet' ? 180 : 220}px, ${gridParams.cardWidth}px))`,
+                      gridTemplateColumns: `repeat(${effectiveColumns}, minmax(${gridParams.screenCategory === 'mobile' ? 150 : gridParams.screenCategory === 'tablet' ? 180 : 220}px, ${gridParams.cardWidth}px))`,
                       gap: `${gridParams.gap}px`,
                       justifyContent: 'center'
                     }}
