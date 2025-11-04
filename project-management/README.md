@@ -1,258 +1,59 @@
-# 📊 Project Management - Albert3 Muse Synth Studio
+# 🎯 Дашборд управления проектом
 
-**Last Updated:** October 31, 2025  
-**Current Sprint:** 31 (Completed - 95%)  
-**Next Sprint:** 32 (Testing Infrastructure)  
-**Project Status:** ✅ Production Ready  
-**Version:** v2.7.5
+Этот документ — центральный хаб для отслеживания прогресса разработки Albert3 Muse Synth Studio.
 
 ---
 
-## 🎯 Quick Navigation
+##  Sprint 32: Миграция на Replicate и Стабилизация
 
-### 📋 Current Status
+**Статус:** 🟢 **В процессе**
+**Период:** 2025-11-03 – 2025-11-10
 
-**Sprint 31 - COMPLETED ✅**
-- **Completion:** 95%
-- **Period:** Oct 13-31, 2025
-- **Version:** v2.7.5
-- **Focus:** Critical Infrastructure & Performance
+### Ключевые цели спринта:
 
-**Key Achievements:**
-- ✅ Automatic track archiving system
-- ✅ Enhanced error handling
-- ✅ Production monitoring infrastructure  
-- ✅ Database optimization (+90% performance)
-- ✅ Comprehensive documentation
+| Задача | Приоритет | Статус | Ответственный |
+| :--- | :--- | :--- | :--- |
+| **Исправить баг с версиями треков** | 🔥 Критический | ✅ **Готово** | Jules |
+| **Мигрировать `analyze-audio` на Replicate**| 🔥 Критический | ✅ **Готово** | Jules |
+| Улучшить `README.md` и документацию | 💧 Средний | ✅ **Готово** | Jules |
+| Визуализировать управление задачами | 💧 Средний | ✅ **Готово** | Jules |
+| Покрыть тестами `useTrackVersions` | 🧊 Низкий | ⏳ В ожидании | - |
 
----
-
-## 📁 Structure
-
-```
-project-management/
-├── current-sprint/          # ⚡ Active Sprint 32
-├── sprints/                 # 📅 Sprint history
-├── roadmap/                 # 🗺️ Future planning
-├── tasks/                   # 📋 Backlog & tracking
-├── metrics/                 # 📊 KPIs & analytics
-└── reports/                 # 📄 Status reports
-```
+**Подробный план спринта:** [ `./SPRINT_32_PLAN.md`](./SPRINT_32_PLAN.md)
+**Текущий статус:** [ `./SPRINT_32_STATUS.md`](./SPRINT_32_STATUS.md)
 
 ---
 
-## 🗂️ Navigation
-
-### 📋 Sprint Documentation
-
-**Current Sprint:**
-- **[Sprint 32 Plan](./SPRINT_32_PLAN.md)** ⭐ Testing Infrastructure (Nov 1-14)
-
-**Recently Completed:**
-- **[Sprint 31 Final Report](./SPRINT_31_FINAL_REPORT.md)** ✅ Critical Infrastructure (95% complete)
-
-### 📚 Key Resources
-
-- **[Technical Debt Plan](./TECHNICAL_DEBT_PLAN.md)** - Comprehensive debt tracking (147 items)
-- **[Development Roadmap](./DEVELOPMENT_ROADMAP.md)** - Long-term planning
-- **[Contributing Guide](./CONTRIBUTING.md)** - Team collaboration guidelines
-- **[Quick Reference](./QUICK-REFERENCE.md)** - Cheat sheets and shortcuts
-
-### 🗺️ Roadmap
-- [Q4 2025 Roadmap](roadmap/q4-2025.md) - Current quarter
-- [Q1 2026 Plan](roadmap/q1-2026.md) - Next quarter
-- [Long-term Vision](roadmap/long-term.md) - 2026+
-
-### 📋 Tasks & Backlog
-- [Backlog](tasks/backlog.md) - Prioritized tasks
-- [Technical Debt](tasks/technical-debt.md) - Tech debt tracking
-- [Completed Tasks](tasks/completed.md) - Done work
-
-### 📊 Metrics & Analytics
-- [KPI Dashboard](metrics/README.md) - Key metrics
-- [Velocity Chart](metrics/velocity.md) - Sprint velocity
-- [Quality Metrics](metrics/quality.md) - Code quality
-- [Performance Metrics](metrics/performance.md) - App performance
-
-### 📄 Reports
-- [Reports Index](reports/README.md) - All reports
-- [Weekly Reports](reports/weekly/) - Weekly status
-- [Monthly Reports](reports/monthly/) - Monthly summaries
-- [Audit Reports](reports/audits/) - System audits
-
----
-
-## 🎯 Current Focus (Sprint 32)
-
-### Primary Objectives
-1. 🧪 **E2E Testing Framework** - Playwright setup with critical user flows
-2. 📈 **Unit Test Coverage** - Increase from 15% to 80%+
-3. 🔗 **Integration Tests** - Edge Functions and API endpoints
-4. ⚡ **Performance Testing** - Load testing and benchmarking
-5. 🚀 **CI/CD Integration** - Automated testing pipeline
-
-### Success Criteria
-- ✅ E2E tests cover 5+ critical journeys
-- ✅ Unit test coverage ≥ 80%
-- ✅ All Edge Functions have integration tests
-- ✅ Performance benchmarks established
-- ✅ CI/CD pipeline runs all tests automatically
-
-**See:** [Sprint 32 Plan](./SPRINT_32_PLAN.md) for detailed breakdown
-
----
-
-## 📈 Sprint Metrics
-
-### Sprint 31 Results (COMPLETED)
-| Metric | Target | Achieved | Status |
-|--------|--------|----------|--------|
-| Security Score | >90% | 96% | ✅ Exceeded |
-| Lighthouse Score | >90 | 95 | ✅ Exceeded |
-| Bundle Size | <400KB | 320KB | ✅ Exceeded |
-| Mureka Success | >90% | 95% | ✅ Exceeded |
-
-### Sprint 32 Targets
-| Metric | Current | Target | Status |
-|--------|---------|--------|--------|
-| Test Coverage | 15% | 80%+ | ⏳ Planned |
-| Unit Tests | 10 | 50+ | ⏳ Planned |
-| Integration Tests | 0 | 10+ | ⏳ Planned |
-| E2E Tests | 0 | 15+ | ⏳ Planned |
-| CI/CD Test Time | N/A | < 10 min | ⏳ Planned |
-
----
-
-## 🏆 Key Achievements
-
-### Sprint 31 Highlights
-- 🔒 **Security**: 62% → 96% (+55%)
-- ⚡ **Performance**: Bundle -62%, FCP -43%
-- 🐛 **Stability**: Mureka 70% → 95% success
-- 📚 **Docs**: 100% API coverage
-
-### Overall Project
-- 🎯 **Production Ready**: 96%
-- 📦 **Features**: 50+ implemented
-- 🎵 **AI Providers**: 2 (Suno, Mureka)
-- 👥 **Users**: Authentication + Credits
-
----
-
-## 📋 How to Use This System
-
-### For Team Members
-
-**Daily**:
-1. Check [current sprint status](current-sprint/status.md)
-2. Update your tasks
-3. Report blockers
-
-**Weekly**:
-1. Review [weekly report](reports/weekly/)
-2. Attend sprint review (Friday 16:00)
-3. Update documentation if needed
-
-**Sprint Planning**:
-1. Review [backlog](tasks/backlog.md)
-2. Estimate tasks (Story Points)
-3. Commit to sprint goal
-
-### For Stakeholders
-
-**Track Progress**:
-- [Current Sprint](current-sprint/README.md) - Real-time status
-- [Metrics Dashboard](metrics/README.md) - KPIs
-- [Roadmap](roadmap/q4-2025.md) - Future plans
-
-**Reports**:
-- [Weekly Reports](reports/weekly/) - Progress updates
-- [Monthly Reports](reports/monthly/) - Monthly summaries
-
----
-
-## 🎯 Agile Process
-
-### Sprint Cycle (2 weeks)
+## 🗺️ Дорожная карта (Roadmap) на Q4 2025
 
 ```mermaid
-graph LR
-    A[Sprint Planning] --> B[Daily Standups]
-    B --> C[Development]
-    C --> D[Code Review]
-    D --> E[Testing]
-    E --> F[Sprint Review]
-    F --> G[Retrospective]
-    G --> A
+gantt
+    title Дорожная карта продукта
+    dateFormat  YYYY-MM-DD
+    section Стабилизация
+    Исправление критических багов    :done,    des1, 2025-11-03, 1d
+    Миграция на Replicate API       :done,    des2, 2025-11-04, 2d
+
+    section Новые фичи
+    Совместная работа над проектами :active,  des3, 2025-11-06, 7d
+    AI-мастеринг треков             :         des4, 2025-11-13, 14d
+
+    section Технический долг
+    Стабилизация E2E тестов         :         des5, 2025-11-27, 10d
 ```
 
-### Daily Standup (10:00 UTC, 15 min)
-- What did you do yesterday?
-- What will you do today?
-- Any blockers?
-
-### Sprint Review (Friday 16:00, 1h)
-- Demo completed work
-- Get feedback
-- Update backlog
-
-### Sprint Retrospective (Friday 17:00, 30min)
-- What went well?
-- What can be improved?
-- Action items
+**Полная дорожная карта:** [ `./DEVELOPMENT_ROADMAP.md`](./DEVELOPMENT_ROADMAP.md)
 
 ---
 
-## 📊 Definition of Done
+## 📚 Быстрые ссылки
 
-### For Features
-- [ ] Code written and reviewed
-- [ ] Unit tests (≥80% coverage)
-- [ ] Integration tests pass
-- [ ] Documentation updated
-- [ ] Acceptance criteria met
-- [ ] No critical bugs
-- [ ] Deployed to staging
-
-### For Bugs
-- [ ] Root cause identified
-- [ ] Fix implemented
-- [ ] Regression tests added
-- [ ] Tested in all environments
-- [ ] No side effects
-
-### For Sprint
-- [ ] All committed tasks done
-- [ ] Sprint goal achieved
-- [ ] Documentation updated
-- [ ] Release notes prepared
-- [ ] Retrospective completed
+| Раздел | Описание | Ссылка |
+| :--- | :--- | :--- |
+| 🗂️ **Бэклог** | Список всех задач и идей. | [ `./tasks/`](./tasks/) |
+|  sprint **Планы спринтов** | Планы на текущий и будущие спринты. | [ `./sprints/`](./sprints/) |
+| 📊 **Отчёты** | Отчёты о завершённых спринтах. | [ `./reports/`](./reports/) |
+|  milestones **Вехи (Milestones)** | Ключевые точки в развитии проекта. | [ `./milestones/`](./milestones/) |
+|  debt **Технический долг** | План по устранению техдолга. | [ `./TECHNICAL_DEBT_PLAN.md`](./TECHNICAL_DEBT_PLAN.md) |
 
 ---
-
-## 📞 Contacts
-
-### Project Roles
-- **Product Owner**: Backlog management
-- **Scrum Master**: Process facilitation
-- **Tech Lead**: Architecture decisions
-- **QA Lead**: Quality assurance
-
-### Communication
-- **Slack**: #albert3-development
-- **Daily Standup**: 10:00 UTC
-- **Sprint Review**: Friday 16:00 UTC
-- **Email**: dev@albert3.app
-
----
-
-## 🔗 Related Documentation
-
-- [Technical Documentation](../docs/README.md)
-- [Architecture](../docs/architecture/overview.md)
-- [API Reference](../docs/api/README.md)
-- [Troubleshooting](../docs/TROUBLESHOOTING.md)
-
----
-
-*Last Updated: October 31, 2025* | *Sprint: 32* | *Version: v3.0.0-alpha.5*

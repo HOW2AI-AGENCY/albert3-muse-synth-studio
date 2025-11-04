@@ -1,360 +1,91 @@
-# 🎵 Albert3 Muse Synth Studio v3.0.0
-
-AI-powered music generation platform with advanced stem separation and creative tools.
-
-[![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue)](https://www.typescriptlang.org/)
-[![Test Coverage](https://img.shields.io/badge/Coverage-80%25-green)](https://vitest.dev/)
-[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
-
 <div align="center">
+  <img src="https://raw.githubusercontent.com/albert-app/albert3-muse-synth-studio/main/docs/assets/logo.png" alt="Albert3 Muse Synth Studio Logo" width="150">
+  <h1>Albert3 Muse Synth Studio</h1>
+  <p><strong>Профессиональная платформа для AI-генерации музыки</strong></p>
+  <p>Интеграция с Suno & Replicate • Версионирование треков • Аналитика в реальном времени</p>
 
-## 🚀 Quick Start (5 minutes)
-
-### Prerequisites
-- Node.js 18+ 
-- npm 9+
-
-### Installation
-```bash
-git clone https://github.com/your-org/albert3-muse-synth.git
-cd albert3-muse-synth
-npm install
-npm run dev
-```
-
-Visit `http://localhost:5173` to see the app running!
-
-## ✨ Features
-
-- 🎵 **Dual Provider Music Generation** - Suno AI & Mureka AI
-- 🎤 **Advanced Stem Separation** - Vocals, instrumentals, and 12 individual instruments
-- ✍️ **AI Lyrics Generation** - Multiple variants with selection
-- 🎨 **Cover Art Creation** - AI-generated album covers
-- ➕ **Track Extension** - Extend your favorite tracks
-- 📊 **Real-time Analytics** - Track plays, likes, and engagement
-- 🔄 **Real-time Updates** - Live status updates via WebSockets
-
-## 🏗️ Architecture
-
-### Tech Stack
-- **Frontend:** React 18 + TypeScript + Vite + Tailwind CSS
-- **Backend:** Supabase (PostgreSQL + Deno Edge Functions)
-- **State:** TanStack Query + Zustand
-- **UI:** Radix UI Primitives + shadcn/ui
-
-### Project Structure
-```
-src/
-├── config/             # Configuration (breakpoints, providers)
-├── types/domain/       # Domain types (single source of truth)
-├── repositories/       # Data access layer (Repository Pattern)
-├── hooks/              # Custom React hooks
-│   ├── common/        # Generic hooks (useInterval, useDebounce)
-│   ├── tracks/        # Track-related hooks
-│   └── generation/    # Generation hooks
-├── components/         # React components
-│   ├── ui/            # shadcn/ui primitives
-│   └── features/      # Feature components
-└── services/          # Business logic services
-```
-
-See [Architecture Overview](./docs/architecture/SYSTEM_OVERVIEW.md) for detailed diagrams.
-
-## 🔒 Protected Files
-
-These files are critical to the system architecture and require Team Lead approval before modification:
-
-- `src/config/breakpoints.config.ts`
-- `src/types/domain/track.types.ts`
-- `src/repositories/interfaces/TrackRepository.ts`
-
-See [`.protectedrc.json`](./.protectedrc.json) for the complete list.
-
-Pre-commit hooks will automatically validate and block unauthorized changes.
-
-## 🧪 Testing
-
-```bash
-npm test                    # Run all tests
-npm run test:unit          # Unit tests only
-npm run test:integration   # Integration tests
-npm run test:e2e           # E2E tests (Playwright)
-npm run test:coverage      # Coverage report
-```
-
-**Coverage Requirements:**
-- Unit tests: >80%
-- Integration tests: Critical paths covered
-- E2E tests: User workflows covered
-
-## 📊 Performance Metrics
-
-| Metric | Current | Target | Status |
-|--------|---------|--------|--------|
-| LCP | 1.2s | <1.5s | ✅ |
-| FID | 50ms | <100ms | ✅ |
-| CLS | 0.05 | <0.1 | ✅ |
-| Bundle Size | 180 KB | <200 KB | ✅ |
-| Test Coverage | 80% | >80% | ✅ |
-
-## 🤝 Contributing
-
-We welcome contributions! See [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for guidelines.
-
-### Quick Contribution Guide
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes (follow our [code style](./docs/CONTRIBUTING.md#code-style))
-4. Write tests
-5. Commit: `git commit -m 'feat: add amazing feature'`
-6. Push: `git push origin feature/amazing-feature`
-7. Open a Pull Request
-
-## 📚 Documentation
-
-- [Architecture Overview](./docs/architecture/SYSTEM_OVERVIEW.md) - System design and patterns
-- [API Reference](./docs/API.md) - Edge Functions documentation
-- [Contributing](./docs/CONTRIBUTING.md) - Contribution guidelines
-- [10-Week Plan](./docs/10_WEEK_IMPLEMENTATION_PLAN.md) - Implementation roadmap
-
-## 🛠️ Development Scripts
-
-```bash
-npm run dev              # Start dev server
-npm run build            # Production build
-npm run preview          # Preview production build
-npm run lint             # Run ESLint
-npm run type-check       # TypeScript type checking
-npm run migrate:breakpoints  # Migrate deprecated code
-npm run validate:protected   # Validate protected files
-```
-
-## 📝 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
-## 📞 Support
-
-- 📧 Email: dev@albert3.app
-- 💬 [GitHub Discussions](https://github.com/your-org/albert3-muse-synth/discussions)
-- 🐛 [GitHub Issues](https://github.com/your-org/albert3-muse-synth/issues)
-
----
-
-**Built with ❤️ by the Albert3 Team**
-![React](https://img.shields.io/badge/React-18.3.1-61dafb.svg?style=for-the-badge&logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178c6.svg?style=for-the-badge&logo=typescript)
-![Supabase](https://img.shields.io/badge/Supabase-Enabled-3ecf8e.svg?style=for-the-badge&logo=supabase)
-![Build](https://img.shields.io/badge/Build-Passing-success.svg?style=for-the-badge)
-![Security](https://img.shields.io/badge/Security-A+-green.svg?style=for-the-badge&logo=security)
-![Performance](https://img.shields.io/badge/Performance-95%2F100-success.svg?style=for-the-badge)
-
-**🎼 Профессиональная платформа для AI-генерации музыки**
-
-*Dual-Provider Architecture • 12-Stem Separation • Real-time Analytics • Enterprise-Grade Security*
-
-[🎮 Live Demo](https://albert3.lovable.app) • [📚 Documentation](./docs) • [🐛 Report Bug](https://github.com/your-repo/issues) • [💡 Request Feature](https://github.com/your-repo/issues/new) • [💬 Discord](https://discord.gg/albert3)
-
-![Albert3 Screenshot](./docs/assets/screenshots/dashboard.png)
+  <div>
+    <img src="https://img.shields.io/badge/TypeScript-5.8-3178c6.svg?style=for-the-badge&logo=typescript" alt="TypeScript">
+    <img src="https://img.shields.io/badge/React-18.3-61dafb.svg?style=for-the-badge&logo=react" alt="React">
+    <img src="https://img.shields.io/badge/Supabase-2.x-3ecf8e.svg?style=for-the-badge&logo=supabase" alt="Supabase">
+    <img src="https://img.shields.io/badge/Vite-5.4-646cff.svg?style=for-the-badge&logo=vite" alt="Vite">
+  </div>
+  <div>
+    <img src="https://img.shields.io/github/workflow/status/albert-app/albert3-muse-synth-studio/CI?style=for-the-badge&logo=github&label=CI" alt="CI Status">
+    <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="License">
+    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge" alt="PRs Welcome">
+  </div>
 
 </div>
-
----
-
-## 📑 Навигация
-
-<table>
-<tr>
-<td width="33%" valign="top">
-
-### 🚀 Быстрый старт
-- [Установка](#-установка)
-- [Первые шаги](#-первые-шаги)
-- [Примеры использования](#-примеры-использования)
-- [FAQ](#-faq)
-
-</td>
-<td width="33%" valign="top">
-
-### 📖 Документация
-- [Архитектура](./docs/ARCHITECTURE.md)
-- [API Reference](./docs/API.md)
-- [Database Schema](./docs/DATABASE.md)
-- [Security Guide](./docs/SECURITY.md)
-
-</td>
-<td width="33%" valign="top">
-
-### 🛠️ Разработка
-- [Contributing Guide](./CONTRIBUTING.md)
-- [Development Setup](./docs/DEVELOPMENT.md)
-- [Testing Guide](./docs/TESTING.md)
-- [Deployment](./docs/DEPLOYMENT.md)
-
-</td>
-</tr>
-</table>
 
 ---
 
 ## 🎯 О проекте
 
-**Albert3 Muse Synth Studio** — это передовая SPA-платформа для профессиональной работы с AI-генерацией музыки. Приложение объединяет возможности **Suno AI** и **Mureka AI**, предоставляя музыкантам, продюсерам и контент-криейторам мощный инструментарий для создания, редактирования и управления музыкальными композициями.
+**Albert3 Muse Synth Studio** — это передовая SPA-платформа для профессиональной работы с AI-генерацией музыки. Приложение объединяет возможности **Suno AI** (генерация) и **Replicate.com** (анализ), предоставляя музыкантам, продюсерам и контент-криейторам мощный инструментарий для создания, редактирования и управления музыкальными композициями.
 
-### ✨ Ключевые особенности
+## 📚 Навигация по репозиторию
 
-<table>
-<tr>
-<td width="50%">
-
-#### 🎼 Генерация музыки
-- ✅ **Dual-Provider**: Suno AI + Mureka AI
-- ✅ **5 AI Models**: V3.5-V5, mureka-6/7.5/o1
-- ✅ **Custom Mode**: Расширенный контроль
-- ✅ **Reference Audio**: Стиль референса
-- ✅ **Idempotency**: Защита от дублей
-
-</td>
-<td width="50%">
-
-#### 🎚️ Обработка аудио
-- ✅ **12-Stem Separation**: 12 инструментов
-- ✅ **Stem Mixer**: Профессиональный микшер
-- ✅ **Track Extension**: Продление до 4 мин
-- ✅ **Cover Creation**: Кавер-версии
-- ✅ **WAV Export**: Lossless формат
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-#### 🎤 Работа с текстами
-- ✅ **AI Lyrics**: Автогенерация текстов
-- ✅ **Multiple Variants**: Выбор вариантов
-- ✅ **Lyrics Editor**: Встроенный редактор
-- ✅ **Timestamped**: Синхронизация
-- ✅ **Lyrics Library**: Библиотека текстов
-
-</td>
-<td width="50%">
-
-#### 📊 Аналитика & Управление
-- ✅ **Project-Based**: Организация проектов
-- ✅ **Track Versioning**: История версий
-- ✅ **Real-time Analytics**: Глубокая аналитика
-- ✅ **Credit System**: Гибкая система оплаты
-- ✅ **User Roles**: admin/moderator/user
-
-</td>
-</tr>
-</table>
+| Раздел | Описание | Быстрые ссылки |
+| :--- | :--- | :--- |
+| 🚀 **Быстрый старт** | Все, что нужно для запуска проекта за 5 минут. | [Установка](#-установка) • [Запуск](#-быстрый-старт) |
+| 🏗️ **Архитектура** | Глубокое погружение в архитектуру системы. | [Описание](./docs/ARCHITECTURE.md) • [Схема](#-архитектура-системы) |
+| 🔬 **Аудит** | Результаты последнего технического аудита. | [Отчёты](./docs/audit/) • [План работ](./docs/audit/05_Refactor_Plan.md) |
+| 🎛️ **Компоненты** | Обзор UI-кита и ключевых компонентов. | `src/components/ui` |
+| ☁️ **Backend** | Обзор Edge-функций Supabase. | `supabase/functions` |
+| 🤝 **Контрибьютинг**| Как помочь проекту. | [Гайд](./CONTRIBUTING.md) • [Задачи](./project-management) |
 
 ---
 
-## 📊 Метрики производительности
+## ✨ Ключевые особенности
 
-<div align="center">
-
-| Метрика | До оптимизации | После | Улучшение | Статус |
-|---------|----------------|-------|-----------|--------|
-| **Bundle Size** | 520 KB | 254 KB | ↓ 51% | 🟢 |
-| **Time to Interactive** | 3.2s | 1.5s | ↓ 53% | 🟢 |
-| **Memory Usage** | 450 MB | 120 MB | ↓ 73% | 🟢 |
-| **Render Time (1000 треков)** | 2500ms | 75ms | ↓ 97% | 🟢 |
-| **Cache Hit Rate** | - | ~85% | - | 🟢 |
-| **LCP** | 2.5s | 1.2s | ↓ 52% | 🟢 |
-| **CLS** | 0.15 | 0.05 | ↓ 67% | 🟢 |
-| **Success Rate (Suno)** | - | 97% | - | 🟢 |
-| **Success Rate (Mureka)** | - | 94% | - | 🟢 |
-
-</div>
+-   ✅ **Dual-Provider**: Интеграция с Suno AI (генерация) и Replicate.com (анализ).
+-   ✅ **Система версий**: Создание и управление несколькими версиями одного трека.
+-   ✅ **Обработка аудио**: Разделение на стемы, анализ BPM, тональности и жанра.
+-   ✅ **AI-генерация текстов**: Автоматическое создание текстов песен с помощью AI.
+-   ✅ **Проектная организация**: Группировка треков в альбомы и проекты для удобного управления.
+-   ✅ **Аналитика в реальном времени**: Отслеживание статистики прослушиваний.
 
 ---
 
 ## 🏗️ Архитектура системы
 
+Платформа использует архитектуру **Frontend -> Backend-as-a-Service (BaaS)**, где фронтенд-приложение на React взаимодействует с Supabase, который предоставляет базу данных, аутентификацию, хранилище и бессерверные Edge-функции.
+
+<details>
+<summary>Диаграмма архитектуры (нажмите для просмотра)</summary>
+
 ```mermaid
 graph TB
-    subgraph "Frontend Layer"
-        A[React 18.3 + TypeScript]
-        B[TanStack Query v5]
-        C[Zustand State]
-        D[shadcn/ui Components]
-        E[Service Worker]
+    subgraph "Frontend Layer (React + Vite)"
+        A[UI Components (shadcn/ui)]
+        B[State Management (React Query + Zustand)]
+        C[Routing (React Router)]
     end
-    
-    subgraph "Backend Layer - Supabase"
-        F[Edge Functions - Deno]
-        G[PostgreSQL 15 + RLS]
-        H[Authentication JWT]
-        I[Storage Buckets]
-        J[Realtime Subscriptions]
+
+    subgraph "Backend Layer (Supabase)"
+        F[Edge Functions (Deno)]
+        G[Database (PostgreSQL + RLS)]
+        H[Authentication (JWT)]
+        I[Storage]
     end
-    
+
     subgraph "External AI Providers"
         K[Suno AI API]
-        L[Mureka AI API]
-        M[Fal.AI - Stems]
+        L[Replicate.com API]
     end
-    
-    A --> B
-    B --> F
-    F --> K
-    F --> L
-    F --> M
-    F --> G
-    F --> I
-    G --> J
-    J --> A
-    E --> I
-    
+
+    A & C --> B; B --> F;
+    F --> K; F --> L; F --> G; F --> I;
+    G --> H;
+
     style A fill:#61DAFB,stroke:#333,stroke-width:2px
+    style F fill:#3ECF8E,stroke:#333,stroke-width:2px
     style K fill:#FF6F61,stroke:#333,stroke-width:2px
     style L fill:#9B59B6,stroke:#333,stroke-width:2px
-    style F fill:#3ECF8E,stroke:#333,stroke-width:2px
 ```
 
-### 📂 Структура проекта
-
-```
-albert3-muse-synth-studio/
-├── 📁 src/                          # Frontend source code
-│   ├── 📁 components/               # React компоненты
-│   │   ├── 📁 ui/                  # shadcn/ui (35+ компонентов)
-│   │   ├── 📁 player/              # Audio Player System
-│   │   ├── 📁 tracks/              # Track components
-│   │   ├── 📁 generator/           # Music Generator V2
-│   │   └── 📁 workspace/           # Workspace UI
-│   ├── 📁 hooks/                   # Custom React hooks (40+)
-│   ├── 📁 contexts/                # React Context providers
-│   ├── 📁 services/                # API services
-│   ├── 📁 features/                # Feature modules (DDD)
-│   └── 📁 types/                   # TypeScript types
-│
-├── 📁 supabase/                     # Backend (Supabase)
-│   ├── 📁 functions/               # Edge Functions (50+)
-│   │   ├── 📁 generate-suno/      # 🔒 PROTECTED - Suno generation
-│   │   ├── 📁 generate-mureka/    # 🔒 PROTECTED - Mureka generation
-│   │   ├── 📁 separate-stems/     # Stem separation
-│   │   └── 📁 _shared/            # 🔒 PROTECTED - Shared modules
-│   │       ├── 📄 suno.ts         # 🔒 Suno API client (1066 lines)
-│   │       ├── 📄 mureka.ts       # 🔒 Mureka API client (1000+ lines)
-│   │       └── 📄 types/          # 🔒 Shared types
-│   └── 📁 migrations/              # SQL migrations
-│
-└── 📁 docs/                        # Documentation
-    ├── 📄 ARCHITECTURE.md          # 🆕 Architecture deep dive
-    ├── 📄 API.md                   # API documentation
-    ├── 📄 DATABASE.md              # Database schema
-    ├── 📄 SECURITY.md              # Security guide
-    ├── 📄 DEVELOPMENT.md           # Development setup
-    ├── 📄 TESTING.md               # Testing guide
-    └── 📄 DEPLOYMENT.md            # Deployment guide
-```
-
-> 🔒 **PROTECTED FILES** — файлы, помеченные как защищенные, требуют code review от владельца перед изменением. См. [CODEOWNERS](./.github/CODEOWNERS).
+</details>
 
 ---
 
@@ -362,409 +93,105 @@ albert3-muse-synth-studio/
 
 ### Предварительные требования
 
-```bash
-# Node.js >= 18.x
-node --version  # v18.0.0 или выше
+-   **Node.js**: `v18.0.0` или выше
+-   **npm**: `v9.0.0` или выше
+-   **Git**
 
-# npm >= 9.x
-npm --version   # v9.0.0 или выше
-
-# Git
-git --version   # любая современная версия
-```
-
-### Быстрый старт (5 минут)
+### Быстрый старт
 
 ```bash
 # 1. Клонировать репозиторий
-git clone https://github.com/your-username/albert3-muse-synth-studio.git
+git clone https://github.com/albert-app/albert3-muse-synth-studio.git
 cd albert3-muse-synth-studio
 
 # 2. Установить зависимости
 npm install
 
 # 3. Настроить переменные окружения
-# .env файл создается автоматически при подключении к Supabase
+# Для работы с Supabase создайте файл .env и добавьте ключи проекта
+# VITE_SUPABASE_URL=...
+# VITE_SUPABASE_ANON_KEY=...
+# REPLICATE_API_KEY=... (для бэкенда)
 
 # 4. Запустить dev-сервер
 npm run dev
 
-# 5. Открыть в браузере
-# http://localhost:5173
+# 5. Открыть в браузере: http://localhost:5173
 ```
-
-### Настройка Supabase (опционально для локальной разработки)
-
-```bash
-# Установить Supabase CLI
-npm install -g supabase
-
-# Запустить локальный Supabase
-supabase start
-
-# Применить миграции
-supabase db reset
-
-# Деплой Edge Functions
-supabase functions deploy --all
-```
-
-> 💡 **Совет**: Для production используйте Lovable Cloud с автоматическим управлением Supabase.
 
 ---
 
-## 🎮 Первые шаги
+## 🎮 Примеры использования
 
-### 1️⃣ Создание первого трека
+<details>
+<summary>Пример: Генерация трека (нажмите для просмотра)</summary>
 
 ```typescript
-// Импорт клиента Supabase
 import { supabase } from '@/integrations/supabase/client';
 
-// Генерация музыки через Suno AI
-const { data, error } = await supabase.functions.invoke('generate-suno', {
-  body: {
-    prompt: "Upbeat electronic dance music with energetic vibes",
-    tags: "edm, energetic, dance",
-    title: "Neon Nights",
-    customMode: true,
-    make_instrumental: false,
-    model_version: "V5"
-  }
-});
+const generateTrack = async () => {
+  const { data, error } = await supabase.functions.invoke('generate-suno', {
+    body: {
+      prompt: "Upbeat electronic dance music with energetic vibes",
+      tags: "edm, energetic, dance",
+    }
+  });
 
-if (data?.trackId) {
-  console.log('Track generation started:', data.trackId);
-}
-```
-
-### 2️⃣ Разделение на стемы
-
-```typescript
-// Разделение трека на 12 инструментов
-const { data } = await supabase.functions.invoke('separate-stems', {
-  body: {
-    trackId: "your-track-id",
-    separationMode: "split_stem" // 12 stems
-  }
-});
-```
-
-### 3️⃣ Создание проекта
-
-```typescript
-// Создание музыкального проекта
-const { data } = await supabase
-  .from('music_projects')
-  .insert({
-    name: "My Album",
-    description: "Experimental electronic album",
-    project_type: "album",
-    status: "in_progress"
-  })
-  .select()
-  .single();
-```
-
----
-
-## 📚 Примеры использования
-
-### Пример 1: Генерация кавер-версии
-
-```typescript
-import { useCreateCover } from '@/hooks/useCreateCover';
-
-const CreateCoverExample = () => {
-  const { createCover, isLoading } = useCreateCover();
-  
-  const handleCreateCover = async () => {
-    await createCover({
-      originalTrackId: "original-track-uuid",
-      newPrompt: "Make it more jazzy and smooth"
-    });
-  };
-  
-  return (
-    <Button onClick={handleCreateCover} disabled={isLoading}>
-      Create Cover Version
-    </Button>
-  );
+  if (error) console.error('Ошибка генерации:', error);
+  else console.log('Генерация запущена, ID задачи:', data.taskId);
 };
 ```
 
-### Пример 2: Работа с версиями трека
+</details>
+
+<details>
+<summary>Пример: Получение версий трека (нажмите для просмотра)</summary>
 
 ```typescript
 import { useTrackVersions } from '@/hooks/useTrackVersions';
 
-const VersionsExample = ({ trackId }: { trackId: string }) => {
-  const { versions, setPreferredVersion } = useTrackVersions(trackId);
-  
+const TrackVersionsComponent = ({ trackId }: { trackId: string }) => {
+  const { data: versions, isLoading } = useTrackVersions(trackId);
+
+  if (isLoading) return <p>Загрузка версий...</p>;
+
   return (
-    <div>
-      {versions.map((version) => (
-        <div key={version.id}>
-          <p>Version {version.variant_index}</p>
-          <Button onClick={() => setPreferredVersion(version.id)}>
-            Set as Preferred
-          </Button>
-        </div>
+    <ul>
+      {versions?.map((version) => (
+        <li key={version.id}>
+          Версия {version.variant_index ?? version.version_number}
+          <audio controls src={version.audio_url} />
+        </li>
       ))}
-    </div>
+    </ul>
   );
 };
 ```
-
-### Пример 3: Аналитика прослушиваний
-
-```typescript
-import { useTrackAnalytics } from '@/hooks/useTrackAnalytics';
-
-const AnalyticsExample = ({ trackId }: { trackId: string }) => {
-  const { analytics, incrementPlayCount } = useTrackAnalytics(trackId);
-  
-  return (
-    <div>
-      <p>Plays: {analytics?.play_count}</p>
-      <p>Likes: {analytics?.like_count}</p>
-      <p>Downloads: {analytics?.download_count}</p>
-    </div>
-  );
-};
-```
+</details>
 
 ---
 
 ## 🧪 Тестирование
 
 ```bash
-# Запуск всех тестов
+# Запустить все unit-тесты
 npm test
 
-# Тестирование Edge Functions
-npm run supabase:test
-
-# E2E тестирование
+# Запустить E2E-тесты
 npm run test:e2e
 
-# Проверка типов
-npm run typecheck
-
-# Линтинг
-npm run lint
+# Проверить покрытие тестами
+npm run test:coverage
 ```
-
----
-
-## 🚢 Деплой
-
-### Production Deployment (Lovable Cloud)
-
-```bash
-# 1. Commit изменений
-git add .
-git commit -m "feat: add new feature"
-git push origin main
-
-# 2. Lovable Cloud автоматически:
-# - Деплоит Edge Functions
-# - Применяет миграции БД
-# - Обновляет frontend
-```
-
-### Manual Deployment (Vercel/Netlify)
-
-```bash
-# Build production bundle
-npm run build
-
-# Preview локально
-npm run preview
-
-# Deploy to Vercel
-vercel --prod
-
-# Deploy to Netlify
-netlify deploy --prod
-```
-
----
-
-## 🔒 Безопасность
-
-### Row Level Security (RLS)
-
-Все таблицы защищены RLS политиками:
-
-```sql
--- Пример: пользователи видят только свои треки
-CREATE POLICY "Users can view own tracks"
-  ON tracks FOR SELECT
-  USING (auth.uid() = user_id);
-
--- Публичные треки доступны всем
-CREATE POLICY "Public tracks viewable by everyone"
-  ON tracks FOR SELECT
-  USING (is_public = true OR auth.uid() = user_id);
-```
-
-### Защищенные файлы
-
-Файлы интеграции с AI-провайдерами **защищены от случайных изменений**:
-
-- 🔒 `supabase/functions/_shared/suno.ts` — Suno API client
-- 🔒 `supabase/functions/_shared/mureka.ts` — Mureka API client
-- 🔒 `supabase/functions/generate-suno/` — Suno generation logic
-- 🔒 `supabase/functions/generate-mureka/` — Mureka generation logic
-
-> ⚠️ **Важно**: Изменения в этих файлах требуют code review. См. [CODEOWNERS](./.github/CODEOWNERS).
 
 ---
 
 ## 🤝 Вклад в проект
 
-Мы приветствуем вклад сообщества! Пожалуйста, прочитайте [CONTRIBUTING.md](./CONTRIBUTING.md) перед началом работы.
-
-### Процесс контрибуции
-
-1. 🍴 Fork репозитория
-2. 🌿 Создайте feature branch (`git checkout -b feature/amazing-feature`)
-3. ✅ Commit изменений (`git commit -m 'feat: add amazing feature'`)
-4. 📤 Push в branch (`git push origin feature/amazing-feature`)
-5. 🔃 Откройте Pull Request
-
-### Соглашение о коммитах
-
-Используйте [Conventional Commits](https://www.conventionalcommits.org/):
-
-```
-feat: add new feature
-fix: resolve bug in player
-docs: update README
-refactor: improve code structure
-perf: optimize rendering
-test: add unit tests
-```
-
----
-
-## 📖 Документация
-
-<table>
-<tr>
-<td width="50%">
-
-### 🏗️ Архитектура
-- [Системная архитектура](./docs/ARCHITECTURE.md)
-- [Database Schema](./docs/DATABASE.md)
-- [API Design](./docs/API.md)
-- [Security Model](./docs/SECURITY.md)
-
-</td>
-<td width="50%">
-
-### 🛠️ Руководства
-- [Development Setup](./docs/DEVELOPMENT.md)
-- [Testing Guide](./docs/TESTING.md)
-- [Deployment Guide](./docs/DEPLOYMENT.md)
-- [Troubleshooting](./docs/TROUBLESHOOTING.md)
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-### 🔌 Интеграции
-- [Suno API Integration](./docs/integrations/SUNO_API_INTEGRATION.md)
-- [Mureka AI Integration](./docs/integrations/MUREKA_INTEGRATION.md)
-- [Fal.AI Stems](./docs/integrations/FAL_INTEGRATION.md)
-
-</td>
-<td width="50%">
-
-### 📊 Управление проектом
-- [Roadmap](./project-management/ROADMAP.md)
-- [Sprint Reports](./project-management/reports/)
-- [Task Tracking](./project-management/tasks/)
-
-</td>
-</tr>
-</table>
-
----
-
-## 🎯 Roadmap
-
-### Q1 2025 (Current)
-- [x] Dual-Provider Architecture (Suno + Mureka)
-- [x] 12-Stem Separation System
-- [x] Track Versioning System
-- [x] Performance Optimization (Phase 1)
-- [x] Music Video Generation
-- [ ] Collaborative Projects
-- [ ] AI-Powered Mastering
-
-### Q2 2025
-- [ ] Mobile App (React Native)
-- [ ] Advanced Analytics Dashboard
-- [ ] Social Features (Comments, Sharing)
-- [ ] API для разработчиков
-- [ ] Marketplace для пресетов
-
-### Q3 2025
-- [ ] VST Plugin Support
-- [ ] Live Performance Mode
-- [ ] AI-Assisted Mixing
-- [ ] Multi-language Support
-
----
-
-## 💬 Сообщество и поддержка
-
-<div align="center">
-
-[![Discord](https://img.shields.io/badge/Discord-Join%20Chat-7289da.svg?style=for-the-badge&logo=discord)](https://discord.gg/albert3)
-[![Twitter](https://img.shields.io/badge/Twitter-Follow-1da1f2.svg?style=for-the-badge&logo=twitter)](https://twitter.com/albert3studio)
-[![Email](https://img.shields.io/badge/Email-Contact-ea4335.svg?style=for-the-badge&logo=gmail)](mailto:support@albert3.app)
-
-</div>
+Мы приветствуем ваш вклад! Пожалуйста, ознакомьтесь с нашим [**Руководством для контрибьюторов (CONTRIBUTING.md)**](./CONTRIBUTING.md) перед началом работы.
 
 ---
 
 ## 📄 Лицензия
 
 Этот проект лицензирован под [MIT License](./LICENSE).
-
----
-
-## 🙏 Благодарности
-
-- **Suno AI** за потрясающий API для генерации музыки
-- **Mureka AI** за инновационные возможности анализа
-- **Supabase** за мощную backend-платформу
-- **shadcn/ui** за красивые UI-компоненты
-- **TanStack** за невероятные библиотеки (Query, Virtual)
-- **Lovable** за платформу разработки
-
----
-
-## 📞 Контакты
-
-- 📧 Email: [support@albert3.app](mailto:support@albert3.app)
-- 💬 Discord: [Join Server](https://discord.gg/albert3)
-- 🐦 Twitter: [@albert3studio](https://twitter.com/albert3studio)
-- 🌐 Website: [https://albert3.app](https://albert3.app)
-
----
-
-<div align="center">
-
-**Made with ❤️ by Albert3 Team**
-
-⭐ Star us on GitHub — it helps!
-
-[![GitHub stars](https://img.shields.io/github/stars/your-repo/albert3-muse-synth-studio?style=social)](https://github.com/your-repo/albert3-muse-synth-studio/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/your-repo/albert3-muse-synth-studio?style=social)](https://github.com/your-repo/albert3-muse-synth-studio/network/members)
-
-</div>
