@@ -163,16 +163,4 @@ export class EnhancedErrorBoundary extends Component<Props, State> {
   }
 }
 
-// HOC for wrapping routes with error boundary
-export function withErrorBoundary<P extends object>(
-  Component: React.ComponentType<P>,
-  fallback?: ReactNode
-): React.ComponentType<P> {
-  return function WithErrorBoundary(props: P) {
-    return (
-      <EnhancedErrorBoundary fallback={fallback}>
-        <Component {...props} />
-      </EnhancedErrorBoundary>
-    );
-  };
-}
+// Перенесено: HOC withErrorBoundary находится в файле '@/hoc/withErrorBoundary'

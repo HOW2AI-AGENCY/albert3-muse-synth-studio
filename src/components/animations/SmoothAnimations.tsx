@@ -7,41 +7,13 @@ import React, {
   useCallback
 } from 'react';
 import { cn } from '@/lib/utils';
+import { AnimationType, EasingFunction, AnimationConfig } from './types';
 
 /**
  * 🎬 Типы анимаций и их параметры
  */
-export type AnimationType = 
-  | 'fadeIn' 
-  | 'fadeOut' 
-  | 'slideUp' 
-  | 'slideDown' 
-  | 'slideLeft' 
-  | 'slideRight'
-  | 'scaleIn' 
-  | 'scaleOut'
-  | 'bounceIn'
-  | 'elastic'
-  | 'materialSlide'
-  | 'materialFade';
-
-export type EasingFunction = 
-  | 'linear'
-  | 'easeIn'
-  | 'easeOut'
-  | 'easeInOut'
-  | 'materialStandard'
-  | 'materialDecelerate'
-  | 'materialAccelerate'
-  | 'materialSharp';
-
-interface AnimationConfig {
-  duration?: number;
-  delay?: number;
-  easing?: EasingFunction;
-  fillMode?: 'forwards' | 'backwards' | 'both' | 'none';
-  iterations?: number | 'infinite';
-}
+// Типы анимаций импортированы из отдельного файла, чтобы этот TSX
+// экспортировал только компоненты и соответствовал правилу react-refresh
 
 /**
  * 🎯 Material Design Easing Functions
@@ -339,17 +311,25 @@ export const AnimatedList: React.FC<AnimatedListProps> = ({
     new Array(children.length).fill(false)
   );
 
+  const count = children.length;
   useEffect(() => {
-    children.forEach((_, index) => {
-      setTimeout(() => {
+    const timers: Array<ReturnType<typeof setTimeout>> = [];
+    for (let index = 0; index < count; index++) {
+      const t = setTimeout(() => {
         setVisibleItems(prev => {
           const newState = [...prev];
           newState[index] = true;
           return newState;
         });
       }, index * stagger);
-    });
-  }, [children.length, stagger]);
+      timers.push(t);
+    }
+    return () => {
+      // Очищаем таймеры и сбрасываем состояние при изменении списка
+      timers.forEach(clearTimeout);
+      setVisibleItems(new Array(count).fill(false));
+    };
+  }, [count, stagger]);
 
   return (
     <div className={className}>

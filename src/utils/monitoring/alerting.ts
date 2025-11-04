@@ -158,10 +158,9 @@ export class AlertingSystem {
       },
     });
 
-    // Console logging
+    // Логгируем предупреждение через централизованный логгер
     const emoji = severity === 'critical' ? '🚨' : '⚠️';
-    console.warn(`${emoji} [Alert] ${severity.toUpperCase()}: ${message}`, metadata);
-    logger.warn(message, 'AlertingSystem', { alertId, severity, ...metadata });
+    logger.warn(`${emoji} [Alert] ${severity.toUpperCase()}: ${message}`, 'AlertingSystem', { alertId, severity, ...metadata });
 
     this.lastAlerts.set(alertId, now);
   }
