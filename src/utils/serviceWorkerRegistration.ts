@@ -3,6 +3,8 @@
  * Week 3: Smart Loading & Caching
  */
 
+import { logger } from './logger';
+
 export const registerServiceWorker = async () => {
   if ('serviceWorker' in navigator) {
     try {
@@ -10,7 +12,7 @@ export const registerServiceWorker = async () => {
         scope: '/',
       });
 
-      console.log('[SW] Service Worker registered:', registration.scope);
+      logger.info('[SW] Service Worker registered', 'ServiceWorker', { scope: registration.scope });
 
       // Check for updates periodically
       setInterval(() => {
@@ -25,7 +27,7 @@ export const registerServiceWorker = async () => {
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
             // New service worker available
-            console.log('[SW] New version available');
+            logger.info('[SW] New version available', 'ServiceWorker');
             
             // Optionally notify user about update
             if (window.confirm('Доступна новая версия приложения. Обновить сейчас?')) {
@@ -38,10 +40,10 @@ export const registerServiceWorker = async () => {
 
       return registration;
     } catch (error) {
-      console.error('[SW] Service Worker registration failed:', error);
+      logger.error('[SW] Service Worker registration failed', error as Error, 'ServiceWorker');
     }
   } else {
-    console.log('[SW] Service Worker not supported');
+    logger.warn('[SW] Service Worker not supported', 'ServiceWorker');
   }
 };
 
@@ -49,13 +51,13 @@ export const unregisterServiceWorker = async () => {
   if ('serviceWorker' in navigator) {
     const registration = await navigator.serviceWorker.ready;
     await registration.unregister();
-    console.log('[SW] Service Worker unregistered');
+    logger.info('[SW] Service Worker unregistered', 'ServiceWorker');
   }
 };
 
 export const clearServiceWorkerCache = async () => {
   if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
     navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHE' });
-    console.log('[SW] Cache clear requested');
+    logger.info('[SW] Cache clear requested', 'ServiceWorker');
   }
 };

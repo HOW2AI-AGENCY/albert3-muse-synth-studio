@@ -46,10 +46,14 @@ export class PromptDJHelper extends EventTarget {
         }
       });
 
+import { logger } from './logger';
+
+// ...
+
       if (error) throw error;
 
       this.sessionId = data.sessionId;
-      logger.info('[PromptDJHelper] Session created:', 'PromptDJHelper', { sessionId: this.sessionId });
+      logger.info('[PromptDJHelper] Session created', 'PromptDJHelper', { sessionId: this.sessionId });
 
       // Initialize Web Audio API
       this.audioContext = new AudioContext({ sampleRate: 48000 });
@@ -73,7 +77,7 @@ export class PromptDJHelper extends EventTarget {
       };
 
       this.ws.onerror = (error) => {
-        logger.error('[PromptDJHelper] WebSocket error:', error as Error, 'PromptDJHelper');
+        logger.error('[PromptDJHelper] WebSocket error', error as Error, 'PromptDJHelper');
         this.setPlaybackState('error');
         this.dispatchEvent(new CustomEvent('error', { 
           detail: { message: 'WebSocket connection failed' }
@@ -88,7 +92,7 @@ export class PromptDJHelper extends EventTarget {
       };
 
     } catch (error) {
-      logger.error('[PromptDJHelper] Connect error:', error as Error, 'PromptDJHelper');
+      logger.error('[PromptDJHelper] Connect error', error as Error, 'PromptDJHelper');
       this.setPlaybackState('error');
       throw error;
     }
@@ -110,7 +114,7 @@ export class PromptDJHelper extends EventTarget {
       prompts: activePrompts.map(p => ({ text: p.text, weight: p.weight }))
     }));
 
-    logger.info('[PromptDJHelper] Prompts updated:', 'PromptDJHelper', { count: activePrompts.length });
+    logger.info(`[PromptDJHelper] Prompts updated: ${activePrompts.length}`, 'PromptDJHelper');
   }
 
   /**
@@ -136,15 +140,15 @@ export class PromptDJHelper extends EventTarget {
           break;
 
         case 'error':
-          logger.error('[PromptDJHelper] Server error:', new Error(message.message), 'PromptDJHelper');
+          logger.error('[PromptDJHelper] Server error', new Error(message.message), 'PromptDJHelper');
           this.setPlaybackState('error');
           break;
 
         default:
-          logger.info('[PromptDJHelper] Unknown message type:', 'PromptDJHelper', { type: message.type });
+          logger.warn('[PromptDJHelper] Unknown message type', 'PromptDJHelper', { type: message.type });
       }
     } catch (error) {
-      logger.error('[PromptDJHelper] Message parsing error:', error as Error, 'PromptDJHelper');
+      logger.error('[PromptDJHelper] Message parsing error', error as Error, 'PromptDJHelper');
     }
   }
 
@@ -185,7 +189,7 @@ export class PromptDJHelper extends EventTarget {
       }));
 
     } catch (error) {
-      logger.error('[PromptDJHelper] Audio processing error:', error as Error, 'PromptDJHelper');
+      logger.error('[PromptDJHelper] Audio processing error', error as Error, 'PromptDJHelper');
     }
   }
 

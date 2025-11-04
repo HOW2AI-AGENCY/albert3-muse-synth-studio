@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { PromptDJHelper, type WeightedPrompt, type PlaybackState } from '@/utils/PromptDJHelper';
 import { cn } from '@/lib/utils';
+import { logger } from '@/utils/logger';
 
 const DEFAULT_PROMPTS = [
   'Epic orchestral symphony',
@@ -90,7 +91,7 @@ export const PromptDJ: React.FC = () => {
         toast.success('Prompt DJ запущен');
       } catch (error) {
         toast.error('Не удалось запустить Prompt DJ');
-        logger.error('Failed to start Prompt DJ', error as Error, 'PromptDJComponent');
+        logger.error('Failed to start Prompt DJ', error as Error, 'PromptDJ');
       }
     } else if (playbackState === 'playing') {
       helperRef.current.disconnect();

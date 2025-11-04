@@ -62,9 +62,7 @@ const sendToAnalytics = (metric: Metric) => {
   if (navigator.sendBeacon) {
     navigator.sendBeacon('/api/analytics/web-vitals', body);
   } else {
-    fetch('/api/analytics/web-vitals', { body, method: 'POST', keepalive: true }).catch(err =>
-      logger.error('Failed to send web-vitals', err, 'WebVitalsAnalytics')
-    );
+    fetch('/api/analytics/web-vitals', { body, method: 'POST', keepalive: true }).catch(err => logger.error('Failed to send web vitals', err, 'WebVitals'));
   }
 };
 
