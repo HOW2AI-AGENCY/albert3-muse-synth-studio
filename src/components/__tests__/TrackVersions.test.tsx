@@ -45,12 +45,12 @@ vi.mock('sonner', () => ({
 }));
 
 const trackVersionApiMocks = vi.hoisted(() => ({
-  updateTrackVersion: vi.fn(),
+  setMasterVersion: vi.fn(),
   deleteTrackVersion: vi.fn(),
 }));
 
 vi.mock('@/features/tracks/api/trackVersions', () => ({
-  updateTrackVersion: trackVersionApiMocks.updateTrackVersion,
+  setMasterVersion: trackVersionApiMocks.setMasterVersion,
   deleteTrackVersion: trackVersionApiMocks.deleteTrackVersion,
 }));
 
@@ -86,7 +86,7 @@ describe('TrackVersions component', () => {
     audioPlayerMocks.useAudioPlayerMock.mockClear();
     audioPlayerMocks.playTrack.mockClear();
     audioPlayerMocks.togglePlayPause.mockClear();
-    trackVersionApiMocks.updateTrackVersion.mockClear();
+    trackVersionApiMocks.setMasterVersion.mockClear();
     trackVersionApiMocks.deleteTrackVersion.mockClear();
 
     audioPlayerMocks.useAudioPlayerMock.mockReturnValue({
@@ -115,7 +115,7 @@ describe('TrackVersions component', () => {
       audioRef: { current: null } as RefObject<HTMLAudioElement>,
       clearCurrentTrack: audioPlayerMocks.clearCurrentTrack,
     });
-    trackVersionApiMocks.updateTrackVersion.mockResolvedValue({ ok: true });
+    trackVersionApiMocks.setMasterVersion.mockResolvedValue({ ok: true });
     trackVersionApiMocks.deleteTrackVersion.mockResolvedValue({ ok: true });
   });
 
@@ -166,13 +166,14 @@ describe('TrackVersions component', () => {
     await user.click(toggleButton);
 
     await screen.findByText('Вариант 1');
-    const masterButton = screen.getByRole('button', { name: 'Сделать вариант 1 предпочитаемым' });
+    const masterButton = screen.getByRole('button', { name: 'Откатить на вариант 1' });
     await user.click(masterButton);
 
     await waitFor(() => {
-      expect(trackVersionApiMocks.updateTrackVersion).toHaveBeenCalledTimes(2);
+      expect(trackVersionApiMocks.setMasterVersion).toHaveBeenCalledTimes(1);
+      expect(trackVersionApiMocks.setMasterVersion).toHaveBeenCalledWith('track-1', 'track-alt');
       expect(onVersionUpdate).toHaveBeenCalled();
-      expect(toastMocks.success).toHaveBeenCalledWith('Вариант 1 установлен как предпочитаемый');
+      expect(toastMocks.success).toHaveBeenCalledWith('Версия 1 установлена как главная');
     });
   });
 

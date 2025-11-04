@@ -24,7 +24,8 @@ import {
   getVersionMetadata,
   type TrackVersionLike,
 } from "./trackVersionUtils";
-import { deleteTrackVersion, updateTrackVersion } from "../api/trackVersions";
+import { deleteTrackVersion, setMasterVersion } from "../api/trackVersions";
+import { TrackOperationsLogger } from "@/services/track-operations.logger";
 
 interface TrackVersion extends TrackVersionLike {
   suno_id: string;
@@ -58,23 +59,13 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
     try {
       vibrate('medium');
 
-      // Unset all other masters for this track
-      await Promise.all(
-        versions
-          .filter(version => version.id !== versionId && version.is_preferred_variant)
-          .map(async version => {
-            const updateResult = await updateTrackVersion(version.id, { is_preferred_variant: false });
-            if (!updateResult.ok) {
-              throw updateResult.error;
-            }
-          }),
-      );
-
-      // Set new master
-      const updateResult = await updateTrackVersion(versionId, { is_preferred_variant: true });
-      if (!updateResult.ok) {
-        throw updateResult.error;
-      }
+      // Централизованный откат через установку мастер-версии
+      await TrackOperationsLogger.trackOperation('rollback', trackId, async () => {
+        const result = await setMasterVersion(trackId, versionId);
+        if (!result.ok) {
+          throw result.error;
+        }
+      }, { versionNumber });
 
       vibrate('success');
       toast.success(`Версия ${versionNumber} установлена как главная`);
@@ -139,7 +130,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
       if (versionToDelete.is_preferred_variant && versions.length > 1) {
         const nextVersion = versions.find(v => v.id !== versionToDelete.id && !v.is_primary_variant);
         if (nextVersion) {
-          const updateResult = await updateTrackVersion(nextVersion.id, { is_preferred_variant: true });
+          const updateResult = await setMasterVersion(trackId, nextVersion.id);
           if (!updateResult.ok) {
             throw updateResult.error;
           }
@@ -262,12 +253,12 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                             size="sm"
                             variant="outline"
                             onClick={() => handleSetMaster(version.id, version.variant_index, version.is_primary_variant)}
-                            aria-label={`Сделать вариант ${version.variant_index} предпочитаемым`}
+                            aria-label={`Откатить на вариант ${version.variant_index}`}
                             className="text-xs h-8 transition-transform active:scale-95"
                           >
                             <Star className="w-3 h-3 mr-1" />
-                            <span className="hidden sm:inline">Сделать главной</span>
-                            <span className="sm:hidden">Главная</span>
+                            <span className="hidden sm:inline">Откатить на эту версию</span>
+                            <span className="sm:hidden">Откатить</span>
                           </Button>
                         )}
 

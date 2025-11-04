@@ -18,7 +18,8 @@ export type TrackOperation =
   | 'add_vocal'
   | 'toggle_public'
   | 'like'
-  | 'unlike';
+  | 'unlike'
+  | 'rollback';
 
 export interface TrackOperationContext {
   trackId: string;
