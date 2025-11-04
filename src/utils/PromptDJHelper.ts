@@ -6,6 +6,7 @@
  * @since 2025-11-02
  */
 
+import { logger } from './logger';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface WeightedPrompt {

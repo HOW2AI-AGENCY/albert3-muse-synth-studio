@@ -2,6 +2,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
 import { createSunoClient } from '../_shared/suno.ts';
+import { logger } from '../_shared/logger.ts';
 
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
@@ -33,7 +34,7 @@ serve(async (req: Request) => {
       });
     }
 
-    console.log('[migrate-versions] Starting migration for user:', user.id);
+    logger.info('[migrate-versions] Starting migration for user:', { userId: user.id });
 
     // Получаем все completed Suno треки БЕЗ версий
     const { data: tracksWithoutVersions, error: tracksError } = await supabase
@@ -46,7 +47,7 @@ serve(async (req: Request) => {
       .order('created_at', { ascending: false });
 
     if (tracksError) {
-      console.error('[migrate-versions] Error fetching tracks:', tracksError);
+      logger.error('[migrate-versions] Error fetching tracks:', { error: tracksError });
       throw tracksError;
     }
 
@@ -74,7 +75,7 @@ serve(async (req: Request) => {
       }
     }
 
-    console.log(`[migrate-versions] Found ${tracksToMigrate.length} tracks without versions`);
+    logger.info(`[migrate-versions] Found ${tracksToMigrate.length} tracks without versions`);
 
     const SUNO_API_KEY = Deno.env.get('SUNO_API_KEY');
     if (!SUNO_API_KEY) {
@@ -88,7 +89,7 @@ serve(async (req: Request) => {
 
     for (const track of tracksToMigrate) {
       try {
-        console.log(`[migrate-versions] Processing track ${track.id} (suno_id: ${track.suno_id})`);
+        logger.info(`[migrate-versions] Processing track ${track.id}`, { suno_id: track.suno_id });
 
         let versions = [];
         
@@ -110,10 +111,10 @@ serve(async (req: Request) => {
                 is_preferred_variant: index === 0,
               }));
               
-              console.log(`[migrate-versions] Got ${versions.length} versions from Suno API`);
+              logger.info(`[migrate-versions] Got ${versions.length} versions from Suno API`);
             }
           } catch (sunoError) {
-            console.warn(`[migrate-versions] Could not fetch from Suno API:`, sunoError);
+            logger.warn(`[migrate-versions] Could not fetch from Suno API:`, { error: sunoError });
           }
         }
 
@@ -130,7 +131,7 @@ serve(async (req: Request) => {
             is_primary_variant: true,
             is_preferred_variant: true,
           });
-          console.log('[migrate-versions] Created fallback version_0 from track data');
+          logger.info('[migrate-versions] Created fallback version_0 from track data');
         }
 
         // Сохраняем версии в БД
@@ -160,10 +161,10 @@ serve(async (req: Request) => {
           if (versionError) {
             // Игнорируем ошибки дубликатов
             if (!versionError.message.includes('duplicate')) {
-              console.error('[migrate-versions] Error inserting version:', versionError);
+              logger.error('[migrate-versions] Error inserting version:', { error: versionError });
             }
           } else {
-            console.log(`[migrate-versions] ✓ Created version ${version.variant_index} for track ${track.id}`);
+            logger.info(`[migrate-versions] ✓ Created version ${version.variant_index} for track ${track.id}`);
           }
         }
 
@@ -176,7 +177,7 @@ serve(async (req: Request) => {
         });
 
       } catch (error) {
-        console.error(`[migrate-versions] Error processing track ${track.id}:`, error);
+        logger.error(`[migrate-versions] Error processing track ${track.id}:`, { error });
         failed++;
         results.push({
           track_id: track.id,
@@ -187,7 +188,7 @@ serve(async (req: Request) => {
       }
     }
 
-    console.log(`[migrate-versions] Migration complete: ${migrated} migrated, ${failed} failed`);
+    logger.info(`[migrate-versions] Migration complete: ${migrated} migrated, ${failed} failed`);
 
     return new Response(JSON.stringify({
       success: true,
@@ -201,7 +202,7 @@ serve(async (req: Request) => {
     });
 
   } catch (error) {
-    console.error('[migrate-versions] Fatal error:', error);
+    logger.error('[migrate-versions] Fatal error:', { error });
     return new Response(JSON.stringify({
       error: error instanceof Error ? error.message : 'Unknown error',
       success: false

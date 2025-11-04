@@ -19,6 +19,7 @@ import {
   SunoApiError,
   SunoLyricsVariantStatus,
 } from "../_shared/suno.ts";
+import { logger } from "../_shared/logger.ts";
 
 interface SyncLyricsJobRequestBody {
   jobId: string;
@@ -149,7 +150,7 @@ const upsertVariants = async (
     .upsert(payload, { onConflict: "job_id,variant_index" });
 
   if (error) {
-    console.error("🔴 [SYNC-LYRICS-JOB] Failed to upsert variants", {
+    logger.error("🔴 [SYNC-LYRICS-JOB] Failed to upsert variants", {
       jobId,
       error,
     });
@@ -227,7 +228,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     const { data: authData, error: authError } = await supabaseUser.auth.getUser();
 
     if (authError || !authData?.user) {
-      console.error("🔴 [SYNC-LYRICS-JOB] Auth failed", authError);
+      logger.error("🔴 [SYNC-LYRICS-JOB] Auth failed", { error: authError });
       return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -243,7 +244,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       .maybeSingle();
 
     if (jobError) {
-      console.error("🔴 [SYNC-LYRICS-JOB] Failed to load job", jobError);
+      logger.error("🔴 [SYNC-LYRICS-JOB] Failed to load job", { error: jobError });
       return new Response(JSON.stringify({ success: false, error: "Failed to load job" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -262,7 +263,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     if (!forceRefresh && (jobRecord.status === "completed" || jobRecord.status === "failed")) {
       const { data: latestJob, error: latestError } = await fetchJobWithVariants(supabaseAdmin, jobId);
       if (latestError) {
-        console.error("🔴 [SYNC-LYRICS-JOB] Failed to fetch latest job", latestError);
+        logger.error("🔴 [SYNC-LYRICS-JOB] Failed to fetch latest job", { error: latestError });
         return new Response(JSON.stringify({ success: false, error: "Failed to fetch job" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -278,7 +279,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     if (!jobRecord.suno_task_id) {
       const { data: latestJob, error: latestError } = await fetchJobWithVariants(supabaseAdmin, jobId);
       if (latestError) {
-        console.error("🔴 [SYNC-LYRICS-JOB] Failed to fetch job without task id", latestError);
+        logger.error("🔴 [SYNC-LYRICS-JOB] Failed to fetch job without task id", { error: latestError });
       }
 
       return new Response(JSON.stringify({ success: false, error: "Missing Suno task identifier", job: latestJob ?? null }), {
@@ -314,7 +315,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       try {
         safeRawResponse = JSON.parse(JSON.stringify(result.rawResponse));
       } catch (serializationError) {
-        console.error("⚠️ [SYNC-LYRICS-JOB] Failed to serialise Suno response", serializationError);
+        logger.error("⚠️ [SYNC-LYRICS-JOB] Failed to serialise Suno response", { error: serializationError });
       }
     }
 
@@ -332,12 +333,12 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       .eq("id", jobId);
 
     if (updateError) {
-      console.error("🔴 [SYNC-LYRICS-JOB] Failed to update job", updateError);
+      logger.error("🔴 [SYNC-LYRICS-JOB] Failed to update job", { error: updateError });
     }
 
     const { data: refreshedJob, error: refreshedError } = await fetchJobWithVariants(supabaseAdmin, jobId);
     if (refreshedError) {
-      console.error("🔴 [SYNC-LYRICS-JOB] Failed to load refreshed job", refreshedError);
+      logger.error("🔴 [SYNC-LYRICS-JOB] Failed to load refreshed job", { error: refreshedError });
       return new Response(JSON.stringify({ success: false, error: "Failed to load refreshed job" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -349,7 +350,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("🔴 [SYNC-LYRICS-JOB] Error", error);
+    logger.error("🔴 [SYNC-LYRICS-JOB] Error", { error });
 
     if (error instanceof ValidationException) {
       return new Response(JSON.stringify({ success: false, error: "Validation failed", details: error.errors }), {

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { createSupabaseAdminClient, createSupabaseUserClient } from "../_shared/supabase.ts";
+import { logger } from '../_shared/logger.ts';
 
 const baseHeaders = createCorsHeaders();
 
@@ -42,7 +43,7 @@ serve(async (req: Request): Promise<Response> => {
       .maybeSingle();
 
     if (trackErr) {
-      console.error("[backfill] track select error", trackErr);
+      logger.error("[backfill] track select error", { error: trackErr });
       return new Response(JSON.stringify({ error: trackErr.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -64,7 +65,7 @@ serve(async (req: Request): Promise<Response> => {
       .eq("parent_track_id", trackId);
 
     if (versionsErr) {
-      console.error("[backfill] versions select error", versionsErr);
+      logger.error("[backfill] versions select error", { error: versionsErr });
       return new Response(JSON.stringify({ error: versionsErr.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -138,7 +139,7 @@ serve(async (req: Request): Promise<Response> => {
           skipped++;
           continue;
         }
-        console.error("[backfill] insert error", insertErr, payload);
+        logger.error("[backfill] insert error", { error: insertErr, payload });
         return new Response(JSON.stringify({ error: insertErr.message }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -154,7 +155,7 @@ serve(async (req: Request): Promise<Response> => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
-    console.error("[backfill] unhandled", e);
+    logger.error("[backfill] unhandled", { error: e });
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
       { status: 500, headers: { ...baseHeaders, "Content-Type": "application/json" } },

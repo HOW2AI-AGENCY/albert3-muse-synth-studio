@@ -9,6 +9,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { extractTitle } from '../_shared/title-extractor.ts';
 import { detectLanguage } from '../_shared/language-detector.ts';
+import { logger } from '../_shared/logger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -65,7 +66,7 @@ serve(async (req) => {
     const taskId = payload.data.task_id;
     const callbackType = payload.data.callbackType;
     
-    console.log(`[suno-webhook] 📥 Received callback`, {
+    logger.info(`[suno-webhook] 📥 Received callback`, {
       code: payload.code,
       msg: payload.msg,
       callbackType,
@@ -81,7 +82,7 @@ serve(async (req) => {
       .single();
 
     if (fetchError || !track) {
-      console.error('[suno-webhook] Track not found:', fetchError);
+      logger.error('[suno-webhook] Track not found:', { error: fetchError });
       return new Response(
         JSON.stringify({ error: 'Track not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -91,7 +92,7 @@ serve(async (req) => {
     // Получаем массив треков из правильного места в payload
     const items = payload.data.data || [];
     
-    console.log(`[suno-webhook] 🎵 Processing ${items.length} tracks for callbackType=${callbackType}`);
+    logger.info(`[suno-webhook] 🎵 Processing ${items.length} tracks for callbackType=${callbackType}`);
 
     // Обработка разных типов callback
     let updateData: Record<string, unknown> = {};
@@ -107,7 +108,7 @@ serve(async (req) => {
             stage_description: 'Lyrics generated, preparing audio',
           },
         };
-        console.log(`[suno-webhook] ✍️ Text generation completed for ${taskId}`);
+        logger.info(`[suno-webhook] ✍️ Text generation completed for ${taskId}`);
         break;
         
       case 'first': {
@@ -133,7 +134,7 @@ serve(async (req) => {
             },
           };
           
-          console.log(`[suno-webhook] 🎵 First track ready`, {
+          logger.info(`[suno-webhook] 🎵 First track ready`, {
             taskId,
             audioUrl: audioUrl?.substring(0, 60),
             duration,
@@ -150,7 +151,7 @@ serve(async (req) => {
             error_message: payload.msg,
             progress_percent: 0,
           };
-          console.error(`[suno-webhook] ❌ Generation failed: ${payload.msg}`);
+          logger.error(`[suno-webhook] ❌ Generation failed: ${payload.msg}`);
         } else if (items.length > 0) {
           const mainTrack = items[0];
           const audioUrl = mainTrack.audio_url || mainTrack.stream_audio_url || mainTrack.source_audio_url || null;
@@ -184,7 +185,7 @@ serve(async (req) => {
             },
           };
           
-          console.log(`[suno-webhook] ✅ Generation completed`, {
+          logger.info(`[suno-webhook] ✅ Generation completed`, {
             taskId,
             title: extractedTitle,
             variantsCount: items.length,
@@ -200,7 +201,7 @@ serve(async (req) => {
           error_message: payload.msg,
           progress_percent: 0,
         };
-        console.error(`[suno-webhook] ❌ Error callback: ${payload.msg}`);
+        logger.error(`[suno-webhook] ❌ Error callback: ${payload.msg}`);
         break;
     }
 
@@ -211,18 +212,18 @@ serve(async (req) => {
       .eq('id', track.id);
 
     if (updateError) {
-      console.error('[suno-webhook] Failed to update track:', updateError);
+      logger.error('[suno-webhook] Failed to update track:', { error: updateError });
       return new Response(
         JSON.stringify({ error: 'Failed to update track' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`[suno-webhook] Track updated successfully: ${track.id} -> ${payload.stage}`);
+    logger.info(`[suno-webhook] Track updated successfully: ${track.id} -> ${updateData.status}`);
 
     // ✅ Создаём версии треков на этапах 'first' и 'complete'
     if ((callbackType === 'complete' || callbackType === 'first') && items.length > 0) {
-      console.log(`[suno-webhook] 💾 Creating track versions`, {
+      logger.info(`[suno-webhook] 💾 Creating track versions`, {
         stage: callbackType,
         tracksCount: items.length,
         trackId: track.id,
@@ -249,7 +250,7 @@ serve(async (req) => {
         // Проверяем, существует ли версия с таким suno_id
         const sunoId = versionTrack.id ? String(versionTrack.id) : '';
         if (sunoId && existingBySunoId.has(sunoId)) {
-          console.log(`[suno-webhook] ↪︎ Skip existing version for suno_id=${sunoId}`);
+          logger.info(`[suno-webhook] ↪︎ Skip existing version for suno_id=${sunoId}`);
           continue;
         }
         
@@ -298,9 +299,9 @@ serve(async (req) => {
           });
 
         if (versionError) {
-          console.error(`[suno-webhook] ❌ Failed to create version ${variantIndex}:`, versionError);
+          logger.error(`[suno-webhook] ❌ Failed to create version ${variantIndex}:`, { error: versionError });
         } else {
-          console.log(`[suno-webhook] ✅ Alternate version ${variantIndex} created`, {
+          logger.info(`[suno-webhook] ✅ Alternate version ${variantIndex} created`, {
             title: versionTitle,
             audioUrl: audioUrl?.substring(0, 60),
             duration,
@@ -329,7 +330,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('[suno-webhook] Unexpected error:', error);
+    logger.error('[suno-webhook] Unexpected error:', { error });
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

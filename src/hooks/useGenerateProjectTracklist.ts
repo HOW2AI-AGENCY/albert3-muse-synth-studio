@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 import { toast } from 'sonner';
 import { useTracks } from '@/hooks/useTracks';
 import { logger } from '@/utils/logger';
