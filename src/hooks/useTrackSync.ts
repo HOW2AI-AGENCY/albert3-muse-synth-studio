@@ -144,7 +144,12 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
           if (!isMounted) return;
           
           if (status === 'SUBSCRIBED') {
-            logInfo('Track sync subscribed', 'useTrackSync');
+            // Если был запланирован повторный коннект — отменяем, чтобы избежать гонок
+            if (reconnectTimeoutId) {
+              clearTimeout(reconnectTimeoutId);
+              reconnectTimeoutId = undefined;
+            }
+            logInfo('Track sync subscribed', 'useTrackSync', { userId });
             reconnectAttemptsRef.current = 0;
             retryAttemptRef.current = 0;
             channelRef.current = channel;
@@ -197,7 +202,10 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
                 }
               }, delay);
             } else if (reconnectAttemptsRef.current >= MAX_RECONNECT) {
-              logError('Max reconnect attempts reached', new Error('Reconnect failed'), 'useTrackSync');
+              logError('Max reconnect attempts reached', new Error('Reconnect failed'), 'useTrackSync', {
+                attempts: reconnectAttemptsRef.current,
+                userId,
+              });
               toastRef.current?.({
                 title: 'Потеряно соединение',
                 description: 'Обновите страницу для восстановления',

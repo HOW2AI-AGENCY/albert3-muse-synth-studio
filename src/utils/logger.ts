@@ -127,16 +127,37 @@ class Logger {
 
     switch (level) {
       case LogLevel.ERROR:
-        console.error(`🔴 ${fullMessage}`, data, error);
+        // Избегаем вывода undefined для data, если оно отсутствует
+        if (data !== undefined && error) {
+          console.error(`🔴 ${fullMessage}`, data, error);
+        } else if (error) {
+          console.error(`🔴 ${fullMessage}`, error);
+        } else if (data !== undefined) {
+          console.error(`🔴 ${fullMessage}`, data);
+        } else {
+          console.error(`🔴 ${fullMessage}`);
+        }
         break;
       case LogLevel.WARN:
-        console.warn(`🟡 ${fullMessage}`, data);
+        if (data !== undefined) {
+          console.warn(`🟡 ${fullMessage}`, data);
+        } else {
+          console.warn(`🟡 ${fullMessage}`);
+        }
         break;
       case LogLevel.INFO:
-        console.info(`🔵 ${fullMessage}`, data);
+        if (data !== undefined) {
+          console.info(`🔵 ${fullMessage}`, data);
+        } else {
+          console.info(`🔵 ${fullMessage}`);
+        }
         break;
       case LogLevel.DEBUG:
-        console.debug(`⚪ ${fullMessage}`, data);
+        if (data !== undefined) {
+          console.debug(`⚪ ${fullMessage}`, data);
+        } else {
+          console.debug(`⚪ ${fullMessage}`);
+        }
         break;
     }
   }
