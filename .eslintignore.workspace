@@ -1,0 +1,7 @@
+node_modules/
+dist/
+build/
+playwright-report/
+coverage/
+supabase/**/node_modules/
+reports/

@@ -14,7 +14,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "db:seed": "supabase db reset"
+    "db:seed": "supabase db reset",
+    "lint:workspace": "eslint -c eslint.workspace.config.js --ignore-path .eslintignore.workspace \"src/pages/workspace/**/*.{ts,tsx}\" \"src/components/workspace/**/*.{ts,tsx}\" \"src/config/workspace-navigation.ts\"",
+    "verify:workspace": "npm run typecheck && npm run lint:workspace && npm run docs:validate"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
