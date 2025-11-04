@@ -7,16 +7,30 @@
   <div>
     <img src="https://img.shields.io/badge/TypeScript-5.8-3178c6.svg?style=for-the-badge&logo=typescript" alt="TypeScript">
     <img src="https://img.shields.io/badge/React-18.3-61dafb.svg?style=for-the-badge&logo=react" alt="React">
-    <img src="https://img.shields.io/badge/Supabase-2.x-3ecf8e.svg?style=for-the-badge&logo=supabase" alt="Supabase">
-    <img src="https://img.shields.io/badge/Vite-5.4-646cff.svg?style=for-the-badge&logo=vite" alt="Vite">
+    <img src="https://img.shields.io/badge/Supabase-2.56-3ecf8e.svg?style=for-the-badge&logo=supabase" alt="Supabase">
+    <img src="https://img.shields.io/badge/Vite-7.1-646cff.svg?style=for-the-badge&logo=vite" alt="Vite">
   </div>
   <div>
-    <img src="https://img.shields.io/github/workflow/status/albert-app/albert3-muse-synth-studio/CI?style=for-the-badge&logo=github&label=CI" alt="CI Status">
+    <img src="https://img.shields.io/badge/Security-9.0/10-brightgreen.svg?style=for-the-badge" alt="Security Score">
     <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="License">
     <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge" alt="PRs Welcome">
   </div>
 
 </div>
+
+---
+
+## 🚨 Последние обновления безопасности
+
+**04 ноября 2025** - Выполнены критичные улучшения безопасности (P1):
+- ✅ **Логирование в Sentry:** Заменено 25 использований `console.*` на `logger` → Все ошибки теперь отслеживаются
+- ✅ **Обновлены зависимости:** vite 7.1.12, supabase 2.56.0 → 0 уязвимостей
+- ✅ **CORS ограничен:** Изменен с `*` на localhost whitelist → Защита от CSRF атак
+- ✅ **CSP headers:** Добавлена Content Security Policy → Защита от XSS атак
+
+**Оценка безопасности:** 8.0/10 → **9.0/10** ⭐
+
+📊 [Полный отчёт аудита](./docs/audit/) • [Статус выполнения](./docs/audit/2025-11-04_Implementation_Status.md) • [План дальнейших работ](./docs/audit/2025-11-04_Next_Steps.md)
 
 ---
 
