@@ -320,7 +320,7 @@ const Generate = () => {
   // Mobile: List with FAB and Drawers
   return (
     <div className="h-full bg-background flex flex-col">
-      <div className="flex-1 overflow-y-auto workspace-main p-4 pb-24">
+      <div className="flex-1 overflow-y-auto workspace-main p-4">
         <div className="mb-4">
           <Select value={selectedProjectId || "all"} onValueChange={(value) => setSelectedProjectId(value === "all" ? undefined : value)}>
             <SelectTrigger className="w-full">
