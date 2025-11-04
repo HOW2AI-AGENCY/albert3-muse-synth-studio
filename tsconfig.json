@@ -16,5 +16,8 @@
     "strictNullChecks": true,
     "skipLibCheck": true,
     "allowJs": false
-  }
+  },
+  "exclude": [
+    "supabase/functions"
+  ]
 }

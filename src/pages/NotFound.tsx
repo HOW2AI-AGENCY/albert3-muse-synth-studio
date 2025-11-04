@@ -20,7 +20,12 @@ const NotFound = () => {
         const { data } = await supabase.auth.getSession();
         setIsAuthenticated(!!data.session);
       } catch (error) {
-        logger.error("Failed to check auth session", "NotFound", { error });
+        logger.error(
+          "Failed to check auth session",
+          error instanceof Error ? error : new Error(String(error)),
+          "NotFound",
+          { error }
+        );
         setIsAuthenticated(false);
       }
     };
