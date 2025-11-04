@@ -22,7 +22,7 @@ const WorkspaceLayout = () => {
 
   return (
     <NavigationTracker>
-      <div className="flex min-h-screen min-h-[100dvh] bg-background">
+      <div className="flex min-h-[100dvh] bg-background">
         {/* Sidebar - Desktop only */}
         <MinimalSidebar
           isExpanded={isSidebarExpanded}

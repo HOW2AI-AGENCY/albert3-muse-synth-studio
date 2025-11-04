@@ -18,7 +18,6 @@ export const BottomTabBar: FC<BottomTabBarProps> = ({
   const location = useLocation();
   const { vibrate } = useHapticFeedback();
   const tabBarRef = useRef<HTMLElement>(null);
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const handleTabClick = useCallback(() => {
     vibrate("light");

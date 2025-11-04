@@ -53,7 +53,6 @@ const TrackCardComponent = memo(({
   onAddVocal,
   onDescribeTrack,
   onCreatePersona,
-  onToggleLyrics,
   className,
 }: TrackCardProps) => {
   const cardRef = useRef<HTMLDivElement>(null);

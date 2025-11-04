@@ -39,15 +39,7 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
   }, []);
 
   // Переключение на следующую версию
-  const handleNextVersion = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    
-    const totalVersions = versionCount + 1;
-    const nextIndex = (currentVersionIndex + 1) % totalVersions;
-    
-    onVersionChange(nextIndex);
-  }, [currentVersionIndex, versionCount, onVersionChange]);
+  // Удалено как неиспользуемое: смена версии реализована кнопками ниже
 
   // Установка текущей версии как мастер-версии
   const handleSetMaster = useCallback(async (e: React.MouseEvent) => {

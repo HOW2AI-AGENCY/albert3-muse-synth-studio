@@ -41,9 +41,9 @@ const Landing = () => {
   }, [featuredTracks]);
 
   return (
-    <div className="min-h-screen min-h-[100dvh] bg-background">
+    <div className="min-h-[100dvh] bg-background">
       {/* Hero Section */}
-      <section className="relative min-h-screen min-h-[100dvh] flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-[100dvh] flex items-center justify-center overflow-hidden">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0">
           <img 
