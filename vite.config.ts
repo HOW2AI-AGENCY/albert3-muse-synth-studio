@@ -20,8 +20,11 @@ export default defineConfig(({ mode }) => ({
           ? "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.sentry.com"
           : "script-src 'self' https://cdn.sentry.com",
         "style-src 'self' 'unsafe-inline'",
+        // Разрешаем SharedWorker и blob: для разработки
+        "worker-src 'self' blob:",
         "img-src 'self' https: data: blob:",
-        "connect-src 'self' https://qycfsepwguaiwcquwwbw.supabase.co wss://qycfsepwguaiwcquwwbw.supabase.co https://*.sentry.io https://sentry.io",
+        // Расширяем connect-src: локальный Vite HMR (ws:, http:) + внешние домены
+        "connect-src 'self' http: ws: https://qycfsepwguaiwcquwwbw.supabase.co wss://qycfsepwguaiwcquwwbw.supabase.co https://*.sentry.io https://sentry.io",
         "font-src 'self' data:",
         "media-src 'self' https: blob:",
         "frame-ancestors 'none'",

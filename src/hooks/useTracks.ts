@@ -117,8 +117,14 @@ export const useTracks = (refreshTrigger?: number, options: UseTracksOptions = {
       const { data, error, count } = await builder;
 
       if (error) {
-        logError('Failed to load tracks', error as Error, 'useTracks', { userId });
-        throw error instanceof Error ? error : new Error('Failed to load tracks');
+        const err = error as Error;
+        if (err.name === 'AbortError') {
+          logger.debug('Tracks request aborted', 'useTracks', { userId });
+          // Пробрасываем отмену, чтобы React Query корректно обработал cancellation
+          throw err;
+        }
+        logError('Failed to load tracks', err, 'useTracks', { userId });
+        throw err;
       }
 
       const tracks = (data || []).map(mapTrackRowToTrack);
@@ -154,7 +160,8 @@ export const useTracks = (refreshTrigger?: number, options: UseTracksOptions = {
     refetch,
   } = useInfiniteQuery<TracksPage, Error>({
     queryKey,
-    queryFn: ({ pageParam, signal }) => fetchTracksPage({ pageParam, signal }),
+    queryFn: ({ pageParam, signal }) =>
+      fetchTracksPage({ pageParam: typeof pageParam === 'number' ? pageParam : 0, signal }),
     initialPageParam: 0,
     getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.cursor + 1 : undefined),
     enabled: Boolean(userId),
@@ -170,6 +177,10 @@ export const useTracks = (refreshTrigger?: number, options: UseTracksOptions = {
 
   useEffect(() => {
     if (!error) return;
+    if (error.name === 'AbortError') {
+      logger.debug('Tracks request aborted', 'useTracks');
+      return;
+    }
 
     toast({
       title: 'Ошибка загрузки',
