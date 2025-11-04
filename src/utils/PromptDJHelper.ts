@@ -41,14 +41,10 @@ export class PromptDJHelper extends EventTarget {
 
       // Create session
       const { data, error } = await supabase.functions.invoke('prompt-dj-lyria-stream', {
-        body: { 
+        body: {
           initialPrompts: initialPrompts.map(p => ({ text: p.text, weight: p.weight }))
         }
       });
-
-import { logger } from './logger';
-
-// ...
 
       if (error) throw error;
 
