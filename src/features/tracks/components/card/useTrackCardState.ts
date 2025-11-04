@@ -126,15 +126,20 @@ export const useTrackCardState = (track: Track) => {
   const isCurrentTrack = currentTrack?.id === displayedVersion.id;
   const playButtonDisabled = track.status !== 'completed' || !displayedVersion.audio_url;
 
-  // Реальное количество версий для UI (дефолтно 2)
+  // ✅ FIX: Используем versionCount из хука, который правильно фильтрует версии (sourceVersionNumber >= 1)
+  // allVersions.length может содержать дубликаты с variant_index=0, поэтому не используем его
   const uiVersionCount = useMemo(() => {
-    return (allVersions.length || versionCount || 2);
-  }, [allVersions.length, versionCount]);
+    // versionCount - количество дополнительных версий (без основной)
+    // +1 для основной версии = общее количество
+    return versionCount + 1;
+  }, [versionCount]);
 
   const handleVersionChange = useCallback((versionIndex: number) => {
-    const clamped = Math.max(0, Math.min(versionIndex, allVersions.length - 1));
+    // ✅ FIX: Используем правильное количество версий без дубликатов
+    const maxIndex = Math.max(0, allVersions.filter(v => v.audio_url).length - 1);
+    const clamped = Math.max(0, Math.min(versionIndex, maxIndex));
     setSelectedVersionIndex(clamped);
-  }, [allVersions.length]);
+  }, [allVersions]);
 
   const handlePlayClick = useCallback(
     (event: React.MouseEvent) => {

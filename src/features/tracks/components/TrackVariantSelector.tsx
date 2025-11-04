@@ -69,11 +69,12 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
   }, [currentVersionIndex, allVersions, setMasterVersion, isSettingMaster, isLoading, toast]);
 
   // ✅ FIX: Не показываем селектор если меньше 2 версий
-  if (isLoading || allVersions.length < 2) {
+  // Используем versionCount (правильно фильтрованное количество) вместо allVersions.length
+  const totalVersions = versionCount + 1;
+
+  if (isLoading || totalVersions < 2) {
     return null;
   }
-
-  const totalVersions = versionCount + 1;
   const displayIndex = currentVersionIndex + 1;
   const currentVersion = allVersions[currentVersionIndex];
   const isMasterVersion = currentVersion?.isMasterVersion;
