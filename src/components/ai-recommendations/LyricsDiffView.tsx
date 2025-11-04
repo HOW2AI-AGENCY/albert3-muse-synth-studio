@@ -51,7 +51,7 @@ export const LyricsDiffView = ({
           <Label className="text-xs text-muted-foreground uppercase tracking-wide">
             Оригинальная лирика
           </Label>
-          <div className="p-4 rounded-lg border bg-muted/30 text-sm min-h-[200px] whitespace-pre-wrap font-mono text-xs">
+          <div className="p-4 rounded-lg border bg-muted/30 min-h-[200px] whitespace-pre-wrap font-mono text-xs">
             {originalLyrics || "Нет оригинальной лирики"}
           </div>
         </div>
@@ -65,7 +65,7 @@ export const LyricsDiffView = ({
             {readonly ? "Форматированная лирика" : "Форматированная лирика (редактируемая)"}
           </Label>
           {readonly ? (
-            <div className="p-4 rounded-lg border border-primary/40 bg-primary/5 text-sm min-h-[200px] whitespace-pre-wrap font-mono text-xs">
+            <div className="p-4 rounded-lg border border-primary/40 bg-primary/5 min-h-[200px] whitespace-pre-wrap font-mono text-xs">
               {displayedLyrics}
             </div>
           ) : (
