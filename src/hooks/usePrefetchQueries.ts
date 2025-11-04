@@ -9,7 +9,6 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { logger } from '@/utils/logger';
 import { supabase } from '@/integrations/supabase/client';
-import { logger } from '@/utils/logger';
 
 interface UsePrefetchQueriesOptions {
   enabled?: boolean;
