@@ -1,0 +1,125 @@
+{
+  "audit_metadata": {
+    "audit_date": "2025-11-03",
+    "auditor": "Jules",
+    "version": "1.0.0"
+  },
+  "repo_map": [
+    {
+      "path": "src/pages",
+      "role": "entry-points"
+    },
+    {
+      "path": "src/components/ui",
+      "role": "ui-atoms"
+    },
+    {
+      "path": "src/hooks",
+      "role": "business-logic"
+    },
+    {
+      "path": "supabase/functions",
+      "role": "backend-integrations"
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "react",
+      "version": "18.3.1",
+      "risk": "low",
+      "notes": "Industry standard."
+    },
+    {
+      "name": "@supabase/supabase-js",
+      "version": "2.58.0",
+      "risk": "low",
+      "notes": "Core backend client."
+    },
+    {
+      "name": "@tanstack/react-query",
+      "version": "5.90.2",
+      "risk": "low",
+      "notes": "Best-in-class for server state management."
+    },
+    {
+      "name": "date-fns",
+      "version": "3.0.0",
+      "risk": "medium",
+      "notes": "Potential version conflict with react-day-picker@8.10.1. Recommend downgrading to ~3.6.0 if issues arise."
+    }
+  ],
+  "components": [
+    {
+      "path": "src/components/ui/button.tsx",
+      "role": "atom",
+      "props": [
+        "variant",
+        "size",
+        "asChild",
+        "loading"
+      ],
+      "states": [
+        "default",
+        "disabled",
+        "loading"
+      ],
+      "issues": [
+        "missing-aria-busy"
+      ],
+      "recommendations": [
+        "Add aria-busy={loading} for better accessibility in loading state."
+      ]
+    }
+  ],
+  "integrations": [
+    {
+      "client": "suno",
+      "entry_point": "supabase/functions/generate-suno/",
+      "authentication": true,
+      "security_level": "high",
+      "notes": "Well-implemented, secure, and resilient integration."
+    },
+    {
+      "client": "mureka",
+      "entry_point": "supabase/functions/analyze-audio/",
+      "authentication": false,
+      "security_level": "critical_vulnerability",
+      "notes": "CRITICAL: Lacks user authentication, allowing unauthorized access and potential API key abuse. Must be fixed immediately."
+    }
+  ],
+  "refactor_plan": [
+    {
+      "id": "TASK-1-AUTH-FIX",
+      "description": "Add JWT user authentication to the 'analyze-audio' edge function.",
+      "priority": "critical",
+      "effort": "low",
+      "impact": "high",
+      "category": "security",
+      "files_to_change": [
+        "supabase/functions/analyze-audio/index.ts"
+      ]
+    },
+    {
+      "id": "TASK-2-DEPS-CHECK",
+      "description": "Verify and potentially downgrade 'date-fns' to resolve version conflicts.",
+      "priority": "medium",
+      "effort": "low",
+      "impact": "medium",
+      "category": "stability",
+      "files_to_change": [
+        "package.json"
+      ]
+    },
+    {
+      "id": "TASK-3-A11Y-IMPROVE",
+      "description": "Improve accessibility of the Button component in its loading state.",
+      "priority": "low",
+      "effort": "low",
+      "impact": "low",
+      "category": "a11y",
+      "files_to_change": [
+        "src/components/ui/button.tsx"
+      ]
+    }
+  ]
+}
