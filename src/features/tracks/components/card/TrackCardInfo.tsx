@@ -1,4 +1,4 @@
-import React from 'react';
+import { memo } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Clock, Split, Star, Heart } from '@/utils/iconImports';
 import { TrackProgressBar } from '@/components/tracks/TrackProgressBar';
@@ -19,7 +19,7 @@ interface TrackCardInfoProps {
   onVersionChange?: (index: number) => void;
 }
 
-export const TrackCardInfo = React.memo(({
+export const TrackCardInfo = memo(({
   title,
   prompt,
   duration,

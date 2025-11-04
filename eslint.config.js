@@ -36,7 +36,7 @@ export default tseslint.config(
       // Базовый контроль нейминга
       "@typescript-eslint/naming-convention": [
         "error",
-        { selector: "variableLike", format: ["camelCase", "UPPER_CASE"], leadingUnderscore: "allow" },
+        { selector: "variableLike", format: ["camelCase", "UPPER_CASE", "PascalCase"], leadingUnderscore: "allow" },
         { selector: "function", format: ["camelCase"], leadingUnderscore: "allow" },
         { selector: "typeLike", format: ["PascalCase"] }
       ],

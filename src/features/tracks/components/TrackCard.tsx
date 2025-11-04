@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import { memo, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { fadeInUp } from '@/utils/animations';
@@ -39,7 +39,7 @@ const getGradientByTrackId = (trackId: string) => {
   return gradients[index];
 };
 
-const TrackCardComponent = React.memo(({
+const TrackCardComponent = memo(({
   track,
   onShare,
   onClick,
@@ -200,7 +200,7 @@ const TrackCardComponent = React.memo(({
   );
 });
 
-const MemoizedTrackCard = React.memo(TrackCardComponent, (prevProps, nextProps) => {
+const MemoizedTrackCard = memo(TrackCardComponent, (prevProps: TrackCardProps, nextProps: TrackCardProps) => {
   return (
     prevProps.track.id === nextProps.track.id &&
     prevProps.track.status === nextProps.track.status &&

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef, useEffect, type FC } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -11,13 +11,13 @@ interface BottomTabBarProps {
   className?: string;
 }
 
-export const BottomTabBar: React.FC<BottomTabBarProps> = ({
+export const BottomTabBar: FC<BottomTabBarProps> = ({
   items = [],
   className,
 }) => {
   const location = useLocation();
   const { vibrate } = useHapticFeedback();
-  const tabBarRef = React.useRef<HTMLElement>(null);
+  const tabBarRef = useRef<HTMLElement>(null);
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const handleTabClick = useCallback(() => {
@@ -39,7 +39,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
   }, [items]);
 
   // Update CSS variable for tab bar height
-  React.useEffect(() => {
+  useEffect(() => {
     if (!tabBarRef.current) return;
     
     const updateHeight = () => {
@@ -89,7 +89,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
         }
       }}
     >
-      <div className="flex items-center justify-around px-0.5">
+      <div className="flex items-center justify-between px-1.5">
         {primaryItems.map((item) => {
           const Icon = item.icon;
           const isActive =
@@ -142,7 +142,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
                 >
                   <Icon className="h-4 w-4" aria-hidden="true" />
                 </motion.div>
-                <span className="text-[11px] leading-tight font-medium truncate max-w-full">{item.label}</span>
+                <span className="text-[11px] leading-tight font-medium truncate max-w-[80px]">{item.label}</span>
               </motion.div>
             </NavLink>
           );
