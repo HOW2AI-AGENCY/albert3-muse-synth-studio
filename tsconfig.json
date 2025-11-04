@@ -15,7 +15,8 @@
     "noUnusedLocals": true,
     "strictNullChecks": true,
     "skipLibCheck": true,
-    "allowJs": false
+    "allowJs": false,
+    "types": ["vitest/globals", "vitest-dom/extend-expect"]
   },
   "exclude": [
     "supabase/functions"

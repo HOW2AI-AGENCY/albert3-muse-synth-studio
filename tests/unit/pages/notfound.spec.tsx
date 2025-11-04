@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import NotFound from '@/pages/NotFound';
+import NotFound from '../../../src/pages/NotFound';
 
 // Локальный мок Supabase для контроля сессии
 vi.mock('@/integrations/supabase/client', () => ({
@@ -27,7 +27,7 @@ describe('NotFound page', () => {
   });
 
   it('показывает ссылку на главную при отсутствии сессии', async () => {
-    const { supabase } = await import('@/integrations/supabase/client');
+    const { supabase } = await import('../../../src/integrations/supabase/client');
     // Меняем мок на отсутствие сессии
     // @ts-expect-error — тестовая замена
     supabase.auth.getSession.mockResolvedValue({ data: { session: null } });

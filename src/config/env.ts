@@ -23,22 +23,40 @@ const envSchema = z.object({
   isProduction: z.boolean(),
 });
 
-const parsed = envSchema.safeParse(rawEnv);
+const result = envSchema.safeParse(rawEnv);
 
-if (!parsed.success) {
-  const formattedErrors = Object.entries(parsed.error.flatten().fieldErrors)
+let envData: z.infer<typeof envSchema>;
+
+if (result.success) {
+  envData = result.data;
+} else {
+  const formattedErrors = Object.entries(result.error.flatten().fieldErrors)
     .map(([field, errors]) => `${field}: ${errors?.join(", ")}`)
     .join("\n");
 
-  throw new Error(`Environment validation failed:\n${formattedErrors}`);
+  // В dev-режиме не падаем: предупреждаем и подставляем безопасные значения
+  if (rawEnv.isDevelopment) {
+    console.warn(
+      `Environment validation failed in development. Using safe defaults.\n${formattedErrors}`,
+    );
+    envData = {
+      supabaseUrl: "https://localhost.invalid",
+      supabaseAnonKey: "dev-placeholder-key",
+      appEnv: "development",
+      isDevelopment: true,
+      isProduction: false,
+    };
+  } else {
+    throw new Error(`Environment validation failed:\n${formattedErrors}`);
+  }
 }
 
 export const appEnv = {
-  supabaseUrl: parsed.data.supabaseUrl,
-  supabaseAnonKey: parsed.data.supabaseAnonKey,
-  appEnv: parsed.data.appEnv,
-  isDevelopment: parsed.data.isDevelopment,
-  isProduction: parsed.data.isProduction,
+  supabaseUrl: envData.supabaseUrl,
+  supabaseAnonKey: envData.supabaseAnonKey,
+  appEnv: envData.appEnv,
+  isDevelopment: envData.isDevelopment,
+  isProduction: envData.isProduction,
 };
 
 export type AppEnvironment = typeof appEnv;
