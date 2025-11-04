@@ -482,7 +482,7 @@ export class ApiService {
       } as ProviderBalanceResponse;
     }
 
-    const functionName = `get-balance?provider=${provider}`;
+    const functionName = `get-balance`;
 
     const requestPromise: Promise<ProviderBalanceResponse> = (async () => {
       const TIMEOUT_MS = 15000;
@@ -493,7 +493,7 @@ export class ApiService {
       });
 
       try {
-        const invokePromise = supabase.functions.invoke(functionName, { method: 'GET' });
+        const invokePromise = supabase.functions.invoke(functionName, { body: { provider } });
         const { data, error } = await Promise.race([invokePromise, timeout]) as any;
         if (error || !data) {
           return handleSupabaseFunctionError(

@@ -52,8 +52,8 @@ export const useProviderBalance = () => {
       const TIMEOUT_MS = 15000;
       const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('get-balance timeout')), TIMEOUT_MS));
       const invokePromise = supabase.functions.invoke<ProviderBalance>(
-        `get-balance?provider=${PRIMARY_PROVIDER}`,
-        { method: 'GET' }
+        'get-balance',
+        { body: { provider: PRIMARY_PROVIDER } }
       );
       const { data, error: invokeError } = await Promise.race([invokePromise, timeout]) as any;
 

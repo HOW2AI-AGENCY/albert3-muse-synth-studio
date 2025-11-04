@@ -18,8 +18,7 @@ export const InfoTooltip = ({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button
-          type="button"
+        <span
           className={cn(
             "inline-flex items-center justify-center",
             "w-4 h-4 rounded-full",
@@ -29,9 +28,11 @@ export const InfoTooltip = ({
             className
           )}
           aria-label="Показать подсказку"
+          role="button"
+          tabIndex={0}
         >
           <Info className={cn("w-3.5 h-3.5", iconClassName)} />
-        </button>
+        </span>
       </TooltipTrigger>
       <TooltipContent side={side} className="max-w-xs">
         {content}
