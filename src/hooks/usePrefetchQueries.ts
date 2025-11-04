@@ -8,6 +8,7 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 interface UsePrefetchQueriesOptions {
   enabled?: boolean;
@@ -67,7 +68,7 @@ export const usePrefetchQueries = (options: UsePrefetchQueriesOptions = {}) => {
           staleTime: 5 * 60 * 1000,
         });
       } catch (error) {
-        console.error('[Prefetch] Failed to prefetch queries:', error);
+        logger.error('[Prefetch] Failed to prefetch queries', error as Error, 'usePrefetchQueries');
       }
     };
 
@@ -113,7 +114,7 @@ export const usePrefetchTrackDetails = (trackId: string | null) => {
           staleTime: 5 * 60 * 1000,
         });
       } catch (error) {
-        console.error('[Prefetch] Failed to prefetch track details:', error);
+        logger.error('[Prefetch] Failed to prefetch track details', error as Error, 'usePrefetchTrackDetails', { trackId });
       }
     };
 

@@ -45,10 +45,14 @@ export class PromptDJHelper extends EventTarget {
         }
       });
 
+import { logger } from './logger';
+
+// ...
+
       if (error) throw error;
 
       this.sessionId = data.sessionId;
-      console.log('[PromptDJHelper] Session created:', this.sessionId);
+      logger.info('[PromptDJHelper] Session created', 'PromptDJHelper', { sessionId: this.sessionId });
 
       // Initialize Web Audio API
       this.audioContext = new AudioContext({ sampleRate: 48000 });
@@ -63,7 +67,7 @@ export class PromptDJHelper extends EventTarget {
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
-        console.log('[PromptDJHelper] WebSocket connected');
+        logger.info('[PromptDJHelper] WebSocket connected', 'PromptDJHelper');
         this.setPlaybackState('loading');
       };
 
@@ -72,7 +76,7 @@ export class PromptDJHelper extends EventTarget {
       };
 
       this.ws.onerror = (error) => {
-        console.error('[PromptDJHelper] WebSocket error:', error);
+        logger.error('[PromptDJHelper] WebSocket error', error as Error, 'PromptDJHelper');
         this.setPlaybackState('error');
         this.dispatchEvent(new CustomEvent('error', { 
           detail: { message: 'WebSocket connection failed' }
@@ -80,14 +84,14 @@ export class PromptDJHelper extends EventTarget {
       };
 
       this.ws.onclose = () => {
-        console.log('[PromptDJHelper] WebSocket closed');
+        logger.info('[PromptDJHelper] WebSocket closed', 'PromptDJHelper');
         if (this.playbackState === 'playing') {
           this.setPlaybackState('idle');
         }
       };
 
     } catch (error) {
-      console.error('[PromptDJHelper] Connect error:', error);
+      logger.error('[PromptDJHelper] Connect error', error as Error, 'PromptDJHelper');
       this.setPlaybackState('error');
       throw error;
     }
@@ -98,7 +102,7 @@ export class PromptDJHelper extends EventTarget {
    */
   async updatePrompts(prompts: WeightedPrompt[]): Promise<void> {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.warn('[PromptDJHelper] WebSocket not ready');
+      logger.warn('[PromptDJHelper] WebSocket not ready', 'PromptDJHelper');
       return;
     }
 
@@ -109,7 +113,7 @@ export class PromptDJHelper extends EventTarget {
       prompts: activePrompts.map(p => ({ text: p.text, weight: p.weight }))
     }));
 
-    console.log('[PromptDJHelper] Prompts updated:', activePrompts.length);
+    logger.info(`[PromptDJHelper] Prompts updated: ${activePrompts.length}`, 'PromptDJHelper');
   }
 
   /**
@@ -121,7 +125,7 @@ export class PromptDJHelper extends EventTarget {
 
       switch (message.type) {
         case 'session.created':
-          console.log('[PromptDJHelper] Session confirmed');
+          logger.info('[PromptDJHelper] Session confirmed', 'PromptDJHelper');
           break;
 
         case 'audio.chunk':
@@ -135,15 +139,15 @@ export class PromptDJHelper extends EventTarget {
           break;
 
         case 'error':
-          console.error('[PromptDJHelper] Server error:', message.message);
+          logger.error('[PromptDJHelper] Server error', new Error(message.message), 'PromptDJHelper');
           this.setPlaybackState('error');
           break;
 
         default:
-          console.log('[PromptDJHelper] Unknown message type:', message.type);
+          logger.warn('[PromptDJHelper] Unknown message type', 'PromptDJHelper', { type: message.type });
       }
     } catch (error) {
-      console.error('[PromptDJHelper] Message parsing error:', error);
+      logger.error('[PromptDJHelper] Message parsing error', error as Error, 'PromptDJHelper');
     }
   }
 
@@ -184,7 +188,7 @@ export class PromptDJHelper extends EventTarget {
       }));
 
     } catch (error) {
-      console.error('[PromptDJHelper] Audio processing error:', error);
+      logger.error('[PromptDJHelper] Audio processing error', error as Error, 'PromptDJHelper');
     }
   }
 

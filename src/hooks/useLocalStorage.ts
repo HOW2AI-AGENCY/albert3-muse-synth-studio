@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { logger } from '@/utils/logger';
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
   // State to store our value
@@ -10,7 +11,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
       return item ? JSON.parse(item) : initialValue;
     } catch (error) {
       // If error also return initialValue
-      console.log(error);
+      logger.warn('Failed to read from local storage', 'useLocalStorage', { key, error });
       return initialValue;
     }
   });
@@ -27,7 +28,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
       window.localStorage.setItem(key, JSON.stringify(valueToStore));
     } catch (error) {
       // A more advanced implementation would handle the error case
-      console.log(error);
+      logger.warn('Failed to write to local storage', 'useLocalStorage', { key, error });
     }
   };
 

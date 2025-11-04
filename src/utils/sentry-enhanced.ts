@@ -4,6 +4,7 @@
  */
 
 import * as Sentry from '@sentry/react';
+import { logger } from "./logger";
 
 /**
  * Enhanced error capture with automatic context enrichment
@@ -20,7 +21,7 @@ export const captureEnhancedError = (
   }
 ) => {
   if (!import.meta.env.PROD) {
-    console.error('[Sentry Enhanced]', error, context);
+    logger.error('[Sentry Enhanced]', error as Error, 'sentry-enhanced', context);
     return;
   }
 

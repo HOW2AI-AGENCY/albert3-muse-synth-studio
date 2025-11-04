@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useTracks } from '@/hooks/useTracks';
+import { logger } from '@/utils/logger';
 
 export const useGenerateProjectTracklist = () => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -34,7 +35,7 @@ export const useGenerateProjectTracklist = () => {
       });
 
       if (error) {
-        console.error('Error generating tracklist:', error);
+        logger.error('Error generating tracklist', error, 'useGenerateProjectTracklist');
         toast.error('Ошибка генерации треклиста', { id: 'generating-tracklist' });
         return null;
       }
@@ -45,7 +46,7 @@ export const useGenerateProjectTracklist = () => {
       toast.success(`Создано ${data.count} треков для проекта`, { id: 'generating-tracklist' });
       return data.tracks;
     } catch (error) {
-      console.error('Error:', error);
+      logger.error('Error generating tracklist', error as Error, 'useGenerateProjectTracklist');
       toast.error('Произошла ошибка при генерации', { id: 'generating-tracklist' });
       return null;
     } finally {
