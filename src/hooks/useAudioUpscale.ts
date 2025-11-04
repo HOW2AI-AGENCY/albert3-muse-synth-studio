@@ -8,6 +8,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export interface AudioUpscaleParams {
   inputFileUrl: string;
@@ -39,7 +40,7 @@ export const useAudioUpscale = () => {
       toast.success('Audio upscaling started! ⏳');
     },
     onError: (error: Error) => {
-      console.error('[useAudioUpscale] Error:', error);
+      logger.error('Audio upscale failed', error, 'useAudioUpscale');
       toast.error(error.message || 'Failed to upscale audio');
     }
   });

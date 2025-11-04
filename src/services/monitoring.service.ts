@@ -6,6 +6,7 @@
 import { onCLS, onFCP, onLCP, onTTFB, onINP } from 'web-vitals';
 import * as Sentry from '@sentry/react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
 
 type MetricName = 'CLS' | 'FCP' | 'LCP' | 'TTFB' | 'INP';
 
@@ -29,7 +30,11 @@ export function initWebVitals() {
 
       // Optionally send to database for poor metrics
       if (metric.rating === 'poor') {
-        console.warn(`Poor ${metric.name}:`, metric.value);
+        logger.warn(`Poor ${metric.name} detected`, 'WebVitals', {
+          metric: metric.name,
+          value: metric.value,
+          rating: metric.rating,
+        });
       }
     };
 
@@ -117,7 +122,7 @@ export async function checkSunoHealth(): Promise<ServiceHealthStatus> {
       lastChecked: Date.now(),
     };
   } catch (error) {
-    console.error('Suno health check failed:', error);
+    logger.error('Suno health check failed', error instanceof Error ? error : undefined, 'MonitoringService');
     return {
       provider: 'suno',
       healthy: false,
@@ -142,7 +147,7 @@ export async function checkMurekaHealth(): Promise<ServiceHealthStatus> {
       lastChecked: Date.now(),
     };
   } catch (error) {
-    console.error('Mureka health check failed:', error);
+    logger.error('Mureka health check failed', error instanceof Error ? error : undefined, 'MonitoringService');
     return {
       provider: 'mureka',
       healthy: false,

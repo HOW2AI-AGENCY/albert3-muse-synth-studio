@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { StyleRecommendationResult } from "@/types/styles";
+import { logger } from "@/utils/logger";
 
 export interface AdvancedPromptRequest {
   styleRecommendations: StyleRecommendationResult;
@@ -57,7 +58,9 @@ export async function generateAdvancedPrompt(
 
     return data.result;
   } catch (error) {
-    console.error('[AdvancedPromptGenerator] Error:', error);
+    logger.error('Failed to generate advanced prompt', error instanceof Error ? error : undefined, 'AdvancedPromptGenerator', {
+      hasSession: !!request,
+    });
     throw error;
   }
 }

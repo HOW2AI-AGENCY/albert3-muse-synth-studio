@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { getAIDescription } from '@/types/track-metadata';
 import type { TrackMetadata } from '@/types/track-metadata';
+import { logger } from '@/utils/logger';
 
 // ============================================================================
 // TYPES
@@ -98,7 +99,9 @@ export const CreatePersonaDialog = ({
         throw new Error('Не удалось получить улучшенное описание');
       }
     } catch (error) {
-      console.error('[BOOST-STYLE] Error:', error);
+      logger.error('Boost style failed', error instanceof Error ? error : undefined, 'CreatePersonaDialog', {
+        trackId: track.id,
+      });
       toast.error('Ошибка улучшения описания');
     } finally {
       setIsBoosting(false);
@@ -141,7 +144,9 @@ export const CreatePersonaDialog = ({
       });
 
       if (error) {
-        console.error('[CREATE-PERSONA] Function error:', error);
+        logger.error('Create persona function error', error instanceof Error ? error : undefined, 'CreatePersonaDialog', {
+          trackId: track.id,
+        });
         throw error;
       }
 
@@ -161,7 +166,10 @@ export const CreatePersonaDialog = ({
       setDescription('');
       setIsPublic(false);
     } catch (error) {
-      console.error('[CREATE-PERSONA] Error:', error);
+      logger.error('Failed to create persona', error instanceof Error ? error : undefined, 'CreatePersonaDialog', {
+        trackId: track.id,
+        name,
+      });
 
       const errorMessage = error instanceof Error ? error.message : 'Не удалось создать персону';
 
