@@ -10,16 +10,13 @@ vi.mock('@/features/tracks/hooks', async () => {
     ...actual,
     useTrackVersions: vi.fn((trackId: string) => ({
       isLoading: false,
+      // Компонент использует versionCount и allVersions
+      versionCount: 1, // Итого версий: versionCount + 1 = 2
       allVersions: [
         { id: `${trackId}-v1`, audio_url: 'audio1.mp3', versionNumber: 1, isMasterVersion: true },
         { id: `${trackId}-v2`, audio_url: 'audio2.mp3', versionNumber: 2, isMasterVersion: false },
       ],
-      versions: [
-        { id: `${trackId}-v2`, audio_url: 'audio2.mp3', versionNumber: 2, isMasterVersion: false },
-      ],
-      totalVersionCount: 2,
-      additionalVersionCount: 1,
-      mainVersion: { id: `${trackId}-v1`, audio_url: 'audio1.mp3', versionNumber: 1, isMasterVersion: true },
+      setMasterVersion: vi.fn(async () => {}),
     })),
   };
 });
@@ -29,7 +26,7 @@ describe('TrackVariantSelector', () => {
     vi.clearAllMocks();
   });
 
-  it('renders two clickable version buttons and total count badge', () => {
+  it('по умолчанию показывает только бейдж количества; по клику раскрывает V1/V2', () => {
     const onVersionChange = vi.fn();
     render(
       <TrackVariantSelector
@@ -39,16 +36,21 @@ describe('TrackVariantSelector', () => {
       />
     );
 
-    const versionBtn1 = screen.getByRole('button', { name: /версия 1/i });
-    const versionBtn2 = screen.getByRole('button', { name: /версия 2/i });
+    // В свернутом состоянии есть только «бейдж» количества
     const totalBadge = screen.getByLabelText('Всего версий: 2');
-
-    expect(versionBtn1).toBeInTheDocument();
-    expect(versionBtn2).toBeInTheDocument();
     expect(totalBadge).toBeInTheDocument();
+
+    // Кнопок V1/V2 пока нет
+    expect(screen.queryByRole('button', { name: /версия 1/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /версия 2/i })).toBeNull();
+
+    // Клик по бейджу раскрывает переключатель
+    fireEvent.click(totalBadge);
+    expect(screen.getByRole('button', { name: /версия 1/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /версия 2/i })).toBeInTheDocument();
   });
 
-  it('calls onVersionChange with correct index when clicking buttons', () => {
+  it('корректно вызывает onVersionChange при клике по V1/V2', () => {
     const onVersionChange = vi.fn();
     render(
       <TrackVariantSelector
@@ -57,6 +59,10 @@ describe('TrackVariantSelector', () => {
         onVersionChange={onVersionChange}
       />
     );
+
+    // Раскрыть переключатель
+    const totalBadge = screen.getByLabelText('Всего версий: 2');
+    fireEvent.click(totalBadge);
 
     const versionBtn1 = screen.getByRole('button', { name: /версия 1/i });
     const versionBtn2 = screen.getByRole('button', { name: /версия 2/i });
@@ -66,5 +72,27 @@ describe('TrackVariantSelector', () => {
 
     fireEvent.click(versionBtn2);
     expect(onVersionChange).toHaveBeenCalledWith(1);
+  });
+
+  it('поддерживает раскрытие клавишей Enter и закрытие Escape', () => {
+    const onVersionChange = vi.fn();
+    render(
+      <TrackVariantSelector
+        trackId="track-123"
+        currentVersionIndex={0}
+        onVersionChange={onVersionChange}
+      />
+    );
+
+    const totalBadge = screen.getByLabelText('Всего версий: 2');
+    // Открыть клавиатурой
+    fireEvent.keyDown(totalBadge, { key: 'Enter' });
+    expect(screen.getByRole('button', { name: /версия 1/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /версия 2/i })).toBeInTheDocument();
+
+    // Закрыть Escape
+    fireEvent.keyDown(totalBadge, { key: 'Escape' });
+    expect(screen.queryByRole('button', { name: /версия 1/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /версия 2/i })).toBeNull();
   });
 });

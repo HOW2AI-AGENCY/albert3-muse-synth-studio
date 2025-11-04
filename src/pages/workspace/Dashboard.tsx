@@ -14,6 +14,7 @@ import { DashboardSkeleton } from "@/components/ui/loading-states";
 import { AnalyticsService } from "@/services/analytics.service";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { ParallaxHeader } from "@/components/layout/ParallaxHeader";
 import { PageSection } from "@/components/layout/PageSection";
 import { StatCard } from "@/components/layout/StatCard";
 import { ActionTile } from "@/components/layout/ActionTile";
@@ -95,11 +96,13 @@ const Dashboard = () => {
   return (
     <PageContainer>
       <div className="space-y-8">
-        <PageHeader
-          title="Добро пожаловать"
-          description="Создавайте музыку, управляйте проектами и отслеживайте прогресс"
-          icon={Music}
-        />
+        <ParallaxHeader>
+          <PageHeader
+            title="Добро пожаловать"
+            description="Создавайте музыку, управляйте проектами и отслеживайте прогресс"
+            icon={Music}
+          />
+        </ParallaxHeader>
 
         {/* Stats with trends */}
         <section>

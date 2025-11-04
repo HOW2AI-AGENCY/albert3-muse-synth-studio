@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -23,6 +23,20 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
   const { versionCount, allVersions, setMasterVersion, isLoading } = useTrackVersions(trackId, true);
   const { toast } = useToast();
   const [isSettingMaster, setIsSettingMaster] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Закрытие при клике вне блока
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!containerRef.current) return;
+      if (!containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Переключение на следующую версию
   const handleNextVersion = useCallback((e: React.MouseEvent) => {
@@ -82,7 +96,7 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
   const isActive = (index: number) => index === currentVersionIndex;
 
   return (
-    <div className="flex items-center gap-1">
+    <div ref={containerRef} className="flex items-center gap-1">
       {/* Кнопка установки мастер-версии */}
       <Tooltip>
         <TooltipTrigger asChild>
@@ -112,58 +126,93 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
         </TooltipContent>
       </Tooltip>
 
-      {/* Переключатель двух версий + бейдж реального количества */}
-      <div className={cn("flex items-center gap-1.5", className)}>
-        {[0, 1].map((index) => (
-          <Tooltip key={index}>
+      {/* Переключатель: свернутый (иконка-счетчик) → раскрытый (кнопки V1/V2) */}
+      <div
+        className={cn("flex items-center gap-1.5", className)}
+        role="group"
+        aria-label="Переключатель версий"
+        aria-expanded={isOpen}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.stopPropagation();
+            setIsOpen(false);
+          }
+          if (!isOpen && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            setIsOpen(true);
+          }
+        }}
+      >
+        {!isOpen && (
+          <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant="secondary"
-                size="sm"
+              <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  e.preventDefault();
-                  // Если всего версий меньше данного индекса, перелистываем по кругу
-                  const targetIndex = index < totalVersions ? index : 0;
-                  onVersionChange(targetIndex);
+                  setIsOpen(true);
                 }}
-                aria-label={index === 0 ? 'Версия 1 (Оригинал)' : 'Версия 2'}
-                aria-pressed={isActive(index)}
                 className={cn(
-                  "h-7 w-7 p-0 rounded-full text-xs font-bold",
-                  "transition-all duration-200 ease-in-out",
-                  "border border-border/60 shadow-sm",
-                  isActive(index) 
-                    ? "bg-[#4285F4] text-white border-transparent hover:bg-[#3a78dc]"
-                    : "bg-background/90 text-muted-foreground hover:bg-background",
+                  "h-7 min-w-[26px] px-2 rounded-md",
+                  "flex items-center justify-center",
+                  "bg-background/95 text-xs font-semibold tabular-nums",
+                  "border border-border/50 shadow-sm transition-all",
+                  "hover:bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
                 )}
+                aria-label={`Всего версий: ${totalVersions}`}
+                aria-haspopup="true"
+                aria-expanded={false}
               >
-                {index + 1}
-              </Button>
+                {totalVersions}
+              </button>
             </TooltipTrigger>
-            <TooltipContent side="left">
-              {index === 0 ? 'Оригинал' : 'Вариант 2'}
-            </TooltipContent>
+            <TooltipContent side="left">Всего версий: {totalVersions}</TooltipContent>
           </Tooltip>
-        ))}
+        )}
 
-        {/* Бейдж реального количества версий */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div
-              className={cn(
-                "h-7 min-w-[22px] px-1.5 rounded-md",
-                "flex items-center justify-center",
-                "bg-background/95 text-xs font-semibold tabular-nums",
-                "border border-border/50 shadow-lg"
-              )}
-              aria-label={`Всего версий: ${totalVersions}`}
-            >
-              {totalVersions}
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="left">Всего версий: {totalVersions}</TooltipContent>
-        </Tooltip>
+        {isOpen && (
+          <div className="flex items-center gap-1.5 transition-all">
+            {[0, 1].map((index) => (
+              <Tooltip key={index}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      const targetIndex = index < totalVersions ? index : 0;
+                      onVersionChange(targetIndex);
+                      // После выбора — сворачиваем обратно
+                      setIsOpen(false);
+                    }}
+                    onBlur={(e) => {
+                      // Если фокус уходит из группы — закрываем
+                      if (!e.relatedTarget || !(containerRef.current?.contains(e.relatedTarget as Node))) {
+                        setIsOpen(false);
+                      }
+                    }}
+                    aria-label={index === 0 ? 'Версия 1 (Оригинал)' : 'Версия 2'}
+                    aria-pressed={isActive(index)}
+                    className={cn(
+                      "h-7 w-7 p-0 rounded-full text-xs font-bold",
+                      "transition-all duration-200 ease-in-out",
+                      "border border-border/60 shadow-sm",
+                      isActive(index) 
+                        ? "bg-[#4285F4] text-white border-transparent hover:bg-[#3a78dc]"
+                        : "bg-background/90 text-muted-foreground hover:bg-background",
+                    )}
+                  >
+                    {index + 1}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  {index === 0 ? 'Оригинал' : 'Вариант 2'}
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
