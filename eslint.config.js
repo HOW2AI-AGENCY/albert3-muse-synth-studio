@@ -13,8 +13,12 @@ export default tseslint.config(
       "node_modules/**",
       "dist/**",
       "build/**",
-      "playwright-report/**"
-    ]
+      "playwright-report/**",
+      // Перенесено из .eslintignore.workspace (ESLint v9 рекомендует использовать поле ignores)
+      "coverage/**",
+      "supabase/**/node_modules/**",
+      "reports/**",
+    ],
   },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
@@ -29,17 +33,41 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "react-refresh/only-export-components": [
+        "warn",
+        { allowConstantExport: true },
+      ],
       "@typescript-eslint/no-unused-vars": "off",
       "no-console": "warn", // Полный запрет console.*, используем logger
       "@typescript-eslint/no-explicit-any": "off",
       // Базовый контроль нейминга
       "@typescript-eslint/naming-convention": [
         "error",
-        { selector: "variableLike", format: ["camelCase", "UPPER_CASE", "PascalCase"], leadingUnderscore: "allow" },
-        { selector: "function", format: ["camelCase"], leadingUnderscore: "allow" },
-        { selector: "typeLike", format: ["PascalCase"] }
+        {
+          selector: "variableLike",
+          format: ["camelCase", "UPPER_CASE", "PascalCase"],
+          leadingUnderscore: "allow",
+        },
+        {
+          selector: "function",
+          format: ["camelCase"],
+          leadingUnderscore: "allow",
+        },
+        { selector: "typeLike", format: ["PascalCase"] },
       ],
     },
-  }
+  },
+  // Локальные исключения: разрешаем console.* в serverless-функциях, seed-скриптах и e2e-тестах
+  {
+    files: [
+      "supabase/functions/**/*.ts",
+      "supabase/seed/**/*.ts",
+      "tests/e2e/**/*.ts",
+      "scripts/**/*.ts",
+    ],
+    rules: {
+      "no-console": "off",
+      "@typescript-eslint/naming-convention": "off",
+    },
+  },
 );

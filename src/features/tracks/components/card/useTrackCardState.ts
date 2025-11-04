@@ -70,6 +70,28 @@ export const useTrackCardState = (track: Track) => {
     }
   }, [currentTrack, track.id, allVersions, selectedVersionIndex]);
 
+  // ✅ Сохранение/восстановление выбранной версии в localStorage
+  useEffect(() => {
+    try {
+      const key = `track:selectedVersion:${track.id}`;
+      const stored = localStorage.getItem(key);
+      if (stored !== null) {
+        const parsed = Number(stored);
+        if (!Number.isNaN(parsed) && parsed >= 0 && parsed < allVersions.length) {
+          setSelectedVersionIndex(parsed);
+        }
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [track.id]);
+
+  useEffect(() => {
+    try {
+      const key = `track:selectedVersion:${track.id}`;
+      localStorage.setItem(key, String(selectedVersionIndex));
+    } catch {}
+  }, [track.id, selectedVersionIndex]);
+
   // Displayed version
   const displayedVersion = useMemo(() => {
     const version = allVersions[selectedVersionIndex];
@@ -100,9 +122,15 @@ export const useTrackCardState = (track: Track) => {
   const isCurrentTrack = currentTrack?.id === displayedVersion.id;
   const playButtonDisabled = track.status !== 'completed' || !displayedVersion.audio_url;
 
+  // Реальное количество версий для UI (дефолтно 2)
+  const uiVersionCount = useMemo(() => {
+    return (allVersions.length || versionCount || 2);
+  }, [allVersions.length, versionCount]);
+
   const handleVersionChange = useCallback((versionIndex: number) => {
-    setSelectedVersionIndex(versionIndex);
-  }, []);
+    const clamped = Math.max(0, Math.min(versionIndex, allVersions.length - 1));
+    setSelectedVersionIndex(clamped);
+  }, [allVersions.length]);
 
   const handlePlayClick = useCallback(
     (event: React.MouseEvent) => {
@@ -187,7 +215,7 @@ export const useTrackCardState = (track: Track) => {
     hasStems,
     selectedVersionIndex,
     isLiked,
-    versionCount,
+    versionCount: uiVersionCount,
     masterVersion,
     displayedVersion,
     operationTargetId,

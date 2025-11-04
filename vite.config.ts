@@ -42,7 +42,8 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === "development" && false && componentTagger(),
+    // componentTagger отключён; используйте ENABLE_TAGGER=1 для включения
+    null,
     tsconfigPaths(),
     mode !== "development" && process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT
       ? sentryVitePlugin({

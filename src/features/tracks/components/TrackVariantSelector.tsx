@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Star, ChevronDown } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTrackVersions } from '@/features/tracks/hooks';
@@ -78,6 +78,8 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
   const currentVersion = allVersions[currentVersionIndex];
   const isMasterVersion = currentVersion?.isMasterVersion;
 
+  const isActive = (index: number) => index === currentVersionIndex;
+
   return (
     <div className="flex items-center gap-1">
       {/* Кнопка установки мастер-версии */}
@@ -109,29 +111,59 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
         </TooltipContent>
       </Tooltip>
 
-      {/* Переключатель версий */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleNextVersion}
-            className={cn(
-              "h-7 px-2.5 gap-1.5 text-xs font-semibold",
-              "bg-background/95 hover:bg-background backdrop-blur-md",
-              "border border-border/50 shadow-lg",
-              "transition-all duration-200 hover:scale-105 active:scale-95",
-              className
-            )}
-          >
-            <span className="tabular-nums">{displayIndex}/{totalVersions}</span>
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="left">
-          <p>Переключить вариант трека</p>
-        </TooltipContent>
-      </Tooltip>
+      {/* Переключатель двух версий + бейдж реального количества */}
+      <div className={cn("flex items-center gap-1.5", className)}>
+        {[0, 1].map((index) => (
+          <Tooltip key={index}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  // Если всего версий меньше данного индекса, перелистываем по кругу
+                  const targetIndex = index < totalVersions ? index : 0;
+                  onVersionChange(targetIndex);
+                }}
+                aria-label={index === 0 ? 'Версия 1 (Оригинал)' : 'Версия 2'}
+                aria-pressed={isActive(index)}
+                className={cn(
+                  "h-7 w-7 p-0 rounded-full text-xs font-bold",
+                  "transition-all duration-200 ease-in-out",
+                  "border border-border/60 shadow-sm",
+                  isActive(index) 
+                    ? "bg-[#4285F4] text-white border-transparent hover:bg-[#3a78dc]"
+                    : "bg-background/90 text-muted-foreground hover:bg-background",
+                )}
+              >
+                {index + 1}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">
+              {index === 0 ? 'Оригинал' : 'Вариант 2'}
+            </TooltipContent>
+          </Tooltip>
+        ))}
+
+        {/* Бейдж реального количества версий */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              className={cn(
+                "h-7 min-w-[22px] px-1.5 rounded-md",
+                "flex items-center justify-center",
+                "bg-background/95 text-xs font-semibold tabular-nums",
+                "border border-border/50 shadow-lg"
+              )}
+              aria-label={`Всего версий: ${totalVersions}`}
+            >
+              {totalVersions}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="left">Всего версий: {totalVersions}</TooltipContent>
+        </Tooltip>
+      </div>
     </div>
   );
 };

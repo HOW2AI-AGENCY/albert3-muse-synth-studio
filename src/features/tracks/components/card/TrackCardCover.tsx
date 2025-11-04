@@ -1,4 +1,5 @@
 import React from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { LazyImage } from '@/components/ui/lazy-image';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -80,20 +81,31 @@ export const TrackCardCover = React.memo(({
         </div>
       )}
 
-      {/* Cover image */}
-      {coverUrl ? (
-        <LazyImage
-          src={coverUrl || '/placeholder.svg'}
-          alt={`Обложка трека ${title}`}
-          placeholder="/placeholder.svg"
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          wrapperClassName="w-full h-full"
-        />
-      ) : (
-        <div className={cn("w-full h-full flex items-center justify-center bg-gradient-to-br", gradient)}>
-          <Music className="w-8 h-8 text-primary/50" />
-        </div>
-      )}
+      {/* Cover image with smooth fade transition (300ms, ease-in-out) */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={coverUrl ?? 'placeholder'}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3, ease: 'easeInOut' }}
+          className="w-full h-full"
+        >
+          {coverUrl ? (
+            <LazyImage
+              src={coverUrl || '/placeholder.svg'}
+              alt={`Обложка трека ${title}`}
+              placeholder="/placeholder.svg"
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              wrapperClassName="w-full h-full"
+            />
+          ) : (
+            <div className={cn("w-full h-full flex items-center justify-center bg-gradient-to-br", gradient)}>
+              <Music className="w-8 h-8 text-primary/50" />
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
 
       {/* Play overlay */}
       {isCompleted && (
