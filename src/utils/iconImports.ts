@@ -77,7 +77,8 @@ export {
   ArrowLeft,
   ArrowRight,
   PanelLeft,
-  RotateCcw
+  RotateCcw,
+  Tag
 } from 'lucide-react';
 
 // File Operations

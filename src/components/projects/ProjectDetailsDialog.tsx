@@ -6,16 +6,17 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  ResponsiveDialog as Dialog,
+  ResponsiveDialogContent as DialogContent,
+  ResponsiveDialogHeader as DialogHeader,
+  ResponsiveDialogTitle as DialogTitle,
+} from '@/components/ui/responsive-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Music, Clock, Disc3, Tag, Calendar, TrendingUp, Sparkles } from 'lucide-react';
+import { Music, Clock, Disc3, Calendar, TrendingUp, Sparkles } from '@/utils/iconImports';
+import { Tag } from 'lucide-react';
 import { useTracks } from '@/hooks/useTracks';
 import { useGenerateProjectTracklist } from '@/hooks/useGenerateProjectTracklist';
 import { TrackActions } from '@/components/projects/TrackActions';

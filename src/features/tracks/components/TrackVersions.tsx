@@ -2,7 +2,7 @@ import { useState, memo, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, Star, Music2, ChevronDown, ChevronUp, Trash2 } from "@/utils/iconImports";
+import { Play, Pause, Star, Music2, ChevronDown, ChevronUp, Trash2, Download } from "@/utils/iconImports";
 import { toast } from "sonner";
 import { useCurrentTrack, useIsPlaying, useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
@@ -26,6 +26,7 @@ import {
 } from "./trackVersionUtils";
 import { deleteTrackVersion, setMasterVersion } from "../api/trackVersions";
 import { TrackOperationsLogger } from "@/services/track-operations.logger";
+import { useDownloadTrack } from "@/hooks/useDownloadTrack";
 
 interface TrackVersion extends TrackVersionLike {
   suno_id: string;
@@ -49,6 +50,10 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
   const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
   const { vibrate } = useHapticFeedback();
+  const { downloadTrack, isDownloading, downloadingTrackId } = useDownloadTrack();
+
+  // Кол-во альтернативных версий (без первичной)
+  const additionalCount = versions.filter(v => !v.is_primary_variant).length;
 
   // Мемоизируем функцию установки мастер-версии
   const handleSetMaster = useCallback(async (versionId: string, versionNumber: number, isPrimary?: boolean) => {
@@ -215,7 +220,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
               variant={v.id === preferredVersion?.id ? 'default' : 'ghost'}
               className="h-7 px-2 text-xs"
               onClick={() => handleSetMaster(v.id, (v.variant_index ?? 0) + 1, v.is_primary_variant)}
-              aria-label={`Выбрать версию V${v.variant_index || v.version_number || 1}`}
+              aria-label={`Выбрать версию V${(v.variant_index ?? 0) + 1}`}
             >
               {`V${(v.variant_index ?? 0) + 1}`}
               {v.is_preferred_variant ? <Star className="w-3 h-3 ml-1" /> : null}
@@ -279,6 +284,22 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                       </div>
 
                       <div className="flex gap-1 sm:ml-auto">
+                        {/* Скачать версию */}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => downloadTrack({
+                            id: trackId,
+                            title: `track-${trackId}-V${(version.variant_index ?? 0) + 1}`,
+                            audio_url: version.audio_url
+                          })}
+                          aria-label={`Скачать вариант ${version.variant_index}`}
+                          disabled={!version.audio_url || (isDownloading && downloadingTrackId === trackId)}
+                          className="text-xs h-8 transition-transform active:scale-95"
+                        >
+                          <Download className="w-3 h-3" />
+                        </Button>
+
                         {!version.is_preferred_variant && (
                           <Button
                             size="sm"

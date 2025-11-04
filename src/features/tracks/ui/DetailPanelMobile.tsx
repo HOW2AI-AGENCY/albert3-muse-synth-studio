@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Download, Share2, Trash2, Play, Heart, Info, Music, Settings } from "@/utils/iconImports";
+import { Download, Share2, Trash2, Play, Heart, Info, Music, Settings, X } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -116,7 +116,28 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
 
   return (
     <ScrollArea className="flex-1 bg-gradient-to-b from-background to-background/95">
-      <div className="p-3 space-y-3">
+      {/* Sticky header with close button and safe area */}
+      <div className="sticky top-0 z-40 bg-gradient-to-b from-background to-background/80 backdrop-blur-sm">
+        <div className="flex justify-end p-2 pr-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            aria-label="Закрыть панель"
+            className="rounded-full"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div
+        className="p-3 space-y-3"
+        style={{
+          paddingTop: 'calc(env(safe-area-inset-top) + 0.75rem)',
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)'
+        }}
+      >
         {/* Compact Hero */}
         <div className="flex gap-3 bg-card/50 backdrop-blur-sm border border-border/40 rounded-xl p-3 shadow-md">
           <div className="relative shrink-0">
