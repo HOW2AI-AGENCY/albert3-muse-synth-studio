@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Music, VolumeX, Volume1, Volume2, X } from '@/utils/iconImports';
+import { LyricsDisplay } from '../LyricsDisplay'; // Import LyricsDisplay
 
 export interface DesktopPlayerLayoutProps {
   track: AudioPlayerTrack;
@@ -178,6 +179,11 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
             />
           </div>
 
+          {/* Lyrics Display */}
+          {track.suno_task_id && track.id && (
+            <LyricsDisplay taskId={track.suno_task_id} audioId={track.id} />
+          )}
+
           {/* Controls Row - Compact */}
           <div className="flex items-center justify-between gap-2">
             {/* Playback Controls - Smaller buttons */}
@@ -229,4 +235,3 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
 });
 
 DesktopPlayerLayout.displayName = 'DesktopPlayerLayout';
-

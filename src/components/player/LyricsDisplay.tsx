@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useTimestampedLyrics } from '@/hooks/useTimestampedLyrics';
-import { useCurrentTrack, useAudioPlayerStore } from '@/stores/audioPlayerStore';
+import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
 import { cn } from '@/lib/utils';
 
 interface LyricsDisplayProps {
