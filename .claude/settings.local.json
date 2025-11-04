@@ -5,7 +5,12 @@
       "Bash(npm run build:*)",
       "Bash(npm install:*)",
       "Bash(npx vite build:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
