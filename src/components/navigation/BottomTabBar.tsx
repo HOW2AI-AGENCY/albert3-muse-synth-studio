@@ -64,12 +64,12 @@ export const BottomTabBar: FC<BottomTabBarProps> = ({
       ref={tabBarRef}
       data-bottom-tab-bar="true"
       className={cn(
-        "fixed bottom-0 left-0 right-0 border-t border-border/60 bg-background/95 backdrop-blur",
+        "fixed bottom-0 left-0 right-0 border-t border-border/30 bg-card/80 backdrop-blur-xl", /* Adjusted for glassmorphism effect */
         "pb-[env(safe-area-inset-bottom)]",
         "lg:hidden",
         className
       )}
-      style={{ zIndex: 'var(--z-sticky)' }}
+      style={{ zIndex: 'var(--z-bottom-tab-bar)' }} /* Use specific z-index token */
       role="navigation"
       aria-label="Основная навигация"
       onKeyDown={(e) => {
@@ -118,26 +118,23 @@ export const BottomTabBar: FC<BottomTabBarProps> = ({
               aria-current={isActive ? "page" : undefined}
             >
               {/* Active indicator */}
-              {isActive && !prefersReducedMotion && (
+              {isActive && (
                 <motion.div
-                  className="absolute inset-0 bg-primary/10 rounded-md"
+                  className="absolute inset-0 bg-primary/10 rounded-md" /* Subtle background for active tab */
                   layoutId="activeTab"
                   initial={false}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                   style={{ willChange: 'transform' }}
                 />
               )}
-              {isActive && prefersReducedMotion && (
-                <div className="absolute inset-0 bg-primary/10 rounded-md" />
-              )}
               
               <motion.div
                 className="relative z-10 flex flex-col items-center gap-0.5"
-                animate={isActive ? { y: -2 } : { y: 0 }}
+                animate={isActive ? { y: -2 } : { y: 0 }} /* Slight lift for active tab */
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
               >
                 <motion.div
-                  whileTap={{ scale: 0.85 }}
+                  whileTap={{ scale: 0.85 }} /* Tap animation for icons */
                   transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                 >
                   <Icon className="h-4 w-4" aria-hidden="true" />
