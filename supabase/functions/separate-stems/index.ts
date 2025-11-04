@@ -45,7 +45,7 @@ const mainHandler = async (req: Request) => {
   }
 
   try {
-    console.log('🟢 [STEMS] Handler entry', {
+    logger.info('🟢 [STEMS] Handler entry', {
       method: req.method,
       url: req.url,
       hasXUserId: !!req.headers.get('X-User-Id'),
@@ -55,14 +55,14 @@ const mainHandler = async (req: Request) => {
     // ✅ Extract userId from X-User-Id header (set by middleware)
     const userId = req.headers.get('X-User-Id');
     if (!userId) {
-      console.error('🔴 [STEMS] handler-401: Missing X-User-Id from middleware');
+      logger.error('🔴 [STEMS] handler-401: Missing X-User-Id from middleware');
       return new Response(
         JSON.stringify({ error: 'Unauthorized - missing user context' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`[separate-stems] ✅ User context from middleware: userId=${userId.substring(0, 8)}..., method=${req.method}`);
+    logger.info(`[separate-stems] ✅ User context from middleware: userId=${userId.substring(0, 8)}..., method=${req.method}`);
 
     const SUNO_API_KEY = Deno.env.get("SUNO_API_KEY");
     if (!SUNO_API_KEY) {
@@ -75,7 +75,7 @@ const mainHandler = async (req: Request) => {
     const body = await validateRequest(req, validationSchemas.separateStems) as SeparateStemsRequestBody;
     const { trackId, versionId, separationMode } = body;
     
-    console.log(`[separate-stems] 📋 Request details: trackId=${trackId}, versionId=${versionId || 'null'}, mode=${separationMode}`);
+    logger.info(`[separate-stems] 📋 Request details: trackId=${trackId}, versionId=${versionId || 'null'}, mode=${separationMode}`);
 
     if (!SUPPORTED_SEPARATION_MODES.has(separationMode)) {
       throw new ValidationException([
@@ -99,7 +99,7 @@ const mainHandler = async (req: Request) => {
     }
 
     if (trackRecord.user_id !== userId) {
-      console.error(`[separate-stems] ❌ handler-403: User ${userId.substring(0, 8)}... does not own track ${trackId}`);
+      logger.error(`[separate-stems] ❌ handler-403: User ${userId.substring(0, 8)}... does not own track ${trackId}`);
       return new Response(
         JSON.stringify({ error: "Forbidden" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -156,7 +156,7 @@ const mainHandler = async (req: Request) => {
       throw new Error("Missing Suno audio identifier for track or version");
     }
 
-    console.log("[separate-stems] 🎵 Request details", {
+    logger.info("[separate-stems] 🎵 Request details", {
       trackId,
       versionId: versionId ?? null,
       audioId,
@@ -283,7 +283,7 @@ const mainHandler = async (req: Request) => {
       }
     }
 
-    console.log("[separate-stems] ✨ Request submitted", {
+    logger.info("[separate-stems] ✨ Request submitted", {
       trackId,
       versionId: versionId ?? null,
       separationMode,

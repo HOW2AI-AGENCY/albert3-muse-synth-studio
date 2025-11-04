@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, Volume2, VolumeX, AlertCircle } from 'lucide-react';
+import { logger } from '@/utils/logger';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
@@ -89,7 +90,7 @@ export const PromptDJ: React.FC = () => {
         toast.success('Prompt DJ запущен');
       } catch (error) {
         toast.error('Не удалось запустить Prompt DJ');
-        console.error(error);
+        logger.error('Failed to start Prompt DJ', error as Error, 'PromptDJComponent');
       }
     } else if (playbackState === 'playing') {
       helperRef.current.disconnect();

@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
+import { logger } from '../_shared/logger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -37,10 +38,10 @@ serve(async (req) => {
     if (token) {
       const { error: userError } = await supabaseClient.auth.getUser(token);
       if (userError) {
-        console.warn('Auth token invalid:', userError.message);
+        logger.warn('Auth token invalid:', { error: userError.message });
       }
     } else {
-      console.warn('No auth token provided - proceeding as guest');
+      logger.warn('No auth token provided - proceeding as guest');
     }
 
     const body: EnhancePromptRequest = await req.json();
@@ -181,7 +182,7 @@ Return a JSON object with:
     });
 
     if (!aiResponse.ok) {
-      console.error('AI API error:', await aiResponse.text());
+      logger.error('AI API error:', { error: await aiResponse.text() });
       throw new Error('Failed to enhance prompt');
     }
 
@@ -212,7 +213,7 @@ Return a JSON object with:
     );
 
   } catch (error) {
-    console.error('Error enhancing prompt:', error);
+    logger.error('Error enhancing prompt:', { error });
     const errorMessage = error instanceof Error ? error.message : 'Failed to enhance prompt';
     return new Response(
       JSON.stringify({
