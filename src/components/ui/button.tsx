@@ -23,14 +23,14 @@ const buttonVariants = cva(
         fab: "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg glow-primary-strong hover:from-primary/90 hover:to-primary touch-optimized",
       },
       size: {
-        default: "h-control-md px-4",
+        default: "h-control-xl px-4", /* Adjusted to 48px for WCAG touch target */
         sm: "h-control-sm rounded-sm px-3 text-xs",
         lg: "h-control-lg rounded-lg px-8 text-base",
         xl: "h-control-xl rounded-lg px-10 text-lg",
-        icon: "h-control-md w-control-md",
+        icon: "h-control-xl w-control-xl", /* Adjusted to 48px for WCAG touch target */
         "icon-sm": "h-control-sm w-control-sm",
         "icon-lg": "h-control-lg w-control-lg",
-        fab: "h-14 w-14 rounded-full",
+        fab: "h-14 w-14 rounded-full touch-optimized", /* Ensure FAB is touch-optimized */
       },
     },
     defaultVariants: {
