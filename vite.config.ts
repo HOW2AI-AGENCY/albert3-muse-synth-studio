@@ -15,7 +15,10 @@ export default defineConfig(({ mode }) => ({
       // CSP: перенос из index.html в реальные HTTP-заголовки
       'Content-Security-Policy': [
         "default-src 'self'",
-        "script-src 'self' 'wasm-unsafe-eval' https://cdn.sentry.com",
+        // Для React Fast Refresh в dev-режиме требуется 'unsafe-eval'
+        mode === 'development'
+          ? "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.sentry.com"
+          : "script-src 'self' https://cdn.sentry.com",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' https: data: blob:",
         "connect-src 'self' https://qycfsepwguaiwcquwwbw.supabase.co wss://qycfsepwguaiwcquwwbw.supabase.co https://*.sentry.io https://sentry.io",
