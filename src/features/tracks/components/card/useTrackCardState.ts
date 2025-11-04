@@ -16,7 +16,23 @@ export const useTrackCardState = (track: Track) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [hasStems, setHasStems] = useState(false);
-  const [selectedVersionIndex, setSelectedVersionIndex] = useState(0);
+
+  // Initialize selectedVersionIndex from localStorage or default to 0
+  const [selectedVersionIndex, setSelectedVersionIndex] = useState(() => {
+    try {
+      const key = `track:selectedVersion:${track.id}`;
+      const stored = localStorage.getItem(key);
+      if (stored !== null) {
+        const parsed = Number(stored);
+        // We can't validate against allVersions.length here as it's not available yet.
+        // Validation will happen in the useEffect below.
+        return Number.isNaN(parsed) ? 0 : parsed;
+      }
+    } catch {
+      // Silently ignore localStorage read errors
+    }
+    return 0;
+  });
 
   // Check for stems
   useEffect(() => {
@@ -70,23 +86,14 @@ export const useTrackCardState = (track: Track) => {
     }
   }, [currentTrack, track.id, allVersions, selectedVersionIndex]);
 
-  // ✅ Сохранение/восстановление выбранной версии в localStorage
+  // Validate and update selectedVersionIndex when allVersions changes
   useEffect(() => {
-    try {
-      const key = `track:selectedVersion:${track.id}`;
-      const stored = localStorage.getItem(key);
-      if (stored !== null) {
-        const parsed = Number(stored);
-        if (!Number.isNaN(parsed) && parsed >= 0 && parsed < allVersions.length) {
-          setSelectedVersionIndex(parsed);
-        }
-      }
-    } catch {
-      // Silently ignore localStorage read errors
+    if (selectedVersionIndex >= allVersions.length) {
+      setSelectedVersionIndex(0); // Reset to 0 if out of bounds
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [track.id]);
+  }, [allVersions, selectedVersionIndex]);
 
+  // Save selectedVersionIndex to localStorage
   useEffect(() => {
     try {
       const key = `track:selectedVersion:${track.id}`;

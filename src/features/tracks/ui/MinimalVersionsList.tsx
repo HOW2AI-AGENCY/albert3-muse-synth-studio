@@ -1,13 +1,15 @@
-import { memo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { memo, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Play, Star } from "@/utils/iconImports";
+import { Play, Star, Download } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { formatDuration } from "@/utils/formatters";
 import { cn } from "@/lib/utils";
+import { setMasterVersion } from "../api/trackVersions";
+import { toast } from "sonner";
 
 interface MinimalVersionsListProps {
   trackId: string;
@@ -16,6 +18,7 @@ interface MinimalVersionsListProps {
 export const MinimalVersionsList = memo(({ trackId }: MinimalVersionsListProps) => {
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
   const currentTrack = useAudioPlayerStore((state) => state.currentTrack);
+  const queryClient = useQueryClient();
 
   const { data: versions = [], isLoading } = useQuery({
     queryKey: ["track-versions-minimal", trackId],
@@ -47,6 +50,38 @@ export const MinimalVersionsList = memo(({ trackId }: MinimalVersionsListProps) 
     enabled: !!trackId,
   });
 
+  const allVersions = useMemo(() => {
+    if (mainTrack) {
+      return [
+        {
+          id: mainTrack.id,
+          variant_index: 0,
+          audio_url: mainTrack.audio_url,
+          cover_url: mainTrack.cover_url,
+          duration: mainTrack.duration_seconds,
+          // Основная версия не является записью в track_versions,
+          // поэтому не показываем ей возможность стать мастер-версией
+          is_preferred_variant: false,
+          is_primary: true,
+        },
+        ...versions,
+      ];
+    }
+    return versions;
+  }, [mainTrack, versions]);
+
+  // Показываем ровно 2 версии: основную + последнюю доступную версию,
+  // если есть только версии без основной — берём первые две.
+  const displayVersions = useMemo(() => {
+    if (allVersions.length <= 2) return allVersions;
+    const hasMain = Boolean(mainTrack);
+    if (hasMain) {
+      const last = versions[versions.length - 1];
+      return [allVersions[0], last];
+    }
+    return allVersions.slice(0, 2);
+  }, [allVersions, mainTrack, versions]);
+
   if (isLoading) {
     return (
       <div className="space-y-2">
@@ -56,21 +91,6 @@ export const MinimalVersionsList = memo(({ trackId }: MinimalVersionsListProps) 
       </div>
     );
   }
-
-  const allVersions = mainTrack
-    ? [
-        {
-          id: mainTrack.id,
-          variant_index: 0,
-          audio_url: mainTrack.audio_url,
-          cover_url: mainTrack.cover_url,
-          duration: mainTrack.duration_seconds,
-          is_preferred_variant: true,
-          is_primary: true,
-        },
-        ...versions,
-      ]
-    : versions;
 
   if (allVersions.length === 0) {
     return <p className="text-xs text-muted-foreground text-center py-4">Нет версий</p>;
@@ -87,11 +107,28 @@ export const MinimalVersionsList = memo(({ trackId }: MinimalVersionsListProps) 
     });
   };
 
+  const handleDownload = (url?: string) => {
+    if (!url) return;
+    window.open(url, "_blank");
+  };
+
+  const handleSetMaster = async (versionId: string) => {
+    const res = await setMasterVersion(trackId, versionId);
+    if (res.ok) {
+      toast.success("Выбрана мастер-версия");
+      // Обновляем локальные запросы
+      queryClient.invalidateQueries({ queryKey: ["track-versions-minimal", trackId] });
+      queryClient.invalidateQueries({ queryKey: ["track-versions", trackId] });
+    } else {
+      toast.error("Не удалось выбрать мастер-версию");
+    }
+  };
+
   return (
     <div className="space-y-1.5">
-      {allVersions.map((version, index) => {
+      {displayVersions.map((version, index) => {
         const isPlaying = currentTrack?.id === version.id;
-        const isMain = index === 0;
+        const isMain = !!(index === 0 && mainTrack);
 
         return (
           <div
@@ -106,7 +143,7 @@ export const MinimalVersionsList = memo(({ trackId }: MinimalVersionsListProps) 
                 <p className="text-xs font-medium truncate">
                   {isMain ? "Основная" : `V${version.variant_index}`}
                 </p>
-                {version.is_preferred_variant && (
+                {!isMain && version.is_preferred_variant && (
                   <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
                 )}
                 {isPlaying && (
@@ -122,15 +159,38 @@ export const MinimalVersionsList = memo(({ trackId }: MinimalVersionsListProps) 
               )}
             </div>
 
-            <Button
-              size="icon"
-              variant={isPlaying ? "default" : "ghost"}
-              onClick={() => handlePlay(version)}
-              disabled={!version.audio_url}
-              className="h-7 w-7 shrink-0"
-            >
-              <Play className="h-3 w-3" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                size="icon"
+                variant={isPlaying ? "default" : "ghost"}
+                onClick={() => handlePlay(version)}
+                disabled={!version.audio_url}
+                className="h-7 w-7 shrink-0"
+              >
+                <Play className="h-3 w-3" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => handleDownload(version.audio_url ?? undefined)}
+                disabled={!version.audio_url}
+                className="h-7 w-7 shrink-0"
+                aria-label={`Скачать ${isMain ? 'основную' : `версию V${version.variant_index}`}`}
+              >
+                <Download className="h-3 w-3" />
+              </Button>
+              {!isMain && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => handleSetMaster(version.id)}
+                  className="h-7 w-7 shrink-0"
+                  aria-label={`Сделать мастер: V${version.variant_index}`}
+                >
+                  <Star className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
           </div>
         );
       })}
