@@ -58,11 +58,12 @@ export const SimpleModeCompact = memo(({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                className="touch-target-min gap-1.5 text-xs text-muted-foreground hover:text-foreground"
                 onClick={onOpenHistory}
                 disabled={isGenerating}
+                aria-label="Открыть историю промптов"
               >
-                <History className="h-3.5 w-3.5" />
+                <History className="h-4 w-4" aria-hidden="true" />
                 История
               </Button>
             )}

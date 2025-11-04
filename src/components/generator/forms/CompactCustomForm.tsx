@@ -207,9 +207,10 @@ export const CompactCustomForm = memo(({
                     size="icon"
                     onClick={onOpenHistory}
                     disabled={isGenerating}
-                    className="h-6 w-6"
+                    className="touch-target-min"
+                    aria-label="История промптов"
                   >
-                    <History className="h-3 w-3" />
+                    <History className="h-4 w-4" aria-hidden="true" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="left">
@@ -241,11 +242,12 @@ export const CompactCustomForm = memo(({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute right-1 top-2 h-6 w-6 text-primary hover:text-primary hover:bg-primary/10"
+                    className="absolute right-1 top-2 touch-target-min text-primary hover:text-primary hover:bg-primary/10"
                     onClick={onBoostPrompt}
                     disabled={isBoosting || isGenerating}
+                    aria-label="Улучшить промпт с помощью AI"
                   >
-                    <Sparkles className={cn("h-3.5 w-3.5", isBoosting && "animate-spin")} />
+                    <Sparkles className={cn("h-4 w-4", isBoosting && "animate-spin")} aria-hidden="true" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="left">

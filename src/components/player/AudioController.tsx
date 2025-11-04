@@ -2,7 +2,7 @@
  * AudioController - компонент для управления воспроизведением аудио
  * Отделен от UI для оптимизации производительности
  */
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useAudioPlayerStore, useCurrentTrack, useIsPlaying, useVolume, useAudioRef } from '@/stores/audioPlayerStore';
 import { logger } from '@/utils/logger';
 import { toast } from 'sonner';
@@ -13,6 +13,12 @@ export const AudioController = () => {
   const volume = useVolume();
   const audioRef = useAudioRef();
   
+  // Служебные флаги для сериализации операций
+  const isSettingSourceRef = useRef(false);
+  const playLockRef = useRef(false);
+  const lastLoadedTrackIdRef = useRef<string | null>(null);
+  const retryTimeoutIdRef = useRef<number | null>(null);
+  
   const updateCurrentTime = useAudioPlayerStore((state) => state.updateCurrentTime);
   const updateDuration = useAudioPlayerStore((state) => state.updateDuration);
   const updateBufferingProgress = useAudioPlayerStore((state) => state.updateBufferingProgress);
@@ -21,32 +27,45 @@ export const AudioController = () => {
   const playNext = useAudioPlayerStore((state) => state.playNext);
   const proxyTriedRef = useRef<Record<string, boolean>>({});  // ✅ FIX: Track per audio URL
 
+  // Безопасный запуск воспроизведения с защитой от параллельных вызовов
+  const safePlay = useCallback(async () => {
+    const audio = audioRef?.current;
+    if (!audio) return;
+    if (isSettingSourceRef.current) {
+      logger.info('Skip play: source is being set', 'AudioController', { trackId: currentTrack?.id });
+      return;
+    }
+    if (playLockRef.current) {
+      logger.warn('Skip play: another play() in progress', 'AudioController', { trackId: currentTrack?.id });
+      return;
+    }
+    playLockRef.current = true;
+    try {
+      await audio.play();
+      logger.info('Audio playback started', 'AudioController', { 
+        trackId: currentTrack?.id,
+        audio_url: currentTrack?.audio_url?.substring(0, 100) 
+      });
+    } catch (error) {
+      logger.error('Failed to play audio', error as Error, 'AudioController', { trackId: currentTrack?.id });
+      pause();
+    } finally {
+      playLockRef.current = false;
+    }
+  }, [audioRef, currentTrack?.id, currentTrack?.audio_url, pause]);
+
   // ============= УПРАВЛЕНИЕ ВОСПРОИЗВЕДЕНИЕМ =============
   useEffect(() => {
     const audio = audioRef?.current;
     if (!audio) return;
 
-    const playAudio = async () => {
-      try {
-        await audio.play();
-        logger.info('Audio playback started', 'AudioController', { 
-          trackId: currentTrack?.id,
-          audio_url: currentTrack?.audio_url?.substring(0, 100) 
-        });
-      } catch (error) {
-        logger.error('Failed to play audio', error as Error, 'AudioController', { 
-          trackId: currentTrack?.id 
-        });
-        pause();
-      }
-    };
-
     if (isPlaying && currentTrack) {
-      playAudio();
+      // Сериализованный запуск воспроизведения
+      safePlay();
     } else {
       audio.pause();
     }
-  }, [isPlaying, audioRef, currentTrack, pause]);
+  }, [isPlaying, audioRef, currentTrack, pause, safePlay]);
 
   // ============= ЗАГРУЗКА НОВОГО ТРЕКА =============
   useEffect(() => {
@@ -71,6 +90,14 @@ export const AudioController = () => {
     const RETRY_DELAYS = [1000, 3000, 5000]; // Exponential backoff
 
     const loadAudioWithRetry = async () => {
+      // Если во время ретрая сменился трек — прекращаем
+      if (lastLoadedTrackIdRef.current && lastLoadedTrackIdRef.current !== currentTrack.id) {
+        logger.info('Abort load: track changed', 'AudioController', {
+          expected: lastLoadedTrackIdRef.current,
+          actual: currentTrack.id,
+        });
+        return;
+      }
       try {
         logger.info('Loading new track', 'AudioController', { 
           trackId: currentTrack.id,
@@ -78,14 +105,16 @@ export const AudioController = () => {
           attempt: retryCount + 1,
         });
 
-        // Сброс текущих значений
+        // Сериализованная установка источника
+        isSettingSourceRef.current = true;
         audio.src = audioUrl;
         audio.load();
         updateCurrentTime(0);
+        lastLoadedTrackIdRef.current = currentTrack.id;
         
         // Автовоспроизведение при смене трека
         if (isPlaying) {
-          await audio.play();
+          await safePlay();
         }
       } catch (error) {
         // ✅ Retry logic for network/temporary errors
@@ -108,7 +137,10 @@ export const AudioController = () => {
             error: error instanceof Error ? error.message : String(error),
           });
 
-          setTimeout(() => {
+          if (retryTimeoutIdRef.current) {
+            clearTimeout(retryTimeoutIdRef.current);
+          }
+          retryTimeoutIdRef.current = window.setTimeout(() => {
             loadAudioWithRetry();
           }, delay);
         } else {
@@ -119,10 +151,29 @@ export const AudioController = () => {
           pause();
         }
       }
+      finally {
+        isSettingSourceRef.current = false;
+      }
     };
 
+    // Перед стартом — отменяем возможный предыдущий таймер
+    if (retryTimeoutIdRef.current) {
+      clearTimeout(retryTimeoutIdRef.current);
+      retryTimeoutIdRef.current = null;
+    }
+    lastLoadedTrackIdRef.current = currentTrack.id;
+    isSettingSourceRef.current = true;
     loadAudioWithRetry();
-  }, [currentTrack?.audio_url, currentTrack?.id, audioRef, isPlaying, pause, updateCurrentTime]);
+
+    // Очистка при смене трека/размонтировании
+    return () => {
+      if (retryTimeoutIdRef.current) {
+        clearTimeout(retryTimeoutIdRef.current);
+        retryTimeoutIdRef.current = null;
+      }
+      isSettingSourceRef.current = false;
+    };
+  }, [currentTrack?.audio_url, currentTrack?.id, audioRef, isPlaying, pause, updateCurrentTime, safePlay]);
 
   // ============= ГРОМКОСТЬ =============
   useEffect(() => {
@@ -225,7 +276,9 @@ export const AudioController = () => {
 
             audio.src = objectUrl;
             audio.load();
-            try { await audio.play(); } catch {}
+            try { await audio.play(); } catch (e) {
+              logger.error('Failed to play object URL audio', e as Error, 'AudioController', { trackId: currentTrack?.id });
+            }
             toast.success('Аудио подготовлено, воспроизвожу');
             return;
           } catch (e) {

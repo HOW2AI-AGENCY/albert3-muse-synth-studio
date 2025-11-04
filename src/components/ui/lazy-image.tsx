@@ -13,7 +13,7 @@ interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 export const LazyImage = React.memo(({ 
   src, 
   alt, 
-  placeholder = '/placeholder.svg',
+  placeholder = `${import.meta.env.BASE_URL || '/'}placeholder.svg`,
   className,
   wrapperClassName,
   ...props 

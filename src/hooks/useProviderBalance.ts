@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ProviderBalance {
@@ -18,8 +18,17 @@ export const useProviderBalance = () => {
   const [balance, setBalance] = useState<ProviderBalance | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const inFlightRef = useRef(false);
+  const isMountedRef = useRef(true);
+  const requestSeqRef = useRef(0);
 
   const fetchBalance = useCallback(async () => {
+    if (inFlightRef.current) {
+      // Пропускаем, если предыдущий запрос ещё не завершён
+      return;
+    }
+    inFlightRef.current = true;
+    const seq = ++requestSeqRef.current;
     setIsLoading(true);
     setError(null);
 
@@ -28,22 +37,25 @@ export const useProviderBalance = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session || !session.access_token) {
         const unauthorizedMessage = 'Unauthorized: sign in to view balance';
-        setError(unauthorizedMessage);
-        setBalance({
-          provider: PRIMARY_PROVIDER,
-          balance: 0,
-          currency: 'credits',
-          error: unauthorizedMessage,
-        });
+        if (isMountedRef.current && seq === requestSeqRef.current) {
+          setError(unauthorizedMessage);
+          setBalance({
+            provider: PRIMARY_PROVIDER,
+            balance: 0,
+            currency: 'credits',
+            error: unauthorizedMessage,
+          });
+        }
         return;
       }
 
-      const { data, error: invokeError } = await supabase.functions.invoke<ProviderBalance>(
+      const TIMEOUT_MS = 15000;
+      const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('get-balance timeout')), TIMEOUT_MS));
+      const invokePromise = supabase.functions.invoke<ProviderBalance>(
         `get-balance?provider=${PRIMARY_PROVIDER}`,
-        {
-          method: 'GET',
-        }
+        { method: 'GET' }
       );
+      const { data, error: invokeError } = await Promise.race([invokePromise, timeout]) as any;
 
       if (invokeError) {
         throw new Error(invokeError.message);
@@ -57,27 +69,38 @@ export const useProviderBalance = () => {
         throw new Error(`[${PRIMARY_PROVIDER}] ${data.error}`);
       }
 
-      setBalance(data);
-      setError(null);
+      if (isMountedRef.current && seq === requestSeqRef.current) {
+        setBalance(data);
+        setError(null);
+      }
     } catch (fetchError) {
       const errorMessage = (fetchError as Error).message;
-      setError(errorMessage);
-      setBalance({
-        provider: PRIMARY_PROVIDER,
-        balance: 0,
-        currency: 'credits',
-        error: errorMessage,
-      });
+      if (isMountedRef.current && seq === requestSeqRef.current) {
+        setError(errorMessage);
+        setBalance({
+          provider: PRIMARY_PROVIDER,
+          balance: 0,
+          currency: 'credits',
+          error: errorMessage,
+        });
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current && seq === requestSeqRef.current) {
+        setIsLoading(false);
+      }
+      inFlightRef.current = false;
     }
   }, []);
 
   useEffect(() => {
+    isMountedRef.current = true;
     fetchBalance();
 
     const interval = setInterval(fetchBalance, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    return () => {
+      isMountedRef.current = false;
+      clearInterval(interval);
+    };
   }, [fetchBalance]);
 
   return { balance, isLoading, error, refetch: fetchBalance };

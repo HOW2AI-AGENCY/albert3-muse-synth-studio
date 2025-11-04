@@ -18,7 +18,7 @@ interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 export const LazyImage: React.FC<LazyImageProps> = ({
   src,
   alt,
-  placeholder = '/placeholder.svg',
+  placeholder = `${import.meta.env.BASE_URL || '/'}placeholder.svg`,
   fallback,
   className,
   skeletonClassName,

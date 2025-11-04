@@ -111,6 +111,9 @@ export type ProviderBalanceResponse = {
  */
 
 export class ApiService {
+  // Ин-флайт запросы и кеш последнего успешного ответа для баланса провайдеров
+  private static inFlightBalance: Map<string, Promise<ProviderBalanceResponse>> = new Map();
+  private static lastBalanceCache: Map<string, ProviderBalanceResponse> = new Map();
   /**
    * Improve a music prompt using AI
    */
@@ -452,7 +455,12 @@ export class ApiService {
    */
   static async getProviderBalance(provider: 'suno' | 'replicate'): Promise<ProviderBalanceResponse> {
     const context = "ApiService.getProviderBalance";
-    // Guard: avoid invoking edge function without user session
+
+    // Переиспользуем уже идущий запрос, чтобы не плодить дубликаты
+    const existing = ApiService.inFlightBalance.get(provider);
+    if (existing) return existing;
+
+    // Guard: не дергаем edge-функцию без сессии
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session || !session.access_token) {
@@ -473,21 +481,50 @@ export class ApiService {
         error: 'Session check failed',
       } as ProviderBalanceResponse;
     }
-    // Corrected: Use GET request with query parameters for better REST compliance
+
     const functionName = `get-balance?provider=${provider}`;
-    const { data, error } = await supabase.functions.invoke(functionName, {
-      method: 'GET',
-    });
 
-    if (error || !data) {
-      return handleSupabaseFunctionError(
-        error,
-        `Failed to get balance for ${provider}`,
-        context,
-        { provider }
-      );
-    }
+    const requestPromise: Promise<ProviderBalanceResponse> = (async () => {
+      const TIMEOUT_MS = 15000;
+      // Реализуем таймаут через гонку промисов
+      const timeout = new Promise<never>((_, reject) => {
+        const id = setTimeout(() => reject(new Error('get-balance timeout')), TIMEOUT_MS);
+        (timeout as any).id = id;
+      });
 
-    return data as ProviderBalanceResponse;
+      try {
+        const invokePromise = supabase.functions.invoke(functionName, { method: 'GET' });
+        const { data, error } = await Promise.race([invokePromise, timeout]) as any;
+        if (error || !data) {
+          return handleSupabaseFunctionError(
+            error,
+            `Failed to get balance for ${provider}`,
+            context,
+            { provider }
+          );
+        }
+        ApiService.lastBalanceCache.set(provider, data as ProviderBalanceResponse);
+        return data as ProviderBalanceResponse;
+      } catch (e) {
+        const cached = ApiService.lastBalanceCache.get(provider);
+        if (cached) {
+          logWarn('Returning cached provider balance due to error', context, { provider, error: e instanceof Error ? e.message : String(e) });
+          return cached;
+        }
+        return handleSupabaseFunctionError(
+          null,
+          `Failed to get balance for ${provider}`,
+          context,
+          { provider }
+        );
+      } finally {
+        const t: any = timeout as any;
+        if (t.id) clearTimeout(t.id);
+        ApiService.inFlightBalance.delete(provider);
+      }
+    })();
+
+    ApiService.inFlightBalance.set(provider, requestPromise);
+    return requestPromise;
   }
 }
