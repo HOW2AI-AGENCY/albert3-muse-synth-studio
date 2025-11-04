@@ -153,26 +153,38 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
                   setIsOpen(true);
                 }}
                 className={cn(
-                  "h-7 min-w-[26px] px-2 rounded-md",
-                  "flex items-center justify-center",
-                  "bg-background/95 text-xs font-semibold tabular-nums",
+                  "h-7 px-2 rounded-md",
+                  "flex items-center gap-1",
+                  "bg-background/95 text-xs font-semibold",
                   "border border-border/50 shadow-sm transition-all",
                   "hover:bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
                 )}
-                aria-label={`Всего версий: ${totalVersions}`}
+                aria-label={`Активная версия: V${displayIndex}${isMasterVersion ? ' (MASTER)' : ''}`}
                 aria-haspopup="true"
                 aria-expanded={false}
               >
-                {totalVersions}
+                <span
+                  className={cn(
+                    "inline-flex h-5 min-w-[22px] items-center justify-center rounded-sm px-1",
+                    isMasterVersion
+                      ? "bg-[#4285F4] text-white"
+                      : "bg-muted text-foreground"
+                  )}
+                >
+                  {`V${displayIndex}`}
+                </span>
+                {isMasterVersion && (
+                  <span className="ml-0.5 text-[10px] font-bold tracking-wide text-amber-500">MASTER</span>
+                )}
               </button>
             </TooltipTrigger>
-            <TooltipContent side="left">Всего версий: {totalVersions}</TooltipContent>
+            <TooltipContent side="left">Активная версия: V{displayIndex}{isMasterVersion ? ' · MASTER' : ''}</TooltipContent>
           </Tooltip>
         )}
 
         {isOpen && (
           <div className="flex items-center gap-1.5 transition-all">
-            {[0, 1].map((index) => (
+            {Array.from({ length: totalVersions }).map((_, index) => (
               <Tooltip key={index}>
                 <TooltipTrigger asChild>
                   <Button
@@ -192,7 +204,7 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
                         setIsOpen(false);
                       }
                     }}
-                    aria-label={index === 0 ? 'Версия 1 (Оригинал)' : 'Версия 2'}
+                    aria-label={index === 0 ? 'Версия 1 (Оригинал)' : `Версия ${index + 1}`}
                     aria-pressed={isActive(index)}
                     className={cn(
                       "h-7 w-7 p-0 rounded-full text-xs font-bold",
@@ -207,7 +219,7 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="left">
-                  {index === 0 ? 'Оригинал' : 'Вариант 2'}
+                  {index === 0 ? 'Оригинал' : `Вариант ${index}`}
                 </TooltipContent>
               </Tooltip>
             ))}
