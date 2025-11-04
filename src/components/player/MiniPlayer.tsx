@@ -77,21 +77,21 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
     <div
       data-testid="mini-player"
       onClick={handleExpand}
-      className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border/30 shadow-lg cursor-pointer animate-slide-up safe-area-bottom-md hover:bg-card/90 transition-all duration-300 pt-[var(--mobile-spacing-md)]" /* Updated styling for glassmorphism with unified safe-area */
+      className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border/30 shadow-lg cursor-pointer animate-slide-up safe-area-bottom-md hover:bg-card/90 transition-all duration-300 pt-[var(--mobile-spacing-sm)] md:pt-[var(--mobile-spacing-md)]" /* Updated styling for glassmorphism with unified safe-area */
       style={{
         zIndex: 'var(--z-mini-player)' /* Use unified z-index system from design-tokens.css */
       }}
     >
-      <ResponsiveStack 
-        direction="horizontal" 
-        spacing="sm" 
-        align="center" 
-        className="p-3"
+      <ResponsiveStack
+        direction="horizontal"
+        spacing="sm"
+        align="center"
+        className="p-2 md:p-3"
       >
         {/* Album Art */}
         <div className={cn(
-          "relative rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 flex-shrink-0 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 group",
-          "w-12 h-12 lg:w-14 lg:h-14"
+          "relative rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 flex-shrink-0 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 group",
+          "w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14"
         )}>
           {currentTrack.cover_url ? (
             <img
@@ -131,7 +131,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
         </div>
 
         {/* Playback Controls */}
-        <div className="flex items-center gap-3 md:gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0">
           {/* Phase 2.3: Versions Sheet для мобильных */}
           {hasVersions && (
             <Sheet>
@@ -203,13 +203,13 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
                 size="icon"
                 variant="default"
                 onClick={handlePlayPause}
-                className="h-14 w-14 min-h-[56px] min-w-[56px] rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-200 active:scale-95 touch-optimized"
+                className="h-12 w-12 min-h-[48px] min-w-[48px] sm:h-14 sm:w-14 sm:min-h-[56px] sm:min-w-[56px] rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-200 active:scale-95 touch-optimized"
                 style={{ willChange: 'transform' }}
               >
                 {isPlaying ? (
-                  <Pause className="h-5 w-5" />
+                  <Pause className="h-4 w-4 sm:h-5 sm:w-5" />
                 ) : (
-                  <Play className="h-5 w-5 ml-0.5" />
+                  <Play className="h-4 w-4 sm:h-5 sm:w-5 ml-0.5" />
                 )}
               </Button>
             </TooltipTrigger>

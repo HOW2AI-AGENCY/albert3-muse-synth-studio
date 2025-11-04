@@ -385,16 +385,20 @@ const Generate = () => {
               <DrawerTrigger asChild>
                 <motion.div
                   initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.5, type: 'spring', stiffness: 260, damping: 20 }}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                  animate={{
+                    scale: showGenerator ? 0 : 1,
+                    opacity: showGenerator ? 0 : 1
+                  }}
+                  transition={{ delay: showGenerator ? 0 : 0.5, type: 'spring', stiffness: 260, damping: 20 }}
+                  whileHover={{ scale: showGenerator ? 0 : 1.1 }}
+                  whileTap={{ scale: showGenerator ? 0 : 0.9 }}
+                  style={{ pointerEvents: showGenerator ? 'none' : 'auto' }}
                 >
                   <Button
                     variant="fab"
                     size="fab"
                     className="fixed right-6"
-                    style={{ 
+                    style={{
                       bottom: 'calc(var(--bottom-tab-bar-height) + 1rem)',
                       position: 'fixed',
                       zIndex: 'var(--z-fab)'
