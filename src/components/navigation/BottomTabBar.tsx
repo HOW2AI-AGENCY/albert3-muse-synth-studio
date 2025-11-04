@@ -64,7 +64,7 @@ export const BottomTabBar: FC<BottomTabBarProps> = ({
       data-bottom-tab-bar="true"
       className={cn(
         "fixed bottom-0 left-0 right-0 border-t border-border/30 bg-card/80 backdrop-blur-xl", /* Adjusted for glassmorphism effect */
-        "pb-[env(safe-area-inset-bottom)]",
+        "safe-area-bottom", /* Use unified safe-area utility class */
         "lg:hidden",
         className
       )}

@@ -102,36 +102,39 @@ export const TrackCardMobile = memo(({ track, onClick, onMoreClick }: TrackCardM
             </div>
           </div>
           
-          {/* Compact buttons */}
-          <div className="flex items-center gap-0.5 mt-1">
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="h-7 w-7 p-0 mobile-touch"
+          {/* Touch-optimized buttons (WCAG AAA compliant: min 44px) */}
+          <div className="flex items-center gap-1 mt-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="touch-target-min p-0" /* Use touch-target-min utility (44px min) */
               onClick={handlePlayClick}
               disabled={playButtonDisabled}
+              aria-label={isCurrentTrack && isPlaying ? "Пауза" : "Воспроизвести"}
             >
               {isCurrentTrack && isPlaying ? (
-                <Pause className="h-3 w-3" />
+                <Pause className="h-4 w-4" />
               ) : (
-                <Play className="h-3 w-3" />
+                <Play className="h-4 w-4" />
               )}
             </Button>
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="h-7 w-7 p-0 mobile-touch"
+            <Button
+              size="sm"
+              variant="ghost"
+              className="touch-target-min p-0" /* Use touch-target-min utility (44px min) */
               onClick={handleLikeClick}
+              aria-label={isLiked ? "Убрать из избранного" : "Добавить в избранное"}
             >
-              <Heart className={cn("h-3 w-3", isLiked && "fill-red-500 text-red-500")} />
+              <Heart className={cn("h-4 w-4", isLiked && "fill-red-500 text-red-500")} />
             </Button>
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="h-7 w-7 p-0 mobile-touch ml-auto"
+            <Button
+              size="sm"
+              variant="ghost"
+              className="touch-target-min p-0 ml-auto" /* Use touch-target-min utility (44px min) */
               onClick={handleMoreClick}
+              aria-label="Дополнительные действия"
             >
-              <MoreVertical className="h-3 w-3" />
+              <MoreVertical className="h-4 w-4" />
             </Button>
           </div>
         </div>

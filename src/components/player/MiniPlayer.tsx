@@ -77,11 +77,9 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
     <div
       data-testid="mini-player"
       onClick={handleExpand}
-      className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border/30 shadow-lg cursor-pointer animate-slide-up safe-area-bottom hover:bg-card/90 transition-all duration-300" /* Updated styling for glassmorphism */
+      className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border/30 shadow-lg cursor-pointer animate-slide-up safe-area-bottom-md hover:bg-card/90 transition-all duration-300 pt-[var(--mobile-spacing-md)]" /* Updated styling for glassmorphism with unified safe-area */
       style={{
-        zIndex: 'var(--z-mini-player)', /* Use unified z-index system from design-tokens.css */
-        paddingBottom: 'calc(env(safe-area-inset-bottom) + var(--mobile-spacing-md))', /* Use design tokens for spacing */
-        paddingTop: 'var(--mobile-spacing-md)'
+        zIndex: 'var(--z-mini-player)' /* Use unified z-index system from design-tokens.css */
       }}
     >
       <ResponsiveStack 

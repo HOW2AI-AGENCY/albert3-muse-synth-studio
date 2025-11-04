@@ -374,6 +374,23 @@
     padding-right: env(safe-area-inset-right);
   }
 
+  /* Safe area bottom utilities (unified system for fixed bottom elements) */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-bottom-sm {
+    padding-bottom: calc(env(safe-area-inset-bottom) + var(--mobile-spacing-sm));
+  }
+
+  .safe-area-bottom-md {
+    padding-bottom: calc(env(safe-area-inset-bottom) + var(--mobile-spacing-md));
+  }
+
+  .safe-area-bottom-lg {
+    padding-bottom: calc(env(safe-area-inset-bottom) + var(--mobile-spacing-lg));
+  }
+
   /* Touch target optimization */
   .touch-target {
     @apply min-h-[44px] min-w-[44px];
