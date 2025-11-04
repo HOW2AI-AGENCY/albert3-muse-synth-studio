@@ -7,7 +7,7 @@
   <div>
     <img src="https://img.shields.io/badge/TypeScript-5.8-3178c6.svg?style=for-the-badge&logo=typescript" alt="TypeScript">
     <img src="https://img.shields.io/badge/React-18.3-61dafb.svg?style=for-the-badge&logo=react" alt="React">
-    <img src="https://img.shields.io/badge/Supabase-2.56-3ecf8e.svg?style=for-the-badge&logo=supabase" alt="Supabase">
+    <img src="https://img.shields.io/badge/Supabase-2.54.11-3ecf8e.svg?style=for-the-badge&logo=supabase" alt="Supabase">
     <img src="https://img.shields.io/badge/Vite-7.1-646cff.svg?style=for-the-badge&logo=vite" alt="Vite">
   </div>
   <div>
@@ -24,7 +24,7 @@
 
 **04 ноября 2025** - Выполнены критичные улучшения безопасности (P1):
 - ✅ **Логирование в Sentry:** Заменено 25 использований `console.*` на `logger` → Все ошибки теперь отслеживаются
-- ✅ **Обновлены зависимости:** vite 7.1.12, supabase 2.56.0 → 0 уязвимостей
+- ✅ **Обновлены зависимости:** vite 7.1.12, supabase 2.54.11, typescript 5.8.3 → устранены найденные уязвимости
 - ✅ **CORS ограничен:** Изменен с `*` на localhost whitelist → Защита от CSRF атак
 - ✅ **CSP headers:** Добавлена Content Security Policy → Защита от XSS атак
 
@@ -194,8 +194,11 @@ npm test
 # Запустить E2E-тесты
 npm run test:e2e
 
-# Проверить покрытие тестами
-npm run test:coverage
+# Проверить покрытие тестами (в Vitest покрытие включено в npm test)
+# Альтернативно: можно запустить с ключом --coverage
+npm test
+# или
+npm run test -- --coverage
 ```
 
 ---
