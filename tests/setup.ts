@@ -20,16 +20,20 @@ vi.mock('@/integrations/supabase/client', () => ({
       signOut: vi.fn(),
       onAuthStateChange: vi.fn(),
     },
-    from: vi.fn(() => ({
-      select: vi.fn().mockReturnThis(),
-      insert: vi.fn().mockReturnThis(),
-      update: vi.fn().mockReturnThis(),
-      delete: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      single: vi.fn(),
-      order: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockReturnThis(),
-    })),
+    from: vi.fn((table: string) => {
+      const mockChain = {
+        select: vi.fn().mockReturnThis(),
+        insert: vi.fn().mockReturnThis(),
+        update: vi.fn().mockReturnThis(),
+        delete: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn(),
+        order: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        range: vi.fn().mockResolvedValue({ data: [{ id: 'track-1', title: 'Test Track', status: 'completed', audio_url: 'url1', created_at: new Date().toISOString() }], error: null, count: 1 }),
+      };
+      return mockChain;
+    }),
     functions: {
       invoke: vi.fn(),
     },
@@ -103,3 +107,15 @@ global.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
 } as any;
+
+// Mock AuthContext
+vi.mock('@/contexts/AuthContext', async () => {
+  const actual = await vi.importActual('@/contexts/AuthContext');
+  return {
+    ...actual,
+    useAuth: () => ({
+      userId: 'test-user-id',
+      isLoading: false,
+    }),
+  };
+});

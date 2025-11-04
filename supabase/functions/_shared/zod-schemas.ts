@@ -42,7 +42,7 @@ export const uuidSchema = z.string().uuid();
 // ✅ generate-suno request schema
 export const generateSunoSchema = z.object({
   trackId: uuidSchema.optional(),
-  prompt: z.string().min(1).max(3000).trim(),
+  prompt: z.string().min(1).max(3000).trim().optional(),
   tags: z.array(z.string().max(50)).max(20).optional(),
   title: z.string().max(200).optional(),
   make_instrumental: z.boolean().optional(),
@@ -61,6 +61,20 @@ export const generateSunoSchema = z.object({
   wait_audio: z.boolean().optional(),
   projectId: uuidSchema.optional(), // ✅ НОВОЕ: ID проекта
   personaId: uuidSchema.optional(), // ✅ НОВОЕ: ID персоны (уже есть в хендлере)
+}).refine(data => data.prompt || data.lyrics, {
+  message: "Either 'prompt' or 'lyrics' must be provided.",
+  path: ["prompt"],
+}).refine(data => {
+  if (data.customMode) {
+    return !!data.lyrics;
+  }
+  return true;
+}, {
+  message: "'lyrics' are required when 'customMode' is true.",
+  path: ["lyrics"],
+}).refine(data => !(data.referenceAudioUrl && data.referenceTrackId), {
+  message: "Cannot provide both 'referenceAudioUrl' and 'referenceTrackId'.",
+  path: ["referenceAudioUrl"],
 });
 
 // ✅ extend-track request schema

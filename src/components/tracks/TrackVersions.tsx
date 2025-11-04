@@ -3,7 +3,7 @@
  * Displays all versions of a track (main + variants)
  */
 
-import { useTrackVersions } from '@/hooks/useTrackVersions';
+import { useTrackVersions } from '@/features/tracks/hooks';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ interface TrackVersionsProps {
 }
 
 export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
-  const { data: allVersions = [], isLoading } = useTrackVersions(trackId);
+  const { allVersions = [], isLoading } = useTrackVersions(trackId);
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
   const currentTrack = useAudioPlayerStore((state) => state.currentTrack);
 
@@ -51,7 +51,7 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-testid="track-versions-container">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold">Версии ({allVersions.length})</h3>
       </div>

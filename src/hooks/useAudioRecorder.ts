@@ -256,6 +256,11 @@ export const useAudioRecorder = (
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
+      // Ensure AudioContext is always closed on unmount
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
     };
   }, [isRecording, stopRecording, audioUrl]);
 

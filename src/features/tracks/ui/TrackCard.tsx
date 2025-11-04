@@ -97,6 +97,7 @@ const TrackCardComponent = React.memo(({
       tabIndex={0}
       onKeyDown={handleKeyDown}
       className="touch-optimized focus-ring"
+      data-testid="track-card"
     >
       <Card
         className={cn(
