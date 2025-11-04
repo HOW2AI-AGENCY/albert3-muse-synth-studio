@@ -74,7 +74,7 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
       data-testid={`track-list-item-${track.id}`}
       className={cn(
         isVisible ? "group flex items-center gap-3 p-2 rounded-lg transition-colors duration-200 opacity-100 animate-fade-in" : "group flex items-center gap-3 p-2 rounded-lg transition-colors duration-200 opacity-0",
-        "hover:bg-muted/50",
+        "hover:bg-muted/50 border-b border-border",
         isCurrentTrack && "bg-primary/10",
         className
       )}
@@ -113,11 +113,11 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
           <p className={cn("font-medium text-sm truncate", isCurrentTrack && "text-primary")}>{track.title}</p>
           {isCurrentTrack && isPlaying && <Headphones className="h-4 w-4 text-primary flex-shrink-0" />}
         </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           {track.status === 'completed' ? (
             <>
               {track.style_tags && <span>{track.style_tags.slice(0,2).join(', ')}</span>}
@@ -130,10 +130,11 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
         </div>
       </div>
 
-      <div className={cn(
-        "flex items-center gap-0.5 transition-opacity duration-200",
-        isHovered || isCurrentTrack ? "opacity-100" : "opacity-0 group-focus-within:opacity-100"
-      )}
+      <div
+        className={cn(
+          "flex items-center gap-0.5 transition-opacity duration-200",
+          isHovered || isCurrentTrack ? "opacity-100" : "opacity-0 group-focus-within:opacity-100"
+        )}
         onClick={(e) => e.stopPropagation()}
       >
         <TrackActionsMenu

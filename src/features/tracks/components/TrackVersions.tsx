@@ -41,6 +41,7 @@ interface TrackVersionsProps {
 
 const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpdate }: TrackVersionsProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [selectorOpen, setSelectorOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [versionToDelete, setVersionToDelete] = useState<TrackVersion | null>(null);
   const currentTrack = useCurrentTrack();
@@ -161,7 +162,9 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
   }, [versionToDelete, versions, trackId, vibrate, onVersionUpdate]);
 
   const additionalVersions = versions.filter(version => !version.is_primary_variant);
-  const additionalCount = additionalVersions.length;
+  const primaryVersion = versions.find(v => v.is_primary_variant);
+  const preferredVersion = versions.find(v => v.is_preferred_variant) || primaryVersion;
+  const activeVersionLabel = preferredVersion ? `V${(preferredVersion.variant_index ?? 0) + 1}` : 'V1';
 
   if (!versions || versions.length <= 1) {
     return null;
@@ -172,9 +175,19 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Music2 className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm font-medium">
-            Версии ({additionalCount})
-          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 px-2 text-xs font-medium"
+            onClick={() => {
+              vibrate('light');
+              setSelectorOpen((prev) => !prev);
+            }}
+            aria-expanded={selectorOpen}
+            aria-label="Активная версия"
+          >
+            {activeVersionLabel}
+          </Button>
         </div>
         <Button
           variant="ghost"
@@ -192,6 +205,24 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
           )}
         </Button>
       </div>
+
+      {selectorOpen && (
+        <div className="flex items-center gap-2 p-2 rounded-md bg-muted/40 border border-muted/50 transition-all animate-fade-in">
+          {versions.map((v) => (
+            <Button
+              key={v.id}
+              size="sm"
+              variant={v.id === preferredVersion?.id ? 'default' : 'ghost'}
+              className="h-7 px-2 text-xs"
+              onClick={() => handleSetMaster(v.id, (v.variant_index ?? 0) + 1, v.is_primary_variant)}
+              aria-label={`Выбрать версию V${v.variant_index || v.version_number || 1}`}
+            >
+              {`V${(v.variant_index ?? 0) + 1}`}
+              {v.is_preferred_variant ? <Star className="w-3 h-3 ml-1" /> : null}
+            </Button>
+          ))}
+        </div>
+      )}
 
       {isExpanded && (
         <div className="space-y-2 animate-fade-in">
