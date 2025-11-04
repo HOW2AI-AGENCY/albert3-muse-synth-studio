@@ -37,8 +37,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
   
   const { vibrate } = useHapticFeedback();
 
-  if (!currentTrack) return null;
-
+  // ✅ All hooks must be called before any conditional returns
   const handlePlayPause = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     vibrate('light');
@@ -71,6 +70,9 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
   // Versions
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
 
+  // ✅ Conditional return after all hooks
+  if (!currentTrack) return null;
+
   return (
     <div
       data-testid="mini-player"
@@ -90,7 +92,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
         {/* Album Art */}
         <div className={cn(
           "relative rounded-xl overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 flex-shrink-0 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 group",
-          "w-14 h-14 md:w-12 md:h-12 lg:w-16 lg:h-16"
+          "w-12 h-12 lg:w-14 lg:h-14"
         )}>
           {currentTrack.cover_url ? (
             <img

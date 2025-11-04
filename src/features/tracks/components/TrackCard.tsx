@@ -157,7 +157,7 @@ const TrackCardComponent = memo(({
           />
         </div>
 
-        <CardContent className="p-2 flex-1 flex flex-col">
+        <CardContent className="p-2 md:p-3 lg:p-4 flex-1 flex flex-col">
           <TrackCardInfo
             title={displayedVersion.title || track.title}
             prompt={track.prompt}
@@ -204,7 +204,7 @@ const MemoizedTrackCard = memo(TrackCardComponent, (prevProps: TrackCardProps, n
   return (
     prevProps.track.id === nextProps.track.id &&
     prevProps.track.status === nextProps.track.status &&
-    prevProps.track.like_count === nextProps.track.like_count &&
+    (prevProps.track.like_count ?? 0) === (nextProps.track.like_count ?? 0) &&
     prevProps.track.is_public === nextProps.track.is_public &&
     prevProps.track.audio_url === nextProps.track.audio_url &&
     prevProps.track.cover_url === nextProps.track.cover_url &&
