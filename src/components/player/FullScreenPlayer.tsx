@@ -142,7 +142,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
   return (
     <div
       ref={swipeRef as React.RefObject<HTMLDivElement>}
-      className="fixed inset-0 z-[60] bg-gradient-to-b from-background via-background/95 to-card/90 backdrop-blur-xl animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-fullscreen-player bg-gradient-to-b from-background via-background/95 to-card/90 backdrop-blur-xl animate-fade-in overflow-y-auto touch-optimized"
       style={{ 
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)'
