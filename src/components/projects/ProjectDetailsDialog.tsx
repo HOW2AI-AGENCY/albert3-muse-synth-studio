@@ -3,7 +3,7 @@
  * Shows project information and tracklist
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
@@ -22,6 +22,10 @@ import { TrackActions } from '@/components/projects/TrackActions';
 import type { Database } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { useProjects } from '@/contexts/ProjectContext';
 import {
   Tooltip,
   TooltipContent,
@@ -43,10 +47,16 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
   project,
 }) => {
   const queryClient = useQueryClient();
+  const { updateProject } = useProjects();
   const { tracks: allTracks, isLoading } = useTracks(undefined, { 
     projectId: project?.id 
   });
   const { generateTracklist, isGenerating } = useGenerateProjectTracklist();
+
+  const [isPublic, setIsPublic] = useState<boolean>(!!project?.is_public);
+  useEffect(() => {
+    setIsPublic(!!project?.is_public);
+  }, [project?.is_public]);
 
   // Треки уже отфильтрованы по project_id через хук
   const projectTracks = useMemo(() => {
@@ -132,6 +142,19 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                       {project.mood}
                     </Badge>
                   )}
+                  {/* Public toggle */}
+                  <div className="flex items-center gap-2 ml-auto">
+                    <span className="text-xs text-muted-foreground">Публичный проект</span>
+                    <Switch
+                      checked={isPublic}
+                      onCheckedChange={async (checked) => {
+                        setIsPublic(checked);
+                        if (project) {
+                          await updateProject(project.id, { is_public: checked } as any);
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
 
                 {/* Description */}
@@ -203,6 +226,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                       <span className="text-xs">Прогресс</span>
                     </div>
                     <p className="text-2xl font-bold">{completionPercent}%</p>
+                    <Progress value={completionPercent} className="h-2 mt-2" />
                   </Card>
 
                   <Card className="p-3">
@@ -220,158 +244,165 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
 
             <Separator />
 
-            {/* Tracklist */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <Music className="h-5 w-5" />
-                  Треки проекта
-                </h3>
-                <div className="flex items-center gap-2">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={async () => {
-                            await generateTracklist({
-                              id: project.id,
-                              name: project.name,
-                              description: project.description,
-                              genre: project.genre,
-                              mood: project.mood,
-                              project_type: project.project_type,
-                              total_tracks: project.total_tracks,
-                            });
-                          }}
-                          disabled={isGenerating}
-                        >
-                          <Sparkles className={cn("h-4 w-4", isGenerating && "animate-pulse")} />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Сгенерировать треклист</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">
-                      {completedTracks.length} завершено
-                    </Badge>
-                    {draftTracks.length > 0 && (
-                      <Badge variant="outline">
-                        {draftTracks.length} черновиков
+            {/* Tracklist Accordion */}
+            <Accordion type="single" collapsible defaultValue="tracks">
+              <AccordionItem value="tracks">
+                <AccordionTrigger>
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-lg font-semibold flex items-center gap-2">
+                      <Music className="h-5 w-5" />
+                      Треки проекта
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">
+                        {completedTracks.length} завершено
                       </Badge>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {isLoading ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Загрузка треков...
-                </div>
-              ) : projectTracks.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Music className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>В проекте пока нет треков</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {projectTracks.map((track, index) => (
-                    <Card
-                      key={track.id}
-                      className={cn(
-                        "p-4 hover:bg-accent/50 transition-colors",
-                        track.status !== 'completed' && "opacity-60"
+                      {draftTracks.length > 0 && (
+                        <Badge variant="outline">
+                          {draftTracks.length} черновиков
+                        </Badge>
                       )}
-                    >
-                      <div className="flex items-start gap-4">
-                        {/* Track Number */}
-                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
-                          {index + 1}
-                        </div>
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="flex items-center justify-between mb-4">
+                    <div />
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={async () => {
+                              await generateTracklist({
+                                id: project.id,
+                                name: project.name,
+                                description: project.description,
+                                genre: project.genre,
+                                mood: project.mood,
+                                project_type: project.project_type,
+                                total_tracks: project.total_tracks,
+                              });
+                            }}
+                            disabled={isGenerating}
+                          >
+                            <Sparkles className={cn("h-4 w-4", isGenerating && "animate-pulse")} />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Сгенерировать треклист</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
 
-                        {/* Cover */}
-                        <div className="flex-shrink-0">
-                          {track.cover_url ? (
-                            <img
-                              src={track.cover_url}
-                              alt={track.title}
-                              className="w-12 h-12 rounded object-cover"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                              <Music className="h-6 w-6 text-primary/50" />
-                            </div>
+                  {isLoading ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Загрузка треков...
+                    </div>
+                  ) : projectTracks.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Music className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>В проекте пока нет треков</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {projectTracks.map((track, index) => (
+                        <Card
+                          key={track.id}
+                          className={cn(
+                            "p-4 hover:bg-accent/50 transition-colors",
+                            track.status !== 'completed' && "opacity-60"
                           )}
-                        </div>
+                        >
+                          <div className="flex items-start gap-4">
+                            {/* Track Number */}
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
+                              {index + 1}
+                            </div>
 
-                        {/* Track Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
+                            {/* Cover */}
+                            <div className="flex-shrink-0">
+                              {track.cover_url ? (
+                                <img
+                                  src={track.cover_url}
+                                  alt={track.title}
+                                  className="w-12 h-12 rounded object-cover"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                                  <Music className="h-6 w-6 text-primary/50" />
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Track Info */}
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-medium truncate">{track.title}</h4>
-                              {track.prompt && (
-                                <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
-                                  {track.prompt}
-                                </p>
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-medium truncate">{track.title}</h4>
+                                  {track.prompt && (
+                                    <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
+                                      {track.prompt}
+                                    </p>
+                                  )}
+                                </div>
+                                <Badge
+                                  variant={
+                                    track.status === 'completed' ? 'default' : 
+                                    track.lyrics ? 'default' : 'secondary'
+                                  }
+                                  className={cn(
+                                    "text-xs flex-shrink-0 transition-all",
+                                    track.lyrics && track.status !== 'completed' && "animate-pulse"
+                                  )}
+                                >
+                                  {track.status === 'completed' ? 'Готов' : 
+                                   track.status === 'processing' ? 'Обработка' : 
+                                   track.lyrics ? 'Черновик' :
+                                   track.status === 'pending' ? 'В очереди' : 
+                                   track.status === 'failed' ? 'Ошибка' : 'В очереди'}
+                                </Badge>
+                              </div>
+
+                              {/* Tags and Duration */}
+                              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                {track.style_tags && track.style_tags.slice(0, 3).map((tag, i) => (
+                                  <Badge key={i} variant="outline" className="text-[10px]">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                                {track.duration && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatDuration(track.duration)}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Track Actions for non-completed Tracks */}
+                              {track.status !== 'completed' && track.status !== 'failed' && (
+                                <TrackActions
+                                  track={track as any}
+                                  projectId={project.id}
+                                  projectName={project.name}
+                                  projectDescription={project.concept_description}
+                                  projectGenre={project.genre}
+                                  projectMood={project.mood}
+                                  onLyricsGenerated={() => {
+                                    queryClient.invalidateQueries({ queryKey: ['tracks'] });
+                                  }}
+                                />
                               )}
                             </div>
-                            <Badge
-                              variant={
-                                track.status === 'completed' ? 'default' : 
-                                track.lyrics ? 'default' : 'secondary'
-                              }
-                              className={cn(
-                                "text-xs flex-shrink-0 transition-all",
-                                track.lyrics && track.status !== 'completed' && "animate-pulse"
-                              )}
-                            >
-                              {track.status === 'completed' ? 'Готов' : 
-                               track.status === 'processing' ? 'Обработка' : 
-                               track.lyrics ? 'Черновик' :
-                               track.status === 'pending' ? 'В очереди' : 
-                               track.status === 'failed' ? 'Ошибка' : 'В очереди'}
-                            </Badge>
                           </div>
-
-                          {/* Tags and Duration */}
-                          <div className="flex items-center gap-2 mt-2 flex-wrap">
-                            {track.style_tags && track.style_tags.slice(0, 3).map((tag, i) => (
-                              <Badge key={i} variant="outline" className="text-[10px]">
-                                {tag}
-                              </Badge>
-                            ))}
-                            {track.duration && (
-                              <span className="text-xs text-muted-foreground">
-                                {formatDuration(track.duration)}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Track Actions for non-completed Tracks */}
-                          {track.status !== 'completed' && track.status !== 'failed' && (
-                            <TrackActions
-                              track={track as any}
-                              projectId={project.id}
-                              projectName={project.name}
-                              projectDescription={project.concept_description}
-                              projectGenre={project.genre}
-                              projectMood={project.mood}
-                              onLyricsGenerated={() => {
-                                queryClient.invalidateQueries({ queryKey: ['tracks'] });
-                              }}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </div>
         </ScrollArea>
       </DialogContent>
