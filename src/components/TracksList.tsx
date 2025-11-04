@@ -81,10 +81,12 @@ const TracksListComponent = ({
     };
   }, []);
 
-  // Responsive grid: мобильным экранам даём 2 колонки и корректные отступы
-  const { columns, gap } = useResponsiveGrid(containerDimensions.width, { 
-    isDetailPanelOpen 
+  // Responsive grid: получаем параметры и принудительно фиксируем 2 колонки на мобильных
+  const gridParams = useResponsiveGrid(containerDimensions.width, {
+    isDetailPanelOpen
   });
+  const { gap } = gridParams;
+  const effectiveColumns = gridParams.screenCategory === 'mobile' ? 2 : gridParams.columns;
 
   const handleViewChange = useCallback((view: 'grid' | 'list') => {
     setViewMode(view);
@@ -199,7 +201,7 @@ const TracksListComponent = ({
               // Use virtualization for large lists with adaptive grid
               <VirtualizedTrackGrid
                 tracks={tracks}
-                columns={columns}
+                columns={effectiveColumns}
                 gap={gap}
                 onTrackPlay={onSelect || handlePlay}
                 onShare={handleShare}
@@ -216,7 +218,7 @@ const TracksListComponent = ({
               <div 
                 className="grid w-full"
                 style={{
-                  gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+                  gridTemplateColumns: `repeat(${effectiveColumns}, minmax(0, 1fr))`,
                   gap: `${gap}px`,
                 }}
               >
