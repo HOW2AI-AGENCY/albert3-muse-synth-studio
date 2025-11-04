@@ -153,7 +153,7 @@ const TrackCardComponent = React.memo(({
             status={track.status}
             progressPercent={track.progress_percent ?? undefined}
             createdAt={track.created_at}
-            likeCount={track.like_count}
+            likeCount={displayedVersion.like_count ?? track.like_count}
             isMasterVersion={displayedVersion.isMasterVersion}
             onVersionChange={handleVersionChange}
           />

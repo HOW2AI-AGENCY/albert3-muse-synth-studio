@@ -5,6 +5,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TrackCard } from '@/features/tracks/components/TrackCard';
+import * as useTrackLikesModule from '@/hooks/useTrackLikes';
+import * as audioStore from '@/stores/audioPlayerStore';
 import type { Track } from '@/types/domain/track.types';
 
 // Mock dependencies
@@ -121,7 +123,7 @@ describe('TrackCard', () => {
   it('should toggle like on like button click', async () => {
     const mockLikeTrack = vi.fn();
     
-    vi.mocked(require('@/hooks/useTrackLikes').useTrackLikes).mockReturnValue({
+    vi.mocked(useTrackLikesModule.useTrackLikes).mockReturnValue({
       isLiked: false,
       likeTrack: mockLikeTrack,
       unlikeTrack: vi.fn(),
@@ -164,8 +166,8 @@ describe('TrackCard', () => {
   });
 
   it('should highlight current playing track', () => {
-    vi.mocked(require('@/stores/audioPlayerStore').useCurrentTrack).mockReturnValue(mockTrack);
-    vi.mocked(require('@/stores/audioPlayerStore').useIsPlaying).mockReturnValue(true);
+    vi.mocked(audioStore.useCurrentTrack).mockReturnValue(mockTrack);
+    vi.mocked(audioStore.useIsPlaying).mockReturnValue(true);
 
     render(<TrackCard track={mockTrack} />);
 
