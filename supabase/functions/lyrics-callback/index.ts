@@ -4,6 +4,7 @@ import {
 } from "../_shared/cors.ts";
 import { createSecurityHeaders } from "../_shared/security.ts";
 import { createSupabaseAdminClient } from "../_shared/supabase.ts";
+import { logger } from "../_shared/logger.ts";
 
 interface LyricsCallbackVariant {
   id?: string;
@@ -70,7 +71,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     
     if (SUNO_WEBHOOK_SECRET) {
       if (!signature) {
-        console.error('🔴 [LYRICS-CALLBACK] Missing webhook signature');
+        logger.error('Missing webhook signature', { function: 'lyrics-callback' });
         return new Response(JSON.stringify({ error: 'missing_signature' }), {
           status: 401,
           headers: corsHeaders,
@@ -80,9 +81,9 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       const bodyText = await req.text();
       const { verifyWebhookSignature } = await import('../_shared/webhook-verify.ts');
       const isValid = await verifyWebhookSignature(bodyText, signature, SUNO_WEBHOOK_SECRET);
-      
+
       if (!isValid) {
-        console.error('🔴 [LYRICS-CALLBACK] Invalid webhook signature');
+        logger.error('Invalid webhook signature', { function: 'lyrics-callback' });
         return new Response(JSON.stringify({ error: 'invalid_signature' }), {
           status: 401,
           headers: corsHeaders,
@@ -91,7 +92,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       
       payload = JSON.parse(bodyText) as LyricsCallbackBody;
     } else {
-      console.warn('⚠️ [LYRICS-CALLBACK] SUNO_WEBHOOK_SECRET not configured - skipping signature verification');
+      logger.warn('SUNO_WEBHOOK_SECRET not configured - skipping signature verification', { function: 'lyrics-callback' });
       payload = await req.json() as LyricsCallbackBody;
     }
     const code = typeof payload.code === "number" ? payload.code : undefined;
@@ -107,7 +108,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
         : undefined;
 
     if (!taskId) {
-      console.error("🔴 [LYRICS-CALLBACK] Missing taskId in callback", payload);
+      logger.error("Missing taskId in callback", { function: 'lyrics-callback', payload });
       return new Response(JSON.stringify({ status: "ignored" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -123,7 +124,8 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       .maybeSingle();
 
     if (jobError) {
-      console.error("🔴 [LYRICS-CALLBACK] Failed to load job", {
+      logger.error("Failed to load lyrics job", {
+        function: 'lyrics-callback',
         taskId,
         error: jobError,
       });
@@ -134,7 +136,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     }
 
     if (!job) {
-      console.warn("⚠️ [LYRICS-CALLBACK] No job found for task", { taskId });
+      logger.warn("No lyrics job found for task", { function: 'lyrics-callback', taskId });
       return new Response(JSON.stringify({ status: "ignored" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -191,7 +193,8 @@ export const mainHandler = async (req: Request): Promise<Response> => {
           .upsert(upsertPayload, { onConflict: "job_id,variant_index" });
 
         if (upsertError) {
-          console.error("🔴 [LYRICS-CALLBACK] Failed to upsert variants", {
+          logger.error("Failed to upsert lyrics variants", {
+            function: 'lyrics-callback',
             jobId: job.id,
             error: upsertError,
           });
@@ -213,7 +216,8 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       .eq("id", job.id);
 
     if (updateError) {
-      console.error("🔴 [LYRICS-CALLBACK] Failed to update job", {
+      logger.error("Failed to update lyrics job", {
+        function: 'lyrics-callback',
         jobId: job.id,
         error: updateError,
       });
@@ -241,18 +245,23 @@ export const mainHandler = async (req: Request): Promise<Response> => {
           .select('id');
 
         if (saveError) {
-          console.error('⚠️ [LYRICS-CALLBACK] Failed to auto-save lyrics to library', {
+          logger.error('Failed to auto-save lyrics to library', {
+            function: 'lyrics-callback',
             jobId: job.id,
             error: saveError,
           });
         } else {
-          console.log('✅ [LYRICS-CALLBACK] Auto-saved lyrics to library', {
+          logger.info('Auto-saved lyrics to library', {
+            function: 'lyrics-callback',
             jobId: job.id,
             saved_count: savedLyrics?.length || 0,
           });
         }
       } catch (saveError) {
-        console.error('⚠️ [LYRICS-CALLBACK] Error auto-saving lyrics', saveError);
+        logger.error('Error auto-saving lyrics', {
+          function: 'lyrics-callback',
+          error: saveError,
+        });
       }
     }
 

@@ -261,7 +261,7 @@ export const getReplicateBalance = async () => {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('Replicate API error:', response.status, errorText);
+    logger.error('Replicate API error', { status: response.status, errorText });
     return { provider: 'replicate', balance: 0, error: `Replicate API error: ${response.status}` };
   }
 
