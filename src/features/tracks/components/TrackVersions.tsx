@@ -204,7 +204,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
 
       {isExpanded && (
         <div className="space-y-2 animate-fade-in">
-          {versions.map((version) => {
+          {additionalVersions.map((version) => {
             // Сравниваем с реальным ID версии
             const isCurrentVersion = currentTrack?.id === version.id;
             const isVersionPlaying = isCurrentVersion && isPlaying;
@@ -241,9 +241,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                         <div className="min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-medium text-sm">
-                              {version.is_primary_variant 
-                                ? 'Оригинал' 
-                                : `Вариант ${version.variant_index}`}
+                              {`Вариант ${version.variant_index}`}
                             </span>
                             {version.is_preferred_variant && (
                               <Badge variant="default" className="gap-1 text-xs">
@@ -259,7 +257,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                       </div>
 
                       <div className="flex gap-1 sm:ml-auto">
-                        {!version.is_preferred_variant && !version.is_primary_variant && (
+                        {!version.is_preferred_variant && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -273,7 +271,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                           </Button>
                         )}
 
-                        {additionalCount > 1 && !version.is_primary_variant && (
+                        {additionalCount > 1 && (
                           <Button
                             size="sm"
                             variant="ghost"
