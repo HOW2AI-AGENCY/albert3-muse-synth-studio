@@ -25,7 +25,7 @@ export default tseslint.config(
       // Нейминг: camelCase для переменных/функций, PascalCase для типов/компонентов
       "@typescript-eslint/naming-convention": [
         "error",
-        { selector: "variableLike", format: ["camelCase", "UPPER_CASE"], leadingUnderscore: "allow" },
+        { selector: "variableLike", format: ["camelCase", "UPPER_CASE", "PascalCase"], leadingUnderscore: "allow" },
         { selector: "function", format: ["camelCase"], leadingUnderscore: "allow" },
         { selector: "typeLike", format: ["PascalCase"] }
       ],

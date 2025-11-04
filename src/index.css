@@ -104,6 +104,17 @@
 }
 
 @layer utilities {
+  /* Workspace content margin synced with sidebar width */
+  @media (min-width: 1024px) {
+    .workspace-content {
+      margin-left: var(--sidebar-width-collapsed);
+      transition: margin-left var(--duration-normal) var(--ease-out);
+    }
+    .workspace-content--expanded {
+      margin-left: var(--sidebar-width-expanded);
+    }
+  }
+
   /* P0 FIX: Mobile input optimization - prevents iOS zoom on input fields */
   .mobile-input {
     font-size: max(16px, 1rem) !important;
