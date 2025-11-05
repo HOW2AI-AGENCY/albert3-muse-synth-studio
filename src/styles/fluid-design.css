@@ -1,0 +1,270 @@
+/* Fluid Design System Variables */
+:root {
+  /* Fluid Typography - Mobile First Approach */
+  --fluid-min-width: 320px;
+  --fluid-max-width: 1920px;
+  --fluid-min-scale: 1;
+  --fluid-max-scale: 1.2;
+  
+  /* Fluid Font Sizes using clamp() */
+  --fluid-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+  --fluid-sm: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);
+  --fluid-base: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
+  --fluid-lg: clamp(1.125rem, 1rem + 0.625vw, 1.5rem);
+  --fluid-xl: clamp(1.25rem, 1.1rem + 0.75vw, 2rem);
+  --fluid-2xl: clamp(1.5rem, 1.2rem + 1.5vw, 3rem);
+  --fluid-3xl: clamp(1.875rem, 1.4rem + 2.375vw, 4rem);
+  --fluid-4xl: clamp(2.25rem, 1.6rem + 3.25vw, 5rem);
+  --fluid-display: clamp(2.5rem, 1.8rem + 3.5vw, 6rem);
+  
+  /* Fluid Spacing */
+  --fluid-space-2xs: clamp(0.25rem, 0.2rem + 0.25vw, 0.375rem);
+  --fluid-space-xs: clamp(0.5rem, 0.4rem + 0.5vw, 0.75rem);
+  --fluid-space-sm: clamp(0.75rem, 0.6rem + 0.75vw, 1.125rem);
+  --fluid-space-md: clamp(1rem, 0.8rem + 1vw, 1.5rem);
+  --fluid-space-lg: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);
+  --fluid-space-xl: clamp(2rem, 1.6rem + 2vw, 3rem);
+  --fluid-space-2xl: clamp(3rem, 2.4rem + 3vw, 4.5rem);
+  --fluid-space-3xl: clamp(4rem, 3.2rem + 4vw, 6rem);
+  
+  /* Container Fluid Widths */
+  --fluid-container-xs: clamp(16rem, 12rem + 20vw, 20rem);
+  --fluid-container-sm: clamp(20rem, 16rem + 20vw, 24rem);
+  --fluid-container-md: clamp(24rem, 20rem + 20vw, 28rem);
+  --fluid-container-lg: clamp(28rem, 24rem + 20vw, 32rem);
+  --fluid-container-xl: clamp(32rem, 28rem + 20vw, 36rem);
+  --fluid-container-2xl: clamp(36rem, 32rem + 20vw, 42rem);
+  --fluid-container-3xl: clamp(42rem, 36rem + 30vw, 48rem);
+  --fluid-container-4xl: clamp(48rem, 40rem + 40vw, 64rem);
+  
+  /* Touch Target Sizes (Accessibility) */
+  --touch-target-min: 44px;
+  --touch-target-comfortable: 48px;
+  --touch-target-large: 56px;
+  
+  /* Safe Area Insets for Mobile Devices */
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  
+  /* Mobile Optimized Animations */
+  --mobile-duration-fast: 150ms;
+  --mobile-duration-normal: 250ms;
+  --mobile-duration-slow: 400ms;
+  
+  /* Haptic Feedback Simulation */
+  --haptic-light: 0.1s;
+  --haptic-medium: 0.2s;
+  --haptic-heavy: 0.3s;
+}
+
+/* Mobile-First Responsive Breakpoints */
+@custom-media --mobile (width < 768px);
+@custom-media --tablet (width >= 768px) and (width < 1024px);
+@custom-media --desktop (width >= 1024px);
+@custom-media --large-desktop (width >= 1440px);
+
+/* Fluid Typography Classes */
+.fluid-text-xs { font-size: var(--fluid-xs); }
+.fluid-text-sm { font-size: var(--fluid-sm); }
+.fluid-text-base { font-size: var(--fluid-base); }
+.fluid-text-lg { font-size: var(--fluid-lg); }
+.fluid-text-xl { font-size: var(--fluid-xl); }
+.fluid-text-2xl { font-size: var(--fluid-2xl); }
+.fluid-text-3xl { font-size: var(--fluid-3xl); }
+.fluid-text-4xl { font-size: var(--fluid-4xl); }
+.fluid-text-display { font-size: var(--fluid-display); }
+
+/* Fluid Spacing Classes */
+.fluid-space-2xs { padding: var(--fluid-space-2xs); }
+.fluid-space-xs { padding: var(--fluid-space-xs); }
+.fluid-space-sm { padding: var(--fluid-space-sm); }
+.fluid-space-md { padding: var(--fluid-space-md); }
+.fluid-space-lg { padding: var(--fluid-space-lg); }
+.fluid-space-xl { padding: var(--fluid-space-xl); }
+.fluid-space-2xl { padding: var(--fluid-space-2xl); }
+.fluid-space-3xl { padding: var(--fluid-space-3xl); }
+
+/* Touch Target Optimizations */
+.touch-target {
+  min-height: var(--touch-target-min);
+  min-width: var(--touch-target-min);
+  padding: var(--fluid-space-xs);
+}
+
+.touch-target-comfortable {
+  min-height: var(--touch-target-comfortable);
+  min-width: var(--touch-target-comfortable);
+  padding: var(--fluid-space-sm);
+}
+
+.touch-target-large {
+  min-height: var(--touch-target-large);
+  min-width: var(--touch-target-large);
+  padding: var(--fluid-space-md);
+}
+
+/* Mobile-Optimized Animations */
+@media (max-width: 767px) {
+  .animate-mobile-optimized {
+    animation-duration: var(--mobile-duration-normal);
+    transition-duration: var(--mobile-duration-normal);
+  }
+  
+  .reduce-motion * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Safe Area Insets Support */
+.safe-area-top {
+  padding-top: var(--safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: var(--safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: var(--safe-area-inset-right);
+}
+
+.safe-area-inset {
+  padding: 
+    var(--safe-area-inset-top)
+    var(--safe-area-inset-right)
+    var(--safe-area-inset-bottom)
+    var(--safe-area-inset-left);
+}
+
+/* Fluid Container Classes */
+.fluid-container-xs { max-width: var(--fluid-container-xs); }
+.fluid-container-sm { max-width: var(--fluid-container-sm); }
+.fluid-container-md { max-width: var(--fluid-container-md); }
+.fluid-container-lg { max-width: var(--fluid-container-lg); }
+.fluid-container-xl { max-width: var(--fluid-container-xl); }
+.fluid-container-2xl { max-width: var(--fluid-container-2xl); }
+.fluid-container-3xl { max-width: var(--fluid-container-3xl); }
+.fluid-container-4xl { max-width: var(--fluid-container-4xl); }
+
+/* Responsive Grid System */
+.fluid-grid {
+  display: grid;
+  gap: var(--fluid-space-md);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+}
+
+.fluid-grid-compact {
+  display: grid;
+  gap: var(--fluid-space-sm);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+}
+
+.fluid-grid-dense {
+  display: grid;
+  gap: var(--fluid-space-xs);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+}
+
+/* Responsive Flex System */
+.fluid-flex {
+  display: flex;
+  gap: var(--fluid-space-md);
+  flex-wrap: wrap;
+}
+
+.fluid-flex-compact {
+  display: flex;
+  gap: var(--fluid-space-sm);
+  flex-wrap: wrap;
+}
+
+.fluid-flex-dense {
+  display: flex;
+  gap: var(--fluid-space-xs);
+  flex-wrap: wrap;
+}
+
+/* Mobile-First Responsive Utilities */
+@media (max-width: 767px) {
+  .mobile-fluid {
+    font-size: var(--fluid-base);
+    padding: var(--fluid-space-md);
+  }
+  
+  .mobile-compact {
+    font-size: var(--fluid-sm);
+    padding: var(--fluid-space-sm);
+  }
+  
+  .mobile-touch {
+    min-height: var(--touch-target-comfortable);
+    min-width: var(--touch-target-comfortable);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .tablet-fluid {
+    font-size: var(--fluid-lg);
+    padding: var(--fluid-space-lg);
+  }
+}
+
+@media (min-width: 1024px) {
+  .desktop-fluid {
+    font-size: var(--fluid-xl);
+    padding: var(--fluid-space-xl);
+  }
+}
+
+/* Performance Optimizations */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+.will-change-contents {
+  will-change: contents;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  :root {
+    --border: 2px solid;
+    --shadow: 0 0 0 1px currentColor;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .print-fluid {
+    font-size: 12pt;
+    line-height: 1.4;
+  }
+}

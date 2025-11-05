@@ -42,6 +42,7 @@ import { primeTrackVersionsCache } from "@/features/tracks/hooks/useTrackVersion
 import type { AudioPlayerTrack } from "@/types/track";
 import { useResponsiveGrid } from '@/hooks/useResponsiveGrid';
 import { VirtualizedTrackGrid } from '@/components/tracks/VirtualizedTrackGrid';
+import { VirtualizedTrackList } from '@/components/tracks/VirtualizedTrackList';
 import { useAuth } from "@/contexts/AuthContext";
 
 type ViewMode = 'grid' | 'list' | 'optimized';
@@ -710,25 +711,17 @@ const Library: React.FC = () => {
           )}
           
           {viewMode === 'list' && (
-            <div className="space-y-2">
-              {filteredAndSortedTracks.map((track) => (
-                <div key={track.id} className="relative" aria-busy={loadingTrackId === track.id}>
-                  <TrackListItem
-                    track={convertToDisplayTrack(track) as any}
-                    onShare={() => handleShare(track.id)}
-                    onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
-                    onSeparateStems={() => handleSeparateStems(track.id)}
-                    onRetry={handleRetry}
-                    onDelete={handleDelete}
-                  />
-                  {loadingTrackId === track.id && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-xl bg-background/80 backdrop-blur-sm">
-                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                      <span className="text-xs font-medium text-muted-foreground">Загрузка версий…</span>
-                    </div>
-                  )}
-                </div>
-              ))}
+            <div className="w-full" style={{ height: 'calc(100vh - 280px)' }}>
+              <VirtualizedTrackList
+                tracks={filteredAndSortedTracks}
+                height={600}
+                onTrackPlay={handleTrackPlay}
+                onShare={handleShare}
+                onSeparateStems={handleSeparateStems}
+                onRetry={handleRetry}
+                onDelete={handleDelete}
+                loadingTrackId={loadingTrackId}
+              />
             </div>
           )}
           
