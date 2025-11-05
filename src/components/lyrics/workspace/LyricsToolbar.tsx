@@ -161,8 +161,8 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
   return (
     <>
       <div className={cn(
-        "flex items-center gap-1 p-1.5 border-b bg-muted/30 w-full min-w-0 overflow-x-auto whitespace-nowrap scrollbar-minimal",
-        compact && "p-1"
+        "flex items-center gap-0.5 sm:gap-1 p-1 sm:p-1.5 border-b bg-muted/30 w-full min-w-0 overflow-x-auto whitespace-nowrap scrollbar-minimal", /* Mobile optimized: reduced gap and padding */
+        compact && "p-0.5"
       )}>
         {/* View Mode Toggle */}
         {mode !== 'view' && (
@@ -173,9 +173,9 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
                   variant={viewMode === 'visual' ? 'secondary' : 'ghost'}
                   size="sm"
                   onClick={() => onViewModeChange('visual')}
-                  className="h-7 w-7 p-0"
+                  className="h-6 w-6 sm:h-7 sm:w-7 p-0" /* Mobile: 24px, Desktop: 28px */
                 >
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Визуальный режим</TooltipContent>
@@ -187,15 +187,15 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
                   variant={viewMode === 'raw' ? 'secondary' : 'ghost'}
                   size="sm"
                   onClick={() => onViewModeChange('raw')}
-                  className="h-7 w-7 p-0"
+                  className="h-6 w-6 sm:h-7 sm:w-7 p-0" /* Mobile: 24px, Desktop: 28px */
                 >
-                  <Edit2 className="h-4 w-4" />
+                  <Edit2 className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Исходный код</TooltipContent>
             </Tooltip>
 
-            <Separator orientation="vertical" className="h-5" />
+            <Separator orientation="vertical" className="h-4 sm:h-5" />
           </>
         )}
 
@@ -208,9 +208,9 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={onAddSection}
-                  className="h-7 w-7 p-0"
+                  className="h-6 w-6 sm:h-7 sm:w-7 p-0" /* Mobile optimized */
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Добавить секцию (Ctrl+Enter)</TooltipContent>
@@ -224,10 +224,10 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowAIDialog(true)}
-                    className="h-7 w-7 p-0"
+                    className="h-6 w-6 sm:h-7 sm:w-7 p-0" /* Mobile optimized */
                     disabled={isGenerating}
                   >
-                    <Sparkles className="h-4 w-4" />
+                    <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Сгенерировать текст с AI</TooltipContent>
@@ -242,10 +242,10 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
                     variant="ghost"
                     size="sm"
                     onClick={handleSave}
-                    className="h-7 w-7 p-0"
+                    className="h-6 w-6 sm:h-7 sm:w-7 p-0" /* Mobile optimized */
                     disabled={isSaving}
                   >
-                    <Save className="h-4 w-4" />
+                    <Save className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Сохранить лирику</TooltipContent>
@@ -259,9 +259,9 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
                     variant="ghost"
                     size="sm"
                     onClick={onGenerate}
-                    className="h-7 w-7 p-0"
+                    className="h-6 w-6 sm:h-7 sm:w-7 p-0" /* Mobile optimized */
                   >
-                    <Wand2 className="h-4 w-4" />
+                    <Wand2 className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>AI генерация</TooltipContent>
@@ -272,18 +272,18 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
 
         <div className="flex-1" />
 
-        {/* Stats */}
-        <div className="flex items-center gap-1.5">
-          <Badge 
-            variant="secondary" 
-            className="h-6 px-1.5 text-[10px] font-mono"
+        {/* Stats - Mobile Optimized */}
+        <div className="flex items-center gap-1 sm:gap-1.5">
+          <Badge
+            variant="secondary"
+            className="h-5 sm:h-6 px-1 sm:px-1.5 text-[9px] sm:text-[10px] font-mono"
           >
-            <FileText className="h-3 w-3 mr-1" />
+            <FileText className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
             {stats.sections}
           </Badge>
 
           {!compact && (
-            <span className="text-[10px] text-muted-foreground px-1">
+            <span className="hidden sm:inline text-[10px] text-muted-foreground px-1">
               {stats.lines}L • {stats.words}W
             </span>
           )}
@@ -291,12 +291,12 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
           {/* Lint Issues */}
           {(errorCount > 0 || warningCount > 0) && (
             <>
-              <Separator orientation="vertical" className="h-4" />
+              <Separator orientation="vertical" className="h-3 sm:h-4" />
               <Badge
                 variant={errorCount > 0 ? 'destructive' : 'secondary'}
-                className="h-6 px-1.5 text-[10px]"
+                className="h-5 sm:h-6 px-1 sm:px-1.5 text-[9px] sm:text-[10px]"
               >
-                <AlertCircle className="h-3 w-3 mr-1" />
+                <AlertCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
                 {errorCount + warningCount}
               </Badge>
             </>
