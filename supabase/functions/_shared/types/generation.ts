@@ -29,7 +29,9 @@ export interface SunoGenerationParams extends BaseGenerationParams {
   audioWeight?: number;
   referenceAudioUrl?: string;
   referenceTrackId?: string;
-  personaId?: string; // ✅ НОВОЕ: ID Suno Persona
+  personaId?: string; // ✅ ID Suno Persona
+  projectId?: string; // ✅ Active project ID for track
+  inspoProjectId?: string; // ✅ Inspiration project ID (source)
 }
 
 export interface MurekaGenerationParams extends BaseGenerationParams {

@@ -368,15 +368,45 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
 
   const handleReferenceTrackSelect = useCallback(
     (track: any) => {
-      if (track?.style_tags?.length > 0) {
-        const existingTags = state.params.tags || '';
-        const newTags = existingTags
-          ? `${existingTags}, ${track.style_tags.join(', ')}`
-          : track.style_tags.join(', ');
-        state.setParam('tags', newTags);
+      // ✅ Auto-fill form with reference track data
+      if (track?.title) {
+        state.setParam('title', `${track.title} (Ref)`);
       }
+
+      if (track?.prompt) {
+        state.setParam('prompt', track.prompt);
+        state.setDebouncedPrompt(track.prompt);
+      }
+
+      if (track?.lyrics) {
+        state.setParam('lyrics', track.lyrics);
+        state.setDebouncedLyrics(track.lyrics);
+      }
+
+      if (track?.style_tags?.length > 0) {
+        state.setParam('tags', track.style_tags.join(', '));
+      }
+
+      // Store reference track ID for tracking
+      if (track?.id) {
+        state.setParam('referenceTrackId', track.id);
+      }
+
+      logger.info('✅ Reference track data auto-filled', 'MusicGeneratorContainer', {
+        trackId: track.id,
+        hasTitle: !!track.title,
+        hasPrompt: !!track.prompt,
+        hasLyrics: !!track.lyrics,
+        tagsCount: track.style_tags?.length || 0,
+      });
+
+      toast({
+        title: '✅ Данные трека применены',
+        description: `Название, промпт${track.lyrics ? ', лирика' : ''} и теги заполнены автоматически`,
+        duration: 3000,
+      });
     },
-    [state]
+    [state, toast]
   );
 
   const handleLyricsGenerated = useCallback(
