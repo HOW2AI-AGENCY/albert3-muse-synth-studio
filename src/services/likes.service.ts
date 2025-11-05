@@ -16,7 +16,9 @@ export class LikesService {
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (checkError) throw checkError;
+      if (checkError) {
+        throw new Error(`Failed to check version like status: ${checkError.message}`);
+      }
 
       if (existing) {
         // Unlike - delete the record
@@ -25,7 +27,9 @@ export class LikesService {
           .delete()
           .eq('id', existing.id);
 
-        if (deleteError) throw deleteError;
+        if (deleteError) {
+          throw new Error(`Failed to unlike version: ${deleteError.message}`);
+        }
         return false;
       } else {
         // Like - insert new record
@@ -36,7 +40,9 @@ export class LikesService {
             user_id: userId,
           });
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          throw new Error(`Failed to like version: ${insertError.message}`);
+        }
         return true;
       }
     } catch (error) {
@@ -57,7 +63,9 @@ export class LikesService {
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(`Failed to check version like status: ${error.message}`);
+      }
       return !!data;
     } catch (error) {
       logger.error('Error checking version like status', error instanceof Error ? error : new Error(String(error)), 'LikesService', { versionId, userId });
@@ -76,7 +84,9 @@ export class LikesService {
         .eq('id', versionId)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(`Failed to fetch version like count: ${error.message}`);
+      }
       return data?.like_count || 0;
     } catch (error) {
       logger.error('Error fetching version like count', error instanceof Error ? error : new Error(String(error)), 'LikesService', { versionId });
@@ -98,7 +108,9 @@ export class LikesService {
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (checkError) throw checkError;
+      if (checkError) {
+        throw new Error(`Failed to check track like status: ${checkError.message}`);
+      }
 
       if (existing) {
         // Unlike - delete the record
@@ -107,7 +119,9 @@ export class LikesService {
           .delete()
           .eq('id', existing.id);
 
-        if (deleteError) throw deleteError;
+        if (deleteError) {
+          throw new Error(`Failed to unlike track: ${deleteError.message}`);
+        }
         return false;
       } else {
         // Like - insert new record
@@ -118,7 +132,9 @@ export class LikesService {
             user_id: userId,
           });
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          throw new Error(`Failed to like track: ${insertError.message}`);
+        }
         return true;
       }
     } catch (error) {
@@ -139,7 +155,9 @@ export class LikesService {
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(`Failed to check track like status: ${error.message}`);
+      }
       return !!data;
     } catch (error) {
       logger.error('Error checking like status', error instanceof Error ? error : new Error(String(error)), 'LikesService', { trackId, userId });
@@ -173,7 +191,9 @@ export class LikesService {
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(`Failed to fetch liked tracks: ${error.message}`);
+      }
       
       // Extract tracks from the joined data
       const tracks = data?.map(item => item.tracks).filter(Boolean) || [];
@@ -195,7 +215,9 @@ export class LikesService {
         .eq('id', trackId)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        throw new Error(`Failed to fetch track like count: ${error.message}`);
+      }
       return data?.like_count || 0;
     } catch (error) {
       logger.error('Error fetching like count', error instanceof Error ? error : new Error(String(error)), 'LikesService', { trackId });
