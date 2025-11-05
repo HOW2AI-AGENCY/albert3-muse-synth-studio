@@ -18,6 +18,7 @@ export const AudioController = () => {
   const playLockRef = useRef(false);
   const lastLoadedTrackIdRef = useRef<string | null>(null);
   const retryTimeoutIdRef = useRef<number | null>(null);
+  const mediaSessionSetRef = useRef(false);
   
   const updateCurrentTime = useAudioPlayerStore((state) => state.updateCurrentTime);
   const updateDuration = useAudioPlayerStore((state) => state.updateDuration);
@@ -25,6 +26,8 @@ export const AudioController = () => {
   const pause = useAudioPlayerStore((state) => state.pause);
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
   const playNext = useAudioPlayerStore((state) => state.playNext);
+  const playPrevious = useAudioPlayerStore((state) => state.playPrevious);
+  const seekTo = useAudioPlayerStore((state) => state.seekTo);
   const proxyTriedRef = useRef<Record<string, boolean>>({});  // ✅ FIX: Track per audio URL
 
   // Безопасный запуск воспроизведения с защитой от параллельных вызовов
@@ -53,6 +56,74 @@ export const AudioController = () => {
       playLockRef.current = false;
     }
   }, [audioRef, currentTrack?.id, currentTrack?.audio_url, pause]);
+
+  // ============= MEDIASESSION API =============
+  useEffect(() => {
+    if (!currentTrack || !('mediaSession' in navigator)) return;
+
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: currentTrack.title,
+        artist: currentTrack.style_tags?.[0] || 'AI Generated',
+        album: 'Albert3 Muse Synth Studio',
+        artwork: currentTrack.cover_url
+          ? [
+              { src: currentTrack.cover_url, sizes: '512x512', type: 'image/jpeg' },
+              { src: currentTrack.cover_url, sizes: '256x256', type: 'image/jpeg' },
+              { src: currentTrack.cover_url, sizes: '128x128', type: 'image/jpeg' },
+            ]
+          : [],
+      });
+
+      // Set action handlers only once
+      if (!mediaSessionSetRef.current) {
+        navigator.mediaSession.setActionHandler('play', () => {
+          logger.info('MediaSession: play action', 'AudioController');
+          playTrack(currentTrack);
+        });
+
+        navigator.mediaSession.setActionHandler('pause', () => {
+          logger.info('MediaSession: pause action', 'AudioController');
+          pause();
+        });
+
+        navigator.mediaSession.setActionHandler('previoustrack', () => {
+          logger.info('MediaSession: previous track action', 'AudioController');
+          playPrevious();
+        });
+
+        navigator.mediaSession.setActionHandler('nexttrack', () => {
+          logger.info('MediaSession: next track action', 'AudioController');
+          playNext();
+        });
+
+        navigator.mediaSession.setActionHandler('seekto', (details) => {
+          if (details.seekTime !== undefined) {
+            logger.info('MediaSession: seek action', 'AudioController', { seekTime: details.seekTime });
+            seekTo(details.seekTime);
+          }
+        });
+
+        mediaSessionSetRef.current = true;
+      }
+
+      // Update playback state
+      navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+
+      logger.info('MediaSession metadata updated', 'AudioController', {
+        title: currentTrack.title,
+        isPlaying,
+      });
+    } catch (error) {
+      logger.error('Failed to set MediaSession', error as Error, 'AudioController');
+    }
+
+    return () => {
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = null;
+      }
+    };
+  }, [currentTrack, isPlaying, playTrack, pause, playNext, seekTo]);
 
   // ============= УПРАВЛЕНИЕ ВОСПРОИЗВЕДЕНИЕМ =============
   useEffect(() => {

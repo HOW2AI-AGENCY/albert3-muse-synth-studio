@@ -1,5 +1,5 @@
-import { useState, Suspense, lazy } from "react";
-import { motion } from "framer-motion";
+import { useState, Suspense, lazy, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { MusicGeneratorV2 } from "@/components/MusicGeneratorV2";
 import { TracksList } from "@/components/TracksList";
 const DetailPanel = lazy(() => import("@/features/tracks/ui/DetailPanel").then(m => ({ default: m.DetailPanel })));
@@ -7,7 +7,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Plus } from "@/utils/iconImports";
-import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import { Portal } from "@/components/ui/Portal";
@@ -26,6 +26,7 @@ import { useMusicProjects } from "@/hooks/useMusicProjects";
 import { useTrackOperations } from "@/hooks/tracks/useTrackOperations";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUIStateStore } from "@/stores/uiStateStore";
 
 const Generate = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
@@ -61,6 +62,11 @@ const Generate = () => {
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1023px)");
 
+  // Глобальное состояние UI для управления видимостью FAB
+  const registerDialog = useUIStateStore((state) => state.registerDialog);
+  const unregisterDialog = useUIStateStore((state) => state.unregisterDialog);
+  const shouldHideFAB = useUIStateStore((state) => state.shouldHideFAB());
+
   useTrackSync(userId || undefined, {
     onTrackCompleted: refreshTracks,
     onTrackFailed: refreshTracks,
@@ -72,6 +78,61 @@ const Generate = () => {
     checkIntervalMs: 60000,
     pendingThresholdMs: 120000,
   });
+
+  // Регистрируем открытые диалоги для управления FAB
+  useEffect(() => {
+    if (showGenerator) {
+      registerDialog('generator');
+    } else {
+      unregisterDialog('generator');
+    }
+    return () => unregisterDialog('generator');
+  }, [showGenerator, registerDialog, unregisterDialog]);
+
+  useEffect(() => {
+    if (selectedTrack) {
+      registerDialog('trackDetail');
+    } else {
+      unregisterDialog('trackDetail');
+    }
+    return () => unregisterDialog('trackDetail');
+  }, [selectedTrack, registerDialog, unregisterDialog]);
+
+  useEffect(() => {
+    if (separateStemsOpen) {
+      registerDialog('separateStems');
+    } else {
+      unregisterDialog('separateStems');
+    }
+    return () => unregisterDialog('separateStems');
+  }, [separateStemsOpen, registerDialog, unregisterDialog]);
+
+  useEffect(() => {
+    if (extendOpen) {
+      registerDialog('extend');
+    } else {
+      unregisterDialog('extend');
+    }
+    return () => unregisterDialog('extend');
+  }, [extendOpen, registerDialog, unregisterDialog]);
+
+  useEffect(() => {
+    if (coverOpen) {
+      registerDialog('cover');
+    } else {
+      unregisterDialog('cover');
+    }
+    return () => unregisterDialog('cover');
+  }, [coverOpen, registerDialog, unregisterDialog]);
+
+  useEffect(() => {
+    if (createPersonaOpen) {
+      registerDialog('createPersona');
+    } else {
+      unregisterDialog('createPersona');
+    }
+    return () => unregisterDialog('createPersona');
+  }, [createPersonaOpen, registerDialog, unregisterDialog]);
 
   const handleTrackGenerated = () => {
     if (!isDesktop) {
@@ -378,58 +439,59 @@ const Generate = () => {
         onSuccess={refreshTracks}
       />
 
-      <Portal>
-        <Drawer open={showGenerator} onOpenChange={setShowGenerator}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <DrawerTrigger asChild>
+      {/* FAB Button - Скрывается при открытых формах и развернутом плеере */}
+      <AnimatePresence>
+        {!shouldHideFAB && !isDesktop && (
+          <Portal>
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <motion.div
                   initial={{ scale: 0, opacity: 0 }}
-                  animate={{
-                    scale: showGenerator ? 0 : 1,
-                    opacity: showGenerator ? 0 : 1
-                  }}
-                  transition={{ delay: showGenerator ? 0 : 0.2, type: 'spring', stiffness: 260, damping: 20 }} /* Reduced delay from 0.5 to 0.2 for faster response */
-                  whileHover={{ scale: showGenerator ? 0 : 1.1 }}
-                  whileTap={{ scale: showGenerator ? 0 : 0.9 }}
-                  style={{
-                    pointerEvents: showGenerator ? 'none' : 'auto',
-                    display: showGenerator ? 'none' : 'block' /* FIXED: Complete hiding from DOM when drawer open */
-                  }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
                 >
                   <Button
                     variant="fab"
                     size="fab"
+                    onClick={() => setShowGenerator(true)}
                     className="fixed right-6"
                     style={{
-                      bottom: 'calc(var(--bottom-tab-bar-height) + 1rem)',
+                      bottom: 'max(calc(var(--mini-player-height, 0px) + var(--bottom-tab-bar-height, 64px) + 1rem), 5rem)',
                       position: 'fixed',
-                      zIndex: 'var(--z-fab)'
+                      zIndex: 70,
+                      willChange: 'transform'
                     }}
                     aria-label="Создать музыку"
                   >
                     <Plus className="h-6 w-6" />
                   </Button>
                 </motion.div>
-              </DrawerTrigger>
-            </TooltipTrigger>
-            <TooltipContent side="left">
-              <p className="text-sm font-medium">Создать музыку</p>
-            </TooltipContent>
-          </Tooltip>
-          <DrawerContent className="h-[90vh] mt-20">
-            <VisuallyHidden>
-              <DrawerTitle>Создать музыку</DrawerTitle>
-            </VisuallyHidden>
-            <div className="w-full max-w-md mx-auto h-8 flex items-center justify-center">
-              <div className="w-12 h-1 bg-muted-foreground/20 rounded-full" />
-            </div>
-            <div className="p-4 h-full overflow-y-auto">
-              <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
-            </div>
-          </DrawerContent>
-        </Drawer>
-      </Portal>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                <p className="text-sm font-medium">Создать музыку</p>
+              </TooltipContent>
+            </Tooltip>
+          </Portal>
+        )}
+      </AnimatePresence>
+
+      {/* Generator Drawer */}
+      <Drawer open={showGenerator} onOpenChange={setShowGenerator}>
+        <DrawerContent className="h-[90vh] mt-20">
+          <VisuallyHidden>
+            <DrawerTitle>Создать музыку</DrawerTitle>
+          </VisuallyHidden>
+          <div className="w-full max-w-md mx-auto h-8 flex items-center justify-center">
+            <div className="w-12 h-1 bg-muted-foreground/20 rounded-full" />
+          </div>
+          <div className="p-4 h-full overflow-y-auto">
+            <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       <Drawer open={!!selectedTrack} onOpenChange={(open) => !open && handleCloseDetail()}>
         <DrawerContent className="h-[70vh] max-h-[75vh]">

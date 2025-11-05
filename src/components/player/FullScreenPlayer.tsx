@@ -17,7 +17,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { logger } from "@/utils/logger";
-import { LyricsDisplay } from './LyricsDisplay'; // Import LyricsDisplay
+import { TimestampedLyricsDisplay } from './TimestampedLyricsDisplay';
+import { useTimestampedLyrics } from '@/hooks/useTimestampedLyrics';
 
 interface FullScreenPlayerProps {
   onMinimize: () => void;
@@ -38,6 +39,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
   
   const currentTime = useAudioPlayerStore((state) => state.currentTime);
   const duration = useAudioPlayerStore((state) => state.duration);
+  const bufferingProgress = useAudioPlayerStore((state) => state.bufferingProgress);
   const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
   const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
   
@@ -47,6 +49,13 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
   const playNext = useAudioPlayerStore((state) => state.playNext);
   const playPrevious = useAudioPlayerStore((state) => state.playPrevious);
   const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
+
+  // Получаем timestamped lyrics
+  const { data: lyricsData } = useTimestampedLyrics({
+    taskId: currentTrack?.suno_task_id,
+    audioId: currentTrack?.id,
+    enabled: !!(currentTrack?.suno_task_id && currentTrack?.id),
+  });
 
   const { vibrate } = useHapticFeedback();
   const { toast } = useToast();
@@ -143,10 +152,11 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
   return (
     <div
       ref={swipeRef as React.RefObject<HTMLDivElement>}
-      className="fixed inset-0 z-fullscreen-player bg-gradient-to-b from-background via-background/95 to-card/90 backdrop-blur-xl animate-fade-in overflow-y-auto touch-optimized"
-      style={{ 
+      className="fixed inset-0 bg-gradient-to-b from-background via-background/95 to-card/90 backdrop-blur-xl animate-fade-in overflow-y-auto touch-optimized"
+      style={{
         paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: 'env(safe-area-inset-bottom)'
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        zIndex: 'var(--z-fullscreen-player)'
       }}
       role="dialog"
       aria-label="Full Screen Player"
@@ -251,22 +261,39 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
           </p>
         </div>
 
-        {/* Lyrics Display for Mobile */}
-        {currentTrack.suno_task_id && currentTrack.id && (
-          <div className="mb-4 px-4 animate-fade-in">
-            <LyricsDisplay taskId={currentTrack.suno_task_id} audioId={currentTrack.id} />
+        {/* Улучшенный дисплей лирики с синхронизацией */}
+        {lyricsData && lyricsData.alignedWords && lyricsData.alignedWords.length > 0 && (
+          <div className="mb-4 animate-fade-in max-h-64">
+            <TimestampedLyricsDisplay
+              timestampedLyrics={lyricsData.alignedWords}
+              currentTime={currentTime}
+              onSeek={seekTo}
+              coverUrl={currentTrack.cover_url}
+              className="h-64"
+            />
           </div>
         )}
 
         {/* Progress Bar */}
         <div className="mb-2 px-4 animate-slide-up">
-          <Slider
-            value={[currentTime]}
-            max={duration}
-            step={0.1}
-            onValueChange={handleSeek}
-            className="w-full cursor-pointer hover:scale-y-110 transition-transform duration-200"
-          />
+          <div className="relative">
+            {/* Buffering progress indicator */}
+            {bufferingProgress > 0 && bufferingProgress < 100 && (
+              <div
+                className="absolute top-1/2 -translate-y-1/2 left-0 h-1 bg-primary/30 rounded-full transition-all duration-300 pointer-events-none"
+                style={{ width: `${bufferingProgress}%` }}
+              >
+                <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+              </div>
+            )}
+            <Slider
+              value={[currentTime]}
+              max={duration}
+              step={0.1}
+              onValueChange={handleSeek}
+              className="w-full cursor-pointer hover:scale-y-110 transition-transform duration-200"
+            />
+          </div>
           <div className="flex justify-between text-xs text-muted-foreground/80 mt-2 font-medium tabular-nums">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration)}</span>
