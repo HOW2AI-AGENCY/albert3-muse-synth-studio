@@ -3,7 +3,89 @@ import { logger } from "@/utils/logger";
 
 export class LikesService {
   /**
-   * Toggle like status for a track
+   * Toggle like status for a track version
+   * Returns true if version is now liked, false if unliked
+   */
+  static async toggleVersionLike(versionId: string, userId: string): Promise<boolean> {
+    try {
+      // Check if already liked
+      const { data: existing, error: checkError } = await supabase
+        .from('track_version_likes')
+        .select('id')
+        .eq('version_id', versionId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existing) {
+        // Unlike - delete the record
+        const { error: deleteError } = await supabase
+          .from('track_version_likes')
+          .delete()
+          .eq('id', existing.id);
+
+        if (deleteError) throw deleteError;
+        return false;
+      } else {
+        // Like - insert new record
+        const { error: insertError } = await supabase
+          .from('track_version_likes')
+          .insert({
+            version_id: versionId,
+            user_id: userId,
+          });
+
+        if (insertError) throw insertError;
+        return true;
+      }
+    } catch (error) {
+      logger.error('Error toggling version like', error instanceof Error ? error : new Error(String(error)), 'LikesService', { versionId, userId });
+      throw error;
+    }
+  }
+
+  /**
+   * Check if a track version is liked by the user
+   */
+  static async isVersionLiked(versionId: string, userId: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('track_version_likes')
+        .select('id')
+        .eq('version_id', versionId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return !!data;
+    } catch (error) {
+      logger.error('Error checking version like status', error instanceof Error ? error : new Error(String(error)), 'LikesService', { versionId, userId });
+      return false;
+    }
+  }
+
+  /**
+   * Get like count for a track version
+   */
+  static async getVersionLikeCount(versionId: string): Promise<number> {
+    try {
+      const { data, error } = await supabase
+        .from('track_versions')
+        .select('like_count')
+        .eq('id', versionId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data?.like_count || 0;
+    } catch (error) {
+      logger.error('Error fetching version like count', error instanceof Error ? error : new Error(String(error)), 'LikesService', { versionId });
+      return 0;
+    }
+  }
+
+  /**
+   * Toggle like status for a track (legacy - for backward compatibility)
    * Returns true if track is now liked, false if unliked
    */
   static async toggleLike(trackId: string, userId: string): Promise<boolean> {

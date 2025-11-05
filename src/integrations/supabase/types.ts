@@ -1391,6 +1391,35 @@ export type Database = {
           },
         ]
       }
+      track_version_likes: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+          version_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+          version_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "track_version_likes_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "track_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       track_versions: {
         Row: {
           audio_url: string | null
@@ -1400,6 +1429,7 @@ export type Database = {
           id: string
           is_preferred_variant: boolean | null
           is_primary_variant: boolean | null
+          like_count: number
           lyrics: string | null
           metadata: Json | null
           parent_track_id: string
@@ -1415,6 +1445,7 @@ export type Database = {
           id?: string
           is_preferred_variant?: boolean | null
           is_primary_variant?: boolean | null
+          like_count?: number
           lyrics?: string | null
           metadata?: Json | null
           parent_track_id: string
@@ -1430,6 +1461,7 @@ export type Database = {
           id?: string
           is_preferred_variant?: boolean | null
           is_primary_variant?: boolean | null
+          like_count?: number
           lyrics?: string | null
           metadata?: Json | null
           parent_track_id?: string
@@ -1842,6 +1874,10 @@ export type Database = {
       }
       increment_play_count: { Args: { track_id: string }; Returns: undefined }
       increment_view_count: { Args: { track_id: string }; Returns: undefined }
+      is_version_liked: {
+        Args: { p_user_id: string; p_version_id: string }
+        Returns: boolean
+      }
       mark_track_archived: {
         Args: {
           _storage_audio_url: string

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useCurrentTrack, useIsPlaying, useAudioPlayerStore } from '@/stores/audioPlayerStore';
-import { useTrackLike, useTrackVersions } from '@/features/tracks/hooks';
+import { useTrackVersions } from '@/features/tracks/hooks';
+import { useTrackVersionLike } from '@/features/tracks/hooks/useTrackVersionLike';
 import { useToast } from '@/hooks/use-toast';
 import type { Track } from '@/types/domain/track.types';
 
@@ -10,7 +11,6 @@ export const useTrackCardState = (track: Track) => {
   const isPlaying = useIsPlaying();
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
 
-  const { isLiked, toggleLike } = useTrackLike(track.id, track.like_count || 0);
   const { versions, mainVersion, versionCount, masterVersion } = useTrackVersions(track.id, true);
   
   const [isHovered, setIsHovered] = useState(false);
@@ -121,6 +121,12 @@ export const useTrackCardState = (track: Track) => {
     );
   }, [allVersions, selectedVersionIndex, mainVersion, track]);
 
+  // ✅ FIX: Лайки применяются к активной версии, а не к треку целиком
+  const { isLiked, likeCount, toggleLike } = useTrackVersionLike(
+    displayedVersion?.id || null, 
+    0 // Initial like count (will be loaded from DB)
+  );
+
   // ✅ FIX: Контекстное меню применяется к displayedVersion
   const operationTargetId = useMemo(() => {
     return displayedVersion.id;
@@ -230,7 +236,8 @@ export const useTrackCardState = (track: Track) => {
     setIsVisible,
     hasStems,
     selectedVersionIndex,
-    isLiked,
+    isLiked, // ✅ Лайк для активной версии
+    likeCount, // ✅ Количество лайков для активной версии
     versionCount: uiVersionCount,
     masterVersion,
     displayedVersion,
@@ -243,7 +250,7 @@ export const useTrackCardState = (track: Track) => {
     // Handlers
     handleVersionChange,
     handlePlayClick,
-    handleLikeClick,
+    handleLikeClick, // ✅ Лайк для активной версии
     handleDownloadClick,
     handleTogglePublic,
   };
