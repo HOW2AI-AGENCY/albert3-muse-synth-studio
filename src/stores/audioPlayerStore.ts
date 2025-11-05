@@ -37,6 +37,7 @@ export interface AudioPlayerTrack {
   versionNumber?: number;
   isMasterVersion?: boolean;
   sourceVersionNumber?: number | null;
+  suno_task_id?: string; // Added for timestamped lyrics
 }
 
 export interface TrackVersion {
