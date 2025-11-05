@@ -2,58 +2,48 @@
  * Track Status Badge Component
  * Visual indicator for track generation status with animations
  * Implements P1-4 from 2025-11-05 audit
+ * Phase 3: Added i18n localization support
  */
 
 import { memo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Clock, FileEdit, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/i18n';
 
 export type TrackStatus = 'pending' | 'draft' | 'processing' | 'completed' | 'failed';
 
 interface StatusConfig {
-  label: string;
   icon: typeof Clock;
   colorClass: string;
   pulse: boolean;
-  description: string;
 }
 
-const STATUS_CONFIG: Record<TrackStatus, StatusConfig> = {
+const STATUS_ICON_CONFIG: Record<TrackStatus, StatusConfig> = {
   pending: {
-    label: 'Ожидание',
     icon: Clock,
     colorClass: 'bg-gray-100 text-gray-700 border-gray-200',
     pulse: false,
-    description: 'Трек создан, ожидает добавления лирики или запуска генерации',
   },
   draft: {
-    label: 'Черновик',
     icon: FileEdit,
     colorClass: 'bg-blue-100 text-blue-700 border-blue-200',
     pulse: false,
-    description: 'Трек содержит лирику и готов к генерации',
   },
   processing: {
-    label: 'Генерация',
     icon: Loader2,
     colorClass: 'bg-amber-100 text-amber-700 border-amber-200',
     pulse: true,
-    description: 'AI провайдер обрабатывает запрос на генерацию музыки',
   },
   completed: {
-    label: 'Готов',
     icon: CheckCircle2,
     colorClass: 'bg-green-100 text-green-700 border-green-200',
     pulse: false,
-    description: 'Генерация успешно завершена, трек готов к прослушиванию',
   },
   failed: {
-    label: 'Ошибка',
     icon: AlertCircle,
     colorClass: 'bg-red-100 text-red-700 border-red-200',
     pulse: false,
-    description: 'Произошла ошибка при генерации трека',
   },
 };
 
@@ -72,8 +62,13 @@ export const TrackStatusBadge = memo<TrackStatusBadgeProps>(({
   showIcon = true,
   showTooltip = true,
 }) => {
-  const config = STATUS_CONFIG[status];
+  const t = useTranslation();
+  const config = STATUS_ICON_CONFIG[status];
   const Icon = config.icon;
+
+  // Get localized label and description
+  const label = t(`status.${status}` as const);
+  const description = t(`statusDescription.${status}` as const);
 
   if (variant === 'icon-only') {
     return (
@@ -84,8 +79,8 @@ export const TrackStatusBadge = memo<TrackStatusBadgeProps>(({
           config.pulse && "animate-pulse",
           className
         )}
-        title={showTooltip ? config.description : undefined}
-        aria-label={`Статус: ${config.label}`}
+        title={showTooltip ? description : undefined}
+        aria-label={`${t('status.pending')}: ${label}`}
       >
         <Icon className={cn(
           "w-3.5 h-3.5",
@@ -105,7 +100,7 @@ export const TrackStatusBadge = memo<TrackStatusBadgeProps>(({
           config.pulse && "animate-pulse",
           className
         )}
-        title={showTooltip ? config.description : undefined}
+        title={showTooltip ? description : undefined}
       >
         <div className="flex items-center gap-1">
           {showIcon && (
@@ -114,7 +109,7 @@ export const TrackStatusBadge = memo<TrackStatusBadgeProps>(({
               config.pulse && "animate-spin"
             )} />
           )}
-          <span>{config.label}</span>
+          <span>{label}</span>
         </div>
       </Badge>
     );
@@ -130,7 +125,7 @@ export const TrackStatusBadge = memo<TrackStatusBadgeProps>(({
         config.pulse && "animate-pulse",
         className
       )}
-      title={showTooltip ? config.description : undefined}
+      title={showTooltip ? description : undefined}
     >
       <div className="flex items-center gap-1.5 sm:gap-2">
         {showIcon && (
@@ -139,7 +134,7 @@ export const TrackStatusBadge = memo<TrackStatusBadgeProps>(({
             config.pulse && "animate-spin"
           )} />
         )}
-        <span>{config.label}</span>
+        <span>{label}</span>
       </div>
     </Badge>
   );
@@ -148,11 +143,18 @@ export const TrackStatusBadge = memo<TrackStatusBadgeProps>(({
 TrackStatusBadge.displayName = 'TrackStatusBadge';
 
 /**
- * Hook to get status configuration
- * Useful for custom styling
+ * Hook to get status configuration with localized labels
+ * Useful for custom styling and status display
  */
-export const useStatusConfig = (status: TrackStatus): StatusConfig => {
-  return STATUS_CONFIG[status];
+export const useStatusConfig = (status: TrackStatus) => {
+  const t = useTranslation();
+  const config = STATUS_ICON_CONFIG[status];
+
+  return {
+    ...config,
+    label: t(`status.${status}` as const),
+    description: t(`statusDescription.${status}` as const),
+  };
 };
 
 /**

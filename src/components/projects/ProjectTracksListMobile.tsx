@@ -2,6 +2,7 @@
  * Project Tracks List Mobile Component
  * Displays all tracks belonging to a project in mobile-optimized layout
  * Phase 2 improvement from 2025-11-05 audit (P1-M7)
+ * Phase 3: Added i18n localization support
  */
 
 import { memo, useState, useMemo } from 'react';
@@ -14,6 +15,7 @@ import { Music, Search, Filter, SortAsc, SortDesc, Plus } from 'lucide-react';
 import { TrackCardMobile } from '@/features/tracks/components/TrackCardMobile';
 import { TrackStatusBadge } from '@/components/tracks/TrackStatusBadge';
 import { useTracks } from '@/hooks/useTracks';
+import { useTranslation } from '@/i18n';
 import { cn } from '@/lib/utils';
 import type { TrackStatus } from '@/components/tracks/TrackStatusBadge';
 
@@ -34,6 +36,7 @@ export const ProjectTracksListMobile = memo<ProjectTracksListMobileProps>(({
   onAddTrack,
   className,
 }) => {
+  const t = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<TrackStatus | 'all'>('all');
   const [sortOption, setSortOption] = useState<SortOption>('created_at_desc');
@@ -104,7 +107,7 @@ export const ProjectTracksListMobile = memo<ProjectTracksListMobileProps>(({
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <Music className="h-5 w-5 text-primary flex-shrink-0" />
             <h2 className="text-base sm:text-lg font-semibold truncate mobile-text-readable">
-              {projectName || 'Треки проекта'}
+              {projectName || t('project.viewTracks')}
             </h2>
           </div>
           {onAddTrack && (
@@ -113,7 +116,7 @@ export const ProjectTracksListMobile = memo<ProjectTracksListMobileProps>(({
               variant="default"
               onClick={onAddTrack}
               className="touch-min"
-              aria-label="Добавить трек"
+              aria-label={t('project.addTrack')}
             >
               <Plus className="h-5 w-5" />
             </Button>
@@ -123,7 +126,7 @@ export const ProjectTracksListMobile = memo<ProjectTracksListMobileProps>(({
         {/* Statistics */}
         <div className="flex flex-wrap gap-1.5 sm:gap-2">
           <Badge variant="secondary" className="text-xs">
-            Всего: {stats.total}
+            {t('statistics.total')}: {stats.total}
           </Badge>
           {stats.completed > 0 && (
             <TrackStatusBadge status="completed" variant="compact" showIcon={false} />
@@ -150,7 +153,7 @@ export const ProjectTracksListMobile = memo<ProjectTracksListMobileProps>(({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Поиск треков..."
+            placeholder={t('tracks.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 h-10 mobile-text-base"
@@ -162,15 +165,15 @@ export const ProjectTracksListMobile = memo<ProjectTracksListMobileProps>(({
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
             <SelectTrigger className="flex-1 h-10 mobile-text-base">
               <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Все статусы" />
+              <SelectValue placeholder={t('tracks.filterByStatus')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Все статусы</SelectItem>
-              <SelectItem value="completed">Готовые</SelectItem>
-              <SelectItem value="processing">В процессе</SelectItem>
-              <SelectItem value="draft">Черновики</SelectItem>
-              <SelectItem value="pending">Ожидание</SelectItem>
-              <SelectItem value="failed">С ошибкой</SelectItem>
+              <SelectItem value="all">{t('filter.all')}</SelectItem>
+              <SelectItem value="completed">{t('statistics.completed')}</SelectItem>
+              <SelectItem value="processing">{t('statistics.processing')}</SelectItem>
+              <SelectItem value="draft">{t('statistics.draft')}</SelectItem>
+              <SelectItem value="pending">{t('statistics.pending')}</SelectItem>
+              <SelectItem value="failed">{t('statistics.failed')}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -181,13 +184,13 @@ export const ProjectTracksListMobile = memo<ProjectTracksListMobileProps>(({
               ) : (
                 <SortAsc className="h-4 w-4 mr-2" />
               )}
-              <SelectValue placeholder="Сортировка" />
+              <SelectValue placeholder={t('common.sort')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="created_at_desc">Новые первые</SelectItem>
-              <SelectItem value="created_at_asc">Старые первые</SelectItem>
-              <SelectItem value="title_asc">По названию (А-Я)</SelectItem>
-              <SelectItem value="title_desc">По названию (Я-А)</SelectItem>
+              <SelectItem value="created_at_desc">{t('sort.createdDesc')}</SelectItem>
+              <SelectItem value="created_at_asc">{t('sort.createdAsc')}</SelectItem>
+              <SelectItem value="title_asc">{t('sort.titleAsc')}</SelectItem>
+              <SelectItem value="title_desc">{t('sort.titleDesc')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -199,7 +202,7 @@ export const ProjectTracksListMobile = memo<ProjectTracksListMobileProps>(({
           <div className="flex items-center justify-center py-12">
             <div className="text-center space-y-2">
               <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-sm text-muted-foreground">Загрузка треков...</p>
+              <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
             </div>
           </div>
         ) : filteredAndSortedTracks.length === 0 ? (
@@ -208,17 +211,17 @@ export const ProjectTracksListMobile = memo<ProjectTracksListMobileProps>(({
               <Music className="h-12 w-12 text-muted-foreground" />
             </div>
             <h3 className="text-base sm:text-lg font-semibold mb-2">
-              {searchQuery || statusFilter !== 'all' ? 'Треки не найдены' : 'Пока нет треков'}
+              {searchQuery || statusFilter !== 'all' ? t('tracks.noTracks') : t('tracks.noTracks')}
             </h3>
             <p className="text-sm text-muted-foreground text-center max-w-sm mb-4">
               {searchQuery || statusFilter !== 'all'
-                ? 'Попробуйте изменить фильтры или поисковый запрос'
-                : 'Добавьте первый трек в этот проект'}
+                ? t('tracks.noTracksDescription')
+                : t('tracks.noTracksDescription')}
             </p>
             {onAddTrack && !(searchQuery || statusFilter !== 'all') && (
               <Button onClick={onAddTrack} className="touch-min">
                 <Plus className="h-4 w-4 mr-2" />
-                Добавить трек
+                {t('project.addTrack')}
               </Button>
             )}
           </div>
