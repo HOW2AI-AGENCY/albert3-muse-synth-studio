@@ -108,6 +108,7 @@ export type TranslationKey =
   | `statusDescription.${keyof Translations['statusDescription']}`
   | `tracks.${keyof Translations['tracks']}`
   | `trackActions.${keyof Translations['trackActions']}`
+  | `trackDetails.${keyof Translations['trackDetails']}`
   | `generation.${keyof Translations['generation']}`
   | `project.${keyof Translations['project']}`
   | `reference.${keyof Translations['reference']}`

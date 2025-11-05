@@ -192,5 +192,26 @@
     "longPress": "Long press for menu",
     "pullToRefresh": "Pull to refresh",
     "backToTop": "Back to top"
+  },
+  "trackDetails": {
+    "closePanel": "Close panel",
+    "quickActions": "Quick actions",
+    "saved": "Saved",
+    "saving": "Saving...",
+    "errorSaving": "Failed to save",
+    "trackDeleted": "Track deleted",
+    "linkCopied": "Link copied",
+    "confirmDelete": "Delete track permanently?",
+    "trackInfo": "Track information",
+    "editDetails": "Edit details",
+    "title": "Title",
+    "genre": "Genre",
+    "mood": "Mood",
+    "isPublic": "Public track",
+    "styleTags": "Style tags",
+    "versions": "Versions",
+    "stems": "Stems",
+    "noVersions": "No other versions",
+    "noStems": "No separated stems"
   }
 }

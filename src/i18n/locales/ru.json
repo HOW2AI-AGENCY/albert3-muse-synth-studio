@@ -192,5 +192,26 @@
     "longPress": "Долгое нажатие для меню",
     "pullToRefresh": "Потяните для обновления",
     "backToTop": "Вернуться наверх"
+  },
+  "trackDetails": {
+    "closePanel": "Закрыть панель",
+    "quickActions": "Быстрые действия",
+    "saved": "Сохранено",
+    "saving": "Сохранение...",
+    "errorSaving": "Не удалось сохранить",
+    "trackDeleted": "Трек удалён",
+    "linkCopied": "Ссылка скопирована",
+    "confirmDelete": "Удалить трек безвозвратно?",
+    "trackInfo": "Информация о треке",
+    "editDetails": "Редактировать",
+    "title": "Название",
+    "genre": "Жанр",
+    "mood": "Настроение",
+    "isPublic": "Публичный трек",
+    "styleTags": "Теги стиля",
+    "versions": "Версии",
+    "stems": "Стемы",
+    "noVersions": "Нет других версий",
+    "noStems": "Нет разделённых стемов"
   }
 }
