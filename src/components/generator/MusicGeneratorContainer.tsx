@@ -36,6 +36,7 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
   const { isMobile } = useBreakpoints();
 
   const state = useGeneratorState(selectedProvider);
+  const { setParams } = state;
 
   const [personaDialogOpen, setPersonaDialogOpen] = useState(false);
   const [projectDialogOpen, setProjectDialogOpen] = useState(false);
@@ -70,36 +71,47 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
 
   useEffect(() => {
     const defaultModel = getDefaultModel(selectedProvider as ProviderType);
-    state.setParams((prev) => {
-      const newParams = {
-        ...prev,
-        provider: selectedProvider,
-        modelVersion: defaultModel.value,
-      };
 
-      if (selectedProvider === 'mureka' && prev.referenceAudioUrl) {
-        logger.warn('Clearing reference audio for Mureka', 'MusicGeneratorContainer', {
-          previousProvider: prev.provider,
-          hadReference: !!prev.referenceAudioUrl,
-        });
+    setParams((prev) => {
+      const shouldUpdateProvider = prev.provider !== selectedProvider;
+      const shouldUpdateModelVersion = prev.modelVersion !== defaultModel.value;
+      const shouldClearReference = selectedProvider === 'mureka' && !!prev.referenceAudioUrl;
 
-        toast({
-          title: '⚠️ Референс удалён',
-          description: 'Mureka не поддерживает референсное аудио',
-          duration: 4000,
-        });
-
-        return {
-          ...newParams,
-          referenceAudioUrl: null,
-          referenceFileName: null,
-          referenceTrackId: null,
-        };
+      if (!shouldUpdateProvider && !shouldUpdateModelVersion && !shouldClearReference) {
+        return prev;
       }
 
-      return newParams;
+      const nextParams = shouldUpdateProvider || shouldUpdateModelVersion
+        ? {
+            ...prev,
+            provider: selectedProvider,
+            modelVersion: defaultModel.value,
+          }
+        : prev;
+
+      if (!shouldClearReference) {
+        return nextParams;
+      }
+
+      logger.warn('Clearing reference audio for Mureka', 'MusicGeneratorContainer', {
+        previousProvider: prev.provider,
+        hadReference: !!prev.referenceAudioUrl,
+      });
+
+      toast({
+        title: '⚠️ Референс удалён',
+        description: 'Mureka не поддерживает референсное аудио',
+        duration: 4000,
+      });
+
+      return {
+        ...nextParams,
+        referenceAudioUrl: null,
+        referenceFileName: null,
+        referenceTrackId: null,
+      };
     });
-  }, [selectedProvider, toast, state]);
+  }, [selectedProvider, setParams, toast]);
 
   const handleMurekaLyricsSelect = useCallback(
     async (lyrics: string, variantId: string) => {

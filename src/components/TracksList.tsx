@@ -2,7 +2,6 @@ import { useState, memo, useCallback, useRef, useEffect, useMemo } from "react";
 import { TrackCard } from "@/features/tracks/components/TrackCard";
 import { TrackListItem } from "@/features/tracks/components/TrackListItem";
 import { VirtualizedTrackGrid } from "./tracks/VirtualizedTrackGrid";
-import { ViewSwitcher } from "./tracks/ViewSwitcher";
 import { TrackListSkeleton } from "@/components/skeletons";
 import { Track } from "@/services/api.service";
 import { Music } from "@/utils/iconImports";
@@ -26,6 +25,7 @@ interface TracksListProps {
   onSelect?: (track: Track) => void;
   isDetailPanelOpen?: boolean;
   trackOperations: TrackOperations;
+  viewMode: 'grid' | 'list';
 }
 
 const TracksListComponent = ({
@@ -40,20 +40,13 @@ const TracksListComponent = ({
   onSelect,
   isDetailPanelOpen = false,
   trackOperations,
+  viewMode,
 }: TracksListProps) => {
   const playTrackWithQueue = useAudioPlayerStore((state) => state.playTrackWithQueue);
   const { toast } = useToast();
   const { mutateAsync: syncTrack } = useManualSyncTrack();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
-    try {
-      const saved = typeof window !== 'undefined' ? localStorage.getItem('tracks-view-mode') : 'grid';
-      return (saved as 'grid' | 'list') || 'grid';
-    } catch {
-      return 'grid';
-    }
-  });
 
   // Track container dimensions for virtualization
   useEffect(() => {
@@ -189,13 +182,6 @@ const TracksListComponent = ({
     <AITrackActionsContainer>
       {({ onDescribeTrack }) => (
         <div className="space-y-4" ref={containerRef}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-xl font-semibold tracking-tight">
-              Ваши треки ({tracks.length})
-            </h2>
-            <ViewSwitcher view={viewMode} onViewChange={handleViewChange} />
-          </div>
-
           {viewMode === 'grid' ? (
             tracks.length > 50 && containerDimensions.width > 0 ? (
               // Use virtualization for large lists with adaptive grid

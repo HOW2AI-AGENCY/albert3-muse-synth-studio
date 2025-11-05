@@ -69,7 +69,7 @@ export const TrackCardActions = React.memo(({
       onCover={onCover}
       onAddVocal={onAddVocal}
       onCreatePersona={onCreatePersona}
-      variant="full"
+      variant="compact"
     />
   );
 });
