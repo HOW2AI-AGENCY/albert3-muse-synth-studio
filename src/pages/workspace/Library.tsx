@@ -13,8 +13,7 @@ import {
   SortAsc,
   SortDesc,
   Loader2,
-  CheckSquare,
-  Square,
+  Check,
 } from "@/utils/iconImports";
 import { TrackCard, TrackListItem } from "@/features/tracks";
 import { OptimizedTrackList } from "@/components/OptimizedTrackList";
@@ -53,7 +52,8 @@ type ViewMode = 'grid' | 'list' | 'optimized';
 type SortBy = 'created_at' | 'title' | 'duration' | 'like_count';
 type SortOrder = 'asc' | 'desc';
 
-const Library: React.FC = () => {
+const LibraryContent: React.FC = () => {
+  const { isSelectionMode, setSelectionMode, clearSelection } = useSelectedTracks();
   const {
     tracks,
     isLoading,
@@ -633,6 +633,23 @@ const Library: React.FC = () => {
               >
                 Название {sortBy === 'title' && (sortOrder === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (isSelectionMode) {
+                    clearSelection();
+                  }
+                  setSelectionMode(!isSelectionMode);
+                }}
+                className={cn(
+                  isSelectionMode && 'bg-primary/10 border-primary/50',
+                  "hover:scale-105 transition-all duration-300"
+                )}
+              >
+                <Check className="h-4 w-4" />
+                <span className="ml-1">Выбрать</span>
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -826,6 +843,17 @@ const Library: React.FC = () => {
         />
       )}
     </div>
+  );
+};
+
+const Library: React.FC = () => {
+  return (
+    <SelectedTracksProvider>
+      <div className="relative">
+        <LibraryContent />
+        <SelectionToolbar className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50" />
+      </div>
+    </SelectedTracksProvider>
   );
 };
 
