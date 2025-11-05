@@ -77,7 +77,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
     <div
       data-testid="mini-player"
       onClick={handleExpand}
-      className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border/30 shadow-lg cursor-pointer animate-slide-up safe-area-bottom-md hover:bg-card/90 transition-all duration-300 pt-[var(--mobile-spacing-sm)] md:pt-[var(--mobile-spacing-md)]" /* Updated styling for glassmorphism with unified safe-area */
+      className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border/30 shadow-lg cursor-pointer animate-slide-up safe-area-bottom hover:bg-card/90 transition-all duration-300 pt-[var(--mobile-spacing-xs)] md:pt-[var(--mobile-spacing-md)]" /* Mobile optimized: reduced safe-area and padding */
       style={{
         zIndex: 'var(--z-mini-player)' /* Use unified z-index system from design-tokens.css */
       }}
@@ -86,12 +86,12 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
         direction="horizontal"
         spacing="sm"
         align="center"
-        className="p-2 md:p-3"
+        className="p-1.5 sm:p-2 md:p-3" /* Reduced mobile padding from p-2 to p-1.5 */
       >
         {/* Album Art */}
         <div className={cn(
           "relative rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 flex-shrink-0 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 group",
-          "w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14"
+          "w-8 h-8 sm:w-12 sm:h-12 lg:w-14 lg:h-14" /* Reduced mobile size from w-10 h-10 to w-8 h-8 */
         )}>
           {currentTrack.cover_url ? (
             <img
@@ -131,15 +131,15 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
         </div>
 
         {/* Playback Controls */}
-        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0">
-          {/* Phase 2.3: Versions Sheet для мобильных */}
+        <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0"> {/* Reduced mobile gap from gap-1.5 to gap-1 */}
+          {/* Phase 2.3: Versions Sheet - HIDDEN ON MOBILE */}
           {hasVersions && (
             <Sheet>
               <SheetTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="icon-button-touch relative hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hidden sm:inline-flex icon-button-touch relative hover:bg-primary/10 hover:scale-105 transition-all duration-200" /* Hidden on mobile */
                   onClick={(e) => e.stopPropagation()}
                 >
                   <List className="h-4 w-4" />
@@ -203,13 +203,13 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
                 size="icon"
                 variant="default"
                 onClick={handlePlayPause}
-                className="h-12 w-12 min-h-[48px] min-w-[48px] sm:h-14 sm:w-14 sm:min-h-[56px] sm:min-w-[56px] rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-200 active:scale-95 touch-optimized"
+                className="h-10 w-10 min-h-[40px] min-w-[40px] sm:h-12 sm:w-12 sm:min-h-[48px] sm:min-w-[48px] md:h-14 md:w-14 md:min-h-[56px] md:min-w-[56px] rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-200 active:scale-95 touch-optimized" /* Reduced mobile size to 40px (still WCAG compliant) */
                 style={{ willChange: 'transform' }}
               >
                 {isPlaying ? (
-                  <Pause className="h-4 w-4 sm:h-5 sm:w-5" />
+                  <Pause className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" /> /* Scaled icon sizes */
                 ) : (
-                  <Play className="h-4 w-4 sm:h-5 sm:w-5 ml-0.5" />
+                  <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 ml-0.5" /> /* Scaled icon sizes */
                 )}
               </Button>
             </TooltipTrigger>

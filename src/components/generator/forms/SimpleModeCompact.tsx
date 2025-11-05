@@ -4,6 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Music, Sparkles, Info, History } from '@/utils/iconImports';
 import { StyleRecommendationsInline } from '@/components/generator/StyleRecommendationsInline';
 import { PromptCharacterCounter } from '@/components/generator/PromptCharacterCounter';
@@ -45,28 +46,13 @@ export const SimpleModeCompact = memo(({
   return (
     <div className="flex flex-col h-full">
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto space-y-2 sm:space-y-3 pb-20 p-2 sm:p-3">
+      <div className="flex-1 overflow-y-auto space-y-1.5 sm:space-y-2 pb-20 p-1.5 sm:p-2 md:p-3"> {/* Reduced mobile spacing and padding */}
         {/* Prompt with AI Boost */}
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-1.5">
-              <div className="w-1 h-5 bg-gradient-to-b from-primary to-primary/50 rounded-full" />
-              <Label htmlFor="music-prompt" className="text-sm font-semibold">Описание музыки</Label>
-              <InfoTooltip content="Опишите желаемую музыку: жанр, настроение, инструменты. Чем детальнее, тем лучше результат." />
-            </div>
-            {onOpenHistory && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="touch-target-min gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-                onClick={onOpenHistory}
-                disabled={isGenerating}
-                aria-label="Открыть историю промптов"
-              >
-                <History className="h-4 w-4" aria-hidden="true" />
-                История
-              </Button>
-            )}
+          <div className="flex items-center gap-1.5 mb-1">
+            <div className="w-1 h-5 bg-gradient-to-b from-primary to-primary/50 rounded-full" />
+            <Label htmlFor="music-prompt" className="text-sm font-semibold">Описание музыки</Label>
+            <InfoTooltip content="Опишите желаемую музыку: жанр, настроение, инструменты. Чем детальнее, тем лучше результат." />
           </div>
           <div className="relative">
             <Textarea
@@ -103,14 +89,36 @@ export const SimpleModeCompact = memo(({
             )}
           </div>
 
-          {/* Контролы под формой ввода */}
-          <div className="flex items-center justify-end pt-1">
-            <div id="prompt-counter">
-              <PromptCharacterCounter
-                currentLength={debouncedPrompt.length}
-                maxLength={MAX_PROMPT_LENGTH}
-              />
+          {/* Controls below textarea - FIXED: Moved History button here to match Advanced mode */}
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center gap-1.5">
+              <div id="prompt-counter">
+                <PromptCharacterCounter
+                  currentLength={debouncedPrompt.length}
+                  maxLength={MAX_PROMPT_LENGTH}
+                />
+              </div>
+              <InfoTooltip content="Рекомендуем описать стиль, жанр, настроение, темп и инструменты для лучших результатов." />
             </div>
+            {onOpenHistory && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onOpenHistory}
+                    disabled={isGenerating}
+                    className="touch-target-min"
+                    aria-label="История промптов"
+                  >
+                    <History className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p className="text-xs">История промптов</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
         </div>
 

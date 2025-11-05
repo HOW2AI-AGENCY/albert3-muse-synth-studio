@@ -389,10 +389,13 @@ const Generate = () => {
                     scale: showGenerator ? 0 : 1,
                     opacity: showGenerator ? 0 : 1
                   }}
-                  transition={{ delay: showGenerator ? 0 : 0.5, type: 'spring', stiffness: 260, damping: 20 }}
+                  transition={{ delay: showGenerator ? 0 : 0.2, type: 'spring', stiffness: 260, damping: 20 }} /* Reduced delay from 0.5 to 0.2 for faster response */
                   whileHover={{ scale: showGenerator ? 0 : 1.1 }}
                   whileTap={{ scale: showGenerator ? 0 : 0.9 }}
-                  style={{ pointerEvents: showGenerator ? 'none' : 'auto' }}
+                  style={{
+                    pointerEvents: showGenerator ? 'none' : 'auto',
+                    display: showGenerator ? 'none' : 'block' /* FIXED: Complete hiding from DOM when drawer open */
+                  }}
                 >
                   <Button
                     variant="fab"
