@@ -55,7 +55,7 @@ const MinimalSidebar = ({
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="absolute right-2 top-2 h-8 w-8 rounded-md"
+            className="absolute right-2 top-2 h-11 w-11 sm:h-9 sm:w-9 rounded-md"
             aria-label="Закрыть меню"
           >
             <X className="h-4 w-4" />

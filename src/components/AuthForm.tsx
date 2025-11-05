@@ -102,7 +102,7 @@ export const AuthForm = () => {
   const isSigningUp = isLoading && activeTab === 'signup';
 
   return (
-    <Card className="card-glass p-6 w-full max-w-md mx-auto">
+    <Card className="card-glass p-4 sm:p-6 w-full max-w-md mx-auto">
       <Tabs defaultValue="signin" className="w-full" onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="signin">Войти</TabsTrigger>
