@@ -55,7 +55,7 @@ export const ReferenceAudioLibraryInline = ({ onSelect }: ReferenceAudioLibraryI
         />
       </div>
 
-      <ScrollArea className="h-[400px]">
+      <ScrollArea className="h-[300px] sm:h-[400px]">
         {isLoading ? (
           <div className="text-center py-8 text-muted-foreground">
             Загрузка библиотеки...

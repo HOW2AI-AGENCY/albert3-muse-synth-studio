@@ -101,7 +101,7 @@ export const NotificationsDropdown = () => {
 
         <DropdownMenuSeparator />
 
-        <ScrollArea className="h-[400px]">
+        <ScrollArea className="h-[300px] sm:h-[400px]">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />

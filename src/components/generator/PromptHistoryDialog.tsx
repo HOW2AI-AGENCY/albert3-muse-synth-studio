@@ -44,7 +44,7 @@ export const PromptHistoryDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] p-3 sm:p-6">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-3xl max-h-[85vh] p-3 sm:p-6">
         <DialogHeader className="pb-2 sm:pb-4">
           <DialogTitle className="flex items-center gap-1.5 sm:gap-2 text-base sm:text-lg">
             <History className="w-4 h-4 sm:w-5 sm:h-5" />

@@ -44,7 +44,7 @@ export const ReferenceTrackSelector = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh]">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-2xl max-h-[80vh]">
         <DialogHeader>
           <DialogTitle>Выбрать трек из библиотеки</DialogTitle>
         </DialogHeader>
@@ -72,7 +72,7 @@ export const ReferenceTrackSelector = ({
           </div>
 
           {/* Список треков */}
-          <ScrollArea className="h-[400px] pr-4">
+          <ScrollArea className="h-[300px] sm:h-[400px] pr-4">
             {isLoading ? (
               <div className="flex items-center justify-center h-32">
                 <p className="text-sm text-muted-foreground">Загрузка треков...</p>

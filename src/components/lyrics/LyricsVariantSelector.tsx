@@ -199,7 +199,7 @@ export const LyricsVariantSelector = ({
 
           {/* Lyrics Content */}
           <Card className="relative">
-            <ScrollArea className="h-[320px] w-full">
+            <ScrollArea className="h-[240px] sm:h-[320px] w-full">
               <pre className="whitespace-pre-wrap text-sm leading-relaxed p-4 font-sans">
                 {currentVariant.content}
               </pre>

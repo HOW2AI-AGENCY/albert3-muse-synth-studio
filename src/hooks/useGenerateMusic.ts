@@ -3,7 +3,7 @@
  * Now uses unified GenerationService for better separation of concerns
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { GenerationService, GenerationRequest } from '@/services/generation';
 import { logger } from '@/utils/logger';
 import { rateLimiter, RATE_LIMIT_CONFIGS, formatResetTime } from '@/utils/rateLimiter';
@@ -358,6 +358,13 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
       setIsGenerating(false);
     }
   }, [isGenerating, provider, toast, onSuccess, cleanup, setupSubscription]);
+
+  // Auto-cleanup on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      cleanup();
+    };
+  }, [cleanup]);
 
   return {
     generate,
