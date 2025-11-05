@@ -36,6 +36,12 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
     return null;
   }
 
+  // ✅ FIX: Helper for consistent version number calculation
+  const getDisplayVersionNumber = (version: typeof allVersions[0]): number => {
+    // variant_index is 0-based, so add 1 for display (0 -> V1, 1 -> V2, etc.)
+    return (version.variant_index ?? 0) + 1;
+  };
+
   const handlePlayVersion = (version: typeof allVersions[0]) => {
     if (!version.audio_url) return;
 
@@ -46,7 +52,7 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
       cover_url: version.cover_url || undefined,
       duration: version.duration || undefined,
       lyrics: version.lyrics || undefined,
-      versionNumber: version.variant_index || version.version_number || 0,
+      versionNumber: getDisplayVersionNumber(version),
     });
   };
 
@@ -89,7 +95,7 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-medium truncate">
-                        {isMain ? 'Основная версия' : `Вариант ${version.variant_index || version.version_number || index}`}
+                        {isMain ? 'Основная версия' : `Вариант ${getDisplayVersionNumber(version)}`}
                       </p>
                       {version.is_preferred_variant && (
                         <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
