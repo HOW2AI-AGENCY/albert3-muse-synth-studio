@@ -6,9 +6,10 @@
  */
 
 // Authentication & User
-export { 
+export {
   Loader2,
   User,
+  Users,
   LogOut,
   AlertTriangle,
   RefreshCw,
