@@ -201,8 +201,8 @@ export function GenrePresets({ onSelect }: GenrePresetsProps) {
             );
           })}
         </CarouselContent>
-        <CarouselPrevious className="absolute -left-3 sm:-left-4 top-1/2 -translate-y-1/2 h-8 w-8 sm:h-9 sm:w-9 shadow-lg border-border/50 bg-background/95 hover:bg-accent disabled:opacity-40 z-10" />
-        <CarouselNext className="absolute -right-3 sm:-right-4 top-1/2 -translate-y-1/2 h-8 w-8 sm:h-9 sm:w-9 shadow-lg border-border/50 bg-background/95 hover:bg-accent disabled:opacity-40 z-10" />
+        <CarouselPrevious className="absolute -left-3 sm:-left-4 top-1/2 -translate-y-1/2 h-11 w-11 sm:h-9 sm:w-9 shadow-lg border-border/50 bg-background/95 hover:bg-accent disabled:opacity-40 z-10" />
+        <CarouselNext className="absolute -right-3 sm:-right-4 top-1/2 -translate-y-1/2 h-11 w-11 sm:h-9 sm:w-9 shadow-lg border-border/50 bg-background/95 hover:bg-accent disabled:opacity-40 z-10" />
       </Carousel>
     </div>
   );

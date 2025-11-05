@@ -129,7 +129,7 @@ export const AudioUploader = memo(({
               variant="ghost"
               size="sm"
               onClick={onClear}
-              className="h-8 w-8 p-0"
+              className="h-11 w-11 sm:h-8 sm:w-8 p-0"
             >
               <X className="w-4 h-4" />
             </Button>

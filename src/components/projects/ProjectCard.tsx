@@ -77,7 +77,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 backdrop-blur-sm bg-background/80 hover:bg-background/90">
+              <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 backdrop-blur-sm bg-background/80 hover:bg-background/90">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
