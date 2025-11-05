@@ -251,11 +251,11 @@ export const TrackActionsMenu = memo(({
                   </DropdownMenuItem>
                 )}
 
-                {showExtended && onCreatePersona && (
+                {onCreatePersona && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      onClick={() => onCreatePersona(trackId)} 
+                    <DropdownMenuItem
+                      onClick={() => onCreatePersona(trackId)}
                       className="text-primary"
                     >
                       <User className="w-4 h-4 mr-2 text-primary" />
@@ -267,7 +267,7 @@ export const TrackActionsMenu = memo(({
             )}
 
             {/* Mureka-specific hint */}
-            {isMurekaTrack && showExtended && (
+            {isMurekaTrack && (
               <>
                 <DropdownMenuSeparator />
                 <div className="px-2 py-1.5 text-xs text-muted-foreground">
