@@ -10,7 +10,7 @@ import { ApiService, type Track, mapTrackRowToTrack } from '@/services/api.servi
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
-import { logger, logError, logInfo } from '@/utils/logger';
+import { logger, logError, logInfo, logWarn } from '@/utils/logger';
 import { useAuth } from '@/contexts/AuthContext';
 import { trackCacheService } from '@/services/track-cache.service';
 
@@ -123,7 +123,28 @@ export const useTracks = (refreshTrigger?: number, options: UseTracksOptions = {
           // Пробрасываем отмену, чтобы React Query корректно обработал cancellation
           throw err;
         }
-        logError('Failed to load tracks', err, 'useTracks', { userId });
+        const msg = (err.message || '').toUpperCase();
+        const isTransient =
+          msg.includes('ERR_NETWORK_CHANGED') ||
+          msg.includes('ERR_CONNECTION_RESET') ||
+          msg.includes('ECONNRESET') ||
+          msg.includes('ERR_QUIC_PROTOCOL_ERROR') ||
+          msg.includes('ETIMEDOUT') ||
+          msg.includes('ERR_CONNECTION_TIMED_OUT') ||
+          msg.includes('ERR_NAME_NOT_RESOLVED') ||
+          msg.includes('FAILED TO FETCH') ||
+          msg.includes('NETWORKERROR') ||
+          msg.includes('ENETUNREACH') ||
+          msg.includes('EHOSTUNREACH');
+
+        if (isTransient) {
+          logWarn('Транзиентная сетевая ошибка при загрузке треков', 'useTracks', {
+            userId,
+            message: err.message,
+          });
+        } else {
+          logError('Failed to load tracks', err, 'useTracks', { userId });
+        }
         throw err;
       }
 
@@ -179,6 +200,25 @@ export const useTracks = (refreshTrigger?: number, options: UseTracksOptions = {
     if (!error) return;
     if (error.name === 'AbortError') {
       logger.debug('Tracks request aborted', 'useTracks');
+      return;
+    }
+    const msg = (error.message || '').toUpperCase();
+    const isTransient =
+      msg.includes('ERR_NETWORK_CHANGED') ||
+      msg.includes('ERR_CONNECTION_RESET') ||
+      msg.includes('ECONNRESET') ||
+      msg.includes('ERR_QUIC_PROTOCOL_ERROR') ||
+      msg.includes('ETIMEDOUT') ||
+      msg.includes('ERR_CONNECTION_TIMED_OUT') ||
+      msg.includes('ERR_NAME_NOT_RESOLVED') ||
+      msg.includes('FAILED TO FETCH') ||
+      msg.includes('NETWORKERROR') ||
+      msg.includes('ENETUNREACH') ||
+      msg.includes('EHOSTUNREACH');
+    if (isTransient) {
+      logWarn('Пропуск уведомления для временной сетевой ошибки', 'useTracks', {
+        message: error.message,
+      });
       return;
     }
 

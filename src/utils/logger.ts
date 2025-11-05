@@ -338,9 +338,7 @@ const maskString = (value: string): string => {
  * @returns A new object with sensitive data masked.
  */
 export const maskObject = (data?: Record<string, unknown>): Record<string, unknown> | undefined => {
-  if (!data) {
-    return undefined;
-  }
+  if (!data) return undefined;
 
   // ✅ SECURITY: Расширенный список чувствительных ключей
   const sensitiveKeywords = [
@@ -349,38 +347,56 @@ export const maskObject = (data?: Record<string, unknown>): Record<string, unkno
     "lovable_api_key", "suno_api_key", "mureka_api_key", "openai_api_key"
   ];
 
-  const maskValue = (value: unknown, keyPath: string[]): unknown => {
-    if (Array.isArray(value)) {
-      return value.map((item, index) => maskValue(item, [...keyPath, String(index)]));
-    }
+  const visited = new WeakSet<object>();
+  const MAX_DEPTH = 5;
 
-    if (value && typeof value === "object") {
-      return Object.entries(value as Record<string, unknown>).reduce<Record<string, unknown>>((acc, [nestedKey, nestedValue]) => {
-        acc[nestedKey] = maskValue(nestedValue, [...keyPath, nestedKey]);
-        return acc;
-      }, {});
-    }
+  const maskValue = (value: unknown, keyPath: string[], depth: number): unknown => {
+    if (value === null || value === undefined) return value;
 
-    const lastKey = keyPath[keyPath.length - 1]?.toLowerCase() ?? "";
-    const shouldMask = sensitiveKeywords.some((keyword) => lastKey.includes(keyword));
-
-    if (shouldMask) {
-      if (typeof value === "string") {
-        return maskString(value);
-      }
-      if (typeof value === "number") {
-        return "***";
-      }
-      if (typeof value === "boolean") {
+    // Примитивы
+    if (typeof value !== 'object') {
+      const lastKey = keyPath[keyPath.length - 1]?.toLowerCase() ?? '';
+      const shouldMask = sensitiveKeywords.some((keyword) => lastKey.includes(keyword));
+      if (shouldMask) {
+        if (typeof value === 'string') return maskString(value);
+        if (typeof value === 'number') return '***';
         return value;
       }
-      return value === null || value === undefined ? value : "***";
+      return value;
     }
 
-    return value;
+    // Ограничение глубины
+    if (depth > MAX_DEPTH) {
+      return '[MaxDepth]';
+    }
+
+    // Дата
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+
+    // Массивы
+    if (Array.isArray(value)) {
+      return value.map((item, index) => maskValue(item, [...keyPath, String(index)], depth + 1));
+    }
+
+    // Объекты с возможными циклами
+    const obj = value as Record<string, unknown>;
+    if (visited.has(obj)) {
+      return '[Circular]';
+    }
+    visited.add(obj);
+
+    const result: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj)) {
+      result[k] = maskValue(v, [...keyPath, k], depth + 1);
+    }
+    return result;
   };
 
-  return maskValue({ ...data }, []) as Record<string, unknown>;
+  // Клонируем верхний уровень, чтобы не мутировать исходные данные
+  const topLevel = { ...data } as Record<string, unknown>;
+  return maskValue(topLevel, [], 0) as Record<string, unknown>;
 };
 
 
@@ -401,13 +417,17 @@ if (typeof window !== 'undefined') {
 
   // Перехватываем необработанные Promise rejections
   window.addEventListener('unhandledrejection', (event) => {
+    const reasonMessage = event.reason instanceof Error
+      ? event.reason.message
+      : typeof event.reason === 'string'
+        ? event.reason
+        : undefined;
+
     logger.error(
       'Необработанное отклонение Promise',
-      event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
+      event.reason instanceof Error ? event.reason : new Error(String(reasonMessage ?? 'Promise rejected')),
       'GlobalPromiseHandler',
-      {
-        reason: event.reason
-      }
+      reasonMessage ? { reason: reasonMessage } : undefined
     );
   });
 }
