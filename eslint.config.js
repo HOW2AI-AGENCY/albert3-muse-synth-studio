@@ -50,7 +50,7 @@ export default tseslint.config(
         },
         {
           selector: "function",
-          format: ["camelCase"],
+          format: ["camelCase", "PascalCase"], // Allow PascalCase for functions (e.g., React components)
           leadingUnderscore: "allow",
         },
         { selector: "typeLike", format: ["PascalCase"] },

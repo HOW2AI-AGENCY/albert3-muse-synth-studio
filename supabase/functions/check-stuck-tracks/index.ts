@@ -1,3 +1,9 @@
+// Этот файл выполняется в среде Deno (Supabase Edge Functions).
+// Импорты по URL и глобал `Deno` недоступны для TS-проверки в Node IDE,
+// поэтому отключаем проверку типов, чтобы избежать ложных ошибок.
+// Этот файл выполняется в среде Deno (Supabase Edge Functions).
+// Импорты по URL и глобал `Deno` недоступны для TS-проверки в Node IDE,
+// поэтому отключаем проверку типов, чтобы избежать ложных ошибок.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { createSupabaseAdminClient } from "../_shared/supabase.ts";

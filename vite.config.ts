@@ -4,10 +4,27 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
-import { visualizer } from "rollup-plugin-visualizer";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig(async ({ mode }) => {
+  // Опционально подключаем visualizer только в production и если пакет установлен
+  let visualizerPlugin: any = null;
+  if (mode === 'production') {
+    try {
+      const { visualizer } = await import('rollup-plugin-visualizer');
+      visualizerPlugin = visualizer({
+        filename: 'stats.html',
+        open: false, // Установите true, чтобы авто-открывать в браузере
+        gzipSize: true,
+        brotliSize: true,
+        template: 'treemap', // 'treemap' | 'sunburst' | 'network'
+      });
+    } catch (e) {
+      console.warn('[vite] rollup-plugin-visualizer не установлен — пропускаю анализ бандла');
+    }
+  }
+
+  return ({
   // Разрешаем встраивание только в продакшене; в dev убираем блокировки iframe
   // чтобы корректно работать в редакторах, использующих iframe (например, Lovable)
   server: {
@@ -77,15 +94,8 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === 'development' && componentTagger(),
     tsconfigPaths(),
-    // ✅ Bundle analyzer - generates stats.html after build
-    // Run: npm run build && open stats.html
-    mode === 'production' && visualizer({
-      filename: 'stats.html',
-      open: false, // Set to true to auto-open in browser
-      gzipSize: true,
-      brotliSize: true,
-      template: 'treemap', // 'treemap' | 'sunburst' | 'network'
-    }),
+    // ✅ Анализатор бандла — добавляется только при наличии пакета и в production
+    visualizerPlugin,
     mode !== "development" && process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT
       ? sentryVitePlugin({
           org: process.env.SENTRY_ORG,
@@ -119,4 +129,5 @@ export default defineConfig(({ mode }) => ({
       "react-router-dom",
     ],
   },
-}));
+  });
+});

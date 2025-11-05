@@ -16,7 +16,7 @@
     "strictNullChecks": true,
     "skipLibCheck": true,
     "allowJs": false,
-    "types": ["vitest/globals", "vitest-dom/extend-expect"]
+    "types": ["vitest/globals", "@testing-library/jest-dom/vitest"]
   },
   "exclude": [
     "supabase/functions"

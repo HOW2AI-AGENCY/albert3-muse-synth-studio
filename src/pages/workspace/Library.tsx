@@ -112,26 +112,27 @@ const LibraryContent: React.FC = () => {
   // Measure container width with immediate initialization (FIX: prevents 0-width flash)
   useEffect(() => {
     if (!containerRef.current) return;
+
+    const updateWidth = (width: number) => {
+      if (width > 0 && width !== containerWidth) { // Only update if width is positive and has changed
+        setContainerWidth(width);
+      }
+    };
     
     // ✅ FIX: Immediately set initial width to prevent single-column flash
     const initialWidth = containerRef.current.clientWidth;
-    if (initialWidth > 0) {
-      setContainerWidth(initialWidth);
-    }
-    
+    updateWidth(initialWidth); // Use the updateWidth function for initial set
+
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const width = entry.contentRect.width;
-        if (width > 0) {
-          setContainerWidth(width);
-        }
+        updateWidth(entry.contentRect.width); // Use the updateWidth function for observer updates
       }
     });
     
     resizeObserver.observe(containerRef.current);
     
     return () => resizeObserver.disconnect();
-  }, []);
+  }, [containerWidth]); // Add containerWidth to dependencies to ensure updateWidth has the latest state
   
   // Сохранение настроек просмотра
   useEffect(() => {
