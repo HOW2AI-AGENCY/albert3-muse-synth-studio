@@ -29,7 +29,9 @@ export interface SunoGenerationParams extends BaseGenerationParams {
   audioWeight?: number;
   referenceAudioUrl?: string;
   referenceTrackId?: string;
-  personaId?: string; // ✅ НОВОЕ: ID Suno Persona
+  personaId?: string; // ✅ ID Suno Persona
+  projectId?: string; // ✅ Active project ID for track
+  inspoProjectId?: string; // ✅ Inspiration project ID (source)
 }
 
 export interface MurekaGenerationParams extends BaseGenerationParams {
@@ -60,13 +62,14 @@ export type GenerationResponse = GenerationResult | GenerationError;
 
 /**
  * Track status during generation lifecycle
- * - pending: Track created, waiting to start generation
+ * - pending: Track created, waiting to start generation (no lyrics yet)
+ * - draft: Track has lyrics, ready for generation
  * - preparing: Provider is preparing resources (Mureka specific)
  * - processing: Active generation in progress
  * - completed: Generation finished successfully
  * - failed: Generation failed with error
  */
-export type TrackStatus = 'pending' | 'preparing' | 'processing' | 'completed' | 'failed';
+export type TrackStatus = 'pending' | 'draft' | 'preparing' | 'processing' | 'completed' | 'failed';
 
 export interface ProviderTrackData {
   status: TrackStatus;

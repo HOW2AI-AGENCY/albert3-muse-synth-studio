@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 import ProviderBalance from "./layout/ProviderBalance";
+import { LanguageSwitcher, useTranslation } from "@/i18n";
 
 interface HeaderProps {
   user?: {
@@ -19,12 +20,13 @@ interface HeaderProps {
 
 export const Header = ({ user, onAuthClick }: HeaderProps) => {
   const { toast } = useToast();
+  const t = useTranslation();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     toast({
-      title: "Signed out",
-      description: "You have been successfully signed out",
+      title: t('common.signedOut'),
+      description: t('common.signedOutDescription'),
     });
   };
 
@@ -51,6 +53,18 @@ export const Header = ({ user, onAuthClick }: HeaderProps) => {
 
         {/* User Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Language Switcher */}
+          <LanguageSwitcher
+            variant="icon-only"
+            size="sm"
+            className="sm:hidden"
+          />
+          <LanguageSwitcher
+            variant="default"
+            size="sm"
+            className="hidden sm:flex"
+          />
+
           {user ? (
             <>
               <ProviderBalance />
@@ -62,25 +76,25 @@ export const Header = ({ user, onAuthClick }: HeaderProps) => {
                   {user.email}
                 </span>
               </div>
-              <Button 
-                variant="glass" 
-                size="sm" 
+              <Button
+                variant="glass"
+                size="sm"
                 onClick={handleSignOut}
                 className="hover:scale-105 transition-all duration-300"
               >
                 <LogOut className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Выйти</span>
+                <span className="hidden sm:inline">{t('common.logout')}</span>
               </Button>
             </>
           ) : (
-            <Button 
-              variant="hero" 
-              size="sm" 
+            <Button
+              variant="hero"
+              size="sm"
               onClick={onAuthClick}
               className="hover:scale-105 transition-all duration-300 shadow-glow-primary"
             >
               <User className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Войти</span>
+              <span className="hidden sm:inline">{t('common.login')}</span>
             </Button>
           )}
         </div>

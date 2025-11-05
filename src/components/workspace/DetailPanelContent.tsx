@@ -14,6 +14,7 @@ import { CompactTrackHero } from "@/features/tracks/ui/CompactTrackHero";
 import { EmptyStateCard } from "@/components/layout/EmptyStateCard";
 import { StructuredLyrics } from "@/components/lyrics/legacy/StructuredLyrics";
 import { StyleRecommendationsPanel } from "./StyleRecommendationsPanel";
+import { ReferenceSourcesPanel } from "./ReferenceSourcesPanel";
 import { EnhancedPromptPreviewDialog, AIErrorAlert, type EnhancedPromptData } from "@/components/ai-recommendations";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 const usePlayTrack = () => useAudioPlayerStore(state => state.playTrack);
@@ -578,6 +579,13 @@ export const DetailPanelContent = ({
                 />
               </CardContent>
             </Card>
+
+            {/* References & Sources - НОВОЕ */}
+            <ReferenceSourcesPanel
+              metadata={track.metadata}
+              trackId={track.id}
+              className="mb-4"
+            />
 
             {/* Technical Details - Always Visible */}
             <Card className="bg-muted/30 border-border/40">

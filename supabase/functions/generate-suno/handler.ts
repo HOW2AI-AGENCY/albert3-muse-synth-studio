@@ -118,6 +118,21 @@ export class SunoGenerationHandler extends GenerationHandler<SunoGenerationParam
       metadata.reference_track_id = params.referenceTrackId;
     }
 
+    // ✅ НОВОЕ: Сохраняем personaId для отображения в UI
+    if (params.personaId) {
+      metadata.persona_id = params.personaId;
+    }
+
+    // ✅ НОВОЕ: Сохраняем inspoProjectId для отображения источника
+    if (params.inspoProjectId) {
+      metadata.inspo_project_id = params.inspoProjectId;
+    }
+
+    // ✅ НОВОЕ: Сохраняем projectId для связи с проектом
+    if (params.projectId) {
+      metadata.project_id = params.projectId;
+    }
+
     return metadata;
   }
 
