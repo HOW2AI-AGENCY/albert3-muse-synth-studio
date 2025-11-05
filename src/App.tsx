@@ -26,12 +26,17 @@ const LazySentryFeedbackButton = lazy(() =>
   import("@/components/SentryFeedbackButton").then(m => ({ default: m.SentryFeedbackButton }))
 );
 
-// Оптимизированная конфигурация React Query
+// ✅ Mobile-aware React Query configuration
+// Reduce cache times on mobile devices to preserve memory
+const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 минут - кэш считается свежим
-      gcTime: 1000 * 60 * 10, // 10 минут - время хранения в памяти (ранее cacheTime)
+      // Mobile: 2 min cache, Desktop: 5 min cache
+      staleTime: isMobile ? 1000 * 60 * 2 : 1000 * 60 * 5,
+      // Mobile: 5 min memory retention, Desktop: 10 min
+      gcTime: isMobile ? 1000 * 60 * 5 : 1000 * 60 * 10,
       refetchOnWindowFocus: false, // Не перезапрашивать при фокусе окна
       refetchOnMount: false, // Не перезапрашивать при монтировании
       refetchOnReconnect: true, // Перезапросить при восстановлении соединения
@@ -40,7 +45,8 @@ const queryClient = new QueryClient({
         if (error?.status && error.status >= 400 && error.status < 500) {
           return false;
         }
-        return failureCount < 2; // Максимум 2 попытки
+        // Mobile: 1 retry, Desktop: 2 retries (slower mobile connections)
+        return failureCount < (isMobile ? 1 : 2);
       },
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     },

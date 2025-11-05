@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { logger } from '@/utils/logger';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ProjectTrackPickerDialog } from '@/components/generator/ProjectTrackPickerDialog';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useProjects } from '@/contexts/ProjectContext';
 import { useTracks } from '@/hooks/useTracks';
 import type { Track } from '@/types/domain/track.types';
@@ -65,11 +65,24 @@ export const CompactCustomForm = memo(({
   const { tracks: allTracks } = useTracks();
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const lyricsLineCount = debouncedLyrics.split('\n').filter(l => l.trim()).length;
-  const tagsCount = params.tags.split(',').filter(t => t.trim()).length;
+
+  // ✅ Memoized computed values to prevent re-computation on every render
+  const lyricsLineCount = useMemo(
+    () => debouncedLyrics.split('\n').filter(l => l.trim()).length,
+    [debouncedLyrics]
+  );
+
+  const tagsCount = useMemo(
+    () => params.tags.split(',').filter(t => t.trim()).length,
+    [params.tags]
+  );
+
   const [trackPickerOpen, setTrackPickerOpen] = useState(false);
 
-  const selectedProject = projects.find(p => p.id === params.activeProjectId);
+  const selectedProject = useMemo(
+    () => projects.find(p => p.id === params.activeProjectId),
+    [projects, params.activeProjectId]
+  );
 
   const handleTrackSelect = useCallback((track: Track) => {
     logger.info('Track selected from project - autofilling form', 'CompactCustomForm', { 
