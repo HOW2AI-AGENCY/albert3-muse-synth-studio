@@ -1,5 +1,7 @@
 /* Импорт системы дизайн-токенов */
 @import './styles/design-tokens.css';
+/* Импорт улучшенной контрастности для мобильных устройств (Phase 2) */
+@import './styles/mobile-contrast.css';
 
 @tailwind base;
 @tailwind components;
