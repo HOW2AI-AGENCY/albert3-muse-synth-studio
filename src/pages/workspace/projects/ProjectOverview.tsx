@@ -17,6 +17,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AdaptiveGrid } from '@/components/layout/ResponsiveLayout';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 type MusicProject = Database['public']['Tables']['music_projects']['Row'];
 
@@ -24,7 +34,9 @@ export const ProjectOverview: React.FC = () => {
   const { projects, isLoading, deleteProject } = useProjects();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<MusicProject | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<MusicProject | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [category, setCategory] = useState<'all' | 'album' | 'single' | 'ep' | 'compilation'>('all');
   const [status, setStatus] = useState<'all' | 'draft' | 'active' | 'archived'>('all');
@@ -110,12 +122,12 @@ export const ProjectOverview: React.FC = () => {
       {/* Заголовок и действия */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="space-y-1">
-          <h2 className="text-2xl font-bold">Проекты</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-xl sm:text-2xl font-bold">Проекты</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">
             {projects.length} {projects.length === 1 ? 'проект' : 'проектов'}
           </p>
         </div>
-        <Button onClick={() => setCreateDialogOpen(true)} className="min-h-[44px]">
+        <Button onClick={() => setCreateDialogOpen(true)} className="h-11 sm:h-10 px-4">
           <Plus className="h-4 w-4 mr-2" />
           Новый проект
         </Button>
@@ -139,10 +151,10 @@ export const ProjectOverview: React.FC = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2">
             <Select value={category} onValueChange={(v) => setCategory(v as typeof category)}>
-              <SelectTrigger aria-label="Фильтр по типу" className="min-w-[160px]">
-                <Filter className="mr-2 h-4 w-4" />
+              <SelectTrigger aria-label="Фильтр по типу">
+                <Filter className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
                 <SelectValue placeholder="Тип" />
               </SelectTrigger>
               <SelectContent>
@@ -155,7 +167,7 @@ export const ProjectOverview: React.FC = () => {
             </Select>
 
             <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-              <SelectTrigger aria-label="Статус проекта" className="min-w-[160px]">
+              <SelectTrigger aria-label="Статус проекта">
                 <SelectValue placeholder="Статус" />
               </SelectTrigger>
               <SelectContent>
@@ -167,8 +179,8 @@ export const ProjectOverview: React.FC = () => {
             </Select>
 
             <Select value={dateRange} onValueChange={(v) => setDateRange(v as typeof dateRange)}>
-              <SelectTrigger aria-label="Период" className="min-w-[160px]">
-                <CalendarDays className="mr-2 h-4 w-4" />
+              <SelectTrigger aria-label="Период">
+                <CalendarDays className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
                 <SelectValue placeholder="Период" />
               </SelectTrigger>
               <SelectContent>
@@ -180,8 +192,8 @@ export const ProjectOverview: React.FC = () => {
             </Select>
 
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-              <SelectTrigger aria-label="Сортировка" className="min-w-[160px]">
-                <SortAsc className="mr-2 h-4 w-4" />
+              <SelectTrigger aria-label="Сортировка">
+                <SortAsc className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
                 <SelectValue placeholder="Сортировка" />
               </SelectTrigger>
               <SelectContent>
@@ -205,21 +217,46 @@ export const ProjectOverview: React.FC = () => {
               setDetailsDialogOpen(true);
             }}
             onDelete={() => {
-              if (confirm(`Удалить проект "${project.name}"?`)) {
-                deleteProject(project.id);
-              }
+              setProjectToDelete(project);
+              setDeleteDialogOpen(true);
             }}
           />
         ))}
       </AdaptiveGrid>
 
       <CreateProjectDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
-      
+
       <ProjectDetailsDialog
         open={detailsDialogOpen}
         onOpenChange={setDetailsDialogOpen}
         project={selectedProject}
       />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить проект?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Вы действительно хотите удалить проект "{projectToDelete?.name}"? Это действие нельзя отменить.
+              Все треки, связанные с проектом, останутся, но потеряют связь с проектом.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (projectToDelete) {
+                  deleteProject(projectToDelete.id);
+                  setProjectToDelete(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
