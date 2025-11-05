@@ -170,19 +170,45 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-4 gap-1">
-          <Button size="sm" variant="outline" onClick={handlePlay} disabled={!track.audio_url} className="h-8">
-            <Play className="h-3 w-3" />
+        {/* P0-M1 fix: Quick Actions with proper touch targets */}
+        <div className="grid grid-cols-4 gap-2">
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={handlePlay}
+            disabled={!track.audio_url}
+            className="touch-min"
+            aria-label="Воспроизвести"
+          >
+            <Play className="h-4 w-4 sm:h-3 sm:w-3" />
           </Button>
-          <Button size="sm" variant="outline" onClick={toggleLike} className="h-8">
-            <Heart className={cn("h-3 w-3", isLiked && "fill-current text-red-500")} />
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={toggleLike}
+            className="touch-min"
+            aria-label={isLiked ? "Убрать из избранного" : "Добавить в избранное"}
+          >
+            <Heart className={cn("h-4 w-4 sm:h-3 sm:w-3", isLiked && "fill-current text-red-500")} />
           </Button>
-          <Button size="sm" variant="outline" onClick={handleDownload} disabled={!track.audio_url} className="h-8">
-            <Download className="h-3 w-3" />
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={handleDownload}
+            disabled={!track.audio_url}
+            className="touch-min"
+            aria-label="Скачать"
+          >
+            <Download className="h-4 w-4 sm:h-3 sm:w-3" />
           </Button>
-          <Button size="sm" variant="outline" onClick={handleShare} className="h-8">
-            <Share2 className="h-3 w-3" />
+          <Button
+            size="icon"
+            variant="outline"
+            onClick={handleShare}
+            className="touch-min"
+            aria-label="Поделиться"
+          >
+            <Share2 className="h-4 w-4 sm:h-3 sm:w-3" />
           </Button>
         </div>
 
@@ -235,11 +261,13 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
               </div>
 
               {track.prompt && (
-                <div className="space-y-1">
-                  <Label className="text-[10px]">Промпт</Label>
-                  <p className="text-[10px] text-muted-foreground bg-muted/50 p-2 rounded max-h-16 overflow-y-auto">
-                    {track.prompt}
-                  </p>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium">Промпт генерации</Label>
+                  <ScrollArea className="max-h-32 sm:max-h-40">
+                    <p className="mobile-text-long-form text-contrast-medium bg-muted/30 p-3 rounded-lg">
+                      {track.prompt}
+                    </p>
+                  </ScrollArea>
                 </div>
               )}
 
@@ -278,12 +306,14 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
           {track.lyrics && (
             <AccordionItem value="lyrics" className="border rounded-lg px-3">
               <AccordionTrigger className="py-2.5 hover:no-underline">
-                <span className="text-xs font-medium">📝 Текст</span>
+                <span className="text-xs font-medium">📝 Лирика</span>
               </AccordionTrigger>
               <AccordionContent className="pb-3">
-                <pre className="text-[10px] whitespace-pre-wrap bg-muted/50 p-2 rounded max-h-40 overflow-y-auto">
-                  {track.lyrics}
-                </pre>
+                <ScrollArea className="max-h-64 sm:max-h-80">
+                  <pre className="mobile-text-lyrics text-contrast-medium bg-muted/30 p-3 rounded-lg">
+                    {track.lyrics}
+                  </pre>
+                </ScrollArea>
               </AccordionContent>
             </AccordionItem>
           )}
