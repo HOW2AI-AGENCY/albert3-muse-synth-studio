@@ -27,6 +27,8 @@ import { useTrackOperations } from "@/hooks/tracks/useTrackOperations";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUIStateStore } from "@/stores/uiStateStore";
+import { ViewSwitcher } from "@/components/tracks/ViewSwitcher";
+import { Filter } from "@/utils/iconImports";
 
 const Generate = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
@@ -48,6 +50,15 @@ const Generate = () => {
   const trackOperations = useTrackOperations();
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showGenerator, setShowGenerator] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    try {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('tracks-view-mode') : 'grid';
+      return (saved as 'grid' | 'list') || 'grid';
+    } catch {
+      return 'grid';
+    }
+  });
+
 
   // Dialog states
   const [separateStemsOpen, setSeparateStemsOpen] = useState(false);
@@ -181,6 +192,15 @@ const Generate = () => {
     setCreatePersonaOpen(true);
   };
 
+  const handleViewChange = (view: 'grid' | 'list') => {
+    setViewMode(view);
+    try {
+      localStorage.setItem('tracks-view-mode', view);
+    } catch {
+      // Ignore storage errors
+    }
+  };
+
   // Desktop: 3-panel resizable layout
   if (isDesktop) {
     return (
@@ -228,6 +248,7 @@ const Generate = () => {
                 onSelect={setSelectedTrack}
                 isDetailPanelOpen={!!selectedTrack}
                 trackOperations={trackOperations}
+                viewMode={viewMode}
               />
               {hasNextPage && (
                 <div className="mt-4 flex justify-center">
@@ -327,6 +348,7 @@ const Generate = () => {
                 onCreatePersona={handleCreatePersona}
                 onSelect={setSelectedTrack}
                 trackOperations={trackOperations}
+                viewMode={viewMode}
               />
               {hasNextPage && (
                 <div className="mt-4 flex justify-center">
@@ -381,22 +403,41 @@ const Generate = () => {
   // Mobile: List with FAB and Drawers
   return (
     <div className="h-full bg-background flex flex-col">
-      <div className="flex-1 overflow-y-auto workspace-main p-4">
-        <div className="mb-4">
-          <Select value={selectedProjectId || "all"} onValueChange={(value: string) => setSelectedProjectId(value === "all" ? undefined : value)}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Все треки" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Все треки</SelectItem>
-              {projects.map((project: { id: string; name: string }) => (
-                <SelectItem key={project.id} value={project.id}>
-                  {project.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div className="flex items-center justify-between p-4">
+        <h2 className="text-xl font-bold">Мои треки</h2>
+        <div className="flex items-center gap-2">
+          <ViewSwitcher view={viewMode} onViewChange={handleViewChange} />
+          <Drawer>
+            <DrawerTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Filter className="h-4 w-4" />
+              </Button>
+            </DrawerTrigger>
+            <DrawerContent className="h-[40vh] mt-20">
+              <div className="p-4">
+                <h3 className="text-lg font-semibold mb-4">Фильтры и сортировка</h3>
+                <div className="mb-4">
+                  <Select value={selectedProjectId || "all"} onValueChange={(value: string) => setSelectedProjectId(value === "all" ? undefined : value)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Все треки" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Все треки</SelectItem>
+                      {projects.map((project: { id: string; name: string }) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {/* TODO: Add sorting options here */}
+              </div>
+            </DrawerContent>
+          </Drawer>
         </div>
+      </div>
+      <div className="flex-1 overflow-y-auto workspace-main p-4">
         <TracksList
           tracks={tracks}
           isLoading={isLoading}
@@ -408,6 +449,7 @@ const Generate = () => {
           onCreatePersona={handleCreatePersona}
           onSelect={setSelectedTrack}
           trackOperations={trackOperations}
+          viewMode={viewMode}
         />
         {hasNextPage && (
           <div className="mt-4 flex justify-center">
@@ -450,8 +492,7 @@ const Generate = () => {
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0, opacity: 0 }}
                   transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   <Button
                     variant="fab"

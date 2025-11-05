@@ -86,7 +86,6 @@ export const TrackActionsMenu = memo(({
   // Resolve aliases
   const finalOnDownloadClick = onDownloadClick || onDownload;
   const finalOnShareClick = onShareClick || onShare;
-  const showExtended = variant === 'full';
   const isMurekaTrack = trackMetadata?.provider === 'mureka';
   const isSunoTrack = !isMurekaTrack;
   
