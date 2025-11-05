@@ -12,7 +12,7 @@ import type { TrackMetadata } from "@/types/track-metadata";
 
 type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
 
-export type TrackStatus = "pending" | "processing" | "completed" | "failed";
+export type TrackStatus = "pending" | "draft" | "processing" | "completed" | "failed";
 
 export type Track = Omit<TrackRow, 'metadata'> & {
   status: TrackStatus;
@@ -23,6 +23,7 @@ export type Track = Omit<TrackRow, 'metadata'> & {
 
 const isTrackStatus = (status: TrackRow["status"]): status is TrackStatus =>
   status === "pending" ||
+  status === "draft" ||
   status === "processing" ||
   status === "completed" ||
   status === "failed";
