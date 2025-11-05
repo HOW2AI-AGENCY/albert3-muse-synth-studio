@@ -105,7 +105,11 @@ function selectedTracksReducer(state: SelectedTracksState, action: SelectedTrack
   }
 }
 
-export function SelectedTracksProvider({ children }: { children: React.ReactNode }) {
+interface SelectedTracksProviderProps {
+  children: React.ReactNode;
+}
+
+export const SelectedTracksProvider: React.FC<SelectedTracksProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(selectedTracksReducer, initialState);
 
   const selectTrack = useCallback((trackId: string) => {

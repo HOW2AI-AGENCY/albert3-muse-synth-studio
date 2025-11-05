@@ -13,14 +13,16 @@ import {
   SortAsc,
   SortDesc,
   Loader2,
+  CheckSquare,
+  Square,
 } from "@/utils/iconImports";
 import { TrackCard, TrackListItem } from "@/features/tracks";
 import { OptimizedTrackList } from "@/components/OptimizedTrackList";
 import { LibrarySkeleton } from "@/components/skeletons/LibrarySkeleton";
 import { TrackStatusMonitor } from "@/components/TrackStatusMonitor";
-import { 
-  LazySeparateStemsDialog, 
-  LazyExtendTrackDialog, 
+import {
+  LazySeparateStemsDialog,
+  LazyExtendTrackDialog,
   LazyCreateCoverDialog,
   LazyTrackDeleteDialog,
   LazyAddVocalDialog,
@@ -44,6 +46,8 @@ import { useResponsiveGrid } from '@/hooks/useResponsiveGrid';
 import { VirtualizedTrackGrid } from '@/components/tracks/VirtualizedTrackGrid';
 import { VirtualizedTrackList } from '@/components/tracks/VirtualizedTrackList';
 import { useAuth } from "@/contexts/AuthContext";
+import { SelectedTracksProvider, useSelectedTracks } from '@/contexts/SelectedTracksContext';
+import { SelectionToolbar } from '@/components/tracks/SelectionToolbar';
 
 type ViewMode = 'grid' | 'list' | 'optimized';
 type SortBy = 'created_at' | 'title' | 'duration' | 'like_count';
