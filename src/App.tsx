@@ -9,11 +9,12 @@ import router from "./router";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { TelegramAuthProvider } from "@/contexts/TelegramAuthProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { LanguageProvider } from "@/i18n";
 import { toast } from "@/hooks/use-toast";
 import { reportWebVitals, logMetric } from "@/utils/web-vitals";
-import { 
-  preconnectExternalResources, 
-  setupResourceHints 
+import {
+  preconnectExternalResources,
+  setupResourceHints
 } from "@/utils/bundleOptimization";
 import { trackPerformanceMetric } from "@/utils/sentry-enhanced";
 
@@ -106,33 +107,35 @@ const App = () => {
   return (
     <GlobalErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <TelegramAuthProvider>
-          <AuthProvider>
-            <TooltipProvider delayDuration={200}>
-              <AppLayout>
-                <Suspense fallback={<FullPageSpinner />}>
-                  <Toaster />
-                  <RouterProvider router={router} />
+        <LanguageProvider>
+          <TelegramAuthProvider>
+            <AuthProvider>
+              <TooltipProvider delayDuration={200}>
+                <AppLayout>
+                  <Suspense fallback={<FullPageSpinner />}>
+                    <Toaster />
+                    <RouterProvider router={router} />
 
-                  {/* ✅ Lazy load heavy components */}
-                  <Suspense fallback={null}>
-                    <LazyGlobalAudioPlayer />
-                  </Suspense>
-
-                  {import.meta.env.DEV && (
+                    {/* ✅ Lazy load heavy components */}
                     <Suspense fallback={null}>
-                      <LazyPerformanceMonitorWidget />
+                      <LazyGlobalAudioPlayer />
                     </Suspense>
-                  )}
 
-                  <Suspense fallback={null}>
-                    <LazySentryFeedbackButton />
+                    {import.meta.env.DEV && (
+                      <Suspense fallback={null}>
+                        <LazyPerformanceMonitorWidget />
+                      </Suspense>
+                    )}
+
+                    <Suspense fallback={null}>
+                      <LazySentryFeedbackButton />
+                    </Suspense>
                   </Suspense>
-                </Suspense>
-              </AppLayout>
-            </TooltipProvider>
-          </AuthProvider>
-        </TelegramAuthProvider>
+                </AppLayout>
+              </TooltipProvider>
+            </AuthProvider>
+          </TelegramAuthProvider>
+        </LanguageProvider>
       </QueryClientProvider>
     </GlobalErrorBoundary>
   );

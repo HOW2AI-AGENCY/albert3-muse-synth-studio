@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 import ProviderBalance from "./layout/ProviderBalance";
+import { LanguageSwitcher } from "@/i18n";
 
 interface HeaderProps {
   user?: {
@@ -51,6 +52,18 @@ export const Header = ({ user, onAuthClick }: HeaderProps) => {
 
         {/* User Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Language Switcher */}
+          <LanguageSwitcher
+            variant="icon-only"
+            size="sm"
+            className="sm:hidden"
+          />
+          <LanguageSwitcher
+            variant="default"
+            size="sm"
+            className="hidden sm:flex"
+          />
+
           {user ? (
             <>
               <ProviderBalance />
@@ -62,9 +75,9 @@ export const Header = ({ user, onAuthClick }: HeaderProps) => {
                   {user.email}
                 </span>
               </div>
-              <Button 
-                variant="glass" 
-                size="sm" 
+              <Button
+                variant="glass"
+                size="sm"
                 onClick={handleSignOut}
                 className="hover:scale-105 transition-all duration-300"
               >
@@ -73,9 +86,9 @@ export const Header = ({ user, onAuthClick }: HeaderProps) => {
               </Button>
             </>
           ) : (
-            <Button 
-              variant="hero" 
-              size="sm" 
+            <Button
+              variant="hero"
+              size="sm"
               onClick={onAuthClick}
               className="hover:scale-105 transition-all duration-300 shadow-glow-primary"
             >
