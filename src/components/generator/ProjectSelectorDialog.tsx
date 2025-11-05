@@ -27,7 +27,13 @@ interface ProjectSelectorDialogProps {
   onOpenChange: (open: boolean) => void;
   selectedProjectId: string | null;
   onProjectSelect: (projectId: string | null) => void;
-  onTrackSelect?: (trackId: string) => void;
+  onTrackSelect?: (track: {
+    id: string;
+    title: string;
+    prompt?: string;
+    lyrics?: string;
+    style_tags?: string[];
+  }) => void;
   showTrackSelection?: boolean;
 }
 
@@ -71,9 +77,16 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
     }
   };
 
-  const handleTrackClick = (trackId: string) => {
+  const handleTrackClick = (track: typeof projectTracks[0]) => {
     if (onTrackSelect) {
-      onTrackSelect(trackId);
+      // ✅ Pass full track data for auto-fill
+      onTrackSelect({
+        id: track.id,
+        title: track.title,
+        prompt: track.prompt || undefined,
+        lyrics: track.lyrics || undefined,
+        style_tags: track.style_tags || undefined,
+      });
       onOpenChange(false);
     }
   };
@@ -180,7 +193,7 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                               key={track.id}
                               variant="outline"
                               className="w-full justify-start h-auto p-3"
-                              onClick={() => handleTrackClick(track.id)}
+                              onClick={() => handleTrackClick(track)}
                             >
                               <div className="flex items-center gap-3 w-full">
                                 {track.cover_url && (
