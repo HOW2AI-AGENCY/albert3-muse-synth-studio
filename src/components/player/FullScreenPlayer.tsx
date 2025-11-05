@@ -38,6 +38,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
   
   const currentTime = useAudioPlayerStore((state) => state.currentTime);
   const duration = useAudioPlayerStore((state) => state.duration);
+  const bufferingProgress = useAudioPlayerStore((state) => state.bufferingProgress);
   const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
   const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
   
@@ -143,10 +144,11 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
   return (
     <div
       ref={swipeRef as React.RefObject<HTMLDivElement>}
-      className="fixed inset-0 z-fullscreen-player bg-gradient-to-b from-background via-background/95 to-card/90 backdrop-blur-xl animate-fade-in overflow-y-auto touch-optimized"
-      style={{ 
+      className="fixed inset-0 bg-gradient-to-b from-background via-background/95 to-card/90 backdrop-blur-xl animate-fade-in overflow-y-auto touch-optimized"
+      style={{
         paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: 'env(safe-area-inset-bottom)'
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        zIndex: 'var(--z-fullscreen-player)'
       }}
       role="dialog"
       aria-label="Full Screen Player"
@@ -260,13 +262,24 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
 
         {/* Progress Bar */}
         <div className="mb-2 px-4 animate-slide-up">
-          <Slider
-            value={[currentTime]}
-            max={duration}
-            step={0.1}
-            onValueChange={handleSeek}
-            className="w-full cursor-pointer hover:scale-y-110 transition-transform duration-200"
-          />
+          <div className="relative">
+            {/* Buffering progress indicator */}
+            {bufferingProgress > 0 && bufferingProgress < 100 && (
+              <div
+                className="absolute top-1/2 -translate-y-1/2 left-0 h-1 bg-primary/30 rounded-full transition-all duration-300 pointer-events-none"
+                style={{ width: `${bufferingProgress}%` }}
+              >
+                <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-primary rounded-full animate-pulse" />
+              </div>
+            )}
+            <Slider
+              value={[currentTime]}
+              max={duration}
+              step={0.1}
+              onValueChange={handleSeek}
+              className="w-full cursor-pointer hover:scale-y-110 transition-transform duration-200"
+            />
+          </div>
           <div className="flex justify-between text-xs text-muted-foreground/80 mt-2 font-medium tabular-nums">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration)}</span>

@@ -7,7 +7,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Plus } from "@/utils/iconImports";
-import { Drawer, DrawerContent, DrawerTrigger, DrawerTitle } from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import { Portal } from "@/components/ui/Portal";
@@ -378,58 +378,57 @@ const Generate = () => {
         onSuccess={refreshTracks}
       />
 
-      <Portal>
-        <Drawer open={showGenerator} onOpenChange={setShowGenerator}>
+      {/* FAB Button - Fixed positioning and z-index */}
+      {!showGenerator && (
+        <Portal>
           <Tooltip>
             <TooltipTrigger asChild>
-              <DrawerTrigger asChild>
-                <motion.div
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{
-                    scale: showGenerator ? 0 : 1,
-                    opacity: showGenerator ? 0 : 1
-                  }}
-                  transition={{ delay: showGenerator ? 0 : 0.2, type: 'spring', stiffness: 260, damping: 20 }} /* Reduced delay from 0.5 to 0.2 for faster response */
-                  whileHover={{ scale: showGenerator ? 0 : 1.1 }}
-                  whileTap={{ scale: showGenerator ? 0 : 0.9 }}
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <Button
+                  variant="fab"
+                  size="fab"
+                  onClick={() => setShowGenerator(true)}
+                  className="fixed right-6"
                   style={{
-                    pointerEvents: showGenerator ? 'none' : 'auto',
-                    display: showGenerator ? 'none' : 'block' /* FIXED: Complete hiding from DOM when drawer open */
+                    bottom: 'max(calc(var(--bottom-tab-bar-height, 64px) + 1rem), 5rem)',
+                    position: 'fixed',
+                    zIndex: 70, // Explicit numeric value as fallback
+                    willChange: 'transform'
                   }}
+                  aria-label="Создать музыку"
                 >
-                  <Button
-                    variant="fab"
-                    size="fab"
-                    className="fixed right-6"
-                    style={{
-                      bottom: 'calc(var(--bottom-tab-bar-height) + 1rem)',
-                      position: 'fixed',
-                      zIndex: 'var(--z-fab)'
-                    }}
-                    aria-label="Создать музыку"
-                  >
-                    <Plus className="h-6 w-6" />
-                  </Button>
-                </motion.div>
-              </DrawerTrigger>
+                  <Plus className="h-6 w-6" />
+                </Button>
+              </motion.div>
             </TooltipTrigger>
             <TooltipContent side="left">
               <p className="text-sm font-medium">Создать музыку</p>
             </TooltipContent>
           </Tooltip>
-          <DrawerContent className="h-[90vh] mt-20">
-            <VisuallyHidden>
-              <DrawerTitle>Создать музыку</DrawerTitle>
-            </VisuallyHidden>
-            <div className="w-full max-w-md mx-auto h-8 flex items-center justify-center">
-              <div className="w-12 h-1 bg-muted-foreground/20 rounded-full" />
-            </div>
-            <div className="p-4 h-full overflow-y-auto">
-              <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
-            </div>
-          </DrawerContent>
-        </Drawer>
-      </Portal>
+        </Portal>
+      )}
+
+      {/* Generator Drawer */}
+      <Drawer open={showGenerator} onOpenChange={setShowGenerator}>
+        <DrawerContent className="h-[90vh] mt-20">
+          <VisuallyHidden>
+            <DrawerTitle>Создать музыку</DrawerTitle>
+          </VisuallyHidden>
+          <div className="w-full max-w-md mx-auto h-8 flex items-center justify-center">
+            <div className="w-12 h-1 bg-muted-foreground/20 rounded-full" />
+          </div>
+          <div className="p-4 h-full overflow-y-auto">
+            <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       <Drawer open={!!selectedTrack} onOpenChange={(open) => !open && handleCloseDetail()}>
         <DrawerContent className="h-[70vh] max-h-[75vh]">
