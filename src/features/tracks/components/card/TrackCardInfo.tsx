@@ -37,7 +37,7 @@ export const TrackCardInfo = memo(({
       <div className="flex-1">
         <div className="flex items-start justify-between gap-2 mb-0.5">
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
-            <h3 className="font-semibold text-sm leading-tight line-clamp-1 group-hover:text-primary">
+            <h3 className="font-semibold text-base md:text-lg leading-tight line-clamp-1 group-hover:text-primary">
               {title}
             </h3>
             {hasStems && (
@@ -61,7 +61,7 @@ export const TrackCardInfo = memo(({
           {/* ✅ REMOVED: Дублирующий переключатель версий - используется только верхний в TrackVariantSelector */}
         </div>
         
-        <p className="text-xs text-muted-foreground mb-1.5 line-clamp-1">{prompt}</p>
+        <p className="text-xs md:text-sm text-muted-foreground mb-1.5 line-clamp-1">{prompt}</p>
       </div>
 
       {(status === 'processing' || status === 'pending') && (

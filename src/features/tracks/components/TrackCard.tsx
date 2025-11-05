@@ -158,7 +158,7 @@ const TrackCardComponent = memo(({
           />
         </div>
 
-        <CardContent className="p-2 md:p-3 lg:p-4 flex-1 flex flex-col">
+        <CardContent className="p-3 flex-1 flex flex-col">
           <TrackCardInfo
             title={displayedVersion.title || track.title}
             prompt={track.prompt}
