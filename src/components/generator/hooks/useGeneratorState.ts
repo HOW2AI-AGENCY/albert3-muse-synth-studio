@@ -1,7 +1,7 @@
 /**
  * Consolidated state management for MusicGeneratorV2
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import type { GenerationParams, GeneratorMode } from '@/components/generator/types/generator.types';
 
 export interface GeneratorState {
@@ -105,7 +105,9 @@ export const useGeneratorState = (
   const [debouncedPrompt, setDebouncedPrompt] = useState(params.prompt);
   const [debouncedLyrics, setDebouncedLyrics] = useState(params.lyrics);
 
-  return {
+  // Memoize the return object to prevent infinite re-renders
+  // Only create a new object reference when the actual state values change
+  return useMemo(() => ({
     // State
     mode,
     audioPreviewOpen,
@@ -119,7 +121,7 @@ export const useGeneratorState = (
     params,
     debouncedPrompt,
     debouncedLyrics,
-    
+
     // Actions
     setMode,
     setAudioPreviewOpen,
@@ -134,5 +136,19 @@ export const useGeneratorState = (
     setParam,
     setDebouncedPrompt,
     setDebouncedLyrics,
-  };
+  }), [
+    mode,
+    audioPreviewOpen,
+    lyricsDialogOpen,
+    historyDialogOpen,
+    showPresets,
+    pendingAudioFile,
+    murekaLyricsDialog,
+    enhancedPrompt,
+    isEnhancing,
+    params,
+    debouncedPrompt,
+    debouncedLyrics,
+    setParam,
+  ]);
 };
