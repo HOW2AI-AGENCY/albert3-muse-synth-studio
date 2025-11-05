@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 import ProviderBalance from "./layout/ProviderBalance";
-import { LanguageSwitcher } from "@/i18n";
+import { LanguageSwitcher, useTranslation } from "@/i18n";
 
 interface HeaderProps {
   user?: {
@@ -20,12 +20,13 @@ interface HeaderProps {
 
 export const Header = ({ user, onAuthClick }: HeaderProps) => {
   const { toast } = useToast();
+  const t = useTranslation();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     toast({
-      title: "Signed out",
-      description: "You have been successfully signed out",
+      title: t('common.signedOut'),
+      description: t('common.signedOutDescription'),
     });
   };
 
@@ -82,7 +83,7 @@ export const Header = ({ user, onAuthClick }: HeaderProps) => {
                 className="hover:scale-105 transition-all duration-300"
               >
                 <LogOut className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Выйти</span>
+                <span className="hidden sm:inline">{t('common.logout')}</span>
               </Button>
             </>
           ) : (
@@ -93,7 +94,7 @@ export const Header = ({ user, onAuthClick }: HeaderProps) => {
               className="hover:scale-105 transition-all duration-300 shadow-glow-primary"
             >
               <User className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Войти</span>
+              <span className="hidden sm:inline">{t('common.login')}</span>
             </Button>
           )}
         </div>

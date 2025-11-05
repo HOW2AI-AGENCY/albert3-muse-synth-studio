@@ -140,7 +140,10 @@
     "confirm": "Подтвердить",
     "settings": "Настройки",
     "help": "Помощь",
-    "logout": "Выйти"
+    "login": "Войти",
+    "logout": "Выйти",
+    "signedOut": "Вы вышли из системы",
+    "signedOutDescription": "Вы успешно вышли из системы"
   },
   "validation": {
     "required": "Обязательное поле",

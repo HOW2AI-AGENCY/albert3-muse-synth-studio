@@ -140,7 +140,10 @@
     "confirm": "Confirm",
     "settings": "Settings",
     "help": "Help",
-    "logout": "Logout"
+    "login": "Login",
+    "logout": "Logout",
+    "signedOut": "Signed out",
+    "signedOutDescription": "You have been successfully signed out"
   },
   "validation": {
     "required": "Required field",

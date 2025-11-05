@@ -16,6 +16,7 @@ import { logger } from "@/utils/logger";
 import { supabase } from "@/integrations/supabase/client";
 import { useTrackLike } from "@/features/tracks/hooks/useTrackLike";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
+import { useTranslation } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { MinimalVersionsList } from "./MinimalVersionsList";
 import { MinimalStemsList } from "./MinimalStemsList";
@@ -45,6 +46,7 @@ interface DetailPanelMobileProps {
 
 export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: DetailPanelMobileProps) => {
   const { toast } = useToast();
+  const t = useTranslation();
   const [isDeleting, setIsDeleting] = useState(false);
   const [title, setTitle] = useState(track.title);
   const [genre, setGenre] = useState(track.genre || "");
@@ -64,14 +66,14 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
         .eq("id", track.id);
 
       if (error) throw error;
-      toast({ title: "✅ Сохранено" });
+      toast({ title: t('trackDetails.saved') });
       onUpdate?.();
     } catch (error) {
-      toast({ title: "Ошибка", description: "Не удалось сохранить", variant: "destructive" });
+      toast({ title: t('common.error'), description: t('trackDetails.errorSaving'), variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
-  }, [title, genre, mood, isPublic, track.id, toast, onUpdate]);
+  }, [title, genre, mood, isPublic, track.id, toast, onUpdate, t]);
 
   const handlePlay = useCallback(() => {
     if (!track.audio_url) return;
@@ -94,21 +96,21 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
   const handleShare = () => {
     const shareUrl = `${window.location.origin}/track/${track.id}`;
     navigator.clipboard.writeText(shareUrl);
-    toast({ title: "🔗 Ссылка скопирована" });
+    toast({ title: t('trackDetails.linkCopied') });
   };
 
   const handleDelete = async () => {
-    if (!confirm("Удалить трек безвозвратно?")) return;
-    
+    if (!confirm(t('trackDetails.confirmDelete'))) return;
+
     setIsDeleting(true);
     try {
       await ApiService.deleteTrackCompletely(track.id);
-      toast({ title: "🗑️ Трек удалён" });
+      toast({ title: t('trackDetails.trackDeleted') });
       onDelete?.();
       onClose?.();
     } catch (error) {
       logger.error("Error deleting track", error instanceof Error ? error : new Error(String(error)), "DetailPanelMobile", { trackId: track.id });
-      toast({ title: "Ошибка", variant: "destructive" });
+      toast({ title: t('common.error'), variant: "destructive" });
     } finally {
       setIsDeleting(false);
     }
@@ -123,7 +125,7 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
             variant="ghost"
             size="icon"
             onClick={onClose}
-            aria-label="Закрыть панель"
+            aria-label={t('trackDetails.closePanel')}
             className="rounded-full"
           >
             <X className="h-4 w-4" />
@@ -178,7 +180,7 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
             onClick={handlePlay}
             disabled={!track.audio_url}
             className="touch-min"
-            aria-label="Воспроизвести"
+            aria-label={t('trackActions.play')}
           >
             <Play className="h-4 w-4 sm:h-3 sm:w-3" />
           </Button>
@@ -187,7 +189,7 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
             variant="outline"
             onClick={toggleLike}
             className="touch-min"
-            aria-label={isLiked ? "Убрать из избранного" : "Добавить в избранное"}
+            aria-label={isLiked ? t('trackActions.unlike') : t('trackActions.like')}
           >
             <Heart className={cn("h-4 w-4 sm:h-3 sm:w-3", isLiked && "fill-current text-red-500")} />
           </Button>
@@ -197,7 +199,7 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
             onClick={handleDownload}
             disabled={!track.audio_url}
             className="touch-min"
-            aria-label="Скачать"
+            aria-label={t('trackActions.download')}
           >
             <Download className="h-4 w-4 sm:h-3 sm:w-3" />
           </Button>
@@ -206,7 +208,7 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
             variant="outline"
             onClick={handleShare}
             className="touch-min"
-            aria-label="Поделиться"
+            aria-label={t('trackActions.share')}
           >
             <Share2 className="h-4 w-4 sm:h-3 sm:w-3" />
           </Button>
@@ -220,12 +222,12 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
             <AccordionTrigger className="py-2.5 hover:no-underline">
               <div className="flex items-center gap-2">
                 <Info className="h-3.5 w-3.5" />
-                <span className="text-xs font-medium">Информация</span>
+                <span className="text-xs font-medium">{t('trackDetails.trackInfo')}</span>
               </div>
             </AccordionTrigger>
             <AccordionContent className="space-y-2 pb-3">
               <div className="space-y-1.5">
-                <Label htmlFor="title-mobile" className="text-[10px]">Название</Label>
+                <Label htmlFor="title-mobile" className="text-[10px]">{t('trackDetails.title')}</Label>
                 <Input
                   id="title-mobile"
                   value={title}
@@ -236,7 +238,7 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
 
               <div className="grid grid-cols-2 gap-1.5">
                 <div className="space-y-1.5">
-                  <Label htmlFor="genre-mobile" className="text-[10px]">Жанр</Label>
+                  <Label htmlFor="genre-mobile" className="text-[10px]">{t('trackDetails.genre')}</Label>
                   <Input
                     id="genre-mobile"
                     value={genre}
@@ -245,7 +247,7 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="mood-mobile" className="text-[10px]">Настроение</Label>
+                  <Label htmlFor="mood-mobile" className="text-[10px]">{t('trackDetails.mood')}</Label>
                   <Input
                     id="mood-mobile"
                     value={mood}
@@ -256,13 +258,13 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
               </div>
 
               <div className="flex items-center justify-between">
-                <Label htmlFor="public-mobile" className="text-[10px]">Публичный</Label>
+                <Label htmlFor="public-mobile" className="text-[10px]">{t('trackDetails.isPublic')}</Label>
                 <Switch id="public-mobile" checked={isPublic} onCheckedChange={setIsPublic} />
               </div>
 
               {track.prompt && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium">Промпт генерации</Label>
+                  <Label className="text-xs font-medium">{t('generation.prompt')}</Label>
                   <ScrollArea className="max-h-32 sm:max-h-40">
                     <p className="mobile-text-long-form text-contrast-medium bg-muted/30 p-3 rounded-lg">
                       {track.prompt}
@@ -272,7 +274,7 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
               )}
 
               <Button onClick={handleSave} disabled={isSaving} size="sm" className="w-full h-7 text-xs">
-                {isSaving ? "..." : "Сохранить"}
+                {isSaving ? t('trackDetails.saving') : t('common.save')}
               </Button>
             </AccordionContent>
           </AccordionItem>
@@ -281,7 +283,7 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
             <AccordionTrigger className="py-2.5 hover:no-underline">
               <div className="flex items-center gap-2">
                 <Music className="h-3.5 w-3.5" />
-                <span className="text-xs font-medium">Версии</span>
+                <span className="text-xs font-medium">{t('trackDetails.versions')}</span>
               </div>
             </AccordionTrigger>
             <AccordionContent className="pb-3">
@@ -294,7 +296,7 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
               <AccordionTrigger className="py-2.5 hover:no-underline">
                 <div className="flex items-center gap-2">
                   <Settings className="h-3.5 w-3.5" />
-                  <span className="text-xs font-medium">Стемы</span>
+                  <span className="text-xs font-medium">{t('trackDetails.stems')}</span>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pb-3">
@@ -306,7 +308,7 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
           {track.lyrics && (
             <AccordionItem value="lyrics" className="border rounded-lg px-3">
               <AccordionTrigger className="py-2.5 hover:no-underline">
-                <span className="text-xs font-medium">📝 Лирика</span>
+                <span className="text-xs font-medium">📝 {t('generation.lyrics')}</span>
               </AccordionTrigger>
               <AccordionContent className="pb-3">
                 <ScrollArea className="max-h-64 sm:max-h-80">
@@ -330,7 +332,7 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
               className="w-full h-8 text-xs"
             >
               <Trash2 className="h-3 w-3 mr-1.5" />
-              {isDeleting ? "Удаление..." : "Удалить"}
+              {isDeleting ? `${t('common.delete')}...` : t('common.delete')}
             </Button>
           </>
         )}
