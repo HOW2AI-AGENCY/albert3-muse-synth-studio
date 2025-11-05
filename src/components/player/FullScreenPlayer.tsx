@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { logger } from "@/utils/logger";
+import { LyricsDisplay } from './LyricsDisplay'; // Import LyricsDisplay
 
 interface FullScreenPlayerProps {
   onMinimize: () => void;
@@ -249,6 +250,13 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
             {currentTrack.style_tags?.join(' • ') || 'AI Generated'}
           </p>
         </div>
+
+        {/* Lyrics Display for Mobile */}
+        {currentTrack.suno_task_id && currentTrack.id && (
+          <div className="mb-4 px-4 animate-fade-in">
+            <LyricsDisplay taskId={currentTrack.suno_task_id} audioId={currentTrack.id} />
+          </div>
+        )}
 
         {/* Progress Bar */}
         <div className="mb-2 px-4 animate-slide-up">
