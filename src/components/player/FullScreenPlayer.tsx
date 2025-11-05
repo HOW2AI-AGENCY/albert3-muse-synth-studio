@@ -17,7 +17,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { logger } from "@/utils/logger";
-import { LyricsDisplay } from './LyricsDisplay'; // Import LyricsDisplay
+import { TimestampedLyricsDisplay } from './TimestampedLyricsDisplay';
+import { useTimestampedLyrics } from '@/hooks/useTimestampedLyrics';
 
 interface FullScreenPlayerProps {
   onMinimize: () => void;
@@ -48,6 +49,13 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
   const playNext = useAudioPlayerStore((state) => state.playNext);
   const playPrevious = useAudioPlayerStore((state) => state.playPrevious);
   const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
+
+  // Получаем timestamped lyrics
+  const { data: lyricsData } = useTimestampedLyrics({
+    taskId: currentTrack?.suno_task_id,
+    audioId: currentTrack?.id,
+    enabled: !!(currentTrack?.suno_task_id && currentTrack?.id),
+  });
 
   const { vibrate } = useHapticFeedback();
   const { toast } = useToast();
@@ -253,10 +261,16 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
           </p>
         </div>
 
-        {/* Lyrics Display for Mobile */}
-        {currentTrack.suno_task_id && currentTrack.id && (
-          <div className="mb-4 px-4 animate-fade-in">
-            <LyricsDisplay taskId={currentTrack.suno_task_id} audioId={currentTrack.id} />
+        {/* Улучшенный дисплей лирики с синхронизацией */}
+        {lyricsData && lyricsData.alignedWords && lyricsData.alignedWords.length > 0 && (
+          <div className="mb-4 animate-fade-in max-h-64">
+            <TimestampedLyricsDisplay
+              timestampedLyrics={lyricsData.alignedWords}
+              currentTime={currentTime}
+              onSeek={seekTo}
+              coverUrl={currentTrack.cover_url}
+              className="h-64"
+            />
           </div>
         )}
 
