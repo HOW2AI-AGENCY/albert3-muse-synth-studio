@@ -36,7 +36,6 @@ export const ParallaxHeader: React.FC<ParallaxHeaderProps> = ({
     if (prefersReducedMotion) return;
 
     let rafId = 0;
-    let lastScrollY = window.scrollY;
 
     const animate = () => {
       const el = containerRef.current;
@@ -51,7 +50,6 @@ export const ParallaxHeader: React.FC<ParallaxHeaderProps> = ({
       el.style.opacity = `${opacity}`;
       el.style.willChange = "transform, opacity";
 
-      lastScrollY = currentScroll;
       rafId = requestAnimationFrame(animate);
     };
 

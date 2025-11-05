@@ -201,7 +201,6 @@ const MemoizedTrackCard = React.memo(TrackCardComponent, (prevProps, nextProps) 
 });
 
 const TrackCardWithErrorBoundary = withErrorBoundary(MemoizedTrackCard);
-TrackCardWithErrorBoundary.displayName = 'TrackCard';
 export { TrackCardWithErrorBoundary as TrackCard };
 
 // Inject keyframes for fade-in animation once

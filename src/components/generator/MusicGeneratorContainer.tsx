@@ -227,8 +227,8 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
 
     logger.info(
       '🎵 [GENERATE] Starting generation',
-      `Prompt: ${!!state.params.prompt.trim()}, Lyrics: ${!!state.params.lyrics.trim()}, Audio: ${!!state.params.referenceAudioUrl}, Mode: ${state.mode}`,
-      'MusicGeneratorContainer'
+      'MusicGeneratorContainer',
+      { prompt: !!state.params.prompt.trim(), lyrics: !!state.params.lyrics.trim(), audio: !!state.params.referenceAudioUrl, mode: state.mode }
     );
 
     const started = await generate(requestParams);
@@ -474,7 +474,7 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
       isMobile={isMobile}
       isGenerating={isGenerating}
       isEnhancing={state.isEnhancing}
-      currentModels={currentModels}
+      currentModels={[...currentModels]}
       audioSourceDialogOpen={audioSourceDialogOpen}
       personaDialogOpen={personaDialogOpen}
       projectDialogOpen={projectDialogOpen}

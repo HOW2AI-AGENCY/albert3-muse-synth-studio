@@ -44,13 +44,13 @@ export const LyricsService = {
       const response = data as SunoLyricsApiResponse;
 
       if (!response.success) {
-        logger.error('Suno lyrics Edge Function returned error', new Error(response.error || 'Unknown error'), { taskId, audioId });
+        logger.error('Suno lyrics Edge Function returned error', new Error(response.error || 'Unknown error'), 'LyricsService', { taskId, audioId });
         throw new Error(response.error || 'Failed to get timestamped lyrics');
       }
 
       return response.data;
     } catch (error) {
-      logger.error('Error fetching timestamped lyrics', error as Error, { taskId, audioId });
+      logger.error('Error fetching timestamped lyrics', error as Error, 'LyricsService', { taskId, audioId });
       throw error;
     }
   },

@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useReducer, useCallback } from 'react';
-import type { Track } from '@/services/api.service';
 
 interface SelectedTracksState {
   selectedTrackIds: Set<string>;

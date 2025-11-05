@@ -2,6 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import { LyricsService } from '@/services/lyrics.service';
 import { logger } from '@/utils/logger';
 
+export interface TimestampedWord {
+  word: string;
+  success: boolean;
+  startS: number;
+  endS: number;
+  palign: number;
+}
+
 interface UseTimestampedLyricsProps {
   taskId: string | undefined;
   audioId: string | undefined;

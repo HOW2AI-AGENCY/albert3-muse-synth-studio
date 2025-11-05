@@ -73,7 +73,7 @@ export class PromptDJHelper extends EventTarget {
       };
 
       this.ws.onerror = (error) => {
-        logger.error('[PromptDJHelper] WebSocket error', error as Error, 'PromptDJHelper');
+        logger.error('[PromptDJHelper] WebSocket error', new Error('WebSocket connection failed'), 'PromptDJHelper', { error });
         this.setPlaybackState('error');
         this.dispatchEvent(new CustomEvent('error', { 
           detail: { message: 'WebSocket connection failed' }

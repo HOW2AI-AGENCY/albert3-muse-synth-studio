@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface DefaultErrorFallbackProps {
   error: Error;
   reset: () => void;

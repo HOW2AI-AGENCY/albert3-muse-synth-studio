@@ -9,7 +9,6 @@ import {
   FolderOpen, 
   X,
   Play,
-  Pause,
   Share2
 } from 'lucide-react';
 import { toast } from 'sonner';

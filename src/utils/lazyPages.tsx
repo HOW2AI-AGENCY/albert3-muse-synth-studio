@@ -5,7 +5,7 @@ import { logError } from './logger';
  * Утилита для создания ленивых страниц с обработкой ошибок
  * Phase 1 Optimization: Code Splitting для больших компонентов
  */
-const createLazyPage = <Props extends object>(
+const createLazyPage = <Props extends object = {}>(
   importFn: () => Promise<{ default: React.ComponentType<Props> }>,
   pageName: string
 ) => {
@@ -83,13 +83,13 @@ export const LazyMonitoringHub = createLazyPage(
   'MonitoringHub'
 );
 
-export const LazyStudio = createLazyPage(
-  () => import('../pages/workspace/Studio').then(module => ({ default: module.Studio })),
+export const LazyStudio = createLazyPage<{}>(
+  () => import('../pages/workspace/Studio').then(module => ({ default: module.Studio as any })),
   'Studio'
 );
 
-export const LazyDAW = createLazyPage(
-  () => import('../pages/workspace/DAW').then(module => ({ default: module.DAW })),
+export const LazyDAW = createLazyPage<{}>(
+  () => import('../pages/workspace/DAW').then(module => ({ default: module.DAW as any })),
   'DAW'
 );
 
@@ -128,8 +128,8 @@ export const LazyPersonas = createLazyPage(
   'Personas'
 );
 
-export const LazyPromptDJPage = createLazyPage(
-  () => import('../pages/workspace/PromptDJPage').then(module => ({ default: module.PromptDJPage })),
+export const LazyPromptDJPage = createLazyPage<{}>(
+  () => import('../pages/workspace/PromptDJPage').then(module => ({ default: module.PromptDJPage as any })),
   'PromptDJPage'
 );
 

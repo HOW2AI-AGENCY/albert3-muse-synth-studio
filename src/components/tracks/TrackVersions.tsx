@@ -8,7 +8,7 @@ import { useTrackVersions } from '@/features/tracks/hooks';
 import { Card, CardContent } from '@/components/ui/card';
 import { EnhancedBadge } from '@/components/ui/enhanced-badge';
 import { EnhancedButton } from '@/components/ui/enhanced-button';
-import { Play, Pause, Music, Star, Headphones, Waveform } from 'lucide-react';
+import { Play, Pause, Music, Headphones } from 'lucide-react';
 import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
 import { formatTime } from '@/utils/formatters';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,7 +21,7 @@ interface TrackVersionsProps {
 export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
   const { allVersions = [], isLoading } = useTrackVersions(trackId);
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
-  const pauseTrack = useAudioPlayerStore((state) => state.pauseTrack);
+  const pause = useAudioPlayerStore((state) => state.pause);
   const currentTrack = useAudioPlayerStore((state) => state.currentTrack);
   const isPlaying = useAudioPlayerStore((state) => state.isPlaying);
 
@@ -52,7 +52,7 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
     const isCurrentTrack = currentTrack?.id === version.id;
     
     if (isCurrentTrack && isPlaying) {
-      pauseTrack();
+      pause();
     } else {
       playTrack({
         id: version.id,
@@ -179,7 +179,7 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       {version.duration && (
                         <span className="flex items-center gap-1">
-                          <Waveform className="h-3 w-3" />
+                          <Music className="h-3 w-3" />
                           {formatTime(version.duration)}
                         </span>
                       )}

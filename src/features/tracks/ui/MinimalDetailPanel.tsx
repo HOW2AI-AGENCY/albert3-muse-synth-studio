@@ -46,8 +46,6 @@ interface MinimalDetailPanelProps {
 
 export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: MinimalDetailPanelProps) => {
   const [title, setTitle] = useState(track.title);
-  const [genre, setGenre] = useState(track.genre || "");
-  const [mood, setMood] = useState(track.mood || "");
   const [isPublic, setIsPublic] = useState(track.is_public || false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeAccordion, setActiveAccordion] = useState<string | undefined>("info");
@@ -60,7 +58,7 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
     try {
       const { error } = await supabase
         .from("tracks")
-        .update({ title, genre: genre || null, mood: mood || null, is_public: isPublic })
+        .update({ title, is_public: isPublic })
         .eq("id", track.id);
 
       if (error) throw error;
@@ -72,7 +70,7 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
     } finally {
       setIsSaving(false);
     }
-  }, [title, genre, mood, isPublic, track.id, onUpdate]);
+  }, [title, isPublic, track.id, onUpdate]);
 
   const handleDelete = useCallback(async () => {
     if (!confirm("Удалить трек безвозвратно?")) return;

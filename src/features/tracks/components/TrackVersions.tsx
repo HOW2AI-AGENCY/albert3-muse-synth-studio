@@ -360,7 +360,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
             <AlertDialogDescription>
               Вы собираетесь удалить {versionToDelete?.is_primary_variant
                 ? 'оригинальную версию'
-                : `вариант ${getDisplayVersionNumber(versionToDelete)}`}.
+                : `вариант ${getDisplayVersionNumber(versionToDelete ?? undefined)}`}.
               {versionToDelete?.is_preferred_variant && !versionToDelete?.is_primary_variant && (
                 <span className="block mt-2 text-orange-500 font-medium">
                   ⚠️ Это главная версия. Статус главной будет присвоен другой версии.
