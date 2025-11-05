@@ -55,6 +55,14 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
   // Кол-во альтернативных версий (без первичной)
   const additionalCount = versions.filter(v => !v.is_primary_variant).length;
 
+  // ✅ FIX: Helper function for consistent version number display
+  // Define early so it's available in all callbacks
+  const getDisplayVersionNumber = useCallback((version: TrackVersion | undefined): number => {
+    if (!version) return 1;
+    // variant_index is 0-based, so add 1 for display (0 -> V1, 1 -> V2, etc.)
+    return (version.variant_index ?? 0) + 1;
+  }, []);
+
   // Мемоизируем функцию установки мастер-версии
   const handleSetMaster = useCallback(async (versionId: string, versionNumber: number, isPrimary?: boolean) => {
     if (isPrimary) {
@@ -91,9 +99,10 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
   const handlePlayVersion = useCallback((version: TrackVersion) => {
     vibrate('light');
 
-    logInfo(`Playing version ${version.variant_index}`, 'TrackVersions', {
+    const displayNumber = getDisplayVersionNumber(version);
+    logInfo(`Playing version ${displayNumber}`, 'TrackVersions', {
       versionId: version.id,
-      versionNumber: version.variant_index,
+      versionNumber: displayNumber,
       trackId
     });
 
@@ -150,7 +159,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
       }
 
       vibrate('success');
-      toast.success(`Вариант ${versionToDelete.variant_index} удалён`);
+      toast.success(`Вариант ${getDisplayVersionNumber(versionToDelete)} удалён`);
       onVersionUpdate?.();
     } catch (error) {
       logError("Ошибка при удалении версии", error as Error, "TrackVersions", {
@@ -169,7 +178,9 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
   const additionalVersions = versions.filter(version => !version.is_primary_variant);
   const primaryVersion = versions.find(v => v.is_primary_variant);
   const preferredVersion = versions.find(v => v.is_preferred_variant) || primaryVersion;
-  const activeVersionLabel = preferredVersion ? `V${(preferredVersion.variant_index ?? 0) + 1}` : 'V1';
+
+  // ✅ Use consistent version number display
+  const activeVersionLabel = `V${getDisplayVersionNumber(preferredVersion)}`;
 
   if (!versions || versions.length <= 1) {
     return null;
@@ -219,10 +230,10 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
               size="sm"
               variant={v.id === preferredVersion?.id ? 'default' : 'ghost'}
               className="h-7 px-2 text-xs"
-              onClick={() => handleSetMaster(v.id, (v.variant_index ?? 0) + 1, v.is_primary_variant)}
-              aria-label={`Выбрать версию V${(v.variant_index ?? 0) + 1}`}
+              onClick={() => handleSetMaster(v.id, getDisplayVersionNumber(v), v.is_primary_variant)}
+              aria-label={`Выбрать версию V${getDisplayVersionNumber(v)}`}
             >
-              {`V${(v.variant_index ?? 0) + 1}`}
+              {`V${getDisplayVersionNumber(v)}`}
               {v.is_preferred_variant ? <Star className="w-3 h-3 ml-1" /> : null}
             </Button>
           ))}
@@ -253,8 +264,8 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                           onClick={() => handlePlayVersion(version)}
                           aria-label={
                             isVersionPlaying
-                              ? `Пауза варианта ${version.variant_index}`
-                              : `Воспроизвести вариант ${version.variant_index}`
+                              ? `Пауза варианта ${getDisplayVersionNumber(version)}`
+                              : `Воспроизвести вариант ${getDisplayVersionNumber(version)}`
                           }
                           className="h-10 w-10 flex-shrink-0 transition-transform active:scale-95"
                         >
@@ -268,7 +279,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                         <div className="min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-medium text-sm">
-                              {`Вариант ${version.variant_index}`}
+                              {`Вариант ${getDisplayVersionNumber(version)}`}
                             </span>
                             {version.is_preferred_variant && (
                               <Badge variant="default" className="gap-1 text-xs">
@@ -290,10 +301,10 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                           variant="outline"
                           onClick={() => downloadTrack({
                             id: trackId,
-                            title: `track-${trackId}-V${(version.variant_index ?? 0) + 1}`,
+                            title: `track-${trackId}-V${getDisplayVersionNumber(version)}`,
                             audio_url: version.audio_url
                           })}
-                          aria-label={`Скачать вариант ${version.variant_index}`}
+                          aria-label={`Скачать вариант ${getDisplayVersionNumber(version)}`}
                           disabled={!version.audio_url || (isDownloading && downloadingTrackId === trackId)}
                           className="text-xs h-8 transition-transform active:scale-95"
                         >
@@ -304,8 +315,8 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleSetMaster(version.id, version.variant_index, version.is_primary_variant)}
-                            aria-label={`Откатить на вариант ${version.variant_index}`}
+                            onClick={() => handleSetMaster(version.id, getDisplayVersionNumber(version), version.is_primary_variant)}
+                            aria-label={`Откатить на вариант ${getDisplayVersionNumber(version)}`}
                             className="text-xs h-8 transition-transform active:scale-95"
                           >
                             <Star className="w-3 h-3 mr-1" />
@@ -319,7 +330,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                             size="sm"
                             variant="ghost"
                             onClick={() => handleDeleteVersion(version)}
-                            aria-label={`Удалить вариант ${version.variant_index}`}
+                            aria-label={`Удалить вариант ${getDisplayVersionNumber(version)}`}
                             className="text-xs h-8 text-destructive hover:text-destructive transition-transform active:scale-95"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -347,9 +358,9 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
           <AlertDialogHeader>
             <AlertDialogTitle>Удалить версию?</AlertDialogTitle>
             <AlertDialogDescription>
-              Вы собираетесь удалить {versionToDelete?.is_primary_variant 
-                ? 'оригинальную версию' 
-                : `вариант ${versionToDelete?.variant_index}`}.
+              Вы собираетесь удалить {versionToDelete?.is_primary_variant
+                ? 'оригинальную версию'
+                : `вариант ${getDisplayVersionNumber(versionToDelete)}`}.
               {versionToDelete?.is_preferred_variant && !versionToDelete?.is_primary_variant && (
                 <span className="block mt-2 text-orange-500 font-medium">
                   ⚠️ Это главная версия. Статус главной будет присвоен другой версии.
