@@ -120,7 +120,7 @@ export default function SunoPrototypePage() {
     const onTimeUpdate = () => setCurrentTime(el.currentTime);
     el.addEventListener('timeupdate', onTimeUpdate);
     return () => el.removeEventListener('timeupdate', onTimeUpdate);
-  }, [audioRef, setCurrentTime]); // Add setCurrentTime to dependencies
+  }, []); // Empty deps: only run once on mount when audioRef is set
 
   // ===== Render =====
   return (
