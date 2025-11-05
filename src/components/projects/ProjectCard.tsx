@@ -50,31 +50,31 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   return (
     <Card className="group hover:border-primary/50 transition-all cursor-pointer overflow-hidden">
       {/* Cover Image */}
-      <div 
+      <div
         onClick={handleCardClick}
-        className="relative h-48 bg-gradient-to-br from-primary/20 via-primary/10 to-background overflow-hidden"
+        className="relative h-40 sm:h-48 bg-gradient-to-br from-primary/20 via-primary/10 to-background overflow-hidden"
       >
         {project.cover_url ? (
-          <img 
-            src={project.cover_url} 
+          <img
+            src={project.cover_url}
             alt={project.name}
             className="w-full h-full object-cover transition-transform group-hover:scale-105"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Music className="h-16 w-16 text-primary/30" />
+            <Music className="h-12 w-12 sm:h-16 sm:w-16 text-primary/30" />
           </div>
         )}
-        
+
         {/* Overlay with project type badge */}
-        <div className="absolute top-3 left-3">
-          <Badge variant="secondary" className="backdrop-blur-sm bg-background/80">
+        <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
+          <Badge variant="secondary" className="backdrop-blur-sm bg-background/80 text-xs sm:text-sm">
             {project.project_type || 'single'}
           </Badge>
         </div>
         
         {/* Actions Menu */}
-        <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
+        <div className="absolute top-2 right-2 sm:top-3 sm:right-3" onClick={(e) => e.stopPropagation()}>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 backdrop-blur-sm bg-background/80 hover:bg-background/90">
@@ -108,18 +108,18 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
         </div>
       </div>
 
-      <CardHeader onClick={handleCardClick} className="pb-3 space-y-3">
+      <CardHeader onClick={handleCardClick} className="pb-3 space-y-2 sm:space-y-3">
         <div>
-          <h3 className="font-semibold text-lg truncate mb-1">{project.name}</h3>
+          <h3 className="font-semibold text-base sm:text-lg truncate mb-1">{project.name}</h3>
           {project.description && (
-            <p className="text-sm text-muted-foreground line-clamp-2">
+            <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
               {project.description}
             </p>
           )}
         </div>
 
         {/* Stats row */}
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+        <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
           {project.total_tracks !== null && project.total_tracks !== undefined && project.total_tracks > 0 && (
             <div className="flex items-center gap-1.5">
               <Disc3 className="h-4 w-4" />

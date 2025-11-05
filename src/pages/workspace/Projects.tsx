@@ -21,16 +21,16 @@ const Projects = () => {
   return (
     <ProjectProvider>
       <div className="h-full flex flex-col">
-        <div className="px-6 pt-6 pb-4 border-b border-border/40">
-          <h1 className="text-3xl font-bold mb-2">Проекты</h1>
-          <p className="text-muted-foreground">
+        <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-border/40">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Проекты</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Создавайте проекты, управляйте треками и ресурсами
           </p>
         </div>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ProjectTab)} className="flex-1 flex flex-col">
-          <div className="px-6 pt-4">
-            <TabsList className="grid w-full grid-cols-5 max-w-3xl">
+          <div className="px-4 sm:px-6 pt-3 sm:pt-4">
+            <TabsList className="grid w-full grid-cols-5 max-w-3xl h-11 sm:h-10">
               <TabsTrigger value="overview" className="flex items-center gap-2">
                 <FolderOpen className="w-4 h-4" />
                 <span className="hidden sm:inline">Обзор</span>
@@ -56,7 +56,7 @@ const Projects = () => {
 
           <div className="flex-1 overflow-hidden">
             <TabsContent value="overview" className="h-full m-0 p-0">
-              <div className="h-full overflow-y-auto p-6">
+              <div className="h-full overflow-y-auto p-4 sm:p-6">
                 <ProjectOverview />
               </div>
             </TabsContent>
