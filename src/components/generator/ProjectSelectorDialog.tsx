@@ -81,7 +81,7 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl max-h-[80vh]">
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-3xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>Выбор проекта</DialogTitle>
             <DialogDescription>
@@ -117,7 +117,7 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                 {/* Projects List */}
                 <div className="space-y-2">
                   <h3 className="text-sm font-medium">Проекты</h3>
-                  <ScrollArea className="h-[400px] pr-4">
+                  <ScrollArea className="h-[300px] sm:h-[400px] pr-4">
                     {isLoading ? (
                       <div className="text-sm text-muted-foreground text-center py-8">
                         Загрузка...
@@ -168,7 +168,7 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                     <h3 className="text-sm font-medium">
                       Треки проекта "{selectedProject?.name}"
                     </h3>
-                    <ScrollArea className="h-[400px] pr-4">
+                    <ScrollArea className="h-[300px] sm:h-[400px] pr-4">
                       {projectTracks.length === 0 ? (
                         <div className="text-sm text-muted-foreground text-center py-8">
                           В проекте пока нет завершенных треков

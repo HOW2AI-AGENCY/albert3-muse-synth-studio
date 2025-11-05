@@ -80,16 +80,23 @@ export const usePlayAnalytics = (
   useEffect(() => {
     const cleanupOldRecords = () => {
       const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      
+
+      // Collect keys first to avoid mutation during iteration
+      const keysToCheck: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith(STORAGE_KEY_PREFIX)) {
-          const timestamp = localStorage.getItem(key);
-          if (timestamp && parseInt(timestamp, 10) < weekAgo) {
-            localStorage.removeItem(key);
-          }
+          keysToCheck.push(key);
         }
       }
+
+      // Now safely remove old entries
+      keysToCheck.forEach((key) => {
+        const timestamp = localStorage.getItem(key);
+        if (timestamp && parseInt(timestamp, 10) < weekAgo) {
+          localStorage.removeItem(key);
+        }
+      });
     };
 
     cleanupOldRecords();

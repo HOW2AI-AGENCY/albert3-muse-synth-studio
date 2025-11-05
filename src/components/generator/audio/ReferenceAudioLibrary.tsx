@@ -147,7 +147,7 @@ export function ReferenceAudioLibrary({ onSelect, selectedUrl, onAnalyze }: Refe
   }
 
   return (
-    <ScrollArea className="h-[400px] pr-4">
+    <ScrollArea className="h-[300px] sm:h-[400px] pr-4">
       <div className="space-y-2">
         {audioFiles.map((audio) => {
           const isSelected = selectedUrl === audio.file_url;

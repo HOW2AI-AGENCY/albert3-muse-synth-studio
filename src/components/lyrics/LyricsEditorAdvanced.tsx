@@ -269,7 +269,7 @@ export const LyricsEditorAdvanced: React.FC<LyricsEditorAdvancedProps> = ({
           )}
 
           {/* Sections */}
-          <ScrollArea className="h-[400px]">
+          <ScrollArea className="h-[300px] sm:h-[400px]">
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}

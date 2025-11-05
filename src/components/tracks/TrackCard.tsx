@@ -118,7 +118,7 @@ export const TrackCard: React.FC<TrackCardProps> = ({
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center">
             <Button
               size="icon"
-              className="h-12 w-12 rounded-full bg-primary/90 hover:bg-primary opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+              className="h-12 w-12 rounded-full bg-primary/90 hover:bg-primary opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200"
               onClick={handlePlayPause}
             >
               {isPlaying ? (

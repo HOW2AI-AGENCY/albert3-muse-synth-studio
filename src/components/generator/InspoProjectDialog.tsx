@@ -75,7 +75,7 @@ export const InspoProjectDialog = memo(({
                 />
               </div>
 
-              <ScrollArea className="h-[400px]">
+              <ScrollArea className="h-[300px] sm:h-[400px]">
                 {projectsLoading ? (
                   <div className="text-center py-8 text-muted-foreground">Загрузка проектов...</div>
                 ) : musicProjects.length === 0 ? (
