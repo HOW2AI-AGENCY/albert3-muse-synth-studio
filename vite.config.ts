@@ -4,6 +4,7 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
+import { visualizer } from "rollup-plugin-visualizer";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -76,6 +77,15 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === 'development' && componentTagger(),
     tsconfigPaths(),
+    // ✅ Bundle analyzer - generates stats.html after build
+    // Run: npm run build && open stats.html
+    mode === 'production' && visualizer({
+      filename: 'stats.html',
+      open: false, // Set to true to auto-open in browser
+      gzipSize: true,
+      brotliSize: true,
+      template: 'treemap', // 'treemap' | 'sunburst' | 'network'
+    }),
     mode !== "development" && process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT
       ? sentryVitePlugin({
           org: process.env.SENTRY_ORG,
