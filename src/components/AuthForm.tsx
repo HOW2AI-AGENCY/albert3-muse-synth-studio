@@ -121,6 +121,7 @@ export const AuthForm = () => {
                 onChange={(e) => setSignInEmail(e.target.value)}
                 required
                 disabled={isLoading}
+                autoComplete="email"
               />
             </div>
             <div className="space-y-2">
@@ -161,6 +162,7 @@ export const AuthForm = () => {
                 onChange={(e) => setSignUpEmail(e.target.value)}
                 required
                 disabled={isLoading}
+                autoComplete="email"
               />
             </div>
             <div className="space-y-2">
