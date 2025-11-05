@@ -13,7 +13,7 @@ import { useRef, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Track } from '@/services/api.service';
 import { TrackCard } from '@/features/tracks/components/TrackCard';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface VirtualizedTracksListProps {
   tracks: Track[];

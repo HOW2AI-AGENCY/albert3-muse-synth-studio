@@ -19,7 +19,10 @@
  * 
  * // recognition и description обновляются автоматически через polling
  * if (recognition?.recognized_title) {
- *   console.log('Распознано:', recognition.recognized_title, recognition.recognized_artist);
+ *   logger.info('Распознано', 'useReferenceAnalysis', {
+ *     title: recognition.recognized_title,
+ *     artist: recognition.recognized_artist
+ *   });
  * }
  * ```
  */

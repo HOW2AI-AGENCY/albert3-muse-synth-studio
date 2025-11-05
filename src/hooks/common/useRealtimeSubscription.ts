@@ -8,7 +8,7 @@
  *   'tracks-channel',
  *   'tracks',
  *   `user_id=eq.${userId}`,
- *   (payload) => console.log('Track updated:', payload)
+ *   (payload) => logger.info('Track updated', 'useRealtimeSubscription', { payload })
  * );
  * ```
  */
