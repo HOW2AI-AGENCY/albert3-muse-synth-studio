@@ -173,7 +173,7 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
                   variant={viewMode === 'visual' ? 'secondary' : 'ghost'}
                   size="sm"
                   onClick={() => onViewModeChange('visual')}
-                  className="h-6 w-6 sm:h-7 sm:w-7 p-0" /* Mobile: 24px, Desktop: 28px */
+                  className="h-11 w-11 sm:h-7 sm:w-7 p-0" /* Mobile: 44px, Desktop: 28px */
                 >
                   <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
@@ -187,7 +187,7 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
                   variant={viewMode === 'raw' ? 'secondary' : 'ghost'}
                   size="sm"
                   onClick={() => onViewModeChange('raw')}
-                  className="h-6 w-6 sm:h-7 sm:w-7 p-0" /* Mobile: 24px, Desktop: 28px */
+                  className="h-11 w-11 sm:h-7 sm:w-7 p-0" /* Mobile: 44px, Desktop: 28px */
                 >
                   <Edit2 className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
@@ -208,7 +208,7 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={onAddSection}
-                  className="h-6 w-6 sm:h-7 sm:w-7 p-0" /* Mobile optimized */
+                  className="h-11 w-11 sm:h-7 sm:w-7 p-0" /* Mobile: 44px, Desktop: 28px */
                 >
                   <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
@@ -224,7 +224,7 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowAIDialog(true)}
-                    className="h-6 w-6 sm:h-7 sm:w-7 p-0" /* Mobile optimized */
+                    className="h-11 w-11 sm:h-7 sm:w-7 p-0" /* Mobile: 44px, Desktop: 28px */
                     disabled={isGenerating}
                   >
                     <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -242,7 +242,7 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
                     variant="ghost"
                     size="sm"
                     onClick={handleSave}
-                    className="h-6 w-6 sm:h-7 sm:w-7 p-0" /* Mobile optimized */
+                    className="h-11 w-11 sm:h-7 sm:w-7 p-0" /* Mobile: 44px, Desktop: 28px */
                     disabled={isSaving}
                   >
                     <Save className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -259,7 +259,7 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
                     variant="ghost"
                     size="sm"
                     onClick={onGenerate}
-                    className="h-6 w-6 sm:h-7 sm:w-7 p-0" /* Mobile optimized */
+                    className="h-11 w-11 sm:h-7 sm:w-7 p-0" /* Mobile: 44px, Desktop: 28px */
                   >
                     <Wand2 className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>

@@ -26,7 +26,7 @@ export const FavoriteButton = React.memo<FavoriteButtonProps>(({
     <Button
       variant={variant}
       size="icon"
-      className={cn('h-8 w-8', className)}
+      className={cn('h-11 w-11 sm:h-8 sm:w-8', className)}
       onClick={onClick}
     >
       <Star

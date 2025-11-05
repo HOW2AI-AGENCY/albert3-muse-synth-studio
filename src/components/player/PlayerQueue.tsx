@@ -90,17 +90,17 @@ const QueueItem = memo(({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="h-11 w-11 sm:h-8 sm:w-8 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
           onClick={() => onPlay(track)}
           disabled={isCurrentTrack}
         >
           <Play className="h-4 w-4" />
         </Button>
-        
+
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"
+          className="h-11 w-11 sm:h-8 sm:w-8 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:text-destructive"
           onClick={() => onRemove(track.id)}
           disabled={isRemoving}
         >
