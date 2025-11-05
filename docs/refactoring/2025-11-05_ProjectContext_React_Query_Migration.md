@@ -140,12 +140,23 @@ function MyComponent() {
 ### Manual Testing Checklist
 
 - [x] TypeScript compiles without errors
+- [x] Fixed infinite re-render loop (React error #301)
 - [ ] Create project → instant UI update
 - [ ] Update project → instant UI update
 - [ ] Delete project → instant UI update
 - [ ] Error handling → rollback on failure
 - [ ] Cache working → no unnecessary refetches
 - [ ] Toast notifications working
+
+### Known Issues Fixed
+
+#### React Error #301 - Infinite Re-render Loop ✅ FIXED
+**Issue:** The `invalidate` function in `useProjectsQuery` was being recreated on every render, causing the `refreshProjects` callback in ProjectContext to be recreated, triggering an infinite re-render loop.
+
+**Fix:** Wrapped `invalidate` in `useCallback` with proper dependencies `[queryClient, userId]` to ensure stable function reference.
+
+**Files Changed:**
+- `src/hooks/projects/useProjectsQuery.ts` - Added `useCallback` for `invalidate` function
 
 ### Unit Tests
 

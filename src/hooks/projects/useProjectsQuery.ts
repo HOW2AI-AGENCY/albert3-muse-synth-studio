@@ -4,6 +4,7 @@
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { logger } from '@/utils/logger';
@@ -82,17 +83,20 @@ export const useProjectsQuery = () => {
     refetchOnMount: true,
   });
 
+  // ✅ Memoize invalidate function to prevent infinite re-renders
+  const invalidate = useCallback(() => {
+    queryClient.invalidateQueries({
+      queryKey: projectsKeys.list(userId)
+    });
+  }, [queryClient, userId]);
+
   return {
     projects: query.data ?? [],
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     error: query.error,
     refetch: query.refetch,
-
-    // Utility methods
-    invalidate: () => queryClient.invalidateQueries({
-      queryKey: projectsKeys.list(userId)
-    }),
+    invalidate,
   };
 };
 
