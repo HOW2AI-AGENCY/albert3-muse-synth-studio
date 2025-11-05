@@ -67,6 +67,7 @@ export {
   Menu,
   Search,
   Settings,
+  Filter,
   SlidersHorizontal,
   Sliders,
   Eye,

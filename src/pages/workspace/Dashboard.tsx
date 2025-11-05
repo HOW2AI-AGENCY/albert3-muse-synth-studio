@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Music, Library, Settings, Sparkles, Users, Headphones, Flame } from "@/utils/iconImports";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,15 +55,16 @@ const Dashboard = () => {
     return platformStats?.topGenres.map((g) => g.genre) ?? [];
   }, [platformStats]);
 
-  // Error handling
-  if (error) {
+  // Error handling — переносим показ тоста из фазы рендера в эффект
+  useEffect(() => {
+    if (!error) return;
     logger.error("Failed to load public tracks", error, "Dashboard");
     toast({
       title: "Ошибка",
       description: "Не удалось загрузить публичные треки",
       variant: "destructive",
     });
-  }
+  }, [error, toast]);
 
   const handleGenerateClick = useCallback(() => navigate("/workspace/generate"), [navigate]);
   const handleLibraryClick = useCallback(() => navigate("/workspace/library"), [navigate]);

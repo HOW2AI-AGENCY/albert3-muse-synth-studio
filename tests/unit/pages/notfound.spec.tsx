@@ -1,4 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
+// Явно подключаем jest-dom матчеры для совместимости редактора и типов
+import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import NotFound from '../../../src/pages/NotFound';

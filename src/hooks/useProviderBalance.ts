@@ -73,16 +73,23 @@ export const useProviderBalance = () => {
         setBalance(data);
         setError(null);
       }
-    } catch (fetchError) {
-      const errorMessage = (fetchError as Error).message;
+  } catch (fetchError) {
+      const errorMessage = (fetchError as Error).message || String(fetchError);
+      const isAborted = /Abort/i.test(errorMessage) || /ERR_ABORTED/i.test(errorMessage);
       if (isMountedRef.current && seq === requestSeqRef.current) {
-        setError(errorMessage);
-        setBalance({
-          provider: PRIMARY_PROVIDER,
-          balance: 0,
-          currency: 'credits',
-          error: errorMessage,
-        });
+        if (isAborted) {
+          // Тихо игнорируем прерванные запросы (например, при переключении страниц)
+          // не сбрасываем баланс и не показываем ошибку
+          setError(null);
+        } else {
+          setError(errorMessage);
+          setBalance({
+            provider: PRIMARY_PROVIDER,
+            balance: 0,
+            currency: 'credits',
+            error: errorMessage,
+          });
+        }
       }
     } finally {
       if (isMountedRef.current && seq === requestSeqRef.current) {

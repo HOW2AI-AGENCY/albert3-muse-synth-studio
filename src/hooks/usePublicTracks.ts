@@ -41,7 +41,7 @@ export const usePublicTracks = ({
           .select(
             `
             *,
-            profiles!inner(id, full_name, avatar_url, username)
+            profiles!inner(id, full_name, avatar_url)
           `,
             { count: "exact" }
           )
@@ -51,8 +51,10 @@ export const usePublicTracks = ({
 
         // Apply search filter
         if (searchQuery) {
+          // Ищем по названию трека и полному имени профиля.
+          // Удалён profiles.username, так как такого столбца нет в таблице profiles.
           query = query.or(
-            `title.ilike.%${searchQuery}%,profiles.full_name.ilike.%${searchQuery}%,profiles.username.ilike.%${searchQuery}%`
+            `title.ilike.%${searchQuery}%,profiles.full_name.ilike.%${searchQuery}%`
           );
         }
 
@@ -85,6 +87,7 @@ export const usePublicTracks = ({
         const { data, error, count } = await query;
 
         if (error) {
+          // Ошибка выбора столбца/джойна (например, 42703) будет поднята как ошибка Supabase
           logger.error("Failed to fetch public tracks", error, "usePublicTracks", {
             from,
             to,
@@ -103,13 +106,18 @@ export const usePublicTracks = ({
           tracks,
           nextCursor,
         };
-      } catch (error) {
-        logger.error(
-          "Unexpected error in usePublicTracks",
-          error instanceof Error ? error : new Error(String(error)),
-          "usePublicTracks"
-        );
-        throw error;
+      } catch (e) {
+        const err = e instanceof Error ? e : new Error(String(e));
+        // Грациозно игнорируем прерванные запросы при навигации/разгрузке компонента
+        if (err.name === "AbortError" || err.message.includes("ERR_ABORTED")) {
+          return {
+            tracks: [],
+            nextCursor: null,
+          };
+        }
+
+        logger.error("Unexpected error in usePublicTracks", err, "usePublicTracks");
+        throw err;
       }
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
