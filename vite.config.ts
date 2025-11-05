@@ -10,41 +10,38 @@ export default defineConfig(({ mode }) => ({
   // Разрешаем встраивание только в продакшене; в dev убираем блокировки iframe
   // чтобы корректно работать в редакторах, использующих iframe (например, Lovable)
   server: {
-    host: "::",
+    host: "0.0.0.0", // Разрешаем доступ через все интерфейсы для Lovable preview
     port: 8080,
     // Добавляем заголовки безопасности для dev-сервера
-    headers: {
-      // CSP: перенос из index.html в реальные HTTP-заголовки
-      'Content-Security-Policy': [
-        "default-src 'self'",
-        // Для React Fast Refresh в dev-режиме требуется 'unsafe-eval'
-        mode === 'development'
-          ? "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.sentry.com"
-          : "script-src 'self' https://cdn.sentry.com",
-        "style-src 'self' 'unsafe-inline'",
-        // Разрешаем SharedWorker и blob: для разработки
-        "worker-src 'self' blob:",
-        "img-src 'self' https: data: blob:",
-        // Расширяем connect-src: локальный Vite HMR (ws:, http:) + внешние домены
-        "connect-src 'self' http: ws: https://qycfsepwguaiwcquwwbw.supabase.co wss://qycfsepwguaiwcquwwbw.supabase.co https://*.sentry.io https://sentry.io",
-        "font-src 'self' data:",
-        "media-src 'self' https: blob:",
-        // В dev НЕ указываем frame-ancestors, чтобы разрешить встраивание в iframe редакторов
-        mode === 'development' ? null : "frame-ancestors 'none'",
-        "base-uri 'self'",
-        "form-action 'self'",
-        "object-src 'none'",
-        'upgrade-insecure-requests'
-      ].filter(Boolean).join('; '),
-      // Прочие security headers
-      // В dev НЕ отправляем X-Frame-Options, чтобы разрешить встраивание в iframe
-      ...(mode === 'development' ? {} : { 'X-Frame-Options': 'DENY' }),
-      'X-Content-Type-Options': 'nosniff',
-      'X-XSS-Protection': '1; mode=block',
-      'Referrer-Policy': 'strict-origin-when-cross-origin',
-      // Сужаем разрешения браузера
-      'Permissions-Policy': 'geolocation=(), microphone=(), camera=()'
-    }
+    headers: mode === 'development'
+      ? {
+          // В dev-режиме: минимальные ограничения для Lovable preview
+          // CSP отключаем в dev, чтобы не блокировать Lovable iframe
+          // 'Content-Security-Policy' намеренно не устанавливаем
+        }
+      : {
+          // Production CSP: строгие правила безопасности
+          'Content-Security-Policy': [
+            "default-src 'self'",
+            "script-src 'self' https://cdn.sentry.com",
+            "style-src 'self' 'unsafe-inline'",
+            "worker-src 'self' blob:",
+            "img-src 'self' https: data: blob:",
+            "connect-src 'self' https://qycfsepwguaiwcquwwbw.supabase.co wss://qycfsepwguaiwcquwwbw.supabase.co https://*.sentry.io https://sentry.io",
+            "font-src 'self' data:",
+            "media-src 'self' https: blob:",
+            "frame-ancestors 'none'",
+            "base-uri 'self'",
+            "form-action 'self'",
+            "object-src 'none'",
+            'upgrade-insecure-requests'
+          ].join('; '),
+          'X-Frame-Options': 'DENY',
+          'X-Content-Type-Options': 'nosniff',
+          'X-XSS-Protection': '1; mode=block',
+          'Referrer-Policy': 'strict-origin-when-cross-origin',
+          'Permissions-Policy': 'geolocation=(), microphone=(), camera=()'
+        }
   },
   build: {
     rollupOptions: {
