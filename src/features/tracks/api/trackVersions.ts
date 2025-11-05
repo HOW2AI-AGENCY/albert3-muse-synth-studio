@@ -281,8 +281,13 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
 
     const allVersions = new Map<string, TrackWithVersions>();
 
-    // Fallback: Extract versions from metadata.suno_data
+    // ✅ FIX: Fallback из metadata.suno_data используется ТОЛЬКО если нет версий в БД
+    // Это предотвращает дублирование версий
+    const useMetadataFallback = !dbVersions || dbVersions.length === 0;
+
+    // Fallback: Extract versions from metadata.suno_data (only if no DB versions exist)
     if (
+      useMetadataFallback &&
       mainTrack.metadata &&
       typeof mainTrack.metadata === 'object' &&
       'suno_data' in mainTrack.metadata &&
@@ -382,6 +387,7 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       trackId,
       dbVersionsCount: dbVersions?.length || 0,
       metadataVersionsCount: (mainTrack.metadata as any)?.suno_data?.length || 0,
+      usedMetadataFallback: useMetadataFallback,
       normalizedVersionsCount: normalizedVersions.length,
     });
 
