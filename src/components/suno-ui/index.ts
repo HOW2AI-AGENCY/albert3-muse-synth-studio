@@ -3,23 +3,30 @@
  *
  * Centralized exports for all modern music platform UI components
  *
- * @version 1.0.0
+ * @version 2.0.0
  * @created 2025-11-05
+ * @updated 2025-11-05 (Phase 4-6)
  */
 
 // Track Components
 export { TrackRow } from '../tracks/TrackRow';
 export { TrackActionsMenu } from '../tracks/TrackActionsMenu';
+export { TrackInspector } from '../tracks/TrackInspector';
 
 // Modal Dialogs
 export { ShareDialog } from '../modals/ShareDialog';
 export { PermissionsDialog } from '../modals/PermissionsDialog';
 export { MoveToWorkspaceDialog } from '../modals/MoveToWorkspaceDialog';
 export { AddToQueueDialog } from '../modals/AddToQueueDialog';
+export { ShortcutsDialog } from '../modals/ShortcutsDialog';
 
 // Feed/Home Components
 export { PromoBanner } from '../feed/PromoBanner';
 export { ContestSection } from '../feed/ContestSection';
+
+// Workspace Components
+export { WorkspaceShell } from '../workspace/WorkspaceShell';
+export { StyleEditor } from '../generator/StyleEditor';
 
 // Type Exports
 export type {

@@ -1,16 +1,18 @@
 /**
  * i18n Configuration
- * Internationalization system for RU/EN localization
+ * Internationalization system for RU/EN/TH localization
  * Phase 3 improvement from 2025-11-05 audit
+ * Phase 5 update: Added Thai (TH) support
  */
 
 import enTranslations from './locales/en.json';
 import ruTranslations from './locales/ru.json';
+import thTranslations from './locales/th.json';
 
 /**
  * Supported languages
  */
-export type Language = 'ru' | 'en';
+export type Language = 'ru' | 'en' | 'th';
 
 /**
  * Translation keys structure (inferred from JSON)
@@ -23,6 +25,7 @@ export type Translations = typeof enTranslations;
 export const translations: Record<Language, Translations> = {
   en: enTranslations,
   ru: ruTranslations,
+  th: thTranslations,
 };
 
 /**
@@ -45,8 +48,8 @@ export const getPreferredLanguage = (): Language => {
   try {
     // Check local storage first
     const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
-    if (stored && (stored === 'ru' || stored === 'en')) {
-      return stored;
+    if (stored && (stored === 'ru' || stored === 'en' || stored === 'th')) {
+      return stored as Language;
     }
 
     // Check browser language
@@ -56,6 +59,9 @@ export const getPreferredLanguage = (): Language => {
     }
     if (browserLang.startsWith('en')) {
       return 'en';
+    }
+    if (browserLang.startsWith('th')) {
+      return 'th';
     }
   } catch {
     // localStorage not available (SSR, private browsing, etc.)
@@ -150,4 +156,5 @@ export const translate = (
 export const LANGUAGE_NAMES: Record<Language, { native: string; english: string }> = {
   ru: { native: 'Русский', english: 'Russian' },
   en: { native: 'English', english: 'English' },
+  th: { native: 'ไทย', english: 'Thai' },
 };
