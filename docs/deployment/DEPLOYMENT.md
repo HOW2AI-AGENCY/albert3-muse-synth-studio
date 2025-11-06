@@ -416,8 +416,8 @@ jobs:
 
 ### 1. Настройка Sentry (Error Tracking)
 ```bash
-# Установка Sentry
-npm install @sentry/react @sentry/tracing
+# Установка Sentry (tracing встроен в @sentry/react v8+)
+npm install @sentry/react
 
 # Настройка в main.tsx
 import * as Sentry from "@sentry/react";
