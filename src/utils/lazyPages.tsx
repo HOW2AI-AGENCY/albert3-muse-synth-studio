@@ -1,41 +1,86 @@
 import { lazy } from 'react';
 import { logError } from './logger';
+import { retryDynamicImport, checkForceReload } from './chunkRetry';
 
 /**
  * Утилита для создания ленивых страниц с обработкой ошибок
  * Phase 1 Optimization: Code Splitting для больших компонентов
  */
+/**
+ * ✅ FIX: Улучшенная обработка ошибок lazy loading с retry механизмом
+ */
 const createLazyPage = <Props extends object = {}>(
   importFn: () => Promise<{ default: React.ComponentType<Props> }>,
-  pageName: string
+  pageName: string,
+  maxRetries = 3
 ) => {
   return lazy(async () => {
+    let fallbackError: Error | undefined;
+
     try {
-      const module = await importFn();
+      // ✅ Используем retryDynamicImport с умным retry механизмом
+      const module = await retryDynamicImport(importFn, {
+        maxRetries,
+        retryDelay: 1000,
+        onRetry: (attempt, error) => {
+          logError(
+            `Retrying lazy load (attempt ${attempt}/${maxRetries}): ${pageName}`,
+            error,
+            'LazyLoader',
+            { attempt }
+          );
+        },
+      });
+
       return module;
     } catch (error) {
-      logError(`Failed to load lazy page: ${pageName}`, error instanceof Error ? error : undefined);
+      fallbackError = error instanceof Error ? error : new Error(String(error));
+      
+      logError(
+        `Failed to load lazy page after ${maxRetries} attempts: ${pageName}`,
+        fallbackError,
+        'LazyLoader',
+        { maxRetries }
+      );
 
-      // Fallback компонент в случае ошибки
-      const FallbackComponent: React.ComponentType<Props> = () => (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center space-y-2">
-            <p className="text-lg font-medium">Ошибка загрузки страницы</p>
-            <p className="text-sm text-muted-foreground">{pageName}</p>
+      // ✅ Проверяем необходимость полной перезагрузки
+      checkForceReload();
+    }
+
+    // ✅ Fallback после всех попыток
+    const FallbackComponent: React.ComponentType<Props> = () => (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4 p-6 max-w-md">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-xl font-semibold">Не удалось загрузить страницу</h2>
+          <p className="text-sm text-muted-foreground">{pageName}</p>
+          {fallbackError && (
+            <details className="text-xs text-left bg-muted p-3 rounded">
+              <summary className="cursor-pointer font-medium">Детали ошибки</summary>
+              <pre className="mt-2 whitespace-pre-wrap break-all">{fallbackError.message}</pre>
+            </details>
+          )}
+          <div className="flex gap-2 justify-center">
             <button 
               onClick={() => window.location.reload()} 
-              className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition"
             >
-              Перезагрузить
+              Перезагрузить страницу
+            </button>
+            <button 
+              onClick={() => window.location.href = '/workspace/dashboard'} 
+              className="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/90 transition"
+            >
+              На главную
             </button>
           </div>
         </div>
-      );
+      </div>
+    );
 
-      return {
-        default: FallbackComponent
-      };
-    }
+    return {
+      default: FallbackComponent
+    };
   });
 };
 

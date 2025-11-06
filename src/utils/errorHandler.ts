@@ -45,18 +45,19 @@ export const errorHandler = {
         ...error.metadata 
       });
 
-      // Send to Sentry with category
-      Sentry.captureException(error, {
-        level: 'warning',
-        tags: {
-          category: error.category,
+      // ✅ FIX: Избегаем дублирования - Sentry уже получил через logger.warn
+      // Отправляем только метаданные без повторной captureException
+      try {
+        Sentry.setContext('error_handler', {
           code: error.code,
-          isOperational: 'true',
-        },
-        contexts: {
-          error: error.metadata,
-        },
-      });
+          category: error.category,
+          statusCode: error.statusCode,
+          ...error.metadata,
+        });
+      } catch (sentryError) {
+        // Игнорируем ошибки Sentry
+        console.error('[SENTRY] Failed to set context:', sentryError);
+      }
 
       return {
         title: this.getUserFriendlyTitle(error.category),
@@ -67,13 +68,8 @@ export const errorHandler = {
 
     // Unexpected error - full logging
     logger.error('Unexpected error', error, context);
-    Sentry.captureException(error, {
-      level: 'error',
-      tags: { 
-        category: ErrorCategory.UNKNOWN,
-        isOperational: 'false',
-      },
-    });
+    
+    // ✅ FIX: Не дублируем - уже отправлено через logger.error
 
     return {
       title: 'Неожиданная ошибка',

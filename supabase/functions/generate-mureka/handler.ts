@@ -82,29 +82,42 @@ export class MurekaGenerationHandler extends GenerationHandler<MurekaGenerationP
       
       logger.info(`✅ [MUREKA] Track created`, { trackId });
 
-      // 4. Generate lyrics if needed (NO soft fallback - fail fast)
+      // 4. Generate lyrics if needed with proper error handling
       let finalLyrics = params.lyrics;
       if (params.hasVocals !== false && (!finalLyrics || finalLyrics.trim().length === 0)) {
-        const lyricsResult = await this.generateLyrics(trackId, params.prompt);
+        logger.info('📝 No lyrics provided, generating lyrics from prompt');
         
-        if (!lyricsResult.success) {
-          // ✅ P0 FIX: NO soft fallback - throw error to expose real issues
-          const errorMsg = lyricsResult.error || 'Lyrics generation failed';
-          logger.error('🔴 [MUREKA] Lyrics generation failed', new Error(errorMsg), 'MurekaHandler', {
-            trackId,
-            error: lyricsResult.error,
-          });
+        try {
+          const lyricsResult = await this.generateLyrics(trackId, params.prompt);
           
-          // Mark track as failed
-          await this.handleFailedTrack(trackId, `Lyrics generation failed: ${errorMsg}`);
-          throw new Error(`Lyrics generation failed: ${errorMsg}`);
+          if (!lyricsResult.success) {
+            const errorMsg = lyricsResult.error || 'Неизвестная ошибка генерации текста';
+            
+            // ✅ FIX: Более информативная ошибка для пользователя
+            const userFriendlyError = errorMsg.includes('429') || errorMsg.includes('rate limit')
+              ? 'Превышен лимит запросов к Mureka API. Пожалуйста, попробуйте позже.'
+              : errorMsg.includes('quota') || errorMsg.includes('exceeded')
+              ? 'Исчерпана квота Mureka API. Обратитесь к администратору.'
+              : `Ошибка генерации текста: ${errorMsg}. Попробуйте снова или укажите текст вручную.`;
+            
+            logger.error('🔴 [MUREKA] Lyrics generation failed', { error: lyricsResult.error });
+            await this.handleFailedTrack(trackId, `Lyrics generation failed: ${userFriendlyError}`);
+            
+            throw new Error(`Lyrics generation failed: ${userFriendlyError}`);
+          }
+          
+          if (lyricsResult.requiresLyricsSelection) {
+            return lyricsResult;
+          }
+          
+          finalLyrics = lyricsResult.lyrics;
+        } catch (error) {
+          // ✅ FIX: Перехватываем и обрабатываем все ошибки lyrics generation
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          logger.error('🔴 [MUREKA] Lyrics generation failed', { error: errorMsg });
+          await this.handleFailedTrack(trackId, errorMsg);
+          throw error;
         }
-        
-        if (lyricsResult.requiresLyricsSelection) {
-          return lyricsResult;
-        }
-        
-        finalLyrics = lyricsResult.lyrics;
       } else if (params.hasVocals === false) {
         logger.info('🎼 Instrumental mode, skipping lyrics generation');
         finalLyrics = undefined;

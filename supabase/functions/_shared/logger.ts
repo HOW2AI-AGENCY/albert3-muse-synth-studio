@@ -28,11 +28,19 @@ export const logger = {
       ...(context && { context })
     }));
     
-    // ✅ Send to Sentry
-    captureSentryException(
-      new Error(message), 
-      context as SentryContext
-    );
+    // ✅ FIX: Избегаем циклических вызовов Sentry
+    // Отправляем только если это не внутренняя ошибка логгера
+    if (!message.includes('[SENTRY]') && !message.includes('sentry')) {
+      try {
+        captureSentryException(
+          new Error(message), 
+          context as SentryContext
+        );
+      } catch (sentryError) {
+        // Не логируем ошибки Sentry, чтобы избежать циклов
+        console.error('[SENTRY] Failed to capture exception:', sentryError);
+      }
+    }
   },
   
   warn: (message: string, context?: LogContext) => {
@@ -43,12 +51,18 @@ export const logger = {
       ...(context && { context })
     }));
     
-    // ✅ Send warnings to Sentry
-    captureSentryMessage(
-      message, 
-      'warning', 
-      context as SentryContext
-    );
+    // ✅ FIX: Избегаем циклических вызовов Sentry
+    if (!message.includes('[SENTRY]') && !message.includes('sentry')) {
+      try {
+        captureSentryMessage(
+          message, 
+          'warning', 
+          context as SentryContext
+        );
+      } catch (sentryError) {
+        console.error('[SENTRY] Failed to capture message:', sentryError);
+      }
+    }
   },
   
   debug: (message: string, context?: LogContext) => {
@@ -83,12 +97,16 @@ export const withSentry = (
       const response = await handler(req);
       
       const duration = Date.now() - startTime;
-      logger.info(`Request completed: ${options?.transaction || 'unknown'}`, {
-        duration,
-        status: response.status,
-        transaction: options?.transaction,
-        correlationId: options?.correlationId,
-      });
+      
+      // ✅ FIX: Логируем только важные запросы (> 1s или ошибки)
+      if (duration > 1000 || response.status >= 400) {
+        logger.info(`Request completed: ${options?.transaction || 'unknown'}`, {
+          duration,
+          status: response.status,
+          transaction: options?.transaction,
+          correlationId: options?.correlationId,
+        });
+      }
       
       return response;
     } catch (error) {
@@ -103,16 +121,8 @@ export const withSentry = (
         userId: options?.userId,
       });
       
-      // ✅ Capture in Sentry
-      captureSentryException(
-        error instanceof Error ? error : new Error(errorMessage),
-        {
-          transaction: options?.transaction,
-          correlationId: options?.correlationId,
-          userId: options?.userId,
-          duration,
-        }
-      );
+      // ✅ FIX: Не отправляем в Sentry здесь - уже отправлено через logger.error
+      // Избегаем дублирования
       
       // Re-throw to allow error handling by caller
       throw error;

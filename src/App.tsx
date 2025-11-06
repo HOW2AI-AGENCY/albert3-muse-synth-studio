@@ -17,6 +17,7 @@ import {
   setupResourceHints
 } from "@/utils/bundleOptimization";
 import { trackPerformanceMetric } from "@/utils/sentry-enhanced";
+import { setupChunkErrorHandler } from "@/utils/chunkRetry";
 
 // ✅ Lazy load heavy components
 const LazyGlobalAudioPlayer = lazy(() => import("./components/player/GlobalAudioPlayer"));
@@ -58,6 +59,11 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
+  // ✅ Setup chunk error handler
+  useEffect(() => {
+    setupChunkErrorHandler();
+  }, []);
+
   // Monitor Web Vitals and track to Sentry
   useEffect(() => {
     const startTime = performance.now();

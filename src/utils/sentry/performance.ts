@@ -45,7 +45,8 @@ export function startTransaction(
       (span) => span
     );
   } catch (error) {
-    logger.error('Failed to start Sentry transaction', error as Error, 'SentryPerformance', {
+    // ✅ FIX: Используем console напрямую, чтобы избежать циклов через logger
+    console.error('[SENTRY] Failed to start transaction:', error, {
       name,
       metadata,
     });
@@ -72,7 +73,8 @@ export function endTransaction(
     }
     span.end();
   } catch (error) {
-    logger.error('Failed to end Sentry transaction', error as Error, 'SentryPerformance');
+    // ✅ FIX: Используем console напрямую
+    console.error('[SENTRY] Failed to end transaction:', error);
   }
 }
 
@@ -168,13 +170,11 @@ export function recordMetric(
   try {
     Sentry.setMeasurement(name, value, unit);
     
-    logger.debug('Recorded metric', 'SentryPerformance', {
-      name,
-      value,
-      unit,
-    });
+    // ✅ FIX: Не логируем каждую метрику - слишком шумно
+    // logger.debug удалён
   } catch (error) {
-    logger.error('Failed to record Sentry metric', error as Error, 'SentryPerformance', {
+    // ✅ FIX: Используем console напрямую
+    console.error('[SENTRY] Failed to record metric:', error, {
       name,
       value,
       unit,
