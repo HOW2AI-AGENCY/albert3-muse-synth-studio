@@ -5,8 +5,9 @@
 import { memo, useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import type { AudioPlayerTrack } from '@/stores/audioPlayerStore';
-import { useAudioPlayerStore, useIsPlaying, useVolume } from '@/stores/audioPlayerStore';
+import { useAudioPlayerStore, useIsPlaying, useVolume, usePlaybackModeControls } from '@/stores/audioPlayerStore';
 import { usePlayerVisibility } from '../hooks/usePlayerVisibility';
+import { usePlayerKeyboardShortcuts } from '../hooks/usePlayerKeyboardShortcuts';
 import { PlaybackControls } from './PlaybackControls';
 import { ProgressBar } from './ProgressBar';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,7 @@ export interface DesktopPlayerLayoutProps {
 
 export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) => {
   const { isVisible } = usePlayerVisibility(track);
-  
+
   // Zustand store selectors
   const isPlaying = useIsPlaying();
   const volume = useVolume();
@@ -30,11 +31,12 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
   const bufferingProgress = useAudioPlayerStore((state) => state.bufferingProgress);
   const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
   const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
-  
+
   const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
   const seekTo = useAudioPlayerStore((state) => state.seekTo);
   const setVolume = useAudioPlayerStore((state) => state.setVolume);
   const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
+  const { toggleRepeatMode, toggleShuffle } = usePlaybackModeControls();
 
   // Volume control state
   const [isMuted, setIsMuted] = useState(false);
@@ -60,15 +62,30 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
     if (newVolume > 0) setPreviousVolume(newVolume);
   }, [setVolume]);
 
+  // Keyboard shortcuts
+  usePlayerKeyboardShortcuts({
+    togglePlayPause,
+    seekTo,
+    setVolume,
+    toggleMute,
+    toggleRepeatMode,
+    toggleShuffle,
+    currentTime,
+    duration,
+    volume,
+  });
+
   // Close player handler
   const clearCurrentTrack = useAudioPlayerStore((state) => state.clearCurrentTrack);
-  
+
   const handleClose = useCallback(() => {
     clearCurrentTrack();
   }, [clearCurrentTrack]);
 
   return (
     <div
+      role="region"
+      aria-label="Медиаплеер"
       className={`fixed bottom-6 left-6 right-6 sm:bottom-6 sm:left-6 sm:right-6 md:bottom-8 md:right-8 md:left-auto md:max-w-[420px] md:w-auto lg:bottom-10 lg:right-10 transition-all duration-500 ease-out ${
         isVisible
           ? 'translate-y-0 opacity-100 scale-100'
@@ -197,20 +214,26 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
             />
 
             {/* Volume Control - Compact */}
-            <div className="flex items-center gap-1.5 min-w-[120px]">
+            <div
+              className="flex items-center gap-1.5 min-w-[120px]"
+              role="group"
+              aria-label="Управление громкостью"
+            >
               <Button
                 size="icon"
                 variant="ghost"
                 onClick={toggleMute}
                 className="h-6 w-6 hover:bg-primary/10 hover:scale-110 transition-all duration-200 group/vol"
-                title={isMuted ? 'Включить звук' : 'Выключить звук'}
+                title={isMuted ? 'Включить звук (M)' : 'Выключить звук (M)'}
+                aria-label={isMuted ? 'Включить звук' : 'Выключить звук'}
+                aria-pressed={isMuted}
               >
                 {isMuted || volume === 0 ? (
-                  <VolumeX className="h-3 w-3 group-hover/vol:text-primary transition-colors duration-200" />
+                  <VolumeX className="h-3 w-3 group-hover/vol:text-primary transition-colors duration-200" aria-hidden="true" />
                 ) : volume < 0.5 ? (
-                  <Volume1 className="h-3 w-3 group-hover/vol:text-primary transition-colors duration-200" />
+                  <Volume1 className="h-3 w-3 group-hover/vol:text-primary transition-colors duration-200" aria-hidden="true" />
                 ) : (
-                  <Volume2 className="h-3 w-3 group-hover/vol:text-primary transition-colors duration-200" />
+                  <Volume2 className="h-3 w-3 group-hover/vol:text-primary transition-colors duration-200" aria-hidden="true" />
                 )}
               </Button>
               <div className="flex-1 min-w-[70px] max-w-[90px]">
@@ -218,12 +241,19 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
                   value={[isMuted ? 0 : volume]}
                   max={1}
                   step={0.01}
-                  aria-label="Volume"
+                  aria-label={`Громкость ${Math.round((isMuted ? 0 : volume) * 100)}%`}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.round((isMuted ? 0 : volume) * 100)}
                   onValueChange={handleVolumeChange}
                   className="cursor-pointer hover:scale-y-125 transition-transform duration-200"
                 />
               </div>
-              <span className="text-[9px] font-medium text-muted-foreground/70 tabular-nums w-6 text-right">
+              <span
+                className="text-[9px] font-medium text-muted-foreground/70 tabular-nums w-6 text-right"
+                aria-live="polite"
+                aria-atomic="true"
+              >
                 {Math.round((isMuted ? 0 : volume) * 100)}%
               </span>
             </div>
