@@ -1,18 +1,17 @@
 /**
  * AudioSR Upscale Edge Function
  * Upsamples audio files to 48kHz with enhanced quality
- * 
+ *
  * @version 1.0.0
  * @since 2025-11-02
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import Replicate from 'https://esm.sh/replicate@0.25.2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { createCorsHeaders } from "../_shared/cors.ts";
+import { createSecurityHeaders } from "../_shared/security.ts";
+import { createSupabaseUserClient } from "../_shared/supabase.ts";
+import { logger } from "../_shared/logger.ts";
 
 interface AudioUpscaleRequest {
   inputFileUrl: string;
@@ -24,11 +23,38 @@ interface AudioUpscaleRequest {
 }
 
 serve(async (req) => {
+  const corsHeaders = {
+    ...createCorsHeaders(req),
+    ...createSecurityHeaders()
+  };
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Authenticate user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      logger.error('Missing authorization header', 'upscale-audio-sr');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const userClient = createSupabaseUserClient(token);
+    const { data: { user }, error: userError } = await userClient.auth.getUser(token);
+
+    if (userError || !user) {
+      logger.error('Authentication failed', userError ?? new Error('No user'), 'upscale-audio-sr');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const REPLICATE_API_KEY = Deno.env.get('REPLICATE_API_KEY');
     if (!REPLICATE_API_KEY) {
       throw new Error('REPLICATE_API_KEY not configured');
@@ -40,9 +66,9 @@ serve(async (req) => {
 
     // Status check
     if (body.predictionId) {
-      console.log('[upscale-audio-sr] Checking status:', body.predictionId);
+      logger.info('Checking status', 'upscale-audio-sr', { predictionId: body.predictionId, userId: user.id });
       const prediction = await replicate.predictions.get(body.predictionId);
-      
+
       return new Response(
         JSON.stringify(prediction),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -57,9 +83,10 @@ serve(async (req) => {
       );
     }
 
-    console.log('[upscale-audio-sr] Starting upscale:', {
+    logger.info('Starting upscale', 'upscale-audio-sr', {
       inputUrl: body.inputFileUrl,
-      truncatedBatches: body.truncatedBatches ?? true
+      truncatedBatches: body.truncatedBatches ?? true,
+      userId: user.id
     });
 
     const prediction = await replicate.predictions.create({
@@ -73,7 +100,7 @@ serve(async (req) => {
       }
     });
 
-    console.log('[upscale-audio-sr] Prediction created:', prediction.id);
+    logger.info('Prediction created', 'upscale-audio-sr', { predictionId: prediction.id });
 
     return new Response(
       JSON.stringify({
@@ -85,7 +112,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[upscale-audio-sr] Error:', error);
+    logger.error('Error', error instanceof Error ? error : new Error(String(error)), 'upscale-audio-sr');
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Internal server error'

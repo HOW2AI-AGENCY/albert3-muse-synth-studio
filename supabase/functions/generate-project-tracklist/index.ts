@@ -1,12 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { createCorsHeaders } from "../_shared/cors.ts";
+import { createSecurityHeaders } from "../_shared/security.ts";
+import { logger } from "../_shared/logger.ts";
 
 serve(async (req) => {
+  const corsHeaders = {
+    ...createCorsHeaders(req),
+    ...createSecurityHeaders()
+  };
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -42,7 +45,7 @@ serve(async (req) => {
       const json = atob(base64);
       decoded = JSON.parse(json);
     } catch (e) {
-      console.error('JWT decode failed:', e);
+      logger.error('JWT decode failed', e instanceof Error ? e : new Error(String(e)), 'generate-project-tracklist');
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

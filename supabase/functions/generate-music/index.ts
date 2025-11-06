@@ -2,28 +2,27 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
 import { validateRequest, validationSchemas } from "../_shared/validation.ts";
 import { createSupabaseAdminClient, createSupabaseUserClient } from "../_shared/supabase.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Credentials': 'true',
-  ...createSecurityHeaders()
-};
+import { createCorsHeaders } from "../_shared/cors.ts";
+import { logger } from "../_shared/logger.ts";
 
 const mainHandler = async (req: Request): Promise<Response> => {
+  const corsHeaders = {
+    ...createCorsHeaders(req),
+    ...createSecurityHeaders()
+  };
+
   // Handle OPTIONS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   try {
-    console.log('[generate-music] Request received');
-    
+    logger.info('Request received', 'generate-music');
+
     // Получение пользователя из JWT токена
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      console.error('[generate-music] No authorization header');
+      logger.error('No authorization header', 'generate-music');
       return new Response(JSON.stringify({ error: 'Authorization header required' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -35,7 +34,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
 
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
     if (authError || !user) {
-      console.error('[generate-music] Auth error:', authError);
+      logger.error('Auth error', authError ?? new Error('No user'), 'generate-music');
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -45,8 +44,8 @@ const mainHandler = async (req: Request): Promise<Response> => {
     // Валидация входных данных
     const validatedData = await validateRequest(req, validationSchemas.generateMusic)
     const { trackId, prompt } = validatedData
-    
-    console.log('[generate-music] Validated data:', { trackId, promptLength: prompt?.length });
+
+    logger.info('Validated data', 'generate-music', { trackId, promptLength: prompt?.length, userId: user.id });
 
     const REPLICATE_API_KEY = Deno.env.get('REPLICATE_API_KEY');
     if (!REPLICATE_API_KEY) {
@@ -56,7 +55,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
     // Initialize Supabase client for updating track status
     const supabase = createSupabaseAdminClient();
 
-    console.log(`Starting music generation for track ${trackId} with prompt: ${prompt}`);
+    logger.info(`Starting music generation for track ${trackId}`, 'generate-music', { trackId, promptLength: prompt?.length });
 
     // Update track status to processing
     await supabase

@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { createCorsHeaders } from '../_shared/cors.ts';
+import { logger } from '../_shared/logger.ts';
 
 const corsHeaders = createCorsHeaders();
 
@@ -114,7 +115,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (insertError) {
-      console.error('Error saving lyrics:', insertError);
+      logger.error('Error saving lyrics', insertError, 'save-lyrics');
       return new Response(
         JSON.stringify({ error: insertError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -126,7 +127,7 @@ Deno.serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error in save-lyrics function:', error);
+    logger.error('Error in save-lyrics function', error instanceof Error ? error : new Error(String(error)), 'save-lyrics');
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
