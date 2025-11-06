@@ -24,7 +24,7 @@
 
 ## 🛰️ Sentry
 
-- **Frontend SDK:** инициализируется в `src/main.tsx` (через `@sentry/react`, `@sentry/tracing`).
+- **Frontend SDK:** инициализируется в `src/main.tsx` (через `@sentry/react`; tracing встроен в v8+).
 - **DSN:** `VITE_SENTRY_DSN` (обязателен для продакшена). Дополнительно поддерживаются `VITE_SENTRY_ENVIRONMENT`, `VITE_SENTRY_RELEASE`.
 - **Инструменты:** breadcrumbs собираются из `src/utils/logger.ts` и `src/services/analytics.service.ts`. Edge Functions отправляют логи в Supabase (пока без Sentry).
 - **Оповещения:** правила см. `project-management/reports/2025-10-16-repo-audit.md#observability` (ежедневные дайджесты + критические алерты).
