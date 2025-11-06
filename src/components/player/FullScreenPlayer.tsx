@@ -134,10 +134,22 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
 
   const handleDownload = useCallback(() => {
     vibrate('medium');
-    if (currentTrack?.audio_url) { // Use optional chaining
-      window.open(currentTrack.audio_url, '_blank');
+    if (currentTrack?.audio_url) {
+      // Proper download using <a> element instead of window.open
+      const a = document.createElement('a');
+      a.href = currentTrack.audio_url;
+      a.download = `${currentTrack.title}.mp3`;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      toast({
+        title: "Скачивание начато",
+        description: `Скачивание "${currentTrack.title}"`,
+      });
     }
-  }, [vibrate, currentTrack?.audio_url]); // Add currentTrack to dependencies
+  }, [vibrate, currentTrack?.audio_url, currentTrack?.title, toast]);
 
   const handleLike = useCallback(() => {
     vibrate(isLiked ? 'light' : 'success');

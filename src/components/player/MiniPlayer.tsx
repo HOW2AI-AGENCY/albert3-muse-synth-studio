@@ -1,5 +1,5 @@
-import { memo, useCallback, useMemo } from "react";
-import { Play, Pause, SkipBack, SkipForward, X, List, Star } from "@/utils/iconImports";
+import { memo, useCallback, useMemo, useState } from "react";
+import { Play, Pause, SkipBack, SkipForward, X, List, Star, Layers } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ResponsiveStack } from "@/components/ui/ResponsiveLayout";
@@ -36,6 +36,9 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
   const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
   
   const { vibrate } = useHapticFeedback();
+
+  // Controlled Sheet state for versions
+  const [isVersionsSheetOpen, setIsVersionsSheetOpen] = useState(false);
 
   // ✅ All hooks must be called before any conditional returns
   const handlePlayPause = useCallback((e: React.MouseEvent) => {
@@ -127,19 +130,37 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
                 </span>
               </>
             )}
+            {/* Version indicator for mobile - opens Sheet */}
+            {hasVersions && (
+              <>
+                <span className="sm:hidden">•</span>
+                <button
+                  className="sm:hidden flex items-center gap-1 hover:text-primary transition-colors min-h-[44px] -my-2 py-2 touch-optimized active:scale-95"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    vibrate('light');
+                    setIsVersionsSheetOpen(true);
+                  }}
+                  aria-label="Открыть версии трека"
+                >
+                  <Layers className="h-3 w-3" />
+                  <span className="font-medium">V{currentTrack.versionNumber ?? currentVersionIndex + 1}</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
         {/* Playback Controls */}
         <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0"> {/* Reduced mobile gap from gap-1.5 to gap-1 */}
-          {/* Phase 2.3: Versions Sheet - HIDDEN ON MOBILE */}
+          {/* Phase 2.3: Versions Sheet - Desktop button, Mobile opens via track info */}
           {hasVersions && (
-            <Sheet>
+            <Sheet open={isVersionsSheetOpen} onOpenChange={setIsVersionsSheetOpen}>
               <SheetTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="hidden sm:inline-flex icon-button-touch relative hover:bg-primary/10 hover:scale-105 transition-all duration-200" /* Hidden on mobile */
+                className="hidden sm:inline-flex icon-button-touch relative hover:bg-primary/10 hover:scale-105 transition-all duration-200" /* Desktop only - mobile uses track info indicator */
                   onClick={(e) => e.stopPropagation()}
                 >
                   <List className="h-4 w-4" />
