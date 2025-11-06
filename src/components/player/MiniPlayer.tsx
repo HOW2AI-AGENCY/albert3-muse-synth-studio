@@ -203,13 +203,13 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
                 size="icon"
                 variant="default"
                 onClick={handlePlayPause}
-                className="h-10 w-10 min-h-[40px] min-w-[40px] sm:h-12 sm:w-12 sm:min-h-[48px] sm:min-w-[48px] md:h-14 md:w-14 md:min-h-[56px] md:min-w-[56px] rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-200 active:scale-95 touch-optimized" /* Reduced mobile size to 40px (still WCAG compliant) */
+                className="h-11 w-11 min-h-[44px] min-w-[44px] sm:h-12 sm:w-12 sm:min-h-[48px] sm:min-w-[48px] md:h-14 md:w-14 md:min-h-[56px] md:min-w-[56px] rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-200 active:scale-95 touch-optimized" /* WCAG 2.1 AA compliant: 44px minimum */
                 style={{ willChange: 'transform' }}
               >
                 {isPlaying ? (
-                  <Pause className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" /> /* Scaled icon sizes */
+                  <Pause className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5" />
                 ) : (
-                  <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 ml-0.5" /> /* Scaled icon sizes */
+                  <Play className="h-4 w-4 sm:h-4 sm:w-4 md:h-5 md:w-5 ml-0.5" />
                 )}
               </Button>
             </TooltipTrigger>
