@@ -8,6 +8,7 @@ import {
   downloadAndUploadVideo,
 } from "../_shared/storage.ts";
 import { autoSaveLyrics } from "../_shared/auto-save-lyrics.ts";
+import { logger } from "../_shared/logger.ts";
 
 const corsHeaders = {
   ...createCorsHeaders(),
@@ -37,7 +38,7 @@ const mainHandler = async (req: Request) => {
     
     if (SUNO_WEBHOOK_SECRET) {
       if (!signature) {
-        console.error('[suno-callback] Missing webhook signature');
+        logger.error('Missing webhook signature', new Error('Missing webhook signature'), 'suno-callback');
         return new Response(JSON.stringify({ ok: false, error: 'missing_signature' }), {
           status: 401,
           headers: corsHeaders
@@ -49,14 +50,14 @@ const mainHandler = async (req: Request) => {
       const isValid = await verifyWebhookSignature(bodyText, signature, SUNO_WEBHOOK_SECRET);
       
       if (!isValid) {
-        console.error('[suno-callback] Invalid webhook signature');
+        logger.error('Invalid webhook signature', new Error('Invalid webhook signature'), 'suno-callback');
         return new Response(JSON.stringify({ ok: false, error: 'invalid_signature' }), {
           status: 401,
           headers: corsHeaders
         });
       }
     } else {
-      console.warn('[suno-callback] SUNO_WEBHOOK_SECRET not configured - skipping signature verification');
+      logger.warn('SUNO_WEBHOOK_SECRET not configured - skipping signature verification', 'suno-callback');
     }
     
     const supabase = createSupabaseAdminClient();
@@ -64,7 +65,7 @@ const mainHandler = async (req: Request) => {
     // Check content length before reading
     const contentLength = req.headers.get('content-length');
     if (contentLength && parseInt(contentLength) > MAX_PAYLOAD_SIZE) {
-      console.error('Payload too large:', contentLength);
+      logger.error('Payload too large', new Error(`Payload too large: ${contentLength}`), 'suno-callback', { contentLength });
       return new Response(
         JSON.stringify({ ok: false, error: 'payload_too_large' }),
         { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -75,7 +76,7 @@ const mainHandler = async (req: Request) => {
     
     // Additional size check after reading
     if (bodyText.length > MAX_PAYLOAD_SIZE) {
-      console.error('Payload too large after read:', bodyText.length);
+      logger.error('Payload too large after read', new Error(`Payload size: ${bodyText.length}`), 'suno-callback', { size: bodyText.length });
       return new Response(
         JSON.stringify({ ok: false, error: 'payload_too_large' }),
         { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -85,14 +86,14 @@ const mainHandler = async (req: Request) => {
     try {
       payload = JSON.parse(bodyText || "{}");
     } catch (e) {
-      console.error("Suno callback: invalid JSON", bodyText);
+      logger.error("Invalid JSON in callback", e instanceof Error ? e : new Error("Invalid JSON"), "suno-callback", { bodyPreview: bodyText.substring(0, 100) });
       return new Response(JSON.stringify({ ok: false, error: "invalid_json" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log("Suno callback payload:", JSON.stringify(payload, null, 2));
+    logger.info("Suno callback payload received", "suno-callback", { payload });
 
     // Extract tracks array from payload
     // Suno can send: { data: { data: [...] } } or { data: [...] } or just single task
@@ -119,7 +120,7 @@ const mainHandler = async (req: Request) => {
       payload?.id;
 
     if (!taskId) {
-      console.error("Suno callback: missing taskId. Available keys:", Object.keys(payload), Object.keys(payload?.data || {}));
+      logger.error("Missing taskId in payload", new Error("Missing taskId"), "suno-callback", { payloadKeys: Object.keys(payload), dataKeys: Object.keys(payload?.data || {}) });
       return new Response(JSON.stringify({ ok: false, error: "missing_taskId" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -128,7 +129,7 @@ const mainHandler = async (req: Request) => {
 
     const callbackType = payload?.callbackType || 'unknown';
 
-    console.log("Extracted taskId:", taskId, "Tasks count:", tasks.length, "Callback type:", callbackType);
+    logger.info("Extracted taskId", "suno-callback", { taskId, tasksCount: tasks.length, callbackType });
 
     // ✅ Removed ai_jobs status update - using tracks table only
 
@@ -140,7 +141,7 @@ const mainHandler = async (req: Request) => {
       .maybeSingle();
 
     if (findErr) {
-      console.error("Suno callback: error finding track:", findErr);
+      logger.error("Error finding track", findErr, "suno-callback", { taskId });
       return new Response(JSON.stringify({ ok: false, error: "db_error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -148,7 +149,7 @@ const mainHandler = async (req: Request) => {
     }
 
     if (!track) {
-      console.warn("Suno callback: no track found for taskId:", taskId);
+      logger.warn("No track found for taskId", "suno-callback", { taskId });
       return new Response(JSON.stringify({ ok: true, message: "no_track" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -170,7 +171,7 @@ const mainHandler = async (req: Request) => {
         .update({ status: "failed", error_message: reason })
         .contains("metadata", { suno_task_id: taskId });
 
-      console.log("Suno callback: track marked failed", { taskId, reason });
+      logger.info("Track marked failed", "suno-callback", { taskId, reason });
       return new Response(JSON.stringify({ ok: true }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -189,7 +190,7 @@ const mainHandler = async (req: Request) => {
           .from("tracks")
           .update({ status: "failed", error_message: message })
           .contains("metadata", { suno_task_id: taskId });
-        console.error("Suno callback: no successful tracks with audio", { taskId });
+        logger.error("No successful tracks with audio", new Error("No successful tracks"), "suno-callback", { taskId });
         return new Response(JSON.stringify({ ok: false, error: message }), {
           status: 422,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -198,7 +199,7 @@ const mainHandler = async (req: Request) => {
 
       if (!track.user_id) {
         const message = "Track missing user reference";
-        console.error("Suno callback: unable to determine user for track", { taskId, trackId: track.id });
+        logger.error("Unable to determine user for track", new Error("No user ID"), "suno-callback", { taskId, trackId: track.id });
         return new Response(JSON.stringify({ ok: false, error: message }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -253,7 +254,7 @@ const mainHandler = async (req: Request) => {
         // Check if title is truncated prompt (first 50 chars)
         (track.prompt && currentTitle === track.prompt.substring(0, 50));
 
-      console.log("Suno callback: processing main track", {
+      logger.info("Processing main track", "suno-callback", {
         trackId: track.id,
         taskId,
         audioPreview: externalAudioUrl?.substring(0, 60),
@@ -317,12 +318,12 @@ const mainHandler = async (req: Request) => {
       // Only update title if it was auto-generated
       if (isAutoGeneratedTitle && sanitizedTitle && sanitizedTitle !== 'Generated Track') {
         updateData.title = sanitizedTitle;
-        console.log('✅ Auto-generated title updated:', { 
+        logger.info('Auto-generated title updated', 'suno-callback', { 
           old: currentTitle, 
           new: sanitizedTitle 
         });
       } else {
-        console.log('ℹ️ Keeping user-defined title:', currentTitle);
+        logger.info('Keeping user-defined title', 'suno-callback', { currentTitle });
       }
       
       try {
@@ -351,7 +352,7 @@ const mainHandler = async (req: Request) => {
             })
             .eq("id", track.id);
           
-          console.error("Suno callback: failed to update main track", updateTrackError);
+          logger.error("Failed to update main track", updateTrackError, "suno-callback", { taskId });
           
           // Return 500 so Suno retries the callback
           return new Response(JSON.stringify({ 
@@ -364,7 +365,7 @@ const mainHandler = async (req: Request) => {
           });
         }
       } catch (unexpectedError) {
-        console.error("Suno callback: unexpected error", unexpectedError);
+        logger.error("Unexpected error", unexpectedError, "suno-callback");
         
         // Fallback: mark as failed with details
         await supabase
@@ -385,7 +386,7 @@ const mainHandler = async (req: Request) => {
         throw unexpectedError;
       }
 
-      console.log("Suno callback: main track updated successfully", { trackId: track.id, taskId });
+      logger.info("Main track updated successfully", "suno-callback", { trackId: track.id, taskId });
 
       // ✅ Auto-save lyrics to saved_lyrics table
       if (sanitizedLyrics && track.user_id) {
@@ -403,7 +404,7 @@ const mainHandler = async (req: Request) => {
       // Первый вариант (index 0) уже сохранён в основной tracks таблице выше
       // Suno всегда генерирует 2 варианта: [0] сохранён в tracks, [1] сохраняем в track_versions
       if (successfulTracks.length > 1) {
-        console.log(`[suno-callback] Creating ${successfulTracks.length - 1} additional track versions`);
+        logger.info(`Creating ${successfulTracks.length - 1} additional track versions`, "suno-callback");
 
         // Считываем существующие версии, чтобы не дублировать и корректно назначать индексы
         const { data: existingVersions } = await supabase
@@ -434,7 +435,7 @@ const mainHandler = async (req: Request) => {
           // Если версия с таким suno_id уже существует — пропускаем
           const vtId = versionTrack.id ? String(versionTrack.id) : '';
           if (vtId && bySunoId.has(vtId)) {
-            console.log(`[suno-callback] ↪︎ Skip existing version for suno_id=${vtId} at index ${bySunoId.get(vtId)}`);
+            logger.info(`Skip existing version for suno_id=${vtId}`, "suno-callback", { index: bySunoId.get(vtId) });
             continue;
           }
 
@@ -446,7 +447,7 @@ const mainHandler = async (req: Request) => {
             || versionTrack.stream_audio_url || versionTrack.source_stream_audio_url;
           
           if (!versionExternalAudioUrl) {
-            console.warn(`[suno-callback] Version ${variantIndex} missing audio URL, skipping`);
+            logger.warn(`Version ${variantIndex} missing audio URL, skipping`, "suno-callback");
             continue;
           }
 
@@ -503,18 +504,18 @@ const mainHandler = async (req: Request) => {
             }, { onConflict: 'parent_track_id,variant_index' });
 
           if (versionError) {
-            console.error(`[suno-callback] Error upserting version ${variantIndex}:`, versionError, {
+            logger.error(`Error upserting version ${variantIndex}`, versionError, "suno-callback", {
               parent_track_id: track.id,
               variant_index: variantIndex,
               is_primary_variant: false,
             });
           } else {
-            console.log(`[suno-callback] ✅ Additional version ${variantIndex} saved`);
+            logger.info(`Additional version ${variantIndex} saved`, "suno-callback");
           }
         }
       }
 
-      console.log('Suno callback: track completed', {
+      logger.info('Track completed', 'suno-callback', {
         taskId,
         trackId: track.id,
         versionsCount: successfulTracks.length,
@@ -532,14 +533,14 @@ const mainHandler = async (req: Request) => {
       .update({ status: "processing" })
       .contains("metadata", { suno_task_id: taskId });
 
-    console.log("Suno callback: track still processing", { taskId });
+    logger.info("Track still processing", "suno-callback", { taskId });
 
     return new Response(JSON.stringify({ ok: true }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("Suno callback error:", error);
+    logger.error("Suno callback error", error instanceof Error ? error : new Error(String(error)), "suno-callback");
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },

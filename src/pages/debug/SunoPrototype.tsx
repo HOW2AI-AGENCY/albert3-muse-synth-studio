@@ -11,7 +11,7 @@ import { ReplaceSectionDialog } from '@/components/tracks/ReplaceSectionDialog';
 import { useReplaceSection } from '@/hooks/useReplaceSection';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import { logger } from '@/lib/logger';
+import { logger } from '@/utils/logger';
 
 interface PrototypeTrack {
   id: string;

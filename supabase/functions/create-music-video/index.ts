@@ -30,15 +30,29 @@ serve(async (req) => {
       throw new Error("SUNO_API_KEY is not configured");
     }
 
-    // ✅ 1. Extract and validate user
-    const userId = req.headers.get('X-User-Id');
-    if (!userId) {
-      logger.error('Unauthorized request', { function: 'create-music-video' });
+    // ✅ 1. Authenticate user via JWT
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      logger.error('Missing authorization header', 'create-music-video');
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: corsHeaders }
       );
     }
+
+    const token = authHeader.replace('Bearer ', '');
+    const supabase = createSupabaseAdminClient();
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+    if (userError || !user) {
+      logger.error('Authentication failed', userError ?? new Error('No user'), 'create-music-video');
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: corsHeaders }
+      );
+    }
+
+    const userId = user.id;
 
     // ✅ 2. Parse and validate request body
     const body = await req.json();
@@ -57,8 +71,7 @@ serve(async (req) => {
 
     const { trackId, audioId, author, domainName } = validationResult.data as CreateMusicVideoRequest;
 
-    logger.info('Creating music video', {
-      function: 'create-music-video',
+    logger.info('Creating music video', 'create-music-video', {
       trackId,
       audioId,
       userId,
@@ -67,7 +80,6 @@ serve(async (req) => {
     });
 
     // ✅ 3. Verify track ownership
-    const supabase = createSupabaseAdminClient();
     const { data: track, error: trackError } = await supabase
       .from('tracks')
       .select('id, user_id, suno_id, metadata')

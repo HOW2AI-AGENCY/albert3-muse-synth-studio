@@ -1,10 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { createSupabaseAdminClient, createSupabaseUserClient } from "../_shared/supabase.ts";
+import { createCorsHeaders } from "../_shared/cors.ts";
+import { createSecurityHeaders } from "../_shared/security.ts";
+import { logger } from "../_shared/logger.ts";
 
 interface Track {
   track_id: string;
@@ -17,38 +15,63 @@ interface Track {
 }
 
 serve(async (req) => {
+  const corsHeaders = {
+    ...createCorsHeaders(req),
+    ...createSecurityHeaders()
+  };
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    // Authenticate user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      logger.error('Missing authorization header', 'archive-tracks');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    const userClient = createSupabaseUserClient(token);
+    const { data: { user }, error: userError } = await userClient.auth.getUser(token);
+
+    if (userError || !user) {
+      logger.error('Authentication failed', userError ?? new Error('No user'), 'archive-tracks');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Use admin client for database operations
+    const supabaseClient = createSupabaseAdminClient();
 
     const { trackId, limit = 50 } = await req.json().catch(() => ({}));
 
-    console.log('🗄️ Starting archiving process', { trackId, limit });
+    logger.info('Starting archiving process', 'archive-tracks', { trackId, limit, userId: user.id });
 
     // Get tracks needing archiving
     const { data: tracks, error: fetchError } = await supabaseClient
       .rpc('get_tracks_needing_archiving', { _limit: limit });
 
     if (fetchError) {
-      console.error('❌ Failed to fetch tracks', fetchError);
+      logger.error('Failed to fetch tracks', fetchError, 'archive-tracks');
       throw new Error(`Failed to fetch tracks: ${fetchError.message}`);
     }
 
     if (!tracks || tracks.length === 0) {
-      console.log('✅ No tracks need archiving');
+      logger.info('No tracks need archiving', 'archive-tracks');
       return new Response(
         JSON.stringify({ success: true, archived: 0, failed: 0, message: 'No tracks to archive' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`📦 Found ${tracks.length} tracks to archive`);
+    logger.info(`Found ${tracks.length} tracks to archive`, 'archive-tracks');
 
     const results = {
       success: 0,
@@ -58,7 +81,7 @@ serve(async (req) => {
 
     for (const track of tracks as Track[]) {
       try {
-        console.log(`🔄 Archiving track ${track.track_id}: "${track.title}"`);
+        logger.info(`Archiving track ${track.track_id}: "${track.title}"`, 'archive-tracks');
 
         // Create archiving job
         const { data: job, error: jobError } = await supabaseClient
@@ -158,14 +181,14 @@ serve(async (req) => {
           .eq('id', job.id);
 
         results.success++;
-        console.log(`✅ Successfully archived track ${track.track_id}`);
+        logger.info(`Successfully archived track ${track.track_id}`, 'archive-tracks');
 
       } catch (error) {
         results.failed++;
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         results.errors.push({ trackId: track.track_id, error: errorMessage });
-        
-        console.error(`❌ Failed to archive track ${track.track_id}:`, errorMessage);
+
+        logger.error(`Failed to archive track ${track.track_id}`, error instanceof Error ? error : new Error(errorMessage), 'archive-tracks');
 
         // Update job as failed
         await supabaseClient
@@ -180,7 +203,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`📊 Archiving complete: ${results.success} success, ${results.failed} failed`);
+    logger.info(`Archiving complete: ${results.success} success, ${results.failed} failed`, 'archive-tracks');
 
     return new Response(
       JSON.stringify({
@@ -193,7 +216,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('❌ Archive tracks error:', error);
+    logger.error('Archive tracks error', error instanceof Error ? error : new Error(String(error)), 'archive-tracks');
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

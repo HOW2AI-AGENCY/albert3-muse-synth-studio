@@ -59,20 +59,9 @@ if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
 
 // Service Worker: production only
 if (import.meta.env.PROD) {
-  // Register SW in production
+  // Register SW in production - using comprehensive serviceWorker.ts
   initServiceWorker().catch((error) => {
     logger.error('Failed to register service worker', error, 'ServiceWorker');
-  });
-
-  import('@/utils/registerServiceWorker').then(({ registerServiceWorker }) => {
-    registerServiceWorker().catch((error) => {
-      logger.error('Failed to register service worker', error, 'ServiceWorker');
-    });
-  });
-} else {
-  // Unregister any existing SW in development
-  import('@/utils/registerServiceWorker').then(({ unregisterServiceWorker }) => {
-    unregisterServiceWorker();
   });
 }
 
