@@ -81,15 +81,6 @@ const TracksListComponent = ({
   const { gap } = gridParams;
   const effectiveColumns = gridParams.screenCategory === 'mobile' ? 2 : gridParams.columns;
 
-  const handleViewChange = useCallback((view: 'grid' | 'list') => {
-    setViewMode(view);
-    try {
-      localStorage.setItem('tracks-view-mode', view);
-    } catch {
-      // Игнорируем ошибки хранения
-    }
-  }, []);
-
   // ✅ Мемоизация списка воспроизводимых треков
   const playableTracks = useMemo(() => 
     tracks

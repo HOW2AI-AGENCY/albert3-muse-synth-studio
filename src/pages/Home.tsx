@@ -102,10 +102,12 @@ const Home = memo(() => {
           description="Create professional music tracks with the power of AI. Get started in seconds with simple prompts or dive deep with advanced controls."
           ctaPrimary={{
             label: 'Get Studio',
+            href: '/workspace/generator',
             onClick: () => console.log('Get Studio clicked'),
           }}
           ctaSecondary={{
             label: 'Learn More',
+            href: '/docs',
             onClick: () => console.log('Learn More clicked'),
           }}
           variant="gradient"

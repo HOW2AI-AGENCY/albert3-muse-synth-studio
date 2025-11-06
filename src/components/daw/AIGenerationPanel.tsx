@@ -32,6 +32,7 @@ import {
 import { Sparkles, Wand2, Music, Loader2 } from 'lucide-react';
 import { useGenerateMusic } from '@/hooks/useGenerateMusic';
 import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { logInfo } from '@/utils/logger';
 
 interface AIGenerationPanelProps {
@@ -44,8 +45,12 @@ export const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({
   const [prompt, setPrompt] = useState('');
   const [genre, setGenre] = useState('electronic');
   const [duration, setDuration] = useState('30');
+  const { toast: showToast } = useToast();
 
-  const { generateMusic, isGenerating } = useGenerateMusic();
+  const { generate, isGenerating } = useGenerateMusic({
+    provider: 'suno',
+    toast: showToast,
+  });
 
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) {
@@ -56,21 +61,16 @@ export const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({
     try {
       logInfo('Generating AI clip from DAW', 'AIGenerationPanel', { prompt, genre });
 
-      const result = await generateMusic({
+      await generate({
         prompt,
-        genre,
-        has_vocals: false,
-        duration: parseInt(duration),
+        hasVocals: false,
       });
 
-      if (result?.audio_url) {
-        toast.success('AI clip generated successfully!');
-        onClipGenerated?.(result.audio_url, result.title || 'AI Generated');
-      }
+      toast.success('AI clip generation started!');
     } catch (error) {
       toast.error('Failed to generate clip');
     }
-  }, [prompt, genre, duration, generateMusic, onClipGenerated]);
+  }, [prompt, genre, generate]);
 
   return (
     <Card className="w-80">
