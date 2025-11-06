@@ -1,5 +1,5 @@
 import { memo, useState, useCallback, useMemo } from "react";
-import { Play, Pause, SkipBack, SkipForward, Minimize2, Volume2, VolumeX, Share2, Download, Heart, Repeat, Star } from "@/utils/iconImports";
+import { Play, Pause, SkipBack, SkipForward, Minimize2, Volume2, VolumeX, Share2, Download, Heart, Repeat, Star, Eye, EyeOff } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { logger } from "@/utils/logger";
 import { TimestampedLyricsDisplay } from './TimestampedLyricsDisplay';
+import { LyricsMobile } from './LyricsMobile';
 import { useTimestampedLyrics } from '@/hooks/useTimestampedLyrics';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface FullScreenPlayerProps {
   onMinimize: () => void;
@@ -60,6 +62,10 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
   const { vibrate } = useHapticFeedback();
   const { toast } = useToast();
   const [isMuted, setIsMuted] = useState(false);
+  const [showLyrics, setShowLyrics] = useState(true);
+  
+  // Определяем мобильное устройство
+  const isMobile = useMediaQuery('(max-width: 768px)');
   
   // ============= ВЕРСИИ ТРЕКОВ =============
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
@@ -177,6 +183,24 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
           </Button>
           
           <div className="flex gap-2">
+            {/* Кнопка управления лирикой */}
+            {lyricsData && lyricsData.alignedWords && lyricsData.alignedWords.length > 0 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  vibrate('light');
+                  setShowLyrics(!showLyrics);
+                }}
+                className="h-10 w-10 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+              >
+                {showLyrics ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -262,15 +286,27 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
         </div>
 
         {/* Улучшенный дисплей лирики с синхронизацией */}
-        {lyricsData && lyricsData.alignedWords && lyricsData.alignedWords.length > 0 && (
+        {showLyrics && lyricsData && lyricsData.alignedWords && lyricsData.alignedWords.length > 0 && (
           <div className="mb-4 animate-fade-in max-h-64">
-            <TimestampedLyricsDisplay
-              timestampedLyrics={lyricsData.alignedWords}
-              currentTime={currentTime}
-              onSeek={seekTo}
-              coverUrl={currentTrack.cover_url}
-              className="h-64"
-            />
+            {isMobile ? (
+              <LyricsMobile
+                timestampedLyrics={lyricsData.alignedWords}
+                currentTime={currentTime}
+                onSeek={seekTo}
+                togglePlayPause={togglePlayPause}
+                coverUrl={currentTrack.cover_url}
+                className="h-64"
+                showControls={false}
+              />
+            ) : (
+              <TimestampedLyricsDisplay
+                timestampedLyrics={lyricsData.alignedWords}
+                currentTime={currentTime}
+                onSeek={seekTo}
+                coverUrl={currentTrack.cover_url}
+                className="h-64"
+              />
+            )}
           </div>
         )}
 
