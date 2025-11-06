@@ -403,6 +403,58 @@ export const AudioController = () => {
     playTrack
   ]);
 
+  // ============= ПРЕДЗАГРУЗКА СЛЕДУЮЩЕГО ТРЕКА =============
+  const nextTrackInQueue = useRef<HTMLAudioElement | null>(null);
+  const queue = useAudioPlayerStore((state) => state.queue);
+  const currentQueueIndex = useAudioPlayerStore((state) => state.currentQueueIndex);
+  const isShuffleEnabled = useAudioPlayerStore((state) => state.isShuffleEnabled);
+  const shuffleHistory = useAudioPlayerStore((state) => state.shuffleHistory);
+
+  useEffect(() => {
+    if (!nextTrackInQueue.current) {
+      nextTrackInQueue.current = new Audio();
+      nextTrackInQueue.current.preload = 'auto';
+    }
+
+    // Определяем следующий трек для предзагрузки
+    let nextTrack: AudioPlayerTrack | null = null;
+
+    if (isShuffleEnabled && queue.length > 0) {
+      // В shuffle mode берем случайный трек из непроигранных
+      const unplayedTracks = queue.filter(
+        (track) => !shuffleHistory.includes(track.id)
+      );
+      if (unplayedTracks.length > 0) {
+        nextTrack = unplayedTracks[0]; // Берем первый непроигранный для предзагрузки
+      }
+    } else if (currentQueueIndex >= 0 && currentQueueIndex < queue.length - 1) {
+      // В обычном режиме берем следующий по индексу
+      nextTrack = queue[currentQueueIndex + 1];
+    }
+
+    // Предзагружаем следующий трек
+    if (nextTrack?.audio_url && nextTrackInQueue.current) {
+      try {
+        nextTrackInQueue.current.src = nextTrack.audio_url;
+        logger.info('Preloading next track', 'AudioController', {
+          nextTrackId: nextTrack.id,
+          nextTrackTitle: nextTrack.title,
+        });
+      } catch (error) {
+        logger.error('Failed to preload next track', error as Error, 'AudioController', {
+          nextTrackId: nextTrack?.id,
+        });
+      }
+    }
+
+    return () => {
+      // Cleanup при размонтировании
+      if (nextTrackInQueue.current) {
+        nextTrackInQueue.current.src = '';
+      }
+    };
+  }, [queue, currentQueueIndex, isShuffleEnabled, shuffleHistory]);
+
   // Рендерим скрытый audio элемент
   return (
     <audio

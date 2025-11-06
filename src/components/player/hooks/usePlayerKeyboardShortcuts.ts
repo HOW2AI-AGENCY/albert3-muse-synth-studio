@@ -8,6 +8,9 @@ interface UsePlayerKeyboardShortcutsProps {
   togglePlayPause: () => void;
   seekTo: (time: number) => void;
   setVolume: (volume: number) => void;
+  toggleMute?: () => void;
+  toggleRepeatMode?: () => void;
+  toggleShuffle?: () => void;
   currentTime: number;
   duration: number;
   volume: number;
@@ -17,6 +20,9 @@ export const usePlayerKeyboardShortcuts = ({
   togglePlayPause,
   seekTo,
   setVolume,
+  toggleMute,
+  toggleRepeatMode,
+  toggleShuffle,
   currentTime,
   duration,
   volume,
@@ -51,10 +57,33 @@ export const usePlayerKeyboardShortcuts = ({
           e.preventDefault();
           setVolume(Math.max(volume - 0.1, 0));
           break;
+        case 'KeyM':
+          e.preventDefault();
+          toggleMute?.();
+          break;
+        case 'KeyR':
+          e.preventDefault();
+          toggleRepeatMode?.();
+          break;
+        case 'KeyS':
+          e.preventDefault();
+          toggleShuffle?.();
+          break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isMobile, togglePlayPause, currentTime, duration, seekTo, volume, setVolume]);
+  }, [
+    isMobile,
+    togglePlayPause,
+    currentTime,
+    duration,
+    seekTo,
+    volume,
+    setVolume,
+    toggleMute,
+    toggleRepeatMode,
+    toggleShuffle,
+  ]);
 };

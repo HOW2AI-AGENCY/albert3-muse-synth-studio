@@ -2,7 +2,7 @@
  * Playback controls for desktop player
  */
 import { memo, useCallback } from 'react';
-import { Play, Pause, SkipBack, SkipForward, List, Star } from '@/utils/iconImports';
+import { Play, Pause, SkipBack, SkipForward, List, Star, Repeat, Repeat1, Shuffle } from '@/utils/iconImports';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { PlayerQueue } from '../PlayerQueue';
 import { useVersionNavigation } from '@/hooks/useVersionNavigation';
-import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
+import { useAudioPlayerStore, usePlaybackModes, usePlaybackModeControls } from '@/stores/audioPlayerStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Version {
@@ -43,6 +43,8 @@ export const PlaybackControls = memo(({
   const { handleNext, handlePrevious } = useVersionNavigation();
   const currentTime = useAudioPlayerStore((state) => state.currentTime);
   const seekTo = useAudioPlayerStore((state) => state.seekTo);
+  const { repeatMode, isShuffleEnabled } = usePlaybackModes();
+  const { toggleRepeatMode, toggleShuffle } = usePlaybackModeControls();
 
   const onPreviousClick = useCallback(() => {
     const result = handlePrevious(currentTime);
@@ -54,6 +56,11 @@ export const PlaybackControls = memo(({
   const onNextClick = useCallback(() => {
     handleNext();
   }, [handleNext]);
+
+  // Get appropriate repeat icon
+  const RepeatIcon = repeatMode === 'one' ? Repeat1 : Repeat;
+  const repeatTooltip = repeatMode === 'off' ? 'Без повтора' : repeatMode === 'one' ? 'Повтор трека' : 'Повтор всех';
+
   return (
     <div className="flex items-center gap-2">
       <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.1 }}>
@@ -62,9 +69,10 @@ export const PlaybackControls = memo(({
           variant="ghost"
           onClick={onPreviousClick}
           title={hasVersions ? "Предыдущая версия (←)" : "Предыдущий трек (←)"}
+          aria-label={hasVersions ? "Предыдущая версия" : "Предыдущий трек"}
           className="h-6 w-6 hover:bg-primary/10 transition-all duration-200 group"
         >
-          <SkipBack className="h-3 w-3 group-hover:text-primary transition-colors duration-200" />
+          <SkipBack className="h-3 w-3 group-hover:text-primary transition-colors duration-200" aria-hidden="true" />
         </Button>
       </motion.div>
 
@@ -74,6 +82,8 @@ export const PlaybackControls = memo(({
           variant="default"
           onClick={onTogglePlayPause}
           title={isPlaying ? "Пауза (Space)" : "Воспроизвести (Space)"}
+          aria-label={isPlaying ? "Пауза" : "Воспроизвести"}
+          aria-pressed={isPlaying}
           className="h-8 w-8 rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-300 group relative overflow-hidden"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
@@ -87,7 +97,7 @@ export const PlaybackControls = memo(({
                 transition={{ duration: 0.2, ease: "easeOut" }}
                 className="relative z-10"
               >
-                <Pause className="h-3.5 w-3.5" />
+                <Pause className="h-3.5 w-3.5" aria-hidden="true" />
               </motion.div>
             ) : (
               <motion.div
@@ -98,7 +108,7 @@ export const PlaybackControls = memo(({
                 transition={{ duration: 0.2, ease: "easeOut" }}
                 className="relative z-10"
               >
-                <Play className="h-3.5 w-3.5 ml-0.5" />
+                <Play className="h-3.5 w-3.5 ml-0.5" aria-hidden="true" />
               </motion.div>
             )}
           </AnimatePresence>
@@ -111,11 +121,68 @@ export const PlaybackControls = memo(({
           variant="ghost"
           onClick={onNextClick}
           title={hasVersions ? "Следующая версия (→)" : "Следующий трек (→)"}
+          aria-label={hasVersions ? "Следующая версия" : "Следующий трек"}
           className="h-6 w-6 hover:bg-primary/10 transition-all duration-200 group"
         >
-          <SkipForward className="h-3 w-3 group-hover:text-primary transition-colors duration-200" />
+          <SkipForward className="h-3 w-3 group-hover:text-primary transition-colors duration-200" aria-hidden="true" />
         </Button>
       </motion.div>
+
+      {/* Shuffle Button */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.1 }}>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={toggleShuffle}
+              className={`h-6 w-6 hover:bg-primary/10 transition-all duration-200 group ${
+                isShuffleEnabled ? 'text-primary' : ''
+              }`}
+              title={isShuffleEnabled ? 'Случайный порядок включен (S)' : 'Случайный порядок выключен (S)'}
+              aria-label={isShuffleEnabled ? 'Выключить случайный порядок' : 'Включить случайный порядок'}
+              aria-pressed={isShuffleEnabled}
+            >
+              <Shuffle
+                className={`h-3 w-3 transition-all duration-200 ${
+                  isShuffleEnabled ? 'text-primary' : 'group-hover:text-primary'
+                }`}
+              />
+            </Button>
+          </motion.div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p className="text-xs">{isShuffleEnabled ? 'Случайный порядок включен' : 'Случайный порядок'}</p>
+        </TooltipContent>
+      </Tooltip>
+
+      {/* Repeat Button */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.1 }}>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={toggleRepeatMode}
+              className={`h-6 w-6 hover:bg-primary/10 transition-all duration-200 group ${
+                repeatMode !== 'off' ? 'text-primary' : ''
+              }`}
+              title={`${repeatTooltip} (R)`}
+              aria-label={`Режим повтора: ${repeatTooltip}`}
+              aria-pressed={repeatMode !== 'off'}
+            >
+              <RepeatIcon
+                className={`h-3 w-3 transition-all duration-200 ${
+                  repeatMode !== 'off' ? 'text-primary' : 'group-hover:text-primary'
+                }`}
+              />
+            </Button>
+          </motion.div>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p className="text-xs">{repeatTooltip}</p>
+        </TooltipContent>
+      </Tooltip>
 
       {/* Track Versions - Compact */}
       {hasVersions && (
@@ -124,11 +191,12 @@ export const PlaybackControls = memo(({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.1 }}>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="relative h-6 w-6 hover:bg-primary/10 transition-all duration-200"
                     title={`${availableVersions.length} версий`}
+                    aria-label={`${availableVersions.length} версий трека`}
                   >
                     <List className="h-3 w-3" />
                     <Badge className="absolute -top-0.5 -right-0.5 h-3 w-3 p-0 flex items-center justify-center text-[7px] bg-gradient-primary">

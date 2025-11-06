@@ -50,6 +50,8 @@ export {
   SkipBack,
   SkipForward,
   Repeat,
+  Repeat1,
+  Shuffle,
   Star,
   Split
 } from 'lucide-react';

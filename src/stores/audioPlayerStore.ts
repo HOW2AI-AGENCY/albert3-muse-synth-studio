@@ -23,6 +23,8 @@ import { useRef } from 'react';
 import { getTrackWithVersions, getMasterVersion } from '@/features/tracks/api/trackVersions';
 import { logInfo, logError } from '@/utils/logger';
 
+export type RepeatMode = 'off' | 'one' | 'all';
+
 export interface AudioPlayerTrack {
   id: string;
   title: string;
@@ -61,10 +63,14 @@ interface AudioPlayerState {
   currentTime: number;
   duration: number;
   bufferingProgress: number;
-  
+
   // Queue management
   currentQueueIndex: number;
-  
+  repeatMode: RepeatMode;
+  isShuffleEnabled: boolean;
+  shuffledQueue: AudioPlayerTrack[];
+  shuffleHistory: string[]; // Track IDs played in shuffle mode
+
   // Version management
   availableVersions: TrackVersion[];
   currentVersionIndex: number;
@@ -88,6 +94,13 @@ interface AudioPlayerState {
   playNext: () => void;
   playPrevious: () => void;
   playTrackWithQueue: (track: AudioPlayerTrack, allTracks: AudioPlayerTrack[]) => void;
+
+  // ==========================================
+  // PLAYBACK MODE ACTIONS
+  // ==========================================
+  toggleRepeatMode: () => void;
+  toggleShuffle: () => void;
+  setRepeatMode: (mode: RepeatMode) => void;
   
   // ==========================================
   // VERSION ACTIONS
@@ -133,6 +146,10 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
         duration: 0,
         bufferingProgress: 0,
         currentQueueIndex: -1,
+        repeatMode: 'off',
+        isShuffleEnabled: false,
+        shuffledQueue: [],
+        shuffleHistory: [],
         availableVersions: [],
         currentVersionIndex: -1,
 
@@ -213,13 +230,57 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
         },
 
         clearQueue: () => {
-          set({ queue: [], currentQueueIndex: -1 });
+          set({ queue: [], currentQueueIndex: -1, shuffledQueue: [], shuffleHistory: [] });
         },
 
         playNext: () => {
           const state = get();
+
+          // ✅ Repeat One: restart current track
+          if (state.repeatMode === 'one' && state.currentTrack) {
+            set({ currentTime: 0, isPlaying: true });
+            return;
+          }
+
+          // ✅ Shuffle mode
+          if (state.isShuffleEnabled && state.queue.length > 0) {
+            // Get unplayed tracks
+            const unplayedTracks = state.queue.filter(
+              (track) => !state.shuffleHistory.includes(track.id)
+            );
+
+            if (unplayedTracks.length > 0) {
+              // Pick random track from unplayed
+              const randomIndex = Math.floor(Math.random() * unplayedTracks.length);
+              const nextTrack = unplayedTracks[randomIndex];
+              const queueIndex = state.queue.findIndex((t) => t.id === nextTrack.id);
+
+              set({
+                currentTrack: nextTrack,
+                currentQueueIndex: queueIndex,
+                isPlaying: true,
+                currentTime: 0,
+                duration: nextTrack.duration || 0,
+                shuffleHistory: [...state.shuffleHistory, nextTrack.id],
+              });
+
+              get().loadVersions(nextTrack.parentTrackId || nextTrack.id);
+              return;
+            } else if (state.repeatMode === 'all') {
+              // ✅ All tracks played, restart shuffle if repeat all
+              set({ shuffleHistory: [] });
+              get().playNext(); // Recursive call with empty history
+              return;
+            } else {
+              // No more tracks and no repeat
+              set({ isPlaying: false });
+              return;
+            }
+          }
+
+          // ✅ Normal sequential mode
           const nextIndex = state.currentQueueIndex + 1;
-          
+
           if (nextIndex < state.queue.length) {
             const nextTrack = state.queue[nextIndex];
             set({
@@ -229,9 +290,20 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               currentTime: 0,
               duration: nextTrack.duration || 0,
             });
-            
-            // ✅ FIX: Загрузить версии для нового трека
+
             get().loadVersions(nextTrack.parentTrackId || nextTrack.id);
+          } else if (state.repeatMode === 'all' && state.queue.length > 0) {
+            // ✅ Repeat All: restart from beginning
+            const firstTrack = state.queue[0];
+            set({
+              currentTrack: firstTrack,
+              currentQueueIndex: 0,
+              isPlaying: true,
+              currentTime: 0,
+              duration: firstTrack.duration || 0,
+            });
+
+            get().loadVersions(firstTrack.parentTrackId || firstTrack.id);
           }
         },
 
@@ -272,7 +344,46 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             isPlaying: true,
             currentTime: 0,
             duration: track.duration || 0,
+            shuffleHistory: [track.id], // Reset shuffle history with current track
           });
+        },
+
+        // ==========================================
+        // PLAYBACK MODE ACTIONS
+        // ==========================================
+        toggleRepeatMode: () => {
+          const state = get();
+          const modes: RepeatMode[] = ['off', 'one', 'all'];
+          const currentIndex = modes.indexOf(state.repeatMode);
+          const nextMode = modes[(currentIndex + 1) % modes.length];
+
+          logInfo('Toggling repeat mode', 'audioPlayerStore', {
+            from: state.repeatMode,
+            to: nextMode
+          });
+
+          set({ repeatMode: nextMode });
+        },
+
+        toggleShuffle: () => {
+          const state = get();
+          const newShuffleState = !state.isShuffleEnabled;
+
+          logInfo('Toggling shuffle', 'audioPlayerStore', {
+            enabled: newShuffleState
+          });
+
+          set({
+            isShuffleEnabled: newShuffleState,
+            shuffleHistory: newShuffleState && state.currentTrack
+              ? [state.currentTrack.id]
+              : [],
+          });
+        },
+
+        setRepeatMode: (mode) => {
+          logInfo('Setting repeat mode', 'audioPlayerStore', { mode });
+          set({ repeatMode: mode });
         },
 
         // ==========================================
@@ -419,6 +530,8 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
         // Only persist user preferences, not playback state
         partialize: (state) => ({
           volume: state.volume,
+          repeatMode: state.repeatMode,
+          isShuffleEnabled: state.isShuffleEnabled,
         }),
       }
     ),
@@ -535,8 +648,29 @@ export const useVersions = () =>
  * Get version controls
  * Returns stable function references
  */
-export const useVersionControls = () => 
+export const useVersionControls = () =>
   useAudioPlayerStore((state) => ({
     switchToVersion: state.switchToVersion,
     loadVersions: state.loadVersions,
+  }));
+
+/**
+ * Get playback modes state
+ * Only re-renders when repeat mode or shuffle changes
+ */
+export const usePlaybackModes = () =>
+  useAudioPlayerStore((state) => ({
+    repeatMode: state.repeatMode,
+    isShuffleEnabled: state.isShuffleEnabled,
+  }));
+
+/**
+ * Get playback mode controls
+ * Returns stable function references
+ */
+export const usePlaybackModeControls = () =>
+  useAudioPlayerStore((state) => ({
+    toggleRepeatMode: state.toggleRepeatMode,
+    toggleShuffle: state.toggleShuffle,
+    setRepeatMode: state.setRepeatMode,
   }));
