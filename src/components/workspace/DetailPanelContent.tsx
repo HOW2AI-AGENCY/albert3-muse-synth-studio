@@ -582,7 +582,7 @@ export const DetailPanelContent = ({
 
             {/* References & Sources - НОВОЕ */}
             <ReferenceSourcesPanel
-              metadata={track.metadata}
+              metadata={track.metadata ?? null}
               trackId={track.id}
               className="mb-4"
             />

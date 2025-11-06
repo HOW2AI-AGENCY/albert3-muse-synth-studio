@@ -12,7 +12,6 @@ import { memo, useMemo } from 'react';
 import {
   Wand2,
   Sparkles,
-  Waveform,
   ListPlus,
   ListMusic,
   FolderInput,
@@ -24,6 +23,7 @@ import {
   Flag,
   Trash2,
   Lock,
+  Waves,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -40,14 +40,13 @@ import type {
   TrackActionsMenuProps,
   TrackActionsItem,
   TrackActionId,
-  DEFAULT_TRACK_ACTIONS,
 } from '@/types/suno-ui.types';
 
 // Icon map
 const ICON_MAP: Record<string, typeof Wand2> = {
   Wand2,
   Sparkles,
-  Waveform,
+  Waves,
   ListPlus,
   ListMusic,
   FolderInput,
@@ -64,7 +63,7 @@ const ICON_MAP: Record<string, typeof Wand2> = {
 const DEFAULT_ITEMS: TrackActionsItem[] = [
   { id: 'remix', icon: 'Wand2', label: 'Remix/Edit', shortcut: 'R' },
   { id: 'create', icon: 'Sparkles', label: 'Create' },
-  { id: 'stems', icon: 'Waveform', label: 'Get Stems', pro: true },
+  { id: 'stems', icon: 'Waves', label: 'Get Stems', pro: true },
   { id: 'queue', icon: 'ListPlus', label: 'Add to Queue', shortcut: 'Q' },
   { id: 'playlist', icon: 'ListMusic', label: 'Add to Playlist' },
   { id: 'move', icon: 'FolderInput', label: 'Move to Workspace' },
