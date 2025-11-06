@@ -145,6 +145,8 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
   }, [vibrate, isLiked, toggleLike]);
 
   const swipeRef = useSwipeGesture({
+    onSwipeLeft: handleNext,      // Swipe left = next track
+    onSwipeRight: handlePrevious, // Swipe right = previous track
     onSwipeDown: useCallback(() => {
       vibrate('medium');
       onMinimize();
@@ -177,11 +179,11 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
             variant="ghost"
             size="icon"
             onClick={onMinimize}
-            className="h-10 w-10 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+            className="h-11 w-11 min-h-[44px] min-w-[44px] hover:bg-primary/10 hover:scale-105 transition-all duration-200"
           >
             <Minimize2 className="h-5 w-5" />
           </Button>
-          
+
           <div className="flex gap-2">
             {/* Кнопка управления лирикой */}
             {lyricsData && lyricsData.alignedWords && lyricsData.alignedWords.length > 0 && (
@@ -192,7 +194,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
                   vibrate('light');
                   setShowLyrics(!showLyrics);
                 }}
-                className="h-10 w-10 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+                className="h-11 w-11 min-h-[44px] min-w-[44px] hover:bg-primary/10 hover:scale-105 transition-all duration-200"
               >
                 {showLyrics ? (
                   <EyeOff className="h-5 w-5" />
@@ -205,14 +207,14 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
               variant="ghost"
               size="icon"
               onClick={handleShare}
-              className="h-10 w-10 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+              className="h-11 w-11 min-h-[44px] min-w-[44px] hover:bg-primary/10 hover:scale-105 transition-all duration-200"
             >
               <Share2 className="h-5 w-5" />
             </Button>
             {hasVersions && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative h-10 w-10 hover:bg-primary/10 hover:scale-105 transition-all duration-200">
+                  <Button variant="ghost" size="icon" className="relative h-11 w-11 min-h-[44px] min-w-[44px] hover:bg-primary/10 hover:scale-105 transition-all duration-200">
                     <Repeat className="h-5 w-5" />
                     <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-gradient-primary animate-pulse">
                       {availableVersions.length}
@@ -375,7 +377,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
             variant="ghost"
             size="icon"
             onClick={handleLike}
-            className={`h-10 w-10 hover:scale-110 transition-all duration-200 ${
+            className={`h-11 w-11 min-h-[44px] min-w-[44px] hover:scale-110 transition-all duration-200 ${
               isLiked ? 'text-accent hover:bg-accent/10' : 'hover:bg-primary/10'
             }`}
           >
@@ -412,7 +414,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
             variant="ghost"
             size="icon"
             onClick={handleDownload}
-            className="h-10 w-10 hover:bg-primary/10 hover:scale-110 transition-all duration-200"
+            className="h-11 w-11 min-h-[44px] min-w-[44px] hover:bg-primary/10 hover:scale-110 transition-all duration-200"
           >
             <Download className="h-5 w-5" />
           </Button>
