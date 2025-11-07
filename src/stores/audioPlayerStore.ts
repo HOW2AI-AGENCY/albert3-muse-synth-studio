@@ -479,10 +479,13 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
           });
           
           // ✅ FIX 2: Сохраняем currentTime при переключении версий
+          // ✅ P1.2: Validate currentTime against new version duration
+          const safeCurrentTime = Math.min(currentTime, newTrack.duration || currentTime || 0);
+
           set({
             currentTrack: newTrack,
             currentVersionIndex: versionIndex,
-            currentTime, // ✅ Восстанавливаем позицию воспроизведения
+            currentTime: safeCurrentTime, // ✅ Восстанавливаем позицию (валидированную)
             isPlaying, // ✅ Сохраняем состояние воспроизведения
           });
         },
@@ -622,6 +625,7 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
           volume: state.volume,
           repeatMode: state.repeatMode,
           isShuffleEnabled: state.isShuffleEnabled,
+          shuffleHistory: state.shuffleHistory, // ✅ P1.3: Persist shuffle history
         }),
       }
     ),

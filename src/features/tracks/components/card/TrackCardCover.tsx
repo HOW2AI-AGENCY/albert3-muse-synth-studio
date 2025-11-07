@@ -114,7 +114,7 @@ export const TrackCardCover = React.memo(({
             "absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300",
             isHovered || (isCurrentTrack && isPlaying)
               ? "opacity-100"
-              : "opacity-0 group-focus-within:opacity-100"
+              : "opacity-0 group-focus-within:opacity-100 pointer-events-none"
           )}
         >
           <Button
