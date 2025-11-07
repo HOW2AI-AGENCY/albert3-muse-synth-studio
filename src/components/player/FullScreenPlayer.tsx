@@ -21,30 +21,26 @@ import { TimestampedLyricsDisplay } from './TimestampedLyricsDisplay';
 import { LyricsMobile } from './LyricsMobile';
 import { useTimestampedLyrics } from '@/hooks/useTimestampedLyrics';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { MobileProgressBar } from './mobile/MobileProgressBar';
 
 interface FullScreenPlayerProps {
   onMinimize: () => void;
 }
-
-const formatTime = (seconds: number): string => {
-  if (!seconds || isNaN(seconds)) return "0:00";
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-};
 
 export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => {
   // ✅ Zustand store with optimized selectors
   const currentTrack = useCurrentTrack();
   const isPlaying = useIsPlaying();
   const volume = useVolume();
-  
+
+  // ⚠️ EXCEPTION: currentTime needed ONLY for lyrics components (they don't subscribe internally)
+  // Progress bar no longer needs this (handled by MobileProgressBar)
+  // TODO: Refactor lyrics components to subscribe internally in future
   const currentTime = useAudioPlayerStore((state) => state.currentTime);
-  const duration = useAudioPlayerStore((state) => state.duration);
-  const bufferingProgress = useAudioPlayerStore((state) => state.bufferingProgress);
+
   const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
   const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
-  
+
   const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
   const seekTo = useAudioPlayerStore((state) => state.seekTo);
   const setVolume = useAudioPlayerStore((state) => state.setVolume);
@@ -332,31 +328,11 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
           </div>
         )}
 
-        {/* Progress Bar */}
-        <div className="mb-2 px-4 animate-slide-up">
-          <div className="relative">
-            {/* Buffering progress indicator */}
-            {bufferingProgress > 0 && bufferingProgress < 100 && (
-              <div
-                className="absolute top-1/2 -translate-y-1/2 left-0 h-1 bg-primary/30 rounded-full transition-all duration-300 pointer-events-none"
-                style={{ width: `${bufferingProgress}%` }}
-              >
-                <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-primary rounded-full animate-pulse" />
-              </div>
-            )}
-            <Slider
-              value={[Math.min(Math.max(currentTime, 0), Math.max(0, duration))]}
-              max={Math.max(0, duration)}
-              step={0.1}
-              onValueChange={handleSeek}
-              className="w-full cursor-pointer hover:scale-y-110 transition-transform duration-200"
-            />
-          </div>
-          <div className="flex justify-between text-xs text-muted-foreground/80 mt-2 font-medium tabular-nums">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
-          </div>
-        </div>
+        {/* Progress Bar - ✅ OPTIMIZED: Internal subscriptions prevent parent re-renders */}
+        <MobileProgressBar
+          onSeek={handleSeek}
+          className="mb-2 px-4 animate-slide-up"
+        />
 
         {/* Main Controls */}
         <div className="flex items-center justify-center gap-4 sm:gap-6 mb-4 sm:mb-6 px-4 animate-slide-up">
