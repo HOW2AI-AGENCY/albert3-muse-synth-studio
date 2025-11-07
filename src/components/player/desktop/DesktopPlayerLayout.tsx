@@ -220,10 +220,10 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
             <ProgressBar onSeek={seekTo} />
           </div>
 
-          {/* Lyrics Display */}
-          {track.suno_task_id && track.id && (
+          {/* Lyrics Display - ✅ P0 FIX: Show even without suno_task_id */}
+          {track.id && (
             <LyricsDisplay
-              taskId={track.suno_task_id}
+              taskId={track.suno_task_id || ''}
               audioId={track.id}
               fallbackLyrics={track.lyrics}
             />

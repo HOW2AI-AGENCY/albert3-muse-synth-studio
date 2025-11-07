@@ -279,10 +279,40 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
 
     if (versionsError) throw versionsError;
 
-    const allVersions = new Map<string, TrackWithVersions>();
+    // ✅ P0 FIX: Use Map with sourceVersionNumber as key to prevent duplicates
+    // This deduplicates by version number, not by ID
+    const versionsByNumber = new Map<number, TrackWithVersions>();
 
-    // Fallback: Extract versions from metadata.suno_data
+    // PRIORITY 1: Load from track_versions table (authoritative source)
+    if (dbVersions && dbVersions.length > 0) {
+      dbVersions.forEach(version => {
+        const versionNum = version.variant_index ?? 0;
+        versionsByNumber.set(versionNum, {
+          id: version.id,
+          parentTrackId: mainTrack.id,
+          sourceVersionNumber: versionNum,
+          versionNumber: versionNum + 1,
+          isMasterVersion: Boolean(version.is_preferred_variant),
+          title: mainTrack.title,
+          audio_url: version.audio_url || undefined,
+          cover_url: version.cover_url || mainTrack.cover_url || undefined,
+          video_url: version.video_url || undefined,
+          duration: version.duration || undefined,
+          lyrics: version.lyrics || undefined,
+          style_tags: mainTrack.style_tags || undefined,
+          status: 'completed',
+          user_id: mainTrack.user_id,
+          metadata: (version.metadata as TrackMetadata | null) || (mainTrack.metadata as TrackMetadata | null),
+          suno_id: version.suno_id || undefined,
+          created_at: version.created_at,
+        });
+      });
+    }
+
+    // PRIORITY 2: Fallback to metadata.suno_data ONLY if track_versions is empty
+    // This prevents duplicates from multiple sources
     if (
+      versionsByNumber.size === 0 &&
       mainTrack.metadata &&
       typeof mainTrack.metadata === 'object' &&
       'suno_data' in mainTrack.metadata &&
@@ -293,7 +323,7 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
         const audioUrl = versionData.audio_url || versionData.stream_audio_url;
         if (!audioUrl) return;
 
-        allVersions.set(versionData.id, {
+        versionsByNumber.set(index, {
           id: versionData.id,
           parentTrackId: mainTrack.id,
           sourceVersionNumber: index,
@@ -315,13 +345,10 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       });
     }
 
-    // ✅ FIX: Check if there's a version with variant_index: 0 in track_versions
-    const hasVersionZero = dbVersions && dbVersions.length > 0 && dbVersions.some(v => v.variant_index === 0);
-
-    // Add main track as the first version ONLY if there's no version with variant_index: 0 in track_versions
-    // This prevents duplication of the main version
+    // PRIORITY 3: Add main track as version 0 ONLY if not already present
+    const hasVersionZero = versionsByNumber.has(0);
     if (mainTrack.audio_url && !hasVersionZero) {
-      allVersions.set(mainTrack.id, {
+      versionsByNumber.set(0, {
         id: mainTrack.id,
         parentTrackId: mainTrack.id,
         sourceVersionNumber: 0,
@@ -342,32 +369,8 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       });
     }
 
-    // Process versions from track_versions table (authoritative source)
-    if (dbVersions && dbVersions.length > 0) {
-      dbVersions.forEach(version => {
-        allVersions.set(version.id, {
-          id: version.id,
-          parentTrackId: mainTrack.id,
-          sourceVersionNumber: version.variant_index,
-          versionNumber: (version.variant_index ?? 0) + 1,
-          isMasterVersion: Boolean(version.is_preferred_variant),
-          title: mainTrack.title,
-          audio_url: version.audio_url || undefined,
-          cover_url: version.cover_url || mainTrack.cover_url || undefined,
-          video_url: version.video_url || undefined,
-          duration: version.duration || undefined,
-          lyrics: version.lyrics || undefined,
-          style_tags: mainTrack.style_tags || undefined,
-          status: 'completed',
-          user_id: mainTrack.user_id,
-          metadata: (version.metadata as TrackMetadata | null) || (mainTrack.metadata as TrackMetadata | null),
-          suno_id: version.suno_id || undefined,
-          created_at: version.created_at,
-        });
-      });
-    }
-
-    const normalizedVersions = Array.from(allVersions.values());
+    // ✅ P0 FIX: Convert Map to Array - guaranteed no duplicates by sourceVersionNumber
+    const normalizedVersions = Array.from(versionsByNumber.values());
 
     // Designate master version
     const masterVersion = normalizedVersions.find(v => v.isMasterVersion);
@@ -382,11 +385,12 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       (a.sourceVersionNumber ?? 0) - (b.sourceVersionNumber ?? 0)
     );
 
-    logInfo('Track versions loaded', 'trackVersions', {
+    logInfo('Track versions loaded (deduplicated)', 'trackVersions', {
       trackId,
       dbVersionsCount: dbVersions?.length || 0,
       metadataVersionsCount: (mainTrack.metadata as any)?.suno_data?.length || 0,
       normalizedVersionsCount: normalizedVersions.length,
+      versionNumbers: normalizedVersions.map(v => v.sourceVersionNumber).sort(),
     });
 
     return normalizedVersions;
