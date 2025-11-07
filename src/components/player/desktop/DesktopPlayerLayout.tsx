@@ -23,12 +23,13 @@ export interface DesktopPlayerLayoutProps {
 export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) => {
   const { isVisible } = usePlayerVisibility(track);
 
-  // Zustand store selectors
+  // ✅ CRITICAL FIX: Removed currentTime, duration, bufferingProgress subscriptions
+  // These were causing DesktopPlayerLayout to re-render 60 times/sec!
+  // Now ProgressBar and usePlayerKeyboardShortcuts subscribe internally
+
+  // Zustand store selectors (only what's needed for this component)
   const isPlaying = useIsPlaying();
   const volume = useVolume();
-  const currentTime = useAudioPlayerStore((state) => state.currentTime);
-  const duration = useAudioPlayerStore((state) => state.duration);
-  const bufferingProgress = useAudioPlayerStore((state) => state.bufferingProgress);
   const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
   const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
 
@@ -61,7 +62,7 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
       setVolume(0);
       setIsMuted(true);
     }
-  }, [isMuted, setVolume]); // ✅ Removed volume dependency to prevent infinite loop
+  }, [isMuted, setVolume]);
 
   const handleVolumeChange = useCallback((value: number[]) => {
     const newVolume = value[0];
@@ -70,9 +71,9 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
     if (newVolume > 0) {
       previousVolumeRef.current = newVolume;
     }
-  }, [setVolume]); // ✅ Using ref instead of state for previousVolume
+  }, [setVolume]);
 
-  // Keyboard shortcuts
+  // ✅ Keyboard shortcuts now subscribe to store internally
   usePlayerKeyboardShortcuts({
     togglePlayPause,
     seekTo,
@@ -80,9 +81,6 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
     toggleMute,
     toggleRepeatMode,
     toggleShuffle,
-    currentTime,
-    duration,
-    volume,
   });
 
   // Close player handler
@@ -198,12 +196,8 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
 
           {/* Progress Bar - Compact */}
           <div className="space-y-1">
-            <ProgressBar 
-              currentTime={currentTime}
-              duration={duration}
-              bufferingProgress={bufferingProgress}
-              onSeek={seekTo}
-            />
+            {/* ✅ ProgressBar now subscribes to store internally */}
+            <ProgressBar onSeek={seekTo} />
           </div>
 
           {/* Lyrics Display */}

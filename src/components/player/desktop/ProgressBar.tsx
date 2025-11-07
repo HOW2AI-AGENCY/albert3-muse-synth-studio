@@ -1,24 +1,26 @@
 /**
  * Progress bar with time display for desktop player
+ *
+ * ✅ FIX: Subscribes to store internally to prevent parent re-renders
+ * This component now gets currentTime/duration directly from store
  */
 import { memo } from 'react';
 import { Slider } from '@/components/ui/slider';
 import { formatTime } from '@/utils/formatters';
 import { motion } from 'framer-motion';
+import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
 
 interface ProgressBarProps {
-  currentTime: number;
-  duration: number;
-  bufferingProgress: number;
   onSeek: (time: number) => void;
 }
 
 export const ProgressBar = memo(({
-  currentTime,
-  duration,
-  bufferingProgress,
   onSeek
 }: ProgressBarProps) => {
+  // ✅ Subscribe to store internally - prevents parent from re-rendering 60 FPS
+  const currentTime = useAudioPlayerStore((state) => state.currentTime);
+  const duration = useAudioPlayerStore((state) => state.duration);
+  const bufferingProgress = useAudioPlayerStore((state) => state.bufferingProgress);
   const progressPercent = duration > 0 ? Math.round((currentTime / duration) * 100) : 0;
 
   return (
