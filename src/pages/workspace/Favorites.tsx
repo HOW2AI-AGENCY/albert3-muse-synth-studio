@@ -172,7 +172,7 @@ const Favorites = () => {
         </div>
       </div>
 
-      {/* Tracks Grid */}
+      {/* Tracks Grid - Responsive: 1 col mobile, 2 tablet, 3 desktop, 4 wide */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
         {likedTracks.map((track, index) => (
           <div

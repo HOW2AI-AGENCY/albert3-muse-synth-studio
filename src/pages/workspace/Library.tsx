@@ -696,16 +696,18 @@ const LibraryContent: React.FC = () => {
                     onDelete={handleDelete}
                   />
                 ) : (
-                  <div 
+                  <div
                     className="grid overflow-auto h-full scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent"
                     style={{
-                      gridTemplateColumns: `repeat(${effectiveColumns}, minmax(${gridParams.screenCategory === 'mobile' ? 150 : gridParams.screenCategory === 'tablet' ? 180 : 220}px, ${gridParams.cardWidth}px))`,
+                      gridTemplateColumns: gridParams.screenCategory === 'mobile'
+                        ? '1fr' // ✅ MOBILE: Single column, full width
+                        : `repeat(${effectiveColumns}, minmax(${gridParams.screenCategory === 'tablet' ? 320 : 320}px, 1fr))`,
                       gap: `${gridParams.gap}px`,
                       justifyContent: 'center'
                     }}
                   >
                   {filteredAndSortedTracks.map((track) => (
-                    <div key={track.id} className="relative" style={{ maxWidth: `${gridParams.cardWidth}px` }} aria-busy={loadingTrackId === track.id}>
+                    <div key={track.id} className="relative w-full" aria-busy={loadingTrackId === track.id}>
                       <TrackCard
                         track={normalizeTrack(track)}
                         onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
