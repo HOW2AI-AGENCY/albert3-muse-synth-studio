@@ -15,7 +15,8 @@ interface LyricsDisplayProps {
  */
 export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audioId, fallbackLyrics }) => {
   // ✅ P0 FIX: Skip timestamped lyrics fetch if no taskId
-  const shouldFetchTimestamped = taskId && taskId.length > 0;
+  // ✅ HOTFIX: Ensure boolean type for React Query enabled parameter
+  const shouldFetchTimestamped = !!(taskId && taskId.length > 0);
 
   const { data: lyricsData, isLoading, isError } = useTimestampedLyrics({
     taskId,
