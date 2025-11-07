@@ -43,12 +43,14 @@ describe('Formatters Utility', () => {
       expect(formatted).toContain('2025');
     });
 
-    it('should include time', () => {
+    it('should format date without time', () => {
       const date = new Date('2025-01-15T10:30:00');
       const formatted = formatDate(date);
 
-      expect(formatted).toContain('10');
-      expect(formatted).toContain('30');
+      // Russian locale format: "15 янв. 2025 г."
+      expect(formatted).toContain('15');
+      expect(formatted).toContain('2025');
+      expect(formatted).toMatch(/янв/i);
     });
   });
 
@@ -59,22 +61,22 @@ describe('Formatters Utility', () => {
       expect(formatNumber(999)).toBe('999');
     });
 
-    it('should format thousands with K suffix', () => {
-      expect(formatNumber(1000)).toBe('1.0K');
-      expect(formatNumber(1500)).toBe('1.5K');
-      expect(formatNumber(42000)).toBe('42.0K');
-      expect(formatNumber(999999)).toBe('1000.0K');
+    it('should format thousands with space separator (ru-RU)', () => {
+      expect(formatNumber(1000)).toBe('1 000');
+      expect(formatNumber(1500)).toBe('1 500');
+      expect(formatNumber(42000)).toBe('42 000');
+      expect(formatNumber(999999)).toBe('999 999');
     });
 
-    it('should format millions with M suffix', () => {
-      expect(formatNumber(1000000)).toBe('1.0M');
-      expect(formatNumber(2500000)).toBe('2.5M');
-      expect(formatNumber(42000000)).toBe('42.0M');
+    it('should format millions with space separator (ru-RU)', () => {
+      expect(formatNumber(1000000)).toBe('1 000 000');
+      expect(formatNumber(2500000)).toBe('2 500 000');
+      expect(formatNumber(42000000)).toBe('42 000 000');
     });
 
     it('should handle edge cases', () => {
-      expect(formatNumber(1001)).toBe('1.0K');
-      expect(formatNumber(1000001)).toBe('1.0M');
+      expect(formatNumber(1001)).toBe('1 001');
+      expect(formatNumber(1000001)).toBe('1 000 001');
     });
   });
 
@@ -101,7 +103,8 @@ describe('Formatters Utility', () => {
       expect(truncateText('', 10)).toBe('');
       expect(truncateText('Hi', 2)).toBe('Hi');
       expect(truncateText('Test', 4)).toBe('Test');
-      expect(truncateText('Test', 3)).toBe('...');
+      expect(truncateText('Test', 3)).toBe('...');  // maxLength 3 means 0 chars + '...'
+      expect(truncateText('Test', 5)).toBe('Te...'); // maxLength 5 means 2 chars + '...'
     });
   });
 });
