@@ -279,24 +279,23 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
                 </TooltipTrigger>
                 <TooltipContent>{isMuted ? 'Включить звук (M)' : 'Выключить звук (M)'}</TooltipContent>
               </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex-1 min-w-[70px] max-w-[90px]">
-                    <Slider
-                      value={[volume]}
-                      max={1}
-                      step={0.01}
-                      aria-label={`Громкость ${Math.round(volume * 100)}%`}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-valuenow={Math.round(volume * 100)}
-                      onValueChange={handleVolumeChange}
-                      className="cursor-pointer hover:scale-y-125 transition-transform duration-200"
-                    />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>Громкость: {Math.round(volume * 100)}% (↑/↓)</TooltipContent>
-              </Tooltip>
+              {/* Volume slider without Tooltip to avoid React Error #185 */}
+              <div
+                className="flex-1 min-w-[70px] max-w-[90px]"
+                title={`Громкость: ${Math.round(volume * 100)}% (↑/↓)`}
+              >
+                <Slider
+                  value={[volume]}
+                  max={1}
+                  step={0.01}
+                  aria-label={`Громкость ${Math.round(volume * 100)}%`}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.round(volume * 100)}
+                  onValueChange={handleVolumeChange}
+                  className="cursor-pointer hover:scale-y-125 transition-transform duration-200"
+                />
+              </div>
               <span
                 className="text-[9px] font-medium text-muted-foreground/70 tabular-nums w-6 text-right"
                 aria-live="polite"
