@@ -1,9 +1,10 @@
-import { memo, useCallback, useMemo, useState } from "react";
-import { Play, Pause, SkipBack, SkipForward, X, List, Star, Layers } from "@/utils/iconImports";
+import { memo, useCallback, useMemo, useState, useRef, useEffect } from "react";
+import { Play, Pause, SkipBack, SkipForward, X, List, Star, Layers, Volume2, VolumeX, Volume1 } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ResponsiveStack } from "@/components/ui/ResponsiveLayout";
-import { useAudioPlayerStore, useCurrentTrack, useIsPlaying } from "@/stores/audioPlayerStore";
+import { useAudioPlayerStore, useCurrentTrack, useIsPlaying, useVolume } from "@/stores/audioPlayerStore";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -34,8 +35,33 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
   const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
   const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
   const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
-  
+  const volume = useVolume();
+  const setVolume = useAudioPlayerStore((state) => state.setVolume);
+
   const { vibrate } = useHapticFeedback();
+
+  // ✅ P0 FIX: Volume control state - using refs to prevent infinite loops
+  const [isMuted, setIsMuted] = useState(false);
+  const previousVolumeRef = useRef(volume);
+  const volumeRef = useRef(volume);
+  const prevVolumeForMuteRef = useRef(volume);
+
+  // Keep refs in sync with volume from store
+  useEffect(() => {
+    volumeRef.current = volume;
+  }, [volume]);
+
+  // ✅ P0 FIX: Sync isMuted with volume changes ONLY when crossing zero threshold
+  useEffect(() => {
+    const wasZero = prevVolumeForMuteRef.current === 0;
+    const isZero = volume === 0;
+
+    if (wasZero !== isZero) {
+      setIsMuted(isZero);
+    }
+
+    prevVolumeForMuteRef.current = volume;
+  }, [volume]);
 
   // Controlled Sheet state for versions
   const [isVersionsSheetOpen, setIsVersionsSheetOpen] = useState(false);
@@ -69,6 +95,31 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
     vibrate('medium');
     clearCurrentTrack();
   }, [clearCurrentTrack, vibrate]);
+
+  // ✅ P0 FIX: Volume control handlers
+  const handleVolumeChange = useCallback((value: number[]) => {
+    const newVolume = value[0];
+    setVolume(newVolume);
+    setIsMuted(newVolume === 0);
+    if (newVolume > 0) {
+      previousVolumeRef.current = newVolume;
+    }
+  }, [setVolume]);
+
+  const toggleMute = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    vibrate('light');
+    if (isMuted) {
+      // Unmute: restore previous volume
+      setVolume(previousVolumeRef.current);
+      setIsMuted(false);
+    } else {
+      // Mute: save current volume and set to 0
+      previousVolumeRef.current = volumeRef.current;
+      setVolume(0);
+      setIsMuted(true);
+    }
+  }, [vibrate, isMuted, setVolume]);
 
   // Versions
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
@@ -250,6 +301,36 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
             </TooltipTrigger>
             <TooltipContent>Следующий трек</TooltipContent>
           </Tooltip>
+
+          {/* ✅ P0 FIX: Volume Control - Desktop only */}
+          <div className="hidden md:flex items-center gap-1.5 ml-2" onClick={(e) => e.stopPropagation()}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={toggleMute}
+                  className="h-8 w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+                >
+                  {isMuted || volume === 0 ? (
+                    <VolumeX className="h-4 w-4" />
+                  ) : volume < 0.5 ? (
+                    <Volume1 className="h-4 w-4" />
+                  ) : (
+                    <Volume2 className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{isMuted ? 'Включить звук' : 'Выключить звук'}</TooltipContent>
+            </Tooltip>
+            <Slider
+              value={[isMuted ? 0 : volume]}
+              max={1}
+              step={0.01}
+              onValueChange={handleVolumeChange}
+              className="w-20 cursor-pointer hover:scale-y-110 transition-transform duration-200"
+            />
+          </div>
 
           <Tooltip>
             <TooltipTrigger asChild>

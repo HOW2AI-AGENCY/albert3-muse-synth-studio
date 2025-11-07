@@ -6,13 +6,15 @@ import { cn } from '@/lib/utils';
 interface LyricsDisplayProps {
   taskId: string;
   audioId: string;
+  lyrics?: string; // ✅ P0 FIX: Regular lyrics for fallback
 }
 
 /**
  * ✅ Memoized to prevent unnecessary re-renders from parent
- * Only re-renders when taskId or audioId changes
+ * Only re-renders when taskId, audioId, or lyrics changes
+ * ✅ P0 FIX: Added fallback to regular lyrics when timestamped lyrics unavailable
  */
-export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audioId }) => {
+export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audioId, lyrics }) => {
   const { data: lyricsData, isLoading, isError } = useTimestampedLyrics({ taskId, audioId });
   const currentTime = useAudioPlayerStore((state) => state.currentTime);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -84,7 +86,18 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
     return <div className="text-center text-muted-foreground">Загрузка текста...</div>;
   }
 
+  // ✅ P0 FIX: Fallback to regular lyrics when timestamped lyrics unavailable
   if (isError || !lyricsData || lyricsData.alignedWords.length === 0) {
+    // Check if regular lyrics are available
+    if (lyrics && lyrics.trim().length > 0) {
+      return (
+        <div className="lyrics-display max-h-60 overflow-y-auto text-center py-4">
+          <div className="text-base text-muted-foreground whitespace-pre-line">
+            {lyrics}
+          </div>
+        </div>
+      );
+    }
     return <div className="text-center text-muted-foreground">Текст не найден.</div>;
   }
 

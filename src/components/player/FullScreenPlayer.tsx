@@ -1,4 +1,4 @@
-import { memo, useState, useCallback, useMemo } from "react";
+import { memo, useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { Play, Pause, SkipBack, SkipForward, Minimize2, Volume2, VolumeX, Share2, Download, Heart, Repeat, Star, Eye, EyeOff } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -61,9 +61,33 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
 
   const { vibrate } = useHapticFeedback();
   const { toast } = useToast();
+
+  // Volume control state - using refs to prevent infinite loops
   const [isMuted, setIsMuted] = useState(false);
   const [showLyrics, setShowLyrics] = useState(true);
-  
+  const previousVolumeRef = useRef(volume);
+  const volumeRef = useRef(volume);
+  const prevVolumeForMuteRef = useRef(volume); // Track previous volume for mute detection
+
+  // Keep refs in sync with volume from store
+  useEffect(() => {
+    volumeRef.current = volume;
+  }, [volume]);
+
+  // ✅ P0 FIX: Sync isMuted with volume changes ONLY when crossing zero threshold
+  // This prevents infinite loops while still handling keyboard shortcuts
+  useEffect(() => {
+    const wasZero = prevVolumeForMuteRef.current === 0;
+    const isZero = volume === 0;
+
+    // Only update isMuted when volume crosses the zero threshold
+    if (wasZero !== isZero) {
+      setIsMuted(isZero);
+    }
+
+    prevVolumeForMuteRef.current = volume;
+  }, [volume]);
+
   // Определяем мобильное устройство
   const isMobile = useMediaQuery('(max-width: 768px)');
   
@@ -96,16 +120,23 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
   }, [seekTo]);
 
   const handleVolumeChange = useCallback((value: number[]) => {
-    setVolume(value[0]);
-    setIsMuted(value[0] === 0);
+    const newVolume = value[0];
+    setVolume(newVolume);
+    setIsMuted(newVolume === 0);
+    if (newVolume > 0) {
+      previousVolumeRef.current = newVolume;
+    }
   }, [setVolume]);
 
   const toggleMute = useCallback(() => {
     vibrate('light');
     if (isMuted) {
-      setVolume(0.5);
+      // Unmute: restore previous volume
+      setVolume(previousVolumeRef.current);
       setIsMuted(false);
     } else {
+      // Mute: save current volume and set to 0
+      previousVolumeRef.current = volumeRef.current;
       setVolume(0);
       setIsMuted(true);
     }

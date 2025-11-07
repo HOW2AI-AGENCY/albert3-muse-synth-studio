@@ -217,7 +217,11 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
 
           {/* Lyrics Display */}
           {track.suno_task_id && track.id && (
-            <LyricsDisplay taskId={track.suno_task_id} audioId={track.id} />
+            <LyricsDisplay
+              taskId={track.suno_task_id}
+              audioId={track.id}
+              lyrics={track.lyrics}
+            />
           )}
 
           {/* Controls Row - Compact */}
