@@ -140,11 +140,10 @@ export const useTrackCardState = (track: Track) => {
   const playButtonDisabled = track.status !== 'completed' || !displayedVersion.audio_url;
 
   // ✅ FIX: Используем versionCount из хука, который правильно фильтрует версии (sourceVersionNumber >= 1)
-  // allVersions.length может содержать дубликаты с variant_index=0, поэтому не используем его
+  // versionCount - это количество дополнительных версий (без основной)
+  // Отображаем только количество ДОПОЛНИТЕЛЬНЫХ версий, без учета основной
   const uiVersionCount = useMemo(() => {
-    // versionCount - количество дополнительных версий (без основной)
-    // +1 для основной версии = общее количество
-    return versionCount + 1;
+    return versionCount; // Показываем только дополнительные версии
   }, [versionCount]);
 
   const handleVersionChange = useCallback((versionIndex: number) => {
