@@ -17,7 +17,8 @@ export const usePlayerVisibility = (currentTrack: any) => {
       setIsVisible(false);
       setPlayerExpanded(false); // Сбрасываем состояние когда трек закрыт
     }
-  }, [currentTrack, setPlayerExpanded]);
+    // ✅ FIX: Remove setPlayerExpanded from deps - Zustand store functions are stable
+  }, [currentTrack]);
 
   const setIsExpanded = (expanded: boolean) => {
     setPlayerExpanded(expanded);

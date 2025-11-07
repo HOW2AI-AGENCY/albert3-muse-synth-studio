@@ -310,17 +310,11 @@ export const AudioController = () => {
       updateCurrentTime(audio.currentTime);
     };
 
-    // handleLoadedMetadata is now handled in the track loading useEffect for playback
-    const handleLoadedMetadata = () => {
-      logger.info('Audio metadata loaded (secondary listener)', 'AudioController', {
-        duration: audio.duration,
-        trackId: currentTrack?.id
-      });
-    };
+    // ✅ FIX: Removed duplicate loadedmetadata listener (already handled in track loading effect)
 
     const handleEnded = () => {
-      logger.info('Track ended, playing next', 'AudioController', { 
-        trackId: currentTrack?.id 
+      logger.info('Track ended, playing next', 'AudioController', {
+        trackId: currentTrack?.id
       });
       playNext();
     };
@@ -423,27 +417,26 @@ export const AudioController = () => {
     };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    // ✅ FIX: Removed duplicate loadedmetadata listener
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('progress', handleProgress);
     audio.addEventListener('error', handleError);
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      // ✅ FIX: Removed duplicate loadedmetadata listener
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('progress', handleProgress);
       audio.removeEventListener('error', handleError);
     };
   }, [
-    audioRef, 
-    currentTrack, 
-    updateCurrentTime, 
-    updateDuration, 
-    updateBufferingProgress, 
-    playNext, 
-    pause, 
-    playTrack
+    audioRef,
+    currentTrack,
+    updateCurrentTime,
+    updateBufferingProgress,
+    playNext,
+    pause,
+    // ✅ FIX: Removed updateDuration and playTrack from deps (not used in this effect)
   ]);
 
   // ============= ПРЕДЗАГРУЗКА СЛЕДУЮЩЕГО ТРЕКА =============

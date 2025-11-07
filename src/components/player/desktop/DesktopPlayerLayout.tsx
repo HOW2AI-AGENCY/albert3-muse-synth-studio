@@ -90,8 +90,8 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
       previousVolumeRef.current = newVolume;
     }
 
-    // ✅ HOTFIX v3: Always sync isMuted with volume (handles slider to 0)
-    setIsMuted(newVolume === 0);
+    // ✅ FIX: Remove setIsMuted call - useEffect (line 61) handles this automatically
+    // Prevents double state update when slider changes
   }, [setVolume]);
 
   // ✅ Keyboard shortcuts now subscribe to store internally
