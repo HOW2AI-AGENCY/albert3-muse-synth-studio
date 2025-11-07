@@ -62,21 +62,23 @@ describe('Formatters Utility', () => {
     });
 
     it('should format thousands with space separator (ru-RU)', () => {
-      expect(formatNumber(1000)).toBe('1 000');
-      expect(formatNumber(1500)).toBe('1 500');
-      expect(formatNumber(42000)).toBe('42 000');
-      expect(formatNumber(999999)).toBe('999 999');
+      // Russian locale uses non-breaking space (\u00A0)
+      expect(formatNumber(1000)).toMatch(/1[\s\u00A0]000/);
+      expect(formatNumber(1500)).toMatch(/1[\s\u00A0]500/);
+      expect(formatNumber(42000)).toMatch(/42[\s\u00A0]000/);
+      expect(formatNumber(999999)).toMatch(/999[\s\u00A0]999/);
     });
 
     it('should format millions with space separator (ru-RU)', () => {
-      expect(formatNumber(1000000)).toBe('1 000 000');
-      expect(formatNumber(2500000)).toBe('2 500 000');
-      expect(formatNumber(42000000)).toBe('42 000 000');
+      // Russian locale uses non-breaking space (\u00A0)
+      expect(formatNumber(1000000)).toMatch(/1[\s\u00A0]000[\s\u00A0]000/);
+      expect(formatNumber(2500000)).toMatch(/2[\s\u00A0]500[\s\u00A0]000/);
+      expect(formatNumber(42000000)).toMatch(/42[\s\u00A0]000[\s\u00A0]000/);
     });
 
     it('should handle edge cases', () => {
-      expect(formatNumber(1001)).toBe('1 001');
-      expect(formatNumber(1000001)).toBe('1 000 001');
+      expect(formatNumber(1001)).toMatch(/1[\s\u00A0]001/);
+      expect(formatNumber(1000001)).toMatch(/1[\s\u00A0]000[\s\u00A0]001/);
     });
   });
 
@@ -102,9 +104,9 @@ describe('Formatters Utility', () => {
     it('should handle edge cases', () => {
       expect(truncateText('', 10)).toBe('');
       expect(truncateText('Hi', 2)).toBe('Hi');
-      expect(truncateText('Test', 4)).toBe('Test');
-      expect(truncateText('Test', 3)).toBe('...');  // maxLength 3 means 0 chars + '...'
-      expect(truncateText('Test', 5)).toBe('Te...'); // maxLength 5 means 2 chars + '...'
+      expect(truncateText('Test', 4)).toBe('Test');  // Text length = maxLength, no truncation
+      expect(truncateText('Test', 3)).toBe('...');   // maxLength 3 means 0 chars + '...'
+      expect(truncateText('TestLong', 5)).toBe('Te...');  // maxLength 5 means 2 chars + '...'
     });
   });
 });
