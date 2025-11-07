@@ -315,8 +315,12 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       });
     }
 
-    // Add main track as the first version if it has audio
-    if (mainTrack.audio_url) {
+    // ✅ FIX: Check if there's a version with variant_index: 0 in track_versions
+    const hasVersionZero = dbVersions && dbVersions.length > 0 && dbVersions.some(v => v.variant_index === 0);
+
+    // Add main track as the first version ONLY if there's no version with variant_index: 0 in track_versions
+    // This prevents duplication of the main version
+    if (mainTrack.audio_url && !hasVersionZero) {
       allVersions.set(mainTrack.id, {
         id: mainTrack.id,
         parentTrackId: mainTrack.id,
