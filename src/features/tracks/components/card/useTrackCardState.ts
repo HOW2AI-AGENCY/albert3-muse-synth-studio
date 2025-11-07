@@ -10,6 +10,7 @@ export const useTrackCardState = (track: Track) => {
   const currentTrack = useCurrentTrack();
   const isPlaying = useIsPlaying();
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
+  const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
 
   const { versions, mainVersion, versionCount, masterVersion } = useTrackVersions(track.id, true);
   
@@ -150,8 +151,23 @@ export const useTrackCardState = (track: Track) => {
     // ✅ FIX: Используем правильное количество версий без дубликатов
     const maxIndex = Math.max(0, allVersions.filter(v => v.audio_url).length - 1);
     const clamped = Math.max(0, Math.min(versionIndex, maxIndex));
+    const newVersion = allVersions[clamped];
+
+    // Update UI state
     setSelectedVersionIndex(clamped);
-  }, [allVersions]);
+
+    // ✅ FIX: Switch audio if this track is currently active in the player
+    // Check if parent track matches (handles both main track and version IDs)
+    const isThisTrackActive =
+      currentTrack?.id === track.id ||
+      currentTrack?.parentTrackId === track.id ||
+      currentTrack?.id === newVersion?.id;
+
+    if (isThisTrackActive && newVersion?.id && newVersion.audio_url) {
+      // Switch to the new version in the audio player
+      switchToVersion(newVersion.id);
+    }
+  }, [allVersions, currentTrack, track.id, switchToVersion]);
 
   const handlePlayClick = useCallback(
     (event: React.MouseEvent) => {
