@@ -49,38 +49,36 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
     volumeRef.current = volume;
   }, [volume]);
 
-  // ✅ P2 FIX: Sync isMuted with volume changes (e.g., from keyboard shortcuts)
-  // IMPORTANT: Only update if value actually changed to prevent infinite loops
-  useEffect(() => {
-    const shouldBeMuted = volume === 0;
-    if (isMuted !== shouldBeMuted) {
-      setIsMuted(shouldBeMuted);
-    }
-  }, [volume, isMuted]);
-
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
 
   const toggleMute = useCallback(() => {
     if (isMuted) {
-      // Unmute: restore previous volume
-      setVolume(previousVolumeRef.current);
+      // Unmute: restore previous volume (default to 50% if previous was 0)
+      const restoreVolume = previousVolumeRef.current > 0 ? previousVolumeRef.current : 0.5;
+      setVolume(restoreVolume);
       setIsMuted(false);
     } else {
       // Mute: save current volume and set to 0
-      previousVolumeRef.current = volumeRef.current;
+      previousVolumeRef.current = volume > 0 ? volume : 0.5;
       setVolume(0);
       setIsMuted(true);
     }
-  }, [isMuted, setVolume]);
+  }, [isMuted, volume, setVolume]);
 
   const handleVolumeChange = useCallback((value: number[]) => {
     const newVolume = value[0];
     setVolume(newVolume);
-    setIsMuted(newVolume === 0);
+
+    // ✅ Обновляем previousVolume только если volume > 0
     if (newVolume > 0) {
       previousVolumeRef.current = newVolume;
     }
-  }, [setVolume]);
+
+    // ✅ Автоматически снимаем mute если пользователь двигает slider
+    if (newVolume > 0 && isMuted) {
+      setIsMuted(false);
+    }
+  }, [setVolume, isMuted]);
 
   // ✅ Keyboard shortcuts now subscribe to store internally
   usePlayerKeyboardShortcuts({
@@ -211,7 +209,11 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
 
           {/* Lyrics Display */}
           {track.suno_task_id && track.id && (
-            <LyricsDisplay taskId={track.suno_task_id} audioId={track.id} />
+            <LyricsDisplay
+              taskId={track.suno_task_id}
+              audioId={track.id}
+              fallbackLyrics={track.lyrics}
+            />
           )}
 
           {/* Controls Row - Compact */}
@@ -251,13 +253,13 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
               </Button>
               <div className="flex-1 min-w-[70px] max-w-[90px]">
                 <Slider
-                  value={[isMuted ? 0 : volume]}
+                  value={[volume]}
                   max={1}
                   step={0.01}
-                  aria-label={`Громкость ${Math.round((isMuted ? 0 : volume) * 100)}%`}
+                  aria-label={`Громкость ${Math.round(volume * 100)}%`}
                   aria-valuemin={0}
                   aria-valuemax={100}
-                  aria-valuenow={Math.round((isMuted ? 0 : volume) * 100)}
+                  aria-valuenow={Math.round(volume * 100)}
                   onValueChange={handleVolumeChange}
                   className="cursor-pointer hover:scale-y-125 transition-transform duration-200"
                 />
@@ -267,7 +269,7 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
                 aria-live="polite"
                 aria-atomic="true"
               >
-                {Math.round((isMuted ? 0 : volume) * 100)}%
+                {Math.round(volume * 100)}%
               </span>
             </div>
           </div>

@@ -1,11 +1,12 @@
 import { memo, useCallback, useMemo, useState } from "react";
-import { Play, Pause, SkipBack, SkipForward, X, List, Star, Layers } from "@/utils/iconImports";
+import { Play, Pause, SkipBack, SkipForward, X, List, Star, Layers, VolumeX, Volume1, Volume2 } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ResponsiveStack } from "@/components/ui/ResponsiveLayout";
 import { useAudioPlayerStore, useCurrentTrack, useIsPlaying } from "@/stores/audioPlayerStore";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
 import {
   Sheet,
   SheetContent,
@@ -24,7 +25,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
   // ✅ Zustand store with optimized selectors
   const currentTrack = useCurrentTrack();
   const isPlaying = useIsPlaying();
-  
+
   const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
   const playNext = useAudioPlayerStore((state) => state.playNext);
   const playPrevious = useAudioPlayerStore((state) => state.playPrevious);
@@ -34,7 +35,11 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
   const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
   const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
   const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
-  
+
+  // ✅ P2: Volume control for desktop
+  const volume = useAudioPlayerStore((state) => state.volume);
+  const setVolume = useAudioPlayerStore((state) => state.setVolume);
+
   const { vibrate } = useHapticFeedback();
 
   // Controlled Sheet state for versions
@@ -69,6 +74,12 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
     vibrate('medium');
     clearCurrentTrack();
   }, [clearCurrentTrack, vibrate]);
+
+  // ✅ P2: Volume control handler
+  const handleVolumeChange = useCallback((e: React.MouseEvent, value: number[]) => {
+    e.stopPropagation(); // Prevent expanding player when adjusting volume
+    setVolume(value[0]);
+  }, [setVolume]);
 
   // Versions
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
@@ -250,6 +261,39 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
             </TooltipTrigger>
             <TooltipContent>Следующий трек</TooltipContent>
           </Tooltip>
+
+          {/* ✅ P2: Volume Control for Desktop */}
+          <div
+            className="hidden md:flex items-center gap-2 ml-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5">
+                  {volume === 0 ? (
+                    <VolumeX className="h-4 w-4 text-muted-foreground" />
+                  ) : volume < 0.5 ? (
+                    <Volume1 className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Volume2 className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <div className="w-20">
+                    <Slider
+                      value={[volume]}
+                      max={1}
+                      step={0.01}
+                      onValueChange={(value) => handleVolumeChange({} as React.MouseEvent, value)}
+                      className="cursor-pointer"
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground tabular-nums w-8">
+                    {Math.round(volume * 100)}%
+                  </span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>Громкость</TooltipContent>
+            </Tooltip>
+          </div>
 
           <Tooltip>
             <TooltipTrigger asChild>
