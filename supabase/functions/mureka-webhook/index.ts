@@ -1,10 +1,10 @@
 /**
  * Mureka Webhook Handler
- * 
+ *
  * Receives callbacks from Mureka API when generation tasks complete.
  * Updates track status and URLs in the database.
- * 
- * Security: No JWT verification needed as webhooks come from external service
+ *
+ * Security: HMAC-SHA256 signature verification for webhook authenticity
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -14,6 +14,7 @@ import { createSupabaseAdminClient } from "../_shared/supabase.ts";
 import { logger } from "../_shared/logger.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { validateAndParse } from "../_shared/zod-schemas.ts";
+import { verifyWebhookSignature } from "../_shared/webhook-verify.ts";
 
 const corsHeaders = {
   ...createCorsHeaders(),
@@ -51,8 +52,51 @@ serve(async (req: Request): Promise<Response> => {
   const startTime = Date.now();
 
   try {
+    // ✅ P0-3 FIX: Webhook signature verification
+    const signature = req.headers.get('X-Mureka-Signature');
+    const MUREKA_WEBHOOK_SECRET = Deno.env.get('MUREKA_WEBHOOK_SECRET');
+
+    // Read body as text first for signature verification
+    const bodyText = await req.text();
+
+    if (MUREKA_WEBHOOK_SECRET) {
+      if (!signature) {
+        logger.error('Missing webhook signature', new Error('Missing X-Mureka-Signature header'), 'mureka-webhook');
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Missing webhook signature'
+          }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
+      const isValid = await verifyWebhookSignature(bodyText, signature, MUREKA_WEBHOOK_SECRET);
+
+      if (!isValid) {
+        logger.error('Invalid webhook signature', new Error('Signature verification failed'), 'mureka-webhook');
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Invalid webhook signature'
+          }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
+      logger.info('✅ [MUREKA-WEBHOOK] Signature verified successfully', { hasSignature: true });
+    } else {
+      logger.warn('⚠️ [MUREKA-WEBHOOK] MUREKA_WEBHOOK_SECRET not configured - skipping signature verification', { production: Deno.env.get('DENO_ENV') === 'production' });
+    }
+
     // Parse and validate webhook payload
-    const rawBody = await req.json();
+    const rawBody = JSON.parse(bodyText);
     
     logger.info('📥 [MUREKA-WEBHOOK] Received webhook', { 
       taskId: rawBody?.data?.task_id,

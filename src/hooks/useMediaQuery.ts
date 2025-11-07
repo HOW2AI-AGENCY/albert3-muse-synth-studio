@@ -11,8 +11,8 @@ export function useMediaQuery(query: string) {
     const listener = () => {
       setMatches(media.matches);
     };
-    media.addListener(listener);
-    return () => media.removeListener(listener);
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
   }, [query]);
 
   return matches;
