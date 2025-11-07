@@ -4,7 +4,6 @@
  */
 
 import { logger } from './logger.ts';
-import { createCorsHeaders as createSecureCorsHeaders } from './cors.ts';
 
 export interface ErrorResponse {
   success: false;
@@ -58,12 +57,14 @@ function isAuthError(error: unknown): boolean {
 }
 
 /**
- * Create CORS headers (wrapper for secure implementation)
- * @deprecated Use createSecureCorsHeaders from cors.ts directly
+ * Create CORS headers
  */
-export function createCorsHeaders(req?: Request): Record<string, string> {
-  // ✅ SECURITY FIX: Use whitelist-based CORS instead of wildcard
-  return createSecureCorsHeaders(req);
+export function createCorsHeaders(): Record<string, string> {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+  };
 }
 
 /**
@@ -79,10 +80,9 @@ export function handleEdgeFunctionError(
     userId?: string;
     correlationId?: string;
     requestBody?: unknown;
-    request?: Request; // Add request for CORS origin validation
   }
 ): Response {
-  const corsHeaders = createCorsHeaders(context.request);
+  const corsHeaders = createCorsHeaders();
   
   // 1. Authentication errors
   if (isAuthError(error)) {
@@ -189,17 +189,17 @@ export function handleEdgeFunctionError(
 /**
  * Handle OPTIONS requests for CORS
  */
-export function handleCorsPreflightRequest(req?: Request): Response {
+export function handleCorsPreflightRequest(): Response {
   return new Response(null, {
     status: 204,
-    headers: createCorsHeaders(req),
+    headers: createCorsHeaders(),
   });
 }
 
 /**
  * Create success response
  */
-export function createSuccessResponse<T>(data: T, req?: Request): Response {
+export function createSuccessResponse<T>(data: T): Response {
   return new Response(
     JSON.stringify({
       success: true,
@@ -208,7 +208,7 @@ export function createSuccessResponse<T>(data: T, req?: Request): Response {
     {
       status: 200,
       headers: {
-        ...createCorsHeaders(req),
+        ...createCorsHeaders(),
         'Content-Type': 'application/json',
       },
     }
@@ -225,17 +225,16 @@ export function withErrorHandler<T>(
   return async (req: Request): Promise<Response> => {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
-      return handleCorsPreflightRequest(req);
+      return handleCorsPreflightRequest();
     }
-
+    
     try {
       const result = await handler(req);
-      return createSuccessResponse(result, req);
+      return createSuccessResponse(result);
     } catch (error) {
       return handleEdgeFunctionError(error, {
         ...context,
         correlationId: crypto.randomUUID(),
-        request: req, // Pass request for CORS validation
       });
     }
   };

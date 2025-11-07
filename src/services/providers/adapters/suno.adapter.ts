@@ -16,7 +16,6 @@ import {
 import { logger } from '@/utils/logger';
 import { handleGenerationError } from '@/utils/error-handlers/generation-errors';
 import { metricsCollector } from '@/utils/monitoring/metrics';
-import { withEdgeFunctionTimeout, TimeoutError } from '@/utils/timeout';
 
 export class SunoProviderAdapter implements IProviderClient {
   async generateMusic(params: GenerationParams): Promise<GenerationResult> {
@@ -30,13 +29,9 @@ export class SunoProviderAdapter implements IProviderClient {
     const payload = this.transformToSunoFormat(params);
 
     try {
-      // SEC-003: Add timeout to prevent indefinite hanging
-      const { data, error } = await withEdgeFunctionTimeout(
-        supabase.functions.invoke('generate-suno', {
-          body: payload,
-        }),
-        'generate-suno'
-      );
+      const { data, error } = await supabase.functions.invoke('generate-suno', {
+        body: payload,
+      });
 
       if (error) {
         // Track failure metric
@@ -64,18 +59,6 @@ export class SunoProviderAdapter implements IProviderClient {
 
       return this.transformFromSunoFormat(data);
     } catch (error) {
-      // Handle timeout errors
-      if (error instanceof TimeoutError) {
-        logger.error('Suno generation timeout', error);
-        metricsCollector.trackGeneration({
-          trackId: params.trackId || 'unknown',
-          provider: 'suno',
-          status: 'timeout',
-          duration: error.timeoutMs,
-          timestamp: Date.now(),
-        });
-      }
-
       // Handle rate limit errors
       if (error && typeof error === 'object' && 'errorCode' in error) {
         const err = error as any;
@@ -97,18 +80,14 @@ export class SunoProviderAdapter implements IProviderClient {
       trackId: params.originalTrackId,
     });
 
-    // SEC-003: Add timeout
-    const { data, error } = await withEdgeFunctionTimeout(
-      supabase.functions.invoke('extend-track', {
-        body: {
-          trackId: params.originalTrackId,
-          prompt: params.prompt,
-          duration: params.duration,
-          continueAt: params.continueAt,
-        },
-      }),
-      'extend-track'
-    );
+    const { data, error } = await supabase.functions.invoke('extend-track', {
+      body: {
+        trackId: params.originalTrackId,
+        prompt: params.prompt,
+        duration: params.duration,
+        continueAt: params.continueAt,
+      },
+    });
 
     if (error) {
       logger.error('Suno extend failed', error instanceof Error ? error : new Error(String(error)));
@@ -129,18 +108,13 @@ export class SunoProviderAdapter implements IProviderClient {
       type: params.separationType,
     });
 
-    // SEC-003: Add timeout (stem separation can take longer)
-    const { data, error } = await withEdgeFunctionTimeout(
-      supabase.functions.invoke('separate-stems', {
-        body: {
-          taskId: params.trackId,
-          audioId: params.audioId,
-          type: params.separationType,
-        },
-      }),
-      'separate-stems',
-      60000 // 60 seconds for heavy processing
-    );
+    const { data, error } = await supabase.functions.invoke('separate-stems', {
+      body: {
+        taskId: params.trackId,
+        audioId: params.audioId,
+        type: params.separationType,
+      },
+    });
 
     if (error) {
       logger.error('Suno stem separation failed', error instanceof Error ? error : new Error(String(error)));
@@ -176,14 +150,9 @@ export class SunoProviderAdapter implements IProviderClient {
   }
 
   async getBalance(): Promise<BalanceInfo> {
-    // SEC-003: Add timeout
-    const { data, error } = await withEdgeFunctionTimeout(
-      supabase.functions.invoke('get-balance', {
-        body: { provider: 'suno' },
-      }),
-      'get-balance',
-      10000 // 10 seconds for quick query
-    );
+    const { data, error } = await supabase.functions.invoke('get-balance', {
+      body: { provider: 'suno' },
+    });
 
     if (error) {
       logger.error('Suno balance fetch failed', error instanceof Error ? error : new Error(String(error)));

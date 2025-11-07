@@ -62,56 +62,16 @@ serve(async (req) => {
     );
 
     const payload: SunoWebhookPayload = await req.json();
-
+    
     const taskId = payload.data.task_id;
     const callbackType = payload.data.callbackType;
-
-    // =====================================================
-    // SEC-002: WEBHOOK IDEMPOTENCY CHECK
-    // =====================================================
-    // Generate idempotency key from webhook headers or payload
-    const webhookId =
-      req.headers.get('X-Delivery-Id') ||
-      req.headers.get('X-Webhook-Id') ||
-      `suno-${taskId}-${callbackType}-${Date.now()}`;
-
-    // Check if webhook was already processed
-    const { data: alreadyProcessed } = await supabaseClient
-      .rpc('check_webhook_processed', { p_webhook_id: webhookId });
-
-    if (alreadyProcessed) {
-      logger.info(`[suno-webhook] ↪︎ Webhook already processed (idempotent)`, {
-        webhookId,
-        taskId,
-        callbackType,
-      });
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          idempotent: true,
-          message: 'Webhook already processed',
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Register webhook delivery
-    await supabaseClient.rpc('register_webhook_delivery', {
-      p_webhook_id: webhookId,
-      p_provider: 'suno',
-      p_task_id: taskId,
-      p_track_id: null, // Will update after finding track
-      p_payload: payload as unknown as Record<string, unknown>,
-    });
-
+    
     logger.info(`[suno-webhook] 📥 Received callback`, {
       code: payload.code,
       msg: payload.msg,
       callbackType,
       taskId,
       tracksCount: payload.data.data?.length || 0,
-      webhookId,
     });
 
     // Находим трек по suno_id (task_id от Suno)
@@ -359,50 +319,18 @@ serve(async (req) => {
         payload: payload as unknown as Record<string, unknown>,
       });
 
-    // =====================================================
-    // SEC-002: MARK WEBHOOK AS COMPLETED
-    // =====================================================
-    await supabaseClient.rpc('complete_webhook_delivery', {
-      p_webhook_id: webhookId,
-      p_track_id: track.id,
-    });
-
-    logger.info(`[suno-webhook] ✅ Webhook completed`, { webhookId, trackId: track.id });
-
     return new Response(
-      JSON.stringify({
-        success: true,
+      JSON.stringify({ 
+        success: true, 
         trackId: track.id,
         callbackType: callbackType,
         versionsCreated: items.length,
         code: payload.code,
-        webhookId,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     logger.error('[suno-webhook] Unexpected error:', { error });
-
-    // =====================================================
-    // SEC-002: MARK WEBHOOK AS FAILED
-    // =====================================================
-    try {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      // Try to get webhookId from scope (may not be available if error was early)
-      const webhookId = req.headers.get('X-Delivery-Id') ||
-                        req.headers.get('X-Webhook-Id');
-
-      if (webhookId) {
-        await supabaseClient.rpc('fail_webhook_delivery', {
-          p_webhook_id: webhookId,
-          p_error_message: errorMessage,
-        });
-      }
-    } catch (logError) {
-      // Ignore logging errors
-      logger.error('[suno-webhook] Failed to log webhook error:', { logError });
-    }
-
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

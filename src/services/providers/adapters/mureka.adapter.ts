@@ -16,7 +16,6 @@ import {
 import { logger } from '@/utils/logger';
 import { handleGenerationError } from '@/utils/error-handlers/generation-errors';
 import { metricsCollector } from '@/utils/monitoring/metrics';
-import { withEdgeFunctionTimeout, TimeoutError } from '@/utils/timeout';
 
 export class MurekaProviderAdapter implements IProviderClient {
   async generateMusic(params: GenerationParams): Promise<GenerationResult> {
@@ -30,13 +29,9 @@ export class MurekaProviderAdapter implements IProviderClient {
     const payload = this.transformToMurekaFormat(params);
 
     try {
-      // SEC-003: Add timeout to prevent indefinite hanging
-      const { data, error } = await withEdgeFunctionTimeout(
-        supabase.functions.invoke('generate-mureka', {
-          body: payload,
-        }),
-        'generate-mureka'
-      );
+      const { data, error } = await supabase.functions.invoke('generate-mureka', {
+        body: payload,
+      });
 
       if (error) {
         // Track failure metric
@@ -85,17 +80,13 @@ export class MurekaProviderAdapter implements IProviderClient {
       trackId: params.originalTrackId,
     });
 
-    // SEC-003: Add timeout
-    const { data, error } = await withEdgeFunctionTimeout(
-      supabase.functions.invoke('extend-lyrics-mureka', {
-        body: {
-          trackId: params.originalTrackId,
-          prompt: params.prompt,
-          duration: params.duration,
-        },
-      }),
-      'extend-lyrics-mureka'
-    );
+    const { data, error } = await supabase.functions.invoke('extend-lyrics-mureka', {
+      body: {
+        trackId: params.originalTrackId,
+        prompt: params.prompt,
+        duration: params.duration,
+      },
+    });
 
     if (error) {
       logger.error('Mureka extend failed', error instanceof Error ? error : new Error(String(error)));
@@ -117,18 +108,13 @@ export class MurekaProviderAdapter implements IProviderClient {
     });
 
     // Mureka uses same Suno API for stem separation
-    // SEC-003: Add timeout (stem separation can take longer)
-    const { data, error } = await withEdgeFunctionTimeout(
-      supabase.functions.invoke('separate-stems', {
-        body: {
-          taskId: params.trackId,
-          audioId: params.audioId,
-          type: params.separationType,
-        },
-      }),
-      'separate-stems',
-      60000 // 60 seconds for heavy processing
-    );
+    const { data, error } = await supabase.functions.invoke('separate-stems', {
+      body: {
+        taskId: params.trackId,
+        audioId: params.audioId,
+        type: params.separationType,
+      },
+    });
 
     if (error) {
       logger.error('Mureka stem separation failed', error instanceof Error ? error : new Error(String(error)));
@@ -164,12 +150,7 @@ export class MurekaProviderAdapter implements IProviderClient {
   }
 
   async getBalance(): Promise<BalanceInfo> {
-    // SEC-003: Add timeout (balance queries should be fast)
-    const { data, error } = await withEdgeFunctionTimeout(
-      supabase.functions.invoke('get-mureka-balance'),
-      'get-mureka-balance',
-      10000 // 10 seconds - quick query
-    );
+    const { data, error } = await supabase.functions.invoke('get-mureka-balance');
 
     if (error) {
       logger.error('Mureka balance fetch failed', error instanceof Error ? error : new Error(String(error)));
