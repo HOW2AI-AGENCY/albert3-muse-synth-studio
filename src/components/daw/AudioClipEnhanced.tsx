@@ -38,7 +38,7 @@ type DragMode = 'move' | 'trim-start' | 'trim-end' | 'fade-in' | 'fade-out' | nu
 
 export const AudioClipEnhanced: React.FC<AudioClipEnhancedProps> = ({
   clip,
-  trackId,
+  trackId: _trackId,
   zoom,
   scrollLeft,
   trackHeight,
