@@ -384,17 +384,18 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
             />
           </Button>
 
-          <div className="hidden sm:flex items-center gap-2 flex-1 max-w-xs mx-4">
+          {/* ✅ P1-4 FIX: Show volume control on mobile (was hidden sm:flex) */}
+          <div className="flex items-center gap-2 flex-1 max-w-xs mx-4">
             <Button
               variant="ghost"
               size="icon"
               onClick={toggleMute}
-              className="h-8 w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+              className="h-11 w-11 min-h-[44px] min-w-[44px] sm:h-8 sm:w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
             >
               {isMuted ? (
-                <VolumeX className="h-4 w-4" />
+                <VolumeX className="h-5 w-5 sm:h-4 sm:w-4" />
               ) : (
-                <Volume2 className="h-4 w-4" />
+                <Volume2 className="h-5 w-5 sm:h-4 sm:w-4" />
               )}
             </Button>
             <Slider
@@ -402,7 +403,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
               max={1}
               step={0.01}
               onValueChange={handleVolumeChange}
-              className="flex-1 hover:scale-y-110 transition-transform duration-200"
+              className="flex-1 hover:scale-y-110 transition-transform duration-200 touch-optimized"
             />
           </div>
 

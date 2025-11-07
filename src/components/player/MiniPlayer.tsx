@@ -42,8 +42,9 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
 
   const { vibrate } = useHapticFeedback();
 
-  // Controlled Sheet state for versions
+  // Controlled Sheet state for versions and volume
   const [isVersionsSheetOpen, setIsVersionsSheetOpen] = useState(false);
+  const [isVolumeSheetOpen, setIsVolumeSheetOpen] = useState(false);
 
   // ✅ All hooks must be called before any conditional returns
   const handlePlayPause = useCallback((e: React.MouseEvent) => {
@@ -261,7 +262,56 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
             <TooltipContent>Следующий трек</TooltipContent>
           </Tooltip>
 
-          {/* ✅ P2: Volume Control for Desktop */}
+          {/* ✅ P1-4 FIX: Volume Control - Mobile Sheet + Desktop Inline */}
+
+          {/* Mobile Volume Icon (opens Sheet) */}
+          <Sheet open={isVolumeSheetOpen} onOpenChange={setIsVolumeSheetOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden icon-button-touch hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Управление громкостью"
+              >
+                {volume === 0 ? (
+                  <VolumeX className="h-4 w-4" />
+                ) : volume < 0.5 ? (
+                  <Volume1 className="h-4 w-4" />
+                ) : (
+                  <Volume2 className="h-4 w-4" />
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="bg-card/95 backdrop-blur-xl border-primary/20">
+              <SheetHeader>
+                <SheetTitle>Громкость</SheetTitle>
+              </SheetHeader>
+              <div className="py-6 space-y-4">
+                <div className="flex items-center gap-4">
+                  {volume === 0 ? (
+                    <VolumeX className="h-6 w-6 text-muted-foreground" />
+                  ) : volume < 0.5 ? (
+                    <Volume1 className="h-6 w-6 text-muted-foreground" />
+                  ) : (
+                    <Volume2 className="h-6 w-6 text-muted-foreground" />
+                  )}
+                  <Slider
+                    value={[volume]}
+                    max={1}
+                    step={0.01}
+                    onValueChange={handleVolumeChange}
+                    className="flex-1 touch-optimized"
+                  />
+                  <span className="text-sm font-medium tabular-nums w-12 text-center">
+                    {Math.round(volume * 100)}%
+                  </span>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          {/* Desktop Volume Inline Control */}
           <div
             className="hidden md:flex items-center gap-2 ml-2"
             onClick={(e) => e.stopPropagation()}
