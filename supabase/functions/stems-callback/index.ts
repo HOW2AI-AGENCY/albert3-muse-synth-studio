@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createSecurityHeaders } from "../_shared/security.ts";
 import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { createSupabaseAdminClient } from "../_shared/supabase.ts";
+import { logger } from "../_shared/logger.ts";
 import {
   determineSeparationMode,
   determineErrorMessage,
@@ -48,29 +49,29 @@ const mainHandler = async (req: Request) => {
     // ✅ Verify webhook signature
     if (SUNO_WEBHOOK_SECRET) {
       if (!signature) {
-        console.error('[stems-callback] Missing webhook signature');
+        logger.error('Missing webhook signature', new Error('X-Suno-Signature header not provided'), 'stems-callback');
         return new Response(
           JSON.stringify({ error: 'missing_signature' }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
-      
+
       const { verifyWebhookSignature } = await import('../_shared/webhook-verify.ts');
       const isValid = await verifyWebhookSignature(bodyText, signature, SUNO_WEBHOOK_SECRET);
-      
+
       if (!isValid) {
-        console.error('[stems-callback] Invalid webhook signature');
+        logger.error('Invalid webhook signature', new Error('HMAC verification failed'), 'stems-callback');
         return new Response(
           JSON.stringify({ error: 'invalid_signature' }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
     } else {
-      console.warn('[stems-callback] SUNO_WEBHOOK_SECRET not configured - skipping signature verification');
+      logger.warn('SUNO_WEBHOOK_SECRET not configured - skipping signature verification', 'stems-callback');
     }
 
     const payload = JSON.parse(bodyText);
-    console.log("[stems-callback] payload", payload);
+    logger.info('Webhook payload received', 'stems-callback', { hasData: !!payload });
 
     const root = getRecord(payload);
     if (!root) {
@@ -87,7 +88,7 @@ const mainHandler = async (req: Request) => {
     })();
 
     if (!stemTaskId) {
-      console.error("[stems-callback] missing task id", payload);
+      logger.error('Missing task identifier', new Error('task_id not found in payload'), 'stems-callback', { payload });
       return new Response(
         JSON.stringify({ error: "Missing task identifier" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -112,7 +113,7 @@ const mainHandler = async (req: Request) => {
       .maybeSingle();
 
     if (trackError || !trackRecord) {
-      console.error("[stems-callback] track not found", { stemTaskId, trackError });
+      logger.error('Track not found for stem task', trackError || new Error('Track not found'), 'stems-callback', { stemTaskId });
       throw trackError || new Error("Track not found for stem task");
     }
 
@@ -138,7 +139,7 @@ const mainHandler = async (req: Request) => {
 
     const isSuccess = (code === SUNO_STEM_ERROR_CODES.SUCCESS || code === undefined) && stemAssets.length > 0;
 
-    console.log("[stems-callback] 📥 Callback received", {
+    logger.info('Stems callback received', 'stems-callback', {
       stemTaskId,
       code,
       statusMessage,
@@ -164,7 +165,7 @@ const mainHandler = async (req: Request) => {
 
       const { error: deleteError } = await deleteQuery;
       if (deleteError) {
-        console.error("[stems-callback] failed to clean existing stems", { deleteError, trackId, stemTaskId });
+        logger.error('Failed to clean existing stems', deleteError instanceof Error ? deleteError : new Error('Delete failed'), 'stems-callback', { trackId, stemTaskId });
       }
 
       if (stemAssets.length > 0) {
@@ -183,7 +184,7 @@ const mainHandler = async (req: Request) => {
           .insert(rows);
 
         if (insertError) {
-          console.error("[stems-callback] failed to insert stems", { insertError, trackId, stemTaskId });
+          logger.error('Failed to insert stems', insertError instanceof Error ? insertError : new Error('Insert failed'), 'stems-callback', { trackId, stemTaskId });
         }
       }
     }
@@ -219,7 +220,7 @@ const mainHandler = async (req: Request) => {
       .eq("id", trackId);
 
     if (trackUpdateError) {
-      console.error("[stems-callback] failed to update track metadata", { trackUpdateError, trackId });
+      logger.error('Failed to update track metadata', trackUpdateError instanceof Error ? trackUpdateError : new Error('Update failed'), 'stems-callback', { trackId });
     }
 
     if (versionId && versionMetadata) {
@@ -243,11 +244,11 @@ const mainHandler = async (req: Request) => {
         .eq("id", versionId);
 
       if (versionUpdateError) {
-        console.error("[stems-callback] failed to update version metadata", { versionUpdateError, versionId });
+        logger.error('Failed to update version metadata', versionUpdateError instanceof Error ? versionUpdateError : new Error('Update failed'), 'stems-callback', { versionId });
       }
     }
 
-    console.log("[stems-callback] processed", {
+    logger.info('Stems callback processed successfully', 'stems-callback', {
       trackId,
       versionId,
       stemTaskId,
@@ -264,7 +265,7 @@ const mainHandler = async (req: Request) => {
       },
     );
   } catch (error) {
-    console.error("[stems-callback] error", error);
+    logger.error('Stems callback error', error instanceof Error ? error : new Error(String(error)), 'stems-callback');
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Internal server error" }),
       {
