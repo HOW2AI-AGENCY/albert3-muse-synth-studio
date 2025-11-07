@@ -1,8 +1,12 @@
 /**
  * Keyboard shortcuts for desktop player
+ *
+ * ✅ FIX: Subscribes to store internally to prevent parent re-renders
+ * This prevents infinite re-render loops caused by 60 FPS updates
  */
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
 
 interface UsePlayerKeyboardShortcutsProps {
   togglePlayPause: () => void;
@@ -11,9 +15,6 @@ interface UsePlayerKeyboardShortcutsProps {
   toggleMute?: () => void;
   toggleRepeatMode?: () => void;
   toggleShuffle?: () => void;
-  currentTime: number;
-  duration: number;
-  volume: number;
 }
 
 export const usePlayerKeyboardShortcuts = ({
@@ -23,11 +24,31 @@ export const usePlayerKeyboardShortcuts = ({
   toggleMute,
   toggleRepeatMode,
   toggleShuffle,
-  currentTime,
-  duration,
-  volume,
 }: UsePlayerKeyboardShortcutsProps) => {
   const isMobile = useIsMobile();
+
+  // ✅ Subscribe to store internally using refs
+  // This prevents parent component from re-rendering on every currentTime/volume change
+  const currentTimeRef = useRef(0);
+  const durationRef = useRef(0);
+  const volumeRef = useRef(0);
+
+  // Subscribe directly to store and update refs (no parent re-render!)
+  useEffect(() => {
+    const unsubscribe = useAudioPlayerStore.subscribe((state) => {
+      currentTimeRef.current = state.currentTime;
+      durationRef.current = state.duration;
+      volumeRef.current = state.volume;
+    });
+
+    // Initialize refs with current values
+    const state = useAudioPlayerStore.getState();
+    currentTimeRef.current = state.currentTime;
+    durationRef.current = state.duration;
+    volumeRef.current = state.volume;
+
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     if (isMobile) return;
@@ -43,19 +64,20 @@ export const usePlayerKeyboardShortcuts = ({
           break;
         case 'ArrowRight':
           e.preventDefault();
-          seekTo(Math.min(currentTime + 10, duration));
+          // ✅ Use refs instead of closures
+          seekTo(Math.min(currentTimeRef.current + 10, durationRef.current));
           break;
         case 'ArrowLeft':
           e.preventDefault();
-          seekTo(Math.max(currentTime - 10, 0));
+          seekTo(Math.max(currentTimeRef.current - 10, 0));
           break;
         case 'ArrowUp':
           e.preventDefault();
-          setVolume(Math.min(volume + 0.1, 1));
+          setVolume(Math.min(volumeRef.current + 0.1, 1));
           break;
         case 'ArrowDown':
           e.preventDefault();
-          setVolume(Math.max(volume - 0.1, 0));
+          setVolume(Math.max(volumeRef.current - 0.1, 0));
           break;
         case 'KeyM':
           e.preventDefault();
@@ -75,12 +97,11 @@ export const usePlayerKeyboardShortcuts = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
+    // ✅ Removed currentTime, duration, volume from dependencies
+    // Event listener will NOT be recreated on every frame
     isMobile,
     togglePlayPause,
-    currentTime,
-    duration,
     seekTo,
-    volume,
     setVolume,
     toggleMute,
     toggleRepeatMode,

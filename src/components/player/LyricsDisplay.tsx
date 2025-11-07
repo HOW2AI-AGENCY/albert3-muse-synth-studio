@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo, memo } from 'react';
 import { useTimestampedLyrics } from '@/hooks/useTimestampedLyrics';
 import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
 import { cn } from '@/lib/utils';
@@ -8,7 +8,11 @@ interface LyricsDisplayProps {
   audioId: string;
 }
 
-export const LyricsDisplay: React.FC<LyricsDisplayProps> = ({ taskId, audioId }) => {
+/**
+ * ✅ Memoized to prevent unnecessary re-renders from parent
+ * Only re-renders when taskId or audioId changes
+ */
+export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audioId }) => {
   const { data: lyricsData, isLoading, isError } = useTimestampedLyrics({ taskId, audioId });
   const currentTime = useAudioPlayerStore((state) => state.currentTime);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -76,4 +80,6 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = ({ taskId, audioId })
       {renderedWords}
     </div>
   );
-};
+});
+
+LyricsDisplay.displayName = 'LyricsDisplay';
