@@ -1,4 +1,4 @@
-import { memo, useState, useCallback, useMemo } from "react";
+import { memo, useState, useCallback, useMemo, useEffect } from "react";
 import { Play, Pause, SkipBack, SkipForward, Minimize2, Volume2, VolumeX, Share2, Download, Heart, Repeat, Star, Eye, EyeOff } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -63,10 +63,18 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
   const { toast } = useToast();
   const [isMuted, setIsMuted] = useState(false);
   const [showLyrics, setShowLyrics] = useState(true);
-  
+
   // Определяем мобильное устройство
   const isMobile = useMediaQuery('(max-width: 768px)');
-  
+
+  // ✅ FIX: Sync isMuted when volume changes (keyboard shortcuts, etc.)
+  useEffect(() => {
+    const shouldBeMuted = volume === 0;
+    if (isMuted !== shouldBeMuted) {
+      setIsMuted(shouldBeMuted);
+    }
+  }, [volume, isMuted]);
+
   // ============= ВЕРСИИ ТРЕКОВ =============
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
   
@@ -97,7 +105,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
 
   const handleVolumeChange = useCallback((value: number[]) => {
     setVolume(value[0]);
-    setIsMuted(value[0] === 0);
+    // ✅ FIX: Remove setIsMuted call - useEffect handles this automatically
   }, [setVolume]);
 
   const toggleMute = useCallback(() => {

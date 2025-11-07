@@ -41,17 +41,19 @@ export const PlaybackControls = memo(({
   onSwitchVersion,
 }: PlaybackControlsProps) => {
   const { handleNext, handlePrevious } = useVersionNavigation();
-  const currentTime = useAudioPlayerStore((state) => state.currentTime);
+  // ✅ FIX: Don't subscribe to currentTime (60 FPS) - use getState() instead
   const seekTo = useAudioPlayerStore((state) => state.seekTo);
   const { repeatMode, isShuffleEnabled } = usePlaybackModes();
   const { toggleRepeatMode, toggleShuffle } = usePlaybackModeControls();
 
   const onPreviousClick = useCallback(() => {
+    // ✅ FIX: Get currentTime on-demand instead of subscribing
+    const currentTime = useAudioPlayerStore.getState().currentTime;
     const result = handlePrevious(currentTime);
     if (result === 'restart') {
       seekTo(0);
     }
-  }, [handlePrevious, currentTime, seekTo]);
+  }, [handlePrevious, seekTo]);
 
   const onNextClick = useCallback(() => {
     handleNext();
