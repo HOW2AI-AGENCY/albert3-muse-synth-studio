@@ -13,6 +13,7 @@ import { ProgressBar } from './ProgressBar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Music, VolumeX, Volume1, Volume2, X } from '@/utils/iconImports';
 import { LyricsDisplay } from '../LyricsDisplay'; // Import LyricsDisplay
 
@@ -114,12 +115,17 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
     <div
       role="region"
       aria-label="Медиаплеер"
-      className={`fixed bottom-6 left-6 right-6 sm:bottom-6 sm:left-6 sm:right-6 md:bottom-8 md:right-8 md:left-auto md:max-w-[420px] md:w-auto lg:bottom-10 lg:right-10 transition-all duration-500 ease-out ${
-        isVisible
-          ? 'translate-y-0 opacity-100 scale-100'
-          : 'translate-y-24 opacity-0 scale-95 pointer-events-none'
-      }`}
-      style={{ zIndex: 9999 }}
+      className={`
+        fixed
+        bottom-4 left-4 right-4
+        sm:bottom-5 sm:left-5 sm:right-5
+        md:bottom-6 md:left-auto md:right-6 md:max-w-[420px]
+        lg:bottom-8 lg:right-8
+        xl:bottom-10 xl:right-10
+        transition-all duration-500 ease-out
+        ${isVisible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-24 opacity-0 scale-95 pointer-events-none'}
+      `}
+      style={{ zIndex: 'var(--z-desktop-player)' }}
     >
       {/* Compact floating card with modern design */}
       <div className="relative rounded-2xl overflow-hidden border-2 border-primary/20 shadow-2xl shadow-black/60 hover:shadow-primary/20 hover:border-primary/30 transition-all duration-300 group">
@@ -136,15 +142,20 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
 
         <div className="relative px-3 py-2.5 space-y-2.5">
           {/* Close button */}
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={handleClose}
-            className="absolute top-1.5 right-1.5 h-5 w-5 opacity-0 group-hover:opacity-100 hover:bg-destructive/20 hover:text-destructive transition-all duration-200 z-10"
-            title="Закрыть плеер"
-          >
-            <X className="h-3 w-3" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={handleClose}
+                className="absolute top-1.5 right-1.5 h-5 w-5 opacity-0 group-hover:opacity-100 hover:bg-destructive/20 hover:text-destructive transition-all duration-200 z-10"
+                aria-label="Закрыть плеер"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Закрыть плеер (Esc)</TooltipContent>
+          </Tooltip>
 
           {/* Track Info - Compact */}
           <div className="flex items-center gap-2.5">
@@ -220,10 +231,10 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
             <ProgressBar onSeek={seekTo} />
           </div>
 
-          {/* Lyrics Display */}
-          {track.suno_task_id && track.id && (
+          {/* Lyrics Display - ✅ P0 FIX: Show even without suno_task_id */}
+          {track.id && (
             <LyricsDisplay
-              taskId={track.suno_task_id}
+              taskId={track.suno_task_id || ''}
               audioId={track.id}
               fallbackLyrics={track.lyrics}
             />
@@ -247,36 +258,45 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
               role="group"
               aria-label="Управление громкостью"
             >
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={toggleMute}
-                className="h-6 w-6 hover:bg-primary/10 hover:scale-110 transition-all duration-200 group/vol"
-                title={isMuted ? 'Включить звук (M)' : 'Выключить звук (M)'}
-                aria-label={isMuted ? 'Включить звук' : 'Выключить звук'}
-                aria-pressed={isMuted}
-              >
-                {isMuted || volume === 0 ? (
-                  <VolumeX className="h-3 w-3 group-hover/vol:text-primary transition-colors duration-200" aria-hidden="true" />
-                ) : volume < 0.5 ? (
-                  <Volume1 className="h-3 w-3 group-hover/vol:text-primary transition-colors duration-200" aria-hidden="true" />
-                ) : (
-                  <Volume2 className="h-3 w-3 group-hover/vol:text-primary transition-colors duration-200" aria-hidden="true" />
-                )}
-              </Button>
-              <div className="flex-1 min-w-[70px] max-w-[90px]">
-                <Slider
-                  value={[volume]}
-                  max={1}
-                  step={0.01}
-                  aria-label={`Громкость ${Math.round(volume * 100)}%`}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={Math.round(volume * 100)}
-                  onValueChange={handleVolumeChange}
-                  className="cursor-pointer hover:scale-y-125 transition-transform duration-200"
-                />
-              </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={toggleMute}
+                    className="h-6 w-6 hover:bg-primary/10 hover:scale-110 transition-all duration-200 group/vol"
+                    aria-label={isMuted ? 'Включить звук' : 'Выключить звук'}
+                    aria-pressed={isMuted}
+                  >
+                    {isMuted || volume === 0 ? (
+                      <VolumeX className="h-3 w-3 group-hover/vol:text-primary transition-colors duration-200" aria-hidden="true" />
+                    ) : volume < 0.5 ? (
+                      <Volume1 className="h-3 w-3 group-hover/vol:text-primary transition-colors duration-200" aria-hidden="true" />
+                    ) : (
+                      <Volume2 className="h-3 w-3 group-hover/vol:text-primary transition-colors duration-200" aria-hidden="true" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{isMuted ? 'Включить звук (M)' : 'Выключить звук (M)'}</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex-1 min-w-[70px] max-w-[90px]">
+                    <Slider
+                      value={[volume]}
+                      max={1}
+                      step={0.01}
+                      aria-label={`Громкость ${Math.round(volume * 100)}%`}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={Math.round(volume * 100)}
+                      onValueChange={handleVolumeChange}
+                      className="cursor-pointer hover:scale-y-125 transition-transform duration-200"
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>Громкость: {Math.round(volume * 100)}% (↑/↓)</TooltipContent>
+              </Tooltip>
               <span
                 className="text-[9px] font-medium text-muted-foreground/70 tabular-nums w-6 text-right"
                 aria-live="polite"

@@ -14,7 +14,14 @@ interface LyricsDisplayProps {
  * Only re-renders when taskId or audioId changes
  */
 export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audioId, fallbackLyrics }) => {
-  const { data: lyricsData, isLoading, isError } = useTimestampedLyrics({ taskId, audioId });
+  // ✅ P0 FIX: Skip timestamped lyrics fetch if no taskId
+  const shouldFetchTimestamped = taskId && taskId.length > 0;
+
+  const { data: lyricsData, isLoading, isError } = useTimestampedLyrics({
+    taskId,
+    audioId,
+    enabled: shouldFetchTimestamped
+  });
   const currentTime = useAudioPlayerStore((state) => state.currentTime);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastScrolledIndexRef = useRef<number>(-1);
@@ -80,6 +87,20 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
   }, [currentWordIndex]);
 
   // ✅ NOW SAFE TO DO EARLY RETURNS
+
+  // ✅ P0 FIX: If no taskId, show fallback immediately (don't wait for loading)
+  if (!shouldFetchTimestamped) {
+    if (fallbackLyrics) {
+      return (
+        <div className="lyrics-display max-h-60 overflow-y-auto text-center py-4">
+          <p className="text-sm text-muted-foreground whitespace-pre-line">
+            {fallbackLyrics}
+          </p>
+        </div>
+      );
+    }
+    return <div className="text-center text-muted-foreground">Текст не найден.</div>;
+  }
 
   if (isLoading) {
     return <div className="text-center text-muted-foreground">Загрузка текста...</div>;
