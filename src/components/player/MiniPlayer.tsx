@@ -75,9 +75,8 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
     clearCurrentTrack();
   }, [clearCurrentTrack, vibrate]);
 
-  // ✅ P2: Volume control handler
-  const handleVolumeChange = useCallback((e: React.MouseEvent, value: number[]) => {
-    e.stopPropagation(); // Prevent expanding player when adjusting volume
+  // ✅ P2: Volume control handler (simplified - no event needed, parent div handles stopPropagation)
+  const handleVolumeChange = useCallback((value: number[]) => {
     setVolume(value[0]);
   }, [setVolume]);
 
@@ -282,7 +281,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
                       value={[volume]}
                       max={1}
                       step={0.01}
-                      onValueChange={(value) => handleVolumeChange({} as React.MouseEvent, value)}
+                      onValueChange={handleVolumeChange}
                       className="cursor-pointer"
                     />
                   </div>

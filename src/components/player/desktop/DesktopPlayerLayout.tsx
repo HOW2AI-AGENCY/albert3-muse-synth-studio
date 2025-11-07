@@ -43,11 +43,26 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
   const [isMuted, setIsMuted] = useState(false);
   const previousVolumeRef = useRef(volume);
   const volumeRef = useRef(volume);
+  const isMutedRef = useRef(isMuted);
 
   // Keep refs in sync with volume from store
   useEffect(() => {
     volumeRef.current = volume;
   }, [volume]);
+
+  // Keep isMutedRef in sync
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
+
+  // ✅ HOTFIX v3: Sync isMuted when volume changes externally (keyboard shortcuts, MiniPlayer)
+  // Uses ref to avoid stale closure and prevent infinite loops
+  useEffect(() => {
+    const shouldBeMuted = volume === 0;
+    if (isMutedRef.current !== shouldBeMuted) {
+      setIsMuted(shouldBeMuted);
+    }
+  }, [volume]); // ← Only volume dependency - safe!
 
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
 
@@ -74,11 +89,9 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
       previousVolumeRef.current = newVolume;
     }
 
-    // ✅ Автоматически снимаем mute если пользователь двигает slider
-    if (newVolume > 0 && isMuted) {
-      setIsMuted(false);
-    }
-  }, [setVolume, isMuted]);
+    // ✅ HOTFIX v3: Always sync isMuted with volume (handles slider to 0)
+    setIsMuted(newVolume === 0);
+  }, [setVolume]);
 
   // ✅ Keyboard shortcuts now subscribe to store internally
   usePlayerKeyboardShortcuts({
