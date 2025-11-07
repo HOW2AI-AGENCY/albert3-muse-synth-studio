@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
@@ -7,6 +7,16 @@ import { sentryVitePlugin } from "@sentry/vite-plugin";
 
 // https://vitejs.dev/config/
 export default defineConfig(async ({ mode }) => {
+  // Load .env.production as fallback for all modes
+  // This ensures Lovable Cloud preview builds have access to production env vars
+  const env = loadEnv(mode, process.cwd(), '');
+  const productionEnv = loadEnv('production', process.cwd(), '');
+
+  // Merge with production env as fallback
+  const mergedEnv = { ...productionEnv, ...env };
+
+  // Expose merged env vars to the app
+  process.env = { ...process.env, ...mergedEnv };
   // Опционально подключаем visualizer только в production и если пакет установлен
   let visualizerPlugin: any = null;
   if (mode === 'production') {
@@ -27,6 +37,15 @@ export default defineConfig(async ({ mode }) => {
   }
 
   return ({
+  // Define env vars for client-side code
+  // Use production values as fallback for preview/dev builds in Lovable Cloud
+  define: {
+    'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(mergedEnv.VITE_SUPABASE_URL),
+    'import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY': JSON.stringify(mergedEnv.VITE_SUPABASE_PUBLISHABLE_KEY),
+    'import.meta.env.VITE_SUPABASE_PROJECT_ID': JSON.stringify(mergedEnv.VITE_SUPABASE_PROJECT_ID),
+    'import.meta.env.VITE_SENTRY_DSN': JSON.stringify(mergedEnv.VITE_SENTRY_DSN),
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify(mergedEnv.VITE_APP_VERSION),
+  },
   // Разрешаем встраивание только в продакшене; в dev убираем блокировки iframe
   // чтобы корректно работать в редакторах, использующих iframe (например, Lovable)
   server: {
