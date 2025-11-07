@@ -4,8 +4,12 @@
  */
 
 // Navigation & Analytics
-export * from './useNavigationTracking';
-export * from './useUIInteractionTracking';
+export { useNavigationTracking } from './useNavigationTracking';
+export {
+  useUIInteractionTracking,
+  type UIInteractionType,
+  type TrackUIInteractionParams
+} from './useUIInteractionTracking';
 
 // Audio & Media
 export { useAudioRecorder } from './useAudioRecorder';
