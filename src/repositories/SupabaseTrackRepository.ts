@@ -135,24 +135,30 @@ export class SupabaseTrackRepository implements ITrackRepository {
   }
 
   async incrementPlayCount(id: string): Promise<void> {
-    const track = await this.findById(id);
-    if (!track) return;
-    
-    await this.update(id, { play_count: (track.play_count ?? 0) + 1 });
+    // PERF-001: Use atomic RPC function (1 query instead of 2)
+    const { error } = await supabase.rpc('increment_play_count', {
+      p_track_id: id
+    });
+
+    if (error) throw error;
   }
 
   async incrementLikeCount(id: string): Promise<void> {
-    const track = await this.findById(id);
-    if (!track) return;
-    
-    await this.update(id, { like_count: (track.like_count ?? 0) + 1 });
+    // PERF-001: Use atomic RPC function (1 query instead of 2)
+    const { error } = await supabase.rpc('increment_like_count', {
+      p_track_id: id
+    });
+
+    if (error) throw error;
   }
 
   async decrementLikeCount(id: string): Promise<void> {
-    const track = await this.findById(id);
-    if (!track) return;
-    
-    await this.update(id, { like_count: Math.max(0, (track.like_count ?? 0) - 1) });
+    // PERF-001: Use atomic RPC function (1 query instead of 2)
+    const { error } = await supabase.rpc('decrement_like_count', {
+      p_track_id: id
+    });
+
+    if (error) throw error;
   }
 
   subscribe(trackId: string, callback: (track: Track) => void): () => void {
