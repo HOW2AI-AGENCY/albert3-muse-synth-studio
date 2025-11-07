@@ -293,18 +293,18 @@ export const mainHandler = async (req: Request): Promise<Response> => {
           .insert(logEntry);
 
         if (logError) {
-          console.error('⚠️ [LYRICS-CALLBACK] Failed to log to lyrics_generation_log', {
+          logger.error('Failed to log to lyrics_generation_log', logError instanceof Error ? logError : new Error('Log insert failed'), 'lyrics-callback', {
             jobId: job.id,
             error: logError,
           });
         } else {
-          console.log('✅ [LYRICS-CALLBACK] Logged to lyrics_generation_log', {
+          logger.info('Logged to lyrics_generation_log', 'lyrics-callback', {
             jobId: job.id,
             status: success ? 'completed' : 'failed',
           });
         }
       } catch (logError) {
-        console.error('⚠️ [LYRICS-CALLBACK] Error logging to lyrics_generation_log', logError);
+        logger.error('Error logging to lyrics_generation_log', logError instanceof Error ? logError : new Error(String(logError)), 'lyrics-callback');
       }
     }
 
@@ -313,7 +313,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("🔴 [LYRICS-CALLBACK] Error handling callback", error);
+    logger.error('Error handling callback', error instanceof Error ? error : new Error(String(error)), 'lyrics-callback');
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

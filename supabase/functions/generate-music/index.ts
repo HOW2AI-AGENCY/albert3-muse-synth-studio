@@ -85,12 +85,12 @@ const mainHandler = async (req: Request): Promise<Response> => {
 
     if (!replicateResponse.ok) {
       const errorText = await replicateResponse.text();
-      console.error('Replicate API error:', replicateResponse.status, errorText);
+      logger.error('Replicate API error', new Error(`Status ${replicateResponse.status}: ${errorText}`), 'generate-music', { status: replicateResponse.status });
       throw new Error(`Music generation service error: ${replicateResponse.status}`);
     }
 
     const prediction = await replicateResponse.json();
-    console.log('Replicate prediction started:', prediction.id);
+    logger.info('Replicate prediction started', 'generate-music', { predictionId: prediction.id });
 
     // Poll for completion (with timeout)
     const maxAttempts = 60; // 60 attempts * 5 seconds = 5 minutes max
@@ -115,13 +115,13 @@ const mainHandler = async (req: Request): Promise<Response> => {
       );
 
       if (!statusResponse.ok) {
-        console.error('Failed to check prediction status:', statusResponse.status);
+        logger.error('Failed to check prediction status', new Error(`Status ${statusResponse.status}`), 'generate-music', { status: statusResponse.status });
         break;
       }
 
       finalPrediction = await statusResponse.json();
       attempts++;
-      console.log(`Attempt ${attempts}: Status = ${finalPrediction.status}`);
+      logger.info('Polling prediction status', 'generate-music', { attempt: attempts, status: finalPrediction.status });
     }
 
     if (finalPrediction.status === 'succeeded' && finalPrediction.output) {
@@ -137,7 +137,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
         })
         .eq('id', trackId);
 
-      console.log(`Music generation completed for track ${trackId}`);
+      logger.info('Music generation completed', 'generate-music', { trackId });
 
       return new Response(
         JSON.stringify({ success: true, trackId, audioUrl }),
@@ -155,7 +155,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
         })
         .eq('id', trackId);
 
-      console.error(`Music generation failed for track ${trackId}:`, errorMessage);
+      logger.error('Music generation failed', new Error(errorMessage), 'generate-music', { trackId });
 
       return new Response(
         JSON.stringify({ error: errorMessage }),
@@ -164,7 +164,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
     }
 
   } catch (error) {
-    console.error('[generate-music] Error:', error);
+    logger.error('Generate-music error', error instanceof Error ? error : new Error(String(error)), 'generate-music');
     
     // Determine appropriate error code
     let status = 500;
