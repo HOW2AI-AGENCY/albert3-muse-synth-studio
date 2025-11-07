@@ -40,7 +40,7 @@ interface AIGenerationPanelProps {
 }
 
 export const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({
-  onClipGenerated,
+  onClipGenerated: _onClipGenerated,
 }) => {
   const [prompt, setPrompt] = useState('');
   const [genre, setGenre] = useState('electronic');
@@ -64,6 +64,7 @@ export const AIGenerationPanel: React.FC<AIGenerationPanelProps> = ({
       await generate({
         prompt,
         hasVocals: false,
+        provider: 'suno',
       });
 
       toast.success('AI clip generation started!');

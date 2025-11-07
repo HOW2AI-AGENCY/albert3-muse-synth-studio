@@ -80,3 +80,16 @@ export const formatFileSize = (bytes: number): string => {
 export const formatNumber = (num: number): string => {
   return num.toLocaleString("ru-RU");
 };
+
+/**
+ * Обрезает текст до указанной длины и добавляет многоточие
+ * @param text - Текст для обрезки
+ * @param maxLength - Максимальная длина
+ * @returns Обрезанный текст с многоточием или исходный текст
+ */
+export const truncateText = (text: string, maxLength: number): string => {
+  if (!text || text.length <= maxLength) {
+    return text;
+  }
+  return text.slice(0, maxLength - 3) + '...';
+};
