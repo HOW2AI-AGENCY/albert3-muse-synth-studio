@@ -35,35 +35,18 @@ if (result.success) {
     .map(([field, errors]) => `${field}: ${errors?.join(", ")}`)
     .join("\n");
 
-  // ✅ FIX: Не падаем в dev-режиме И в Lovable Cloud preview builds
-  // Lovable Cloud preview builds работают в production mode, но без env vars
-  // Проверяем hostname безопасно (может быть undefined при SSR)
-  let isLovablePreview = false;
-  try {
-    if (typeof window !== 'undefined' && window.location) {
-      isLovablePreview = window.location.hostname.includes('lovable.app') ||
-                         window.location.hostname.includes('lovable.dev');
-    }
-  } catch (e) {
-    // Ignore errors during hostname check
-  }
-
-  if (rawEnv.isDevelopment || isLovablePreview) {
+  // В dev-режиме не падаем: предупреждаем и подставляем безопасные значения
+  if (rawEnv.isDevelopment) {
     logger.warn(
-      `Environment validation failed. Using safe defaults.\n${formattedErrors}\n\n` +
-      `⚠️  Если вы видите эту ошибку в Lovable Cloud:\n` +
-      `   1. Откройте Lovable Dashboard\n` +
-      `   2. Settings → Environment Variables\n` +
-      `   3. Добавьте: VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY\n` +
-      `   4. См. docs/LOVABLE_ENV_SETUP.md для деталей`,
+      `Environment validation failed in development. Using safe defaults.\n${formattedErrors}`,
       'env-config'
     );
     envData = {
       supabaseUrl: "https://localhost.invalid",
       supabaseAnonKey: "dev-placeholder-key",
-      appEnv: rawEnv.isDevelopment ? "development" : "production",
-      isDevelopment: rawEnv.isDevelopment,
-      isProduction: rawEnv.isProduction,
+      appEnv: "development",
+      isDevelopment: true,
+      isProduction: false,
     };
   } else {
     throw new Error(`Environment validation failed:\n${formattedErrors}`);
