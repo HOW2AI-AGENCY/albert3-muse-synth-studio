@@ -50,13 +50,9 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
   }, [volume]);
 
   // ✅ P2 FIX: Sync isMuted with volume changes (e.g., from keyboard shortcuts)
-  // IMPORTANT: Only update if value actually changed to prevent infinite loops
   useEffect(() => {
-    const shouldBeMuted = volume === 0;
-    if (isMuted !== shouldBeMuted) {
-      setIsMuted(shouldBeMuted);
-    }
-  }, [volume, isMuted]);
+    setIsMuted(volume === 0);
+  }, [volume]);
 
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
 
