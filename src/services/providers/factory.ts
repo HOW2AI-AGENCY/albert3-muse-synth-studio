@@ -65,10 +65,11 @@ export class ProviderFactory {
         logger.debug('[ProviderFactory] Creating Mureka adapter');
         return new MurekaProviderAdapter();
 
-      default:
+      default: {
         const errorMsg = `Unsupported provider: ${provider}`;
         logger.error('[ProviderFactory] Provider not supported', new Error(errorMsg));
         throw new Error(errorMsg);
+      }
     }
   }
 

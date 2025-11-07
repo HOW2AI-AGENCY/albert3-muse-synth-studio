@@ -28,8 +28,10 @@ export const useIntersectionObserver = (
 
   const updateEntry = useCallback(([entry]: IntersectionObserverEntry[]) => {
     setEntry(entry);
-    setIsVisible(entry.isIntersecting);
-  }, []);
+    if (!frozen) {
+      setIsVisible(entry.isIntersecting);
+    }
+  }, [frozen]);
 
   useEffect(() => {
     const node = elementRef.current;
@@ -43,7 +45,7 @@ export const useIntersectionObserver = (
     observer.observe(node);
 
     return () => observer.disconnect();
-  }, [elementRef, threshold, root, rootMargin, frozen, updateEntry]);
+  }, [threshold, root, rootMargin, frozen, updateEntry]);
 
   const setRef = useCallback((node: Element | null) => {
     if (node) {

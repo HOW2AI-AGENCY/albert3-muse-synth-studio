@@ -84,7 +84,7 @@ export const useTracksMutations = () => {
       }
       logger.error('Increment play count failed', error instanceof Error ? error : undefined, 'useTracksMutations');
     },
-    onSettled: (_, __, trackId) => {
+    onSettled: (_data, _error, trackId) => {
       // Refetch to ensure consistency with server state
       queryClient.invalidateQueries({ queryKey: ['track', trackId] });
     },
@@ -139,7 +139,7 @@ export const useTracksMutations = () => {
       logger.error('Toggle like failed', error instanceof Error ? error : undefined, 'useTracksMutations');
       toast.error('Не удалось изменить статус лайка');
     },
-    onSettled: (_, __, { trackId }) => {
+    onSettled: (_data, _error, { trackId }) => {
       // Refetch to ensure consistency with server state
       queryClient.invalidateQueries({ queryKey: ['track', trackId] });
       queryClient.invalidateQueries({ queryKey: ['tracks'] });

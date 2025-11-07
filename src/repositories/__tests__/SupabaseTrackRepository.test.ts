@@ -20,9 +20,10 @@ describe('SupabaseTrackRepository', () => {
   let repository: SupabaseTrackRepository;
   let mockSupabase: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     repository = new SupabaseTrackRepository();
-    mockSupabase = require('@/integrations/supabase/client').supabase;
+    const supabaseModule = await import('@/integrations/supabase/client');
+    mockSupabase = supabaseModule.supabase;
     vi.clearAllMocks();
   });
 

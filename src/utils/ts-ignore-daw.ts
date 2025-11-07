@@ -1,10 +1,9 @@
 /**
  * TypeScript configuration helper
- * This file forces @ts-nocheck for all DAW experimental features
+ * Marker file for DAW experimental features
  */
 
-// All DAW-related files are considered experimental and excluded from strict type checking
-// @ts-nocheck is applied globally to:
+// All DAW-related files are considered experimental and may have relaxed type checking:
 // - src/components/daw/**
 // - src/pages/workspace/DAWEnhanced.tsx
 

@@ -49,11 +49,12 @@ describe('cn utility', () => {
   });
 
   it('handles complex nested structures', () => {
+    const shouldInclude = false;
     const result = cn(
       'base',
       ['array-class-1', { 'conditional': true }],
       { 'object-class': true },
-      false && 'never-included'
+      shouldInclude && 'never-included'
     );
     expect(result).toBe('base array-class-1 conditional object-class');
   });

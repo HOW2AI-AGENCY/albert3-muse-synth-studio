@@ -20,6 +20,8 @@ export default defineConfig(async ({ mode }) => {
         template: 'treemap', // 'treemap' | 'sunburst' | 'network'
       });
     } catch (e) {
+      // Visualizer не установлен - пропускаем анализ бандла
+      // eslint-disable-next-line no-console
       console.warn('[vite] rollup-plugin-visualizer не установлен — пропускаю анализ бандла');
     }
   }

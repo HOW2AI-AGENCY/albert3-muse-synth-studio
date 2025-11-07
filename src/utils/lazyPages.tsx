@@ -9,6 +9,7 @@ import { retryDynamicImport, checkForceReload } from './chunkRetry';
 /**
  * ✅ FIX: Улучшенная обработка ошибок lazy loading с retry механизмом
  */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 const createLazyPage = <Props extends object = {}>(
   importFn: () => Promise<{ default: React.ComponentType<Props> }>,
   pageName: string,
@@ -128,11 +129,13 @@ export const LazyMonitoringHub = createLazyPage(
   'MonitoringHub'
 );
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export const LazyStudio = createLazyPage<{}>(
   () => import('../pages/workspace/Studio').then(module => ({ default: module.Studio as any })),
   'Studio'
 );
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export const LazyDAW = createLazyPage<{}>(
   () => import('../pages/workspace/DAW').then(module => ({ default: module.DAW as any })),
   'DAW'
@@ -173,6 +176,7 @@ export const LazyPersonas = createLazyPage(
   'Personas'
 );
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export const LazyPromptDJPage = createLazyPage<{}>(
   () => import('../pages/workspace/PromptDJPage').then(module => ({ default: module.PromptDJPage as any })),
   'PromptDJPage'
