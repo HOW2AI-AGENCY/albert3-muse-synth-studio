@@ -93,7 +93,6 @@ export const LyricsMobile = React.memo<LyricsMobileProps>(
     showControls = true,
   }) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const activeLineRef = useRef<HTMLDivElement | null>(null);
     const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const lastScrolledIndexRef = useRef<number>(-1);
     const { vibrate } = useHapticFeedback();
@@ -121,17 +120,11 @@ export const LyricsMobile = React.memo<LyricsMobileProps>(
       );
     }, [lines, currentTime]);
 
-    // ✅ FIX: Callback ref для установки активной строки
-    const setActiveLineRef = useCallback((element: HTMLDivElement | null, index: number) => {
-      if (index === activeLineIndex && element) {
-        activeLineRef.current = element;
-      }
-    }, [activeLineIndex]);
-
-    // ✅ FIX: Debounced плавный автоскролл с улучшенным easing
+    // ✅ FIXED: Use querySelector instead of refs to avoid infinite loop
+    // This completely eliminates the conditional ref problem
     useEffect(() => {
       // Скролл только если индекс изменился (не на каждый frame)
-      if (activeLineIndex !== -1 && activeLineIndex !== lastScrolledIndexRef.current) {
+      if (activeLineIndex !== -1 && activeLineIndex !== lastScrolledIndexRef.current && containerRef.current) {
         // Очистить предыдущий timeout
         if (scrollTimeoutRef.current) {
           clearTimeout(scrollTimeoutRef.current);
@@ -139,19 +132,23 @@ export const LyricsMobile = React.memo<LyricsMobileProps>(
 
         // Debounce scroll на 150ms чтобы избежать множественных scroll calls
         scrollTimeoutRef.current = setTimeout(() => {
-          if (activeLineRef.current && containerRef.current) {
-            const container = containerRef.current;
-            const target = activeLineRef.current;
-            const targetTop = target.offsetTop;
-            const containerHeight = container.clientHeight;
-            const scrollTo = targetTop - containerHeight / 2 + target.clientHeight / 2;
+          if (containerRef.current) {
+            // Use querySelector with data-attribute instead of ref
+            const activeElement = containerRef.current.querySelector(`[data-line-index="${activeLineIndex}"]`);
+            if (activeElement) {
+              const container = containerRef.current;
+              const target = activeElement as HTMLElement;
+              const targetTop = target.offsetTop;
+              const containerHeight = container.clientHeight;
+              const scrollTo = targetTop - containerHeight / 2 + target.clientHeight / 2;
 
-            // Плавный скролл
-            container.scrollTo({
-              top: scrollTo,
-              behavior: 'smooth',
-            });
-            lastScrolledIndexRef.current = activeLineIndex;
+              // Плавный скролл
+              container.scrollTo({
+                top: scrollTo,
+                behavior: 'smooth',
+              });
+              lastScrolledIndexRef.current = activeLineIndex;
+            }
           }
         }, 150);
       }
@@ -283,7 +280,7 @@ export const LyricsMobile = React.memo<LyricsMobileProps>(
               return (
                 <div
                   key={line.id}
-                  ref={(el) => setActiveLineRef(el, index)}
+                  data-line-index={index}
                   className={cn(
                     'transition-all duration-300 ease-out text-center',
                     'transform-gpu will-change-transform',

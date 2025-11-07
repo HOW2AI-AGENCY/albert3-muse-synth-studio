@@ -72,7 +72,6 @@ const groupWordsIntoLines = (words: TimestampedWord[]): LyricLine[] => {
 export const TimestampedLyricsDisplay = React.memo<TimestampedLyricsDisplayProps>(
   ({ timestampedLyrics, currentTime, onSeek, className, coverUrl }) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const activeLineRef = useRef<HTMLDivElement | null>(null);
     const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const lastScrolledIndexRef = useRef<number>(-1);
 
@@ -91,17 +90,11 @@ export const TimestampedLyricsDisplay = React.memo<TimestampedLyricsDisplayProps
       );
     }, [lines, currentTime]);
 
-    // ✅ FIX: Callback ref для установки активной строки
-    const setActiveLineRef = useCallback((element: HTMLDivElement | null, index: number) => {
-      if (index === activeLineIndex && element) {
-        activeLineRef.current = element;
-      }
-    }, [activeLineIndex]);
-
-    // ✅ FIX: Debounced автоскролл к активной строке
+    // ✅ FIXED: Use querySelector instead of refs to avoid infinite loop
+    // This completely eliminates the conditional ref problem
     useEffect(() => {
       // Скролл только если индекс изменился (не на каждый frame)
-      if (activeLineIndex !== -1 && activeLineIndex !== lastScrolledIndexRef.current) {
+      if (activeLineIndex !== -1 && activeLineIndex !== lastScrolledIndexRef.current && containerRef.current) {
         // Очистить предыдущий timeout
         if (scrollTimeoutRef.current) {
           clearTimeout(scrollTimeoutRef.current);
@@ -109,12 +102,16 @@ export const TimestampedLyricsDisplay = React.memo<TimestampedLyricsDisplayProps
 
         // Debounce scroll на 150ms чтобы избежать множественных scroll calls
         scrollTimeoutRef.current = setTimeout(() => {
-          if (activeLineRef.current) {
-            activeLineRef.current.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center',
-            });
-            lastScrolledIndexRef.current = activeLineIndex;
+          if (containerRef.current) {
+            // Use querySelector with data-attribute instead of ref
+            const activeElement = containerRef.current.querySelector(`[data-line-index="${activeLineIndex}"]`);
+            if (activeElement) {
+              activeElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+              });
+              lastScrolledIndexRef.current = activeLineIndex;
+            }
           }
         }, 150);
       }
@@ -163,7 +160,7 @@ export const TimestampedLyricsDisplay = React.memo<TimestampedLyricsDisplayProps
               return (
                 <div
                   key={index}
-                  ref={(el) => setActiveLineRef(el, index)}
+                  data-line-index={index}
                   className={cn(
                     'transition-all duration-300 ease-out text-center',
                     'transform-gpu will-change-transform',
