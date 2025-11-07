@@ -4,6 +4,7 @@
  */
 import { useCallback, useEffect, useRef } from 'react';
 import { useAudioPlayerStore, useCurrentTrack, useIsPlaying, useVolume, useAudioRef } from '@/stores/audioPlayerStore';
+import type { AudioPlayerTrack } from '@/stores/audioPlayerStore';
 import { logger } from '@/utils/logger';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,28 +35,61 @@ export const AudioController = () => {
   const safePlay = useCallback(async () => {
     const audio = audioRef?.current;
     if (!audio) return;
+
+    // Не пытаться играть во время смены источника
     if (isSettingSourceRef.current) {
       logger.info('Skip play: source is being set', 'AudioController', { trackId: currentTrack?.id });
       return;
     }
+
+    // Блокировка конкурентных вызовов play()
     if (playLockRef.current) {
       logger.warn('Skip play: another play() in progress', 'AudioController', { trackId: currentTrack?.id });
       return;
     }
     playLockRef.current = true;
+
     try {
+      // Дождаться готовности к воспроизведению, чтобы избежать AbortError при смене src
+      if (audio.readyState < 3) {
+        await new Promise<void>((resolve) => {
+          let timeoutId: number | null = null;
+          const cleanup = () => {
+            audio.removeEventListener('canplay', onReady);
+            audio.removeEventListener('loadeddata', onReady);
+            audio.removeEventListener('stalled', onReady);
+            audio.removeEventListener('error', onReady);
+            if (timeoutId) window.clearTimeout(timeoutId);
+          };
+          const onReady = () => {
+            cleanup();
+            resolve();
+          };
+          audio.addEventListener('canplay', onReady, { once: true });
+          audio.addEventListener('loadeddata', onReady, { once: true });
+          audio.addEventListener('stalled', onReady, { once: true });
+          audio.addEventListener('error', onReady, { once: true });
+          timeoutId = window.setTimeout(onReady, 1500); // fail-soft через 1.5s
+        });
+      }
+
       await audio.play();
       logger.info('Audio playback started', 'AudioController', { 
         trackId: currentTrack?.id,
         audio_url: currentTrack?.audio_url?.substring(0, 100) 
       });
     } catch (error) {
-      logger.error('Failed to play audio', error as Error, 'AudioController', { trackId: currentTrack?.id });
-      pause();
+      // Частый случай при мгновенной смене трека: AbortError — не считаем ошибкой
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        logger.warn('play() aborted due to a new load; ignoring', 'AudioController', { trackId: currentTrack?.id });
+      } else {
+        logger.error('Failed to play audio', error as Error, 'AudioController', { trackId: currentTrack?.id });
+        // Не принудительно ставим на паузу при ошибке автозапуска — оставим решение UI/пользователю
+      }
     } finally {
       playLockRef.current = false;
     }
-  }, [audioRef, currentTrack?.id, currentTrack?.audio_url, pause]);
+  }, [audioRef, currentTrack?.id, currentTrack?.audio_url]);
 
   // ============= MEDIASESSION API =============
   useEffect(() => {
@@ -241,7 +275,8 @@ export const AudioController = () => {
         trackId: currentTrack?.id
       });
       if (isPlaying) {
-        safePlay(); // Only play if `isPlaying` is true
+        // Небольшая задержка, чтобы избежать гонки с load()
+        setTimeout(() => safePlay(), 0);
       }
     };
 

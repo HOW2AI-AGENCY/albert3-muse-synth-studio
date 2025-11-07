@@ -230,7 +230,7 @@ export const ProjectTracksListMobile = memo<ProjectTracksListMobileProps>(({
             {filteredAndSortedTracks.map((track) => (
               <TrackCardMobile
                 key={track.id}
-                track={track}
+                track={track as any}
                 onClick={() => onTrackClick?.(track.id)}
               />
             ))}

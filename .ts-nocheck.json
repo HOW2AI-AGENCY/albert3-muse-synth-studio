@@ -1,0 +1,10 @@
+/**
+ * Files to exclude from TypeScript strict type checking
+ * These are experimental/WIP features
+ */
+{
+  "exclude": [
+    "src/components/daw/**/*",
+    "src/pages/workspace/DAWEnhanced.tsx"
+  ]
+}

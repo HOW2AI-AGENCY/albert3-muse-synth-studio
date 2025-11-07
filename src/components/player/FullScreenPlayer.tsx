@@ -337,8 +337,8 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
               </div>
             )}
             <Slider
-              value={[currentTime]}
-              max={duration}
+              value={[Math.min(Math.max(currentTime, 0), Math.max(0, duration))]}
+              max={Math.max(0, duration)}
               step={0.1}
               onValueChange={handleSeek}
               className="w-full cursor-pointer hover:scale-y-110 transition-transform duration-200"
