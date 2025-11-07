@@ -361,24 +361,24 @@ export const AudioController = () => {
         (errorCode === 3 || errorCode === 4)
       ) {
         proxyTriedRef.current[audioUrl] = true;
-        toast.message('Преобразую аудио для воспроизведения...', {
-          duration: 10000,
-        });
-        
-        // ✅ FIX: Add 30s timeout for proxy request
-        const PROXY_TIMEOUT = 30000;
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Proxy timeout after 30s')), PROXY_TIMEOUT)
+
+        // ✅ P2 FIX: Show loading toast with progress indicator
+        const loadingToastId = toast.loading('Подготовка аудио для воспроизведения...');
+
+        // ✅ P2 FIX: Reduced timeout from 30s to 15s for better UX
+        const PROXY_TIMEOUT = 15000;
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Proxy timeout after 15s')), PROXY_TIMEOUT)
         );
-        
+
         (async () => {
           try {
             const proxyPromise = supabase.functions.invoke('fetch-audio-proxy', {
               body: { url: audioUrl },
             });
-            
+
             const { data, error } = await Promise.race([proxyPromise, timeoutPromise]) as any;
-            
+
             if (error || !data || !(data as any).base64) {
               throw error || new Error('proxy failed');
             }
@@ -397,14 +397,22 @@ export const AudioController = () => {
             try { await audio.play(); } catch (e) {
               logger.error('Failed to play object URL audio', e as Error, 'AudioController', { trackId: currentTrack?.id });
             }
-            toast.success('Аудио подготовлено, воспроизвожу');
+
+            // ✅ P2 FIX: Update loading toast to success
+            toast.success('Аудио готово к воспроизведению', { id: loadingToastId });
             return;
           } catch (e) {
             logger.error('Proxy audio fallback failed', e as Error, 'AudioController', { trackId: currentTrack?.id });
+
+            // ✅ P2 FIX: Update loading toast to error with specific message
+            const isTimeout = (e as Error).message?.includes('timeout');
+            const errorMsg = isTimeout
+              ? 'Не удалось подготовить аудио: превышено время ожидания'
+              : (errorCode ? errorMessages[errorCode] || 'Не удалось подготовить аудио' : 'Не удалось подготовить аудио');
+
+            toast.error(errorMsg, { id: loadingToastId });
+            pause();
           }
-          const userMessage = errorCode ? errorMessages[errorCode] || 'Ошибка загрузки аудио' : 'Ошибка загрузки аудио';
-          toast.error(userMessage);
-          pause();
         })();
         return;
       }

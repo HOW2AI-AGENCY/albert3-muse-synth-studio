@@ -49,6 +49,11 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
     volumeRef.current = volume;
   }, [volume]);
 
+  // ✅ P2 FIX: Sync isMuted with volume changes (e.g., from keyboard shortcuts)
+  useEffect(() => {
+    setIsMuted(volume === 0);
+  }, [volume]);
+
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
 
   const toggleMute = useCallback(() => {
