@@ -37,9 +37,16 @@ if (result.success) {
 
   // ✅ FIX: Не падаем в dev-режиме И в Lovable Cloud preview builds
   // Lovable Cloud preview builds работают в production mode, но без env vars
-  const isLovablePreview = typeof window !== 'undefined' &&
-    (window.location.hostname.includes('lovable.app') ||
-     window.location.hostname.includes('lovable.dev'));
+  // Проверяем hostname безопасно (может быть undefined при SSR)
+  let isLovablePreview = false;
+  try {
+    if (typeof window !== 'undefined' && window.location) {
+      isLovablePreview = window.location.hostname.includes('lovable.app') ||
+                         window.location.hostname.includes('lovable.dev');
+    }
+  } catch (e) {
+    // Ignore errors during hostname check
+  }
 
   if (rawEnv.isDevelopment || isLovablePreview) {
     logger.warn(
