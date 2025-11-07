@@ -7,6 +7,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { logger } from '../_shared/logger.ts';
 
 // ============================================================================
 // CORS HEADERS
@@ -116,7 +117,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('[CREATE-PERSONA] Request:', { trackId, musicIndex, name, userId: user.id });
+    logger.info('Create persona request', { endpoint: 'create-suno-persona', trackId, musicIndex, name, userId: user.id });
 
     // ============================================================================
     // FETCH TRACK DATA
@@ -175,11 +176,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('[CREATE-PERSONA] Track found:', {
-      trackId,
-      sunoTaskId,
-      provider: track.provider,
-    });
+    logger.info('Track found', { endpoint: 'create-suno-persona', trackId, sunoTaskId, provider: track.provider });
 
     // ============================================================================
     // CALL SUNO API
@@ -206,11 +203,7 @@ serve(async (req) => {
 
     const sunoData: SunoPersonaResponse = await sunoResponse.json();
 
-    console.log('[CREATE-PERSONA] Suno API response:', {
-      status: sunoResponse.status,
-      code: sunoData.code,
-      msg: sunoData.msg,
-    });
+    logger.info('Suno API response', { endpoint: 'create-suno-persona', status: sunoResponse.status, code: sunoData.code, msg: sunoData.msg });
 
     // Handle Suno API errors
     if (!sunoResponse.ok || sunoData.code !== 200) {
@@ -279,11 +272,11 @@ serve(async (req) => {
       .single();
 
     if (saveError) {
-      console.error('[CREATE-PERSONA] Database error:', saveError);
+      logger.error('Database error', saveError instanceof Error ? saveError : new Error(String(saveError)), 'create-suno-persona');
       throw new Error(`Failed to save persona: ${saveError.message}`);
     }
 
-    console.log('[CREATE-PERSONA] ✅ Persona created successfully:', persona.id);
+    logger.info('Persona created successfully', { endpoint: 'create-suno-persona', personaId: persona.id });
 
     // ============================================================================
     // RETURN SUCCESS
@@ -309,7 +302,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('[CREATE-PERSONA] Error:', error);
+    logger.error('Error in create-suno-persona', error instanceof Error ? error : new Error(String(error)), 'create-suno-persona');
 
     return new Response(
       JSON.stringify({

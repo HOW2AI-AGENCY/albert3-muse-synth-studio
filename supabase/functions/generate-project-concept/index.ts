@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logger } from '../_shared/logger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,7 +26,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    console.log('[generate-project-concept] Generating full project concept with AI');
+    logger.info('Generating full project concept with AI', { endpoint: 'generate-project-concept' });
 
     // System prompt для детальной генерации проекта
     const systemPrompt = `You are a professional music project planner and creative director.
@@ -179,7 +180,7 @@ Generate:
       }
       
       const errorText = await response.text();
-      console.error('[generate-project-concept] AI error:', response.status, errorText);
+      logger.error('AI gateway error', new Error(errorText), 'generate-project-concept', { status: response.status });
       throw new Error('AI gateway error');
     }
 
@@ -192,8 +193,9 @@ Generate:
     }
 
     const projectConcept = JSON.parse(toolCall.function.arguments);
-    
-    console.log('[generate-project-concept] Project generated:', {
+
+    logger.info('Project generated', {
+      endpoint: 'generate-project-concept',
       name: projectConcept.name,
       trackCount: projectConcept.planned_tracks?.length || 0
     });
@@ -204,7 +206,7 @@ Generate:
     );
 
   } catch (error) {
-    console.error('[generate-project-concept] Error:', error);
+    logger.error('Error in generate-project-concept', error instanceof Error ? error : new Error(String(error)), 'generate-project-concept');
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'Unknown error' 

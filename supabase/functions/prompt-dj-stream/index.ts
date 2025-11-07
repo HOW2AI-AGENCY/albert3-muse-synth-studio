@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { logger } from '../_shared/logger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -21,7 +22,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('[prompt-dj-stream] Starting SSE stream:', sessionId);
+    logger.info('Starting SSE stream', { endpoint: 'prompt-dj-stream', sessionId });
 
     // Создаем SSE stream
     const stream = new ReadableStream({
@@ -60,7 +61,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('[prompt-dj-stream] Error:', error);
+    logger.error('Error in prompt-dj-stream', error instanceof Error ? error : new Error(String(error)), 'prompt-dj-stream');
     return new Response(
       JSON.stringify({ error: error.message || 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

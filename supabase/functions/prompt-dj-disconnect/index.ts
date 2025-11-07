@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { logger } from '../_shared/logger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,7 +25,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('[prompt-dj-disconnect] Disconnecting session:', sessionId);
+    logger.info('Disconnecting session', { endpoint: 'prompt-dj-disconnect', sessionId });
 
     // В production здесь бы закрывалось соединение с Gemini Lyria API
     return new Response(
@@ -36,7 +37,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[prompt-dj-disconnect] Error:', error);
+    logger.error('Error in prompt-dj-disconnect', error instanceof Error ? error : new Error(String(error)), 'prompt-dj-disconnect');
     return new Response(
       JSON.stringify({ error: error.message || 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { createSecurityHeaders, withRateLimit } from "../_shared/security.ts";
+import { logger } from "../_shared/logger.ts";
 import {
   createSupabaseAdminClient,
   createSupabaseUserClient,
@@ -81,14 +82,14 @@ const handler = async (req: Request): Promise<Response> => {
     // Get userId from X-User-Id header (injected by middleware)
     const userId = req.headers.get('X-User-Id');
     if (!userId) {
-      console.error('[sync-stem-job] ❌ handler-401: Missing X-User-Id header (middleware auth failed)');
+      logger.error('Missing X-User-Id header (middleware auth failed)', new Error('Unauthorized'), 'sync-stem-job');
       return new Response(
         JSON.stringify({ error: 'Unauthorized - missing user context' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`[sync-stem-job] 🔄 Handler entry: userId=${userId.substring(0, 8)}..., trackId=${body.trackId || 'pending'}`);
+    logger.info('Handler entry', { endpoint: 'sync-stem-job', userId: userId.substring(0, 8), trackId: body.trackId || 'pending' });
 
     const supabaseAdmin = createSupabaseAdminClient();
 
@@ -103,7 +104,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (trackRecord.user_id !== userId) {
-      console.error(`[sync-stem-job] ❌ handler-403: User ${userId.substring(0, 8)}... does not own track ${trackId}`);
+      logger.error('User does not own track', new Error('Forbidden'), 'sync-stem-job', { userId: userId.substring(0, 8), trackId });
       return new Response(
         JSON.stringify({ error: "Forbidden" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -201,7 +202,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       const { error: deleteError } = await deleteQuery;
       if (deleteError) {
-        console.error("[sync-stem-job] failed to remove previous stems", { deleteError, trackId, separationMode });
+        logger.error('Failed to remove previous stems', deleteError instanceof Error ? deleteError : new Error(String(deleteError)), 'sync-stem-job', { trackId, separationMode });
       }
 
       if (stemAssets.length > 0) {
@@ -220,7 +221,7 @@ const handler = async (req: Request): Promise<Response> => {
           .insert(rows);
 
         if (insertError) {
-          console.error("[sync-stem-job] failed to insert stem assets", { insertError, trackId, separationMode });
+          logger.error('Failed to insert stem assets', insertError instanceof Error ? insertError : new Error(String(insertError)), 'sync-stem-job', { trackId, separationMode });
         }
       }
     }
@@ -263,7 +264,7 @@ const handler = async (req: Request): Promise<Response> => {
       .eq("id", trackId);
 
     if (trackUpdateError) {
-      console.error("[sync-stem-job] failed to update track metadata", { trackUpdateError, trackId });
+      logger.error('Failed to update track metadata', trackUpdateError instanceof Error ? trackUpdateError : new Error(String(trackUpdateError)), 'sync-stem-job', { trackId });
     }
 
     if (versionId && versionMetadata) {
@@ -288,7 +289,7 @@ const handler = async (req: Request): Promise<Response> => {
         .eq("id", versionId);
 
       if (versionUpdateError) {
-        console.error("[sync-stem-job] failed to update version metadata", { versionUpdateError, versionId });
+        logger.error('Failed to update version metadata', versionUpdateError instanceof Error ? versionUpdateError : new Error(String(versionUpdateError)), 'sync-stem-job', { versionId });
       }
     }
 
@@ -310,7 +311,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
     );
   } catch (error) {
-    console.error("[sync-stem-job] error", error);
+    logger.error('Error in sync-stem-job', error instanceof Error ? error : new Error(String(error)), 'sync-stem-job');
 
     if (error instanceof ValidationException) {
       return new Response(

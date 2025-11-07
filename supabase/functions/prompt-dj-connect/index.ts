@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { logger } from '../_shared/logger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,7 +29,7 @@ serve(async (req) => {
 
     const GOOGLE_AI_API_KEY = Deno.env.get('GOOGLE_AI_API_KEY');
     if (!GOOGLE_AI_API_KEY) {
-      console.error('[prompt-dj-connect] GOOGLE_AI_API_KEY not configured');
+      logger.error('GOOGLE_AI_API_KEY not configured', new Error('Missing API key'), 'prompt-dj-connect');
       return new Response(
         JSON.stringify({ error: 'API key not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -62,7 +63,8 @@ serve(async (req) => {
     // Генерируем sessionId
     const sessionId = crypto.randomUUID();
 
-    console.log('[prompt-dj-connect] Session created:', {
+    logger.info('Session created', {
+      endpoint: 'prompt-dj-connect',
       sessionId,
       userId: user.id,
       promptsCount: initialPrompts.length
@@ -80,7 +82,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[prompt-dj-connect] Error:', error);
+    logger.error('Error in prompt-dj-connect', error instanceof Error ? error : new Error(String(error)), 'prompt-dj-connect');
     return new Response(
       JSON.stringify({ error: error.message || 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
