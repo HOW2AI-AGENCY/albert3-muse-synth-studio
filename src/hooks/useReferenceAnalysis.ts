@@ -27,7 +27,7 @@
  * ```
  */
 
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -112,8 +112,8 @@ export function useReferenceAnalysis() {
   // STATE: IDs текущего анализа
   // ============================================================================
 
-  const [currentRecognitionId, setCurrentRecognitionId] = React.useState<string | null>(null);
-  const [currentDescriptionId, setCurrentDescriptionId] = React.useState<string | null>(null);
+  const [currentRecognitionId, setCurrentRecognitionId] = useState<string | null>(null);
+  const [currentDescriptionId, setCurrentDescriptionId] = useState<string | null>(null);
 
   // ============================================================================
   // MUTATION: Запуск анализа
@@ -336,7 +336,7 @@ export function useReferenceAnalysis() {
   // EFFECTS: Toast notifications при завершении
   // ============================================================================
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (recognition?.status === 'completed' && recognition.recognized_title) {
       toast({
         title: '✅ Песня распознана',
@@ -363,7 +363,7 @@ export function useReferenceAnalysis() {
     }
   }, [recognition?.status, toast]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (description?.status === 'completed' && description.detected_genre) {
       toast({
         title: '✅ Описание готово',
@@ -391,7 +391,7 @@ export function useReferenceAnalysis() {
   // RUNTIME LOGGING: промежуточные стадии
   // ============================================================================
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!recognition) return;
     if (recognition.status === 'pending' || recognition.status === 'processing') {
       logger.info('⏳ [ANALYZE] Recognition in progress', 'useReferenceAnalysis', {
@@ -401,7 +401,7 @@ export function useReferenceAnalysis() {
     }
   }, [recognition?.status]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!description) return;
     if (description.status === 'pending' || description.status === 'processing') {
       logger.info('⏳ [ANALYZE] Description in progress', 'useReferenceAnalysis', {

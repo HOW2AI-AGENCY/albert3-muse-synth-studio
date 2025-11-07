@@ -5,8 +5,7 @@
  * Отслеживает производительность критических операций
  */
 
-import { useEffect, useRef, useCallback } from 'react';
-import React from 'react';
+import { useEffect, useRef, useCallback, ComponentType, createElement } from 'react';
 import { logger } from '@/utils/logger';
 
 interface PerformanceMetric {
@@ -198,9 +197,9 @@ export function usePerformanceMonitor(options: PerformanceMonitorOptions = {}) {
  * HOC для автоматического измерения производительности компонента
  */
 export function withPerformanceMonitoring<P extends Record<string, unknown>>(
-  Component: React.ComponentType<P>,
+  Component: ComponentType<P>,
   componentName: string
-): React.ComponentType<P> {
+): ComponentType<P> {
   const PerformanceMonitoredComponent = (props: P) => {
     const { startMeasure } = usePerformanceMonitor();
 
@@ -211,7 +210,7 @@ export function withPerformanceMonitoring<P extends Record<string, unknown>>(
       };
     });
 
-    return React.createElement(Component, props);
+    return createElement(Component, props);
   };
 
   PerformanceMonitoredComponent.displayName = `withPerformanceMonitoring(${componentName})`;
