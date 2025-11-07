@@ -129,20 +129,22 @@ serve(async (req: Request): Promise<Response> => {
       .single();
 
     if (findError || !track) {
-      logger.warn('Track not found for task_id', { 
+      logger.warn('Track not found for task_id', {
         taskId: webhook.data.task_id,
-        error: findError 
+        error: findError
       });
-      
-      // Return 200 anyway to acknowledge webhook
+
+      // ⚡ OPTIMIZATION: Return 202 to trigger retry (like Suno)
+      // 202 = "Accepted, but not yet processed" - tells Mureka to retry later
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: 'Track not found but webhook acknowledged' 
+        JSON.stringify({
+          success: false,
+          message: 'Track not found but webhook acknowledged',
+          retry: true
         }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 202,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }
@@ -181,37 +183,56 @@ serve(async (req: Request): Promise<Response> => {
         throw updateError;
       }
 
-      // Store additional variants if multiple clips
+      // ⚡ OPTIMIZATION: Store additional variants with idempotency
       if (webhook.data.clips.length > 1) {
-        const variants = webhook.data.clips.slice(1).map((clip, index) => ({
-          parent_track_id: track.id,
-          version_number: index + 2, // Start from 2 (first clip is version 1)
-          is_master: false,
-          audio_url: clip.audio_url,
-          cover_url: clip.image_url,
-          video_url: clip.video_url,
-          duration: clip.duration,
-          lyrics: clip.lyrics,
-          metadata: {
-            mureka_clip_id: clip.id,
-            webhook_received_at: new Date().toISOString(),
-          },
-        }));
-
-        const { error: variantsError } = await supabaseAdmin
+        // Check existing versions to avoid duplicates (idempotency)
+        const { data: existingVersions } = await supabaseAdmin
           .from('track_versions')
-          .insert(variants);
+          .select('variant_index, metadata->mureka_clip_id')
+          .eq('parent_track_id', track.id);
 
-        if (variantsError) {
-          logger.warn('Failed to insert track variants', { 
-            error: variantsError, 
-            trackId: track.id 
-          });
-        } else {
-          logger.info('✅ [MUREKA-WEBHOOK] Stored variants', { 
-            trackId: track.id, 
-            count: variants.length 
-          });
+        const existingClipIds = new Set(
+          (existingVersions || [])
+            .map((v: any) => v.metadata?.mureka_clip_id)
+            .filter(Boolean)
+        );
+
+        const variants = webhook.data.clips
+          .slice(1)
+          .filter((clip) => !existingClipIds.has(clip.id)) // Skip existing
+          .map((clip, index) => ({
+            parent_track_id: track.id,
+            variant_index: index + 1, // ✅ FIX: Use variant_index (not version_number)
+            is_primary_variant: false,
+            is_preferred_variant: index === 0, // First additional variant is preferred
+            audio_url: clip.audio_url,
+            cover_url: clip.image_url,
+            video_url: clip.video_url,
+            duration: clip.duration,
+            lyrics: clip.lyrics,
+            metadata: {
+              mureka_clip_id: clip.id,
+              webhook_received_at: new Date().toISOString(),
+            },
+          }));
+
+        if (variants.length > 0) {
+          // ✅ FIX: Use upsert for idempotency
+          const { error: variantsError } = await supabaseAdmin
+            .from('track_versions')
+            .upsert(variants, { onConflict: 'parent_track_id,variant_index' });
+
+          if (variantsError) {
+            logger.warn('Failed to insert track variants', {
+              error: variantsError,
+              trackId: track.id
+            });
+          } else {
+            logger.info('✅ [MUREKA-WEBHOOK] Stored variants', {
+              trackId: track.id,
+              count: variants.length
+            });
+          }
         }
       }
 

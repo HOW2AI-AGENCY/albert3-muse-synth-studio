@@ -168,10 +168,11 @@ const mainHandler = async (req: Request) => {
       const firstErr = tasks.find((t: any) => ["error", "failed"].includes((t?.status || "").toLowerCase()));
       const reason = firstErr?.msg || firstErr?.error || "Generation failed (callback)";
 
+      // ⚡ OPTIMIZATION: Use track.id instead of contains() for better performance
       await supabase
         .from("tracks")
         .update({ status: "failed", error_message: reason })
-        .contains("metadata", { suno_task_id: taskId });
+        .eq("id", track.id);
 
       logger.info("Track marked failed", "suno-callback", { taskId, reason });
       return new Response(JSON.stringify({ ok: true }), {
@@ -188,10 +189,11 @@ const mainHandler = async (req: Request) => {
 
       if (successfulTracks.length === 0) {
         const message = "Completed without audio URL in callback";
+        // ⚡ OPTIMIZATION: Use track.id instead of contains()
         await supabase
           .from("tracks")
           .update({ status: "failed", error_message: message })
-          .contains("metadata", { suno_task_id: taskId });
+          .eq("id", track.id);
         logger.error("No successful tracks with audio", new Error("No successful tracks"), "suno-callback", { taskId });
         return new Response(JSON.stringify({ ok: false, error: message }), {
           status: 422,
