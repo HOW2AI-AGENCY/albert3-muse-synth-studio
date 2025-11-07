@@ -6,13 +6,14 @@ import { cn } from '@/lib/utils';
 interface LyricsDisplayProps {
   taskId: string;
   audioId: string;
+  fallbackLyrics?: string; // ✅ P1: Добавить fallback prop
 }
 
 /**
  * ✅ Memoized to prevent unnecessary re-renders from parent
  * Only re-renders when taskId or audioId changes
  */
-export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audioId }) => {
+export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audioId, fallbackLyrics }) => {
   const { data: lyricsData, isLoading, isError } = useTimestampedLyrics({ taskId, audioId });
   const currentTime = useAudioPlayerStore((state) => state.currentTime);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -84,7 +85,17 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
     return <div className="text-center text-muted-foreground">Загрузка текста...</div>;
   }
 
+  // ✅ P1 FIX: Показать fallback lyrics если timestamped недоступны
   if (isError || !lyricsData || lyricsData.alignedWords.length === 0) {
+    if (fallbackLyrics) {
+      return (
+        <div className="lyrics-display max-h-60 overflow-y-auto text-center py-4">
+          <p className="text-sm text-muted-foreground whitespace-pre-line">
+            {fallbackLyrics}
+          </p>
+        </div>
+      );
+    }
     return <div className="text-center text-muted-foreground">Текст не найден.</div>;
   }
 
