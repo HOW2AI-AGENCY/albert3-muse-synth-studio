@@ -63,14 +63,7 @@ export const AudioClipEnhanced: React.FC<AudioClipEnhancedProps> = ({
   const clipLeft = clip.startTime * zoom - scrollLeft;
   const clipWidth = clip.duration * zoom;
 
-  // Check if clip is visible
-  const isVisible = clipLeft + clipWidth > 0 && clipLeft < window.innerWidth;
-
-  // Prevent rendering if not visible (performance optimization)
-  if (!isVisible) {
-    return null;
-  }
-
+  // All hooks must be called before any early returns
   const handleMouseDown = useCallback(
     (e: React.MouseEvent, mode: DragMode) => {
       e.stopPropagation();
@@ -178,6 +171,14 @@ export const AudioClipEnhanced: React.FC<AudioClipEnhancedProps> = ({
     },
     [clip.id, selectClip]
   );
+
+  // ✅ Check visibility AFTER all hooks are called (Rules of Hooks compliance)
+  const isVisible = clipLeft + clipWidth > 0 && clipLeft < window.innerWidth;
+
+  // Prevent rendering if not visible (performance optimization)
+  if (!isVisible) {
+    return null;
+  }
 
   return (
     <ContextMenu>
