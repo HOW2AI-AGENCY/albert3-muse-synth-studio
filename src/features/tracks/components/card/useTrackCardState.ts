@@ -134,7 +134,11 @@ export const useTrackCardState = (track: Track) => {
   }, [displayedVersion.id]);
 
   const operationTargetVersion = useMemo(() => {
-    return displayedVersion;
+    return {
+      ...displayedVersion,
+      versionNumber: displayedVersion.versionNumber,
+      isMasterVersion: displayedVersion.isMasterVersion,
+    };
   }, [displayedVersion]);
 
   const isCurrentTrack = currentTrack?.id === displayedVersion.id;

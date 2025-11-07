@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrackActionsMenu } from '@/features/tracks/components/shared/TrackActionsMenu';
+import { UnifiedTrackActionsMenu } from '@/components/tracks/shared/TrackActionsMenu.unified';
 
 interface Version {
   id: string;
@@ -18,6 +18,8 @@ interface TrackCardActionsProps {
   operationTargetId: string;
   operationTargetVersion: {
     audio_url?: string;
+    versionNumber?: number;
+    isMasterVersion?: boolean;
   };
   onLikeClick: () => void;
   onDownloadClick: () => void;
@@ -39,6 +41,7 @@ export const TrackCardActions = React.memo(({
   hasVocals,
   isLiked,
   operationTargetId,
+  operationTargetVersion,
   onLikeClick,
   onDownloadClick,
   onShareClick,
@@ -51,17 +54,23 @@ export const TrackCardActions = React.memo(({
   onCreatePersona,
 }: TrackCardActionsProps) => {
   return (
-    <TrackActionsMenu
+    <UnifiedTrackActionsMenu
       trackId={trackId}
       trackStatus={trackStatus}
       trackMetadata={trackMetadata}
+      currentVersionId={operationTargetId}
+      versionNumber={operationTargetVersion?.versionNumber}
+      isMasterVersion={operationTargetVersion?.isMasterVersion ?? false}
+      variant="compact"
+      showQuickActions={true}
+      layout="flat"
+      enableAITools={true}
       isPublic={isPublic ?? false}
       hasVocals={hasVocals ?? false}
       isLiked={isLiked}
-      operationTargetId={operationTargetId}
-      onLikeClick={onLikeClick}
-      onDownloadClick={onDownloadClick}
-      onShareClick={onShareClick}
+      onLike={onLikeClick}
+      onDownload={onDownloadClick}
+      onShare={onShareClick}
       onTogglePublic={onTogglePublic}
       onDescribeTrack={onDescribeTrack}
       onSeparateStems={onSeparateStems}
@@ -69,7 +78,6 @@ export const TrackCardActions = React.memo(({
       onCover={onCover}
       onAddVocal={onAddVocal}
       onCreatePersona={onCreatePersona}
-      variant="compact"
     />
   );
 });
