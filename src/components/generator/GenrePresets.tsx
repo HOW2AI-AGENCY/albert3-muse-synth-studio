@@ -1,12 +1,13 @@
+import { memo, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 import {
-  Music, 
-  Disc3, 
-  Radio, 
-  Zap, 
+  Music,
+  Disc3,
+  Radio,
+  Zap,
   Headphones,
   Piano,
   Guitar,
@@ -128,20 +129,21 @@ interface GenrePresetsProps {
   }) => void;
 }
 
-export function GenrePresets({ onSelect }: GenrePresetsProps) {
-  const handlePresetClick = (preset: GenrePreset) => {
+export const GenrePresets = memo(({ onSelect }: GenrePresetsProps) => {
+  // ✅ P0 OPTIMIZATION: Stable callback reference
+  const handlePresetClick = useCallback((preset: GenrePreset) => {
     onSelect({
       styleTags: preset.styleTags,
       mood: preset.mood,
       promptSuggestion: preset.promptSuggestion
     });
-    
+
     // Track genre selection
     AnalyticsService.recordEvent({
       eventType: 'genre_selected',
       metadata: { genre: preset.name, id: preset.id }
     });
-  };
+  }, [onSelect]);
   
   return (
     <div className="space-y-3">
@@ -206,4 +208,6 @@ export function GenrePresets({ onSelect }: GenrePresetsProps) {
       </Carousel>
     </div>
   );
-}
+});
+
+GenrePresets.displayName = 'GenrePresets';

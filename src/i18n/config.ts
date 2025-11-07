@@ -6,6 +6,7 @@
 
 import enTranslations from './locales/en.json';
 import ruTranslations from './locales/ru.json';
+import { logger } from '@/utils/logger';
 
 /**
  * Supported languages
@@ -137,7 +138,7 @@ export const translate = (
   const translation = getNestedValue(translations[lang], key);
 
   if (typeof translation !== 'string') {
-    console.warn(`Translation not found: ${key} (${lang})`);
+    logger.warn(`Translation not found: ${key} (${lang})`, 'i18n', { key, lang });
     return key;
   }
 

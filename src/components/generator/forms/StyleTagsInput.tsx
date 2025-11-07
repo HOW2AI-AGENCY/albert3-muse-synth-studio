@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TagsCarousel } from '@/components/generator/TagsCarousel';
@@ -18,16 +18,33 @@ export const StyleTagsInput = memo(({
   onNegativeTagsChange,
   isGenerating,
 }: StyleTagsInputProps) => {
+  // ✅ P0 OPTIMIZATION: Stable callback references
+  const handleTagClick = useCallback((tag: string) => {
+    const currentTags = tags.split(',').map(t => t.trim()).filter(Boolean);
+    if (!currentTags.includes(tag)) {
+      onTagsChange([...currentTags, tag].join(', '));
+    }
+  }, [tags, onTagsChange]);
+
+  const handleTagsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    if (newValue.length <= 200) {
+      onTagsChange(newValue);
+    }
+  }, [onTagsChange]);
+
+  const handleNegativeTagsChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    if (newValue.length <= 200) {
+      onNegativeTagsChange(newValue);
+    }
+  }, [onNegativeTagsChange]);
+
   return (
     <div className="space-y-3">
       {/* Inspiration Tags Carousel */}
-      <TagsCarousel 
-        onTagClick={(tag: string) => {
-          const currentTags = tags.split(',').map(t => t.trim()).filter(Boolean);
-          if (!currentTags.includes(tag)) {
-            onTagsChange([...currentTags, tag].join(', '));
-          }
-        }} 
+      <TagsCarousel
+        onTagClick={handleTagClick}
         disabled={isGenerating}
       />
 
@@ -41,12 +58,7 @@ export const StyleTagsInput = memo(({
           type="text"
           placeholder="rock, energetic, guitar"
           value={tags}
-          onChange={(e) => {
-            const newValue = e.target.value;
-            if (newValue.length <= 200) {
-              onTagsChange(newValue);
-            }
-          }}
+          onChange={handleTagsChange}
           className="h-8 text-sm"
           disabled={isGenerating}
           maxLength={200}
@@ -63,12 +75,7 @@ export const StyleTagsInput = memo(({
           type="text"
           placeholder="slow, acoustic"
           value={negativeTags}
-          onChange={(e) => {
-            const newValue = e.target.value;
-            if (newValue.length <= 200) {
-              onNegativeTagsChange(newValue);
-            }
-          }}
+          onChange={handleNegativeTagsChange}
           className="h-8 text-sm"
           disabled={isGenerating}
           maxLength={200}
