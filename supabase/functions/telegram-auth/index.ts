@@ -5,6 +5,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { logger } from '../_shared/logger.ts';
 // Using Web Crypto API for HMAC verification
 
 const corsHeaders = {
@@ -75,7 +76,7 @@ async function verifyTelegramInitData(initData: string, botToken: string): Promi
     // Compare case-insensitive
     return calculatedHash.toLowerCase() === providedHash.toLowerCase();
   } catch (error) {
-    console.error('❌ [TELEGRAM-AUTH] Verification error:', error);
+    logger.error('Telegram initData verification error', error instanceof Error ? error : new Error(String(error)), 'telegram-auth');
     return false;
   }
 }
@@ -89,7 +90,7 @@ serve(async (req) => {
   try {
     const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
     if (!botToken) {
-      console.error('❌ [TELEGRAM-AUTH] TELEGRAM_BOT_TOKEN not configured');
+      logger.error('TELEGRAM_BOT_TOKEN not configured', new Error('Environment variable missing'), 'telegram-auth');
       return new Response(
         JSON.stringify({ error: 'Server configuration error' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -105,19 +106,25 @@ serve(async (req) => {
       );
     }
 
-    console.log(`🔐 [TELEGRAM-AUTH] Verifying user: ${user.id} (${user.first_name})`);
+    logger.info('Verifying Telegram user', 'telegram-auth', {
+      telegramId: user.id,
+      firstName: user.first_name,
+      username: user.username
+    });
 
     // Verify initData signature
     const isValid = await verifyTelegramInitData(initData, botToken);
     if (!isValid) {
-      console.error('❌ [TELEGRAM-AUTH] Invalid initData signature');
+      logger.error('Invalid Telegram initData signature', new Error('HMAC verification failed'), 'telegram-auth', {
+        telegramId: user.id
+      });
       return new Response(
         JSON.stringify({ error: 'Invalid authentication data' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('✅ [TELEGRAM-AUTH] InitData verified');
+    logger.info('Telegram initData verified successfully', 'telegram-auth', { telegramId: user.id });
 
     // Initialize Supabase admin client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -135,7 +142,10 @@ serve(async (req) => {
     let userId: string;
 
     if (telegramUser) {
-      console.log(`♻️ [TELEGRAM-AUTH] Existing user found: ${telegramUser.id}`);
+      logger.info('Existing Telegram user found', 'telegram-auth', {
+        userId: telegramUser.id,
+        telegramId: user.id
+      });
       userId = telegramUser.id;
 
       // Update user metadata
@@ -151,7 +161,7 @@ serve(async (req) => {
         },
       });
     } else {
-      console.log(`🆕 [TELEGRAM-AUTH] Creating new user`);
+      logger.info('Creating new Telegram user', 'telegram-auth', { telegramId: user.id });
 
       // Create new user
       const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
@@ -171,7 +181,9 @@ serve(async (req) => {
       });
 
       if (createError || !newUser.user) {
-        console.error('❌ [TELEGRAM-AUTH] User creation failed:', createError);
+        logger.error('Telegram user creation failed', createError || new Error('User creation failed'), 'telegram-auth', {
+          telegramId: user.id
+        });
         return new Response(
           JSON.stringify({ error: 'Failed to create user' }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -179,7 +191,10 @@ serve(async (req) => {
       }
 
       userId = newUser.user.id;
-      console.log(`✅ [TELEGRAM-AUTH] User created: ${userId}`);
+      logger.info('Telegram user created successfully', 'telegram-auth', {
+        userId,
+        telegramId: user.id
+      });
     }
 
     // Generate session token
@@ -189,7 +204,9 @@ serve(async (req) => {
     });
 
     if (sessionError || !sessionData) {
-      console.error('❌ [TELEGRAM-AUTH] Session generation failed:', sessionError);
+      logger.error('Session generation failed', sessionError || new Error('Session generation failed'), 'telegram-auth', {
+        userId
+      });
       return new Response(
         JSON.stringify({ error: 'Failed to generate session' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -203,14 +220,19 @@ serve(async (req) => {
     });
 
     if (signInError || !signInData.session) {
-      console.error('❌ [TELEGRAM-AUTH] Sign in failed:', signInError);
+      logger.error('Telegram user sign in failed', signInError || new Error('Sign in failed'), 'telegram-auth', {
+        userId
+      });
       return new Response(
         JSON.stringify({ error: 'Failed to sign in' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`🎉 [TELEGRAM-AUTH] Authentication successful for user ${userId}`);
+    logger.info('Telegram authentication successful', 'telegram-auth', {
+      userId,
+      telegramId: user.id
+    });
 
     return new Response(
       JSON.stringify({

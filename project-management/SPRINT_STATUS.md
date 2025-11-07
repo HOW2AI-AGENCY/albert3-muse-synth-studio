@@ -55,14 +55,14 @@
 | 8 | Implement parallel asset downloads | P1 | ✅ Done | Claude | 100% | ✅ 4h |
 | 9 | Add database connection pooling | P1 | 📋 To Do | - | 0% | 1 day |
 | 10 | Add volume control to mobile mini player | P1 | ✅ Done | Claude | 100% | ✅ 1.5h |
-| 11 | Replace all console.log with logger | P1 | 🏗️ In Progress | Claude | 65% | Partial |
+| 11 | Replace all console.log with logger | P1 | 🏗️ In Progress | Claude | 75% | Partial |
 
 **Sprint Progress:** 2/5 tasks completed (40%)
 
 **Заметки:**
 - Task #8 завершен: Параллельная загрузка ассетов в webhooks (60% быстрее)
 - Task #10 завершен: Mobile volume control с Sheet drawer + inline desktop (⚡ Quick Win: 1.5h vs 4h estimate)
-- Task #11 частично выполнен: Большинство console.* заменены на logger в предыдущих коммитах (11/25 критичных файлов)
+- Task #11 частично выполнен: 40 console.* заменено в 5 критичных Edge Functions (stems-callback, generate-music, lyrics-callback, generate-minimax, telegram-auth)
 
 ---
 
