@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { logger } from "@/utils/logger";
 
+// Environment variables are loaded from .env.production as fallback in all modes
+// This is configured in vite.config.ts to ensure Lovable Cloud preview builds
+// have access to production credentials without requiring manual env var setup
 const rawEnv = {
   supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
   supabaseAnonKey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
