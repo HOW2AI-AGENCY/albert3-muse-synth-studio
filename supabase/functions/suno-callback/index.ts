@@ -149,9 +149,11 @@ const mainHandler = async (req: Request) => {
     }
 
     if (!track) {
-      logger.warn("No track found for taskId", "suno-callback", { taskId });
-      return new Response(JSON.stringify({ ok: true, message: "no_track" }), {
-        status: 200,
+      // ✅ FIX: Return 202 Accepted instead of 200 OK to trigger Suno retry
+      // 202 = "Accepted, but not yet processed" - tells Suno to retry later
+      logger.warn("No track found for taskId - returning 202 for retry", "suno-callback", { taskId });
+      return new Response(JSON.stringify({ ok: false, message: "track_not_found_yet", retry: true }), {
+        status: 202,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

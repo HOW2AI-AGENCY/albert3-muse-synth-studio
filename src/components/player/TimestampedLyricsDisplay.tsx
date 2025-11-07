@@ -9,7 +9,7 @@
  * @since 2025-11-05
  */
 
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import type { TimestampedWord } from '@/hooks/useTimestampedLyrics';
 
@@ -72,7 +72,9 @@ const groupWordsIntoLines = (words: TimestampedWord[]): LyricLine[] => {
 export const TimestampedLyricsDisplay = React.memo<TimestampedLyricsDisplayProps>(
   ({ timestampedLyrics, currentTime, onSeek, className, coverUrl }) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const activeLineRef = useRef<HTMLDivElement>(null);
+    const activeLineRef = useRef<HTMLDivElement | null>(null);
+    const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const lastScrolledIndexRef = useRef<number>(-1);
 
     // Группируем слова в строки
     const lines = useMemo(() => {
@@ -89,14 +91,40 @@ export const TimestampedLyricsDisplay = React.memo<TimestampedLyricsDisplayProps
       );
     }, [lines, currentTime]);
 
-    // Автоскролл к активной строке
-    useEffect(() => {
-      if (activeLineIndex !== -1 && activeLineRef.current) {
-        activeLineRef.current.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-        });
+    // ✅ FIX: Callback ref для установки активной строки
+    const setActiveLineRef = useCallback((element: HTMLDivElement | null, index: number) => {
+      if (index === activeLineIndex && element) {
+        activeLineRef.current = element;
       }
+    }, [activeLineIndex]);
+
+    // ✅ FIX: Debounced автоскролл к активной строке
+    useEffect(() => {
+      // Скролл только если индекс изменился (не на каждый frame)
+      if (activeLineIndex !== -1 && activeLineIndex !== lastScrolledIndexRef.current) {
+        // Очистить предыдущий timeout
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+        }
+
+        // Debounce scroll на 150ms чтобы избежать множественных scroll calls
+        scrollTimeoutRef.current = setTimeout(() => {
+          if (activeLineRef.current) {
+            activeLineRef.current.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+            });
+            lastScrolledIndexRef.current = activeLineIndex;
+          }
+        }, 150);
+      }
+
+      // Cleanup on unmount
+      return () => {
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+        }
+      };
     }, [activeLineIndex]);
 
     if (timestampedLyrics.length === 0) {
@@ -135,7 +163,7 @@ export const TimestampedLyricsDisplay = React.memo<TimestampedLyricsDisplayProps
               return (
                 <div
                   key={index}
-                  ref={isActive ? activeLineRef : null}
+                  ref={(el) => setActiveLineRef(el, index)}
                   className={cn(
                     'transition-all duration-300 ease-out text-center',
                     'transform-gpu will-change-transform',

@@ -26,7 +26,8 @@ interface UseGenerateMusicOptions {
   toast: ToastFunction;
 }
 
-const AUTO_CLEANUP_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+// ✅ FIX: Уменьшено с 5 минут до 30 секунд для лучшего UX
+const AUTO_CLEANUP_TIMEOUT = 30 * 1000; // 30 seconds (было 5 minutes)
 const DEBOUNCE_DELAY = 2000; // 2 seconds
 const POLLING_INTERVAL = 10000; // 10 seconds
 const MAX_POLLING_DURATION = 10 * 60 * 1000; // 10 minutes
@@ -164,7 +165,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
 
     // Auto-cleanup after timeout, then start polling as fallback
     cleanupTimerRef.current = setTimeout(() => {
-      logger.warn('Auto-cleaning stale subscription after 5 minutes, starting polling fallback', 'useGenerateMusic', { trackId });
+      logger.warn('Auto-cleaning stale subscription after 30 seconds, starting polling fallback', 'useGenerateMusic', { trackId });
       
       // Unsubscribe from realtime
       if (subscriptionRef.current) {
@@ -281,7 +282,34 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
         isCached: result.taskId === 'cached',
       });
 
+      // ✅ FIX: Validate taskId before proceeding
       const isCachedResult = result.taskId === 'cached';
+
+      if (!isCachedResult) {
+        // For new generations, taskId must be present and valid
+        if (!result.taskId || typeof result.taskId !== 'string' || result.taskId.trim().length === 0) {
+          const error = new Error('Invalid task ID received from server');
+          logger.error('[HOOK] Invalid task ID validation failed', error, 'useGenerateMusic', {
+            trackId: result.trackId,
+            taskId: result.taskId,
+            provider: effectiveProvider,
+          });
+
+          toast({
+            title: 'Ошибка генерации',
+            description: 'Сервер вернул некорректный идентификатор задачи. Попробуйте еще раз.',
+            variant: 'destructive',
+          });
+
+          cleanup();
+          return false;
+        }
+
+        logger.info('[HOOK] Task ID validation passed', 'useGenerateMusic', {
+          taskId: result.taskId,
+          taskIdLength: result.taskId.length,
+        });
+      }
 
       if (isCachedResult) {
         // Show toast with info about cached track

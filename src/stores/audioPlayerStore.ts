@@ -76,6 +76,9 @@ interface AudioPlayerState {
   availableVersions: TrackVersion[];
   currentVersionIndex: number;
 
+  // ✅ FIX: Request cancellation
+  _loadVersionsAbortController: AbortController | null;
+
   // ==========================================
   // PLAYBACK ACTIONS
   // ==========================================
@@ -153,6 +156,7 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
         shuffleHistory: [],
         availableVersions: [],
         currentVersionIndex: -1,
+        _loadVersionsAbortController: null,
 
         // ==========================================
         // PLAYBACK ACTIONS
@@ -192,10 +196,15 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             currentTime: 0,
             duration: track.duration || 0,
           });
-          
-          // ✅ Автоматически загружаем версии при воспроизведении
+
+          // ✅ FIX: Await loadVersions и handle errors
           const parentId = track.parentTrackId || track.id;
-          get().loadVersions(parentId);
+          get().loadVersions(parentId).catch((error) => {
+            logError('Failed to load versions in playTrack', error as Error, 'audioPlayerStore', {
+              trackId: track.id,
+              parentId
+            });
+          });
         },
 
         pause: () => {
@@ -275,7 +284,14 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
                 shuffleHistory: [...state.shuffleHistory, nextTrack.id],
               });
 
-              get().loadVersions(nextTrack.parentTrackId || nextTrack.id);
+              // ✅ FIX: Handle errors
+              const parentId = nextTrack.parentTrackId || nextTrack.id;
+              get().loadVersions(parentId).catch((error) => {
+                logError('Failed to load versions in playNext (shuffle)', error as Error, 'audioPlayerStore', {
+                  trackId: nextTrack.id,
+                  parentId
+                });
+              });
               return;
             } else if (state.repeatMode === 'all') {
               // ✅ All tracks played, restart shuffle if repeat all
@@ -302,7 +318,14 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               duration: nextTrack.duration || 0,
             });
 
-            get().loadVersions(nextTrack.parentTrackId || nextTrack.id);
+            // ✅ FIX: Handle errors
+            const parentId = nextTrack.parentTrackId || nextTrack.id;
+            get().loadVersions(parentId).catch((error) => {
+              logError('Failed to load versions in playNext (sequential)', error as Error, 'audioPlayerStore', {
+                trackId: nextTrack.id,
+                parentId
+              });
+            });
           } else if (state.repeatMode === 'all' && state.queue.length > 0) {
             // ✅ Repeat All: restart from beginning
             const firstTrack = state.queue[0];
@@ -314,7 +337,14 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               duration: firstTrack.duration || 0,
             });
 
-            get().loadVersions(firstTrack.parentTrackId || firstTrack.id);
+            // ✅ FIX: Handle errors
+            const parentId = firstTrack.parentTrackId || firstTrack.id;
+            get().loadVersions(parentId).catch((error) => {
+              logError('Failed to load versions in playNext (repeat all)', error as Error, 'audioPlayerStore', {
+                trackId: firstTrack.id,
+                parentId
+              });
+            });
           }
         },
 
@@ -337,9 +367,15 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               currentTime: 0,
               duration: prevTrack.duration || 0,
             });
-            
-            // ✅ FIX: Загрузить версии для нового трека
-            get().loadVersions(prevTrack.parentTrackId || prevTrack.id);
+
+            // ✅ FIX: Handle errors
+            const parentId = prevTrack.parentTrackId || prevTrack.id;
+            get().loadVersions(parentId).catch((error) => {
+              logError('Failed to load versions in playPrevious', error as Error, 'audioPlayerStore', {
+                trackId: prevTrack.id,
+                parentId
+              });
+            });
           } else {
             // Just restart current track
             set({ currentTime: 0 });
@@ -452,9 +488,22 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
         },
         
         loadVersions: async (trackId) => {
+          // ✅ FIX: Отменить предыдущий запрос если он еще выполняется
+          const state = get();
+          if (state._loadVersionsAbortController) {
+            state._loadVersionsAbortController.abort();
+            logInfo('Aborted previous loadVersions request', 'audioPlayerStore', {
+              previousTrackId: state.currentTrack?.id
+            });
+          }
+
+          // Создать новый AbortController для этого запроса
+          const abortController = new AbortController();
+          set({ _loadVersionsAbortController: abortController });
+
           try {
             logInfo('Loading versions for track', 'audioPlayerStore', { trackId });
-            
+
             // ✅ FIX 1: Проверяем, является ли trackId версией
             const supabase = (await import('@/integrations/supabase/client')).supabase;
             const { data: versionCheck } = await supabase
@@ -462,25 +511,48 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               .select('parent_track_id')
               .eq('id', trackId)
               .maybeSingle();
-            
+
+            // Проверить не был ли запрос отменен
+            if (abortController.signal.aborted) {
+              logInfo('loadVersions aborted after versionCheck', 'audioPlayerStore', { trackId });
+              return;
+            }
+
             // Если это версия, загружаем версии для parent трека
             const parentId = versionCheck?.parent_track_id || trackId;
-            
-            logInfo('Loading versions', 'audioPlayerStore', { 
+
+            logInfo('Loading versions', 'audioPlayerStore', {
               requestedTrackId: trackId,
               resolvedParentId: parentId,
               isVersion: !!versionCheck?.parent_track_id,
             });
-            
+
             // Загружаем все версии родительского трека
             const allVersions = await getTrackWithVersions(parentId);
-            
-            if (allVersions.length === 0) {
-              logInfo('No versions found', 'audioPlayerStore', { parentId });
-              set({ availableVersions: [], currentVersionIndex: -1 });
+
+            // ✅ FIX: Проверить не был ли запрос отменен перед установкой state
+            if (abortController.signal.aborted) {
+              logInfo('loadVersions aborted after getTrackWithVersions', 'audioPlayerStore', { trackId });
               return;
             }
-            
+
+            // ✅ FIX: Проверить что trackId все еще актуален (не переключились на другой трек)
+            const currentState = get();
+            const currentTrackParentId = currentState.currentTrack?.parentTrackId || currentState.currentTrack?.id;
+            if (currentTrackParentId !== parentId) {
+              logInfo('Track changed during loadVersions, discarding results', 'audioPlayerStore', {
+                requestedParentId: parentId,
+                currentTrackParentId,
+              });
+              return;
+            }
+
+            if (allVersions.length === 0) {
+              logInfo('No versions found', 'audioPlayerStore', { parentId });
+              set({ availableVersions: [], currentVersionIndex: -1, _loadVersionsAbortController: null });
+              return;
+            }
+
             // Преобразуем TrackWithVersions в TrackVersion
             const versions: TrackVersion[] = allVersions.map((v) => ({
               id: v.id,
@@ -491,27 +563,34 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               duration: v.duration,
               title: v.title,
             }));
-            
+
             // ✅ Находим мастер-версию
             const masterVersion = getMasterVersion(allVersions);
-            const currentVersionIndex = masterVersion 
+            const currentVersionIndex = masterVersion
               ? versions.findIndex(v => v.id === masterVersion.id)
               : 0;
-            
-            logInfo('Versions loaded', 'audioPlayerStore', { 
-              parentId, 
+
+            logInfo('Versions loaded', 'audioPlayerStore', {
+              parentId,
               count: versions.length,
               masterVersionId: masterVersion?.id,
               currentVersionIndex,
             });
-            
-            set({ 
+
+            set({
               availableVersions: versions,
               currentVersionIndex,
+              _loadVersionsAbortController: null,
             });
           } catch (error) {
+            // Игнорировать AbortError
+            if (error instanceof Error && error.name === 'AbortError') {
+              logInfo('loadVersions request aborted', 'audioPlayerStore', { trackId });
+              return;
+            }
+
             logError('Failed to load versions', error as Error, 'audioPlayerStore', { trackId });
-            set({ availableVersions: [], currentVersionIndex: -1 });
+            set({ availableVersions: [], currentVersionIndex: -1, _loadVersionsAbortController: null });
           }
         },
 
