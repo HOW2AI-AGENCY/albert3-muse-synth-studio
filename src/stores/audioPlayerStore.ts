@@ -22,6 +22,7 @@ import { logger } from '@/utils/logger';
 import { useRef } from 'react';
 import { getTrackWithVersions, getMasterVersion } from '@/features/tracks/api/trackVersions';
 import { logInfo, logError } from '@/utils/logger';
+import { toast } from 'sonner';
 
 export type RepeatMode = 'off' | 'one' | 'all';
 
@@ -158,13 +159,23 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
         // ==========================================
         playTrack: (track) => {
           const state = get();
-          
+
           // ✅ FIX: Проверить что audio_url существует
           if (!track.audio_url) {
             logger.error('Cannot play track without audio URL', new Error('Missing audio URL'), 'audioPlayerStore', {
               trackId: track.id,
               title: track.title,
+              status: track.status,
             });
+
+            // ✅ P2 FIX: User-friendly message based on track status
+            if (track.status === 'processing') {
+              toast.info('Трек еще генерируется, подождите немного');
+            } else if (track.status === 'failed') {
+              toast.error('Генерация трека завершилась с ошибкой');
+            } else {
+              toast.error('Аудио файл недоступен');
+            }
             return;
           }
           

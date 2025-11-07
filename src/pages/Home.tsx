@@ -18,6 +18,7 @@ import { TrackRow } from '@/components/tracks/TrackRow';
 // import { cn } from '@/lib/utils';
 import { useTranslation } from '@/i18n/LanguageContext';
 import type { FeedTab, UITrack, ContestInfo } from '@/types/suno-ui.types';
+import { logger } from '@/utils/logger';
 
 // Mock data - replace with actual API calls
 const MOCK_CONTESTS: ContestInfo[] = [
@@ -74,22 +75,22 @@ const Home = memo(() => {
   }, []);
 
   const handleSelectContest = useCallback((contestId: string) => {
-    console.log('Selected contest:', contestId);
+    logger.info('Selected contest', 'Home', { contestId });
     // TODO: Navigate to contest details
   }, []);
 
   const handlePlayTrack = useCallback((trackId: string) => {
-    console.log('Play track:', trackId);
+    logger.info('Play track', 'Home', { trackId });
     // TODO: Implement play functionality
   }, []);
 
   const handlePauseTrack = useCallback((trackId: string) => {
-    console.log('Pause track:', trackId);
+    logger.info('Pause track', 'Home', { trackId });
     // TODO: Implement pause functionality
   }, []);
 
   const handleOpenInspector = useCallback((trackId: string) => {
-    console.log('Open inspector:', trackId);
+    logger.info('Open inspector', 'Home', { trackId });
     // TODO: Open track inspector
   }, []);
 
