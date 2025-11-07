@@ -15,7 +15,7 @@ import { Loader2, TrendingUp, Heart, Sparkles } from 'lucide-react';
 import { PromoBanner } from '@/components/feed/PromoBanner';
 import { ContestSection } from '@/components/feed/ContestSection';
 import { TrackRow } from '@/components/tracks/TrackRow';
-import { cn } from '@/lib/utils';
+// import { cn } from '@/lib/utils';
 import { useTranslation } from '@/i18n/LanguageContext';
 import type { FeedTab, UITrack, ContestInfo } from '@/types/suno-ui.types';
 
@@ -44,7 +44,7 @@ const MOCK_CONTESTS: ContestInfo[] = [
 ];
 
 const Home = memo(() => {
-  const { t } = useTranslation();
+  // const t = useTranslation();
   const [activeTab, setActiveTab] = useState<FeedTab>('for-you');
   const [tracks, setTracks] = useState<UITrack[]>([]);
   const [isLoading, setIsLoading] = useState(true);
