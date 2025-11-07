@@ -33,7 +33,15 @@
 
 ### Week 2 (Nov 7-14)
 
-#### Day 8-9: CRON Activation & Monitoring
+#### ✅ Day 8 (Nov 7): CRITICAL Player Fixes (P0)
+- [x] P0-1: Fixed FullScreenPlayer infinite loop (HOTFIX v2 pattern)
+- [x] P0-2: Added MiniPlayer desktop volume control
+- [x] P0-3: Implemented LyricsDisplay fallback to regular lyrics
+- [x] Created comprehensive player audit document (22 issues identified)
+- [x] TypeScript type checking passed
+- **Commit**: `4012b5b` - 3 critical fixes, 5 files changed
+
+#### Day 9: CRON Activation & Monitoring
 - [ ] Activate pg_cron + pg_net extensions
 - [ ] Deploy CRON jobs migration
 - [ ] Monitor first archiving run
@@ -227,5 +235,5 @@ Sprint Progress (Story Points)
 
 ---
 
-**Last Updated**: 2025-11-04 (Day 5)  
-**Next Update**: 2025-11-07 (End of Week 1)
+**Last Updated**: 2025-11-07 (Day 8)
+**Next Update**: 2025-11-11 (End of Week 2)

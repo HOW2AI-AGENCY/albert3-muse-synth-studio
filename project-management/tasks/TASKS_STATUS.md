@@ -1,23 +1,66 @@
 # 📊 Статус всех задач проекта
 
-**Последнее обновление**: 16 октября 2025 (Sprint 24 закрыт)
-**Текущий Sprint**: Подготовка к Sprint 25 (kick-off)
+**Последнее обновление**: 7 ноября 2025 (Sprint 32, Day 8)
+**Текущий Sprint**: Sprint 32 - Testing & Reliability
 **Версия проекта**: 2.6.2
-**Прогресс Sprint 24**: 5/5 задач (100%) 🟢
+**Прогресс Sprint 32**: 71% 🟡 (Week 1 complete, Week 2 in progress)
 
 ---
 
-> Для оперативной информации используйте также [STATUS_DASHBOARD.md](STATUS_DASHBOARD.md) и [Developer Control Center](../../docs/DEVELOPER_DASHBOARD.md).
+> Для оперативной информации используйте также [SPRINT_32_STATUS.md](../SPRINT_32_STATUS.md) и [Developer Control Center](../../docs/DEVELOPER_DASHBOARD.md).
 
-## 🧭 Подготовка к Sprint 25
+## 🚀 Недавние обновления (7 ноября 2025)
 
-- **Kick-off:** запланирован на 18 октября 2025.
-- **Кандидаты в спринт:** `PERF-001`, `AI-002`, `DATA-002`, `UX-002` (см. backlog).
-- **Действия перед стартом:**
-  1. Подтвердить объём PERF-001 и доступность метрик.
-  2. Обновить оценку по AI-002 (зависимости Suno и потребление кредитов).
-  3. Провести ревью Supabase edge-функций для DATA-002.
-  4. Подготовить PRD по UX-002 и синхронизировать дизайн.
+### PLAYER-001: Critical Player Fixes (P0) ✅
+**Дата завершения**: 7 ноября 2025
+**Время**: 3 часа
+**Статус**: ✅ ЗАВЕРШЕНО
+**Приоритет**: 🔴 CRITICAL (P0)
+
+**Реализовано**:
+- ✅ P0-1: Fixed FullScreenPlayer infinite loop in volume control (applied HOTFIX v2 pattern)
+- ✅ P0-2: Added desktop volume control to MiniPlayer (compact design, md: breakpoint)
+- ✅ P0-3: Implemented LyricsDisplay fallback to regular lyrics (track.lyrics)
+- ✅ Created comprehensive player audit: `docs/player-comprehensive-audit-2025-11-07.md`
+  - Analyzed 8 player components (desktop + mobile)
+  - Identified 22 issues across P0-P3 priorities
+  - Cross-platform feature parity comparison
+  - Detailed reproduction steps and fix estimates
+
+**Результат**:
+- Eliminated "Maximum update depth exceeded" error in FullScreenPlayer
+- Volume control now available in MiniPlayer on desktop (previously only in full player)
+- Lyrics fallback prevents "Текст не найден" when regular lyrics exist
+- TypeScript type checking passed
+- Commit: `4012b5b` (5 files changed, 1171 insertions)
+
+**Технические детали**:
+- Applied useRef pattern to track volume threshold crossing
+- Prevented infinite loops with prevVolumeForMuteRef.current
+- Synchronized isMuted state ONLY when volume crosses zero
+- Compact slider design (w-20) for MiniPlayer
+- Regular lyrics displayed with whitespace-pre-line formatting
+
+---
+
+## 🧭 Sprint 32 - Testing & Reliability (В ПРОЦЕССЕ)
+
+**Период**: 2025-10-31 - 2025-11-14 (2 weeks)
+**Статус**: 🟡 IN PROGRESS (Week 2, Day 8)
+**Прогресс**: 71%
+
+**Основные цели**:
+- Edge Function Coverage: 80% ✅
+- E2E Critical Flows: 5 flows ✅
+- E2E Total Tests: 20 tests 🟡 (14/20)
+- CRON Jobs Deployed: 5 jobs ❌ (blocked)
+- CI/CD Pipeline: 1 workflow 🔴 (not started)
+
+**Недавние достижения**:
+- Day 8: PLAYER-001 - Critical P0 player fixes (3h) ✅
+- Day 1-4: Edge Function tests + E2E flows (15 story points) ✅
+
+**См. также**: [SPRINT_32_STATUS.md](../SPRINT_32_STATUS.md) для детальной информации.
 
 ## 🚀 Sprint 24 - Stabilization & Delivery (ЗАВЕРШЁН)
 **Период**: 2 октября 2025 - 15 октября 2025
