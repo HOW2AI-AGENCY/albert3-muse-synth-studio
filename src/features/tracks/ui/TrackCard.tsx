@@ -54,6 +54,7 @@ const TrackCardComponent = React.memo(({
     hasStems,
     selectedVersionIndex,
     isLiked,
+    likeCount, // ✅ FIXED: Added missing likeCount from useTrackCard hook
     versionCount,
     masterVersion,
     displayedVersion,
@@ -153,7 +154,7 @@ const TrackCardComponent = React.memo(({
             status={track.status}
             progressPercent={track.progress_percent ?? undefined}
             createdAt={track.created_at}
-            likeCount={track.like_count}
+            likeCount={likeCount} // ✅ FIXED: Use likeCount from hook, not track.like_count
             isMasterVersion={displayedVersion.isMasterVersion}
             onVersionChange={handleVersionChange}
           />
