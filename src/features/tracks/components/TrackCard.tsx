@@ -65,6 +65,7 @@ const TrackCardComponent = memo(({
     hasStems,
     selectedVersionIndex,
     isLiked,
+    likeCount, // ✅ FIXED: Added missing likeCount from hook
     versionCount,
     masterVersion,
     displayedVersion,
