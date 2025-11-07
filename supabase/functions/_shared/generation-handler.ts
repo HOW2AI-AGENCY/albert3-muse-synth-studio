@@ -237,7 +237,37 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
       throw new Error(`Failed to update track with task ID: ${error.message}`);
     }
 
-    logger.info(`✅ Track updated with ${taskIdField}`, { trackId, taskId });
+    // ✅ FIX: Verify that taskId was actually persisted
+    const { data: verifyTrack, error: verifyError } = await this.supabase
+      .from('tracks')
+      .select('suno_id, mureka_task_id, metadata')
+      .eq('id', trackId)
+      .single();
+
+    if (verifyError) {
+      logger.error(`❌ Failed to verify track update`, { error: verifyError, trackId, taskId });
+      throw new Error(`Failed to verify task ID update: ${verifyError.message}`);
+    }
+
+    // Check both column and metadata storage
+    const storedInColumn = this.providerName === 'suno'
+      ? verifyTrack?.suno_id === taskId
+      : verifyTrack?.mureka_task_id === taskId;
+
+    const storedInMetadata = (verifyTrack?.metadata as any)?.[taskIdField] === taskId;
+
+    if (!storedInColumn && !storedInMetadata) {
+      const errorMsg = `Task ID not persisted correctly. Column: ${storedInColumn}, Metadata: ${storedInMetadata}`;
+      logger.error(`❌ ${errorMsg}`, { trackId, taskId, verifyTrack });
+      throw new Error(errorMsg);
+    }
+
+    logger.info(`✅ Track updated and verified with ${taskIdField}`, {
+      trackId,
+      taskId,
+      storedInColumn,
+      storedInMetadata,
+    });
   }
 
   /**
