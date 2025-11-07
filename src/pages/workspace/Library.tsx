@@ -852,7 +852,8 @@ const Library: React.FC = () => {
     <SelectedTracksProvider>
       <div className="relative">
         <LibraryContent />
-        <SelectionToolbar className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50" />
+        {/* ✅ FIX P0.2: Removed z-50, now handled by SelectionToolbar component */}
+        <SelectionToolbar />
       </div>
     </SelectedTracksProvider>
   );
