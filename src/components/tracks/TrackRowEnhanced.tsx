@@ -158,6 +158,7 @@ export const TrackRowEnhanced = memo<TrackRowEnhancedProps>(
         onClick={handleRowClick}
         className={cn(
           'group relative flex items-center gap-3 p-3 rounded-lg transition-all duration-200',
+          'min-w-[280px] min-h-[76px]', // Mobile-friendly minimum dimensions
           'hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
           'border border-transparent hover:border-accent',
           isSelected && 'bg-accent/30 border-accent',

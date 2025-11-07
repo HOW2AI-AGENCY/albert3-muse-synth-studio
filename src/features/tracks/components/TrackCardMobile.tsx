@@ -63,10 +63,11 @@ export const TrackCardMobile = memo(({ track, onClick, onMoreClick }: TrackCardM
   }, [onMoreClick]);
 
   return (
-    <Card 
+    <Card
       onClick={onClick}
       className={cn(
         "overflow-hidden hover:shadow-lg transition-all h-auto cursor-pointer",
+        "min-w-[280px] min-h-[88px]", // Mobile-friendly minimum dimensions
         isCurrentTrack && "ring-2 ring-primary"
       )}
     >

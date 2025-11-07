@@ -119,6 +119,8 @@ const TrackCardComponent = memo(({
         className={cn(
           'group relative overflow-hidden cursor-pointer transition-all duration-300',
           'border-border/50 bg-card hover:bg-muted/30 card-elevated',
+          'min-w-[280px] sm:min-w-[300px] md:min-w-[320px]', // Mobile-friendly minimum width
+          'min-h-[380px] sm:min-h-[400px]', // Minimum height for usability
           isVisible ? 'h-full flex flex-col opacity-100' : 'h-full flex flex-col opacity-0',
           isCurrentTrack && 'ring-2 ring-primary/80 shadow-glow-primary-strong',
           className

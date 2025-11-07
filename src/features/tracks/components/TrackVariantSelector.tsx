@@ -1,5 +1,9 @@
+/**
+ * @redesigned 2025-11-07 - Modern UI with improved icons, animations, and mobile support
+ */
+
 import React, { useCallback, useState, useRef, useEffect } from 'react';
-import { Star } from 'lucide-react';
+import { Star, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTrackVersions } from '@/features/tracks/hooks';
@@ -88,7 +92,7 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
   const isActive = (index: number) => index === currentVersionIndex;
 
   return (
-    <div ref={containerRef} className="flex items-center gap-1">
+    <div ref={containerRef} className="flex items-center gap-1.5">
       {/* Кнопка установки мастер-версии */}
       <Tooltip>
         <TooltipTrigger asChild>
@@ -98,22 +102,25 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
             onClick={handleSetMaster}
             disabled={isMasterVersion || isSettingMaster}
             className={cn(
-              "h-7 w-7 p-0",
-              "transition-all duration-200",
-              isMasterVersion 
-                ? "text-amber-500 hover:text-amber-600" 
-                : "text-muted-foreground hover:text-amber-500 opacity-60 hover:opacity-100"
+              "h-8 w-8 p-0 rounded-full min-w-[32px] min-h-[32px]",
+              "transition-all duration-300",
+              isMasterVersion
+                ? "bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-950/40 dark:to-orange-950/40 text-amber-600 dark:text-amber-400 shadow-sm"
+                : "text-muted-foreground hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/20 opacity-60 hover:opacity-100"
             )}
           >
-            <Star 
-              className={cn(
-                "h-4 w-4",
-                isMasterVersion && "fill-current"
-              )} 
-            />
+            {isMasterVersion ? (
+              <Sparkles
+                className="h-4.5 w-4.5 fill-amber-500 text-amber-500 animate-pulse"
+              />
+            ) : (
+              <Star
+                className="h-4 w-4"
+              />
+            )}
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="left">
+        <TooltipContent side="left" className="font-medium">
           {isMasterVersion ? 'Мастер-версия' : 'Установить как мастер-версию'}
         </TooltipContent>
       </Tooltip>
@@ -145,76 +152,98 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
                   setIsOpen(true);
                 }}
                 className={cn(
-                  "h-7 px-2 rounded-md",
-                  "flex items-center gap-1",
-                  "bg-background/95 text-xs font-semibold",
-                  "border border-border/50 shadow-sm transition-all",
-                  "hover:bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  "h-8 px-2.5 rounded-lg min-w-[44px]",
+                  "flex items-center gap-1.5",
+                  "text-xs font-bold",
+                  "border shadow-sm transition-all duration-200",
+                  "hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/50",
+                  isMasterVersion
+                    ? "bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-950/40 dark:to-orange-950/40 border-amber-200 dark:border-amber-800 hover:from-amber-200 hover:to-orange-200 dark:hover:from-amber-950/60 dark:hover:to-orange-950/60"
+                    : "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-blue-200/50 dark:border-blue-800/50 hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-950/50 dark:hover:to-indigo-950/50"
                 )}
                 aria-label={`Активная версия: V${displayIndex}${isMasterVersion ? ' (MASTER)' : ''}`}
                 aria-haspopup="true"
                 aria-expanded={false}
               >
+                {isMasterVersion && (
+                  <Sparkles className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+                )}
                 <span
                   className={cn(
-                    "inline-flex h-5 min-w-[22px] items-center justify-center rounded-sm px-1",
+                    "inline-flex items-center justify-center font-bold",
                     isMasterVersion
-                      ? "bg-[#4285F4] text-white"
-                      : "bg-muted text-foreground"
+                      ? "text-amber-700 dark:text-amber-400"
+                      : "text-blue-700 dark:text-blue-400"
                   )}
                 >
                   {`V${displayIndex}`}
                 </span>
                 {isMasterVersion && (
-                  <span className="ml-0.5 text-[10px] font-bold tracking-wide text-amber-500">MASTER</span>
+                  <span className="text-[9px] font-extrabold tracking-wider text-amber-600 dark:text-amber-500 uppercase">Master</span>
                 )}
               </button>
             </TooltipTrigger>
-            <TooltipContent side="left">Активная версия: V{displayIndex}{isMasterVersion ? ' · MASTER' : ''}</TooltipContent>
+            <TooltipContent side="left" className="font-medium">
+              Активная версия: V{displayIndex}{isMasterVersion ? ' · MASTER' : ''}
+            </TooltipContent>
           </Tooltip>
         )}
 
         {isOpen && (
-          <div className="flex items-center gap-1.5 transition-all">
-            {Array.from({ length: totalVersions }).map((_, index) => (
-              <Tooltip key={index}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      const targetIndex = index < totalVersions ? index : 0;
-                      onVersionChange(targetIndex);
-                      // После выбора — сворачиваем обратно
-                      setIsOpen(false);
-                    }}
-                    onBlur={(e) => {
-                      // Если фокус уходит из группы — закрываем
-                      if (!e.relatedTarget || !(containerRef.current?.contains(e.relatedTarget as Node))) {
+          <div className="flex items-center gap-2 transition-all animate-in fade-in slide-in-from-left-2 duration-200">
+            {Array.from({ length: totalVersions }).map((_, index) => {
+              const isThisActive = isActive(index);
+              const versionAtIndex = allVersions[index];
+              const isThisMaster = versionAtIndex?.isMasterVersion;
+
+              return (
+                <Tooltip key={index}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={isThisActive ? "default" : "outline"}
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        const targetIndex = index < totalVersions ? index : 0;
+                        onVersionChange(targetIndex);
+                        // После выбора — сворачиваем обратно
                         setIsOpen(false);
-                      }
-                    }}
-                    aria-label={index === 0 ? 'Версия 1 (Оригинал)' : `Версия ${index + 1}`}
-                    aria-pressed={isActive(index)}
-                    className={cn(
-                      "h-7 w-7 p-0 rounded-full text-xs font-bold",
-                      "transition-all duration-200 ease-in-out",
-                      "border border-border/60 shadow-sm",
-                      isActive(index) 
-                        ? "bg-[#4285F4] text-white border-transparent hover:bg-[#3a78dc]"
-                        : "bg-background/90 text-muted-foreground hover:bg-background",
-                    )}
-                  >
-                    {index + 1}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left">
-                  {index === 0 ? 'Оригинал' : `Вариант ${index}`}
-                </TooltipContent>
-              </Tooltip>
-            ))}
+                      }}
+                      onBlur={(e) => {
+                        // Если фокус уходит из группы — закрываем
+                        if (!e.relatedTarget || !(containerRef.current?.contains(e.relatedTarget as Node))) {
+                          setIsOpen(false);
+                        }
+                      }}
+                      aria-label={index === 0 ? 'Версия 1 (Оригинал)' : `Версия ${index + 1}`}
+                      aria-pressed={isThisActive}
+                      className={cn(
+                        "h-9 w-9 p-0 rounded-full text-sm font-bold relative min-w-[36px] min-h-[36px]",
+                        "transition-all duration-200 ease-in-out",
+                        "border-2 shadow-sm",
+                        isThisActive
+                          ? isThisMaster
+                            ? "bg-gradient-to-br from-amber-500 to-orange-500 text-white border-transparent hover:from-amber-600 hover:to-orange-600 shadow-lg scale-110"
+                            : "bg-gradient-to-br from-blue-500 to-indigo-500 text-white border-transparent hover:from-blue-600 hover:to-indigo-600 shadow-lg scale-110"
+                          : isThisMaster
+                            ? "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-950/50"
+                            : "bg-background/90 text-muted-foreground border-border/60 hover:bg-background hover:border-primary/50"
+                      )}
+                    >
+                      {isThisMaster && (
+                        <Sparkles className="absolute -top-1 -right-1 h-3 w-3 fill-amber-500 text-amber-500" />
+                      )}
+                      {index + 1}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="font-medium">
+                    {index === 0 ? 'Оригинал' : `Вариант ${index}`}
+                    {isThisMaster && <span className="ml-1 text-amber-500">★ Master</span>}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
           </div>
         )}
       </div>

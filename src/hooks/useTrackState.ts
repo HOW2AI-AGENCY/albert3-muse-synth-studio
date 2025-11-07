@@ -159,16 +159,16 @@ export const useTrackState = (track: Track, options: UseTrackStateOptions = {}) 
     );
   }, [allVersions, selectedVersionIndex, mainVersion, track]);
 
-  // Check if displayedVersion is a real version (not fallback to track)
+  // Check if displayedVersion is a real version from track_versions table
   const isRealVersion = useMemo(() => {
     return allVersions.some(v => v.id === displayedVersion.id);
   }, [allVersions, displayedVersion.id]);
 
-  // Likes applied to active version - ONLY if it's a real version
-  // For tracks without versions, we skip like functionality to avoid FK constraint violation
+  // ✅ SIMPLIFIED: Use ONLY version likes system
+  // Tracks without versions in track_versions will have disabled like functionality
   const { isLiked, likeCount, toggleLike } = useTrackVersionLike(
     isRealVersion ? displayedVersion.id : null,
-    0 // Initial like count (will be loaded from DB)
+    displayedVersion.like_count ?? 0
   );
 
   // Context menu target is the displayed version
@@ -190,24 +190,40 @@ export const useTrackState = (track: Track, options: UseTrackStateOptions = {}) 
 
   const handleVersionChange = useCallback(
     (versionIndex: number) => {
-      // Ensure versionIndex is valid
-      const validVersions = allVersions.filter((v) => v.audio_url);
-      const maxIndex = Math.max(0, validVersions.length - 1);
-      const clamped = Math.max(0, Math.min(versionIndex, maxIndex));
-      const newVersion = validVersions[clamped];
-
-      if (!newVersion) {
+      // ✅ FIX: Don't filter - use allVersions directly to maintain index consistency
+      if (versionIndex < 0 || versionIndex >= allVersions.length) {
         logger.error(
-          'Version change failed - no valid version',
+          'Version change failed - index out of bounds',
           new Error('Invalid version index'),
           'useTrackState',
-          { trackId: track.id, versionIndex, maxIndex }
+          { trackId: track.id, versionIndex, maxIndex: allVersions.length - 1 }
         );
         return;
       }
 
-      // Update UI state
-      setSelectedVersionIndex(clamped);
+      const newVersion = allVersions[versionIndex];
+
+      if (!newVersion) {
+        logger.error(
+          'Version change failed - no version at index',
+          new Error('Missing version'),
+          'useTrackState',
+          { trackId: track.id, versionIndex }
+        );
+        return;
+      }
+
+      if (!newVersion.audio_url) {
+        logger.warn(
+          'Version change skipped - no audio URL',
+          'useTrackState',
+          { trackId: track.id, versionId: newVersion.id, versionIndex }
+        );
+        return;
+      }
+
+      // Update UI state with the exact index from allVersions
+      setSelectedVersionIndex(versionIndex);
 
       // Switch audio if this track is currently active in the player
       const isThisTrackActive =
