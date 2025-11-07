@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
 import type { PermissionsDialogProps, TrackVisibility } from '@/types/suno-ui.types';
 
@@ -91,7 +92,7 @@ export const PermissionsDialog = memo<PermissionsDialogProps>(({
       onOpenChange(false);
     } catch (error) {
       toast.error('Failed to update permissions');
-      console.error('Permission update error:', error);
+      logger.error('Permission update error', error instanceof Error ? error : new Error(String(error)), 'PermissionsDialog');
     } finally {
       setIsSaving(false);
     }

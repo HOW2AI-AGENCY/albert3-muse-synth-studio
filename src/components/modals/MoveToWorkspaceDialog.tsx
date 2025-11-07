@@ -23,6 +23,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
 import type { MoveToWorkspaceDialogProps, WorkspaceOption } from '@/types/suno-ui.types';
 
@@ -58,7 +59,7 @@ export const MoveToWorkspaceDialog = memo<MoveToWorkspaceDialogProps>(({
       onOpenChange(false);
     } catch (error) {
       toast.error('Failed to move track');
-      console.error('Move track error:', error);
+      logger.error('Move track error', error instanceof Error ? error : new Error(String(error)), 'MoveToWorkspaceDialog');
     } finally {
       setIsMoving(false);
     }
