@@ -39,39 +39,39 @@ interface UseResponsiveGridOptions {
  */
 const GRID_CONFIGS: Record<string, ResponsiveGridConfig> = {
   mobile: {
-    minCardWidth: 140,
-    maxCardWidth: 200,
-    idealCardWidth: 160,
+    minCardWidth: 280, // ✅ FIXED: Match TrackCard min-w-[280px]
+    maxCardWidth: 360, // ✅ Increased for better mobile experience
+    idealCardWidth: 320,
+    minColumns: 1, // ✅ Single column on small screens
+    maxColumns: 2, // ✅ Max 2 columns on mobile
+  },
+  tablet: {
+    minCardWidth: 320, // ✅ FIXED: Match TrackCard sm:min-w-[320px]
+    maxCardWidth: 400,
+    idealCardWidth: 350,
     minColumns: 2,
     maxColumns: 3,
   },
-  tablet: {
-    minCardWidth: 180,
-    maxCardWidth: 240,
-    idealCardWidth: 200,
+  desktop: {
+    minCardWidth: 320,
+    maxCardWidth: 420,
+    idealCardWidth: 360,
     minColumns: 3,
     maxColumns: 4,
   },
-  desktop: {
-    minCardWidth: 220,
-    maxCardWidth: 280,
-    idealCardWidth: 250,
+  wide: {
+    minCardWidth: 320,
+    maxCardWidth: 420,
+    idealCardWidth: 360,
     minColumns: 4,
     maxColumns: 5,
   },
-  wide: {
-    minCardWidth: 220,
-    maxCardWidth: 280,
-    idealCardWidth: 250,
+  ultrawide: {
+    minCardWidth: 320,
+    maxCardWidth: 420,
+    idealCardWidth: 360,
     minColumns: 5,
     maxColumns: 7,
-  },
-  ultrawide: {
-    minCardWidth: 220,
-    maxCardWidth: 280,
-    idealCardWidth: 250,
-    minColumns: 6,
-    maxColumns: 9,
   },
 };
 

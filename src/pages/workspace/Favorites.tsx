@@ -172,8 +172,8 @@ const Favorites = () => {
         </div>
       </div>
 
-      {/* Tracks Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+      {/* Tracks Grid - Responsive with min card width */}
+      <div className="grid gap-4 md:gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))' }}>
         {likedTracks.map((track, index) => (
           <div
             key={track.id}
