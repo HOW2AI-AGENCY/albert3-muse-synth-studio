@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { downloadAndUploadAudio, downloadAndUploadCover, downloadAndUploadVideo } from "../_shared/storage.ts";
 import { createSupabaseAdminClient } from "../_shared/supabase.ts";
+import { logger } from "../_shared/logger.ts";
 
 const corsHeaders = createCorsHeaders();
 
@@ -11,7 +12,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    console.log('🔄 [MIGRATE] Starting migration of old tracks to Storage...');
+    logger.info('Starting migration of old tracks to Storage', { endpoint: 'migrate-tracks-to-storage' });
 
     const supabase = createSupabaseAdminClient();
 
@@ -24,7 +25,7 @@ serve(async (req: Request) => {
     // ========================================
     // Step 1: Migrate main tracks
     // ========================================
-    console.log('📊 [MIGRATE] Fetching tracks with external URLs...');
+    logger.info('Fetching tracks with external URLs', { endpoint: 'migrate-tracks-to-storage' });
 
     const { data: tracks, error: fetchError } = await supabase
       .from('tracks')
@@ -33,21 +34,21 @@ serve(async (req: Request) => {
       .or('audio_url.like.%cdn.suno.ai%,audio_url.like.%apiboxfiles%,audio_url.like.%mfile%');
 
     if (fetchError) {
-      console.error('🔴 [MIGRATE] Error fetching tracks:', fetchError);
+      logger.error('Error fetching tracks', fetchError instanceof Error ? fetchError : new Error(String(fetchError)), 'migrate-tracks-to-storage');
       throw fetchError;
     }
 
     totalTracks = tracks?.length || 0;
-    console.log(`📦 [MIGRATE] Found ${totalTracks} tracks to migrate`);
+    logger.info('Found tracks to migrate', { endpoint: 'migrate-tracks-to-storage', totalTracks });
 
     // Migrate each track
     for (const track of tracks || []) {
-      console.log(`\n🔄 [MIGRATE] Processing track ${track.id}...`);
+      logger.info('Processing track', { endpoint: 'migrate-tracks-to-storage', trackId: track.id });
 
       try {
         // Check if already migrated (URL contains supabase storage)
         if (track.audio_url?.includes('supabase.co/storage')) {
-          console.log(`⏭️  [MIGRATE] Track ${track.id} already migrated, skipping`);
+          logger.info('Track already migrated, skipping', { endpoint: 'migrate-tracks-to-storage', trackId: track.id });
           skippedTracks++;
           continue;
         }
@@ -67,9 +68,9 @@ serve(async (req: Request) => {
               'main.mp3',
               supabase
             );
-            console.log(`✅ [MIGRATE] Audio migrated for track ${track.id}`);
+            logger.info('Audio migrated for track', { endpoint: 'migrate-tracks-to-storage', trackId: track.id });
           } catch (error) {
-            console.error(`❌ [MIGRATE] Failed to migrate audio for ${track.id}:`, error);
+            logger.error('Failed to migrate audio', error instanceof Error ? error : new Error(String(error)), 'migrate-tracks-to-storage', { trackId: track.id });
             // Mark track as failed if audio migration fails
             await supabase
               .from('tracks')
@@ -93,9 +94,9 @@ serve(async (req: Request) => {
               'cover.jpg',
               supabase
             );
-            console.log(`✅ [MIGRATE] Cover migrated for track ${track.id}`);
+            logger.info('Cover migrated for track', { endpoint: 'migrate-tracks-to-storage', trackId: track.id });
           } catch (error) {
-            console.warn(`⚠️  [MIGRATE] Cover migration failed for ${track.id}, keeping original`);
+            logger.warn('Cover migration failed, keeping original', { endpoint: 'migrate-tracks-to-storage', trackId: track.id });
             // Keep original cover URL, not critical
           }
         }
@@ -110,9 +111,9 @@ serve(async (req: Request) => {
               'video.mp4',
               supabase
             );
-            console.log(`✅ [MIGRATE] Video migrated for track ${track.id}`);
+            logger.info('Video migrated for track', { endpoint: 'migrate-tracks-to-storage', trackId: track.id });
           } catch (error) {
-            console.warn(`⚠️  [MIGRATE] Video migration failed for ${track.id}, keeping original`);
+            logger.warn('Video migration failed, keeping original', { endpoint: 'migrate-tracks-to-storage', trackId: track.id });
             // Keep original video URL, not critical
           }
         }
@@ -128,10 +129,10 @@ serve(async (req: Request) => {
           .eq('id', track.id);
 
         migratedTracks++;
-        console.log(`✅ [MIGRATE] Track ${track.id} successfully migrated`);
+        logger.info('Track successfully migrated', { endpoint: 'migrate-tracks-to-storage', trackId: track.id });
 
       } catch (error) {
-        console.error(`🔴 [MIGRATE] Error processing track ${track.id}:`, error);
+        logger.error('Error processing track', error instanceof Error ? error : new Error(String(error)), 'migrate-tracks-to-storage', { trackId: track.id });
         failedTracks++;
       }
     }
@@ -139,7 +140,7 @@ serve(async (req: Request) => {
     // ========================================
     // Step 2: Migrate track versions
     // ========================================
-    console.log('\n📊 [MIGRATE] Migrating track versions...');
+    logger.info('Migrating track versions', { endpoint: 'migrate-tracks-to-storage' });
 
     const { data: versions, error: versionsError } = await supabase
       .from('track_versions')
@@ -147,15 +148,15 @@ serve(async (req: Request) => {
       .or('audio_url.like.%cdn.suno.ai%,audio_url.like.%apiboxfiles%,audio_url.like.%mfile%');
 
     if (versionsError) {
-      console.warn('⚠️  [MIGRATE] Error fetching versions:', versionsError);
+      logger.warn('Error fetching versions', { endpoint: 'migrate-tracks-to-storage', error: versionsError.message });
     } else {
-      console.log(`📦 [MIGRATE] Found ${versions?.length || 0} versions to migrate`);
+      logger.info('Found versions to migrate', { endpoint: 'migrate-tracks-to-storage', versionsCount: versions?.length || 0 });
 
       for (const version of versions || []) {
         try {
           // Skip if already migrated
           if (version.audio_url?.includes('supabase.co/storage')) {
-            console.log(`⏭️  [MIGRATE] Version ${version.id} already migrated`);
+            logger.info('Version already migrated', { endpoint: 'migrate-tracks-to-storage', versionId: version.id });
             continue;
           }
 
@@ -167,7 +168,7 @@ serve(async (req: Request) => {
             .single();
 
           if (!parentTrack) {
-            console.error(`❌ [MIGRATE] Parent track not found for version ${version.id}`);
+            logger.error('Parent track not found for version', new Error('Parent track not found'), 'migrate-tracks-to-storage', { versionId: version.id });
             continue;
           }
 
@@ -186,7 +187,7 @@ serve(async (req: Request) => {
                 supabase
               );
             } catch (error) {
-              console.error(`❌ [MIGRATE] Failed to migrate version ${version.id} audio`);
+              logger.error('Failed to migrate version audio', error instanceof Error ? error : new Error(String(error)), 'migrate-tracks-to-storage', { versionId: version.id });
               // Delete broken version
               await supabase
                 .from('track_versions')
@@ -206,7 +207,7 @@ serve(async (req: Request) => {
                 supabase
               );
             } catch (error) {
-              console.warn(`⚠️  [MIGRATE] Cover migration failed for version ${version.id}`);
+              logger.warn('Cover migration failed for version', { endpoint: 'migrate-tracks-to-storage', versionId: version.id });
             }
           }
 
@@ -220,7 +221,7 @@ serve(async (req: Request) => {
                 supabase
               );
             } catch (error) {
-              console.warn(`⚠️  [MIGRATE] Video migration failed for version ${version.id}`);
+              logger.warn('Video migration failed for version', { endpoint: 'migrate-tracks-to-storage', versionId: version.id });
             }
           }
 
@@ -234,10 +235,10 @@ serve(async (req: Request) => {
             })
             .eq('id', version.id);
 
-          console.log(`✅ [MIGRATE] Version ${version.id} migrated successfully`);
+          logger.info('Version migrated successfully', { endpoint: 'migrate-tracks-to-storage', versionId: version.id });
 
         } catch (error) {
-          console.error(`🔴 [MIGRATE] Error migrating version ${version.id}:`, error);
+          logger.error('Error migrating version', error instanceof Error ? error : new Error(String(error)), 'migrate-tracks-to-storage', { versionId: version.id });
         }
       }
     }
@@ -253,7 +254,7 @@ serve(async (req: Request) => {
       success_rate: totalTracks > 0 ? ((migratedTracks / totalTracks) * 100).toFixed(1) : 0
     };
 
-    console.log('\n📊 [MIGRATE] Migration Summary:', JSON.stringify(summary, null, 2));
+    logger.info('Migration Summary', { endpoint: 'migrate-tracks-to-storage', summary });
 
     return new Response(
       JSON.stringify({
@@ -268,7 +269,7 @@ serve(async (req: Request) => {
     );
 
   } catch (error) {
-    console.error('🔴 [MIGRATE] Migration error:', error);
+    logger.error('Migration error', error instanceof Error ? error : new Error(String(error)), 'migrate-tracks-to-storage');
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Migration failed'

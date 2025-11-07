@@ -1,13 +1,14 @@
 /**
  * Edge Function: Refresh Track Audio URLs
  * SPRINT 28: PLAYER-FIX-001
- * 
+ *
  * Регенерирует signed URLs для треков с истекшим временем действия
  * TTL: 7 дней для production, 1 час для test режима
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { logger } from '../_shared/logger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -39,7 +40,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`[refresh-track-audio] Refreshing URLs for track: ${trackId}, mode: ${mode}`);
+    logger.info('Refreshing URLs for track', { endpoint: 'refresh-track-audio', trackId, mode });
 
     // Получаем трек из БД (используем maybeSingle для корректной обработки отсутствия данных)
     const { data: track, error: fetchError } = await supabaseClient
@@ -49,7 +50,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (fetchError) {
-      console.error('[refresh-track-audio] Database error:', fetchError);
+      logger.error('Database error', fetchError instanceof Error ? fetchError : new Error(String(fetchError)), 'refresh-track-audio');
       return new Response(
         JSON.stringify({ error: 'Database error', details: fetchError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -57,7 +58,7 @@ serve(async (req) => {
     }
 
     if (!track) {
-      console.warn(`[refresh-track-audio] Track not found: ${trackId}`);
+      logger.warn('Track not found', { endpoint: 'refresh-track-audio', trackId });
       return new Response(
         JSON.stringify({ error: 'Track not found', trackId }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -92,13 +93,13 @@ serve(async (req) => {
 
           if (!signError && signedData?.signedUrl) {
             refreshedUrls[key] = signedData.signedUrl;
-            console.log(`[refresh-track-audio] Refreshed ${key}: ${filePath} (TTL: ${TTL_SECONDS}s)`);
+            logger.info('Refreshed URL', { endpoint: 'refresh-track-audio', key, filePath, ttl: TTL_SECONDS });
           } else {
-            console.error(`[refresh-track-audio] Failed to refresh ${key}:`, signError);
+            logger.error('Failed to refresh URL', signError instanceof Error ? signError : new Error(String(signError)), 'refresh-track-audio', { key });
           }
         }
       } catch (error) {
-        console.error(`[refresh-track-audio] Error parsing ${key}:`, error);
+        logger.error('Error parsing URL', error instanceof Error ? error : new Error(String(error)), 'refresh-track-audio', { key });
       }
     }
 
@@ -115,14 +116,14 @@ serve(async (req) => {
         .eq('id', trackId);
 
       if (updateError) {
-        console.error('[refresh-track-audio] Failed to update track:', updateError);
+        logger.error('Failed to update track', updateError instanceof Error ? updateError : new Error(String(updateError)), 'refresh-track-audio');
         return new Response(
           JSON.stringify({ error: 'Failed to update track URLs' }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      console.log(`[refresh-track-audio] Successfully refreshed ${Object.keys(updatePayload).length} URLs`);
+      logger.info('Successfully refreshed URLs', { endpoint: 'refresh-track-audio', count: Object.keys(updatePayload).length });
     }
 
     return new Response(
@@ -135,7 +136,7 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('[refresh-track-audio] Unexpected error:', error);
+    logger.error('Unexpected error', error instanceof Error ? error : new Error(String(error)), 'refresh-track-audio');
     return new Response(
       JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

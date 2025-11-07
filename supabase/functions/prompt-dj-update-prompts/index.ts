@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { logger } from '../_shared/logger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -26,7 +27,8 @@ serve(async (req) => {
       );
     }
 
-    console.log('[prompt-dj-update-prompts] Updating prompts:', {
+    logger.info('Updating prompts', {
+      endpoint: 'prompt-dj-update-prompts',
       sessionId,
       promptsCount: prompts.length,
       activePrompts: prompts.filter(p => p.weight > 0).length
@@ -43,7 +45,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[prompt-dj-update-prompts] Error:', error);
+    logger.error('Error in prompt-dj-update-prompts', error instanceof Error ? error : new Error(String(error)), 'prompt-dj-update-prompts');
     return new Response(
       JSON.stringify({ error: error.message || 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

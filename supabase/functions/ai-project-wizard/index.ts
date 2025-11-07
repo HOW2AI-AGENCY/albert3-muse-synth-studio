@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { logger } from '../_shared/logger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,7 +19,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    console.log('[ai-project-wizard] Generating draft:', { mode, projectType, trackCount });
+    logger.info('[ai-project-wizard] Generating draft', { mode, projectType, trackCount });
 
     // Build system prompt
     const systemPrompt = `You are a music project planner AI. Create detailed, creative music project concepts.
@@ -120,7 +121,7 @@ Be creative but realistic. Match the project type and track count requested.`;
       }
       
       const errorText = await response.text();
-      console.error('[ai-project-wizard] AI error:', response.status, errorText);
+      logger.error('[ai-project-wizard] AI error', { status: response.status, errorText });
       throw new Error('AI gateway error');
     }
 
@@ -137,7 +138,7 @@ Be creative but realistic. Match the project type and track count requested.`;
     // Add project_type to draft
     draft.project_type = projectType;
 
-    console.log('[ai-project-wizard] Draft generated:', draft.name);
+    logger.info('[ai-project-wizard] Draft generated', { name: draft.name });
 
     return new Response(
       JSON.stringify({ draft }),
@@ -145,7 +146,10 @@ Be creative but realistic. Match the project type and track count requested.`;
     );
 
   } catch (error) {
-    console.error('[ai-project-wizard] Error:', error);
+    logger.error('[ai-project-wizard] Error', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'Unknown error' 

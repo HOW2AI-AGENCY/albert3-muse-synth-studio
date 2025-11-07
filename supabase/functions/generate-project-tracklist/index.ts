@@ -68,7 +68,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    console.log('Generating tracklist for project:', projectName);
+    logger.info('Generating tracklist for project', { endpoint: 'generate-project-tracklist', projectName });
 
     // AI prompt
     const aiPrompt = `Ты музыкальный продюсер. Создай детальный треклист для ${projectType || 'альбома'} "${projectName}".
@@ -112,7 +112,7 @@ ${mood ? `Настроение: ${mood}` : ''}
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
-      console.error('AI API error:', errorText);
+      logger.error('AI API error', new Error(errorText), 'generate-project-tracklist', { status: aiResponse.status });
       throw new Error(`AI API error: ${aiResponse.status}`);
     }
 
@@ -135,7 +135,7 @@ ${mood ? `Настроение: ${mood}` : ''}
       throw new Error('Invalid tracklist format');
     }
 
-    console.log(`Creating ${tracklist.tracks.length} tracks in database`);
+    logger.info('Creating tracks in database', { endpoint: 'generate-project-tracklist', trackCount: tracklist.tracks.length });
 
     // Create tracks in DB
     const tracksToInsert = tracklist.tracks.map((track: any) => ({
@@ -156,11 +156,11 @@ ${mood ? `Настроение: ${mood}` : ''}
       .select();
 
     if (insertError) {
-      console.error('Insert error:', insertError);
+      logger.error('Insert error', insertError instanceof Error ? insertError : new Error(String(insertError)), 'generate-project-tracklist');
       throw insertError;
     }
 
-    console.log(`Successfully created ${insertedTracks.length} tracks`);
+    logger.info('Successfully created tracks', { endpoint: 'generate-project-tracklist', trackCount: insertedTracks.length });
 
     return new Response(
       JSON.stringify({ 
@@ -172,7 +172,7 @@ ${mood ? `Настроение: ${mood}` : ''}
     );
 
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Error in generate-project-tracklist', error instanceof Error ? error : new Error(String(error)), 'generate-project-tracklist');
     const message = error instanceof Error ? error.message : 'Unknown error';
     const status = message === 'Unauthorized' || message === 'Missing authorization header' ? 401 : 500;
     return new Response(

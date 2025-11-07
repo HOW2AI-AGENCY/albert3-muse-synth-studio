@@ -1,12 +1,13 @@
 /**
  * Prompt DJ Lyria Stream Edge Function
  * WebSocket proxy для Gemini Lyria Live Music API
- * 
+ *
  * @version 1.0.0
  * @since 2025-11-02
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { logger } from '../_shared/logger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -52,7 +53,7 @@ serve(async (req) => {
         );
       }
 
-      console.log('[prompt-dj-lyria] Starting WebSocket stream:', sessionId);
+      logger.info('Starting WebSocket stream', { endpoint: 'prompt-dj-lyria', sessionId });
 
       // Upgrade to WebSocket
       const upgrade = req.headers.get('upgrade') || '';
@@ -65,23 +66,23 @@ serve(async (req) => {
       // Connect to Google Gemini Lyria API (example - adjust to actual API)
       // Note: This is a placeholder - actual implementation depends on Gemini Lyria API structure
       socket.onopen = () => {
-        console.log('[prompt-dj-lyria] WebSocket opened');
-        socket.send(JSON.stringify({ 
+        logger.info('WebSocket opened', { endpoint: 'prompt-dj-lyria' });
+        socket.send(JSON.stringify({
           type: 'session.created',
-          sessionId 
+          sessionId
         }));
       };
 
       socket.onmessage = async (event) => {
         try {
           const message = JSON.parse(event.data);
-          console.log('[prompt-dj-lyria] Received message:', message.type);
+          logger.info('Received message', { endpoint: 'prompt-dj-lyria', messageType: message.type });
 
           // Handle different message types
           if (message.type === 'prompts.update') {
             // Forward weighted prompts to Gemini Lyria
             // This is where you'd integrate with actual Gemini Lyria API
-            console.log('[prompt-dj-lyria] Updating prompts:', message.prompts);
+            logger.info('Updating prompts', { endpoint: 'prompt-dj-lyria', prompts: message.prompts });
 
             // Simulate audio streaming response
             // In production, this would be actual audio chunks from Gemini Lyria
@@ -92,20 +93,20 @@ serve(async (req) => {
             }));
           }
         } catch (error) {
-          console.error('[prompt-dj-lyria] Message error:', error);
+          logger.error('Message error', error instanceof Error ? error : new Error(String(error)), 'prompt-dj-lyria');
           socket.send(JSON.stringify({
             type: 'error',
-            message: error.message
+            message: error instanceof Error ? error.message : 'Unknown error'
           }));
         }
       };
 
       socket.onerror = (error) => {
-        console.error('[prompt-dj-lyria] WebSocket error:', error);
+        logger.error('WebSocket error', error instanceof Error ? error : new Error(String(error)), 'prompt-dj-lyria');
       };
 
       socket.onclose = () => {
-        console.log('[prompt-dj-lyria] WebSocket closed');
+        logger.info('WebSocket closed', { endpoint: 'prompt-dj-lyria' });
       };
 
       return response;
@@ -124,7 +125,8 @@ serve(async (req) => {
 
       const sessionId = crypto.randomUUID();
 
-      console.log('[prompt-dj-lyria] Session created:', {
+      logger.info('Session created', {
+        endpoint: 'prompt-dj-lyria',
         sessionId,
         promptsCount: initialPrompts.length,
         activePrompts: initialPrompts.filter(p => p.weight > 0).length
@@ -153,7 +155,8 @@ serve(async (req) => {
         );
       }
 
-      console.log('[prompt-dj-lyria] Updating prompts:', {
+      logger.info('Updating prompts', {
+        endpoint: 'prompt-dj-lyria',
         sessionId,
         promptsCount: prompts.length,
         activePrompts: prompts.filter(p => p.weight > 0).length
@@ -177,7 +180,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[prompt-dj-lyria] Error:', error);
+    logger.error('Error in prompt-dj-lyria', error instanceof Error ? error : new Error(String(error)), 'prompt-dj-lyria');
     return new Response(
       JSON.stringify({ error: error.message || 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
