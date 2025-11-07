@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { logger } from "@/utils/logger";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings as SettingsIcon, User, LogOut, Bell, Shield, Palette, Database } from "@/utils/iconImports";
-import { PersonalizationSettings } from "@/components/settings/PersonalizationSettings";
+import PersonalizationSettings from "@/components/settings/PersonalizationSettings";
 
 const Settings = () => {
   const navigate = useNavigate();

@@ -23,7 +23,7 @@ const densityModes: Array<{ value: DensityMode; label: string; description: stri
  * Компонент настроек персонализации
  * Позволяет выбрать accent color и density mode
  */
-export const PersonalizationSettings = () => {
+const PersonalizationSettings = () => {
   const { preferences, setAccentColor, setDensityMode, resetPreferences } = useUserPreferences();
 
   return (
@@ -123,3 +123,5 @@ export const PersonalizationSettings = () => {
     </div>
   );
 };
+
+export default PersonalizationSettings;
