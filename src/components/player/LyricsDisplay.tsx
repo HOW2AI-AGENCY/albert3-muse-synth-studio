@@ -47,6 +47,19 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
     });
   }, [lyricsData, currentWordIndex]);
 
+  // ✅ P1 FIX: Reset scroll position when track changes
+  // This prevents the issue where switching to a new track with the same starting
+  // word index (e.g., both start at index 0) would not scroll to the beginning
+  useEffect(() => {
+    // Reset scroll tracking ref
+    lastScrolledIndexRef.current = -1;
+
+    // Reset container scroll position to top
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
+  }, [taskId, audioId]); // Reset when track changes
+
   // Only scroll when the active word changes, not on every currentTime update
   useEffect(() => {
     if (
