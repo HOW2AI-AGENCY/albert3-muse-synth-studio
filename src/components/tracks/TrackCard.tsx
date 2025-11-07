@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +18,7 @@ interface TrackCardProps {
   className?: string;
 }
 
-export const TrackCard: React.FC<TrackCardProps> = ({
+export const TrackCard: React.FC<TrackCardProps> = memo(({
   track,
   isPlaying = false,
   onPlay,
@@ -28,53 +28,60 @@ export const TrackCard: React.FC<TrackCardProps> = ({
   onMore,
   className = '',
 }) => {
-  const { 
-    isSelectionMode, 
-    isTrackSelected, 
-    toggleTrack 
+  const {
+    isSelectionMode,
+    isTrackSelected,
+    toggleTrack
   } = useSelectedTracks();
 
-  const isSelected = isTrackSelected(track.id);
+  // ✅ P0 OPTIMIZATION: Memoize selection check
+  const isSelected = useMemo(
+    () => isTrackSelected(track.id),
+    [isTrackSelected, track.id]
+  );
 
-  const handleCardClick = (e: React.MouseEvent) => {
+  // ✅ P0 OPTIMIZATION: Memoize formatted duration
+  const formattedDuration = useMemo(
+    () => track.duration ? formatDuration(track.duration) : null,
+    [track.duration]
+  );
+
+  // ✅ P0 OPTIMIZATION: Stable callback references
+  const handleCardClick = useCallback((e: React.MouseEvent) => {
     if (isSelectionMode) {
       e.preventDefault();
       e.stopPropagation();
       toggleTrack(track.id);
     }
-  };
+  }, [isSelectionMode, toggleTrack, track.id]);
 
-  const handlePlayPause = (e: React.MouseEvent) => {
+  const handlePlayPause = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (isPlaying) {
       onPause?.(track);
     } else {
       onPlay?.(track);
     }
-  };
+  }, [isPlaying, onPause, onPlay, track]);
 
-  const handleDownload = (e: React.MouseEvent) => {
+  const handleDownload = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     onDownload?.(track);
-  };
+  }, [onDownload, track]);
 
-  const handleShare = (e: React.MouseEvent) => {
+  const handleShare = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     onShare?.(track);
-  };
+  }, [onShare, track]);
 
-  const handleMore = (e: React.MouseEvent) => {
+  const handleMore = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     onMore?.(track);
-  };
+  }, [onMore, track]);
 
-  const handleCheckboxChange = (checked: boolean) => {
-    if (checked) {
-      toggleTrack(track.id);
-    } else {
-      toggleTrack(track.id);
-    }
-  };
+  const handleCheckboxChange = useCallback((checked: boolean) => {
+    toggleTrack(track.id);
+  }, [toggleTrack, track.id]);
 
   return (
     <Card 
@@ -130,12 +137,12 @@ export const TrackCard: React.FC<TrackCardProps> = ({
           </div>
 
           {/* Duration Badge */}
-          {track.duration && (
+          {formattedDuration && (
             <Badge
               variant="secondary"
               className="absolute bottom-2 right-2 text-xs bg-black/70 text-white"
             >
-              {formatDuration(track.duration)}
+              {formattedDuration}
             </Badge>
           )}
         </div>
@@ -204,7 +211,9 @@ export const TrackCard: React.FC<TrackCardProps> = ({
       </CardFooter>
     </Card>
   );
-};
+});
+
+TrackCard.displayName = 'TrackCard';
 
 // Helper function to format duration
 function formatDuration(seconds: number): string {

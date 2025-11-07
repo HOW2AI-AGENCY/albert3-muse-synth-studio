@@ -104,12 +104,12 @@ const Home = memo(() => {
           ctaPrimary={{
             label: 'Get Studio',
             href: '/workspace/generator',
-            onClick: () => console.log('Get Studio clicked'),
+            onClick: () => logger.debug('User clicked Get Studio CTA', 'Home'),
           }}
           ctaSecondary={{
             label: 'Learn More',
             href: '/docs',
-            onClick: () => console.log('Learn More clicked'),
+            onClick: () => logger.debug('User clicked Learn More CTA', 'Home'),
           }}
           variant="gradient"
           onDismiss={handleDismissBanner}

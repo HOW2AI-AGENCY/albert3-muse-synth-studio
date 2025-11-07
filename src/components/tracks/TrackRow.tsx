@@ -8,7 +8,7 @@
  * @created 2025-11-05
  */
 
-import { memo, useCallback, useState } from 'react';
+import { memo, useCallback, useState, useMemo } from 'react';
 import { Play, Pause, Heart, MoreVertical, Eye, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -69,7 +69,11 @@ export const TrackRow = memo<TrackRowProps>(({
   ariaSelected,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const statusBadge = getStatusBadge(track.status);
+
+  // ✅ P0 OPTIMIZATION: Memoize computed values
+  const statusBadge = useMemo(() => getStatusBadge(track.status), [track.status]);
+  const canPlay = useMemo(() => track.status === 'ready' || track.status === 'published', [track.status]);
+  const showProcessing = useMemo(() => track.status === 'processing' || track.status === 'queued', [track.status]);
 
   const handlePlayPause = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -114,9 +118,6 @@ export const TrackRow = memo<TrackRowProps>(({
         break;
     }
   }, [handlePlayPause, handleLikeToggle]);
-
-  const canPlay = track.status === 'ready' || track.status === 'published';
-  const showProcessing = track.status === 'processing' || track.status === 'queued';
 
   return (
     <div

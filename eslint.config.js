@@ -38,7 +38,7 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       "@typescript-eslint/no-unused-vars": "off",
-      "no-console": "warn", // Полный запрет console.*, используем logger
+      "no-console": "error", // ✅ P0: Строгий запрет console.*, используем централизованный logger
       "@typescript-eslint/no-explicit-any": "off",
       // Базовый контроль нейминга
       "@typescript-eslint/naming-convention": [
@@ -57,13 +57,15 @@ export default tseslint.config(
       ],
     },
   },
-  // Локальные исключения: разрешаем console.* в serverless-функциях, seed-скриптах и e2e-тестах
+  // Локальные исключения: разрешаем console.* где необходимо
   {
     files: [
       "supabase/functions/**/*.ts",
       "supabase/seed/**/*.ts",
       "tests/e2e/**/*.ts",
       "scripts/**/*.ts",
+      "src/lib/logger.ts", // ✅ P0: Базовая имплементация логгера
+      "src/utils/sentry/**/*.ts", // Dev mode logging
     ],
     rules: {
       "no-console": "off",

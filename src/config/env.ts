@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { logger } from "@/utils/logger";
 
 const rawEnv = {
   supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
@@ -36,8 +37,9 @@ if (result.success) {
 
   // В dev-режиме не падаем: предупреждаем и подставляем безопасные значения
   if (rawEnv.isDevelopment) {
-    console.warn(
+    logger.warn(
       `Environment validation failed in development. Using safe defaults.\n${formattedErrors}`,
+      'env-config'
     );
     envData = {
       supabaseUrl: "https://localhost.invalid",
