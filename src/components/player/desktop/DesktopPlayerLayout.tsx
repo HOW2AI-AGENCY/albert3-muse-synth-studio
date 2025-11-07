@@ -43,20 +43,26 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
   const [isMuted, setIsMuted] = useState(false);
   const previousVolumeRef = useRef(volume);
   const volumeRef = useRef(volume);
+  const prevVolumeForMuteRef = useRef(volume); // Track previous volume for mute detection
 
   // Keep refs in sync with volume from store
   useEffect(() => {
     volumeRef.current = volume;
   }, [volume]);
 
-  // ✅ P2 FIX: Sync isMuted with volume changes (e.g., from keyboard shortcuts)
-  // IMPORTANT: Only update if value actually changed to prevent infinite loops
+  // ✅ P2 FIX: Sync isMuted with volume changes ONLY when crossing zero threshold
+  // This prevents infinite loops while still handling keyboard shortcuts
   useEffect(() => {
-    const shouldBeMuted = volume === 0;
-    if (isMuted !== shouldBeMuted) {
-      setIsMuted(shouldBeMuted);
+    const wasZero = prevVolumeForMuteRef.current === 0;
+    const isZero = volume === 0;
+
+    // Only update isMuted when volume crosses the zero threshold
+    if (wasZero !== isZero) {
+      setIsMuted(isZero);
     }
-  }, [volume, isMuted]);
+
+    prevVolumeForMuteRef.current = volume;
+  }, [volume]);
 
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
 
