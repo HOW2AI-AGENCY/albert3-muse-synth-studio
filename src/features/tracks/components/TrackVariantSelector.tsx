@@ -88,8 +88,8 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
   const isActive = (index: number) => index === currentVersionIndex;
 
   return (
-    <div ref={containerRef} className="flex items-center gap-1">
-      {/* Кнопка установки мастер-версии */}
+    <div ref={containerRef} className="flex items-center gap-2">
+      {/* ✅ REDESIGNED: Master version button with better visibility */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -98,27 +98,28 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
             onClick={handleSetMaster}
             disabled={isMasterVersion || isSettingMaster}
             className={cn(
-              "h-7 w-7 p-0",
-              "transition-all duration-200",
-              isMasterVersion 
-                ? "text-amber-500 hover:text-amber-600" 
-                : "text-muted-foreground hover:text-amber-500 opacity-60 hover:opacity-100"
+              "h-8 w-8 p-0 rounded-lg",
+              "transition-all duration-300 ease-in-out",
+              "backdrop-blur-sm shadow-sm",
+              isMasterVersion
+                ? "bg-amber-500/90 text-white hover:bg-amber-600 scale-105"
+                : "bg-background/80 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 opacity-70 hover:opacity-100"
             )}
           >
-            <Star 
+            <Star
               className={cn(
-                "h-4 w-4",
-                isMasterVersion && "fill-current"
-              )} 
+                "h-4 w-4 transition-transform duration-300",
+                isMasterVersion && "fill-current drop-shadow-glow"
+              )}
             />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="left">
-          {isMasterVersion ? 'Мастер-версия' : 'Установить как мастер-версию'}
+        <TooltipContent side="left" className="font-medium">
+          {isMasterVersion ? '⭐ Мастер-версия' : 'Установить как мастер'}
         </TooltipContent>
       </Tooltip>
 
-      {/* Переключатель: свернутый (иконка-счетчик) → раскрытый (кнопки V1/V2) */}
+      {/* ✅ REDESIGNED: Version selector with better UX */}
       <div
         className={cn("flex items-center gap-1.5", className)}
         role="group"
@@ -135,6 +136,7 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
           }
         }}
       >
+        {/* Collapsed state - single badge */}
         {!isOpen && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -145,76 +147,83 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
                   setIsOpen(true);
                 }}
                 className={cn(
-                  "h-7 px-2 rounded-md",
-                  "flex items-center gap-1",
-                  "bg-background/95 text-xs font-semibold",
-                  "border border-border/50 shadow-sm transition-all",
-                  "hover:bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  "h-8 px-3 rounded-lg",
+                  "flex items-center gap-1.5",
+                  "backdrop-blur-sm shadow-md",
+                  "text-sm font-bold",
+                  "transition-all duration-300 ease-in-out",
+                  "hover:scale-105 hover:shadow-lg",
+                  "focus:outline-none focus:ring-2 focus:ring-primary/50",
+                  isMasterVersion
+                    ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
+                    : "bg-background/90 border border-border/60 text-foreground hover:bg-background"
                 )}
                 aria-label={`Активная версия: V${displayIndex}${isMasterVersion ? ' (MASTER)' : ''}`}
                 aria-haspopup="true"
                 aria-expanded={false}
               >
-                <span
-                  className={cn(
-                    "inline-flex h-5 min-w-[22px] items-center justify-center rounded-sm px-1",
-                    isMasterVersion
-                      ? "bg-[#4285F4] text-white"
-                      : "bg-muted text-foreground"
-                  )}
-                >
-                  {`V${displayIndex}`}
-                </span>
+                <span className="tracking-wide">V{displayIndex}</span>
                 {isMasterVersion && (
-                  <span className="ml-0.5 text-[10px] font-bold tracking-wide text-amber-500">MASTER</span>
+                  <Star className="h-3 w-3 fill-amber-300 text-amber-300 animate-pulse" />
                 )}
               </button>
             </TooltipTrigger>
-            <TooltipContent side="left">Активная версия: V{displayIndex}{isMasterVersion ? ' · MASTER' : ''}</TooltipContent>
+            <TooltipContent side="left" className="font-medium">
+              Версия {displayIndex} из {totalVersions}{isMasterVersion ? ' ⭐' : ''}
+            </TooltipContent>
           </Tooltip>
         )}
 
+        {/* Expanded state - all version buttons */}
         {isOpen && (
-          <div className="flex items-center gap-1.5 transition-all">
-            {Array.from({ length: totalVersions }).map((_, index) => (
-              <Tooltip key={index}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      const targetIndex = index < totalVersions ? index : 0;
-                      onVersionChange(targetIndex);
-                      // После выбора — сворачиваем обратно
-                      setIsOpen(false);
-                    }}
-                    onBlur={(e) => {
-                      // Если фокус уходит из группы — закрываем
-                      if (!e.relatedTarget || !(containerRef.current?.contains(e.relatedTarget as Node))) {
+          <div className="flex items-center gap-2 transition-all animate-in fade-in slide-in-from-right-2 duration-300">
+            {Array.from({ length: totalVersions }).map((_, index) => {
+              const isVersionActive = isActive(index);
+              const versionIsIndex = allVersions[index];
+              const isVersionMaster = versionIsIndex?.isMasterVersion;
+
+              return (
+                <Tooltip key={index}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        const targetIndex = index < totalVersions ? index : 0;
+                        onVersionChange(targetIndex);
                         setIsOpen(false);
-                      }
-                    }}
-                    aria-label={index === 0 ? 'Версия 1 (Оригинал)' : `Версия ${index + 1}`}
-                    aria-pressed={isActive(index)}
-                    className={cn(
-                      "h-7 w-7 p-0 rounded-full text-xs font-bold",
-                      "transition-all duration-200 ease-in-out",
-                      "border border-border/60 shadow-sm",
-                      isActive(index) 
-                        ? "bg-[#4285F4] text-white border-transparent hover:bg-[#3a78dc]"
-                        : "bg-background/90 text-muted-foreground hover:bg-background",
-                    )}
-                  >
-                    {index + 1}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="left">
-                  {index === 0 ? 'Оригинал' : `Вариант ${index}`}
-                </TooltipContent>
-              </Tooltip>
-            ))}
+                      }}
+                      onBlur={(e) => {
+                        if (!e.relatedTarget || !(containerRef.current?.contains(e.relatedTarget as Node))) {
+                          setIsOpen(false);
+                        }
+                      }}
+                      aria-label={index === 0 ? 'Версия 1 (Оригинал)' : `Версия ${index + 1}`}
+                      aria-pressed={isVersionActive}
+                      className={cn(
+                        "h-9 w-9 p-0 rounded-lg text-sm font-bold relative",
+                        "transition-all duration-300 ease-in-out",
+                        "shadow-md",
+                        isVersionActive
+                          ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white border-2 border-blue-400 scale-110 shadow-xl"
+                          : "bg-background/90 border border-border/60 text-muted-foreground hover:bg-background hover:scale-105 hover:border-primary/50",
+                      )}
+                    >
+                      {index + 1}
+                      {isVersionMaster && (
+                        <Star className="absolute -top-1 -right-1 h-3 w-3 fill-amber-400 text-amber-400" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="font-medium">
+                    {index === 0 ? '📀 Оригинал' : `🎵 Вариант ${index}`}
+                    {isVersionMaster && ' ⭐'}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
           </div>
         )}
       </div>

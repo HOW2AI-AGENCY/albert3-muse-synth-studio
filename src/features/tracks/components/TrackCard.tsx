@@ -119,6 +119,7 @@ const TrackCardComponent = memo(({
         className={cn(
           'group relative overflow-hidden cursor-pointer transition-all duration-300',
           'border-border/50 bg-card hover:bg-muted/30 card-elevated',
+          'min-w-[280px] sm:min-w-[320px]', // ✅ MIN SIZE: 280px mobile, 320px tablet+
           isVisible ? 'h-full flex flex-col opacity-100' : 'h-full flex flex-col opacity-0',
           isCurrentTrack && 'ring-2 ring-primary/80 shadow-glow-primary-strong',
           className
@@ -169,7 +170,7 @@ const TrackCardComponent = memo(({
             status={track.status}
             progressPercent={track.progress_percent}
             createdAt={track.created_at}
-            likeCount={track.like_count}
+            likeCount={likeCount}
             isMasterVersion={displayedVersion.isMasterVersion}
             onVersionChange={handleVersionChange}
           />
