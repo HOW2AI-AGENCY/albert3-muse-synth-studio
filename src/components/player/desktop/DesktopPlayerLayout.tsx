@@ -2,7 +2,7 @@
  * Desktop Player Layout Component - Compact Floating Design
  * Modern, compact floating player with animations
  */
-import { memo, useState, useCallback, useMemo } from 'react';
+import { memo, useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import type { AudioPlayerTrack } from '@/stores/audioPlayerStore';
 import { useAudioPlayerStore, useIsPlaying, useVolume, usePlaybackModeControls } from '@/stores/audioPlayerStore';
@@ -38,29 +38,39 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
   const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
   const { toggleRepeatMode, toggleShuffle } = usePlaybackModeControls();
 
-  // Volume control state
+  // Volume control state - using refs to prevent infinite loops
   const [isMuted, setIsMuted] = useState(false);
-  const [previousVolume, setPreviousVolume] = useState(volume);
+  const previousVolumeRef = useRef(volume);
+  const volumeRef = useRef(volume);
+
+  // Keep refs in sync with volume from store
+  useEffect(() => {
+    volumeRef.current = volume;
+  }, [volume]);
 
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
 
   const toggleMute = useCallback(() => {
     if (isMuted) {
-      setVolume(previousVolume);
+      // Unmute: restore previous volume
+      setVolume(previousVolumeRef.current);
       setIsMuted(false);
     } else {
-      setPreviousVolume(volume);
+      // Mute: save current volume and set to 0
+      previousVolumeRef.current = volumeRef.current;
       setVolume(0);
       setIsMuted(true);
     }
-  }, [isMuted, setVolume, previousVolume, volume]);
+  }, [isMuted, setVolume]); // ✅ Removed volume dependency to prevent infinite loop
 
   const handleVolumeChange = useCallback((value: number[]) => {
     const newVolume = value[0];
     setVolume(newVolume);
     setIsMuted(newVolume === 0);
-    if (newVolume > 0) setPreviousVolume(newVolume);
-  }, [setVolume]);
+    if (newVolume > 0) {
+      previousVolumeRef.current = newVolume;
+    }
+  }, [setVolume]); // ✅ Using ref instead of state for previousVolume
 
   // Keyboard shortcuts
   usePlayerKeyboardShortcuts({
