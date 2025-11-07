@@ -147,12 +147,12 @@ export const usePromptHistory = () => {
 
   // Save as template
   const saveAsTemplate = useMutation({
-    mutationFn: async ({ id, template_name }: { id: string; template_name: string }) => {
+    mutationFn: async ({ id, templateName }: { id: string; templateName: string }) => {
       const { error } = await supabase
         .from('prompt_history')
         .update({
           is_template: true,
-          template_name,
+          template_name: templateName,
         })
         .eq('id', id);
 

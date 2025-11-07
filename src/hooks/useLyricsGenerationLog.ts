@@ -10,6 +10,7 @@ import type { Database } from '@/integrations/supabase/types';
 
 type LyricsLogRow = Database['public']['Tables']['lyrics_generation_log']['Row'];
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface LyricsGenerationLogEntry extends LyricsLogRow {
   // Можно добавить дополнительные вычисляемые поля если нужно
 }

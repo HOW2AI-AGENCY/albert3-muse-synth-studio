@@ -55,7 +55,8 @@ export const errorHandler = {
           ...error.metadata,
         });
       } catch (sentryError) {
-        // Игнорируем ошибки Sentry
+        // Игнорируем ошибки Sentry - не логируем, чтобы избежать рекурсии
+        // eslint-disable-next-line no-console
         console.error('[SENTRY] Failed to set context:', sentryError);
       }
 
