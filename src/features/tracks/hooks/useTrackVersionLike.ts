@@ -59,7 +59,15 @@ export const useTrackVersionLike = (versionId: string | null, initialLikeCount: 
   }, [versionId]);
 
   const toggleLike = async () => {
-    if (isLoading || !versionId) return;
+    if (isLoading) return;
+
+    if (!versionId) {
+      logger.warn('Cannot toggle like - no version ID', 'useTrackVersionLike');
+      toast.error('Ошибка', {
+        description: 'Невозможно поставить лайк для этой версии',
+      });
+      return;
+    }
 
     setIsLoading(true);
 
@@ -69,6 +77,7 @@ export const useTrackVersionLike = (versionId: string | null, initialLikeCount: 
         toast.error('Войдите в систему', {
           description: 'Необходимо войти, чтобы ставить лайки',
         });
+        setIsLoading(false);
         return;
       }
 

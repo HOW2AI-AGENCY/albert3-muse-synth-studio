@@ -154,13 +154,20 @@ export const useTrackState = (track: Track, options: UseTrackStateOptions = {}) 
         versionNumber: 1,
         isMasterVersion: false,
         parentTrackId: track.id,
+        lyrics: null,
       }
     );
   }, [allVersions, selectedVersionIndex, mainVersion, track]);
 
-  // Likes applied to active version
+  // Check if displayedVersion is a real version (not fallback to track)
+  const isRealVersion = useMemo(() => {
+    return allVersions.some(v => v.id === displayedVersion.id);
+  }, [allVersions, displayedVersion.id]);
+
+  // Likes applied to active version - ONLY if it's a real version
+  // For tracks without versions, we skip like functionality to avoid FK constraint violation
   const { isLiked, likeCount, toggleLike } = useTrackVersionLike(
-    displayedVersion?.id || null,
+    isRealVersion ? displayedVersion.id : null,
     0 // Initial like count (will be loaded from DB)
   );
 
@@ -184,9 +191,20 @@ export const useTrackState = (track: Track, options: UseTrackStateOptions = {}) 
   const handleVersionChange = useCallback(
     (versionIndex: number) => {
       // Ensure versionIndex is valid
-      const maxIndex = Math.max(0, allVersions.filter((v) => v.audio_url).length - 1);
+      const validVersions = allVersions.filter((v) => v.audio_url);
+      const maxIndex = Math.max(0, validVersions.length - 1);
       const clamped = Math.max(0, Math.min(versionIndex, maxIndex));
-      const newVersion = allVersions[clamped];
+      const newVersion = validVersions[clamped];
+
+      if (!newVersion) {
+        logger.error(
+          'Version change failed - no valid version',
+          new Error('Invalid version index'),
+          'useTrackState',
+          { trackId: track.id, versionIndex, maxIndex }
+        );
+        return;
+      }
 
       // Update UI state
       setSelectedVersionIndex(clamped);
@@ -195,9 +213,9 @@ export const useTrackState = (track: Track, options: UseTrackStateOptions = {}) 
       const isThisTrackActive =
         currentTrack?.id === track.id ||
         currentTrack?.parentTrackId === track.id ||
-        currentTrack?.id === newVersion?.id;
+        currentTrack?.id === newVersion.id;
 
-      if (isThisTrackActive && newVersion?.id && newVersion.audio_url) {
+      if (isThisTrackActive && newVersion.audio_url) {
         switchToVersion(newVersion.id);
       }
     },
@@ -209,24 +227,59 @@ export const useTrackState = (track: Track, options: UseTrackStateOptions = {}) 
       if (event) {
         event.stopPropagation();
       }
-      if (playButtonDisabled) return;
+      if (playButtonDisabled) {
+        logger.warn('Play clicked but button is disabled', 'useTrackState', {
+          trackId: track.id,
+          status: track.status,
+          hasAudioUrl: !!displayedVersion.audio_url,
+        });
+        return;
+      }
+
+      if (!displayedVersion.audio_url) {
+        logger.error(
+          'Cannot play track - no audio URL',
+          new Error('Missing audio URL'),
+          'useTrackState',
+          { trackId: track.id, versionId: displayedVersion.id }
+        );
+        toast({
+          title: 'Ошибка',
+          description: 'Аудиофайл недоступен',
+          variant: 'destructive',
+        });
+        return;
+      }
 
       const audioTrack = {
         id: displayedVersion.id,
         title: displayedVersion.title || track.title,
-        audio_url: displayedVersion.audio_url || '',
+        audio_url: displayedVersion.audio_url,
         cover_url: displayedVersion.cover_url || track.cover_url || undefined,
         duration: displayedVersion.duration || track.duration || undefined,
         status: 'completed' as const,
         style_tags: track.style_tags || [],
-        lyrics: displayedVersion.lyrics,
+        lyrics: displayedVersion.lyrics || undefined,
         parentTrackId: track.id,
         versionNumber: displayedVersion.versionNumber,
         isMasterVersion: displayedVersion.isMasterVersion,
       };
-      playTrack(audioTrack);
+
+      try {
+        playTrack(audioTrack);
+      } catch (error) {
+        logger.error('Failed to play track', error as Error, 'useTrackState', {
+          trackId: track.id,
+          versionId: displayedVersion.id,
+        });
+        toast({
+          title: 'Ошибка',
+          description: 'Не удалось начать воспроизведение',
+          variant: 'destructive',
+        });
+      }
     },
-    [playButtonDisabled, displayedVersion, track, playTrack]
+    [playButtonDisabled, displayedVersion, track, playTrack, toast]
   );
 
   const handleLikeClick = useCallback(() => {
