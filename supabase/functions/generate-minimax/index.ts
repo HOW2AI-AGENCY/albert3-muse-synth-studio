@@ -8,6 +8,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import Replicate from 'https://esm.sh/replicate@0.25.2';
+import { logger } from '../_shared/logger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -52,7 +53,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('[generate-minimax] Starting generation:', {
+    logger.info('Starting MiniMax generation', 'generate-minimax', {
       promptLength: body.prompt.length,
       lyricsLength: body.lyrics.length,
       hasReference: !!body.referenceAudioUrl
@@ -75,14 +76,14 @@ serve(async (req) => {
       input.style_strength = body.styleStrength || 0.8;
     }
 
-    console.log('[generate-minimax] Calling Replicate API...');
+    logger.info('Calling Replicate API for MiniMax', 'generate-minimax');
 
     const output = await replicate.run(
       'minimax/music-1.5',
       { input }
     );
 
-    console.log('[generate-minimax] Generation complete:', { output });
+    logger.info('MiniMax generation complete', 'generate-minimax', { hasOutput: !!output });
 
     return new Response(
       JSON.stringify({
@@ -95,7 +96,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[generate-minimax] Error:', error);
+    logger.error('MiniMax generation error', error instanceof Error ? error : new Error(String(error)), 'generate-minimax');
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Internal server error'
