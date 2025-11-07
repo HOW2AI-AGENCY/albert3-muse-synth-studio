@@ -20,6 +20,11 @@
  */
 
 import { logger } from "./logger.ts";
+import { CircuitBreaker } from "./circuit-breaker.ts";
+
+// ✅ P0-4 FIX: Circuit Breaker для Mureka API
+// Параметры: threshold=5 failures, timeout=60s cooldown, resetTime=30s
+const murekaCircuitBreaker = new CircuitBreaker(5, 60000, 30000);
 
 // ============================================================================
 // MUSIC GENERATION TYPES
@@ -407,20 +412,22 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
   ): Promise<T> {
     const url = `${BASE_URL}${endpoint}`;
     let lastError: Error | null = null;
-    
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
-        
-        logger.debug(`🔵 [MUREKA-REQUEST] Attempt ${attempt}/${MAX_RETRIES}`, {
-          endpoint,
-          method,
-          hasBody: !!body,
-          bodyPreview: body ? JSON.stringify(body).slice(0, 200) : null
-        });
-        
-        const response = await fetch(url, {
+
+    // ✅ P0-4 FIX: Wrap in circuit breaker
+    return await murekaCircuitBreaker.call(async () => {
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
+
+          logger.debug(`🔵 [MUREKA-REQUEST] Attempt ${attempt}/${MAX_RETRIES}`, {
+            endpoint,
+            method,
+            hasBody: !!body,
+            bodyPreview: body ? JSON.stringify(body).slice(0, 200) : null
+          });
+
+          const response = await fetch(url, {
           method,
           headers,
           body: body ? JSON.stringify(body) : undefined,
@@ -490,14 +497,15 @@ export function createMurekaClient(options: CreateMurekaClientOptions) {
           );
         }
       }
-    }
-    
-    logger.error(`🔴 [MUREKA] All retry attempts failed`, {
-      endpoint,
-      error: lastError?.message
-    });
-    
-    throw lastError || new Error('Mureka API request failed');
+      }
+
+      logger.error(`🔴 [MUREKA] All retry attempts failed`, {
+        endpoint,
+        error: lastError?.message
+      });
+
+      throw lastError || new Error('Mureka API request failed');
+    }); // Close circuit breaker.call()
   }
 
   return {

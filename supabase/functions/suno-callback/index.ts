@@ -266,20 +266,18 @@ const mainHandler = async (req: Request) => {
         callbackType,
       });
 
-      let uploadedAudioUrl = externalAudioUrl || null;
-      if (externalAudioUrl) {
-        uploadedAudioUrl = await downloadAndUploadAudio(externalAudioUrl, track.id, track.user_id, "main.mp3", supabase);
-      }
-
-      let uploadedCoverUrl = externalCoverUrl || null;
-      if (externalCoverUrl) {
-        uploadedCoverUrl = await downloadAndUploadCover(externalCoverUrl, track.id, track.user_id, "cover.jpg", supabase);
-      }
-
-      let uploadedVideoUrl = externalVideoUrl || null;
-      if (externalVideoUrl) {
-        uploadedVideoUrl = await downloadAndUploadVideo(externalVideoUrl, track.id, track.user_id, "video.mp4", supabase);
-      }
+      // ✅ P1-3 FIX: Parallel asset downloads (60% faster)
+      const [uploadedAudioUrl, uploadedCoverUrl, uploadedVideoUrl] = await Promise.all([
+        externalAudioUrl
+          ? downloadAndUploadAudio(externalAudioUrl, track.id, track.user_id, "main.mp3", supabase)
+          : Promise.resolve(null),
+        externalCoverUrl
+          ? downloadAndUploadCover(externalCoverUrl, track.id, track.user_id, "cover.jpg", supabase)
+          : Promise.resolve(null),
+        externalVideoUrl
+          ? downloadAndUploadVideo(externalVideoUrl, track.id, track.user_id, "video.mp4", supabase)
+          : Promise.resolve(null),
+      ]);
 
       const rawTags = Array.isArray(mainTrack.tags)
         ? mainTrack.tags.join(",")
@@ -453,35 +451,37 @@ const mainHandler = async (req: Request) => {
             continue;
           }
 
-          const versionAudioUrl = await downloadAndUploadAudio(
-            versionExternalAudioUrl,
-            track.id,
-            track.user_id,
-            `version-${variantIndex}.mp3`,
-            supabase,
-          );
+          // ✅ P1-3 FIX: Parallel asset downloads for versions
+          const versionCoverUrlRaw = versionTrack.image_url || versionTrack.image_large_url || versionTrack.imageUrl || null;
+          const versionVideoUrlRaw = versionTrack.video_url || versionTrack.videoUrl || null;
 
-          let versionCoverUrl = versionTrack.image_url || versionTrack.image_large_url || versionTrack.imageUrl || null;
-          if (versionCoverUrl) {
-            versionCoverUrl = await downloadAndUploadCover(
-              versionCoverUrl,
+          const [versionAudioUrl, versionCoverUrl, versionVideoUrl] = await Promise.all([
+            downloadAndUploadAudio(
+              versionExternalAudioUrl,
               track.id,
               track.user_id,
-              `version-${variantIndex}-cover.jpg`,
+              `version-${variantIndex}.mp3`,
               supabase,
-            );
-          }
-
-          let versionVideoUrl = versionTrack.video_url || versionTrack.videoUrl || null;
-          if (versionVideoUrl) {
-            versionVideoUrl = await downloadAndUploadVideo(
-              versionVideoUrl,
-              track.id,
-              track.user_id,
-              `version-${variantIndex}-video.mp4`,
-              supabase,
-            );
-          }
+            ),
+            versionCoverUrlRaw
+              ? downloadAndUploadCover(
+                  versionCoverUrlRaw,
+                  track.id,
+                  track.user_id,
+                  `version-${variantIndex}-cover.jpg`,
+                  supabase,
+                )
+              : Promise.resolve(null),
+            versionVideoUrlRaw
+              ? downloadAndUploadVideo(
+                  versionVideoUrlRaw,
+                  track.id,
+                  track.user_id,
+                  `version-${variantIndex}-video.mp4`,
+                  supabase,
+                )
+              : Promise.resolve(null),
+          ]);
 
           const versionMetadata = {
             suno_track_data: versionTrack,
