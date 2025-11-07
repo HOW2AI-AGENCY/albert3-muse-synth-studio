@@ -40,10 +40,10 @@ interface UseResponsiveGridOptions {
 const GRID_CONFIGS: Record<string, ResponsiveGridConfig> = {
   mobile: {
     minCardWidth: 280, // ✅ FIXED: Match TrackCard min-w-[280px]
-    maxCardWidth: 360, // ✅ Increased for better mobile experience
-    idealCardWidth: 320,
-    minColumns: 1, // ✅ Single column on small screens
-    maxColumns: 2, // ✅ Max 2 columns on mobile
+    maxCardWidth: 480, // ✅ Full width on mobile
+    idealCardWidth: 360,
+    minColumns: 1, // ✅ FORCED: Single column only on mobile
+    maxColumns: 1, // ✅ FORCED: Never more than 1 column on mobile
   },
   tablet: {
     minCardWidth: 320, // ✅ FIXED: Match TrackCard sm:min-w-[320px]

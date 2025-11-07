@@ -699,7 +699,9 @@ const LibraryContent: React.FC = () => {
                   <div
                     className="grid overflow-auto h-full scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent"
                     style={{
-                      gridTemplateColumns: `repeat(${effectiveColumns}, minmax(${gridParams.screenCategory === 'mobile' ? 280 : gridParams.screenCategory === 'tablet' ? 320 : 320}px, 1fr))`,
+                      gridTemplateColumns: gridParams.screenCategory === 'mobile'
+                        ? '1fr' // ✅ MOBILE: Single column, full width
+                        : `repeat(${effectiveColumns}, minmax(${gridParams.screenCategory === 'tablet' ? 320 : 320}px, 1fr))`,
                       gap: `${gridParams.gap}px`,
                       justifyContent: 'center'
                     }}
