@@ -159,16 +159,11 @@ export const useTrackState = (track: Track, options: UseTrackStateOptions = {}) 
     );
   }, [allVersions, selectedVersionIndex, mainVersion, track]);
 
-  // Check if displayedVersion is a real version (not fallback to track)
-  const isRealVersion = useMemo(() => {
-    return allVersions.some(v => v.id === displayedVersion.id);
-  }, [allVersions, displayedVersion.id]);
-
-  // Likes applied to active version - ONLY if it's a real version
-  // For tracks without versions, we skip like functionality to avoid FK constraint violation
+  // ✅ ONLY VERSION LIKES: Use track_version_likes table exclusively
+  // Likes are always applied to the currently displayed version
   const { isLiked, likeCount, toggleLike } = useTrackVersionLike(
-    isRealVersion ? displayedVersion.id : null,
-    0 // Initial like count (will be loaded from DB)
+    displayedVersion.id,
+    displayedVersion.like_count || 0
   );
 
   // Context menu target is the displayed version
