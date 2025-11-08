@@ -12,6 +12,7 @@ import type { Database } from '@/integrations/supabase/types';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 type TrackRow = Database['public']['Tables']['tracks']['Row'];
+type TrackVersionRow = Database['public']['Tables']['track_versions']['Row'];
 
 
 interface TrackSyncOptions {
@@ -95,7 +96,7 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
           },
           (payload: RealtimePostgresChangesPayload<TrackRow>) => {
             if (!isMounted) return;
-            
+
             const newTrack = payload.new;
             const oldTrack = payload.old;
 
@@ -137,6 +138,45 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
             // Track processing
             if ('status' in oldTrack && oldTrack.status === 'pending' && newTrack.status === 'processing') {
               logInfo('Track processing started', 'useTrackSync', { trackId: newTrack.id });
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*', // INSERT, UPDATE, DELETE
+            schema: 'public',
+            table: 'track_versions',
+          },
+          (payload: RealtimePostgresChangesPayload<TrackVersionRow>) => {
+            if (!isMounted) return;
+
+            const newVersion = payload.new as TrackVersionRow | undefined;
+            const oldVersion = payload.old as TrackVersionRow | undefined;
+
+            // Get parent_track_id from either new or old record
+            const parentTrackId = newVersion?.parent_track_id || oldVersion?.parent_track_id;
+
+            if (!parentTrackId) return;
+
+            logInfo('Track version change detected', 'useTrackSync', {
+              event: payload.eventType,
+              versionId: newVersion?.id || oldVersion?.id,
+              parentTrackId,
+              variantIndex: newVersion?.variant_index,
+            });
+
+            // ✅ FIX: Invalidate cache when track_versions changes
+            // This ensures UI updates when new versions are inserted/updated
+            invalidateTrackVersionsCache(parentTrackId);
+
+            // Show toast notification for new versions
+            if (payload.eventType === 'INSERT' && newVersion) {
+              const variantNum = (newVersion.variant_index ?? 0) + 1;
+              toastRef.current?.({
+                title: '🎵 Новая версия готова',
+                description: `Версия ${variantNum} добавлена к треку`,
+              });
             }
           }
         )

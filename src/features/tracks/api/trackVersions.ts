@@ -199,6 +199,7 @@ interface SunoMetadataEntry {
   stream_audio_url?: string;
   image_url?: string;
   imageUrl?: string;
+  cover_url?: string;
   video_url?: string;
   videoUrl?: string;
   duration?: number;
@@ -218,6 +219,7 @@ interface SunoTrackData {
   audio_url?: string;
   stream_audio_url?: string;
   image_url?: string;
+  cover_url?: string;
   video_url?: string;
   duration?: number;
 }
@@ -309,39 +311,56 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
       });
     }
 
-    // PRIORITY 2: Fallback to metadata.suno_data ONLY if track_versions is empty
-    // This prevents duplicates from multiple sources
+    // PRIORITY 2: Merge with metadata.suno_data for versions not yet in DB
+    // ✅ FIX: Always check metadata for additional versions, not just when track_versions is empty
+    // This allows showing versions from polling before they're fully persisted to track_versions
     if (
-      versionsByNumber.size === 0 &&
       mainTrack.metadata &&
       typeof mainTrack.metadata === 'object' &&
       'suno_data' in mainTrack.metadata &&
       isSunoDataArray(mainTrack.metadata.suno_data) &&
       mainTrack.metadata.suno_data.length > 0
     ) {
+      // Collect suno_ids already in DB to avoid duplicates
+      const existingSunoIds = new Set<string>();
+      versionsByNumber.forEach(v => {
+        if (v.suno_id) {
+          existingSunoIds.add(v.suno_id);
+        }
+      });
+
       mainTrack.metadata.suno_data.forEach((versionData, index) => {
         const audioUrl = versionData.audio_url || versionData.stream_audio_url;
         if (!audioUrl) return;
 
-        versionsByNumber.set(index, {
-          id: versionData.id,
-          parentTrackId: mainTrack.id,
-          sourceVersionNumber: index,
-          versionNumber: index + 1,
-          isMasterVersion: false, // will be corrected later
-          title: mainTrack.title,
-          audio_url: audioUrl,
-          cover_url: versionData.image_url || mainTrack.cover_url || undefined,
-          video_url: versionData.video_url || undefined,
-          duration: versionData.duration || undefined,
-          lyrics: mainTrack.lyrics || undefined,
-          style_tags: mainTrack.style_tags || undefined,
-          status: 'completed',
-          user_id: mainTrack.user_id,
-          metadata: mainTrack.metadata as TrackMetadata | null,
-          suno_id: versionData.id,
-          created_at: mainTrack.created_at,
-        });
+        // Skip if this suno_id already exists in DB
+        if (versionData.id && existingSunoIds.has(versionData.id)) {
+          return;
+        }
+
+        // Only add if this variant_index slot is empty
+        if (!versionsByNumber.has(index)) {
+          versionsByNumber.set(index, {
+            id: versionData.id,
+            parentTrackId: mainTrack.id,
+            sourceVersionNumber: index,
+            versionNumber: index + 1,
+            isMasterVersion: false, // will be corrected later
+            title: mainTrack.title,
+            audio_url: audioUrl,
+            // ✅ FIX: Support both cover_url and image_url for compatibility
+            cover_url: versionData.cover_url || versionData.image_url || mainTrack.cover_url || undefined,
+            video_url: versionData.video_url || undefined,
+            duration: versionData.duration || undefined,
+            lyrics: mainTrack.lyrics || undefined,
+            style_tags: mainTrack.style_tags || undefined,
+            status: 'completed',
+            user_id: mainTrack.user_id,
+            metadata: mainTrack.metadata as TrackMetadata | null,
+            suno_id: versionData.id,
+            created_at: mainTrack.created_at,
+          });
+        }
       });
     }
 

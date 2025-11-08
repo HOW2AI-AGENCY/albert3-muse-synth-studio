@@ -182,7 +182,9 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
   // ✅ Use consistent version number display
   const activeVersionLabel = `V${getDisplayVersionNumber(preferredVersion)}`;
 
-  if (!versions || versions.length <= 1) {
+  // ✅ FIX: Check if there are additional versions (not just total count)
+  // Component should only hide when there are NO additional versions to display
+  if (!versions || versions.length === 0 || additionalVersions.length === 0) {
     return null;
   }
 
