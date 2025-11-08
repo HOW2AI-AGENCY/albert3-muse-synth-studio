@@ -16,6 +16,7 @@ const parseAllowedOrigins = (): string[] => {
       'http://127.0.0.1:8080',
       'https://*.lovable.app',
       'https://*.lovableproject.com',
+      'https://music.how2ai.agency',
     ];
   }
 
