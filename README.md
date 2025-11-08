@@ -232,6 +232,57 @@ npm run test -- --coverage
 
 ---
 
+## 🔔 Вебхуки Suno: идемпотентность и обработка
+
+В проекте реализована надёжная идемпотентная обработка вебхуков Suno:
+
+- Проверка повторной доставки через таблицу `webhook_delivery_log` и RPC `check_webhook_processed`.
+- Регистрация начала обработки `register_webhook_delivery`, фиксация результата `complete_webhook_delivery` или ошибки `fail_webhook_delivery`.
+- Генерация `webhookId` из заголовков (`x-delivery-id`, `x-webhook-id`) либо детерминированно из `taskId`/`stage`.
+- Ошибочные колбэки (`code >= 400`, `callbackType === 'error'`) помечают трек как `failed`.
+
+Подробнее: `docs/architecture/webhooks.md`.
+
+```mermaid
+sequenceDiagram
+  participant Suno as Suno API
+  participant Edge as Supabase Edge Function
+  participant DB as PostgreSQL
+
+  Suno->>Edge: POST /generate-music-callb
+  Edge->>DB: check_webhook_processed(id)
+  alt Обработан
+    Edge-->>Suno: 200 OK
+  else Новый
+    Edge->>DB: register_webhook_delivery(id)
+    Edge->>Edge: processSunoCallback()
+    alt Ошибка
+      Edge->>DB: fail_webhook_delivery(id)
+    else Успех
+      Edge->>DB: complete_webhook_delivery(id)
+    end
+    Edge-->>Suno: 200 OK
+  end
+```
+
+---
+
+## 🧹 Очистка Supabase Storage
+
+Для предотвращения переполнения хранилища и снижения затрат:
+
+- В `supabase/functions/cleanup-storage-objects/index.ts` добавлена пагинация `list()` для больших бакетов.
+- Убрано обращение к несуществующему полю `deleted_at` в таблице `tracks`.
+- Очистка учитывает статус трека (`failed`), возраст файла и наличие трека в БД.
+
+Запуск локально:
+
+```bash
+deno task test   # включает тесты Edge-функций
+```
+
+---
+
 ## 🤝 Вклад в проект
 
 Мы приветствуем ваш вклад! Пожалуйста, ознакомьтесь с нашим [**Руководством для контрибьюторов (CONTRIBUTING.md)**](./CONTRIBUTING.md) перед началом работы.
