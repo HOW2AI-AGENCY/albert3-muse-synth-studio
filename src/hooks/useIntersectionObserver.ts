@@ -23,15 +23,20 @@ export const useIntersectionObserver = (
   const [entry, setEntry] = useState<IntersectionObserverEntry>();
   const [isVisible, setIsVisible] = useState(false);
   const elementRef = useRef<Element>();
+  const frozenRef = useRef(false);
 
   const frozen = entry?.isIntersecting && freezeOnceVisible;
 
+  useEffect(() => {
+    frozenRef.current = frozen;
+  }, [frozen]);
+
   const updateEntry = useCallback(([entry]: IntersectionObserverEntry[]) => {
     setEntry(entry);
-    if (!frozen) {
+    if (!frozenRef.current) {
       setIsVisible(entry.isIntersecting);
     }
-  }, [frozen]);
+  }, []);
 
   useEffect(() => {
     const node = elementRef.current;
@@ -108,11 +113,18 @@ export const useInfiniteScroll = (
     freezeOnceVisible: false
   });
 
+  // Use a ref to store the latest callback to avoid infinite loops
+  const callbackRef = useRef(callback);
+
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
+
   useEffect(() => {
     if (isVisible && hasMore) {
-      callback();
+      callbackRef.current();
     }
-  }, [isVisible, hasMore, callback]);
+  }, [isVisible, hasMore]);
 
   return { ref };
 };
