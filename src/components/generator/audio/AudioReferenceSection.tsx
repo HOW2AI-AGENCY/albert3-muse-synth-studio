@@ -87,12 +87,15 @@ export const AudioReferenceSection = memo(({
         logger.error('[AUTO-ANALYSIS] Failed', error, 'AudioReferenceSection');
       });
   }, [
-    autoAnalyze, 
+    autoAnalyze,
     referenceAudioUrl,
     isAnalyzing,
     isPolling,
-    analyzeAudio
-    // ✅ НЕ добавляем recognition/description в зависимости!
+    analyzeAudio,
+    recognition?.audio_file_url,
+    recognition?.status,
+    description?.audio_file_url,
+    description?.status,
   ]);
 
   // ✅ НОВОЕ: Уведомление родителя о завершении анализа
@@ -106,7 +109,7 @@ export const AudioReferenceSection = memo(({
         description,
       });
     }
-  }, [recognition?.status, description?.status, onAnalysisComplete]);
+  }, [recognition, description, onAnalysisComplete]);
 
   return (
     <div className="space-y-2">

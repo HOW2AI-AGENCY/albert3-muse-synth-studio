@@ -11,6 +11,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { TrackRowEnhanced } from '@/components/tracks/TrackRowEnhanced';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import type { Track } from '@/types/domain/track.types';
+import * as trackStateModule from '@/hooks/useTrackState';
 
 // Mock dependencies
 vi.mock('@/hooks/useTrackState', () => ({
@@ -73,14 +74,15 @@ describe('TrackRowEnhanced', () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    // Сбрасываем реализации моков к исходным, чтобы изменения из предыдущих тестов не протекали
+    vi.resetAllMocks();
   });
 
   describe('Rendering', () => {
     it('renders track title', () => {
       renderWithProviders(<TrackRowEnhanced track={mockTrack} />);
 
-      expect(screen.getByText('Test Track V1')).toBeInTheDocument();
+      expect(screen.getByText('Test Track V1')).toBeTruthy();
     });
 
     it('renders track prompt', () => {
@@ -92,8 +94,8 @@ describe('TrackRowEnhanced', () => {
     it('renders cover image when available', () => {
       renderWithProviders(<TrackRowEnhanced track={mockTrack} />);
 
-      const coverImage = screen.getByAlt(/test track v1 cover/i);
-      expect(coverImage).toBeInTheDocument();
+      const coverImage = screen.getByAltText(/test track v1 cover/i);
+      expect(coverImage).toBeTruthy();
       expect(coverImage).toHaveAttribute('src', 'https://example.com/cover.jpg');
     });
 
@@ -106,7 +108,7 @@ describe('TrackRowEnhanced', () => {
 
   describe('Version Support', () => {
     it('shows version selector when showVersionSelector is true and multiple versions exist', () => {
-      const { useTrackState } = require('@/hooks/useTrackState');
+      const { useTrackState } = trackStateModule;
       useTrackState.mockReturnValue({
         ...useTrackState(),
         versionCount: 2, // 2 additional versions + main = 3 total
@@ -120,7 +122,7 @@ describe('TrackRowEnhanced', () => {
     });
 
     it('does not show version selector when only one version exists', () => {
-      const { useTrackState } = require('@/hooks/useTrackState');
+      const { useTrackState } = trackStateModule;
       useTrackState.mockReturnValue({
         ...useTrackState(),
         versionCount: 0, // Only main version
@@ -134,7 +136,7 @@ describe('TrackRowEnhanced', () => {
     });
 
     it('does not show version selector when showVersionSelector is false', () => {
-      const { useTrackState } = require('@/hooks/useTrackState');
+      const { useTrackState } = trackStateModule;
       useTrackState.mockReturnValue({
         ...useTrackState(),
         versionCount: 2,
@@ -148,7 +150,7 @@ describe('TrackRowEnhanced', () => {
     });
 
     it('shows version count badge when multiple versions exist', () => {
-      const { useTrackState } = require('@/hooks/useTrackState');
+      const { useTrackState } = trackStateModule;
       useTrackState.mockReturnValue({
         ...useTrackState(),
         versionCount: 2, // 3 total versions
@@ -170,7 +172,7 @@ describe('TrackRowEnhanced', () => {
 
     it('calls handlePlayClick when play button is clicked', () => {
       const mockHandlePlayClick = vi.fn();
-      const { useTrackState } = require('@/hooks/useTrackState');
+      const { useTrackState } = trackStateModule;
       useTrackState.mockReturnValue({
         ...useTrackState(),
         handlePlayClick: mockHandlePlayClick,
@@ -185,7 +187,7 @@ describe('TrackRowEnhanced', () => {
     });
 
     it('shows pause icon when track is currently playing', () => {
-      const { useTrackState } = require('@/hooks/useTrackState');
+      const { useTrackState } = trackStateModule;
       useTrackState.mockReturnValue({
         ...useTrackState(),
         isCurrentTrack: true,
@@ -209,7 +211,7 @@ describe('TrackRowEnhanced', () => {
 
     it('does not show play button for processing tracks', () => {
       const processingTrack = { ...mockTrack, status: 'processing' as const };
-      const { useTrackState } = require('@/hooks/useTrackState');
+      const { useTrackState } = trackStateModule;
       useTrackState.mockReturnValue({
         ...useTrackState(),
         playButtonDisabled: true,
@@ -231,7 +233,8 @@ describe('TrackRowEnhanced', () => {
       };
       renderWithProviders(<TrackRowEnhanced track={failedTrack} />);
 
-      expect(screen.getByText(/failed/i)).toBeInTheDocument();
+      // Ищем именно статус-бейдж с текстом "Failed"
+      expect(screen.getByText(/^Failed$/i)).toBeInTheDocument();
       expect(screen.getByText(/generation failed/i)).toBeInTheDocument();
     });
 
@@ -246,20 +249,20 @@ describe('TrackRowEnhanced', () => {
 
   describe('Badges', () => {
     it('shows stems badge when stems are available', () => {
-      const { useTrackState } = require('@/hooks/useTrackState');
+      const { useTrackState } = trackStateModule;
       useTrackState.mockReturnValue({
         ...useTrackState(),
         hasStems: true,
       });
 
-      renderWithProviders(<TrackRowEnhanced track={mockTrack} />);
-
-      // Tooltip content
-      expect(screen.getByText(/доступны стемы/i)).toBeInTheDocument();
+      const { container } = renderWithProviders(<TrackRowEnhanced track={mockTrack} />);
+      // Проверяем наличие иконки Split (стемы) рядом с заголовком
+      const stemsIcon = container.querySelector('svg.h-3\\.5.w-3\\.5.text-primary');
+      expect(stemsIcon).toBeInTheDocument();
     });
 
-    it('shows master version badge for master version', () => {
-      const { useTrackState } = require('@/hooks/useTrackState');
+    it('shows master version badge icon for master version', () => {
+      const { useTrackState } = trackStateModule;
       useTrackState.mockReturnValue({
         ...useTrackState(),
         displayedVersion: {
@@ -270,8 +273,10 @@ describe('TrackRowEnhanced', () => {
 
       renderWithProviders(<TrackRowEnhanced track={mockTrack} />);
 
-      // Tooltip content
-      expect(screen.getByText(/мастер-версия/i)).toBeInTheDocument();
+      // Проверяем наличие иконки мастер-версии (звезда)
+      const { container } = renderWithProviders(<TrackRowEnhanced track={mockTrack} />);
+      const starIcon = container.querySelector('svg.text-yellow-500');
+      expect(starIcon).toBeInTheDocument();
     });
   });
 
@@ -304,7 +309,7 @@ describe('TrackRowEnhanced', () => {
 
     it('handles keyboard navigation (Enter key)', () => {
       const mockHandlePlayClick = vi.fn();
-      const { useTrackState } = require('@/hooks/useTrackState');
+      const { useTrackState } = trackStateModule;
       useTrackState.mockReturnValue({
         ...useTrackState(),
         handlePlayClick: mockHandlePlayClick,
@@ -320,7 +325,7 @@ describe('TrackRowEnhanced', () => {
 
     it('handles keyboard navigation (Space key)', () => {
       const mockHandlePlayClick = vi.fn();
-      const { useTrackState } = require('@/hooks/useTrackState');
+      const { useTrackState } = trackStateModule;
       useTrackState.mockReturnValue({
         ...useTrackState(),
         handlePlayClick: mockHandlePlayClick,
@@ -336,7 +341,7 @@ describe('TrackRowEnhanced', () => {
 
     it('handles like keyboard shortcut (L key)', () => {
       const mockHandleLikeClick = vi.fn();
-      const { useTrackState } = require('@/hooks/useTrackState');
+      const { useTrackState } = trackStateModule;
       useTrackState.mockReturnValue({
         ...useTrackState(),
         handleLikeClick: mockHandleLikeClick,
@@ -379,7 +384,7 @@ describe('TrackRowEnhanced', () => {
 
   describe('Current Track Highlight', () => {
     it('highlights current track with primary border', () => {
-      const { useTrackState } = require('@/hooks/useTrackState');
+      const { useTrackState } = trackStateModule;
       useTrackState.mockReturnValue({
         ...useTrackState(),
         isCurrentTrack: true,
@@ -393,7 +398,7 @@ describe('TrackRowEnhanced', () => {
     });
 
     it('highlights thumbnail with primary ring when current track', () => {
-      const { useTrackState } = require('@/hooks/useTrackState');
+      const { useTrackState } = trackStateModule;
       useTrackState.mockReturnValue({
         ...useTrackState(),
         isCurrentTrack: true,
@@ -401,7 +406,7 @@ describe('TrackRowEnhanced', () => {
 
       renderWithProviders(<TrackRowEnhanced track={mockTrack} />);
 
-      const thumbnail = screen.getByAlt(/test track v1 cover/i).parentElement;
+      const thumbnail = screen.getByAltText(/test track v1 cover/i).parentElement;
       expect(thumbnail).toHaveClass('ring-primary');
     });
   });

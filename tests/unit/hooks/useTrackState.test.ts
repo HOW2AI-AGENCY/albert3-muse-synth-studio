@@ -10,6 +10,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useTrackState } from '@/hooks/useTrackState';
 import type { Track } from '@/types/domain/track.types';
+// Импортируем модули, которые мокируются через vi.mock, чтобы работать с их мок‑функциями без require()
+import * as AudioPlayerStore from '@/stores/audioPlayerStore';
+import { useTrackVersionLike } from '@/features/tracks/hooks/useTrackVersionLike';
+import { useToast } from '@/hooks/use-toast';
 
 // Mock dependencies
 vi.mock('@/stores/audioPlayerStore', () => ({
@@ -180,8 +184,7 @@ describe('useTrackState', () => {
     describe('handlePlayClick', () => {
       it('calls playTrack with correct parameters', () => {
         const mockPlayTrack = vi.fn();
-        const { useAudioPlayerStore } = require('@/stores/audioPlayerStore');
-        useAudioPlayerStore.mockReturnValue({
+        AudioPlayerStore.useAudioPlayerStore.mockReturnValue({
           playTrack: mockPlayTrack,
           switchToVersion: vi.fn(),
         });
@@ -204,8 +207,7 @@ describe('useTrackState', () => {
 
       it('does not call playTrack when playButtonDisabled is true', () => {
         const mockPlayTrack = vi.fn();
-        const { useAudioPlayerStore } = require('@/stores/audioPlayerStore');
-        useAudioPlayerStore.mockReturnValue({
+        AudioPlayerStore.useAudioPlayerStore.mockReturnValue({
           playTrack: mockPlayTrack,
           switchToVersion: vi.fn(),
         });
@@ -224,7 +226,6 @@ describe('useTrackState', () => {
     describe('handleLikeClick', () => {
       it('calls toggleLike when clicked', () => {
         const mockToggleLike = vi.fn();
-        const { useTrackVersionLike } = require('@/features/tracks/hooks/useTrackVersionLike');
         useTrackVersionLike.mockReturnValue({
           isLiked: false,
           likeCount: 0,
@@ -244,7 +245,6 @@ describe('useTrackState', () => {
     describe('handleDownloadClick', () => {
       it('creates download link and triggers download', () => {
         const mockToast = vi.fn();
-        const { useToast } = require('@/hooks/use-toast');
         useToast.mockReturnValue({ toast: mockToast });
 
         // Mock DOM APIs
@@ -283,7 +283,6 @@ describe('useTrackState', () => {
 
       it('shows error toast when audio_url is missing', () => {
         const mockToast = vi.fn();
-        const { useToast } = require('@/hooks/use-toast');
         useToast.mockReturnValue({ toast: mockToast });
 
         const noAudioTrack = { ...mockTrack, audio_url: null };
@@ -327,7 +326,6 @@ describe('useTrackState', () => {
 
       it('falls back to clipboard when navigator.share is not available', async () => {
         const mockToast = vi.fn();
-        const { useToast } = require('@/hooks/use-toast');
         useToast.mockReturnValue({ toast: mockToast });
 
         const mockWriteText = vi.fn().mockResolvedValue(undefined);
@@ -382,7 +380,6 @@ describe('useTrackState', () => {
 
   describe('Like State', () => {
     it('provides isLiked from useTrackVersionLike', () => {
-      const { useTrackVersionLike } = require('@/features/tracks/hooks/useTrackVersionLike');
       useTrackVersionLike.mockReturnValue({
         isLiked: true,
         likeCount: 5,

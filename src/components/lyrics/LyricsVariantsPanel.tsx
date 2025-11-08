@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,28 +29,7 @@ export function LyricsVariantsPanel({ jobId, onSelect }: LyricsVariantsPanelProp
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    loadVariants();
-
-    // Subscribe to realtime updates
-    const channel = supabase
-      .channel(`lyrics_variants_${jobId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'lyrics_variants',
-        filter: `job_id=eq.${jobId}`,
-      }, () => {
-        loadVariants();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [jobId]);
-
-  const loadVariants = async () => {
+  const loadVariants = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('lyrics_variants')
@@ -71,7 +50,28 @@ export function LyricsVariantsPanel({ jobId, onSelect }: LyricsVariantsPanelProp
       });
       setIsLoading(false);
     }
-  };
+  }, [jobId, toast]);
+
+  useEffect(() => {
+    void loadVariants();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel(`lyrics_variants_${jobId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'lyrics_variants',
+        filter: `job_id=eq.${jobId}`,
+      }, () => {
+        void loadVariants();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [jobId, loadVariants]);
 
   const copyToClipboard = async (text: string, index: number) => {
     try {

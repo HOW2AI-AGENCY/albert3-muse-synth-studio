@@ -75,24 +75,26 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
            ('ontouchstart' in window || navigator.maxTouchPoints > 0);
   };
 
-  // Обновление информации о viewport
-  const updateViewport = () => {
-    if (typeof window === 'undefined') return;
-
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    
-    setViewport({
-      width,
-      height,
-      breakpoint: getBreakpoint(width),
-      orientation: getOrientation(width, height),
-      isTouch: getTouchSupport(),
-      pixelRatio: window.devicePixelRatio,
-    });
-  };
-
+  // Обновление информации о viewport и обработчики событий определены внутри эффекта,
+  // чтобы избежать предупреждения о пропущенной зависимости и не пересоздавать слушатели.
   useEffect(() => {
+    const updateViewport = () => {
+      if (typeof window === 'undefined') return;
+
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      setViewport({
+        width,
+        height,
+        breakpoint: getBreakpoint(width),
+        orientation: getOrientation(width, height),
+        isTouch: getTouchSupport(),
+        pixelRatio: window.devicePixelRatio,
+      });
+    };
+
+    // Инициализация
     updateViewport();
 
     const handleResize = () => {
@@ -390,60 +392,4 @@ export const FlexContainer: React.FC<FlexContainerProps> = ({
 };
 
 // Хук для получения информации о viewport
-export const useViewport = () => {
-  const [viewport, setViewport] = useState<ViewportInfo>({
-    width: typeof window !== 'undefined' ? window.innerWidth : 1024,
-    height: typeof window !== 'undefined' ? window.innerHeight : 768,
-    breakpoint: 'lg',
-    orientation: 'landscape',
-    isTouch: false,
-    pixelRatio: typeof window !== 'undefined' ? window.devicePixelRatio : 1,
-  });
-
-  useEffect(() => {
-    const updateViewport = () => {
-      if (typeof window === 'undefined') return;
-
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      
-      setViewport({
-        width,
-        height,
-        breakpoint: width >= 2560 ? '4k' : 
-                   width >= 1920 ? '3xl' :
-                   width >= 1536 ? '2xl' :
-                   width >= 1280 ? 'xl' :
-                   width >= 1024 ? 'lg' :
-                   width >= 768 ? 'md' :
-                   width >= 640 ? 'sm' : 'xs',
-        orientation: width > height ? 'landscape' : 'portrait',
-        isTouch: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
-        pixelRatio: window.devicePixelRatio,
-      });
-    };
-
-    updateViewport();
-
-    const handleResize = () => {
-      if (window.resizeTimeout) {
-        clearTimeout(window.resizeTimeout);
-      }
-      window.resizeTimeout = setTimeout(updateViewport, 100);
-    };
-
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', () => setTimeout(updateViewport, 200));
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      if (window.resizeTimeout) {
-        clearTimeout(window.resizeTimeout);
-      }
-    };
-  }, []);
-
-  return viewport;
-};
-
 export default ResponsiveLayout;

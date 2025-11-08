@@ -3,7 +3,7 @@
  * Показывается когда Mureka генерирует несколько вариантов текста
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -41,13 +41,7 @@ export const MurekaLyricsVariantDialog = ({
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (open && jobId) {
-      loadVariants();
-    }
-  }, [open, jobId]);
-
-  const loadVariants = async () => {
+  const loadVariants = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -73,7 +67,13 @@ export const MurekaLyricsVariantDialog = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [jobId, trackId]);
+
+  useEffect(() => {
+    if (open && jobId) {
+      void loadVariants();
+    }
+  }, [open, jobId, loadVariants]);
 
   const handleConfirm = () => {
     const variant = variants.find(v => v.id === selectedVariant);

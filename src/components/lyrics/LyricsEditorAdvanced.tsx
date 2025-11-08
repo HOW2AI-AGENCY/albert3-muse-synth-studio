@@ -68,7 +68,7 @@ export const LyricsEditorAdvanced: React.FC<LyricsEditorAdvancedProps> = ({
     })
   );
 
-  // Parse lyrics on mount and when rawText changes
+  // Парсинг лирики при монтировании и каждом изменении rawText
   useEffect(() => {
     if (rawText) {
       const sections = parseLyrics(rawText);
@@ -78,7 +78,7 @@ export const LyricsEditorAdvanced: React.FC<LyricsEditorAdvancedProps> = ({
         updatedAt: new Date().toISOString(),
       }));
     }
-  }, []);
+  }, [rawText]);
 
   // Lint on document change
   useEffect(() => {
@@ -93,13 +93,8 @@ export const LyricsEditorAdvanced: React.FC<LyricsEditorAdvancedProps> = ({
   }, [document, onLyricsChange]);
 
   const handleRawTextChange = (value: string) => {
+    // Парсинг будет выполнен в эффекте выше
     setRawText(value);
-    const sections = parseLyrics(value);
-    setDocument(prev => ({
-      ...prev,
-      sections,
-      updatedAt: new Date().toISOString(),
-    }));
   };
 
   const handleDragEnd = (event: DragEndEvent) => {

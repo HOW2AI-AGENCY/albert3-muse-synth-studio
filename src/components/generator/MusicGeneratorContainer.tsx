@@ -46,15 +46,18 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
 
   const audioUpload = useAudioUploadHandler(state);
 
+  // Избегаем прямой ссылки на объект state внутри эффекта
+  const { setParam: setParamPrompt, debouncedPrompt } = state;
   useEffect(() => {
-    const timer = setTimeout(() => state.setParam('prompt', state.debouncedPrompt), 300);
+    const timer = setTimeout(() => setParamPrompt('prompt', debouncedPrompt), 300);
     return () => clearTimeout(timer);
-  }, [state.debouncedPrompt, state.setParam]);
+  }, [debouncedPrompt, setParamPrompt]);
 
+  const { setParam: setParamLyrics, debouncedLyrics } = state;
   useEffect(() => {
-    const timer = setTimeout(() => state.setParam('lyrics', state.debouncedLyrics), 300);
+    const timer = setTimeout(() => setParamLyrics('lyrics', debouncedLyrics), 300);
     return () => clearTimeout(timer);
-  }, [state.debouncedLyrics, state.setParam]);
+  }, [debouncedLyrics, setParamLyrics]);
 
   const handleLyricsStage = useCallback(
     ({ trackId, jobId }: { trackId: string; jobId: string }) => {
