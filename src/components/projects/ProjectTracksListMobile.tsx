@@ -17,7 +17,7 @@ import { TrackStatusBadge } from '@/components/tracks/TrackStatusBadge';
 import { useTracks } from '@/hooks/useTracks';
 import { useTranslation } from '@/i18n';
 import { cn } from '@/lib/utils';
-import type { TrackStatus } from '@/components/tracks/TrackStatusBadge';
+import type { TrackStatus } from '@/components/tracks/track-status.types';
 
 interface ProjectTracksListMobileProps {
   projectId: string;

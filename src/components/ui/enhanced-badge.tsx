@@ -22,7 +22,7 @@ const badgeVariants = cva(
   }
 );
 
-export interface BadgeProps 
+interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {}
 
@@ -40,4 +40,5 @@ const EnhancedBadge = React.forwardRef<HTMLDivElement, BadgeProps>(
 
 EnhancedBadge.displayName = "EnhancedBadge";
 
-export { EnhancedBadge, badgeVariants };
+// Экспортируем только компонент, чтобы соответствовать правилам Fast Refresh
+export { EnhancedBadge };

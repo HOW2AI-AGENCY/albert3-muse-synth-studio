@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 /**
  * 🔍 Типы устройств и их характеристики
  */
-export interface DeviceProfile {
+interface DeviceProfile {
   id: string;
   name: string;
   category: 'mobile' | 'tablet' | 'desktop' | 'tv';
@@ -32,7 +32,7 @@ export interface DeviceProfile {
 /**
  * 📱 Предустановленные профили устройств
  */
-export const deviceProfiles: DeviceProfile[] = [
+const deviceProfiles: DeviceProfile[] = [
   // iOS устройства
   {
     id: 'iphone-15-pro',
@@ -209,7 +209,7 @@ export const deviceProfiles: DeviceProfile[] = [
 /**
  * 🧪 Результаты тестирования
  */
-export interface TestResult {
+interface TestResult {
   deviceId: string;
   testName: string;
   status: 'pass' | 'fail' | 'warning' | 'pending';
@@ -227,7 +227,7 @@ export interface TestResult {
 /**
  * 🔧 Хук для определения текущего устройства
  */
-export const useDeviceDetection = () => {
+const useDeviceDetection = () => {
   const [currentDevice, setCurrentDevice] = useState<DeviceProfile | null>(null);
   const [capabilities, setCapabilities] = useState({
     touch: false,
@@ -706,13 +706,4 @@ export const CompatibilityStats: React.FC<CompatibilityStatsProps> = ({
       </div>
     </div>
   );
-};
-
-export default {
-  deviceProfiles,
-  useDeviceDetection,
-  DeviceInfo,
-  AutoTester,
-  DeviceSimulator,
-  CompatibilityStats,
 };

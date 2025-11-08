@@ -22,7 +22,7 @@ const cardVariants = cva(
   },
 );
 
-export interface CardProps
+interface CardProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof cardVariants> {
   asChild?: boolean;
@@ -72,4 +72,5 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 );
 CardFooter.displayName = "CardFooter";
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent, cardVariants };
+// Экспортируем только компоненты, чтобы соответствовать правилам Fast Refresh
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };

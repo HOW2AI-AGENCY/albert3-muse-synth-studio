@@ -11,7 +11,7 @@ import { Clock, FileEdit, Loader2, CheckCircle2, AlertCircle } from 'lucide-reac
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/i18n';
 
-export type TrackStatus = 'pending' | 'draft' | 'processing' | 'completed' | 'failed';
+import type { TrackStatus } from './track-status.types';
 
 interface StatusConfig {
   icon: typeof Clock;
@@ -55,7 +55,7 @@ interface TrackStatusBadgeProps {
   showTooltip?: boolean;
 }
 
-export const TrackStatusBadge = memo<TrackStatusBadgeProps>(({
+export const TrackStatusBadge = memo<TrackStatusBadgeProps>(({ 
   status,
   variant = 'default',
   className,
@@ -146,7 +146,7 @@ TrackStatusBadge.displayName = 'TrackStatusBadge';
  * Hook to get status configuration with localized labels
  * Useful for custom styling and status display
  */
-export const useStatusConfig = (status: TrackStatus) => {
+const useStatusConfig = (status: TrackStatus) => {
   const t = useTranslation();
   const config = STATUS_ICON_CONFIG[status];
 
@@ -161,20 +161,20 @@ export const useStatusConfig = (status: TrackStatus) => {
  * Utility to check if status allows generation
  * Based on can_generate_track() PostgreSQL function
  */
-export const canGenerateTrack = (status: TrackStatus): boolean => {
+const canGenerateTrack = (status: TrackStatus): boolean => {
   return status === 'pending' || status === 'draft';
 };
 
 /**
  * Utility to check if track is in final state
  */
-export const isFinalStatus = (status: TrackStatus): boolean => {
+const isFinalStatus = (status: TrackStatus): boolean => {
   return status === 'completed' || status === 'failed';
 };
 
 /**
  * Utility to check if track is being processed
  */
-export const isProcessingStatus = (status: TrackStatus): boolean => {
+const isProcessingStatus = (status: TrackStatus): boolean => {
   return status === 'processing';
 };

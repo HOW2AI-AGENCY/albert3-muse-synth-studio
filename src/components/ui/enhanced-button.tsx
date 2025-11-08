@@ -146,4 +146,5 @@ const EnhancedButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
 EnhancedButton.displayName = "EnhancedButton";
 
-export { EnhancedButton, buttonVariants };
+// Экспортируем только компонент, чтобы соответствовать правилам Fast Refresh
+export { EnhancedButton };
