@@ -11,7 +11,7 @@
     <img src="https://img.shields.io/badge/Vite-7.1-646cff.svg?style=for-the-badge&logo=vite" alt="Vite">
   </div>
   <div>
-    <a href="https://github.com/albert-app/albert3-muse-synth-studio/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/albert-app/albert3-muse-synth-studio/ci.yml?style=for-the-badge&label=CI%2FCD" alt="CI/CD"></a>
+    <a href="https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/HOW2AI-AGENCY/albert3-muse-synth-studio/ci.yml?branch=main&style=for-the-badge&label=CI%2FCD" alt="CI/CD"></a>
     <img src="https://img.shields.io/badge/Coverage-vitest--summary-blue.svg?style=for-the-badge" alt="Test Coverage">
     <img src="https://img.shields.io/badge/version-2.6.2-informational.svg?style=for-the-badge" alt="Package Version">
     <img src="https://img.shields.io/badge/Security-9.0/10-brightgreen.svg?style=for-the-badge" alt="Security Score">
