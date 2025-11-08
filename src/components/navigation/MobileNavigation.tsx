@@ -162,7 +162,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isDrawerOpen]);
+  }, [isDrawerOpen, closeDrawer]);
 
   // Блокировка прокрутки body при открытом drawer
   useEffect(() => {
