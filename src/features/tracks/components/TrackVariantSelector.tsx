@@ -191,7 +191,8 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
                       onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
-                        const targetIndex = index < totalVersions ? index : 0;
+                        // ✅ FIX: Используем корректный индекс версии
+                        const targetIndex = Math.min(index, totalVersions - 1);
                         onVersionChange(targetIndex);
                         setIsOpen(false);
                       }}

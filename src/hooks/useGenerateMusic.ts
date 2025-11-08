@@ -26,8 +26,8 @@ interface UseGenerateMusicOptions {
   toast: ToastFunction;
 }
 
-// ✅ FIX: Уменьшено с 5 минут до 30 секунд для лучшего UX
-const AUTO_CLEANUP_TIMEOUT = 30 * 1000; // 30 seconds (было 5 minutes)
+// ✅ FIX: Увеличено до 3 минут для стабильной работы realtime
+const AUTO_CLEANUP_TIMEOUT = 3 * 60 * 1000; // 3 minutes
 const DEBOUNCE_DELAY = 2000; // 2 seconds
 const POLLING_INTERVAL = 10000; // 10 seconds
 const MAX_POLLING_DURATION = 10 * 60 * 1000; // 10 minutes
@@ -165,7 +165,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
 
     // Auto-cleanup after timeout, then start polling as fallback
     cleanupTimerRef.current = setTimeout(() => {
-      logger.warn('Auto-cleaning stale subscription after 30 seconds, starting polling fallback', 'useGenerateMusic', { trackId });
+      logger.warn('Auto-cleaning stale subscription after 3 minutes, starting polling fallback', 'useGenerateMusic', { trackId });
       
       // Unsubscribe from realtime
       if (subscriptionRef.current) {
@@ -282,7 +282,43 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
         isCached: result.taskId === 'cached',
       });
 
-      // ✅ FIX: Validate taskId before proceeding
+      // ✅ FIX: Validate result.success before accessing taskId
+      if (!result.success) {
+        const errorMsg = result.error || 'Генерация не удалась';
+        logger.error('[HOOK] Generation failed', new Error(errorMsg), 'useGenerateMusic', {
+          trackId: result.trackId,
+          provider: effectiveProvider,
+        });
+
+        toast({
+          title: 'Ошибка генерации',
+          description: errorMsg,
+          variant: 'destructive',
+        });
+
+        cleanup();
+        return false;
+      }
+
+      // ✅ FIX: Validate trackId presence
+      if (!result.trackId || typeof result.trackId !== 'string' || result.trackId.trim().length === 0) {
+        const error = new Error('Invalid track ID received from server');
+        logger.error('[HOOK] Invalid track ID', error, 'useGenerateMusic', {
+          result,
+          provider: effectiveProvider,
+        });
+
+        toast({
+          title: 'Ошибка генерации',
+          description: 'Сервер вернул некорректный идентификатор трека.',
+          variant: 'destructive',
+        });
+
+        cleanup();
+        return false;
+      }
+
+      // ✅ FIX: Validate taskId before proceeding (unless cached)
       const isCachedResult = result.taskId === 'cached';
 
       if (!isCachedResult) {

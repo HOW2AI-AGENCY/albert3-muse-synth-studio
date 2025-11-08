@@ -14,13 +14,21 @@ interface LyricsDisplayProps {
  * Only re-renders when taskId or audioId changes
  */
 export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audioId, fallbackLyrics }) => {
-  // ✅ P0 FIX: Skip timestamped lyrics fetch if no taskId
-  // ✅ HOTFIX: Ensure boolean type for React Query enabled parameter
-  const shouldFetchTimestamped = !!(taskId && taskId.length > 0);
+  // ✅ FIX: Улучшенная валидация taskId и audioId
+  const shouldFetchTimestamped = Boolean(
+    taskId && 
+    typeof taskId === 'string' && 
+    taskId.trim().length > 0 &&
+    taskId !== 'null' &&
+    taskId !== 'undefined' &&
+    audioId && 
+    typeof audioId === 'string' && 
+    audioId.trim().length > 0
+  );
 
   const { data: lyricsData, isLoading, isError } = useTimestampedLyrics({
-    taskId,
-    audioId,
+    taskId: taskId || '',
+    audioId: audioId || '',
     enabled: shouldFetchTimestamped
   });
   const currentTime = useAudioPlayerStore((state) => state.currentTime);
