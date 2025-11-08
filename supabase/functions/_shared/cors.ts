@@ -6,18 +6,20 @@ const parseAllowedOrigins = (): string[] => {
   const raw = Deno.env.get('CORS_ALLOWED_ORIGINS');
 
   if (!raw) {
-    // ✅ SECURITY: Default to localhost and Lovable preview/production domains
-    // For production, set CORS_ALLOWED_ORIGINS env variable with your domains:
-    // Example: "https://albert3.com,https://*.vercel.app,https://albert3-muse-synth-studio.vercel.app"
-    return [
-      'http://localhost:5173',
-      'http://localhost:8080',
-      'http://127.0.0.1:5173',
-      'http://127.0.0.1:8080',
-      'https://*.lovable.app',
-      'https://*.lovableproject.com',
-      'https://music.how2ai.agency',
-    ];
+    // ⚠️ TEMPORARY FIX: Using wildcard to allow all origins
+    // TODO: Once Edge Functions are redeployed, change back to whitelist:
+    // [
+    //   'http://localhost:5173',
+    //   'http://localhost:8080',
+    //   'http://127.0.0.1:5173',
+    //   'http://127.0.0.1:8080',
+    //   'https://*.lovable.app',
+    //   'https://*.lovableproject.com',
+    //   'https://music.how2ai.agency',
+    // ]
+    // This is a temporary workaround until we can redeploy Edge Functions
+    // with proper CORS configuration through Supabase Dashboard.
+    return ['*'];
   }
 
   return raw
