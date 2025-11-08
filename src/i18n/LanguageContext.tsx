@@ -4,7 +4,7 @@
  * Phase 3 improvement from 2025-11-05 audit
  */
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode, memo } from 'react';
+import { useState, useCallback, useEffect, ReactNode, memo } from 'react';
 import {
   Language,
   TranslationKey,
@@ -14,41 +14,8 @@ import {
   LANGUAGE_NAMES,
 } from './config';
 import { logger } from '@/utils/logger';
+import { LanguageContext, type LanguageContextValue } from './LanguageContextBase';
 
-/**
- * Language context value
- */
-interface LanguageContextValue {
-  /**
-   * Current language
-   */
-  language: Language;
-
-  /**
-   * Change language
-   */
-  setLanguage: (lang: Language) => void;
-
-  /**
-   * Translate a key
-   */
-  t: (key: TranslationKey, params?: Record<string, string | number>) => string;
-
-  /**
-   * Get language display name
-   */
-  getLanguageName: (lang: Language, format?: 'native' | 'english') => string;
-
-  /**
-   * Get all available languages
-   */
-  availableLanguages: Language[];
-}
-
-/**
- * Language context
- */
-const LanguageContext = createContext<LanguageContextValue | undefined>(undefined);
 
 /**
  * Language provider props
@@ -125,31 +92,4 @@ LanguageProvider.displayName = 'LanguageProvider';
  * @returns Language context value
  * @throws Error if used outside LanguageProvider
  */
-export const useLanguage = (): LanguageContextValue => {
-  const context = useContext(LanguageContext);
-
-  if (!context) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
-  }
-
-  return context;
-};
-
-/**
- * Hook to use translations
- * Convenience hook that returns only the translate function
- * @returns Translate function
- */
-export const useTranslation = (): LanguageContextValue['t'] => {
-  const { t } = useLanguage();
-  return t;
-};
-
-/**
- * Hook to get current language
- * @returns Current language code
- */
-export const useCurrentLanguage = (): Language => {
-  const { language } = useLanguage();
-  return language;
-};
+// Хуки перенесены в './languageHooks', чтобы файл контекста экспортировал только компонент

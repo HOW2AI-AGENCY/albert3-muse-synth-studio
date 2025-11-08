@@ -13,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useLanguage } from '../LanguageContext';
+import { useLanguage } from '../languageHooks';
 import { Language } from '../config';
 import { hapticFeedback } from '@/utils/haptic';
 import { cn } from '@/lib/utils';

@@ -17,12 +17,8 @@ export {
 } from './config';
 
 // Context & Hooks
-export {
-  LanguageProvider,
-  useLanguage,
-  useTranslation,
-  useCurrentLanguage,
-} from './LanguageContext';
+export { LanguageProvider } from './LanguageContext';
+export { useLanguage, useTranslation, useCurrentLanguage } from './languageHooks';
 
 // Components
 export { LanguageSwitcher } from './components/LanguageSwitcher';
