@@ -12,8 +12,15 @@ export const useTrackCardState = (track: Track) => {
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
   const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
 
-  const { versions, mainVersion, versionCount, masterVersion } = useTrackVersions(track.id, true);
-  
+  // ✅ FIX: Use allVersions from hook instead of manually combining mainVersion + versions
+  // The hook's allVersions includes versions from metadata.suno_data via hybrid merging
+  const {
+    allVersions: hookAllVersions,
+    mainVersion,
+    versionCount,
+    masterVersion
+  } = useTrackVersions(track.id, true);
+
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [hasStems, setHasStems] = useState(false);
@@ -49,12 +56,11 @@ export const useTrackCardState = (track: Track) => {
     checkStems();
   }, [track.id]);
 
-  // ✅ FIX: Фильтруем только версии с audio_url
+  // ✅ FIX: Filter versions with audio_url from hook's allVersions
+  // This includes versions from both track_versions DB and metadata.suno_data
   const allVersions = useMemo(() => {
-    if (!mainVersion) return [];
-    const validVersions = [mainVersion, ...versions].filter(v => !!v.audio_url);
-    return validVersions;
-  }, [mainVersion, versions]);
+    return hookAllVersions.filter(v => !!v.audio_url);
+  }, [hookAllVersions]);
 
   // ✅ FIX: Синхронизация с плеером
   useEffect(() => {
