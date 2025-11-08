@@ -1,0 +1,58 @@
+name: Release Version Synchronization
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Версия для синхронизации (например, 2.6.4)'
+        required: true
+
+jobs:
+  verify-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            TAG=${GITHUB_REF#refs/tags/v}
+            echo "version=$TAG" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Read package.json version
+        id: pkg
+        run: |
+          PKG_VERSION=$(cat package.json | jq -r '.version')
+          echo "pkg_version=$PKG_VERSION" >> $GITHUB_OUTPUT
+          echo "Package.json version: $PKG_VERSION"
+
+      - name: Check CHANGELOG contains version header
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if ! grep -E "##\s+\[?${VERSION}\]?" CHANGELOG.md > /dev/null; then
+            echo "CHANGELOG.md не содержит заголовка версии ${VERSION}."
+            exit 1
+          fi
+
+      - name: Ensure package.json matches version
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          PKG="${{ steps.pkg.outputs.pkg_version }}"
+          if [ "$VERSION" != "$PKG" ]; then
+            echo "Несинхронизированные версии: tag=${VERSION}, package.json=${PKG}."
+            echo "Пожалуйста, обновите package.json и CHANGELOG.md до ${VERSION}."
+            exit 1
+          else
+            echo "Версии синхронизированы: ${VERSION}."
+          fi

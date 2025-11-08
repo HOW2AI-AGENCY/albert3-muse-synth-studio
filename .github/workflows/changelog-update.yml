@@ -1,0 +1,32 @@
+name: Conventional Changelog Update
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  update-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate Changelog from Conventional Commits
+        uses: TriPSs/conventional-changelog-action@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          output-file: CHANGELOG.md
+          release-count: 0
+          skip-version-file: false
+          version-file: package.json
+          preset: conventionalcommits
+          tag-prefix: v
+          commit-message: "docs(changelog): update changelog"
+
+      - name: Commit and Push changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: "CHANGELOG.md"
+          message: "docs(changelog): auto-update"
+          push: true

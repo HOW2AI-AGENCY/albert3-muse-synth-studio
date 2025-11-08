@@ -11,6 +11,9 @@
     <img src="https://img.shields.io/badge/Vite-7.1-646cff.svg?style=for-the-badge&logo=vite" alt="Vite">
   </div>
   <div>
+    <a href="https://github.com/albert-app/albert3-muse-synth-studio/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/albert-app/albert3-muse-synth-studio/ci.yml?style=for-the-badge&label=CI%2FCD" alt="CI/CD"></a>
+    <img src="https://img.shields.io/badge/Coverage-vitest--summary-blue.svg?style=for-the-badge" alt="Test Coverage">
+    <img src="https://img.shields.io/badge/version-2.6.2-informational.svg?style=for-the-badge" alt="Package Version">
     <img src="https://img.shields.io/badge/Security-9.0/10-brightgreen.svg?style=for-the-badge" alt="Security Score">
     <img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="License">
     <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge" alt="PRs Welcome">
@@ -19,6 +22,23 @@
 </div>
 
 ---
+
+## 📑 Содержание
+
+- [О проекте](#-о-проекте)
+- [Навигация по репозиторию](#-навигация-по-репозиторию)
+- [Ключевые особенности](#-ключевые-особенности)
+- [Архитектура системы](#-архитектура-системы)
+- [Установка](#-установка)
+- [Примеры использования](#-примеры-использования)
+- [Тестирование](#-тестирование)
+- [Вебхуки Suno](#-вебхуки-suno-идемпотентность-и-обработка)
+- [Визуальные элементы](#-визуальные-элементы)
+- [Вклад в проект](#-вклад-в-проект)
+- [Лицензия](#-лицензия)
+- [Архив отчётов](#-архив-отчётов-и-политика-хранения)
+
+Быстрые ссылки: [Документация](./docs/README.md) • [Индекс документов](./docs/INDEX.md) • [Контрибьютинг](./CONTRIBUTING.md) • [Changelog](./CHANGELOG.md)
 
 ## 🚨 Последние обновления
 
@@ -212,6 +232,42 @@ const TrackVersionsComponent = ({ trackId }: { trackId: string }) => {
 ```
 </details>
 
+<details>
+<summary>Пример: Вызов Edge-функции из Node.js-скрипта (нажмите для просмотра)</summary>
+
+```ts
+// scripts/examples/call-edge.ts
+import 'cross-fetch/polyfill';
+
+const SUPABASE_FUNCTIONS_URL = process.env.SUPABASE_FUNCTIONS_URL!; // например: https://<project-id>.functions.supabase.co
+const SUNO_PROMPT = 'Ambient chillout with soft pads and slow beat';
+
+async function main() {
+  const resp = await fetch(`${SUPABASE_FUNCTIONS_URL}/generate-suno`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt: SUNO_PROMPT, tags: 'ambient,chill' })
+  });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  const data = await resp.json();
+  console.log('Задача поставлена:', data);
+}
+
+main().catch((e) => {
+  console.error('Ошибка:', e);
+  process.exit(1);
+});
+```
+
+Запуск (Windows PowerShell):
+
+```powershell
+$env:SUPABASE_FUNCTIONS_URL="https://<project-id>.functions.supabase.co"
+node .\scripts\examples\call-edge.ts
+```
+
+</details>
+
 ---
 
 ## 🧪 Тестирование
@@ -267,6 +323,21 @@ sequenceDiagram
 
 ---
 
+## 🖼️ Визуальные элементы
+
+Для быстрого представления интерфейса используйте скриншоты и gif-анимации. Ниже — пример-placeholder (обновите при необходимости реальными скриншотами):
+
+<div align="center">
+  <img src="public/images/mureka-placeholder.webp" alt="Интерфейс приложения (пример)" width="720" />
+</div>
+
+Рекомендации:
+- Храните изображения в `public/images`.
+- Используйте форматы PNG/SVG/WebP; для gif-анимаций — оптимизированные WebP.
+- Добавляйте подписи и ссылки на соответствующие разделы документации (например, [Компоненты UI](./src/components/ui)).
+
+---
+
 ## 🧹 Очистка Supabase Storage
 
 Для предотвращения переполнения хранилища и снижения затрат:
@@ -287,11 +358,21 @@ deno task test   # включает тесты Edge-функций
 
 Мы приветствуем ваш вклад! Пожалуйста, ознакомьтесь с нашим [**Руководством для контрибьюторов (CONTRIBUTING.md)**](./CONTRIBUTING.md) перед началом работы.
 
+Кратко о процессе ревью:
+- Коммиты — по Conventional Commits (feat/fix/docs/chore и т.д.).
+- Перед PR: `npm run verify:workspace` (линт, типы, тесты, сборка).
+- PR должен проходить обязательные проверки в CI: TypeScript, ESLint, Unit/E2E, Edge Functions.
+- Обновляйте документацию и Changelog при изменениях логики или API.
+
 ---
 
 ## 📄 Лицензия
 
 Этот проект лицензирован под [MIT License](./LICENSE).
+
+Условия использования:
+- Свободно используйте и модифицируйте код при сохранении уведомления об авторских правах и лицензии.
+- ПО предоставляется «как есть», без гарантий. См. текст лицензии для подробностей.
 
 ---
 

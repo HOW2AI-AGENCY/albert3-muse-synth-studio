@@ -1,0 +1,35 @@
+name: Enforce Changelog Changes on PR
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  require-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes in PR files
+        id: diff
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }} HEAD)
+          echo "changed=$CHANGED" >> $GITHUB_OUTPUT
+          echo "Changed files:\n$CHANGED"
+
+      - name: Fail if code changed without CHANGELOG update
+        run: |
+          echo "Checking for CHANGELOG.md in changes..."
+          CODE_CHANGED=$(echo "${{ steps.diff.outputs.changed }}" | egrep -i "^(src/|supabase/|package.json|packages/|apps/|server/|api/|scripts/)" || true)
+          CHANGELOG_CHANGED=$(echo "${{ steps.diff.outputs.changed }}" | egrep -i "^CHANGELOG.md$" || true)
+          if [ -n "$CODE_CHANGED" ] && [ -z "$CHANGELOG_CHANGED" ]; then
+            echo "ERROR: В этом PR изменён код, но отсутствует правка CHANGELOG.md."
+            echo "Пожалуйста, добавьте соответствующий раздел в CHANGELOG.md (Added/Changed/Fixed/Security/Docs)."
+            exit 1
+          else
+            echo "OK: либо код не менялся, либо CHANGELOG обновлён."
+          fi
