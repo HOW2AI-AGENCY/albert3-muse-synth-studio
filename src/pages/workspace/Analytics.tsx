@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -67,11 +67,8 @@ const Analytics = () => {
     value === '7d' || value === '30d' || value === 'all';
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [timeRange]);
-
-  const fetchAnalytics = async () => {
+  // Загружаем аналитические данные, оборачиваем в useCallback для корректных зависимостей
+  const fetchAnalytics = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -150,7 +147,12 @@ const Analytics = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [timeRange]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
+
 
   const exportToCSV = () => {
     const headers = ['Track ID', 'Title', 'Views', 'Plays', 'Likes', 'Downloads', 'Genre', 'Created At'];

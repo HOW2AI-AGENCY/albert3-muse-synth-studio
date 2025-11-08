@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { 
   Home, 
@@ -65,8 +65,8 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
   const drawerRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
-  // Haptic feedback (если поддерживается)
-  const triggerHaptic = (type: 'light' | 'medium' | 'heavy' = 'light') => {
+  // Haptic feedback (если поддерживается) — делаем стабильной ссылкой
+  const triggerHaptic = useCallback((type: 'light' | 'medium' | 'heavy' = 'light') => {
     if ('vibrate' in navigator) {
       const patterns = {
         light: [10],
@@ -75,7 +75,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
       };
       navigator.vibrate(patterns[type]);
     }
-  };
+  }, []);
 
   // Обработка жестов для drawer
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -136,15 +136,15 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
     setIsDragging(false);
   };
 
-  const openDrawer = () => {
+  const openDrawer = useCallback(() => {
     setIsDrawerOpen(true);
     triggerHaptic('light');
-  };
+  }, [triggerHaptic]);
 
-  const closeDrawer = () => {
+  const closeDrawer = useCallback(() => {
     setIsDrawerOpen(false);
     triggerHaptic('light');
-  };
+  }, [triggerHaptic]);
 
   const handleTabClick = (tab: TabItem) => {
     triggerHaptic('light');

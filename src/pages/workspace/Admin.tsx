@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,14 +40,8 @@ export default function Admin() {
   const [modeLoading, setModeLoading] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (!roleLoading && isAdmin) {
-      fetchAdminData();
-      fetchCreditMode();
-    }
-  }, [roleLoading, isAdmin]);
-
-  const fetchCreditMode = async () => {
+  // Загружаем режим кредитов (обернуто в useCallback для стабильной ссылки)
+  const fetchCreditMode = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('app_settings')
@@ -63,45 +57,10 @@ export default function Admin() {
     } catch (error) {
       logger.error('Failed to fetch credit mode', error as Error, 'Admin');
     }
-  };
+  }, []);
 
-  const handleCreditModeChange = async (checked: boolean) => {
-    const newMode = checked ? 'production' : 'test';
-    setModeLoading(true);
-
-    try {
-      const { error } = await supabase
-        .from('app_settings')
-        .update({ 
-          value: { 
-            mode: newMode, 
-            description: newMode === 'test' 
-              ? 'Test mode - shared provider balance' 
-              : 'Production mode - internal platform credits'
-          } 
-        })
-        .eq('key', 'credit_mode');
-
-      if (error) throw error;
-
-      setCreditMode(newMode);
-      toast({
-        title: 'Успешно',
-        description: `Режим кредитов изменен на ${newMode === 'test' ? 'тестовый' : 'продакшн'}`,
-      });
-    } catch (error) {
-      logger.error('Failed to update credit mode', error as Error, 'Admin');
-      toast({
-        title: 'Ошибка',
-        description: 'Не удалось изменить режим кредитов',
-        variant: 'destructive',
-      });
-    } finally {
-      setModeLoading(false);
-    }
-  };
-
-  const fetchAdminData = async () => {
+  // Загружаем данные админ-панели (обернуто в useCallback для корректных зависимостей в useEffect)
+  const fetchAdminData = useCallback(async () => {
     setIsLoading(true);
     try {
       // Получаем статистику
@@ -157,7 +116,51 @@ export default function Admin() {
     } finally {
       setIsLoading(false);
     }
+  }, [toast]);
+
+  useEffect(() => {
+    if (!roleLoading && isAdmin) {
+      fetchAdminData();
+      fetchCreditMode();
+    }
+  }, [roleLoading, isAdmin, fetchAdminData, fetchCreditMode]);
+
+  const handleCreditModeChange = async (checked: boolean) => {
+    const newMode = checked ? 'production' : 'test';
+    setModeLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('app_settings')
+        .update({ 
+          value: { 
+            mode: newMode, 
+            description: newMode === 'test' 
+              ? 'Test mode - shared provider balance' 
+              : 'Production mode - internal platform credits'
+          } 
+        })
+        .eq('key', 'credit_mode');
+
+      if (error) throw error;
+
+      setCreditMode(newMode);
+      toast({
+        title: 'Успешно',
+        description: `Режим кредитов изменен на ${newMode === 'test' ? 'тестовый' : 'продакшн'}`,
+      });
+    } catch (error) {
+      logger.error('Failed to update credit mode', error as Error, 'Admin');
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось изменить режим кредитов',
+        variant: 'destructive',
+      });
+    } finally {
+      setModeLoading(false);
+    }
   };
+
 
   const handleDeleteTrack = async (trackId: string) => {
     if (!confirm('Вы уверены, что хотите удалить этот трек?')) return;
