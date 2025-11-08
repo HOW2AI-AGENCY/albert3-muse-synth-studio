@@ -143,7 +143,7 @@ export class SunoGenerationHandler extends GenerationHandler<SunoGenerationParam
     // ✅ Добавляем языковой hint если нужно
     const promptWithHint = customMode 
       ? params.lyrics || ''
-      : addLanguageHint(params.prompt || '', params.lyrics);
+      : addLanguageHint(params.prompt || '', params.lyrics || undefined);
 
     const sunoPayload: SunoGenerationPayload = {
       prompt: promptWithHint,
@@ -187,13 +187,24 @@ export class SunoGenerationHandler extends GenerationHandler<SunoGenerationParam
     // Parse Suno response - queryResult.tasks contains the tracks
     if (queryResult.status === 'SUCCESS' && queryResult.tasks.length > 0) {
       const track = queryResult.tasks[0];
-      
+      // ✅ Добавляем все варианты в metadata.suno_data, чтобы фронтенд мог показать версии
+      const sunoData = queryResult.tasks.map(t => ({
+        id: t.id,
+        audio_url: t.audioUrl,
+        stream_audio_url: t.streamAudioUrl,
+        cover_url: t.imageUrl,
+        video_url: (t as any).videoUrl ?? undefined,
+        duration: t.duration,
+        title: t.title,
+      }));
+
       return {
         status: 'completed',
         audio_url: track.audioUrl,
         cover_url: track.imageUrl,
         duration: track.duration,
         title: track.title,
+        metadata: { suno_data: sunoData },
       };
     }
 
