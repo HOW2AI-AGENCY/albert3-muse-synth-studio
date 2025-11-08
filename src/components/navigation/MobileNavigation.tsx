@@ -389,68 +389,6 @@ const DrawerMenuItem: React.FC<DrawerMenuItemProps> = ({ item, onClose, level = 
  */
 
 // Основные вкладки для музыкального приложения
-export const defaultMusicTabs: TabItem[] = [
-  {
-    id: 'home',
-    label: 'Главная',
-    icon: Home,
-  },
-  {
-    id: 'library',
-    label: 'Библиотека',
-    icon: Music,
-  },
-  {
-    id: 'record',
-    label: 'Запись',
-    icon: Mic,
-  },
-  {
-    id: 'profile',
-    label: 'Профиль',
-    icon: User,
-  },
-];
-
-// Элементы бокового меню
-export const defaultDrawerItems: DrawerItem[] = [
-  {
-    id: 'search',
-    label: 'Поиск',
-    icon: Search,
-  },
-  {
-    id: 'favorites',
-    label: 'Избранное',
-    icon: Heart,
-  },
-  {
-    id: 'downloads',
-    label: 'Загрузки',
-    icon: Download,
-  },
-  {
-    id: 'share',
-    label: 'Поделиться',
-    icon: Share,
-  },
-  {
-    id: 'settings',
-    label: 'Настройки',
-    icon: Settings,
-    children: [
-      {
-        id: 'audio-settings',
-        label: 'Аудио настройки',
-        icon: Music,
-      },
-      {
-        id: 'app-settings',
-        label: 'Настройки приложения',
-        icon: Settings,
-      },
-    ],
-  },
-];
+// Предустановки вынесены в отдельный модуль: './mobilePresets'
 
 export default MobileNavigation;

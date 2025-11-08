@@ -19,7 +19,7 @@ import {
   preloadFavorites,
   preloadSettings,
   preloadPromptDJPage,
-} from "@/utils/lazyPages";
+} from "@/utils/lazyImports";
 
 export type WorkspaceNavRole = "admin";
 

@@ -13,27 +13,7 @@ import { hapticFeedback } from '@/utils/haptic';
 /**
  * Breadcrumb item
  */
-export interface BreadcrumbItem {
-  /**
-   * Display label
-   */
-  label: string;
-
-  /**
-   * Navigation path (optional for last item)
-   */
-  href?: string;
-
-  /**
-   * Icon component (optional)
-   */
-  icon?: React.ComponentType<{ className?: string }>;
-
-  /**
-   * Is current page (last item)
-   */
-  current?: boolean;
-}
+import type { BreadcrumbItem } from './breadcrumbs.types';
 
 /**
  * Mobile breadcrumbs props
@@ -190,38 +170,9 @@ MobileBreadcrumbs.displayName = 'MobileBreadcrumbs';
  * });
  * ```
  */
-export const useBreadcrumbs = (
-  pathname: string,
-  customLabels?: Record<string, string>
-): BreadcrumbItem[] => {
-  const segments = pathname.split('/').filter(Boolean);
-
-  return segments.map((segment, index) => {
-    const href = '/' + segments.slice(0, index + 1).join('/');
-    const isLast = index === segments.length - 1;
-
-    // Use custom label if provided, otherwise capitalize segment
-    const label = customLabels?.[segment] ||
-                 segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');
-
-    return {
-      label,
-      href: isLast ? undefined : href,
-      current: isLast,
-    };
-  });
-};
+// Перенесено в './useBreadcrumbs'
 
 /**
  * Utility to create breadcrumb item
  */
-export const createBreadcrumb = (
-  label: string,
-  href?: string,
-  icon?: React.ComponentType<{ className?: string }>
-): BreadcrumbItem => ({
-  label,
-  href,
-  icon,
-  current: !href,
-});
+// Перенесено в './breadcrumbUtils'

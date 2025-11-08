@@ -84,3 +84,10 @@ export const LazySettings = createLazyComponent(
 export const preloadDashboard = preloadComponent(() => import('../pages/workspace/Dashboard'));
 export const preloadGenerate = preloadComponent(() => import('../pages/workspace/Generate'));
 export const preloadLibrary = preloadComponent(() => import('../pages/workspace/Library'));
+export const preloadProjects = preloadComponent(() => import('../pages/workspace/Projects'));
+export const preloadMonitoringHub = preloadComponent(() => import('../pages/workspace/MonitoringHub'));
+export const preloadStudio = preloadComponent(() => import('../pages/workspace/Studio'));
+export const preloadDAW = preloadComponent(() => import('../pages/workspace/DAW'));
+export const preloadFavorites = preloadComponent(() => import('../pages/workspace/Favorites'));
+export const preloadSettings = preloadComponent(() => import('../pages/workspace/Settings'));
+export const preloadPromptDJPage = preloadComponent(() => import('../pages/workspace/PromptDJPage'));

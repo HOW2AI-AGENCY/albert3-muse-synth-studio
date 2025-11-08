@@ -8,6 +8,7 @@ import React, {
   MouseEvent,
 } from 'react';
 import { cn } from '@/lib/utils';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 // import { SmoothAnimation } from '../animations/SmoothAnimations';
 
 /**
@@ -372,32 +373,8 @@ export const SwipeActions: React.FC<SwipeActionsProps> = ({
 /**
  * 📳 Haptic Feedback хук
  */
-export const useHapticFeedback = () => {
-  const isSupported = 'vibrate' in navigator;
-
-  const trigger = useCallback((
-    pattern: 'light' | 'medium' | 'heavy' | 'success' | 'error' | 'warning' | number[]
-  ) => {
-    if (!isSupported) return;
-
-    const patterns = {
-      light: [10],
-      medium: [20],
-      heavy: [30],
-      success: [10, 50, 10],
-      error: [50, 50, 50],
-      warning: [20, 20, 20],
-    };
-
-    const vibrationPattern = Array.isArray(pattern) ? pattern : patterns[pattern];
-    navigator.vibrate(vibrationPattern);
-  }, [isSupported]);
-
-  return {
-    isSupported,
-    trigger,
-  };
-};
+// Локальная реализация useHapticFeedback удалена.
+// Используем общий хук из '@/hooks/useHapticFeedback' для соблюдения правил Fast Refresh.
 
 /**
  * 🎯 Long Press компонент
@@ -419,20 +396,20 @@ export const LongPress: React.FC<LongPressProps> = ({
 }) => {
   const [isPressed, setIsPressed] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const { trigger } = useHapticFeedback();
+  const { vibrate } = useHapticFeedback();
 
   const handleStart = useCallback(() => {
     if (disabled) return;
 
     setIsPressed(true);
-    trigger('light');
+    vibrate('light');
 
     timeoutRef.current = setTimeout(() => {
-      trigger('heavy');
+      vibrate('heavy');
       onLongPress();
       setIsPressed(false);
     }, delay);
-  }, [disabled, delay, onLongPress, trigger]);
+  }, [disabled, delay, onLongPress, vibrate]);
 
   const handleEnd = useCallback(() => {
     if (timeoutRef.current) {
@@ -574,7 +551,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   const [startY, setStartY] = useState(0);
   const [currentY, setCurrentY] = useState(0);
   const sheetRef = useRef<HTMLDivElement>(null);
-  const { trigger } = useHapticFeedback();
+  const { vibrate } = useHapticFeedback();
 
   const snapHeight = snapPoints[currentSnap] * window.innerHeight;
 
@@ -582,8 +559,8 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     setStartY(e.touches[0].clientY);
     setCurrentY(e.touches[0].clientY);
     setIsDragging(true);
-    trigger('light');
-  }, [trigger]);
+    vibrate('light');
+  }, [vibrate]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (!isDragging) return;
@@ -610,22 +587,22 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     if (deltaY > threshold && currentSnap > 0) {
       // Свайп вниз - уменьшаем высоту
       setCurrentSnap(prev => Math.max(0, prev - 1));
-      trigger('medium');
+      vibrate('medium');
     } else if (deltaY < -threshold && currentSnap < snapPoints.length - 1) {
       // Свайп вверх - увеличиваем высоту
       setCurrentSnap(prev => Math.min(snapPoints.length - 1, prev + 1));
-      trigger('medium');
+      vibrate('medium');
     } else if (deltaY > threshold * 2) {
       // Закрываем при сильном свайпе вниз
       onClose();
-      trigger('heavy');
+      vibrate('heavy');
     }
     
     // Возвращаем к ближайшей точке привязки
     if (sheetRef.current) {
       sheetRef.current.style.height = `${snapPoints[currentSnap] * window.innerHeight}px`;
     }
-  }, [isDragging, currentY, startY, currentSnap, snapPoints, onClose, trigger]);
+  }, [isDragging, currentY, startY, currentSnap, snapPoints, onClose, vibrate]);
 
   if (!isOpen) return null;
 
@@ -665,11 +642,4 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   );
 };
 
-export default {
-  PullToRefresh,
-  SwipeActions,
-  useHapticFeedback,
-  LongPress,
-  RippleEffect,
-  BottomSheet,
-};
+// Удалён default export, чтобы файл экспортировал только компоненты.

@@ -202,15 +202,4 @@ export const LazyMusicGeneratorV2 = lazy(() =>
 /**
  * Предзагрузчики для критических страниц
  */
-export const preloadGenerate = () => import('../pages/workspace/Generate');
-export const preloadLibrary = () => import('../pages/workspace/Library');
-export const preloadDashboard = () => import('../pages/workspace/Dashboard');
-export const preloadMusicGenerator = () => import('../components/MusicGeneratorV2');
-export const preloadProjects = () => import('../pages/workspace/Projects');
-export const preloadMonitoringHub = () => import('../pages/workspace/MonitoringHub');
-export const preloadStudio = () => import('../pages/workspace/Studio');
-export const preloadDAW = () => import('../pages/workspace/DAW');
-export const preloadFavorites = () => import('../pages/workspace/Favorites');
-export const preloadAnalytics = () => import('../pages/workspace/Analytics');
-export const preloadSettings = () => import('../pages/workspace/Settings');
-export const preloadPromptDJPage = () => import('../pages/workspace/PromptDJPage');
+// Предзагрузчики перенесены в '@/utils/lazyImports' для соблюдения правил Fast Refresh
