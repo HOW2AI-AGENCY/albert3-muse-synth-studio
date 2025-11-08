@@ -101,3 +101,12 @@ dist
 tmp/
 temp/
 stats.html
+
+# Playwright reports and test artifacts
+playwright-report/
+test-results/
+tests/e2e/artifacts/
+tests/e2e/html-report/
+
+# Supabase local temp files
+supabase/.temp/

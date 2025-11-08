@@ -9,8 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Documentation: `docs/architecture/webhooks.md` — архитектура вебхуков Suno (идемпотентность, обработка ошибок, диаграммы)
+- README: разделы про обработку вебхуков и очистку Supabase Storage
+- Project management: `project-management/SPRINT_STATUS.md`, `docs/sprints/SPRINT_33_...`, `docs/sprints/SPRINT_34_...`
+
+### Changed
+- Supabase Edge Functions: добавлены механизмы идемпотентности для `generate-music-callb` (извлечение `x-delivery-id`, кеширование, корректные ответы)
+- Callback processor: расширена обработка ошибочных коллбеков (валидация, логирование, безопасные ответы)
+- Storage cleanup: пагинация, удаление `deleted_at`, подготовка к учёту `archived_at`
+
+### Security
+- Webhook Idempotency: предотвращение повторной обработки дублей доставки
+- CI: подтверждены Deno‑тесты для Edge функций
+
 ### Planned
-- Sprint 32: Testing infrastructure and E2E tests
+- Sprint 34: Подпись вебхуков Suno, миграция `tracks.archived_at`, интеграционные тесты дублей, метрики обработки
 - Performance monitoring dashboards
 - Load testing framework
 

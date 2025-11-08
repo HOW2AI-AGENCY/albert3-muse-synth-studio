@@ -102,6 +102,34 @@ git push origin feature/ISSUE-123-add-feature
 - Add screenshots/GIFs for UI changes
 - Wait for review (minimum 1 approval required)
 
+### Branch Protection & Required Checks
+
+To maintain repository health and quality, the following protections and checks are required for `main` and `develop`:
+
+- Require pull request before merging (no direct pushes)
+- Minimum 1 approval from reviewers
+- Status checks must pass before merge:
+  - `npm run typecheck` — TypeScript type validation
+  - `npm run lint` — ESLint
+  - `npm test` — Unit tests with coverage
+  - (if applicable) `npx supabase functions test` — Edge Functions
+- Require linear history (no merge commits on protected branches)
+- Enforce Conventional Commits in PR titles
+
+### Branch Cleanup Policy
+
+After merging a PR:
+
+- Delete the feature/bugfix branch from remote (GitHub UI or CLI)
+- Periodically clean up stale branches:
+  - Identify merged branches: `git branch -r --merged origin/main`
+  - Delete with confirmation following project rules
+- Archive large, long‑living branches into `/archive` if needed
+
+See also:
+- Repository cleanup checklist: `docs/maintenance/REPO_CLEANUP_CHECKLIST.md`
+- Sprint status: `project-management/SPRINT_STATUS.md`
+
 ## 📝 Code Style
 
 ### TypeScript
