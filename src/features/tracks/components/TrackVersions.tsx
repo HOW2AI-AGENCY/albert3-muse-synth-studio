@@ -26,7 +26,6 @@ import {
 } from "./trackVersionUtils";
 import { deleteTrackVersion } from "../api/trackVersions";
 import { useTrackRollback } from "@/features/tracks/hooks/useTrackRollback";
-import { TrackOperationsLogger } from "@/services/track-operations.logger";
 import { useDownloadTrack } from "@/hooks/useDownloadTrack";
 
 interface TrackVersion extends TrackVersionLike {
@@ -167,7 +166,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
       setDeleteDialogOpen(false);
       setVersionToDelete(null);
     }
-  }, [versionToDelete, versions, trackId, vibrate, onVersionUpdate, getDisplayVersionNumber]);
+  }, [versionToDelete, versions, trackId, vibrate, onVersionUpdate, getDisplayVersionNumber, rollbackToVersion]);
 
   const additionalVersions = versions.filter(version => !version.is_primary_variant);
   const primaryVersion = versions.find(v => v.is_primary_variant);

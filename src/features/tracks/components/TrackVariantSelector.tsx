@@ -3,7 +3,6 @@ import { Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTrackVersions } from '@/features/tracks/hooks';
-import { useTrackRollback } from '@/features/tracks/hooks';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { logError } from '@/utils/logger';
@@ -21,8 +20,7 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
   onVersionChange,
   className 
 }) => {
-  const { versionCount, allVersions, isLoading } = useTrackVersions(trackId, true);
-  const { rollbackToVersion } = useTrackRollback(trackId);
+  const { versionCount, allVersions, isLoading, setMasterVersion } = useTrackVersions(trackId, true);
   const { toast } = useToast();
   const [isSettingMaster, setIsSettingMaster] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -67,8 +65,8 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
     setIsSettingMaster(true);
     
     try {
-      // Централизованный откат/переключение мастер-версии через useTrackRollback
-      await rollbackToVersion(currentVersion.id);
+      // Централизованная установка мастер-версии через useTrackVersions
+      await setMasterVersion(currentVersion.id);
       
       toast({
         title: 'Мастер-версия установлена',
@@ -84,7 +82,7 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
     } finally {
       setIsSettingMaster(false);
     }
-  }, [currentVersionIndex, allVersions, rollbackToVersion, isSettingMaster, isLoading, toast]);
+  }, [currentVersionIndex, allVersions, setMasterVersion, isSettingMaster, isLoading, toast]);
 
   // ✅ FIX: Не показываем селектор если меньше 2 версий
   // Используем versionCount (правильно фильтрованное количество) вместо allVersions.length
