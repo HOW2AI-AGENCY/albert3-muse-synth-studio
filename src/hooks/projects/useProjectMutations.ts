@@ -90,7 +90,8 @@ export const useCreateProject = () => {
           updated_at: new Date().toISOString(),
           total_tracks: 0,
           completed_tracks: 0,
-          project_type: 'standard',
+          // Используем валидное значение enum project_type согласно миграции
+          project_type: 'single',
           is_public: false,
           ai_generation_params: null,
           concept_description: null,

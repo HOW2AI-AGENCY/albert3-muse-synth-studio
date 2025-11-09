@@ -16,6 +16,13 @@ export const OptimizedTrackList: React.FC<OptimizedTrackListProps> = memo(({
   onShare,
   className = '',
 }) => {
+  // Нормализуем статус трека: draft/undefined считаем как pending
+  const normalizeStatus = useCallback((status?: OptimizedTrack['status']): OptimizedTrack['status'] => {
+    if (!status || status === 'draft' || status === 'pending') return 'pending';
+    if (status === 'processing') return 'processing';
+    if (status === 'failed') return 'failed';
+    return 'completed';
+  }, []);
   // Мемоизируем обработчики для предотвращения лишних ререндеров
   const handleDownload = useCallback((trackId: string) => {
     onDownload?.(trackId);
@@ -31,13 +38,13 @@ export const OptimizedTrackList: React.FC<OptimizedTrackListProps> = memo(({
       {tracks.map((track) => (
         <TrackListItem
           key={track.id}
-          track={{ ...track, status: track.status ?? 'completed' }}
+          track={{ ...track, status: normalizeStatus(track.status) as 'pending' | 'processing' | 'completed' | 'failed' }}
           onDownload={() => handleDownload(track.id)}
           onShare={() => handleShare(track.id)}
         />
       ))}
     </div>
-  ), [tracks, handleDownload, handleShare, className]);
+  ), [tracks, handleDownload, handleShare, className, normalizeStatus]);
 });
 
 OptimizedTrackList.displayName = 'OptimizedTrackList';
