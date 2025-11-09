@@ -1,7 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { TrackVariantSelector } from '@/features/tracks/components/TrackVariantSelector';
+import { TrackVariantSelector } from '../../../src/features/tracks/components/TrackVariantSelector';
 
 // Гибкий мок useTrackVersions с поддержкой сценариев
 let scenario: 'twoVariants' | 'mainPlusVariant' = 'twoVariants';
@@ -56,7 +56,7 @@ describe('TrackVariantSelector', () => {
 
     // В свернутом состоянии показывается активная версия и метка MASTER
     const activeBadge = screen.getByLabelText('Активная версия: V1 (MASTER)');
-    expect(activeBadge).toBeInTheDocument();
+    expect(activeBadge).toBeTruthy();
 
     // Кнопок V1/V2 пока нет
     expect(screen.queryByRole('button', { name: /версия 1/i })).toBeNull();
@@ -64,8 +64,8 @@ describe('TrackVariantSelector', () => {
 
     // Клик по бейджу раскрывает переключатель
     fireEvent.click(activeBadge);
-    expect(screen.getByRole('button', { name: /версия 1/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /версия 2/i })).toBeInTheDocument();
+expect(screen.getByRole('button', { name: /версия 1/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /версия 2/i })).toBeTruthy();
   });
 
   it('корректно вызывает onVersionChange при клике по V1/V2', () => {
@@ -105,8 +105,8 @@ describe('TrackVariantSelector', () => {
     const activeBadge = screen.getByLabelText('Активная версия: V1 (MASTER)');
     // Открыть клавиатурой
     fireEvent.keyDown(activeBadge, { key: 'Enter' });
-    expect(screen.getByRole('button', { name: /версия 1/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /версия 2/i })).toBeInTheDocument();
+expect(screen.getByRole('button', { name: /версия 1/i })).toBeTruthy();
+expect(screen.getByRole('button', { name: /версия 2/i })).toBeTruthy();
 
     // Закрыть Escape
     fireEvent.keyDown(activeBadge, { key: 'Escape' });
@@ -127,7 +127,7 @@ describe('TrackVariantSelector', () => {
 
     // Кнопка установки мастер-версии должна быть отключена для основной версии
     const starBtn = screen.getByRole('button', { name: 'Основная версия' });
-    expect(starBtn).toBeDisabled();
+    expect((starBtn as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('позволяет назначить вариант как мастер: кнопка активна и вызывает API', async () => {
@@ -143,12 +143,12 @@ describe('TrackVariantSelector', () => {
 
     // Для варианта должна быть активная кнопка "Установить как мастер"
     const starBtn = screen.getByRole('button', { name: 'Установить как мастер' });
-    expect(starBtn).not.toBeDisabled();
+    expect((starBtn as HTMLButtonElement).disabled).toBe(false);
 
     // Клик инициирует вызов setMasterVersion
     fireEvent.click(starBtn);
     expect(setMasterSpy).toHaveBeenCalledTimes(1);
     // Аргумент — id текущей версии
-    expect(setMasterSpy.mock.calls[0][0]).toBe('track-123-v1');
+    expect(setMasterSpy).toHaveBeenCalledWith('track-123-v1');
   });
 });
