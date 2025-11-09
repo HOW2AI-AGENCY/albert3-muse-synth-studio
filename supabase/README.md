@@ -31,6 +31,32 @@
 
 4. Проверьте, что вызовы `supabase.functions.invoke('generate-suno')` возвращают код `200` и создают записи в `ai_jobs`/`rate_limits` (через Supabase Studio или CLI).
 
+### Секреты вебхуков Suno
+
+Для защиты обработчика `generate-music-callb` от поддельных запросов добавьте секрет `SUNO_WEBHOOK_SECRET`. При его наличии функция проверяет заголовок `X-Suno-Signature` (HMAC-SHA256 от «сырого» тела запроса) и отклоняет некорректные подписи.
+
+1. Установите секрет:
+
+   ```bash
+   supabase secrets set SUNO_WEBHOOK_SECRET=your-suno-webhook-secret
+   ```
+
+2. Разверните функцию:
+
+   ```bash
+   supabase functions deploy generate-music-callb
+   ```
+
+3. Проверка (PowerShell):
+
+   ```powershell
+   $body = '{"code":200,"msg":"OK","data":{"callbackType":"first","task_id":"t-123","data":[]}}'
+   # Неверная подпись → 401
+   curl -X POST "http://localhost:54321/functions/v1/generate-music-callb" -H "Content-Type: application/json" -H "X-Suno-Signature: invalid" -d $body -i
+   ```
+
+> Если `SUNO_WEBHOOK_SECRET` не задан, проверка подписи отключена; используйте защиту сети/маршрутизации для ограничений источников вызова.
+
 ### Предварительные требования
 
 - [Docker Desktop](https://docs.docker.com/desktop/) (для запуска контейнеров Supabase)
