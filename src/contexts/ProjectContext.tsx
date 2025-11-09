@@ -10,9 +10,9 @@
  * @version 2.0.0 - Migrated to React Query
  */
 
-import React, { useState, useCallback, ReactNode, useContext } from 'react';
+import React, { useState, useCallback, ReactNode } from 'react';
 import { logger } from '@/utils/logger';
-import { ProjectContext, ProjectContextValue, MusicProject, ProjectInsert, ProjectUpdate } from './project/context';
+import { ProjectContext, MusicProject, ProjectInsert, ProjectUpdate } from './project/context';
 
 // Import new React Query hooks
 import {

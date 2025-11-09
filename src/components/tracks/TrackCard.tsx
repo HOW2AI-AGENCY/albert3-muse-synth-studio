@@ -79,7 +79,8 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
     onMore?.(track);
   }, [onMore, track]);
 
-  const handleCheckboxChange = useCallback((checked: boolean) => {
+  // Параметр checked нам не нужен — мы просто переключаем выбранность трека по его id
+  const handleCheckboxChange = useCallback((_checked: boolean) => {
     toggleTrack(track.id);
   }, [toggleTrack, track.id]);
 

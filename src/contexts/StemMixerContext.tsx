@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { logger, logError } from '@/utils/logger';
-import { StemMixerContext, StemMixerContextType, TrackStem } from './stem-mixer/context';
+import { StemMixerContext, TrackStem } from './stem-mixer/context';
 
 // Контекст и типы вынесены в отдельный модуль ./stem-mixer/context
 

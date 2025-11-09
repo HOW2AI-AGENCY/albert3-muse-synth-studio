@@ -229,12 +229,8 @@ export const UnifiedTrackActionsMenu = memo(({
   onReport,
   onDelete,
 }: UnifiedTrackActionsMenuProps) => {
-  // Provider/status detection (для рендера ниже)
-  const isMurekaTrack = trackMetadata?.provider === 'mureka';
-  const isSunoTrack = !isMurekaTrack;
-  const isCompleted = trackStatus === 'completed';
-  const isProcessing = trackStatus === 'processing' || trackStatus === 'pending';
-  const isFailed = trackStatus === 'failed';
+  // Provider/status detection выполняется локально внутри useMemo ниже,
+  // чтобы не тащить производные значения в зависимости и избежать предупреждений об неиспользуемых переменных
 
   // Build menu items based on available actions and permissions
   const menuItems = useMemo<MenuItem[]>(() => {
@@ -669,7 +665,7 @@ export const UnifiedTrackActionsMenu = memo(({
             </Tooltip>
           )}
 
-          {variant !== 'minimal' && isCompleted && (
+          {variant !== 'minimal' && trackStatus === 'completed' && (
             <>
               {onDownload && (
                 <Tooltip>
@@ -761,7 +757,7 @@ export const UnifiedTrackActionsMenu = memo(({
             ))}
 
             {/* Mureka hint */}
-            {isMurekaTrack && isCompleted && (onExtend || onCover) && (
+            {trackMetadata?.provider === 'mureka' && trackStatus === 'completed' && (onExtend || onCover) && (
               <>
                 <DropdownMenuSeparator />
                 <div className="px-2 py-1.5 text-xs text-muted-foreground">
