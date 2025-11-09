@@ -13,15 +13,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation: `docs/architecture/webhooks.md` — архитектура вебхуков Suno (идемпотентность, обработка ошибок, диаграммы)
 - README: разделы про обработку вебхуков и очистку Supabase Storage
 - Project management: `project-management/SPRINT_STATUS.md`, `docs/sprints/SPRINT_33_...`, `docs/sprints/SPRINT_34_...`
+- Z-Index System: Added missing `--z-bottom-tab-bar` and `--z-control-buttons` CSS variables
+- Z-Index System: Mobile-specific media queries for proper stacking on screens ≤767px
+- Tailwind Config: Complete z-index token integration in theme configuration
 
 ### Changed
 - Supabase Edge Functions: добавлены механизмы идемпотентности для `generate-music-callb` (извлечение `x-delivery-id`, кеширование, корректные ответы)
 - Callback processor: расширена обработка ошибочных коллбеков (валидация, логирование, безопасные ответы)
 - Storage cleanup: пагинация, удаление `deleted_at`, подготовка к учёту `archived_at`
+- Z-Index Hierarchy: Unified z-index system across all components
+  - Bottom Navigation: 1000
+  - Control Buttons: 1050
+  - Mini Player: 1100
+  - Modal Layers: 1150-1210
+  - Tooltips: 1200
+
+### Fixed
+- **P0.1 Critical:** Mobile generation button hidden by z-index conflicts
+  - SimpleModeCompact: Changed z-index from `--z-mini-player` to `--z-control-buttons`
+  - SelectionToolbar: Updated z-index to prevent overlap with player
+  - Fixed proper stacking order: Navigation < Controls < Player < Modals
 
 ### Security
 - Webhook Idempotency: предотвращение повторной обработки дублей доставки
 - CI: подтверждены Deno‑тесты для Edge функций
+- **Verified P0.2:** Server-side rate limiting active (5-10 req/min with X-RateLimit-* headers)
+- **Verified P0.3:** Circuit Breaker integrated in Suno & Mureka APIs (5 failures, 60s timeout)
+- **Verified P0.4:** Retry logic with exponential backoff (3 attempts, 1000ms initial delay)
 
 ### Planned
 - Sprint 34: Подпись вебхуков Suno, миграция `tracks.archived_at`, интеграционные тесты дублей, метрики обработки
