@@ -17,7 +17,6 @@
 import { memo, useCallback } from 'react';
 import { Play, Pause, Clock, Split, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { UnifiedTrackActionsMenu } from '@/components/tracks/shared/TrackActionsMenu.unified';

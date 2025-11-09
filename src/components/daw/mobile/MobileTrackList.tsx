@@ -15,7 +15,6 @@ import { DAWTrack } from '@/stores/dawStore';
 import { useDAWStore } from '@/stores/dawStore';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Progress } from '@/components/ui/progress';
 import {
   Volume2,
   VolumeX,
@@ -218,7 +217,7 @@ export const MobileTrackList: React.FC<MobileTrackListProps> = ({ tracks }) => {
             {/* Clips Preview */}
             {clipCount > 0 && (
               <div className="mt-2 h-8 bg-muted rounded relative overflow-hidden">
-                {track.clips.map((clip, idx) => {
+                {track.clips.map((clip) => {
                   const maxDuration = Math.max(...track.clips.map(c => c.startTime + c.duration));
                   const left = (clip.startTime / maxDuration) * 100;
                   const width = (clip.duration / maxDuration) * 100;

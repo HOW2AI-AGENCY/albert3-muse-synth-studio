@@ -1,18 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { 
-  Home, 
-  Music, 
-  Mic, 
-  Settings, 
-  User, 
   Menu, 
   X, 
-  ChevronRight,
-  Search,
-  Heart,
-  Download,
-  Share2 as Share
+  ChevronRight
 } from '@/utils/iconImports';
 
 interface TabItem {

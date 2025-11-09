@@ -68,11 +68,15 @@ export function withTimeout<T>(
         timeoutMs
       );
 
-      logger.error('Operation timeout', {
-        operation: label,
-        timeoutMs,
-        error: error.message,
-      });
+      logger.error(
+        'Operation timeout',
+        error,
+        'Timeout',
+        {
+          operation: label,
+          timeoutMs,
+        }
+      );
 
       reject(error);
     }, timeoutMs);

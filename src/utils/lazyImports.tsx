@@ -1,4 +1,3 @@
-import { type ComponentType } from 'react';
 import { createLazyComponent } from '@/utils/lazyComponentFactory';
 
 // Файл теперь экспортирует только ленивые компоненты.
