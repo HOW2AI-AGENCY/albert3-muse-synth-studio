@@ -8,7 +8,7 @@
  * @created 2025-11-05
  */
 
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useCallback } from 'react';
 import {
   Wand2,
   Sparkles,
@@ -36,6 +36,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { logger } from '@/utils/logger';
 import type {
   TrackActionsMenuProps,
   TrackActionsItem,
@@ -158,14 +159,19 @@ export const TrackActionsMenu = memo<TrackActionsMenuExtendedProps>(({
     return groups;
   }, [filteredItems]);
 
-  const handleAction = (actionId: TrackActionId) => {
-    if (onAction) {
-      onAction(actionId, trackId);
+  const handleAction = useCallback((actionId: TrackActionId) => {
+    try {
+      onAction?.(actionId, trackId);
+    } catch (error) {
+      // Логируем, но не мешаем закрытию меню, чтобы избежать зацикливания UI
+      logger.error('TrackActionsMenu action handler error', error as Error, 'TrackActionsMenu', {
+        actionId,
+        trackId,
+      });
+    } finally {
+      onOpenChange?.(false);
     }
-    if (onOpenChange) {
-      onOpenChange(false);
-    }
-  };
+  }, [onAction, trackId, onOpenChange]);
 
   const renderMenuItem = (item: TrackActionsItem) => {
     const Icon = ICON_MAP[item.icon];
@@ -175,7 +181,14 @@ export const TrackActionsMenu = memo<TrackActionsMenuExtendedProps>(({
       <DropdownMenuItem
         key={item.id}
         disabled={isDisabled}
-        onClick={() => !isDisabled && handleAction(item.id)}
+        onClick={(e) => {
+          // Предотвращаем всплытие, чтобы клики по элементам меню
+          // не влия ли на родительские обработчики и состояние
+          e.stopPropagation();
+          if (!isDisabled) {
+            handleAction(item.id);
+          }
+        }}
         className={cn(
           'flex items-center gap-2 cursor-pointer',
           item.danger && 'text-destructive focus:text-destructive focus:bg-destructive/10',

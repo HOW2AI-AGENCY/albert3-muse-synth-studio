@@ -7,7 +7,7 @@
  * @created 2025-11-05
  */
 
-import { memo, useState, useCallback } from 'react';
+import { memo, useState, useCallback, useEffect } from 'react';
 import { Shield, Lock, Users, Globe, AlertCircle } from 'lucide-react';
 import {
   Dialog,
@@ -56,7 +56,7 @@ const VISIBILITY_OPTIONS: Array<{
   },
 ];
 
-export const PermissionsDialog = memo<PermissionsDialogProps>(({
+export const PermissionsDialog = memo<PermissionsDialogProps>(({ 
   open,
   onOpenChange,
   trackId,
@@ -66,6 +66,14 @@ export const PermissionsDialog = memo<PermissionsDialogProps>(({
 }) => {
   const [selectedVisibility, setSelectedVisibility] = useState<TrackVisibility>(currentVisibility);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Синхронизация выбранной видимости при каждом открытии диалога
+  // и при изменении фактической видимости трека
+  useEffect(() => {
+    if (open) {
+      setSelectedVisibility(currentVisibility);
+    }
+  }, [currentVisibility, open]);
 
   const hasChanges = selectedVisibility !== currentVisibility;
   const isPublishing = currentVisibility !== 'public' && selectedVisibility === 'public';
