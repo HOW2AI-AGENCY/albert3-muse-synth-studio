@@ -87,7 +87,7 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
     >
       <div className="relative flex-shrink-0 w-10 h-10 rounded-md overflow-hidden bg-muted">
         {track.cover_url ? (
-          <img src={track.cover_url} alt={track.title} className="w-full h-full object-cover" />
+          <img src={track.cover_url} alt={track.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Music className="h-5 w-5 text-muted-foreground" />

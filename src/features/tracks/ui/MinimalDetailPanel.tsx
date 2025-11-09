@@ -136,7 +136,7 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
           <div className="flex gap-2.5">
             {track.cover_url && (
               <div className="w-20 h-20 rounded-lg overflow-hidden border border-border/40 shrink-0 shadow-sm">
-                <img src={track.cover_url} alt={track.title} className="w-full h-full object-cover" />
+                <img src={track.cover_url} alt={track.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
               </div>
             )}
             <div className="flex-1 min-w-0 space-y-1">

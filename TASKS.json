@@ -63,10 +63,10 @@
     "acceptanceCriteria": "E2E-тесты запускаются одной командой и стабильно проходят.",
     "flags": ["devex", "testing"],
     "status": "in_progress",
-    "updatedAt": "2025-11-04",
+    "updatedAt": "2025-11-09",
     "notes": "Добавлены критические E2E-флоу (14 тестов). Флак не замечен, настройка Docker Compose в работе."
   }
- ,
+,
   {
     "id": "TASK-006",
     "title": "Добавить Error Boundaries в критические компоненты",
@@ -157,5 +157,48 @@
     "flags": ["ui", "consistency"],
     "status": "todo",
     "updatedAt": "2025-11-09"
+  }
+ ,
+  {
+    "id": "TASK-013",
+    "title": "Оптимизировать селекторы Zustand в аудиоплеере",
+    "description": "Рефактор useAudioPlayerStore селекторов: убрать shallow, вернуть стабильные ссылки, устранить TS2554 и лишние перерисовки.",
+    "files": ["src/stores/audioPlayerStore.ts", "src/components/player/DesktopPlayerLayout.tsx"],
+    "risk": "Низкий",
+    "estimate": "1 день",
+    "deps": [],
+    "acceptanceCriteria": "Нет TS2554; плеер не пересчитывается лишний раз; dev-логи чисты.",
+    "flags": ["performance", "ux"],
+    "status": "done",
+    "updatedAt": "2025-11-09",
+    "notes": "Удалён import shallow, селекторы переписаны на независимые поля; стабилизированы ссылки на экшены и стейт." 
+  },
+  {
+    "id": "TASK-014",
+    "title": "Устранить предупреждение React Hook в TrackActionsMenu",
+    "description": "Удалить лишнюю зависимость provider из useMemo и стабилизировать список действий меню.",
+    "files": ["src/components/tracks/shared/TrackActionsMenu.unified.tsx"],
+    "risk": "Низкий",
+    "estimate": "0.5 дня",
+    "deps": [],
+    "acceptanceCriteria": "Линтер react-hooks не выдаёт предупреждений; рендер меню стабилен.",
+    "flags": ["ux", "performance"],
+    "status": "done",
+    "updatedAt": "2025-11-09",
+    "notes": "Зависимость provider удалена из массива; провайдер вычисляется внутри useMemo из trackMetadata."
+  },
+  {
+    "id": "TASK-015",
+    "title": "Унифицировать Deno std/http импорт и отключить TS-проверки для Edge Functions",
+    "description": "Зафиксировать версию std@0.168.0 и добавить // @ts-nocheck в функции Supabase для исключения диагностик в Node/Vite окружении.",
+    "files": ["supabase/functions/generate-music-callb/index.ts", "supabase/functions/create-suno-persona/index.ts"],
+    "risk": "Низкий",
+    "estimate": "0.5 дня",
+    "deps": [],
+    "acceptanceCriteria": "TypeScript не выдаёт ошибок на импорт Deno, Edge Functions корректно работают в среде Deno/Supabase.",
+    "flags": ["backend", "stability"],
+    "status": "done",
+    "updatedAt": "2025-11-09",
+    "notes": "Импорт serve унифицирован на std@0.168.0; добавлены теги @ts-nocheck в два файла."
   }
 ]

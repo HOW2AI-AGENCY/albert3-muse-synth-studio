@@ -85,6 +85,7 @@ export const PersonaSelector = memo<PersonaSelectorProps>(({
                         src={persona.cover_image_url} 
                         alt={persona.name}
                         className="h-8 w-8 rounded object-cover"
+                        loading="lazy" decoding="async"
                       />
                     ) : (
                       <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
@@ -125,6 +126,7 @@ export const PersonaSelector = memo<PersonaSelectorProps>(({
                 src={selectedPersona.cover_image_url} 
                 alt={selectedPersona.name}
                 className="h-12 w-12 rounded object-cover"
+                loading="lazy" decoding="async"
               />
             )}
             <div className="flex-1 min-w-0">

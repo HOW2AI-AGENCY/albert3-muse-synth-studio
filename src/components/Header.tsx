@@ -41,6 +41,7 @@ export const Header = ({ user, onAuthClick }: HeaderProps) => {
               src={logo} 
               alt="MusicAI Pro Logo" 
               className="relative h-10 w-10 sm:h-12 sm:w-12 rounded-full ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all duration-300 group-hover:scale-110" 
+              loading="eager" decoding="async" fetchPriority="high"
             />
           </div>
           <div className="flex items-center gap-2">

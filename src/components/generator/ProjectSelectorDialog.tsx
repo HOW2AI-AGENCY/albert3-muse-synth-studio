@@ -201,6 +201,7 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                                     src={track.cover_url} 
                                     alt={track.title}
                                     className="w-10 h-10 rounded object-cover"
+                                    loading="lazy" decoding="async"
                                   />
                                 )}
                                 <div className="flex flex-col items-start gap-1 flex-1 min-w-0">
