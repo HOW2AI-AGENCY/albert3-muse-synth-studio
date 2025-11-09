@@ -66,4 +66,96 @@
     "updatedAt": "2025-11-04",
     "notes": "Добавлены критические E2E-флоу (14 тестов). Флак не замечен, настройка Docker Compose в работе."
   }
+ ,
+  {
+    "id": "TASK-006",
+    "title": "Добавить Error Boundaries в критические компоненты",
+    "description": "Создать общий ErrorBoundary и обернуть ключевые страницы/виджеты (Home, DAW, FullScreenPlayer, Library), логировать ошибки через utils/logger и показывать дружелюбные фолбэки.",
+    "files": ["src/components/common/ErrorBoundary.tsx", "src/pages/", "src/components/player/FullScreenPlayer.tsx"],
+    "risk": "Средний",
+    "estimate": "2 дня",
+    "deps": [],
+    "acceptanceCriteria": "Ошибки в дочерних компонентах не крашат приложение, отображается фолбэк и запись уходит в логгер/Sentry.",
+    "flags": ["ux", "stability"],
+    "status": "todo",
+    "updatedAt": "2025-11-09"
+  },
+  {
+    "id": "TASK-007",
+    "title": "Детектировать сетевой статус и показать оффлайн-баннер",
+    "description": "Добавить хук useNetworkStatus и глобальный UI-баннер оффлайн/восстановления, блокировать генерацию/загрузки при offline.",
+    "files": ["src/hooks/useNetworkStatus.ts", "src/components/banners/NetworkStatusBanner.tsx"],
+    "risk": "Низкий",
+    "estimate": "1 день",
+    "deps": [],
+    "acceptanceCriteria": "При потере сети показывается баннер, недоступные действия дизейблятся, при восстановлении сети есть уведомление.",
+    "flags": ["ux", "resilience"],
+    "status": "todo",
+    "updatedAt": "2025-11-09"
+  },
+  {
+    "id": "TASK-008",
+    "title": "Санитизация ввода и XSS-превенция",
+    "description": "Стандартизировать обработку пользовательского ввода (промпт, названия треков, комментарии) через sanitize утилиты; запретить небезопасный HTML, экранировать вывод.",
+    "files": ["src/utils/sanitize.ts", "src/components/forms/", "src/pages/"] ,
+    "risk": "Средний",
+    "estimate": "2 дня",
+    "deps": [],
+    "acceptanceCriteria": "Ввод проходит через санитизацию, потенциальные XSS-пейлоуды не рендерятся, линтеры/тесты подтверждают.",
+    "flags": ["security", "ux"],
+    "status": "todo",
+    "updatedAt": "2025-11-09"
+  },
+  {
+    "id": "TASK-009",
+    "title": "Исправить утечку памяти в Supabase realtime-подписках",
+    "description": "Аудит useEffect и подписок на realtime, обеспечить отписку при анмаунте/смене параметров, убрать дублирующиеся подписки.",
+    "files": ["src/services/supabaseRealtime.ts", "src/hooks/"] ,
+    "risk": "Высокий",
+    "estimate": "2 дня",
+    "deps": [],
+    "acceptanceCriteria": "Нет роста потребления памяти при навигации; подписки корректно очищаются; профайлинг отражает стабильные аллокации.",
+    "flags": ["stability", "performance"],
+    "status": "todo",
+    "updatedAt": "2025-11-09"
+  },
+  {
+    "id": "TASK-010",
+    "title": "Вынести цвета канваса в дизайн-токены и утилиту",
+    "description": "Создать утилиту getCanvasColors и использовать CSS-переменные/токены вместо хардкода в MobileTimeline/DAW канвасах.",
+    "files": ["src/utils/canvas-colors.ts", "src/components/daw/mobile/MobileTimeline.tsx", "src/pages/workspace/DAWEnhanced.tsx"],
+    "risk": "Низкий",
+    "estimate": "1 день",
+    "deps": ["TASK-002"],
+    "acceptanceCriteria": "Все канвас-компоненты берут цвета через утилиту и токены, хардкод отсутствует.",
+    "flags": ["ui", "refactoring"],
+    "status": "todo",
+    "updatedAt": "2025-11-09"
+  },
+  {
+    "id": "TASK-011",
+    "title": "Добавить реальную валидацию форм с немедленной обратной связью",
+    "description": "Интегрировать схему валидации (Zod/Yup), показать inline-ошибки и хинты в генерации музыки и логине.",
+    "files": ["src/components/forms/", "src/features/generate/"],
+    "risk": "Низкий",
+    "estimate": "2 дня",
+    "deps": [],
+    "acceptanceCriteria": "Поля валидируются на вводе, ошибки видимы и понятны, генерация недоступна при невалидных данных.",
+    "flags": ["ux"],
+    "status": "todo",
+    "updatedAt": "2025-11-09"
+  },
+  {
+    "id": "TASK-012",
+    "title": "Унифицировать брейкпоинты в FullScreenPlayer и по приложению",
+    "description": "Создать BREAKPOINTS конфиг и заменить хардкод медиазапросов на переменные/утилиты.",
+    "files": ["src/config/breakpoints.config.ts", "src/components/player/FullScreenPlayer.tsx"],
+    "risk": "Низкий",
+    "estimate": "1 день",
+    "deps": ["TASK-002"],
+    "acceptanceCriteria": "Нет хардкода брейкпоинтов; используются значения из конфига; визуально игрок ведет себя консистентно.",
+    "flags": ["ui", "consistency"],
+    "status": "todo",
+    "updatedAt": "2025-11-09"
+  }
 ]
