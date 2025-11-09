@@ -33,6 +33,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - SimpleModeCompact: Changed z-index from `--z-mini-player` to `--z-control-buttons`
   - SelectionToolbar: Updated z-index to prevent overlap with player
   - Fixed proper stacking order: Navigation < Controls < Player < Modals
+- **P1 Critical:** Mobile drawer overlay below bottom navigation
+  - Increased `--z-drawer` from 200 to 1140 (above navigation, below modals)
+  - Ensures drawer backdrop covers navigation when open
+  - Fixed modal behavior on mobile devices
 
 ### Security
 - Webhook Idempotency: предотвращение повторной обработки дублей доставки
