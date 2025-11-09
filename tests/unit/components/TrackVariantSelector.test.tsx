@@ -3,27 +3,45 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TrackVariantSelector } from '@/features/tracks/components/TrackVariantSelector';
 
-// Мокаем хук useTrackVersions, чтобы контролировать количество версий
+// Гибкий мок useTrackVersions с поддержкой сценариев
+let scenario: 'twoVariants' | 'mainPlusVariant' = 'twoVariants';
+let setMasterSpy = vi.fn(async () => {});
+
 vi.mock('@/features/tracks/hooks', async () => {
   const actual = await vi.importActual<any>('@/features/tracks/hooks');
   return {
     ...actual,
-    useTrackVersions: vi.fn((trackId: string) => ({
-      isLoading: false,
-      // Компонент использует versionCount и allVersions
-      versionCount: 1, // Итого версий: versionCount + 1 = 2
-      allVersions: [
-        { id: `${trackId}-v1`, audio_url: 'audio1.mp3', versionNumber: 1, isMasterVersion: true },
-        { id: `${trackId}-v2`, audio_url: 'audio2.mp3', versionNumber: 2, isMasterVersion: false },
-      ],
-      setMasterVersion: vi.fn(async () => {}),
-    })),
+    useTrackVersions: vi.fn((trackId: string) => {
+      if (scenario === 'mainPlusVariant') {
+        return {
+          isLoading: false,
+          versionCount: 1, // всего: 2 (оригинал + 1 вариант)
+          allVersions: [
+            { id: `${trackId}-main`, audio_url: 'main.mp3', versionNumber: 0, sourceVersionNumber: 0, isMasterVersion: false },
+            { id: `${trackId}-v1`, audio_url: 'audio1.mp3', versionNumber: 1, sourceVersionNumber: 1, isMasterVersion: false },
+          ],
+          setMasterVersion: setMasterSpy,
+        };
+      }
+      // По умолчанию: 2 варианта, V1 — MASTER
+      return {
+        isLoading: false,
+        versionCount: 1, // всего: 2
+        allVersions: [
+          { id: `${trackId}-v1`, audio_url: 'audio1.mp3', versionNumber: 1, isMasterVersion: true },
+          { id: `${trackId}-v2`, audio_url: 'audio2.mp3', versionNumber: 2, isMasterVersion: false },
+        ],
+        setMasterVersion: setMasterSpy,
+      };
+    }),
   };
 });
 
 describe('TrackVariantSelector', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    scenario = 'twoVariants';
+    setMasterSpy = vi.fn(async () => {});
   });
 
   it('в закрытом состоянии показывает активную версию и метку MASTER; по клику раскрывает V1/V2', () => {
@@ -94,5 +112,43 @@ describe('TrackVariantSelector', () => {
     fireEvent.keyDown(activeBadge, { key: 'Escape' });
     expect(screen.queryByRole('button', { name: /версия 1/i })).toBeNull();
     expect(screen.queryByRole('button', { name: /версия 2/i })).toBeNull();
+  });
+
+  it('не позволяет назначать основную версию как мастер: кнопка со звёздой отключена и имеет метку "Основная версия"', () => {
+    scenario = 'mainPlusVariant';
+    const onVersionChange = vi.fn();
+    render(
+      <TrackVariantSelector
+        trackId="track-123"
+        currentVersionIndex={0}
+        onVersionChange={onVersionChange}
+      />
+    );
+
+    // Кнопка установки мастер-версии должна быть отключена для основной версии
+    const starBtn = screen.getByRole('button', { name: 'Основная версия' });
+    expect(starBtn).toBeDisabled();
+  });
+
+  it('позволяет назначить вариант как мастер: кнопка активна и вызывает API', async () => {
+    scenario = 'mainPlusVariant';
+    const onVersionChange = vi.fn();
+    render(
+      <TrackVariantSelector
+        trackId="track-123"
+        currentVersionIndex={1}
+        onVersionChange={onVersionChange}
+      />
+    );
+
+    // Для варианта должна быть активная кнопка "Установить как мастер"
+    const starBtn = screen.getByRole('button', { name: 'Установить как мастер' });
+    expect(starBtn).not.toBeDisabled();
+
+    // Клик инициирует вызов setMasterVersion
+    fireEvent.click(starBtn);
+    expect(setMasterSpy).toHaveBeenCalledTimes(1);
+    // Аргумент — id текущей версии
+    expect(setMasterSpy.mock.calls[0][0]).toBe('track-123-v1');
   });
 });

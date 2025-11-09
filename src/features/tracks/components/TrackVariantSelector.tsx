@@ -49,7 +49,16 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
     if (isSettingMaster || isLoading) return;
     
     const currentVersion = allVersions[currentVersionIndex];
-    if (!currentVersion || currentVersion.isMasterVersion) {
+    // Нельзя назначать основную версию (sourceVersionNumber === 0) как мастер,
+    // так как основная версия живёт в таблице tracks, а мастер-флаг хранится в track_versions
+    const isMainVersion = currentVersion?.sourceVersionNumber === 0;
+    if (!currentVersion || currentVersion.isMasterVersion || isMainVersion) {
+      if (isMainVersion) {
+        toast({
+          title: 'Недоступно',
+          description: 'Основная версия не может быть назначена как мастер напрямую',
+        });
+      }
       return;
     }
     
@@ -84,6 +93,7 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
   const displayIndex = currentVersionIndex + 1;
   const currentVersion = allVersions[currentVersionIndex];
   const isMasterVersion = currentVersion?.isMasterVersion;
+  const isMainVersion = currentVersion?.sourceVersionNumber === 0;
 
   const isActive = (index: number) => index === currentVersionIndex;
 
@@ -96,7 +106,8 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
             variant="ghost"
             size="sm"
             onClick={handleSetMaster}
-            disabled={isMasterVersion || isSettingMaster}
+            disabled={isMasterVersion || isSettingMaster || isMainVersion}
+            aria-label={isMasterVersion ? 'Мастер-версия' : (isMainVersion ? 'Основная версия' : 'Установить как мастер')}
             className={cn(
               "h-8 w-8 p-0 rounded-lg",
               "transition-all duration-300 ease-in-out",
@@ -115,7 +126,7 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
           </Button>
         </TooltipTrigger>
         <TooltipContent side="left" className="font-medium">
-          {isMasterVersion ? '⭐ Мастер-версия' : 'Установить как мастер'}
+          {isMasterVersion ? '⭐ Мастер-версия' : (isMainVersion ? 'Основная версия' : 'Установить как мастер')}
         </TooltipContent>
       </Tooltip>
 

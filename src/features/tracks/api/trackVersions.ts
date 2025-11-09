@@ -133,27 +133,19 @@ export async function setMasterVersion(
   try {
     logInfo('Setting master version', context, { parentTrackId, versionId });
     
-    // 1. Сбросить is_preferred_variant для всех версий этого трека
-    const { error: resetError } = await supabase
-      .from('track_versions')
-      .update({ is_preferred_variant: false })
-      .eq('parent_track_id', parentTrackId);
-    
-    if (resetError) {
-      const error = new TrackVersionError('Failed to reset preferred variants', context, resetError);
-      logError('Failed to reset preferred variants', error, context, { parentTrackId });
-      return { ok: false, error };
-    }
-    
-    // 2. Установить is_preferred_variant: true для выбранной версии
+    // ✅ Транзакционный апдейт через Postgres RPC‑функцию
+    // Функция в БД atomically сбрасывает флаги и устанавливает мастер‑версию
     return handleTrackVersionOperation(
-      async () =>
-        supabase
-          .from('track_versions')
-          .update({ is_preferred_variant: true })
-          .eq('id', versionId)
-          .select()
-          .single<TrackVersionRow>(),
+      async () => {
+        const { data, error } = await supabase.rpc('set_master_version', {
+          parent_track_id: parentTrackId,
+          version_id: versionId,
+        });
+
+        // RPC возвращает массив строк track_versions; берём первую как результат
+        const updated = Array.isArray(data) ? (data[0] as TrackVersionRow | undefined) : (data as TrackVersionRow | null);
+        return { data: updated ?? null, error };
+      },
       {
         action: 'setMasterVersion',
         errorMessage: 'Failed to set master version',
