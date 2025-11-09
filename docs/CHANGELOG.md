@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Восстановлен контракт `src/config/breakpoints.config.ts` (экспорты `mediaQuery`, `getScreenCategory`, `breakpointCSSVars`) для совместимости с существующими хуками и утилитами.
 - Добавлены юнит‑тесты для контракта брейкпоинтов: `tests/unit/config/breakpoints.config.test.ts`.
 - Документирован единый контракт брейкпоинтов: `docs/architecture/RESPONSIVE_BREAKPOINTS.md`.
+- Исправлено предупреждение доступности Radix Dialog: добавлен скрытый `DialogTitle` в `DialogSkeleton` (`src/components/LazyDialogs.tsx`).
 
 ## [2.0.0] - 2025-11-03
 
