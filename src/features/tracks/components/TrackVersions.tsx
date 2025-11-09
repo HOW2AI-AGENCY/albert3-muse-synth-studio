@@ -24,7 +24,8 @@ import {
   getVersionMetadata,
   type TrackVersionLike,
 } from "./trackVersionUtils";
-import { deleteTrackVersion, setMasterVersion } from "../api/trackVersions";
+import { deleteTrackVersion } from "../api/trackVersions";
+import { useTrackRollback } from "@/features/tracks/hooks/useTrackRollback";
 import { TrackOperationsLogger } from "@/services/track-operations.logger";
 import { useDownloadTrack } from "@/hooks/useDownloadTrack";
 
@@ -51,6 +52,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
   const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
   const { vibrate } = useHapticFeedback();
   const { downloadTrack, isDownloading, downloadingTrackId } = useDownloadTrack();
+  const { rollbackToVersion } = useTrackRollback(trackId);
 
   // Кол-во альтернативных версий (без первичной)
   const additionalCount = versions.filter(v => !v.is_primary_variant).length;
@@ -72,14 +74,8 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
 
     try {
       vibrate('medium');
-
-      // Централизованный откат через установку мастер-версии
-      await TrackOperationsLogger.trackOperation('rollback', trackId, async () => {
-        const result = await setMasterVersion(trackId, versionId);
-        if (!result.ok) {
-          throw result.error;
-        }
-      }, { versionNumber });
+      // Централизованный переход на выбранную версию
+      await rollbackToVersion(versionId);
 
       vibrate('success');
       toast.success(`Версия ${versionNumber} установлена как главная`);
@@ -93,7 +89,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
       vibrate('error');
       toast.error('Ошибка при установке главной версии');
     }
-  }, [trackId, vibrate, onVersionUpdate]);
+  }, [trackId, vibrate, onVersionUpdate, rollbackToVersion]);
 
   // Мемоизируем функцию воспроизведения версии
   const handlePlayVersion = useCallback((version: TrackVersion) => {
@@ -145,10 +141,8 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
       if (versionToDelete.is_preferred_variant && versions.length > 1) {
         const nextVersion = versions.find(v => v.id !== versionToDelete.id && !v.is_primary_variant);
         if (nextVersion) {
-          const updateResult = await setMasterVersion(trackId, nextVersion.id);
-          if (!updateResult.ok) {
-            throw updateResult.error;
-          }
+          // Если удаляем мастер-версию — заранее переключаемся на следующую доступную
+          await rollbackToVersion(nextVersion.id);
         }
       }
 

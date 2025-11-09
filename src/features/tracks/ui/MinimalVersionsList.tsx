@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { formatDuration } from "@/utils/formatters";
 import { cn } from "@/lib/utils";
-import { setMasterVersion } from "../api/trackVersions";
+import { useTrackRollback } from "@/features/tracks/hooks/useTrackRollback";
 import { toast } from "sonner";
 
 interface MinimalVersionsListProps {
@@ -19,6 +19,7 @@ export const MinimalVersionsList = memo(({ trackId }: MinimalVersionsListProps) 
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
   const currentTrack = useAudioPlayerStore((state) => state.currentTrack);
   const queryClient = useQueryClient();
+  const { rollbackToVersion } = useTrackRollback(trackId);
 
   const { data: versions = [], isLoading } = useQuery({
     queryKey: ["track-versions-minimal", trackId],
@@ -113,13 +114,13 @@ export const MinimalVersionsList = memo(({ trackId }: MinimalVersionsListProps) 
   };
 
   const handleSetMaster = async (versionId: string) => {
-    const res = await setMasterVersion(trackId, versionId);
-    if (res.ok) {
+    try {
+      await rollbackToVersion(versionId);
       toast.success("Выбрана мастер-версия");
       // Обновляем локальные запросы
       queryClient.invalidateQueries({ queryKey: ["track-versions-minimal", trackId] });
       queryClient.invalidateQueries({ queryKey: ["track-versions", trackId] });
-    } else {
+    } catch {
       toast.error("Не удалось выбрать мастер-версию");
     }
   };
