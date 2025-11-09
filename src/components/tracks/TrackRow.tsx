@@ -9,13 +9,15 @@
  */
 
 import { memo, useCallback, useState, useMemo } from 'react';
-import { Play, Pause, Heart, MoreVertical, Eye, MessageSquare } from 'lucide-react';
+import { Play, Pause, Heart, MoreVertical, Eye, MessageSquare, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { TrackRowProps, TrackStatus } from '@/types/suno-ui.types';
 import { TrackActionsMenu } from './TrackActionsMenu';
+import { useTrackVersions } from '@/features/tracks/hooks/useTrackVersions';
+import { TrackVariantSelector } from '@/features/tracks/components/TrackVariantSelector';
 
 /**
  * Format duration from seconds to MM:SS
@@ -51,7 +53,7 @@ const formatCount = (count: number): string => {
   return count.toString();
 };
 
-export const TrackRow = memo<TrackRowProps>(({
+export const TrackRow = memo<TrackRowProps>(({ 
   track,
   showMenu = true,
   showStats = true,
@@ -69,11 +71,22 @@ export const TrackRow = memo<TrackRowProps>(({
   ariaSelected,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [selectedVersionIndex, setSelectedVersionIndex] = useState(0);
 
   // ✅ P0 OPTIMIZATION: Memoize computed values
   const statusBadge = useMemo(() => getStatusBadge(track.status), [track.status]);
   const canPlay = useMemo(() => track.status === 'ready' || track.status === 'published', [track.status]);
   const showProcessing = useMemo(() => track.status === 'processing' || track.status === 'queued', [track.status]);
+
+  // Версии трека (без изменений поведения проигрывателя)
+  const { allVersions, versionCount, isLoading } = useTrackVersions(track.id, true);
+
+  // Отображаемая версия и производные данные
+  const displayedVersion = allVersions[selectedVersionIndex] ?? null;
+  const displayCoverUrl = displayedVersion?.cover_url ?? track.thumbnailUrl;
+  const displayTitle = displayedVersion?.title ?? track.title;
+  const displayDurationSec = displayedVersion?.duration ?? track.durationSec;
+  const totalVersions = (versionCount ?? 0) + 1; // включая оригинал
 
   const handlePlayPause = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -146,10 +159,10 @@ export const TrackRow = memo<TrackRowProps>(({
             isPlaying && 'ring-primary'
           )}
         >
-          {track.thumbnailUrl ? (
+          {displayCoverUrl ? (
             <img
-              src={track.thumbnailUrl}
-              alt={`${track.title} cover`}
+              src={displayCoverUrl}
+              alt={`${displayTitle} cover`}
               className="w-full h-full object-cover"
               loading="lazy"
             />
@@ -188,6 +201,22 @@ export const TrackRow = memo<TrackRowProps>(({
               <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           )}
+
+          {/* Mini Version Selector (если есть доп. версии) */}
+          {!isLoading && totalVersions > 1 && track.status === 'ready' && (
+            <div
+              className="absolute -top-1 -right-1 z-10"
+              onClick={(e) => e.stopPropagation()}
+              data-testid="version-selector"
+            >
+              <TrackVariantSelector
+                trackId={track.id}
+                currentVersionIndex={selectedVersionIndex}
+                onVersionChange={(index) => setSelectedVersionIndex(Math.max(0, Math.min(index, allVersions.length - 1)))}
+                className="scale-75 origin-top-right"
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -200,20 +229,35 @@ export const TrackRow = memo<TrackRowProps>(({
             'text-foreground group-hover:text-primary transition-colors',
             isPlaying && 'text-primary'
           )}
-          title={track.title}
+          title={displayTitle}
         >
-          {track.title}
+          {displayTitle}
         </h3>
+
+        {/* Version indicator (если есть доп. версии) */}
+        {!isLoading && totalVersions > 1 && (
+          <div className="flex items-center gap-1 mb-1">
+            <Badge variant="secondary" className="h-4 px-1.5 text-[10px] gap-1">
+              <span>{`V${(selectedVersionIndex ?? 0) + 1}`}</span>
+              {displayedVersion?.isMasterVersion && (
+                <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" />
+              )}
+              {versionCount > 0 && (
+                <span className="text-muted-foreground">{`+${versionCount}`}</span>
+              )}
+            </Badge>
+          </div>
+        )}
 
         {/* Meta + Status */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {track.summary || track.meta ? (
             <span className="truncate">{track.summary || track.meta}</span>
           ) : null}
-          {track.durationSec > 0 && (
+          {displayDurationSec > 0 && (
             <>
               <span className="text-muted-foreground/40">•</span>
-              <span className="font-mono">{formatDuration(track.durationSec)}</span>
+              <span className="font-mono">{formatDuration(displayDurationSec)}</span>
             </>
           )}
         </div>
