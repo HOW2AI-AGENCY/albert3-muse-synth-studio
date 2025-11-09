@@ -232,6 +232,8 @@ export interface TrackWithVersions {
   sourceVersionNumber: number | null;
   /** Признак мастер-версии */
   isMasterVersion: boolean;
+  /** Количество лайков для этой версии (денормализованное поле) */
+  like_count?: number;
   title: string;
   audio_url?: string;
   cover_url?: string;
@@ -287,6 +289,7 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
           sourceVersionNumber: versionNum,
           versionNumber: versionNum + 1,
           isMasterVersion: Boolean(version.is_preferred_variant),
+          like_count: typeof version.like_count === 'number' ? version.like_count : undefined,
           title: mainTrack.title,
           audio_url: version.audio_url || undefined,
           cover_url: version.cover_url || mainTrack.cover_url || undefined,

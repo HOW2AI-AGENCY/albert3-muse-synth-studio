@@ -8,7 +8,8 @@ export const usePromptHistoryState = () => {
 
   const handleSaveAsTemplate = async (id: string) => {
     if (!templateName.trim()) return;
-    await saveAsTemplate({ id, template_name: templateName });
+    // ✅ Передаем поле в формате, ожидаемом хуком (camelCase)
+    await saveAsTemplate({ id, templateName: templateName });
     setTemplateName('');
     setSavingTemplateId(null);
   };
