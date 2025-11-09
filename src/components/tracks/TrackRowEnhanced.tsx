@@ -178,6 +178,15 @@ export const TrackRowEnhanced = memo<TrackRowEnhancedProps>(
       [canPlay, handlePlayClick, handleLikeClick]
     );
 
+    // Метаданные трека для меню действий, мемоизируем чтобы избежать лишних перерисовок
+    const memoizedTrackMetadata = useMemo(
+      () => ({
+        ...(track.metadata || {}),
+        wavConverting: isConverting && convertingTrackId === track.id,
+      }),
+      [track.metadata, isConverting, convertingTrackId, track.id]
+    );
+
     // Total versions including main
     const totalVersions = versionCount + 1;
 
@@ -364,13 +373,7 @@ export const TrackRowEnhanced = memo<TrackRowEnhancedProps>(
             <UnifiedTrackActionsMenu
               trackId={track.id}
               trackStatus={track.status}
-              trackMetadata={{
-                ...(track.metadata || {}),
-                wavConverting: isConverting && convertingTrackId === track.id,
-              }}
-                ...(track.metadata || {}),
-                wavConverting: isConverting && convertingTrackId === track.id,
-              }), [track.metadata, isConverting, convertingTrackId, track.id])}
+              trackMetadata={memoizedTrackMetadata}
               currentVersionId={displayedVersion.id}
               versionNumber={displayedVersion.versionNumber}
               isMasterVersion={displayedVersion.isMasterVersion}
