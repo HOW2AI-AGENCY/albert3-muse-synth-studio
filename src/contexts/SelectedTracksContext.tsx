@@ -150,4 +150,5 @@ export const SelectedTracksProvider: React.FC<SelectedTracksProviderProps> = ({ 
 
 // Хук перенесён в ./selected-tracks/useSelectedTracks
 // Для удобства, реэкспортируем его из этого файла, чтобы импорты работали как раньше
+// eslint-disable-next-line react-refresh/only-export-components
 export { useSelectedTracks } from './selected-tracks/useSelectedTracks';
