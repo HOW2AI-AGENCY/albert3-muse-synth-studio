@@ -22,6 +22,25 @@ export const useAudioRecorder = (
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Важно: объявляем stopRecording ДО startRecording, чтобы избежать ошибки
+  // "Cannot access '<var>' before initialization" (TDZ) при вычислении массива зависимостей
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current?.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+  }, []);
+
   const startRecording = useCallback(async () => {
     try {
       setError(null);
@@ -212,23 +231,6 @@ export const useAudioRecorder = (
       });
     }
   }, [toast, uploadAudio, onRecordComplete, stopRecording, recordingTime]);
-
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current?.state === 'recording') {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
-
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
-      audioContextRef.current = null;
-    }
-  }, []);
 
   const reset = useCallback(() => {
     if (audioUrl) {
