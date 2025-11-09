@@ -1,5 +1,5 @@
 import React, { useReducer, useCallback } from 'react';
-import { SelectedTracksContext, SelectedTracksState } from './selected-tracks/context';
+import { SelectedTracksContext, SelectedTracksState, SelectedTracksContextType } from './selected-tracks/context';
 
 // Типы и контекст вынесены в ./selected-tracks/context
 
@@ -149,3 +149,5 @@ export const SelectedTracksProvider: React.FC<SelectedTracksProviderProps> = ({ 
 }
 
 // Хук перенесён в ./selected-tracks/useSelectedTracks
+// Для удобства, реэкспортируем его из этого файла, чтобы импорты работали как раньше
+export { useSelectedTracks } from './selected-tracks/useSelectedTracks';

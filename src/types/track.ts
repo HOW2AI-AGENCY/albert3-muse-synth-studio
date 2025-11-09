@@ -8,7 +8,7 @@ export interface BaseTrack {
   id: string;
   title: string;
   audio_url: string | null;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'draft' | 'processing' | 'completed' | 'failed';
   created_at: string;
   prompt: string;
   improved_prompt: string | null;
@@ -70,7 +70,7 @@ export interface OptimizedTrack {
   audio_url?: string;
   cover_url?: string;
   style_tags?: string[];
-  status?: 'pending' | 'processing' | 'completed' | 'failed';
+  status?: 'pending' | 'draft' | 'processing' | 'completed' | 'failed';
   duration?: number;
   duration_seconds?: number;
   like_count?: number;
@@ -139,7 +139,7 @@ export interface TrackWithVersions extends BaseTrack {
 }
 
 // Утилитарные типы для преобразования
-export type TrackStatus = 'pending' | 'processing' | 'completed' | 'failed';
+export type TrackStatus = 'pending' | 'draft' | 'processing' | 'completed' | 'failed';
 
 type ConvertibleTrack = {
   id: string;
