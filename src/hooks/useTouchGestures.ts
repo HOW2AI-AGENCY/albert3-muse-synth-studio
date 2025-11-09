@@ -120,8 +120,10 @@ export const useTouchGestures = (options: UseTouchGesturesOptions = {}) => {
       } else if (e.touches.length === 2) {
         // Two fingers - pinch or scroll
         clearLongPressTimer();
-        const distance = getTouchDistance(e.touches[0], e.touches[1]);
-        const center = getTouchCenter(e.touches[0], e.touches[1]);
+        const touch1 = e.touches[0] as unknown as Touch;
+        const touch2 = e.touches[1] as unknown as Touch;
+        const distance = getTouchDistance(touch1, touch2);
+        const center = getTouchCenter(touch1, touch2);
 
         initialPinchDistanceRef.current = distance;
         lastPinchScaleRef.current = 1;
@@ -177,8 +179,10 @@ export const useTouchGestures = (options: UseTouchGesturesOptions = {}) => {
         };
       } else if (e.touches.length === 2 && isPinchingRef.current) {
         // Two fingers - pinch zoom or scroll
-        const distance = getTouchDistance(e.touches[0], e.touches[1]);
-        const center = getTouchCenter(e.touches[0], e.touches[1]);
+        const touch1 = e.touches[0] as unknown as Touch;
+        const touch2 = e.touches[1] as unknown as Touch;
+        const distance = getTouchDistance(touch1, touch2);
+        const center = getTouchCenter(touch1, touch2);
         const scale = distance / initialPinchDistanceRef.current;
 
         // Detect if it's a pinch (distance change) or scroll (parallel movement)

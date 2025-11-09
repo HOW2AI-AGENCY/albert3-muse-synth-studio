@@ -77,14 +77,14 @@ export const DAWEnhanced: React.FC = () => {
   const loadStemsAsMultitrack = useDAWStore((state) => state.loadStemsAsMultitrack);
 
   // Load user's tracks for stem loading
-  const { data: userTracks } = useTracks();
+  const { tracks: userTracks } = useTracks();
 
   // Initialize project if none exists
   useEffect(() => {
     if (!project) {
       createProject('Untitled Project');
     }
-  }, [project, createProject]);
+  }, [project]);
 
   // Update container width on resize
   useEffect(() => {
@@ -170,7 +170,7 @@ export const DAWEnhanced: React.FC = () => {
 
   const handleLoadStems = useCallback(
     (trackId: string) => {
-      const track = userTracks?.tracks.find((t) => t.id === trackId);
+      const track = userTracks?.find((t) => t.id === trackId);
       if (!track) return;
 
       // Fetch stems for this track
@@ -277,8 +277,8 @@ export const DAWEnhanced: React.FC = () => {
                     <SelectValue placeholder="Select a track..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {userTracks?.tracks
-                      .filter((t) => t.has_stems)
+                    {userTracks
+                      ?.filter((t) => t.has_stems)
                       .map((track) => (
                         <SelectItem key={track.id} value={track.id}>
                           {track.title}

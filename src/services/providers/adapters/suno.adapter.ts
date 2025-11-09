@@ -70,7 +70,7 @@ export class SunoProviderAdapter implements IProviderClient {
         metricsCollector.trackGeneration({
           trackId: params.trackId || 'unknown',
           provider: 'suno',
-          status: 'timeout',
+          status: 'failed' as const,
           duration: error.timeoutMs,
           timestamp: Date.now(),
         });

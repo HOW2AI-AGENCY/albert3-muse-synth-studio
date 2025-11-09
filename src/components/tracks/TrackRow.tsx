@@ -80,13 +80,16 @@ export const TrackRow = memo<TrackRowProps>(({
 
   // Версии трека (без изменений поведения проигрывателя)
   const { allVersions, versionCount, isLoading } = useTrackVersions(track.id, true);
+  const totalVersions = (versionCount ?? 0) + 1; // включая оригинал
 
   // Отображаемая версия и производные данные
-  const displayedVersion = allVersions[selectedVersionIndex] ?? null;
+  const displayedVersion = useMemo(() => 
+    allVersions[selectedVersionIndex] ?? null,
+    [allVersions, selectedVersionIndex]
+  );
   const displayCoverUrl = displayedVersion?.cover_url ?? track.thumbnailUrl;
   const displayTitle = displayedVersion?.title ?? track.title;
   const displayDurationSec = displayedVersion?.duration ?? track.durationSec;
-  const totalVersions = (versionCount ?? 0) + 1; // включая оригинал
 
   const handlePlayPause = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -212,7 +215,11 @@ export const TrackRow = memo<TrackRowProps>(({
               <TrackVariantSelector
                 trackId={track.id}
                 currentVersionIndex={selectedVersionIndex}
-                onVersionChange={(index) => setSelectedVersionIndex(Math.max(0, Math.min(index, allVersions.length - 1)))}
+                onVersionChange={(index) => {
+                  // ✅ FIX: Prevent infinite loop - validate index before setting
+                  const clampedIndex = Math.max(0, Math.min(index, totalVersions - 1));
+                  setSelectedVersionIndex(clampedIndex);
+                }}
                 className="scale-75 origin-top-right"
               />
             </div>

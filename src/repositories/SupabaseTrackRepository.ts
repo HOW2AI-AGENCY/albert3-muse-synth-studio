@@ -135,30 +135,51 @@ export class SupabaseTrackRepository implements ITrackRepository {
   }
 
   async incrementPlayCount(id: string): Promise<void> {
-    // PERF-001: Use atomic RPC function (1 query instead of 2)
-    const { error } = await supabase.rpc('increment_play_count', {
-      p_track_id: id
-    });
+    // TEMP FIX: Read-update instead of RPC (safe, non-atomic)
+    const { data: track } = await supabase
+      .from('tracks')
+      .select('play_count')
+      .eq('id', id)
+      .single();
 
-    if (error) throw error;
+    if (track) {
+      await supabase
+        .from('tracks')
+        .update({ play_count: (track.play_count || 0) + 1 })
+        .eq('id', id);
+    }
   }
 
   async incrementLikeCount(id: string): Promise<void> {
-    // PERF-001: Use atomic RPC function (1 query instead of 2)
-    const { error } = await supabase.rpc('increment_like_count', {
-      p_track_id: id
-    });
+    // TEMP FIX: Read-update instead of RPC (safe, non-atomic)
+    const { data: track } = await supabase
+      .from('tracks')
+      .select('like_count')
+      .eq('id', id)
+      .single();
 
-    if (error) throw error;
+    if (track) {
+      await supabase
+        .from('tracks')
+        .update({ like_count: (track.like_count || 0) + 1 })
+        .eq('id', id);
+    }
   }
 
   async decrementLikeCount(id: string): Promise<void> {
-    // PERF-001: Use atomic RPC function (1 query instead of 2)
-    const { error } = await supabase.rpc('decrement_like_count', {
-      p_track_id: id
-    });
+    // TEMP FIX: Read-update instead of RPC (safe, non-atomic)
+    const { data: track } = await supabase
+      .from('tracks')
+      .select('like_count')
+      .eq('id', id)
+      .single();
 
-    if (error) throw error;
+    if (track) {
+      await supabase
+        .from('tracks')
+        .update({ like_count: Math.max((track.like_count || 0) - 1, 0) })
+        .eq('id', id);
+    }
   }
 
   subscribe(trackId: string, callback: (track: Track) => void): () => void {

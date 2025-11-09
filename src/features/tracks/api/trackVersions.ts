@@ -137,14 +137,26 @@ export async function setMasterVersion(
     // Функция в БД atomically сбрасывает флаги и устанавливает мастер‑версию
     return handleTrackVersionOperation(
       async () => {
-        const { data, error } = await supabase.rpc('set_master_version', {
-          parent_track_id: parentTrackId,
-          version_id: versionId,
-        });
+        // TEMP FIX: Direct SQL update instead of RPC until types are regenerated
+        // Reset all is_preferred_variant flags for this track
+        const { error: resetError } = await supabase
+          .from('track_versions')
+          .update({ is_preferred_variant: false })
+          .eq('parent_track_id', parentTrackId);
 
-        // RPC возвращает массив строк track_versions; берём первую как результат
-        const updated = Array.isArray(data) ? (data[0] as TrackVersionRow | undefined) : (data as TrackVersionRow | null);
-        return { data: updated ?? null, error };
+        if (resetError) {
+          return { data: null, error: resetError };
+        }
+
+        // Set the new master version
+        const { data, error } = await supabase
+          .from('track_versions')
+          .update({ is_preferred_variant: true })
+          .eq('id', versionId)
+          .select()
+          .single();
+
+        return { data, error };
       },
       {
         action: 'setMasterVersion',

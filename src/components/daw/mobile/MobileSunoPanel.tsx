@@ -83,10 +83,9 @@ export const MobileSunoPanel: React.FC = () => {
   const [selectedTrackForStems, setSelectedTrackForStems] = useState<string>('');
 
   const loadStemsAsMultitrack = useDAWStore((state) => state.loadStemsAsMultitrack);
-  const addClip = useDAWStore((state) => state.addClip);
 
   // Load user tracks
-  const { data: userTracks } = useTracks();
+  const { tracks: userTracks } = useTracks();
 
   // Stem separation
   const { generateStems, isGenerating: isSeparatingStems } = useStemSeparation({
@@ -153,7 +152,7 @@ export const MobileSunoPanel: React.FC = () => {
   const handleLoadStems = useCallback(
     async (trackId: string) => {
       try {
-        const track = userTracks?.tracks.find((t) => t.id === trackId);
+        const track = userTracks?.find((t) => t.id === trackId);
         if (!track) return;
 
         const { data: stems, error } = await supabase
@@ -343,8 +342,8 @@ export const MobileSunoPanel: React.FC = () => {
                       <SelectValue placeholder="Select a track..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {userTracks?.tracks
-                        .filter((t) => t.has_stems)
+                      {userTracks
+                        ?.filter((t) => t.has_stems)
                         .map((track) => (
                           <SelectItem key={track.id} value={track.id}>
                             <div className="flex items-center gap-2">
@@ -383,7 +382,7 @@ export const MobileSunoPanel: React.FC = () => {
                       <SelectValue placeholder="Select a track..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {userTracks?.tracks.map((track) => (
+                      {userTracks?.map((track) => (
                         <SelectItem key={track.id} value={track.id}>
                           <div className="flex items-center gap-2">
                             <Music className="h-3 w-3" />

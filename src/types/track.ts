@@ -157,6 +157,16 @@ type ConvertibleTrack = {
 export const convertToAudioPlayerTrack = (track: ConvertibleTrack): AudioPlayerTrack | null => {
   if (!track.audio_url) return null;
 
+  // Filter out 'draft' status as it's not part of TrackStatus type
+  const mappedStatus = track.status === 'draft' ? 'pending' : track.status;
+  const validStatus: TrackStatus | undefined = 
+    mappedStatus === 'pending' || 
+    mappedStatus === 'processing' || 
+    mappedStatus === 'completed' || 
+    mappedStatus === 'failed' 
+      ? mappedStatus 
+      : undefined;
+
   return {
     id: track.id,
     title: track.title,
@@ -165,7 +175,7 @@ export const convertToAudioPlayerTrack = (track: ConvertibleTrack): AudioPlayerT
     duration: track.duration || track.duration_seconds || undefined,
     style_tags: track.style_tags || undefined,
     lyrics: track.lyrics || undefined,
-    status: track.status as TrackStatus | undefined,
+    status: validStatus,
   };
 };
 

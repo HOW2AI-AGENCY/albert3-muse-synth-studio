@@ -28,7 +28,7 @@ export const useIntersectionObserver = (
   const frozen = entry?.isIntersecting && freezeOnceVisible;
 
   useEffect(() => {
-    frozenRef.current = frozen;
+    frozenRef.current = !!frozen;
   }, [frozen]);
 
   const updateEntry = useCallback(([entry]: IntersectionObserverEntry[]) => {
