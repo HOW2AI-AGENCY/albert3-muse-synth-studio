@@ -17,6 +17,7 @@
  */
 
 import { create } from 'zustand';
+// removed shallow import — используем раздельные селекторы со стабильными ссылками
 import { devtools, persist } from 'zustand/middleware';
 import { logger } from '@/utils/logger';
 import { useRef } from 'react';
@@ -695,76 +696,76 @@ export const useQueue = () =>
  * Get playback controls
  * Returns stable function references (won't cause re-renders)
  */
-export const usePlaybackControls = () => 
-  useAudioPlayerStore((state) => ({
-    playTrack: state.playTrack,
-    pause: state.pause,
-    resume: state.resume,
-    togglePlayPause: state.togglePlayPause,
-    playNext: state.playNext,
-    playPrevious: state.playPrevious,
-  }));
+export const usePlaybackControls = () => {
+  const playTrack = useAudioPlayerStore((state) => state.playTrack);
+  const pause = useAudioPlayerStore((state) => state.pause);
+  const resume = useAudioPlayerStore((state) => state.resume);
+  const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
+  const playNext = useAudioPlayerStore((state) => state.playNext);
+  const playPrevious = useAudioPlayerStore((state) => state.playPrevious);
+  return { playTrack, pause, resume, togglePlayPause, playNext, playPrevious };
+};
 
 /**
  * Get audio controls
  * Returns stable function references
  */
-export const useAudioControls = () => 
-  useAudioPlayerStore((state) => ({
-    setVolume: state.setVolume,
-    seekTo: state.seekTo,
-    updateCurrentTime: state.updateCurrentTime,
-    updateDuration: state.updateDuration,
-  }));
+export const useAudioControls = () => {
+  const setVolume = useAudioPlayerStore((state) => state.setVolume);
+  const seekTo = useAudioPlayerStore((state) => state.seekTo);
+  const updateCurrentTime = useAudioPlayerStore((state) => state.updateCurrentTime);
+  const updateDuration = useAudioPlayerStore((state) => state.updateDuration);
+  return { setVolume, seekTo, updateCurrentTime, updateDuration };
+};
 
 /**
  * Get queue controls
  * Returns stable function references
  */
-export const useQueueControls = () => 
-  useAudioPlayerStore((state) => ({
-    addToQueue: state.addToQueue,
-    removeFromQueue: state.removeFromQueue,
-    clearQueue: state.clearQueue,
-  }));
+export const useQueueControls = () => {
+  const addToQueue = useAudioPlayerStore((state) => state.addToQueue);
+  const removeFromQueue = useAudioPlayerStore((state) => state.removeFromQueue);
+  const clearQueue = useAudioPlayerStore((state) => state.clearQueue);
+  return { addToQueue, removeFromQueue, clearQueue };
+};
 
 /**
  * Get version state
  * Only re-renders when versions or current version index changes
  */
-export const useVersions = () => 
-  useAudioPlayerStore((state) => ({
-    availableVersions: state.availableVersions,
-    currentVersionIndex: state.currentVersionIndex,
-  }));
+export const useVersions = () => {
+  const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
+  const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
+  return { availableVersions, currentVersionIndex };
+};
 
 /**
  * Get version controls
  * Returns stable function references
  */
-export const useVersionControls = () =>
-  useAudioPlayerStore((state) => ({
-    switchToVersion: state.switchToVersion,
-    loadVersions: state.loadVersions,
-  }));
+export const useVersionControls = () => {
+  const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
+  const loadVersions = useAudioPlayerStore((state) => state.loadVersions);
+  return { switchToVersion, loadVersions };
+};
 
 /**
  * Get playback modes state
  * Only re-renders when repeat mode or shuffle changes
  */
-export const usePlaybackModes = () =>
-  useAudioPlayerStore((state) => ({
-    repeatMode: state.repeatMode,
-    isShuffleEnabled: state.isShuffleEnabled,
-  }));
+export const usePlaybackModes = () => {
+  const repeatMode = useAudioPlayerStore((state) => state.repeatMode);
+  const isShuffleEnabled = useAudioPlayerStore((state) => state.isShuffleEnabled);
+  return { repeatMode, isShuffleEnabled };
+};
 
 /**
  * Get playback mode controls
  * Returns stable function references
  */
-export const usePlaybackModeControls = () =>
-  useAudioPlayerStore((state) => ({
-    toggleRepeatMode: state.toggleRepeatMode,
-    toggleShuffle: state.toggleShuffle,
-    setRepeatMode: state.setRepeatMode,
-  }));
+export const usePlaybackModeControls = () => {
+  const toggleRepeatMode = useAudioPlayerStore((state) => state.toggleRepeatMode);
+  const toggleShuffle = useAudioPlayerStore((state) => state.toggleShuffle);
+  const setRepeatMode = useAudioPlayerStore((state) => state.setRepeatMode);
+  return { toggleRepeatMode, toggleShuffle, setRepeatMode };
+};

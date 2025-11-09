@@ -13,6 +13,28 @@ import { AITrackActionsContainer } from "@/components/tracks/AITrackActionsConta
 import { useResponsiveGrid } from "@/hooks/useResponsiveGrid";
 import type { TrackOperations } from "@/hooks/tracks/useTrackOperations";
 
+/**
+ * TracksList — компонент списка треков с адаптивной сеткой и виртуализацией.
+ *
+ * Назначение:
+ * - Отображение треков в режимах `grid` и `list` с поддержкой больших коллекций (виртуализация)
+ * - Управление действиями над треком: воспроизведение, шаринг, повтор генерации, синхронизация, удаление
+ * - Интеграция с глобальным аудиоплеером и контейнером действий ИИ
+ *
+ * Ключевые особенности производительности:
+ * - Измерение размеров контейнера через `ResizeObserver` для точной виртуализации
+ * - Мемоизация воспроизводимого плейлиста (`playableTracks`) и обработчиков
+ * - Адаптивное вычисление количества колонок в сетке с учётом мобильной вёрстки
+ *
+ * Пропсы:
+ * - `tracks`: список треков
+ * - `isLoading`: индикатор загрузки
+ * - `deleteTrack`, `refreshTracks`: операции управления
+ * - коллбеки действий (`onSeparateStems`, `onExtend`, `onCover`, `onCreatePersona`, `onSelect`)
+ * - `isDetailPanelOpen`: влияет на расчёт колонок сетки
+ * - `trackOperations`: контейнер бизнес-операций над треком
+ * - `viewMode`: режим отображения (`grid` | `list`)
+ */
 interface TracksListProps {
   tracks: Track[];
   isLoading: boolean;
@@ -28,6 +50,11 @@ interface TracksListProps {
   viewMode: 'grid' | 'list';
 }
 
+/**
+ * Основной компонент реализации списка треков.
+ * Не рендерит лишние элементы при больших объёмах данных,
+ * корректно кеширует обработчики и поддерживает режимы сетка/список.
+ */
 const TracksListComponent = ({
   tracks,
   isLoading,

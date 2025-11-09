@@ -6,6 +6,27 @@ import { LyricsContent } from './LyricsContent';
 import { SectionPresetDialog } from './SectionPresetDialog';
 import { cn } from '@/lib/utils';
 
+/**
+ * LyricsWorkspace — рабочее пространство для редактирования и просмотра лирики.
+ *
+ * Назначение:
+ * - Парсинг текста лирики в структуру документа с секциями и глобальными тегами
+ * - Линтинг содержимого и отображение статистики (строки, слова, символы, секции)
+ * - Управление разделами (добавление по пресетам, обновление, удаление, переупорядочивание)
+ * - Экспорт в формат Suno и обратная синхронизация изменений
+ *
+ * Особенности:
+ * - Автонумерация куплетов (`Verse 1`, `Verse 2`, ...)
+ * - Чёткое разделение Toolbar/Content/Dialog для соблюдения принципов SRP (SOLID)
+ * - Аккуратное использование мемоизации для производительности
+ *
+ * Пропсы:
+ * - `mode`: режим работы (`view` | `edit` | `generate`)
+ * - `value`: исходный текст лирики
+ * - `onChange`, `onGenerate`, `onGenerateLyrics`, `onSave`: коллбеки управления
+ * - `readOnly`, `showAITools`, `showTags`, `showSectionControls`, `compact`: настройки UI
+ * - `className`: дополнительные классы контейнера
+ */
 export interface LyricsWorkspaceProps {
   mode: 'view' | 'edit' | 'generate';
   value: string;
@@ -21,7 +42,12 @@ export interface LyricsWorkspaceProps {
   className?: string;
 }
 
-export const LyricsWorkspace = memo<LyricsWorkspaceProps>(({
+/**
+ * Основной компонент рабочей области лирики.
+ * Обеспечивает преобразование текста в структурированный документ,
+ * связь Toolbar ↔ Content и диалог пресетов секций.
+ */
+export const LyricsWorkspace = memo<LyricsWorkspaceProps>(({ 
   mode,
   value,
   onChange,

@@ -183,7 +183,7 @@ serve(async (req: Request) => {
     // CALL SUNO API
     // ============================================================================
 
-    const SUNO_API_KEY = Deno.env.get('SUNO_API_KEY');
+    const SUNO_API_KEY = (globalThis as any).Deno?.env?.get('SUNO_API_KEY');
     if (!SUNO_API_KEY) {
       throw new Error('SUNO_API_KEY not configured');
     }
