@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { usePromptHistory } from '@/hooks/usePromptHistory';
+import { toast } from '@/hooks/use-toast';
 
 export const usePromptHistoryState = () => {
   const { history, templates, isLoading, deletePrompt, saveAsTemplate } = usePromptHistory();
@@ -7,7 +8,13 @@ export const usePromptHistoryState = () => {
   const [savingTemplateId, setSavingTemplateId] = useState<string | null>(null);
 
   const handleSaveAsTemplate = async (id: string) => {
-    if (!templateName.trim()) return;
+    if (!templateName.trim()) {
+      toast({
+        variant: 'destructive',
+        description: 'Введите имя шаблона перед сохранением',
+      });
+      return;
+    }
     // ✅ Передаем поле в формате, ожидаемом хуком (camelCase)
     await saveAsTemplate({ id, templateName: templateName });
     setTemplateName('');
