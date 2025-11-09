@@ -245,3 +245,7 @@ export const StemMixerProvider = ({ children }: StemMixerProviderProps) => {
     </StemMixerContext.Provider>
   );
 };
+
+// Для обратной совместимости: реэкспортируем хук из нового расположения
+// Это позволяет импортировать useStemMixer как из '@/contexts/StemMixerContext', так и из '@/contexts/stem-mixer/useStemMixer'
+export { useStemMixer } from './stem-mixer/useStemMixer';
