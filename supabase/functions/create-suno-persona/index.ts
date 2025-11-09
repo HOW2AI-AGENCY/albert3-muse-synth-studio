@@ -6,16 +6,19 @@
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { logger } from '../_shared/logger.ts';
+import { createSupabaseUserClient } from '../_shared/supabase.ts';
+import { createCorsHeaders } from '../_shared/cors.ts';
+import { createSecurityHeaders } from '../_shared/security.ts';
 
 // ============================================================================
 // CORS HEADERS
 // ============================================================================
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  ...createCorsHeaders(),
+  ...createSecurityHeaders(),
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
 // ============================================================================
@@ -44,12 +47,13 @@ interface SunoPersonaResponse {
 // MAIN HANDLER
 // ============================================================================
 
-serve(async (req) => {
+serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let ctxTrackId: string | undefined;
   try {
     // ============================================================================
     // AUTHENTICATION
@@ -57,26 +61,22 @@ serve(async (req) => {
 
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      throw new Error('Missing authorization header');
+      return new Response(JSON.stringify({ error: 'Authorization header required' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
-    );
-
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    const token = authHeader.replace('Bearer ', '');
+    const supabase = createSupabaseUserClient(token);
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
 
     if (userError || !user) {
-      throw new Error('Unauthorized');
+      logger.error('Authentication failed', userError ?? new Error('Unauthorized'));
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // ============================================================================
@@ -85,6 +85,7 @@ serve(async (req) => {
 
     const body: CreatePersonaRequest = await req.json();
     const { trackId, musicIndex, name, description, isPublic = false } = body;
+    ctxTrackId = trackId;
 
     if (!trackId || musicIndex === undefined || !name || !description) {
       return new Response(
@@ -272,8 +273,11 @@ serve(async (req) => {
       .single();
 
     if (saveError) {
-      logger.error('Database error', saveError instanceof Error ? saveError : new Error(String(saveError)), 'create-suno-persona');
-      throw new Error(`Failed to save persona: ${saveError.message}`);
+      logger.error('Database error', saveError instanceof Error ? saveError : new Error(String(saveError)));
+      return new Response(JSON.stringify({ error: 'Failed to save persona' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     logger.info('Persona created successfully', { endpoint: 'create-suno-persona', personaId: persona.id });
@@ -302,11 +306,14 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    logger.error('Error in create-suno-persona', error instanceof Error ? error : new Error(String(error)), 'create-suno-persona');
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error('Error in create-suno-persona', err);
 
+    // Provide safer, consistent error payload and include trackId context if available
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Internal server error',
+        error: err.message || 'Internal server error',
+        trackId: ctxTrackId,
       }),
       {
         status: 500,

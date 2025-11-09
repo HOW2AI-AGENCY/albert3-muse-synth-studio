@@ -36,7 +36,13 @@ export const useCreatePersona = () => {
       });
 
       if (error) {
-        logger.error('Failed to create persona', error, 'useCreatePersona');
+        // Расширяем логирование: статус/контекст ошибки из Supabase Functions
+        const status = (error as any)?.status;
+        const context = (error as any)?.context;
+        logger.error('Failed to create persona', new Error(`${error.message}${status ? ` (status ${status})` : ''}`), 'useCreatePersona');
+        if (context) {
+          logger.warn('Persona creation error context', 'useCreatePersona', context);
+        }
         throw error;
       }
 
@@ -51,13 +57,27 @@ export const useCreatePersona = () => {
       logger.info('Persona created successfully', 'useCreatePersona', { personaId: data.id });
     },
     onError: (error: Error) => {
-      if (error.message.includes('already exists')) {
+      const status = (error as any)?.status as number | undefined;
+      const msg = error.message.toLowerCase();
+      if (msg.includes('already exists') || status === 409) {
         toast.error('Персона уже существует', {
           description: 'Эта комбинация трека и индекса уже использована'
         });
-      } else if (error.message.includes('insufficient credits')) {
+      } else if (msg.includes('insufficient') || status === 402) {
         toast.error('Недостаточно кредитов', {
           description: 'Пополните баланс для создания персоны'
+        });
+      } else if (status === 401 || msg.includes('unauthorized') || msg.includes('authorization')) {
+        toast.error('Авторизация требуется', {
+          description: 'Войдите в аккаунт и повторите попытку'
+        });
+      } else if (status === 404) {
+        toast.error('Трек не найден', {
+          description: 'Проверьте корректность выбранного трека'
+        });
+      } else if (status === 400) {
+        toast.error('Некорректные данные', {
+          description: 'Проверьте поля формы: название, описание, индекс'
         });
       } else {
         toast.error('Ошибка создания персоны', {
