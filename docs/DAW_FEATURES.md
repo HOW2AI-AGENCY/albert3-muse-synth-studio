@@ -370,7 +370,8 @@ track.effects = [
 The DAW can utilize existing `StemMixerContext` for advanced stem playback:
 
 ```typescript
-import { useStemMixer } from '@/contexts/StemMixerContext';
+// Обновлённый путь: хук находится в контексте стем-миксера
+import { useStemMixer } from '@/contexts/stem-mixer/useStemMixer';
 
 const { loadStems, play, pause, setStemVolume } = useStemMixer();
 ```
