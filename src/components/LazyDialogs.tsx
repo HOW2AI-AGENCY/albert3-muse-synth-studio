@@ -5,7 +5,7 @@
 
 import { lazy, Suspense, ComponentProps } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 // Lazy imports - используем named exports, оборачиваем в default
 const TrackDeleteDialogComponent = lazy(() => 
@@ -37,6 +37,10 @@ const CreatePersonaDialogComponent = lazy(() =>
 const DialogSkeleton = () => (
   <Dialog open>
     <DialogContent className="max-w-md">
+      {/* Заголовок добавлен для доступности (скрыт визуально) */}
+      <DialogHeader>
+        <DialogTitle className="sr-only">Загрузка диалога…</DialogTitle>
+      </DialogHeader>
       <div className="space-y-4">
         <Skeleton className="h-6 w-48" />
         <Skeleton className="h-20 w-full" />
