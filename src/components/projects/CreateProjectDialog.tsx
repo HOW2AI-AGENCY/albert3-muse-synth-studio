@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, Sparkles, FileText } from 'lucide-react';
 import { useAIProjectCreation } from '@/hooks/useAIProjectCreation';
-import { useProjects } from '@/contexts/ProjectContext';
+import { useProjects } from '@/contexts/project/useProjects';
 import { useCreateProjectWithTracks } from '@/hooks/useCreateProjectWithTracks';
 import type { Database } from '@/integrations/supabase/types';
 

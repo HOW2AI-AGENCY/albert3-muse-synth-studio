@@ -22,7 +22,7 @@ import { logger } from '@/utils/logger';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ProjectTrackPickerDialog } from '@/components/generator/ProjectTrackPickerDialog';
 import { useState, useCallback, useMemo } from 'react';
-import { useProjects } from '@/contexts/ProjectContext';
+import { useProjects } from '@/contexts/project/useProjects';
 import { useTracks } from '@/hooks/useTracks';
 import type { Track } from '@/types/domain/track.types';
 import { useToast } from '@/hooks/use-toast';

@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { logger, logError, logInfo, logWarn } from '@/utils/logger';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth/useAuth';
 import { trackCacheService } from '@/services/track-cache.service';
 
 type TrackRow = Database['public']['Tables']['tracks']['Row'];

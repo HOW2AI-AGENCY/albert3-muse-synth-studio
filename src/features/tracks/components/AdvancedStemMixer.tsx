@@ -5,7 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { SimpleProgress } from '@/components/ui/SimpleProgress';
 import { Play, Pause, RotateCcw, Volume2 } from 'lucide-react';
-import { useStemMixer } from '@/contexts/StemMixerContext';
+import { useStemMixer } from '@/contexts/stem-mixer/useStemMixer';
 import { StemMixerTrack } from './StemMixerTrack';
 import { formatDuration } from '@/utils/formatters';
 

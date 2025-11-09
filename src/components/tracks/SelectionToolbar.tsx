@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSelectedTracks } from '@/contexts/SelectedTracksContext';
+import { useSelectedTracks } from '@/contexts/selected-tracks/useSelectedTracks';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 

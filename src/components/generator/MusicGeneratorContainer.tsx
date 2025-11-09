@@ -322,12 +322,14 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
     }, 100);
   }, [handleGenerate, state]);
 
+  // Деструктурируем нужные части из state, чтобы избежать зависимости от всего объекта
+  const { params, mode, setMode } = state;
   useEffect(() => {
-    const hasAdvancedFeatures = !!state.params.referenceAudioUrl || !!state.params.personaId;
+    const hasAdvancedFeatures = !!params.referenceAudioUrl || !!params.personaId;
 
-    if (hasAdvancedFeatures && state.mode === 'simple') {
+    if (hasAdvancedFeatures && mode === 'simple') {
       logger.info('Auto-switching to Custom Mode (advanced features detected)', 'MusicGeneratorContainer');
-      state.setMode('custom');
+      setMode('custom');
 
       toast({
         title: 'Переключено на Custom Mode',
@@ -335,7 +337,7 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
         duration: 3000,
       });
     }
-  }, [state.params.referenceAudioUrl, state.params.personaId, state.mode, state.setMode, toast]);
+  }, [params.referenceAudioUrl, params.personaId, mode, setMode, toast]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

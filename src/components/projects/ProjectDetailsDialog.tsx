@@ -25,7 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { useProjects } from '@/contexts/ProjectContext';
+import { useProjects } from '@/contexts/project/useProjects';
 import {
   Tooltip,
   TooltipContent,

@@ -18,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Music, Search, Clock, Check, User, ListMusic, Sparkles } from 'lucide-react';
 import { useTracks } from '@/hooks/useTracks';
-import { useProjects } from '@/contexts/ProjectContext';
+import { useProjects } from '@/contexts/project/useProjects';
 import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
 import type { Track } from '@/types/domain/track.types';

@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import type { Track } from "@/services/api.service";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth/useAuth";
 import { logError, logInfo } from "@/utils/logger";
 
 type RetryFailureReason = "unauthorized" | "error";

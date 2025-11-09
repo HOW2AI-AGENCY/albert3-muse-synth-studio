@@ -25,7 +25,7 @@ import { TrackDialogsManager } from "@/components/tracks/TrackDialogsManager";
 import { useMusicProjects } from "@/hooks/useMusicProjects";
 import { useTrackOperations } from "@/hooks/tracks/useTrackOperations";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth/useAuth";
 import { useUIStateStore } from "@/stores/uiStateStore";
 import { ViewSwitcher } from "@/components/tracks/ViewSwitcher";
 import { Filter } from "@/utils/iconImports";

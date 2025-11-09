@@ -1,25 +1,10 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { logError, logInfo } from '@/utils/logger';
+import { AuthContext, type AuthContextValue } from './auth/context';
 
-interface AuthContextValue {
-  user: User | null;
-  userId: string | null;
-  session: Session | null;
-  isLoading: boolean;
-  refresh: () => Promise<void>;
-}
-
-const defaultValue: AuthContextValue = {
-  user: null,
-  userId: null,
-  session: null,
-  isLoading: true,
-  refresh: async () => {},
-};
-
-export const AuthContext = createContext<AuthContextValue>(defaultValue);
+// Типы и контекст вынесены в ./auth/context
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -109,4 +94,4 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => useContext(AuthContext);
+// Хук вынесен в ./auth/useAuth

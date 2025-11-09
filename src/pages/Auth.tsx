@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AuthForm } from "@/components/AuthForm";
 import { Music } from "@/utils/iconImports";
 import { isTelegramWebApp } from "@/utils/telegram/twa";
-import { useTelegramAuth } from "@/contexts/TelegramAuthProvider";
+import { useTelegramAuth } from "@/contexts/telegram-auth/useTelegramAuth";
 
 const Auth = () => {
   const isTWA = isTelegramWebApp();

@@ -17,7 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Folder, Music, Plus, Check } from 'lucide-react';
-import { useProjects } from '@/contexts/ProjectContext';
+import { useProjects } from '@/contexts/project/useProjects';
 import { useTracks } from '@/hooks/useTracks';
 import { CreateProjectDialog } from '@/components/projects/CreateProjectDialog';
 import { cn } from '@/lib/utils';

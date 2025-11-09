@@ -1,9 +1,7 @@
-import React, { createContext, useContext, useReducer, useCallback } from 'react';
+import React, { useReducer, useCallback } from 'react';
+import { SelectedTracksContext, SelectedTracksState } from './selected-tracks/context';
 
-interface SelectedTracksState {
-  selectedTrackIds: Set<string>;
-  isSelectionMode: boolean;
-}
+// Типы и контекст вынесены в ./selected-tracks/context
 
 type SelectedTracksAction =
   | { type: 'SELECT_TRACK'; trackId: string }
@@ -14,21 +12,7 @@ type SelectedTracksAction =
   | { type: 'SET_SELECTION_MODE'; enabled: boolean }
   | { type: 'CLEAR_SELECTION' };
 
-interface SelectedTracksContextType {
-  selectedTrackIds: Set<string>;
-  isSelectionMode: boolean;
-  selectedTracksCount: number;
-  selectTrack: (trackId: string) => void;
-  deselectTrack: (trackId: string) => void;
-  toggleTrack: (trackId: string) => void;
-  selectAll: (trackIds: string[]) => void;
-  deselectAll: () => void;
-  setSelectionMode: (enabled: boolean) => void;
-  clearSelection: () => void;
-  isTrackSelected: (trackId: string) => boolean;
-}
-
-const SelectedTracksContext = createContext<SelectedTracksContextType | undefined>(undefined);
+// Контекст импортирован из отдельного файла
 
 const initialState: SelectedTracksState = {
   selectedTrackIds: new Set(),
@@ -164,10 +148,4 @@ export const SelectedTracksProvider: React.FC<SelectedTracksProviderProps> = ({ 
   );
 }
 
-export function useSelectedTracks() {
-  const context = useContext(SelectedTracksContext);
-  if (context === undefined) {
-    throw new Error('useSelectedTracks must be used within a SelectedTracksProvider');
-  }
-  return context;
-}
+// Хук перенесён в ./selected-tracks/useSelectedTracks

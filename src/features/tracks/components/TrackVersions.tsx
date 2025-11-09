@@ -93,7 +93,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
       vibrate('error');
       toast.error('Ошибка при установке главной версии');
     }
-  }, [trackId, versions, vibrate, onVersionUpdate]);
+  }, [trackId, vibrate, onVersionUpdate]);
 
   // Мемоизируем функцию воспроизведения версии
   const handlePlayVersion = useCallback((version: TrackVersion) => {
@@ -114,7 +114,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
     } else {
       playTrack(buildAudioPlayerTrack(version, trackId));
     }
-  }, [trackId, currentTrack, isPlaying, vibrate, togglePlayPause, playTrack]);
+  }, [trackId, currentTrack, isPlaying, vibrate, togglePlayPause, playTrack, getDisplayVersionNumber]);
 
   // Мемоизируем функцию удаления версии
   const handleDeleteVersion = useCallback(async (version: TrackVersion) => {
@@ -173,7 +173,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
       setDeleteDialogOpen(false);
       setVersionToDelete(null);
     }
-  }, [versionToDelete, versions, trackId, vibrate, onVersionUpdate]);
+  }, [versionToDelete, versions, trackId, vibrate, onVersionUpdate, getDisplayVersionNumber]);
 
   const additionalVersions = versions.filter(version => !version.is_primary_variant);
   const primaryVersion = versions.find(v => v.is_primary_variant);

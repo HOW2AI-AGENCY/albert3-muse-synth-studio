@@ -176,7 +176,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
       // Start polling as fallback
       startPolling(trackId);
     }, AUTO_CLEANUP_TIMEOUT);
-  }, [cleanup, toast, onSuccess, startPolling]);
+  }, [cleanup, toast, onSuccess, startPolling, provider]);
 
   // Main generation function
   const generate = useCallback(async (options: GenerationRequest): Promise<boolean> => {

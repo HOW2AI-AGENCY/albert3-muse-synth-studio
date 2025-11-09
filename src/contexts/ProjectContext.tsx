@@ -10,9 +10,9 @@
  * @version 2.0.0 - Migrated to React Query
  */
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { useState, useCallback, ReactNode, useContext } from 'react';
 import { logger } from '@/utils/logger';
-import type { Database } from '@/integrations/supabase/types';
+import { ProjectContext, ProjectContextValue, MusicProject, ProjectInsert, ProjectUpdate } from './project/context';
 
 // Import new React Query hooks
 import {
@@ -22,22 +22,7 @@ import {
   useDeleteProject,
 } from '@/hooks/projects';
 
-type MusicProject = Database['public']['Tables']['music_projects']['Row'];
-type ProjectInsert = Database['public']['Tables']['music_projects']['Insert'];
-type ProjectUpdate = Database['public']['Tables']['music_projects']['Update'];
-
-interface ProjectContextValue {
-  selectedProject: MusicProject | null;
-  setSelectedProject: (project: MusicProject | null) => void;
-  projects: MusicProject[];
-  isLoading: boolean;
-  createProject: (params: ProjectInsert) => Promise<MusicProject | null>;
-  updateProject: (id: string, params: ProjectUpdate) => Promise<void>;
-  deleteProject: (id: string) => Promise<void>;
-  refreshProjects: () => Promise<void>;
-}
-
-const ProjectContext = createContext<ProjectContextValue | undefined>(undefined);
+// Контекст и типы вынесены в отдельный модуль ./project/context
 
 export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [selectedProject, setSelectedProject] = useState<MusicProject | null>(null);
@@ -124,10 +109,4 @@ export const ProjectProvider: React.FC<{ children: ReactNode }> = ({ children })
   );
 };
 
-export const useProjects = () => {
-  const context = useContext(ProjectContext);
-  if (context === undefined) {
-    throw new Error('useProjects must be used within a ProjectProvider');
-  }
-  return context;
-};
+// Хук перенесён в отдельный файл ./project/useProjects

@@ -44,7 +44,7 @@ import type { AudioPlayerTrack } from "@/types/track";
 import { useResponsiveGrid } from '@/hooks/useResponsiveGrid';
 import { VirtualizedTrackGrid } from '@/components/tracks/VirtualizedTrackGrid';
 import { VirtualizedTrackList } from '@/components/tracks/VirtualizedTrackList';
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth/useAuth";
 import { SelectedTracksProvider, useSelectedTracks } from '@/contexts/SelectedTracksContext';
 import { SelectionToolbar } from '@/components/tracks/SelectionToolbar';
 

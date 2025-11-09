@@ -1,5 +1,4 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { toast } from "sonner";
 
 // Defer loading Sonner's Toaster until after client mount to avoid React runtime mismatches
 const LazyToaster = lazy(() => import("sonner").then((m) => ({ default: m.Toaster })));
@@ -34,4 +33,4 @@ const Toaster = ({ theme = "system", ...props }: ToasterProps) => {
   );
 };
 
-export { Toaster, toast };
+export { Toaster };

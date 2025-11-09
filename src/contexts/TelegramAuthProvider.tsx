@@ -2,7 +2,7 @@
  * Telegram Web App Authentication Provider
  * Автоматически авторизует пользователей через Telegram если они открыли приложение в TWA
  */
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   isTelegramWebApp, 
@@ -12,20 +12,9 @@ import {
 } from '@/utils/telegram/twa';
 import { FullPageSpinner } from '@/components/ui/loading-states';
 import { logger } from '@/utils/logger';
+import { TelegramAuthContext } from './telegram-auth/context';
 
-interface TelegramAuthContextValue {
-  isTelegramAuth: boolean;
-  isInitialized: boolean;
-  telegramUser: ReturnType<typeof getTelegramUser> | null;
-}
-
-const TelegramAuthContext = createContext<TelegramAuthContextValue>({
-  isTelegramAuth: false,
-  isInitialized: false,
-  telegramUser: null,
-});
-
-export const useTelegramAuth = () => useContext(TelegramAuthContext);
+// Контекст вынесен в ./telegram-auth/context, хук вынесен в ./telegram-auth/useTelegramAuth
 
 interface TelegramAuthProviderProps {
   children: React.ReactNode;

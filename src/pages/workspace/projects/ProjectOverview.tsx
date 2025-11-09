@@ -9,7 +9,7 @@ import { Plus, Search, Filter, SortAsc, CalendarDays } from 'lucide-react';
 import { ProjectCard } from '@/components/projects/ProjectCard';
 import { CreateProjectDialog } from '@/components/projects/CreateProjectDialog';
 import { ProjectDetailsDialog } from '@/components/projects/ProjectDetailsDialog';
-import { useProjects } from '@/contexts/ProjectContext';
+import { useProjects } from '@/contexts/project/useProjects';
 import { TrackListSkeleton } from '@/components/skeletons';
 import type { Database } from '@/integrations/supabase/types';
 import { Input } from '@/components/ui/input';

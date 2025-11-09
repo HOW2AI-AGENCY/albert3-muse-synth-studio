@@ -211,7 +211,7 @@ export const useAudioRecorder = (
         variant: 'destructive',
       });
     }
-  }, [toast, uploadAudio, onRecordComplete]);
+  }, [toast, uploadAudio, onRecordComplete, stopRecording, recordingTime]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current?.state === 'recording') {

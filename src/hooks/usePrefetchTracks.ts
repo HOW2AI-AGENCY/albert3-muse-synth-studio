@@ -48,16 +48,21 @@ export const usePrefetchTracks = (
       prefetchedUrls.current.add(track.audio_url);
     }
 
+    // Захватываем текущие значения ref в локальные переменные,
+    // чтобы cleanup работал с стабильными ссылками и удовлетворял eslint-plugin-react-hooks.
+    const audioCacheRef = audioCache.current;
+    const prefetchedUrlsRef = prefetchedUrls.current;
+
     // Cleanup old cached audio (keep only recent ones)
     return () => {
-      if (audioCache.current.size > prefetchCount * 4) {
-        const urlsToDelete = Array.from(audioCache.current.keys()).slice(0, audioCache.current.size - prefetchCount * 3);
+      if (audioCacheRef.size > prefetchCount * 4) {
+        const urlsToDelete = Array.from(audioCacheRef.keys()).slice(0, audioCacheRef.size - prefetchCount * 3);
         urlsToDelete.forEach(url => {
-          const audio = audioCache.current.get(url);
+          const audio = audioCacheRef.get(url);
           if (audio) {
             audio.src = ''; // Release resources
-            audioCache.current.delete(url);
-            prefetchedUrls.current.delete(url);
+            audioCacheRef.delete(url);
+            prefetchedUrlsRef.delete(url);
           }
         });
       }

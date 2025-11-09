@@ -361,7 +361,7 @@ export function useReferenceAnalysis() {
         variant: 'destructive',
       });
     }
-  }, [recognition?.status, toast]);
+  }, [recognition, toast]);
 
   useEffect(() => {
     if (description?.status === 'completed' && description.detected_genre) {
@@ -385,7 +385,7 @@ export function useReferenceAnalysis() {
         variant: 'destructive',
       });
     }
-  }, [description?.status, toast]);
+  }, [description, toast]);
 
   // ============================================================================
   // RUNTIME LOGGING: промежуточные стадии
@@ -399,7 +399,7 @@ export function useReferenceAnalysis() {
         status: recognition.status,
       });
     }
-  }, [recognition?.status]);
+  }, [recognition]);
 
   useEffect(() => {
     if (!description) return;
@@ -409,7 +409,7 @@ export function useReferenceAnalysis() {
         status: description.status,
       });
     }
-  }, [description?.status]);
+  }, [description]);
 
   // ============================================================================
   // DERIVED STATE

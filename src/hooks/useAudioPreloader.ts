@@ -81,12 +81,14 @@ export const useAudioPreloader = (
 
   // Cleanup on unmount
   useEffect(() => {
+    // Захватываем текущее значение ref, чтобы cleanup работал со стабильной ссылкой
+    const preloadedAudioRefsRef = preloadedAudioRefs.current;
     return () => {
-      for (const audio of preloadedAudioRefs.current.values()) {
+      for (const audio of preloadedAudioRefsRef.values()) {
         audio.pause();
         audio.src = '';
       }
-      preloadedAudioRefs.current.clear();
+      preloadedAudioRefsRef.clear();
     };
   }, []);
 

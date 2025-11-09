@@ -3,7 +3,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useSelectedTracks } from '@/contexts/SelectedTracksContext';
+import { useSelectedTracks } from '@/contexts/selected-tracks/useSelectedTracks';
 import { Play, Pause, MoreHorizontal, Download, Share2 } from 'lucide-react';
 import type { Track } from '@/services/api.service';
 

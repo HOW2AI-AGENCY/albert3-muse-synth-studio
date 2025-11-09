@@ -7,7 +7,7 @@ import type { WorkspaceNavItem } from "@/config/workspace-navigation";
 import { useProviderBalance } from "@/hooks/useProviderBalance";
 import { UserProfileDropdown } from "./UserProfileDropdown";
 import { NotificationsDropdown } from "./NotificationsDropdown";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth/useAuth";
 
 interface MinimalSidebarProps {
   isExpanded: boolean;

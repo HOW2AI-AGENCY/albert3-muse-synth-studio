@@ -1,45 +1,9 @@
-import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { logger, logError } from '@/utils/logger';
+import { StemMixerContext, StemMixerContextType, TrackStem } from './stem-mixer/context';
 
-export interface TrackStem {
-  id: string;
-  stem_type: string;
-  audio_url: string;
-  separation_mode: string;
-  track_id: string;
-}
-
-interface StemMixerContextType {
-  activeStemIds: Set<string>;
-  stemVolumes: Map<string, number>;
-  stemMuted: Map<string, boolean>;
-  soloStemId: string | null;
-  isPlaying: boolean;
-  currentTime: number;
-  duration: number;
-  masterVolume: number;
-  loadStems: (stems: TrackStem[]) => void;
-  toggleStem: (stemId: string) => void;
-  setStemVolume: (stemId: string, volume: number) => void;
-  toggleStemMute: (stemId: string) => void;
-  setSolo: (stemId: string | null) => void;
-  setMasterVolume: (volume: number) => void;
-  play: () => Promise<void>;
-  pause: () => void;
-  seekTo: (time: number) => void;
-  resetAll: () => void;
-}
-
-const StemMixerContext = createContext<StemMixerContextType | undefined>(undefined);
-
-export const useStemMixer = () => {
-  const context = useContext(StemMixerContext);
-  if (!context) {
-    throw new Error('useStemMixer must be used within StemMixerProvider');
-  }
-  return context;
-};
+// Контекст и типы вынесены в отдельный модуль ./stem-mixer/context
 
 interface StemMixerProviderProps {
   children: React.ReactNode;
@@ -138,6 +102,19 @@ export const StemMixerProvider = ({ children }: StemMixerProviderProps) => {
     setSoloStemId(stemId);
   }, []);
 
+  // Переносим pause выше play, чтобы не использовать переменную до её объявления
+  const pause = useCallback(() => {
+    audioElementsRef.current.forEach(audio => {
+      audio.pause();
+    });
+    setIsPlaying(false);
+
+    if (timeUpdateIntervalRef.current) {
+      clearInterval(timeUpdateIntervalRef.current);
+      timeUpdateIntervalRef.current = null;
+    }
+  }, []);
+
   const play = useCallback(async () => {
     try {
       const playPromises: Promise<void>[] = [];
@@ -178,19 +155,7 @@ export const StemMixerProvider = ({ children }: StemMixerProviderProps) => {
       logger.error('Error playing stems', error instanceof Error ? error : new Error(String(error)), 'StemMixerContext');
       toast.error('Ошибка воспроизведения стемов');
     }
-  }, [activeStemIds, stemMuted, soloStemId, stemVolumes, currentTime, masterVolume]);
-
-  const pause = useCallback(() => {
-    audioElementsRef.current.forEach(audio => {
-      audio.pause();
-    });
-    setIsPlaying(false);
-
-    if (timeUpdateIntervalRef.current) {
-      clearInterval(timeUpdateIntervalRef.current);
-      timeUpdateIntervalRef.current = null;
-    }
-  }, []);
+  }, [activeStemIds, stemMuted, soloStemId, stemVolumes, currentTime, masterVolume, pause]);
 
   const seekTo = useCallback((time: number) => {
     audioElementsRef.current.forEach(audio => {
@@ -238,15 +203,18 @@ export const StemMixerProvider = ({ children }: StemMixerProviderProps) => {
 
   // Cleanup on unmount
   useEffect(() => {
+    // Захватываем текущую ссылку на карту аудио-элементов,
+    // чтобы избежать предупреждений exhaustive-deps и использовать стабильную ссылку в cleanup
+    const audioElementsMapRef = audioElementsRef.current;
     return () => {
       if (timeUpdateIntervalRef.current) {
         clearInterval(timeUpdateIntervalRef.current);
       }
-      audioElementsRef.current.forEach(audio => {
+      audioElementsMapRef.forEach(audio => {
         audio.pause();
         audio.src = '';
       });
-      audioElementsRef.current.clear();
+      audioElementsMapRef.clear();
     };
   }, []);
 
