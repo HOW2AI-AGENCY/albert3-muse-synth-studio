@@ -177,10 +177,10 @@ export const SimpleModeCompact = memo(({
         </div>
       </div>
 
-      {/* Sticky Footer - ✅ FIX P0.1: z-index above bottom nav (z-50) and safe-area spacing */}
+      {/* Sticky Footer - ✅ FIX P0.1: z-index above bottom nav and safe-area spacing */}
       <div
         className="sticky bottom-0 left-0 right-0 border-t border-border/20 bg-background/95 backdrop-blur-sm mt-4 safe-area-bottom-lg"
-        style={{ zIndex: 'var(--z-mini-player)' }}
+        style={{ zIndex: 'var(--z-control-buttons)' }}
       >
         <div className="p-2 sm:p-3 safe-area-bottom">
           <Button
