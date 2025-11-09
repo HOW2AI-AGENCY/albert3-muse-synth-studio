@@ -246,6 +246,5 @@ export const StemMixerProvider = ({ children }: StemMixerProviderProps) => {
   );
 };
 
-// Для обратной совместимости: реэкспортируем хук из нового расположения
-// Это позволяет импортировать useStemMixer как из '@/contexts/StemMixerContext', так и из '@/contexts/stem-mixer/useStemMixer'
-export { useStemMixer } from './stem-mixer/useStemMixer';
+// Примечание: чтобы сохранить работу Fast Refresh, файл экспортирует только компонент.
+// Импортируйте хук напрямую: `import { useStemMixer } from '@/contexts/stem-mixer/useStemMixer'`.

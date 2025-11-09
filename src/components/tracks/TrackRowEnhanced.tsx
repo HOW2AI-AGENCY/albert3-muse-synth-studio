@@ -14,7 +14,7 @@
  * @created 2025-11-07
  */
 
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { Play, Pause, Clock, Split, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -23,10 +23,10 @@ import { UnifiedTrackActionsMenu } from '@/components/tracks/shared/TrackActions
 import { TrackVariantSelector } from '@/features/tracks/components/TrackVariantSelector';
 import { useTrackState } from '@/hooks/useTrackState';
 import { useConvertToWav } from '@/hooks/useConvertToWav';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { formatDuration } from '@/utils/formatters';
 import type { Track } from '@/types/domain/track.types';
+import { getLatestWavJob } from '@/services/wav.service';
 
 interface TrackRowEnhancedProps {
   track: Track;
@@ -125,17 +125,8 @@ export const TrackRowEnhanced = memo<TrackRowEnhancedProps>(
 
     const handleDownloadWavAction = useCallback(async (tid: string) => {
       try {
-        const { data, error } = await supabase
-          .from('wav_jobs')
-          .select('*')
-          .eq('track_id', tid)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (error) throw error;
-
-        if (!data || data.status !== 'completed' || !data.wav_url) {
+        const job = await getLatestWavJob(tid);
+        if (!job || job.status !== 'completed' || !job.wav_url) {
           toast({
             title: 'WAV ещё не готов',
             description: 'Сначала запустите конвертацию, или подождите её завершения.',
@@ -144,7 +135,7 @@ export const TrackRowEnhanced = memo<TrackRowEnhancedProps>(
         }
 
         const title = displayedVersion.title || track.title || 'track';
-        await downloadWav(data.wav_url, title);
+        await downloadWav(job.wav_url, title);
       } catch (err) {
         toast({
           title: 'Ошибка проверки WAV',
@@ -373,7 +364,13 @@ export const TrackRowEnhanced = memo<TrackRowEnhancedProps>(
             <UnifiedTrackActionsMenu
               trackId={track.id}
               trackStatus={track.status}
-              trackMetadata={{ ...(track.metadata || {}), wavConverting: isConverting && convertingTrackId === track.id }}
+              trackMetadata={{
+                ...(track.metadata || {}),
+                wavConverting: isConverting && convertingTrackId === track.id,
+              }}
+                ...(track.metadata || {}),
+                wavConverting: isConverting && convertingTrackId === track.id,
+              }), [track.metadata, isConverting, convertingTrackId, track.id])}
               currentVersionId={displayedVersion.id}
               versionNumber={displayedVersion.versionNumber}
               isMasterVersion={displayedVersion.isMasterVersion}

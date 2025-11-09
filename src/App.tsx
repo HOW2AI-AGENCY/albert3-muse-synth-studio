@@ -1,4 +1,4 @@
-import { useEffect, Suspense, lazy } from "react";
+import { useEffect, Suspense, lazy, Profiler } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -18,6 +18,7 @@ import {
 } from "@/utils/bundleOptimization";
 import { trackPerformanceMetric } from "@/utils/sentry-enhanced";
 import { setupChunkErrorHandler } from "@/utils/chunkRetry";
+import { recordPerformanceMetric } from "@/utils/performanceMonitor";
 
 // ✅ Lazy load heavy components
 const LazyGlobalAudioPlayer = lazy(() => import("./components/player/GlobalAudioPlayer"));
@@ -118,6 +119,14 @@ const App = () => {
             <AuthProvider>
               <TooltipProvider delayDuration={200}>
                 <AppLayout>
+                  <Profiler id="AppLayout" onRender={(id, phase, actualDuration) => {
+                    // Записываем метрику рендера компонента через PerformanceMonitor и Sentry
+                    recordPerformanceMetric('rendering', actualDuration, 'ReactProfiler', { id, phase });
+                    if (actualDuration > 1000) {
+                      // 1s+ рендер считаем потенциально проблемным
+                      trackPerformanceMetric('component_render', actualDuration, { component: id, phase });
+                    }
+                  }}>
                   <Suspense fallback={<FullPageSpinner />}>
                     <Toaster />
                     <RouterProvider router={router} />
@@ -137,6 +146,7 @@ const App = () => {
                       <LazySentryFeedbackButton />
                     </Suspense>
                   </Suspense>
+                  </Profiler>
                 </AppLayout>
               </TooltipProvider>
             </AuthProvider>

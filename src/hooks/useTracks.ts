@@ -133,6 +133,7 @@ export const useTracks = (refreshTrigger?: number, options: UseTracksOptions = {
           msg.includes('ERR_CONNECTION_TIMED_OUT') ||
           msg.includes('ERR_NAME_NOT_RESOLVED') ||
           msg.includes('FAILED TO FETCH') ||
+          msg.includes('ERR_ABORTED') ||
           msg.includes('NETWORKERROR') ||
           msg.includes('ENETUNREACH') ||
           msg.includes('EHOSTUNREACH');
@@ -212,6 +213,7 @@ export const useTracks = (refreshTrigger?: number, options: UseTracksOptions = {
       msg.includes('ERR_CONNECTION_TIMED_OUT') ||
       msg.includes('ERR_NAME_NOT_RESOLVED') ||
       msg.includes('FAILED TO FETCH') ||
+      msg.includes('ERR_ABORTED') ||
       msg.includes('NETWORKERROR') ||
       msg.includes('ENETUNREACH') ||
       msg.includes('EHOSTUNREACH');

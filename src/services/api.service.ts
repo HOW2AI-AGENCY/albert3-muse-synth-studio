@@ -9,6 +9,8 @@ import { handlePostgrestError, handleSupabaseFunctionError } from "@/services/ap
 import { logError, logWarn } from "@/utils/logger";
 import { retryWithBackoff, RETRY_CONFIGS } from "@/utils/retryWithBackoff";
 import type { TrackMetadata } from "@/types/track-metadata";
+import { startKpiTimer, endKpiTimer } from "@/utils/kpi";
+import { trackAPIRequest } from "@/utils/sentry-enhanced";
 
 type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
 
@@ -122,6 +124,8 @@ export class ApiService {
     request: ImprovePromptRequest
   ): Promise<ImprovePromptResponse> {
     const context = "ApiService.improvePrompt";
+    const timerId = `${context}:${Date.now()}`;
+    startKpiTimer(timerId);
     
     // Используем retry logic для улучшения промпта
     const { data, error } = await retryWithBackoff(
@@ -143,6 +147,10 @@ export class ApiService {
         },
       }
     );
+
+    // KPI + Sentry
+    const duration = endKpiTimer(timerId, 'api_latency', { endpoint: 'improve-prompt' }) ?? 0;
+    trackAPIRequest('improve-prompt', 'POST', error ? 500 : 200, duration, error ?? undefined as any);
 
     if (error || !data) {
       return handleSupabaseFunctionError(
@@ -493,9 +501,14 @@ export class ApiService {
         (timeout as any).id = id;
       });
 
+      const timerId = `${context}:${provider}:${Date.now()}`;
+      startKpiTimer(timerId);
+
       try {
         const invokePromise = supabase.functions.invoke(functionName, { body: { provider } });
         const { data, error } = await Promise.race([invokePromise, timeout]) as any;
+        const duration = endKpiTimer(timerId, 'api_latency', { endpoint: functionName, provider }) ?? 0;
+        trackAPIRequest(functionName, 'POST', error ? 500 : 200, duration, error ?? undefined);
         if (error || !data) {
           return handleSupabaseFunctionError(
             error,
@@ -507,6 +520,7 @@ export class ApiService {
         ApiService.lastBalanceCache.set(provider, data as ProviderBalanceResponse);
         return data as ProviderBalanceResponse;
       } catch (e) {
+        endKpiTimer(timerId, 'api_latency', { endpoint: functionName, provider, aborted: true });
         const cached = ApiService.lastBalanceCache.get(provider);
         if (cached) {
           logWarn('Returning cached provider balance due to error', context, { provider, error: e instanceof Error ? e.message : String(e) });

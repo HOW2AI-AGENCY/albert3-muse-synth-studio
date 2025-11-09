@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { logger } from '@/utils/logger';
+import { isNetworkAbortError } from '@/utils/errors';
 import {
   Wand2,
   Plus,
@@ -126,6 +127,11 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
       });
 
       if (error) {
+        if (isNetworkAbortError(error)) {
+          // Отмена запроса при закрытии диалога/навигации — игнорируем
+          logger.debug('AI generation aborted', 'LyricsToolbar');
+          return;
+        }
         logger.error('AI generation error', error instanceof Error ? error : new Error(String(error)), 'LyricsToolbar');
         toast({
           title: "Ошибка генерации",
@@ -147,12 +153,16 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
         });
       }
     } catch (err) {
-      logger.error('Unexpected error', err instanceof Error ? err : new Error(String(err)), 'LyricsToolbar');
-      toast({
-        title: "Ошибка",
-        description: "Произошла непредвиденная ошибка",
-        variant: "destructive"
-      });
+      if (isNetworkAbortError(err)) {
+        logger.debug('AI generation aborted (catch)', 'LyricsToolbar');
+      } else {
+        logger.error('Unexpected error', err instanceof Error ? err : new Error(String(err)), 'LyricsToolbar');
+        toast({
+          title: "Ошибка",
+          description: "Произошла непредвиденная ошибка",
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsGenerating(false);
     }

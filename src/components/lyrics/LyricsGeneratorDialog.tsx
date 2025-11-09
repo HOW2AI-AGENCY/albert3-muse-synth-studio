@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/utils/logger";
+import { isNetworkAbortError } from "@/utils/errors";
 import { Loader2, FileText, Edit2, Copy } from "lucide-react";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { cn } from "@/lib/utils";
@@ -45,6 +46,8 @@ export function LyricsGeneratorDialog({
 
   const wordCount = prompt.trim().split(/\s+/).filter(Boolean).length;
   const editWordCount = editPrompt.trim().split(/\s+/).filter(Boolean).length;
+
+  // Используем общий helper для распознавания отмененных/сетевых ошибок
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -81,6 +84,11 @@ export function LyricsGeneratorDialog({
       });
 
       if (error) {
+        // Если это отмена запроса (закрыли диалог/перешли на другую страницу), не показываем критическую ошибку
+        if (isNetworkAbortError(error)) {
+          logger.debug('[LYRICS] Request aborted during generation', 'LyricsGeneratorDialog', { trackId });
+          return;
+        }
         throw error;
       }
 
@@ -105,12 +113,17 @@ export function LyricsGeneratorDialog({
         throw new Error('No lyrics generated');
       }
     } catch (error) {
-      logger.error(`❌ [LYRICS] Error generating lyrics:`, error instanceof Error ? error : undefined);
-      toast({
-        variant: "destructive",
-        title: "Ошибка",
-        description: error instanceof Error ? error.message : "Не удалось сгенерировать текст"
-      });
+      if (isNetworkAbortError(error)) {
+        // Тихо игнорируем отмену: это нормальная ситуация при закрытии окна/навигации
+        logger.debug('[LYRICS] Generation aborted', 'LyricsGeneratorDialog', { trackId });
+      } else {
+        logger.error(`❌ [LYRICS] Error generating lyrics:`, error instanceof Error ? error : undefined);
+        toast({
+          variant: "destructive",
+          title: "Ошибка",
+          description: error instanceof Error ? error.message : "Не удалось сгенерировать текст"
+        });
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -148,7 +161,13 @@ export function LyricsGeneratorDialog({
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        if (isNetworkAbortError(error)) {
+          logger.debug('[LYRICS] Request aborted during edit', 'LyricsGeneratorDialog', { trackId });
+          return;
+        }
+        throw error;
+      }
 
       if (data?.lyrics) {
         setGeneratedLyrics(data.lyrics);
@@ -170,12 +189,16 @@ export function LyricsGeneratorDialog({
         throw new Error('No edited lyrics generated');
       }
     } catch (error) {
-      logger.error(`❌ [LYRICS] Error editing lyrics:`, error instanceof Error ? error : undefined);
-      toast({
-        variant: "destructive",
-        title: "Ошибка",
-        description: error instanceof Error ? error.message : "Не удалось отредактировать текст"
-      });
+      if (isNetworkAbortError(error)) {
+        logger.debug('[LYRICS] Edit aborted', 'LyricsGeneratorDialog', { trackId });
+      } else {
+        logger.error(`❌ [LYRICS] Error editing lyrics:`, error instanceof Error ? error : undefined);
+        toast({
+          variant: "destructive",
+          title: "Ошибка",
+          description: error instanceof Error ? error.message : "Не удалось отредактировать текст"
+        });
+      }
     } finally {
       setIsGenerating(false);
     }
