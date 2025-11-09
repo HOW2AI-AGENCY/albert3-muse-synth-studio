@@ -17,8 +17,8 @@ export const usePlayerVisibility = (currentTrack: any) => {
       setIsVisible(false);
       setPlayerExpanded(false); // Сбрасываем состояние когда трек закрыт
     }
-    // ✅ FIX: Remove setPlayerExpanded from deps - Zustand store functions are stable
-  }, [currentTrack]);
+    // Добавляем setPlayerExpanded в зависимости, чтобы удовлетворить правила eslint-react-hooks
+  }, [currentTrack, setPlayerExpanded]);
 
   const setIsExpanded = (expanded: boolean) => {
     setPlayerExpanded(expanded);

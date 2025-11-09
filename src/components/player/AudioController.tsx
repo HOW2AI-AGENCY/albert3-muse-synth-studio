@@ -31,6 +31,12 @@ export const AudioController = () => {
   const seekTo = useAudioPlayerStore((state) => state.seekTo);
   const proxyTriedRef = useRef<Record<string, boolean>>({});  // ✅ FIX: Track per audio URL
 
+  // Стабилизированный обработчик для action 'previoustrack' MediaSession
+  const handlePlayPrevious = useCallback(() => {
+    logger.info('MediaSession: previous track action', 'AudioController');
+    playPrevious();
+  }, [playPrevious]);
+
   // Безопасный запуск воспроизведения с защитой от параллельных вызовов
   const safePlay = useCallback(async () => {
     const audio = audioRef?.current;
@@ -121,10 +127,7 @@ export const AudioController = () => {
           pause();
         });
 
-        navigator.mediaSession.setActionHandler('previoustrack', () => {
-          logger.info('MediaSession: previous track action', 'AudioController');
-          playPrevious();
-        });
+        navigator.mediaSession.setActionHandler('previoustrack', handlePlayPrevious);
 
         navigator.mediaSession.setActionHandler('nexttrack', () => {
           logger.info('MediaSession: next track action', 'AudioController');
@@ -157,7 +160,7 @@ export const AudioController = () => {
         navigator.mediaSession.metadata = null;
       }
     };
-  }, [currentTrack, isPlaying, playTrack, pause, playNext, seekTo]);
+  }, [currentTrack, isPlaying, playTrack, pause, playNext, seekTo, handlePlayPrevious]);
 
   // ============= УПРАВЛЕНИЕ ВОСПРОИЗВЕДЕНИЕМ =============
   useEffect(() => {

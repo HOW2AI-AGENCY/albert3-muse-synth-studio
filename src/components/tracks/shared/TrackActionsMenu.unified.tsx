@@ -229,7 +229,7 @@ export const UnifiedTrackActionsMenu = memo(({
   onReport,
   onDelete,
 }: UnifiedTrackActionsMenuProps) => {
-  // Provider detection
+  // Provider/status detection (для рендера ниже)
   const isMurekaTrack = trackMetadata?.provider === 'mureka';
   const isSunoTrack = !isMurekaTrack;
   const isCompleted = trackStatus === 'completed';
@@ -238,6 +238,12 @@ export const UnifiedTrackActionsMenu = memo(({
 
   // Build menu items based on available actions and permissions
   const menuItems = useMemo<MenuItem[]>(() => {
+    // Локальные вычисления внутри useMemo, чтобы не тащить производные значения в зависимости
+    const isMurekaTrackLocal = trackMetadata?.provider === 'mureka';
+    const isSunoTrackLocal = !isMurekaTrackLocal;
+    const isCompletedLocal = trackStatus === 'completed';
+    const isProcessingLocal = trackStatus === 'processing' || trackStatus === 'pending';
+    const isFailedLocal = trackStatus === 'failed';
     const items: MenuItem[] = [];
 
     // Quick actions (if not shown as separate buttons)
@@ -251,7 +257,7 @@ export const UnifiedTrackActionsMenu = memo(({
           shortcut: enableKeyboardShortcuts ? 'L' : undefined,
         });
       }
-      if (onDownload && isCompleted) {
+      if (onDownload && isCompletedLocal) {
         items.push({
           id: 'download',
           label: 'Скачать MP3',
@@ -260,7 +266,7 @@ export const UnifiedTrackActionsMenu = memo(({
           shortcut: enableKeyboardShortcuts ? 'D' : undefined,
         });
       }
-      if (onShare && isCompleted) {
+      if (onShare && isCompletedLocal) {
         items.push({
           id: 'share',
           label: 'Поделиться',
@@ -272,7 +278,7 @@ export const UnifiedTrackActionsMenu = memo(({
     }
 
     // Creative actions
-    if (onRemix && isCompleted) {
+    if (onRemix && isCompletedLocal) {
       items.push({
         id: 'remix',
         label: 'Remix/Edit',
@@ -282,7 +288,7 @@ export const UnifiedTrackActionsMenu = memo(({
       });
     }
 
-    if (onCreate && isCompleted) {
+    if (onCreate && isCompletedLocal) {
       items.push({
         id: 'create',
         label: 'Create',
@@ -291,7 +297,7 @@ export const UnifiedTrackActionsMenu = memo(({
       });
     }
 
-    if (onSeparateStems && isCompleted) {
+    if (onSeparateStems && isCompletedLocal) {
       items.push({
         id: 'stems',
         label: 'Разделить на стемы',
@@ -303,7 +309,7 @@ export const UnifiedTrackActionsMenu = memo(({
     }
 
     // Organization actions
-    if (onAddToQueue && isCompleted) {
+    if (onAddToQueue && isCompletedLocal) {
       items.push({
         id: 'queue',
         label: 'Add to Queue',
@@ -313,7 +319,7 @@ export const UnifiedTrackActionsMenu = memo(({
       });
     }
 
-    if (onAddToPlaylist && isCompleted) {
+    if (onAddToPlaylist && isCompletedLocal) {
       items.push({
         id: 'playlist',
         label: 'Add to Playlist',
@@ -322,7 +328,7 @@ export const UnifiedTrackActionsMenu = memo(({
       });
     }
 
-    if (onMoveToWorkspace && canMove && isCompleted) {
+    if (onMoveToWorkspace && canMove && isCompletedLocal) {
       items.push({
         id: 'move',
         label: 'Move to Workspace',
@@ -332,7 +338,7 @@ export const UnifiedTrackActionsMenu = memo(({
     }
 
     // Publishing actions
-    if (onTogglePublic && isCompleted) {
+    if (onTogglePublic && isCompletedLocal) {
       items.push({
         id: 'publish',
         label: isPublic ? 'Скрыть' : 'Опубликовать',
@@ -341,7 +347,7 @@ export const UnifiedTrackActionsMenu = memo(({
       });
     }
 
-    if (onPublish && canPublish && isCompleted) {
+    if (onPublish && canPublish && isCompletedLocal) {
       items.push({
         id: 'publish',
         label: 'Publish',
@@ -350,7 +356,7 @@ export const UnifiedTrackActionsMenu = memo(({
       });
     }
 
-    if (onViewDetails && isCompleted) {
+    if (onViewDetails && isCompletedLocal) {
       items.push({
         id: 'details',
         label: 'Song Details',
@@ -359,7 +365,7 @@ export const UnifiedTrackActionsMenu = memo(({
       });
     }
 
-    if (onSetPermissions && isCompleted) {
+    if (onSetPermissions && isCompletedLocal) {
       items.push({
         id: 'permissions',
         label: 'Visibility & Permissions',
@@ -369,7 +375,7 @@ export const UnifiedTrackActionsMenu = memo(({
     }
 
     // AI Tools (if enabled)
-    if (enableAITools && onDescribeTrack && isCompleted) {
+    if (enableAITools && onDescribeTrack && isCompletedLocal) {
       items.push({
         id: 'describe',
         label: 'AI Описание',
@@ -379,7 +385,7 @@ export const UnifiedTrackActionsMenu = memo(({
     }
 
     // Suno-specific actions
-    if (isSunoTrack && isCompleted) {
+    if (isSunoTrackLocal && isCompletedLocal) {
       if (onExtend) {
         items.push({
           id: 'extend',
@@ -418,7 +424,7 @@ export const UnifiedTrackActionsMenu = memo(({
     }
 
     // System actions
-    if (onSync && isProcessing) {
+    if (onSync && isProcessingLocal) {
       items.push({
         id: 'sync',
         label: 'Обновить статус',
@@ -427,7 +433,7 @@ export const UnifiedTrackActionsMenu = memo(({
       });
     }
 
-    if (onRetry && isFailed) {
+    if (onRetry && isFailedLocal) {
       items.push({
         id: 'retry',
         label: 'Повторить генерацию',
@@ -461,11 +467,7 @@ export const UnifiedTrackActionsMenu = memo(({
   }, [
     trackId,
     trackStatus,
-    isCompleted,
-    isProcessing,
-    isFailed,
-    isSunoTrack,
-    isMurekaTrack,
+    trackMetadata?.provider,
     showQuickActions,
     enableKeyboardShortcuts,
     enableAITools,
