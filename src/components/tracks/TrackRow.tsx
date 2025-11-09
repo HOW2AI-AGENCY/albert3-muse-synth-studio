@@ -203,7 +203,7 @@ export const TrackRow = memo<TrackRowProps>(({
           )}
 
           {/* Mini Version Selector (если есть доп. версии) */}
-          {!isLoading && totalVersions > 1 && track.status === 'ready' && (
+          {!isLoading && totalVersions > 1 && (
             <div
               className="absolute -top-1 -right-1 z-10"
               onClick={(e) => e.stopPropagation()}
