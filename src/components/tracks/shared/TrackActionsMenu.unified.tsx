@@ -66,6 +66,7 @@ export type TrackActionId =
   // Quick actions
   | 'like'
   | 'download'
+  | 'downloadWav'
   | 'share'
 
   // Creative actions
@@ -89,6 +90,7 @@ export type TrackActionId =
   | 'cover'
   | 'addVocal'
   | 'createPersona'
+  | 'convertWav'
 
   // System actions
   | 'sync'
@@ -134,12 +136,14 @@ interface UnifiedTrackActionsMenuProps {
   // Actions (all optional for flexibility)
   onLike?: () => void;
   onDownload?: () => void;
+  onDownloadWav?: (trackId: string) => void;
   onShare?: () => void;
   onTogglePublic?: () => void;
 
   // AI & Processing
   onDescribeTrack?: (trackId: string) => void;
   onSeparateStems?: (trackId: string) => void;
+  onConvertToWav?: (trackId: string) => void;
 
   // Suno-specific
   onExtend?: (trackId: string) => void;
@@ -212,6 +216,8 @@ export const UnifiedTrackActionsMenu = memo(({
   onTogglePublic,
   onDescribeTrack,
   onSeparateStems,
+  onConvertToWav,
+  onDownloadWav,
   onExtend,
   onCover,
   onAddVocal,
@@ -262,6 +268,15 @@ export const UnifiedTrackActionsMenu = memo(({
           shortcut: enableKeyboardShortcuts ? 'D' : undefined,
         });
       }
+      if (onDownloadWav && isCompletedLocal) {
+        items.push({
+          id: 'downloadWav',
+          label: 'Скачать WAV',
+          icon: <FileAudio className="w-4 h-4" />,
+          action: () => onDownloadWav(currentVersionId || trackId),
+          shortcut: enableKeyboardShortcuts ? 'W' : undefined,
+        });
+      }
       if (onShare && isCompletedLocal) {
         items.push({
           id: 'share',
@@ -301,6 +316,18 @@ export const UnifiedTrackActionsMenu = memo(({
         action: () => onSeparateStems(currentVersionId || trackId),
         pro: !enableProFeatures,
         tooltip: !enableProFeatures ? 'Upgrade to Pro to unlock this feature' : undefined,
+      });
+    }
+
+    // WAV conversion
+    const isConvertingWav = !!(trackMetadata && (trackMetadata as any).wavConverting);
+    if (onConvertToWav && isCompletedLocal) {
+      items.push({
+        id: 'convertWav',
+        label: isConvertingWav ? 'Конвертация в WAV…' : 'Конвертировать в WAV',
+        icon: <FileAudio className="w-4 h-4" />,
+        action: () => onConvertToWav(currentVersionId || trackId),
+        disabled: isConvertingWav,
       });
     }
 
@@ -539,7 +566,7 @@ export const UnifiedTrackActionsMenu = memo(({
 
     // Processing (Stems, Extend, Cover, Add Vocal)
     const processingItems = menuItems.filter(
-      (item) => ['stems', 'extend', 'cover', 'addVocal', 'createPersona'].includes(item.id)
+      (item) => ['stems', 'convertWav', 'extend', 'cover', 'addVocal', 'createPersona'].includes(item.id)
     );
     if (processingItems.length > 0) {
       groups.push({ label: 'Обработка', items: processingItems });
@@ -547,7 +574,7 @@ export const UnifiedTrackActionsMenu = memo(({
 
     // Sharing
     const shareItems = menuItems.filter(
-      (item) => ['like', 'download', 'share'].includes(item.id)
+      (item) => ['like', 'download', 'downloadWav', 'share'].includes(item.id)
     );
     if (shareItems.length > 0) {
       groups.push({ items: shareItems });

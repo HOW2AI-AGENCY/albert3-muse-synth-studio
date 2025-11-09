@@ -22,6 +22,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { UnifiedTrackActionsMenu } from '@/components/tracks/shared/TrackActionsMenu.unified';
 import { TrackVariantSelector } from '@/features/tracks/components/TrackVariantSelector';
 import { useTrackState } from '@/hooks/useTrackState';
+import { useConvertToWav } from '@/hooks/useConvertToWav';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { formatDuration } from '@/utils/formatters';
 import type { Track } from '@/types/domain/track.types';
 
@@ -110,6 +113,46 @@ export const TrackRowEnhanced = memo<TrackRowEnhancedProps>(
       handleTogglePublic,
       handleShareClick,
     } = useTrackState(track);
+
+    // WAV conversion hook
+    const { convertToWav, downloadWav, isConverting, convertingTrackId } = useConvertToWav();
+    const { toast } = useToast();
+    const handleConvertToWav = useCallback(() => {
+      // Конвертация выполняется для текущей версии/всего трека
+      // audioId необязателен — edge-функция определит его из метаданных
+      void convertToWav({ trackId: track.id });
+    }, [convertToWav, track.id]);
+
+    const handleDownloadWavAction = useCallback(async (tid: string) => {
+      try {
+        const { data, error } = await supabase
+          .from('wav_jobs')
+          .select('*')
+          .eq('track_id', tid)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (!data || data.status !== 'completed' || !data.wav_url) {
+          toast({
+            title: 'WAV ещё не готов',
+            description: 'Сначала запустите конвертацию, или подождите её завершения.',
+          });
+          return;
+        }
+
+        const title = displayedVersion.title || track.title || 'track';
+        await downloadWav(data.wav_url, title);
+      } catch (err) {
+        toast({
+          title: 'Ошибка проверки WAV',
+          description: 'Не удалось получить статус конвертации.',
+          variant: 'destructive',
+        });
+      }
+    }, [downloadWav, displayedVersion.title, track.title, toast]);
 
     const statusBadge = getStatusBadge(track.status);
     const canPlay = track.status === 'completed';
@@ -330,7 +373,7 @@ export const TrackRowEnhanced = memo<TrackRowEnhancedProps>(
             <UnifiedTrackActionsMenu
               trackId={track.id}
               trackStatus={track.status}
-              trackMetadata={track.metadata}
+              trackMetadata={{ ...(track.metadata || {}), wavConverting: isConverting && convertingTrackId === track.id }}
               currentVersionId={displayedVersion.id}
               versionNumber={displayedVersion.versionNumber}
               isMasterVersion={displayedVersion.isMasterVersion}
@@ -343,10 +386,12 @@ export const TrackRowEnhanced = memo<TrackRowEnhancedProps>(
               isLiked={isLiked}
               onLike={handleLikeClick}
               onDownload={handleDownloadClick}
+              onDownloadWav={handleDownloadWavAction}
               onShare={handleShareClick}
               onTogglePublic={handleTogglePublic}
               onDescribeTrack={onDescribeTrack}
               onSeparateStems={onSeparateStems}
+              onConvertToWav={handleConvertToWav}
               onExtend={onExtend}
               onCover={onCover}
               onAddVocal={onAddVocal}
