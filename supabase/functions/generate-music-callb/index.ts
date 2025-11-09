@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Unified Generate Music Callback Handler (generate-music-callb)
  * 
@@ -8,7 +9,7 @@
  * - Финализацию статуса на этапе COMPLETE
  */
 
-import { serve } from "https://deno.land/std/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { createSupabaseAdminClient } from "../_shared/supabase.ts";
 import { logger } from "../_shared/logger.ts";

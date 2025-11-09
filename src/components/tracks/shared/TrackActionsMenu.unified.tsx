@@ -490,7 +490,6 @@ export const UnifiedTrackActionsMenu = memo(({
   }, [
     trackId,
     trackStatus,
-    trackMetadata?.provider,
     trackMetadata,
     showQuickActions,
     enableKeyboardShortcuts,
