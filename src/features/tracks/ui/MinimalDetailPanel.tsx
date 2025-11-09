@@ -1,5 +1,5 @@
-import { memo, useState, useCallback } from "react";
-import { X, Play, Download, Share2, Heart, Info, Music, Settings, Trash2 } from "@/utils/iconImports";
+import { memo, useState, useCallback, KeyboardEvent } from "react";
+import { X, Play, Download, Share2, Heart, Info, Music, Settings, Trash2, Star } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -9,14 +9,15 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { useTrackLike } from "@/features/tracks/hooks/useTrackLike";
+// Интеграция общего состояния трека с поддержкой версий
+import { useTrackState } from "@/hooks/useTrackState";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { ApiService } from "@/services/api.service";
 import { formatDuration, formatDate } from "@/utils/formatters";
-import { MinimalVersionsList } from "./MinimalVersionsList";
 import { MinimalStemsList } from "./MinimalStemsList";
+import { UnifiedTrackActionsMenu } from "@/components/tracks/shared/TrackActionsMenu.unified";
 
 interface Track {
   id: string;
@@ -49,9 +50,26 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
   const [isPublic, setIsPublic] = useState(track.is_public || false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeAccordion, setActiveAccordion] = useState<string | undefined>("info");
-
-  const { isLiked, toggleLike } = useTrackLike(track.id, track.like_count || 0);
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
+  const {
+    isPlaying,
+    displayedVersion,
+    isLiked,
+    handleLikeClick,
+    handleVersionChange,
+    operationTargetId,
+    allVersions,
+  } = useTrackState({
+    id: track.id,
+    title: track.title,
+    audio_url: track.audio_url,
+    cover_url: track.cover_url,
+    duration: track.duration_seconds,
+    status: track.status as any,
+    style_tags: track.style_tags || [],
+    lyrics: track.lyrics,
+    parentTrackId: track.id,
+  } as any);
 
   const handleSave = useCallback(async () => {
     setIsSaving(true);
@@ -86,18 +104,21 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
   }, [track.id, onDelete, onClose]);
 
   const handlePlay = useCallback(() => {
-    if (!track.audio_url) return;
+    if (!displayedVersion?.audio_url) return;
     playTrack({
-      id: track.id,
+      id: displayedVersion.id,
       title: track.title,
-      audio_url: track.audio_url,
-      cover_url: track.cover_url,
-      duration: track.duration_seconds,
+      audio_url: displayedVersion.audio_url,
+      cover_url: displayedVersion.cover_url,
+      duration: displayedVersion.duration ?? track.duration_seconds,
       status: track.status as any,
       style_tags: track.style_tags || [],
       lyrics: track.lyrics,
+      parentTrackId: track.id,
+      versionNumber: displayedVersion.versionNumber,
+      isMasterVersion: displayedVersion.isMasterVersion,
     });
-  }, [track, playTrack]);
+  }, [displayedVersion, track, playTrack]);
 
   const handleDownload = useCallback(() => {
     if (track.audio_url) window.open(track.audio_url, "_blank");
@@ -134,18 +155,18 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
         <div className="p-3 space-y-2.5">
           {/* Hero Section - Compact */}
           <div className="flex gap-2.5">
-            {track.cover_url && (
+            {displayedVersion?.cover_url && (
               <div className="w-20 h-20 rounded-lg overflow-hidden border border-border/40 shrink-0 shadow-sm">
-                <img src={track.cover_url} alt={track.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                <img src={displayedVersion.cover_url} alt={track.title} className="w-full h-full object-cover" loading="lazy" decoding="async" width={80} height={80} />
               </div>
             )}
             <div className="flex-1 min-w-0 space-y-1">
               <p className="text-xs text-muted-foreground">
                 {formatDate(track.created_at)}
               </p>
-              {track.duration_seconds && (
+              {displayedVersion?.duration && (
                 <p className="text-xs text-muted-foreground">
-                  ⏱️ {formatDuration(track.duration_seconds)}
+                  ⏱️ {formatDuration(displayedVersion.duration)}
                 </p>
               )}
               {track.style_tags && track.style_tags.length > 0 && (
@@ -162,13 +183,13 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
 
           {/* Quick Actions - Single Row */}
           <div className="grid grid-cols-4 gap-1">
-            <Button size="sm" variant="outline" onClick={handlePlay} disabled={!track.audio_url} className="h-9">
+            <Button size="sm" variant="outline" onClick={handlePlay} disabled={!displayedVersion?.audio_url} className="h-9" aria-label={isPlaying ? "Пауза" : "Воспроизвести"}>
               <Play className="h-3.5 w-3.5" />
             </Button>
-            <Button size="sm" variant="outline" onClick={toggleLike} className="h-9">
+            <Button size="sm" variant="outline" onClick={handleLikeClick} className="h-9" aria-live="polite" aria-pressed={isLiked} aria-label={isLiked ? "Убрать лайк c активной версии" : "Поставить лайк активной версии"}>
               <Heart className={cn("h-3.5 w-3.5", isLiked && "fill-current text-red-500")} />
             </Button>
-            <Button size="sm" variant="outline" onClick={handleDownload} disabled={!track.audio_url} className="h-9">
+            <Button size="sm" variant="outline" onClick={handleDownload} disabled={!displayedVersion?.audio_url} className="h-9" aria-label="Скачать активную версию">
               <Download className="h-3.5 w-3.5" />
             </Button>
             <Button size="sm" variant="outline" onClick={handleShare} className="h-9">
@@ -251,7 +272,37 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pb-3">
-                <MinimalVersionsList trackId={track.id} />
+                <div role="tablist" aria-label="Список вариантов трека" className="flex flex-wrap gap-1.5">
+                  {allVersions?.map((v, idx) => {
+                    const isActive = v.id === displayedVersion?.id;
+                    return (
+                      <button
+                        key={v.id}
+                        role="tab"
+                        aria-selected={isActive}
+                        tabIndex={isActive ? 0 : -1}
+                        className={cn(
+                          "px-2.5 h-7 rounded-full text-xs border",
+                          isActive ? "bg-primary text-primary-foreground border-primary" : "bg-muted hover:bg-muted/60"
+                        )}
+                        onClick={() => handleVersionChange(idx)}
+                        onKeyDown={(e: KeyboardEvent<HTMLButtonElement>) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleVersionChange(idx);
+                          }
+                        }}
+                        aria-label={`Вариант ${v.versionNumber ?? (idx + 1)}${v.isMasterVersion ? ' — основной' : ''}`}
+                        title={`Вариант ${v.versionNumber ?? (idx + 1)}`}
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          {v.isMasterVersion && <Star className="w-3 h-3" />}
+                          {`V${v.versionNumber ?? (idx + 1)}`}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </AccordionContent>
             </AccordionItem>
 
@@ -286,6 +337,26 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
               </AccordionItem>
             )}
           </Accordion>
+
+          {/* Контекстное меню активной версии */}
+          <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+            <UnifiedTrackActionsMenu
+              trackId={track.id}
+              trackStatus={track.status}
+              trackMetadata={{ provider: 'suno' }}
+              currentVersionId={operationTargetId}
+              versionNumber={displayedVersion?.versionNumber}
+              isMasterVersion={displayedVersion?.isMasterVersion}
+              variant="full"
+              showQuickActions={true}
+              layout="flat"
+              isLiked={isLiked}
+              hasVocals={track.has_stems ?? false}
+              onLike={handleLikeClick}
+              onDownload={() => handleDownload()}
+              onShare={() => handleShare()}
+            />
+          </div>
 
           {/* Delete Button */}
           {onDelete && (

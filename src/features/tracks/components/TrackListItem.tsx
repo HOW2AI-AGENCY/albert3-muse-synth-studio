@@ -1,10 +1,11 @@
-import React, { useState, useCallback, memo, useRef, useEffect } from "react";
+import React, { useState, useCallback, memo, useRef, useEffect, KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Music, Headphones, AlertTriangle, Loader2, Play, Pause } from "@/utils/iconImports";
-import { useCurrentTrack, useIsPlaying, useAudioPlayerStore } from "@/stores/audioPlayerStore";
+// удалён импорт audioPlayerStore: воспроизведение теперь делегируется useTrackState
 import { cn } from "@/lib/utils";
 import { formatDuration } from "@/utils/formatters";
-import { TrackActionsMenu } from "@/features/tracks/components/shared/TrackActionsMenu";
+import { UnifiedTrackActionsMenu } from "@/components/tracks/shared/TrackActionsMenu.unified";
+import { useTrackState } from "@/hooks/useTrackState";
 
 // Упрощенный интерфейс, аналогичный TrackCard
 interface Track {
@@ -34,11 +35,31 @@ interface TrackListItemProps {
 }
 
 const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, onSync, onDelete, onSeparateStems, className }: TrackListItemProps) => {
-  const currentTrack = useCurrentTrack();
-  const isPlaying = useIsPlaying();
-  const playTrack = useAudioPlayerStore((state) => state.playTrack);
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const {
+    displayedVersion,
+    isPlaying,
+    isCurrentTrack,
+    playButtonDisabled,
+    selectedVersionIndex,
+    versionCount,
+    allVersions,
+    operationTargetId,
+    handleVersionChange,
+    handlePlayClick,
+    isLiked,
+    handleLikeClick,
+  } = useTrackState({
+    id: track.id,
+    title: track.title,
+    audio_url: track.audio_url,
+    cover_url: track.cover_url,
+    duration: track.duration,
+    status: track.status,
+    style_tags: track.style_tags || [],
+    like_count: track.like_count,
+  } as any);
   
   const itemRef = useRef<HTMLDivElement>(null);
 
@@ -50,23 +71,14 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
     setIsVisible(true);
   }, []);
 
-  const isCurrentTrack = currentTrack?.id === track.id;
-  const playButtonDisabled = track.status !== "completed" || !track.audio_url;
-
-  const handlePlayClick = useCallback((event: React.MouseEvent) => {
+  // Обёртка: сохраняем стоп-распространение и используем общую логику проигрывания
+  const handlePlayClickWrapped = useCallback((event: React.MouseEvent) => {
     event.stopPropagation();
     if (playButtonDisabled) return;
-    playTrack({
-      id: track.id,
-      title: track.title,
-      audio_url: track.audio_url!,
-      cover_url: track.cover_url,
-      duration: track.duration,
-      status: track.status,
-    });
-  }, [playButtonDisabled, playTrack, track]);
+    handlePlayClick();
+  }, [playButtonDisabled, handlePlayClick]);
 
-  const formattedDuration = track.duration ? formatDuration(track.duration) : null;
+  const formattedDuration = displayedVersion?.duration ? formatDuration(displayedVersion.duration) : null;
 
   return (
     <div
@@ -86,12 +98,35 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
       aria-label={`Трек ${track.title}`}
     >
       <div className="relative flex-shrink-0 w-10 h-10 rounded-md overflow-hidden bg-muted">
-        {track.cover_url ? (
-          <img src={track.cover_url} alt={track.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+        {displayedVersion?.cover_url ? (
+          <img src={displayedVersion.cover_url} alt={track.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Music className="h-5 w-5 text-muted-foreground" />
           </div>
+        )}
+
+        {versionCount > 0 && (
+          <button
+            type="button"
+            className="absolute -top-1 -right-1 z-10 px-1.5 h-5 rounded-full bg-black/60 text-white text-[10px] border border-white/30 hover:bg-black/70"
+            aria-label={`Активная версия V${displayedVersion?.versionNumber ?? (selectedVersionIndex + 1)}. Нажмите, чтобы переключить версию.`}
+            title={`Версия V${displayedVersion?.versionNumber ?? (selectedVersionIndex + 1)}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              const nextIndex = (selectedVersionIndex + 1) % Math.max(1, allVersions.length);
+              handleVersionChange(nextIndex);
+            }}
+            onKeyDown={(e: KeyboardEvent<HTMLButtonElement>) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const nextIndex = (selectedVersionIndex + 1) % Math.max(1, allVersions.length);
+                handleVersionChange(nextIndex);
+              }
+            }}
+          >
+            V{displayedVersion?.versionNumber ?? (selectedVersionIndex + 1)}
+          </button>
         )}
 
         <div
@@ -101,7 +136,7 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
           )}
         >
           {track.status === 'completed' ? (
-            <Button size="icon" variant="ghost" className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white" onClick={handlePlayClick} aria-label={isCurrentTrack && isPlaying ? "Приостановить" : "Воспроизвести"}>
+            <Button size="icon" variant="ghost" className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white" onClick={handlePlayClickWrapped} aria-label={isCurrentTrack && isPlaying ? "Приостановить" : "Воспроизвести"}>
               {isCurrentTrack && isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
             </Button>
           ) : track.status === 'processing' ? (
@@ -137,13 +172,19 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        <TrackActionsMenu
+        <UnifiedTrackActionsMenu
           trackId={track.id}
           trackStatus={track.status}
           hasVocals={track.has_vocals ?? true}
           trackMetadata={{ provider: 'suno' }}
+          currentVersionId={operationTargetId}
+          versionNumber={displayedVersion?.versionNumber}
+          isMasterVersion={displayedVersion?.isMasterVersion}
           variant="minimal"
-          onDownload={onDownload}
+          showQuickActions={true}
+          isLiked={isLiked}
+          onLike={handleLikeClick}
+          onDownload={() => { onDownload?.(); }}
           onShare={onShare}
           onRetry={onRetry}
           onSync={onSync}
