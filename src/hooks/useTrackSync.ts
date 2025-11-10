@@ -8,8 +8,9 @@
  * - Simplified retry logic (handled by Supabase)
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { logInfo, logWarn, logError } from '@/utils/logger';
 import { invalidateTrackVersionsCache } from '@/features/tracks/hooks/useTrackVersions';
 import RealtimeSubscriptionManager from '@/services/realtimeSubscriptionManager';
@@ -31,6 +32,7 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
   const toastRef = useRef<ReturnType<typeof useToast>['toast'] | null>(null);
   const onTrackCompletedRef = useRef<TrackSyncOptions['onTrackCompleted']>();
   const onTrackFailedRef = useRef<TrackSyncOptions['onTrackFailed']>();
+  const [isSubscribed, setIsSubscribed] = useState(false);
   const { onTrackCompleted, onTrackFailed, enabled = true } = options;
 
   useEffect(() => {
@@ -100,36 +102,6 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
       }
     };
 
-    // Handler for track version changes (new versions added)
-    const handleVersionUpdate = (payload: RealtimePostgresChangesPayload<TrackVersionRow>) => {
-      const newVersion = payload.new as TrackVersionRow | undefined;
-      const oldVersion = payload.old as TrackVersionRow | undefined;
-
-      // Get parent_track_id from either new or old record
-      const parentTrackId = newVersion?.parent_track_id || oldVersion?.parent_track_id;
-
-      if (!parentTrackId) return;
-
-      logInfo('Track version change detected', 'useTrackSync', {
-        event: payload.eventType,
-        versionId: newVersion?.id || oldVersion?.id,
-        parentTrackId,
-        variantIndex: newVersion?.variant_index,
-      });
-
-      // Invalidate cache when track_versions changes
-      invalidateTrackVersionsCache(parentTrackId);
-
-      // Show toast notification for new versions
-      if (payload.eventType === 'INSERT' && newVersion) {
-        const variantNum = (newVersion.variant_index ?? 0) + 1;
-        toastRef.current?.({
-          title: '🎵 Новая версия готова',
-          description: `Версия ${variantNum} добавлена к треку`,
-        });
-      }
-    };
-
     // Subscribe to user tracks via centralized manager
     const unsubscribeTracks = RealtimeSubscriptionManager.subscribeToUserTracks(
       userId,
@@ -137,10 +109,12 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
       handleTrackUpdate
     );
 
+    setIsSubscribed(true);
     logInfo('Subscribed to user tracks', 'useTrackSync', { userId });
 
     return () => {
       unsubscribeTracks();
+      setIsSubscribed(false);
       logInfo('Unsubscribed from track sync', 'useTrackSync', { userId });
     };
   }, [userId, enabled]);
@@ -191,6 +165,6 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
   }, [userId, enabled]);
 
   return {
-    isSubscribed: channelRef.current !== null,
+    isSubscribed,
   };
 };
