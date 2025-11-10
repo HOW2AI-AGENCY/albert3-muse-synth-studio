@@ -208,33 +208,41 @@ CREATE POLICY "Users can CRUD their own tracks"
 
 ---
 
-### 4. **track_versions** - Версии треков
+### 4. **track_versions** - Варианты треков ✅ REFACTORED (v2.0.0)
 
 ```sql
 CREATE TABLE public.track_versions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   parent_track_id UUID NOT NULL REFERENCES public.tracks(id) ON DELETE CASCADE,
-  version_number INTEGER NOT NULL,
-  is_master BOOLEAN DEFAULT false,
-  
+  variant_index INTEGER NOT NULL CHECK (variant_index >= 1), -- ✅ MUST BE >= 1
+  is_preferred_variant BOOLEAN DEFAULT false,
+
   -- Медиа
   audio_url TEXT,
   cover_url TEXT,
   video_url TEXT,
-  
+
   -- Атрибуты
   lyrics TEXT,
   duration INTEGER,
   suno_id TEXT,
-  
+
+  -- Метрики
+  like_count INTEGER DEFAULT 0 NOT NULL, -- Auto-updated by trigger
+
   -- Метаданные
   metadata JSONB DEFAULT '{}'::jsonb,
-  
+
   -- Временные метки
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  
-  UNIQUE(parent_track_id, version_number)
+
+  UNIQUE(parent_track_id, variant_index)
 );
+
+-- Indexes
+CREATE INDEX idx_track_versions_parent ON track_versions(parent_track_id);
+CREATE INDEX idx_track_versions_preferred ON track_versions(is_preferred_variant);
+CREATE INDEX idx_track_versions_variant_index ON track_versions(variant_index);
 
 -- RLS Policies
 CREATE POLICY "Users can view versions of their own tracks"
@@ -256,9 +264,30 @@ CREATE POLICY "Users can view versions of public tracks"
         AND tracks.is_public = true
     )
   );
+
+-- Trigger for auto-updating like_count
+CREATE TRIGGER update_version_likes_count
+  AFTER INSERT OR DELETE ON track_version_likes
+  FOR EACH ROW
+  EXECUTE FUNCTION update_track_version_like_count();
 ```
 
-**Назначение**: Хранение альтернативных версий треков (extend, cover, remixes)
+**Назначение**: Хранение альтернативных вариантов треков (variant_index >= 1)
+
+**⚠️ ВАЖНО**:
+- Основной трек (оригинал) хранится в таблице `tracks`, НЕ здесь
+- `variant_index` ВСЕГДА >= 1 (constraint enforced)
+- Нет версии 0 - это устраняет путаницу
+- Используйте `is_preferred_variant` для отметки любимого варианта
+
+**Изменения в v2.0.0 (2025-11-10)**:
+- ✅ Переименовано: `version_number` → `variant_index`
+- ✅ Переименовано: `is_master` → `is_preferred_variant`
+- ✅ Добавлен: `like_count` с автообновлением через trigger
+- ✅ Добавлен: CHECK constraint `variant_index >= 1`
+- ✅ Удалено: `is_primary_variant` (не использовалось)
+
+**См. также**: [VERSIONING_SYSTEM.md](./VERSIONING_SYSTEM.md) для подробной документации
 
 ---
 
