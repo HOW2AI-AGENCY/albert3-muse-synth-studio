@@ -18,6 +18,8 @@ import type { TrackRowProps, TrackStatus } from '@/types/suno-ui.types';
 import { TrackActionsMenu } from './TrackActionsMenu';
 import { useTrackVersions } from '@/features/tracks/hooks/useTrackVersions';
 import { TrackVariantSelector } from '@/features/tracks/components/TrackVariantSelector';
+import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
+import type { AudioPlayerTrack } from '@/types/track';
 
 /**
  * Format duration from seconds to MM:SS
@@ -73,14 +75,17 @@ export const TrackRow = memo<TrackRowProps>(({
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedVersionIndex, setSelectedVersionIndex] = useState(0);
 
+  // ✅ Audio player integration
+  const currentTrack = useAudioPlayerStore((state) => state.currentTrack);
+
   // ✅ P0 OPTIMIZATION: Memoize computed values
   const statusBadge = useMemo(() => getStatusBadge(track.status), [track.status]);
   const canPlay = useMemo(() => track.status === 'ready' || track.status === 'published', [track.status]);
   const showProcessing = useMemo(() => track.status === 'processing' || track.status === 'queued', [track.status]);
 
-  // Версии трека (без изменений поведения проигрывателя)
+  // Версии трека
   const { allVersions, versionCount, isLoading } = useTrackVersions(track.id, true);
-  const totalVersions = (versionCount ?? 0) + 1; // включая оригинал
+  const totalVersions = (versionCount ?? 0) + 1;
 
   // Отображаемая версия и производные данные
   const displayedVersion = useMemo(() => 
@@ -90,15 +95,38 @@ export const TrackRow = memo<TrackRowProps>(({
   const displayCoverUrl = displayedVersion?.cover_url ?? track.thumbnailUrl;
   const displayTitle = displayedVersion?.title ?? track.title;
   const displayDurationSec = displayedVersion?.duration ?? track.durationSec;
+  const displayLikeCount = displayedVersion?.like_count ?? track.stats.likes;
 
-  const handlePlayPause = useCallback((e: React.MouseEvent) => {
+  const handlePlayPause = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
+    
     if (isPlaying && onPause) {
       onPause(track.id);
+      return;
+    }
+    
+    // ✅ FIX: Play selected version instead of default
+    if (displayedVersion?.audio_url) {
+      const versionToPlay: AudioPlayerTrack = {
+        id: displayedVersion.id,
+        title: displayedVersion.title || track.title,
+        audio_url: displayedVersion.audio_url,
+        cover_url: displayedVersion.cover_url,
+        duration: displayedVersion.duration,
+        style_tags: displayedVersion.style_tags,
+        lyrics: displayedVersion.lyrics,
+        status: 'completed',
+        parentTrackId: displayedVersion.parentTrackId || track.id,
+        versionNumber: displayedVersion.versionNumber,
+        isMasterVersion: displayedVersion.isMasterVersion,
+      };
+      
+      const playerStore = useAudioPlayerStore.getState();
+      playerStore.playTrack(versionToPlay);
     } else if (onPlay) {
       onPlay(track.id);
     }
-  }, [isPlaying, onPlay, onPause, track.id]);
+  }, [isPlaying, onPlay, onPause, track.id, displayedVersion]);
 
   const handleLikeToggle = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -216,9 +244,29 @@ export const TrackRow = memo<TrackRowProps>(({
                 trackId={track.id}
                 currentVersionIndex={selectedVersionIndex}
                 onVersionChange={(index) => {
-                  // ✅ FIX: Prevent infinite loop - validate index before setting
                   const clampedIndex = Math.max(0, Math.min(index, totalVersions - 1));
                   setSelectedVersionIndex(clampedIndex);
+                  
+                  // ✅ FIX: Switch player version if this track is currently playing
+                  const selectedVersion = allVersions[clampedIndex];
+                  if (currentTrack?.parentTrackId === track.id && selectedVersion?.audio_url) {
+                    const versionToPlay: AudioPlayerTrack = {
+                      id: selectedVersion.id,
+                      title: selectedVersion.title || track.title,
+                      audio_url: selectedVersion.audio_url,
+                      cover_url: selectedVersion.cover_url,
+                      duration: selectedVersion.duration,
+                      style_tags: selectedVersion.style_tags,
+                      lyrics: selectedVersion.lyrics,
+                      status: 'completed',
+                      parentTrackId: selectedVersion.parentTrackId || track.id,
+                      versionNumber: selectedVersion.versionNumber,
+                      isMasterVersion: selectedVersion.isMasterVersion,
+                    };
+                    
+                    const playerStore = useAudioPlayerStore.getState();
+                    playerStore.playTrack(versionToPlay);
+                  }
                 }}
                 className="scale-75 origin-top-right"
               />
@@ -331,11 +379,11 @@ export const TrackRow = memo<TrackRowProps>(({
                       track.flags.liked && 'fill-red-500 text-red-500'
                     )}
                   />
-                  <span>{formatCount(track.stats.likes)}</span>
+                  <span>{formatCount(displayLikeCount)}</span>
                 </div>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{track.stats.likes.toLocaleString()} likes</p>
+                <p>{displayLikeCount.toLocaleString()} likes</p>
               </TooltipContent>
             </Tooltip>
 
