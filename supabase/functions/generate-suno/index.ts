@@ -14,6 +14,7 @@ import { validateAndParse, generateSunoSchema } from "../_shared/zod-schemas.ts"
 import { SunoGenerationHandler } from "./handler.ts";
 import type { SunoGenerationParams } from "../_shared/types/generation.ts";
 import { sanitizePrompt, sanitizeLyrics, sanitizeTitle, sanitizeStyleTags } from "../_shared/sanitization.ts";
+import { checkRateLimitRedis } from "../_shared/rate-limit.ts";
 
 serve(async (req: Request): Promise<Response> => {
   const corsHeaders = {
@@ -47,7 +48,47 @@ serve(async (req: Request): Promise<Response> => {
 
     logger.info('✅ User authenticated', { userId: user.id });
 
-    // 2. Parse and validate request
+    // 2. Check rate limit (Redis-based, distributed)
+    const rateLimitResult = await checkRateLimitRedis(user.id, 'GENERATION');
+
+    if (!rateLimitResult.allowed) {
+      logger.warn('⚠️ Rate limit exceeded for Suno generation', {
+        userId: user.id,
+        remaining: rateLimitResult.remaining,
+        resetAt: new Date(rateLimitResult.resetAt).toISOString(),
+        retryAfter: rateLimitResult.retryAfter
+      });
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Rate limit exceeded',
+          message: 'Too many generation requests. Please try again later.',
+          errorCode: 'RATE_LIMIT_EXCEEDED',
+          resetAt: new Date(rateLimitResult.resetAt).toISOString(),
+          retryAfter: rateLimitResult.retryAfter,
+          remaining: rateLimitResult.remaining,
+        }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'X-RateLimit-Limit': '10',
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': Math.ceil(rateLimitResult.resetAt / 1000).toString(),
+            'Retry-After': (rateLimitResult.retryAfter || 60).toString(),
+          },
+        }
+      );
+    }
+
+    logger.info('✅ Rate limit check passed', {
+      userId: user.id,
+      remaining: rateLimitResult.remaining
+    });
+
+    // 3. Parse and validate request
     const rawBody = await req.json();
     const validation = validateAndParse(generateSunoSchema, rawBody);
     
@@ -65,7 +106,7 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // 3. Transform to handler params with sanitization
+    // 4. Transform to handler params with sanitization
     const body = validation.data;
     const params: SunoGenerationParams = {
       trackId: body.trackId,
@@ -88,7 +129,7 @@ serve(async (req: Request): Promise<Response> => {
       referenceTrackId: body.referenceTrackId,
     };
 
-    // 4. Initialize handler and generate
+    // 5. Initialize handler and generate
     const supabaseAdmin = createSupabaseAdminClient();
     const SUNO_API_KEY = Deno.env.get('SUNO_API_KEY');
     if (!SUNO_API_KEY) {
@@ -111,7 +152,7 @@ serve(async (req: Request): Promise<Response> => {
     
     const result = await handler.generate(params);
 
-    // 5. Return response
+    // 6. Return response
     return new Response(
       JSON.stringify(result),
       { 

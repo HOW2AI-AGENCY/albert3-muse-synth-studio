@@ -14,7 +14,7 @@ import { validateAndParse, uuidSchema } from "../_shared/zod-schemas.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { MurekaGenerationHandler } from "./handler.ts";
 import type { MurekaGenerationParams } from "../_shared/types/generation.ts";
-import { checkRateLimit, rateLimitConfigs, createRateLimitHeaders } from "../_shared/rate-limit.ts";
+import { checkRateLimitRedis } from "../_shared/rate-limit.ts";
 import { sanitizePrompt, sanitizeLyrics, sanitizeTitle, sanitizeStyleTags } from "../_shared/sanitization.ts";
 
 const corsHeaders = {
@@ -49,42 +49,44 @@ serve(async (req: Request): Promise<Response> => {
 
     logger.info('✅ User authenticated', { userId: user.id });
 
-    // 2. Check rate limit
-    const { allowed, headers: rateLimitHeaders, result: rateLimitResult } = checkRateLimit(
-      user.id,
-      rateLimitConfigs.generation
-    );
+    // 2. Check rate limit (Redis-based, distributed)
+    const rateLimitResult = await checkRateLimitRedis(user.id, 'GENERATION');
 
-    if (!allowed) {
-      logger.warn('⚠️ Rate limit exceeded for Mureka generation', { 
+    if (!rateLimitResult.allowed) {
+      logger.warn('⚠️ Rate limit exceeded for Mureka generation', {
         userId: user.id,
-        limit: rateLimitResult.limit,
-        resetAt: new Date(rateLimitResult.resetAt).toISOString()
+        remaining: rateLimitResult.remaining,
+        resetAt: new Date(rateLimitResult.resetAt).toISOString(),
+        retryAfter: rateLimitResult.retryAfter
       });
 
       return new Response(
         JSON.stringify({
+          success: false,
           error: 'Rate limit exceeded',
           message: 'Слишком много запросов на генерацию. Попробуйте позже.',
+          errorCode: 'RATE_LIMIT_EXCEEDED',
           resetAt: new Date(rateLimitResult.resetAt).toISOString(),
-          limit: rateLimitResult.limit,
+          retryAfter: rateLimitResult.retryAfter,
           remaining: rateLimitResult.remaining,
         }),
         {
           status: 429,
           headers: {
             ...corsHeaders,
-            ...rateLimitHeaders,
             'Content-Type': 'application/json',
+            'X-RateLimit-Limit': '10',
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': Math.ceil(rateLimitResult.resetAt / 1000).toString(),
+            'Retry-After': (rateLimitResult.retryAfter || 60).toString(),
           },
         }
       );
     }
 
-    logger.info('✅ Rate limit check passed', { 
-      userId: user.id, 
-      remaining: rateLimitResult.remaining,
-      limit: rateLimitResult.limit 
+    logger.info('✅ Rate limit check passed', {
+      userId: user.id,
+      remaining: rateLimitResult.remaining
     });
 
     // 3. Check for active Mureka generations (concurrent_request_limit: 1)
@@ -177,16 +179,15 @@ serve(async (req: Request): Promise<Response> => {
     
     const result = await handler.generate(params);
 
-    // 7. Return response with rate limit headers
+    // 7. Return response
     return new Response(
       JSON.stringify(result),
-      { 
-        status: 200, 
-        headers: { 
-          ...corsHeaders, 
-          ...rateLimitHeaders,
-          'Content-Type': 'application/json' 
-        } 
+      {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
       }
     );
 
