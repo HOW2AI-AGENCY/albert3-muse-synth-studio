@@ -235,6 +235,71 @@ function isSunoDataArray(data: unknown): data is SunoTrackData[] {
   );
 }
 
+/**
+ * ✅ REFACTORED: Unified version representation
+ * Represents a track variant (NOT the main track)
+ * variant_index ALWAYS >= 1 (1, 2, 3...)
+ */
+export interface TrackVariant {
+  /** Unique ID of this variant (from track_versions.id) */
+  id: string;
+  /** ID of the parent track (from tracks table) */
+  parentTrackId: string;
+  /** Variant number from DB (1, 2, 3...) - ALWAYS >= 1 */
+  variantIndex: number;
+  /** Is this the preferred (master) variant? */
+  isPreferredVariant: boolean;
+  /** Like count for this variant (denormalized) */
+  likeCount?: number;
+  /** Audio URL for this variant */
+  audioUrl?: string;
+  /** Cover image URL */
+  coverUrl?: string;
+  /** Video URL */
+  videoUrl?: string;
+  /** Duration in seconds */
+  duration?: number;
+  /** Lyrics for this variant */
+  lyrics?: string;
+  /** Suno ID for this variant */
+  sunoId?: string;
+  /** Metadata specific to this variant */
+  metadata?: TrackMetadata | null;
+  /** Creation timestamp */
+  createdAt?: string;
+}
+
+/**
+ * ✅ NEW: Structured result for track with variants
+ * Clearly separates main track from variants
+ */
+export interface TrackWithVariantsResult {
+  /** The main track (from tracks table) */
+  mainTrack: {
+    id: string;
+    title: string;
+    audioUrl?: string;
+    coverUrl?: string;
+    videoUrl?: string;
+    duration?: number;
+    lyrics?: string;
+    styleTags?: string[];
+    status?: string;
+    userId?: string;
+    sunoId?: string;
+    metadata?: TrackMetadata | null;
+    createdAt?: string;
+  };
+  /** All variants (variant_index >= 1) */
+  variants: TrackVariant[];
+  /** The preferred variant (if set), or null */
+  preferredVariant: TrackVariant | null;
+}
+
+/**
+ * @deprecated Use TrackVariant instead
+ * Legacy interface for backward compatibility
+ */
 export interface TrackWithVersions {
   id: string;
   parentTrackId: string;
@@ -262,9 +327,115 @@ export interface TrackWithVersions {
 }
 
 /**
+ * ✅ NEW: Load track with variants (REFACTORED VERSION)
+ *
+ * Returns structured data:
+ * - mainTrack: The primary track from tracks table
+ * - variants: Only variants with variant_index >= 1
+ * - preferredVariant: The variant marked as preferred, or null
+ *
+ * Key changes from getTrackWithVersions():
+ * - Does NOT create variant_index = 0
+ * - Clear separation between main track and variants
+ * - No metadata.suno_data fallback (variants must be in DB)
+ *
+ * @param trackId - The track ID to load
+ * @returns Structured result with main track and variants
+ */
+export async function getTrackWithVariants(trackId: string): Promise<TrackWithVariantsResult | null> {
+  try {
+    // Load main track
+    const { data: mainTrack, error: trackError } = await supabase
+      .from('tracks')
+      .select('*')
+      .eq('id', trackId)
+      .single<TrackRow>();
+
+    if (trackError) {
+      logError('Failed to load main track', trackError as Error, 'trackVersions.getTrackWithVariants', { trackId });
+      throw trackError;
+    }
+
+    if (!mainTrack) {
+      logInfo('Track not found', 'trackVersions.getTrackWithVariants', { trackId });
+      return null;
+    }
+
+    // Load variants (ONLY variant_index >= 1)
+    const { data: dbVersions, error: versionsError } = await supabase
+      .from('track_versions')
+      .select('*')
+      .eq('parent_track_id', trackId)
+      .gte('variant_index', 1) // ✅ CRITICAL: Only load variants >= 1
+      .order('variant_index', { ascending: true })
+      .returns<TrackVersionRow[]>();
+
+    if (versionsError) {
+      logError('Failed to load variants', versionsError as Error, 'trackVersions.getTrackWithVariants', { trackId });
+      throw versionsError;
+    }
+
+    // Convert database rows to TrackVariant interface
+    const variants: TrackVariant[] = (dbVersions || []).map(version => ({
+      id: version.id,
+      parentTrackId: mainTrack.id,
+      variantIndex: version.variant_index ?? 1,
+      isPreferredVariant: Boolean(version.is_preferred_variant),
+      likeCount: typeof version.like_count === 'number' ? version.like_count : undefined,
+      audioUrl: version.audio_url || undefined,
+      coverUrl: version.cover_url || mainTrack.cover_url || undefined,
+      videoUrl: version.video_url || undefined,
+      duration: version.duration || undefined,
+      lyrics: version.lyrics || undefined,
+      sunoId: version.suno_id || undefined,
+      metadata: (version.metadata as TrackMetadata | null) || null,
+      createdAt: version.created_at,
+    }));
+
+    // Find preferred variant
+    const preferredVariant = variants.find(v => v.isPreferredVariant) || null;
+
+    // Construct result
+    const result: TrackWithVariantsResult = {
+      mainTrack: {
+        id: mainTrack.id,
+        title: mainTrack.title,
+        audioUrl: mainTrack.audio_url || undefined,
+        coverUrl: mainTrack.cover_url || undefined,
+        videoUrl: mainTrack.video_url || undefined,
+        duration: mainTrack.duration || mainTrack.duration_seconds || undefined,
+        lyrics: mainTrack.lyrics || undefined,
+        styleTags: mainTrack.style_tags || undefined,
+        status: mainTrack.status,
+        userId: mainTrack.user_id,
+        sunoId: mainTrack.suno_id || undefined,
+        metadata: (mainTrack.metadata as TrackMetadata | null) || null,
+        createdAt: mainTrack.created_at,
+      },
+      variants,
+      preferredVariant,
+    };
+
+    logInfo('Track with variants loaded', 'trackVersions.getTrackWithVariants', {
+      trackId,
+      variantCount: variants.length,
+      hasPreferred: Boolean(preferredVariant),
+    });
+
+    return result;
+  } catch (error) {
+    logError('Failed to load track with variants', error as Error, 'trackVersions.getTrackWithVariants', { trackId });
+    throw error;
+  }
+}
+
+/**
+ * @deprecated Use getTrackWithVariants() instead
+ * Legacy function for backward compatibility
+ *
  * Loads a track and all its versions from the database
  * Returns an array where first element is the main track, followed by all versions
- * 
+ *
  * FALLBACK: Если track_versions пустая, пытается извлечь версии из metadata.suno_data
  */
 export async function getTrackWithVersions(trackId: string): Promise<TrackWithVersions[]> {
@@ -430,6 +601,46 @@ export async function getTrackWithVersions(trackId: string): Promise<TrackWithVe
 
 
 /**
+ * ✅ NEW: Get preferred variant from array of variants
+ * @param variants - Array of TrackVariant objects
+ * @returns The preferred variant, or null if none is marked as preferred
+ */
+export function getPreferredVariant(variants: TrackVariant[]): TrackVariant | null {
+  if (!variants || variants.length === 0) return null;
+  return variants.find(v => v.isPreferredVariant) || null;
+}
+
+/**
+ * ✅ NEW: Check if a track has variants
+ * @param variants - Array of TrackVariant objects
+ * @returns True if there are any variants (variant_index >= 1)
+ */
+export function hasVariants(variants: TrackVariant[]): boolean {
+  return variants && variants.length > 0;
+}
+
+/**
+ * ✅ NEW: Convert legacy TrackWithVersions[] to new format
+ * Helper for gradual migration
+ */
+export function convertLegacyVersionsToVariants(
+  legacyVersions: TrackWithVersions[]
+): { mainTrack: TrackWithVersions | null; variants: TrackWithVersions[] } {
+  if (!legacyVersions || legacyVersions.length === 0) {
+    return { mainTrack: null, variants: [] };
+  }
+
+  // Find version 0 (main track)
+  const mainTrack = legacyVersions.find(v => v.sourceVersionNumber === 0) || legacyVersions[0];
+
+  // Filter variants (sourceVersionNumber >= 1)
+  const variants = legacyVersions.filter(v => v.sourceVersionNumber !== null && v.sourceVersionNumber >= 1);
+
+  return { mainTrack, variants };
+}
+
+/**
+ * @deprecated Use getPreferredVariant() instead
  * Gets the master version of a track (or main track if no master is set)
  */
 export function getMasterVersion(tracks: TrackWithVersions[]): TrackWithVersions | null {
@@ -444,6 +655,7 @@ export function getMasterVersion(tracks: TrackWithVersions[]): TrackWithVersions
 }
 
 /**
+ * @deprecated Use hasVariants() instead
  * Checks if a track has multiple versions
  */
 export function hasMultipleVersions(tracks: TrackWithVersions[]): boolean {
