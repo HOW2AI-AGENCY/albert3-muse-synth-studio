@@ -50,8 +50,12 @@ export interface TrackVersion {
   isMasterVersion: boolean;
   audio_url?: string;
   cover_url?: string;
+  video_url?: string;
   duration?: number;
   title: string;
+  lyrics?: string;
+  style_tags?: string[];
+  suno_id?: string;
 }
 
 interface AudioPlayerState {
@@ -464,11 +468,15 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             id: version.id,
             audio_url: version.audio_url,
             cover_url: version.cover_url || currentTrack.cover_url,
+            video_url: version.video_url || currentTrack.video_url,
             duration: version.duration || currentTrack.duration,
+            title: version.title,
+            lyrics: version.lyrics || currentTrack.lyrics,
+            style_tags: version.style_tags || currentTrack.style_tags,
+            suno_task_id: version.suno_id || currentTrack.suno_task_id,
             versionNumber: version.versionNumber,
             isMasterVersion: version.isMasterVersion,
             parentTrackId: currentTrack.parentTrackId || currentTrack.id,
-            title: version.title,
           };
           
           logInfo('Switching to version', 'audioPlayerStore', { 
@@ -564,8 +572,12 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               isMasterVersion: v.isMasterVersion,
               audio_url: v.audio_url,
               cover_url: v.cover_url,
+              video_url: v.video_url,
               duration: v.duration,
               title: v.title,
+              lyrics: v.lyrics,
+              style_tags: v.style_tags,
+              suno_id: v.suno_id,
             }));
 
             // ✅ Находим мастер-версию
