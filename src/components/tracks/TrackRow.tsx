@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { TrackRowProps, TrackStatus } from '@/types/suno-ui.types';
 import { TrackActionsMenu } from './TrackActionsMenu';
-import { useTrackVersions } from '@/features/tracks/hooks/useTrackVersions';
+import { useTrackVariants } from '@/features/tracks/hooks/useTrackVariants';
 import { TrackVariantSelector } from '@/features/tracks/components/TrackVariantSelector';
 import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
 import type { AudioPlayerTrack } from '@/types/track';
@@ -83,9 +83,61 @@ export const TrackRow = memo<TrackRowProps>(({
   const canPlay = useMemo(() => track.status === 'ready' || track.status === 'published', [track.status]);
   const showProcessing = useMemo(() => track.status === 'processing' || track.status === 'queued', [track.status]);
 
-  // Версии трека
-  const { allVersions, versionCount, isLoading } = useTrackVersions(track.id, true);
-  const totalVersions = (versionCount ?? 0) + 1;
+  // Track versions with React Query
+  const { data: variantsData, isLoading } = useTrackVariants(track.id, true);
+
+  // Combine main track and variants into a single array for easier indexing
+  const allVersions = useMemo(() => {
+    if (!variantsData) return [];
+    const { mainTrack, variants } = variantsData;
+    // Create a legacy-compatible structure to minimize changes
+    const mainAsVersion = {
+      id: mainTrack.id,
+      parentTrackId: mainTrack.id,
+      sourceVersionNumber: 0,
+      versionNumber: 1,
+      isMasterVersion: variants.length === 0 || !variants.some(v => v.isPreferredVariant),
+      like_count: undefined, // Main track likes are separate
+      title: mainTrack.title,
+      audio_url: mainTrack.audioUrl,
+      cover_url: mainTrack.coverUrl,
+      video_url: mainTrack.videoUrl,
+      duration: mainTrack.duration,
+      lyrics: mainTrack.lyrics,
+      style_tags: mainTrack.styleTags,
+      status: mainTrack.status,
+      user_id: mainTrack.userId,
+      metadata: mainTrack.metadata,
+      suno_id: mainTrack.sunoId,
+      created_at: mainTrack.createdAt,
+    };
+
+    const variantsAsVersions = variants.map((v, i) => ({
+      id: v.id,
+      parentTrackId: v.parentTrackId,
+      sourceVersionNumber: v.variantIndex,
+      versionNumber: v.variantIndex + 1,
+      isMasterVersion: v.isPreferredVariant,
+      like_count: v.likeCount,
+      title: mainTrack.title, // Variants share the main title
+      audio_url: v.audioUrl,
+      cover_url: v.coverUrl,
+      video_url: v.videoUrl,
+      duration: v.duration,
+      lyrics: v.lyrics,
+      style_tags: mainTrack.styleTags, // Variants share style tags
+      status: 'completed',
+      user_id: mainTrack.userId,
+      metadata: v.metadata,
+      suno_id: v.sunoId,
+      created_at: v.createdAt,
+    }));
+
+    return [mainAsVersion, ...variantsAsVersions];
+  }, [variantsData]);
+
+  const versionCount = useMemo(() => variantsData?.variants.length ?? 0, [variantsData]);
+  const totalVersions = versionCount + 1;
 
   // Отображаемая версия и производные данные
   const displayedVersion = useMemo(() => 

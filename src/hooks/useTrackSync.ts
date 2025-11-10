@@ -12,7 +12,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { logInfo, logWarn, logError } from '@/utils/logger';
-import { invalidateTrackVersionsCache } from '@/features/tracks/hooks/useTrackVersions';
+import { useQueryClient } from '@tanstack/react-query';
+import { trackVersionsQueryKeys } from '@/features/tracks/api/trackVersions';
 import RealtimeSubscriptionManager from '@/services/realtimeSubscriptionManager';
 import type { Database } from '@/integrations/supabase/types';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
@@ -33,6 +34,7 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
   const onTrackCompletedRef = useRef<TrackSyncOptions['onTrackCompleted']>();
   const onTrackFailedRef = useRef<TrackSyncOptions['onTrackFailed']>();
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const queryClient = useQueryClient();
   const { onTrackCompleted, onTrackFailed, enabled = true } = options;
 
   useEffect(() => {
@@ -78,7 +80,7 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
           title: '✅ Трек готов!',
           description: `"${newTrack.title}" успешно сгенерирован`,
         });
-        invalidateTrackVersionsCache(newTrack.id);
+        queryClient.invalidateQueries({ queryKey: trackVersionsQueryKeys.list(newTrack.id) });
         onTrackCompletedRef.current?.(newTrack.id);
       }
 

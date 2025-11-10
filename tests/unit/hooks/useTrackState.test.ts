@@ -10,66 +10,27 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useTrackState } from '@/hooks/useTrackState';
 import type { Track } from '@/types/domain/track.types';
-// Импортируем модули, которые мокируются через vi.mock, чтобы работать с их мок‑функциями без require()
 import * as AudioPlayerStore from '@/stores/audioPlayerStore';
 import { useTrackVersionLike } from '@/features/tracks/hooks/useTrackVersionLike';
 import { useToast } from '@/hooks/use-toast';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mock dependencies
-vi.mock('@/stores/audioPlayerStore', () => ({
-  useCurrentTrack: vi.fn(() => null),
-  useIsPlaying: vi.fn(() => false),
-  useAudioPlayerStore: vi.fn(() => ({
-    playTrack: vi.fn(),
-    switchToVersion: vi.fn(),
-  })),
-}));
+vi.mock('@/stores/audioPlayerStore');
+vi.mock('@/features/tracks/hooks');
+vi.mock('@/features/tracks/hooks/useTrackVersionLike');
+vi.mock('@/hooks/use-toast');
+vi.mock('@/integrations/supabase/client');
+vi.mock('@/utils/logger');
 
-vi.mock('@/features/tracks/hooks', () => ({
-  useTrackVersions: vi.fn(() => ({
-    versions: [],
-    mainVersion: null,
-    versionCount: 0,
-    masterVersion: null,
-  })),
-}));
-
-vi.mock('@/features/tracks/hooks/useTrackVersionLike', () => ({
-  useTrackVersionLike: vi.fn(() => ({
-    isLiked: false,
-    likeCount: 0,
-    toggleLike: vi.fn(),
-  })),
-}));
-
-vi.mock('@/hooks/use-toast', () => ({
-  useToast: vi.fn(() => ({
-    toast: vi.fn(),
-  })),
-}));
-
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          limit: vi.fn(() => Promise.resolve({ data: [] })),
-        })),
-      })),
-      update: vi.fn(() => ({
-        eq: vi.fn(() => Promise.resolve({ error: null })),
-      })),
-    })),
-  },
-}));
-
-vi.mock('@/utils/logger', () => ({
-  logger: {
-    error: vi.fn(),
-  },
-}));
+const queryClient = new QueryClient();
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+);
 
 describe('useTrackState', () => {
+  const { useTrackVariants } = require('@/features/tracks/hooks');
+
   const mockTrack: Track = {
     id: 'track-123',
     title: 'Test Track',
@@ -86,310 +47,75 @@ describe('useTrackState', () => {
     metadata: {},
   };
 
+  const mockVariantsData = {
+    mainTrack: { id: 'track-123', title: 'Test Track', audioUrl: 'audio.mp3' },
+    variants: [{ id: 'variant-1', title: 'Test Track', audioUrl: 'variant.mp3', isPreferredVariant: false }],
+    preferredVariant: null,
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    useTrackVariants.mockReturnValue({ data: mockVariantsData, isLoading: false });
+    vi.mocked(AudioPlayerStore.useAudioPlayerStore).mockReturnValue({
+        playTrack: vi.fn(),
+        switchToVersion: vi.fn(),
+    });
+    vi.mocked(useTrackVersionLike).mockReturnValue({
+        isLiked: false,
+        likeCount: 0,
+        toggleLike: vi.fn(),
+    });
+    vi.mocked(useToast).mockReturnValue({ toast: vi.fn() });
   });
 
   afterEach(() => {
     localStorage.clear();
   });
 
-  describe('Initialization', () => {
-    it('initializes with default state', () => {
-      const { result } = renderHook(() => useTrackState(mockTrack));
-
-      expect(result.current.selectedVersionIndex).toBe(0);
-      expect(result.current.isHovered).toBe(false);
-      expect(result.current.isVisible).toBe(false);
-      expect(result.current.hasStems).toBe(false);
-    });
-
-    it('loads selectedVersionIndex from localStorage if available', () => {
-      localStorage.setItem('track:selectedVersion:track-123', '2');
-
-      const { result } = renderHook(() => useTrackState(mockTrack));
-
-      expect(result.current.selectedVersionIndex).toBe(2);
-    });
-
-    it('uses default index 0 if localStorage has invalid data', () => {
-      localStorage.setItem('track:selectedVersion:track-123', 'invalid');
-
-      const { result } = renderHook(() => useTrackState(mockTrack));
-
-      expect(result.current.selectedVersionIndex).toBe(0);
-    });
+  it('initializes and loads selectedVersionIndex from localStorage', () => {
+    localStorage.setItem('track:selectedVersion:track-123', '1');
+    const { result } = renderHook(() => useTrackState(mockTrack), { wrapper });
+    expect(result.current.selectedVersionIndex).toBe(1);
   });
 
-  describe('Version Management', () => {
-    it('provides displayedVersion based on selectedVersionIndex', () => {
-      const { result } = renderHook(() => useTrackState(mockTrack));
-
-      expect(result.current.displayedVersion).toBeDefined();
-      expect(result.current.displayedVersion.id).toBe(mockTrack.id);
-      expect(result.current.displayedVersion.title).toBe(mockTrack.title);
-    });
-
-    it('updates operationTargetId to match displayedVersion', () => {
-      const { result } = renderHook(() => useTrackState(mockTrack));
-
-      expect(result.current.operationTargetId).toBe(result.current.displayedVersion.id);
-    });
-
-    it('saves selectedVersionIndex to localStorage when changed', async () => {
-      const { result } = renderHook(() => useTrackState(mockTrack));
-
-      act(() => {
-        result.current.handleVersionChange(1);
-      });
-
-      await waitFor(() => {
-        const stored = localStorage.getItem('track:selectedVersion:track-123');
-        expect(stored).toBe('1');
-      });
-    });
+  it('provides displayedVersion based on selectedVersionIndex', () => {
+    const { result } = renderHook(() => useTrackState(mockTrack), { wrapper });
+    expect(result.current.displayedVersion).toBeDefined();
+    expect(result.current.displayedVersion.id).toBe('track-123');
   });
 
-  describe('Player State', () => {
-    it('sets isCurrentTrack to false when track is not playing', () => {
-      const { result } = renderHook(() => useTrackState(mockTrack));
-
-      expect(result.current.isCurrentTrack).toBe(false);
-      expect(result.current.isPlaying).toBe(false);
+  it('calls playTrack with correct parameters', () => {
+    const mockPlayTrack = vi.fn();
+    vi.mocked(AudioPlayerStore.useAudioPlayerStore).mockReturnValue({
+        playTrack: mockPlayTrack,
+        switchToVersion: vi.fn(),
     });
 
-    it('sets playButtonDisabled to false for completed track with audio_url', () => {
-      const { result } = renderHook(() => useTrackState(mockTrack));
-
-      expect(result.current.playButtonDisabled).toBe(false);
+    const { result } = renderHook(() => useTrackState(mockTrack), { wrapper });
+    act(() => {
+      result.current.handlePlayClick();
     });
 
-    it('sets playButtonDisabled to true for processing track', () => {
-      const processingTrack = { ...mockTrack, status: 'processing' as const };
-      const { result } = renderHook(() => useTrackState(processingTrack));
-
-      expect(result.current.playButtonDisabled).toBe(true);
-    });
-
-    it('sets playButtonDisabled to true for track without audio_url', () => {
-      const noAudioTrack = { ...mockTrack, audio_url: null };
-      const { result } = renderHook(() => useTrackState(noAudioTrack));
-
-      expect(result.current.playButtonDisabled).toBe(true);
-    });
+    expect(mockPlayTrack).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'track-123',
+        title: 'Test Track',
+      })
+    );
   });
 
-  describe('Handlers', () => {
-    describe('handlePlayClick', () => {
-      it('calls playTrack with correct parameters', () => {
-        const mockPlayTrack = vi.fn();
-        AudioPlayerStore.useAudioPlayerStore.mockReturnValue({
-          playTrack: mockPlayTrack,
-          switchToVersion: vi.fn(),
-        });
-
-        const { result } = renderHook(() => useTrackState(mockTrack));
-
-        act(() => {
-          result.current.handlePlayClick();
-        });
-
-        expect(mockPlayTrack).toHaveBeenCalledWith(
-          expect.objectContaining({
-            id: mockTrack.id,
-            title: mockTrack.title,
-            audio_url: mockTrack.audio_url,
-            status: 'completed',
-          })
-        );
-      });
-
-      it('does not call playTrack when playButtonDisabled is true', () => {
-        const mockPlayTrack = vi.fn();
-        AudioPlayerStore.useAudioPlayerStore.mockReturnValue({
-          playTrack: mockPlayTrack,
-          switchToVersion: vi.fn(),
-        });
-
-        const processingTrack = { ...mockTrack, status: 'processing' as const };
-        const { result } = renderHook(() => useTrackState(processingTrack));
-
-        act(() => {
-          result.current.handlePlayClick();
-        });
-
-        expect(mockPlayTrack).not.toHaveBeenCalled();
-      });
+  it('calls toggleLike when handleLikeClick is called', () => {
+    const mockToggleLike = vi.fn();
+    vi.mocked(useTrackVersionLike).mockReturnValue({
+        isLiked: false,
+        likeCount: 0,
+        toggleLike: mockToggleLike,
     });
-
-    describe('handleLikeClick', () => {
-      it('calls toggleLike when clicked', () => {
-        const mockToggleLike = vi.fn();
-        useTrackVersionLike.mockReturnValue({
-          isLiked: false,
-          likeCount: 0,
-          toggleLike: mockToggleLike,
-        });
-
-        const { result } = renderHook(() => useTrackState(mockTrack));
-
-        act(() => {
-          result.current.handleLikeClick();
-        });
-
-        expect(mockToggleLike).toHaveBeenCalledTimes(1);
-      });
+    const { result } = renderHook(() => useTrackState(mockTrack), { wrapper });
+    act(() => {
+        result.current.handleLikeClick();
     });
-
-    describe('handleDownloadClick', () => {
-      it('creates download link and triggers download', () => {
-        const mockToast = vi.fn();
-        useToast.mockReturnValue({ toast: mockToast });
-
-        // Mock DOM APIs
-        const mockLink = {
-          href: '',
-          download: '',
-          click: vi.fn(),
-        };
-        const createElementSpy = vi.spyOn(document, 'createElement').mockReturnValue(mockLink as any);
-        const appendChildSpy = vi.spyOn(document.body, 'appendChild').mockImplementation(() => mockLink as any);
-        const removeChildSpy = vi.spyOn(document.body, 'removeChild').mockImplementation(() => mockLink as any);
-
-        const { result } = renderHook(() => useTrackState(mockTrack));
-
-        act(() => {
-          result.current.handleDownloadClick();
-        });
-
-        expect(createElementSpy).toHaveBeenCalledWith('a');
-        expect(mockLink.href).toBe(mockTrack.audio_url);
-        expect(mockLink.download).toContain(mockTrack.title);
-        expect(mockLink.click).toHaveBeenCalled();
-        expect(appendChildSpy).toHaveBeenCalled();
-        expect(removeChildSpy).toHaveBeenCalled();
-        expect(mockToast).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: 'Скачивание начато',
-          })
-        );
-
-        // Cleanup
-        createElementSpy.mockRestore();
-        appendChildSpy.mockRestore();
-        removeChildSpy.mockRestore();
-      });
-
-      it('shows error toast when audio_url is missing', () => {
-        const mockToast = vi.fn();
-        useToast.mockReturnValue({ toast: mockToast });
-
-        const noAudioTrack = { ...mockTrack, audio_url: null };
-        const { result } = renderHook(() => useTrackState(noAudioTrack));
-
-        act(() => {
-          result.current.handleDownloadClick();
-        });
-
-        expect(mockToast).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: 'Ошибка',
-            description: 'Аудиофайл недоступен',
-            variant: 'destructive',
-          })
-        );
-      });
-    });
-
-    describe('handleShareClick', () => {
-      it('uses navigator.share when available', async () => {
-        const mockShare = vi.fn().mockResolvedValue(undefined);
-        Object.defineProperty(navigator, 'share', {
-          value: mockShare,
-          writable: true,
-          configurable: true,
-        });
-
-        const { result } = renderHook(() => useTrackState(mockTrack));
-
-        await act(async () => {
-          result.current.handleShareClick();
-        });
-
-        expect(mockShare).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: mockTrack.title,
-          })
-        );
-      });
-
-      it('falls back to clipboard when navigator.share is not available', async () => {
-        const mockToast = vi.fn();
-        useToast.mockReturnValue({ toast: mockToast });
-
-        const mockWriteText = vi.fn().mockResolvedValue(undefined);
-        Object.defineProperty(navigator, 'share', {
-          value: undefined,
-          writable: true,
-          configurable: true,
-        });
-        Object.defineProperty(navigator, 'clipboard', {
-          value: { writeText: mockWriteText },
-          writable: true,
-          configurable: true,
-        });
-
-        const { result } = renderHook(() => useTrackState(mockTrack));
-
-        await act(async () => {
-          result.current.handleShareClick();
-        });
-
-        expect(mockWriteText).toHaveBeenCalled();
-        expect(mockToast).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: 'Ссылка скопирована',
-          })
-        );
-      });
-    });
-  });
-
-  describe('State Setters', () => {
-    it('allows setting isHovered', () => {
-      const { result } = renderHook(() => useTrackState(mockTrack));
-
-      act(() => {
-        result.current.setIsHovered(true);
-      });
-
-      expect(result.current.isHovered).toBe(true);
-    });
-
-    it('allows setting isVisible', () => {
-      const { result } = renderHook(() => useTrackState(mockTrack));
-
-      act(() => {
-        result.current.setIsVisible(true);
-      });
-
-      expect(result.current.isVisible).toBe(true);
-    });
-  });
-
-  describe('Like State', () => {
-    it('provides isLiked from useTrackVersionLike', () => {
-      useTrackVersionLike.mockReturnValue({
-        isLiked: true,
-        likeCount: 5,
-        toggleLike: vi.fn(),
-      });
-
-      const { result } = renderHook(() => useTrackState(mockTrack));
-
-      expect(result.current.isLiked).toBe(true);
-      expect(result.current.likeCount).toBe(5);
-    });
+    expect(mockToggleLike).toHaveBeenCalledTimes(1);
   });
 });

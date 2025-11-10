@@ -7,7 +7,7 @@
  * Migration path: Old track_likes → New track_version_likes
  */
 
-import { useTrackVersions } from './useTrackVersions';
+import { useTrackVariants } from './useTrackVariants';
 import { useTrackVersionLike } from './useTrackVersionLike';
 
 /**
@@ -16,10 +16,10 @@ import { useTrackVersionLike } from './useTrackVersionLike';
  */
 export const useTrackLike = (trackId: string, initialLikeCount: number = 0) => {
   // Load track versions to get the master version
-  const { masterVersion, mainVersion, isLoading: versionsLoading } = useTrackVersions(trackId, true);
+  const { data: variantsData, isLoading: versionsLoading } = useTrackVariants(trackId, true);
 
   // Use the master version (or main version as fallback) for likes
-  const versionToLike = masterVersion || mainVersion;
+  const versionToLike = variantsData?.preferredVariant || variantsData?.mainTrack;
   const versionId = versionToLike?.id || trackId;
 
   // Delegate to version-based like system

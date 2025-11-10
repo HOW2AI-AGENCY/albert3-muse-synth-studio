@@ -665,3 +665,12 @@ export function hasMultipleVersions(tracks: TrackWithVersions[]): boolean {
 
   return tracks.length > 1;
 }
+
+/**
+ * ✅ NEW: React Query keys for track variants
+ */
+export const trackVersionsQueryKeys = {
+  all: ['track-variants'] as const,
+  lists: () => [...trackVersionsQueryKeys.all, 'list'] as const,
+  list: (trackId: string) => [...trackVersionsQueryKeys.lists(), trackId] as const,
+};

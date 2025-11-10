@@ -15,7 +15,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useCurrentTrack, useIsPlaying, useAudioPlayerStore } from '@/stores/audioPlayerStore';
-import { useTrackVersions } from '@/features/tracks/hooks';
+import { useTrackVariants } from '@/features/tracks/hooks';
 import { useTrackVersionLike } from '@/features/tracks/hooks/useTrackVersionLike';
 import { useToast } from '@/hooks/use-toast';
 import type { Track } from '@/types/domain/track.types';
@@ -37,14 +37,7 @@ export const useTrackState = (track: Track, options: UseTrackStateOptions = {}) 
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
   const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
 
-  // ✅ FIX: Use allVersions from hook instead of manually combining mainVersion + versions
-  // The hook's allVersions includes versions from metadata.suno_data via hybrid merging
-  const {
-    allVersions: hookAllVersions,
-    mainVersion,
-    versionCount,
-    masterVersion
-  } = useTrackVersions(track.id, loadVersions);
+  const { data: variantsData, isLoading } = useTrackVariants(track.id, loadVersions);
 
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -85,16 +78,39 @@ export const useTrackState = (track: Track, options: UseTrackStateOptions = {}) 
     checkStems();
   }, [track.id]);
 
-  // ✅ FIX: Filter versions with audio_url from hook's allVersions
-  // This includes versions from both track_versions DB and metadata.suno_data
   const allVersions = useMemo(() => {
-    return hookAllVersions.filter((v) => !!v.audio_url);
-  }, [hookAllVersions]);
+    if (!variantsData) return [];
+    const { mainTrack, variants } = variantsData;
+    const mainAsVersion = {
+      id: mainTrack.id,
+      title: mainTrack.title,
+      audio_url: mainTrack.audioUrl,
+      cover_url: mainTrack.coverUrl,
+      duration: mainTrack.duration,
+      lyrics: mainTrack.lyrics,
+      isMasterVersion: !variantsData.preferredVariant,
+      parentTrackId: mainTrack.id,
+      versionNumber: 1,
+      like_count: 0, // Placeholder
+    };
+    const variantsAsVersions = variants.map((v, i) => ({
+      id: v.id,
+      title: mainTrack.title,
+      audio_url: v.audioUrl,
+      cover_url: v.coverUrl,
+      duration: v.duration,
+      lyrics: v.lyrics,
+      isMasterVersion: v.isPreferredVariant,
+      parentTrackId: v.parentTrackId,
+      versionNumber: v.variantIndex + 1,
+      like_count: v.likeCount,
+    }));
+    return [mainAsVersion, ...variantsAsVersions].filter(v => v.audio_url);
+  }, [variantsData]);
 
   // Sync with audio player
   useEffect(() => {
     if (!currentTrack || !allVersions.length) {
-      // If track is not active, return to master version
       const masterIndex = allVersions.findIndex((v) => v.isMasterVersion);
       if (masterIndex !== -1 && masterIndex !== selectedVersionIndex) {
         setSelectedVersionIndex(masterIndex);
@@ -105,7 +121,6 @@ export const useTrackState = (track: Track, options: UseTrackStateOptions = {}) 
     const isCurrentTrack =
       currentTrack.parentTrackId === track.id || currentTrack.id === track.id;
     if (!isCurrentTrack) {
-      // If track is not active, return to master version
       const masterIndex = allVersions.findIndex((v) => v.isMasterVersion);
       if (masterIndex !== -1 && masterIndex !== selectedVersionIndex) {
         setSelectedVersionIndex(masterIndex);
@@ -113,11 +128,7 @@ export const useTrackState = (track: Track, options: UseTrackStateOptions = {}) 
       return;
     }
 
-    // If track is active, sync with player
-    const currentVersionInAllVersions = allVersions.findIndex(
-      (v) => v.id === currentTrack.id
-    );
-
+    const currentVersionInAllVersions = allVersions.findIndex((v) => v.id === currentTrack.id);
     if (
       currentVersionInAllVersions !== -1 &&
       currentVersionInAllVersions !== selectedVersionIndex
@@ -126,29 +137,21 @@ export const useTrackState = (track: Track, options: UseTrackStateOptions = {}) 
     }
   }, [currentTrack, track.id, allVersions, selectedVersionIndex]);
 
-  // Validate and update selectedVersionIndex when allVersions changes
   useEffect(() => {
     if (selectedVersionIndex >= allVersions.length) {
-      setSelectedVersionIndex(0); // Reset to 0 if out of bounds
+      setSelectedVersionIndex(0);
     }
   }, [allVersions, selectedVersionIndex]);
 
-  // Save selectedVersionIndex to localStorage
   useEffect(() => {
     try {
       const key = `track:selectedVersion:${track.id}`;
       localStorage.setItem(key, String(selectedVersionIndex));
-    } catch {
-      // Silently ignore localStorage write errors
-    }
+    } catch {}
   }, [track.id, selectedVersionIndex]);
 
-  // Displayed version
   const displayedVersion = useMemo(() => {
-    const version = allVersions[selectedVersionIndex];
-    return (
-      version ||
-      mainVersion || {
+    return allVersions[selectedVersionIndex] || {
         id: track.id,
         title: track.title,
         audio_url: track.audio_url,
@@ -158,33 +161,20 @@ export const useTrackState = (track: Track, options: UseTrackStateOptions = {}) 
         isMasterVersion: false,
         parentTrackId: track.id,
         lyrics: null,
-      }
-    );
-  }, [allVersions, selectedVersionIndex, mainVersion, track]);
+        like_count: 0,
+      };
+  }, [allVersions, selectedVersionIndex, track]);
 
-  // ✅ ONLY VERSION LIKES: Use track_version_likes table exclusively
-  // Likes are always applied to the currently displayed version
   const { isLiked, likeCount, toggleLike } = useTrackVersionLike(
     displayedVersion.id,
     displayedVersion.like_count || 0
   );
 
-  // Context menu target is the displayed version
-  const operationTargetId = useMemo(() => {
-    return displayedVersion.id;
-  }, [displayedVersion.id]);
-
-  const operationTargetVersion = useMemo(() => {
-    return displayedVersion;
-  }, [displayedVersion]);
-
+  const operationTargetId = displayedVersion.id;
+  const operationTargetVersion = displayedVersion;
   const isCurrentTrack = currentTrack?.id === displayedVersion.id;
   const playButtonDisabled = track.status !== 'completed' || !displayedVersion.audio_url;
-
-  // UI version count (number of additional versions, excluding main)
-  const uiVersionCount = useMemo(() => {
-    return versionCount;
-  }, [versionCount]);
+  const uiVersionCount = variantsData?.variants.length ?? 0;
 
   const handleVersionChange = useCallback(
     (versionIndex: number) => {
