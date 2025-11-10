@@ -1,6 +1,10 @@
 /**
  * Hook for music generation with realtime updates
- * Now uses unified GenerationService for better separation of concerns
+ *
+ * ✅ REFACTORED: Now uses RealtimeSubscriptionManager (P0-2 fix)
+ * - Eliminates duplicate subscriptions
+ * - Centralizedchannel management
+ * - Automatic cleanup and deduplication
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -8,11 +12,15 @@ import { GenerationService, GenerationRequest } from '@/services/generation';
 import { logger } from '@/utils/logger';
 import { rateLimiter, RATE_LIMIT_CONFIGS, formatResetTime } from '@/utils/rateLimiter';
 import { supabase } from '@/integrations/supabase/client';
-import type { RealtimeChannel } from '@supabase/supabase-js';
+import RealtimeSubscriptionManager from '@/services/realtimeSubscriptionManager';
+import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import type { MusicProvider } from '@/config/provider-models';
+import type { Database } from '@/integrations/supabase/types';
 import * as Sentry from '@sentry/react';
 import { addBreadcrumb } from '@/utils/sentry';
 import { trackGenerationEvent } from '@/utils/sentry-enhanced';
+
+type TrackRow = Database['public']['Tables']['tracks']['Row'];
 
 type ToastFunction = (options: { 
   title: string; 
@@ -34,7 +42,7 @@ const MAX_POLLING_DURATION = 10 * 60 * 1000; // 10 minutes
 
 export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGenerateMusicOptions) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const subscriptionRef = useRef<RealtimeChannel | null>(null);
+  const unsubscribeRef = useRef<(() => void) | null>(null); // ✅ Changed to unsubscribe function
   const cleanupTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pollingStartTimeRef = useRef<number>(0);
@@ -47,17 +55,18 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
       clearTimeout(cleanupTimerRef.current);
       cleanupTimerRef.current = null;
     }
-    
+
     if (pollingTimerRef.current) {
       clearTimeout(pollingTimerRef.current);
       pollingTimerRef.current = null;
     }
-    
-    if (subscriptionRef.current) {
-      subscriptionRef.current.unsubscribe();
-      subscriptionRef.current = null;
+
+    // ✅ Call unsubscribe function instead of channel.unsubscribe()
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
     }
-    
+
     currentTrackIdRef.current = null;
     pollingStartTimeRef.current = 0;
   }, []);
@@ -126,7 +135,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
     pollTrack();
   }, [cleanup, toast, onSuccess]);
 
-  // Setup realtime subscription for track status
+  // ✅ REFACTORED: Setup realtime subscription via RealtimeSubscriptionManager
   const setupSubscription = useCallback((trackId: string, isCached: boolean = false) => {
     cleanup();
 
@@ -136,43 +145,54 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
       return;
     }
 
-    const subscription = GenerationService.subscribe(trackId, (status, trackData) => {
-      if (status === 'completed') {
-        trackGenerationEvent('completed', trackId, provider, {
-          duration: trackData?.metadata?.duration,
-        });
-        toast({
-          title: '✅ Трек готов!',
-          description: `Ваш трек "${trackData?.title}" успешно сгенерирован.`,
-        });
-        onSuccess?.();
-        cleanup();
-      } else if (status === 'failed') {
-        trackGenerationEvent('failed', trackId, provider, {
-          errorMessage: trackData?.errorMessage,
-          prompt: trackData?.prompt,
-        });
-        toast({
-          title: '❌ Ошибка генерации',
-          description: trackData?.errorMessage || 'Произошла ошибка при обработке вашего трека.',
-          variant: 'destructive',
-        });
-        cleanup();
-      }
-    });
+    // Subscribe via centralized manager
+    const unsubscribe = RealtimeSubscriptionManager.subscribeToTrack(
+      trackId,
+      (payload: RealtimePostgresChangesPayload<TrackRow>) => {
+        const track = payload.new;
+        if (!track) return;
 
-    subscriptionRef.current = subscription;
+        logger.info('Track update received via manager', 'useGenerateMusic', {
+          trackId,
+          status: track.status,
+        });
+
+        if (track.status === 'completed') {
+          trackGenerationEvent('completed', trackId, provider, {
+            duration: track.duration,
+          });
+          toast({
+            title: '✅ Трек готов!',
+            description: `Ваш трек "${track.title}" успешно сгенерирован.`,
+          });
+          onSuccess?.();
+          cleanup();
+        } else if (track.status === 'failed') {
+          trackGenerationEvent('failed', trackId, provider, {
+            errorMessage: track.error_message,
+          });
+          toast({
+            title: '❌ Ошибка генерации',
+            description: track.error_message || 'Произошла ошибка при обработке вашего трека.',
+            variant: 'destructive',
+          });
+          cleanup();
+        }
+      }
+    );
+
+    unsubscribeRef.current = unsubscribe;
 
     // Auto-cleanup after timeout, then start polling as fallback
     cleanupTimerRef.current = setTimeout(() => {
       logger.warn('Auto-cleaning stale subscription after 3 minutes, starting polling fallback', 'useGenerateMusic', { trackId });
-      
+
       // Unsubscribe from realtime
-      if (subscriptionRef.current) {
-        subscriptionRef.current.unsubscribe();
-        subscriptionRef.current = null;
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
       }
-      
+
       // Start polling as fallback
       startPolling(trackId);
     }, AUTO_CLEANUP_TIMEOUT);
