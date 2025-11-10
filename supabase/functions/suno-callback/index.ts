@@ -101,12 +101,23 @@ const mainHandler = async (req: Request) => {
     if (payload?.data?.data && Array.isArray(payload.data.data)) {
       // New format: { data: { data: [...], task_id: "..." } }
       tasks = payload.data.data;
+      logger.info('📦 Parsed tasks from payload.data.data format', 'suno-callback', { count: tasks.length });
     } else if (Array.isArray(payload?.data)) {
       // Alternative format: { data: [...] }
       tasks = payload.data;
+      logger.info('📦 Parsed tasks from payload.data array format', 'suno-callback', { count: tasks.length });
     } else if (payload?.audio_url || payload?.audioUrl) {
       // Single task format
       tasks = [payload];
+      logger.info('📦 Parsed tasks from single payload format', 'suno-callback', { count: 1 });
+    } else {
+      logger.warn('⚠️ No tasks found in payload', 'suno-callback', {
+        hasData: !!payload?.data,
+        hasDataData: !!payload?.data?.data,
+        isDataArray: Array.isArray(payload?.data),
+        hasAudioUrl: !!(payload?.audio_url || payload?.audioUrl),
+        payloadKeys: Object.keys(payload || {})
+      });
     }
 
     // Extract taskId with support for both taskId and task_id
@@ -186,6 +197,12 @@ const mainHandler = async (req: Request) => {
       const successfulTracks = tasks.filter((t: any) =>
         t?.audioUrl || t?.audio_url || t?.stream_audio_url || t?.source_stream_audio_url
       );
+
+      logger.info('✅ Filtered successful tracks with audio', 'suno-callback', {
+        totalTasks: tasks.length,
+        successfulCount: successfulTracks.length,
+        trackIds: successfulTracks.map((t: any) => t?.id || 'unknown')
+      });
 
       if (successfulTracks.length === 0) {
         const message = "Completed without audio URL in callback";
@@ -405,6 +422,13 @@ const mainHandler = async (req: Request) => {
       // ✅ FIX: Создаём только ДОПОЛНИТЕЛЬНЫЕ версии (начиная с индекса 1)
       // Первый вариант (index 0) уже сохранён в основной tracks таблице выше
       // Suno всегда генерирует 2 варианта: [0] сохранён в tracks, [1] сохраняем в track_versions
+
+      logger.info('🔍 Checking if additional versions needed', 'suno-callback', {
+        successfulTracksLength: successfulTracks.length,
+        willCreateVersions: successfulTracks.length > 1,
+        expectedVersions: successfulTracks.length - 1
+      });
+
       if (successfulTracks.length > 1) {
         logger.info(`Creating ${successfulTracks.length - 1} additional track versions`, "suno-callback");
 
