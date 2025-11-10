@@ -1,7 +1,6 @@
-// @ts-nocheck
 /**
  * Unified Generate Music Callback Handler (generate-music-callb)
- * 
+ *
  * Обрабатывает Suno API callbacks и обеспечивает:
  * - Немедленное воспроизведение первой версии (stream/audio URL)
  * - Фоновую загрузку всех версий в Supabase Storage
