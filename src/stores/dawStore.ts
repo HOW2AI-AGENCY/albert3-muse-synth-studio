@@ -14,7 +14,7 @@
 
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import { logger, logInfo, logError } from '@/utils/logger';
+import { logInfo, logError } from '@/utils/logger';
 import { TrackStem } from '@/types/domain/track.types';
 
 // ==========================================
@@ -465,7 +465,7 @@ export const useDAWStore = create<DAWState>()(
           set((state) => {
             if (!state.project) return state;
 
-            const stemTracks: DAWTrack[] = stems.map((stem, index) => ({
+            const stemTracks: DAWTrack[] = stems.map((stem) => ({
               id: generateId(),
               name: stem.stem_type.replace('_', ' ').toUpperCase(),
               type: 'stem' as const,

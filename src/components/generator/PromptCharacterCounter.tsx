@@ -13,10 +13,9 @@ export const PromptCharacterCounter = memo(({
   className,
 }: PromptCharacterCounterProps) => {
   // ✅ P0 OPTIMIZATION: Memoize computed values
-  const { percentage, isNearLimit, isAtLimit } = useMemo(() => {
+  const { isNearLimit, isAtLimit } = useMemo(() => {
     const pct = (currentLength / maxLength) * 100;
     return {
-      percentage: pct,
       isNearLimit: pct >= 80,
       isAtLimit: pct >= 100,
     };

@@ -42,7 +42,6 @@ export const WaveformVisualization: React.FC<WaveformVisualizationProps> = ({
   backgroundColor = '#1f2937',
   zoom = 60,
   startTime = 0,
-  duration,
   className = '',
   onReady,
 }) => {
@@ -220,7 +219,6 @@ function extractPeaks(
 ): Float32Array {
   const sampleRate = audioBuffer.sampleRate;
   const channelData = audioBuffer.getChannelData(0); // Use first channel
-  const duration = audioBuffer.duration;
 
   // Calculate how many samples we need based on zoom level
   const visibleDuration = canvasWidth / zoom;

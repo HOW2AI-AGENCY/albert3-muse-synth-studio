@@ -18,7 +18,6 @@ import { TransportControls } from '@/components/daw/TransportControls';
 import { TimelineEnhanced } from '@/components/daw/TimelineEnhanced';
 import { TrackLaneEnhanced } from '@/components/daw/TrackLaneEnhanced';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -29,7 +28,6 @@ import {
 } from '@/components/ui/dialog';
 import {
   Plus,
-  FolderOpen,
   Save,
   Undo2,
   Redo2,
@@ -42,7 +40,6 @@ import {
   Eraser,
   Grid3x3,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useTracks } from '@/hooks/useTracks';
 import { TrackStem } from '@/types/domain/track.types';
 import {
@@ -58,7 +55,6 @@ import { toast } from 'sonner';
 export const DAWEnhanced: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(1200);
-  const [selectedTrackForStems, setSelectedTrackForStems] = useState<string | null>(null);
 
   // DAW Store
   const project = useDAWStore((state) => state.project);
@@ -332,7 +328,6 @@ export const DAWEnhanced: React.FC = () => {
               <TrackLaneEnhanced
                 key={track.id}
                 track={track}
-                width={containerWidth}
                 zoom={timeline.zoom}
                 scrollLeft={timeline.scrollLeft}
               />

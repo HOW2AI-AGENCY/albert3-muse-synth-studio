@@ -142,39 +142,5 @@ export const TrackStatusBadge = memo<TrackStatusBadgeProps>(({
 
 TrackStatusBadge.displayName = 'TrackStatusBadge';
 
-/**
- * Hook to get status configuration with localized labels
- * Useful for custom styling and status display
- */
-const useStatusConfig = (status: TrackStatus) => {
-  const t = useTranslation();
-  const config = STATUS_ICON_CONFIG[status];
-
-  return {
-    ...config,
-    label: t(`status.${status}` as const),
-    description: t(`statusDescription.${status}` as const),
-  };
-};
-
-/**
- * Utility to check if status allows generation
- * Based on can_generate_track() PostgreSQL function
- */
-const canGenerateTrack = (status: TrackStatus): boolean => {
-  return status === 'pending' || status === 'draft';
-};
-
-/**
- * Utility to check if track is in final state
- */
-const isFinalStatus = (status: TrackStatus): boolean => {
-  return status === 'completed' || status === 'failed';
-};
-
-/**
- * Utility to check if track is being processed
- */
-const isProcessingStatus = (status: TrackStatus): boolean => {
-  return status === 'processing';
-};
+// Utility functions for status management
+// These can be exported if needed by other components

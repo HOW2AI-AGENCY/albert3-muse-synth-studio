@@ -16,7 +16,7 @@ import {
 import { logger } from '@/utils/logger';
 import { handleGenerationError } from '@/utils/error-handlers/generation-errors';
 import { metricsCollector } from '@/utils/monitoring/metrics';
-import { withEdgeFunctionTimeout, TimeoutError } from '@/utils/timeout';
+import { withEdgeFunctionTimeout } from '@/utils/timeout';
 
 export class MurekaProviderAdapter implements IProviderClient {
   async generateMusic(params: GenerationParams): Promise<GenerationResult> {

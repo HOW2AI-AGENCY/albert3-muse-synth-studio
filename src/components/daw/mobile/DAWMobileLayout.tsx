@@ -11,15 +11,12 @@
  * @module components/daw/mobile/DAWMobileLayout
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { useDAWStore } from '@/stores/dawStore';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  Play,
-  Pause,
-  Square,
   Plus,
   Music,
   Settings,
@@ -27,11 +24,9 @@ import {
   Wand2,
   ChevronUp,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { MobileTrackList } from './MobileTrackList';
 import { MobileTimeline } from './MobileTimeline';
 import { MobileTransportBar } from './MobileTransportBar';
-import { MobileToolbar } from './MobileToolbar';
 import { MobileSunoPanel } from './MobileSunoPanel';
 
 type MobileView = 'tracks' | 'timeline' | 'mixer' | 'suno' | 'settings';
@@ -41,21 +36,9 @@ export const DAWMobileLayout: React.FC = () => {
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
 
   const project = useDAWStore((state) => state.project);
-  const isPlaying = useDAWStore((state) => state.isPlaying);
   const tracks = useDAWStore((state) => state.project?.tracks || []);
 
-  const play = useDAWStore((state) => state.play);
-  const pause = useDAWStore((state) => state.pause);
-  const stop = useDAWStore((state) => state.stop);
   const addTrack = useDAWStore((state) => state.addTrack);
-
-  const handlePlayPause = useCallback(() => {
-    if (isPlaying) {
-      pause();
-    } else {
-      play();
-    }
-  }, [isPlaying, play, pause]);
 
   return (
     <div className="h-screen w-screen flex flex-col bg-background overflow-hidden">

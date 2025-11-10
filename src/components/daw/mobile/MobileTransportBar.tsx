@@ -22,7 +22,6 @@ import {
   Repeat,
   Repeat1,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 export const MobileTransportBar: React.FC = () => {
   const isPlaying = useDAWStore((state) => state.isPlaying);

@@ -13,7 +13,7 @@
 
 import React, { useCallback, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { useDAWStore, DAWTrack, DAWClip } from '@/stores/dawStore';
+import { useDAWStore, type DAWTrack } from '@/stores/dawStore';
 import { AudioClipEnhanced } from './AudioClipEnhanced';
 import { Volume2, VolumeX, Music2, Trash2, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,6 @@ import {
 
 interface TrackLaneEnhancedProps {
   track: DAWTrack;
-  width: number;
   zoom: number;
   scrollLeft: number;
   isSelected?: boolean;
@@ -36,7 +35,6 @@ interface TrackLaneEnhancedProps {
 
 export const TrackLaneEnhanced: React.FC<TrackLaneEnhancedProps> = ({
   track,
-  width,
   zoom,
   scrollLeft,
   isSelected = false,
@@ -51,13 +49,7 @@ export const TrackLaneEnhanced: React.FC<TrackLaneEnhancedProps> = ({
   const addClip = useDAWStore((state) => state.addClip);
   const selectTrack = useDAWStore((state) => state.selectTrack);
 
-  // Convert time to pixel position
-  const timeToPixel = useCallback(
-    (time: number) => {
-      return time * zoom - scrollLeft;
-    },
-    [zoom, scrollLeft]
-  );
+  // Time to pixel conversion handled by AudioClipEnhanced
 
   // Convert pixel to time
   const pixelToTime = useCallback(

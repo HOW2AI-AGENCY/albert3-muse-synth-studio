@@ -9,7 +9,7 @@
  * @since 2025-11-05
  */
 
-import React, { useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import type { TimestampedWord } from '@/hooks/useTimestampedLyrics';
 

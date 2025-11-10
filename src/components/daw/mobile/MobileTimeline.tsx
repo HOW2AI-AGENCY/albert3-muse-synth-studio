@@ -13,7 +13,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useDAWStore } from '@/stores/dawStore';
 import { useTouchGestures } from '@/hooks/useTouchGestures';
-import { cn } from '@/lib/utils';
 
 export const MobileTimeline: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -35,7 +34,7 @@ export const MobileTimeline: React.FC = () => {
     handleTouchMove,
     handleTouchEnd,
   } = useTouchGestures({
-    onTap: (x, y) => {
+    onTap: (x) => {
       // Seek to tap position
       const rect = canvasRef.current?.getBoundingClientRect();
       if (!rect) return;
@@ -44,12 +43,12 @@ export const MobileTimeline: React.FC = () => {
       const time = (relativeX + scrollLeft) / zoom;
       seekTo(Math.max(0, time));
     },
-    onPinchMove: (scale, centerX, centerY) => {
+    onPinchMove: (scale) => {
       // Pinch to zoom
       const newZoom = Math.max(10, Math.min(200, zoom * scale));
       setZoom(newZoom);
     },
-    onTwoFingerScroll: (deltaX, deltaY) => {
+    onTwoFingerScroll: (deltaX) => {
       // Scroll timeline
       setScroll(Math.max(0, scrollLeft - deltaX));
     },

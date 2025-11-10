@@ -15,8 +15,6 @@ import { Loader2, TrendingUp, Heart, Sparkles } from 'lucide-react';
 import { PromoBanner } from '@/components/feed/PromoBanner';
 import { ContestSection } from '@/components/feed/ContestSection';
 import { TrackRow } from '@/components/tracks/TrackRow';
-// import { cn } from '@/lib/utils';
-import { useTranslation } from '@/i18n';
 import type { FeedTab, UITrack, ContestInfo } from '@/types/suno-ui.types';
 import { logger } from '@/utils/logger';
 

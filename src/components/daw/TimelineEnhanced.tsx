@@ -237,12 +237,10 @@ function drawTimeRuler(
   // Determine tick interval based on zoom
   let tickInterval: number;
   let showBeats = true;
-  let showSubdivisions = false;
 
   if (zoom > 200) {
     // Very zoomed in - show beat subdivisions (16th notes)
     tickInterval = beatDuration / 4;
-    showSubdivisions = true;
   } else if (zoom > 100) {
     // Zoomed in - show beats
     tickInterval = beatDuration;

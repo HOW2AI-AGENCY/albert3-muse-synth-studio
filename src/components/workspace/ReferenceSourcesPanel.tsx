@@ -30,7 +30,6 @@ interface ReferenceSourcesPanelProps {
 
 export const ReferenceSourcesPanel = memo<ReferenceSourcesPanelProps>(({
   metadata,
-  trackId,
   className
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);

@@ -9,7 +9,7 @@ import { useSmartTrackPlay } from '@/hooks/useSmartTrackPlay';
 import { formatDuration } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { TrackStatusBadge } from '@/components/tracks/TrackStatusBadge';
+// TrackStatusBadge import removed - not used in mobile view
 
 interface Track {
   id: string;
