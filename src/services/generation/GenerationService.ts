@@ -143,6 +143,22 @@ export class GenerationService {
 
   /**
    * Subscribe to real-time track status updates
+   *
+   * @deprecated Use RealtimeSubscriptionManager.subscribeToTrack() instead
+   * This method creates duplicate subscriptions and will be removed in future version
+   *
+   * Migration example:
+   * ```typescript
+   * // ❌ OLD
+   * const subscription = GenerationService.subscribe(trackId, callback);
+   *
+   * // ✅ NEW
+   * import RealtimeSubscriptionManager from '@/services/realtimeSubscriptionManager';
+   * const unsubscribe = RealtimeSubscriptionManager.subscribeToTrack(trackId, (payload) => {
+   *   const track = payload.new;
+   *   if (track.status === 'completed') callback('completed', track);
+   * });
+   * ```
    */
   static subscribe(trackId: string, callback: TrackStatusCallback): RealtimeChannel {
     // Cleanup existing subscription for this track
@@ -152,7 +168,7 @@ export class GenerationService {
       this.activeSubscriptions.delete(trackId);
     }
 
-    logger.info('📡 [GenerationService] Setting up realtime subscription', 'GenerationService', { trackId });
+    logger.warn('⚠️ [GenerationService] Using deprecated subscribe method - migrate to RealtimeSubscriptionManager', 'GenerationService', { trackId });
 
     const channel = supabase
       .channel(`track-${trackId}`)
@@ -200,6 +216,7 @@ export class GenerationService {
 
   /**
    * Unsubscribe from track updates
+   * @deprecated Use RealtimeSubscriptionManager instead
    */
   static unsubscribe(trackId: string): void {
     const channel = this.activeSubscriptions.get(trackId);
@@ -212,6 +229,7 @@ export class GenerationService {
 
   /**
    * Unsubscribe from all active subscriptions
+   * @deprecated Use RealtimeSubscriptionManager instead
    */
   static unsubscribeAll(): void {
     this.activeSubscriptions.forEach((channel, trackId) => {

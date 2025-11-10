@@ -13,6 +13,7 @@ import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { logger, logError, logInfo, logWarn } from '@/utils/logger';
 import { useAuth } from '@/contexts/auth/useAuth';
 import { trackCacheService } from '@/services/track-cache.service';
+import RealtimeSubscriptionManager from '@/services/realtimeSubscriptionManager';
 
 type TrackRow = Database['public']['Tables']['tracks']['Row'];
 
@@ -319,16 +320,11 @@ export const useTracks = (refreshTrigger?: number, options: UseTracksOptions = {
     return () => clearInterval(checkStuckInterval);
   }, [tracks, refetch]);
 
+  // ✅ FIX P0-2: Use centralized subscription manager to prevent duplicate channels
   useEffect(() => {
     if (!userId) return;
 
-    let isSubscribed = true;
-
-    const channelName = `tracks-user-${userId}-project-${projectId ?? 'all'}`;
-
     const handlePayload = (payload: RealtimePostgresChangesPayload<TrackRow>) => {
-      if (!isSubscribed) return;
-
       const candidate = (payload.new as TrackRow | null) ?? (payload.old as TrackRow | null);
 
       if (projectId && candidate?.project_id !== projectId) {
@@ -342,24 +338,18 @@ export const useTracks = (refreshTrigger?: number, options: UseTracksOptions = {
       queryClient.invalidateQueries({ queryKey });
     };
 
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'tracks', filter: `user_id=eq.${userId}` },
-        handlePayload
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          logInfo('Realtime subscription active', 'useTracks', { channelName });
-        }
-      });
+    // Use centralized manager - automatically handles deduplication and cleanup
+    const unsubscribe = RealtimeSubscriptionManager.subscribeToUserTracks(
+      userId,
+      projectId,
+      handlePayload
+    );
+
+    logInfo('Subscribed to user tracks via manager', 'useTracks', { userId, projectId });
 
     return () => {
-      isSubscribed = false;
-      supabase.removeChannel(channel).then(() => {
-        logInfo('Realtime channel removed', 'useTracks');
-      });
+      unsubscribe();
+      logInfo('Unsubscribed from user tracks', 'useTracks', { userId, projectId });
     };
   }, [userId, projectId, excludeDraftTracks, queryClient, queryKey]);
 
