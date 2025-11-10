@@ -138,9 +138,22 @@ const mainHandler = async (req: Request) => {
       });
     }
 
-    const callbackType = payload?.callbackType || 'unknown';
+    const callbackType = payload?.data?.callbackType || payload?.callbackType || 'unknown';
 
     logger.info("Extracted taskId", "suno-callback", { taskId, tasksCount: tasks.length, callbackType });
+
+    // ✅ FIX: Игнорируем промежуточные callbacks, обрабатываем только complete
+    // Suno отправляет 3 callback: text → first (1 трек) → complete (2 трека)
+    if (callbackType === 'text' || callbackType === 'first') {
+      logger.info('⏭️ Skipping intermediate callback, waiting for complete', 'suno-callback', {
+        callbackType,
+        taskId
+      });
+      return new Response(JSON.stringify({ ok: true, message: 'intermediate_callback_acknowledged' }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     // ✅ Removed ai_jobs status update - using tracks table only
 
