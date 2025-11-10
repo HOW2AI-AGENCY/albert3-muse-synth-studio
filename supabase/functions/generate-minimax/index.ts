@@ -9,10 +9,12 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import Replicate from 'https://esm.sh/replicate@0.25.2';
 import { logger } from '../_shared/logger.ts';
+import { createCorsHeaders } from '../_shared/cors.ts';
+import { createSecurityHeaders } from '../_shared/security.ts';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  ...createCorsHeaders(),
+  ...createSecurityHeaders(),
 };
 
 interface MinimaxGenerationRequest {
