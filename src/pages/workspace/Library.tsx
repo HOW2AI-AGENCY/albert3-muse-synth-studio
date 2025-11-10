@@ -38,8 +38,8 @@ import { DisplayTrack, convertToAudioPlayerTrack, convertToDisplayTrack, convert
 import { cn } from "@/lib/utils";
 import { logger } from "@/utils/logger";
 import { normalizeTrack } from "@/utils/trackNormalizer";
-import { getTrackWithVersions } from "@/features/tracks/api/trackVersions";
-import { primeTrackVersionsCache } from "@/features/tracks/hooks/useTrackVersions";
+import { getTrackWithVariants, trackVersionsQueryKeys } from "@/features/tracks/api/trackVersions";
+import { useQueryClient } from "@tanstack/react-query";
 import type { AudioPlayerTrack } from "@/types/track";
 import { useResponsiveGrid } from '@/hooks/useResponsiveGrid';
 import { VirtualizedTrackGrid } from '@/components/tracks/VirtualizedTrackGrid';
@@ -66,6 +66,7 @@ const LibraryContent: React.FC = () => {
   const { toast } = useToast();
   const playTrackWithQueue = useAudioPlayerStore((state) => state.playTrackWithQueue);
   const currentTrack = useAudioPlayerStore((state) => state.currentTrack);
+  const queryClient = useQueryClient();
 
   // Get current user
   const { userId } = useAuth();
@@ -224,62 +225,43 @@ const LibraryContent: React.FC = () => {
     setLoadingTrackId(currentTrackId);
 
     try {
-      const tracksWithVersions = await getTrackWithVersions(track.id);
-      primeTrackVersionsCache(track.id, tracksWithVersions);
-      const playableVersionEntries = tracksWithVersions
-        .map(version => {
-          const audio = convertToAudioPlayerTrack({
-            id: version.id,
-            title: version.title,
-            audio_url: version.audio_url ?? null,
-            cover_url: version.cover_url ?? null,
-            duration: version.duration ?? null,
-            duration_seconds: version.duration ?? null,
-            style_tags: version.style_tags ?? null,
-            lyrics: version.lyrics ?? null,
-            status: version.status ?? 'completed',
-          });
+      const variantsData = await getTrackWithVariants(track.id);
+      if (variantsData) {
+        queryClient.setQueryData(trackVersionsQueryKeys.list(track.id), variantsData);
 
-          if (!audio) {
-            return null;
-          }
+        const allVersions = [variantsData.mainTrack, ...variantsData.variants];
+        const audioTracks = allVersions.map(v => convertToAudioPlayerTrack({
+          id: v.id,
+          title: v.title,
+          audio_url: v.audioUrl ?? null,
+          cover_url: v.coverUrl ?? null,
+          duration: v.duration ?? null,
+          duration_seconds: v.duration ?? null,
+          style_tags: v.styleTags ?? null,
+          lyrics: v.lyrics ?? null,
+          status: v.status ?? 'completed',
+        })).filter((t): t is NonNullable<typeof t> => t !== null);
 
-          return {
-            version,
-            audio: {
-              ...audio,
-              parentTrackId: version.parentTrackId,
-              versionNumber: version.versionNumber,
-              isMasterVersion: version.isMasterVersion,
-              sourceVersionNumber: version.sourceVersionNumber,
-            },
-          };
-        })
-        .filter((entry): entry is NonNullable<typeof entry> => entry !== null && entry.audio !== null);
+        const preferredOrMain = variantsData.preferredVariant || variantsData.mainTrack;
+        const startTrack = audioTracks.find(t => t.id === preferredOrMain.id);
+        const remainingTracks = filteredAndSortedTracks
+          .filter(t => t.id !== track.id && t.audio_url)
+          .map(displayTrack => mapDisplayTrackToAudio(convertToDisplayTrack(displayTrack)))
+          .filter((audioTrack): audioTrack is AudioPlayerTrack => Boolean(audioTrack));
 
-      const masterEntry = playableVersionEntries.find(entry => entry.version.isMasterVersion) ??
-        playableVersionEntries[0] ??
-        null;
-
-      const otherVersionTracks = playableVersionEntries
-        .filter(entry => masterEntry ? entry.version.id !== masterEntry.version.id : true)
-        .map(entry => entry.audio);
-
-      const remainingTracks = filteredAndSortedTracks
-        .filter(t => t.id !== track.id && t.audio_url)
-        .map(displayTrack => mapDisplayTrackToAudio(convertToDisplayTrack(displayTrack)))
-        .filter((audioTrack): audioTrack is AudioPlayerTrack => Boolean(audioTrack));
-
-      if (masterEntry) {
-        const queue = [masterEntry.audio, ...otherVersionTracks, ...remainingTracks];
-        playTrackWithQueue(masterEntry.audio, queue);
-        return;
+        if (startTrack) {
+          playTrackWithQueue(startTrack, [...audioTracks, ...remainingTracks]);
+          return;
+        }
       }
 
       const fallbackAudio = mapDisplayTrackToAudio(track);
       if (fallbackAudio) {
-        const queue = [fallbackAudio, ...otherVersionTracks, ...remainingTracks];
-        playTrackWithQueue(fallbackAudio, queue);
+        const remainingTracks = filteredAndSortedTracks
+          .filter(t => t.id !== track.id && t.audio_url)
+          .map(displayTrack => mapDisplayTrackToAudio(convertToDisplayTrack(displayTrack)))
+          .filter((audioTrack): audioTrack is AudioPlayerTrack => Boolean(audioTrack));
+        playTrackWithQueue(fallbackAudio, [fallbackAudio, ...remainingTracks]);
         return;
       }
 
@@ -298,7 +280,7 @@ const LibraryContent: React.FC = () => {
     } finally {
       setLoadingTrackId(prev => (prev === currentTrackId ? null : prev));
     }
-  }, [filteredAndSortedTracks, mapDisplayTrackToAudio, playTrackWithQueue, toast]);
+  }, [filteredAndSortedTracks, mapDisplayTrackToAudio, playTrackWithQueue, toast, queryClient]);
 
   // handleLike is now handled by useTrackLike hook in TrackCard
   // const handleLike = useCallback(async (trackId: string) => {

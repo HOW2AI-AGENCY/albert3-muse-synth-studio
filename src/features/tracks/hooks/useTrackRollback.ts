@@ -1,9 +1,9 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 import { logError, logInfo } from '@/utils/logger';
-import { setMasterVersion as setMasterVersionApi, unwrapResult } from '../api/trackVersions';
+import { setMasterVersion as setMasterVersionApi, unwrapResult, trackVersionsQueryKeys } from '../api/trackVersions';
 import { TrackOperationsLogger } from '@/services/track-operations.logger';
-import { invalidateTrackVersionsCache, fetchTrackVersions } from './useTrackVersions';
+import { useQueryClient } from '@tanstack/react-query';
 
 /**
  * useTrackRollback
@@ -12,6 +12,8 @@ import { invalidateTrackVersionsCache, fetchTrackVersions } from './useTrackVers
  * Под капотом использует API установки мастер-версии и централизованное логирование.
  */
 export const useTrackRollback = (trackId: string | null | undefined) => {
+  const queryClient = useQueryClient();
+
   const rollbackToVersion = useCallback(async (versionId: string) => {
     if (!trackId) {
       logError('Rollback failed: missing trackId', new Error('Invalid trackId'), 'useTrackRollback', { versionId });
@@ -25,14 +27,13 @@ export const useTrackRollback = (trackId: string | null | undefined) => {
       const result = await setMasterVersionApi(trackId, versionId);
       unwrapResult(result);
 
-      // Обновить кэш версий, чтобы UI сразу отразил изменения
-      invalidateTrackVersionsCache(trackId);
-      await fetchTrackVersions(trackId, { force: true });
+      // Invalidate the query for this track's variants to trigger a refetch
+      await queryClient.invalidateQueries({ queryKey: trackVersionsQueryKeys.list(trackId) });
 
       toast.success('Откат выполнен: выбрана указанная версия как главная');
       logInfo('Rollback to version completed', 'useTrackRollback', { trackId, versionId });
     });
-  }, [trackId]);
+  }, [trackId, queryClient]);
 
   return { rollbackToVersion };
 };

@@ -4,7 +4,7 @@
  * Modernized with enhanced UI components and animations
  */
 
-import { useTrackVersions } from '@/features/tracks/hooks';
+import { useTrackVariants } from '@/features/tracks/hooks';
 import { Card, CardContent } from '@/components/ui/card';
 import { EnhancedBadge } from '@/components/ui/enhanced-badge';
 import { EnhancedButton } from '@/components/ui/enhanced-button';
@@ -19,7 +19,7 @@ interface TrackVersionsProps {
 }
 
 export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
-  const { allVersions = [], isLoading } = useTrackVersions(trackId);
+  const { data: variantsData, isLoading } = useTrackVariants(trackId);
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
   const pause = useAudioPlayerStore((state) => state.pause);
   const currentTrack = useAudioPlayerStore((state) => state.currentTrack);
@@ -36,21 +36,29 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
     );
   }
 
-  if (allVersions.length === 0) {
+  if (!variantsData || (variantsData.variants.length === 0 && !variantsData.mainTrack.audioUrl)) {
     return null;
   }
 
-  // ✅ FIX: Helper for consistent version number calculation
-  const getDisplayVersionNumber = (index: number): number => {
-    // Use array index for version numbering (0 -> V1, 1 -> V2, etc.)
-    return index + 1;
-  };
+  // Combine main track and variants into a single list for rendering
+  const allVersions = [
+    { ...variantsData.mainTrack, isPreferredVariant: !variantsData.preferredVariant, variantIndex: 0 },
+    ...variantsData.variants,
+  ].map((v, i) => ({
+    ...v,
+    id: v.id || `${trackId}-${i}`,
+    title: v.title || variantsData.mainTrack.title,
+    audio_url: v.audioUrl,
+    cover_url: v.coverUrl,
+    isMasterVersion: v.isPreferredVariant,
+    versionNumber: i + 1,
+  }));
 
-  const handlePlayVersion = (version: typeof allVersions[0]) => {
+  const handlePlayVersion = (version: (typeof allVersions)[0]) => {
     if (!version.audio_url) return;
 
     const isCurrentTrack = currentTrack?.id === version.id;
-    
+
     if (isCurrentTrack && isPlaying) {
       pause();
     } else {
@@ -61,7 +69,7 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
         cover_url: version.cover_url || undefined,
         duration: version.duration || undefined,
         lyrics: version.lyrics || undefined,
-        versionNumber: getDisplayVersionNumber(allVersions.indexOf(version)),
+        versionNumber: version.versionNumber,
       });
     }
   };

@@ -3,8 +3,8 @@ import { Heart, Loader2 } from "@/utils/iconImports";
 import { LikesService } from "@/services/likes.service";
 import { supabase } from "@/integrations/supabase/client";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
-import { TrackCard, getTrackWithVersions } from "@/features/tracks";
-import { primeTrackVersionsCache } from "@/features/tracks/hooks/useTrackVersions";
+import { TrackCard, getTrackWithVariants, trackVersionsQueryKeys } from "@/features/tracks";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { convertToAudioPlayerTrack } from "@/types/track";
 import type { TrackStatus } from "@/services/api.service";
@@ -31,6 +31,7 @@ const Favorites = () => {
   const [likedTracks, setLikedTracks] = useState<LikedTrack[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const playTrackWithQueue = useAudioPlayerStore((state) => state.playTrackWithQueue);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     loadLikedTracks();
@@ -62,46 +63,30 @@ const Favorites = () => {
   const handleTrackClick = async (track: LikedTrack) => {
     if (!track.audio_url || track.status !== 'completed') return;
 
-    // Load track with all versions
-    const tracksWithVersions = await getTrackWithVersions(track.id);
-    primeTrackVersionsCache(track.id, tracksWithVersions);
+    const variantsData = await getTrackWithVariants(track.id);
+    if (variantsData) {
+      queryClient.setQueryData(trackVersionsQueryKeys.list(track.id), variantsData);
 
-    if (tracksWithVersions.length > 0) {
-      const toAudioTrack = (version: typeof tracksWithVersions[number]) => {
-        const audio = convertToAudioPlayerTrack({
-          id: version.id,
-          title: version.title,
-          audio_url: version.audio_url ?? null,
-          cover_url: version.cover_url ?? null,
-          duration: version.duration ?? null,
-          duration_seconds: version.duration ?? null,
-          style_tags: version.style_tags ?? null,
-          lyrics: version.lyrics ?? null,
-          status: version.status ?? 'completed',
-        });
+      const allVersions = [variantsData.mainTrack, ...variantsData.variants];
+      const audioTracks = allVersions.map(v => convertToAudioPlayerTrack({
+        id: v.id,
+        title: v.title,
+        audio_url: v.audioUrl ?? null,
+        cover_url: v.coverUrl ?? null,
+        duration: v.duration ?? null,
+        duration_seconds: v.duration ?? null,
+        style_tags: v.styleTags ?? null,
+        lyrics: v.lyrics ?? null,
+        status: v.status ?? 'completed',
+      })).filter((t): t is NonNullable<typeof t> => t !== null);
 
-        if (!audio) {
-          return null;
-        }
+      const preferredOrMain = variantsData.preferredVariant || variantsData.mainTrack;
+      const startTrack = audioTracks.find(t => t.id === preferredOrMain.id);
 
-        return {
-          ...audio,
-          parentTrackId: version.parentTrackId ?? track.id,
-          versionNumber: version.versionNumber,
-          isMasterVersion: version.isMasterVersion,
-          sourceVersionNumber: version.sourceVersionNumber,
-        };
-      };
-
-      const audioTracks = tracksWithVersions.map(toAudioTrack).filter((t): t is NonNullable<typeof t> => t !== null);
-      const masterOrMain = tracksWithVersions.find(t => t.isMasterVersion) || tracksWithVersions[0];
-      const masterAudio = masterOrMain ? toAudioTrack(masterOrMain) : null;
-
-      if (masterAudio && audioTracks.length > 0) {
-        playTrackWithQueue(masterAudio, audioTracks);
+      if (startTrack) {
+        playTrackWithQueue(startTrack, audioTracks);
       }
     } else {
-      // Fallback to single track
       playTrackWithQueue({
         id: track.id,
         title: track.title,

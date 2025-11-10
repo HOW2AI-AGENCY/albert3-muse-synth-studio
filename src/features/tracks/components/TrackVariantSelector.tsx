@@ -1,8 +1,8 @@
-import React, { useCallback, useState, useRef, useEffect } from 'react';
+import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import { Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useTrackVersions } from '@/features/tracks/hooks';
+import { useTrackVariants, useSetPreferredVariant } from '@/features/tracks/hooks';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { logError } from '@/utils/logger';
@@ -14,23 +14,21 @@ interface TrackVariantSelectorProps {
   className?: string;
 }
 
-export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({ 
+export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
   trackId,
   currentVersionIndex,
   onVersionChange,
-  className 
+  className,
 }) => {
-  const { versionCount, allVersions, isLoading, setMasterVersion } = useTrackVersions(trackId, true);
+  const { data: variantsData, isLoading } = useTrackVariants(trackId, true);
+  const { mutate: setPreferred, isPending: isSettingMaster } = useSetPreferredVariant();
   const { toast } = useToast();
-  const [isSettingMaster, setIsSettingMaster] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Закрытие при клике вне блока
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (!containerRef.current) return;
-      if (!containerRef.current.contains(event.target as Node)) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
@@ -38,69 +36,68 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Переключение на следующую версию
-  // Удалено как неиспользуемое: смена версии реализована кнопками ниже
+  const allVersions = useMemo(() => {
+    if (!variantsData) return [];
+    const { mainTrack, variants } = variantsData;
+    const mainAsVariant = {
+      ...mainTrack,
+      isPreferredVariant: variants.length > 0 ? !variants.some(v => v.isPreferredVariant) : true,
+    };
+    return [mainAsVariant, ...variants];
+  }, [variantsData]);
 
-  // Установка текущей версии как мастер-версии
-  const handleSetMaster = useCallback(async (e: React.MouseEvent) => {
+  const handleSetMaster = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    
-    if (isSettingMaster || isLoading) return;
-    
+
+    if (isSettingMaster || isLoading || !variantsData) return;
+
     const currentVersion = allVersions[currentVersionIndex];
-    // Нельзя назначать основную версию (sourceVersionNumber === 0) как мастер,
-    // так как основная версия живёт в таблице tracks, а мастер-флаг хранится в track_versions
-    const isMainVersion = currentVersion?.sourceVersionNumber === 0;
-    if (!currentVersion || currentVersion.isMasterVersion || isMainVersion) {
+    const isMainVersion = currentVersionIndex === 0;
+
+    if (!currentVersion || currentVersion.isPreferredVariant || isMainVersion) {
       if (isMainVersion) {
         toast({
           title: 'Недоступно',
-          description: 'Основная версия не может быть назначена как мастер напрямую',
+          description: 'Основная версия не может быть назначена как мастер напрямую.',
         });
       }
       return;
     }
-    
-    setIsSettingMaster(true);
-    
-    try {
-      // Централизованная установка мастер-версии через useTrackVersions
-      await setMasterVersion(currentVersion.id);
-      
-      toast({
-        title: 'Мастер-версия установлена',
-        description: `Версия ${currentVersionIndex + 1} теперь основная`,
-      });
-    } catch (error) {
-      logError('Failed to set master version', error as Error, 'TrackVariantSelector');
-      toast({
-        title: 'Ошибка',
-        description: 'Не удалось установить мастер-версию',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSettingMaster(false);
-    }
-  }, [currentVersionIndex, allVersions, setMasterVersion, isSettingMaster, isLoading, toast]);
 
-  // ✅ FIX: Не показываем селектор если меньше 2 версий
-  // Используем versionCount (правильно фильтрованное количество) вместо allVersions.length
-  const totalVersions = versionCount + 1;
+    setPreferred({ trackId, variantId: currentVersion.id! }, {
+      onSuccess: () => {
+        toast({
+          title: 'Мастер-версия установлена',
+          description: `Версия ${currentVersionIndex + 1} теперь основная.`,
+        });
+      },
+      onError: (error) => {
+        logError('Failed to set master version', error, 'TrackVariantSelector');
+        toast({
+          title: 'Ошибка',
+          description: 'Не удалось установить мастер-версию.',
+          variant: 'destructive',
+        });
+      }
+    });
+  }, [currentVersionIndex, allVersions, setPreferred, isSettingMaster, isLoading, toast, trackId, variantsData]);
+
+  const totalVersions = allVersions.length;
 
   if (isLoading || totalVersions < 2) {
     return null;
   }
+
   const displayIndex = currentVersionIndex + 1;
   const currentVersion = allVersions[currentVersionIndex];
-  const isMasterVersion = currentVersion?.isMasterVersion;
-  const isMainVersion = currentVersion?.sourceVersionNumber === 0;
+  const isMasterVersion = currentVersion?.isPreferredVariant;
+  const isMainVersion = currentVersionIndex === 0;
 
   const isActive = (index: number) => index === currentVersionIndex;
 
   return (
     <div ref={containerRef} className="flex items-center gap-2">
-      {/* ✅ REDESIGNED: Master version button with better visibility */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -131,7 +128,6 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
         </TooltipContent>
       </Tooltip>
 
-      {/* ✅ REDESIGNED: Version selector with better UX */}
       <div
         className={cn("flex items-center gap-1.5", className)}
         role="group"
@@ -148,7 +144,6 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
           }
         }}
       >
-        {/* Collapsed state - single badge */}
         {!isOpen && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -186,13 +181,12 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
           </Tooltip>
         )}
 
-        {/* Expanded state - all version buttons */}
         {isOpen && (
           <div className="flex items-center gap-2 transition-all animate-in fade-in slide-in-from-right-2 duration-300">
             {Array.from({ length: totalVersions }).map((_, index) => {
               const isVersionActive = isActive(index);
-              const versionIsIndex = allVersions[index];
-              const isVersionMaster = versionIsIndex?.isMasterVersion;
+              const versionAtIndex = allVersions[index];
+              const isVersionMaster = versionAtIndex?.isPreferredVariant;
 
               return (
                 <Tooltip key={index}>
@@ -203,7 +197,6 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
                       onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
-                        // ✅ FIX: Используем корректный индекс версии
                         const targetIndex = Math.min(index, totalVersions - 1);
                         onVersionChange(targetIndex);
                         setIsOpen(false);
@@ -225,14 +218,14 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
                       )}
                     >
                       {index + 1}
-                      {isVersionMaster && (
+                      {isVersionMaster && index !== 0 && (
                         <Star className="absolute -top-1 -right-1 h-3 w-3 fill-amber-400 text-amber-400" />
                       )}
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="left" className="font-medium">
                     {index === 0 ? '📀 Оригинал' : `🎵 Вариант ${index}`}
-                    {isVersionMaster && ' ⭐'}
+                    {isVersionMaster && index !== 0 && ' ⭐'}
                   </TooltipContent>
                 </Tooltip>
               );
