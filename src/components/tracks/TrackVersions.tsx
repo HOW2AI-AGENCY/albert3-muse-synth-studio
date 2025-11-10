@@ -1,18 +1,22 @@
 /**
- * Track Versions Component
- * Displays all versions of a track (main + variants)
- * Modernized with enhanced UI components and animations
+ * Track Versions Component - REFACTORED
+ *
+ * This version is refactored to directly use the new `useTrackVariants` hook
+ * and its data structure (`mainTrack`, `variants`), removing the legacy compatibility layer.
  */
 
+import { useState } from 'react';
+import { useState } from 'react';
 import { useTrackVariants } from '@/features/tracks/hooks';
 import { Card, CardContent } from '@/components/ui/card';
 import { EnhancedBadge } from '@/components/ui/enhanced-badge';
 import { EnhancedButton } from '@/components/ui/enhanced-button';
-import { Play, Pause, Music, Headphones } from 'lucide-react';
+import { Play, Pause, Music, Headphones, Edit } from 'lucide-react';
 import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
 import { formatTime } from '@/utils/formatters';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { EditVersionDialog } from './EditVersionDialog';
 
 interface TrackVersionsProps {
   trackId: string;
@@ -24,6 +28,7 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
   const pause = useAudioPlayerStore((state) => state.pause);
   const currentTrack = useAudioPlayerStore((state) => state.currentTrack);
   const isPlaying = useAudioPlayerStore((state) => state.isPlaying);
+  const [editingVersion, setEditingVersion] = useState<(typeof allVersions)[0] | null>(null);
 
   if (isLoading) {
     return (
@@ -40,22 +45,10 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
     return null;
   }
 
-  // Combine main track and variants into a single list for rendering
-  const allVersions = [
-    { ...variantsData.mainTrack, isPreferredVariant: !variantsData.preferredVariant, variantIndex: 0 },
-    ...variantsData.variants,
-  ].map((v, i) => ({
-    ...v,
-    id: v.id || `${trackId}-${i}`,
-    title: v.title || variantsData.mainTrack.title,
-    audio_url: v.audioUrl,
-    cover_url: v.coverUrl,
-    isMasterVersion: v.isPreferredVariant,
-    versionNumber: i + 1,
-  }));
+  const allVersions = [variantsData.mainTrack, ...variantsData.variants];
 
   const handlePlayVersion = (version: (typeof allVersions)[0]) => {
-    if (!version.audio_url) return;
+    if (!version.audioUrl) return;
 
     const isCurrentTrack = currentTrack?.id === version.id;
 
@@ -63,13 +56,13 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
       pause();
     } else {
       playTrack({
-        id: version.id,
+        id: version.id!,
         title: version.title || 'Untitled',
-        audio_url: version.audio_url,
-        cover_url: version.cover_url || undefined,
+        audio_url: version.audioUrl,
+        cover_url: version.coverUrl || undefined,
         duration: version.duration || undefined,
         lyrics: version.lyrics || undefined,
-        versionNumber: version.versionNumber,
+        versionNumber: allVersions.indexOf(version) + 1,
       });
     }
   };
@@ -96,10 +89,10 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
 
       <div className="space-y-2">
         {allVersions.map((version, index) => {
-          const isMain = index === 0; // First version is considered main
+          const isMain = index === 0;
           const isCurrentVersion = currentTrack?.id === version.id;
           const isVersionPlaying = isCurrentVersion && isPlaying;
-          const displayNumber = getDisplayVersionNumber(index);
+          const displayNumber = index + 1;
 
           return (
             <Card
@@ -111,37 +104,29 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
                 "relative overflow-hidden"
               )}
             >
-              {/* Background gradient for main version */}
               {isMain && (
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent pointer-events-none" />
               )}
               
               <CardContent className="p-3 relative">
                 <div className="flex items-center gap-3">
-                  {/* Version Badge */}
                   <div className="absolute top-2 right-2 z-10">
                     <EnhancedBadge
                       variant={isMain ? "success" : "secondary"}
-                      className={cn(
-                        "text-xs font-medium transition-all duration-300",
-                        isMain && "shadow-sm"
-                      )}
+                      className={cn("text-xs font-medium transition-all duration-300", isMain && "shadow-sm")}
                     >
                       {isMain ? "Основная" : `V${displayNumber}`}
                     </EnhancedBadge>
                   </div>
 
-                  {/* Cover with Enhanced Design */}
                   <div className="relative flex-shrink-0">
                     <div className={cn(
                       "w-12 h-12 rounded-lg overflow-hidden bg-gradient-to-br transition-all duration-300 group-hover:shadow-md",
-                      isMain
-                        ? "from-primary/30 to-accent-pink/20 shadow-sm"
-                        : "from-secondary/20 to-secondary/5"
+                      isMain ? "from-primary/30 to-accent-pink/20 shadow-sm" : "from-secondary/20 to-secondary/5"
                     )}>
-                      {version.cover_url ? (
+                      {version.coverUrl ? (
                         <img
-                          src={version.cover_url}
+                          src={version.coverUrl}
                           alt={version.title || 'Version cover'}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
@@ -152,24 +137,19 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
                       )}
                     </div>
                     
-                    {/* Playing Animation */}
                     {isVersionPlaying && (
                       <div className="absolute -bottom-1 -right-1 flex gap-0.5">
                         {[1, 2, 3].map((i) => (
                           <div
                             key={i}
                             className="w-1 bg-primary rounded-full animate-pulse"
-                            style={{
-                              height: `${Math.random() * 8 + 4}px`,
-                              animationDelay: `${i * 0.1}s`,
-                            }}
+                            style={{ height: `${Math.random() * 8 + 4}px`, animationDelay: `${i * 0.1}s` }}
                           />
                         ))}
                       </div>
                     )}
                   </div>
                   
-                  {/* Enhanced Info Section */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <p className={cn(
@@ -177,13 +157,10 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
                         isMain ? "text-foreground" : "text-foreground/90",
                         isCurrentVersion && "text-primary font-semibold"
                       )}>
-                        {version.title || 'Без названия'}
+                        {version.name || version.title || 'Без названия'}
                       </p>
-                      
-                      {/* Remove preferred variant indicator since property doesn't exist */}
                     </div>
                     
-                    {/* Metadata Row */}
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
                       {version.duration && (
                         <span className="flex items-center gap-1">
@@ -192,44 +169,52 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
                         </span>
                       )}
                       
-                      {/* Playing Status */}
                       {isVersionPlaying && (
                         <EnhancedBadge variant="info" className="text-xs px-1.5 py-0">
                           Играет
                         </EnhancedBadge>
                       )}
-                      
-                      {/* Remove audio quality indicator since property doesn't exist */}
                     </div>
+                    {version.comment && <p className="text-xs text-muted-foreground mt-1 truncate">{version.comment}</p>}
                   </div>
                   
-                  {/* Enhanced Play Button */}
-                  <EnhancedButton
-                    size="icon-sm"
-                    variant={isVersionPlaying ? "default" : "outline"}
-                    onClick={() => handlePlayVersion(version)}
-                    disabled={!version.audio_url}
-                    className={cn(
-                      "h-8 w-8 transition-all duration-300",
-                      isVersionPlaying && "shadow-lg scale-110",
-                      !version.audio_url && "opacity-50 cursor-not-allowed"
-                    )}
-                    title={isVersionPlaying ? "Пауза" : "Воспроизвести"}
-                  >
-                    {isVersionPlaying ? (
-                      <Pause className="h-3 w-3" />
-                    ) : (
-                      <Play className="h-3 w-3" />
-                    )}
-                  </EnhancedButton>
+                  <div className="flex items-center gap-2">
+                    <EnhancedButton
+                      size="icon-sm"
+                      variant="ghost"
+                      className="h-8 w-8"
+                      onClick={() => setEditingVersion(version)}
+                    >
+                      <Edit className="h-3 w-3" />
+                    </EnhancedButton>
+                    <EnhancedButton
+                      size="icon-sm"
+                      variant={isVersionPlaying ? "default" : "outline"}
+                      onClick={() => handlePlayVersion(version)}
+                      disabled={!version.audioUrl}
+                      className={cn(
+                        "h-8 w-8 transition-all duration-300",
+                        isVersionPlaying && "shadow-lg scale-110",
+                        !version.audioUrl && "opacity-50 cursor-not-allowed"
+                      )}
+                      title={isVersionPlaying ? "Пауза" : "Воспроизвести"}
+                    >
+                      {isVersionPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                    </EnhancedButton>
+                  </div>
                 </div>
-                
-                {/* Progress Bar removed due to missing currentTime property in AudioPlayerTrack */}
               </CardContent>
             </Card>
           );
         })}
       </div>
+      {editingVersion && (
+        <EditVersionDialog
+          open={!!editingVersion}
+          onOpenChange={(open) => !open && setEditingVersion(null)}
+          version={editingVersion}
+        />
+      )}
     </div>
   );
 };

@@ -196,6 +196,33 @@ export async function deleteTrackVersion(versionId: string): Promise<Result<Trac
   );
 }
 
+/**
+ * ✅ NEW: Update track version details (name and comment)
+ */
+export async function updateTrackVersionDetails(
+  versionId: string,
+  details: { name?: string; comment?: string }
+): Promise<Result<TrackVersionRow>> {
+  return handleTrackVersionOperation(
+    async () =>
+      supabase
+        .from('track_versions')
+        .update({
+          name: details.name,
+          comment: details.comment,
+        })
+        .eq('id', versionId)
+        .select()
+        .single<TrackVersionRow>(),
+    {
+      action: 'updateDetails',
+      errorMessage: 'Failed to update track version details',
+      payload: { versionId, details },
+      notFoundError: () => new TrackVersionNotFoundError(`${TRACK_VERSIONS_CONTEXT}.updateDetails`, versionId),
+    }
+  );
+}
+
 interface SunoMetadataEntry {
   id?: string;
   audioUrl?: string;
@@ -243,6 +270,10 @@ function isSunoDataArray(data: unknown): data is SunoTrackData[] {
 export interface TrackVariant {
   /** Unique ID of this variant (from track_versions.id) */
   id: string;
+  /** Custom name for the variant */
+  name?: string | null;
+  /** User comment for the variant */
+  comment?: string | null;
   /** ID of the parent track (from tracks table) */
   parentTrackId: string;
   /** Variant number from DB (1, 2, 3...) - ALWAYS >= 1 */
@@ -378,6 +409,8 @@ export async function getTrackWithVariants(trackId: string): Promise<TrackWithVa
     // Convert database rows to TrackVariant interface
     const variants: TrackVariant[] = (dbVersions || []).map(version => ({
       id: version.id,
+      name: version.name,
+      comment: version.comment,
       parentTrackId: mainTrack.id,
       variantIndex: version.variant_index ?? 1,
       isPreferredVariant: Boolean(version.is_preferred_variant),
