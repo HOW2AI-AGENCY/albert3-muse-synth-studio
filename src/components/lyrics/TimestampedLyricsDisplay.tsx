@@ -29,11 +29,24 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
     const result: LyricLine[] = [];
     let currentLine: TimestampedWord[] = [];
     lyricsData.forEach((word) => {
-      currentLine.push(word);
-      if (word.word.includes('\n')) {
-        result.push({
-          id: result.length,
-          words: currentLine,
+      if (word.word === '\n') {
+        if (currentLine.length > 0) {
+          result.push({
+            id: result.length,
+            words: currentLine,
+            startTime: currentLine[0].startS,
+            endTime: currentLine[currentLine.length - 1].endS,
+          });
+          currentLine = [];
+        }
+      } else {
+        currentLine.push(word);
+      }
+    });
+    if (currentLine.length > 0) {
+      result.push({
+        id: result.length,
+        words: currentLine,
           startTime: currentLine[0].startS,
           endTime: currentLine[currentLine.length - 1].endS,
         });
@@ -88,9 +101,10 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
                 >
                   {line.words.map((word, wordIndex) => {
                     const progress = isActive ? Math.max(0, Math.min(1, (currentTime - word.startS) / (word.endS - word.startS))) : 0;
-                    const cleanedWord = word.word.replace(/\\n/g, ' ');
+                    const cleanedWord = word.word.replace(/[\n\r]/g, ' ').trim();
+                    if (!cleanedWord) return null;
                     return (
-                      <span key={wordIndex} className="relative inline-block">
+                      <span key={wordIndex} className="relative inline-block mr-2">
                         <span
                           className="absolute top-0 left-0 h-full w-full overflow-hidden bg-gradient-to-r from-primary to-primary-focus bg-clip-text text-transparent"
                           style={{

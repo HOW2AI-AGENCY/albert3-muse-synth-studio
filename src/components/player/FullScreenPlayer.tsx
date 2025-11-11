@@ -17,11 +17,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { logger } from "@/utils/logger";
-import TimestampedLyricsDisplay from '@/components/lyrics/TimestampedLyricsDisplay';
-import { useTimestampedLyrics } from '@/hooks/useTimestampedLyrics';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { MobileProgressBar } from './mobile/MobileProgressBar';
-import { LyricsSkeleton } from "./LyricsSkeleton";
+import { LyricsDisplay } from './LyricsDisplay';
 
 interface FullScreenPlayerProps {
   onMinimize: () => void;
@@ -42,12 +40,6 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
   const playNext = useAudioPlayerStore((state) => state.playNext);
   const playPrevious = useAudioPlayerStore((state) => state.playPrevious);
   const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
-
-  const { data: lyricsData, isLoading } = useTimestampedLyrics({
-    taskId: currentTrack?.suno_task_id,
-    audioId: currentTrack?.id,
-    enabled: !!(currentTrack?.suno_task_id && currentTrack?.id),
-  });
 
   const { vibrate } = useHapticFeedback();
   const { toast } = useToast();
@@ -196,7 +188,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
           </Button>
 
           <div className="flex gap-2">
-            {lyricsData?.alignedWords && lyricsData.alignedWords.length > 0 && (
+            {currentTrack?.suno_task_id && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -296,17 +288,11 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
 
         {showLyrics && (
           <div className="mb-4 animate-fade-in max-h-64 h-64 flex items-center justify-center">
-            {isLoading ? (
-              <LyricsSkeleton className="w-full" />
-            ) : (
-              lyricsData?.alignedWords && lyricsData.alignedWords.length > 0 && (
-                <TimestampedLyricsDisplay
-                  lyricsData={lyricsData.alignedWords}
-                  currentTime={currentTime}
-                  className="h-64"
-                />
-              )
-            )}
+            <LyricsDisplay
+              taskId={currentTrack.suno_task_id ?? ''}
+              audioId={currentTrack.id}
+              fallbackLyrics={currentTrack.lyrics ?? ''}
+            />
           </div>
         )}
 
