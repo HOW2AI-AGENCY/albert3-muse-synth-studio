@@ -17,8 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { logger } from "@/utils/logger";
-import { TimestampedLyricsDisplay } from './TimestampedLyricsDisplay';
-import { LyricsMobile } from './LyricsMobile';
+import TimestampedLyricsDisplay from '@/components/lyrics/TimestampedLyricsDisplay';
 import { useTimestampedLyrics } from '@/hooks/useTimestampedLyrics';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { MobileProgressBar } from './mobile/MobileProgressBar';
@@ -29,14 +28,9 @@ interface FullScreenPlayerProps {
 }
 
 export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => {
-  // ✅ Zustand store with optimized selectors
   const currentTrack = useCurrentTrack();
   const isPlaying = useIsPlaying();
   const volume = useVolume();
-
-  // ⚠️ EXCEPTION: currentTime needed ONLY for lyrics components (they don't subscribe internally)
-  // Progress bar no longer needs this (handled by MobileProgressBar)
-  // TODO: Refactor lyrics components to subscribe internally in future
   const currentTime = useAudioPlayerStore((state) => state.currentTime);
 
   const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
@@ -49,7 +43,6 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
   const playPrevious = useAudioPlayerStore((state) => state.playPrevious);
   const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
 
-  // Получаем timestamped lyrics
   const { data: lyricsData, isLoading } = useTimestampedLyrics({
     taskId: currentTrack?.suno_task_id,
     audioId: currentTrack?.id,
@@ -61,10 +54,8 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
   const [isMuted, setIsMuted] = useState(false);
   const [showLyrics, setShowLyrics] = useState(true);
 
-  // Определяем мобильное устройство
   const isMobile = useMediaQuery('(max-width: 768px)');
 
-  // ✅ FIX: Sync isMuted when volume changes (keyboard shortcuts, etc.)
   useEffect(() => {
     const shouldBeMuted = volume === 0;
     if (isMuted !== shouldBeMuted) {
@@ -72,7 +63,6 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
     }
   }, [volume, isMuted]);
 
-  // Показываем предупреждение о низком качестве синхронизации
   useEffect(() => {
     if (lyricsData?.hootCer && lyricsData.hootCer > 0.3) {
       toast({
@@ -83,10 +73,8 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
     }
   }, [lyricsData, toast]);
 
-  // ============= ВЕРСИИ ТРЕКОВ =============
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
   
-  // Always call the hook, but pass null if no currentTrack
   const { isLiked, toggleLike } = useTrackLike(
     currentTrack?.id ?? "", 
     0
@@ -113,7 +101,6 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
 
   const handleVolumeChange = useCallback((value: number[]) => {
     setVolume(value[0]);
-    // ✅ FIX: Remove setIsMuted call - useEffect handles this automatically
   }, [setVolume]);
 
   const toggleMute = useCallback(() => {
@@ -132,8 +119,8 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: currentTrack?.title || '', // Use optional chaining for currentTrack
-          text: `Слушай этот трек: ${currentTrack?.title || ''}`, // Use optional chaining
+          title: currentTrack?.title || '',
+          text: `Слушай этот трек: ${currentTrack?.title || ''}`,
           url: window.location.href,
         });
       } catch (error) {
@@ -146,12 +133,11 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
         description: "Ссылка на трек скопирована в буфер обмена",
       });
     }
-  }, [vibrate, currentTrack?.title, toast]); // Add currentTrack to dependencies
+  }, [vibrate, currentTrack?.title, toast]);
 
   const handleDownload = useCallback(() => {
     vibrate('medium');
     if (currentTrack?.audio_url) {
-      // Proper download using <a> element instead of window.open
       const a = document.createElement('a');
       a.href = currentTrack.audio_url;
       a.download = `${currentTrack.title}.mp3`;
@@ -173,8 +159,8 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
   }, [vibrate, isLiked, toggleLike]);
 
   const swipeRef = useSwipeGesture({
-    onSwipeLeft: handleNext,      // Swipe left = next track
-    onSwipeRight: handlePrevious, // Swipe right = previous track
+    onSwipeLeft: handleNext,
+    onSwipeRight: handlePrevious,
     onSwipeDown: useCallback(() => {
       vibrate('medium');
       onMinimize();
@@ -182,8 +168,6 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
   });
 
   if (!currentTrack) return null;
-
-  // const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
     <div
@@ -201,7 +185,6 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
         <h1>Now playing: {currentTrack?.title || 'No track selected'}</h1>
       </VisuallyHidden.Root>
       <div className="flex flex-col min-h-screen p-4 sm:p-6">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6 sm:mb-8 animate-slide-up">
           <Button
             variant="ghost"
@@ -213,8 +196,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
           </Button>
 
           <div className="flex gap-2">
-            {/* Кнопка управления лирикой */}
-            {lyricsData && lyricsData.alignedWords && lyricsData.alignedWords.length > 0 && (
+            {lyricsData?.alignedWords && lyricsData.alignedWords.length > 0 && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -277,7 +259,6 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
           </div>
         </div>
 
-        {/* Album Art */}
         <div className="flex-1 flex items-center justify-center mb-6 sm:mb-8 px-4">
           <div className="relative w-full max-w-sm aspect-square rounded-3xl overflow-hidden shadow-glow-primary animate-scale-in hover:scale-105 transition-all duration-500 group">
             {currentTrack.cover_url ? (
@@ -297,13 +278,11 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
           </div>
         </div>
 
-        {/* Track Info */}
         <div className="text-center mb-4 sm:mb-6 px-4 animate-slide-up" key={currentTrack.id}>
           <div className="flex items-center justify-center gap-2 mb-2 animate-fade-in">
             <h2 className="text-xl sm:text-2xl font-bold text-gradient-primary line-clamp-2 transition-all duration-300">
               {currentTrack.title}
             </h2>
-            {/* Индикатор текущей версии */}
             {hasVersions && (
               <Badge variant="secondary" className="text-sm animate-scale-in">
                 V{currentTrack.versionNumber ?? currentVersionIndex + 1}
@@ -315,46 +294,27 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
           </p>
         </div>
 
-        {/* Улучшенный дисплей лирики с синхронизацией */}
         {showLyrics && (
           <div className="mb-4 animate-fade-in max-h-64 h-64 flex items-center justify-center">
             {isLoading ? (
               <LyricsSkeleton className="w-full" />
             ) : (
               lyricsData?.alignedWords && lyricsData.alignedWords.length > 0 && (
-                <>
-                  {isMobile ? (
-                    <LyricsMobile
-                      timestampedLyrics={lyricsData.alignedWords}
-                      currentTime={currentTime}
-                      onSeek={seekTo}
-                      togglePlayPause={togglePlayPause}
-                      coverUrl={currentTrack.cover_url}
-                      className="h-64"
-                      showControls={false}
-                    />
-                  ) : (
-                    <TimestampedLyricsDisplay
-                      timestampedLyrics={lyricsData.alignedWords}
-                      currentTime={currentTime}
-                      onSeek={seekTo}
-                      coverUrl={currentTrack.cover_url}
-                      className="h-64"
-                    />
-                  )}
-                </>
+                <TimestampedLyricsDisplay
+                  lyricsData={lyricsData.alignedWords}
+                  currentTime={currentTime}
+                  className="h-64"
+                />
               )
             )}
           </div>
         )}
 
-        {/* Progress Bar - ✅ OPTIMIZED: Internal subscriptions prevent parent re-renders */}
         <MobileProgressBar
           onSeek={handleSeek}
           className="mb-2 px-4 animate-slide-up"
         />
 
-        {/* Main Controls */}
         <div className="flex items-center justify-center gap-4 sm:gap-6 mb-4 sm:mb-6 px-4 animate-slide-up">
           <Button
             variant="ghost"
@@ -387,7 +347,6 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
           </Button>
         </div>
 
-        {/* Secondary Controls */}
         <div className="flex items-center justify-between mb-4 sm:mb-6 px-4 animate-slide-up">
           <Button
             variant="ghost"
@@ -404,7 +363,6 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
             />
           </Button>
 
-          {/* ✅ P1-4 FIX: Show volume control on mobile (was hidden sm:flex) */}
           <div className="flex items-center gap-2 flex-1 max-w-xs mx-4">
             <Button
               variant="ghost"
