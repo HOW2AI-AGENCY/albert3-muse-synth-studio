@@ -17,7 +17,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Music, VolumeX, Volume1, Volume2, X, Mic2, AlertCircle } from '@/utils/iconImports';
 import { useTimestampedLyrics } from '@/hooks/useTimestampedLyrics';
 import TimestampedLyricsDisplay from '@/components/lyrics/TimestampedLyricsDisplay';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { LyricsSkeleton } from '../LyricsSkeleton';
 
 export interface DesktopPlayerLayoutProps {
@@ -294,9 +294,12 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
       </div>
     </div>
     <Dialog open={showKaraoke} onOpenChange={setShowKaraoke}>
-      <DialogContent className="max-w-4xl h-[70vh] bg-background/80 backdrop-blur-md flex flex-col">
+      <DialogContent className="max-w-4xl h-[70vh] bg-background/80 backdrop-blur-md flex flex-col" aria-describedby="karaoke-description">
         <DialogHeader>
           <DialogTitle>Караоке: {track.title}</DialogTitle>
+          <DialogDescription id="karaoke-description">
+            Синхронизированный текст песни с подсветкой слов в реальном времени
+          </DialogDescription>
         </DialogHeader>
         <div className="flex-1">
           {isLoading && <LyricsSkeleton />}
