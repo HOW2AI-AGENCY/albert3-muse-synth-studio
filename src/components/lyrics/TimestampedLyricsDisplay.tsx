@@ -88,16 +88,18 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
                 >
                   {line.words.map((word, wordIndex) => {
                     const progress = isActive ? Math.max(0, Math.min(1, (currentTime - word.startS) / (word.endS - word.startS))) : 0;
+                    const cleanedWord = word.word.replace(/\\n/g, ' ');
                     return (
                       <span key={wordIndex} className="relative inline-block">
-                        <span className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-primary to-primary-focus bg-no-repeat text-transparent bg-clip-text"
+                        <span
+                          className="absolute top-0 left-0 h-full w-full overflow-hidden bg-gradient-to-r from-primary to-primary-focus bg-clip-text text-transparent"
                           style={{
                             width: `${progress * 100}%`,
                           }}
                         >
-                          {word.word.replace(/\\n/g, ' ')}
+                          {cleanedWord}
                         </span>
-                         <span className="opacity-1">{word.word.replace(/\\n/g, ' ')}</span>
+                        <span>{cleanedWord}</span>
                       </span>
                     );
                   })}

@@ -12,7 +12,7 @@ import {
 import { logger } from "../_shared/logger.ts";
 
 const SUNO_API_KEY = Deno.env.get("SUNO_API_KEY");
-const SUNO_API_BASE_URL = "https://api.sunoapi.org";
+const SUNO_API_BASE_URL = Deno.env.get("SUNO_API_BASE_URL");
 
 const requestSchema = z.object({
   taskId: z.string().min(1, { message: "taskId is required." }),
@@ -38,8 +38,8 @@ export async function handler(req: Request) {
       );
     }
 
-    if (!SUNO_API_KEY) {
-      throw new Error("SUNO_API_KEY is not configured");
+    if (!SUNO_API_KEY || !SUNO_API_BASE_URL) {
+      throw new Error("Suno API credentials are not configured");
     }
 
     const rawBody = await req.json();
