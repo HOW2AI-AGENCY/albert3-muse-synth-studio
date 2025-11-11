@@ -133,7 +133,12 @@ export const TimestampedLyricsDisplay = React.memo<TimestampedLyricsDisplayProps
     }
 
     return (
-      <div className={cn('relative h-full overflow-hidden', className)}>
+      <div
+        className={cn('relative h-full overflow-hidden', className)}
+        role="region"
+        aria-label="Synchronized lyrics"
+        aria-live="polite"
+      >
         {/* Затемненная обложка на фоне */}
         {coverUrl && (
           <div className="absolute inset-0 overflow-hidden">
