@@ -174,10 +174,26 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
           if (track.selectedVersionId) {
             // Ensure versions are loaded for the parent track
             const parentId = track.parentTrackId || track.id;
+
+            // ✅ FIX: Store track ID before async operation to detect race conditions
+            const requestedTrackId = track.id;
+
             await get().loadVersions(parentId);
 
-            // After loading, get the latest state
+            // ✅ FIX: Check if user switched to another track during loading
             const updatedState = get();
+            const currentlyRequestedTrackId = updatedState.currentTrack?.id;
+
+            // If current track changed during loading, abort this playback request
+            if (currentlyRequestedTrackId && currentlyRequestedTrackId !== requestedTrackId && currentlyRequestedTrackId !== track.selectedVersionId) {
+              logInfo('Playback request aborted - user switched tracks', 'audioPlayerStore', {
+                requestedTrackId,
+                currentTrackId: currentlyRequestedTrackId,
+              });
+              return;
+            }
+
+            // After loading, get the latest state
             const selectedVersion = updatedState.availableVersions.find(v => v.id === track.selectedVersionId);
 
             if (selectedVersion && selectedVersion.audio_url) {

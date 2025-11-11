@@ -359,6 +359,7 @@ class RealtimeSubscriptionManager {
 
   /**
    * Log current subscription state (for debugging)
+   * ✅ Only uses console in development mode for formatted output
    */
   static logDebugInfo(): void {
     const stats = this.getStats();
@@ -369,12 +370,21 @@ class RealtimeSubscriptionManager {
       subscriptions,
     });
 
-    console.group('🔴 Realtime Subscription Manager');
-    console.log('Total Channels:', stats.total);
-    console.log('Total Listeners:', stats.totalListeners);
-    console.log('By Type:', stats.byType);
-    console.table(subscriptions);
-    console.groupEnd();
+    // ✅ FIX: Only use console in development for formatted debug output
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.group('🔴 Realtime Subscription Manager');
+      // eslint-disable-next-line no-console
+      console.log('Total Channels:', stats.total);
+      // eslint-disable-next-line no-console
+      console.log('Total Listeners:', stats.totalListeners);
+      // eslint-disable-next-line no-console
+      console.log('By Type:', stats.byType);
+      // eslint-disable-next-line no-console
+      console.table(subscriptions);
+      // eslint-disable-next-line no-console
+      console.groupEnd();
+    }
   }
 }
 
