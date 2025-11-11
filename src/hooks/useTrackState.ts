@@ -37,7 +37,7 @@ export const useTrackState = (track: Track, options: UseTrackStateOptions = {}) 
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
   const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
 
-  const { data: variantsData, isLoading } = useTrackVariants(track.id, loadVersions);
+  const { data: variantsData } = useTrackVariants(track.id, loadVersions);
 
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -93,7 +93,7 @@ export const useTrackState = (track: Track, options: UseTrackStateOptions = {}) 
       versionNumber: 1,
       like_count: 0, // Placeholder
     };
-    const variantsAsVersions = variants.map((v, i) => ({
+    const variantsAsVersions = variants.map((v) => ({
       id: v.id,
       title: mainTrack.title,
       audio_url: v.audioUrl,
@@ -107,6 +107,17 @@ export const useTrackState = (track: Track, options: UseTrackStateOptions = {}) 
     }));
     return [mainAsVersion, ...variantsAsVersions].filter(v => v.audio_url);
   }, [variantsData]);
+
+  const masterVersion: { id: string; versionNumber: number; isMasterVersion: boolean } | null = useMemo(() => {
+    const master = allVersions.find(v => v.isMasterVersion);
+    if (!master) return null;
+    
+    return {
+      id: master.id,
+      versionNumber: master.versionNumber,
+      isMasterVersion: true,
+    };
+  }, [allVersions]);
 
   // Sync with audio player
   useEffect(() => {

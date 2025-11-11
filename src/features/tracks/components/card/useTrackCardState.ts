@@ -124,6 +124,17 @@ export const useTrackCardState = (track: Track) => {
     };
   }, [allVersions, selectedVersionIndex, track]);
 
+  const masterVersion: { id: string; versionNumber: number; isMasterVersion: boolean } | null = useMemo(() => {
+    const master = allVersions.find(v => v.isMasterVersion);
+    if (!master) return null;
+    
+    return {
+      id: master.id,
+      versionNumber: master.versionNumber,
+      isMasterVersion: true,
+    };
+  }, [allVersions]);
+
   // ✅ Use like count from displayed version
   const { isLiked, likeCount, toggleLike } = useTrackVersionLike(
     displayedVersion?.id || null, 
@@ -213,7 +224,7 @@ export const useTrackCardState = (track: Track) => {
     isLiked,
     likeCount,
     versionCount: uiVersionCount,
-    masterVersion: variantsData?.preferredVariant,
+    masterVersion,
     displayedVersion,
     operationTargetId,
     operationTargetVersion,

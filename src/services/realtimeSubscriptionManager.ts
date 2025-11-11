@@ -52,7 +52,7 @@ class RealtimeSubscriptionManager {
    * @param listener - Callback when track updates
    * @returns Unsubscribe function
    */
-  static subscribeToTrack<T = any>(
+  static subscribeToTrack<T extends Record<string, any> = Record<string, any>>(
     trackId: string,
     listener: Listener<RealtimePostgresChangesPayload<T>>
   ): () => void {
@@ -90,7 +90,7 @@ class RealtimeSubscriptionManager {
               try {
                 l(payload);
               } catch (error) {
-                logger.error('Listener error in track subscription', error, 'RealtimeManager', { key });
+                logger.error('Listener error in track subscription', error as Error, 'RealtimeManager', { key });
               }
             });
           }
@@ -130,7 +130,7 @@ class RealtimeSubscriptionManager {
    * @param listener - Callback when tracks update
    * @returns Unsubscribe function
    */
-  static subscribeToUserTracks<T = any>(
+  static subscribeToUserTracks<T extends Record<string, any> = Record<string, any>>(
     userId: string,
     projectId: string | null,
     listener: Listener<RealtimePostgresChangesPayload<T>>
@@ -167,7 +167,7 @@ class RealtimeSubscriptionManager {
               try {
                 l(payload);
               } catch (error) {
-                logger.error('Listener error in user tracks subscription', error, 'RealtimeManager', {
+                logger.error('Listener error in user tracks subscription', error as Error, 'RealtimeManager', {
                   key,
                 });
               }
@@ -211,7 +211,7 @@ class RealtimeSubscriptionManager {
    * @param listener - Callback when versions change
    * @returns Unsubscribe function
    */
-  static subscribeToTrackVersions<T = any>(
+  static subscribeToTrackVersions<T extends Record<string, any> = Record<string, any>>(
     trackId: string,
     listener: Listener<RealtimePostgresChangesPayload<T>>
   ): () => void {
@@ -248,7 +248,7 @@ class RealtimeSubscriptionManager {
               } catch (error) {
                 logger.error(
                   'Listener error in track versions subscription',
-                  error,
+                  error as Error,
                   'RealtimeManager',
                   { key }
                 );

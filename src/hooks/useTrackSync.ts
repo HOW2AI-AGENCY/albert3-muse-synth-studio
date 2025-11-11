@@ -19,7 +19,6 @@ import type { Database } from '@/integrations/supabase/types';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 type TrackRow = Database['public']['Tables']['tracks']['Row'];
-type TrackVersionRow = Database['public']['Tables']['track_versions']['Row'];
 
 
 interface TrackSyncOptions {

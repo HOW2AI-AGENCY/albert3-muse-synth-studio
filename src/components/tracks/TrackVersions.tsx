@@ -42,12 +42,19 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
 
   // Combine main track and variants into a single list for rendering
   const allVersions = [
-    { ...variantsData.mainTrack, isPreferredVariant: !variantsData.preferredVariant, variantIndex: 0 },
-    ...variantsData.variants,
+    { 
+      ...variantsData.mainTrack, 
+      isPreferredVariant: !variantsData.preferredVariant, 
+      variantIndex: 0,
+      title: variantsData.mainTrack.title,
+    },
+    ...variantsData.variants.map(v => ({
+      ...v,
+      title: variantsData.mainTrack.title,
+    })),
   ].map((v, i) => ({
     ...v,
     id: v.id || `${trackId}-${i}`,
-    title: v.title || variantsData.mainTrack.title,
     audio_url: v.audioUrl,
     cover_url: v.coverUrl,
     isMasterVersion: v.isPreferredVariant,
@@ -99,7 +106,7 @@ export const TrackVersions = ({ trackId }: TrackVersionsProps) => {
           const isMain = index === 0; // First version is considered main
           const isCurrentVersion = currentTrack?.id === version.id;
           const isVersionPlaying = isCurrentVersion && isPlaying;
-          const displayNumber = getDisplayVersionNumber(index);
+          const displayNumber = index; // Simple index for display
 
           return (
             <Card

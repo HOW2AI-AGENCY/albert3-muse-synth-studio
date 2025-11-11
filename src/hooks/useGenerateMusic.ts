@@ -13,7 +13,7 @@ import { logger } from '@/utils/logger';
 import { rateLimiter, RATE_LIMIT_CONFIGS, formatResetTime } from '@/utils/rateLimiter';
 import { supabase } from '@/integrations/supabase/client';
 import RealtimeSubscriptionManager from '@/services/realtimeSubscriptionManager';
-import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import type { MusicProvider } from '@/config/provider-models';
 import type { Database } from '@/integrations/supabase/types';
 import * as Sentry from '@sentry/react';
@@ -146,11 +146,11 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
     }
 
     // Subscribe via centralized manager
-    const unsubscribe = RealtimeSubscriptionManager.subscribeToTrack(
+    const unsubscribe = RealtimeSubscriptionManager.subscribeToTrack<TrackRow>(
       trackId,
       (payload: RealtimePostgresChangesPayload<TrackRow>) => {
-        const track = payload.new;
-        if (!track) return;
+        const track = payload.new as TrackRow;
+        if (!track || !track.id) return;
 
         logger.info('Track update received via manager', 'useGenerateMusic', {
           trackId,
@@ -159,7 +159,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
 
         if (track.status === 'completed') {
           trackGenerationEvent('completed', trackId, provider, {
-            duration: track.duration,
+            duration: track.duration ?? undefined,
           });
           toast({
             title: '✅ Трек готов!',
@@ -169,7 +169,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
           cleanup();
         } else if (track.status === 'failed') {
           trackGenerationEvent('failed', trackId, provider, {
-            errorMessage: track.error_message,
+            errorMessage: track.error_message ?? undefined,
           });
           toast({
             title: '❌ Ошибка генерации',

@@ -341,7 +341,7 @@ export const useTracks = (refreshTrigger?: number, options: UseTracksOptions = {
     // Use centralized manager - automatically handles deduplication and cleanup
     const unsubscribe = RealtimeSubscriptionManager.subscribeToUserTracks(
       userId,
-      projectId,
+      projectId ?? null,
       handlePayload
     );
 

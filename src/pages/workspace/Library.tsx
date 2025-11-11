@@ -229,7 +229,15 @@ const LibraryContent: React.FC = () => {
       if (variantsData) {
         queryClient.setQueryData(trackVersionsQueryKeys.list(track.id), variantsData);
 
-        const allVersions = [variantsData.mainTrack, ...variantsData.variants];
+        const allVersions = [
+          { ...variantsData.mainTrack },
+          ...variantsData.variants.map(v => ({
+            ...v,
+            title: variantsData.mainTrack.title,
+            styleTags: variantsData.mainTrack.styleTags,
+            status: 'completed' as const,
+          }))
+        ];
         const audioTracks = allVersions.map(v => convertToAudioPlayerTrack({
           id: v.id,
           title: v.title,
