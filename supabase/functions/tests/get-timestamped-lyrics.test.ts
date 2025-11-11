@@ -8,8 +8,9 @@ import { installFetchMock } from "./_testUtils.ts";
 Deno.test(
   "get-timestamped-lyrics successfully proxies request and returns data",
   async () => {
+    const sunoApiBaseUrl = Deno.env.get("SUNO_API_BASE_URL") || "https://api.sunoapi.org";
     const restoreFetch = installFetchMock({
-      "https://api.sunoapi.org/api/v1/generate/get-timestamped-lyrics": () =>
+      [`${sunoApiBaseUrl}/api/v1/generate/get-timestamped-lyrics`]: () =>
         new Response(
           JSON.stringify({
             code: 200,

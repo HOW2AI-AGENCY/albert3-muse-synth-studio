@@ -17,6 +17,9 @@ Deno.env.set("SUPABASE_SERVICE_ROLE", SERVICE_ROLE);
 if (!Deno.env.get("SUNO_API_KEY")) {
   Deno.env.set("SUNO_API_KEY", "test-suno-key");
 }
+if (!Deno.env.get("SUNO_API_BASE_URL")) {
+  Deno.env.set("SUNO_API_BASE_URL", "https://api.sunoapi.org");
+}
 
 export const adminClient: SupabaseClient = createClient(SUPABASE_URL, SERVICE_ROLE);
 export const anonClient: SupabaseClient = createClient(SUPABASE_URL, ANON_KEY);
