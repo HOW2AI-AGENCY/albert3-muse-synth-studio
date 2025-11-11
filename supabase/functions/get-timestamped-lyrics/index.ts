@@ -1,6 +1,7 @@
 /**
- * @version 2.0.0
+ * @version 2.1.0
  * @since 2025-11-11
+ * @changelog 2.1.0 - Fixed authentication to use JWT token instead of X-User-Id header
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -10,6 +11,7 @@ import {
   handleCorsPreflightRequest,
 } from "../_shared/cors.ts";
 import { logger } from "../_shared/logger.ts";
+import { createSupabaseUserClient } from "../_shared/supabase.ts";
 
 const SUNO_API_KEY = Deno.env.get("SUNO_API_KEY");
 const SUNO_API_BASE_URL = Deno.env.get("SUNO_API_BASE_URL");
@@ -27,16 +29,36 @@ export async function handler(req: Request) {
   }
 
   try {
-    const userId = req.headers.get("X-User-Id");
-    if (!userId) {
+    // ✅ FIX: Extract user ID from JWT token instead of expecting X-User-Id header
+    // Previous implementation expected X-User-Id header which was never set by the frontend
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      logger.error("[GET-TIMESTAMPED-LYRICS] Missing Authorization header");
       return new Response(
-        JSON.stringify({ error: "Unauthorized - missing user context" }),
+        JSON.stringify({ error: "Unauthorized - missing authorization header" }),
         {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
     }
+
+    const token = authHeader.replace("Bearer ", "");
+    const userClient = createSupabaseUserClient(token);
+    const { data: { user }, error: userError } = await userClient.auth.getUser(token);
+
+    if (userError || !user) {
+      logger.error("[GET-TIMESTAMPED-LYRICS] Authentication failed", userError);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - invalid token" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    logger.info("[GET-TIMESTAMPED-LYRICS] User authenticated", { userId: user.id });
 
     if (!SUNO_API_KEY || !SUNO_API_BASE_URL) {
       throw new Error("Suno API credentials are not configured");
