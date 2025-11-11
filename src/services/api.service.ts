@@ -21,6 +21,7 @@ export type Track = Omit<TrackRow, 'metadata'> & {
   style?: string | null;
   mureka_task_id?: string | null;
   metadata: TrackMetadata | null;
+  selectedVersionId?: string;
 };
 
 const isTrackStatus = (status: TrackRow["status"]): status is TrackStatus =>
