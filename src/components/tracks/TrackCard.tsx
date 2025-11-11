@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,11 +6,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useSelectedTracks } from '@/contexts/selected-tracks/useSelectedTracks';
 import { Play, Pause, MoreHorizontal, Download, Share2 } from 'lucide-react';
 import type { Track } from '@/services/api.service';
+import { TrackVersions } from './TrackVersions';
 
 interface TrackCardProps {
   track: Track;
   isPlaying?: boolean;
-  onPlay?: (track: Track) => void;
+  onPlay?: (track: Track & { selectedVersionId?: string }) => void;
   onPause?: (track: Track) => void;
   onDownload?: (track: Track) => void;
   onShare?: (track: Track) => void;
@@ -33,6 +34,7 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
     isTrackSelected,
     toggleTrack
   } = useSelectedTracks();
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
 
   // ✅ P0 OPTIMIZATION: Memoize selection check
   const isSelected = useMemo(
@@ -60,9 +62,13 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
     if (isPlaying) {
       onPause?.(track);
     } else {
-      onPlay?.(track);
+      onPlay?.({ ...track, selectedVersionId: selectedVersionId || undefined });
     }
-  }, [isPlaying, onPause, onPlay, track]);
+  }, [isPlaying, onPause, onPlay, track, selectedVersionId]);
+
+  const handleVersionSelect = useCallback((versionId: string) => {
+    setSelectedVersionId(versionId);
+  }, []);
 
   const handleDownload = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -161,6 +167,12 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
               </Badge>
             </div>
           )}
+
+          <TrackVersions
+            trackId={track.id}
+            selectedVersionId={selectedVersionId}
+            onVersionSelect={handleVersionSelect}
+          />
 
           {/* Track Status */}
           {track.status && (

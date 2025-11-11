@@ -42,6 +42,7 @@ export interface AudioPlayerTrack {
   isMasterVersion?: boolean;
   sourceVersionNumber?: number | null;
   suno_task_id?: string; // Added for timestamped lyrics
+  selectedVersionId?: string;
 }
 
 export interface TrackVersion {
@@ -166,10 +167,51 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
         // ==========================================
         // PLAYBACK ACTIONS
         // ==========================================
-        playTrack: (track) => {
+        playTrack: async (track) => {
           const state = get();
 
-          // ✅ FIX: Проверить что audio_url существует
+          // If a specific version is selected, handle it first
+          if (track.selectedVersionId) {
+            // Ensure versions are loaded for the parent track
+            const parentId = track.parentTrackId || track.id;
+            await get().loadVersions(parentId);
+
+            // After loading, get the latest state
+            const updatedState = get();
+            const selectedVersion = updatedState.availableVersions.find(v => v.id === track.selectedVersionId);
+
+            if (selectedVersion && selectedVersion.audio_url) {
+              // Create a new track object for the player from the selected version
+              const versionTrack: AudioPlayerTrack = {
+                ...track,
+                id: selectedVersion.id,
+                audio_url: selectedVersion.audio_url,
+                cover_url: selectedVersion.cover_url || track.cover_url,
+                duration: selectedVersion.duration || track.duration,
+                versionNumber: selectedVersion.versionNumber,
+                isMasterVersion: selectedVersion.isMasterVersion,
+                parentTrackId: parentId,
+              };
+
+              // Now, play this specific version
+              set({
+                currentTrack: versionTrack,
+                isPlaying: true,
+                currentTime: 0,
+                duration: versionTrack.duration || 0,
+              });
+              return; // Exit after playing the selected version
+            } else {
+              logError('Selected version not found or has no audio URL', new Error('Version not playable'), 'audioPlayerStore', {
+                trackId: track.id,
+                selectedVersionId: track.selectedVersionId,
+              });
+              toast.error('Выбранная версия недоступна');
+              // Fallback to playing the main track if the version is invalid
+            }
+          }
+
+          // Standard playback logic
           if (!track.audio_url) {
             logger.error('Cannot play track without audio URL', new Error('Missing audio URL'), 'audioPlayerStore', {
               trackId: track.id,
@@ -177,7 +219,6 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               status: track.status,
             });
 
-            // ✅ P2 FIX: User-friendly message based on track status
             if (track.status === 'processing') {
               toast.info('Трек еще генерируется, подождите немного');
             } else if (track.status === 'failed') {
@@ -187,14 +228,12 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             }
             return;
           }
-          
-          // If same track, just resume
+
           if (state.currentTrack?.id === track.id) {
             set({ isPlaying: true });
             return;
           }
 
-          // New track - reset state and load versions
           set({
             currentTrack: track,
             isPlaying: true,
@@ -202,12 +241,11 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             duration: track.duration || 0,
           });
 
-          // ✅ FIX: Await loadVersions и handle errors
           const parentId = track.parentTrackId || track.id;
           get().loadVersions(parentId).catch((error) => {
             logError('Failed to load versions in playTrack', error as Error, 'audioPlayerStore', {
               trackId: track.id,
-              parentId
+              parentId,
             });
           });
         },
