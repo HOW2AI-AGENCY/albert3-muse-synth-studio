@@ -24,14 +24,17 @@ export const TrackVersionBadge = memo(({
     <Badge
       variant={isMasterVersion ? 'default' : 'secondary'}
       className={cn(
-        'text-[10px] px-1.5 py-0 h-4 font-medium transition-all duration-200',
-        isMasterVersion && 'bg-gradient-to-r from-blue-500 to-blue-600',
-        isLoading && 'animate-pulse',
+        'text-[10px] px-1.5 py-0.5 h-5 font-medium transition-all duration-150',
+        isMasterVersion && 'bg-gradient-to-r from-blue-500 to-blue-600 shadow-sm',
+        isLoading && 'opacity-70',
         className
       )}
     >
       {isLoading ? (
-        <Loader2 className="h-2.5 w-2.5 animate-spin" />
+        <div className="flex items-center gap-1">
+          <Loader2 className="h-2.5 w-2.5 animate-spin" />
+          <span>V{versionNumber}</span>
+        </div>
       ) : (
         <>V{versionNumber}</>
       )}

@@ -45,14 +45,14 @@ export const useDescribeSong = () => {
         trackId: params.trackId,
       });
 
-      const { data, error } = await supabase.functions.invoke<DescribeSongResponse>(
-        'describe-song',
-        {
-          body: {
-            trackId: params.trackId,
-          },
-        }
-      );
+    const { data, error } = await supabase.functions.invoke<DescribeSongResponse>(
+      'describe-song-replicate',
+      {
+        body: {
+          trackId: params.trackId,
+        },
+      }
+    );
 
       if (error) {
         logger.error('Track description failed', error instanceof Error ? error : new Error(String(error)));

@@ -31,6 +31,13 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
     audioId: audioId || '',
     enabled: shouldFetchTimestamped
   });
+
+  // ✅ CRITICAL FIX: Проверка валидности данных после загрузки
+  const hasValidLyrics = Boolean(
+    lyricsData?.alignedWords && 
+    Array.isArray(lyricsData.alignedWords) && 
+    lyricsData.alignedWords.length > 0
+  );
   const currentTime = useAudioPlayerStore((state) => state.currentTime);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastScrolledIndexRef = useRef<number>(-1);
@@ -39,30 +46,31 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
 
   // Memoize current word index to prevent recalculating on every render
   const currentWordIndex = useMemo(() => {
-    if (!lyricsData?.alignedWords) return -1;
+    if (!hasValidLyrics) return -1;
     return lyricsData.alignedWords.findIndex(
       (word) => currentTime >= word.startS && currentTime <= word.endS
     );
-  }, [currentTime, lyricsData]);
+  }, [currentTime, hasValidLyrics, lyricsData]);
 
   // Memoize rendered words to prevent unnecessary re-renders
   const renderedWords = useMemo(() => {
-    if (!lyricsData?.alignedWords) return [];
+    if (!hasValidLyrics) return [];
     return lyricsData.alignedWords.map((word, index) => {
       const isActive = index === currentWordIndex;
       return (
         <span
           key={index}
+          data-index={index}
           className={cn(
-            'text-lg transition-colors duration-200',
-            isActive ? 'text-primary font-bold' : 'text-muted-foreground'
+            'inline-block text-lg sm:text-xl transition-all duration-200 px-1',
+            isActive ? 'text-primary font-bold scale-110' : 'text-muted-foreground'
           )}
         >
           {word.word}{' '}
         </span>
       );
     });
-  }, [lyricsData, currentWordIndex]);
+  }, [hasValidLyrics, lyricsData, currentWordIndex]);
 
   // ✅ P1 FIX: Reset scroll position when track changes
   // This prevents the issue where switching to a new track with the same starting
@@ -116,22 +124,28 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
   }
 
   // ✅ P1 FIX: Показать fallback lyrics если timestamped недоступны
-  if (isError || !lyricsData || lyricsData.alignedWords.length === 0) {
+  if (isError || !hasValidLyrics) {
     if (fallbackLyrics) {
       return (
-        <div className="lyrics-display max-h-60 overflow-y-auto text-center py-4">
-          <p className="text-sm text-muted-foreground whitespace-pre-line">
+        <div className="lyrics-display max-h-60 overflow-y-auto text-center py-4 px-2">
+          <p className="text-sm sm:text-base text-muted-foreground whitespace-pre-line leading-relaxed">
             {fallbackLyrics}
           </p>
         </div>
       );
     }
-    return <div className="text-center text-muted-foreground">Текст не найден.</div>;
+    return <div className="text-center text-muted-foreground py-8">Текст не найден.</div>;
   }
 
   return (
-    <div ref={containerRef} className="lyrics-display max-h-60 overflow-y-auto text-center py-4">
-      {renderedWords}
+    <div 
+      ref={containerRef} 
+      className="lyrics-display max-h-60 overflow-y-auto text-center py-4 px-2 
+                 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent"
+    >
+      <div className="flex flex-wrap justify-center items-center gap-x-1 gap-y-2">
+        {renderedWords}
+      </div>
     </div>
   );
 });

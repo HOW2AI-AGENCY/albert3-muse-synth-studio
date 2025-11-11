@@ -106,7 +106,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
           onSuccess?.();
           cleanup();
           return;
-        } else if (track?.status === 'failed') {
+        } else if (track && track.status === 'failed') {
           logger.error('❌ Track failed (polling)', new Error('Track generation failed'), 'useGenerateMusic', { 
             trackId,
             errorMessage: track.error_message 
@@ -116,13 +116,17 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
             description: track.error_message || 'Произошла ошибка при обработке вашего трека.',
             variant: 'destructive',
           });
+          setIsGenerating(false);
           cleanup();
           return;
         }
         
         // Continue polling if still processing
-        if (track?.status === 'processing' || track?.status === 'pending') {
+        if (track && (track.status === 'processing' || track.status === 'pending')) {
           pollingTimerRef.current = setTimeout(pollTrack, POLLING_INTERVAL);
+        } else if (!track) {
+          logger.warn('Track not found during polling', 'useGenerateMusic', { trackId });
+          cleanup();
         }
       } catch (error) {
         logger.error('Polling error', error as Error, 'useGenerateMusic', { trackId });
@@ -163,8 +167,9 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
           });
           toast({
             title: '✅ Трек готов!',
-            description: `Ваш трек "${track.title}" успешно сгенерирован.`,
+            description: `Ваш трек "${track.title || 'Новый трек'}" успешно сгенерирован.`,
           });
+          setIsGenerating(false);
           onSuccess?.();
           cleanup();
         } else if (track.status === 'failed') {
@@ -176,6 +181,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
             description: track.error_message || 'Произошла ошибка при обработке вашего трека.',
             variant: 'destructive',
           });
+          setIsGenerating(false);
           cleanup();
         }
       }
