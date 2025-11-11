@@ -22,6 +22,7 @@ import { LyricsMobile } from './LyricsMobile';
 import { useTimestampedLyrics } from '@/hooks/useTimestampedLyrics';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { MobileProgressBar } from './mobile/MobileProgressBar';
+import { LyricsSkeleton } from "./LyricsSkeleton";
 
 interface FullScreenPlayerProps {
   onMinimize: () => void;
@@ -49,7 +50,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
   const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
 
   // Получаем timestamped lyrics
-  const { data: lyricsData } = useTimestampedLyrics({
+  const { data: lyricsData, isLoading } = useTimestampedLyrics({
     taskId: currentTrack?.suno_task_id,
     audioId: currentTrack?.id,
     enabled: !!(currentTrack?.suno_task_id && currentTrack?.id),
@@ -70,6 +71,17 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
       setIsMuted(shouldBeMuted);
     }
   }, [volume, isMuted]);
+
+  // Показываем предупреждение о низком качестве синхронизации
+  useEffect(() => {
+    if (lyricsData?.hootCer && lyricsData.hootCer > 0.3) {
+      toast({
+        title: "Низкое качество синхронизации",
+        description: "Синхронизация текста для этого трека может быть неточной.",
+        variant: "destructive",
+      });
+    }
+  }, [lyricsData, toast]);
 
   // ============= ВЕРСИИ ТРЕКОВ =============
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
@@ -304,26 +316,34 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
         </div>
 
         {/* Улучшенный дисплей лирики с синхронизацией */}
-        {showLyrics && lyricsData && lyricsData.alignedWords && lyricsData.alignedWords.length > 0 && (
-          <div className="mb-4 animate-fade-in max-h-64">
-            {isMobile ? (
-              <LyricsMobile
-                timestampedLyrics={lyricsData.alignedWords}
-                currentTime={currentTime}
-                onSeek={seekTo}
-                togglePlayPause={togglePlayPause}
-                coverUrl={currentTrack.cover_url}
-                className="h-64"
-                showControls={false}
-              />
+        {showLyrics && (
+          <div className="mb-4 animate-fade-in max-h-64 h-64 flex items-center justify-center">
+            {isLoading ? (
+              <LyricsSkeleton className="w-full" />
             ) : (
-              <TimestampedLyricsDisplay
-                timestampedLyrics={lyricsData.alignedWords}
-                currentTime={currentTime}
-                onSeek={seekTo}
-                coverUrl={currentTrack.cover_url}
-                className="h-64"
-              />
+              lyricsData?.alignedWords && lyricsData.alignedWords.length > 0 && (
+                <>
+                  {isMobile ? (
+                    <LyricsMobile
+                      timestampedLyrics={lyricsData.alignedWords}
+                      currentTime={currentTime}
+                      onSeek={seekTo}
+                      togglePlayPause={togglePlayPause}
+                      coverUrl={currentTrack.cover_url}
+                      className="h-64"
+                      showControls={false}
+                    />
+                  ) : (
+                    <TimestampedLyricsDisplay
+                      timestampedLyrics={lyricsData.alignedWords}
+                      currentTime={currentTime}
+                      onSeek={seekTo}
+                      coverUrl={currentTrack.cover_url}
+                      className="h-64"
+                    />
+                  )}
+                </>
+              )
             )}
           </div>
         )}
