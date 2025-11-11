@@ -14,8 +14,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Music, VolumeX, Volume1, Volume2, X } from '@/utils/iconImports';
-import { LyricsDisplay } from '../LyricsDisplay'; // Import LyricsDisplay
+import { Music, VolumeX, Volume1, Volume2, X, Mic2, AlertCircle } from '@/utils/iconImports';
+import { useTimestampedLyrics } from '@/hooks/useTimestampedLyrics';
+import TimestampedLyricsDisplay from '@/components/lyrics/TimestampedLyricsDisplay';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { LyricsSkeleton } from '../LyricsSkeleton';
 
 export interface DesktopPlayerLayoutProps {
   track: AudioPlayerTrack;
@@ -23,14 +26,11 @@ export interface DesktopPlayerLayoutProps {
 
 export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) => {
   const { isVisible } = usePlayerVisibility(track);
+  const [showKaraoke, setShowKaraoke] = useState(false);
 
-  // ✅ CRITICAL FIX: Removed currentTime, duration, bufferingProgress subscriptions
-  // These were causing DesktopPlayerLayout to re-render 60 times/sec!
-  // Now ProgressBar and usePlayerKeyboardShortcuts subscribe internally
-
-  // Zustand store selectors (only what's needed for this component)
   const isPlaying = useIsPlaying();
   const volume = useVolume();
+  const currentTime = useAudioPlayerStore((state) => state.currentTime);
   const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
   const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
 
@@ -40,41 +40,40 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
   const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
   const { toggleRepeatMode, toggleShuffle } = usePlaybackModeControls();
 
-  // Volume control state - using refs to prevent infinite loops
   const [isMuted, setIsMuted] = useState(false);
   const previousVolumeRef = useRef(volume);
   const volumeRef = useRef(volume);
   const isMutedRef = useRef(isMuted);
 
-  // Keep refs in sync with volume from store
+  const { data: lyricsData, isLoading, isError, isSuccess } = useTimestampedLyrics({
+    taskId: track.suno_task_id,
+    audioId: track.id,
+    enabled: !!track.suno_task_id && !!track.id && showKaraoke,
+  });
+
   useEffect(() => {
     volumeRef.current = volume;
   }, [volume]);
 
-  // Keep isMutedRef in sync
   useEffect(() => {
     isMutedRef.current = isMuted;
   }, [isMuted]);
 
-  // ✅ HOTFIX v3: Sync isMuted when volume changes externally (keyboard shortcuts, MiniPlayer)
-  // Uses ref to avoid stale closure and prevent infinite loops
   useEffect(() => {
     const shouldBeMuted = volume === 0;
     if (isMutedRef.current !== shouldBeMuted) {
       setIsMuted(shouldBeMuted);
     }
-  }, [volume]); // ← Only volume dependency - safe!
+  }, [volume]);
 
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
 
   const toggleMute = useCallback(() => {
     if (isMuted) {
-      // Unmute: restore previous volume (default to 50% if previous was 0)
       const restoreVolume = previousVolumeRef.current > 0 ? previousVolumeRef.current : 0.5;
       setVolume(restoreVolume);
       setIsMuted(false);
     } else {
-      // Mute: save current volume and set to 0
       previousVolumeRef.current = volume > 0 ? volume : 0.5;
       setVolume(0);
       setIsMuted(true);
@@ -84,17 +83,11 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
   const handleVolumeChange = useCallback((value: number[]) => {
     const newVolume = value[0];
     setVolume(newVolume);
-
-    // ✅ Обновляем previousVolume только если volume > 0
     if (newVolume > 0) {
       previousVolumeRef.current = newVolume;
     }
-
-    // ✅ FIX: Remove setIsMuted call - useEffect (line 61) handles this automatically
-    // Prevents double state update when slider changes
   }, [setVolume]);
 
-  // ✅ Keyboard shortcuts now subscribe to store internally
   usePlayerKeyboardShortcuts({
     togglePlayPause,
     seekTo,
@@ -104,7 +97,6 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
     toggleShuffle,
   });
 
-  // Close player handler
   const clearCurrentTrack = useAudioPlayerStore((state) => state.clearCurrentTrack);
 
   const handleClose = useCallback(() => {
@@ -112,6 +104,7 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
   }, [clearCurrentTrack]);
 
   return (
+    <>
     <div
       role="region"
       aria-label="Медиаплеер"
@@ -127,21 +120,16 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
       `}
       style={{ zIndex: 'var(--z-desktop-player)' }}
     >
-      {/* Compact floating card with modern design */}
       <div className="relative rounded-2xl overflow-hidden border-2 border-primary/20 shadow-2xl shadow-black/60 hover:shadow-primary/20 hover:border-primary/30 transition-all duration-300 group">
-        {/* Strong contrast background */}
         <div className="absolute inset-0 bg-gradient-to-br from-slate-950/98 via-slate-900/98 to-slate-950/98 backdrop-blur-3xl backdrop-saturate-150" />
         <div className="absolute inset-0 bg-gradient-to-r from-primary/8 via-accent/5 to-primary/8 opacity-50 group-hover:opacity-70 transition-opacity duration-500" />
         
-        {/* Top accent line with animation */}
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent opacity-60" />
         <div className="absolute top-0 left-1/4 right-1/4 h-0.5 bg-primary shadow-glow-primary animate-pulse" />
         
-        {/* Outer glow effect */}
         <div className="absolute -inset-2 bg-gradient-radial from-primary/15 via-accent/10 to-transparent blur-3xl opacity-60 group-hover:opacity-80 transition-opacity duration-500 -z-10" />
 
         <div className="relative px-3 py-2.5 space-y-2.5">
-          {/* Close button */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -157,7 +145,6 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
             <TooltipContent>Закрыть плеер (Esc)</TooltipContent>
           </Tooltip>
 
-          {/* Track Info - Compact */}
           <div className="flex items-center gap-2.5">
             <div className="relative group/cover">
               <div className="relative w-11 h-11 rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 flex-shrink-0 shadow-md hover:shadow-lg transition-all duration-300 group-hover/cover:scale-105">
@@ -174,7 +161,6 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                 
-                {/* Pulsating border when playing */}
                 {isPlaying && (
                   <motion.div
                     className="absolute inset-0 rounded-lg border-2 border-primary pointer-events-none"
@@ -191,7 +177,6 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
                   />
                 )}
                 
-                {/* Playing indicator */}
                 {isPlaying && (
                   <div className="absolute bottom-1 right-1">
                     <div className="flex items-center gap-0.5">
@@ -223,26 +208,28 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
                 <p className="text-[9px] text-muted-foreground/70 mt-0.5">AI Generated</p>
               )}
             </div>
+             {track.suno_task_id && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => setShowKaraoke(!showKaraoke)}
+                      className="h-6 w-6 hover:bg-primary/10 hover:scale-110 transition-all duration-200 group/vol"
+                    >
+                      <Mic2 className="h-4 w-4 text-primary" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Караоке</TooltipContent>
+                </Tooltip>
+              )}
           </div>
 
-          {/* Progress Bar - Compact */}
           <div className="space-y-1">
-            {/* ✅ ProgressBar now subscribes to store internally */}
             <ProgressBar onSeek={seekTo} />
           </div>
 
-          {/* Lyrics Display - ✅ P0 FIX: Show even without suno_task_id */}
-          {track.id && (
-            <LyricsDisplay
-              taskId={track.suno_task_id || ''}
-              audioId={track.id}
-              fallbackLyrics={track.lyrics}
-            />
-          )}
-
-          {/* Controls Row - Compact */}
           <div className="flex items-center justify-between gap-2">
-            {/* Playback Controls - Smaller buttons */}
             <PlaybackControls 
               isPlaying={isPlaying}
               hasVersions={hasVersions}
@@ -252,7 +239,6 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
               onSwitchVersion={switchToVersion}
             />
 
-            {/* Volume Control - Compact */}
             <div
               className="flex items-center gap-1.5 min-w-[120px]"
               role="group"
@@ -279,7 +265,6 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
                 </TooltipTrigger>
                 <TooltipContent>{isMuted ? 'Включить звук (M)' : 'Выключить звук (M)'}</TooltipContent>
               </Tooltip>
-              {/* Volume slider without Tooltip to avoid React Error #185 */}
               <div
                 className="flex-1 min-w-[70px] max-w-[90px]"
                 title={`Громкость: ${Math.round(volume * 100)}% (↑/↓)`}
@@ -308,6 +293,30 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
         </div>
       </div>
     </div>
+    <Dialog open={showKaraoke} onOpenChange={setShowKaraoke}>
+      <DialogContent className="max-w-4xl h-[70vh] bg-background/80 backdrop-blur-md flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Караоке: {track.title}</DialogTitle>
+        </DialogHeader>
+        <div className="flex-1">
+          {isLoading && <LyricsSkeleton />}
+          {isError && (
+            <div className="flex flex-col items-center justify-center h-full text-destructive">
+              <AlertCircle className="w-12 h-12 mb-4" />
+              <p className="text-lg font-semibold">Ошибка загрузки</p>
+              <p className="text-sm">Не удалось загрузить текст песни.</p>
+            </div>
+          )}
+          {isSuccess && lyricsData && (
+            <TimestampedLyricsDisplay
+              lyricsData={lyricsData.alignedWords}
+              currentTime={currentTime}
+            />
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 });
 
