@@ -15,10 +15,8 @@ import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Music, VolumeX, Volume1, Volume2, X, Mic2, AlertCircle } from '@/utils/iconImports';
-import { useTimestampedLyrics } from '@/hooks/useTimestampedLyrics';
-import TimestampedLyricsDisplay from '@/components/lyrics/TimestampedLyricsDisplay';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { LyricsSkeleton } from '../LyricsSkeleton';
+import { LyricsDisplay } from '../LyricsDisplay';
 
 export interface DesktopPlayerLayoutProps {
   track: AudioPlayerTrack;
@@ -44,12 +42,6 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
   const previousVolumeRef = useRef(volume);
   const volumeRef = useRef(volume);
   const isMutedRef = useRef(isMuted);
-
-  const { data: lyricsData, isLoading, isError, isSuccess } = useTimestampedLyrics({
-    taskId: track.suno_task_id,
-    audioId: track.id,
-    enabled: !!track.suno_task_id && !!track.id && showKaraoke,
-  });
 
   useEffect(() => {
     volumeRef.current = volume;
@@ -301,19 +293,12 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
             Синхронизированный текст песни с подсветкой слов в реальном времени
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-1">
-          {isLoading && <LyricsSkeleton />}
-          {isError && (
-            <div className="flex flex-col items-center justify-center h-full text-destructive">
-              <AlertCircle className="w-12 h-12 mb-4" />
-              <p className="text-lg font-semibold">Ошибка загрузки</p>
-              <p className="text-sm">Не удалось загрузить текст песни.</p>
-            </div>
-          )}
-          {isSuccess && lyricsData && (
-            <TimestampedLyricsDisplay
-              lyricsData={lyricsData.alignedWords}
-              currentTime={currentTime}
+        <div className="flex-1 overflow-hidden">
+          {showKaraoke && (
+            <LyricsDisplay
+              taskId={track.suno_task_id ?? ''}
+              audioId={track.id}
+              fallbackLyrics={track.lyrics ?? ''}
             />
           )}
         </div>
