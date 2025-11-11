@@ -64,7 +64,7 @@ export function useTrackVariants(trackId: string | null | undefined, enabled: bo
     },
     enabled: !!trackId && enabled,
     staleTime: 1000 * 60 * 5, // 5 minutes
-    cacheTime: 1000 * 60 * 30, // 30 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes (replaces deprecated cacheTime)
     retry: 1,
   });
 }

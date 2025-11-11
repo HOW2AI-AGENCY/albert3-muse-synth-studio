@@ -112,7 +112,7 @@ export const TrackRow = memo<TrackRowProps>(({
       created_at: mainTrack.createdAt,
     };
 
-    const variantsAsVersions = variants.map((v, i) => ({
+    const variantsAsVersions = variants.map((v) => ({
       id: v.id,
       parentTrackId: v.parentTrackId,
       sourceVersionNumber: v.variantIndex,

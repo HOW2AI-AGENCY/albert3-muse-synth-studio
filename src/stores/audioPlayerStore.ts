@@ -21,7 +21,7 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { logger } from '@/utils/logger';
 import { useRef } from 'react';
-import { getTrackWithVersions, getMasterVersion } from '@/features/tracks/api/trackVersions';
+import { getTrackWithVariants } from '@/features/tracks/api/trackVersions';
 import { logInfo, logError } from '@/utils/logger';
 import { toast } from 'sonner';
 
@@ -539,12 +539,12 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               isVersion: !!versionCheck?.parent_track_id,
             });
 
-            // Загружаем все версии родительского трека
-            const allVersions = await getTrackWithVersions(parentId);
+            // ✅ NEW: Используем новый API getTrackWithVariants
+            const variantsData = await getTrackWithVariants(parentId);
 
             // ✅ FIX: Проверить не был ли запрос отменен перед установкой state
             if (abortController.signal.aborted) {
-              logInfo('loadVersions aborted after getTrackWithVersions', 'audioPlayerStore', { trackId });
+              logInfo('loadVersions aborted after getTrackWithVariants', 'audioPlayerStore', { trackId });
               return;
             }
 
@@ -559,37 +559,54 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               return;
             }
 
-            if (allVersions.length === 0) {
-              logInfo('No versions found', 'audioPlayerStore', { parentId });
+            if (!variantsData) {
+              logInfo('No variants data found', 'audioPlayerStore', { parentId });
               set({ availableVersions: [], currentVersionIndex: -1, _loadVersionsAbortController: null });
               return;
             }
 
-            // Преобразуем TrackWithVersions в TrackVersion
-            const versions: TrackVersion[] = allVersions.map((v) => ({
-              id: v.id,
-              versionNumber: v.versionNumber,
-              isMasterVersion: v.isMasterVersion,
-              audio_url: v.audio_url,
-              cover_url: v.cover_url,
-              video_url: v.video_url,
-              duration: v.duration,
-              title: v.title,
-              lyrics: v.lyrics,
-              style_tags: v.style_tags,
-              suno_id: v.suno_id,
-            }));
+            // ✅ NEW: Создаем массив версий из mainTrack + variants
+            // mainTrack всегда первый (index 0), затем все варианты
+            const versions: TrackVersion[] = [
+              // Main track (version 1)
+              {
+                id: variantsData.mainTrack.id,
+                versionNumber: 1,
+                isMasterVersion: !variantsData.preferredVariant, // Master если нет preferred variant
+                audio_url: variantsData.mainTrack.audioUrl,
+                cover_url: variantsData.mainTrack.coverUrl,
+                video_url: variantsData.mainTrack.videoUrl,
+                duration: variantsData.mainTrack.duration,
+                title: variantsData.mainTrack.title,
+                lyrics: variantsData.mainTrack.lyrics,
+                style_tags: variantsData.mainTrack.styleTags,
+                suno_id: variantsData.mainTrack.sunoId,
+              },
+              // Variants (version 2, 3, 4...)
+              ...variantsData.variants.map((variant) => ({
+                id: variant.id,
+                versionNumber: variant.variantIndex + 1, // variantIndex 1 → versionNumber 2
+                isMasterVersion: variant.isPreferredVariant,
+                audio_url: variant.audioUrl,
+                cover_url: variant.coverUrl,
+                video_url: variant.videoUrl,
+                duration: variant.duration,
+                title: variantsData.mainTrack.title,
+                lyrics: variant.lyrics,
+                style_tags: variantsData.mainTrack.styleTags,
+                suno_id: variant.sunoId,
+              }))
+            ];
 
-            // ✅ Находим мастер-версию
-            const masterVersion = getMasterVersion(allVersions);
-            const currentVersionIndex = masterVersion
-              ? versions.findIndex(v => v.id === masterVersion.id)
+            // ✅ Находим текущую версию (preferred или main)
+            const currentVersionIndex = variantsData.preferredVariant
+              ? versions.findIndex(v => v.id === variantsData.preferredVariant?.id)
               : 0;
 
             logInfo('Versions loaded', 'audioPlayerStore', {
               parentId,
               count: versions.length,
-              masterVersionId: masterVersion?.id,
+              hasPreferred: Boolean(variantsData.preferredVariant),
               currentVersionIndex,
             });
 

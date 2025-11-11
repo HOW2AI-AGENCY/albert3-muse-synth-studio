@@ -12,7 +12,7 @@ export const useTrackCardState = (track: Track) => {
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
   const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
 
-  const { data: variantsData, isLoading } = useTrackVariants(track.id, true);
+  const { data: variantsData } = useTrackVariants(track.id, true);
 
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -31,8 +31,9 @@ export const useTrackCardState = (track: Track) => {
       isMasterVersion: !variantsData.preferredVariant,
       parentTrackId: mainTrack.id,
       versionNumber: 1,
+      likeCount: 0, // ✅ Main track doesn't have like_count in variants
     };
-    const variantsAsVersions = variants.map((v, i) => ({
+    const variantsAsVersions = variants.map((v) => ({
       id: v.id,
       title: mainTrack.title,
       audio_url: v.audioUrl,
@@ -42,6 +43,7 @@ export const useTrackCardState = (track: Track) => {
       isMasterVersion: v.isPreferredVariant,
       parentTrackId: v.parentTrackId,
       versionNumber: v.variantIndex + 1,
+      likeCount: v.likeCount || 0, // ✅ Variant like count
     }));
     return [mainAsVersion, ...variantsAsVersions];
   }, [variantsData]);
@@ -118,10 +120,15 @@ export const useTrackCardState = (track: Track) => {
       versionNumber: 1,
       isMasterVersion: false,
       parentTrackId: track.id,
+      likeCount: 0, // ✅ Default like count
     };
   }, [allVersions, selectedVersionIndex, track]);
 
-  const { isLiked, likeCount, toggleLike } = useTrackVersionLike(displayedVersion?.id || null, 0);
+  // ✅ Use like count from displayed version
+  const { isLiked, likeCount, toggleLike } = useTrackVersionLike(
+    displayedVersion?.id || null, 
+    displayedVersion?.likeCount || 0
+  );
 
   const operationTargetId = displayedVersion.id;
   const operationTargetVersion = displayedVersion;

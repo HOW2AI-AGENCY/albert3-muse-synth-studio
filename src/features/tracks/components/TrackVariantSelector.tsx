@@ -72,7 +72,7 @@ export const TrackVariantSelector: React.FC<TrackVariantSelectorProps> = ({
           description: `Версия ${currentVersionIndex + 1} теперь основная.`,
         });
       },
-      onError: (error) => {
+      onError: (error: Error) => {
         logError('Failed to set master version', error, 'TrackVariantSelector');
         toast({
           title: 'Ошибка',
