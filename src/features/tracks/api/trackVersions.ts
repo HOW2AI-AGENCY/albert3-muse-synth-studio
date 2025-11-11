@@ -347,7 +347,7 @@ export async function getTrackWithVariants(trackId: string): Promise<TrackWithVa
     // Load main track
     const { data: mainTrack, error: trackError } = await supabase
       .from('tracks')
-      .select('*')
+      .select('*, suno_id')
       .eq('id', trackId)
       .single<TrackRow>();
 
@@ -364,7 +364,7 @@ export async function getTrackWithVariants(trackId: string): Promise<TrackWithVa
     // Load variants (ONLY variant_index >= 1)
     const { data: dbVersions, error: versionsError } = await supabase
       .from('track_versions')
-      .select('*')
+      .select('*, suno_id')
       .eq('parent_track_id', trackId)
       .gte('variant_index', 1) // ✅ CRITICAL: Only load variants >= 1
       .order('variant_index', { ascending: true })
