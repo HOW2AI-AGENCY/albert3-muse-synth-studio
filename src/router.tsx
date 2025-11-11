@@ -34,7 +34,6 @@ import {
   LazyPersonas,
   LazyPromptDJPage,
   LazyEdgeFunctionsDebug,
-  LazySunoPrototype,
 } from "./utils/lazyPages";
 
 
@@ -53,14 +52,6 @@ export const router = createBrowserRouter(
       element: (
         <Suspense fallback={<FullPageSpinner />}>
           <LazyEdgeFunctionsDebug />
-        </Suspense>
-      )
-    },
-    {
-      path: "/debug/suno-prototype",
-      element: (
-        <Suspense fallback={<FullPageSpinner />}>
-          <LazySunoPrototype />
         </Suspense>
       )
     },

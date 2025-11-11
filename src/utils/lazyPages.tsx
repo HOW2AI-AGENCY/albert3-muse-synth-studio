@@ -187,11 +187,6 @@ export const LazyEdgeFunctionsDebug = createLazyPage(
   'EdgeFunctionsDebug'
 );
 
-export const LazySunoPrototype = createLazyPage(
-  () => import('../pages/debug/SunoPrototype'),
-  'SunoPrototype'
-);
-
 /**
  * Lazy-loaded компоненты для дополнительной оптимизации
  */
