@@ -113,11 +113,17 @@ export async function processSunoCallback(
   const immediateAudioUrl = first.stream_audio_url || first.audio_url;
   const immediateCoverUrl = first.image_url;
 
+  // ✅ FIX: Extract title from Suno response if not set
+  const extractedTitle = first.title || track.title;
+
   if (immediateAudioUrl) {
+    // ✅ FIX: Set status to 'completed' when audio is ready for better UX
+    // No need to wait for COMPLETE callback - track is playable now
     await supabase
       .from('tracks')
       .update({
-        status: track.status === 'completed' ? 'completed' : 'processing',
+        status: 'completed', // ✅ FIX: Set completed immediately when audio is ready
+        title: extractedTitle || track.title, // ✅ FIX: Update title from Suno
         audio_url: immediateAudioUrl,
         cover_url: immediateCoverUrl ?? track.cover_url,
         metadata: {
@@ -127,6 +133,7 @@ export async function processSunoCallback(
           suno_last_callback_msg: msg,
           suno_data: versions, // сохраняем полный массив версий в метаданных
           immediate_play_ready: true,
+          playable_since: new Date().toISOString(), // ✅ Track when became playable
         },
       })
       .eq('id', trackId);
@@ -135,6 +142,8 @@ export async function processSunoCallback(
       trackId,
       stage: callbackType,
       audioPreview: immediateAudioUrl.substring(0, 80),
+      title: extractedTitle, // ✅ Log extracted title
+      titleSource: first.title ? 'suno_api' : 'existing_track',
     });
   }
 
@@ -210,6 +219,7 @@ export async function processSunoCallback(
         .from('tracks')
         .update({
           status: 'completed',
+          title: extractedTitle || track.title, // ✅ FIX: Ensure title is set on completion
           audio_url: finalAudio,
           cover_url: finalCover,
           metadata: {

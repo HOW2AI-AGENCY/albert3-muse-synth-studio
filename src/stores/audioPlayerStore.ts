@@ -207,6 +207,7 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
                 versionNumber: selectedVersion.versionNumber,
                 isMasterVersion: selectedVersion.isMasterVersion,
                 parentTrackId: parentId,
+                suno_task_id: selectedVersion.suno_id || track.suno_task_id, // ✅ FIX: Pass suno_id for lyrics
               };
 
               // Now, play this specific version
@@ -527,7 +528,7 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             title: version.title,
             lyrics: version.lyrics || currentTrack.lyrics,
             style_tags: version.style_tags || currentTrack.style_tags,
-            suno_task_id: version.suno_id || currentTrack.suno_task_id,
+            suno_task_id: version.suno_id || currentTrack.suno_task_id, // ✅ FIX: Pass suno_id for lyrics
             versionNumber: version.versionNumber,
             isMasterVersion: version.isMasterVersion,
             parentTrackId: currentTrack.parentTrackId || currentTrack.id,
