@@ -27,6 +27,8 @@ interface Subscription<T> {
   listeners: Set<Listener<T>>;
   channelName: string;
   createdAt: number;
+  retryCount: number;
+  retryTimeoutId?: NodeJS.Timeout;
 }
 
 interface SubscriptionStats {
@@ -43,6 +45,50 @@ interface SubscriptionStats {
  */
 class RealtimeSubscriptionManager {
   private static subscriptions = new Map<string, Subscription<any>>();
+  private static readonly MAX_RETRIES = 5;
+  private static readonly BASE_RETRY_DELAY = 1000; // 1 second
+
+  /**
+   * Retry connection with exponential backoff
+   * @param key - Subscription key
+   * @param recreateChannel - Function to recreate the channel
+   */
+  private static retryConnection(key: string, recreateChannel: () => void): void {
+    const sub = this.subscriptions.get(key);
+    if (!sub) return;
+
+    // Clear any existing retry timeout
+    if (sub.retryTimeoutId) {
+      clearTimeout(sub.retryTimeoutId);
+    }
+
+    // Check if max retries reached
+    if (sub.retryCount >= this.MAX_RETRIES) {
+      logger.error(
+        'Max retries reached for realtime channel',
+        new Error('Max retries exceeded'),
+        'RealtimeManager',
+        { key, retryCount: sub.retryCount }
+      );
+      return;
+    }
+
+    // Calculate delay with exponential backoff
+    const delay = this.BASE_RETRY_DELAY * Math.pow(2, sub.retryCount);
+    sub.retryCount++;
+
+    logger.warn('Retrying realtime channel connection', 'RealtimeManager', {
+      key,
+      attempt: sub.retryCount,
+      maxRetries: this.MAX_RETRIES,
+      delayMs: delay,
+    });
+
+    // Schedule retry
+    sub.retryTimeoutId = setTimeout(() => {
+      recreateChannel();
+    }, delay);
+  }
 
   /**
    * Subscribe to a specific track's updates
@@ -97,15 +143,66 @@ class RealtimeSubscriptionManager {
         }
       )
       .subscribe((status) => {
+        const sub = this.subscriptions.get(key);
+
         if (status === 'SUBSCRIBED') {
           logger.info('Track channel subscribed', 'RealtimeManager', { channelName, trackId });
+          // ✅ Reset retry count on successful connection
+          if (sub) {
+            sub.retryCount = 0;
+          }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           logger.error(
             'Track channel error',
             new Error(`Channel status: ${status}`),
             'RealtimeManager',
-            { channelName, trackId }
+            { channelName, trackId, status }
           );
+
+          // ✅ Attempt automatic reconnection
+          if (sub && sub.retryCount < this.MAX_RETRIES) {
+            this.retryConnection(key, () => {
+              // Remove old channel
+              sub.channel.unsubscribe();
+
+              // Create new channel with same listeners
+              const newChannel = supabase
+                .channel(channelName)
+                .on(
+                  'postgres_changes',
+                  {
+                    event: '*',
+                    schema: 'public',
+                    table: 'tracks',
+                    filter: `id=eq.${trackId}`,
+                  },
+                  (payload) => {
+                    const currentSub = this.subscriptions.get(key);
+                    if (currentSub) {
+                      currentSub.listeners.forEach((l) => {
+                        try {
+                          l(payload);
+                        } catch (error) {
+                          logger.error('Listener error in track subscription', error as Error, 'RealtimeManager', { key });
+                        }
+                      });
+                    }
+                  }
+                )
+                .subscribe((newStatus) => {
+                  const currentSub = this.subscriptions.get(key);
+                  if (newStatus === 'SUBSCRIBED') {
+                    logger.info('Track channel reconnected successfully', 'RealtimeManager', { channelName, trackId });
+                    if (currentSub) currentSub.retryCount = 0;
+                  }
+                });
+
+              // Update subscription with new channel
+              if (this.subscriptions.has(key)) {
+                this.subscriptions.get(key)!.channel = newChannel;
+              }
+            });
+          }
         }
       });
 
@@ -114,6 +211,7 @@ class RealtimeSubscriptionManager {
       listeners: new Set([listener]),
       channelName,
       createdAt: Date.now(),
+      retryCount: 0,
     });
 
     logger.info('Created new track channel', 'RealtimeManager', { key, channelName });
@@ -176,19 +274,70 @@ class RealtimeSubscriptionManager {
         }
       )
       .subscribe((status) => {
+        const sub = this.subscriptions.get(key);
+
         if (status === 'SUBSCRIBED') {
           logger.info('User tracks channel subscribed', 'RealtimeManager', {
             channelName,
             userId,
             projectId,
           });
+          // ✅ Reset retry count on successful connection
+          if (sub) {
+            sub.retryCount = 0;
+          }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           logger.error(
             'User tracks channel error',
             new Error(`Channel status: ${status}`),
             'RealtimeManager',
-            { channelName, userId, projectId }
+            { channelName, userId, projectId, status }
           );
+
+          // ✅ Attempt automatic reconnection
+          if (sub && sub.retryCount < this.MAX_RETRIES) {
+            this.retryConnection(key, () => {
+              // Remove old channel
+              sub.channel.unsubscribe();
+
+              // Create new channel with same listeners
+              const newChannel = supabase
+                .channel(channelName)
+                .on(
+                  'postgres_changes',
+                  {
+                    event: '*',
+                    schema: 'public',
+                    table: 'tracks',
+                    filter: `user_id=eq.${userId}`,
+                  },
+                  (payload) => {
+                    const currentSub = this.subscriptions.get(key);
+                    if (currentSub) {
+                      currentSub.listeners.forEach((l) => {
+                        try {
+                          l(payload);
+                        } catch (error) {
+                          logger.error('Listener error in user tracks subscription', error as Error, 'RealtimeManager', { key });
+                        }
+                      });
+                    }
+                  }
+                )
+                .subscribe((newStatus) => {
+                  const currentSub = this.subscriptions.get(key);
+                  if (newStatus === 'SUBSCRIBED') {
+                    logger.info('User tracks channel reconnected successfully', 'RealtimeManager', { channelName, userId, projectId });
+                    if (currentSub) currentSub.retryCount = 0;
+                  }
+                });
+
+              // Update subscription with new channel
+              if (this.subscriptions.has(key)) {
+                this.subscriptions.get(key)!.channel = newChannel;
+              }
+            });
+          }
         }
       });
 
@@ -197,6 +346,7 @@ class RealtimeSubscriptionManager {
       listeners: new Set([listener]),
       channelName,
       createdAt: Date.now(),
+      retryCount: 0,
     });
 
     logger.info('Created new user tracks channel', 'RealtimeManager', { key, channelName });
@@ -299,6 +449,12 @@ class RealtimeSubscriptionManager {
 
     // If no listeners remain, remove channel
     if (sub.listeners.size === 0) {
+      // ✅ Clear any pending retry timers to prevent memory leaks
+      if (sub.retryTimeoutId) {
+        clearTimeout(sub.retryTimeoutId);
+        logger.info('Cleared pending retry timer', 'RealtimeManager', { key });
+      }
+
       void supabase.removeChannel(sub.channel);
       this.subscriptions.delete(key);
       logger.info('Removed channel (no listeners remain)', 'RealtimeManager', {
