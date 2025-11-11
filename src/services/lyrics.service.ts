@@ -33,7 +33,7 @@ export const LyricsService = {
     try {
       const { data, error } = await supabase.functions.invoke('get-timestamped-lyrics', {
         method: 'POST',
-        body: JSON.stringify({ taskId, audioId }),
+        body: { taskId, audioId },
       });
 
       if (error) {
