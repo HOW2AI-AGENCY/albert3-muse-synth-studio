@@ -47,16 +47,6 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
       result.push({
         id: result.length,
         words: currentLine,
-          startTime: currentLine[0].startS,
-          endTime: currentLine[currentLine.length - 1].endS,
-        });
-        currentLine = [];
-      }
-    });
-    if (currentLine.length > 0) {
-      result.push({
-        id: result.length,
-        words: currentLine,
         startTime: currentLine[0].startS,
         endTime: currentLine[currentLine.length - 1].endS,
       });
