@@ -60,22 +60,22 @@ const Landing = () => {
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse-glow" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-pulse-glow" style={{ animationDelay: '1s' }} />
         
-        <div className="container relative z-10 text-center px-4 py-20">
+        <div className="container relative z-10 text-center px-4 py-24 sm:py-32">
           <div className="flex justify-center mb-8 animate-float">
             <div className="p-6 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 backdrop-blur-xl border border-primary/30 glow-primary">
               <Music className="w-16 h-16 text-primary animate-pulse" />
             </div>
           </div>
           
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black mb-6 text-gradient-primary animate-slide-up leading-tight">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-8 text-gradient-primary animate-slide-up leading-tight">
             MusicAI Pro
           </h1>
 
-          <p className="text-lg sm:text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto mb-4 animate-fade-in font-medium" style={{ animationDelay: '0.2s' }}>
+          <p className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto mb-6 animate-fade-in font-medium" style={{ animationDelay: '0.2s' }}>
             Создавайте профессиональную музыку с помощью AI за минуты
           </p>
           
-          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-12 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-12 animate-fade-in" style={{ animationDelay: '0.3s' }}>
             Без музыкального образования. Без сложного оборудования. Просто ваше воображение.
           </p>
           
@@ -116,15 +116,15 @@ const Landing = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-24 relative overflow-hidden">
+      <section className="py-28 sm:py-32 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-background via-surface/30 to-background" />
         
         <div className="container px-4 relative z-10">
-          <div className="text-center mb-16 animate-slide-up">
-            <h2 className="text-4xl md:text-6xl font-black mb-4 text-gradient-primary">
+          <div className="text-center mb-16 sm:mb-20 animate-slide-up">
+            <h2 className="text-5xl md:text-6xl font-black mb-6 text-gradient-primary">
               Возможности платформы
             </h2>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
               Всё, что нужно для создания профессиональной музыки в одном месте
             </p>
           </div>
@@ -165,15 +165,15 @@ const Landing = () => {
 
       {/* Featured Tracks Section */}
       {featuredTracks.length > 0 && (
-        <section className="py-24 relative overflow-hidden">
+        <section className="py-28 sm:py-32 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-background via-surface/20 to-background" />
           
           <div className="container px-4 relative z-10">
-            <div className="text-center mb-16 animate-slide-up">
-              <h2 className="text-4xl md:text-6xl font-black mb-4 text-gradient-primary">
+            <div className="text-center mb-16 sm:mb-20 animate-slide-up">
+              <h2 className="text-5xl md:text-6xl font-black mb-6 text-gradient-primary">
                 Популярные треки
               </h2>
-              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+              <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
                 Послушайте, что создают наши пользователи
               </p>
             </div>
@@ -253,16 +253,16 @@ const Landing = () => {
       )}
 
       {/* CTA Section */}
-      <section className="py-32 relative overflow-hidden">
+      <section className="py-36 sm:py-40 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/10 rounded-full blur-3xl animate-pulse-glow" />
         
         <div className="container px-4 text-center relative z-10">
-          <div className="max-w-4xl mx-auto p-12 rounded-3xl bg-gradient-to-br from-card/50 to-card/30 backdrop-blur-2xl border border-border/30 animate-scale-in">
-            <h2 className="text-4xl md:text-6xl font-black mb-6 text-gradient-primary">
+          <div className="max-w-4xl mx-auto p-12 sm:p-16 rounded-3xl bg-gradient-to-br from-card/50 to-card/30 backdrop-blur-2xl border border-border/30 animate-scale-in">
+            <h2 className="text-5xl md:text-6xl font-black mb-8 text-gradient-primary">
               Готовы создать свою первую композицию?
             </h2>
-            <p className="text-lg md:text-xl text-foreground/80 mb-10 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xl md:text-2xl text-foreground/80 mb-12 max-w-2xl mx-auto leading-relaxed">
               Присоединяйтесь к тысячам музыкантов, которые уже используют MusicAI Pro для создания невероятной музыки
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
