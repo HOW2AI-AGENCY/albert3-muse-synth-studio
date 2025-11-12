@@ -135,7 +135,7 @@ export const TagPalette: React.FC<TagPaletteProps> = ({
             size="sm"
             onClick={() => onAddTag(tag)}
             className={cn(
-              "h-auto min-h-[28px] sm:min-h-[32px] px-2 sm:px-3 py-1 sm:py-1.5",
+              "h-auto min-h-[44px] md:min-h-[36px] px-2 sm:px-3 py-1 sm:py-1.5",
               "text-[10px] sm:text-xs font-medium",
               "hover:scale-105 active:scale-95 transition-all duration-200",
               "border-2 hover:border-primary"
@@ -237,12 +237,12 @@ export const TagPalette: React.FC<TagPaletteProps> = ({
           value={customTagValue}
           onChange={(e) => setCustomTagValue(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleAddCustomTag()}
-          className="h-8 sm:h-9 text-xs sm:text-sm flex-1"
+          className="h-11 md:h-9 text-xs sm:text-sm flex-1"
         />
         <Button 
           onClick={handleAddCustomTag} 
           size="sm" 
-          className="h-8 sm:h-9 px-3 sm:px-4 text-xs sm:text-sm"
+          className="h-11 md:h-9 px-3 sm:px-4 text-xs sm:text-sm"
           disabled={!customTagValue.trim()}
         >
           <Plus className="h-3.5 w-3.5 sm:mr-1.5" />

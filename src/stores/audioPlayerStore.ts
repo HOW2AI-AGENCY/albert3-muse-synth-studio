@@ -668,6 +668,7 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
                 newCurrentTrack = {
                   ...updatedState.currentTrack,
                   suno_task_id: correspondingVersion.suno_id,
+                  suno_id: correspondingVersion.suno_id, // ✅ FIX: Also set suno_id for LyricsDisplay audioId
                 };
               }
             }

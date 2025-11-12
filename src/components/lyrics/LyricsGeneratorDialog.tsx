@@ -266,7 +266,7 @@ export function LyricsGeneratorDialog({
                         setEditPrompt("");
                       }}
                       disabled={isGenerating}
-                      className="flex-1 h-8"
+                      className="flex-1 h-11 md:h-9"
                     >
                       Отмена
                     </Button>
@@ -274,7 +274,7 @@ export function LyricsGeneratorDialog({
                       size="sm"
                       onClick={handleEditWithAI}
                       disabled={isGenerating || !editPrompt.trim() || editWordCount > MAX_WORDS}
-                      className="flex-1 h-8 gap-2"
+                      className="flex-1 h-11 md:h-9 gap-2"
                     >
                       {isGenerating ? (
                         <>

@@ -156,7 +156,7 @@ export function LyricsVariantsPanel({ jobId, onSelect }: LyricsVariantsPanelProp
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1 h-8 text-xs"
+                    className="flex-1 h-11 md:h-9 text-xs"
                     onClick={() => copyToClipboard(variant.content!, index)}
                   >
                     {copiedIndex === index ? (
@@ -174,7 +174,7 @@ export function LyricsVariantsPanel({ jobId, onSelect }: LyricsVariantsPanelProp
                   {onSelect && (
                     <Button
                       size="sm"
-                      className="flex-1 h-8 text-xs"
+                      className="flex-1 h-11 md:h-9 text-xs"
                       onClick={() => onSelect(variant)}
                     >
                       Применить

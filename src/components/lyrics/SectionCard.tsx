@@ -117,7 +117,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
                   setIsEditingTitle(false);
                 }
               }}
-              className="h-8 flex-1 font-semibold"
+              className="h-11 md:h-9 flex-1 font-semibold"
               autoFocus
             />
           ) : (
@@ -133,7 +133,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
             variant="ghost"
             size="sm"
             onClick={handleCollapse}
-            className="h-8 w-8 p-0"
+            className="touch-target-min md:h-9 md:w-9 p-0"
           >
             {isCollapsed ? (
               <ChevronDown className="h-4 w-4" />
@@ -144,7 +144,7 @@ export const SectionCard: React.FC<SectionCardProps> = ({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <Button variant="ghost" size="sm" className="touch-target-min md:h-9 md:w-9 p-0">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>

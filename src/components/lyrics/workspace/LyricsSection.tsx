@@ -140,7 +140,7 @@ export const LyricsSection: React.FC<LyricsSectionProps> = ({
                 }
               }}
               className={cn(
-                "h-8 flex-1 font-semibold",
+                "h-11 md:h-9 flex-1 font-semibold",
                 compact && "h-7 text-sm"
               )}
               autoFocus
@@ -148,7 +148,7 @@ export const LyricsSection: React.FC<LyricsSectionProps> = ({
           ) : (
             <button
               onClick={() => !readOnly && setIsEditingTitle(true)}
-                className={cn(
+              className={cn(
                 "flex-1 text-left font-semibold hover:text-primary transition-colors min-w-0 truncate",
                 readOnly && "cursor-default hover:text-current",
                 compact && "text-sm"
@@ -164,7 +164,7 @@ export const LyricsSection: React.FC<LyricsSectionProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={handleCollapse}
-                className={cn("h-8 w-8 p-0", compact && "h-7 w-7")}
+                className={cn("touch-target-min md:h-9 md:w-9 p-0", compact && "h-7 w-7")}
               >
                 {isCollapsed ? (
                   <ChevronDown className={cn("h-4 w-4", compact && "h-3.5 w-3.5")} />
@@ -176,7 +176,7 @@ export const LyricsSection: React.FC<LyricsSectionProps> = ({
               {!readOnly && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className={cn("h-8 w-8 p-0", compact && "h-7 w-7")}>
+                    <Button variant="ghost" size="sm" className={cn("touch-target-min md:h-9 md:w-9 p-0", compact && "h-7 w-7")}>
                       <MoreVertical className={cn("h-4 w-4", compact && "h-3.5 w-3.5")} />
                     </Button>
                   </DropdownMenuTrigger>
@@ -239,7 +239,7 @@ export const LyricsSection: React.FC<LyricsSectionProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => setShowTagPalette(true)}
-                className={cn("w-full", compact && "h-8 text-xs")}
+                className={cn("w-full h-11 md:h-9", compact && "h-8 text-xs")}
               >
                 <Plus className={cn("mr-2 h-4 w-4", compact && "mr-1.5 h-3 w-3")} />
                 Добавить теги

@@ -135,13 +135,13 @@ export const SectionPresetDialog: React.FC<SectionPresetDialogProps> = ({
                 placeholder="Например: Verse 3, Outro..."
                 value={customSectionName}
                 onChange={(e) => setCustomSectionName(e.target.value)}
-                className="h-7 sm:h-8 text-xs sm:text-sm"
+                className="h-11 md:h-9 text-xs sm:text-sm"
               />
               <Button
                 size="sm"
                 onClick={() => handlePresetClick(preset)}
                 disabled={!customSectionName.trim()}
-                className="h-7 sm:h-8 px-2 sm:px-3 text-xs"
+                className="h-11 md:h-9 px-2 sm:px-3 text-xs"
               >
                 Добавить
               </Button>

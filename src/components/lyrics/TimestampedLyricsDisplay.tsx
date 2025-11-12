@@ -73,7 +73,7 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
   return (
     <div className={cn("h-full w-full", className)}>
       <ScrollArea className="h-full w-full">
-        <div ref={scrollRef} className="flex flex-col items-center justify-center p-2 sm:p-4 text-base sm:text-2xl md:text-3xl font-bold text-center min-h-full">
+        <div ref={scrollRef} className="flex flex-col items-center justify-center p-2 sm:p-4 text-lg sm:text-2xl md:text-3xl lg:text-4xl font-bold text-center min-h-full">
           <AnimatePresence>
             {lines.map((line, lineIndex) => {
               const isActive = lineIndex === activeLineIndex;

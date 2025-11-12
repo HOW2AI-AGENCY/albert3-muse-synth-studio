@@ -293,10 +293,10 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-hidden">
-          {showKaraoke && (
+          {showKaraoke && track.suno_task_id && track.suno_id && (
             <LyricsDisplay
-              taskId={track.suno_task_id ?? ''}
-              audioId={track.id}
+              taskId={track.suno_task_id}
+              audioId={track.suno_id}
               fallbackLyrics={track.lyrics ?? ''}
             />
           )}

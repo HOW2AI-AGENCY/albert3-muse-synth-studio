@@ -1,7 +1,9 @@
 /**
- * @version 2.1.0
+ * @version 2.2.0
  * @since 2025-11-11
- * @changelog 2.1.0 - Fixed authentication to use JWT token instead of X-User-Id header
+ * @changelog
+ *   2.2.0 - Enhanced error handling and logging for Suno API responses
+ *   2.1.0 - Fixed authentication to use JWT token instead of X-User-Id header
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -84,6 +86,12 @@ export async function handler(req: Request) {
 
     const sunoPayload = { taskId, audioId };
 
+    logger.info("[GET-TIMESTAMPED-LYRICS] Requesting from Suno API", {
+      taskId,
+      audioId,
+      url: `${SUNO_API_BASE_URL}/api/v1/generate/get-timestamped-lyrics`
+    });
+
     const sunoResponse = await fetch(
       `${SUNO_API_BASE_URL}/api/v1/generate/get-timestamped-lyrics`,
       {
@@ -96,7 +104,67 @@ export async function handler(req: Request) {
       },
     );
 
-    const responseData = await sunoResponse.json();
+    logger.info("[GET-TIMESTAMPED-LYRICS] Suno API response received", {
+      status: sunoResponse.status,
+      statusText: sunoResponse.statusText,
+      ok: sunoResponse.ok,
+    });
+
+    // Try to parse response body
+    let responseData;
+    const contentType = sunoResponse.headers.get("content-type");
+
+    try {
+      if (contentType?.includes("application/json")) {
+        responseData = await sunoResponse.json();
+      } else {
+        const textBody = await sunoResponse.text();
+        logger.error("[GET-TIMESTAMPED-LYRICS] Non-JSON response from Suno API", {
+          status: sunoResponse.status,
+          contentType,
+          bodyPreview: textBody.substring(0, 500),
+        });
+
+        return new Response(
+          JSON.stringify({
+            error: "Invalid response from Suno API",
+            details: `Expected JSON, got ${contentType}`,
+            statusCode: sunoResponse.status,
+          }),
+          {
+            status: 502, // Bad Gateway - upstream returned invalid response
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+    } catch (parseError) {
+      logger.error("[GET-TIMESTAMPED-LYRICS] Failed to parse Suno API response", parseError as Error);
+
+      return new Response(
+        JSON.stringify({
+          error: "Failed to parse Suno API response",
+          details: parseError instanceof Error ? parseError.message : "Unknown parsing error",
+        }),
+        {
+          status: 502,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Log response data for debugging
+    logger.info("[GET-TIMESTAMPED-LYRICS] Parsed response data", {
+      hasData: !!responseData,
+      dataKeys: responseData ? Object.keys(responseData) : [],
+    });
+
+    // If Suno API returned an error status, log it
+    if (!sunoResponse.ok) {
+      logger.error("[GET-TIMESTAMPED-LYRICS] Suno API returned error", {
+        status: sunoResponse.status,
+        responseData,
+      });
+    }
 
     return new Response(JSON.stringify(responseData), {
       status: sunoResponse.status,
