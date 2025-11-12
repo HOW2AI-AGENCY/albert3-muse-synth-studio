@@ -8,9 +8,10 @@
 |---|---|---|---|---|
 | Sprint 33: Webhooks Idempotency & Storage Cleanup | 07–14 ноя 2025 | ✅ Завершён | Идемпотентность вебхуков; обработка ошибок; пагинация очистки; CI Deno‑тесты | [Документ спринта](../docs/sprints/SPRINT_33_WEBHOOKS_IDEMPOTENCY_AND_STORAGE_CLEANUP.md) |
 | **Comprehensive Audit 2025-11-09** | 09 ноя 2025 | ✅ Завершён | Z-index fixes (P0/P1), security verification, UI/UX audit, functional testing | [Audit Report](../docs/audit/COMPREHENSIVE_AUDIT_2025-11-09.md) |
+| **Critical Fixes 2025-11-12** | 12 ноя 2025 | ✅ Завершён | P0 mobile generation button fix, security verification (rate limiting, webhooks, circuit breaker, retry) | [Commit 52b2235](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/commit/52b2235) |
 | Sprint 34: Webhook Signature & Archival | 15–22 ноя 2025 | ⏳ Запланирован | Документация подписи вебхуков; `archived_at`; интеграционные тесты; метрики | [Документ спринта](../docs/sprints/SPRINT_34_WEBHOOK_SIGNATURE_AND_ARCHIVAL.md) |
-| Sprint 35: Critical Fixes & UX Improvements | 11–24 ноя 2025 | 📋 Новый | Error boundaries, network detection, input sanitization, memory leaks (P1 fixes) | [Audit 2025-11-09](../docs/audit/COMPREHENSIVE_AUDIT_2025-11-09.md#phase-2-high-priority-p1---next-sprint) |
-| Sprint 36: Refactoring & Optimization | 25 ноя–08 дек 2025 | 📋 Запланирован | Large component refactoring, validation expansion, error message improvements (P2) | [Audit 2025-11-09](../docs/audit/COMPREHENSIVE_AUDIT_2025-11-09.md#phase-3-medium-priority-p2---weeks-3-4) |
+| Sprint 35: Lyrics UX Improvements | 23 ноя–06 дек 2025 | 📋 Новый | Mobile optimization, touch accessibility, dark theme, settings dialog, prefetch optimization | [Sprint Plan](SPRINT_35_LYRICS_UX.md) |
+| Sprint 36: Critical Fixes & UX | 07–20 дек 2025 | 📋 Запланирован | Error boundaries, network detection, input sanitization, memory leaks (P1 fixes) | [Audit 2025-11-09](../docs/audit/COMPREHENSIVE_AUDIT_2025-11-09.md#phase-2-high-priority-p1---next-sprint) |
 
 ## Диаграмма (Mermaid)
 
@@ -21,7 +22,10 @@ gantt
     section Спринты
     Sprint 33 Webhooks :done, 2025-11-07, 7d
     Comprehensive Audit :done, 2025-11-09, 1d
+    Critical Fixes P0 :done, 2025-11-12, 1d
     Sprint 34 Signature :active, 2025-11-15, 8d
-    Sprint 35 Critical Fixes :crit, 2025-11-11, 14d
-    Sprint 36 Refactoring :2025-11-25, 14d
+    Sprint 35 Lyrics UX :crit, 2025-11-23, 14d
+    Sprint 36 Critical Fixes :2025-12-07, 14d
+    section Документация
+    Lyrics System Docs :done, 2025-11-12, 1d
 ```
