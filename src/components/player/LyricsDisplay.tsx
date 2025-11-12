@@ -1,8 +1,6 @@
-
-import React, { useEffect, useRef, useMemo, memo } from 'react';
+import React, { memo } from 'react';
 import { useTimestampedLyrics } from '@/hooks/useTimestampedLyrics';
 import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
-import { cn } from '@/lib/utils';
 import TimestampedLyricsDisplay from '../lyrics/TimestampedLyricsDisplay';
 import { LyricsSkeleton } from './LyricsSkeleton';
 
@@ -40,24 +38,24 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
   if (!shouldFetchTimestamped) {
     if (fallbackLyrics) {
       return (
-        <div className="lyrics-display max-h-60 overflow-y-auto text-center py-4">
-          <p className="text-sm text-muted-foreground whitespace-pre-line">
+        <div className="lyrics-display w-full h-full max-h-60 overflow-y-auto text-center py-4 px-2">
+          <p className="text-sm sm:text-base text-muted-foreground whitespace-pre-line leading-relaxed">
             {fallbackLyrics}
           </p>
         </div>
       );
     }
-    return <div className="text-center text-muted-foreground">Текст не найден.</div>;
+    return <div className="text-center text-muted-foreground py-8">Текст не найден.</div>;
   }
 
   if (isLoading) {
-    return <LyricsSkeleton />;
+    return <LyricsSkeleton className="w-full h-full" />;
   }
 
   if (isError || !hasValidLyrics) {
     if (fallbackLyrics) {
       return (
-        <div className="lyrics-display max-h-60 overflow-y-auto text-center py-4 px-2">
+        <div className="lyrics-display w-full h-full max-h-60 overflow-y-auto text-center py-4 px-2">
           <p className="text-sm sm:text-base text-muted-foreground whitespace-pre-line leading-relaxed">
             {fallbackLyrics}
           </p>
@@ -68,10 +66,15 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
   }
 
   return (
-    <TimestampedLyricsDisplay
-      lyricsData={lyricsData.alignedWords}
-      currentTime={currentTime}
-    />
+    <div className="w-full h-full">
+      {lyricsData && (
+        <TimestampedLyricsDisplay
+          lyricsData={lyricsData.alignedWords}
+          currentTime={currentTime}
+          className="w-full h-full"
+        />
+      )}
+    </div>
   );
 });
 

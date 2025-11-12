@@ -421,6 +421,7 @@ class RealtimeSubscriptionManager {
       listeners: new Set([listener]),
       channelName,
       createdAt: Date.now(),
+      retryCount: 0,
     });
 
     logger.info('Created new track versions channel', 'RealtimeManager', { key, channelName });

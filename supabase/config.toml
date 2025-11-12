@@ -179,3 +179,6 @@ verify_jwt = true
 
 [functions.prompt-dj-lyria-stream]
 verify_jwt = false
+
+[functions.describe-song-replicate]
+verify_jwt = true

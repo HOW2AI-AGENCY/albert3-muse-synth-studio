@@ -1,203 +1,164 @@
+/**
+ * AI-powered track title generation
+ * Analyzes prompt, style, and lyrics to generate creative titles
+ * 
+ * @version 1.0.0
+ * @created 2025-11-12
+ */
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { withRateLimit, createSecurityHeaders } from "../_shared/security.ts";
-import { createCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
-import { logger, withSentry } from "../_shared/logger.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import {
+  createCorsHeaders,
+  handleCorsPreflightRequest,
+} from "../_shared/cors.ts";
+import { logger } from "../_shared/logger.ts";
+import { createSupabaseUserClient } from "../_shared/supabase.ts";
 
-const corsHeaders = {
-  ...createCorsHeaders(),
-  ...createSecurityHeaders()
-};
+const requestSchema = z.object({
+  prompt: z.string().optional(),
+  lyrics: z.string().optional(),
+  styleTags: z.array(z.string()).optional(),
+  genre: z.string().optional(),
+  mood: z.string().optional(),
+});
 
-interface GenerateTitleRequest {
-  prompt: string;
-  lyrics?: string;
-  styleTags?: string[];
-  provider?: string;
-}
+async function handler(req: Request) {
+  const corsHeaders = createCorsHeaders(req);
 
-const mainHandler = async (req: Request) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return handleCorsPreflightRequest(req);
   }
 
   try {
-    const userId = req.headers.get('X-User-Id');
-    if (!userId) {
+    // Authenticate user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const { prompt, lyrics, styleTags, provider } = await req.json() as GenerateTitleRequest;
+    const token = authHeader.replace("Bearer ", "");
+    const userClient = createSupabaseUserClient(token);
+    const { data: { user }, error: userError } = await userClient.auth.getUser(token);
 
-    if (!prompt) {
+    if (userError || !user) {
       return new Response(
-        JSON.stringify({ error: 'prompt is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    logger.info('Generating track title', {
-      userId,
-      promptLength: prompt.length,
-      hasLyrics: !!lyrics,
-      provider: provider || 'unknown'
-    });
+    // Parse request
+    const body = await req.json();
+    const validation = requestSchema.safeParse(body);
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({
+          error: "Validation failed",
+          details: validation.error.format(),
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // Build AI context
-    const aiContext = `
-Generate a creative, concise track title based on:
+    const { prompt, lyrics, styleTags, genre, mood } = validation.data;
 
-MUSIC DESCRIPTION: ${prompt}
-${lyrics ? `LYRICS EXCERPT:\n${lyrics.substring(0, 500)}...` : ''}
-${styleTags && styleTags.length > 0 ? `STYLE TAGS: ${styleTags.join(', ')}` : ''}
-${provider ? `MUSIC PROVIDER: ${provider}` : ''}
+    // Build AI prompt for title generation
+    const lyricsPreview = lyrics ? lyrics.slice(0, 300) : '';
+    const styleInfo = styleTags?.join(', ') || genre || mood || 'unknown';
+
+    const aiPrompt = `Generate a creative, catchy, and relevant song title based on:
+
+**Prompt:** ${prompt || 'Not provided'}
+**Style/Genre:** ${styleInfo}
+**Lyrics Preview:** ${lyricsPreview || 'Not provided'}
 
 Requirements:
-- Title must be 2-6 words
+- Title must be 2-5 words
 - Catchy and memorable
-- Reflect the mood and theme
-- Professional and artistic
-- No quotes or special characters
-`;
+- Reflects the mood/genre
+- Avoids clichés
+- Professional and marketable
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
+Return ONLY the title, nothing else.`;
+
+    // Call Lovable AI
+    const aiResponse = await fetch("https://api.lovable.app/v1/chat/completions", {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${Deno.env.get("LOVABLE_API_KEY")}`,
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: "openai/gpt-5-mini",
         messages: [
           {
-            role: 'system',
-            content: 'You are a creative music title generator. Generate only the title, nothing else.'
+            role: "system",
+            content: "You are a creative music industry expert specializing in track naming. Generate concise, catchy titles.",
           },
           {
-            role: 'user',
-            content: aiContext
-          }
+            role: "user",
+            content: aiPrompt,
+          },
         ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "generate_track_title",
-              description: "Generate a creative track title",
-              parameters: {
-                type: "object",
-                properties: {
-                  title: {
-                    type: "string",
-                    description: "Creative track title (2-6 words, no quotes)"
-                  }
-                },
-                required: ["title"],
-                additionalProperties: false
-              }
-            }
-          }
-        ],
-        tool_choice: { type: "function", function: { name: "generate_track_title" } }
+        temperature: 0.8,
+        max_tokens: 20,
       }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ 
-            error: 'Rate limit exceeded. Please try again in a moment.',
-            code: 'RATE_LIMIT_EXCEEDED'
-          }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ 
-            error: 'Insufficient AI credits.',
-            code: 'INSUFFICIENT_CREDITS'
-          }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      logger.error('AI service error', {
-        status: response.status,
-        response: errorText.substring(0, 500),
-      });
-      throw new Error(`AI service error: ${response.status}`);
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      logger.error("Lovable AI request failed", new Error(errorText), "generate-track-title");
+      throw new Error("Failed to generate title");
     }
 
-    const data = await response.json();
-    
-    // Extract structured output
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    let title;
-    
-    if (toolCall?.function?.arguments) {
-      try {
-        const result = JSON.parse(toolCall.function.arguments);
-        title = result.title;
-      } catch (e) {
-        logger.error('Failed to parse tool call arguments', {
-          error: e instanceof Error ? e.message : String(e),
-        });
-        throw new Error('Invalid AI response format');
-      }
-    } else {
-      throw new Error('No tool call in AI response');
+    const aiData = await aiResponse.json();
+    const generatedTitle = aiData.choices?.[0]?.message?.content?.trim();
+
+    if (!generatedTitle) {
+      throw new Error("No title generated");
     }
 
-    if (!title || title.length === 0) {
-      throw new Error('Empty title generated');
-    }
+    // Clean up title (remove quotes, extra spaces)
+    const cleanTitle = generatedTitle
+      .replace(/^["']|["']$/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
 
-    // Clean up title (remove quotes, trim)
-    title = title.replace(/^["']|["']$/g, '').trim();
-
-    logger.info('Track title generated', {
-      title,
-      titleLength: title.length,
+    logger.info("Title generated", "generate-track-title", {
+      userId: user.id,
+      title: cleanTitle,
     });
 
     return new Response(
-      JSON.stringify({ title }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({
+        success: true,
+        title: cleanTitle,
+        suggestions: [cleanTitle], // Can add multiple suggestions in future
+      }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
-
   } catch (error) {
-    logger.error('Error in generate-track-title', { 
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    
+    logger.error("Unexpected error", error as Error, "generate-track-title");
     return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Internal server error',
-        code: 'INTERNAL_ERROR'
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Unknown error",
       }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
     );
   }
-};
+}
 
-const rateLimitedHandler = withRateLimit(mainHandler, {
-  maxRequests: 30,
-  windowMinutes: 1,
-  endpoint: 'generate-track-title'
-});
-
-const handler = withSentry(rateLimitedHandler, { transaction: 'generate-track-title' });
-
-serve(handler);
+if (import.meta.main) {
+  serve(handler);
+}

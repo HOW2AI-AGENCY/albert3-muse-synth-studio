@@ -40,10 +40,14 @@ export interface AudioPlayerTrack {
   title: string;
   audio_url: string; // Обязательное поле для плеера
   cover_url?: string;
+  video_url?: string;
   duration?: number;
   style_tags?: string[];
   lyrics?: string;
   status?: 'pending' | 'processing' | 'completed' | 'failed'; // Track status for playback validation
+  suno_task_id?: string; // For timestamped lyrics
+  suno_id?: string; // For API calls
+  selectedVersionId?: string;
 }
 
 // Трек для отображения в списках (может не иметь audio_url)

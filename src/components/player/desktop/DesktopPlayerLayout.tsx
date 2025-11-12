@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Music, VolumeX, Volume1, Volume2, X, Mic2, AlertCircle } from '@/utils/iconImports';
+import { Music, VolumeX, Volume1, Volume2, X, Mic2 } from '@/utils/iconImports';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { LyricsDisplay } from '../LyricsDisplay';
 
@@ -28,7 +28,6 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
 
   const isPlaying = useIsPlaying();
   const volume = useVolume();
-  const currentTime = useAudioPlayerStore((state) => state.currentTime);
   const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
   const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
 

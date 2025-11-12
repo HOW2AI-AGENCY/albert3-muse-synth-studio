@@ -17,7 +17,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { logger } from "@/utils/logger";
-import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { MobileProgressBar } from './mobile/MobileProgressBar';
 import { LyricsDisplay } from './LyricsDisplay';
 
@@ -29,7 +28,6 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
   const currentTrack = useCurrentTrack();
   const isPlaying = useIsPlaying();
   const volume = useVolume();
-  const currentTime = useAudioPlayerStore((state) => state.currentTime);
 
   const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
   const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
@@ -46,8 +44,6 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
   const [isMuted, setIsMuted] = useState(false);
   const [showLyrics, setShowLyrics] = useState(true);
 
-  const isMobile = useMediaQuery('(max-width: 768px)');
-
   useEffect(() => {
     const shouldBeMuted = volume === 0;
     if (isMuted !== shouldBeMuted) {
@@ -55,15 +51,6 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
     }
   }, [volume, isMuted]);
 
-  useEffect(() => {
-    if (lyricsData?.hootCer && lyricsData.hootCer > 0.3) {
-      toast({
-        title: "Низкое качество синхронизации",
-        description: "Синхронизация текста для этого трека может быть неточной.",
-        variant: "destructive",
-      });
-    }
-  }, [lyricsData, toast]);
 
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
   
@@ -286,13 +273,20 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
           </p>
         </div>
 
-        {showLyrics && (
-          <div className="mb-4 animate-fade-in max-h-64 h-64 flex items-center justify-center">
+        {showLyrics && currentTrack.suno_task_id && (
+          <div className="mb-4 animate-fade-in max-h-64 h-64 flex items-center justify-center overflow-hidden">
             <LyricsDisplay
-              taskId={currentTrack.suno_task_id ?? ''}
-              audioId={currentTrack.id}
+              taskId={currentTrack.suno_task_id}
+              audioId={currentTrack.suno_id ?? currentTrack.id}
               fallbackLyrics={currentTrack.lyrics ?? ''}
             />
+          </div>
+        )}
+        {showLyrics && !currentTrack.suno_task_id && currentTrack.lyrics && (
+          <div className="mb-4 animate-fade-in max-h-64 overflow-y-auto text-center py-4 px-2">
+            <p className="text-sm sm:text-base text-muted-foreground whitespace-pre-line leading-relaxed">
+              {currentTrack.lyrics}
+            </p>
           </div>
         )}
 
