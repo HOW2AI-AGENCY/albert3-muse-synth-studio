@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Documentation: Lyrics System** (`docs/LYRICS_SYSTEM.md` v2.0) - Comprehensive 800+ line guide
+  - 3-level lyrics architecture (Timestamped, Structured, Library)
+  - 6 Mermaid diagrams (architecture, flows, caching)
+  - API & services documentation
+  - UI improvement roadmap (P0-P2 priorities)
+- **Sprint 35 Plan** (`project-management/SPRINT_35_LYRICS_UX.md`) - Lyrics UX improvements (Nov 23 - Dec 6)
+  - P0: Mobile font optimization + touch accessibility (WCAG AAA)
+  - P1: Dark theme, settings dialog, smart prefetch
+  - P2: Export to .lrc/.txt/.srt formats
+  - 61 story points, detailed acceptance criteria
 - Documentation: `docs/architecture/webhooks.md` — архитектура вебхуков Suno (идемпотентность, обработка ошибок, диаграммы)
 - README: разделы про обработку вебхуков и очистку Supabase Storage
 - Project management: `project-management/SPRINT_STATUS.md`, `docs/sprints/SPRINT_33_...`, `docs/sprints/SPRINT_34_...`
@@ -29,6 +39,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Tooltips: 1200
 
 ### Fixed
+- **P0.1 Critical:** Mobile generation button hidden by z-index conflicts (Commit 52b2235)
+  - CompactCustomForm: Added `z-index: var(--z-control-buttons)` (1050) to sticky footer
+  - Ensures generation button appears above bottom navigation (z-index: 1000)
+  - Added safe-area-bottom classes for proper mobile spacing
+  - Matches fix already applied in SimpleModeCompact.tsx
 - **P0.1 Critical:** Mobile generation button hidden by z-index conflicts
   - SimpleModeCompact: Changed z-index from `--z-mini-player` to `--z-control-buttons`
   - SelectionToolbar: Updated z-index to prevent overlap with player
@@ -41,12 +56,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Webhook Idempotency: предотвращение повторной обработки дублей доставки
 - CI: подтверждены Deno‑тесты для Edge функций
-- **Verified P0.2:** Server-side rate limiting active (5-10 req/min with X-RateLimit-* headers)
-- **Verified P0.3:** Circuit Breaker integrated in Suno & Mureka APIs (5 failures, 60s timeout)
-- **Verified P0.4:** Retry logic with exponential backoff (3 attempts, 1000ms initial delay)
+- **Verified P0.2:** Server-side rate limiting active (Redis-based, 10 req/hour, X-RateLimit-* headers)
+  - Both generate-suno and generate-mureka protected
+  - HTTP 429 with retry-after on limit exceeded
+- **Verified P0.3:** Webhook authentication active (HMAC-SHA256 signature verification)
+  - mureka-webhook: X-Mureka-Signature validation
+  - suno-callback: X-Suno-Signature validation
+  - Returns 401 on invalid/missing signatures
+- **Verified P0.4:** Circuit Breaker integrated in Suno & Mureka APIs (5 failures, 60s timeout)
+- **Verified P0.5:** Retry logic with exponential backoff (3 attempts, 1000ms initial delay, jitter for 429s)
 
 ### Planned
-- Sprint 34: Подпись вебхуков Suno, миграция `tracks.archived_at`, интеграционные тесты дублей, метрики обработки
+- **Sprint 34** (Nov 15-22): Webhook signature docs, `tracks.archived_at`, integration tests, metrics
+- **Sprint 35** (Nov 23 - Dec 6): Lyrics UX improvements
+  - Mobile font size optimization (≥18px)
+  - Touch accessibility audit (≥44px targets)
+  - Dark theme for lyrics display
+  - Settings dialog (font size, auto-scroll, display mode)
+  - Smart prefetch optimization (cache hit rate >70%)
+  - Export to .lrc/.txt/.srt
+- **Sprint 36** (Dec 7-20): Critical fixes & UX (error boundaries, network detection, input sanitization)
 - Performance monitoring dashboards
 - Load testing framework
 
