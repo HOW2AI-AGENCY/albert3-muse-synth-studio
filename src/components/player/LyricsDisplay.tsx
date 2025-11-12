@@ -1,8 +1,12 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { useTimestampedLyrics } from '@/hooks/useTimestampedLyrics';
+import { useLyricsSettings } from '@/hooks/useLyricsSettings';
 import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
 import TimestampedLyricsDisplay from '../lyrics/TimestampedLyricsDisplay';
+import { LyricsSettingsDialog } from '../lyrics/LyricsSettingsDialog';
 import { LyricsSkeleton } from './LyricsSkeleton';
+import { Button } from '@/components/ui/button';
+import { Settings } from '@/utils/iconImports';
 
 interface LyricsDisplayProps {
   taskId: string;
@@ -11,6 +15,9 @@ interface LyricsDisplayProps {
 }
 
 export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audioId, fallbackLyrics }) => {
+  const [showSettings, setShowSettings] = useState(false);
+  const { settings, updateSettings } = useLyricsSettings();
+
   const shouldFetchTimestamped = Boolean(
     taskId && 
     typeof taskId === 'string' && 
@@ -66,14 +73,35 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
   }
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full relative">
+      {/* Settings Button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setShowSettings(true)}
+        className="absolute top-2 right-2 z-10 h-9 w-9 p-0 bg-background/80 hover:bg-background/90 backdrop-blur-sm"
+        aria-label="Настройки лирики"
+      >
+        <Settings className="h-4 w-4" />
+      </Button>
+
+      {/* Lyrics Display */}
       {lyricsData && (
         <TimestampedLyricsDisplay
           lyricsData={lyricsData.alignedWords}
           currentTime={currentTime}
+          settings={settings}
           className="w-full h-full"
         />
       )}
+
+      {/* Settings Dialog */}
+      <LyricsSettingsDialog
+        open={showSettings}
+        onOpenChange={setShowSettings}
+        settings={settings}
+        onSettingsChange={updateSettings}
+      />
     </div>
   );
 });
