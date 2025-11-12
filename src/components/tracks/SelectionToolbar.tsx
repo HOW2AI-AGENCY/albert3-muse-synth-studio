@@ -69,8 +69,8 @@ export const SelectionToolbar: React.FC<SelectionToolbarProps> = ({ className = 
 
   return (
     <div
-      className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 ${className}`}
-      style={{ zIndex: 'var(--z-control-buttons)' }}
+      className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 ${className} safe-area-bottom`}
+      style={{ zIndex: 'var(--z-mini-player)' }}
     >
       <div className="bg-background/95 backdrop-blur-sm border rounded-lg shadow-lg p-4 min-w-80">
         <div className="flex items-center justify-between mb-3">

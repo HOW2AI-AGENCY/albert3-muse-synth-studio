@@ -31,7 +31,10 @@ export const Header = ({ user, onAuthClick }: HeaderProps) => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/30 bg-background/90 backdrop-blur-2xl shadow-lg">
+    <header
+      className="fixed top-0 left-0 right-0 border-b border-border/30 bg-background/90 backdrop-blur-2xl shadow-lg"
+      style={{ zIndex: 'var(--z-header)' }}
+    >
       <div className="container mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
         {/* Logo and Brand */}
         <div className="flex items-center gap-3 sm:gap-4">

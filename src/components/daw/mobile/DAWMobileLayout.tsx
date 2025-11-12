@@ -195,7 +195,8 @@ export const DAWMobileLayout: React.FC = () => {
 
       {/* FAB for quick add */}
       <button
-        className="fixed bottom-20 right-4 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center z-50 active:scale-95 transition-transform"
+        className="fixed bottom-20 right-4 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+        style={{ zIndex: 'var(--z-fab)' }}
         onClick={() => setBottomSheetOpen(true)}
       >
         <ChevronUp className="h-6 w-6" />

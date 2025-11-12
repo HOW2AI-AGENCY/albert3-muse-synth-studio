@@ -154,7 +154,10 @@ interface OverlaySpinnerProps {
 
 export const OverlaySpinner = ({ text }: OverlaySpinnerProps) => {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+      style={{ zIndex: 'var(--z-modal)' }}
+    >
       <div className="rounded-lg bg-card p-6 shadow-lg">
         <Spinner size="lg" text={text} />
       </div>
