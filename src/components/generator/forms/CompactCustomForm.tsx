@@ -653,9 +653,12 @@ export const CompactCustomForm = memo(({
         </Collapsible>
       </div>
 
-      {/* Sticky Footer */}
-      <div className="absolute bottom-0 left-0 right-0 border-t border-border/20 bg-background/95 backdrop-blur-sm">
-        <div className="p-2 sm:p-3 flex items-center gap-2">
+      {/* Sticky Footer - ✅ FIX P0.1: z-index above bottom nav and safe-area spacing */}
+      <div
+        className="absolute bottom-0 left-0 right-0 border-t border-border/20 bg-background/95 backdrop-blur-sm safe-area-bottom-lg"
+        style={{ zIndex: 'var(--z-control-buttons)' }}
+      >
+        <div className="p-2 sm:p-3 flex items-center gap-2 safe-area-bottom">
           {/* Create Button */}
           <Button
             onClick={onGenerate}
