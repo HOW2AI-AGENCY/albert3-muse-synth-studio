@@ -8,25 +8,26 @@ export const useAudioUpload = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
 
-  const uploadAudio = async (file: File): Promise<string | null> => {
+  const uploadAudio = async (file: File): Promise<string> => {
     if (!file.type.startsWith('audio/')) {
+      const error = new Error('Only audio files are allowed');
       toast({
         variant: 'destructive',
-        title: 'Ошибка',
-        description: 'Пожалуйста, выберите аудио файл'
+        title: 'Invalid File Type',
+        description: error.message,
       });
-      return null;
+      throw error;
     }
 
-    // Лимит 20MB
-    const MAX_SIZE = 20 * 1024 * 1024;
+    const MAX_SIZE = 20 * 1024 * 1024; // 20MB limit
     if (file.size > MAX_SIZE) {
+      const error = new Error('File size must be less than 20MB');
       toast({
         variant: 'destructive',
-        title: 'Файл слишком большой',
-        description: 'Максимальный размер файла 20MB'
+        title: 'File Too Large',
+        description: error.message,
       });
-      return null;
+      throw error;
     }
 
     setIsUploading(true);
@@ -38,20 +39,17 @@ export const useAudioUpload = () => {
         throw new Error('User not authenticated');
       }
 
-      // Генерируем уникальное имя файла
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
       logger.info(`📤 [UPLOAD] Starting audio upload: ${file.name} (${file.size} bytes)`);
-
       setUploadProgress(30);
 
-      // Загружаем в bucket reference-audio
       const { error } = await supabase.storage
         .from('reference-audio')
         .upload(fileName, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
         });
 
       if (error) {
@@ -61,16 +59,18 @@ export const useAudioUpload = () => {
 
       setUploadProgress(70);
 
-      // Получаем публичный URL
       const { data: { publicUrl } } = supabase.storage
         .from('reference-audio')
         .getPublicUrl(fileName);
+
+      if (!publicUrl) {
+        throw new Error('Failed to get public URL for the uploaded file.');
+      }
 
       setUploadProgress(100);
 
       logger.info(`✅ [UPLOAD] Audio uploaded successfully: ${publicUrl}`);
 
-      // Save to audio_library
       try {
         const { error: dbError } = await supabase
           .from('audio_library')
@@ -94,7 +94,7 @@ export const useAudioUpload = () => {
 
       toast({
         title: 'Аудио загружено',
-        description: 'Файл успешно загружен и сохранён в библиотеку'
+        description: 'Файл успешно загружен и сохранён в библиотеку',
       });
 
       return publicUrl;
@@ -103,9 +103,9 @@ export const useAudioUpload = () => {
       toast({
         variant: 'destructive',
         title: 'Ошибка загрузки',
-        description: error instanceof Error ? error.message : 'Не удалось загрузить файл'
+        description: error instanceof Error ? error.message : 'Не удалось загрузить файл',
       });
-      return null;
+      throw error;
     } finally {
       setIsUploading(false);
       setTimeout(() => setUploadProgress(0), 1000);

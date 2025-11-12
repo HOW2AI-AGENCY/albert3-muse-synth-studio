@@ -318,11 +318,16 @@
       --generator-max-height-mobile: calc(100vh - var(--workspace-header-height, 56px) - var(--bottom-tab-bar-height));
 
       /* Mobile z-index adjustments - ensure proper stacking on small screens */
-      --z-bottom-nav: 1000;            /* Bottom navigation - always visible */
-      --z-bottom-tab-bar: 1000;        /* Bottom tab bar - same as nav */
-      --z-control-buttons: 1050;       /* Control buttons - above nav, below player */
-      --z-mini-player: 990;           /* Mini player - above everything except modals */
-      --z-fab: 1075;                   /* FAB - between controls and player */
+      --z-bottom-nav: 50;            /* Bottom navigation - always visible */
+      --z-mini-player: 60;
+      --z-fab: 70;
+      --z-drawer-backdrop: 199;
+      --z-drawer: 200;
+      --z-modal-backdrop: 1000;
+      --z-modal: 1010;
+      --z-sheet: 1020;
+      --z-popover: 1040;
+      --z-toast: 1060;
     }
   }
 
