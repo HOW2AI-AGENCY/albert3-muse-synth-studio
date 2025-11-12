@@ -93,7 +93,8 @@ export const MinimalStemsList = memo(({ trackId }: MinimalStemsListProps) => {
               size="icon"
               variant={isPlaying ? "default" : "ghost"}
               onClick={() => handlePlay(stem)}
-              className="h-7 w-7 shrink-0"
+              className="touch-target-min shrink-0"
+              aria-label={`Воспроизвести ${label}`}
             >
               <Play className="h-3 w-3" />
             </Button>

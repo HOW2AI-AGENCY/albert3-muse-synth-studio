@@ -12,15 +12,15 @@
  */
 
 import React from 'react';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useBreakpoints } from '@/hooks/useBreakpoints';
 import { DAWEnhanced } from './DAWEnhanced';
 import { DAWMobileLayout } from '@/components/daw/mobile/DAWMobileLayout';
 import { logInfo } from '@/utils/logger';
 import { useEffect } from 'react';
 
 export const DAWResponsive: React.FC = () => {
-  // md breakpoint = 768px
-  const isMobile = !useMediaQuery('(min-width: 768px)');
+  // md breakpoint = 768px (centralized config)
+  const { isMobile } = useBreakpoints();
 
   useEffect(() => {
     logInfo('DAW interface rendered', 'DAWResponsive', {

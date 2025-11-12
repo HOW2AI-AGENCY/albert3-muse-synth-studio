@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import Joyride, { CallBackProps, STATUS, Step } from 'react-joyride';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 
+// Z-index для overlay tour (должен быть поверх всего)
+// Соответствует --z-maximum из design-tokens.css
+const Z_TOUR_OVERLAY = 10000;
+
 const TOUR_STEPS: Step[] = [
   {
     target: '[data-tour="header"]',
@@ -163,7 +167,7 @@ export const GeneratorTour = () => {
       styles={{
         options: {
           primaryColor: 'hsl(var(--primary))',
-          zIndex: 10000,
+          zIndex: Z_TOUR_OVERLAY, // Joyride requires numeric value
           arrowColor: 'hsl(var(--popover))',
           backgroundColor: 'hsl(var(--popover))',
           textColor: 'hsl(var(--popover-foreground))',

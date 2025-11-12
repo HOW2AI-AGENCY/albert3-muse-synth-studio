@@ -166,7 +166,8 @@ export const MinimalVersionsList = memo(({ trackId }: MinimalVersionsListProps) 
                 variant={isPlaying ? "default" : "ghost"}
                 onClick={() => handlePlay(version)}
                 disabled={!version.audio_url}
-                className="h-7 w-7 shrink-0"
+                className="touch-target-min shrink-0"
+                aria-label={`Воспроизвести ${isMain ? 'основную версию' : `версию V${version.variant_index}`}`}
               >
                 <Play className="h-3 w-3" />
               </Button>
@@ -175,7 +176,7 @@ export const MinimalVersionsList = memo(({ trackId }: MinimalVersionsListProps) 
                 variant="ghost"
                 onClick={() => handleDownload(version.audio_url ?? undefined)}
                 disabled={!version.audio_url}
-                className="h-7 w-7 shrink-0"
+                className="touch-target-min shrink-0"
                 aria-label={`Скачать ${isMain ? 'основную' : `версию V${version.variant_index}`}`}
               >
                 <Download className="h-3 w-3" />
@@ -185,7 +186,7 @@ export const MinimalVersionsList = memo(({ trackId }: MinimalVersionsListProps) 
                   size="icon"
                   variant="ghost"
                   onClick={() => handleSetMaster(version.id)}
-                  className="h-7 w-7 shrink-0"
+                  className="touch-target-min shrink-0"
                   aria-label={`Сделать мастер: V${version.variant_index}`}
                 >
                   <Star className="h-3 w-3" />
