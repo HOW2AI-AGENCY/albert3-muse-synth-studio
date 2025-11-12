@@ -3,12 +3,35 @@
  * Tests business logic separation
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useTrackCard } from '@/features/tracks/hooks/useTrackCard';
 import type { Track } from '@/types/domain/track.types';
+import { useTrackCardState } from '@/features/tracks/components/card/useTrackCardState';
+
+// Mock the dependency hook
+vi.mock('@/features/tracks/components/card/useTrackCardState');
 
 describe('useTrackCard', () => {
+  beforeEach(() => {
+    // Provide a default mock implementation for useTrackCardState
+    (useTrackCardState as vi.Mock).mockReturnValue({
+      isHovered: false,
+      isVisible: true,
+      hasStems: false,
+      selectedVersionIndex: 0,
+      isLiked: false,
+      likeCount: 0,
+      versionCount: 1,
+      masterVersion: null,
+      displayedVersion: {},
+      operationTargetId: '1',
+      operationTargetVersion: {},
+      isCurrentTrack: false,
+      isPlaying: false,
+      playButtonDisabled: false,
+    });
+  });
   const mockTrack: Track = {
     id: '1',
     title: 'Test Track',
@@ -103,5 +126,18 @@ describe('useTrackCard', () => {
 
     expect(callbacks.onClick).not.toHaveBeenCalled();
     expect(tabEvent.preventDefault).not.toHaveBeenCalled();
+  });
+
+  it('should not throw when onClick is not provided', () => {
+    const { result } = renderHook(() => useTrackCard(mockTrack, {}));
+
+    // Test Enter key
+    const enterEvent = {
+      key: 'Enter',
+      preventDefault: vi.fn(),
+    } as unknown as React.KeyboardEvent;
+
+    expect(() => result.current.handleKeyDown(enterEvent)).not.toThrow();
+    expect(() => result.current.handleCardClick()).not.toThrow();
   });
 });
