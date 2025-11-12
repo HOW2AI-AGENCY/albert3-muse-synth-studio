@@ -13,8 +13,23 @@ import { startKpiTimer, endKpiTimer } from "@/utils/kpi";
 import { trackAPIRequest } from "@/utils/sentry-enhanced";
 
 type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
+type TrackVersionRow = Database["public"]["Tables"]["track_versions"]["Row"];
+
+export type TrackRowWithVersions = TrackRow & {
+  track_versions: TrackVersionRow[];
+};
 
 export type TrackStatus = "pending" | "draft" | "processing" | "completed" | "failed";
+
+export type TrackVersion = {
+  id: string;
+  variant_index: number | null;
+  audio_url: string | null;
+  cover_url: string | null;
+  duration: number | null;
+  is_primary_variant: boolean | null;
+  is_preferred_variant: boolean | null;
+};
 
 export type Track = Omit<TrackRow, 'metadata'> & {
   status: TrackStatus;
@@ -22,6 +37,7 @@ export type Track = Omit<TrackRow, 'metadata'> & {
   mureka_task_id?: string | null;
   metadata: TrackMetadata | null;
   selectedVersionId?: string;
+  versions?: TrackVersion[];
 };
 
 const isTrackStatus = (status: TrackRow["status"]): status is TrackStatus =>
@@ -31,23 +47,20 @@ const isTrackStatus = (status: TrackRow["status"]): status is TrackStatus =>
   status === "completed" ||
   status === "failed";
 
-export const mapTrackRowToTrack = (track: TrackRow): Track => ({
+export const mapTrackRowToTrack = (track: TrackRowWithVersions): Track => ({
   ...track,
   status: isTrackStatus(track.status) ? track.status : "pending",
   idempotency_key: track.idempotency_key ?? null,
-  // New archiving fields with defaults
   archived_to_storage: track.archived_to_storage ?? false,
   storage_audio_url: track.storage_audio_url ?? null,
   storage_cover_url: track.storage_cover_url ?? null,
   storage_video_url: track.storage_video_url ?? null,
   archive_scheduled_at: track.archive_scheduled_at ?? null,
   archived_at: track.archived_at ?? null,
-  // Mureka task ID (optional)
   mureka_task_id: track.mureka_task_id ?? null,
-  // Project ID (optional)
   project_id: track.project_id ?? null,
-  // Typed metadata
   metadata: track.metadata as TrackMetadata | null,
+  versions: Array.isArray(track.track_versions) ? track.track_versions : [],
 });
 
 export interface ImprovePromptRequest {

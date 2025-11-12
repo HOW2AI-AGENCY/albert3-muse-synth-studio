@@ -126,6 +126,7 @@ interface AudioPlayerState {
   updateCurrentTime: (time: number) => void;
   updateDuration: (duration: number) => void;
   updateBufferingProgress: (progress: number) => void;
+  _fetchVersionsFromApi: (trackId: string) => Promise<void>;
 }
 
 /**
@@ -556,23 +557,91 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
         },
         
         loadVersions: async (trackId) => {
-          // ✅ FIX: Отменить предыдущий запрос если он еще выполняется
+          const state = get();
+          const track = state.currentTrack;
+
+          if (!track || (track.id !== trackId && track.parentTrackId !== trackId)) {
+            // Fallback to API if track is not in the store
+            return get()._fetchVersionsFromApi(trackId);
+          }
+
+          const versionsData = track.versions;
+
+          if (!versionsData || versionsData.length === 0) {
+            // Fallback to API if versions are not on the track object
+            return get()._fetchVersionsFromApi(trackId);
+          }
+
+          const versions: TrackVersion[] = [
+            {
+              id: track.id,
+              versionNumber: 1,
+              isMasterVersion: !versionsData.some(v => v.is_preferred_variant),
+              audio_url: track.audio_url,
+              cover_url: track.cover_url,
+              video_url: track.video_url,
+              duration: track.duration,
+              title: track.title,
+              lyrics: track.lyrics,
+              style_tags: track.style_tags,
+              suno_id: track.suno_id,
+            },
+            ...versionsData.map((variant) => ({
+              id: variant.id,
+              versionNumber: (variant.variant_index ?? 0) + 1,
+              isMasterVersion: variant.is_preferred_variant ?? false,
+              audio_url: variant.audio_url,
+              cover_url: variant.cover_url,
+              video_url: null, // video_url not in version data
+              duration: variant.duration,
+              title: track.title, // Versions share the main title
+              lyrics: null, // Lyrics not in version data
+              style_tags: track.style_tags,
+              suno_id: null, // suno_id not in version data
+            }))
+          ];
+
+          const preferredVariant = versionsData.find(v => v.is_preferred_variant);
+          const currentVersionIndex = preferredVariant
+            ? versions.findIndex(v => v.id === preferredVariant.id)
+            : 0;
+
+          set({
+            availableVersions: versions,
+            currentVersionIndex,
+          });
+        },
+
+        // ==========================================
+        // AUDIO CONTROLS
+        // ==========================================
+        setVolume: (volume) => {
+          set({
+            volume: Math.max(0, Math.min(1, volume)),
+          });
+        },
+
+        updateCurrentTime: (time) => {
+          set({ currentTime: time });
+        },
+
+        updateDuration: (duration) => {
+          set({ duration });
+        },
+
+        updateBufferingProgress: (progress) => {
+          set({ bufferingProgress: progress });
+        },
+
+        _fetchVersionsFromApi: async (trackId) => {
           const state = get();
           if (state._loadVersionsAbortController) {
             state._loadVersionsAbortController.abort();
-            logInfo('Aborted previous loadVersions request', 'audioPlayerStore', {
-              previousTrackId: state.currentTrack?.id
-            });
           }
-
-          // Создать новый AbortController для этого запроса
           const abortController = new AbortController();
           set({ _loadVersionsAbortController: abortController });
 
           try {
-            logInfo('Loading versions for track', 'audioPlayerStore', { trackId });
-
-            // ✅ FIX 1: Проверяем, является ли trackId версией
             const supabase = (await import('@/integrations/supabase/client')).supabase;
             const { data: versionCheck } = await supabase
               .from('track_versions')
@@ -580,55 +649,29 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               .eq('id', trackId)
               .maybeSingle();
 
-            // Проверить не был ли запрос отменен
-            if (abortController.signal.aborted) {
-              logInfo('loadVersions aborted after versionCheck', 'audioPlayerStore', { trackId });
-              return;
-            }
+            if (abortController.signal.aborted) return;
 
-            // Если это версия, загружаем версии для parent трека
             const parentId = versionCheck?.parent_track_id || trackId;
-
-            logInfo('Loading versions', 'audioPlayerStore', {
-              requestedTrackId: trackId,
-              resolvedParentId: parentId,
-              isVersion: !!versionCheck?.parent_track_id,
-            });
-
-            // ✅ NEW: Используем новый API getTrackWithVariants
             const variantsData = await getTrackWithVariants(parentId);
 
-            // ✅ FIX: Проверить не был ли запрос отменен перед установкой state
-            if (abortController.signal.aborted) {
-              logInfo('loadVersions aborted after getTrackWithVariants', 'audioPlayerStore', { trackId });
-              return;
-            }
+            if (abortController.signal.aborted) return;
 
-            // ✅ FIX: Проверить что trackId все еще актуален (не переключились на другой трек)
             const currentState = get();
             const currentTrackParentId = currentState.currentTrack?.parentTrackId || currentState.currentTrack?.id;
             if (currentTrackParentId !== parentId) {
-              logInfo('Track changed during loadVersions, discarding results', 'audioPlayerStore', {
-                requestedParentId: parentId,
-                currentTrackParentId,
-              });
               return;
             }
 
             if (!variantsData) {
-              logInfo('No variants data found', 'audioPlayerStore', { parentId });
               set({ availableVersions: [], currentVersionIndex: -1, _loadVersionsAbortController: null });
               return;
             }
 
-            // ✅ NEW: Создаем массив версий из mainTrack + variants
-            // mainTrack всегда первый (index 0), затем все варианты
             const versions: TrackVersion[] = [
-              // Main track (version 1)
               {
                 id: variantsData.mainTrack.id,
                 versionNumber: 1,
-                isMasterVersion: !variantsData.preferredVariant, // Master если нет preferred variant
+                isMasterVersion: !variantsData.preferredVariant,
                 audio_url: variantsData.mainTrack.audioUrl,
                 cover_url: variantsData.mainTrack.coverUrl,
                 video_url: variantsData.mainTrack.videoUrl,
@@ -638,10 +681,9 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
                 style_tags: variantsData.mainTrack.styleTags,
                 suno_id: variantsData.mainTrack.sunoId,
               },
-              // Variants (version 2, 3, 4...)
               ...variantsData.variants.map((variant) => ({
                 id: variant.id,
-                versionNumber: variant.variantIndex + 1, // variantIndex 1 → versionNumber 2
+                versionNumber: variant.variantIndex + 1,
                 isMasterVersion: variant.isPreferredVariant,
                 audio_url: variant.audioUrl,
                 cover_url: variant.coverUrl,
@@ -654,31 +696,21 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               }))
             ];
 
-            // ✅ Находим текущую версию (preferred или main)
             const currentVersionIndex = variantsData.preferredVariant
               ? versions.findIndex(v => v.id === variantsData.preferredVariant?.id)
               : 0;
 
-            const updatedState = get();
-            let newCurrentTrack = updatedState.currentTrack;
-
-            if (updatedState.currentTrack) {
-              const correspondingVersion = versions.find(v => v.id === updatedState.currentTrack!.id);
-              if (correspondingVersion && !updatedState.currentTrack.suno_task_id) {
+            let newCurrentTrack = currentState.currentTrack;
+            if (currentState.currentTrack) {
+              const correspondingVersion = versions.find(v => v.id === currentState.currentTrack!.id);
+              if (correspondingVersion && currentState.currentTrack.suno_task_id !== correspondingVersion.suno_id) {
                 newCurrentTrack = {
-                  ...updatedState.currentTrack,
+                  ...currentState.currentTrack,
                   suno_task_id: correspondingVersion.suno_id,
+                  suno_id: correspondingVersion.suno_id,
                 };
               }
             }
-
-            logInfo('Versions loaded', 'audioPlayerStore', {
-              parentId,
-              count: versions.length,
-              hasPreferred: Boolean(variantsData.preferredVariant),
-              currentVersionIndex,
-              sunoIdUpdated: newCurrentTrack?.suno_task_id !== updatedState.currentTrack?.suno_task_id,
-            });
 
             set({
               currentTrack: newCurrentTrack,
@@ -687,36 +719,12 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               _loadVersionsAbortController: null,
             });
           } catch (error) {
-            // Игнорировать AbortError
             if (error instanceof Error && error.name === 'AbortError') {
-              logInfo('loadVersions request aborted', 'audioPlayerStore', { trackId });
               return;
             }
-
-            logError('Failed to load versions', error as Error, 'audioPlayerStore', { trackId });
+            logError('Failed to fetch versions from API', error as Error, 'audioPlayerStore', { trackId });
             set({ availableVersions: [], currentVersionIndex: -1, _loadVersionsAbortController: null });
           }
-        },
-
-        // ==========================================
-        // AUDIO CONTROLS
-        // ==========================================
-        setVolume: (volume) => {
-          set({ 
-            volume: Math.max(0, Math.min(1, volume)),
-          });
-        },
-
-        updateCurrentTime: (time) => {
-          set({ currentTime: time });
-        },
-
-        updateDuration: (duration) => {
-          set({ duration });
-        },
-        
-        updateBufferingProgress: (progress) => {
-          set({ bufferingProgress: progress });
         },
       }),
       {
