@@ -658,14 +658,29 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               ? versions.findIndex(v => v.id === variantsData.preferredVariant?.id)
               : 0;
 
+            const updatedState = get();
+            let newCurrentTrack = updatedState.currentTrack;
+
+            if (updatedState.currentTrack) {
+              const correspondingVersion = versions.find(v => v.id === updatedState.currentTrack!.id);
+              if (correspondingVersion && !updatedState.currentTrack.suno_task_id) {
+                newCurrentTrack = {
+                  ...updatedState.currentTrack,
+                  suno_task_id: correspondingVersion.suno_id,
+                };
+              }
+            }
+
             logInfo('Versions loaded', 'audioPlayerStore', {
               parentId,
               count: versions.length,
               hasPreferred: Boolean(variantsData.preferredVariant),
               currentVersionIndex,
+              sunoIdUpdated: newCurrentTrack?.suno_task_id !== updatedState.currentTrack?.suno_task_id,
             });
 
             set({
+              currentTrack: newCurrentTrack,
               availableVersions: versions,
               currentVersionIndex,
               _loadVersionsAbortController: null,
