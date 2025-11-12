@@ -123,7 +123,7 @@ export const SimpleVersionSelector: React.FC<SimpleVersionSelectorProps> = ({
             )}
           </SelectValue>
         </SelectTrigger>
-        <SelectContent className="z-[200]">
+        <SelectContent style={{ zIndex: 'var(--z-dropdown)' }}>
           {versions.map((version) => (
             <SelectItem key={version.id} value={version.id}>
               <div className="flex items-center gap-2">

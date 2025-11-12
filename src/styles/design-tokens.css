@@ -193,32 +193,31 @@
     --breakpoint-3xl: 1920px;
     --breakpoint-4k: 2560px;
 
-    /* ===== Z-INDEX СЛОИ (UNIFIED SYSTEM) ===== */
-    /* Base layers (0-99): Static elements, backgrounds */
+    /* ===== Z-INDEX HIERARCHY (CORRECTED) ===== */
+    /* Base layers (0-99) */
     --z-base: 0;
     --z-sidebar: 40;
-    --z-bottom-nav: 1000;            /* Bottom navigation bar */
-    --z-bottom-tab-bar: 1000;        /* Bottom tab bar (alias for bottom-nav) */
-    --z-fab: 70;                     /* Floating action buttons - positioned above nav with transform */
-    --z-control-buttons: 1050;       /* Control buttons in forms/player */
-    --z-mini-player: 1100;           /* Mini player - above navigation */
-    --z-desktop-player: 1100;        /* Desktop player - same level as mini */
+    --z-header: 45;                  /* For sticky header */
+    --z-bottom-nav: 50;              /* Bottom tab bar */
+    --z-mini-player: 60;             /* Audio player */
+    --z-desktop-player: 60;
+    --z-fab: 70;                     /* Floating Action Button */
 
-    /* Interactive layers (100-999): Dropdowns, sticky elements */
-    --z-dropdown: 100;               /* Dropdown menus */
-    --z-sticky: 110;                 /* Sticky positioned elements */
-    --z-fixed: 1030;                 /* Fixed positioned elements */
+    /* Interactive (100-999) */
+    --z-dropdown: 100;
+    --z-sticky: 110;
+    --z-drawer-backdrop: 199;        /* Backdrop for drawer */
+    --z-drawer: 200;
 
-    /* Overlay layers (1000+): Drawers, modals, sheets, popovers, tooltips */
-    --z-drawer: 1140;                /* Side drawers, navigation drawers - above nav, below modals */
-    --z-modal-backdrop: 1150;        /* Modal backdrop/overlay */
-    --z-modal: 1160;                 /* Modal dialogs */
-    --z-sheet: 1170;                 /* Bottom sheets */
-    --z-fullscreen-player: 1180;     /* Fullscreen player */
-    --z-popover: 1190;               /* Popovers and context menus */
-    --z-tooltip: 1200;               /* Tooltips */
-    --z-toast: 1210;                 /* Toast notifications */
-    --z-maximum: 2147483647;         /* Maximum z-index value */
+    /* Overlays (1000+) */
+    --z-modal-backdrop: 1000;
+    --z-modal: 1010;
+    --z-sheet: 1020;
+    --z-fullscreen-player: 1030;
+    --z-popover: 1040;
+    --z-tooltip: 1050;
+    --z-toast: 1060;                 /* Highest */
+    --z-maximum: 2147483647;
     
     /* ===== SEMANTIC SPACING ===== */
     --spacing-card-padding: var(--space-4);

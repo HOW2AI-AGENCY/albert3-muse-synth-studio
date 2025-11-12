@@ -17,10 +17,10 @@ export const PlayerSkeleton = memo(({
 }: PlayerSkeletonProps) => {
   if (variant === 'full') {
     return (
-      <div className={cn(
-        'fixed inset-0 z-50 bg-background flex flex-col animate-pulse',
-        className
-      )}>
+      <div
+        className={cn('fixed inset-0 bg-background flex flex-col animate-pulse', className)}
+        style={{ zIndex: 'var(--z-fullscreen-player)' }}
+      >
         {/* Cover Art */}
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="aspect-square w-full max-w-md bg-muted rounded-lg" />

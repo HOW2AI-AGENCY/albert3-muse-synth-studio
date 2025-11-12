@@ -36,9 +36,10 @@ export const PerformanceMonitorWidget: React.FC = () => {
     return (
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 right-4 z-50 rounded-full shadow-lg"
+        className="fixed bottom-4 right-4 rounded-full shadow-lg"
         size="icon"
         variant="secondary"
+        style={{ zIndex: 'var(--z-maximum)' }}
       >
         <Activity className="h-5 w-5" />
       </Button>
@@ -46,7 +47,10 @@ export const PerformanceMonitorWidget: React.FC = () => {
   }
 
   return (
-    <Card className="fixed bottom-4 right-4 z-50 w-96 max-h-96 overflow-auto shadow-xl">
+    <Card
+      className="fixed bottom-4 right-4 w-96 max-h-96 overflow-auto shadow-xl"
+      style={{ zIndex: 'var(--z-maximum)' }}
+    >
       <div className="p-4 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">

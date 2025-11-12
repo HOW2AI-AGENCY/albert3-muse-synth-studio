@@ -618,10 +618,11 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
       <div
         ref={sheetRef}
         className={cn(
-          'fixed bottom-0 left-0 right-0 bg-background rounded-t-3xl shadow-2xl z-50 transition-all duration-300 ease-out',
+          'fixed bottom-0 left-0 right-0 bg-background rounded-t-3xl shadow-2xl transition-all duration-300 ease-out',
           className
         )}
         style={{
+          zIndex: 'var(--z-drawer)',
           height: `${snapHeight}px`,
         }}
         onTouchStart={handleTouchStart}
