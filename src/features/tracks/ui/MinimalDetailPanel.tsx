@@ -144,7 +144,7 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
           <h2 className="text-sm font-semibold truncate">{track.title}</h2>
         </div>
         {onClose && (
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 shrink-0">
+          <Button variant="ghost" size="icon" onClick={onClose} className="touch-target-min shrink-0" aria-label="Закрыть панель">
             <X className="h-4 w-4" />
           </Button>
         )}
@@ -183,16 +183,16 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
 
           {/* Quick Actions - Single Row */}
           <div className="grid grid-cols-4 gap-1">
-            <Button size="sm" variant="outline" onClick={handlePlay} disabled={!displayedVersion?.audio_url} className="h-9" aria-label={isPlaying ? "Пауза" : "Воспроизвести"}>
+            <Button size="sm" variant="outline" onClick={handlePlay} disabled={!displayedVersion?.audio_url} className="min-h-[44px]" aria-label={isPlaying ? "Пауза" : "Воспроизвести"}>
               <Play className="h-3.5 w-3.5" />
             </Button>
-            <Button size="sm" variant="outline" onClick={handleLikeClick} className="h-9" aria-live="polite" aria-pressed={isLiked} aria-label={isLiked ? "Убрать лайк c активной версии" : "Поставить лайк активной версии"}>
+            <Button size="sm" variant="outline" onClick={handleLikeClick} className="min-h-[44px]" aria-live="polite" aria-pressed={isLiked} aria-label={isLiked ? "Убрать лайк c активной версии" : "Поставить лайк активной версии"}>
               <Heart className={cn("h-3.5 w-3.5", isLiked && "fill-current text-red-500")} />
             </Button>
-            <Button size="sm" variant="outline" onClick={handleDownload} disabled={!displayedVersion?.audio_url} className="h-9" aria-label="Скачать активную версию">
+            <Button size="sm" variant="outline" onClick={handleDownload} disabled={!displayedVersion?.audio_url} className="min-h-[44px]" aria-label="Скачать активную версию">
               <Download className="h-3.5 w-3.5" />
             </Button>
-            <Button size="sm" variant="outline" onClick={handleShare} className="h-9">
+            <Button size="sm" variant="outline" onClick={handleShare} className="min-h-[44px]" aria-label="Поделиться треком">
               <Share2 className="h-3.5 w-3.5" />
             </Button>
           </div>
@@ -257,7 +257,7 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
                   </details>
                 )}
 
-                <Button onClick={handleSave} disabled={isSaving} size="sm" className="w-full h-8">
+                <Button onClick={handleSave} disabled={isSaving} size="sm" className="w-full min-h-[44px]">
                   {isSaving ? "Сохранение..." : "Сохранить"}
                 </Button>
               </AccordionContent>
@@ -366,7 +366,7 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
                 variant="destructive"
                 size="sm"
                 onClick={handleDelete}
-                className="w-full h-8"
+                className="w-full min-h-[44px]"
               >
                 <Trash2 className="h-3.5 w-3.5 mr-2" />
                 Удалить трек

@@ -54,16 +54,18 @@ export const DAWMobileLayout: React.FC = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="touch-target-min"
             onClick={() => setActiveView('suno')}
+            aria-label="Открыть генерацию AI"
           >
             <Wand2 className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="touch-target-min"
             onClick={() => setActiveView('settings')}
+            aria-label="Открыть настройки"
           >
             <Settings className="h-4 w-4" />
           </Button>
