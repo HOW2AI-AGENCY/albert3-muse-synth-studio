@@ -47,7 +47,8 @@ export const GenerationProgress = React.memo(({
                     e.stopPropagation();
                     onSync(track.id);
                   }}
-                  className="h-8 w-8"
+                  className="touch-target-min"
+                  aria-label="Обновить статус трека"
                 >
                   <RefreshCw className="w-4 h-4" />
                 </Button>
@@ -65,7 +66,8 @@ export const GenerationProgress = React.memo(({
                     e.stopPropagation();
                     onDelete(track.id);
                   }}
-                  className="h-8 w-8"
+                  className="touch-target-min"
+                  aria-label="Удалить трек"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
@@ -112,7 +114,8 @@ export const FailedState = React.memo(({
                 e.stopPropagation();
                 onRetry(trackId);
               }}
-              className="h-8 w-8"
+              className="touch-target-min"
+              aria-label="Повторить генерацию"
             >
               <RefreshCw className="w-4 h-4" />
             </Button>
@@ -130,7 +133,8 @@ export const FailedState = React.memo(({
                 e.stopPropagation();
                 onDelete(trackId);
               }}
-              className="h-8 w-8"
+              className="touch-target-min"
+              aria-label="Удалить трек"
             >
               <Trash2 className="w-4 h-4" />
             </Button>

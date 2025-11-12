@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MusicGeneratorV2 } from "@/components/MusicGeneratorV2";
 import { TracksList } from "@/components/TracksList";
 const DetailPanel = lazy(() => import("@/features/tracks/ui/DetailPanel").then(m => ({ default: m.DetailPanel })));
-import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useBreakpoints } from "@/hooks/useBreakpoints";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Plus } from "@/utils/iconImports";
@@ -70,8 +70,7 @@ const Generate = () => {
   const [createPersonaOpen, setCreatePersonaOpen] = useState(false);
   const [selectedTrackForPersona, setSelectedTrackForPersona] = useState<Track | null>(null);
 
-  const isDesktop = useMediaQuery("(min-width: 1024px)");
-  const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1023px)");
+  const { isDesktop, isTablet } = useBreakpoints();
 
   // Глобальное состояние UI для управления видимостью FAB
   const registerDialog = useUIStateStore((state) => state.registerDialog);
@@ -502,7 +501,7 @@ const Generate = () => {
                     style={{
                       bottom: 'max(calc(var(--mini-player-height, 0px) + var(--bottom-tab-bar-height, 64px) + 1rem), 5rem)',
                       position: 'fixed',
-                      zIndex: 70,
+                      zIndex: 'var(--z-fab)',
                       willChange: 'transform'
                     }}
                     aria-label="Создать музыку"
