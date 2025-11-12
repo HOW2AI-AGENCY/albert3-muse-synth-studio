@@ -675,7 +675,7 @@ export const UnifiedTrackActionsMenu = memo(({
                   size="icon"
                   onClick={onLike}
                   className={cn(
-                    'h-8 w-8',
+                    'h-8 w-8 touch-target-min',
                     variant === 'minimal' && 'h-7 w-7'
                   )}
                   aria-label={isLiked ? 'Убрать из избранного' : 'В избранное'}
@@ -703,7 +703,7 @@ export const UnifiedTrackActionsMenu = memo(({
                       variant="ghost"
                       size="icon"
                       onClick={onDownload}
-                      className="h-8 w-8"
+                      className="h-8 w-8 touch-target-min"
                       aria-label="Скачать MP3"
                     >
                       <Download className="w-4 h-4" />
@@ -720,7 +720,7 @@ export const UnifiedTrackActionsMenu = memo(({
                       variant="ghost"
                       size="icon"
                       onClick={onShare}
-                      className="h-8 w-8"
+                      className="h-8 w-8 touch-target-min"
                       aria-label="Поделиться"
                     >
                       <Share2 className="w-4 h-4" />
@@ -742,7 +742,7 @@ export const UnifiedTrackActionsMenu = memo(({
               variant="ghost"
               size="icon"
               className={cn(
-                'h-8 w-8',
+                'h-8 w-8 touch-target-min',
                 variant === 'minimal' && 'h-7 w-7'
               )}
               aria-label="Track actions menu"

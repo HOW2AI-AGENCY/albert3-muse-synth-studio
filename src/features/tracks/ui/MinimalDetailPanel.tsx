@@ -257,9 +257,7 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
                   </details>
                 )}
 
-                <Button onClick={handleSave} disabled={isSaving} size="sm" className="w-full min-h-[44px]">
-                  {isSaving ? "Сохранение..." : "Сохранить"}
-                </Button>
+                {/* Save button is moved to the sticky footer */}
               </AccordionContent>
             </AccordionItem>
 
@@ -357,24 +355,26 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
               onShare={() => handleShare()}
             />
           </div>
-
-          {/* Delete Button */}
-          {onDelete && (
-            <>
-              <Separator />
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleDelete}
-                className="w-full min-h-[44px]"
-              >
-                <Trash2 className="h-3.5 w-3.5 mr-2" />
-                Удалить трек
-              </Button>
-            </>
-          )}
         </div>
       </ScrollArea>
+
+      {/* Sticky Footer */}
+      <div className="p-3 border-t bg-card/50 shrink-0 space-y-2">
+        <Button onClick={handleSave} disabled={isSaving} size="sm" className="w-full min-h-[44px]">
+          {isSaving ? "Сохранение..." : "Сохранить"}
+        </Button>
+        {onDelete && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleDelete}
+            className="w-full min-h-[44px]"
+          >
+            <Trash2 className="h-3.5 w-3.5 mr-2" />
+            Удалить трек
+          </Button>
+        )}
+      </div>
     </div>
   );
 });
