@@ -100,7 +100,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
         direction="horizontal"
         spacing="sm"
         align="center"
-        className="p-1.5 sm:p-2 md:p-3" /* Reduced mobile padding from p-2 to p-1.5 */
+        className="p-1.5 sm:p-2 md:p-3 safe-area-left safe-area-right" /* Reduced mobile padding from p-2 to p-1.5 */
       >
         {/* Album Art */}
         <div className={cn(

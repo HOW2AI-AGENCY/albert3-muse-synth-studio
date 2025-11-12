@@ -321,7 +321,7 @@
       --z-bottom-nav: 1000;            /* Bottom navigation - always visible */
       --z-bottom-tab-bar: 1000;        /* Bottom tab bar - same as nav */
       --z-control-buttons: 1050;       /* Control buttons - above nav, below player */
-      --z-mini-player: 1100;           /* Mini player - above everything except modals */
+      --z-mini-player: 990;           /* Mini player - above everything except modals */
       --z-fab: 1075;                   /* FAB - between controls and player */
     }
   }
