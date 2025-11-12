@@ -91,8 +91,8 @@ export interface PollingConfig {
 }
 
 export const DEFAULT_POLLING_CONFIG: PollingConfig = {
-  intervalMs: 10000,  // 10 seconds
-  maxAttempts: 60,    // 10 minutes total (increased from 40)
+  intervalMs: 2000,  // 2 seconds
+  maxAttempts: 300,   // 10 minutes total
   timeoutMs: 600000,  // 10 minutes
 };
 

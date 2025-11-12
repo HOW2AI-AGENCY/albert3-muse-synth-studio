@@ -6,7 +6,7 @@ import { logger } from '../_shared/logger.ts';
 import { replicate } from '../_shared/replicate.ts';
 
 // ❗ ВАЖНО: Укажите здесь актуальную версию модели Replicate для анализа аудио
-const REPLICATE_MODEL_VERSION = 'meta/musicgen:b05b1dff1d8c6dc63d429b630132313689f81522a3b3834316d2c41c7de334a1'; // Пример: MusicGen
+const REPLICATE_MODEL_VERSION = 'b05b1dff1d8c6dc63d14b0cdb42135378dcb87f6373b0d3d341ede46e59e2b38';
 
 // URL для вебхука, который Replicate вызовет по завершении
 const WEBHOOK_URL = `${Deno.env.get('SUPABASE_URL')}/functions/v1/replicate-callback`;
@@ -39,7 +39,7 @@ serve(async (req: Request) => {
     logger.info('✅ User authenticated in analyze-audio', { userId: user.id });
 
     // 2. Валидация входных данных
-    const { audioUrl, trackId } = await req.json();
+    const { audioUrl, trackId, prompt } = await req.json();
     if (!audioUrl || !trackId) {
       return new Response(JSON.stringify({ error: 'audioUrl and trackId are required' }), {
         status: 400,
@@ -58,12 +58,10 @@ serve(async (req: Request) => {
 
     // 4. Запуск задачи в Replicate
     const prediction = await replicate.run(
-      REPLICATE_MODEL_VERSION,
+      `meta/musicgen:${REPLICATE_MODEL_VERSION}`,
       {
-        // Параметры, специфичные для модели (здесь - для MusicGen)
-        // Их нужно будет адаптировать под реальную модель анализа аудио
         model_version: 'stereo-melody-large',
-        input_audio: audioUrl,
+        description: prompt,
         duration: 8,
       },
       WEBHOOK_URL, // Отправляем результат на наш вебхук
