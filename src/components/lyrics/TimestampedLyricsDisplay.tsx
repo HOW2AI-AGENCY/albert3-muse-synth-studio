@@ -1,5 +1,6 @@
-import React, { useMemo, useEffect, useRef } from 'react';
+import React, { useMemo, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useGesture } from '@use-gesture/react';
 import { cn } from '@/lib/utils';
 import type { TimestampedWord } from '@/hooks/useTimestampedLyrics';
 import type { LyricsSettings } from './LyricsSettingsDialog';
@@ -10,6 +11,8 @@ interface TimestampedLyricsDisplayProps {
   currentTime: number;
   className?: string;
   settings?: LyricsSettings;
+  onTogglePlayPause?: () => void;
+  onSeek?: (time: number) => void;
 }
 
 interface LyricLine {
@@ -24,18 +27,57 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
   currentTime,
   className,
   settings = { fontSize: 'medium', scrollSpeed: 5, disableWordHighlight: false, highContrast: false },
+  onTogglePlayPause,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [fontSize, setFontSize] = useState(1); // Used for pinch-to-zoom
+  const [userSelectedLine, setUserSelectedLine] = useState<number | null>(null);
 
-  // Font size classes based on settings
-  const fontSizeClasses = useMemo(() => {
-    const baseClasses = {
-      small: 'text-base sm:text-lg md:text-xl lg:text-2xl',
-      medium: 'text-lg sm:text-2xl md:text-3xl lg:text-4xl',
-      large: 'text-xl sm:text-3xl md:text-4xl lg:text-5xl',
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prevLine = Math.max(0, (userSelectedLine ?? activeLineIndex) - 1);
+        onSeek?.(lines[prevLine].startTime);
+        setUserSelectedLine(prevLine);
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const nextLine = Math.min(lines.length - 1, (userSelectedLine ?? activeLineIndex) + 1);
+        onSeek?.(lines[nextLine].startTime);
+        setUserSelectedLine(nextLine);
+      } else if (e.key === ' ') {
+        e.preventDefault();
+        onTogglePlayPause?.();
+      }
     };
-    return baseClasses[settings.fontSize];
-  }, [settings.fontSize]);
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [userSelectedLine, activeLineIndex, lines, onSeek, onTogglePlayPause]);
+
+  const fontSizes = useMemo(() => ({ small: 1, medium: 1.5, large: 2 }), []);
+
+  useEffect(() => {
+    setFontSize(fontSizes[settings.fontSize]);
+  }, [settings.fontSize, fontSizes]);
+
+  const bind = useGesture({
+    onDoubleClick: () => {
+      onTogglePlayPause?.();
+    },
+    onPinch: ({ offset: [d] }) => {
+      const newFontSize = Math.max(0.5, Math.min(3, d));
+      setFontSize(newFontSize);
+    },
+    onDrag: ({ scrolling, delta: [, dy], direction: [, yDir] }) => {
+      if (scrolling) {
+        const scrollContainer = scrollRef.current?.closest('[data-radix-scroll-area-viewport]') as HTMLElement;
+        if (scrollContainer) {
+          scrollContainer.scrollTop += dy * yDir;
+        }
+      }
+    },
+  });
 
   const lines: LyricLine[] = useMemo(() => {
     if (!lyricsData) return [];
@@ -120,14 +162,13 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
   }, [activeLineIndex, settings.scrollSpeed]);
 
   return (
-    <div className={cn("h-full w-full bg-background/50 dark:bg-slate-950/80", className)}>
+    <div {...bind()} className={cn("h-full w-full bg-background/50 dark:bg-slate-950/80", className)} style={{ touchAction: 'none' }}>
       <ScrollArea className="h-full w-full">
         <div 
           ref={scrollRef} 
-          className={cn(
-            "flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 font-bold text-center min-h-full",
-            fontSizeClasses
-          )}
+          className="flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 font-bold text-center min-h-full"
+          style={{ fontSize: `${fontSize}rem` }}
+          role="log"
         >
           {lines.length === 0 ? (
             <div className="text-muted-foreground py-8">
@@ -149,6 +190,9 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
                     }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ duration: 0.4, ease: "easeInOut" }}
+                    aria-live={isActive ? 'polite' : 'off'}
+                    aria-atomic="true"
+                    aria-relevant="text"
                     className={cn(
                       "mb-6 sm:mb-8 transition-all duration-300 leading-relaxed px-2",
                       isActive
