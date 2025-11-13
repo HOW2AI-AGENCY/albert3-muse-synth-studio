@@ -28,6 +28,7 @@ export const MinimalVersionsList = memo(({ trackId }: MinimalVersionsListProps) 
         .from("track_versions")
         .select("*")
         .eq("parent_track_id", trackId)
+        .gte("variant_index", 1) // ✅ FIX P0: Only load variants >= 1 (no duplicates of main track)
         .order("variant_index", { ascending: true });
 
       if (error) throw error;
@@ -71,17 +72,11 @@ export const MinimalVersionsList = memo(({ trackId }: MinimalVersionsListProps) 
     return versions;
   }, [mainTrack, versions]);
 
-  // Показываем ровно 2 версии: основную + последнюю доступную версию,
-  // если есть только версии без основной — берём первые две.
+  // ✅ FIX P0: Show ALL versions, not just 2
+  // Previous logic limited display to 2 versions, causing variants to be hidden
   const displayVersions = useMemo(() => {
-    if (allVersions.length <= 2) return allVersions;
-    const hasMain = Boolean(mainTrack);
-    if (hasMain) {
-      const last = versions[versions.length - 1];
-      return [allVersions[0], last];
-    }
-    return allVersions.slice(0, 2);
-  }, [allVersions, mainTrack, versions]);
+    return allVersions;
+  }, [allVersions]);
 
   if (isLoading) {
     return (
