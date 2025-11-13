@@ -129,7 +129,7 @@ const TrackCardComponent = memo(({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="relative aspect-square bg-gradient-to-br from-gray-800 to-gray-900">
+        <div className="relative aspect-square max-h-[200px] sm:max-h-none bg-gradient-to-br from-gray-800 to-gray-900"> {/* P1-2 FIX: Limit height on mobile for better information density */}
           {(track.status === 'processing' || track.status === 'pending') && (
             <GenerationProgress track={track} onSync={onSync} onDelete={onDelete} />
           )}

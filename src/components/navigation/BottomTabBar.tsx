@@ -88,7 +88,7 @@ export const BottomTabBar: FC<BottomTabBarProps> = ({
         }
       }}
     >
-      <div className="flex items-center justify-between px-1.5">
+      <div className="flex items-center justify-between px-2 sm:px-3"> {/* P0-4 FIX: Increased from 6px to 8px for safe touch areas on curved edges */}
         {primaryItems.map((item) => {
           const Icon = item.icon;
           const isActive =
