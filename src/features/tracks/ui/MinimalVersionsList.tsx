@@ -21,7 +21,13 @@ export const MinimalVersionsList = memo(({ trackId }: MinimalVersionsListProps) 
   const queryClient = useQueryClient();
   const { rollbackToVersion } = useTrackRollback(trackId);
 
-  const { data: versions = [], isLoading } = useQuery({
+  const {
+    data: versions = [],
+    isLoading,
+    isError,
+    error,
+    refetch
+  } = useQuery({
     queryKey: ["track-versions-minimal", trackId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -31,10 +37,15 @@ export const MinimalVersionsList = memo(({ trackId }: MinimalVersionsListProps) 
         .gte("variant_index", 1) // ✅ FIX P0: Only load variants >= 1 (no duplicates of main track)
         .order("variant_index", { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Failed to load track versions', error, { trackId });
+        throw error;
+      }
       return data || [];
     },
     enabled: !!trackId,
+    retry: 2, // ✅ P0 FIX: Explicit retry count
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // ✅ Exponential backoff
   });
 
   const { data: mainTrack } = useQuery({
@@ -84,6 +95,28 @@ export const MinimalVersionsList = memo(({ trackId }: MinimalVersionsListProps) 
         {[1, 2].map((i) => (
           <Skeleton key={i} className="h-12 w-full" />
         ))}
+      </div>
+    );
+  }
+
+  // ✅ P0 FIX: Error handling UI
+  if (isError) {
+    return (
+      <div className="p-4 text-center space-y-3 border border-destructive/50 rounded-md bg-destructive/5">
+        <p className="text-sm text-destructive font-medium">
+          Не удалось загрузить версии треков
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {error instanceof Error ? error.message : 'Произошла ошибка при загрузке'}
+        </p>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => refetch()}
+          className="mx-auto"
+        >
+          Повторить попытку
+        </Button>
       </div>
     );
   }
