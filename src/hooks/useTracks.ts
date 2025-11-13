@@ -150,7 +150,7 @@ export const useTracks = (refreshTrigger?: number, options: UseTracksOptions = {
         throw err;
       }
 
-      const tracks = (data || []).map(mapTrackRowToTrack);
+      const tracks = (data || []).map((row) => mapTrackRowToTrack(row as any));
       await trackCacheService.cacheTracks(userId, tracks);
 
       const totalCount = typeof count === 'number' ? count : null;

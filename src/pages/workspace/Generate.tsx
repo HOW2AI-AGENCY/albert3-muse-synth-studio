@@ -402,22 +402,26 @@ const Generate = () => {
   // Mobile: List with FAB and Drawers
   return (
     <div className="h-full bg-background flex flex-col">
-      <div className="flex items-center justify-between p-4">
-        <h2 className="text-xl font-bold">Мои треки</h2>
-        <div className="flex items-center gap-2">
+      {/* Mobile Header - компактный */}
+      <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 bg-background/95 backdrop-blur-sm sticky top-0 z-10">
+        <h2 className="text-lg font-bold truncate">Мои треки</h2>
+        <div className="flex items-center gap-1.5">
           <ViewSwitcher view={viewMode} onViewChange={handleViewChange} />
           <Drawer>
             <DrawerTrigger asChild>
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" className="h-9 w-9">
                 <Filter className="h-4 w-4" />
               </Button>
             </DrawerTrigger>
-            <DrawerContent className="h-[40vh] mt-20">
-              <div className="p-4">
-                <h3 className="text-lg font-semibold mb-4">Фильтры и сортировка</h3>
-                <div className="mb-4">
+            <DrawerContent className="h-auto max-h-[50vh]">
+              <VisuallyHidden>
+                <DrawerTitle>Фильтры</DrawerTitle>
+              </VisuallyHidden>
+              <div className="p-4 pb-safe">
+                <h3 className="text-base font-semibold mb-3">Фильтры</h3>
+                <div className="space-y-3">
                   <Select value={selectedProjectId || "all"} onValueChange={(value: string) => setSelectedProjectId(value === "all" ? undefined : value)}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full h-11">
                       <SelectValue placeholder="Все треки" />
                     </SelectTrigger>
                     <SelectContent>
@@ -430,13 +434,18 @@ const Generate = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                {/* TODO: Add sorting options here */}
               </div>
             </DrawerContent>
           </Drawer>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto workspace-main p-4">
+
+      {/* Track List - с правильными отступами для мобильных */}
+      <div className="flex-1 overflow-y-auto px-3 py-3 pb-safe"
+        style={{
+          paddingBottom: 'calc(var(--workspace-bottom-offset) + 1rem + env(safe-area-inset-bottom))'
+        }}
+      >
         <TracksList
           tracks={tracks}
           isLoading={isLoading}
@@ -451,11 +460,12 @@ const Generate = () => {
           viewMode={viewMode}
         />
         {hasNextPage && (
-          <div className="mt-4 flex justify-center">
+          <div className="mt-3 flex justify-center pb-4">
             <Button
               variant="outline"
               onClick={() => fetchNextPage()}
               disabled={isFetchingNextPage}
+              className="h-11 px-6"
             >
               {isFetchingNextPage ? "Загрузка..." : "Загрузить ещё"}
             </Button>
@@ -480,9 +490,9 @@ const Generate = () => {
         onSuccess={refreshTracks}
       />
 
-      {/* FAB Button - Скрывается при открытых формах и развернутом плеере */}
+      {/* FAB для генератора - улучшенная мобильная версия */}
       <AnimatePresence>
-        {!shouldHideFAB && !isDesktop && (
+        {!shouldHideFAB && (
           <Portal>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -497,10 +507,10 @@ const Generate = () => {
                     variant="fab"
                     size="fab"
                     onClick={() => setShowGenerator(true)}
-                    className="fixed right-6"
+                    className="fixed"
                     style={{
-                      bottom: 'max(calc(var(--mini-player-height, 0px) + var(--bottom-tab-bar-height, 64px) + 1rem), 5rem)',
-                      position: 'fixed',
+                      right: 'max(1rem, env(safe-area-inset-right))',
+                      bottom: 'calc(var(--workspace-bottom-offset) + 1rem + env(safe-area-inset-bottom))',
                       zIndex: 'var(--z-fab)',
                       willChange: 'transform'
                     }}
@@ -518,40 +528,40 @@ const Generate = () => {
         )}
       </AnimatePresence>
 
-      {/* Generator Drawer */}
+      {/* Generator Drawer - оптимизирован для мобильных */}
       <Drawer open={showGenerator} onOpenChange={setShowGenerator}>
-        <DrawerContent className="h-[90vh] mt-20">
+        <DrawerContent className="h-[92vh] max-h-[92vh]">
           <VisuallyHidden>
             <DrawerTitle>Создать музыку</DrawerTitle>
           </VisuallyHidden>
-          <div className="w-full max-w-md mx-auto h-8 flex items-center justify-center">
-            <div className="w-12 h-1 bg-muted-foreground/20 rounded-full" />
-          </div>
-          <div className="p-4 h-full overflow-y-auto">
+          <div className="overflow-y-auto h-full px-3 py-4 pb-safe">
             <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
           </div>
         </DrawerContent>
       </Drawer>
 
+      {/* Detail Panel - улучшенный мобильный drawer */}
       <Drawer open={!!selectedTrack} onOpenChange={(open) => !open && handleCloseDetail()}>
-        <DrawerContent className="h-[70vh] max-h-[75vh]">
+        <DrawerContent className="h-[85vh] max-h-[85vh]">
           <VisuallyHidden>
             <DrawerTitle>Детали трека</DrawerTitle>
           </VisuallyHidden>
-          {/* Drag handle */}
-          <div className="w-full h-8 flex items-center justify-center shrink-0">
-            <div className="w-12 h-1 bg-muted-foreground/20 rounded-full" />
-          </div>
           
           {selectedTrack && (
-            <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
-              <DetailPanel
-                track={normalizeTrack(selectedTrack)}
-                onClose={handleCloseDetail}
-                onUpdate={refreshTracks}
-                onDelete={handleDelete}
-                variant="mobile"
-              />
+            <Suspense fallback={
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            }>
+              <div className="overflow-y-auto h-full pb-safe">
+                <DetailPanel
+                  track={normalizeTrack(selectedTrack)}
+                  onClose={handleCloseDetail}
+                  onUpdate={refreshTracks}
+                  onDelete={handleDelete}
+                  variant="mobile"
+                />
+              </div>
             </Suspense>
           )}
         </DrawerContent>

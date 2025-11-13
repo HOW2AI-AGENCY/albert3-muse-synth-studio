@@ -47,21 +47,24 @@ const isTrackStatus = (status: TrackRow["status"]): status is TrackStatus =>
   status === "completed" ||
   status === "failed";
 
-export const mapTrackRowToTrack = (track: TrackRowWithVersions): Track => ({
-  ...track,
-  status: isTrackStatus(track.status) ? track.status : "pending",
-  idempotency_key: track.idempotency_key ?? null,
-  archived_to_storage: track.archived_to_storage ?? false,
-  storage_audio_url: track.storage_audio_url ?? null,
-  storage_cover_url: track.storage_cover_url ?? null,
-  storage_video_url: track.storage_video_url ?? null,
-  archive_scheduled_at: track.archive_scheduled_at ?? null,
-  archived_at: track.archived_at ?? null,
-  mureka_task_id: track.mureka_task_id ?? null,
-  project_id: track.project_id ?? null,
-  metadata: track.metadata as TrackMetadata | null,
-  versions: Array.isArray(track.track_versions) ? track.track_versions : [],
-});
+export const mapTrackRowToTrack = (track: TrackRow | TrackRowWithVersions): Track => {
+  const trackWithVersions = track as TrackRowWithVersions;
+  return {
+    ...track,
+    status: isTrackStatus(track.status) ? track.status : "pending",
+    idempotency_key: track.idempotency_key ?? null,
+    archived_to_storage: track.archived_to_storage ?? false,
+    storage_audio_url: track.storage_audio_url ?? null,
+    storage_cover_url: track.storage_cover_url ?? null,
+    storage_video_url: track.storage_video_url ?? null,
+    archive_scheduled_at: track.archive_scheduled_at ?? null,
+    archived_at: track.archived_at ?? null,
+    mureka_task_id: track.mureka_task_id ?? null,
+    project_id: track.project_id ?? null,
+    metadata: track.metadata as TrackMetadata | null,
+    versions: Array.isArray(trackWithVersions.track_versions) ? trackWithVersions.track_versions : [],
+  };
+};
 
 export interface ImprovePromptRequest {
   prompt: string;
@@ -330,7 +333,7 @@ export class ApiService {
 
       handlePostgrestError(error, "Failed to fetch tracks", context, { userId });
 
-      const tracks = (data ?? []).map(mapTrackRowToTrack);
+      const tracks = (data ?? []).map((row) => mapTrackRowToTrack(row as TrackRowWithVersions));
 
       // Кэширование теперь происходит только в useTracks, убираем дублирование
       return tracks;
