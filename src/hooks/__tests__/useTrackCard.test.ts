@@ -3,7 +3,8 @@
  * Tests business logic separation
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useTrackCard } from '@/features/tracks/hooks/useTrackCard';
 import type { Track } from '@/types/domain/track.types';
@@ -15,7 +16,7 @@ vi.mock('@/features/tracks/components/card/useTrackCardState');
 describe('useTrackCard', () => {
   beforeEach(() => {
     // Provide a default mock implementation for useTrackCardState
-    (useTrackCardState as vi.Mock).mockReturnValue({
+    (useTrackCardState as ReturnType<typeof vi.fn>).mockReturnValue({
       isHovered: false,
       isVisible: true,
       hasStems: false,

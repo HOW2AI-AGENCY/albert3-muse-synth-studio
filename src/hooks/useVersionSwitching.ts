@@ -27,7 +27,6 @@ export interface SwitchVersionParams {
 export const useVersionSwitching = () => {
   const queryClient = useQueryClient();
   const currentTrack = useAudioPlayerStore((state) => state.currentTrack);
-  const play = useAudioPlayerStore((state) => state.play);
   const pause = useAudioPlayerStore((state) => state.pause);
 
   const switchVersion = useCallback(
