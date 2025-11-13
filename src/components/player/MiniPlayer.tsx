@@ -100,12 +100,12 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
         direction="horizontal"
         spacing="sm"
         align="center"
-        className="p-1.5 sm:p-2 md:p-3" /* Reduced mobile padding from p-2 to p-1.5 */
+        className="p-2 sm:p-2.5 md:p-3" /* P0-1 FIX: Increased from 6px to 8px mobile for better breathing room */
       >
         {/* Album Art */}
         <div className={cn(
           "relative rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 flex-shrink-0 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 group",
-          "w-8 h-8 sm:w-12 sm:h-12 lg:w-14 lg:h-14" /* Reduced mobile size from w-10 h-10 to w-8 h-8 */
+          "w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16" /* P0-2 FIX: Increased from 32px to 48px mobile (Material Design minimum) */
         )}>
           {currentTrack.cover_url ? (
             <img
@@ -163,7 +163,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
         </div>
 
         {/* Playback Controls */}
-        <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0"> {/* Reduced mobile gap from gap-1.5 to gap-1 */}
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-shrink-0"> {/* P0-3 FIX: Increased from 4px to 8px mobile (WCAG 2.5.8 spacing) */}
           {/* Phase 2.3: Versions Sheet - Desktop button, Mobile opens via track info */}
           {hasVersions && (
             <Sheet open={isVersionsSheetOpen} onOpenChange={setIsVersionsSheetOpen}>

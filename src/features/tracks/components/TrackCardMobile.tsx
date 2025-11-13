@@ -71,7 +71,7 @@ export const TrackCardMobile = memo(({ track, onClick, onMoreClick }: TrackCardM
         isCurrentTrack && "ring-2 ring-primary"
       )}
     >
-      <div className="flex gap-2 sm:gap-3 p-2 sm:p-3">
+      <div className="flex gap-2 sm:gap-3 p-3 sm:p-4"> {/* P1-3 FIX: Increased from 8px to 12px mobile for better visual balance */}
         {/* Optimized cover: 80px mobile, 60px tablet+ (P0-M1 fix) */}
         <div className="relative w-20 h-20 sm:w-15 sm:h-15 rounded overflow-hidden flex-shrink-0">
           <LazyImage
