@@ -41,6 +41,8 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
     lyricsData.alignedWords.length > 0
   );
   const currentTime = useAudioPlayerStore((state) => state.currentTime);
+  const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
+  const seekTo = useAudioPlayerStore((state) => state.seekTo);
 
   if (!shouldFetchTimestamped) {
     if (fallbackLyrics) {
@@ -92,6 +94,8 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
           currentTime={currentTime}
           settings={settings}
           className="w-full h-full"
+          onTogglePlayPause={togglePlayPause}
+          onSeek={seekTo}
         />
       )}
 
