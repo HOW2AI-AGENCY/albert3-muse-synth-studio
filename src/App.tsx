@@ -22,11 +22,8 @@ import { recordPerformanceMetric } from "@/utils/performanceMonitor";
 
 // ✅ Lazy load heavy components
 const LazyGlobalAudioPlayer = lazy(() => import("./components/player/GlobalAudioPlayer"));
-const LazyPerformanceMonitorWidget = lazy(() => 
+const LazyPerformanceMonitorWidget = lazy(() =>
   import("@/components/dev/PerformanceMonitorWidget").then(m => ({ default: m.PerformanceMonitorWidget }))
-);
-const LazySentryFeedbackButton = lazy(() => 
-  import("@/components/SentryFeedbackButton").then(m => ({ default: m.SentryFeedbackButton }))
 );
 
 // ✅ Mobile-aware React Query configuration
@@ -136,15 +133,12 @@ const App = () => {
                       <LazyGlobalAudioPlayer />
                     </Suspense>
 
-                    {import.meta.env.DEV && (
+                    {/* ✅ FIX: Hide PerformanceMonitor on mobile devices to avoid UI clutter */}
+                    {import.meta.env.DEV && !isMobile && (
                       <Suspense fallback={null}>
                         <LazyPerformanceMonitorWidget />
                       </Suspense>
                     )}
-
-                    <Suspense fallback={null}>
-                      <LazySentryFeedbackButton />
-                    </Suspense>
                   </Suspense>
                   </Profiler>
                 </AppLayout>
