@@ -221,7 +221,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
                 size="icon"
                 variant="ghost"
                 onClick={handlePrevious}
-                className="icon-button-touch hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+                className="hidden xs:inline-flex icon-button-touch hover:bg-primary/10 hover:scale-105 transition-all duration-200" /* P1-1 FIX: Hide on very small screens (<375px) */
               >
                 <SkipBack className="h-4 w-4" />
               </Button>
@@ -254,7 +254,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
                 size="icon"
                 variant="ghost"
                 onClick={handleNext}
-                className="icon-button-touch hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+                className="hidden xs:inline-flex icon-button-touch hover:bg-primary/10 hover:scale-105 transition-all duration-200" /* P1-1 FIX: Hide on very small screens (<375px) */
               >
                 <SkipForward className="h-4 w-4" />
               </Button>
