@@ -86,15 +86,15 @@ Requirements:
 
 Return ONLY the title, nothing else.`;
 
-    // Call Lovable AI
-    const aiResponse = await fetch("https://api.lovable.app/v1/chat/completions", {
+    // Call Lovable AI with correct endpoint
+    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${Deno.env.get("LOVABLE_API_KEY")}`,
       },
       body: JSON.stringify({
-        model: "openai/gpt-5-mini",
+        model: "google/gemini-2.5-flash",
         messages: [
           {
             role: "system",
@@ -105,8 +105,6 @@ Return ONLY the title, nothing else.`;
             content: aiPrompt,
           },
         ],
-        temperature: 0.8,
-        max_tokens: 20,
       }),
     });
 

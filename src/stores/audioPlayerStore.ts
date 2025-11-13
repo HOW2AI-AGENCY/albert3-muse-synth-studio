@@ -43,6 +43,7 @@ export interface AudioPlayerTrack {
   sourceVersionNumber?: number | null;
   suno_task_id?: string;
   suno_id?: string; // ✅ FIX: Added for lyrics API calls
+  mureka_task_id?: string; // ✅ FIX: Added for Mureka provider
   selectedVersionId?: string;
 }
 
@@ -565,7 +566,7 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             return get()._fetchVersionsFromApi(trackId);
           }
 
-          const versionsData = track.versions;
+          const versionsData = (track as any).versions || [];
 
           if (!versionsData || versionsData.length === 0) {
             // Fallback to API if versions are not on the track object
@@ -576,7 +577,7 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             {
               id: track.id,
               versionNumber: 1,
-              isMasterVersion: !versionsData.some(v => v.is_preferred_variant),
+              isMasterVersion: !versionsData.some((v: any) => v.is_preferred_variant),
               audio_url: track.audio_url,
               cover_url: track.cover_url,
               video_url: track.video_url,
@@ -586,7 +587,7 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               style_tags: track.style_tags,
               suno_id: track.suno_id,
             },
-            ...versionsData.map((variant) => ({
+            ...versionsData.map((variant: any) => ({
               id: variant.id,
               versionNumber: (variant.variant_index ?? 0) + 1,
               isMasterVersion: variant.is_preferred_variant ?? false,
@@ -601,9 +602,9 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             }))
           ];
 
-          const preferredVariant = versionsData.find(v => v.is_preferred_variant);
+          const preferredVariant = versionsData.find((v: any) => v.is_preferred_variant);
           const currentVersionIndex = preferredVariant
-            ? versions.findIndex(v => v.id === preferredVariant.id)
+            ? versions.findIndex((v: any) => v.id === preferredVariant.id)
             : 0;
 
           set({

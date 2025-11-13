@@ -32,6 +32,12 @@ interface SunoLyricsApiResponse {
 export const LyricsService = {
   async getTimestampedLyrics({ taskId, audioId }: GetTimestampedLyricsPayload): Promise<TimestampedLyricsResponse | null> {
     try {
+      // Validate inputs
+      if (!taskId || !audioId || taskId === 'null' || taskId === 'undefined') {
+        logger.warn('Invalid taskId or audioId', 'LyricsService', { taskId, audioId });
+        return null;
+      }
+
       // ✅ Check cache first
       const cached = await lyricsCache.get(taskId, audioId);
       if (cached) {

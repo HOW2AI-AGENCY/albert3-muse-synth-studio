@@ -72,104 +72,129 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
   }, [lines, currentTime]);
 
   useEffect(() => {
-    if (activeLineIndex !== -1 && scrollRef.current) {
-      const activeElement = scrollRef.current.querySelector<HTMLElement>(`[data-line-index="${activeLineIndex}"]`);
-      const scrollContainer = scrollRef.current.parentElement; // Get the ScrollArea's viewport
+    if (activeLineIndex === -1 || !scrollRef.current) return;
 
-      if (activeElement && scrollContainer) {
-        const targetScrollTop = activeElement.offsetTop - (scrollContainer.clientHeight / 2) + (activeElement.clientHeight / 2);
+    const activeElement = scrollRef.current.querySelector<HTMLElement>(
+      `[data-line-index="${activeLineIndex}"]`
+    );
+    
+    // For ScrollArea, we need to get the viewport element
+    const scrollContainer = scrollRef.current.closest('[data-radix-scroll-area-viewport]') as HTMLElement;
 
-        // Custom smooth scroll implementation
-        const startScrollTop = scrollContainer.scrollTop;
-        const distance = targetScrollTop - startScrollTop;
+    if (activeElement && scrollContainer) {
+      const containerHeight = scrollContainer.clientHeight;
+      const elementTop = activeElement.offsetTop;
+      const elementHeight = activeElement.clientHeight;
+      
+      // Center the active line
+      const targetScrollTop = elementTop - (containerHeight / 2) + (elementHeight / 2);
+      const startScrollTop = scrollContainer.scrollTop;
+      const distance = targetScrollTop - startScrollTop;
 
-        // Duration based on scroll speed setting (1 is slowest, 10 is fastest)
-        // We map the 1-10 range to a duration range, e.g., 1500ms to 200ms
-        const maxDuration = 1500;
-        const minDuration = 200;
-        const duration = maxDuration - ((settings.scrollSpeed - 1) / 9) * (maxDuration - minDuration);
+      // Skip animation if distance is very small
+      if (Math.abs(distance) < 10) return;
 
-        let startTime: number | null = null;
+      // Duration based on scroll speed setting (1 is slowest, 10 is fastest)
+      const maxDuration = 1500;
+      const minDuration = 200;
+      const duration = maxDuration - ((settings.scrollSpeed - 1) / 9) * (maxDuration - minDuration);
 
-        const animateScroll = (currentTime: number) => {
-          if (startTime === null) startTime = currentTime;
-          const timeElapsed = currentTime - startTime;
+      let startTime: number | null = null;
 
-          const ease = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // Ease in-out quad
-          const run = ease(Math.min(1, timeElapsed / duration));
+      const animateScroll = (currentTime: number) => {
+        if (startTime === null) startTime = currentTime;
+        const timeElapsed = currentTime - startTime;
 
-          scrollContainer.scrollTop = startScrollTop + distance * run;
+        const ease = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // Ease in-out quad
+        const run = ease(Math.min(1, timeElapsed / duration));
 
-          if (timeElapsed < duration) {
-            requestAnimationFrame(animateScroll);
-          }
-        };
+        scrollContainer.scrollTop = startScrollTop + distance * run;
 
-        requestAnimationFrame(animateScroll);
-      }
+        if (timeElapsed < duration) {
+          requestAnimationFrame(animateScroll);
+        }
+      };
+
+      requestAnimationFrame(animateScroll);
     }
   }, [activeLineIndex, settings.scrollSpeed]);
 
   return (
     <div className={cn("h-full w-full bg-background/50 dark:bg-slate-950/80", className)}>
       <ScrollArea className="h-full w-full">
-        <div ref={scrollRef} className={cn("flex flex-col items-center justify-center p-2 sm:p-4 font-bold text-center min-h-full", fontSizeClasses)}>
-          <AnimatePresence>
-            {lines.map((line, lineIndex) => {
-              const isActive = lineIndex === activeLineIndex;
-              return (
-                <motion.p
-                  key={line.id}
-                  data-line-index={lineIndex}
-                  initial={{ opacity: 0.5, scale: 0.95 }}
-                  animate={{
-                    opacity: isActive ? 1 : 0.5,
-                    scale: isActive ? 1.05 : 0.95,
-                  }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className={cn(
-                    "mb-4 sm:mb-6 transition-all duration-300 leading-relaxed",
-                    isActive
-                      ? settings.highContrast
-                        ? "text-blue-600 dark:text-cyan-400 font-extrabold"
-                        : "text-primary dark:text-primary font-extrabold"
-                      : settings.highContrast
-                        ? "text-gray-700 dark:text-slate-300"
-                        : "text-muted-foreground dark:text-slate-400"
-                  )}
-                >
-                  {line.words.map((word, wordIndex) => {
-                    const progress = isActive ? Math.max(0, Math.min(1, (currentTime - word.startS) / (word.endS - word.startS))) : 0;
-                    const cleanedWord = word.word.replace(/[\n\r]/g, ' ').trim();
-                    if (!cleanedWord) return null;
+        <div 
+          ref={scrollRef} 
+          className={cn(
+            "flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 font-bold text-center min-h-full",
+            fontSizeClasses
+          )}
+        >
+          {lines.length === 0 ? (
+            <div className="text-muted-foreground py-8">
+              Текст не найден
+            </div>
+          ) : (
+            <AnimatePresence mode="popLayout">
+              {lines.map((line, lineIndex) => {
+                const isActive = lineIndex === activeLineIndex;
+                return (
+                  <motion.p
+                    key={line.id}
+                    data-line-index={lineIndex}
+                    initial={{ opacity: 0.3, scale: 0.95, y: 10 }}
+                    animate={{
+                      opacity: isActive ? 1 : 0.4,
+                      scale: isActive ? 1.05 : 0.95,
+                      y: 0,
+                    }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                    className={cn(
+                      "mb-6 sm:mb-8 transition-all duration-300 leading-relaxed px-2",
+                      isActive
+                        ? settings.highContrast
+                          ? "text-blue-600 dark:text-cyan-400 font-extrabold"
+                          : "text-foreground dark:text-foreground font-extrabold"
+                        : settings.highContrast
+                          ? "text-gray-700 dark:text-slate-300"
+                          : "text-muted-foreground dark:text-muted-foreground/60"
+                    )}
+                  >
+                    {line.words.map((word, wordIndex) => {
+                      const progress = isActive 
+                        ? Math.max(0, Math.min(1, (currentTime - word.startS) / (word.endS - word.startS))) 
+                        : 0;
+                      const cleanedWord = word.word.replace(/[\n\r]/g, ' ').trim();
+                      if (!cleanedWord) return null;
 
-                    // If word highlight is disabled, show plain text
-                    if (settings.disableWordHighlight) {
+                      // If word highlight is disabled, show plain text
+                      if (settings.disableWordHighlight) {
+                        return (
+                          <span key={wordIndex} className="mr-2 sm:mr-3">
+                            {cleanedWord}
+                          </span>
+                        );
+                      }
+
                       return (
-                        <span key={wordIndex} className="mr-1 sm:mr-2">
-                          {cleanedWord}
+                        <span key={wordIndex} className="relative inline-block mr-2 sm:mr-3">
+                          <span
+                            className="absolute top-0 left-0 h-full overflow-hidden bg-gradient-to-r from-primary via-primary to-primary dark:from-cyan-400 dark:via-blue-500 dark:to-primary bg-clip-text text-transparent font-extrabold"
+                            style={{
+                              width: `${progress * 100}%`,
+                            }}
+                          >
+                            {cleanedWord}
+                          </span>
+                          <span className="opacity-80">{cleanedWord}</span>
                         </span>
                       );
-                    }
-
-                    return (
-                      <span key={wordIndex} className="relative inline-block mr-1 sm:mr-2">
-                        <span
-                          className="absolute top-0 left-0 h-full overflow-hidden bg-gradient-to-r from-primary via-primary-focus to-primary dark:from-cyan-400 dark:via-blue-400 dark:to-primary bg-clip-text text-transparent"
-                          style={{
-                            width: `${progress * 100}%`,
-                          }}
-                        >
-                          {cleanedWord}
-                        </span>
-                        <span className="text-muted-foreground/80 dark:text-slate-500/90">{cleanedWord}</span>
-                      </span>
-                    );
-                  })}
-                </motion.p>
-              );
-            })}
-          </AnimatePresence>
+                    })}
+                  </motion.p>
+                );
+              })}
+            </AnimatePresence>
+          )}
         </div>
       </ScrollArea>
     </div>
