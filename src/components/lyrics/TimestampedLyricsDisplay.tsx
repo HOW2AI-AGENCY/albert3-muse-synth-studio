@@ -310,9 +310,6 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
                     aria-current={isActive ? 'true' : undefined}
                   >
                     {line.words.map((word, wordIndex) => {
-                      const progress = isActive 
-                        ? Math.max(0, Math.min(1, (currentTime - word.startS) / (word.endS - word.startS))) 
-                        : 0;
                       const cleanedWord = word.word.replace(/[\n\r]/g, ' ').trim();
                       if (!cleanedWord) return null;
 
