@@ -116,45 +116,28 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
     const activeElement = scrollRef.current.querySelector<HTMLElement>(
       `[data-line-index="${activeLineIndex}"]`
     );
-    
-    // For ScrollArea, we need to get the viewport element
-    const scrollContainer = scrollRef.current.closest('[data-radix-scroll-area-viewport]') as HTMLElement;
 
-    if (activeElement && scrollContainer) {
-      const containerHeight = scrollContainer.clientHeight;
-      const elementTop = activeElement.offsetTop;
-      const elementHeight = activeElement.clientHeight;
-      
-      // Center the active line
-      const targetScrollTop = elementTop - (containerHeight / 2) + (elementHeight / 2);
-      const startScrollTop = scrollContainer.scrollTop;
-      const distance = targetScrollTop - startScrollTop;
+    if (!activeElement) return;
 
-      // Skip animation if distance is very small
-      if (Math.abs(distance) < 10) return;
+    const viewport = scrollRef.current.closest('[data-radix-scroll-area-viewport]') as HTMLElement;
 
-      // Duration based on scroll speed setting (1 is slowest, 10 is fastest)
-      const maxDuration = 1500;
-      const minDuration = 200;
-      const duration = maxDuration - ((settings.scrollSpeed - 1) / 9) * (maxDuration - minDuration);
+    if (viewport) {
+      const elementRect = activeElement.getBoundingClientRect();
+      const viewportRect = viewport.getBoundingClientRect();
+      const relativeTop = elementRect.top - viewportRect.top + viewport.scrollTop;
 
-      let startTime: number | null = null;
+      const targetScroll = relativeTop - viewport.offsetHeight / 2 + activeElement.offsetHeight / 2;
 
-      const animateScroll = (currentTime: number) => {
-        if (startTime === null) startTime = currentTime;
-        const timeElapsed = currentTime - startTime;
-
-        const ease = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // Ease in-out quad
-        const run = ease(Math.min(1, timeElapsed / duration));
-
-        scrollContainer.scrollTop = startScrollTop + distance * run;
-
-        if (timeElapsed < duration) {
-          requestAnimationFrame(animateScroll);
-        }
-      };
-
-      requestAnimationFrame(animateScroll);
+      viewport.scrollTo({
+        top: targetScroll,
+        behavior: settings.scrollSpeed > 7 ? 'auto' : 'smooth',
+      });
+    } else {
+      // Fallback for non-ScrollArea environments
+      activeElement.scrollIntoView({
+        behavior: settings.scrollSpeed > 7 ? 'auto' : 'smooth',
+        block: 'center',
+      });
     }
   }, [activeLineIndex, settings.scrollSpeed]);
 
@@ -342,18 +325,33 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
                         );
                       }
 
+                      const isWordActive = currentTime >= word.startS && currentTime <= word.endS;
+                      const wordClass = cn(
+                        "transition-all duration-150 px-1 cursor-pointer",
+                        isWordActive && [
+                          "text-white font-bold scale-110",
+                          "drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]", // White glow
+                          "relative z-10"
+                        ],
+                        !isWordActive && isActive && "text-gray-300 font-medium",
+                        !isWordActive && !isActive && (
+                          settings.highContrast
+                          ? "text-gray-400"
+                          : "text-muted-foreground"
+                        )
+                      );
+
                       return (
-                        <span key={wordIndex} className="relative inline-block mr-2 sm:mr-3">
-                          <span
-                            className="absolute top-0 left-0 h-full overflow-hidden bg-gradient-to-r from-primary via-primary to-primary dark:from-cyan-400 dark:via-blue-500 dark:to-primary bg-clip-text text-transparent font-extrabold"
-                            style={{
-                              width: `${progress * 100}%`,
-                            }}
-                          >
-                            {cleanedWord}
-                          </span>
-                          <span className="opacity-80">{cleanedWord}</span>
-                        </span>
+                        <motion.span
+                          key={wordIndex}
+                          className={wordClass}
+                          onClick={() => onSeek?.(word.startS)}
+                          initial={isWordActive ? { scale: 1 } : {}}
+                          animate={isWordActive ? { scale: 1.1 } : { scale: 1 }}
+                          transition={{ duration: 0.15 }}
+                        >
+                          {cleanedWord}{' '}
+                        </motion.span>
                       );
                     })}
                   </motion.p>

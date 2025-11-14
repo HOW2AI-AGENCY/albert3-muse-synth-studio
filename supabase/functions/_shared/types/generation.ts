@@ -32,6 +32,7 @@ export interface SunoGenerationParams extends BaseGenerationParams {
   personaId?: string; // ✅ ID Suno Persona
   projectId?: string; // ✅ Active project ID for track
   inspoProjectId?: string; // ✅ Inspiration project ID (source)
+  numClips?: number;
 }
 
 export interface MurekaGenerationParams extends BaseGenerationParams {

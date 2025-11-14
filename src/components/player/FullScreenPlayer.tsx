@@ -274,18 +274,18 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
         </div>
 
         {showLyrics && currentTrack ? (
-          <div className="mb-4 animate-fade-in max-h-64 h-64 flex items-center justify-center overflow-hidden">
+          <div className="flex-1 flex flex-col min-h-0 mb-4 animate-fade-in">
             <LyricsDisplay
-              taskId={currentTrack.suno_id || currentTrack.suno_task_id || ''}
+              taskId={currentTrack.suno_task_id || currentTrack.suno_id || ''}
               audioId={currentTrack.id}
               fallbackLyrics={currentTrack.lyrics ?? ''}
             />
           </div>
         ) : !showLyrics && currentTrack ? (
-          <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+          <div className="flex-1 flex items-center justify-center h-32 text-muted-foreground text-sm">
             Включите отображение лирики
           </div>
-        ) : null}
+        ) : <div className="flex-1" />}
 
         <MobileProgressBar
           onSeek={handleSeek}
