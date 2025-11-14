@@ -44,8 +44,8 @@ class RateLimiter {
     remaining: number;
     resetAt: number;
   } {
-    const key = config.keyPrefix 
-      ? `${config.keyPrefix}:${identifier}` 
+    const key = config.keyPrefix
+      ? `${config.keyPrefix}:${identifier}`
       : identifier;
 
     const now = Date.now();
@@ -78,10 +78,10 @@ class RateLimiter {
     }
 
     // Rate limit exceeded
-    logger.warn('Rate limit exceeded', { 
-      key, 
-      count: entry.count, 
-      limit: config.maxRequests 
+    logger.warn('Rate limit exceeded', {
+      key,
+      count: entry.count,
+      limit: config.maxRequests
     });
 
     return {
@@ -110,21 +110,21 @@ export const rateLimitConfigs = {
     maxRequests: 20,
     keyPrefix: 'balance',
   },
-  
+
   // Music generation - 10 requests per minute
   generation: {
     windowMs: 60 * 1000,
     maxRequests: 10,
     keyPrefix: 'generation',
   },
-  
+
   // Strict limit for expensive operations - 5 requests per minute
   expensive: {
     windowMs: 60 * 1000,
     maxRequests: 5,
     keyPrefix: 'expensive',
   },
-  
+
   // Default - 30 requests per minute
   default: {
     windowMs: 60 * 1000,
@@ -144,7 +144,7 @@ export const createRateLimitHeaders = (result: {
   'X-RateLimit-Limit': result.limit.toString(),
   'X-RateLimit-Remaining': result.remaining.toString(),
   'X-RateLimit-Reset': Math.ceil(result.resetAt / 1000).toString(),
-  'Retry-After': result.resetAt > Date.now() 
+  'Retry-After': result.resetAt > Date.now()
     ? Math.ceil((result.resetAt - Date.now()) / 1000).toString()
     : '0',
 });
@@ -227,7 +227,8 @@ export async function checkRateLimitRedis(
 ): Promise<RedisRateLimitResult> {
   // If Upstash not configured, log warning and allow (development mode)
   if (!UPSTASH_URL || !UPSTASH_TOKEN) {
-    logger.warn('⚠️ Upstash not configured - rate limiting disabled', 'RateLimit', {
+    logger.warn('Upstash not configured - rate limiting disabled', {
+      component: 'RateLimit',
       action,
       userId,
     });
@@ -284,7 +285,8 @@ export async function checkRateLimitRedis(
       const resetAt = oldestTimestamp + config.windowSeconds * 1000;
       const retryAfter = Math.ceil((resetAt - now) / 1000);
 
-      logger.warn('❌ Rate limit exceeded', 'RateLimit', {
+      logger.warn('Rate limit exceeded', {
+        component: 'RateLimit',
         userId,
         action,
         currentCount,
@@ -319,7 +321,8 @@ export async function checkRateLimitRedis(
     const remaining = config.maxRequests - currentCount - 1;
     const resetAt = now + config.windowSeconds * 1000;
 
-    logger.info('✅ Rate limit check passed', 'RateLimit', {
+    logger.info('Rate limit check passed', {
+      component: 'RateLimit',
       userId,
       action,
       remaining,
@@ -333,7 +336,9 @@ export async function checkRateLimitRedis(
     };
   } catch (error) {
     // Fail open on Redis errors (prevents DoS)
-    logger.error('❌ Rate limit check failed - allowing request', error, 'RateLimit', {
+    logger.error('Rate limit check failed - allowing request', {
+      component: 'RateLimit',
+      error,
       userId,
       action,
     });

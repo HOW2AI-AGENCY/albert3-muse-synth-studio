@@ -12,6 +12,7 @@ import {
 } from "../_shared/cors.ts";
 import { logger } from "../_shared/logger.ts";
 import { createSupabaseUserClient } from "../_shared/supabase.ts";
+import { TimestampedLyricsResponseSchema } from "../_shared/zod-schemas.ts";
 
 const SUNO_API_KEY = Deno.env.get("SUNO_API_KEY");
 const SUNO_API_BASE_URL = Deno.env.get("SUNO_API_BASE_URL") || "https://api.sunoapi.org";
@@ -29,8 +30,6 @@ export async function handler(req: Request) {
   }
 
   try {
-    // ✅ FIX: Extract user ID from JWT token instead of expecting X-User-Id header
-    // Previous implementation expected X-User-Id header which was never set by the frontend
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       logger.error("[GET-TIMESTAMPED-LYRICS] Missing Authorization header");
@@ -48,7 +47,7 @@ export async function handler(req: Request) {
     const { data: { user }, error: userError } = await userClient.auth.getUser(token);
 
     if (userError || !user) {
-      logger.error("[GET-TIMESTAMPED-LYRICS] Authentication failed", userError);
+      logger.error("[GET-TIMESTAMPED-LYRICS] Authentication failed", { error: userError });
       return new Response(
         JSON.stringify({ error: "Unauthorized - invalid token" }),
         {
@@ -96,16 +95,49 @@ export async function handler(req: Request) {
       },
     );
 
+    if (!sunoResponse.ok) {
+      const errorBody = await sunoResponse.text();
+      logger.error(`[GET-TIMESTAMPED-LYRICS] Suno API request failed`, { status: sunoResponse.status, error: errorBody, taskId, audioId });
+      return new Response(JSON.stringify({ error: `Suno API error: ${errorBody}` }), {
+        status: 502, // Bad Gateway
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const responseData = await sunoResponse.json();
 
-    return new Response(JSON.stringify(responseData), {
-      status: sunoResponse.status,
+    const responseValidation = TimestampedLyricsResponseSchema.safeParse(responseData);
+
+    if (!responseValidation.success) {
+      logger.error(
+        "[GET-TIMESTAMPED-LYRICS] Suno API response validation failed",
+        {
+          error: responseValidation.error,
+          taskId,
+          audioId,
+          responseData,
+        },
+      );
+      return new Response(
+        JSON.stringify({
+          error: "Invalid response from upstream service",
+          details: "The data received from the lyrics provider had an unexpected shape.",
+        }),
+        {
+          status: 502, // Bad Gateway
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    return new Response(JSON.stringify(responseValidation.data), {
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
     logger.error(
       "[GET-TIMESTAMPED-LYRICS] Unexpected error",
-      error as Error,
+      { error: error instanceof Error ? error.message : "Unknown error" },
     );
     return new Response(
       JSON.stringify({
