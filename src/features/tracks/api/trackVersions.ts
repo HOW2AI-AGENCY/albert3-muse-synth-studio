@@ -430,15 +430,19 @@ export async function getTrackWithVariants(trackId: string): Promise<TrackWithVa
 }
 
 /**
- * @deprecated Use getTrackWithVariants() instead
- * Legacy function for backward compatibility
+ * @deprecated Use getTrackWithVariants() instead. This function may produce duplicate versions and relies on unstable fallback logic.
+ * Legacy function for backward compatibility.
  *
- * Loads a track and all its versions from the database
- * Returns an array where first element is the main track, followed by all versions
+ * Loads a track and all its versions from the database.
+ * Returns an array where first element is the main track, followed by all versions.
  *
  * FALLBACK: Если track_versions пустая, пытается извлечь версии из metadata.suno_data
  */
 export async function getTrackWithVersions(trackId: string): Promise<TrackWithVersions[]> {
+  console.warn(
+    'DEPRECATION WARNING: `getTrackWithVersions` is deprecated and will be removed. Please use `getTrackWithVariants` instead.',
+    { trackId }
+  );
   try {
     const { data: mainTrack, error: trackError } = await supabase
       .from('tracks')
