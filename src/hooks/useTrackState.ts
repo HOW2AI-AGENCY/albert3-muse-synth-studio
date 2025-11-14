@@ -158,7 +158,9 @@ export const useTrackState = (track: Track, options: UseTrackStateOptions = {}) 
     try {
       const key = `track:selectedVersion:${track.id}`;
       localStorage.setItem(key, String(selectedVersionIndex));
-    } catch {}
+    } catch {
+      // Silently ignore localStorage write errors
+    }
   }, [track.id, selectedVersionIndex]);
 
   const displayedVersion = useMemo(() => {

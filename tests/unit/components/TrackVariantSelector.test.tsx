@@ -27,9 +27,11 @@ const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
 );
 
+import { useTrackVariants, useSetPreferredVariant } from '@/features/tracks/hooks';
+
 describe('TrackVariantSelector', () => {
-  const mockUseTrackVariants = vi.mocked(require('@/features/tracks/hooks').useTrackVariants);
-  const mockUseSetPreferredVariant = vi.mocked(require('@/features/tracks/hooks').useSetPreferredVariant);
+  const mockUseTrackVariants = vi.mocked(useTrackVariants);
+  const mockUseSetPreferredVariant = vi.mocked(useSetPreferredVariant);
 
   beforeEach(() => {
     vi.clearAllMocks();

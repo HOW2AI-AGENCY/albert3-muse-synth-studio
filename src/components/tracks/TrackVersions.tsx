@@ -29,6 +29,10 @@ export const TrackVersions = ({
   const currentTrack = useAudioPlayerStore((state) => state.currentTrack);
   const isPlaying = useAudioPlayerStore((state) => state.isPlaying);
 
+  const handleSelectVersion = useCallback((versionId: string) => {
+    onVersionSelect?.(versionId);
+  }, [onVersionSelect]);
+
   if (isLoading) {
     return (
       <div className="space-y-2">
@@ -64,10 +68,6 @@ export const TrackVersions = ({
     isMasterVersion: v.isPreferredVariant,
     versionNumber: i + 1,
   }));
-
-  const handleSelectVersion = useCallback((versionId: string) => {
-    onVersionSelect?.(versionId);
-  }, [onVersionSelect]);
 
   return (
     <div className="space-y-3" data-testid="track-versions-container">

@@ -15,7 +15,7 @@ afterEach(() => {
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     auth: {
-      getUser: vi.fn(),
+      getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
       getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
       signIn: vi.fn(),
       signOut: vi.fn(),
@@ -28,13 +28,17 @@ vi.mock('@/integrations/supabase/client', () => ({
         update: vi.fn().mockReturnThis(),
         delete: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
-        single: vi.fn(),
+        single: vi.fn().mockResolvedValue({ data: {}, error: null }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: {}, error: null }),
+        gte: vi.fn().mockReturnThis(),
         order: vi.fn().mockReturnThis(),
         limit: vi.fn().mockReturnThis(),
         range: vi.fn().mockResolvedValue({ data: [{ id: 'track-1', title: 'Test Track', status: 'completed', audio_url: 'url1', created_at: new Date().toISOString() }], error: null, count: 1 }),
+        returns: vi.fn().mockResolvedValue({ data: [], error: null }),
       };
       return mockChain;
     }),
+    rpc: vi.fn(),
     functions: {
       invoke: vi.fn(),
     },

@@ -439,10 +439,6 @@ export async function getTrackWithVariants(trackId: string): Promise<TrackWithVa
  * FALLBACK: Если track_versions пустая, пытается извлечь версии из metadata.suno_data
  */
 export async function getTrackWithVersions(trackId: string): Promise<TrackWithVersions[]> {
-  console.warn(
-    'DEPRECATION WARNING: `getTrackWithVersions` is deprecated and will be removed. Please use `getTrackWithVariants` instead.',
-    { trackId }
-  );
   try {
     const { data: mainTrack, error: trackError } = await supabase
       .from('tracks')

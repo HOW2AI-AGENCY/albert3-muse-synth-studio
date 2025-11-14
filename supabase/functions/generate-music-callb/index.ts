@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Unified Generate Music Callback Handler (generate-music-callb)
  * 

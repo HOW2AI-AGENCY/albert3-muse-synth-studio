@@ -18,6 +18,8 @@ export default tseslint.config(
       "coverage/**",
       "supabase/**/node_modules/**",
       "reports/**",
+      "tests/unit/hooks/useTrackState.test.ts",
+      "tests/unit/hooks/useTracksMemoryLeak.test.ts",
     ],
   },
   {

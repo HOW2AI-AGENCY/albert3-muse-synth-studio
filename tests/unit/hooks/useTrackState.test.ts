@@ -17,7 +17,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Mock dependencies
 vi.mock('@/stores/audioPlayerStore');
-vi.mock('@/features/tracks/hooks');
+vi.mock('@/features/tracks/hooks', async () => ({
+  useTrackVariants: vi.fn(),
+}));
 vi.mock('@/features/tracks/hooks/useTrackVersionLike');
 vi.mock('@/hooks/use-toast');
 vi.mock('@/integrations/supabase/client');
@@ -29,7 +31,6 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 );
 
 describe('useTrackState', () => {
-  const { useTrackVariants } = require('@/features/tracks/hooks');
 
   const mockTrack: Track = {
     id: 'track-123',
@@ -54,6 +55,7 @@ describe('useTrackState', () => {
   };
 
   beforeEach(() => {
+    const { useTrackVariants } = require('@/features/tracks/hooks');
     vi.clearAllMocks();
     localStorage.clear();
     useTrackVariants.mockReturnValue({ data: mockVariantsData, isLoading: false });
