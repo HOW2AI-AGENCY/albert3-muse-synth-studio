@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useState } from "react";
-import { Play, Pause, SkipBack, SkipForward, X, List, Star, Layers, VolumeX, Volume1, Volume2 } from "@/utils/iconImports";
+import { Play, Pause, SkipBack, SkipForward, X, List, Star, VolumeX, Volume1, Volume2 } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ResponsiveStack } from "@/components/ui/ResponsiveLayout";
@@ -91,10 +91,10 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
     <div
       data-testid="mini-player"
       onClick={handleExpand}
-      className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border/30 shadow-lg cursor-pointer animate-slide-up hover:bg-card/90 transition-all duration-300"
+      className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border/50 shadow-2xl cursor-pointer animate-slide-up hover:bg-card/90 transition-all duration-300 px-3 pt-2.5"
       style={{
-        paddingBottom: 'env(safe-area-inset-bottom, 0.5rem)',
-        zIndex: 'var(--z-mini-player)' /* Use unified z-index system from design-tokens.css */
+        paddingBottom: 'max(env(safe-area-inset-bottom), 0.75rem)',
+        zIndex: 'var(--z-mini-player)'
       }}
     >
       <ResponsiveStack
