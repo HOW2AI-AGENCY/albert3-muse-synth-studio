@@ -36,32 +36,27 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
   const lastTapRef = useRef<number>(0);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        const prevLine = Math.max(0, (userSelectedLine ?? activeLineIndex) - 1);
-        onSeek?.(lines[prevLine].startTime);
-        setUserSelectedLine(prevLine);
-      } else if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        const nextLine = Math.min(lines.length - 1, (userSelectedLine ?? activeLineIndex) + 1);
-        onSeek?.(lines[nextLine].startTime);
-        setUserSelectedLine(nextLine);
-      } else if (e.key === ' ') {
-        e.preventDefault();
-        onTogglePlayPause?.();
-      }
-    };
+    // Removed redundant global keydown listener to avoid referencing undeclared vars
+    // Keyboard handling is implemented via handleKeyDown below
+  }, []);
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [userSelectedLine, activeLineIndex, lines, onSeek, onTogglePlayPause]);
-
-  const fontSizes = useMemo(() => ({ small: 1, medium: 1.5, large: 2 }), []);
+  // Font size state and classes
+  const [fontSize, setFontSize] = useState<number>(1.5);
+  const fontSizeClasses = useMemo(() => {
+    switch (settings.fontSize) {
+      case 'small':
+        return 'text-base sm:text-lg';
+      case 'large':
+        return 'text-2xl sm:text-3xl';
+      default:
+        return 'text-xl sm:text-2xl';
+    }
+  }, [settings.fontSize]);
 
   useEffect(() => {
-    setFontSize(fontSizes[settings.fontSize]);
-  }, [settings.fontSize, fontSizes]);
+    const size = settings.fontSize === 'small' ? 1 : settings.fontSize === 'large' ? 2 : 1.5;
+    setFontSize(size);
+  }, [settings.fontSize]);
 
   const bind = useGesture({
     onDoubleClick: () => {
@@ -257,6 +252,7 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
       onTouchEnd={handleDoubleTap}
       tabIndex={0}
       ref={containerRef}
+      {...bind()}
     >
       {/* ✅ P1 FIX: Screen reader announcement for current line */}
       <div
@@ -276,6 +272,7 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
             fontSizeClasses
           )}
           aria-label="Текст песни"
+          style={{ fontSize: `${fontSize}rem` }}
         >
           {lines.length === 0 ? (
             <div className="text-muted-foreground py-8">

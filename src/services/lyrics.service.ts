@@ -56,19 +56,26 @@ export const LyricsService = {
         throw new Error(error.message);
       }
 
-      const response = data as SunoLyricsApiResponse;
+      const response = data as any;
 
-      if (!response.success) {
-        logger.error('Suno lyrics Edge Function returned error', new Error(response.error || 'Unknown error'), 'LyricsService', { taskId, audioId });
-        throw new Error(response.error || 'Failed to get timestamped lyrics');
+      // Normalize various possible response shapes
+      let normalized: TimestampedLyricsResponse | null = null;
+      if (response?.success && response?.data?.alignedWords) {
+        normalized = response.data as TimestampedLyricsResponse;
+      } else if (response?.alignedWords) {
+        normalized = response as TimestampedLyricsResponse;
+      } else if (response?.code === 200 && response?.data?.alignedWords) {
+        normalized = response.data as TimestampedLyricsResponse;
+      }
+
+      if (!normalized) {
+        logger.error('Suno lyrics Edge Function returned unexpected shape', new Error('Invalid response'), 'LyricsService', { taskId, audioId, preview: JSON.stringify(response)?.slice(0, 200) });
+        throw new Error(response?.error || 'Failed to get timestamped lyrics');
       }
 
       // ✅ Cache the result
-      if (response.data) {
-        await lyricsCache.set(taskId, audioId, response.data);
-      }
-
-      return response.data;
+      await lyricsCache.set(taskId, audioId, normalized);
+      return normalized;
     } catch (error) {
       logger.error('Error fetching timestamped lyrics', error as Error, 'LyricsService', { taskId, audioId });
       throw error;
