@@ -20,32 +20,42 @@ export const useTrackCardState = (track: Track) => {
 
   const allVersions = useMemo(() => {
     if (!variantsData) return [];
+
     const { mainTrack, variants } = variantsData;
-    const mainAsVersion = {
+    const versionsMap = new Map();
+
+    // Add main track first, as it's the authoritative "version 0"
+    versionsMap.set(mainTrack.id, {
       id: mainTrack.id,
       title: mainTrack.title,
       audio_url: mainTrack.audioUrl,
       cover_url: mainTrack.coverUrl,
       duration: mainTrack.duration,
       lyrics: mainTrack.lyrics,
+      // The main track is the master *unless* a preferred variant is set
       isMasterVersion: !variantsData.preferredVariant,
       parentTrackId: mainTrack.id,
-      versionNumber: 1,
-      likeCount: 0, // ✅ Main track doesn't have like_count in variants
-    };
-    const variantsAsVersions = variants.map((v) => ({
-      id: v.id,
-      title: mainTrack.title,
-      audio_url: v.audioUrl,
-      cover_url: v.coverUrl,
-      duration: v.duration,
-      lyrics: v.lyrics,
-      isMasterVersion: v.isPreferredVariant,
-      parentTrackId: v.parentTrackId,
-      versionNumber: v.variantIndex + 1,
-      likeCount: v.likeCount || 0, // ✅ Variant like count
-    }));
-    return [mainAsVersion, ...variantsAsVersions];
+      versionNumber: 1, // Display number for UI
+      likeCount: 0,
+    });
+
+    // Add other variants, overwriting is fine if IDs are the same (though unlikely)
+    variants.forEach((v) => {
+      versionsMap.set(v.id, {
+        id: v.id,
+        title: mainTrack.title, // Variants inherit title from main track
+        audio_url: v.audioUrl,
+        cover_url: v.coverUrl,
+        duration: v.duration,
+        lyrics: v.lyrics,
+        isMasterVersion: v.isPreferredVariant,
+        parentTrackId: v.parentTrackId,
+        versionNumber: v.variantIndex + 1, // Display number for UI
+        likeCount: v.likeCount || 0,
+      });
+    });
+
+    return Array.from(versionsMap.values());
   }, [variantsData]);
 
   const [selectedVersionIndex, setSelectedVersionIndex] = useState(() => {
