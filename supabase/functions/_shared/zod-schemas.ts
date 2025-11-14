@@ -236,6 +236,23 @@ export const musicVideoCallbackSchema = z.object({
   })
 });
 
+// ✅ AlignedWord schema for timestamped lyrics
+export const AlignedWordSchema = z.object({
+  word: z.string(),
+  success: z.boolean(),
+  startS: z.number(),
+  endS: z.number(),
+  palign: z.number(),
+});
+
+// ✅ Timestamped lyrics response schema (frontend expectation)
+export const TimestampedLyricsResponseSchema = z.object({
+  alignedWords: z.array(AlignedWordSchema),
+  waveformData: z.array(z.number()),
+  hootCer: z.number(),
+  isStreamed: z.boolean(),
+});
+
 // ✅ Helper function to validate and parse
 export function validateAndParse<T>(
   schema: z.ZodSchema<T>,

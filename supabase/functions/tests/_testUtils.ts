@@ -72,3 +72,26 @@ export const createTestUser = async (): Promise<{ userId: string; accessToken: s
     accessToken: sessionData.session.access_token,
   };
 };
+
+// A valid JWT for testing purposes (content doesn't matter, just needs to exist)
+export const VALID_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+
+// Mocks the Supabase user authentication call
+export const mockSupabaseUser = () => {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  return installFetchMock({
+    [`${supabaseUrl}/auth/v1/user`]: () =>
+      new Response(
+        JSON.stringify({
+          id: "test-user-id",
+          aud: "authenticated",
+          role: "authenticated",
+          email: "test@example.com",
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      ),
+  });
+};
