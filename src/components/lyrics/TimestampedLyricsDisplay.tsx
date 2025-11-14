@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef, useState } from 'react';
+import React, { useMemo, useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGesture } from '@use-gesture/react';
 import { cn } from '@/lib/utils';
@@ -11,8 +11,8 @@ interface TimestampedLyricsDisplayProps {
   currentTime: number;
   className?: string;
   settings?: LyricsSettings;
-  onTogglePlayPause?: () => void;
   onSeek?: (time: number) => void;
+  onTogglePlayPause?: () => void;
 }
 
 interface LyricLine {
@@ -27,11 +27,13 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
   currentTime,
   className,
   settings = { fontSize: 'medium', scrollSpeed: 5, disableWordHighlight: false, highContrast: false },
+  onSeek,
   onTogglePlayPause,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [fontSize, setFontSize] = useState(1); // Used for pinch-to-zoom
-  const [userSelectedLine, setUserSelectedLine] = useState<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [focusedLineIndex, setFocusedLineIndex] = useState<number>(-1);
+  const lastTapRef = useRef<number>(0);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -161,14 +163,119 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
     }
   }, [activeLineIndex, settings.scrollSpeed]);
 
+  // ✅ P1 FIX: Keyboard navigation
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    // Don't interfere with input fields
+    if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') {
+      return;
+    }
+
+    switch (e.key) {
+      case 'Tab':
+        e.preventDefault();
+        if (e.shiftKey) {
+          // Shift+Tab - previous line
+          setFocusedLineIndex(prev => Math.max(0, prev - 1));
+        } else {
+          // Tab - next line
+          setFocusedLineIndex(prev => Math.min(lines.length - 1, prev + 1));
+        }
+        break;
+      case 'Enter':
+        // Enter - seek to focused line
+        if (focusedLineIndex >= 0 && focusedLineIndex < lines.length && onSeek) {
+          e.preventDefault();
+          onSeek(lines[focusedLineIndex].startTime);
+        }
+        break;
+      case 'ArrowUp':
+        // Arrow Up - scroll up
+        e.preventDefault();
+        setFocusedLineIndex(prev => Math.max(0, prev - 1));
+        break;
+      case 'ArrowDown':
+        // Arrow Down - scroll down
+        e.preventDefault();
+        setFocusedLineIndex(prev => Math.min(lines.length - 1, prev + 1));
+        break;
+      case ' ':
+      case 'Spacebar':
+        // Space - play/pause
+        if (onTogglePlayPause) {
+          e.preventDefault();
+          onTogglePlayPause();
+        }
+        break;
+      case 'Escape':
+        // Escape - clear focus
+        e.preventDefault();
+        setFocusedLineIndex(-1);
+        break;
+    }
+  }, [focusedLineIndex, lines, onSeek, onTogglePlayPause]);
+
+  // ✅ P1 FIX: Double tap to play/pause
+  const handleDoubleTap = useCallback((e: React.TouchEvent) => {
+    const now = Date.now();
+    const timeSinceLastTap = now - lastTapRef.current;
+
+    if (timeSinceLastTap < 300 && timeSinceLastTap > 0) {
+      // Double tap detected
+      e.preventDefault();
+      if (onTogglePlayPause) {
+        onTogglePlayPause();
+      }
+    }
+
+    lastTapRef.current = now;
+  }, [onTogglePlayPause]);
+
+  // ✅ P1 FIX: Auto-set initial focus when component mounts
+  useEffect(() => {
+    if (focusedLineIndex === -1 && activeLineIndex >= 0) {
+      setFocusedLineIndex(activeLineIndex);
+    }
+  }, [activeLineIndex, focusedLineIndex]);
+
+  // ✅ P1 FIX: Get current line text for screen readers
+  const currentLineText = useMemo(() => {
+    if (activeLineIndex >= 0 && activeLineIndex < lines.length) {
+      return lines[activeLineIndex].words
+        .map(w => w.word.replace(/[\n\r]/g, ' ').trim())
+        .filter(Boolean)
+        .join(' ');
+    }
+    return '';
+  }, [activeLineIndex, lines]);
+
   return (
-    <div {...bind()} className={cn("h-full w-full bg-background/50 dark:bg-slate-950/80", className)} style={{ touchAction: 'none' }}>
+    <div
+      className={cn("h-full w-full bg-background/50 dark:bg-slate-950/80", className)}
+      role="region"
+      aria-label="Синхронизированный текст песни"
+      onKeyDown={handleKeyDown}
+      onTouchEnd={handleDoubleTap}
+      tabIndex={0}
+      ref={containerRef}
+    >
+      {/* ✅ P1 FIX: Screen reader announcement for current line */}
+      <div
+        className="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {currentLineText}
+      </div>
+
       <ScrollArea className="h-full w-full">
-        <div 
-          ref={scrollRef} 
-          className="flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 font-bold text-center min-h-full"
-          style={{ fontSize: `${fontSize}rem` }}
-          role="log"
+        <div
+          ref={scrollRef}
+          className={cn(
+            "flex flex-col items-center justify-start p-4 sm:p-6 md:p-8 font-bold text-center min-h-full",
+            fontSizeClasses
+          )}
+          aria-label="Текст песни"
         >
           {lines.length === 0 ? (
             <div className="text-muted-foreground py-8">
@@ -178,6 +285,12 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
             <AnimatePresence mode="popLayout">
               {lines.map((line, lineIndex) => {
                 const isActive = lineIndex === activeLineIndex;
+                const isFocused = lineIndex === focusedLineIndex;
+                const lineText = line.words
+                  .map(w => w.word.replace(/[\n\r]/g, ' ').trim())
+                  .filter(Boolean)
+                  .join(' ');
+
                 return (
                   <motion.p
                     key={line.id}
@@ -194,15 +307,27 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
                     aria-atomic="true"
                     aria-relevant="text"
                     className={cn(
-                      "mb-6 sm:mb-8 transition-all duration-300 leading-relaxed px-2",
+                      "mb-6 sm:mb-8 transition-all duration-300 leading-relaxed px-2 cursor-pointer",
+                      "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-lg",
                       isActive
                         ? settings.highContrast
                           ? "text-blue-600 dark:text-cyan-400 font-extrabold"
                           : "text-foreground dark:text-foreground font-extrabold"
                         : settings.highContrast
                           ? "text-gray-700 dark:text-slate-300"
-                          : "text-muted-foreground dark:text-muted-foreground/60"
+                          : "text-muted-foreground dark:text-muted-foreground/60",
+                      isFocused && "ring-2 ring-primary ring-offset-2"
                     )}
+                    onClick={() => {
+                      if (onSeek) {
+                        onSeek(line.startTime);
+                      }
+                      setFocusedLineIndex(lineIndex);
+                    }}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`Строка ${lineIndex + 1}: ${lineText}`}
+                    aria-current={isActive ? 'true' : undefined}
                   >
                     {line.words.map((word, wordIndex) => {
                       const progress = isActive 
