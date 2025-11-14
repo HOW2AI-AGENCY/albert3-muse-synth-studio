@@ -40,11 +40,9 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
     Array.isArray(lyricsData.alignedWords) &&
     lyricsData.alignedWords.length > 0
   );
-  const currentTime = useAudioPlayerStore((state) => state.currentTime);
-  const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
-  const seekTo = useAudioPlayerStore((state) => state.seekTo);
 
   // ✅ P1 FIX: Get player controls for keyboard/gesture support
+  const currentTime = useAudioPlayerStore((state) => state.currentTime);
   const seekTo = useAudioPlayerStore((state) => state.seekTo);
   const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
 
