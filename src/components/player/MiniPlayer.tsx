@@ -91,8 +91,9 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
     <div
       data-testid="mini-player"
       onClick={handleExpand}
-      className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border/30 shadow-lg cursor-pointer animate-slide-up safe-area-bottom hover:bg-card/90 transition-all duration-300 pt-[var(--mobile-spacing-xs)] md:pt-[var(--mobile-spacing-md)]" /* Mobile optimized: reduced safe-area and padding */
+      className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border/30 shadow-lg cursor-pointer animate-slide-up hover:bg-card/90 transition-all duration-300"
       style={{
+        paddingBottom: 'env(safe-area-inset-bottom, 0.5rem)',
         zIndex: 'var(--z-mini-player)' /* Use unified z-index system from design-tokens.css */
       }}
     >
@@ -125,39 +126,41 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
 
         {/* Track Info */}
         <div className="flex-1 min-w-0 animate-fade-in" key={currentTrack.id}>
-          <h4 className="text-sm font-semibold text-foreground truncate transition-all duration-300 hover:text-primary">
-            {currentTrack.title.replace(/\s*\(V\d+\)$/i, '')}
-          </h4>
+          <div className="flex items-center gap-2">
+            <h4 className="text-sm font-semibold text-foreground truncate transition-all duration-300 hover:text-primary">
+              {currentTrack.title.replace(/\s*\(V\d+\)$/i, '')}
+            </h4>
+            {hasVersions && (
+              <Badge variant="secondary" className="hidden sm:inline-flex text-xs h-5 animate-fade-in">
+                V{currentTrack.versionNumber ?? currentVersionIndex + 1}
+              </Badge>
+            )}
+          </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground/80 transition-opacity duration-300">
             <span className="truncate">
-              {currentTrack.style_tags?.[0] || 'AI Generated'}
+              {currentTrack.style_tags?.join(' • ') || 'AI Generated'}
             </span>
             {queue.length > 0 && (
               <>
-                <span>•</span>
+                <span className="opacity-50">•</span>
                 <span className="flex items-center gap-1 animate-fade-in">
-                  <List className="h-3 w-3 animate-pulse" />
+                  <List className="h-3 w-3" />
                   {currentQueueIndex + 1}/{queue.length}
                 </span>
               </>
             )}
-            {/* Version indicator for mobile - opens Sheet */}
             {hasVersions && (
-              <>
-                <span className="sm:hidden">•</span>
-                <button
-                  className="sm:hidden flex items-center gap-1 hover:text-primary transition-colors min-h-[44px] -my-2 py-2 touch-optimized active:scale-95"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    vibrate('light');
-                    setIsVersionsSheetOpen(true);
-                  }}
-                  aria-label="Открыть версии трека"
-                >
-                  <Layers className="h-3 w-3" />
-                  <span className="font-medium">V{currentTrack.versionNumber ?? currentVersionIndex + 1}</span>
-                </button>
-              </>
+              <Badge
+                variant="outline"
+                className="sm:hidden text-xs h-5 animate-fade-in cursor-pointer active:scale-95"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  vibrate('light');
+                  setIsVersionsSheetOpen(true);
+                }}
+              >
+                V{currentTrack.versionNumber ?? currentVersionIndex + 1}
+              </Badge>
             )}
           </div>
         </div>
@@ -171,7 +174,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="hidden sm:inline-flex icon-button-touch relative hover:bg-primary/10 hover:scale-105 transition-all duration-200" /* Desktop only - mobile uses track info indicator */
+                className="h-11 w-11 min-h-[44px] min-w-[44px] hidden sm:inline-flex icon-button-touch relative hover:bg-primary/10 hover:scale-105 transition-all duration-200" /* Desktop only - mobile uses track info indicator */
                   onClick={(e) => e.stopPropagation()}
                 >
                   <List className="h-4 w-4" />
@@ -221,7 +224,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
                 size="icon"
                 variant="ghost"
                 onClick={handlePrevious}
-                className="hidden xs:inline-flex icon-button-touch hover:bg-primary/10 hover:scale-105 transition-all duration-200" /* P1-1 FIX: Hide on very small screens (<375px) */
+                className="h-11 w-11 min-h-[44px] min-w-[44px] hidden xs:inline-flex icon-button-touch hover:bg-primary/10 hover:scale-105 transition-all duration-200" /* P1-1 FIX: Hide on very small screens (<375px) */
               >
                 <SkipBack className="h-4 w-4" />
               </Button>
@@ -254,7 +257,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
                 size="icon"
                 variant="ghost"
                 onClick={handleNext}
-                className="hidden xs:inline-flex icon-button-touch hover:bg-primary/10 hover:scale-105 transition-all duration-200" /* P1-1 FIX: Hide on very small screens (<375px) */
+                className="h-11 w-11 min-h-[44px] min-w-[44px] hidden xs:inline-flex icon-button-touch hover:bg-primary/10 hover:scale-105 transition-all duration-200" /* P1-1 FIX: Hide on very small screens (<375px) */
               >
                 <SkipForward className="h-4 w-4" />
               </Button>
@@ -270,7 +273,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden icon-button-touch hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+                className="h-11 w-11 min-h-[44px] min-w-[44px] md:hidden icon-button-touch hover:bg-primary/10 hover:scale-105 transition-all duration-200"
                 onClick={(e) => e.stopPropagation()}
                 aria-label="Управление громкостью"
               >
@@ -350,7 +353,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
                 size="icon"
                 variant="ghost"
                 onClick={handleClose}
-                className="icon-button-touch hover:bg-destructive/20 hover:scale-105 transition-all duration-200"
+                className="h-11 w-11 min-h-[44px] min-w-[44px] icon-button-touch hover:bg-destructive/20 hover:scale-105 transition-all duration-200"
               >
                 <X className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors" />
               </Button>

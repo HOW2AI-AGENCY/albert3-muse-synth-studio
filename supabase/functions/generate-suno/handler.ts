@@ -154,6 +154,7 @@ export class SunoGenerationHandler extends GenerationHandler<SunoGenerationParam
       customMode: customMode,
       callBackUrl: this.callbackUrl ?? undefined,
       personaId: params.personaId ?? undefined,
+      num_clips: params.numClips ?? 2,
       ...(params.negativeTags ? { negativeTags: params.negativeTags } : {}),
       ...(params.vocalGender ? { vocalGender: params.vocalGender } : {}),
       ...(params.styleWeight !== undefined ? { styleWeight: Number(params.styleWeight.toFixed(2)) } : {}),
