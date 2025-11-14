@@ -14,7 +14,7 @@ import { logger } from "../_shared/logger.ts";
 import { createSupabaseUserClient } from "../_shared/supabase.ts";
 
 const SUNO_API_KEY = Deno.env.get("SUNO_API_KEY");
-const SUNO_API_BASE_URL = Deno.env.get("SUNO_API_BASE_URL");
+const SUNO_API_BASE_URL = Deno.env.get("SUNO_API_BASE_URL") || "https://api.sunoapi.org";
 
 const requestSchema = z.object({
   taskId: z.string().min(1, { message: "taskId is required." }),
@@ -60,7 +60,7 @@ export async function handler(req: Request) {
 
     logger.info("[GET-TIMESTAMPED-LYRICS] User authenticated", { userId: user.id });
 
-    if (!SUNO_API_KEY || !SUNO_API_BASE_URL) {
+    if (!SUNO_API_KEY) {
       throw new Error("Suno API credentials are not configured");
     }
 
