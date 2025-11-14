@@ -178,7 +178,7 @@ export const TrackRow = memo<TrackRowProps>(({
     } else if (onPlay) {
       onPlay(track.id);
     }
-  }, [isPlaying, onPlay, onPause, track.id, displayedVersion]);
+  }, [isPlaying, onPlay, onPause, track.id, displayedVersion, track.title]);
 
   const handleLikeToggle = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();

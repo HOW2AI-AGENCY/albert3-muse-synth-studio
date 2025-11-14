@@ -10,6 +10,7 @@ import { formatDuration } from "@/utils/formatters";
 import { cn } from "@/lib/utils";
 import { useTrackRollback } from "@/features/tracks/hooks/useTrackRollback";
 import { toast } from "sonner";
+import { logError } from "@/utils/logger";
 
 interface MinimalVersionsListProps {
   trackId: string;
@@ -38,7 +39,7 @@ export const MinimalVersionsList = memo(({ trackId }: MinimalVersionsListProps) 
         .order("variant_index", { ascending: true });
 
       if (error) {
-        console.error('Failed to load track versions', error, { trackId });
+        logError('Failed to load track versions', error, "MinimalVersionsList", { trackId });
         throw error;
       }
       return data || [];

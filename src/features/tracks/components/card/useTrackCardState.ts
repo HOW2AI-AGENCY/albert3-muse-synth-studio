@@ -66,7 +66,9 @@ export const useTrackCardState = (track: Track) => {
         const parsed = Number(stored);
         return Number.isNaN(parsed) ? 0 : parsed;
       }
-    } catch {}
+    } catch {
+      // Ignore potential errors with localStorage
+    }
     return 0;
   });
 
@@ -117,7 +119,9 @@ export const useTrackCardState = (track: Track) => {
     try {
       const key = `track:selectedVersion:${track.id}`;
       localStorage.setItem(key, String(selectedVersionIndex));
-    } catch {}
+    } catch {
+      // Ignore potential errors with localStorage
+    }
   }, [track.id, selectedVersionIndex]);
 
   const displayedVersion = useMemo(() => {

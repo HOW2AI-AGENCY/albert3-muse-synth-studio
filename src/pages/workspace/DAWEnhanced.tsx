@@ -80,7 +80,7 @@ export const DAWEnhanced: React.FC = () => {
     if (!project) {
       createProject('Untitled Project');
     }
-  }, [project]);
+  }, [project, createProject]);
 
   // Update container width on resize
   useEffect(() => {

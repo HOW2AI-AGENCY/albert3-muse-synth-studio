@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * @fileoverview Suno Persona Generation Edge Function
  * @description Создает музыкальную персону (Persona) из сгенерированного трека Suno

@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { DetailPanelContent } from '../DetailPanelContent';
 import { supabase } from '@/integrations/supabase/client';
 import { viewSessionGuard } from '@/services/analytics.service';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 vi.mock('@/hooks/useTrackLike', () => ({
   useTrackLike: () => ({
@@ -73,7 +75,14 @@ describe('DetailPanelContent analytics integration', () => {
   });
 
   it('records view and play counters when the detail panel mounts', async () => {
-    render(<DetailPanelContent {...defaultProps} />);
+    const queryClient = new QueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <DetailPanelContent {...defaultProps} />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
 
     await waitFor(() => expect(rpcSpy).toHaveBeenCalledTimes(2));
     expect(rpcSpy).toHaveBeenCalledWith('increment_view_count', { track_id: baseTrack.id });
@@ -81,16 +90,26 @@ describe('DetailPanelContent analytics integration', () => {
   });
 
   it('avoids duplicate counter calls during the same session', async () => {
-    const { unmount } = render(<DetailPanelContent {...defaultProps} />);
+    const queryClient = new QueryClient();
+    const { rerender } = render(
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <DetailPanelContent {...defaultProps} />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
     await waitFor(() => expect(rpcSpy).toHaveBeenCalledTimes(2));
 
     rpcSpy.mockClear();
-    unmount();
-    render(
-      <DetailPanelContent
-        {...defaultProps}
-        track={{ ...baseTrack }}
-      />
+    rerender(
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <DetailPanelContent
+            {...defaultProps}
+            track={{ ...baseTrack }}
+          />
+        </TooltipProvider>
+      </QueryClientProvider>
     );
 
     await waitFor(() => {

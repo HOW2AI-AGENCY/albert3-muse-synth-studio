@@ -14,7 +14,6 @@ vi.mock('@/integrations/supabase/client', () => {
 });
 
 import { getLatestWavJob } from '../../../src/services/wav.service';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { supabase, __mock: mock } = vi.mocked(await import('../../../src/integrations/supabase/client')) as any;
 
 describe('wav.service.getLatestWavJob', () => {

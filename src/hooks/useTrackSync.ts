@@ -118,7 +118,7 @@ export const useTrackSync = (userId: string | undefined, options: TrackSyncOptio
       setIsSubscribed(false);
       logInfo('Unsubscribed from track sync', 'useTrackSync', { userId });
     };
-  }, [userId, enabled]);
+  }, [userId, enabled, queryClient]);
 
   // Check for stale processing tracks on mount
   useEffect(() => {

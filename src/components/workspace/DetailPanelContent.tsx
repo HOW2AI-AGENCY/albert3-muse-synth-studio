@@ -165,6 +165,16 @@ export const DetailPanelContent = ({
         });
       });
     });
+
+    AnalyticsService.recordPlay(track.id).catch(error => {
+      import('@/utils/logger').then(({
+        logError
+      }) => {
+        logError('Failed to record track play', error, 'DetailPanel', {
+          trackId: track.id
+        });
+      });
+    });
   }, [track?.id]);
   useEffect(() => {
     if (!versions?.length) {
