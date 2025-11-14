@@ -1,5 +1,6 @@
 import React, { useMemo, useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useGesture } from '@use-gesture/react';
 import { cn } from '@/lib/utils';
 import type { TimestampedWord } from '@/hooks/useTimestampedLyrics';
 import type { LyricsSettings } from './LyricsSettingsDialog';
@@ -34,15 +35,51 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
   const [focusedLineIndex, setFocusedLineIndex] = useState<number>(-1);
   const lastTapRef = useRef<number>(0);
 
-  // Font size classes based on settings
-  const fontSizeClasses = useMemo(() => {
-    const baseClasses = {
-      small: 'text-base sm:text-lg md:text-xl lg:text-2xl',
-      medium: 'text-lg sm:text-2xl md:text-3xl lg:text-4xl',
-      large: 'text-xl sm:text-3xl md:text-4xl lg:text-5xl',
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prevLine = Math.max(0, (userSelectedLine ?? activeLineIndex) - 1);
+        onSeek?.(lines[prevLine].startTime);
+        setUserSelectedLine(prevLine);
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const nextLine = Math.min(lines.length - 1, (userSelectedLine ?? activeLineIndex) + 1);
+        onSeek?.(lines[nextLine].startTime);
+        setUserSelectedLine(nextLine);
+      } else if (e.key === ' ') {
+        e.preventDefault();
+        onTogglePlayPause?.();
+      }
     };
-    return baseClasses[settings.fontSize];
-  }, [settings.fontSize]);
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [userSelectedLine, activeLineIndex, lines, onSeek, onTogglePlayPause]);
+
+  const fontSizes = useMemo(() => ({ small: 1, medium: 1.5, large: 2 }), []);
+
+  useEffect(() => {
+    setFontSize(fontSizes[settings.fontSize]);
+  }, [settings.fontSize, fontSizes]);
+
+  const bind = useGesture({
+    onDoubleClick: () => {
+      onTogglePlayPause?.();
+    },
+    onPinch: ({ offset: [d] }) => {
+      const newFontSize = Math.max(0.5, Math.min(3, d));
+      setFontSize(newFontSize);
+    },
+    onDrag: ({ scrolling, delta: [, dy], direction: [, yDir] }) => {
+      if (scrolling) {
+        const scrollContainer = scrollRef.current?.closest('[data-radix-scroll-area-viewport]') as HTMLElement;
+        if (scrollContainer) {
+          scrollContainer.scrollTop += dy * yDir;
+        }
+      }
+    },
+  });
 
   const lines: LyricLine[] = useMemo(() => {
     if (!lyricsData) return [];
@@ -266,6 +303,9 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
                     }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ duration: 0.4, ease: "easeInOut" }}
+                    aria-live={isActive ? 'polite' : 'off'}
+                    aria-atomic="true"
+                    aria-relevant="text"
                     className={cn(
                       "mb-6 sm:mb-8 transition-all duration-300 leading-relaxed px-2 cursor-pointer",
                       "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background rounded-lg",
