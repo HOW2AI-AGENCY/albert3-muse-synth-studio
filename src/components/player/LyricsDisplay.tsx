@@ -36,11 +36,15 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
   });
 
   const hasValidLyrics = Boolean(
-    lyricsData?.alignedWords && 
-    Array.isArray(lyricsData.alignedWords) && 
+    lyricsData?.alignedWords &&
+    Array.isArray(lyricsData.alignedWords) &&
     lyricsData.alignedWords.length > 0
   );
   const currentTime = useAudioPlayerStore((state) => state.currentTime);
+
+  // ✅ P1 FIX: Get player controls for keyboard/gesture support
+  const seekTo = useAudioPlayerStore((state) => state.seekTo);
+  const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
 
   if (!shouldFetchTimestamped) {
     if (fallbackLyrics) {
@@ -92,6 +96,8 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
           currentTime={currentTime}
           settings={settings}
           className="w-full h-full"
+          onSeek={seekTo}
+          onTogglePlayPause={togglePlayPause}
         />
       )}
 
