@@ -22,12 +22,6 @@ interface TimestampedLyricsResponse {
   isStreamed: boolean;
 }
 
-interface SunoLyricsApiResponse {
-  success: boolean;
-  data: TimestampedLyricsResponse;
-  cached: boolean;
-  error?: string;
-}
 
 export const LyricsService = {
   async getTimestampedLyrics({ taskId, audioId }: GetTimestampedLyricsPayload): Promise<TimestampedLyricsResponse | null> {
