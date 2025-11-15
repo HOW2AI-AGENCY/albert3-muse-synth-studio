@@ -212,7 +212,7 @@ interface SunoMetadataEntry {
   lyrics?: string;
 }
 
-interface TrackMetadata {
+export interface TrackMetadata {
   suno_data?: SunoMetadataEntry[];
   [key: string]: unknown;
 }
