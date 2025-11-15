@@ -246,13 +246,38 @@ export async function handler(req: Request) {
       );
     }
 
+    // ✅ Check if Suno returned an error or null data FIRST
+    if (rawResponseData && typeof rawResponseData === 'object') {
+      const code = (rawResponseData as any).code;
+      const msg = (rawResponseData as any).msg;
+      const hasData = (rawResponseData as any).data !== null && (rawResponseData as any).data !== undefined;
+      
+      if (code === 500 || (code !== undefined && !hasData)) {
+        logger.warn('[GET-TIMESTAMPED-LYRICS] Suno API data not ready', { code, msg, hasData });
+        
+        // Return 404 - lyrics not ready yet (frontend will handle gracefully)
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'LYRICS_NOT_READY',
+            message: msg || 'Timestamped lyrics are not available yet',
+            hint: 'Try again in a few seconds',
+          }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        );
+      }
+    }
+
     // ✅ Validate response schema
     const validationResult = sunoResponseSchema.safeParse(rawResponseData);
 
     if (!validationResult.success) {
       logger.error("Suno API response validation failed", {
         error: validationResult.error.format(),
-        rawData: JSON.stringify(rawResponseData).slice(0, 500), // Log first 500 chars
+        rawData: JSON.stringify(rawResponseData).slice(0, 500),
       });
       
       // Try to extract alignedWords directly if present
@@ -276,7 +301,9 @@ export async function handler(req: Request) {
       
       return new Response(
         JSON.stringify({
-          error: "Invalid response format from Suno API",
+          success: false,
+          error: "INVALID_RESPONSE_FORMAT",
+          message: "Invalid response format from Suno API",
           validationError: validationResult.error.format(),
         }),
         {
@@ -295,7 +322,9 @@ export async function handler(req: Request) {
       });
       return new Response(
         JSON.stringify({
-          error: "Failed to process lyrics data from Suno API",
+          success: false,
+          error: "NORMALIZATION_FAILED",
+          message: "Failed to process lyrics data from Suno API",
           hint: "The response format was unexpected",
         }),
         {
