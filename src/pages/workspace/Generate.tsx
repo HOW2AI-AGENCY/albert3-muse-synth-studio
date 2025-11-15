@@ -1,4 +1,4 @@
-import { useState, Suspense, lazy, useEffect } from "react";
+import { useState, Suspense, lazy, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MusicGeneratorV2 } from "@/components/MusicGeneratorV2";
 import { TracksList } from "@/components/TracksList";
@@ -16,6 +16,7 @@ import {
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable";
+import type { ImperativePanelHandle } from "react-resizable-panels";
 import { useTracks } from "@/hooks/useTracks";
 import { useTrackSync } from "@/hooks/useTrackSync";
 import { useTrackRecovery } from "@/hooks/useTrackRecovery";
@@ -58,6 +59,9 @@ const Generate = () => {
       return 'grid';
     }
   });
+
+  // ✅ Ref для управления третьей панелью (detail panel)
+  const detailPanelRef = useRef<ImperativePanelHandle>(null);
 
 
   // Dialog states
@@ -143,6 +147,20 @@ const Generate = () => {
     }
     return () => unregisterDialog('createPersona');
   }, [createPersonaOpen, registerDialog, unregisterDialog]);
+
+  // ✅ Управление сворачиванием/разворачиванием третьей панели (detail panel)
+  // Когда selectedTrack изменяется, программно управляем размером панели
+  useEffect(() => {
+    if (!isDesktop || !detailPanelRef.current) return;
+
+    if (selectedTrack) {
+      // Развернуть панель до 30%
+      detailPanelRef.current.expand();
+    } else {
+      // Свернуть панель до 0%
+      detailPanelRef.current.collapse();
+    }
+  }, [selectedTrack, isDesktop]);
 
   const handleTrackGenerated = () => {
     if (!isDesktop) {
@@ -263,14 +281,24 @@ const Generate = () => {
             </div>
           </ResizablePanel>
 
-          {/* ✅ FIX: Всегда рендерим третью панель, но управляем размером */}
-          <ResizableHandle withHandle className={!selectedTrack ? "hidden" : ""} />
-          
-          <ResizablePanel 
-            defaultSize={selectedTrack ? 30 : 0} 
-            minSize={selectedTrack ? 25 : 0} 
-            maxSize={selectedTrack ? 40 : 0}
-            className={!selectedTrack ? "hidden" : ""}
+          {/* ✅ FIX: Используем collapsible API для корректного управления третьей панелью
+              ResizablePanelGroup требует фиксированное количество панелей, поэтому
+              используем collapsible + ref для программного управления вместо условного рендеринга
+
+              Проблема: Ошибка "Panel data not found for index 2" возникала когда третья панель
+              скрывалась через className="hidden", но ResizablePanelGroup всё ещё ожидал её.
+
+              Решение: Используем collapsible API + ImperativePanelHandle для корректного
+              сворачивания/разворачивания панели */}
+          <ResizableHandle withHandle />
+
+          <ResizablePanel
+            ref={detailPanelRef}
+            defaultSize={selectedTrack ? 30 : 0}
+            minSize={25}
+            maxSize={40}
+            collapsible={true}
+            collapsedSize={0}
           >
             {selectedTrack && (
               <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
