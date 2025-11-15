@@ -62,8 +62,24 @@ export const LyricsService = {
           });
 
           if (error) {
+            // ✅ Check if lyrics are not ready yet (404 LYRICS_NOT_READY)
+            // This is a normal state, not an error - don't retry
+            if (error.message?.includes('LYRICS_NOT_READY') || error.message?.includes('404')) {
+              logger.info('Timestamped lyrics not ready yet', 'LyricsService', { taskId, audioId });
+              return null;
+            }
+            
             logger.error('Failed to invoke get-timestamped-lyrics Edge Function', error, 'LyricsService', { taskId, audioId });
             throw new Error(error.message);
+          }
+
+          // ✅ Check if data indicates lyrics not ready
+          if (data && typeof data === 'object' && 'error' in data) {
+            const errorData = data as { error?: string; success?: boolean };
+            if (errorData.error === 'LYRICS_NOT_READY' || errorData.success === false) {
+              logger.info('Timestamped lyrics not ready yet (from response)', 'LyricsService', { taskId, audioId });
+              return null;
+            }
           }
 
           // ✅ Edge Function v2.2.0+ guarantees normalized response format
@@ -94,6 +110,11 @@ export const LyricsService = {
           },
         }
       );
+
+      // ✅ If lyrics not ready, return null gracefully
+      if (!normalized) {
+        return null;
+      }
 
       logger.info('Successfully fetched timestamped lyrics', 'LyricsService', {
         taskId,
