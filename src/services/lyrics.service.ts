@@ -62,24 +62,31 @@ export const LyricsService = {
           });
 
           if (error) {
-            // ✅ Check if lyrics are not ready yet (404 LYRICS_NOT_READY)
-            // This is a normal state, not an error - don't retry
-            if (error.message?.includes('LYRICS_NOT_READY') || error.message?.includes('404')) {
-              logger.info('Timestamped lyrics not ready yet', 'LyricsService', { taskId, audioId });
-              return null;
-            }
-            
             logger.error('Failed to invoke get-timestamped-lyrics Edge Function', error, 'LyricsService', { taskId, audioId });
-            throw new Error(error.message);
+            
+            // ✅ Check if this is a FunctionsHttpError (non-2xx status)
+            // For 404, the error is in data, not in error object
+            // So we'll check data below. Just return null here to let data check happen
+            return null;
           }
 
-          // ✅ Check if data indicates lyrics not ready
+          // ✅ Check if data indicates lyrics not ready (404 response)
           if (data && typeof data === 'object' && 'error' in data) {
-            const errorData = data as { error?: string; success?: boolean };
+            const errorData = data as { error?: string; success?: boolean; message?: string };
             if (errorData.error === 'LYRICS_NOT_READY' || errorData.success === false) {
-              logger.info('Timestamped lyrics not ready yet (from response)', 'LyricsService', { taskId, audioId });
+              logger.info('Timestamped lyrics not ready yet', 'LyricsService', { 
+                taskId, 
+                audioId, 
+                message: errorData.message 
+              });
               return null;
             }
+          }
+
+          // ✅ If we got here with null/undefined data after an error, return null
+          if (!data) {
+            logger.warn('No data received from Edge Function', 'LyricsService', { taskId, audioId });
+            return null;
           }
 
           // ✅ Edge Function v2.2.0+ guarantees normalized response format
