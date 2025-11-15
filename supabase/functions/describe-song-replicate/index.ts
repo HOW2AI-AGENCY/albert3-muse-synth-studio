@@ -178,6 +178,8 @@ serve(async (req) => {
           const energy_level = energyMatch ? parseInt(energyMatch[1]) : null;
           const danceability = danceMatch ? parseInt(danceMatch[1]) : null;
 
+          if (!description) return;
+          
           await supabaseAdmin
             .from('song_descriptions')
             .update({
@@ -201,6 +203,8 @@ serve(async (req) => {
           });
 
         } else if (result.status === 'failed') {
+          if (!description) return;
+          
           await supabaseAdmin
             .from('song_descriptions')
             .update({

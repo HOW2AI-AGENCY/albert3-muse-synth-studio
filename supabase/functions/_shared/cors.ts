@@ -143,6 +143,12 @@ export const createCorsHeaders = (requestOrOrigin?: Request | string | null) => 
 };
 
 /**
+ * Deprecated: Use createCorsHeaders() instead
+ * @deprecated
+ */
+export const corsHeaders = createCorsHeaders();
+
+/**
  * Handles CORS preflight requests
  */
 export const handleCorsPreflightRequest = (req: Request): Response => {

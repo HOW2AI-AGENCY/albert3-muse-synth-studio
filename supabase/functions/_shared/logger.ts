@@ -11,7 +11,11 @@ interface LogContext {
 }
 
 export const logger = {
-  info: (message: string, context?: LogContext) => {
+  info: (message: string, contextOrData?: string | LogContext, data?: LogContext) => {
+    const context = typeof contextOrData === 'string' 
+      ? { context: contextOrData, ...data } 
+      : contextOrData;
+    
     console.log(JSON.stringify({
       timestamp: new Date().toISOString(),
       level: 'info',
@@ -20,30 +24,46 @@ export const logger = {
     }));
   },
   
-  error: (message: string, context?: LogContext) => {
+  error: (message: string, errorOrContext?: Error | string | LogContext, contextOrData?: string | LogContext, data?: LogContext) => {
+    let error: Error | undefined;
+    let context: LogContext | undefined;
+    
+    if (errorOrContext instanceof Error) {
+      error = errorOrContext;
+      context = typeof contextOrData === 'string' 
+        ? { context: contextOrData, ...data }
+        : contextOrData as LogContext;
+    } else {
+      context = typeof errorOrContext === 'string'
+        ? { context: errorOrContext, ...contextOrData as LogContext }
+        : errorOrContext;
+    }
+    
     console.error(JSON.stringify({
       timestamp: new Date().toISOString(),
       level: 'error',
       message,
+      ...(error && { error: error.message, stack: error.stack }),
       ...(context && { context })
     }));
     
-    // ✅ FIX: Избегаем циклических вызовов Sentry
-    // Отправляем только если это не внутренняя ошибка логгера
     if (!message.includes('[SENTRY]') && !message.includes('sentry')) {
       try {
         captureSentryException(
-          new Error(message), 
+          error || new Error(message), 
           context as SentryContext
         );
       } catch (sentryError) {
-        // Не логируем ошибки Sentry, чтобы избежать циклов
         console.error('[SENTRY] Failed to capture exception:', sentryError);
       }
     }
   },
   
-  warn: (message: string, context?: LogContext) => {
+  warn: (message: string, contextOrData?: string | LogContext, data?: LogContext) => {
+    const context = typeof contextOrData === 'string' 
+      ? { context: contextOrData, ...data } 
+      : contextOrData;
+    
     console.warn(JSON.stringify({
       timestamp: new Date().toISOString(),
       level: 'warn',
@@ -51,7 +71,6 @@ export const logger = {
       ...(context && { context })
     }));
     
-    // ✅ FIX: Избегаем циклических вызовов Sentry
     if (!message.includes('[SENTRY]') && !message.includes('sentry')) {
       try {
         captureSentryMessage(
@@ -65,7 +84,11 @@ export const logger = {
     }
   },
   
-  debug: (message: string, context?: LogContext) => {
+  debug: (message: string, contextOrData?: string | LogContext, data?: LogContext) => {
+    const context = typeof contextOrData === 'string' 
+      ? { context: contextOrData, ...data } 
+      : contextOrData;
+    
     console.debug(JSON.stringify({
       timestamp: new Date().toISOString(),
       level: 'debug',
