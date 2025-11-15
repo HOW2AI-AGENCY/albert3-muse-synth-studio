@@ -1,15 +1,23 @@
 // src/lib/logger.ts
+interface LogContext {
+  [key: string]: any;
+}
+
 export const logger = {
-  error: (...args: any[]) => {
-    console.error('[ERROR]', ...args);
+  error: (message: string, errorOrContext?: Error | LogContext, context?: LogContext) => {
+    if (errorOrContext instanceof Error) {
+      console.error('[ERROR]', message, errorOrContext, context);
+    } else {
+      console.error('[ERROR]', message, errorOrContext);
+    }
   },
-  warn: (...args: any[]) => {
-    console.warn('[WARN]', ...args);
+  warn: (message: string, context?: LogContext) => {
+    console.warn('[WARN]', message, context);
   },
-  info: (...args: any[]) => {
-    console.info('[INFO]', ...args);
+  info: (message: string, context?: LogContext) => {
+    console.info('[INFO]', message, context);
   },
-  debug: (...args: any[]) => {
-    console.debug('[DEBUG]', ...args);
+  debug: (message: string, context?: LogContext) => {
+    console.debug('[DEBUG]', message, context);
   },
 };

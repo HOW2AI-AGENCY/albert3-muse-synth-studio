@@ -134,7 +134,7 @@ serve(async (req: Request): Promise<Response> => {
       await supabase.rpc('fail_webhook_delivery', {
         p_webhook_id: webhookId,
         p_error_message: err,
-      }).catch(() => undefined);
+      });
       logger.error('[GENERATE-MUSIC-CALLB] Processing failed', { taskId, stage, webhookId, error: err, httpStatus: status });
       return new Response(JSON.stringify({ ok: false, error: err }), {
         status,
@@ -146,7 +146,7 @@ serve(async (req: Request): Promise<Response> => {
     await supabase.rpc('complete_webhook_delivery', {
       p_webhook_id: webhookId,
       p_track_id: result.trackId || null,
-    }).catch(() => undefined);
+    });
 
     logger.info('[GENERATE-MUSIC-CALLB] Processing complete', { taskId, stage, webhookId, trackId: result.trackId, cached: result.cached });
     return new Response(JSON.stringify({ ok: true, trackId: result.trackId, stage: result.stage, cached: result.cached }), {
