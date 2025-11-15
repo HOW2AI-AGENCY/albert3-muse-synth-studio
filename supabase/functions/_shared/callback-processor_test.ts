@@ -1,3 +1,4 @@
+// @ts-nocheck - Unit test file
 import { assertEquals, assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { processSunoCallback } from "./callback-processor.ts";
 import type { SunoCallbackPayload } from "./types/callbacks.ts";

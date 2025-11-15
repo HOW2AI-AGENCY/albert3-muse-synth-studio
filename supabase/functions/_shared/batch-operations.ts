@@ -193,7 +193,7 @@ export async function batchIncrementCounters(
     })
   );
 
-  logger.info('Batch increment counters completed', 'BatchOperations', {
+  logger.info('Batch increment counters completed', {
     total: increments.length,
   });
 }

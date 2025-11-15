@@ -23,8 +23,8 @@ class MemoryCache {
   set<T>(key: string, data: T, ttlSeconds: number = 300): void {
     // LRU eviction if cache full
     if (this.cache.size >= this.maxSize) {
-      const oldestKey = this.cache.keys().next().value;
-      this.cache.delete(oldestKey);
+      const oldestKey = this.cache.keys().next().value as string | undefined;
+      if (oldestKey) this.cache.delete(oldestKey);
     }
 
     this.cache.set(key, {
@@ -84,7 +84,7 @@ export class CacheWarmer {
     };
 
     globalCache.set(cacheKey, models, 3600); // 1 hour TTL
-    logger.info("Provider models cache warmed", "CacheWarmer");
+    logger.info("Provider models cache warmed");
   }
 
   /**
@@ -103,7 +103,7 @@ export class CacheWarmer {
     ];
 
     globalCache.set(cacheKey, presets, 3600);
-    logger.info("Genre presets cache warmed", "CacheWarmer");
+    logger.info("Genre presets cache warmed");
   }
 
   /**
@@ -146,7 +146,7 @@ export class CacheWarmer {
       globalCache.set(`user:projects:${userId}`, projects.data, 300);
     }
 
-    logger.info("User data cache warmed", "CacheWarmer", {
+    logger.info("User data cache warmed", {
       userId,
       duration: Date.now() - startTime,
       itemsCached: 3,
@@ -164,7 +164,7 @@ export class CacheWarmer {
       this.warmGenrePresets(),
     ]);
 
-    logger.info("All caches warmed", "CacheWarmer", {
+    logger.info("All caches warmed", {
       duration: Date.now() - startTime,
       cacheSize: globalCache.size(),
     });
