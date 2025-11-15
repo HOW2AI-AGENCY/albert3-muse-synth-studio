@@ -8,21 +8,31 @@ import {
   assertObjectMatch,
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { handler as getTimestampedLyricsHandler } from "../get-timestamped-lyrics/index.ts";
-import { installFetchMock } from "./_testUtils.ts";
+import {
+  installFetchMock,
+  mockSupabaseUser,
+  VALID_JWT,
+} from "./_testUtils.ts";
 
-// ====================================================================
-// HELPER: Create mock JWT auth request
-// ====================================================================
-function createMockAuthRequest(body: unknown): Request {
-  return new Request("http://localhost/get-timestamped-lyrics", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer mock-jwt-token", // v2.1.0+ requires JWT
-    },
-    body: JSON.stringify(body),
-  });
-}
+// Create a valid mock response that matches the new Zod schema
+const createValidSunoResponse = () => ({
+  alignedWords: [{
+    word: "test",
+    success: true,
+    startS: 0,
+    endS: 1,
+    palign: 0.5,
+  }],
+  waveformData: [0.1, 0.2, 0.3],
+  hootCer: 0.95,
+  isStreamed: false,
+});
+
+// Create an invalid mock response (missing required fields)
+const createInvalidSunoResponse = () => ({
+  alignedWords: [{ word: "test" }], // Missing other fields in the word object
+  // Missing waveformData, hootCer, isStreamed
+});
 
 // ====================================================================
 // TEST 1: Format 1 - { code: 200, msg: "success", data: {...} }
@@ -30,6 +40,7 @@ function createMockAuthRequest(body: unknown): Request {
 Deno.test(
   "get-timestamped-lyrics normalizes Format 1 (code + msg + data)",
   async () => {
+    mockSupabaseUser(); // Mock Supabase auth
     const sunoApiBaseUrl = Deno.env.get("SUNO_API_BASE_URL") || "https://api.sunoapi.org";
     const restoreFetch = installFetchMock({
       [`${sunoApiBaseUrl}/api/v1/generate/get-timestamped-lyrics`]: () =>
@@ -52,10 +63,20 @@ Deno.test(
     });
 
     try {
-      const request = createMockAuthRequest({
-        taskId: "test-task-id",
-        audioId: "test-audio-id",
-      });
+      const request = new Request(
+        "http://localhost/get-timestamped-lyrics",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${VALID_JWT}`,
+          },
+          body: JSON.stringify({
+            taskId: "test-task-id",
+            audioId: "test-audio-id",
+          }),
+        },
+      );
 
       const response = await getTimestampedLyricsHandler(request);
 
@@ -89,6 +110,7 @@ Deno.test(
 Deno.test(
   "get-timestamped-lyrics normalizes Format 2 (success + data)",
   async () => {
+    mockSupabaseUser(); // Mock Supabase auth
     const sunoApiBaseUrl = Deno.env.get("SUNO_API_BASE_URL") || "https://api.sunoapi.org";
     const restoreFetch = installFetchMock({
       [`${sunoApiBaseUrl}/api/v1/generate/get-timestamped-lyrics`]: () =>
@@ -104,10 +126,20 @@ Deno.test(
     });
 
     try {
-      const request = createMockAuthRequest({
-        taskId: "test-task-2",
-        audioId: "test-audio-2",
-      });
+      const request = new Request(
+        "http://localhost/get-timestamped-lyrics",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${VALID_JWT}`,
+          },
+          body: JSON.stringify({
+            taskId: "test-task-2",
+            audioId: "test-audio-2",
+          }),
+        },
+      );
 
       const response = await getTimestampedLyricsHandler(request);
       assertEquals(response.status, 200);
@@ -128,6 +160,7 @@ Deno.test(
 Deno.test(
   "get-timestamped-lyrics handles Format 3 (direct data)",
   async () => {
+    mockSupabaseUser(); // Mock Supabase auth
     const sunoApiBaseUrl = Deno.env.get("SUNO_API_BASE_URL") || "https://api.sunoapi.org";
     const restoreFetch = installFetchMock({
       [`${sunoApiBaseUrl}/api/v1/generate/get-timestamped-lyrics`]: () =>
@@ -146,10 +179,20 @@ Deno.test(
     });
 
     try {
-      const request = createMockAuthRequest({
-        taskId: "test-task-3",
-        audioId: "test-audio-3",
-      });
+      const request = new Request(
+        "http://localhost/get-timestamped-lyrics",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${VALID_JWT}`,
+          },
+          body: JSON.stringify({
+            taskId: "test-task-3",
+            audioId: "test-audio-3",
+          }),
+        },
+      );
 
       const response = await getTimestampedLyricsHandler(request);
       assertEquals(response.status, 200);
@@ -173,6 +216,7 @@ Deno.test(
 Deno.test(
   "get-timestamped-lyrics returns 500 for invalid Suno response",
   async () => {
+    mockSupabaseUser(); // Mock Supabase auth
     const sunoApiBaseUrl = Deno.env.get("SUNO_API_BASE_URL") || "https://api.sunoapi.org";
     const restoreFetch = installFetchMock({
       [`${sunoApiBaseUrl}/api/v1/generate/get-timestamped-lyrics`]: () =>
@@ -183,10 +227,20 @@ Deno.test(
     });
 
     try {
-      const request = createMockAuthRequest({
-        taskId: "test-task-error",
-        audioId: "test-audio-error",
-      });
+      const request = new Request(
+        "http://localhost/get-timestamped-lyrics",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${VALID_JWT}`,
+          },
+          body: JSON.stringify({
+            taskId: "test-task-error",
+            audioId: "test-audio-error",
+          }),
+        },
+      );
 
       const response = await getTimestampedLyricsHandler(request);
       assertEquals(response.status, 500);
@@ -207,6 +261,7 @@ Deno.test(
 Deno.test(
   "get-timestamped-lyrics handles Suno API errors",
   async () => {
+    mockSupabaseUser(); // Mock Supabase auth
     const sunoApiBaseUrl = Deno.env.get("SUNO_API_BASE_URL") || "https://api.sunoapi.org";
     const restoreFetch = installFetchMock({
       [`${sunoApiBaseUrl}/api/v1/generate/get-timestamped-lyrics`]: () =>
@@ -217,10 +272,20 @@ Deno.test(
     });
 
     try {
-      const request = createMockAuthRequest({
-        taskId: "invalid-task",
-        audioId: "invalid-audio",
-      });
+      const request = new Request(
+        "http://localhost/get-timestamped-lyrics",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${VALID_JWT}`,
+          },
+          body: JSON.stringify({
+            taskId: "invalid-task",
+            audioId: "invalid-audio",
+          }),
+        },
+      );
 
       const response = await getTimestampedLyricsHandler(request);
       assertEquals(response.status, 404);
@@ -241,10 +306,21 @@ Deno.test(
 Deno.test(
   "get-timestamped-lyrics validates request parameters",
   async () => {
-    const request = createMockAuthRequest({
-      taskId: "", // Invalid: empty string
-      audioId: "test-audio",
-    });
+    mockSupabaseUser(); // Mock Supabase auth
+    const request = new Request(
+      "http://localhost/get-timestamped-lyrics",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${VALID_JWT}`,
+        },
+        body: JSON.stringify({
+          taskId: "", // Invalid: empty string
+          audioId: "test-audio",
+        }),
+      },
+    );
 
     const response = await getTimestampedLyricsHandler(request);
     assertEquals(response.status, 400);

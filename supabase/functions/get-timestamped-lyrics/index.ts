@@ -139,8 +139,6 @@ export async function handler(req: Request) {
   }
 
   try {
-    // ✅ FIX: Extract user ID from JWT token instead of expecting X-User-Id header
-    // Previous implementation expected X-User-Id header which was never set by the frontend
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       logger.error("[GET-TIMESTAMPED-LYRICS] Missing Authorization header");
@@ -158,7 +156,7 @@ export async function handler(req: Request) {
     const { data: { user }, error: userError } = await userClient.auth.getUser(token);
 
     if (userError || !user) {
-      logger.error("[GET-TIMESTAMPED-LYRICS] Authentication failed", userError);
+      logger.error("[GET-TIMESTAMPED-LYRICS] Authentication failed", { error: userError });
       return new Response(
         JSON.stringify({ error: "Unauthorized - invalid token" }),
         {
@@ -288,7 +286,7 @@ export async function handler(req: Request) {
   } catch (error) {
     logger.error(
       "[GET-TIMESTAMPED-LYRICS] Unexpected error",
-      error as Error,
+      { error: error instanceof Error ? error.message : "Unknown error" },
     );
     return new Response(
       JSON.stringify({
