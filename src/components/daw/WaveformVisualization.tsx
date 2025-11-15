@@ -14,6 +14,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { logError, logInfo } from '@/utils/logger';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getCanvasColors } from '@/utils/canvas-colors';
 
 interface WaveformVisualizationProps {
   audioUrl: string;
@@ -38,13 +39,16 @@ export const WaveformVisualization: React.FC<WaveformVisualizationProps> = ({
   audioUrl,
   width,
   height = 80,
-  color = '#3b82f6',
-  backgroundColor = '#1f2937',
+  color,
+  backgroundColor,
   zoom = 60,
   startTime = 0,
   className = '',
   onReady,
 }) => {
+  const colors = getCanvasColors();
+  const waveColor = color || colors.primary;
+  const bgColor = backgroundColor || colors.background;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [waveformData, setWaveformData] = useState<WaveformData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -134,7 +138,7 @@ export const WaveformVisualization: React.FC<WaveformVisualizationProps> = ({
     ctx.scale(dpr, dpr);
 
     // Clear canvas
-    ctx.fillStyle = backgroundColor;
+    ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, width, height);
 
     // Calculate visible peaks based on zoom and scroll
@@ -147,8 +151,8 @@ export const WaveformVisualization: React.FC<WaveformVisualizationProps> = ({
     const visiblePeaks = waveformData.peaks.slice(startIndex, endIndex);
 
     // Draw waveform
-    ctx.fillStyle = color;
-    ctx.strokeStyle = color;
+    ctx.fillStyle = waveColor;
+    ctx.strokeStyle = waveColor;
     ctx.lineWidth = 1;
 
     const midY = height / 2;
@@ -170,14 +174,14 @@ export const WaveformVisualization: React.FC<WaveformVisualizationProps> = ({
     }
 
     // Draw center line
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.strokeStyle = colors.border;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(0, midY);
     ctx.lineTo(width, midY);
     ctx.stroke();
 
-  }, [waveformData, width, height, color, backgroundColor, zoom, startTime]);
+  }, [waveformData, width, height, waveColor, bgColor, zoom, startTime, colors]);
 
   if (isLoading) {
     return (

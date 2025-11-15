@@ -19,11 +19,14 @@ import {
 import { useMurekaLyricsSubscription } from '@/components/generator/hooks/useMurekaLyricsSubscription';
 import type { MusicGeneratorV2Props } from '@/components/MusicGeneratorV2.types';
 import { MusicGeneratorContent } from '@/components/generator/MusicGeneratorContent';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { sanitize } from '@/utils/sanitization';
 
 const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2Props) => {
   const { selectedProvider, setProvider } = useMusicGenerationStore();
   const { toast } = useToast();
   const { vibrate } = useHapticFeedback();
+  const isOnline = useOnlineStatus();
 
   const { generate, isGenerating } = useGenerateMusic({
     provider: selectedProvider as ProviderType,
@@ -164,6 +167,15 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
   useStemReferenceLoader(state, selectedProvider, handleProviderChange);
 
   const handleGenerate = useCallback(async () => {
+    if (!isOnline) {
+      toast({
+        title: 'Вы оффлайн',
+        description: 'Проверьте подключение к интернету и попробуйте снова.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     vibrate('heavy');
 
     const hasPrompt = state.params.prompt.trim().length > 0;
@@ -206,9 +218,9 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
     const hasLyricsContent = !!effectiveLyrics;
 
     const requestParams = {
-      prompt: state.params.prompt.trim(),
-      title: state.params.title.trim() || undefined,
-      lyrics: effectiveLyrics,
+      prompt: sanitize(state.params.prompt.trim()),
+      title: sanitize(state.params.title.trim()) || undefined,
+      lyrics: sanitize(effectiveLyrics),
       hasVocals,
       styleTags: state.params.tags.split(',').map((t) => t.trim()).filter(Boolean),
       negativeTags: state.params.negativeTags.trim() || undefined,
@@ -519,7 +531,7 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
     <MusicGeneratorContent
       state={state}
       isMobile={isMobile}
-      isGenerating={isGenerating}
+      isGenerating={isGenerating || !isOnline}
       isEnhancing={state.isEnhancing}
       currentModels={[...currentModels]}
       audioSourceDialogOpen={audioSourceDialogOpen}

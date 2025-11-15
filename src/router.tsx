@@ -1,7 +1,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import { Suspense } from "react";
 import WorkspaceLayout from "./components/workspace/WorkspaceLayout";
-import { ErrorBoundary } from "@/components/error/ErrorBoundary";
+import { EnhancedErrorBoundary } from "@/components/errors/EnhancedErrorBoundary";
 import { GeneratorErrorFallback } from "@/components/error/GeneratorErrorFallback";
 import { TrackListErrorFallback } from "@/components/error/TrackListErrorFallback";
 import { FullPageSpinner } from "@/components/ui/loading-states";
@@ -76,11 +76,11 @@ export const router = createBrowserRouter(
         {
           path: "generate",
           element: (
-            <ErrorBoundary fallback={(error, reset) => <GeneratorErrorFallback error={error} reset={reset} />}>
+            <EnhancedErrorBoundary>
               <Suspense fallback={<FullPageSpinner />}>
                 <LazyGenerate />
               </Suspense>
-            </ErrorBoundary>
+            </EnhancedErrorBoundary>
           )
         },
         {
@@ -118,11 +118,11 @@ export const router = createBrowserRouter(
         {
           path: "library",
           element: (
-            <ErrorBoundary fallback={(error, reset) => <TrackListErrorFallback error={error} reset={reset} />}>
+            <EnhancedErrorBoundary>
               <Suspense fallback={<FullPageSpinner />}>
                 <LazyLibrary />
               </Suspense>
-            </ErrorBoundary>
+            </EnhancedErrorBoundary>
           )
         },
         {

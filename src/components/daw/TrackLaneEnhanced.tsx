@@ -24,6 +24,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { getCanvasColors } from '@/utils/canvas-colors';
 
 interface TrackLaneEnhancedProps {
   track: DAWTrack;
@@ -42,6 +43,7 @@ export const TrackLaneEnhanced: React.FC<TrackLaneEnhancedProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const colors = getCanvasColors();
 
   const updateTrack = useDAWStore((state) => state.updateTrack);
   const removeTrack = useDAWStore((state) => state.removeTrack);
@@ -231,7 +233,7 @@ export const TrackLaneEnhanced: React.FC<TrackLaneEnhancedProps> = ({
         )}
         style={{
           backgroundImage: track.type !== 'master'
-            ? 'repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(255,255,255,0.03) 59px, rgba(255,255,255,0.03) 60px)'
+            ? `repeating-linear-gradient(90deg, transparent, transparent 59px, ${colors.border} 59px, ${colors.border} 60px)`
             : undefined,
         }}
         onDrop={handleDrop}

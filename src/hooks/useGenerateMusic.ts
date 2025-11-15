@@ -113,7 +113,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
           });
           toast({
             title: '❌ Ошибка генерации',
-            description: track.error_message || 'Произошла ошибка при обработке вашего трека.',
+            description: `К сожалению, не удалось сгенерировать трек. ${track.error_message || 'Попробуйте изменить промпт или выбрать другую модель.'}`,
             variant: 'destructive',
           });
           setIsGenerating(false);
@@ -317,8 +317,8 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
         });
 
         toast({
-          title: 'Ошибка генерации',
-          description: errorMsg,
+          title: 'Ошибка инициализации генерации',
+          description: `${errorMsg}. Пожалуйста, проверьте свой запрос и попробуйте снова.`,
           variant: 'destructive',
         });
 
@@ -335,8 +335,8 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
         });
 
         toast({
-          title: 'Ошибка генерации',
-          description: 'Сервер вернул некорректный идентификатор трека.',
+          title: 'Внутренняя ошибка сервера',
+          description: 'Сервер вернул некорректный идентификатор трека. Пожалуйста, попробуйте позже.',
           variant: 'destructive',
         });
 
@@ -358,8 +358,8 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
           });
 
           toast({
-            title: 'Ошибка генерации',
-            description: 'Сервер вернул некорректный идентификатор задачи. Попробуйте еще раз.',
+            title: 'Внутренняя ошибка сервера',
+            description: 'Сервер вернул некорректный идентификатор задачи. Пожалуйста, попробуйте еще раз.',
             variant: 'destructive',
           });
 

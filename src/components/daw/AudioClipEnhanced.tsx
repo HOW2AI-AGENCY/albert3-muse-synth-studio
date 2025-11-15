@@ -24,6 +24,7 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import { Copy, Scissors, Trash2, Volume2 } from 'lucide-react';
+import { getCanvasColors } from '@/utils/canvas-colors';
 
 interface AudioClipEnhancedProps {
   clip: DAWClip;
@@ -42,8 +43,10 @@ export const AudioClipEnhanced: React.FC<AudioClipEnhancedProps> = ({
   zoom,
   scrollLeft,
   trackHeight,
-  color = '#3b82f6',
+  color,
 }) => {
+  const colors = getCanvasColors();
+  const clipColor = color || colors.primary;
   const clipRef = useRef<HTMLDivElement>(null);
   const [dragMode, setDragMode] = useState<DragMode>(null);
   const [dragStart, setDragStart] = useState({ x: 0, startTime: 0, duration: 0 });
@@ -196,7 +199,7 @@ export const AudioClipEnhanced: React.FC<AudioClipEnhancedProps> = ({
             width: `${clipWidth}px`,
             height: `${trackHeight - 8}px`,
             top: '4px',
-            backgroundColor: color + '40',
+            backgroundColor: clipColor + '40',
           }}
           onMouseDown={(e) => handleMouseDown(e, 'move')}
           onClick={handleClick}
@@ -207,7 +210,7 @@ export const AudioClipEnhanced: React.FC<AudioClipEnhancedProps> = ({
               audioUrl={clip.audioUrl}
               width={clipWidth}
               height={trackHeight - 8}
-              color={color}
+              color={clipColor}
               backgroundColor="transparent"
               zoom={zoom}
               startTime={clip.offset}
