@@ -63,12 +63,12 @@ const sunoResponseSchema = z.union([
   z.object({
     code: z.number(),
     msg: z.string(),
-    data: timestampedLyricsSchema,
+    data: timestampedLyricsSchema.nullable(),
   }),
   // Format 2: success + data
   z.object({
     success: z.boolean(),
-    data: timestampedLyricsSchema,
+    data: timestampedLyricsSchema.nullable(),
   }),
   // Format 3: direct data
   timestampedLyricsSchema,
@@ -77,6 +77,8 @@ const sunoResponseSchema = z.union([
     error: z.string(),
     code: z.number().optional(),
   }),
+  // Format 5: fallback for any unexpected structure
+  z.object({}).passthrough(),
 ]);
 
 type SunoResponse = z.infer<typeof sunoResponseSchema>;
@@ -94,39 +96,47 @@ function normalizeSunoResponse(response: SunoResponse): TimestampedLyricsData | 
   try {
     // Check for error response
     if ('error' in response && response.error) {
-      logger.warn("[GET-TIMESTAMPED-LYRICS] Suno API returned error", { error: response.error });
+      logger.warn("Suno API returned error", { error: response.error });
       return null;
     }
 
     // Format 1: { code: 200, data: {...} }
     if ('code' in response && 'data' in response) {
-      if (response.code === 200) {
+      if (response.code === 200 && response.data) {
         return response.data;
       }
-      logger.warn("[GET-TIMESTAMPED-LYRICS] Suno API returned non-200 code", { code: response.code });
+      logger.warn("Suno API returned non-200 code or null data", { 
+        code: response.code, 
+        hasData: !!response.data 
+      });
       return null;
     }
 
     // Format 2: { success: true, data: {...} }
     if ('success' in response && 'data' in response) {
-      if (response.success) {
+      if (response.success && response.data) {
         return response.data;
       }
-      logger.warn("[GET-TIMESTAMPED-LYRICS] Suno API returned success=false");
+      logger.warn("Suno API returned success=false or null data", { 
+        success: response.success,
+        hasData: !!response.data 
+      });
       return null;
     }
 
     // Format 3: { alignedWords: [...] } (direct)
     if ('alignedWords' in response) {
-      return response;
+      return response as TimestampedLyricsData;
     }
 
-    logger.error("[GET-TIMESTAMPED-LYRICS] Unable to normalize Suno response - unknown format", {
-      responseKeys: Object.keys(response),
+    logger.warn("Suno API response format not recognized", { 
+      keys: Object.keys(response) 
     });
     return null;
   } catch (error) {
-    logger.error("[GET-TIMESTAMPED-LYRICS] Error normalizing Suno response", error as Error);
+    logger.error("Error normalizing Suno response", { 
+      error: error instanceof Error ? error.message : String(error) 
+    });
     return null;
   }
 }
@@ -210,10 +220,12 @@ export async function handler(req: Request) {
     // ✅ Parse response
     const rawResponseData = await sunoResponse.json();
 
-    logger.info("[GET-TIMESTAMPED-LYRICS] Suno API raw response", {
+    logger.info("Suno API raw response", {
       status: sunoResponse.status,
       hasData: !!rawResponseData,
-      dataKeys: rawResponseData ? Object.keys(rawResponseData) : [],
+      dataType: typeof rawResponseData,
+      dataKeys: rawResponseData && typeof rawResponseData === 'object' ? Object.keys(rawResponseData) : [],
+      dataPreview: JSON.stringify(rawResponseData).slice(0, 200),
     });
 
     // ✅ Handle non-200 HTTP status
@@ -238,10 +250,30 @@ export async function handler(req: Request) {
     const validationResult = sunoResponseSchema.safeParse(rawResponseData);
 
     if (!validationResult.success) {
-      logger.error("[GET-TIMESTAMPED-LYRICS] Suno API response validation failed", {
+      logger.error("Suno API response validation failed", {
         error: validationResult.error.format(),
         rawData: JSON.stringify(rawResponseData).slice(0, 500), // Log first 500 chars
       });
+      
+      // Try to extract alignedWords directly if present
+      if (rawResponseData && typeof rawResponseData === 'object' && 'alignedWords' in rawResponseData) {
+        logger.info("Attempting direct alignedWords extraction");
+        const directData = {
+          alignedWords: rawResponseData.alignedWords,
+          waveformData: rawResponseData.waveformData || [],
+          hootCer: rawResponseData.hootCer || 0,
+          isStreamed: rawResponseData.isStreamed || false,
+        };
+        
+        const directValidation = timestampedLyricsSchema.safeParse(directData);
+        if (directValidation.success) {
+          logger.info("Direct extraction successful");
+          return new Response(JSON.stringify(directValidation.data), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+      
       return new Response(
         JSON.stringify({
           error: "Invalid response format from Suno API",
