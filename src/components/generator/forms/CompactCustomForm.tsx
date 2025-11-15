@@ -55,7 +55,7 @@ export const CompactCustomForm = memo(({
 
   const lyricsLineCount = useMemo(() => debouncedLyrics.split('\n').filter(l => l.trim()).length, [debouncedLyrics]);
   const tagsCount = useMemo(() => params.tags.split(',').filter(t => t.trim()).length, [params.tags]);
-  const promptError = useMemo(() => debouncedPrompt.length > 500, [debouncedPrompt]);
+  const promptError = useMemo(() => debouncedPrompt.length > 3000, [debouncedPrompt]);
 
   const selectedProject = useMemo(() => projects.find(p => p.id === params.activeProjectId), [projects, params.activeProjectId]);
 
