@@ -81,7 +81,7 @@ export class AdvancedRateLimiter {
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
-        logger.error('Rate limit check error', error, 'AdvancedRateLimiter');
+        logger.error('Rate limit check error', { error: error.message, operation });
         // Fail open - allow request on error
         return {
           allowed: true,
@@ -139,7 +139,7 @@ export class AdvancedRateLimiter {
       const resetAt = bucket.window_start + config.windowMs;
       const retryAfter = Math.ceil((resetAt - now) / 1000);
 
-      logger.warn('Rate limit exceeded', 'AdvancedRateLimiter', {
+      logger.warn('Rate limit exceeded', {
         userId,
         operation,
         tokens: currentTokens,
@@ -153,7 +153,7 @@ export class AdvancedRateLimiter {
         retryAfter,
       };
     } catch (error) {
-      logger.error('Rate limit error', error as Error, 'AdvancedRateLimiter');
+      logger.error('Rate limit error', { error: error instanceof Error ? error.message : String(error), operation });
       // Fail open
       return {
         allowed: true,
@@ -169,12 +169,13 @@ export class AdvancedRateLimiter {
   async cleanup(): Promise<void> {
     const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
 
-    await this.supabase
+    const { data, count } = await this.supabase
       .from('rate_limit_buckets')
       .delete()
-      .lt('last_request', oneDayAgo);
+      .lt('last_request', oneDayAgo)
+      .select('*');
 
-    logger.info('Rate limit buckets cleaned up', 'AdvancedRateLimiter');
+    logger.info('Rate limit buckets cleaned up', { count: data?.length || 0 });
   }
 }
 

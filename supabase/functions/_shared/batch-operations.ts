@@ -28,7 +28,8 @@ export async function batchInsertTracks(
       .insert(chunk);
 
     if (error) {
-      logger.error('Batch insert error', error, 'BatchOperations', {
+      logger.error('Batch insert error', {
+        error: error.message,
         chunkIndex: Math.floor(i / chunkSize),
         chunkSize: chunk.length,
       });
@@ -38,7 +39,7 @@ export async function batchInsertTracks(
     }
   }
 
-  logger.info('Batch insert completed', 'BatchOperations', {
+  logger.info('Batch insert completed', {
     total: tracks.length,
     inserted,
     errors,
@@ -79,7 +80,7 @@ export async function batchUpdateTrackStatus(
         })), {
           onConflict: 'id',
         })
-        .select('id', { count: 'exact' });
+        .select('id');
 
       if (error) throw error;
       return count || 0;
@@ -90,12 +91,12 @@ export async function batchUpdateTrackStatus(
     if (result.status === 'fulfilled') {
       updated += result.value;
     } else {
-      logger.error('Batch update chunk failed', result.reason, 'BatchOperations');
+      logger.error('Batch update chunk failed', { error: result.reason });
       errors++;
     }
   });
 
-  logger.info('Batch update completed', 'BatchOperations', {
+  logger.info('Batch update completed', {
     total: updates.length,
     updated,
     errors,
@@ -125,7 +126,8 @@ export async function batchFetchTracks(
     .limit(1000);
 
   if (error) {
-    logger.error('Batch fetch error', error, 'BatchOperations', {
+    logger.error('Batch fetch error', {
+      error: error.message,
       trackIds: trackIds.length,
     });
     return [];
@@ -152,12 +154,12 @@ export async function batchDeleteOldFailedTracks(
     .select('id');
 
   if (error) {
-    logger.error('Batch delete error', error, 'BatchOperations');
+    logger.error('Batch delete error', { error: error.message });
     return 0;
   }
 
   const deletedCount = data?.length || 0;
-  logger.info('Batch delete old failed tracks', 'BatchOperations', {
+  logger.info('Batch delete old failed tracks', {
     deletedCount,
     daysOld,
   });
