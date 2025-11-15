@@ -114,7 +114,7 @@ export async function processSunoCallback(
   const immediateCoverUrl = first.image_url;
 
   // ✅ FIX: Extract title from Suno response if not set
-  const extractedTitle = first.title || track.title;
+  const extractedTitle = first.title || (track as any).title || 'Untitled';
 
   if (immediateAudioUrl) {
     // ✅ FIX: Set status to 'completed' when audio is ready for better UX
@@ -123,7 +123,7 @@ export async function processSunoCallback(
       .from('tracks')
       .update({
         status: 'completed', // ✅ FIX: Set completed immediately when audio is ready
-        title: extractedTitle || track.title, // ✅ FIX: Update title from Suno
+        title: extractedTitle, // ✅ FIX: Update title from Suno
         audio_url: immediateAudioUrl,
         cover_url: immediateCoverUrl ?? track.cover_url,
         metadata: {
@@ -219,7 +219,7 @@ export async function processSunoCallback(
         .from('tracks')
         .update({
           status: 'completed',
-          title: extractedTitle || track.title, // ✅ FIX: Ensure title is set on completion
+          title: extractedTitle, // ✅ FIX: Ensure title is set on completion
           audio_url: finalAudio,
           cover_url: finalCover,
           metadata: {

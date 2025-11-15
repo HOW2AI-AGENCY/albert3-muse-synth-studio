@@ -52,7 +52,7 @@ export async function fetchTracksOptimized(
   const { data, error, count } = await query;
 
   if (error) {
-    logger.error('Optimized query error', error, 'QueryOptimizer');
+    logger.error('Optimized query error', { error: error instanceof Error ? error.message : String(error) });
     return { data: [], count: 0, hasMore: false };
   }
 
@@ -60,7 +60,7 @@ export async function fetchTracksOptimized(
   
   // Log slow queries
   if (duration > 500) {
-    logger.warn('Slow query detected', 'QueryOptimizer', {
+    logger.warn('Slow query detected', {
       duration,
       userId,
       status,
@@ -120,7 +120,7 @@ export async function fetchProjectTracksOptimized(
 
   const duration = Date.now() - startTime;
 
-  logger.info('Project tracks fetched', 'QueryOptimizer', {
+  logger.info('Project tracks fetched', {
     projectId,
     tracksCount: tracksResult.data?.length || 0,
     duration,
@@ -165,11 +165,11 @@ export async function searchTracksOptimized(
   const duration = Date.now() - startTime;
 
   if (error) {
-    logger.error('Search error', error, 'QueryOptimizer');
+    logger.error('Search error', { error: error instanceof Error ? error.message : String(error) });
     return [];
   }
 
-  logger.info('Search completed', 'QueryOptimizer', {
+  logger.info('Search completed', {
     query,
     resultsCount: data?.length || 0,
     duration,
@@ -192,14 +192,15 @@ export async function prefetchTrackDetails(
 }> {
   const startTime = Date.now();
 
-  // Parallel fetch all related data
-  const [trackResult, versionsResult, stemsResult, userResult] = await Promise.all([
-    supabase
-      .from('tracks')
-      .select('*')
-      .eq('id', trackId)
-      .single(),
+  // Fetch track first to get user_id
+  const trackResult = await supabase
+    .from('tracks')
+    .select('*')
+    .eq('id', trackId)
+    .single();
 
+  // Then parallel fetch related data
+  const [versionsResult, stemsResult, userResult] = await Promise.all([
     supabase
       .from('track_versions')
       .select('*')
@@ -211,16 +212,16 @@ export async function prefetchTrackDetails(
       .select('*')
       .eq('track_id', trackId),
 
-    supabase
+    trackResult.data?.user_id ? supabase
       .from('profiles')
       .select('id, full_name, avatar_url')
-      .eq('id', trackResult.data?.user_id)
-      .single(),
+      .eq('id', trackResult.data.user_id)
+      .single() : Promise.resolve({ data: null, error: null }),
   ]);
 
   const duration = Date.now() - startTime;
 
-  logger.info('Track details prefetched', 'QueryOptimizer', {
+  logger.info('Track details prefetched', {
     trackId,
     duration,
     versionsCount: versionsResult.data?.length || 0,
