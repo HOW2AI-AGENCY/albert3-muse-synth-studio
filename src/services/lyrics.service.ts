@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 import { lyricsCache } from './lyrics/lyricsCache';
+import { retryWithBackoff, RETRY_CONFIGS } from '@/utils/retryWithBackoff';
 
 interface GetTimestampedLyricsPayload {
   taskId: string;
@@ -24,55 +25,98 @@ interface TimestampedLyricsResponse {
 
 
 export const LyricsService = {
+  /**
+   * Fetch timestamped lyrics with retry and fallback mechanism
+   * @param taskId - Suno task ID
+   * @param audioId - Audio track ID
+   * @returns Timestamped lyrics or null if unavailable
+   *
+   * Features:
+   * - ✅ Cache-first strategy
+   * - ✅ Automatic retry with exponential backoff (3 attempts)
+   * - ✅ Graceful fallback to null on persistent failures
+   * - ✅ Detailed logging for debugging
+   */
   async getTimestampedLyrics({ taskId, audioId }: GetTimestampedLyricsPayload): Promise<TimestampedLyricsResponse | null> {
     try {
-      // Validate inputs
+      // ✅ Validate inputs
       if (!taskId || !audioId || taskId === 'null' || taskId === 'undefined') {
         logger.warn('Invalid taskId or audioId', 'LyricsService', { taskId, audioId });
         return null;
       }
 
-      // ✅ Check cache first
+      // ✅ Check cache first (fast path)
       const cached = await lyricsCache.get(taskId, audioId);
       if (cached) {
         logger.info('Using cached lyrics', 'LyricsService', { taskId, audioId });
         return cached;
       }
 
-      // ✅ Fetch from API
-      const { data, error } = await supabase.functions.invoke('get-timestamped-lyrics', {
-        method: 'POST',
-        body: { taskId, audioId },
+      // ✅ Fetch from API with retry mechanism
+      // Uses standard retry config: 3 attempts, 500ms initial delay, exponential backoff
+      const normalized = await retryWithBackoff(
+        async () => {
+          const { data, error } = await supabase.functions.invoke('get-timestamped-lyrics', {
+            method: 'POST',
+            body: { taskId, audioId },
+          });
+
+          if (error) {
+            logger.error('Failed to invoke get-timestamped-lyrics Edge Function', error, 'LyricsService', { taskId, audioId });
+            throw new Error(error.message);
+          }
+
+          // ✅ Edge Function v2.2.0+ guarantees normalized response format
+          // No need for multiple format checks - the Edge Function handles all normalization
+          const result = data as TimestampedLyricsResponse;
+
+          // ✅ Validate that we have the required fields (safety check)
+          if (!result || !result.alignedWords || !Array.isArray(result.alignedWords)) {
+            logger.error(
+              'Edge Function returned invalid data structure',
+              new Error('Missing alignedWords array'),
+              'LyricsService',
+              { taskId, audioId, hasData: !!result, dataKeys: result ? Object.keys(result) : [] }
+            );
+            throw new Error('Invalid lyrics data received from server');
+          }
+
+          return result;
+        },
+        {
+          ...RETRY_CONFIGS.standard, // 3 attempts, 500ms initial, 2x backoff
+          onRetry: (error, attempt, delayMs) => {
+            logger.warn(
+              `Retrying lyrics fetch (attempt ${attempt})`,
+              'LyricsService',
+              { taskId, audioId, error: error.message, nextRetryIn: delayMs }
+            );
+          },
+        }
+      );
+
+      logger.info('Successfully fetched timestamped lyrics', 'LyricsService', {
+        taskId,
+        audioId,
+        wordCount: normalized.alignedWords.length,
+        hasWaveform: normalized.waveformData && normalized.waveformData.length > 0,
       });
 
-      if (error) {
-        logger.error('Failed to invoke get-timestamped-lyrics Edge Function', error);
-        throw new Error(error.message);
-      }
-
-      const response = data as any;
-
-      // Normalize various possible response shapes
-      let normalized: TimestampedLyricsResponse | null = null;
-      if (response?.success && response?.data?.alignedWords) {
-        normalized = response.data as TimestampedLyricsResponse;
-      } else if (response?.alignedWords) {
-        normalized = response as TimestampedLyricsResponse;
-      } else if (response?.code === 200 && response?.data?.alignedWords) {
-        normalized = response.data as TimestampedLyricsResponse;
-      }
-
-      if (!normalized) {
-        logger.error('Suno lyrics Edge Function returned unexpected shape', new Error('Invalid response'), 'LyricsService', { taskId, audioId, preview: JSON.stringify(response)?.slice(0, 200) });
-        throw new Error(response?.error || 'Failed to get timestamped lyrics');
-      }
-
-      // ✅ Cache the result
+      // ✅ Cache the result for future requests
       await lyricsCache.set(taskId, audioId, normalized);
       return normalized;
     } catch (error) {
-      logger.error('Error fetching timestamped lyrics', error as Error, 'LyricsService', { taskId, audioId });
-      throw error;
+      // ✅ FALLBACK: Return null instead of throwing
+      // This allows the UI to gracefully handle missing lyrics
+      logger.error(
+        'Failed to fetch timestamped lyrics after all retries - falling back to null',
+        error as Error,
+        'LyricsService',
+        { taskId, audioId }
+      );
+
+      // Return null instead of throwing - lyrics are not critical for playback
+      return null;
     }
   },
 
