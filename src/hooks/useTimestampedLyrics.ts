@@ -27,8 +27,9 @@ export const useTimestampedLyrics = ({ taskId, audioId, enabled = true }: UseTim
       try {
         return await LyricsService.getTimestampedLyrics({ taskId, audioId });
       } catch (error) {
-        logger.error('Failed to fetch timestamped lyrics', error as Error, 'useTimestampedLyrics', { taskId, audioId });
-        throw error; // Re-throw to let react-query handle the error state
+        // Treat any transient backend error (including 404 LYRICS_NOT_READY) as "not ready yet"
+        logger.warn('Timestamped lyrics not ready yet or transient error', 'useTimestampedLyrics', { taskId, audioId, error: (error as Error)?.message });
+        return null; // Avoid throwing to prevent error boundaries/blank screens
       }
     },
     enabled: enabled && !!taskId && !!audioId,
