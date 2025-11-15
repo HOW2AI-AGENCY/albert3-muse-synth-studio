@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useUserRole } from "@/hooks/useUserRole";
 import { getWorkspaceNavItems } from "@/config/workspace-navigation";
 import { useWorkspaceOffsets } from "@/hooks/useWorkspaceOffsets";
+import { OfflineBanner } from "@/components/common/OfflineBanner";
 
 const WorkspaceLayout = () => {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
@@ -22,6 +23,7 @@ const WorkspaceLayout = () => {
 
   return (
     <NavigationTracker>
+      <OfflineBanner />
       <div className="flex min-h-[100dvh] bg-background">
         {/* Sidebar - Desktop only */}
         <MinimalSidebar

@@ -30,12 +30,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { getCanvasColors } from '@/utils/canvas-colors';
 
 interface MobileTrackListProps {
   tracks: DAWTrack[];
 }
 
 export const MobileTrackList: React.FC<MobileTrackListProps> = ({ tracks }) => {
+  const colors = getCanvasColors();
   const updateTrack = useDAWStore((state) => state.updateTrack);
   const removeTrack = useDAWStore((state) => state.removeTrack);
   const duplicateTrack = useDAWStore((state) => state.duplicateTrack);
@@ -229,7 +231,7 @@ export const MobileTrackList: React.FC<MobileTrackListProps> = ({ tracks }) => {
                       style={{
                         left: `${left}%`,
                         width: `${width}%`,
-                        backgroundColor: track.color || '#3b82f6',
+                        backgroundColor: track.color || colors.primary,
                       }}
                     />
                   );

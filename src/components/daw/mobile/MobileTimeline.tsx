@@ -13,6 +13,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useDAWStore } from '@/stores/dawStore';
 import { useTouchGestures } from '@/hooks/useTouchGestures';
+import { getCanvasColors } from '@/utils/canvas-colors';
 
 export const MobileTimeline: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -75,6 +76,7 @@ export const MobileTimeline: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const colors = getCanvasColors();
     const height = 60;
     const dpr = window.devicePixelRatio || 1;
 
@@ -83,7 +85,7 @@ export const MobileTimeline: React.FC = () => {
     ctx.scale(dpr, dpr);
 
     // Clear
-    ctx.fillStyle = '#1a1a1a';
+    ctx.fillStyle = colors.background;
     ctx.fillRect(0, 0, containerWidth, height);
 
     // Calculate visible time range
@@ -105,8 +107,8 @@ export const MobileTimeline: React.FC = () => {
 
     const startTick = Math.floor(startTime / interval) * interval;
 
-    ctx.strokeStyle = '#4b5563';
-    ctx.fillStyle = '#9ca3af';
+    ctx.strokeStyle = colors.mutedForeground;
+    ctx.fillStyle = colors.foreground;
     ctx.font = '10px sans-serif';
     ctx.textAlign = 'center';
 
@@ -133,7 +135,7 @@ export const MobileTimeline: React.FC = () => {
     // Draw playhead
     const playheadX = (currentTime * zoom) - scrollLeft;
     if (playheadX >= 0 && playheadX <= containerWidth) {
-      ctx.strokeStyle = '#ef4444';
+      ctx.strokeStyle = colors.destructive;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(playheadX, 0);
@@ -141,7 +143,7 @@ export const MobileTimeline: React.FC = () => {
       ctx.stroke();
 
       // Playhead triangle
-      ctx.fillStyle = '#ef4444';
+      ctx.fillStyle = colors.destructive;
       ctx.beginPath();
       ctx.moveTo(playheadX, 0);
       ctx.lineTo(playheadX - 5, 8);

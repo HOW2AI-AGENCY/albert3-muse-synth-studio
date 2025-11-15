@@ -30,6 +30,7 @@ import { useAuth } from "@/contexts/auth/useAuth";
 import { useUIStateStore } from "@/stores/uiStateStore";
 import { ViewSwitcher } from "@/components/tracks/ViewSwitcher";
 import { Filter } from "@/utils/iconImports";
+import { EnhancedErrorBoundary } from "@/components/errors/EnhancedErrorBoundary";
 
 const Generate = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
@@ -229,7 +230,9 @@ const Generate = () => {
           <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
             <div className="h-full overflow-y-auto p-1">
               <div className="w-full max-w-2xl mx-auto">
-                <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
+                <EnhancedErrorBoundary>
+                  <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
+                </EnhancedErrorBoundary>
               </div>
             </div>
           </ResizablePanel>
@@ -238,21 +241,23 @@ const Generate = () => {
 
           <ResizablePanel defaultSize={selectedTrack ? 45 : 75} minSize={30}>
             <div className="h-full overflow-y-auto p-4">
-              <div className="mb-4">
-                <Select value={selectedProjectId || "all"} onValueChange={(value) => setSelectedProjectId(value === "all" ? undefined : value)}>
-                  <SelectTrigger className="w-full max-w-xs">
-                    <SelectValue placeholder="Все треки" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Все треки</SelectItem>
-                    {projects.map((project: { id: string; name: string }) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {projects.length > 0 && (
+                <div className="mb-4">
+                  <Select value={selectedProjectId || "all"} onValueChange={(value) => setSelectedProjectId(value === "all" ? undefined : value)}>
+                    <SelectTrigger className="w-full max-w-xs">
+                      <SelectValue placeholder="Все треки" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Все треки</SelectItem>
+                      {projects.map((project: { id: string; name: string }) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <TracksList
                 tracks={tracks}
                 isLoading={isLoading}
@@ -343,27 +348,31 @@ const Generate = () => {
         >
           <ResizablePanel defaultSize={40} minSize={30} maxSize={50}>
             <div className="h-full p-1">
-              <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
+              <EnhancedErrorBoundary>
+                <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
+              </EnhancedErrorBoundary>
             </div>
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={60} minSize={50}>
             <div className="h-full overflow-y-auto p-4">
-              <div className="mb-4">
-                <Select value={selectedProjectId || "all"} onValueChange={(value) => setSelectedProjectId(value === "all" ? undefined : value)}>
-                  <SelectTrigger className="w-full max-w-xs">
-                    <SelectValue placeholder="Все треки" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Все треки</SelectItem>
-                    {projects.map((project: { id: string; name: string }) => (
-                      <SelectItem key={project.id} value={project.id}>
-                        {project.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {projects.length > 0 && (
+                <div className="mb-4">
+                  <Select value={selectedProjectId || "all"} onValueChange={(value) => setSelectedProjectId(value === "all" ? undefined : value)}>
+                    <SelectTrigger className="w-full max-w-xs">
+                      <SelectValue placeholder="Все треки" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Все треки</SelectItem>
+                      {projects.map((project: { id: string; name: string }) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <TracksList
                 tracks={tracks}
                 isLoading={isLoading}
@@ -447,21 +456,27 @@ const Generate = () => {
               </VisuallyHidden>
               <div className="p-4 pb-safe">
                 <h3 className="text-base font-semibold mb-3">Фильтры</h3>
-                <div className="space-y-3">
-                  <Select value={selectedProjectId || "all"} onValueChange={(value: string) => setSelectedProjectId(value === "all" ? undefined : value)}>
-                    <SelectTrigger className="w-full h-11">
-                      <SelectValue placeholder="Все треки" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Все треки</SelectItem>
-                      {projects.map((project: { id: string; name: string }) => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {projects.length > 0 ? (
+                  <div className="space-y-3">
+                    <Select value={selectedProjectId || "all"} onValueChange={(value: string) => setSelectedProjectId(value === "all" ? undefined : value)}>
+                      <SelectTrigger className="w-full h-11">
+                        <SelectValue placeholder="Все треки" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Все треки</SelectItem>
+                        {projects.map((project: { id: string; name: string }) => (
+                          <SelectItem key={project.id} value={project.id}>
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    У вас еще нет проектов.
+                  </p>
+                )}
               </div>
             </DrawerContent>
           </Drawer>
@@ -563,7 +578,9 @@ const Generate = () => {
             <DrawerTitle>Создать музыку</DrawerTitle>
           </VisuallyHidden>
           <div className="overflow-y-auto h-full px-3 py-4 pb-safe">
-            <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
+            <EnhancedErrorBoundary>
+              <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
+            </EnhancedErrorBoundary>
           </div>
         </DrawerContent>
       </Drawer>

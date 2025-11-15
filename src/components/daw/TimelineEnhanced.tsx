@@ -14,6 +14,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useDAWStore } from '@/stores/dawStore';
 import { cn } from '@/lib/utils';
+import { getCanvasColors } from '@/utils/canvas-colors';
 
 interface TimelineEnhancedProps {
   width: number;
@@ -66,6 +67,8 @@ export const TimelineEnhanced: React.FC<TimelineEnhancedProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const colors = getCanvasColors();
+
     // Set canvas size
     const dpr = window.devicePixelRatio || 1;
     canvas.width = width * dpr;
@@ -73,7 +76,7 @@ export const TimelineEnhanced: React.FC<TimelineEnhancedProps> = ({
     ctx.scale(dpr, dpr);
 
     // Clear canvas
-    ctx.fillStyle = '#1a1a1a';
+    ctx.fillStyle = colors.background;
     ctx.fillRect(0, 0, width, height);
 
     // Calculate visible time range
@@ -81,7 +84,7 @@ export const TimelineEnhanced: React.FC<TimelineEnhancedProps> = ({
     const endTime = (scrollLeft + width) / zoom;
 
     // Draw time ruler
-    drawTimeRuler(ctx, width, height, startTime, endTime, zoom, bpm);
+    drawTimeRuler(ctx, width, height, startTime, endTime, zoom, bpm, colors);
 
     // Draw loop region
     if (loopStart !== null && loopEnd !== null) {
@@ -89,7 +92,7 @@ export const TimelineEnhanced: React.FC<TimelineEnhancedProps> = ({
       const loopEndX = timeToPixel(loopEnd);
 
       if (loopStartX < width && loopEndX > 0) {
-        ctx.fillStyle = 'rgba(59, 130, 246, 0.15)';
+        ctx.fillStyle = `${colors.primary}26`; // primary with ~15% opacity
         ctx.fillRect(
           Math.max(0, loopStartX),
           0,
@@ -98,7 +101,7 @@ export const TimelineEnhanced: React.FC<TimelineEnhancedProps> = ({
         );
 
         // Loop markers
-        ctx.strokeStyle = '#3b82f6';
+        ctx.strokeStyle = colors.primary;
         ctx.lineWidth = 2;
 
         if (loopStartX >= 0 && loopStartX <= width) {
@@ -121,7 +124,7 @@ export const TimelineEnhanced: React.FC<TimelineEnhancedProps> = ({
     markers.forEach((marker) => {
       const x = timeToPixel(marker.time);
       if (x >= 0 && x <= width) {
-        ctx.strokeStyle = marker.color || '#f59e0b';
+        ctx.strokeStyle = marker.color || colors.accent;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(x, 0);
@@ -129,7 +132,7 @@ export const TimelineEnhanced: React.FC<TimelineEnhancedProps> = ({
         ctx.stroke();
 
         // Marker label
-        ctx.fillStyle = marker.color || '#f59e0b';
+        ctx.fillStyle = marker.color || colors.accent;
         ctx.font = '10px sans-serif';
         ctx.fillText(marker.label, x + 4, 12);
       }
@@ -138,7 +141,7 @@ export const TimelineEnhanced: React.FC<TimelineEnhancedProps> = ({
     // Draw playhead
     const playheadX = timeToPixel(currentTime);
     if (playheadX >= 0 && playheadX <= width) {
-      ctx.strokeStyle = '#ef4444';
+      ctx.strokeStyle = colors.destructive;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(playheadX, 0);
@@ -146,7 +149,7 @@ export const TimelineEnhanced: React.FC<TimelineEnhancedProps> = ({
       ctx.stroke();
 
       // Playhead triangle
-      ctx.fillStyle = '#ef4444';
+      ctx.fillStyle = colors.destructive;
       ctx.beginPath();
       ctx.moveTo(playheadX, 0);
       ctx.lineTo(playheadX - 6, 8);
@@ -229,7 +232,8 @@ function drawTimeRuler(
   startTime: number,
   endTime: number,
   zoom: number,
-  bpm: number
+  bpm: number,
+  colors: Awaited<ReturnType<typeof getCanvasColors>>
 ) {
   const beatDuration = 60 / bpm; // Duration of one beat in seconds
   const measureDuration = beatDuration * 4; // Assuming 4/4 time signature
@@ -258,8 +262,8 @@ function drawTimeRuler(
   const startTick = Math.floor(startTime / tickInterval) * tickInterval;
   const endTick = Math.ceil(endTime / tickInterval) * tickInterval;
 
-  ctx.strokeStyle = '#4b5563';
-  ctx.fillStyle = '#9ca3af';
+  ctx.strokeStyle = colors.mutedForeground;
+  ctx.fillStyle = colors.foreground;
   ctx.font = '10px monospace';
   ctx.textAlign = 'center';
 
@@ -277,15 +281,15 @@ function drawTimeRuler(
       tickHeight = height * 0.6;
       showLabel = true;
       ctx.lineWidth = 2;
-      ctx.strokeStyle = '#9ca3af';
+      ctx.strokeStyle = colors.foreground;
     } else if (isBeat && showBeats) {
       tickHeight = height * 0.4;
       ctx.lineWidth = 1;
-      ctx.strokeStyle = '#6b7280';
+      ctx.strokeStyle = colors.mutedForeground;
     } else {
       tickHeight = height * 0.25;
       ctx.lineWidth = 1;
-      ctx.strokeStyle = '#4b5563';
+      ctx.strokeStyle = colors.border;
     }
 
     // Draw tick
@@ -307,7 +311,7 @@ function drawTimeRuler(
   // Draw time labels at top
   if (zoom < 40) {
     ctx.textAlign = 'left';
-    ctx.fillStyle = '#d1d5db';
+    ctx.fillStyle = colors.foreground;
     ctx.font = '11px monospace';
 
     const labelInterval = Math.ceil(30 / zoom); // Label every ~30 seconds
