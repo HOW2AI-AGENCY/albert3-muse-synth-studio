@@ -13,7 +13,7 @@ import { useAudioLibrary } from '@/hooks/useAudioLibrary';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
-import { validateAudioFile, AudioValidationError } from '@/utils/file-validation';
+import { validateAudioFile, FileValidationError } from '@/utils/file-validation';
 
 interface AudioUploadProps {
   onUploadComplete?: () => void;
@@ -35,7 +35,7 @@ export const AudioUpload = React.memo<AudioUploadProps>(({ onUploadComplete }) =
         await validateAudioFile(selectedFile);
         setFile(selectedFile);
       } catch (error) {
-        if (error instanceof AudioValidationError) {
+        if (error instanceof FileValidationError) {
           toast.error(error.message);
         } else {
           toast.error('Ошибка валидации файла');
