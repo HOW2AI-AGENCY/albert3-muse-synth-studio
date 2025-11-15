@@ -32,7 +32,13 @@ export const useTimestampedLyrics = ({ taskId, audioId, enabled = true }: UseTim
       }
     },
     enabled: enabled && !!taskId && !!audioId,
-    staleTime: Infinity, // Lyrics data is unlikely to change
-    gcTime: 1000 * 60 * 60, // Cache for 1 hour (gcTime is the correct option)
+    staleTime: 0, // Not ready immediately → allow polling until ready
+    gcTime: 1000 * 60 * 60, // Cache for 1 hour
+    retry: false, // We handle readiness via polling, not retries on error
+    refetchInterval: (query) => {
+      const data = (query.state.data as any) || null;
+      // Poll every 5s until alignedWords arrive, then stop
+      return data && Array.isArray(data.alignedWords) && data.alignedWords.length > 0 ? false : 5000;
+    },
   });
 };
