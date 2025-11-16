@@ -246,7 +246,11 @@ export async function handler(req: Request) {
           }),
           {
             status: 200,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            headers: { 
+              ...corsHeaders, 
+              "Content-Type": "application/json",
+              "X-Function-Version": "2.2.0",
+            },
           },
         );
       }
@@ -282,7 +286,11 @@ export async function handler(req: Request) {
           }),
           { 
             status: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json',
+              'X-Function-Version': '2.2.0',
+            } 
           }
         );
       }
@@ -359,7 +367,11 @@ export async function handler(req: Request) {
     // ✅ Return normalized, validated data
     return new Response(JSON.stringify(normalizedData), {
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { 
+        ...corsHeaders, 
+        "Content-Type": "application/json",
+        "X-Function-Version": "2.2.0",
+      },
     });
   } catch (error) {
     logger.error(
@@ -372,7 +384,11 @@ export async function handler(req: Request) {
       }),
       {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "application/json",
+          "X-Function-Version": "2.2.0",
+        },
       },
     );
   }
