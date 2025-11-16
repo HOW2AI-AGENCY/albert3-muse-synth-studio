@@ -309,8 +309,15 @@ export const AudioController = () => {
     const audio = audioRef?.current;
     if (!audio) return;
 
+    // ✅ FIX: Throttle time updates для лучшей производительности
+    let lastUpdateTime = 0;
     const handleTimeUpdate = () => {
-      updateCurrentTime(audio.currentTime);
+      const now = Date.now();
+      // Обновляем каждые 50ms для плавной подсветки лирики
+      if (now - lastUpdateTime >= 50) {
+        updateCurrentTime(audio.currentTime);
+        lastUpdateTime = now;
+      }
     };
 
     // ✅ FIX: Removed duplicate loadedmetadata listener (already handled in track loading effect)

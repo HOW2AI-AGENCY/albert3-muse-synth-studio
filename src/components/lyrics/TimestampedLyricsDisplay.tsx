@@ -322,19 +322,21 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
                         );
                       }
 
-                      const isWordActive = currentTime >= word.startS && currentTime <= word.endS;
+                      // ✅ FIX: Более точная проверка активности слова с небольшим допуском
+                      const isWordActive = isActive && currentTime >= word.startS && currentTime < word.endS;
                       const wordClass = cn(
                         "transition-all duration-150 px-1 cursor-pointer",
                         isWordActive && [
-                          "text-white font-bold scale-110",
-                          "drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]", // White glow
-                          "relative z-10"
+                          "text-primary font-extrabold scale-110",
+                          "drop-shadow-[0_0_8px_hsl(var(--primary)/0.8)]",
+                          "relative z-10",
+                          settings.highContrast && "text-blue-600 dark:text-cyan-400"
                         ],
-                        !isWordActive && isActive && "text-gray-300 font-medium",
+                        !isWordActive && isActive && "text-foreground/80 font-medium",
                         !isWordActive && !isActive && (
                           settings.highContrast
-                          ? "text-gray-400"
-                          : "text-muted-foreground"
+                          ? "text-muted-foreground/60"
+                          : "text-muted-foreground/40"
                         )
                       );
 
