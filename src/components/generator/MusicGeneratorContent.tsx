@@ -183,6 +183,7 @@ export const MusicGeneratorContent = memo(({
               onDebouncedPromptChange={state.setDebouncedPrompt}
               onDebouncedLyricsChange={state.setDebouncedLyrics}
               onModeChange={state.setMode}
+              isMobile={isMobile}
             />
           )}
         </div>

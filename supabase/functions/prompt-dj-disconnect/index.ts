@@ -41,7 +41,7 @@ serve(async (req) => {
   } catch (error) {
     logger.error('Error in prompt-dj-disconnect', error instanceof Error ? error : new Error(String(error)), 'prompt-dj-disconnect');
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

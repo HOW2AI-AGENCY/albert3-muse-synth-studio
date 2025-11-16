@@ -102,7 +102,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     const body = await validateRequest(
       req,
       validationSchemas.generateLyrics,
-    ) as GenerateLyricsRequestBody;
+    ) as unknown as GenerateLyricsRequestBody;
 
     const { prompt, trackId, metadata } = body;
 

@@ -43,7 +43,7 @@ serve(async (req: Request) => {
       .eq('user_id', user.id)
       .eq('status', 'completed')
       .eq('provider', 'suno')
-      .is('suno_id', null).not()
+      .not('suno_id', 'is', null)
       .order('created_at', { ascending: false });
 
     if (tracksError) {
@@ -91,7 +91,7 @@ serve(async (req: Request) => {
       try {
         logger.info(`[migrate-versions] Processing track ${track.id}`, { suno_id: track.suno_id });
 
-        let versions = [];
+        let versions: any[] = [];
         
         // Пытаемся получить данные из Suno API
         if (track.suno_id) {

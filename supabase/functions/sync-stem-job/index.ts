@@ -76,7 +76,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     ensureSupabaseUrl();
 
-    const body = await validateRequest(req, validationSchemas.syncStemJob) as SyncStemJobRequestBody;
+    const body = await validateRequest(req, validationSchemas.syncStemJob) as unknown as SyncStemJobRequestBody;
     const { trackId, versionId, taskId: overrideTaskId, separationMode: requestedMode } = body;
 
     // Get userId from X-User-Id header (injected by middleware)

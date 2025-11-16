@@ -12,7 +12,7 @@ import { useTracks } from '@/hooks/useTracks';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
-import type { GenerationParams } from '../../types/generator.types';
+import type { GenerationParams } from '../types/generator.types';
 import type { AdvancedPromptResult } from '@/services/ai/advanced-prompt-generator';
 import type { Track } from '@/types/domain/track.types';
 
@@ -152,7 +152,7 @@ export const CompactCustomForm = memo(({
         <ProjectTrackPickerDialog
           open={trackPickerOpen}
           onOpenChange={setTrackPickerOpen}
-          projectId={params.activeProjectId}
+          projectId={params.activeProjectId || ''}
           onTrackSelect={handleTrackSelect}
           selectedTrackId={params.referenceTrackId || null}
         />

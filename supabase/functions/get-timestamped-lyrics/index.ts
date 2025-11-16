@@ -103,7 +103,7 @@ function normalizeSunoResponse(response: SunoResponse): TimestampedLyricsData | 
     // Format 1: { code: 200, data: {...} }
     if ('code' in response && 'data' in response) {
       if (response.code === 200 && response.data) {
-        return response.data;
+      return response.data as { alignedWords: any[]; waveformData: number[]; hootCer: number; isStreamed: boolean };
       }
       logger.warn("Suno API returned non-200 code or null data", { 
         code: response.code, 
@@ -115,7 +115,7 @@ function normalizeSunoResponse(response: SunoResponse): TimestampedLyricsData | 
     // Format 2: { success: true, data: {...} }
     if ('success' in response && 'data' in response) {
       if (response.success && response.data) {
-        return response.data;
+        return response.data as { alignedWords: any[]; waveformData: number[]; hootCer: number; isStreamed: boolean };
       }
       logger.warn("Suno API returned success=false or null data", { 
         success: response.success,
