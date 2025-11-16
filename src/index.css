@@ -2,6 +2,8 @@
 @import './styles/design-tokens.css';
 /* Импорт улучшенной контрастности для мобильных устройств (Phase 2) */
 @import './styles/mobile-contrast.css';
+/* Импорт Fluid Typography System (Phase 4) */
+@import './styles/fluid-typography.css';
 
 @tailwind base;
 @tailwind components;
@@ -95,8 +97,55 @@
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  /* Fluid Typography - автоматическая адаптивность размеров текста */
+  h1 {
     @apply font-bold tracking-tight;
+    font-size: clamp(1.875rem, 5vw, 3rem);
+    line-height: 1.2;
+  }
+
+  h2 {
+    @apply font-bold tracking-tight;
+    font-size: clamp(1.5rem, 4vw, 2.25rem);
+    line-height: 1.3;
+  }
+
+  h3 {
+    @apply font-bold tracking-tight;
+    font-size: clamp(1.25rem, 3vw, 1.875rem);
+    line-height: 1.4;
+  }
+
+  h4, h5, h6 {
+    @apply font-bold tracking-tight;
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
+    line-height: 1.5;
+  }
+
+  /* Fluid body text */
+  body {
+    font-size: clamp(0.875rem, 1.5vw, 1rem);
+  }
+
+  /* Fluid spacing utilities */
+  .fluid-text-sm {
+    font-size: clamp(0.75rem, 1.2vw, 0.875rem);
+  }
+
+  .fluid-text-base {
+    font-size: clamp(0.875rem, 1.5vw, 1rem);
+  }
+
+  .fluid-text-lg {
+    font-size: clamp(1rem, 2vw, 1.125rem);
+  }
+
+  .fluid-text-xl {
+    font-size: clamp(1.125rem, 2.5vw, 1.25rem);
+  }
+
+  .fluid-text-2xl {
+    font-size: clamp(1.25rem, 3vw, 1.5rem);
   }
 
   /* Safe area support для мобильных устройств */
@@ -110,6 +159,44 @@
 }
 
 @layer utilities {
+  /* Container Queries Support */
+  .container-inline {
+    container-type: inline-size;
+  }
+
+  .container-normal {
+    container-type: normal;
+  }
+
+  .container-size {
+    container-type: size;
+  }
+
+  /* Container query utilities */
+  @container (min-width: 320px) {
+    .cq-xs\:block { display: block; }
+    .cq-xs\:flex { display: flex; }
+    .cq-xs\:grid { display: grid; }
+  }
+
+  @container (min-width: 480px) {
+    .cq-sm\:block { display: block; }
+    .cq-sm\:flex { display: flex; }
+    .cq-sm\:grid { display: grid; }
+    .cq-sm\:flex-row { flex-direction: row; }
+  }
+
+  @container (min-width: 640px) {
+    .cq-md\:block { display: block; }
+    .cq-md\:flex { display: flex; }
+    .cq-md\:grid { display: grid; }
+  }
+
+  @container (min-width: 768px) {
+    .cq-lg\:block { display: block; }
+    .cq-lg\:flex { display: flex; }
+    .cq-lg\:grid { display: grid; }
+  }
   /* Workspace content margin synced with sidebar width */
   @media (min-width: 1024px) {
     .workspace-content {

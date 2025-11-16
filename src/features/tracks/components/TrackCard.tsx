@@ -114,7 +114,7 @@ const TrackCardComponent = memo(({
           onClick?.();
         }
       }}
-      className="touch-optimized focus-ring"
+      className="touch-optimized focus-ring container-inline"
     >
       <Card
         className={cn(
