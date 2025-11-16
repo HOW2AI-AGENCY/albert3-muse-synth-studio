@@ -36,6 +36,9 @@ export const useTimestampedLyrics = ({ taskId, audioId, enabled = true }: UseTim
     staleTime: 0, // Not ready immediately → allow polling until ready
     gcTime: 1000 * 60 * 60, // Cache for 1 hour
     retry: false, // We handle readiness via polling, not retries on error
+    // ✅ P0 FIX: Disable refetch on window focus/reconnect to prevent "aborted signal" errors
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     refetchInterval: (query) => {
       const data = (query.state.data as any) || null;
       // Poll every 5s until alignedWords arrive, then stop

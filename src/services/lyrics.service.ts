@@ -52,73 +52,97 @@ export const LyricsService = {
         return cached;
       }
 
-      // ✅ Fetch from API with retry mechanism
+      // ✅ Fetch from API with retry mechanism + 10s timeout
       // Uses standard retry config: 3 attempts, 500ms initial delay, exponential backoff
       const normalized = await retryWithBackoff(
         async () => {
-          const { data, error } = await supabase.functions.invoke('get-timestamped-lyrics', {
-            method: 'POST',
-            body: { taskId, audioId },
-          });
+          // ✅ P0 FIX: Add 10s timeout to Edge Function invocation
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-          if (error) {
-            // 🔍 DIAGNOSTICS: Log error details for debugging
-            const errorStatus = (error as any)?.status;
-            const errorName = (error as any)?.name;
-            logger.error('Failed to invoke get-timestamped-lyrics Edge Function', error, 'LyricsService', { 
-              taskId, 
-              audioId,
-              errorStatus,
-              errorName,
-              errorMessage: error.message,
+          try {
+            const { data, error } = await supabase.functions.invoke('get-timestamped-lyrics', {
+              method: 'POST',
+              body: { taskId, audioId },
+              signal: controller.signal,
             });
-            
-            // ✅ Check if this is a FunctionsHttpError (non-2xx status)
-            // For 404, the error is in data, not in error object
-            // So we'll check data below. Just return null here to let data check happen
-            return null;
-          }
 
-          // ✅ Check if data indicates lyrics not ready (404 response)
-          if (data && typeof data === 'object' && 'error' in data) {
-            const errorData = data as { error?: string; success?: boolean; message?: string; version?: string };
-            
-            // 🔍 DIAGNOSTICS: Log version header if available
-            const functionVersion = errorData.version || 'unknown';
-            
-            if (errorData.error === 'LYRICS_NOT_READY' || errorData.success === false) {
-              logger.info('Timestamped lyrics not ready yet', 'LyricsService', { 
+            clearTimeout(timeoutId);
+
+            if (error) {
+              // 🔍 DIAGNOSTICS: Log error details for debugging
+              const errorStatus = (error as any)?.status;
+              const errorName = (error as any)?.name;
+              logger.error('Failed to invoke get-timestamped-lyrics Edge Function', error, 'LyricsService', { 
                 taskId, 
-                audioId, 
-                message: errorData.message,
-                functionVersion,
+                audioId,
+                errorStatus,
+                errorName,
+                errorMessage: error.message,
               });
+              
+              // ✅ Check if this is a FunctionsHttpError (non-2xx status)
+              // For 404, the error is in data, not in error object
+              // So we'll check data below. Just return null here to let data check happen
               return null;
             }
+
+            // ✅ Check if data indicates lyrics not ready (404 response)
+            if (data && typeof data === 'object' && 'error' in data) {
+              const errorData = data as { error?: string; success?: boolean; message?: string; version?: string };
+              
+              // 🔍 DIAGNOSTICS: Log version header if available
+              const functionVersion = errorData.version || 'unknown';
+              
+              if (errorData.error === 'LYRICS_NOT_READY' || errorData.success === false) {
+                logger.info('Timestamped lyrics not ready yet', 'LyricsService', { 
+                  taskId, 
+                  audioId, 
+                  message: errorData.message,
+                  functionVersion,
+                });
+                return null;
+              }
+            }
+
+            // ✅ If we got here with null/undefined data after an error, return null
+            if (!data) {
+              logger.warn('No data received from Edge Function', 'LyricsService', { taskId, audioId });
+              return null;
+            }
+
+            // ✅ Edge Function v2.2.0+ guarantees normalized response format
+            // No need for multiple format checks - the Edge Function handles all normalization
+            const result = data as TimestampedLyricsResponse;
+
+            // ✅ Validate that we have the required fields (safety check)
+            if (!result || !result.alignedWords || !Array.isArray(result.alignedWords)) {
+              logger.error(
+                'Edge Function returned invalid data structure',
+                new Error('Missing alignedWords array'),
+                'LyricsService',
+                { taskId, audioId, hasData: !!result, dataKeys: result ? Object.keys(result) : [] }
+              );
+              throw new Error('Invalid lyrics data received from server');
+            }
+
+            return result;
+          } catch (error) {
+            clearTimeout(timeoutId);
+            
+            // Handle timeout specifically
+            if ((error as any)?.name === 'AbortError') {
+              logger.error(
+                'Edge Function timeout after 10s',
+                error as Error,
+                'LyricsService',
+                { taskId, audioId }
+              );
+              throw new Error('Request timeout - lyrics service took too long to respond');
+            }
+            
+            throw error;
           }
-
-          // ✅ If we got here with null/undefined data after an error, return null
-          if (!data) {
-            logger.warn('No data received from Edge Function', 'LyricsService', { taskId, audioId });
-            return null;
-          }
-
-          // ✅ Edge Function v2.2.0+ guarantees normalized response format
-          // No need for multiple format checks - the Edge Function handles all normalization
-          const result = data as TimestampedLyricsResponse;
-
-          // ✅ Validate that we have the required fields (safety check)
-          if (!result || !result.alignedWords || !Array.isArray(result.alignedWords)) {
-            logger.error(
-              'Edge Function returned invalid data structure',
-              new Error('Missing alignedWords array'),
-              'LyricsService',
-              { taskId, audioId, hasData: !!result, dataKeys: result ? Object.keys(result) : [] }
-            );
-            throw new Error('Invalid lyrics data received from server');
-          }
-
-          return result;
         },
         {
           ...RETRY_CONFIGS.standard, // 3 attempts, 500ms initial, 2x backoff
