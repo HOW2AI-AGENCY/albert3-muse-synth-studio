@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
@@ -6,11 +7,10 @@ import { StyleTagsInput } from '../StyleTagsInput';
 import { StyleRecommendationsInline } from '@/components/generator/StyleRecommendationsInline';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 import { cn } from '@/lib/utils';
-import { Suspense } from 'react';
 import type { GenerationParams } from '../../types/generator.types';
 import type { AdvancedPromptResult } from '@/services/ai/advanced-prompt-generator';
 
-const AudioDescriber = React.lazy(() => import('@/components/audio/AudioDescriber').then(m => ({ default: m.AudioDescriber })));
+const AudioDescriber = lazy(() => import('@/components/audio/AudioDescriber').then(m => ({ default: m.AudioDescriber })));
 
 interface FormStylesProps {
     params: GenerationParams;

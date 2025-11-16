@@ -8,7 +8,6 @@ import { FormStyles } from './sections/FormStyles';
 import { FormAdvanced } from './sections/FormAdvanced';
 import { ProjectTrackPickerDialog } from '@/components/generator/ProjectTrackPickerDialog';
 import { useProjects } from '@/contexts/project/useProjects';
-import { useTracks } from '@/hooks/useTracks';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
@@ -49,7 +48,6 @@ export const CompactCustomForm = memo(({
   isMobile
 }: CompactCustomFormProps) => {
   const { projects } = useProjects();
-  const { tracks: allTracks } = useTracks();
   const { toast } = useToast();
   const [trackPickerOpen, setTrackPickerOpen] = useState(false);
 

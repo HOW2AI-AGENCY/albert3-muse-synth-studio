@@ -5,7 +5,6 @@ import { Sparkles, History } from '@/utils/iconImports';
 import { PromptCharacterCounter } from '@/components/generator/PromptCharacterCounter';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 import { cn } from '@/lib/utils';
-import { useMemo } from 'react';
 
 const MAX_PROMPT_LENGTH = 3000;
 
