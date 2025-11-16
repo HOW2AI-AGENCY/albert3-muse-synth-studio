@@ -126,17 +126,10 @@ export const useTracks = (refreshTrigger?: number, options: UseTracksOptions = {
       if (error) {
         const err = error as Error;
         
-        // ✅ Handle AbortError gracefully - expected behavior
+        // ✅ Handle AbortError gracefully - expected behavior when component unmounts
         if (err.name === 'AbortError') {
           logInfo('Tracks request aborted (expected)', 'useTracks', { userId, pageParam });
           return { cursor: pageParam, tracks: [], hasMore: false, totalCount: 0 } satisfies TracksPage;
-        }
-        
-        // Real errors - log and throw
-        if (err.name === 'AbortError') {
-          logger.debug('Tracks request aborted', 'useTracks', { userId });
-          // Пробрасываем отмену, чтобы React Query корректно обработал cancellation
-          throw err;
         }
         const msg = (err.message || '').toUpperCase();
         const isTransient =
