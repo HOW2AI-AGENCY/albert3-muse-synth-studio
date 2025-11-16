@@ -17,10 +17,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UploadExtendDialog } from '@/components/tracks/UploadExtendDialog';
 import { AddInstrumentalDialog } from '@/components/tracks/AddInstrumentalDialog';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 const AudioLibrary = () => {
   const [activeTab, setActiveTab] = useState('library');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300); // ✅ Debounce search
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [showFavorites, setShowFavorites] = useState(false);
   const [selectedSourceType, setSelectedSourceType] = useState<string | null>(null);
@@ -46,14 +48,14 @@ const AudioLibrary = () => {
   }, [audioItems, selectedAudio]);
 
   const filteredItems = React.useMemo(() => {
-    if (!searchQuery) return audioItems;
-    const query = searchQuery.toLowerCase();
+    if (!debouncedSearchQuery) return audioItems;
+    const query = debouncedSearchQuery.toLowerCase();
     return audioItems.filter(item =>
       item.file_name.toLowerCase().includes(query) ||
-      item.description?.toLowerCase().includes(query) ||
-      item.tags.some(tag => tag.toLowerCase().includes(query))
+      (item.description && item.description.toLowerCase().includes(query)) ||
+      (item.tags && item.tags.some(tag => tag.toLowerCase().includes(query)))
     );
-  }, [audioItems, searchQuery]);
+  }, [audioItems, debouncedSearchQuery]);
 
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-background">

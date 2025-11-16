@@ -17,6 +17,7 @@ import { ActionTile } from "@/components/layout/ActionTile";
 import { PublicTracksGrid } from "@/components/dashboard/PublicTracksGrid";
 import { PublicTracksFilters } from "@/components/dashboard/PublicTracksFilters";
 import { logger } from "@/utils/logger";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const Dashboard = () => {
 
   // Filter and sort state
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300); // ✅ Debounce search
   const [genreFilter, setGenreFilter] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
 
@@ -39,7 +41,7 @@ const Dashboard = () => {
     fetchNextPage,
     error,
   } = usePublicTracks({
-    searchQuery,
+    searchQuery: debouncedSearchQuery,
     genreFilter,
     sortBy,
     pageSize: 20,
