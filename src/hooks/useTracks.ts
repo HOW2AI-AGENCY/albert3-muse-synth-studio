@@ -117,8 +117,22 @@ export const useTracks = (refreshTrigger?: number, options: UseTracksOptions = {
 
       const { data, error, count } = await builder;
 
+      // ✅ Graceful handling of AbortError (React Query cancels on unmount)
+      if (signal?.aborted) {
+        logInfo('Tracks request aborted (component unmounted)', 'useTracks', { userId, pageParam });
+        return { cursor: pageParam, tracks: [], hasMore: false, totalCount: 0 } satisfies TracksPage;
+      }
+
       if (error) {
         const err = error as Error;
+        
+        // ✅ Handle AbortError gracefully - expected behavior
+        if (err.name === 'AbortError') {
+          logInfo('Tracks request aborted (expected)', 'useTracks', { userId, pageParam });
+          return { cursor: pageParam, tracks: [], hasMore: false, totalCount: 0 } satisfies TracksPage;
+        }
+        
+        // Real errors - log and throw
         if (err.name === 'AbortError') {
           logger.debug('Tracks request aborted', 'useTracks', { userId });
           // Пробрасываем отмену, чтобы React Query корректно обработал cancellation

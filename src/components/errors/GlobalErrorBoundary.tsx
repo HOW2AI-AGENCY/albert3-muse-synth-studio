@@ -50,6 +50,19 @@ export class GlobalErrorBoundary extends Component<Props, State> {
       }
     );
 
+    // ✅ Send to Sentry in production
+    if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
+      import('@sentry/react').then((Sentry) => {
+        Sentry.captureException(error, {
+          contexts: {
+            react: {
+              componentStack: errorInfo.componentStack,
+            },
+          },
+        });
+      });
+    }
+
     // Обновляем состояние
     this.setState({
       errorInfo,
