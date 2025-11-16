@@ -275,6 +275,54 @@ export type Database = {
           },
         ]
       }
+      daw_projects: {
+        Row: {
+          bpm: number | null
+          created_at: string | null
+          data: Json
+          description: string | null
+          duration_seconds: number | null
+          id: string
+          is_public: boolean | null
+          last_saved_at: string | null
+          name: string
+          thumbnail_url: string | null
+          track_count: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          bpm?: number | null
+          created_at?: string | null
+          data?: Json
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          is_public?: boolean | null
+          last_saved_at?: string | null
+          name: string
+          thumbnail_url?: string | null
+          track_count?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          bpm?: number | null
+          created_at?: string | null
+          data?: Json
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          is_public?: boolean | null
+          last_saved_at?: string | null
+          name?: string
+          thumbnail_url?: string | null
+          track_count?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       lyrics_generation_log: {
         Row: {
           created_at: string
