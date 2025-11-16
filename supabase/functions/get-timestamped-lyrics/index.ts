@@ -342,19 +342,25 @@ export async function handler(req: Request) {
     const normalizedData = normalizeSunoResponse(validationResult.data);
 
     if (!normalizedData) {
-      logger.error("[GET-TIMESTAMPED-LYRICS] Failed to normalize Suno response", {
+      logger.warn("[GET-TIMESTAMPED-LYRICS] Normalized data is null - lyrics not ready", {
         rawData: JSON.stringify(rawResponseData).slice(0, 500),
       });
+      
+      // ✅ Return 200 OK with LYRICS_NOT_READY - consistent with other "not ready" cases
       return new Response(
         JSON.stringify({
           success: false,
-          error: "NORMALIZATION_FAILED",
-          message: "Failed to process lyrics data from Suno API",
-          hint: "The response format was unexpected",
+          error: "LYRICS_NOT_READY",
+          message: "Timestamped lyrics data is not available yet",
+          hint: "Try again in a few seconds",
         }),
         {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+          headers: { 
+            ...corsHeaders, 
+            "Content-Type": "application/json",
+            "X-Function-Version": "2.2.0",
+          },
         },
       );
     }
@@ -363,6 +369,29 @@ export async function handler(req: Request) {
       wordCount: normalizedData.alignedWords.length,
       hasWaveform: normalizedData.waveformData && normalizedData.waveformData.length > 0,
     });
+
+    // ✅ Handle edge case: no aligned words
+    if (!normalizedData.alignedWords || normalizedData.alignedWords.length === 0) {
+      logger.warn("[GET-TIMESTAMPED-LYRICS] No aligned words in normalized data");
+      
+      // ✅ Return 200 OK with LYRICS_NOT_READY for consistency
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "LYRICS_NOT_READY",
+          message: "No timestamped lyrics available yet",
+          hint: "The lyrics may still be processing",
+        }),
+        {
+          status: 200,
+          headers: { 
+            ...corsHeaders, 
+            "Content-Type": "application/json",
+            "X-Function-Version": "2.2.0",
+          },
+        },
+      );
+    }
 
     // ✅ Return normalized, validated data
     return new Response(JSON.stringify(normalizedData), {
