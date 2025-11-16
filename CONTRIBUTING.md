@@ -132,6 +132,14 @@ See also:
 
 ## 📝 Code Style
 
+### Naming Conventions
+- **Variables:** `camelCase` - `trackDuration`
+- **Functions:** `camelCase` - `playTrack()`
+- **Components:** `PascalCase` - `TrackCard`
+- **Constants:** `UPPER_SNAKE_CASE` - `API_BASE_URL`
+- **Types/Interfaces:** `PascalCase` - `TrackCardProps`
+- **Files:** `kebab-case` - `track-card.tsx` OR `PascalCase` - `TrackCard.tsx`
+
 ### TypeScript
 
 ```typescript
@@ -148,6 +156,311 @@ const API_BASE_URL = 'https://api.example.com';
 // ❌ BAD
 const TrackDuration = 120;
 function PlayTrack(track_id) { }
+const track_card = () => {};
+```
+
+### React Components
+
+```typescript
+// ✅ GOOD: Memoized functional component
+export const TrackCard = React.memo(({ 
+  track, 
+  onPlay 
+}: TrackCardProps) => {
+  const handlePlay = useCallback(() => {
+    onPlay(track.id);
+  }, [track.id, onPlay]);
+  
+  return (
+    <Card>
+      <Button onClick={handlePlay}>Play</Button>
+    </Card>
+  );
+});
+
+TrackCard.displayName = 'TrackCard';
+
+// ❌ BAD: Not memoized, no useCallback
+export const TrackCard = ({ track, onPlay }) => {
+  return (
+    <Card>
+      <Button onClick={() => onPlay(track.id)}>Play</Button>
+    </Card>
+  );
+};
+```
+
+### Design System (CRITICAL!)
+
+```typescript
+// ✅ GOOD: Use semantic tokens
+<div className="bg-background text-foreground border-border">
+  <Button variant="default">Click me</Button>
+</div>
+
+// ✅ GOOD: Use HSL from design system
+const colors = getCanvasColors();
+ctx.fillStyle = colors.background; // HSL value
+
+// ❌ BAD: Direct colors
+<div className="bg-white text-black border-gray-300">
+  <Button className="bg-blue-500">Click me</Button>
+</div>
+
+// ❌ BAD: Direct hex colors
+ctx.fillStyle = '#1a1a1a';
+```
+
+**Rule:** NEVER use direct colors (white, black, blue-500, etc.). Always use design system tokens!
+
+---
+
+## 🧪 Testing Requirements
+
+### Test Coverage Targets
+- **Unit Tests:** 80% (currently 35%)
+- **Integration Tests:** 60% (currently 15%)
+- **E2E Tests:** 40% (currently 10%)
+
+### Writing Tests
+
+```typescript
+// Unit test example
+import { renderHook, waitFor } from '@testing-library/react';
+import { useTracks } from '../useTracks';
+
+describe('useTracks', () => {
+  it('should fetch tracks', async () => {
+    const { result } = renderHook(() => useTracks());
+    
+    await waitFor(() => {
+      expect(result.current.tracks).toBeDefined();
+      expect(result.current.tracks.length).toBeGreaterThan(0);
+    });
+  });
+  
+  it('should handle errors', async () => {
+    // Mock error
+    mockSupabase.from('tracks').select.mockRejectedValue(new Error('Failed'));
+    
+    const { result } = renderHook(() => useTracks());
+    
+    await waitFor(() => {
+      expect(result.current.error).toBeDefined();
+    });
+  });
+});
+```
+
+### Required Tests for New Features
+- [ ] Unit tests (before merge)
+- [ ] Integration tests (for complex features)
+- [ ] E2E tests (for user-facing features)
+- [ ] Performance tests (for optimizations)
+
+---
+
+## 🔒 Security Guidelines
+
+### Edge Functions
+```typescript
+// ✅ GOOD: Proper auth check
+const authHeader = req.headers.get('Authorization');
+if (!authHeader) {
+  return new Response('Unauthorized', { status: 401 });
+}
+
+const token = authHeader.replace('Bearer ', '');
+const { data: { user }, error } = await supabase.auth.getUser(token);
+if (error || !user) {
+  return new Response('Unauthorized', { status: 401 });
+}
+```
+
+### Database Operations
+```typescript
+// ✅ GOOD: RLS-protected query
+const { data, error } = await supabase
+  .from('tracks')
+  .select('*')
+  .eq('user_id', userId);
+// RLS automatically filters to user's tracks
+
+// ❌ BAD: Direct SQL without RLS
+await supabase.rpc('raw_sql', {
+  query: 'SELECT * FROM tracks'
+});
+```
+
+### Input Validation
+```typescript
+// ✅ GOOD: Zod validation
+import { z } from 'zod';
+
+const schema = z.object({
+  prompt: z.string().min(1).max(500),
+  tags: z.array(z.string()).optional(),
+});
+
+const validated = schema.parse(input);
+```
+
+---
+
+## 🚀 Pull Request Requirements
+
+### Checklist (MANDATORY)
+- [ ] Code follows style guidelines
+- [ ] TypeScript types added/updated
+- [ ] Tests written and passing
+- [ ] Documentation updated
+- [ ] No console.log in production code
+- [ ] Design system tokens used (no direct colors)
+- [ ] React.memo applied to components
+- [ ] useCallback used for event handlers
+- [ ] Performance impact assessed
+- [ ] Security implications reviewed
+
+### PR Template
+```markdown
+## Description
+Brief description of changes
+
+## Type of Change
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Refactoring
+- [ ] Documentation
+- [ ] Performance improvement
+
+## Testing
+- [ ] Unit tests added/updated
+- [ ] Integration tests added/updated
+- [ ] Manual testing performed
+- [ ] All tests passing
+
+## Screenshots (if UI changes)
+[Add screenshots or GIFs]
+
+## Checklist
+- [ ] Code follows project style
+- [ ] Tests written and passing
+- [ ] Documentation updated
+- [ ] No breaking changes (or documented)
+```
+
+### Review Process
+1. **Minimum 1 approval** required
+2. **CI checks** must pass:
+   - TypeScript compilation
+   - ESLint
+   - Unit tests
+   - Build succeeds
+3. **Code quality** standards met
+4. **Performance** impact acceptable
+
+---
+
+## 📋 Branch Strategy
+
+### Branch Naming
+```
+feature/PHASE-8-bulk-operations
+bugfix/player-audio-glitch
+hotfix/critical-auth-issue
+refactor/generator-components
+docs/phase-8-guide
+test/daw-projects-coverage
+```
+
+### Workflow
+```bash
+# 1. Create branch from develop
+git checkout develop
+git pull origin develop
+git checkout -b feature/my-feature
+
+# 2. Make changes + commit
+git add .
+git commit -m "feat(bulk): add download operation"
+
+# 3. Push to origin
+git push origin feature/my-feature
+
+# 4. Open PR (GitHub UI)
+# 5. Address review comments
+# 6. Merge (squash + merge)
+# 7. Delete branch
+```
+
+---
+
+## 🛠️ Common Patterns
+
+### Custom Hook Pattern
+```typescript
+export function useMyFeature() {
+  const queryClient = useQueryClient();
+  
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['my-feature'],
+    queryFn: fetchData,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+  
+  const { mutateAsync: doAction } = useMutation({
+    mutationFn: performAction,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-feature'] });
+      toast.success('Action completed');
+    },
+    onError: (error) => {
+      toast.error(`Failed: ${error.message}`);
+    },
+  });
+  
+  return { data, isLoading, error, doAction };
+}
+```
+
+### Repository Pattern
+```typescript
+// Interface
+interface IMyRepository {
+  findAll(): Promise<Item[]>;
+  findById(id: string): Promise<Item | null>;
+  create(item: Partial<Item>): Promise<Item>;
+}
+
+// Implementation
+class SupabaseMyRepository implements IMyRepository {
+  async findAll() {
+    const { data, error } = await supabase
+      .from('items')
+      .select('*');
+    
+    if (error) throw error;
+    return data;
+  }
+}
+```
+
+---
+
+## 📚 Additional Resources
+
+- [CLAUDE.md](../../CLAUDE.md) - Complete project guide
+- [Phase 8 Summary](./PHASE_8_SUMMARY.md) - Phase 8 details
+- [Logic Audit](../audit/LOGIC_AUDIT_2025-11-16.md) - Code quality audit
+- [Quick Start](./QUICK_START_GUIDE.md) - Fast onboarding
+- [Architecture](../architecture/SYSTEM_OVERVIEW.md) - System architecture
+
+---
+
+**Last Updated:** November 16, 2025  
+**Version:** 1.0  
+**Status:** Active
+
 const track_card = () => { };
 ```
 
