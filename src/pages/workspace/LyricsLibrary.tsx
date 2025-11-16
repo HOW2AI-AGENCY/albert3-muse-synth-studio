@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLyricsGenerationLog, useLyricsGenerationStats, type LyricsGenerationLogEntry } from '@/hooks/useLyricsGenerationLog';
 import { Badge } from '@/components/ui/badge';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 // Memoized tabs for performance
 const SavedTab = memo(({ 
@@ -264,6 +265,7 @@ StatsTab.displayName = 'StatsTab';
 export default function LyricsLibrary() {
   const [activeTab, setActiveTab] = useState('saved');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300); // ✅ Debounce search
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [showFavorites, setShowFavorites] = useState(false);
   const [selectedLyrics, setSelectedLyrics] = useState<string | null>(null);
@@ -273,7 +275,7 @@ export default function LyricsLibrary() {
   const { data: stats, isLoading: statsLoading } = useLyricsGenerationStats();
 
   const { lyrics, isLoading } = useSavedLyrics({
-    search: searchQuery || undefined,
+    search: debouncedSearchQuery || undefined,
     folder: selectedFolder || undefined,
     favorite: showFavorites,
   });

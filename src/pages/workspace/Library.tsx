@@ -32,6 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTrackCleanup } from "@/hooks/useTrackCleanup";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { usePrefetchTracks } from "@/hooks/usePrefetchTracks";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 // import { LikesService } from "@/services/likes.service"; // Now handled in TrackCard
 import { supabase } from "@/integrations/supabase/client";
 import { DisplayTrack, convertToAudioPlayerTrack, convertToDisplayTrack, convertToOptimizedTrack } from "@/types/track";
@@ -82,6 +83,7 @@ const LibraryContent: React.FC = () => {
   });
   
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300); // ✅ Debounce search
   const [sortBy, setSortBy] = useState<SortBy>('created_at');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -143,10 +145,10 @@ const LibraryContent: React.FC = () => {
   // Мемоизированная фильтрация и сортировка треков
   const filteredAndSortedTracks = useMemo(() => {
     const filtered = tracks.filter(track => {
-      const matchesSearch = !searchQuery || 
-        track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      const matchesSearch = !debouncedSearchQuery || 
+        track.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
         (track.style_tags && track.style_tags.some(tag => 
-          tag.toLowerCase().includes(searchQuery.toLowerCase())
+          tag.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
         ));
       
       const matchesStatus = selectedStatus === 'all' || track.status === selectedStatus;
@@ -187,7 +189,7 @@ const LibraryContent: React.FC = () => {
     });
 
     return filtered;
-  }, [tracks, searchQuery, selectedStatus, sortBy, sortOrder]);
+  }, [tracks, debouncedSearchQuery, selectedStatus, sortBy, sortOrder]);
 
   // Обработчики событий
   const handleViewModeChange = useCallback((mode: ViewMode) => {
