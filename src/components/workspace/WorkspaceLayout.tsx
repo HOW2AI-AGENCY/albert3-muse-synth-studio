@@ -24,7 +24,7 @@ const WorkspaceLayout = () => {
   return (
     <NavigationTracker>
       <OfflineBanner />
-      <div className="flex min-h-[100dvh] bg-background">
+      <div className="flex min-h-[100dvh] bg-background container-normal">
         {/* Sidebar - Desktop only */}
         <MinimalSidebar
           isExpanded={isSidebarExpanded}
@@ -36,7 +36,7 @@ const WorkspaceLayout = () => {
         {/* Main Content */}
         <div
           className={cn(
-            "flex-1 flex flex-col min-w-0 min-h-[100dvh] transition-all duration-300 workspace-content",
+            "flex-1 flex flex-col min-w-0 min-h-[100dvh] transition-all duration-300 workspace-content container-inline",
             isSidebarExpanded && "workspace-content--expanded"
           )}
         >
