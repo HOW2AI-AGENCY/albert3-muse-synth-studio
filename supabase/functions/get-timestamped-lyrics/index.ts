@@ -234,6 +234,23 @@ export async function handler(req: Request) {
         status: sunoResponse.status,
         response: rawResponseData,
       });
+
+      // Treat upstream 404 as 'not ready' to avoid throwing on the client
+      if (sunoResponse.status === 404) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'LYRICS_NOT_READY',
+            message: (rawResponseData && (rawResponseData.message || rawResponseData.error)) || 'Timestamped lyrics are not available yet',
+            hint: 'Try again in a few seconds',
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+
       return new Response(
         JSON.stringify({
           error: rawResponseData?.error || `Suno API error: ${sunoResponse.status}`,
@@ -255,7 +272,7 @@ export async function handler(req: Request) {
       if (code === 500 || (code !== undefined && !hasData)) {
         logger.warn('[GET-TIMESTAMPED-LYRICS] Suno API data not ready', { code, msg, hasData });
         
-        // Return 404 - lyrics not ready yet (frontend will handle gracefully)
+        // Return 200 - lyrics not ready yet (frontend will poll gracefully)
         return new Response(
           JSON.stringify({
             success: false,
@@ -264,7 +281,7 @@ export async function handler(req: Request) {
             hint: 'Try again in a few seconds',
           }),
           { 
-            status: 404, 
+            status: 200,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
         );
