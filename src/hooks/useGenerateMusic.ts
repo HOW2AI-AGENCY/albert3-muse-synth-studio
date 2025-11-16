@@ -2,9 +2,11 @@
  * Hook for music generation with realtime updates
  *
  * ✅ REFACTORED: Now uses RealtimeSubscriptionManager (P0-2 fix)
+ * ✅ ENHANCED: Added XSS sanitization (P0)
  * - Eliminates duplicate subscriptions
- * - Centralizedchannel management
+ * - Centralized channel management
  * - Automatic cleanup and deduplication
+ * - Input sanitization for security
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -19,6 +21,7 @@ import type { Database } from '@/integrations/supabase/types';
 import * as Sentry from '@sentry/react';
 import { addBreadcrumb } from '@/utils/sentry';
 import { trackGenerationEvent } from '@/utils/sentry-enhanced';
+import { sanitizePrompt, sanitizeLyrics, sanitizeTitle } from '@/utils/sanitization';
 
 type TrackRow = Database['public']['Tables']['tracks']['Row'];
 
@@ -70,6 +73,13 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
     currentTrackIdRef.current = null;
     pollingStartTimeRef.current = 0;
   }, []);
+
+  // ✅ Force cleanup on unmount (memory leak prevention)
+  useEffect(() => {
+    return () => {
+      cleanup();
+    };
+  }, [cleanup]);
 
   // Polling fallback for stuck tracks
   const startPolling = useCallback((trackId: string) => {
@@ -206,8 +216,16 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
 
   // Main generation function
   const generate = useCallback(async (options: GenerationRequest): Promise<boolean> => {
-    const effectivePrompt = options.prompt?.trim() ?? '';
-    const effectiveProvider = options.provider || provider;
+    // ✅ Sanitize inputs before processing
+    const sanitizedOptions: GenerationRequest = {
+      ...options,
+      prompt: sanitizePrompt(options.prompt || ''),
+      title: options.title ? sanitizeTitle(options.title) : undefined,
+      lyrics: options.lyrics ? sanitizeLyrics(options.lyrics) : undefined,
+    };
+
+    const effectivePrompt = sanitizedOptions.prompt?.trim() ?? '';
+    const effectiveProvider = sanitizedOptions.provider || provider;
 
     logger.info('🎸 [HOOK] Generation request received', 'useGenerateMusic', {
       promptLength: effectivePrompt.length,

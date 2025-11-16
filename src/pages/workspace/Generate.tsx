@@ -31,6 +31,7 @@ import { useUIStateStore } from "@/stores/uiStateStore";
 import { ViewSwitcher } from "@/components/tracks/ViewSwitcher";
 import { Filter } from "@/utils/iconImports";
 import { EnhancedErrorBoundary } from "@/components/errors/EnhancedErrorBoundary";
+import { NetworkAlert } from "@/components/ui/NetworkAlert";
 
 const Generate = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
@@ -222,20 +223,22 @@ const Generate = () => {
   // Desktop: 3-panel resizable layout
   if (isDesktop) {
     return (
-      <div className="h-full p-4">
-        <ResizablePanelGroup
-          direction="horizontal"
-          className="h-full rounded-lg border"
-        >
-          <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
-            <div className="h-full overflow-y-auto p-1">
-              <div className="w-full max-w-2xl mx-auto">
-                <EnhancedErrorBoundary>
-                  <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
-                </EnhancedErrorBoundary>
+      <>
+        <NetworkAlert />
+        <div className="h-full p-4">
+          <ResizablePanelGroup
+            direction="horizontal"
+            className="h-full rounded-lg border"
+          >
+            <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
+              <div className="h-full overflow-y-auto p-1">
+                <div className="w-full max-w-2xl mx-auto">
+                  <EnhancedErrorBoundary>
+                    <MusicGeneratorV2 onTrackGenerated={handleTrackGenerated} />
+                  </EnhancedErrorBoundary>
+                </div>
               </div>
-            </div>
-          </ResizablePanel>
+            </ResizablePanel>
 
           <ResizableHandle withHandle />
 
@@ -335,13 +338,16 @@ const Generate = () => {
           onSuccess={refreshTracks}
         />
       </div>
+    </>
     );
   }
 
   // Tablet: 2-panel layout
   if (isTablet) {
     return (
-      <div className="h-full p-4">
+      <>
+        <NetworkAlert />
+        <div className="h-full p-4">
         <ResizablePanelGroup
           direction="horizontal"
           className="h-full rounded-lg border"
@@ -433,12 +439,15 @@ const Generate = () => {
           </SheetContent>
         </Sheet>
       </div>
+      </>
     );
   }
 
   // Mobile: List with FAB and Drawers
   return (
-    <div className="h-full bg-background flex flex-col">
+    <>
+      <NetworkAlert />
+      <div className="h-full bg-background flex flex-col">
       {/* Mobile Header - компактный */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 bg-background/95 backdrop-blur-sm sticky top-0 z-10">
         <h2 className="text-lg font-bold truncate">Мои треки</h2>
@@ -612,6 +621,7 @@ const Generate = () => {
         </DrawerContent>
       </Drawer>
     </div>
+    </>
   );
 };
 
