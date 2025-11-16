@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef, useState, useCallback } from 'react';
+import React, { useMemo, useEffect, useRef, useState, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGesture } from '@use-gesture/react';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,56 @@ interface LyricLine {
 
 // ✅ P0 FIX: Timing tolerance for smoother word highlighting (50ms)
 const TIMING_TOLERANCE = 0.05; // seconds
+
+// ✅ P1 FIX: Memoized word component for optimal performance
+const MemoizedWord = memo(({ 
+  word, 
+  isActive, 
+  isFocused, 
+  isDisabled, 
+  isHighContrast,
+  onClick 
+}: {
+  word: TimestampedWord;
+  isActive: boolean;
+  isFocused: boolean;
+  isDisabled: boolean;
+  isHighContrast: boolean;
+  onClick: () => void;
+}) => {
+  return (
+    <motion.span
+      key={`word-${word.startS}`}
+      onClick={onClick}
+      className={cn(
+        "cursor-pointer transition-all duration-200 inline-block px-1",
+        isActive && !isDisabled
+          ? isHighContrast
+            ? "text-yellow-400 font-bold scale-110 drop-shadow-[0_0_12px_rgba(250,204,21,0.8)]"
+            : "text-primary font-semibold scale-110 drop-shadow-[0_0_8px_hsl(var(--primary)/0.6)]"
+          : isFocused
+            ? "text-foreground/90 font-medium"
+            : "text-foreground/70 hover:text-foreground/90",
+      )}
+      animate={{
+        scale: isActive && !isDisabled ? 1.1 : 1,
+        y: isActive && !isDisabled ? -2 : 0,
+      }}
+      transition={{
+        duration: 0.2,
+        ease: "easeOut",
+      }}
+    >
+      {word.word.replace(/[\n\r]/g, ' ').trim()}
+    </motion.span>
+  );
+}, (prev, next) => 
+  prev.isActive === next.isActive && 
+  prev.isFocused === next.isFocused &&
+  prev.word.startS === next.word.startS
+);
+
+MemoizedWord.displayName = 'MemoizedWord';
 
 const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
   lyricsData,
@@ -329,33 +379,18 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
                       const isWordActive = isActive && 
                         currentTime >= (word.startS - TIMING_TOLERANCE) && 
                         currentTime < (word.endS + TIMING_TOLERANCE);
-                      const wordClass = cn(
-                        "transition-all duration-150 px-1 cursor-pointer",
-                        isWordActive && [
-                          "text-primary font-extrabold scale-110",
-                          "drop-shadow-[0_0_8px_hsl(var(--primary)/0.8)]",
-                          "relative z-10",
-                          settings.highContrast && "text-blue-600 dark:text-cyan-400"
-                        ],
-                        !isWordActive && isActive && "text-foreground/80 font-medium",
-                        !isWordActive && !isActive && (
-                          settings.highContrast
-                          ? "text-muted-foreground/60"
-                          : "text-muted-foreground/40"
-                        )
-                      );
 
+                      // ✅ P1 FIX: Use memoized word component for better performance
                       return (
-                        <motion.span
+                        <MemoizedWord
                           key={wordIndex}
-                          className={wordClass}
+                          word={word}
+                          isActive={isWordActive}
+                          isFocused={isFocused}
+                          isDisabled={settings.disableWordHighlight}
+                          isHighContrast={settings.highContrast}
                           onClick={() => onSeek?.(word.startS)}
-                          initial={isWordActive ? { scale: 1 } : {}}
-                          animate={isWordActive ? { scale: 1.1 } : { scale: 1 }}
-                          transition={{ duration: 0.15 }}
-                        >
-                          {cleanedWord}{' '}
-                        </motion.span>
+                        />
                       );
                     })}
                   </motion.p>
