@@ -386,7 +386,7 @@ const mainHandler = async (req: Request) => {
           });
         }
       } catch (unexpectedError) {
-        logger.error("Unexpected error", unexpectedError, "suno-callback");
+        logger.error("Unexpected error", unexpectedError instanceof Error ? unexpectedError : new Error(String(unexpectedError)), "suno-callback");
         
         // Fallback: mark as failed with details
         await supabase

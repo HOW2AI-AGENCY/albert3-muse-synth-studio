@@ -105,7 +105,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
     logger.info(`[ANALYZE-REF] ✅ User authenticated via middleware: userId=${userId.substring(0, 8)}...`);
 
     // ✅ Validate request body
-    const body = await validateRequest(req, validationSchemas.analyzeReferenceAudio) as AnalyzeReferenceAudioRequest;
+    const body = await validateRequest(req, validationSchemas.analyzeReferenceAudio) as unknown as AnalyzeReferenceAudioRequest;
     const { audioUrl, trackId, audioLibraryId } = body;
 
     logger.info('[ANALYZE-REF] 📋 Request details', { 

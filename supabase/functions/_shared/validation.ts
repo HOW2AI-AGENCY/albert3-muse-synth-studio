@@ -42,15 +42,15 @@ export const validators = {
     return null;
   },
 
-  minLength: (minLen: number) => (value: string, fieldName: string): ValidationError | null => {
-    if (value.length < minLen) {
+  minLength: (minLen: number) => (value: unknown, fieldName: string): ValidationError | null => {
+    if (typeof value !== 'string' || value.length < minLen) {
       return { field: fieldName, message: `${fieldName} должно содержать минимум ${minLen} символов` };
     }
     return null;
   },
 
-  maxLength: (maxLen: number) => (value: string, fieldName: string): ValidationError | null => {
-    if (value.length > maxLen) {
+  maxLength: (maxLen: number) => (value: unknown, fieldName: string): ValidationError | null => {
+    if (typeof value !== 'string' || value.length > maxLen) {
       return { field: fieldName, message: `${fieldName} не должно превышать ${maxLen} символов` };
     }
     return null;
@@ -77,9 +77,9 @@ export const validators = {
     return null;
   },
 
-  uuid: (value: string, fieldName: string): ValidationError | null => {
+  uuid: (value: unknown, fieldName: string): ValidationError | null => {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(value)) {
+    if (typeof value !== 'string' || !uuidRegex.test(value)) {
       return { field: fieldName, message: `${fieldName} должно быть валидным UUID` };
     }
     return null;

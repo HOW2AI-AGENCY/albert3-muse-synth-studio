@@ -213,7 +213,7 @@ export const mainHandler = async (req: Request): Promise<Response> => {
     const body = await validateRequest(
       req,
       validationSchemas.syncLyricsJob,
-    ) as SyncLyricsJobRequestBody;
+    ) as unknown as SyncLyricsJobRequestBody;
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {

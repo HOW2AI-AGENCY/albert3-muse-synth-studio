@@ -113,7 +113,12 @@ serve(async (req: Request): Promise<Response> => {
       title: body.title ? sanitizeTitle(body.title) : undefined,
       prompt: sanitizePrompt(body.prompt || ''),
       lyrics: body.lyrics ? sanitizeLyrics(body.lyrics) : undefined,
-      styleTags: body.tags ? sanitizeStyleTags(body.tags) : undefined,
+      styleTags: body.tags 
+        ? (Array.isArray(body.tags) 
+            ? body.tags.map((t: string) => t.trim())
+            : sanitizeStyleTags(body.tags).split(',').map((t: string) => t.trim())
+          )
+        : undefined,
       hasVocals: body.hasVocals,
       modelVersion: body.model_version,
       idempotencyKey: body.idempotencyKey,

@@ -72,7 +72,7 @@ const mainHandler = async (req: Request) => {
     const SUPABASE_URL = ensureSupabaseUrl();
     const sunoClient = createSunoClient({ apiKey: SUNO_API_KEY });
 
-    const body = await validateRequest(req, validationSchemas.separateStems) as SeparateStemsRequestBody;
+    const body = await validateRequest(req, validationSchemas.separateStems) as unknown as SeparateStemsRequestBody;
     const { trackId, versionId, separationMode } = body;
     
     logger.info(`[separate-stems] 📋 Request details: trackId=${trackId}, versionId=${versionId || 'null'}, mode=${separationMode}`);

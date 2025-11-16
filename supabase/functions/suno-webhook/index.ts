@@ -77,6 +77,7 @@ serve(async (req) => {
       req.headers.get('X-Webhook-Id') ||
       `suno-${taskId}-${callbackType}-${Date.now()}`;
 
+    
     // Check if webhook was already processed
     const { data: alreadyProcessed } = await supabaseClient
       .rpc('check_webhook_processed', { p_webhook_id: webhookId });
@@ -390,12 +391,15 @@ serve(async (req) => {
     // =====================================================
     try {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      // Try to get webhookId from scope (may not be available if error was early)
-      const webhookId = req.headers.get('X-Delivery-Id') ||
-                        req.headers.get('X-Webhook-Id');
+      const webhookId = req.headers.get('X-Delivery-Id') || req.headers.get('X-Webhook-Id');
 
       if (webhookId) {
-        await supabaseClient.rpc('fail_webhook_delivery', {
+        const client = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        );
+        
+        await client.rpc('fail_webhook_delivery', {
           p_webhook_id: webhookId,
           p_error_message: errorMessage,
         });

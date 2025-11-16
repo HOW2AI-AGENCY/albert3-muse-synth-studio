@@ -147,7 +147,7 @@ serve(async (req) => {
             status: 'failed',
             error_message: 'Analysis timeout',
           })
-          .eq('id', description.id);
+          .eq('id', description?.id ?? '');
         return;
       }
 
@@ -194,7 +194,7 @@ serve(async (req) => {
               danceability,
               metadata: result,
             })
-            .eq('id', description.id);
+            .eq('id', description?.id ?? '');
 
           logger.info('🎉 Track description completed (Replicate)', {
             genre: detected_genre,
@@ -211,7 +211,7 @@ serve(async (req) => {
               status: 'failed',
               error_message: result.error || 'Analysis failed',
             })
-            .eq('id', description.id);
+            .eq('id', description?.id ?? '');
 
         } else {
           // Still processing

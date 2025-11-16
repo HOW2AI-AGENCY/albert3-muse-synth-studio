@@ -42,10 +42,10 @@ const mainHandler = async (req: Request): Promise<Response> => {
     }
 
     // Валидация входных данных
-    const validatedData = await validateRequest(req, validationSchemas.generateMusic)
-    const { trackId, prompt } = validatedData
+    const validatedData = await validateRequest(req, validationSchemas.generateMusic);
+    const { trackId = '', prompt = '' } = validatedData as { trackId?: string; prompt?: string };
 
-    logger.info('Validated data', 'generate-music', { trackId, promptLength: prompt?.length, userId: user.id });
+    logger.info('Validated data', 'generate-music', { trackId, promptLength: prompt.length, userId: user.id });
 
     const REPLICATE_API_KEY = Deno.env.get('REPLICATE_API_KEY');
     if (!REPLICATE_API_KEY) {
@@ -55,7 +55,7 @@ const mainHandler = async (req: Request): Promise<Response> => {
     // Initialize Supabase client for updating track status
     const supabase = createSupabaseAdminClient();
 
-    logger.info(`Starting music generation for track ${trackId}`, 'generate-music', { trackId, promptLength: prompt?.length });
+    logger.info(`Starting music generation for track ${trackId}`, 'generate-music', { trackId, promptLength: prompt.length });
 
     // Update track status to processing
     await supabase

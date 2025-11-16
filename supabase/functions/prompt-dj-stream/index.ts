@@ -65,7 +65,7 @@ serve(async (req) => {
   } catch (error) {
     logger.error('Error in prompt-dj-stream', error instanceof Error ? error : new Error(String(error)), 'prompt-dj-stream');
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
