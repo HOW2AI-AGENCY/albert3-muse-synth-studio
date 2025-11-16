@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, Heart, Calendar, Clock, ExternalLink, FileText } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 import { useRateLimitHandler } from "@/hooks/useRateLimitHandler";
 import type { LucideIcon } from "@/utils/iconImports";
-import type { Track, TrackVersionMetadata } from "./types";
+import type { Track } from "./types";
 
 const formatDate = (date?: string) => {
     if (!date) return "—";
@@ -61,7 +62,7 @@ interface OverviewTabProps {
     mood: string;
     setMood: (value: string) => void;
     isPublic: boolean;
-    setIsPublic: (value: string) => void;
+    setIsPublic: (value: boolean) => void;
     isSaving: boolean;
     onSave: () => void;
     createdAtToDisplay?: string;
@@ -126,7 +127,7 @@ export const OverviewTab = ({
     };
 
     const { mutate: generateAdvanced, isPending: isGeneratingPrompt } = useAdvancedPromptGenerator({
-        onSuccess: (result) => {
+        onSuccess: () => {
           setAiError(null);
           clearRateLimit();
         },

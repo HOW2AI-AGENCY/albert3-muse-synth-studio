@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { useTrackLike } from "@/features/tracks";
 import { CompactTrackHero } from "@/features/tracks/ui/CompactTrackHero";
@@ -187,8 +186,8 @@ export const DetailPanelContent = ({
             setGenre={setGenre}
             mood={mood}
             setMood={setMood}
-            isPublic={isPublic}
-            setIsPublic={setIsPublic}
+          isPublic={isPublic}
+          setIsPublic={(value) => setIsPublic(value)}
             isSaving={isSaving}
             onSave={onSave}
             createdAtToDisplay={activeVersion?.created_at ?? track.created_at}

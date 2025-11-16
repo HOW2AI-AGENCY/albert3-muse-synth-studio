@@ -2,8 +2,6 @@ import { createBrowserRouter } from "react-router-dom";
 import { Suspense } from "react";
 import WorkspaceLayout from "./components/workspace/WorkspaceLayout";
 import { EnhancedErrorBoundary } from "@/components/errors/EnhancedErrorBoundary";
-import { GeneratorErrorFallback } from "@/components/error/GeneratorErrorFallback";
-import { TrackListErrorFallback } from "@/components/error/TrackListErrorFallback";
 import { FullPageSpinner } from "@/components/ui/loading-states";
 import { ProjectProvider } from "@/contexts/ProjectContext";
 
