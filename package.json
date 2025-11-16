@@ -94,6 +94,7 @@
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
+    "use-debounce": "^10.0.6",
     "vaul": "^0.9.9",
     "vitest": "^4.0.8",
     "web-vitals": "^3.5.2",
