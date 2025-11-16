@@ -62,7 +62,16 @@ export const LyricsService = {
           });
 
           if (error) {
-            logger.error('Failed to invoke get-timestamped-lyrics Edge Function', error, 'LyricsService', { taskId, audioId });
+            // 🔍 DIAGNOSTICS: Log error details for debugging
+            const errorStatus = (error as any)?.status;
+            const errorName = (error as any)?.name;
+            logger.error('Failed to invoke get-timestamped-lyrics Edge Function', error, 'LyricsService', { 
+              taskId, 
+              audioId,
+              errorStatus,
+              errorName,
+              errorMessage: error.message,
+            });
             
             // ✅ Check if this is a FunctionsHttpError (non-2xx status)
             // For 404, the error is in data, not in error object
@@ -72,12 +81,17 @@ export const LyricsService = {
 
           // ✅ Check if data indicates lyrics not ready (404 response)
           if (data && typeof data === 'object' && 'error' in data) {
-            const errorData = data as { error?: string; success?: boolean; message?: string };
+            const errorData = data as { error?: string; success?: boolean; message?: string; version?: string };
+            
+            // 🔍 DIAGNOSTICS: Log version header if available
+            const functionVersion = errorData.version || 'unknown';
+            
             if (errorData.error === 'LYRICS_NOT_READY' || errorData.success === false) {
               logger.info('Timestamped lyrics not ready yet', 'LyricsService', { 
                 taskId, 
                 audioId, 
-                message: errorData.message 
+                message: errorData.message,
+                functionVersion,
               });
               return null;
             }
