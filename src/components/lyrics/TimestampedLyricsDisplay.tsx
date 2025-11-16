@@ -22,6 +22,9 @@ interface LyricLine {
   endTime: number;
 }
 
+// ✅ P0 FIX: Timing tolerance for smoother word highlighting (50ms)
+const TIMING_TOLERANCE = 0.05; // seconds
+
 const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
   lyricsData,
   currentTime,
@@ -322,8 +325,10 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
                         );
                       }
 
-                      // ✅ FIX: Более точная проверка активности слова с небольшим допуском
-                      const isWordActive = isActive && currentTime >= word.startS && currentTime < word.endS;
+                      // ✅ P0 FIX: More precise word activation with 50ms tolerance for smoother animations
+                      const isWordActive = isActive && 
+                        currentTime >= (word.startS - TIMING_TOLERANCE) && 
+                        currentTime < (word.endS + TIMING_TOLERANCE);
                       const wordClass = cn(
                         "transition-all duration-150 px-1 cursor-pointer",
                         isWordActive && [
