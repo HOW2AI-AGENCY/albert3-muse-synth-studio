@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Loader2, DollarSign } from 'lucide-react';
+import { Loader2, Coins } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSunoBalance } from '@/hooks/useSunoBalance';
@@ -12,7 +12,7 @@ export const SunoBalanceDisplay = memo(() => {
       <Tooltip>
         <TooltipTrigger asChild>
           <Badge variant="destructive" className="text-[10px] sm:text-xs">
-            <DollarSign className="h-3 w-3 mr-1" />
+            <Coins className="h-3 w-3 mr-1" />
             Error
           </Badge>
         </TooltipTrigger>
@@ -41,12 +41,12 @@ export const SunoBalanceDisplay = memo(() => {
           variant={balanceValue > 0 ? "default" : "destructive"}
           className="text-[10px] sm:text-xs font-medium"
         >
-          <DollarSign className="h-3 w-3 mr-1" />
-          {balanceValue.toFixed(2)}
+          <Coins className="h-3 w-3 mr-1" />
+          {balanceValue.toFixed(0)} credits
         </Badge>
       </TooltipTrigger>
       <TooltipContent>
-        <p>Баланс Suno: ${balanceValue.toFixed(2)}</p>
+        <p>Баланс Suno: {balanceValue.toFixed(0)} кредитов</p>
       </TooltipContent>
     </Tooltip>
   );
