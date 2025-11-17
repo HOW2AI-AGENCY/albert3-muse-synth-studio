@@ -2,7 +2,7 @@ import React, { memo, useState } from 'react';
 import { useTimestampedLyrics } from '@/hooks/useTimestampedLyrics';
 import { useLyricsSettings } from '@/hooks/useLyricsSettings';
 import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
-import TimestampedLyricsDisplay from '../lyrics/TimestampedLyricsDisplay';
+import { VirtualizedTimestampedLyrics } from '../lyrics/VirtualizedTimestampedLyrics';
 import { LyricsSettingsDialog } from '../lyrics/LyricsSettingsDialog';
 import { LyricsSkeleton } from './LyricsSkeleton';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,6 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
   // ✅ Get player controls for timestamped lyrics
   const currentTime = useAudioPlayerStore((state) => state.currentTime);
   const seekTo = useAudioPlayerStore((state) => state.seekTo);
-  const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
 
   const shouldFetchTimestamped = Boolean(
     taskId && 
@@ -71,13 +70,12 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
 
       <div className="flex-1 overflow-hidden min-h-0">
         {hasTimestampedLyrics && lyricsData ? (
-          <TimestampedLyricsDisplay
+          <VirtualizedTimestampedLyrics
             lyricsData={lyricsData.alignedWords}
             currentTime={currentTime}
             settings={settings}
             className="w-full h-full"
             onSeek={seekTo}
-            onTogglePlayPause={togglePlayPause}
           />
         ) : (String(fallbackLyrics ?? '').trim().length > 0 ? (
           <div className="w-full h-full overflow-y-auto px-4 py-2">
