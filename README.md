@@ -38,14 +38,22 @@
 
 ## 🚨 Последние обновления
 
+**17 ноября 2025 г. — Sprint 35: AI-First Foundation (Subscription System + AI Context)**
+
+- ✅ **Database Migrations:** subscription_plans (4 тарифа), generation_limits, расширены profiles & music_projects
+- ✅ **SQL Functions:** 5 новых функций (check_limit, increment_usage, reset_limits, update_ai_context, get_ai_context)
+- ✅ **RLS Security:** 8 новых политик для subscription_plans и generation_limits
+- ✅ **Edge Functions:** ai-improve-field (Lovable AI integration - Gemini Flash)
+- ✅ **Frontend Components:** SubscriptionContext, FeatureGate, UpgradePrompt
+- 📊 **Documentation:** PHASE_1_SPRINT_1_DATABASE_MIGRATION.md (600+ строк SQL), SPRINT_35_AI_FOUNDATION.md
+- 💬 **Подробности:** [Sprint 35 Plan](./project-management/sprints/SPRINT_35_AI_FOUNDATION.md) • [Database Migration](./docs/PHASE_1_SPRINT_1_DATABASE_MIGRATION.md) • [Sprint Status](./project-management/sprints/SPRINT_STATUS.md)
+
 **16 ноября 2025 г. — Phase 8: DAW Enhancement & Bulk Operations + Logic Audit**
 
 - ✅ **Phase 8 (60% Complete):** DAW Color System, Bulk Operations, DAW Project Storage реализованы
 - ✅ **Logic Audit Score:** 9.3/10 - Excellent architecture, strong TypeScript coverage (92%)
-- ✅ **Bulk Operations:** Delete, Download, Add to Project, Play, Share для multiple треков
-- ✅ **DAW Projects:** Auto-save, JSONB storage, debounced persistence (2s)
 - 📊 **Performance:** Bundle 889 KB, LCP 1.2s, TTI 1.5s - всё в зелёной зоне
-- 💬 **Подробности:** [Logic Audit](./docs/audit/LOGIC_AUDIT_2025-11-16.md) • [Phase 8 Summary](./docs/development/PHASE_8_SUMMARY.md) • [Sprint 35](./project-management/sprints/SPRINT_35_PHASE_8_COMPLETION.md)
+- 💬 **Подробности:** [Logic Audit](./docs/audit/LOGIC_AUDIT_2025-11-16.md) • [Phase 8 Summary](./docs/development/PHASE_8_SUMMARY.md)
 
 **14 ноября 2025 г. — Создан comprehensive AI assistant guide (CLAUDE.md)**
 
