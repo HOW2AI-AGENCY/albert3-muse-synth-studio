@@ -40,7 +40,7 @@ export const TrackCardInfo = memo(({
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0 space-y-1">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <h3 className="font-semibold text-base md:text-lg leading-tight line-clamp-2 group-hover:text-primary flex-1">
+              <h3 className="font-semibold text-sm sm:text-base md:text-lg leading-tight line-clamp-2 group-hover:text-primary flex-1 min-w-0 break-words">
                 {title}
               </h3>
               <div className="flex items-center gap-1 shrink-0">
@@ -48,7 +48,7 @@ export const TrackCardInfo = memo(({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="shrink-0">
-                        <Split className="h-3.5 w-3.5 text-primary" aria-label="Доступны стемы" />
+                        <Split className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary" aria-label="Доступны стемы" />
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>Доступны стемы</TooltipContent>
@@ -58,7 +58,7 @@ export const TrackCardInfo = memo(({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="shrink-0">
-                        <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500" aria-label="Мастер-версия" />
+                        <Star className="h-3 w-3 sm:h-3.5 sm:w-3.5 fill-yellow-500 text-yellow-500" aria-label="Мастер-версия" />
                       </div>
                     </TooltipTrigger>
                     <TooltipContent>Мастер-версия</TooltipContent>
@@ -68,7 +68,7 @@ export const TrackCardInfo = memo(({
             </div>
             
             {prompt && (
-              <p className="text-xs md:text-sm text-muted-foreground/90 leading-relaxed line-clamp-2">
+              <p className="text-xs sm:text-sm text-muted-foreground/90 leading-relaxed line-clamp-1 sm:line-clamp-2 break-words">
                 {prompt}
               </p>
             )}
@@ -95,19 +95,19 @@ export const TrackCardInfo = memo(({
         </div>
       )}
 
-      <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between text-[10px] sm:text-xs text-muted-foreground mt-auto">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           {formattedDuration && (
-            <div className="flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              <span>{formattedDuration}</span>
+            <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+              <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              <span className="whitespace-nowrap">{formattedDuration}</span>
             </div>
           )}
           
           {/* ✅ FIX: Отображение лайков */}
           {likeCount !== null && likeCount !== undefined && likeCount > 0 && (
-            <div className="flex items-center gap-1">
-              <Heart className="w-3 h-3" />
+            <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+              <Heart className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
               <span>{likeCount}</span>
             </div>
           )}

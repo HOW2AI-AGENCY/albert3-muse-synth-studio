@@ -124,7 +124,7 @@ const TrackCardComponent = memo(({
         className={cn(
           'group relative overflow-hidden cursor-pointer transition-all duration-300',
           'border-border/50 bg-card hover:bg-muted/30 card-elevated',
-          'w-full sm:min-w-[320px]', // ✅ MOBILE: Full width | TABLET+: Min 320px
+          'w-full min-w-0', // ✅ Убрали min-w-[320px], оставили только min-w-0 для flex
           isVisible ? 'h-full flex flex-col opacity-100' : 'h-full flex flex-col opacity-0',
           isCurrentTrack && 'ring-2 ring-primary/80 shadow-glow-primary-strong',
           className
