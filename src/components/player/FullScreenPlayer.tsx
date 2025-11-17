@@ -162,7 +162,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
     >
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/40">
-        <div className="flex items-center justify-between px-6 py-4 touch-target-comfortable">
+        <div className="flex items-center justify-between px-3 md:px-6 py-3 md:py-4 touch-target-comfortable">
           <Button
             variant="ghost"
             size="icon"
@@ -170,33 +170,33 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
               vibrate('medium');
               onMinimize();
             }}
-            className="h-11 w-11 min-h-[44px] min-w-[44px] hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+            className="h-10 w-10 md:h-11 md:w-11 min-h-[40px] min-w-[40px] md:min-h-[44px] md:min-w-[44px] hover:bg-primary/10 hover:scale-105 transition-all duration-200"
             aria-label="Свернуть плеер"
           >
-            <Minimize2 className="h-5 w-5" />
+            <Minimize2 className="h-4 w-4 md:h-5 md:w-5" />
           </Button>
 
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleLyricsVisibility}
-            className={`h-11 w-11 min-h-[44px] min-w-[44px] hover:scale-105 transition-all duration-200 ${
+            className={`h-10 w-10 md:h-11 md:w-11 min-h-[40px] min-w-[40px] md:min-h-[44px] md:min-w-[44px] hover:scale-105 transition-all duration-200 ${
               showLyrics ? 'bg-primary/10 text-primary' : 'hover:bg-primary/10'
             }`}
             aria-label={showLyrics ? "Скрыть текст" : "Показать текст"}
           >
-            {showLyrics ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            {showLyrics ? <EyeOff className="h-4 w-4 md:h-5 md:w-5" /> : <Eye className="h-4 w-4 md:h-5 md:w-5" />}
           </Button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 md:gap-2">
             <Button
               variant="ghost"
               size="icon"
               onClick={handleShare}
-              className="h-11 w-11 min-h-[44px] min-w-[44px] hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+              className="h-10 w-10 md:h-11 md:w-11 min-h-[40px] min-w-[40px] md:min-h-[44px] md:min-w-[44px] hover:bg-primary/10 hover:scale-105 transition-all duration-200"
               aria-label="Поделиться"
             >
-              <Share2 className="h-5 w-5" />
+              <Share2 className="h-4 w-4 md:h-5 md:w-5" />
             </Button>
             {hasVersions && (
               <DropdownMenu>
@@ -238,9 +238,9 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
       </div>
 
       {/* Main Content Area */}
-      <div className="relative flex-1 flex flex-col items-center justify-start px-6 py-8 overflow-y-auto">
+      <div className="relative flex-1 flex flex-col items-center justify-start px-3 md:px-6 py-4 md:py-8 overflow-y-auto">
         {/* Album Art */}
-        <div className="relative w-full max-w-sm aspect-square mb-8">
+        <div className="relative w-full max-w-[280px] md:max-w-sm aspect-square mb-4 md:mb-8">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/10 to-transparent rounded-3xl blur-3xl opacity-60 animate-pulse" />
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-primary/5 to-primary/20 rounded-3xl blur-2xl" />
           
@@ -263,25 +263,25 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
         </div>
 
         {/* Track Info */}
-        <div className="text-center px-4 mb-6 animate-fade-in">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <h2 className="text-xl sm:text-2xl font-bold text-gradient-primary line-clamp-2 transition-all duration-300">
+        <div className="text-center px-3 md:px-4 mb-4 md:mb-6 animate-fade-in">
+          <div className="flex items-center justify-center gap-2 mb-1.5 md:mb-2">
+            <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gradient-primary line-clamp-2 transition-all duration-300">
               {currentTrack.title}
             </h2>
             {hasVersions && (
-              <Badge variant="secondary" className="text-sm animate-scale-in">
+              <Badge variant="secondary" className="text-xs md:text-sm animate-scale-in">
                 V{currentTrack.versionNumber ?? currentVersionIndex + 1}
               </Badge>
             )}
           </div>
-          <p className="text-sm sm:text-base text-muted-foreground/80 truncate transition-opacity duration-300">
+          <p className="text-xs md:text-sm lg:text-base text-muted-foreground/80 truncate transition-opacity duration-300">
             {currentTrack.style_tags?.join(' • ') || 'AI Generated'}
           </p>
         </div>
 
         {/* Lyrics */}
         {showLyrics && currentTrack?.suno_task_id && currentTrack?.suno_id && (
-          <div className="flex-1 w-full overflow-hidden mb-6">
+          <div className="flex-1 w-full overflow-hidden mb-3 md:mb-6">
             <LyricsDisplay
               taskId={currentTrack.suno_task_id}
               audioId={currentTrack.suno_id}
@@ -291,23 +291,23 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
         )}
 
         {/* Progress */}
-        <MobileProgressBar onSeek={handleSeek} className="w-full mb-6" />
+        <MobileProgressBar onSeek={handleSeek} className="w-full mb-4 md:mb-6" />
 
         {/* Playback Controls */}
-        <div className="flex items-center justify-center gap-4 sm:gap-8 mb-6 animate-slide-up">
+        <div className="flex items-center justify-center gap-3 md:gap-4 lg:gap-8 mb-4 md:mb-6 animate-slide-up">
           <Button
             variant="ghost"
             size="icon"
             onClick={handlePrevious}
-            className="h-12 w-12 sm:h-14 sm:w-14 hover:bg-primary/10 hover:scale-110 transition-all duration-200"
+            className="h-11 w-11 md:h-12 md:w-12 lg:h-14 lg:w-14 hover:bg-primary/10 hover:scale-110 transition-all duration-200 touch-manipulation"
           >
-            <SkipBack className="h-6 w-6" />
+            <SkipBack className="h-5 w-5 md:h-6 md:w-6" />
           </Button>
 
           <Button
             size="icon"
             onClick={handlePlayPause}
-            className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gradient-primary hover:shadow-glow-primary hover:scale-110 transition-all duration-200"
+            className="h-14 w-14 md:h-16 md:w-16 lg:h-20 lg:w-20 rounded-full bg-gradient-primary hover:shadow-glow-primary hover:scale-110 transition-all duration-200 touch-manipulation"
           >
             {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8 ml-1" />}
           </Button>
