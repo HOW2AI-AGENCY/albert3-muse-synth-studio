@@ -557,7 +557,7 @@ const Generate = () => {
                   className="fixed"
                   style={{
                     right: 'max(1rem, env(safe-area-inset-right))',
-                    bottom: 'calc(var(--workspace-bottom-offset) + 1rem + env(safe-area-inset-bottom))',
+                    bottom: 'calc(var(--workspace-bottom-offset) + var(--mini-player-height, 0px) + 1rem + env(safe-area-inset-bottom))',
                     zIndex: 'var(--z-fab)',
                   }}
                 >

@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { Play, Pause, SkipBack, SkipForward, X } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { useAudioPlayerStore, useCurrentTrack, useIsPlaying } from "@/stores/audioPlayerStore";
@@ -8,6 +8,12 @@ import { cn } from "@/lib/utils";
 import { UnifiedTrackActionsMenu } from "@/components/tracks/shared/TrackActionsMenu.unified";
 import { useTrackVersionLike } from "@/features/tracks/hooks/useTrackVersionLike";
 import { useDownloadTrack } from "@/hooks/useDownloadTrack";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface MiniPlayerProps {
   onExpand: () => void;
@@ -25,6 +31,9 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
   const clearCurrentTrack = useAudioPlayerStore((state) => state.clearCurrentTrack);
   const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
   const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
+  const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
+
+  const [isVersionMenuOpen, setIsVersionMenuOpen] = useState(false);
 
   const { vibrate } = useHapticFeedback();
   
@@ -126,9 +135,44 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
                 {currentTrack.title.replace(/\s*\(V\d+\)$/i, '')}
               </h4>
               {availableVersions.length > 1 && (
-                <Badge variant="secondary" className="text-[10px] h-4 px-1 flex-shrink-0">
-                  V{currentTrack.versionNumber ?? currentVersionIndex + 1}
-                </Badge>
+                <DropdownMenu open={isVersionMenuOpen} onOpenChange={setIsVersionMenuOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Badge 
+                      variant="secondary" 
+                      className="text-[10px] h-4 px-1.5 flex-shrink-0 cursor-pointer hover:bg-secondary/80 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        vibrate('light');
+                      }}
+                    >
+                      V{currentTrack.versionNumber ?? currentVersionIndex + 1}
+                    </Badge>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[200px]">
+                    {availableVersions.map((version, idx) => (
+                      <DropdownMenuItem
+                        key={version.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          vibrate('light');
+                          switchToVersion(version.id);
+                          setIsVersionMenuOpen(false);
+                        }}
+                        className={cn(
+                          "cursor-pointer",
+                          currentVersionIndex === idx && "bg-primary/10 font-medium"
+                        )}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span>Версия {idx + 1}</span>
+                          {currentVersionIndex === idx && (
+                            <span className="text-xs text-primary">●</span>
+                          )}
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
             <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/80">
