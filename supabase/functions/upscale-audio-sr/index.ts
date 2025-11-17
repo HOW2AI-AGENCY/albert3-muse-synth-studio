@@ -1,8 +1,9 @@
 /**
  * AudioSR Upscale Edge Function
- * Upsamples audio files to 48kHz with enhanced quality
+ * Upsamples audio files to 48kHz with enhanced quality using Replicate
+ * Supports both sakemin/audiosr-long-audio and nateraw/audio-super-resolution models
  *
- * @version 1.0.0
+ * @version 2.0.0
  * @since 2025-11-02
  */
 
@@ -10,16 +11,19 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import Replicate from 'https://esm.sh/replicate@0.25.2';
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { createSecurityHeaders } from "../_shared/security.ts";
-import { createSupabaseUserClient } from "../_shared/supabase.ts";
+import { createSupabaseUserClient, createSupabaseAdminClient } from "../_shared/supabase.ts";
 import { logger } from "../_shared/logger.ts";
 
 interface AudioUpscaleRequest {
+  trackId?: string;
   inputFileUrl: string;
   truncatedBatches?: boolean;
   ddimSteps?: number;
   guidanceScale?: number;
   seed?: number;
+  modelVersion?: 'sakemin/audiosr-long-audio' | 'nateraw/audio-super-resolution';
   predictionId?: string; // For status check
+  jobId?: string; // For status check via job
 }
 
 serve(async (req) => {
@@ -61,10 +65,74 @@ serve(async (req) => {
     }
 
     const body: AudioUpscaleRequest = await req.json();
+    const adminClient = createSupabaseAdminClient();
 
     const replicate = new Replicate({ auth: REPLICATE_API_KEY });
 
-    // Status check
+    // Status check via job ID
+    if (body.jobId) {
+      logger.info('Checking status via job', 'upscale-audio-sr', { jobId: body.jobId, userId: user.id });
+      
+      const { data: job, error: jobError } = await adminClient
+        .from('audio_upscale_jobs')
+        .select('*')
+        .eq('id', body.jobId)
+        .single();
+
+      if (jobError || !job) {
+        return new Response(
+          JSON.stringify({ error: 'Job not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // If job has prediction ID, fetch latest status
+      if (job.replicate_prediction_id) {
+        const prediction = await replicate.predictions.get(job.replicate_prediction_id);
+        
+        // Update job status based on prediction
+        if (prediction.status === 'succeeded' && prediction.output) {
+          await adminClient
+            .from('audio_upscale_jobs')
+            .update({
+              status: 'completed',
+              output_audio_url: prediction.output,
+              completed_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', body.jobId);
+        } else if (prediction.status === 'failed') {
+          await adminClient
+            .from('audio_upscale_jobs')
+            .update({
+              status: 'failed',
+              error_message: prediction.error || 'Prediction failed',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', body.jobId);
+        } else if (prediction.status === 'processing') {
+          await adminClient
+            .from('audio_upscale_jobs')
+            .update({
+              status: 'processing',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', body.jobId);
+        }
+
+        return new Response(
+          JSON.stringify({ ...job, prediction }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify(job),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Status check via prediction ID
     if (body.predictionId) {
       logger.info('Checking status', 'upscale-audio-sr', { predictionId: body.predictionId, userId: user.id });
       const prediction = await replicate.predictions.get(body.predictionId);
@@ -86,25 +154,75 @@ serve(async (req) => {
     logger.info('Starting upscale', 'upscale-audio-sr', {
       inputUrl: body.inputFileUrl,
       truncatedBatches: body.truncatedBatches ?? true,
-      userId: user.id
+      userId: user.id,
+      trackId: body.trackId
     });
 
+    // Create job record
+    const { data: job, error: jobError } = await adminClient
+      .from('audio_upscale_jobs')
+      .insert({
+        user_id: user.id,
+        track_id: body.trackId,
+        input_audio_url: body.inputFileUrl,
+        model_version: body.modelVersion || 'sakemin/audiosr-long-audio',
+        truncated_batches: body.truncatedBatches ?? true,
+        ddim_steps: body.ddimSteps || 50,
+        guidance_scale: body.guidanceScale || 3.5,
+        seed: body.seed,
+        status: 'pending',
+        metadata: {
+          started_at: new Date().toISOString()
+        }
+      })
+      .select()
+      .single();
+
+    if (jobError) {
+      logger.error('Failed to create job', jobError, 'upscale-audio-sr');
+      throw jobError;
+    }
+
+    // Model version mapping
+    const modelMap = {
+      'sakemin/audiosr-long-audio': 'sakemin/audiosr-long-audio:7b71ea09a65e5a8d9ad8c3a3e1522e9df7d70e55bb8f70e954d17d80abfc2fce',
+      'nateraw/audio-super-resolution': 'nateraw/audio-super-resolution:a4af8e8f60c08cb6fdb58c13b79fe9e09d95f8e06db5e35499e3f7d8a25f6a95'
+    };
+
+    const modelVersion = body.modelVersion || 'sakemin/audiosr-long-audio';
+    const replicateVersion = modelMap[modelVersion];
+
     const prediction = await replicate.predictions.create({
-      version: '7a9b8e4f6e0b0a0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e',
+      version: replicateVersion,
       input: {
         input_file: body.inputFileUrl,
-        truncated_batches: body.truncatedBatches ?? true,
+        ...(modelVersion === 'sakemin/audiosr-long-audio' && { 
+          truncated_batches: body.truncatedBatches ?? true 
+        }),
         ddim_steps: body.ddimSteps || 50,
         guidance_scale: body.guidanceScale || 3.5,
         ...(body.seed && { seed: body.seed })
       }
     });
 
-    logger.info('Prediction created', 'upscale-audio-sr', { predictionId: prediction.id });
+    logger.info('Prediction created', 'upscale-audio-sr', { 
+      predictionId: prediction.id,
+      jobId: job.id
+    });
+
+    // Update job with prediction ID
+    await adminClient
+      .from('audio_upscale_jobs')
+      .update({
+        replicate_prediction_id: prediction.id,
+        status: 'processing'
+      })
+      .eq('id', job.id);
 
     return new Response(
       JSON.stringify({
         success: true,
+        jobId: job.id,
         predictionId: prediction.id,
         status: prediction.status
       }),

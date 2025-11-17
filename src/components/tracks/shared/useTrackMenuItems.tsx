@@ -300,6 +300,25 @@ export const useTrackMenuItems = (props: UnifiedTrackActionsMenuProps): MenuItem
       }
     }
 
+    // Processing actions
+    if (onConvertToWav && isCompletedLocal && isSunoTrackLocal) {
+      items.push({
+        id: 'convertWav',
+        label: 'Конвертировать в WAV',
+        icon: <FileAudio className="w-4 h-4" />,
+        action: () => onConvertToWav(trackId),
+      });
+    }
+
+    if (onUpscaleAudio && isCompletedLocal) {
+      items.push({
+        id: 'upscale',
+        label: 'Улучшить качество аудио',
+        icon: <Sparkles className="w-4 h-4" />,
+        action: () => onUpscaleAudio(trackId),
+      });
+    }
+
     // ✅ Add resync option for all completed tracks
     if (isCompletedLocal) {
       items.push({

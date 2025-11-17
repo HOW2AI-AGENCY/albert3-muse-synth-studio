@@ -11,15 +11,18 @@ import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 
 export interface AudioUpscaleParams {
+  trackId?: string;
   inputFileUrl: string;
   truncatedBatches?: boolean;
   ddimSteps?: number;
   guidanceScale?: number;
   seed?: number;
+  modelVersion?: 'sakemin/audiosr-long-audio' | 'nateraw/audio-super-resolution';
 }
 
 export interface AudioUpscaleResult {
   success: boolean;
+  jobId: string;
   predictionId: string;
   status: string;
 }
@@ -36,8 +39,10 @@ export const useAudioUpscale = () => {
 
       return data as AudioUpscaleResult;
     },
-    onSuccess: () => {
-      toast.success('Audio upscaling started! ⏳');
+    onSuccess: (data) => {
+      toast.success('Audio upscaling started! ⏳', {
+        description: `Job ID: ${data.jobId}`
+      });
     },
     onError: (error: Error) => {
       logger.error('Audio upscale failed', error, 'useAudioUpscale');
@@ -46,27 +51,46 @@ export const useAudioUpscale = () => {
   });
 };
 
-export const useAudioUpscaleStatus = (predictionId: string | null, enabled: boolean = true) => {
+export const useAudioUpscaleStatus = (jobId: string | null, enabled: boolean = true) => {
   return useQuery({
-    queryKey: ['audio-upscale-status', predictionId],
+    queryKey: ['audio-upscale-status', jobId],
     queryFn: async () => {
-      if (!predictionId) throw new Error('No prediction ID');
+      if (!jobId) throw new Error('No job ID');
 
       const { data, error } = await supabase.functions.invoke('upscale-audio-sr', {
-        body: { predictionId }
+        body: { jobId }
       });
 
       if (error) throw error;
       return data;
     },
-    enabled: enabled && !!predictionId,
+    enabled: enabled && !!jobId,
     refetchInterval: (query) => {
       const data = query.state.data;
       // Stop polling when completed or failed
-      if (data?.status === 'succeeded' || data?.status === 'failed') {
+      if (data?.status === 'completed' || data?.status === 'failed') {
         return false;
       }
-      return 2000; // Poll every 2 seconds
+      return 3000; // Poll every 3 seconds
     }
+  });
+};
+
+export const useAudioUpscaleJobs = (userId: string | undefined) => {
+  return useQuery({
+    queryKey: ['audio-upscale-jobs', userId],
+    queryFn: async () => {
+      if (!userId) return [];
+
+      const { data, error } = await supabase
+        .from('audio_upscale_jobs')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userId
   });
 };
