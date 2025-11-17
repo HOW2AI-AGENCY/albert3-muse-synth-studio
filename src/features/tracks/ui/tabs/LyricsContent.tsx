@@ -5,7 +5,6 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { StructuredLyricsViewer } from '@/components/lyrics/StructuredLyricsViewer';
 import { Copy, Check } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -37,20 +36,19 @@ export const LyricsContent = ({ lyrics }: LyricsContentProps) => {
 
   if (!lyrics) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-320px)] text-muted-foreground">
+      <div className="flex items-center justify-center min-h-[200px] text-muted-foreground">
         <p className="text-sm">Текст песни отсутствует</p>
       </div>
     );
   }
 
   return (
-    <div className="relative flex flex-col h-[calc(100vh-320px)]">
-      <ScrollArea className="flex-1">
-        <StructuredLyricsViewer lyrics={lyrics} className="p-4" />
-      </ScrollArea>
+    <div className="space-y-4">
+      {/* Lyrics Viewer */}
+      <StructuredLyricsViewer lyrics={lyrics} />
 
-      {/* Sticky Copy Button */}
-      <div className="sticky bottom-0 bg-gradient-to-t from-background via-background to-transparent p-4 border-t">
+      {/* Copy Button */}
+      <div className="sticky bottom-0 bg-gradient-to-t from-background via-background to-transparent pt-4">
         <Button
           onClick={handleCopy}
           variant={copied ? 'secondary' : 'default'}

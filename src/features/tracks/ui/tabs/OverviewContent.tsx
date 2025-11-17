@@ -3,7 +3,6 @@
  * Stats, basic info, versions, stems
  */
 
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { StatsGrid } from '../cards/StatsGrid';
 import { GenreMoodCard } from '../cards/GenreMoodCard';
 import { VersionsCard } from '../cards/VersionsCard';
@@ -42,44 +41,42 @@ export const OverviewContent = ({
     metadata: v.metadata as Record<string, any> | null
   }));
   return (
-    <ScrollArea className="h-[calc(100vh-320px)]">
-      <div className="space-y-4 p-4">
-        {/* Stats Grid */}
-        <StatsGrid
-          playCount={track.play_count || 0}
-          likeCount={track.like_count || 0}
-          downloadCount={track.download_count || 0}
-          viewCount={track.view_count || 0}
+    <div className="space-y-4">
+      {/* Stats Grid */}
+      <StatsGrid
+        playCount={track.play_count || 0}
+        likeCount={track.like_count || 0}
+        downloadCount={track.download_count || 0}
+        viewCount={track.view_count || 0}
+      />
+
+      {/* Genre & Mood */}
+      {(track.genre || track.mood || (track.style_tags && track.style_tags.length > 0)) && (
+        <GenreMoodCard
+          genre={track.genre}
+          mood={track.mood}
+          tags={track.style_tags || []}
         />
+      )}
 
-        {/* Genre & Mood */}
-        {(track.genre || track.mood || (track.style_tags && track.style_tags.length > 0)) && (
-          <GenreMoodCard
-            genre={track.genre}
-            mood={track.mood}
-            tags={track.style_tags || []}
-          />
-        )}
+      {/* Versions */}
+      {versions.length > 0 && (
+        <VersionsCard versions={versions} trackId={track.id} />
+      )}
 
-        {/* Versions */}
-        {versions.length > 0 && (
-          <VersionsCard versions={versions} trackId={track.id} />
-        )}
+      {/* Stems Preview */}
+      {track.has_stems && (
+        <StemsCard trackId={track.id} />
+      )}
 
-        {/* Stems Preview */}
-        {track.has_stems && (
-          <StemsCard trackId={track.id} />
-        )}
-
-        {/* Technical Details */}
-        <TechnicalDetailsCard
-          provider={track.provider || 'suno'}
-          model={track.model_name}
-          sunoId={track.suno_id}
-          createdAt={track.created_at}
-          duration={track.duration_seconds}
-        />
-      </div>
-    </ScrollArea>
+      {/* Technical Details */}
+      <TechnicalDetailsCard
+        provider={track.provider || 'suno'}
+        model={track.model_name}
+        sunoId={track.suno_id}
+        createdAt={track.created_at}
+        duration={track.duration_seconds}
+      />
+    </div>
   );
 };
