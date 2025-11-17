@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -47,7 +47,17 @@ export function LyricsGeneratorDialog({
   const wordCount = prompt.trim().split(/\s+/).filter(Boolean).length;
   const editWordCount = editPrompt.trim().split(/\s+/).filter(Boolean).length;
 
-  // Используем общий helper для распознавания отмененных/сетевых ошибок
+  // Загрузка автопромпта из sessionStorage при открытии
+  useEffect(() => {
+    if (open) {
+      const autoPrompt = sessionStorage.getItem('autoLyricsPrompt');
+      if (autoPrompt) {
+        setPrompt(autoPrompt);
+        sessionStorage.removeItem('autoLyricsPrompt');
+        logger.info('🎵 Auto-loaded lyrics prompt', 'LyricsGeneratorDialog');
+      }
+    }
+  }, [open]);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
