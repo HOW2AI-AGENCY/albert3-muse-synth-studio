@@ -297,7 +297,7 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
             <LyricsDisplay
               taskId={track.suno_task_id ?? ''}
               audioId={track.suno_id ?? ''}
-              fallbackLyrics={track.lyrics ?? ''}
+              fallbackLyrics={track.lyrics ?? undefined}
             />
           )}
         </div>
