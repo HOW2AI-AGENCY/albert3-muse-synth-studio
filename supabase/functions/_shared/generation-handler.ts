@@ -181,6 +181,8 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
       lyrics: params.lyrics,
       hasVocals: params.hasVocals,
       styleTags: params.styleTags,
+      genre: (params as any).genre,
+      mood: (params as any).mood,
       provider: this.providerName,
       requestMetadata: metadata,
       idempotencyKey,

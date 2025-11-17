@@ -3,13 +3,15 @@ import { logger } from './logger.ts';
 export async function findOrCreateTrack(
   supabaseAdmin: any,
   userId: string,
-  { trackId, title, prompt, lyrics, hasVocals, styleTags, requestMetadata, idempotencyKey, provider, projectId }: {
+  { trackId, title, prompt, lyrics, hasVocals, styleTags, genre, mood, requestMetadata, idempotencyKey, provider, projectId }: {
     trackId?: string;
     title?: string;
     prompt?: string;
     lyrics?: string | null;
     hasVocals?: boolean;
     styleTags?: string[];
+    genre?: string;
+    mood?: string;
     requestMetadata: Record<string, unknown>;
     idempotencyKey?: string;
     provider?: string;
@@ -107,6 +109,8 @@ export async function findOrCreateTrack(
       lyrics: lyrics ?? null,
       has_vocals: hasVocals ?? null,
       style_tags: styleTags ?? null,
+      genre: genre ?? null,
+      mood: mood ?? null,
       metadata: requestMetadata,
       idempotency_key: idempotencyKey,
       project_id: projectId ?? null, // ✅ НОВОЕ: сохраняем project_id
