@@ -3,17 +3,19 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LazyImage } from '@/components/ui/lazy-image';
 import { Play, Pause, Heart, MoreVertical } from '@/utils/iconImports';
+import { TrackStatusBadge } from '@/components/tracks/TrackStatusBadge';
 import { useCurrentTrack, useIsPlaying } from '@/stores/audioPlayerStore';
 import { useTrackLike } from '@/features/tracks/hooks';
 import { useSmartTrackPlay } from '@/hooks/useSmartTrackPlay';
 import { formatDuration } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-// TrackStatusBadge import removed - not used in mobile view
+import type { TrackStatus } from '@/components/tracks/track-status.types';
 
 interface Track {
   id: string;
   title: string;
+  prompt?: string;
   audio_url?: string;
   cover_url?: string;
   duration?: number;
@@ -89,10 +91,29 @@ export const TrackCardMobile = memo(({ track, onClick, onMoreClick }: TrackCardM
         
         {/* Content */}
         <div className="flex-1 min-w-0 flex flex-col justify-between">
-          <div>
-            {/* P0-M2 fix: Increased font size from 14px to 16px for better readability */}
-            <h3 className="text-base sm:text-sm font-semibold truncate leading-tight">{track.title}</h3>
-            {/* P0-M2 fix: Increased font size from 12px to 13px */}
+          <div className="space-y-1.5">
+            {/* Title with line-clamp-2 for full display */}
+            <h3 className="text-base sm:text-sm font-semibold line-clamp-2 leading-tight">
+              {track.title}
+            </h3>
+            
+            {/* Status Badge */}
+            <div className="flex items-center gap-2">
+              <TrackStatusBadge 
+                status={track.status as TrackStatus}
+                variant="compact"
+                showIcon={true}
+              />
+            </div>
+            
+            {/* Description (prompt) if available */}
+            {track.prompt && (
+              <p className="text-xs text-muted-foreground/90 line-clamp-1 leading-relaxed">
+                {track.prompt}
+              </p>
+            )}
+            
+            {/* Tags and duration */}
             <div className="flex items-center gap-1 text-[13px] sm:text-xs text-muted-foreground">
               {track.style_tags?.[0] && (
                 <span className="truncate">{track.style_tags[0]}</span>

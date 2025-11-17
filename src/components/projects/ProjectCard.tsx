@@ -109,10 +109,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       </div>
 
       <CardHeader onClick={handleCardClick} className="pb-3 space-y-2 sm:space-y-3">
-        <div>
-          <h3 className="font-semibold text-base sm:text-lg truncate mb-1">{project.name}</h3>
+        <div className="space-y-1.5">
+          <h3 className="font-semibold text-base sm:text-lg line-clamp-2 leading-tight">
+            {project.name}
+          </h3>
           {project.description && (
-            <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
+            <p className="text-xs sm:text-sm text-muted-foreground/90 line-clamp-2 leading-relaxed">
               {project.description}
             </p>
           )}
