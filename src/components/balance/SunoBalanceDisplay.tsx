@@ -2,10 +2,10 @@ import { memo } from 'react';
 import { Loader2, Coins } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { useSunoBalance } from '@/hooks/useSunoBalance';
+import { useProviderBalance } from '@/hooks/useProviderBalance';
 
 export const SunoBalanceDisplay = memo(() => {
-  const { data: balance, isLoading, error } = useSunoBalance();
+  const { balance, isLoading, error } = useProviderBalance();
 
   if (error) {
     return (
@@ -27,7 +27,6 @@ export const SunoBalanceDisplay = memo(() => {
     return (
       <Badge variant="secondary" className="text-[10px] sm:text-xs">
         <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-        Loading...
       </Badge>
     );
   }
@@ -42,11 +41,11 @@ export const SunoBalanceDisplay = memo(() => {
           className="text-[10px] sm:text-xs font-medium"
         >
           <Coins className="h-3 w-3 mr-1" />
-          {balanceValue.toFixed(0)} credits
+          {balanceValue.toFixed(2)}
         </Badge>
       </TooltipTrigger>
       <TooltipContent>
-        <p>Баланс Suno: {balanceValue.toFixed(0)} кредитов</p>
+        <p>Баланс Suno: {balanceValue.toFixed(2)} кредитов</p>
       </TooltipContent>
     </Tooltip>
   );
