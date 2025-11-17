@@ -89,6 +89,7 @@ export interface UnifiedTrackActionsMenuProps {
   // Suno-specific
   onExtend?: (trackId: string) => void;
   onCover?: (trackId: string) => void;
+  onGenerateCover?: (trackId: string) => void; // ✅ NEW
   onAddVocal?: (trackId: string) => void;
   onCreatePersona?: (trackId: string) => void;
 
