@@ -20,6 +20,7 @@ import { trackVersionsQueryKeys } from '@/features/tracks/api/trackVersions';
 export const useTracksRealtime = (userId: string | undefined) => {
   const queryClient = useQueryClient();
 
+  // Subscribe to tracks updates
   useRealtimeSubscription<Track>(
     `tracks-${userId}`,
     'tracks',
@@ -29,7 +30,8 @@ export const useTracksRealtime = (userId: string | undefined) => {
         trackId: updatedTrack.id,
         status: updatedTrack.status,
         title: updatedTrack.title?.substring(0, 30),
-        hasAudioUrl: !!updatedTrack.audio_url
+        hasAudioUrl: !!updatedTrack.audio_url,
+        hasLyrics: !!updatedTrack.lyrics
       });
 
       // Update track in all queries
@@ -41,15 +43,17 @@ export const useTracksRealtime = (userId: string | undefined) => {
           if (index === -1) return [...old, updatedTrack];
           
           const updated = [...old];
-          updated[index] = updatedTrack;
+          updated[index] = { ...updated[index], ...updatedTrack };
           return updated;
         }
       );
 
       // Update single track query
-      queryClient.setQueryData(['track', updatedTrack.id], updatedTrack);
+      queryClient.setQueryData(['track', updatedTrack.id], (old: Track | undefined) => {
+        return old ? { ...old, ...updatedTrack } : updatedTrack;
+      });
 
-      // ✅ CRITICAL: Invalidate related queries to refresh versions
+      // ✅ CRITICAL: Invalidate related queries to refresh versions and lyrics
       if (updatedTrack.status === 'completed') {
         logger.info('Track completed - invalidating related queries', 'useTracksRealtime', {
           trackId: updatedTrack.id
@@ -61,7 +65,34 @@ export const useTracksRealtime = (userId: string | undefined) => {
         queryClient.invalidateQueries({ 
           queryKey: ['track-stems', updatedTrack.id] 
         });
+        queryClient.invalidateQueries({ 
+          queryKey: ['tracks'] 
+        });
       }
+    }
+  );
+
+  // ✅ NEW: Subscribe to track_versions updates to catch lyrics in versions
+  useRealtimeSubscription<any>(
+    `track-versions-${userId}`,
+    'track_versions',
+    '', // We'll filter parent tracks by user on client side
+    (updatedVersion: any) => {
+      logger.info('🔔 Track version update received', 'useTracksRealtime', {
+        versionId: updatedVersion.id,
+        trackId: updatedVersion.parent_track_id,
+        hasLyrics: !!updatedVersion.lyrics
+      });
+
+      // Invalidate track versions query for the parent track
+      queryClient.invalidateQueries({ 
+        queryKey: trackVersionsQueryKeys.list(updatedVersion.parent_track_id) 
+      });
+
+      // Invalidate main tracks query to refresh UI
+      queryClient.invalidateQueries({ 
+        queryKey: ['tracks'] 
+      });
     }
   );
 };
