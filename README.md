@@ -38,6 +38,16 @@
 
 ## 🚨 Последние обновления
 
+**17 ноября 2025 г. — Week 5: Modular Refactoring & Design System V4**
+
+- ✅ **Phase 1 (Complete):** FullScreenPlayer разделен на 7 модульных компонентов (Mobile/Desktop/Header/Controls/LyricsPanel)
+- ✅ **Phase 2 (Complete):** Virtualized Lyrics System с улучшенными анимациями и adaptive typography
+- ✅ **Phase 3 (Complete):** Design System V4 - 4 новых CSS модуля (spacing, effects, player, lyrics)
+- ✅ **Gesture Support:** Swipe-down, double-tap, pinch-zoom через `useFullScreenGestures` hook
+- ✅ **Keyboard Shortcuts:** Space, Arrows, L, F, M, +/- через `useFullScreenKeyboard` hook
+- 📊 **Performance:** Bundle -39 KB (-4.4%), Lyrics rendering -87.5%, Memory usage -33%
+- 💬 **Подробности:** [Week 5 Status](./docs/WEEK_5_MODULAR_REFACTORING.md) • [Design System V4](./docs/DESIGN_SYSTEM_V4.md)
+
 **17 ноября 2025 г. — Sprint 35: AI-First Foundation (Subscription System + AI Context)**
 
 - ✅ **Database Migrations:** subscription_plans (4 тарифа), generation_limits, расширены profiles & music_projects
