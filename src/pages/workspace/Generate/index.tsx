@@ -164,8 +164,7 @@ const Generate = () => {
                     <DetailPanel
                       track={normalizeTrack(state.selectedTrack)}
                       onClose={handlers.handleCloseDetail}
-                      onUpdate={refreshTracks}
-                    onDelete={() => {
+                      onDelete={() => {
                       if (state.selectedTrack) {
                         handlers.handleDelete(state.selectedTrack.id);
                       }
@@ -281,8 +280,7 @@ const Generate = () => {
                   <DetailPanel
                     track={normalizeTrack(state.selectedTrack)}
                     onClose={handlers.handleCloseDetail}
-                    onUpdate={refreshTracks}
-                  onDelete={() => {
+                    onDelete={() => {
                     if (state.selectedTrack) {
                       handlers.handleDelete(state.selectedTrack.id);
                     }
