@@ -49,7 +49,7 @@ interface SunoQueryResponse {
   };
 }
 
-async function querySunoTask(taskId: string): Promise<SunoTaskData[] | null> {
+async function querySunoTask(taskId: string): Promise<{ data: SunoTaskData[] | null; status: number }> {
   console.log(`[Resync] Querying Suno API for task: ${taskId}`);
   
   const response = await fetch(`https://api.acedata.cloud/suno/audios?taskId=${taskId}`, {
@@ -59,19 +59,21 @@ async function querySunoTask(taskId: string): Promise<SunoTaskData[] | null> {
     },
   });
 
+  const status = response.status;
+
   if (!response.ok) {
-    console.error(`[Resync] Suno API error: ${response.status}`);
-    return null;
+    console.error(`[Resync] Suno API error: ${status}`);
+    return { data: null, status };
   }
 
   const result: SunoQueryResponse = await response.json();
   
   if (result.code !== 0 || !result.data?.task?.data) {
     console.error('[Resync] Invalid Suno response:', result);
-    return null;
+    return { data: null, status: 422 };
   }
 
-  return result.data.task.data;
+  return { data: result.data.task.data, status: 200 };
 }
 
 async function updateTrackFromSunoData(
@@ -225,13 +227,32 @@ Deno.serve(async (req) => {
     }
 
     // Query Suno API for full generation data
-    const sunoData = await querySunoTask(taskId);
+    const { data: sunoData, status: apiStatus } = await querySunoTask(taskId);
     
     if (!sunoData || sunoData.length === 0) {
-      console.error('[Resync] No data from Suno API');
+      console.error('[Resync] No data from Suno API, status:', apiStatus);
+      
+      // 404 = Track data expired/deleted from Suno (normal for old tracks)
+      if (apiStatus === 404) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Track data no longer available on Suno API',
+            message: 'This track is too old - Suno has already deleted the generation data. The existing track data cannot be updated.',
+            trackId,
+            statusCode: 404,
+          }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Other errors
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch data from Suno API' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          error: 'Failed to fetch data from Suno API',
+          message: 'Unable to retrieve generation data. Please try again later.',
+          statusCode: apiStatus,
+        }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
