@@ -90,7 +90,6 @@ export const useCreateProject = () => {
           updated_at: new Date().toISOString(),
           total_tracks: 0,
           completed_tracks: 0,
-          // Используем валидное значение enum project_type согласно миграции
           project_type: 'single',
           is_public: false,
           ai_generation_params: null,
@@ -107,6 +106,9 @@ export const useCreateProject = () => {
           tempo_range: null,
           total_duration: null,
           visual_references: null,
+          ai_context: null,
+          ai_context_version: null,
+          ai_context_updated_at: null,
         };
 
         queryClient.setQueryData<MusicProject[]>(
