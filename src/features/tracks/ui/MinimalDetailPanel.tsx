@@ -1,5 +1,6 @@
 import { memo, useState, useCallback, KeyboardEvent } from "react";
 import { X, Play, Download, Share2, Heart, Info, Music, Settings, Trash2, Star, Bot, Users, Folder } from "@/utils/iconImports";
+import { StructuredLyricsViewer } from "@/components/lyrics/StructuredLyricsViewer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -368,11 +369,7 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
                       <Music className="w-3.5 h-3.5" />
                       Лирика
                     </Label>
-                    <div className="bg-secondary/30 rounded-lg p-3 max-h-48 overflow-y-auto">
-                      <pre className="whitespace-pre-wrap text-[11px] leading-relaxed font-mono text-foreground/90">
-                        {track.lyrics}
-                      </pre>
-                    </div>
+                    <StructuredLyricsViewer lyrics={track.lyrics} compact />
                   </div>
                 )}
 
@@ -539,20 +536,6 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
             )}
 
             {/* Lyrics */}
-            {track.lyrics && (
-              <AccordionItem value="lyrics" className="border rounded-lg px-3">
-                <AccordionTrigger className="py-2.5 hover:no-underline">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">📝 Текст</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pb-3">
-                  <pre className="text-xs whitespace-pre-wrap bg-muted/50 p-2.5 rounded max-h-60 overflow-y-auto">
-                    {track.lyrics}
-                  </pre>
-                </AccordionContent>
-              </AccordionItem>
-            )}
           </Accordion>
 
           {/* Контекстное меню активной версии */}
