@@ -239,10 +239,15 @@ export const useTracks = (refreshTrigger?: number, options: UseTracksOptions = {
     });
   }, [error, toast]);
 
-  const tracks = useMemo(
-    () => data?.pages.flatMap((page) => page.tracks) ?? [],
-    [data]
-  );
+  const tracks = useMemo(() => {
+    const result = data?.pages.flatMap((page) => page.tracks) ?? [];
+    logInfo('Tracks computed from pages', 'useTracks', {
+      pagesCount: data?.pages?.length || 0,
+      tracksCount: result.length,
+      firstPageTracks: data?.pages?.[0]?.tracks?.length || 0,
+    });
+    return result;
+  }, [data]);
 
   useEffect(() => {
     if (!pollingEnabled) {
