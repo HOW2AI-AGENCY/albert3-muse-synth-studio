@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, Sparkles } from '@/utils/iconImports';
+import { Sparkles } from '@/utils/iconImports';
+import { Section } from '@/components/ui/section';
 import { LyricsInput } from '@/components/lyrics/legacy/LyricsInput';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 import { cn } from '@/lib/utils';
@@ -24,13 +24,10 @@ export const FormLyrics = ({
     isMobile
 }: FormLyricsProps) => {
     return (
-        <Collapsible defaultOpen={true}>
-            <CollapsibleTrigger className={cn(
-                "flex items-center justify-between w-full hover:bg-accent/5 rounded-md transition-colors group",
-                isMobile ? "p-3" : "p-2"
-            )}>
-                <div className="flex items-center gap-2 text-sm font-medium">
-                    <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
+        <Section
+            defaultOpen={true}
+            title={
+                <>
                     <span>Lyrics</span>
                     <InfoTooltip
                         content={
@@ -46,12 +43,14 @@ export const FormLyrics = ({
                             </div>
                         }
                     />
-                    {lyricsLineCount > 0 && (
-                        <Badge variant="secondary" className="h-5 text-[10px] px-1.5">
-                            {lyricsLineCount} lines
-                        </Badge>
-                    )}
-                </div>
+                </>
+            }
+            badge={lyricsLineCount > 0 ? (
+                <Badge variant="secondary" className="h-5 text-[10px] px-1.5">
+                    {lyricsLineCount} lines
+                </Badge>
+            ) : undefined}
+            action={
                 <Button
                     variant="ghost"
                     size="sm"
@@ -60,22 +59,22 @@ export const FormLyrics = ({
                         onOpenLyricsDialog();
                     }}
                     className={cn(
-                        "h-6 px-2 text-[10px] gap-1 transition-opacity",
+                        "h-9 px-2 text-[10px] gap-1 transition-opacity touch-target-min",
                         isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                     )}
+                    aria-label="Сгенерировать текст"
                 >
-                    <Sparkles className="h-3 w-3" />
+                    <Sparkles className="h-3 w-3" aria-hidden="true" />
                     Generate
                 </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-2">
-                <LyricsInput
-                    value={debouncedLyrics}
-                    onChange={onDebouncedLyricsChange}
-                    onGenerateLyrics={onOpenLyricsDialog}
-                    isGenerating={isGenerating}
-                />
-            </CollapsibleContent>
-        </Collapsible>
+            }
+        >
+            <LyricsInput
+                value={debouncedLyrics}
+                onChange={onDebouncedLyricsChange}
+                onGenerateLyrics={onOpenLyricsDialog}
+                isGenerating={isGenerating}
+            />
+        </Section>
     );
 };
