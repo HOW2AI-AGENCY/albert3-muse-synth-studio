@@ -3,9 +3,13 @@ import { usePromptHistory } from '@/hooks/usePromptHistory';
 import { toast } from '@/hooks/use-toast';
 
 export const usePromptHistoryState = () => {
-  const { history, templates, isLoading, deletePrompt, saveAsTemplate } = usePromptHistory();
+  const { history, templates, isLoading, deletePrompt: deleteMutation, saveAsTemplate: saveMutation } = usePromptHistory();
   const [templateName, setTemplateName] = useState('');
   const [savingTemplateId, setSavingTemplateId] = useState<string | null>(null);
+
+  const deletePrompt = (id: string) => {
+    deleteMutation.mutate(id);
+  };
 
   const handleSaveAsTemplate = async (id: string) => {
     if (!templateName.trim()) {
@@ -15,8 +19,7 @@ export const usePromptHistoryState = () => {
       });
       return;
     }
-    // ✅ Передаем поле в формате, ожидаемом хуком (camelCase)
-    await saveAsTemplate({ id, templateName: templateName });
+    saveMutation.mutate({ id, templateName: templateName });
     setTemplateName('');
     setSavingTemplateId(null);
   };
