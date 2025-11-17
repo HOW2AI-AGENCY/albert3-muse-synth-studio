@@ -6,7 +6,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { PersonaSelector } from './PersonaSelector';
+import { PersonaSelector } from './ui/PersonaSelector';
 
 interface PersonaPickerDialogProps {
   open: boolean;
@@ -33,7 +33,7 @@ export const PersonaPickerDialog = memo(({
         
         <PersonaSelector
           value={selectedPersonaId}
-          onChange={onSelectPersona}
+          onValueChange={onSelectPersona}
         />
       </DialogContent>
     </Dialog>

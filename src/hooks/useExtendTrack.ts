@@ -10,6 +10,15 @@ interface ExtendTrackParams {
   tags?: string[];
   model?: "V3_5" | "V4" | "V4_5" | "V4_5PLUS" | "V5";
   defaultParamFlag?: boolean;
+  // ✅ NEW: Extended parameters
+  title?: string;
+  instrumental?: boolean;
+  personaId?: string;
+  negativeTags?: string;
+  vocalGender?: 'm' | 'f';
+  styleWeight?: number;
+  weirdnessConstraint?: number;
+  audioWeight?: number;
 }
 
 export const useExtendTrack = () => {
