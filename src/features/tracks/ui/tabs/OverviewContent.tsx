@@ -1,12 +1,13 @@
 /**
  * Overview Tab Content
- * Main information: stats, genre/mood, prompts, technical details
+ * Main information: stats, genre/mood, prompts, technical details, AI analysis
  */
 
 import { GenreMoodCard } from '../cards/GenreMoodCard';
 import { TrackStatsCard } from '../cards/TrackStatsCard';
 import { PromptCard } from '../cards/PromptCard';
 import { TechnicalDetailsCard } from '../cards/TechnicalDetailsCard';
+import { AIAnalysisCard } from '../cards/AIAnalysisCard';
 import type { Track } from '@/types/domain/track.types';
 
 interface OverviewContentProps {
@@ -23,6 +24,9 @@ export const OverviewContent = ({ track }: OverviewContentProps) => {
         viewCount={track.view_count}
         downloadCount={track.download_count}
       />
+
+      {/* AI Analysis */}
+      <AIAnalysisCard trackId={track.id} />
 
       {/* Genre & Mood */}
       {(track.genre || track.mood || (track.style_tags && track.style_tags.length > 0)) && (

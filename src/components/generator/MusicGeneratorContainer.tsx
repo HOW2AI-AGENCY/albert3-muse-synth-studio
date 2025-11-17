@@ -252,6 +252,7 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
       inspoProjectId: state.params.inspoProjectId || undefined,
     };
 
+    // ✅ Save prompt to history with full generation parameters
     try {
       await savePrompt.mutateAsync({
         prompt: state.params.prompt,
@@ -260,7 +261,31 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
           ? state.params.tags.split(',').map((s) => s.trim()).filter(Boolean)
           : undefined,
         provider: selectedProvider as 'suno' | 'mureka',
+        model_version: state.params.modelVersion,
+        metadata: {
+          customMode: hasLyricsContent,
+          vocalGender: vocalGenderParam,
+          weirdnessConstraint: state.params.weirdnessConstraint,
+          styleWeight: state.params.styleWeight,
+          lyricsWeight: hasLyricsContent ? state.params.lyricsWeight : undefined,
+          audioWeight: state.params.referenceAudioUrl ? state.params.audioWeight : undefined,
+          hasReferenceAudio: !!state.params.referenceAudioUrl,
+          hasPersona: !!state.params.personaId,
+          projectId: state.params.activeProjectId,
+          title: state.params.title || undefined,
+        },
       });
+      
+      logger.info(
+        '📝 [PROMPT_HISTORY] Saved prompt with full metadata',
+        'MusicGeneratorContainer',
+        { 
+          provider: selectedProvider, 
+          hasLyrics: hasLyricsContent,
+          hasReferenceAudio: !!state.params.referenceAudioUrl,
+          model: state.params.modelVersion,
+        }
+      );
     } catch (error) {
       logger.error('[MusicGeneratorContainer] Failed to save prompt', error as Error);
     }

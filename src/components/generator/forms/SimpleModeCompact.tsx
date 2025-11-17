@@ -46,50 +46,60 @@ export const SimpleModeCompact = memo(({
   return (
     <div className="flex flex-col h-full">
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto space-y-1.5 sm:space-y-2 pb-20 p-1.5 sm:p-2 md:p-3"> {/* Reduced mobile spacing and padding */}
-        {/* Prompt with AI Boost */}
+      <div className="flex-1 overflow-y-auto space-y-1.5 sm:space-y-2 pb-20 p-1.5 sm:p-2 md:p-3">
+        {/* Prompt Section */}
         <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5 mb-1">
-            <div className="w-1 h-5 bg-gradient-to-b from-primary to-primary/50 rounded-full" />
-            <Label htmlFor="music-prompt" className="text-sm font-semibold">Описание музыки</Label>
-            <InfoTooltip content="Опишите желаемую музыку: жанр, настроение, инструменты. Чем детальнее, тем лучше результат." />
-          </div>
-          <div className="relative">
-            <Textarea
-              id="music-prompt"
-              data-tour="prompt-input"
-              value={debouncedPrompt}
-              onChange={(e) => {
-                if (e.target.value.length <= MAX_PROMPT_LENGTH) {
-                  onDebouncedPromptChange(e.target.value);
-                }
-              }}
-              placeholder="e.g., Спокойный лоу-фай бит с джазовым пианино..."
-              className={cn(
-                "min-h-[100px] sm:min-h-[120px] resize-none mobile-input pr-10 text-base",
-                "focus-visible:ring-2 focus-visible:ring-primary"
-              )}
-              disabled={isGenerating}
-              maxLength={MAX_PROMPT_LENGTH}
-              aria-label="Описание музыки"
-              aria-describedby="prompt-counter"
-            />
+          {/* Header with Boost Button */}
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <div className="flex items-center gap-1.5">
+              <div className="w-1 h-5 bg-gradient-to-b from-primary to-primary/50 rounded-full" />
+              <Label htmlFor="music-prompt" className="text-sm font-semibold">Описание музыки</Label>
+              <InfoTooltip content="Опишите желаемую музыку: жанр, настроение, инструменты. Чем детальнее, тем лучше результат." />
+            </div>
             {onBoostPrompt && debouncedPrompt.trim() && (
-              <Button
-                data-tour="ai-boost"
-                variant="ghost"
-                size="icon"
-                className="absolute right-2 top-2 h-11 w-11 sm:h-7 sm:w-7 text-primary hover:text-primary hover:bg-primary/10"
-                onClick={onBoostPrompt}
-                disabled={isBoosting || isGenerating}
-                title="Улучшить промпт с помощью AI"
-              >
-                <Sparkles className={cn("h-3.5 w-3.5", isBoosting && "animate-spin")} />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    data-tour="ai-boost"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 gap-1.5 text-primary border-primary/30 hover:bg-primary/10 hover:border-primary/50"
+                    onClick={onBoostPrompt}
+                    disabled={isBoosting || isGenerating}
+                  >
+                    <Sparkles className={cn("h-3.5 w-3.5", isBoosting && "animate-spin")} />
+                    <span className="text-xs font-medium">Улучшить</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                  <p className="text-xs">Улучшить стиль с помощью AI (Suno API)</p>
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
 
-          {/* Controls below textarea - FIXED: Moved History button here to match Advanced mode */}
+          {/* Textarea */}
+          <Textarea
+            id="music-prompt"
+            data-tour="prompt-input"
+            value={debouncedPrompt}
+            onChange={(e) => {
+              if (e.target.value.length <= MAX_PROMPT_LENGTH) {
+                onDebouncedPromptChange(e.target.value);
+              }
+            }}
+            placeholder="e.g., Спокойный лоу-фай бит с джазовым пианино..."
+            className={cn(
+              "min-h-[100px] sm:min-h-[120px] resize-none mobile-input text-base",
+              "focus-visible:ring-2 focus-visible:ring-primary"
+            )}
+            disabled={isGenerating}
+            maxLength={MAX_PROMPT_LENGTH}
+            aria-label="Описание музыки"
+            aria-describedby="prompt-counter"
+          />
+
+          {/* Counter and History Button */}
           <div className="flex items-center justify-between pt-1">
             <div className="flex items-center gap-1.5">
               <div id="prompt-counter">
@@ -98,7 +108,7 @@ export const SimpleModeCompact = memo(({
                   maxLength={MAX_PROMPT_LENGTH}
                 />
               </div>
-              <InfoTooltip content="Рекомендуем описать стиль, жанр, настроение, темп и инструменты для лучших результатов." />
+              <InfoTooltip content="Промпт используется для описания стиля музыки, а текст — для лирики" />
             </div>
             {onOpenHistory && (
               <Tooltip>
@@ -108,7 +118,7 @@ export const SimpleModeCompact = memo(({
                     size="icon"
                     onClick={onOpenHistory}
                     disabled={isGenerating}
-                    className="touch-target-min"
+                    className="touch-target-min h-8 w-8"
                     aria-label="История промптов"
                   >
                     <History className="h-4 w-4" aria-hidden="true" />
