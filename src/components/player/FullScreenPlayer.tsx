@@ -264,13 +264,10 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
             </div>
           )}
         </div>
-              <div className="absolute inset-0 border-4 border-primary/40 rounded-3xl animate-pulse" />
-            )}
-          </div>
-        </div>
 
         {/* Track Info */}
-          <div className="flex items-center justify-center gap-2 mb-2 animate-fade-in">
+        <div className="w-full max-w-sm mb-8 text-center space-y-3">
+          <div className="flex items-center justify-center gap-2">
             <h2 className="text-xl sm:text-2xl font-bold text-gradient-primary line-clamp-2 transition-all duration-300">
               {currentTrack.title}
             </h2>
@@ -280,9 +277,26 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
               </Badge>
             )}
           </div>
-          <p className="text-sm sm:text-base text-muted-foreground/80 truncate animate-fade-in transition-opacity duration-300">
-            {currentTrack.style_tags?.join(' • ') || 'AI Generated'}
-          </p>
+          
+          {currentTrack?.style_tags && currentTrack.style_tags.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-2 mt-3">
+              {currentTrack.style_tags.slice(0, 4).map((tag, idx) => (
+                <Badge
+                  key={idx}
+                  variant="secondary"
+                  className="text-xs px-3 py-1 bg-gradient-to-br from-primary/15 to-primary/5 text-primary border-primary/30 shadow-sm"
+                >
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {hasVersions && (
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <span>Версия {currentVersionIndex + 1} из {availableVersions.length}</span>
+            </div>
+          )}
         </div>
 
         {showLyrics && currentTrack?.suno_task_id && currentTrack?.suno_id ? (
@@ -294,39 +308,53 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
             />
           </div>
         ) : null}
-      </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handlePrevious}
-            className="h-12 w-12 sm:h-14 sm:w-14 hover:bg-primary/10 hover:scale-110 transition-all duration-200"
-          >
-            <SkipBack className="h-6 w-6" />
-          </Button>
 
-          <Button
-            size="icon"
-            onClick={handlePlayPause}
-            className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gradient-primary hover:shadow-glow-primary hover:scale-110 transition-all duration-200"
-          >
-            {isPlaying ? (
-              <Pause className="h-8 w-8 sm:h-10 sm:w-10" fill="currentColor" />
-            ) : (
-              <Play className="h-8 w-8 sm:h-10 sm:w-10 ml-1" fill="currentColor" />
-            )}
-          </Button>
+        {/* Playback Controls */}
+        <div className="w-full max-w-sm space-y-6 px-4">
+          <MobileProgressBar 
+            onSeek={handleSeek}
+            className="mb-4"
+          />
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleNext}
-            className="h-12 w-12 sm:h-14 sm:w-14 hover:bg-primary/10 hover:scale-110 transition-all duration-200"
-          >
-            <SkipForward className="h-6 w-6" />
-          </Button>
+          <div className="flex items-center justify-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handlePrevious}
+              className="h-14 w-14 text-foreground/80 hover:text-foreground hover:bg-primary/10 transition-all"
+              aria-label="Предыдущий трек"
+            >
+              <SkipBack className="h-6 w-6" />
+            </Button>
+
+            <Button
+              variant="default"
+              size="icon"
+              onClick={handlePlayPause}
+              className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.6)] hover:shadow-[0_12px_32px_-8px_hsl(var(--primary)/0.8)] hover:scale-105 transition-all"
+              aria-label={isPlaying ? "Пауза" : "Воспроизвести"}
+            >
+              {isPlaying ? (
+                <Pause className="h-8 w-8 fill-current" />
+              ) : (
+                <Play className="h-8 w-8 fill-current translate-x-1" />
+              )}
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleNext}
+              className="h-14 w-14 text-foreground/80 hover:text-foreground hover:bg-primary/10 transition-all"
+              aria-label="Следующий трек"
+            >
+              <SkipForward className="h-6 w-6" />
+            </Button>
+          </div>
         </div>
 
-        <div className="flex items-center justify-between mb-4 sm:mb-6 px-4 animate-slide-up">
+        {/* Volume and Actions */}
+        <div className="w-full max-w-sm px-4 space-y-4">
           <Button
             variant="ghost"
             size="icon"

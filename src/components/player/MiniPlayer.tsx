@@ -220,8 +220,8 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
           </Button>
         </div>
 
-        {/* Строка 2: Управление воспроизведением + Действия */}
-        <div className="flex items-center gap-2">
+        {/* Строка 2: Действия */}
+        <div className="flex items-center justify-between gap-2">
           {/* Playback Controls */}
           <div className="flex items-center gap-1 flex-shrink-0">
             <Button
