@@ -39,38 +39,38 @@ interface UseResponsiveGridOptions {
  */
 const GRID_CONFIGS: Record<string, ResponsiveGridConfig> = {
   mobile: {
-    minCardWidth: 160, // ✅ Уменьшено для размещения 2 колонок
-    maxCardWidth: 200, // ✅ Компактнее для мобильных
-    idealCardWidth: 180,
-    minColumns: 2, // ✅ ИСПРАВЛЕНО: 2 колонки на мобильных
+    minCardWidth: 140, // ✅ Уменьшено для лучшей адаптивности
+    maxCardWidth: 180, // ✅ Компактнее для мобильных
+    idealCardWidth: 160,
+    minColumns: 2, // ✅ 2 колонки на мобильных
     maxColumns: 2,
   },
   tablet: {
-    minCardWidth: 200, // ✅ FIXED: Match TrackCard sm:min-w-[200px]
-    maxCardWidth: 280,
-    idealCardWidth: 240,
-    minColumns: 3,
+    minCardWidth: 180, // ✅ Уменьшено для лучшей адаптивности
+    maxCardWidth: 260,
+    idealCardWidth: 220,
+    minColumns: 2, // ✅ Минимум 2 колонки при открытой панели
     maxColumns: 4,
   },
   desktop: {
+    minCardWidth: 220,
+    maxCardWidth: 300,
+    idealCardWidth: 260,
+    minColumns: 3, // ✅ Минимум 3 колонки
+    maxColumns: 5,
+  },
+  wide: {
     minCardWidth: 240,
     maxCardWidth: 320,
     idealCardWidth: 280,
     minColumns: 4,
-    maxColumns: 5,
+    maxColumns: 6,
   },
-  wide: {
+  ultrawide: {
     minCardWidth: 260,
     maxCardWidth: 340,
     idealCardWidth: 300,
     minColumns: 5,
-    maxColumns: 6,
-  },
-  ultrawide: {
-    minCardWidth: 280,
-    maxCardWidth: 360,
-    idealCardWidth: 320,
-    minColumns: 6,
     maxColumns: 8,
   },
 };
@@ -98,11 +98,20 @@ export const useResponsiveGrid = (
     // Get config for current screen
     const config = GRID_CONFIGS[screenCategory] || GRID_CONFIGS.desktop;
 
-    // Adjust for detail panel (reduce columns)
+    // Adjust for detail panel (reduce columns more aggressively)
     let { minColumns, maxColumns } = config;
     if (isDetailPanelOpen) {
-      minColumns = Math.max(2, minColumns - 1);
-      maxColumns = Math.max(minColumns, maxColumns - 2);
+      // Более агрессивное уменьшение для панели деталей
+      if (isMobile) {
+        minColumns = 1;
+        maxColumns = 2;
+      } else if (isTablet) {
+        minColumns = 2;
+        maxColumns = 3;
+      } else {
+        minColumns = Math.max(2, minColumns - 1);
+        maxColumns = Math.max(minColumns, maxColumns - 2);
+      }
     }
 
     // Adjust for portrait orientation on tablets
