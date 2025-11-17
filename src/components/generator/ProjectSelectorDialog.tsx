@@ -132,53 +132,53 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-3xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>Выбор проекта</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="w-[calc(100vw-1rem)] h-[calc(100vh-1rem)] sm:w-[calc(100vw-2rem)] sm:h-auto sm:max-w-4xl sm:max-h-[85vh] p-4 sm:p-6 flex flex-col">
+          <DialogHeader className="shrink-0">
+            <DialogTitle className="text-lg sm:text-xl">Выбор проекта</DialogTitle>
+            <DialogDescription className="text-sm">
               Выберите проект {showTrackSelection && 'и трек из него'} для генерации
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="select">
-                <FolderOpen className="h-4 w-4 mr-2" />
-                Выбрать проект
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full flex-1 flex flex-col min-h-0">
+            <TabsList className="grid w-full grid-cols-2 shrink-0">
+              <TabsTrigger value="select" className="text-xs sm:text-sm">
+                <FolderOpen className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                Выбрать
               </TabsTrigger>
-              <TabsTrigger value="create">
-                <Plus className="h-4 w-4 mr-2" />
-                Создать новый
+              <TabsTrigger value="create" className="text-xs sm:text-sm">
+                <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                Создать
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="select" className="space-y-4 mt-4">
+            <TabsContent value="select" className="space-y-3 mt-3 flex-1 flex flex-col min-h-0">
               {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <div className="relative shrink-0">
+                <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                 <Input
                   placeholder="Поиск проектов..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-8 sm:pl-10 h-9 sm:h-10 text-sm"
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 flex-1 min-h-0">
                 {/* Projects List */}
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium">Проекты</h3>
-                  <ScrollArea className="h-[300px] sm:h-[400px] pr-4">
+                <div className="space-y-2 flex flex-col min-h-0">
+                  <h3 className="text-xs sm:text-sm font-medium shrink-0">Проекты</h3>
+                  <ScrollArea className="h-[calc(50vh-180px)] sm:h-[350px] pr-2 sm:pr-4">
                     {isLoading ? (
-                      <div className="text-sm text-muted-foreground text-center py-8">
+                      <div className="text-xs sm:text-sm text-muted-foreground text-center py-6 sm:py-8">
                         Загрузка...
                       </div>
                     ) : filteredProjects.length === 0 ? (
-                      <div className="text-sm text-muted-foreground text-center py-8">
+                      <div className="text-xs sm:text-sm text-muted-foreground text-center py-6 sm:py-8">
                         {searchQuery ? 'Проекты не найдены' : 'Нет проектов'}
                       </div>
                     ) : (
-                      <div className="space-y-3">
+                      <div className="space-y-2 sm:space-y-3">
                         {filteredProjects.map((project) => (
                           <Card
                             key={project.id}
@@ -188,36 +188,36 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                             )}
                             onClick={() => handleProjectClick(project.id)}
                           >
-                            <CardContent className="p-4">
-                              <div className="flex flex-col gap-3">
-                                <div className="flex items-start justify-between gap-3">
-                                  <h4 className="font-semibold text-base leading-tight break-words flex-1">
+                            <CardContent className="p-3 sm:p-4">
+                              <div className="flex flex-col gap-2 sm:gap-3">
+                                <div className="flex items-start justify-between gap-2">
+                                  <h4 className="font-semibold text-sm sm:text-base leading-tight break-words flex-1">
                                     {project.name}
                                   </h4>
                                   {selectedProjectId === project.id && (
-                                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                                    <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0 mt-0.5" />
                                   )}
                                 </div>
                                 
                                 {project.description && (
-                                  <p className="text-sm text-muted-foreground leading-relaxed break-words whitespace-normal">
+                                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed break-words whitespace-normal line-clamp-3 sm:line-clamp-none">
                                     {project.description}
                                   </p>
                                 )}
                                 
-                                <div className="flex items-center gap-2 flex-wrap">
+                                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                                   {project.genre && (
-                                    <Badge variant="secondary" className="text-xs">
+                                    <Badge variant="secondary" className="text-[10px] sm:text-xs">
                                       {project.genre}
                                     </Badge>
                                   )}
                                   {project.mood && (
-                                    <Badge variant="secondary" className="text-xs">
+                                    <Badge variant="secondary" className="text-[10px] sm:text-xs">
                                       {project.mood}
                                     </Badge>
                                   )}
                                   {(project.total_tracks ?? 0) > 0 && (
-                                    <span className="text-xs text-muted-foreground">
+                                    <span className="text-[10px] sm:text-xs text-muted-foreground">
                                       {project.completed_tracks ?? 0}/{project.total_tracks ?? 0} треков
                                     </span>
                                   )}
@@ -233,50 +233,50 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
 
                 {/* Tracks from Selected Project */}
                 {showTrackSelection && selectedProjectId && (
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-medium">
-                      Треки проекта "{selectedProject?.name}"
+                  <div className="space-y-2 flex flex-col min-h-0">
+                    <h3 className="text-xs sm:text-sm font-medium shrink-0">
+                      Треки: "{selectedProject?.name}"
                     </h3>
-                    <ScrollArea className="h-[300px] sm:h-[400px] pr-4">
+                    <ScrollArea className="h-[calc(50vh-180px)] sm:h-[350px] pr-2 sm:pr-4">
                       {projectTracks.length === 0 ? (
-                        <div className="text-sm text-muted-foreground text-center py-8">
+                        <div className="text-xs sm:text-sm text-muted-foreground text-center py-6 sm:py-8">
                           В проекте пока нет треков
                         </div>
                       ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-2 sm:space-y-3">
                           {projectTracks.map((track) => (
                             <Card
                               key={track.id}
                               className="cursor-pointer hover:border-primary/50 transition-all"
                               onClick={() => handleTrackClick(track)}
                             >
-                              <CardContent className="p-4">
-                                <div className="flex items-start gap-3">
+                              <CardContent className="p-3 sm:p-4">
+                                <div className="flex items-start gap-2 sm:gap-3">
                                   {track.cover_url && (
                                     <img 
                                       src={track.cover_url} 
                                       alt={track.title}
-                                      className="w-14 h-14 rounded object-cover flex-shrink-0"
+                                      className="w-10 h-10 sm:w-14 sm:h-14 rounded object-cover flex-shrink-0"
                                       loading="lazy" decoding="async"
                                     />
                                   )}
-                                  <div className="flex flex-col gap-2.5 flex-1 min-w-0">
-                                    <div className="flex items-start gap-2">
-                                      <h4 className="font-semibold text-sm leading-tight break-words whitespace-normal flex-1">
+                                  <div className="flex flex-col gap-1.5 sm:gap-2.5 flex-1 min-w-0">
+                                    <div className="flex items-start gap-1.5 sm:gap-2">
+                                      <h4 className="font-semibold text-xs sm:text-sm leading-tight break-words whitespace-normal flex-1">
                                         {track.title}
                                       </h4>
                                       {track.lyrics && (
-                                        <FileText className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                                        <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-primary shrink-0 mt-0.5" />
                                       )}
                                     </div>
                                     
                                     {track.prompt && (
-                                      <p className="text-xs text-muted-foreground leading-relaxed break-words whitespace-normal">
+                                      <p className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed break-words whitespace-normal line-clamp-2">
                                         {track.prompt}
                                       </p>
                                     )}
                                     
-                                    <div className="flex items-center gap-2 flex-wrap">
+                                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                                       <TrackStatusBadge 
                                         status={track.status as TrackStatus}
                                         variant="compact"
@@ -284,21 +284,21 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                                       />
                                       
                                       {track.style_tags && track.style_tags.length > 0 && (
-                                        <Badge variant="secondary" className="text-xs">
+                                        <Badge variant="secondary" className="text-[10px] sm:text-xs">
                                           {track.style_tags[0]}
                                         </Badge>
                                       )}
                                       {track.duration && (
-                                        <div className="flex items-center gap-1 text-muted-foreground">
-                                          <Clock className="h-3 w-3" />
-                                          <span className="text-xs">
+                                        <div className="flex items-center gap-0.5 sm:gap-1 text-muted-foreground">
+                                          <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                                          <span className="text-[10px] sm:text-xs">
                                             {Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}
                                           </span>
                                         </div>
                                       )}
                                     </div>
                                   </div>
-                                  <Music className="h-4 w-4 text-muted-foreground shrink-0" />
+                                  <Music className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground shrink-0 hidden sm:block" />
                                 </div>
                               </CardContent>
                             </Card>
