@@ -97,7 +97,7 @@
     "use-debounce": "^10.0.6",
     "vaul": "^0.9.9",
     "vitest": "^4.0.8",
-    "web-vitals": "^3.5.2",
+    "web-vitals": "^5.1.0",
     "zod": "^4.1.12",
     "zustand": "^5.0.8"
   },
