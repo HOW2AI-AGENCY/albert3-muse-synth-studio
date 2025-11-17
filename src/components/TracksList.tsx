@@ -214,6 +214,7 @@ const TracksListComponent = ({
                 onCover={onCover}
                 onAddVocal={undefined}
                 onCreatePersona={onCreatePersona}
+                onDescribeTrack={onDescribeTrack}
                 onRetry={handleRetry}
                 onDelete={handleDelete}
               />
