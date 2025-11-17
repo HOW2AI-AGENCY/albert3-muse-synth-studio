@@ -24,7 +24,7 @@ export const useTracksRealtime = (userId: string | undefined) => {
     `tracks-${userId}`,
     'tracks',
     userId ? `user_id=eq.${userId}` : '',
-    (updatedTrack: Track) => {
+    (updatedTrack) => {
       logger.info('🔔 Track realtime update received', 'useTracksRealtime', {
         trackId: updatedTrack.id,
         status: updatedTrack.status,
