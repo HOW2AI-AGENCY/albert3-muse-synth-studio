@@ -5,15 +5,15 @@
 /* Импорт Fluid Typography System (Phase 4) */
 @import './styles/fluid-typography.css';
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 /* Import design system styles */
 @import './styles/player.css';
 @import './styles/lyrics.css';
 @import './styles/spacing.css';
 @import './styles/effects.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
   :root {
