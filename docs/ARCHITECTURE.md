@@ -1,51 +1,20 @@
 # 🏗️ Архитектура: Albert3 Muse Synth Studio
 
-**Версия документа:** 3.0.1 (Аудит от 03.11.2025, обновлено)
+**Версия документа:** 3.0.1 (Аудит от 03.11.2025, обновлено)  
 **Статус:** Актуально
 
 ---
 
 ## 1. Обзор системы
 
-Albert3 Muse Synth Studio — это **Single Page Application (SPA)**, построенное на **React**, которое взаимодействует с бэкендом на платформе **Supabase (Backend-as-a-Service)**.
+Albert3 Muse Synth Studio — это **Single Page Application (SPA)**, построенное на **React**, которое взаимодействует с бэкендом на платформе[...]
 
-Эта архитектура позволяет отделить фронтенд (вся логика отображения и взаимодействия с пользователем) от бэкенда (управление данными, аутентификация, интеграции с AI-сервисами).
+Эта архитектура позволяет отделить фронтенд (вся логика отображения и взаимодействия с пользователем) от бэ�[...]
 
 ### Архитектурная схема
 
-```mermaid
-graph TB
-    subgraph "Frontend Layer (React + Vite)"
-        A[UI Components (shadcn/ui)]
-        B[State Management (React Query + Zustand)]
-        C[Routing (React Router)]
-    end
-
-    subgraph "Backend Layer (Supabase)"
-        F[Edge Functions (Deno)]
-        G[Database (PostgreSQL + RLS)]
-        H[Authentication (JWT)]
-        I[Storage]
-    end
-
-    subgraph "External AI Providers"
-        K[Suno AI API]
-        L[Replicate.com API]
-    end
-
-    A & C --> B
-    B --> F
-    F --> K
-    F --> L
-    F --> G
-    F --> I
-    G --> H
-
-    style A fill:#61DAFB,stroke:#333,stroke-width:2px
-    style F fill:#3ECF8E,stroke:#333,stroke-width:2px
-    style K fill:#FF6F61,stroke:#333,stroke-width:2px
-    style L fill:#9B59B6,stroke:#333,stroke-width:2px
-```
+<!-- Заменено: диаграмма mermaid -->
+![Архитектурная схема](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/blob/4e0a04e28c78d2e45e6c6ca47d266e7a3521629c/docs/assets/ARCHITECTURAL_OVERVIEW.jpg)
 
 ## 2. Технологический стек
 
@@ -83,54 +52,20 @@ graph TB
 
 Это асинхронный процесс, использующий callback для получения результата.
 
-```mermaid
-sequenceDiagram
-    participant User as Пользователь (UI)
-    participant Frontend as Фронтенд (React)
-    participant EdgeFunc as Edge-функция (generate-suno)
-    participant SunoAPI as Suno API
-    participant Callback as Edge-функция (suno-callback)
-    participant DB as Supabase DB
-
-    User->>Frontend: Заполняет форму, нажимает "Сгенерировать"
-    Frontend->>EdgeFunc: Вызывает /generate-suno с JWT и параметрами
-    EdgeFunc->>SunoAPI: Отправляет запрос на генерацию
-    SunoAPI-->>EdgeFunc: Возвращает taskId
-
-    Note over SunoAPI, DB: ...проходит время...
-
-    SunoAPI->>Callback: Вызывает /suno-callback с готовыми треками
-    Callback->>DB: Сохраняет трек и его версии в `tracks` и `track_versions`
-```
+<!-- Заменено: диаграмма mermaid -->
+![Генерация трека Suno](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/blob/731a77348b045ce16ac4dd99702b02fbc3f12807/docs/assets/TRACK_GENERATION_FLOW.jpg)
 
 ### Анализ аудио (Replicate) - Целевая схема
 
 Это будет асинхронный процесс с вебхуком для получения результата.
 
-```mermaid
-sequenceDiagram
-    participant User as Пользователь (UI)
-    participant Frontend as Фронтенд (React)
-    participant EdgeFunc as Edge-функция (analyze-audio)
-    participant ReplicateAPI as Replicate API
-    participant Callback as Edge-функция (replicate-callback)
-    participant DB as Supabase DB
-
-    User->>Frontend: Загружает аудиофайл
-    Frontend->>EdgeFunc: Вызывает /analyze-audio с URL аудио и JWT
-    EdgeFunc->>ReplicateAPI: Запускает задачу анализа, передавая webhook URL
-    ReplicateAPI-->>EdgeFunc: Возвращает ID задачи
-
-    Note over ReplicateAPI, DB: ...проходит время...
-
-    ReplicateAPI->>Callback: Вызывает webhook с результатом анализа
-    Callback->>DB: Обновляет метаданные трека
-```
+<!-- Заменено: диаграмма mermaid -->
+![Анализ аудио Replicate](https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/blob/731a77348b045ce16ac4dd99702b02fbc3f12807/docs/assets/REPLICATE_AUDIO_ANALYSE.jpg)
 
 ## 6. Система версионирования треков
 
 -   **Таблица `tracks`**: Хранит основную информацию о треке.
 -   **Таблица `track_versions`**: Хранит конкретные версии (варианты) трека.
--   **Процесс создания**: `suno-callback` получает от Suno API несколько вариантов трека и создаёт для каждого запись в `track_versions`.
+-   **Процесс создания**: `suno-callback` получает от Suno API несколько вариантов трека и создаёт для каждого запись в `track_[...]
 -   **Процесс получения**: Фронтенд использует хук `useTrackVersions` для загрузки всех доступных версий.
--   **✅ ИСПРАВЛЕНО (2025-11-04)**: Баг с дублированием версии `variant_index: 0` в callback исправлен. Теперь первый вариант сохраняется только в `tracks`, дополнительные варианты - в `track_versions` начиная с `variant_index: 1`.
+-   **✅ ИСПРАВЛЕНО (2025-11-04)**: Баг с дублированием версии `variant_index: 0` в callback исправлен. Теперь первый вариант сохра�[...]
