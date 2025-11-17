@@ -40,6 +40,25 @@ interface OptimizedTrackCardProps {
  * - Minimal re-renders
  * - CSS containment
  */
+/**
+ * Responsive card sizing based on screen
+ */
+const useResponsiveCardSize = () => {
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return { isMobile };
+};
+
 export const OptimizedTrackCard = memo(({
   track,
   isPlaying = false,
@@ -50,6 +69,7 @@ export const OptimizedTrackCard = memo(({
   onMenu,
   className,
 }: OptimizedTrackCardProps) => {
+  const { isMobile } = useResponsiveCardSize();
   // Memoized handlers
   const handleClick = useCallback(() => {
     onClick?.();
@@ -77,9 +97,18 @@ export const OptimizedTrackCard = memo(({
   return (
     <Card
       className={cn(
-        'group cursor-pointer overflow-hidden transition-all duration-300',
-        'hover:shadow-glow-primary hover:-translate-y-1',
+        'group cursor-pointer overflow-hidden',
+        'transition-all duration-300',
+        // Responsive sizing
+        'w-full',
+        'min-w-[160px] max-w-full', // Mobile: 160px min
+        'sm:min-w-[200px]', // Tablet: 200px min
+        'lg:min-w-[240px]', // Desktop: 240px min
+        // Hover effects (disabled on mobile for performance)
+        !isMobile && 'hover:shadow-glow-primary hover:-translate-y-1',
         'focus-within:ring-2 focus-within:ring-primary/50',
+        // Compact on mobile
+        isMobile && 'shadow-sm',
         className
       )}
       style={{ contain: 'layout style paint' }}
@@ -127,19 +156,28 @@ export const OptimizedTrackCard = memo(({
         </div>
 
         {/* Track Info */}
-        <div className="p-3 space-y-2">
+        <div className={cn(
+          'space-y-2',
+          isMobile ? 'p-2' : 'p-3' // Compact padding on mobile
+        )}>
           {/* Title */}
-          <h3 className="font-semibold text-sm line-clamp-2 min-h-[2.5rem]">
+          <h3 className={cn(
+            'font-semibold line-clamp-2',
+            isMobile ? 'text-xs min-h-[2rem]' : 'text-sm min-h-[2.5rem]'
+          )}>
             {track.title}
           </h3>
 
           {/* Metadata */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
+          <div className={cn(
+            'flex items-center justify-between text-muted-foreground',
+            isMobile ? 'text-[10px]' : 'text-xs'
+          )}>
+            <div className="flex items-center gap-1.5">
               {formattedDuration && (
                 <span>{formattedDuration}</span>
               )}
-              {track.style_tags && track.style_tags.length > 0 && (
+              {track.style_tags && track.style_tags.length > 0 && !isMobile && (
                 <span>• {track.style_tags[0]}</span>
               )}
             </div>
@@ -147,29 +185,36 @@ export const OptimizedTrackCard = memo(({
 
           {/* Actions */}
           {isCompleted && (
-            <div className="flex items-center justify-between pt-1">
-              <div className="flex items-center gap-1">
+            <div className={cn(
+              'flex items-center justify-between',
+              isMobile ? 'pt-0.5' : 'pt-1'
+            )}>
+              <div className="flex items-center gap-0.5">
                 <Button
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    'h-8 gap-1',
+                    'gap-1',
+                    isMobile ? 'h-6 px-1' : 'h-8',
                     isLiked && 'text-red-500'
                   )}
                   onClick={handleLike}
                 >
-                  <Heart className={cn('h-4 w-4', isLiked && 'fill-current')} />
-                  <span className="text-xs">{track.like_count || 0}</span>
+                  <Heart className={cn(
+                    isMobile ? 'h-3 w-3' : 'h-4 w-4',
+                    isLiked && 'fill-current'
+                  )} />
+                  {!isMobile && <span className="text-xs">{track.like_count || 0}</span>}
                 </Button>
               </div>
 
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className={cn(isMobile ? 'h-6 w-6' : 'h-8 w-8')}
                 onClick={handleMenu}
               >
-                <MoreVertical className="h-4 w-4" />
+                <MoreVertical className={cn(isMobile ? 'h-3 w-3' : 'h-4 w-4')} />
               </Button>
             </div>
           )}
