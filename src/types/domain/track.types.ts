@@ -47,6 +47,7 @@ export interface Track {
   download_count?: number | null;
   view_count?: number | null;
   suno_id?: string | null;
+  suno_task_id?: string | null;
   mureka_task_id?: string | null;
   model_name?: string | null;
   idempotency_key?: string | null;
@@ -83,6 +84,8 @@ export interface AudioPlayerTrack {
   status?: string;
   style_tags?: string[];
   lyrics?: string;
+  suno_id?: string;
+  suno_task_id?: string;
   parentTrackId?: string;
   versionNumber?: number;
   isMasterVersion?: boolean;

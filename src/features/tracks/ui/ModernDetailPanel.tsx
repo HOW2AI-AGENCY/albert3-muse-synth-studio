@@ -299,7 +299,11 @@ export const ModernDetailPanel = ({
             value="lyrics" 
             className="h-full mt-0 data-[state=active]:animate-in data-[state=active]:fade-in-50"
           >
-            <LyricsContent lyrics={track.lyrics || displayedVersion?.lyrics || ''} />
+            <LyricsContent 
+              lyrics={track.lyrics || displayedVersion?.lyrics || ''} 
+              sunoTaskId={track.suno_task_id}
+              sunoId={track.suno_id}
+            />
           </TabsContent>
 
           <TabsContent 
