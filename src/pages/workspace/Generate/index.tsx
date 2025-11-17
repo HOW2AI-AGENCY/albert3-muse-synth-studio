@@ -165,15 +165,15 @@ const Generate = () => {
                       track={normalizeTrack(state.selectedTrack)}
                       onClose={handlers.handleCloseDetail}
                       onDelete={() => {
-                      if (state.selectedTrack) {
-                        handlers.handleDelete(state.selectedTrack.id);
-                      }
-                    }}
-                    onRemix={() => {
-                      if (state.selectedTrack) {
-                        handlers.handleRemix(state.selectedTrack);
-                      }
-                    }}
+                        if (state.selectedTrack) {
+                          handlers.handleDelete(state.selectedTrack.id);
+                        }
+                      }}
+                      onRemix={() => {
+                        if (state.selectedTrack) {
+                          handlers.handleRemix(state.selectedTrack);
+                        }
+                      }}
                     />
                   </Suspense>
                 </ResizablePanel>
@@ -281,15 +281,15 @@ const Generate = () => {
                     track={normalizeTrack(state.selectedTrack)}
                     onClose={handlers.handleCloseDetail}
                     onDelete={() => {
-                    if (state.selectedTrack) {
-                      handlers.handleDelete(state.selectedTrack.id);
-                    }
-                  }}
-                  onRemix={() => {
-                    if (state.selectedTrack) {
-                      handlers.handleRemix(state.selectedTrack);
-                    }
-                  }}
+                      if (state.selectedTrack) {
+                        handlers.handleDelete(state.selectedTrack.id);
+                      }
+                    }}
+                    onRemix={() => {
+                      if (state.selectedTrack) {
+                        handlers.handleRemix(state.selectedTrack);
+                      }
+                    }}
                   />
                 </Suspense>
               )}

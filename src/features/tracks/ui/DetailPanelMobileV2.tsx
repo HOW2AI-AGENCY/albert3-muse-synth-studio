@@ -221,6 +221,14 @@ export const DetailPanelMobileV2 = ({
                 sunoTaskId={track.suno_task_id}
                 sunoId={track.suno_id}
               />
+              {/* Debug info */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mt-4 p-2 bg-muted rounded text-xs">
+                  <p>track.lyrics: {track.lyrics ? `✅ (${track.lyrics.length} chars)` : '❌ нет'}</p>
+                  <p>displayedVersion?.lyrics: {displayedVersion?.lyrics ? `✅ (${displayedVersion.lyrics.length} chars)` : '❌ нет'}</p>
+                  <p>displayedVersion?.id: {displayedVersion?.id || 'null'}</p>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="versions" className="flex-1 mt-0 p-4">
