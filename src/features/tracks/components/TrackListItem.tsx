@@ -1,11 +1,20 @@
 import React, { useState, useCallback, memo, useRef, useEffect, KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Music, Headphones, AlertTriangle, Loader2, Play, Pause } from "@/utils/iconImports";
-// удалён импорт audioPlayerStore: воспроизведение теперь делегируется useTrackState
 import { cn } from "@/lib/utils";
 import { formatDuration } from "@/utils/formatters";
 import { UnifiedTrackActionsMenu } from "@/components/tracks/shared/TrackActionsMenu.unified";
 import { useTrackState } from "@/hooks/useTrackState";
+import { useTrackLike } from "@/hooks/useTrackLike";
+import { useShareTrack } from "@/hooks/useShareTrack";
+import { useTogglePublic } from "@/hooks/useTogglePublic";
+import { useSeparateStems } from "@/hooks/useSeparateStems";
+import { useExtendTrack } from "@/hooks/useExtendTrack";
+import { useCreateCover } from "@/hooks/useCreateCover";
+import { useDescribeTrack } from "@/hooks/useDescribeTrack";
+import { useDeleteTrack } from "@/hooks/useDeleteTrack";
+import { useRetryTrack } from "@/hooks/useRetryTrack";
+import { useDownloadTrack } from "@/hooks/useDownloadTrack";
 
 // Упрощенный интерфейс, аналогичный TrackCard
 interface Track {
@@ -37,6 +46,8 @@ interface TrackListItemProps {
 const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, onSync, onDelete, onSeparateStems, className }: TrackListItemProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  
+  // Состояние трека и воспроизведение
   const {
     displayedVersion,
     isPlaying,
@@ -49,7 +60,6 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
     handleVersionChange,
     handlePlayClick,
     isLiked,
-    handleLikeClick,
   } = useTrackState({
     id: track.id,
     title: track.title,
@@ -60,6 +70,18 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
     style_tags: track.style_tags || [],
     like_count: track.like_count,
   } as any);
+
+  // Операции с треками
+  const { likeTrack, unlikeTrack } = useTrackLike();
+  const { shareTrack } = useShareTrack();
+  const { togglePublic } = useTogglePublic();
+  const { separateStems } = useSeparateStems();
+  const { extendTrack } = useExtendTrack();
+  const { createCover } = useCreateCover();
+  const { describeTrack } = useDescribeTrack();
+  const { deleteTrack } = useDeleteTrack();
+  const { retryTrack } = useRetryTrack();
+  const { downloadTrack } = useDownloadTrack();
   
   const itemRef = useRef<HTMLDivElement>(null);
 
@@ -70,6 +92,58 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
     }
     setIsVisible(true);
   }, []);
+
+  // Обработчики действий
+  const handleLikeClick = useCallback(() => {
+    if (isLiked) {
+      unlikeTrack(track.id);
+    } else {
+      likeTrack(track.id);
+    }
+  }, [track.id, isLiked, likeTrack, unlikeTrack]);
+
+  const handleDownloadClick = useCallback(() => {
+    if (track.audio_url) {
+      downloadTrack({ id: track.id, title: track.title, audio_url: track.audio_url });
+    }
+    onDownload?.();
+  }, [track.id, track.title, track.audio_url, downloadTrack, onDownload]);
+
+  const handleShareClick = useCallback(() => {
+    shareTrack(track.id);
+    onShare?.();
+  }, [track.id, shareTrack, onShare]);
+
+  const handleTogglePublic = useCallback(() => {
+    togglePublic(track.id, false); // Assuming track.is_public is false, adjust as needed
+  }, [track.id, togglePublic]);
+
+  const handleSeparateStems = useCallback(() => {
+    separateStems(track.id);
+    onSeparateStems?.(track.id);
+  }, [track.id, separateStems, onSeparateStems]);
+
+  const handleExtend = useCallback(() => {
+    extendTrack({ trackId: track.id });
+  }, [track.id, extendTrack]);
+
+  const handleCreateCover = useCallback(() => {
+    createCover({ prompt: `Cover of ${track.title}` });
+  }, [track.title, createCover]);
+
+  const handleDescribeTrack = useCallback(() => {
+    describeTrack(track.id);
+  }, [track.id, describeTrack]);
+
+  const handleDelete = useCallback(() => {
+    deleteTrack(track.id);
+    onDelete?.(track.id);
+  }, [track.id, deleteTrack, onDelete]);
+
+  const handleRetry = useCallback(() => {
+    retryTrack(track.id);
+    onRetry?.(track.id);
+  }, [track.id, retryTrack, onRetry]);
 
   // Обёртка: сохраняем стоп-распространение и используем общую логику проигрывания
   const handlePlayClickWrapped = useCallback((event: React.MouseEvent) => {
@@ -184,12 +258,16 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
           showQuickActions={false}
           isLiked={isLiked}
           onLike={handleLikeClick}
-          onDownload={() => { onDownload?.(); }}
-          onShare={onShare}
-          onRetry={onRetry}
+          onDownload={handleDownloadClick}
+          onShare={handleShareClick}
+          onTogglePublic={handleTogglePublic}
+          onSeparateStems={handleSeparateStems}
+          onExtend={handleExtend}
+          onCover={handleCreateCover}
+          onDescribeTrack={handleDescribeTrack}
+          onDelete={handleDelete}
+          onRetry={handleRetry}
           onSync={onSync}
-          onDelete={onDelete}
-          onSeparateStems={onSeparateStems}
         />
       </div>
     </div>
