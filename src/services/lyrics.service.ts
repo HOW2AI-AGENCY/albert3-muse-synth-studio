@@ -52,6 +52,45 @@ export const LyricsService = {
         return cached;
       }
 
+      // ✅ NEW: Try to get timestamped lyrics from track metadata first (saved during callback)
+      try {
+        const { data: track, error: trackError } = await supabase
+          .from('tracks')
+          .select('metadata')
+          .eq('suno_task_id', taskId)
+          .single();
+
+        if (!trackError && track?.metadata) {
+          const metadata = track.metadata as Record<string, any>;
+          const timestampedLyrics = metadata.timestamped_lyrics;
+          
+          if (timestampedLyrics && Array.isArray(timestampedLyrics)) {
+            logger.info('✅ Using timestamped lyrics from track metadata', 'LyricsService', { 
+              taskId, 
+              audioId,
+              wordsCount: timestampedLyrics.length,
+            });
+            
+            const normalized: TimestampedLyricsResponse = {
+              alignedWords: timestampedLyrics,
+              waveformData: metadata.waveformData || [],
+              hootCer: metadata.hootCer || 0,
+              isStreamed: metadata.isStreamed || false,
+            };
+            
+            // ✅ Cache for future use
+            await lyricsCache.set(taskId, audioId, normalized);
+            return normalized;
+          }
+        }
+      } catch (metadataError) {
+        logger.warn('Failed to fetch timestamped lyrics from metadata, will try API', 'LyricsService', { 
+          taskId, 
+          audioId,
+          error: (metadataError as Error).message,
+        });
+      }
+
       // ✅ Fetch from API with retry mechanism + 10s timeout
       // Uses standard retry config: 3 attempts, 500ms initial delay, exponential backoff
       const normalized = await retryWithBackoff(
