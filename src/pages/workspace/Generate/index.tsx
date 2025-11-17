@@ -34,6 +34,7 @@ import { EnhancedErrorBoundary } from "@/components/errors/EnhancedErrorBoundary
 import { NetworkAlert } from "@/components/ui/NetworkAlert";
 import { useGeneratePageState } from "./useGeneratePageState";
 import { useGeneratePageHandlers } from "./useGeneratePageHandlers";
+import { useWorkspaceOffsets } from "@/hooks/useWorkspaceOffsets";
 
 const Generate = () => {
   const { userId } = useAuth();
@@ -52,6 +53,7 @@ const Generate = () => {
   
   const { projects } = useMusicProjects();
   const { isDesktop, isTablet } = useBreakpoints();
+  useWorkspaceOffsets();
 
   const handlers = useGeneratePageHandlers({
     ...state,
@@ -241,8 +243,12 @@ const Generate = () => {
               <TooltipTrigger asChild>
                 <Button
                   onClick={() => state.setShowGenerator(true)}
-                  style={{ bottom: 'calc(var(--workspace-bottom-offset, 0px) + 1rem)' }}
-                  className="fixed right-4 h-16 w-16 rounded-full shadow-glow-primary touch-target-optimal z-50 bg-primary hover:bg-primary/90 transition-all hover:scale-110"
+                  style={{
+                    bottom: 'calc(var(--workspace-bottom-offset, 0px) + env(safe-area-inset-bottom, 0px) + var(--space-4, 1rem))',
+                    right: 'calc(env(safe-area-inset-right, 0px) + var(--space-4, 1rem))',
+                    zIndex: 'var(--z-fab)'
+                  }}
+                  className="fixed h-16 w-16 rounded-full shadow-glow-primary touch-target-optimal bg-primary hover:bg-primary/90 transition-all hover:scale-110"
                   size="icon"
                   aria-label="Создать музыку"
                 >
