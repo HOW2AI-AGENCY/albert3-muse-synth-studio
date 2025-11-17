@@ -25,6 +25,8 @@ interface TrackCardProps {
   onDescribeTrack?: (trackId: string) => void;
   onCreatePersona?: (trackId: string) => void;
   onToggleLyrics?: (trackId: string, lyrics: string) => void;
+  onUpscaleAudio?: (trackId: string) => void; // ✅ NEW
+  onGenerateCover?: (trackId: string) => void; // ✅ NEW
   className?: string;
 }
 
@@ -53,6 +55,8 @@ const TrackCardComponent = memo(({
   onAddVocal,
   onDescribeTrack,
   onCreatePersona,
+  onUpscaleAudio,
+  onGenerateCover,
   className,
 }: TrackCardProps) => {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -196,6 +200,8 @@ const TrackCardComponent = memo(({
             onCover={onCover}
             onAddVocal={onAddVocal}
             onCreatePersona={onCreatePersona}
+            onUpscaleAudio={onUpscaleAudio}
+            onGenerateCover={onGenerateCover}
           />
         </CardContent>
       </Card>

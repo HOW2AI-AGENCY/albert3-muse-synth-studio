@@ -29,6 +29,8 @@ export type TrackActionId =
   | 'addVocal'
   | 'createPersona'
   | 'convertWav'
+  | 'upscale' // ✅ NEW
+  | 'generateCover' // ✅ NEW
 
   // System actions
   | 'sync'
@@ -85,6 +87,7 @@ export interface UnifiedTrackActionsMenuProps {
   onDescribeTrack?: (trackId: string) => void;
   onSeparateStems?: (trackId: string) => void;
   onConvertToWav?: (trackId: string) => void;
+  onUpscaleAudio?: (trackId: string) => void; // ✅ NEW: Audio upscaling
 
   // Suno-specific
   onExtend?: (trackId: string) => void;
