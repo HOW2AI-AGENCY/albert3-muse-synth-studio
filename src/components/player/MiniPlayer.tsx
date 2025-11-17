@@ -91,9 +91,10 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
     <div
       data-testid="mini-player"
       onClick={handleExpand}
-      className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border/50 shadow-2xl cursor-pointer animate-slide-up hover:bg-card/90 transition-all duration-300 px-3 pt-2.5"
+      className="fixed left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border/50 shadow-2xl cursor-pointer animate-slide-up hover:bg-card/90 transition-all duration-300 px-3 pt-2.5"
       style={{
-        paddingBottom: 'max(env(safe-area-inset-bottom), 0.75rem)',
+        bottom: 'calc(var(--bottom-tab-bar-height, 0px) + env(safe-area-inset-bottom))',
+        paddingBottom: '0.75rem',
         zIndex: 'var(--z-mini-player)'
       }}
     >
