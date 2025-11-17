@@ -42,14 +42,14 @@ export const TrackCardCover = React.memo(({
 }: TrackCardCoverProps) => {
   return (
     <div className="relative aspect-square bg-gradient-to-br from-gray-800 to-gray-900">
-      {/* Vocal/Instrumental badge */}
+      {/* Vocal/Instrumental badge - always visible */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="absolute top-2 left-2 z-10 bg-background/90 backdrop-blur-sm p-1.5 rounded-md cursor-help">
+          <div className="absolute top-2 left-2 z-10 bg-background/90 backdrop-blur-sm p-1.5 rounded-md cursor-help touch-target-min">
             {hasVocals ? (
-              <Mic className="h-4 w-4 text-primary" />
+              <Mic className="h-4 w-4 text-primary" aria-label="С вокалом" />
             ) : (
-              <Music className="h-4 w-4 text-muted-foreground" />
+              <Music className="h-4 w-4 text-muted-foreground" aria-label="Инструментал" />
             )}
           </div>
         </TooltipTrigger>
@@ -58,21 +58,21 @@ export const TrackCardCover = React.memo(({
         </TooltipContent>
       </Tooltip>
 
-      {/* Reference Audio Badge */}
+      {/* Reference Audio Badge - always visible */}
       {hasReferenceAudio && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="absolute bottom-2 left-2 z-10 bg-amber-500/90 backdrop-blur-sm p-1.5 rounded-md cursor-help">
-              <FileAudio className="h-4 w-4 text-white" />
+            <div className="absolute bottom-2 left-2 z-10 bg-amber-500/90 backdrop-blur-sm p-1.5 rounded-md cursor-help touch-target-min">
+              <FileAudio className="h-4 w-4 text-white" aria-label="С референсом" />
             </div>
           </TooltipTrigger>
           <TooltipContent>Создано с аудио-референсом</TooltipContent>
         </Tooltip>
       )}
 
-      {/* Variant selector */}
+      {/* Variant selector - only visible on desktop (md and up) */}
       {isCompleted && (
-        <div className="absolute top-2 right-2 z-10">
+        <div className="absolute top-2 right-2 z-10 hidden md:flex">
           <TrackVariantSelector
             trackId={trackId}
             currentVersionIndex={currentVersionIndex}
