@@ -27,28 +27,6 @@ export const PROVIDERS: Record<MusicProvider, ProviderConfig> = {
       maxConcurrent: 5,
     },
   },
-  mureka: {
-    id: 'mureka',
-    name: 'Mureka AI',
-    displayName: 'Mureka O1',
-    version: '1.0',
-    capabilities: {
-      generateMusic: true,
-      extendTrack: true,
-      separateStems: true,
-      generateLyrics: true,
-      recognizeSong: true,
-      describeSong: true,
-    },
-    pricing: {
-      costPerGeneration: 8,
-      currency: 'credits',
-    },
-    limits: {
-      maxDuration: 180,
-      maxConcurrent: 3,
-    },
-  },
 };
 
 export function getProviderConfig(provider: MusicProvider): ProviderConfig {
