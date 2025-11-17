@@ -43,6 +43,9 @@ export const ModernDetailPanel = ({
     parentTrackId: track.id,
   } as any);
 
+  // Get lyrics from track or displayed version
+  const hasLyrics = !!(track.lyrics || displayedVersion?.lyrics);
+
   const handleDownload = () => {
     if (displayedVersion?.audio_url) {
       window.open(displayedVersion.audio_url, '_blank');
@@ -85,7 +88,7 @@ export const ModernDetailPanel = ({
           <TabsTrigger value="overview" className="data-[state=active]:bg-muted">
             Обзор
           </TabsTrigger>
-          <TabsTrigger value="lyrics" disabled={!track.lyrics} className="data-[state=active]:bg-muted">
+          <TabsTrigger value="lyrics" disabled={!hasLyrics} className="data-[state=active]:bg-muted">
             Текст
           </TabsTrigger>
           <TabsTrigger value="analysis" className="data-[state=active]:bg-muted">
@@ -102,7 +105,7 @@ export const ModernDetailPanel = ({
         </TabsContent>
 
         <TabsContent value="lyrics" className="flex-1 mt-0 data-[state=active]:animate-in data-[state=active]:fade-in-50">
-          <LyricsContent lyrics={track.lyrics || ''} />
+          <LyricsContent lyrics={track.lyrics || displayedVersion?.lyrics || ''} />
         </TabsContent>
 
         <TabsContent value="analysis" className="flex-1 mt-0 data-[state=active]:animate-in data-[state=active]:fade-in-50">
