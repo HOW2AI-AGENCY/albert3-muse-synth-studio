@@ -1,6 +1,6 @@
 # Чек‑лист наведения порядка в репозитории
 
-Дата: 16 ноября 2025 (Обновлено)
+Дата: 17 ноября 2025 (Обновлено)
 
 ## Ревизия структуры
 - [x] Структура `docs/` соответствует стандартам (architecture, sprints, meetings, maintenance)
@@ -15,9 +15,13 @@
 ## Документация
 - [x] README обновлён разделами вебхуков и очистки Storage
 - [x] `docs/architecture/webhooks.md` добавлен
+- [x] `docs/architecture/SUNO_CALLBACK_SYSTEM.md` создан (полная документация callback system)
+- [x] `docs/features/AI_CONTEXT_INTEGRATION.md` создан (AI features guide)
 - [x] `docs/audit/LOGIC_AUDIT_2025-11-16.md` создан (comprehensive audit)
 - [x] `tasks/TASKS_STATUS.md` обновлён (Phase 8 progress)
-- [x] `project-management/SPRINT_STATUS.md` актуализирован
+- [x] `project-management/sprints/SPRINT_35_STATUS.md` создан (Sprint 35 status)
+- [x] `docs/sprints/SPRINT_35_PHASE_1_STATUS.md` создан (Phase 1 detailed report)
+- [x] `docs/maintenance/REPO_CLEANUP_STATUS_2025-11-17.md` создан (today's progress)
 - [ ] Обновить `CONTRIBUTING.md`: обязательный код‑ревью для значимых изменений, линтеры, тесты
 - [ ] Создать `docs/development/PHASE_8_GUIDE.md` (DAW & Bulk Ops guide)
 
@@ -45,9 +49,12 @@
 - [ ] Исправить circular dependency: useTracks ↔ trackHelpers
 - [ ] Добавить error boundaries для major features
 
-## Новые фичи (Phase 8)
-- [x] DAW Color System реализована
-- [x] Bulk Operations реализованы
-- [x] DAW Project Storage реализована
-- [ ] DAW UI Integration (40% complete)
-- [ ] Advanced Bulk Operations (планируется)
+## Новые фичи (Sprint 35)
+- [x] Subscription System интегрирована (100% complete) ✅
+- [x] AI Context Integration реализована (100% complete) ✅
+- [x] Feature Gates добавлены (100% complete) ✅
+- [x] CRON для daily reset настроен (100% complete) ✅
+- [x] Callback System задокументирован (100% complete) ✅
+- [ ] Unit Tests для новых фич (40% complete)
+- [ ] E2E Tests для новых фич (0% complete)
+- [ ] User Guides для AI features (0% complete)
