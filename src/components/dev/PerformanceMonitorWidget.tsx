@@ -8,7 +8,7 @@ import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Activity, BarChart3, Trash2, X } from 'lucide-react';
+import { BarChart3, Trash2, X } from 'lucide-react';
 export const PerformanceMonitorWidget: React.FC = () => {
   const {
     getStats,
