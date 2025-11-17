@@ -28,10 +28,10 @@ export const SongRecognitionDialog = ({ open, onOpenChange, trackId }: SongRecog
   const handleRecognize = async () => {
     if (!pendingFile) return;
 
-    const audioUrl = await uploadAudio(pendingFile);
-    if (!audioUrl) return;
+    const result = await uploadAudio(pendingFile);
+    if (!result?.publicUrl) return;
 
-    await recognize({ audioFileUrl: audioUrl, trackId });
+    await recognize({ audioFileUrl: result.publicUrl, trackId });
     setPendingFile(null);
     onOpenChange(false);
   };

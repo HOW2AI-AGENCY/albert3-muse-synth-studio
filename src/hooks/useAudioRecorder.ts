@@ -6,7 +6,7 @@ const MAX_RECORDING_TIME = 60; // seconds
 
 export const useAudioRecorder = (
   onRecordComplete?: (url: string) => void,
-  uploadAudio?: (file: File) => Promise<string | null>
+  uploadAudio?: (file: File) => Promise<{ publicUrl: string; libraryId: string | null }>
 ) => {
   const { toast } = useToast();
   const [isRecording, setIsRecording] = useState(false);
@@ -121,14 +121,14 @@ export const useAudioRecorder = (
             
             logger.info('Auto-uploading recording', 'useAudioRecorder', { fileName, size: blob.size });
             
-            const uploadedUrl = await uploadAudio(file);
+            const result = await uploadAudio(file);
             
-            if (uploadedUrl) {
-              setAudioUrl(uploadedUrl);
-              logger.info('Recording uploaded successfully', 'useAudioRecorder', { url: uploadedUrl.substring(0, 50) });
+            if (result?.publicUrl) {
+              setAudioUrl(result.publicUrl);
+              logger.info('Recording uploaded successfully', 'useAudioRecorder', { url: result.publicUrl.substring(0, 50) });
               
               // Notify parent component
-              onRecordComplete?.(uploadedUrl);
+              onRecordComplete?.(result.publicUrl);
               
               toast({
                 title: '🎤 Запись загружена',

@@ -8,7 +8,7 @@ export const useAudioUpload = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
 
-  const uploadAudio = async (file: File): Promise<string> => {
+  const uploadAudio = async (file: File): Promise<{ publicUrl: string; libraryId: string | null }> => {
     if (!file.type.startsWith('audio/')) {
       const error = new Error('Only audio files are allowed');
       toast({
@@ -71,8 +71,10 @@ export const useAudioUpload = () => {
 
       logger.info(`✅ [UPLOAD] Audio uploaded successfully: ${publicUrl}`);
 
+      // Сохраняем в audio_library и возвращаем ID для дальнейшего анализа
+      let libraryId: string | null = null;
       try {
-        const { error: dbError } = await supabase
+        const { data: libraryData, error: dbError } = await supabase
           .from('audio_library')
           .insert({
             user_id: user.id,
@@ -81,12 +83,16 @@ export const useAudioUpload = () => {
             file_size: file.size,
             source_type: 'upload',
             usage_count: 0,
-          });
+            analysis_status: 'pending', // Статус анализа
+          })
+          .select('id')
+          .single();
 
         if (dbError) {
           logger.error(`⚠️ [UPLOAD] Failed to save to audio_library: ${dbError.message}`);
         } else {
-          logger.info(`✅ [UPLOAD] Saved to audio_library`);
+          libraryId = libraryData?.id || null;
+          logger.info(`✅ [UPLOAD] Saved to audio_library (ID: ${libraryId})`);
         }
       } catch (dbError) {
         logger.error(`⚠️ [UPLOAD] Database error: ${dbError instanceof Error ? dbError.message : 'Unknown'}`);
@@ -97,7 +103,7 @@ export const useAudioUpload = () => {
         description: 'Файл успешно загружен и сохранён в библиотеку',
       });
 
-      return publicUrl;
+      return { publicUrl, libraryId };
     } catch (error) {
       logger.error(`❌ [UPLOAD] Upload error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       toast({
