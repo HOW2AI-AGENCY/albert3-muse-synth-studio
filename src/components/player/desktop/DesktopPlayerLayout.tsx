@@ -285,14 +285,14 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
       </div>
     </div>
     <Dialog open={showKaraoke} onOpenChange={setShowKaraoke}>
-      <DialogContent className="max-w-4xl h-[70vh] bg-background/80 backdrop-blur-md flex flex-col" aria-describedby="karaoke-description">
-        <DialogHeader>
-          <DialogTitle>Караоке: {track.title}</DialogTitle>
+      <DialogContent className="max-w-5xl w-[90vw] h-[85vh] flex flex-col p-0 gap-0" aria-describedby="karaoke-description">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
+          <DialogTitle className="text-2xl">Караоке: {track.title}</DialogTitle>
           <DialogDescription id="karaoke-description">
             Синхронизированный текст песни с подсветкой слов в реальном времени
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden min-h-0">
           {showKaraoke && (
             <LyricsDisplay
               taskId={track.suno_task_id ?? ''}
