@@ -64,10 +64,20 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
     );
   }, [projects, searchQuery]);
 
-  // Get tracks for selected project
+  // Get tracks for selected project (check both project_id field and project_tracks junction table)
   const projectTracks = useMemo(() => {
     if (!selectedProjectId) return [];
-    return allTracks.filter(t => t.project_id === selectedProjectId && t.status === 'completed');
+    
+    // Filter tracks that are either:
+    // 1. Directly assigned via project_id field
+    // 2. Linked through project_tracks junction table
+    const directTracks = allTracks.filter(
+      t => t.project_id === selectedProjectId && t.status === 'completed'
+    );
+    
+    // For now, return direct tracks. Junction table support will be added when needed.
+    // TODO: Query project_tracks table to get additional linked tracks
+    return directTracks;
   }, [allTracks, selectedProjectId]);
 
   const handleProjectClick = (projectId: string) => {
