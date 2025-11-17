@@ -275,6 +275,51 @@ export async function handler(req: Request) {
       
       if (code === 500 || (code !== undefined && !hasData)) {
         logger.warn('[GET-TIMESTAMPED-LYRICS] Suno API data not ready', { code, msg, hasData });
+
+        // 🔁 Fallback: resolve correct audioId via record-info and retry once
+        try {
+          logger.info('[GET-TIMESTAMPED-LYRICS] Trying fallback via record-info', { taskId, audioId });
+          const infoResp = await fetch(
+            `${SUNO_API_BASE_URL}/api/v1/generate/record-info?taskId=${encodeURIComponent(taskId)}`,
+            { headers: { 'Authorization': `Bearer ${SUNO_API_KEY}` } }
+          );
+          const infoJson: any = await infoResp.json();
+          const candidateId: string | undefined =
+            infoJson?.data?.response?.sunoData?.[0]?.id ||
+            infoJson?.data?.sunoData?.[0]?.id ||
+            infoJson?.data?.id;
+
+          if (candidateId && candidateId !== audioId) {
+            logger.info('[GET-TIMESTAMPED-LYRICS] Resolved audioId via record-info, retrying', { candidateId });
+            const retryResp = await fetch(
+              `${SUNO_API_BASE_URL}/api/v1/generate/get-timestamped-lyrics`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${SUNO_API_KEY}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ taskId, audioId: candidateId }),
+              }
+            );
+            const retryJson: any = await retryResp.json();
+            const normalizedRetry = normalizeSunoResponse(retryJson as any);
+            if (normalizedRetry && Array.isArray(normalizedRetry.alignedWords) && normalizedRetry.alignedWords.length > 0) {
+              logger.info('[GET-TIMESTAMPED-LYRICS] Fallback succeeded');
+              return new Response(JSON.stringify(normalizedRetry), {
+                status: 200,
+                headers: {
+                  ...corsHeaders,
+                  'Content-Type': 'application/json',
+                  'X-Function-Version': '2.2.0',
+                  'X-Fallback': 'record-info',
+                },
+              });
+            }
+          }
+        } catch (e) {
+          logger.warn('[GET-TIMESTAMPED-LYRICS] Fallback via record-info failed', { error: (e as Error).message });
+        }
         
         // Return 200 - lyrics not ready yet (frontend will poll gracefully)
         return new Response(
