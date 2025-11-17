@@ -3,13 +3,14 @@
  * Structured lyrics with copy button and optional synchronized karaoke mode
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { StructuredLyricsViewer } from '@/components/lyrics/StructuredLyricsViewer';
 import { LyricsDisplay } from '@/components/player/LyricsDisplay';
 import { Copy, Check, Mic2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { useTrackVariants } from '@/features/tracks/hooks/useTrackVariants';
 
 interface LyricsContentProps {
   lyrics: string;
@@ -18,16 +19,26 @@ interface LyricsContentProps {
   sunoId?: string;
 }
 
-export const LyricsContent = ({ lyrics, sunoTaskId, sunoId }: LyricsContentProps) => {
+export const LyricsContent = ({ lyrics, trackId, sunoTaskId, sunoId }: LyricsContentProps) => {
   const [copied, setCopied] = useState(false);
   const [showKaraoke, setShowKaraoke] = useState(false);
 
+  // Load variants only if lyrics are missing but we have a trackId
+  const { data: variantsData } = useTrackVariants(trackId || null, !lyrics && !!trackId);
+  const effectiveLyrics = useMemo(() => {
+    if (lyrics) return lyrics;
+    const variants = (variantsData as any)?.variants || [];
+    const preferred = variants.find((v: any) => v?.is_preferred_variant && v?.lyrics);
+    if (preferred?.lyrics) return preferred.lyrics as string;
+    const firstWithLyrics = variants.find((v: any) => v?.lyrics);
+    return (firstWithLyrics?.lyrics as string) || '';
+  }, [lyrics, variantsData]);
   // Check if karaoke mode is available
   const hasKaraokeData = Boolean(sunoTaskId && sunoId);
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(lyrics);
+      await navigator.clipboard.writeText(effectiveLyrics);
       setCopied(true);
       toast({
         title: '✅ Скопировано',
@@ -43,7 +54,7 @@ export const LyricsContent = ({ lyrics, sunoTaskId, sunoId }: LyricsContentProps
     }
   };
 
-  if (!lyrics) {
+  if (!effectiveLyrics) {
     return (
       <div className="flex items-center justify-center min-h-[200px] text-muted-foreground">
         <p className="text-sm">Текст песни отсутствует</p>
@@ -81,12 +92,12 @@ export const LyricsContent = ({ lyrics, sunoTaskId, sunoId }: LyricsContentProps
           <LyricsDisplay
             taskId={sunoTaskId || ''}
             audioId={sunoId || ''}
-            fallbackLyrics={lyrics}
+            fallbackLyrics={effectiveLyrics}
           />
         </div>
       ) : (
         /* Static Lyrics Viewer */
-        <StructuredLyricsViewer lyrics={lyrics} showCopyButton={false} />
+        <StructuredLyricsViewer lyrics={effectiveLyrics} showCopyButton={false} />
       )}
 
       {/* Copy Button */}

@@ -291,6 +291,7 @@ export const ModernDetailPanel = ({
           >
             <LyricsContent 
               lyrics={track.lyrics || displayedVersion?.lyrics || ''} 
+              trackId={track.id}
               sunoTaskId={track.suno_task_id}
               sunoId={track.suno_id}
             />
