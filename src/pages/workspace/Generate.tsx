@@ -183,6 +183,26 @@ const Generate = () => {
     }
   };
 
+  const handleRemix = (track: Track) => {
+    // Auto-fill form with track data and switch to custom mode
+    localStorage.setItem('remixTrackData', JSON.stringify({
+      title: track.title,
+      prompt: track.prompt || track.improved_prompt,
+      lyrics: track.lyrics,
+      tags: track.style_tags?.join(', ') || '',
+      genre: track.genre,
+      mood: track.mood,
+      trackId: track.id,
+      timestamp: Date.now(),
+    }));
+    
+    // Close detail panel and refresh
+    setSelectedTrack(null);
+    
+    // Trigger page reload to apply remix data
+    window.location.reload();
+  };
+
   const handleSeparateStems = (trackId: string) => {
     const t = tracks.find((tr: Track) => tr.id === trackId);
     if (!t) return;
@@ -315,6 +335,7 @@ const Generate = () => {
                   onClose={handleCloseDetail}
                   onUpdate={refreshTracks}
                   onDelete={handleDelete}
+                  onRemix={handleRemix}
                 />
               </Suspense>
             )}
@@ -433,6 +454,7 @@ const Generate = () => {
                   onClose={handleCloseDetail}
                   onUpdate={refreshTracks}
                   onDelete={handleDelete}
+                  onRemix={handleRemix}
                 />
               </Suspense>
             )}
@@ -593,32 +615,18 @@ const Generate = () => {
         </DrawerContent>
       </Drawer>
 
-      {/* Detail Panel - улучшенный мобильный drawer */}
-      <Drawer open={!!selectedTrack} onOpenChange={(open) => !open && handleCloseDetail()}>
-        <DrawerContent className="h-[85vh] max-h-[85vh]">
-          <VisuallyHidden>
-            <DrawerTitle>Детали трека</DrawerTitle>
-          </VisuallyHidden>
-          
-          {selectedTrack && (
-            <Suspense fallback={
-              <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            }>
-              <div className="overflow-y-auto h-full pb-safe">
-                <DetailPanel
-                  track={normalizeTrack(selectedTrack)}
-                  onClose={handleCloseDetail}
-                  onUpdate={refreshTracks}
-                  onDelete={handleDelete}
-                  variant="mobile"
-                />
-              </div>
-            </Suspense>
-          )}
-        </DrawerContent>
-      </Drawer>
+      {/* Detail Panel - mobile version with new component */}
+      {selectedTrack && (
+        <DetailPanel
+          track={normalizeTrack(selectedTrack)}
+          open={!!selectedTrack}
+          onOpenChange={(open) => !open && handleCloseDetail()}
+          onUpdate={refreshTracks}
+          onDelete={handleDelete}
+          onRemix={handleRemix}
+          variant="mobile"
+        />
+      )}
     </div>
     </>
   );

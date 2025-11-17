@@ -45,6 +45,45 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
   const [projectDialogOpen, setProjectDialogOpen] = useState(false);
   const [audioSourceDialogOpen, setAudioSourceDialogOpen] = useState(false);
 
+  // Check for remix data on mount
+  useEffect(() => {
+    const remixData = localStorage.getItem('remixTrackData');
+    if (remixData) {
+      try {
+        const data = JSON.parse(remixData);
+        const age = Date.now() - (data.timestamp || 0);
+        
+        // Only apply if less than 1 minute old
+        if (age < 60000) {
+          // Switch to custom mode
+          state.setMode('custom');
+          
+          // Fill form fields
+          if (data.title) state.setParam('title', data.title);
+          if (data.prompt) {
+            state.setParam('prompt', data.prompt);
+            state.setDebouncedPrompt(data.prompt);
+          }
+          if (data.lyrics) {
+            state.setParam('lyrics', data.lyrics);
+            state.setDebouncedLyrics(data.lyrics);
+          }
+          if (data.tags) state.setParam('tags', data.tags);
+          if (data.trackId) state.setParam('referenceTrackId', data.trackId);
+          
+          sonnerToast.success('🎵 Ремикс готов', {
+            description: 'Форма заполнена данными трека',
+          });
+        }
+        
+        // Clear the data
+        localStorage.removeItem('remixTrackData');
+      } catch (error) {
+        logger.error('Failed to load remix data', error as Error, 'MusicGeneratorContainer');
+      }
+    }
+  }, [state]);
+
   usePendingGenerationLoader(state);
 
   const audioUpload = useAudioUploadHandler(state);

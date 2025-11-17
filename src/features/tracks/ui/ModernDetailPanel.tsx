@@ -5,27 +5,40 @@
 
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { X, Download, Trash2, Sparkles } from 'lucide-react';
 import { CompactTrackHero } from './CompactTrackHero';
 import { OverviewContent } from './tabs/OverviewContent';
 import { LyricsContent } from './tabs/LyricsContent';
 import { AnalysisContent } from './tabs/AnalysisContent';
 import { useTrackState } from '@/hooks/useTrackState';
+import { useDownloadTrack } from '@/hooks/useDownloadTrack';
+import { ApiService } from '@/services/api.service';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface ModernDetailPanelProps {
   track: any; // Accept flexible track type
   onClose?: () => void;
   onUpdate?: () => void;
   onDelete?: () => void;
+  onRemix?: (track: any) => void;
   defaultTab?: 'overview' | 'lyrics' | 'analysis';
 }
 
 export const ModernDetailPanel = ({
   track,
+  onClose,
   onUpdate,
   onDelete,
+  onRemix,
   defaultTab = 'overview',
 }: ModernDetailPanelProps) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'lyrics' | 'analysis'>(defaultTab);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { downloadTrack, isDownloading } = useDownloadTrack();
 
   const {
     isLiked,
@@ -56,8 +69,110 @@ export const ModernDetailPanel = ({
     navigator.clipboard.writeText(window.location.href);
   };
 
+  const handleRemix = () => {
+    // Auto-fill form with track data and switch to custom mode
+    if (onRemix) {
+      onRemix(track);
+    } else {
+      // Fallback: navigate to generate page with track data in localStorage
+      localStorage.setItem('remixTrackData', JSON.stringify({
+        title: track.title,
+        prompt: track.prompt || track.improved_prompt,
+        lyrics: track.lyrics,
+        tags: track.style_tags?.join(', ') || '',
+        genre: track.genre,
+        mood: track.mood,
+        trackId: track.id,
+        timestamp: Date.now(),
+      }));
+      navigate('/workspace/generate');
+      toast({
+        title: '🎵 Ремикс активирован',
+        description: 'Форма заполнена данными трека',
+      });
+    }
+  };
+
+  const handleDeleteClick = async () => {
+    if (!confirm('Вы уверены, что хотите удалить этот трек и все связанные данные?')) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await ApiService.deleteTrackCompletely(track.id);
+      toast({
+        title: '✅ Трек удален',
+        description: 'Трек и все связанные данные успешно удалены',
+      });
+      onDelete?.();
+      onClose?.();
+    } catch (error) {
+      toast({
+        title: '❌ Ошибка',
+        description: 'Не удалось удалить трек',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDownloadClick = () => {
+    downloadTrack({
+      id: track.id,
+      title: track.title,
+      audio_url: displayedVersion?.audio_url || track.audio_url,
+    });
+  };
+
   return (
     <div className="flex flex-col h-full">
+      {/* Header with action buttons */}
+      <div className="flex items-center justify-between px-4 py-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <h2 className="text-lg font-semibold">Детали трека</h2>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRemix}
+            className="gap-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            Ремикс
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDownloadClick}
+            disabled={isDownloading || !displayedVersion?.audio_url}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            {isDownloading ? 'Загрузка...' : 'Скачать'}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDeleteClick}
+            disabled={isDeleting}
+            className="gap-2 text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+            {isDeleting ? 'Удаление...' : 'Удалить'}
+          </Button>
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-8 w-8"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </div>
       {/* Fixed Hero Section */}
       <CompactTrackHero
         track={{

@@ -1,5 +1,6 @@
-import { DetailPanelMobile } from "./DetailPanelMobile";
+import { DetailPanelMobileV2 } from "./DetailPanelMobileV2";
 import { ModernDetailPanel } from "./ModernDetailPanel";
+import { useBreakpoints } from "@/hooks/useBreakpoints";
 
 interface DetailPanelProps {
   track: {
@@ -31,18 +32,50 @@ interface DetailPanelProps {
     provider: string | null;
     metadata?: Record<string, any> | null;
   };
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   onClose?: () => void;
   onUpdate?: () => void;
   onDelete?: () => void;
+  onRemix?: (track: any) => void;
   variant?: 'desktop' | 'mobile';
 }
 
-export const DetailPanel = ({ track, onClose, onUpdate, onDelete, variant = 'desktop' }: DetailPanelProps) => {
-  // Mobile compact version
-  if (variant === 'mobile') {
-    return <DetailPanelMobile track={track as any} onClose={onClose} onUpdate={onUpdate} onDelete={onDelete} />;
+export const DetailPanel = ({ 
+  track, 
+  open, 
+  onOpenChange, 
+  onClose, 
+  onUpdate, 
+  onDelete, 
+  onRemix,
+  variant 
+}: DetailPanelProps) => {
+  const { isMobile } = useBreakpoints();
+  const effectiveVariant = variant || (isMobile ? 'mobile' : 'desktop');
+
+  // Mobile sheet version
+  if (effectiveVariant === 'mobile') {
+    return (
+      <DetailPanelMobileV2 
+        track={track} 
+        open={open ?? true}
+        onOpenChange={onOpenChange ?? (() => onClose?.())}
+        onUpdate={onUpdate} 
+        onDelete={onDelete}
+        onRemix={onRemix}
+      />
+    );
   }
 
-  // ✅ Modern tab-based design for desktop
-  return <ModernDetailPanel track={track} onClose={onClose} onUpdate={onUpdate} onDelete={onDelete} />;
+  // Desktop panel version
+  return (
+    <ModernDetailPanel 
+      track={track} 
+      onClose={onClose} 
+      onUpdate={onUpdate} 
+      onDelete={onDelete}
+      onRemix={onRemix}
+    />
+  );
 };
