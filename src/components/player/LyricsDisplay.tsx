@@ -18,6 +18,11 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
   const [showSettings, setShowSettings] = useState(false);
   const { settings, updateSettings } = useLyricsSettings();
 
+  // ✅ Get player controls for timestamped lyrics
+  const currentTime = useAudioPlayerStore((state) => state.currentTime);
+  const seekTo = useAudioPlayerStore((state) => state.seekTo);
+  const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
+
   const shouldFetchTimestamped = Boolean(
     taskId && 
     typeof taskId === 'string' && 
@@ -51,13 +56,7 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
 
   // Show plain text lyrics if timestamped failed but we have fallback
   if ((isError || !hasTimestampedLyrics) && fallbackLyrics) {
-
-  // ✅ P1 FIX: Get player controls for keyboard/gesture support
-  const currentTime = useAudioPlayerStore((state) => state.currentTime);
-  const seekTo = useAudioPlayerStore((state) => state.seekTo);
-  const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
-
-  if (!shouldFetchTimestamped && fallbackLyrics) {
+    if (!shouldFetchTimestamped && fallbackLyrics) {
     return (
       <div className="lyrics-display w-full h-full max-h-60 overflow-y-auto text-center py-4 px-2">
         <p className="text-sm sm:text-base text-muted-foreground whitespace-pre-line leading-relaxed">
