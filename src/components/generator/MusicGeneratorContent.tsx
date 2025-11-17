@@ -61,6 +61,7 @@ type MusicGeneratorContentProps = {
   onHistorySelect: (item: PromptHistoryItem) => void;
   onPersonaSelect: (personaId: string | null) => void;
   onProjectSelect: (projectId: string | null) => void;
+  onProjectTrackSelect: (track: { id: string; title: string; prompt?: string; lyrics?: string; style_tags?: string[] }) => void;
 };
 
 export const MusicGeneratorContent = memo(({
@@ -98,6 +99,7 @@ export const MusicGeneratorContent = memo(({
   onHistorySelect,
   onPersonaSelect,
   onProjectSelect,
+  onProjectTrackSelect,
 }: MusicGeneratorContentProps) => {
   return (
     <motion.div
@@ -231,7 +233,8 @@ export const MusicGeneratorContent = memo(({
         onOpenChange={onProjectDialogOpenChange}
         selectedProjectId={state.params.activeProjectId ?? null}
         onProjectSelect={onProjectSelect}
-        showTrackSelection={false}
+        onTrackSelect={onProjectTrackSelect}
+        showTrackSelection={true}
       />
 
       <GeneratorTour />
