@@ -324,40 +324,64 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
   ]);
 
   const handleBoostPrompt = useCallback(async () => {
-    if (!state.params.prompt.trim()) return;
+    // Use Suno Boost Style API to enhance style tags
+    const contentToBoost = state.params.tags.trim() || state.params.prompt.trim();
+    
+    if (!contentToBoost) {
+      toast({
+        title: 'Нечего улучшать',
+        description: 'Добавьте теги стилей или описание',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     state.setIsEnhancing(true);
+    vibrate('light');
 
     try {
-      const { data, error } = await supabase.functions.invoke('improve-prompt', {
+      const { data, error } = await supabase.functions.invoke('boost-style', {
         body: {
-          prompt: state.params.prompt,
-          provider: selectedProvider,
+          content: contentToBoost.substring(0, 200), // Max 200 chars for best results
         },
       });
 
-      if (error) throw error;
-
-      if (data?.enhancedPrompt) {
-        state.setParam('prompt', data.enhancedPrompt);
-        state.setDebouncedPrompt(data.enhancedPrompt);
-
-        sonnerToast.success('Промпт улучшен!', {
-          description: 'AI применил рекомендации',
-          duration: 2000,
-        });
+      if (error) {
+        throw error;
       }
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Boost style failed');
+      }
+
+      // Update tags with boosted result
+      const boostedStyle = data.result;
+      state.setParam('tags', boostedStyle);
+
+      sonnerToast.success('✨ Стиль улучшен!', {
+        description: `Кредиты: ${data.creditsConsumed} | Осталось: ${data.creditsRemaining}`,
+        duration: 3000,
+      });
+
+      vibrate('success');
     } catch (error) {
-      logger.error('Failed to boost prompt', error as Error, 'MusicGeneratorContainer');
+      logger.error('Failed to boost style', error as Error, 'MusicGeneratorContainer', {
+        contentLength: contentToBoost.length,
+      });
+      
+      const errorMessage = error instanceof Error ? error.message : 'Не удалось улучшить стиль';
+      
       toast({
         variant: 'destructive',
-        title: 'Ошибка улучшения',
-        description: 'Не удалось улучшить промпт. Попробуйте позже.',
+        title: 'Ошибка улучшения стиля',
+        description: errorMessage,
       });
+      
+      vibrate('error');
     } finally {
       state.setIsEnhancing(false);
     }
-  }, [selectedProvider, state, toast]);
+  }, [state, toast, vibrate]);
 
   const handleEnhancedPromptAccept = useCallback(
     (finalPrompt: string) => {

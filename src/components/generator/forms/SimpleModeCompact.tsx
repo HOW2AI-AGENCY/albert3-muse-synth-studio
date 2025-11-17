@@ -72,7 +72,8 @@ export const SimpleModeCompact = memo(({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="left">
-                  <p className="text-xs">Улучшить стиль с помощью AI (Suno API)</p>
+                  <p className="text-xs font-medium">Boost Style (Suno AI)</p>
+                  <p className="text-xs text-muted-foreground mt-1">Улучшит теги стилей или промпт для лучших результатов</p>
                 </TooltipContent>
               </Tooltip>
             )}
