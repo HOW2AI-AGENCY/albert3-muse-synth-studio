@@ -59,7 +59,6 @@ export const ModernDetailPanel = ({
     parentTrackId: track.id,
   } as any);
 
-  const hasLyrics = !!(track.lyrics || displayedVersion?.lyrics);
   const hasAudio = !!(displayedVersion?.audio_url || track.audio_url);
 
   const handleDownload = () => {
@@ -257,14 +256,11 @@ export const ModernDetailPanel = ({
           </TabsTrigger>
           <TabsTrigger 
             value="lyrics" 
-            disabled={!hasLyrics} 
             className={cn(
               "data-[state=active]:bg-muted relative",
               "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5",
-              "after:data-[state=active]:bg-primary after:transition-colors",
-              "disabled:opacity-50 disabled:cursor-not-allowed"
+              "after:data-[state=active]:bg-primary after:transition-colors"
             )}
-            title={hasLyrics ? 'Текст песни' : 'Текст отсутствует'}
           >
             Текст
           </TabsTrigger>
