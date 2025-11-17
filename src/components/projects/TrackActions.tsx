@@ -97,31 +97,32 @@ export const TrackActions: React.FC<TrackActionsProps> = ({
 
   return (
     <>
-      <div className="flex gap-2 mt-2">
+      <div className="flex gap-2 mt-2 flex-wrap">
         <Button 
           size="sm" 
           variant={track.lyrics ? "default" : "outline"}
           onClick={handleLyricsClick}
-          className="transition-all"
+          className="transition-all touch-target-optimal min-h-[44px] px-4"
         >
           {track.lyrics ? (
             <>
-              <FileText className="h-3 w-3 mr-1" />
-              Просмотр лирики
+              <FileText className="h-4 w-4 mr-2" />
+              <span className="text-sm">Просмотр лирики</span>
             </>
           ) : (
             <>
-              <Sparkles className="h-3 w-3 mr-1" />
-              Создать лирику
+              <Sparkles className="h-4 w-4 mr-2" />
+              <span className="text-sm">Создать лирику</span>
             </>
           )}
         </Button>
         <Button 
           size="sm"
           onClick={handleGenerateTrack}
+          className="touch-target-optimal min-h-[44px] px-4"
         >
-          <Music className="h-3 w-3 mr-1" />
-          Сгенерировать
+          <Music className="h-4 w-4 mr-2" />
+          <span className="text-sm">Сгенерировать</span>
         </Button>
       </div>
 
