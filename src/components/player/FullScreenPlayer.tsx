@@ -238,26 +238,38 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
           </div>
         </div>
 
-        <div className="flex-1 flex items-center justify-center mb-6 sm:mb-8 px-4">
-          <div className="relative w-full max-w-sm aspect-square rounded-3xl overflow-hidden shadow-glow-primary animate-scale-in hover:scale-105 transition-all duration-500 group">
-            {currentTrack.cover_url ? (
-              <img
-                key={currentTrack.id}
-                src={currentTrack.cover_url}
-                alt={currentTrack.title}
-                className="w-full h-full object-cover animate-fade-in"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-primary animate-pulse" />
+      {/* Main Content Area */}
+      <div className="relative flex-1 flex flex-col items-center justify-start px-6 py-8 overflow-y-auto">
+        {/* Album Art with enhanced visuals */}
+        <div className="relative w-full max-w-sm aspect-square mb-8">
+          {/* Animated glow */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/10 to-transparent rounded-3xl blur-3xl opacity-60 animate-pulse" />
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-primary/5 to-primary/20 rounded-3xl blur-2xl" />
+          
+          <img
+            src={currentTrack?.cover_url || '/placeholder.svg'}
+            alt={currentTrack?.title || 'Track'}
+            className={cn(
+              "relative w-full h-full object-cover rounded-3xl shadow-[0_8px_40px_-12px_hsl(var(--primary)/0.4)]",
+              "ring-1 ring-white/10 transition-all duration-500",
+              isPlaying && "scale-[1.02] shadow-[0_12px_48px_-12px_hsl(var(--primary)/0.6)]"
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent group-hover:from-black/30 transition-colors duration-300" />
-            {isPlaying && (
+          />
+          
+          {/* Playing indicator */}
+          {isPlaying && (
+            <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-primary/90 backdrop-blur-sm flex items-center gap-2 shadow-lg">
+              <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+              <span className="text-xs font-medium text-white">Playing</span>
+            </div>
+          )}
+        </div>
               <div className="absolute inset-0 border-4 border-primary/40 rounded-3xl animate-pulse" />
             )}
           </div>
         </div>
 
-        <div className="text-center mb-4 sm:mb-6 px-4 animate-slide-up" key={currentTrack.id}>
+        {/* Track Info */}
           <div className="flex items-center justify-center gap-2 mb-2 animate-fade-in">
             <h2 className="text-xl sm:text-2xl font-bold text-gradient-primary line-clamp-2 transition-all duration-300">
               {currentTrack.title}
@@ -273,26 +285,16 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
           </p>
         </div>
 
-        {showLyrics && currentTrack ? (
-          <div className="flex-1 flex flex-col min-h-0 mb-4 animate-fade-in">
+        {showLyrics && currentTrack?.suno_task_id && currentTrack?.suno_id ? (
+          <div className="flex-1 w-full">
             <LyricsDisplay
-              taskId={currentTrack.suno_task_id || ''}
-              audioId={currentTrack.suno_id || ''}
-              fallbackLyrics={currentTrack.lyrics ?? ''}
+              sunoTaskId={currentTrack.suno_task_id}
+              sunoId={currentTrack.suno_id}
+              className="h-full"
             />
           </div>
-        ) : !showLyrics && currentTrack ? (
-          <div className="flex-1 flex items-center justify-center h-32 text-muted-foreground text-sm">
-            Включите отображение лирики
-          </div>
-        ) : <div className="flex-1" />}
-
-        <MobileProgressBar
-          onSeek={handleSeek}
-          className="mb-2 px-4 animate-slide-up"
-        />
-
-        <div className="flex items-center justify-center gap-4 sm:gap-6 mb-4 sm:mb-6 px-4 animate-slide-up">
+        ) : null}
+      </div>
           <Button
             variant="ghost"
             size="icon"

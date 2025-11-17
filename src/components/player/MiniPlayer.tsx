@@ -93,48 +93,68 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
   return (
     <div
       data-testid="mini-player"
-      className="fixed left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border/50 shadow-2xl transition-all duration-300"
+      className="fixed left-0 right-0 bg-gradient-to-t from-background/98 via-card/95 to-card/90 backdrop-blur-2xl border-t border-border/40 shadow-[0_-4px_24px_-8px_hsl(var(--primary)/0.15)] transition-all duration-300"
       style={{
         bottom: 'calc(var(--bottom-tab-bar-height, 0px) + env(safe-area-inset-bottom))',
         zIndex: 'var(--z-mini-player)'
       }}
     >
+      {/* Прогресс бар сверху */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-border/30">
+        <div 
+          className="h-full bg-gradient-to-r from-primary via-primary/90 to-primary transition-all duration-300"
+          style={{ 
+            width: `${(useAudioPlayerStore.getState().currentTime / useAudioPlayerStore.getState().duration) * 100}%` 
+          }}
+        />
+      </div>
+
       {/* Компактная двухстрочная разметка */}
-      <div className="px-3 py-2 space-y-2">
+      <div className="px-4 py-3 space-y-3">
         {/* Строка 1: Обложка + Инфо + Кнопки управления */}
-        <div className="flex items-center gap-2">
-          {/* Album Art */}
-          <div 
+        <div className="flex items-center gap-3">
+          {/* Album Art с анимацией */}
+          <div
             onClick={handleExpand}
-            className={cn(
-              "relative rounded-md overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 flex-shrink-0 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer group",
-              "w-12 h-12"
-            )}
+            className="relative flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden cursor-pointer group shadow-lg hover:shadow-xl transition-all duration-300"
           >
-            {currentTrack.cover_url ? (
-              <img
-                src={currentTrack.cover_url}
-                alt={currentTrack.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-primary animate-pulse" />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent group-hover:from-black/30 transition-colors duration-300" />
+            <img
+              src={currentTrack.cover_url || '/placeholder.svg'}
+              alt={currentTrack.title}
+              className={cn(
+                "w-full h-full object-cover transition-all duration-500",
+                isPlaying ? "scale-105 brightness-105" : "scale-100"
+              )}
+            />
             {isPlaying && (
-              <div className="absolute inset-0 border-2 border-primary/50 rounded-md animate-pulse" />
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-transparent animate-pulse">
+                <div className="absolute bottom-1 right-1 w-2 h-2 bg-primary rounded-full shadow-[0_0_8px_hsl(var(--primary))]" />
+              </div>
             )}
+            <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-xl" />
           </div>
 
           {/* Track Info */}
-          <div 
-            onClick={handleExpand}
-            className="flex-1 min-w-0 cursor-pointer"
-          >
-            <div className="flex items-center gap-1.5">
-              <h4 className="text-sm font-semibold text-foreground truncate">
-                {currentTrack.title.replace(/\s*\(V\d+\)$/i, '')}
-              </h4>
+          <div className="flex-1 min-w-0 cursor-pointer group" onClick={handleExpand}>
+            <h3 className="text-sm font-bold text-foreground truncate leading-tight mb-1 group-hover:text-primary transition-colors">
+              {currentTrack.title}
+            </h3>
+            <div className="flex items-center gap-2">
+              {currentTrack.style_tags && currentTrack.style_tags.length > 0 && (
+                <div className="flex gap-1">
+                  {currentTrack.style_tags.slice(0, 2).map((tag, idx) => (
+                    <Badge 
+                      key={idx} 
+                      variant="secondary" 
+                      className="text-[10px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-primary/20"
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
               {availableVersions.length > 1 && (
                 <DropdownMenu open={isVersionMenuOpen} onOpenChange={setIsVersionMenuOpen}>
                   <DropdownMenuTrigger asChild>
