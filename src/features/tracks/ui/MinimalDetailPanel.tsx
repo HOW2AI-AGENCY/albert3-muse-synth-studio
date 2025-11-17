@@ -1,5 +1,5 @@
 import { memo, useState, useCallback, KeyboardEvent } from "react";
-import { X, Play, Download, Share2, Heart, Info, Music, Settings, Trash2, Star } from "@/utils/iconImports";
+import { X, Play, Download, Share2, Heart, Info, Music, Settings, Trash2, Star, Bot, Users, Folder } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -50,6 +50,12 @@ interface Track {
     tempo_bpm?: number;
     key?: string;
     instruments?: string[];
+    personaId?: string;
+    personaName?: string;
+    activeProjectId?: string;
+    activeProjectName?: string;
+    inspoProjectId?: string;
+    inspoProjectName?: string;
     [key: string]: unknown;
   };
 }
@@ -355,16 +361,89 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
                   </div>
                 )}
 
+                {/* Лирика */}
+                {track.lyrics && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs flex items-center gap-1.5">
+                      <Music className="w-3.5 h-3.5" />
+                      Лирика
+                    </Label>
+                    <div className="bg-secondary/30 rounded-lg p-3 max-h-48 overflow-y-auto">
+                      <pre className="whitespace-pre-wrap text-[11px] leading-relaxed font-mono text-foreground/90">
+                        {track.lyrics}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+
                 {/* AI-описание из metadata */}
                 {track.metadata?.ai_description && (
-                  <details className="rounded border bg-muted/30">
-                    <summary className="text-xs px-2 py-1.5 cursor-pointer select-none">🤖 AI-описание</summary>
-                    <div className="px-2 pb-2">
-                      <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded max-h-24 overflow-y-auto">
-                        {track.metadata.ai_description}
-                      </p>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs flex items-center gap-1.5">
+                      <Bot className="w-3.5 h-3.5" />
+                      AI-описание
+                    </Label>
+                    <div className="bg-secondary/30 rounded-lg p-3 text-[11px] leading-relaxed text-muted-foreground max-h-32 overflow-y-auto">
+                      {track.metadata.ai_description}
                     </div>
-                  </details>
+                  </div>
+                )}
+
+                {/* Референсное аудио */}
+                {track.reference_audio_url && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs flex items-center gap-1.5">
+                      <Music className="w-3.5 h-3.5" />
+                      Референсное аудио
+                    </Label>
+                    <audio 
+                      controls 
+                      src={track.reference_audio_url} 
+                      className="w-full h-8 rounded"
+                      style={{ height: '32px' }}
+                      preload="metadata"
+                    />
+                  </div>
+                )}
+
+                {/* Музыкальная персона */}
+                {(track.metadata?.personaId || track.metadata?.personaName) && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5" />
+                      Музыкальная персона
+                    </Label>
+                    <div className="bg-secondary/30 rounded-lg p-2.5">
+                      <p className="text-xs font-medium">{track.metadata.personaName || 'Персона'}</p>
+                      {track.metadata.personaId && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5">ID: {track.metadata.personaId}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Проект */}
+                {(track.metadata?.activeProjectId || track.metadata?.inspoProjectId) && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs flex items-center gap-1.5">
+                      <Folder className="w-3.5 h-3.5" />
+                      Проект
+                    </Label>
+                    <div className="bg-secondary/30 rounded-lg p-2.5 space-y-2">
+                      {track.metadata.activeProjectId && (
+                        <div>
+                          <p className="text-[10px] text-muted-foreground">Активный проект</p>
+                          <p className="text-xs font-medium">{track.metadata.activeProjectName || track.metadata.activeProjectId}</p>
+                        </div>
+                      )}
+                      {track.metadata.inspoProjectId && (
+                        <div>
+                          <p className="text-[10px] text-muted-foreground">Проект-вдохновение</p>
+                          <p className="text-xs font-medium">{track.metadata.inspoProjectName || track.metadata.inspoProjectId}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
 
                 <div className="flex items-center justify-between">
@@ -396,18 +475,6 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
                   </details>
                 )}
 
-                {/* Референсное аудио */}
-                {track.reference_audio_url && (
-                  <div className="space-y-1.5">
-                    <Label className="text-xs">🎧 Референсное аудио</Label>
-                    <audio 
-                      controls 
-                      src={track.reference_audio_url} 
-                      className="w-full h-8"
-                      style={{ height: '32px' }}
-                    />
-                  </div>
-                )}
 
                 {/* Save button is moved to the sticky footer */}
               </AccordionContent>
