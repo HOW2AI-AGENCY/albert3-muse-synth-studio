@@ -24,7 +24,7 @@ interface VirtualizedTrackGridProps {
   onDelete?: (trackId: string) => void;
 }
 
-const CARD_HEIGHT = 340; // Approximate TrackCard height
+const CARD_HEIGHT = 320; // ✅ Уменьшено для более компактного отображения
 
 export const VirtualizedTrackGrid = React.memo(({
   tracks,
@@ -90,7 +90,7 @@ export const VirtualizedTrackGrid = React.memo(({
               }}
             >
               <div
-                className="grid w-full px-4"
+                className="grid w-full px-2 sm:px-4"
                 style={{
                   gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
                   gap: `${gap}px`,
