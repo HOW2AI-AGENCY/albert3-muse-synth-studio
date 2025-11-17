@@ -56,8 +56,6 @@ export const DetailPanelMobileV2 = ({
     parentTrackId: track.id,
   } as any);
 
-  const hasLyrics = !!(track.lyrics || displayedVersion?.lyrics);
-
   const handleRemix = () => {
     if (onRemix) {
       onRemix(track);
@@ -202,7 +200,7 @@ export const DetailPanelMobileV2 = ({
               <TabsTrigger value="overview" className="data-[state=active]:bg-muted">
                 Обзор
               </TabsTrigger>
-              <TabsTrigger value="lyrics" disabled={!hasLyrics} className="data-[state=active]:bg-muted">
+              <TabsTrigger value="lyrics" className="data-[state=active]:bg-muted">
                 Текст
               </TabsTrigger>
               <TabsTrigger value="versions" className="data-[state=active]:bg-muted">
