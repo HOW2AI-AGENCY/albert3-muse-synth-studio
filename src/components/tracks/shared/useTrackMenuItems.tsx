@@ -52,8 +52,10 @@ export const useTrackMenuItems = (props: UnifiedTrackActionsMenuProps): MenuItem
     onDescribeTrack,
     onSeparateStems,
     onConvertToWav,
+    onUpscaleAudio,
     onExtend,
     onCover,
+    onGenerateCover,
     onAddVocal,
     onCreatePersona,
     onRemix,
@@ -142,8 +144,7 @@ export const useTrackMenuItems = (props: UnifiedTrackActionsMenuProps): MenuItem
         label: 'Разделить на стемы',
         icon: <Split className="w-4 h-4" />,
         action: () => onSeparateStems(currentVersionId || trackId),
-        pro: !enableProFeatures,
-        tooltip: !enableProFeatures ? 'Upgrade to Pro to unlock this feature' : undefined,
+        disabled: false,
       });
     }
 
@@ -155,6 +156,26 @@ export const useTrackMenuItems = (props: UnifiedTrackActionsMenuProps): MenuItem
         icon: <FileAudio className="w-4 h-4" />,
         action: () => onConvertToWav(currentVersionId || trackId),
         disabled: isConvertingWav,
+      });
+    }
+
+    // ✅ NEW: Audio Upscaling
+    if (onUpscaleAudio && isCompletedLocal && enableAITools) {
+      items.push({
+        id: 'upscale',
+        label: 'Повысить качество (48kHz)',
+        icon: <Sparkles className="w-4 h-4" />,
+        action: () => onUpscaleAudio(currentVersionId || trackId),
+      });
+    }
+
+    // ✅ NEW: Generate Cover Image
+    if (onGenerateCover && isCompletedLocal && isSunoTrackLocal && enableAITools) {
+      items.push({
+        id: 'generateCover',
+        label: 'Создать обложку AI',
+        icon: <Wand2 className="w-4 h-4" />,
+        action: () => onGenerateCover(trackId),
       });
     }
 

@@ -31,6 +31,8 @@ interface TrackCardActionsProps {
   onCover?: (trackId: string) => void;
   onAddVocal?: (trackId: string) => void;
   onCreatePersona?: (trackId: string) => void;
+  onUpscaleAudio?: (trackId: string) => void; // ✅ NEW
+  onGenerateCover?: (trackId: string) => void; // ✅ NEW
 }
 
 export const TrackCardActions = React.memo(({
@@ -52,6 +54,8 @@ export const TrackCardActions = React.memo(({
   onCover,
   onAddVocal,
   onCreatePersona,
+  onUpscaleAudio,
+  onGenerateCover,
 }: TrackCardActionsProps) => {
   return (
     <UnifiedTrackActionsMenu
@@ -78,6 +82,8 @@ export const TrackCardActions = React.memo(({
       onCover={onCover}
       onAddVocal={onAddVocal}
       onCreatePersona={onCreatePersona}
+      onUpscaleAudio={onUpscaleAudio}
+      onGenerateCover={onGenerateCover}
     />
   );
 });

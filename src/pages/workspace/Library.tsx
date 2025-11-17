@@ -25,7 +25,8 @@ import {
   LazyCreateCoverDialog,
   LazyTrackDeleteDialog,
   LazyAddVocalDialog,
-  LazyCreatePersonaDialog
+  LazyCreatePersonaDialog,
+  LazyUpscaleAudioDialog
 } from "@/components/LazyDialogs";
 import { useTracks } from "@/hooks/useTracks";
 import { useToast } from "@/hooks/use-toast";
@@ -107,6 +108,9 @@ const LibraryContent: React.FC = () => {
   
   const [createPersonaDialogOpen, setCreatePersonaDialogOpen] = useState(false);
   const [selectedTrackForPersona, setSelectedTrackForPersona] = useState<DisplayTrack | null>(null);
+  
+  const [upscaleDialogOpen, setUpscaleDialogOpen] = useState(false);
+  const [selectedTrackForUpscale, setSelectedTrackForUpscale] = useState<{ id: string; title: string; audioUrl: string | null } | null>(null);
   
   // Container width tracking for responsive grid
   const containerRef = useRef<HTMLDivElement>(null);
@@ -490,6 +494,23 @@ const LibraryContent: React.FC = () => {
     setCreatePersonaDialogOpen(true);
   }, [tracks]);
 
+  const handleUpscaleAudio = useCallback((trackId: string) => {
+    const track = tracks.find(t => t.id === trackId);
+    if (!track) return;
+    
+    setSelectedTrackForUpscale({
+      id: track.id,
+      title: track.title,
+      audioUrl: track.audio_url
+    });
+    setUpscaleDialogOpen(true);
+  }, [tracks]);
+
+  const handleGenerateCover = useCallback((trackId: string) => {
+    const { generateCoverImage } = require('@/hooks/useGenerateCoverImage');
+    generateCoverImage(trackId);
+  }, []);
+
   // Уникальные статусы для фильтра
   const availableStatuses = useMemo(() => {
     const statuses = new Set(tracks.map(track => track.status));
@@ -709,6 +730,8 @@ const LibraryContent: React.FC = () => {
                         onCover={() => handleCover(track.id)}
                         onAddVocal={() => handleAddVocal(track.id)}
                         onCreatePersona={() => handleCreatePersona(track.id)}
+                        onUpscaleAudio={() => handleUpscaleAudio(track.id)}
+                        onGenerateCover={() => handleGenerateCover(track.id)}
                         onRetry={handleRetry}
                         onDelete={handleDelete}
                       />
@@ -825,6 +848,15 @@ const LibraryContent: React.FC = () => {
             setCreatePersonaDialogOpen(false);
             setSelectedTrackForPersona(null);
           }}
+        />
+      )}
+
+      {upscaleDialogOpen && selectedTrackForUpscale && (
+        <LazyUpscaleAudioDialog
+          open={upscaleDialogOpen}
+          onOpenChange={setUpscaleDialogOpen}
+          trackTitle={selectedTrackForUpscale.title}
+          audioUrl={selectedTrackForUpscale.audioUrl}
         />
       )}
 
