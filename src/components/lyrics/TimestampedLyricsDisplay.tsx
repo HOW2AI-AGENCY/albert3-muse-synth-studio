@@ -160,7 +160,10 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
   }, [lyricsData]);
 
   const activeLineIndex = useMemo(() => {
-    return lines.findIndex(line => currentTime >= line.startTime && currentTime <= line.endTime);
+    return lines.findIndex(line => 
+      currentTime >= (line.startTime - TIMING_TOLERANCE) && 
+      currentTime <= (line.endTime + TIMING_TOLERANCE)
+    );
   }, [lines, currentTime]);
 
   useEffect(() => {
@@ -376,9 +379,9 @@ const TimestampedLyricsDisplay: React.FC<TimestampedLyricsDisplayProps> = ({
                       }
 
                       // ✅ P0 FIX: More precise word activation with 50ms tolerance for smoother animations
-                      const isWordActive = isActive && 
+                      const isWordActive = word.success && isActive && 
                         currentTime >= (word.startS - TIMING_TOLERANCE) && 
-                        currentTime < (word.endS + TIMING_TOLERANCE);
+                        currentTime <= (word.endS + TIMING_TOLERANCE);
 
                       // ✅ P1 FIX: Use memoized word component for better performance
                       return (
