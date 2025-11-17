@@ -12,11 +12,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Folder, Music, Plus, Check, FileText, Clock } from 'lucide-react';
+import { Search, Music, Plus, Check, FileText, Clock, FolderOpen } from 'lucide-react';
 import { useProjects } from '@/contexts/project/useProjects';
 import { useTracks } from '@/hooks/useTracks';
 import { CreateProjectDialog } from '@/components/projects/CreateProjectDialog';
@@ -142,7 +143,7 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="select">
-                <Folder className="h-4 w-4 mr-2" />
+                <FolderOpen className="h-4 w-4 mr-2" />
                 Выбрать проект
               </TabsTrigger>
               <TabsTrigger value="create">
@@ -177,52 +178,53 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                         {searchQuery ? 'Проекты не найдены' : 'Нет проектов'}
                       </div>
                     ) : (
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {filteredProjects.map((project) => (
-                          <Button
+                          <Card
                             key={project.id}
-                            variant="outline"
                             className={cn(
-                              "w-full justify-start h-auto p-4",
-                              selectedProjectId === project.id && "border-primary bg-primary/5"
+                              "cursor-pointer hover:border-primary/50 transition-all",
+                              selectedProjectId === project.id && "border-primary bg-primary/5 shadow-sm"
                             )}
                             onClick={() => handleProjectClick(project.id)}
                           >
-                            <div className="flex flex-col items-start gap-3 flex-1 min-w-0">
-                              <div className="flex items-center gap-2 w-full">
-                                <span className="font-medium text-base leading-tight text-left flex-1 break-words">
-                                  {project.name}
-                                </span>
-                                {selectedProjectId === project.id && (
-                                  <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                            <CardContent className="p-4">
+                              <div className="flex flex-col gap-3">
+                                <div className="flex items-start justify-between gap-3">
+                                  <h4 className="font-semibold text-base leading-tight break-words flex-1">
+                                    {project.name}
+                                  </h4>
+                                  {selectedProjectId === project.id && (
+                                    <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                                  )}
+                                </div>
+                                
+                                {project.description && (
+                                  <p className="text-sm text-muted-foreground leading-relaxed break-words whitespace-normal">
+                                    {project.description}
+                                  </p>
                                 )}
+                                
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  {project.genre && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      {project.genre}
+                                    </Badge>
+                                  )}
+                                  {project.mood && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      {project.mood}
+                                    </Badge>
+                                  )}
+                                  {(project.total_tracks ?? 0) > 0 && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {project.completed_tracks ?? 0}/{project.total_tracks ?? 0} треков
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                              
-                              {project.description && (
-                                <p className="text-xs text-muted-foreground/90 leading-relaxed w-full text-left break-words whitespace-normal">
-                                  {project.description}
-                                </p>
-                              )}
-                              
-                              <div className="flex items-center gap-2 flex-wrap w-full">
-                                {project.genre && (
-                                  <Badge variant="secondary" className="text-[10px]">
-                                    {project.genre}
-                                  </Badge>
-                                )}
-                                {project.mood && (
-                                  <Badge variant="secondary" className="text-[10px]">
-                                    {project.mood}
-                                  </Badge>
-                                )}
-                                {(project.total_tracks ?? 0) > 0 && (
-                                  <span className="text-xs text-muted-foreground">
-                                    {project.completed_tracks ?? 0}/{project.total_tracks ?? 0} треков
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </Button>
+                            </CardContent>
+                          </Card>
                         ))}
                       </div>
                     )}
@@ -241,65 +243,65 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                           В проекте пока нет треков
                         </div>
                       ) : (
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           {projectTracks.map((track) => (
-                            <Button
+                            <Card
                               key={track.id}
-                              variant="outline"
-                              className="w-full justify-start h-auto p-4"
+                              className="cursor-pointer hover:border-primary/50 transition-all"
                               onClick={() => handleTrackClick(track)}
                             >
-                              <div className="flex items-start gap-3 w-full">
-                                {track.cover_url && (
-                                  <img 
-                                    src={track.cover_url} 
-                                    alt={track.title}
-                                    className="w-12 h-12 rounded object-cover flex-shrink-0"
-                                    loading="lazy" decoding="async"
-                                  />
-                                )}
-                                <div className="flex flex-col items-start gap-2.5 flex-1 min-w-0">
-                                  <div className="w-full space-y-1.5">
+                              <CardContent className="p-4">
+                                <div className="flex items-start gap-3">
+                                  {track.cover_url && (
+                                    <img 
+                                      src={track.cover_url} 
+                                      alt={track.title}
+                                      className="w-14 h-14 rounded object-cover flex-shrink-0"
+                                      loading="lazy" decoding="async"
+                                    />
+                                  )}
+                                  <div className="flex flex-col gap-2.5 flex-1 min-w-0">
                                     <div className="flex items-start gap-2">
-                                      <span className="font-medium text-sm leading-tight text-left block flex-1 break-words whitespace-normal">
+                                      <h4 className="font-semibold text-sm leading-tight break-words whitespace-normal flex-1">
                                         {track.title}
-                                      </span>
+                                      </h4>
                                       {track.lyrics && (
                                         <FileText className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                                       )}
                                     </div>
+                                    
                                     {track.prompt && (
-                                      <p className="text-xs text-muted-foreground/90 leading-relaxed break-words whitespace-normal">
+                                      <p className="text-xs text-muted-foreground leading-relaxed break-words whitespace-normal">
                                         {track.prompt}
                                       </p>
                                     )}
-                                  </div>
-                                  
-                                  <div className="flex items-center gap-2 flex-wrap w-full">
-                                    <TrackStatusBadge 
-                                      status={track.status as TrackStatus}
-                                      variant="compact"
-                                      showIcon={true}
-                                    />
                                     
-                                    {track.style_tags && track.style_tags.length > 0 && (
-                                      <Badge variant="secondary" className="text-[10px]">
-                                        {track.style_tags[0]}
-                                      </Badge>
-                                    )}
-                                    {track.duration && (
-                                      <div className="flex items-center gap-1">
-                                        <Clock className="h-3 w-3" />
-                                        <span className="text-xs text-muted-foreground">
-                                          {Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}
-                                        </span>
-                                      </div>
-                                    )}
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <TrackStatusBadge 
+                                        status={track.status as TrackStatus}
+                                        variant="compact"
+                                        showIcon={true}
+                                      />
+                                      
+                                      {track.style_tags && track.style_tags.length > 0 && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          {track.style_tags[0]}
+                                        </Badge>
+                                      )}
+                                      {track.duration && (
+                                        <div className="flex items-center gap-1 text-muted-foreground">
+                                          <Clock className="h-3 w-3" />
+                                          <span className="text-xs">
+                                            {Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
+                                  <Music className="h-4 w-4 text-muted-foreground shrink-0" />
                                 </div>
-                                <Music className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                              </div>
-                            </Button>
+                              </CardContent>
+                            </Card>
                           ))}
                         </div>
                       )}
