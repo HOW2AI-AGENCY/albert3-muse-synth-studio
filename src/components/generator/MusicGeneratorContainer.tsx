@@ -16,7 +16,6 @@ import {
   usePendingGenerationLoader,
   useAudioUploadHandler,
 } from '@/components/generator/hooks';
-import { useMurekaLyricsSubscription } from '@/components/generator/hooks/useMurekaLyricsSubscription';
 import type { MusicGeneratorV2Props } from '@/components/MusicGeneratorV2.types';
 import { MusicGeneratorContent } from '@/components/generator/MusicGeneratorContent';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
