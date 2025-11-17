@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Sparkles, History } from '@/utils/iconImports';
@@ -29,7 +30,13 @@ export const FormPrompt = ({
 }: FormPromptProps) => {
 
     return (
-        <div className="space-y-1.5 p-2">
+        <div className="space-y-[var(--space-2)] p-[var(--space-compact-md)] sm:p-[var(--space-comfortable-sm)]">
+            <div className="flex items-center gap-[var(--space-2)] mb-[var(--space-1)]">
+                <div className="w-1 h-5 bg-gradient-to-b from-primary to-primary/50 rounded-full" aria-hidden="true" />
+                <Label htmlFor="custom-prompt" className="text-sm font-semibold">
+                    Описание стиля
+                </Label>
+            </div>
             <div className="relative">
                 <Textarea
                     id="custom-prompt"
@@ -38,11 +45,13 @@ export const FormPrompt = ({
                     onChange={(e) => onDebouncedPromptChange(e.target.value)}
                     disabled={isGenerating}
                     className={cn(
-                        "pr-10 resize-y min-h-[70px] sm:min-h-[80px] max-h-[300px] mobile-input",
+                        "pr-12 resize-y min-h-[70px] sm:min-h-[80px] max-h-[300px] mobile-input touch-target-min",
                         promptError && "border-destructive focus-visible:ring-destructive"
                     )}
                     maxLength={MAX_PROMPT_LENGTH}
                     aria-label="Описание стиля музыки"
+                    aria-invalid={promptError}
+                    aria-describedby={promptError ? "prompt-error" : "prompt-counter"}
                 />
                 {onBoostPrompt && debouncedPrompt.trim() && (
                     <Tooltip>
@@ -50,7 +59,7 @@ export const FormPrompt = ({
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="absolute right-1 top-2 touch-target-min text-primary hover:text-primary hover:bg-primary/10"
+                                className="absolute right-2 top-2 touch-target-min text-primary hover:text-primary hover:bg-primary/10"
                                 onClick={onBoostPrompt}
                                 disabled={isBoosting || isGenerating}
                                 aria-label="Улучшить промпт с помощью AI"
@@ -65,12 +74,12 @@ export const FormPrompt = ({
                 )}
             </div>
             {promptError && (
-                <p className="text-xs text-destructive">
+                <p id="prompt-error" className="text-xs text-destructive" role="alert">
                     Превышен лимит в {MAX_PROMPT_LENGTH} символов.
                 </p>
             )}
-            <div className="flex items-center justify-between pt-1">
-                <div className="flex items-center gap-1.5">
+            <div className="flex items-center justify-between pt-[var(--space-1)]">
+                <div className="flex items-center gap-[var(--space-2)]">
                     <PromptCharacterCounter
                         currentLength={debouncedPrompt.length}
                         maxLength={MAX_PROMPT_LENGTH}
