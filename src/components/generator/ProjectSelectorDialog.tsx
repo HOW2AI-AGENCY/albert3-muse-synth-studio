@@ -183,14 +183,14 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                             key={project.id}
                             variant="outline"
                             className={cn(
-                              "w-full justify-start h-auto p-4 min-h-[120px]",
+                              "w-full justify-start h-auto p-4",
                               selectedProjectId === project.id && "border-primary bg-primary/5"
                             )}
                             onClick={() => handleProjectClick(project.id)}
                           >
-                            <div className="flex flex-col items-start gap-2 flex-1 min-w-0">
+                            <div className="flex flex-col items-start gap-3 flex-1 min-w-0">
                               <div className="flex items-center gap-2 w-full">
-                                <span className="font-medium line-clamp-2 leading-tight text-left flex-1">
+                                <span className="font-medium text-base leading-tight text-left flex-1 break-words">
                                   {project.name}
                                 </span>
                                 {selectedProjectId === project.id && (
@@ -199,7 +199,7 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                               </div>
                               
                               {project.description && (
-                                <p className="text-xs text-muted-foreground/90 line-clamp-3 leading-relaxed w-full text-left">
+                                <p className="text-xs text-muted-foreground/90 leading-relaxed w-full text-left break-words whitespace-normal">
                                   {project.description}
                                 </p>
                               )}
@@ -246,7 +246,7 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                             <Button
                               key={track.id}
                               variant="outline"
-                              className="w-full justify-start h-auto p-4 min-h-[110px]"
+                              className="w-full justify-start h-auto p-4"
                               onClick={() => handleTrackClick(track)}
                             >
                               <div className="flex items-start gap-3 w-full">
@@ -258,10 +258,10 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                                     loading="lazy" decoding="async"
                                   />
                                 )}
-                                <div className="flex flex-col items-start gap-2 flex-1 min-w-0">
-                                  <div className="w-full space-y-1">
+                                <div className="flex flex-col items-start gap-2.5 flex-1 min-w-0">
+                                  <div className="w-full space-y-1.5">
                                     <div className="flex items-start gap-2">
-                                      <span className="font-medium line-clamp-2 leading-tight text-left block flex-1">
+                                      <span className="font-medium text-sm leading-tight text-left block flex-1 break-words whitespace-normal">
                                         {track.title}
                                       </span>
                                       {track.lyrics && (
@@ -269,7 +269,7 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                                       )}
                                     </div>
                                     {track.prompt && (
-                                      <p className="text-xs text-muted-foreground/90 line-clamp-2 leading-relaxed">
+                                      <p className="text-xs text-muted-foreground/90 leading-relaxed break-words whitespace-normal">
                                         {track.prompt}
                                       </p>
                                     )}
