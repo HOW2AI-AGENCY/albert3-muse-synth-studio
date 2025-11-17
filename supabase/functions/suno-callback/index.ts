@@ -255,7 +255,11 @@ const mainHandler = async (req: Request) => {
       const duration = Number((mainTrack as any).duration ?? (mainTrack as any).duration_seconds ?? 0);
       
       const sanitizedTitle = sanitizeText(mainTrack.title) || "Generated Track";
-      const sanitizedLyrics = sanitizeText(mainTrack.prompt || mainTrack.lyric || mainTrack.lyrics);
+      
+      // ✅ FIX: Extract lyrics from all possible fields (lyric first, then lyrics, then prompt)
+      const rawLyrics = mainTrack.lyric || mainTrack.lyrics || mainTrack.prompt || '';
+      const sanitizedLyrics = sanitizeText(rawLyrics);
+      
       const sanitizedModelName = sanitizeText(mainTrack.model || mainTrack.model_name);
       const sanitizedSunoId = sanitizeText(mainTrack.id);
       
@@ -314,6 +318,9 @@ const mainHandler = async (req: Request) => {
             .filter((tag: string | undefined): tag is string => Boolean(tag))
         : null;
 
+      // ✅ NEW: Extract timestamped lyrics if available
+      const timestampedLyrics = mainTrack.aligned_words || mainTrack.alignedWords || mainTrack.timestamped_lyrics || null;
+      
       const metadataUpdate = {
         ...existingMetadata,
         suno_task_id: taskId,
@@ -321,6 +328,9 @@ const mainHandler = async (req: Request) => {
         suno_callback_type: callbackType,
         suno_callback_code: callbackCode,
         suno_data: successfulTracks,
+        // ✅ NEW: Save timestamped lyrics to metadata
+        timestamped_lyrics: timestampedLyrics,
+        has_timestamped_lyrics: !!timestampedLyrics,
       };
 
       const updateData: any = {
@@ -407,18 +417,31 @@ const mainHandler = async (req: Request) => {
         throw unexpectedError;
       }
 
-      logger.info("Main track updated successfully", "suno-callback", { trackId: track.id, taskId });
+      logger.info("✅ Main track updated successfully", "suno-callback", {
+        trackId: track.id,
+        taskId,
+        hasAudio: !!uploadedAudioUrl,
+        hasCover: !!uploadedCoverUrl,
+        hasVideo: !!uploadedVideoUrl,
+        hasLyrics: !!sanitizedLyrics,
+        hasTimestampedLyrics: !!timestampedLyrics,
+        lyricsPreview: sanitizedLyrics?.substring(0, 50),
+      });
 
       // ✅ Auto-save lyrics to saved_lyrics table
       if (sanitizedLyrics && track.user_id) {
-        await autoSaveLyrics(supabase, {
-          trackId: track.id,
-          userId: track.user_id,
-          title: sanitizedTitle,
-          lyrics: sanitizedLyrics,
-          prompt: track.prompt,
-          tags: styleTags || [],
-        });
+        try {
+          await autoSaveLyrics(supabase, {
+            trackId: track.id,
+            userId: track.user_id,
+            title: sanitizedTitle,
+            lyrics: sanitizedLyrics,
+            prompt: track.prompt,
+            tags: styleTags || [],
+          });
+        } catch (lyricsError) {
+          logger.error('Failed to auto-save lyrics', lyricsError instanceof Error ? lyricsError : new Error(String(lyricsError)), 'suno-callback', { trackId: track.id });
+        }
       }
 
       // ✅ FIX: Создаём только ДОПОЛНИТЕЛЬНЫЕ версии (начиная с индекса 1)
@@ -528,7 +551,7 @@ const mainHandler = async (req: Request) => {
               audio_url: versionAudioUrl,
               video_url: versionVideoUrl,
               cover_url: versionCoverUrl,
-              lyrics: sanitizeText(versionTrack.prompt || versionTrack.lyric || versionTrack.lyrics),
+              lyrics: sanitizeText(versionTrack.lyric || versionTrack.lyrics || versionTrack.prompt),
               duration: Math.round(versionTrack.duration || versionTrack.duration_seconds || 0),
               metadata: versionMetadata,
             }, { onConflict: 'parent_track_id,variant_index' });
