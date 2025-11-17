@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Folder, Music, Plus, Check } from 'lucide-react';
+import { Search, Folder, Music, Plus, Check, FileText, Clock } from 'lucide-react';
 import { useProjects } from '@/contexts/project/useProjects';
 import { useTracks } from '@/hooks/useTracks';
 import { CreateProjectDialog } from '@/components/projects/CreateProjectDialog';
@@ -183,7 +183,7 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                             key={project.id}
                             variant="outline"
                             className={cn(
-                              "w-full justify-start h-auto p-4",
+                              "w-full justify-start h-auto p-4 min-h-[120px]",
                               selectedProjectId === project.id && "border-primary bg-primary/5"
                             )}
                             onClick={() => handleProjectClick(project.id)}
@@ -199,7 +199,7 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                               </div>
                               
                               {project.description && (
-                                <p className="text-xs text-muted-foreground/90 line-clamp-2 leading-relaxed w-full text-left">
+                                <p className="text-xs text-muted-foreground/90 line-clamp-3 leading-relaxed w-full text-left">
                                   {project.description}
                                 </p>
                               )}
@@ -246,7 +246,7 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                             <Button
                               key={track.id}
                               variant="outline"
-                              className="w-full justify-start h-auto p-4"
+                              className="w-full justify-start h-auto p-4 min-h-[110px]"
                               onClick={() => handleTrackClick(track)}
                             >
                               <div className="flex items-start gap-3 w-full">
@@ -260,9 +260,14 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                                 )}
                                 <div className="flex flex-col items-start gap-2 flex-1 min-w-0">
                                   <div className="w-full space-y-1">
-                                    <span className="font-medium line-clamp-2 leading-tight text-left block">
-                                      {track.title}
-                                    </span>
+                                    <div className="flex items-start gap-2">
+                                      <span className="font-medium line-clamp-2 leading-tight text-left block flex-1">
+                                        {track.title}
+                                      </span>
+                                      {track.lyrics && (
+                                        <FileText className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                                      )}
+                                    </div>
                                     {track.prompt && (
                                       <p className="text-xs text-muted-foreground/90 line-clamp-2 leading-relaxed">
                                         {track.prompt}
@@ -283,9 +288,12 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                                       </Badge>
                                     )}
                                     {track.duration && (
-                                      <span className="text-xs text-muted-foreground">
-                                        {Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}
-                                      </span>
+                                      <div className="flex items-center gap-1">
+                                        <Clock className="h-3 w-3" />
+                                        <span className="text-xs text-muted-foreground">
+                                          {Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, '0')}
+                                        </span>
+                                      </div>
                                     )}
                                   </div>
                                 </div>
