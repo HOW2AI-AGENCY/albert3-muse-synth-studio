@@ -274,31 +274,42 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
 
   /**
    * Start polling the provider API for completion
-   * ✅ P0 FIX: Added MAX_PROCESSING_TIME to prevent stuck tracks (especially Mureka)
+   * ✅ FIXED: Stops on failed status, checks DB before each poll, limits consecutive errors
    */
   protected async startPolling(
     trackId: string, 
     taskId: string,
     config: PollingConfig = DEFAULT_POLLING_CONFIG as PollingConfig
   ): Promise<void> {
-    const MAX_PROCESSING_TIME = 10 * 60 * 1000; // ✅ 10 minutes max for all providers
+    const MAX_PROCESSING_TIME = 10 * 60 * 1000; // 10 minutes max for all providers
+    const MAX_CONSECUTIVE_ERRORS = 3; // ✅ Stop after 3 consecutive errors
     const pollingStartTime = Date.now();
     let attemptNumber = 0;
+    let consecutiveErrors = 0;
 
     const poll = async (): Promise<void> => {
       const elapsedTime = Date.now() - pollingStartTime;
 
-      // ✅ P0 FIX: Check timeout FIRST
+      // Check timeout FIRST
       if (elapsedTime > MAX_PROCESSING_TIME) {
         logger.error(`🔴 [${this.providerName.toUpperCase()}] Processing timeout reached`, {
           trackId,
           taskId,
           attempts: attemptNumber,
           elapsedTimeMinutes: Math.round(elapsedTime / 60000),
-          maxMinutes: 10,
         });
-        // Mark as failed directly with custom message
         await this.handleFailedTrack(trackId, `${this.providerName} generation timeout after ${Math.round(elapsedTime / 60000)} minutes (max: 10 min)`);
+        return;
+      }
+
+      // ✅ Check consecutive errors limit
+      if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+        logger.error(`🔴 [${this.providerName.toUpperCase()}] Too many consecutive errors`, {
+          trackId,
+          taskId,
+          consecutiveErrors,
+        });
+        await this.handleFailedTrack(trackId, 'Too many consecutive polling errors - provider API may be unavailable');
         return;
       }
 
@@ -307,17 +318,36 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
           trackId,
           taskId,
           attempts: attemptNumber,
-          elapsedTimeMinutes: Math.round(elapsedTime / 60000),
         });
         await this.handlePollingTimeout(trackId, taskId);
         return;
       }
 
       try {
+        // ✅ Check DB status FIRST - track may have been updated via callback
+        const { data: currentTrack } = await this.supabase
+          .from('tracks')
+          .select('status')
+          .eq('id', trackId)
+          .single();
+        
+        if (currentTrack?.status === 'completed') {
+          logger.info(`✅ [${this.providerName.toUpperCase()}] Track already completed (likely via callback)`, { trackId });
+          return;
+        }
+        
+        if (currentTrack?.status === 'failed') {
+          logger.info(`❌ [${this.providerName.toUpperCase()}] Track already failed, stopping polling`, { trackId });
+          return;
+        }
+        
+        // Poll provider API
         const trackData = await this.pollTaskStatus(taskId);
         
+        // ✅ Reset consecutive errors on successful poll
+        consecutiveErrors = 0;
+        
         // Update polling metadata
-        // Merge polling metadata with existing metadata instead of overwriting
         const { data: metaTrack } = await this.supabase
           .from('tracks')
           .select('metadata')
@@ -350,9 +380,15 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
           return;
         }
 
+        // ✅ STOP IMMEDIATELY on failed status - don't retry
         if (trackData.status === 'failed') {
+          logger.error(`❌ [${this.providerName.toUpperCase()}] Provider reported failure, stopping polling`, {
+            trackId,
+            taskId,
+            error: trackData.error,
+          });
           await this.handleFailedTrack(trackId, trackData.error || 'Generation failed');
-          return;
+          return; // Stop polling immediately
         }
 
         // Continue polling
@@ -360,15 +396,35 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
         setTimeout(poll, config.intervalMs);
 
       } catch (error) {
-        logger.error(`🔴 [${this.providerName.toUpperCase()}] Polling error`, {
-          error,
+        consecutiveErrors++; // ✅ Increment error counter
+        
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        // ✅ Check if error is non-retryable
+        const isNonRetryable = errorMessage.toLowerCase().includes('unauthorized') ||
+          errorMessage.toLowerCase().includes('insufficient credits') ||
+          errorMessage.toLowerCase().includes('недостаточно кредитов') ||
+          errorMessage.toLowerCase().includes('invalid') ||
+          errorMessage.toLowerCase().includes('bad request');
+        
+        if (isNonRetryable) {
+          logger.error(`🔴 [${this.providerName.toUpperCase()}] Non-retryable error, stopping polling`, {
+            error: errorMessage,
+            trackId,
+            taskId,
+          });
+          await this.handleFailedTrack(trackId, errorMessage);
+          return; // Stop immediately on non-retryable errors
+        }
+        
+        logger.error(`🔴 [${this.providerName.toUpperCase()}] Polling error (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS})`, {
+          error: errorMessage,
           trackId,
           taskId,
           attempt: attemptNumber + 1,
-          elapsedSeconds: Math.round(elapsedTime / 1000),
         });
         
-        // Retry polling after error
+        // Continue polling only for retryable errors
         attemptNumber++;
         setTimeout(poll, config.intervalMs);
       }

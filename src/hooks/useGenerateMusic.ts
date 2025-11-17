@@ -297,10 +297,17 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
       });
     }
 
-    // Debounce protection
+    // ✅ Debounce protection - prevents duplicate API calls
     const now = Date.now();
     if (now - lastGenerationTimeRef.current < DEBOUNCE_DELAY) {
-      logger.warn('[HOOK] Debounce protection triggered', 'useGenerateMusic');
+      logger.warn('[HOOK] Debounce protection triggered - preventing duplicate request', 'useGenerateMusic', {
+        timeSinceLastCall: now - lastGenerationTimeRef.current,
+      });
+      toast({
+        title: "Пожалуйста, подождите",
+        description: "Предыдущий запрос еще обрабатывается. Это защищает от лишних расходов кредитов.",
+        variant: "default"
+      });
       return false;
     }
     lastGenerationTimeRef.current = now;
