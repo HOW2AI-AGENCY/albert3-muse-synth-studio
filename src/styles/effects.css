@@ -1,0 +1,213 @@
+/**
+ * Visual Effects System
+ * Gradients, shadows, animations, and special effects
+ */
+
+/* ============================================================================
+   GRADIENT BACKGROUNDS
+   ============================================================================ */
+
+.gradient-primary {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--primary)) 0%,
+    hsl(var(--primary) / 0.8) 100%
+  );
+}
+
+.gradient-surface {
+  background: linear-gradient(
+    180deg,
+    hsl(var(--background)) 0%,
+    hsl(var(--surface)) 100%
+  );
+}
+
+.gradient-overlay-top {
+  background: linear-gradient(
+    180deg,
+    hsl(var(--background)) 0%,
+    hsl(var(--background) / 0.9) 30%,
+    transparent 100%
+  );
+}
+
+.gradient-overlay-bottom {
+  background: linear-gradient(
+    0deg,
+    hsl(var(--background)) 0%,
+    hsl(var(--background) / 0.9) 30%,
+    transparent 100%
+  );
+}
+
+/* ============================================================================
+   SHADOWS & GLOW
+   ============================================================================ */
+
+.shadow-glow-primary {
+  box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+}
+
+.shadow-glow-primary-strong {
+  box-shadow: 
+    0 0 20px hsl(var(--primary) / 0.4),
+    0 0 40px hsl(var(--primary) / 0.2);
+}
+
+.shadow-elevated {
+  box-shadow: 
+    0 4px 6px -1px hsl(var(--shadow) / 0.1),
+    0 2px 4px -2px hsl(var(--shadow) / 0.1);
+}
+
+.shadow-elevated-strong {
+  box-shadow: 
+    0 10px 15px -3px hsl(var(--shadow) / 0.1),
+    0 4px 6px -4px hsl(var(--shadow) / 0.1);
+}
+
+/* ============================================================================
+   GLASS MORPHISM
+   ============================================================================ */
+
+.glass {
+  background: hsl(var(--surface) / 0.8);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid hsl(var(--outline-variant) / 0.2);
+}
+
+.glass-strong {
+  background: hsl(var(--surface) / 0.9);
+  backdrop-filter: blur(30px) saturate(200%);
+  -webkit-backdrop-filter: blur(30px) saturate(200%);
+  border: 1px solid hsl(var(--outline-variant) / 0.3);
+}
+
+/* ============================================================================
+   ANIMATIONS
+   ============================================================================ */
+
+/* Fade in up */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Scale in */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out;
+}
+
+/* Slide in from right */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out;
+}
+
+/* Pulse glow */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.6);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* Shimmer loading */
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--primary) / 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 1000px 100%;
+}
+
+/* ============================================================================
+   BLUR EFFECTS
+   ============================================================================ */
+
+.blur-sm {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.blur-md {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.blur-lg {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* ============================================================================
+   PERFORMANCE OPTIMIZATIONS
+   ============================================================================ */
+
+/* Enable GPU acceleration for animations */
+.glass,
+.glass-strong,
+.shadow-glow-primary,
+.shadow-glow-primary-strong,
+.animate-fade-in-up,
+.animate-scale-in,
+.animate-slide-in-right {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-up,
+  .animate-scale-in,
+  .animate-slide-in-right,
+  .animate-pulse-glow,
+  .animate-shimmer {
+    animation: none;
+  }
+}

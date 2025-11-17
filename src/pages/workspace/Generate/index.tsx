@@ -242,8 +242,12 @@ const Generate = () => {
               <TooltipTrigger asChild>
                 <Button
                   onClick={() => state.setShowGenerator(true)}
-                  className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg z-40"
+                  className="fixed right-4 h-14 w-14 rounded-full shadow-glow-primary touch-target-optimal z-40"
+                  style={{ 
+                    bottom: 'calc(var(--mobile-nav-height, 64px) + var(--space-4))'
+                  }}
                   size="icon"
+                  aria-label="Создать музыку"
                 >
                   <Plus className="h-6 w-6" />
                 </Button>
