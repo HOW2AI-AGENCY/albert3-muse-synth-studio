@@ -169,14 +169,16 @@ Generate:
 
     if (!response.ok) {
       if (response.status === 429) {
+        logger.error('Rate limit exceeded', new Error('429 Too Many Requests'), 'generate-project-concept');
         return new Response(
-          JSON.stringify({ error: 'Превышен лимит запросов. Попробуйте позже.' }),
+          JSON.stringify({ error: 'Слишком много запросов к AI. Подождите минуту и попробуйте снова.' }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       if (response.status === 402) {
+        logger.error('Payment required', new Error('402 Payment Required'), 'generate-project-concept');
         return new Response(
-          JSON.stringify({ error: 'Требуется пополнение баланса.' }),
+          JSON.stringify({ error: 'Недостаточно кредитов. Пополните баланс в Settings → Workspace → Usage.' }),
           { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }

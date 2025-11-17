@@ -250,7 +250,19 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
       personaId: state.params.personaId || undefined,
       projectId: state.params.activeProjectId || undefined,
       inspoProjectId: state.params.inspoProjectId || undefined,
+      analyzedGenre: state.params.analyzedGenre,
+      analyzedMood: state.params.analyzedMood,
+      analyzedTempo: state.params.analyzedTempo,
+      analyzedInstruments: state.params.analyzedInstruments,
+      analyzedDescription: state.params.analyzedDescription,
     };
+
+    logger.info('[GENERATOR] Full generation params logged', 'MusicGeneratorContainer', {
+      ...requestParams,
+      referenceAudioUrl: requestParams.referenceAudioUrl ? 'PRESENT' : 'NONE',
+      personaId: requestParams.personaId || 'NONE',
+      projectId: requestParams.projectId || 'NONE',
+    });
 
     // ✅ Save prompt to history with full generation parameters
     try {

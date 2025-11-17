@@ -99,30 +99,30 @@ export const TrackActions: React.FC<TrackActionsProps> = ({
     <>
       <div className="flex gap-2 mt-2 flex-wrap">
         <Button 
-          size="sm" 
+          size="default"
           variant={track.lyrics ? "default" : "outline"}
           onClick={handleLyricsClick}
-          className="transition-all touch-target-optimal min-h-[44px] px-4"
+          className="transition-all min-h-[48px] px-4 sm:px-6 flex-1 sm:flex-none touch-manipulation"
         >
           {track.lyrics ? (
             <>
-              <FileText className="h-4 w-4 mr-2" />
-              <span className="text-sm">Просмотр лирики</span>
+              <FileText className="h-5 w-5 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
+              <span className="text-sm sm:text-base font-medium">Просмотр лирики</span>
             </>
           ) : (
             <>
-              <Sparkles className="h-4 w-4 mr-2" />
-              <span className="text-sm">Создать лирику</span>
+              <Sparkles className="h-5 w-5 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
+              <span className="text-sm sm:text-base font-medium">Создать лирику</span>
             </>
           )}
         </Button>
         <Button 
-          size="sm"
+          size="default"
           onClick={handleGenerateTrack}
-          className="touch-target-optimal min-h-[44px] px-4"
+          className="min-h-[48px] px-4 sm:px-6 flex-1 sm:flex-none touch-manipulation"
         >
-          <Music className="h-4 w-4 mr-2" />
-          <span className="text-sm">Сгенерировать</span>
+          <Music className="h-5 w-5 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
+          <span className="text-sm sm:text-base font-medium">Сгенерировать</span>
         </Button>
       </div>
 
