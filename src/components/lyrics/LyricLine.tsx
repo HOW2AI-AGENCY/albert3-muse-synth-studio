@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { LyricWord } from './LyricWord';
 import { TimestampedWord } from '@/hooks/useTimestampedLyrics';
+import { cn } from '@/lib/utils';
 
 interface LyricLineProps {
   words: TimestampedWord[];
@@ -14,8 +15,22 @@ interface LyricLineProps {
  * Only re-renders when active words change
  */
 export const LyricLine = memo(({ words, currentTime, onWordClick, timingTolerance }: LyricLineProps) => {
+  const hasActiveWord = words.some(w => 
+    w.success && 
+    currentTime >= (w.startS - timingTolerance) && 
+    currentTime < (w.endS + timingTolerance)
+  );
+
   return (
-    <div className="flex flex-wrap gap-2 mb-4">
+    <div 
+      className={cn(
+        "flex flex-wrap gap-2 mb-6 p-3 rounded-lg transition-all duration-300",
+        hasActiveWord 
+          ? "bg-primary/5 border border-primary/20 shadow-lg scale-[1.02]" 
+          : "border border-transparent"
+      )}
+      data-active={hasActiveWord}
+    >
       {words.map((word, idx) => {
         const isActive = word.success && 
           currentTime >= (word.startS - timingTolerance) && 

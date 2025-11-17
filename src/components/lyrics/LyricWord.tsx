@@ -16,10 +16,11 @@ export const LyricWord = memo(({ word, isActive, onClick }: LyricWordProps) => {
     <span
       onClick={onClick}
       className={cn(
-        "inline-block transition-all duration-200 cursor-pointer hover:scale-105",
+        "inline-block px-1 py-0.5 rounded-md transition-all duration-300 cursor-pointer select-none",
+        "hover:bg-primary/10 active:scale-95",
         isActive
-          ? "text-primary font-semibold scale-110 drop-shadow-[0_0_8px_hsl(var(--primary)/0.6)]"
-          : "text-foreground/70"
+          ? "text-primary font-bold scale-110 bg-primary/15 shadow-[0_0_16px_hsl(var(--primary)/0.4)] animate-pulse"
+          : "text-foreground/70 hover:text-foreground/90 font-medium"
       )}
     >
       {word}

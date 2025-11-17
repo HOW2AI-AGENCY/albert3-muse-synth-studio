@@ -1,0 +1,119 @@
+/**
+ * LyricsDisplay - Modern timestamped lyrics component
+ * Supports karaoke-style word-by-word highlighting with smooth animations
+ */
+import { memo, useEffect, useRef } from 'react';
+import { useTimestampedLyrics } from '@/hooks/useTimestampedLyrics';
+import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
+import { VirtualizedLyrics } from './VirtualizedLyrics';
+import { cn } from '@/lib/utils';
+import { Loader2 } from 'lucide-react';
+
+interface LyricsDisplayProps {
+  sunoTaskId: string;
+  sunoId: string;
+  className?: string;
+}
+
+export const LyricsDisplay = memo(({ sunoTaskId, sunoId, className }: LyricsDisplayProps) => {
+  const currentTime = useAudioPlayerStore((state) => state.currentTime);
+  const seekTo = useAudioPlayerStore((state) => state.seekTo);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const queryResult = useTimestampedLyrics({
+    taskId: sunoTaskId,
+    audioId: sunoId,
+  });
+
+  const rawWords = queryResult.data?.alignedWords || [];
+  
+  // Group words into lines (split by line breaks or every 8-10 words)
+  const lines = rawWords.reduce((acc: any[][], word: any, idx: number) => {
+    if (idx % 8 === 0) {
+      acc.push([]);
+    }
+    if (acc.length > 0) {
+      acc[acc.length - 1].push(word);
+    }
+    return acc;
+  }, []);
+
+  const handleWordClick = (time: number) => {
+    seekTo(time);
+  };
+
+  // Auto-scroll to active line
+  useEffect(() => {
+    if (!scrollContainerRef.current) return;
+
+    const activeLineElement = scrollContainerRef.current.querySelector('[data-active="true"]');
+    if (activeLineElement) {
+      activeLineElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }
+  }, [currentTime]);
+
+  if (queryResult.isLoading) {
+    return (
+      <div className={cn(
+        "flex flex-col items-center justify-center h-full min-h-[400px] gap-4",
+        className
+      )}>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Загрузка текста...</p>
+      </div>
+    );
+  }
+
+  if (queryResult.error) {
+    return (
+      <div className={cn(
+        "flex flex-col items-center justify-center h-full min-h-[400px] gap-2",
+        className
+      )}>
+        <p className="text-sm text-destructive">Не удалось загрузить текст</p>
+        <p className="text-xs text-muted-foreground">{queryResult.error.message}</p>
+      </div>
+    );
+  }
+
+  if (!lines || lines.length === 0) {
+    return (
+      <div className={cn(
+        "flex items-center justify-center h-full min-h-[400px]",
+        className
+      )}>
+        <p className="text-sm text-muted-foreground">Текст песни недоступен</p>
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      ref={scrollContainerRef}
+      className={cn(
+        "relative h-full overflow-y-auto overflow-x-hidden",
+        "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-border/40",
+        "px-4 py-8 md:px-6 md:py-12",
+        "bg-gradient-to-b from-background/50 via-transparent to-background/50",
+        className
+      )}
+    >
+      {/* Gradient overlays for smooth fade */}
+      <div className="sticky top-0 left-0 right-0 h-16 bg-gradient-to-b from-background to-transparent pointer-events-none z-10" />
+      
+      <VirtualizedLyrics
+        lines={lines}
+        currentTime={currentTime}
+        onWordClick={handleWordClick}
+        timingTolerance={0.2}
+      />
+
+      <div className="sticky bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+    </div>
+  );
+});
+
+LyricsDisplay.displayName = 'LyricsDisplay';
