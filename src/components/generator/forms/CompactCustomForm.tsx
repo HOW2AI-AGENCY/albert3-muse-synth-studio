@@ -139,13 +139,11 @@ export const CompactCustomForm = memo(({
           handleQuickTagAdd={handleQuickTagAdd}
           handleApplyTags={handleApplyTags}
           handleAdvancedPromptGenerated={handleAdvancedPromptGenerated}
-          isMobile={isMobile}
         />
         <FormAdvanced
             params={params}
             onParamChange={onParamChange}
             isGenerating={isGenerating}
-            isMobile={isMobile}
         />
         <ProjectTrackPickerDialog
           open={trackPickerOpen}
