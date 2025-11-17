@@ -41,21 +41,28 @@ interface SunoQueryResponse {
   code: number;
   msg: string;
   data: {
-    status: string;
-    task: {
-      id: string;
-      data: SunoTaskData[];
+    taskId: string;
+    parentMusicId?: string;
+    param?: string;
+    response: {
+      taskId: string;
+      sunoData: SunoTaskData[];
     };
+    status: string;
+    type?: string;
+    errorCode?: number;
+    errorMessage?: string;
   };
 }
 
 async function querySunoTask(taskId: string): Promise<{ data: SunoTaskData[] | null; status: number }> {
   console.log(`[Resync] Querying Suno API for task: ${taskId}`);
   
-  const response = await fetch(`https://api.acedata.cloud/suno/audios?taskId=${taskId}`, {
+  // Use the correct Suno API endpoint
+  const response = await fetch(`https://api.sunoapi.org/api/v1/generate/record-info?taskId=${taskId}`, {
     headers: {
-      'accept': 'application/json',
-      'authorization': `Bearer ${SUNO_API_KEY}`,
+      'Authorization': `Bearer ${SUNO_API_KEY}`,
+      'Accept': 'application/json',
     },
   });
 
@@ -68,12 +75,18 @@ async function querySunoTask(taskId: string): Promise<{ data: SunoTaskData[] | n
 
   const result: SunoQueryResponse = await response.json();
   
-  if (result.code !== 0 || !result.data?.task?.data) {
-    console.error('[Resync] Invalid Suno response:', result);
+  // Check response according to API documentation
+  if (result.code !== 200) {
+    console.error('[Resync] Suno API returned error:', result);
+    return { data: null, status: result.code };
+  }
+
+  if (!result.data?.response?.sunoData) {
+    console.error('[Resync] Invalid Suno response structure:', result);
     return { data: null, status: 422 };
   }
 
-  return { data: result.data.task.data, status: 200 };
+  return { data: result.data.response.sunoData, status: 200 };
 }
 
 async function updateTrackFromSunoData(
