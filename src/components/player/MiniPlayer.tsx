@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useState } from "react";
-import { Play, Pause, SkipBack, SkipForward, X } from "@/utils/iconImports";
+import { Play, Pause, SkipBack, SkipForward, X, MoreVertical } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { useAudioPlayerStore, useCurrentTrack, useIsPlaying } from "@/stores/audioPlayerStore";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
@@ -14,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 interface MiniPlayerProps {
   onExpand: () => void;
@@ -235,26 +236,43 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
             </Button>
           </div>
 
-          {/* Unified Actions Menu */}
+          {/* Unified Actions Menu (Three Dots) */}
           <div className="flex-1 flex justify-end">
-            <UnifiedTrackActionsMenu
-              trackId={currentTrack.id}
-              trackStatus={currentTrack.status || 'completed'}
-              trackMetadata={null}
-              currentVersionId={currentVersionId || currentTrack.id}
-              versionNumber={currentTrack.versionNumber}
-              isMasterVersion={availableVersions[currentVersionIndex]?.isMasterVersion ?? false}
-              variant="compact"
-              showQuickActions={true}
-              layout="flat"
-              enableAITools={false}
-              isPublic={false}
-              hasVocals={false}
-              isLiked={isLiked}
-              onLike={toggleLike}
-              onDownload={handleDownloadClick}
-              onShare={() => {}}
-            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 hover:bg-secondary/80"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <UnifiedTrackActionsMenu
+                  trackId={currentTrack.id}
+                  trackStatus={currentTrack.status || 'completed'}
+                  trackMetadata={null}
+                  currentVersionId={currentVersionId || currentTrack.id}
+                  versionNumber={currentTrack.versionNumber}
+                  isMasterVersion={availableVersions[currentVersionIndex]?.isMasterVersion ?? false}
+                  variant="compact"
+                  showQuickActions={false}
+                  layout="flat"
+                  enableAITools={false}
+                  isPublic={false}
+                  hasVocals={false}
+                  isLiked={isLiked}
+                  onLike={toggleLike}
+                  onDownload={handleDownloadClick}
+                  onShare={() => {}}
+                  onDelete={() => {
+                    clearCurrentTrack();
+                    toast.success('Трек удален');
+                  }}
+                />
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
