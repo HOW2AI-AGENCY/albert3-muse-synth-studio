@@ -1,46 +1,29 @@
 /**
  * Overview Tab Content
- * Stats, basic info, versions, stems
+ * Main information: stats, genre/mood, prompts, technical details
  */
 
 import { GenreMoodCard } from '../cards/GenreMoodCard';
-import { VersionsCard } from '../cards/VersionsCard';
-import { StemsCard } from '../cards/StemsCard';
+import { TrackStatsCard } from '../cards/TrackStatsCard';
+import { PromptCard } from '../cards/PromptCard';
 import { TechnicalDetailsCard } from '../cards/TechnicalDetailsCard';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import type { Track } from '@/types/domain/track.types';
 
 interface OverviewContentProps {
   track: Track;
-  onUpdate?: () => void;
-  onDelete?: () => void;
 }
 
-export const OverviewContent = ({
-  track,
-}: OverviewContentProps) => {
-  // Fetch versions
-  const { data: versionsData = [] } = useQuery({
-    queryKey: ['track-versions', track.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('track_versions')
-        .select('*')
-        .eq('parent_track_id', track.id)
-        .order('variant_index', { ascending: true });
-
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  const versions = versionsData.map(v => ({
-    ...v,
-    metadata: v.metadata as Record<string, any> | null
-  }));
+export const OverviewContent = ({ track }: OverviewContentProps) => {
   return (
     <div className="space-y-4">
+      {/* Statistics */}
+      <TrackStatsCard
+        playCount={track.play_count}
+        likeCount={track.like_count}
+        viewCount={track.view_count}
+        downloadCount={track.download_count}
+      />
+
       {/* Genre & Mood */}
       {(track.genre || track.mood || (track.style_tags && track.style_tags.length > 0)) && (
         <GenreMoodCard
@@ -50,15 +33,11 @@ export const OverviewContent = ({
         />
       )}
 
-      {/* Versions */}
-      {versions.length > 0 && (
-        <VersionsCard versions={versions} trackId={track.id} />
-      )}
-
-      {/* Stems Preview */}
-      {track.has_stems && (
-        <StemsCard trackId={track.id} />
-      )}
+      {/* Generation Prompts */}
+      <PromptCard
+        prompt={track.prompt}
+        improvedPrompt={track.improved_prompt}
+      />
 
       {/* Technical Details */}
       <TechnicalDetailsCard
