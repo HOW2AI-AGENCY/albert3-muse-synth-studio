@@ -9,9 +9,11 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import player and lyrics styles */
+/* Import design system styles */
 @import './styles/player.css';
 @import './styles/lyrics.css';
+@import './styles/spacing.css';
+@import './styles/effects.css';
 
 @layer base {
   :root {
