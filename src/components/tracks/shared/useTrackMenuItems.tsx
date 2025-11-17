@@ -116,15 +116,17 @@ export const useTrackMenuItems = (props: UnifiedTrackActionsMenuProps): MenuItem
           shortcut: enableKeyboardShortcuts ? 'W' : undefined,
         });
       }
-      if (onShare && isCompletedLocal) {
-        items.push({
-          id: 'share',
-          label: 'Поделиться',
-          icon: <Share2 className="w-4 h-4" />,
-          action: onShare,
-          shortcut: enableKeyboardShortcuts ? 'S' : undefined,
-        });
-      }
+    }
+
+    // ✅ Always show Share in context menu for completed tracks
+    if (onShare && isCompletedLocal) {
+      items.push({
+        id: 'share',
+        label: 'Поделиться',
+        icon: <Share2 className="w-4 h-4" />,
+        action: onShare,
+        shortcut: enableKeyboardShortcuts ? 'S' : undefined,
+      });
     }
 
     if (onRemix && isCompletedLocal) {

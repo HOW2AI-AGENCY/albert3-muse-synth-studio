@@ -16,7 +16,7 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Download, Share2, MoreVertical, FileAudio } from 'lucide-react';
+import { Heart, Download, MoreVertical, FileAudio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTrackMenuItems } from './useTrackMenuItems';
 import { useGroupedMenuItems } from './useGroupedMenuItems';
@@ -38,7 +38,6 @@ export const UnifiedTrackActionsMenu = memo((props: UnifiedTrackActionsMenuProps
     isLiked = false,
     onLike,
     onDownload,
-    onShare,
   } = props;
 
   const menuItems = useTrackMenuItems(props);
@@ -65,43 +64,24 @@ export const UnifiedTrackActionsMenu = memo((props: UnifiedTrackActionsMenuProps
             </Tooltip>
           )}
 
-          {variant !== 'minimal' && trackStatus === 'completed' && (
-            <>
-              {onDownload && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={onDownload}
-                      className="h-8 w-8 touch-target-min"
-                      aria-label="Скачать MP3"
-                    >
-                      <Download className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Скачать MP3</TooltipContent>
-                </Tooltip>
-              )}
-
-              {onShare && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={onShare}
-                      className="h-8 w-8 touch-target-min"
-                      aria-label="Поделиться"
-                    >
-                      <Share2 className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Поделиться</TooltipContent>
-                </Tooltip>
-              )}
-            </>
+          {variant !== 'minimal' && trackStatus === 'completed' && onDownload && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onDownload}
+                  className="h-8 w-8 touch-target-min"
+                  aria-label="Скачать MP3"
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Скачать MP3</TooltipContent>
+            </Tooltip>
           )}
+
+          {/* Share button hidden - moved to context menu */}
         </>
       )}
 
