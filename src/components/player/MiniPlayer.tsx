@@ -1,25 +1,13 @@
-import { memo, useCallback, useMemo, useState } from "react";
-import { Play, Pause, SkipBack, SkipForward, X, MoreVertical, List, Star, Heart } from "@/utils/iconImports";
+import { memo, useCallback, useMemo } from "react";
+import { Play, Pause, SkipBack, SkipForward, X } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { useAudioPlayerStore, useCurrentTrack, useIsPlaying } from "@/stores/audioPlayerStore";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { Badge } from "@/components/ui/badge";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { getVersionLabel } from "@/utils/versionLabels";
 import { cn } from "@/lib/utils";
+import { UnifiedTrackActionsMenu } from "@/components/tracks/shared/TrackActionsMenu.unified";
 import { useTrackVersionLike } from "@/features/tracks/hooks/useTrackVersionLike";
+import { useDownloadTrack } from "@/hooks/useDownloadTrack";
 
 interface MiniPlayerProps {
   onExpand: () => void;
@@ -35,7 +23,6 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
   const queue = useAudioPlayerStore((state) => state.queue);
   const currentQueueIndex = useAudioPlayerStore((state) => state.currentQueueIndex);
   const clearCurrentTrack = useAudioPlayerStore((state) => state.clearCurrentTrack);
-  const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
   const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
   const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
 
@@ -49,10 +36,10 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
   
   const { isLiked, toggleLike } = useTrackVersionLike(
     currentVersionId,
-    0 // Initial like count - будет обновлен через realtime subscription
+    0
   );
 
-  const [isVersionsSheetOpen, setIsVersionsSheetOpen] = useState(false);
+  const { downloadTrack } = useDownloadTrack();
 
   const handlePlayPause = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -77,19 +64,19 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
     onExpand();
   }, [onExpand, vibrate]);
 
-  const handleClose = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleClose = useCallback(() => {
     vibrate('medium');
     clearCurrentTrack();
   }, [clearCurrentTrack, vibrate]);
 
-  const handleLike = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    vibrate('light');
-    toggleLike();
-  }, [toggleLike, vibrate]);
-
-  const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
+  const handleDownloadClick = useCallback(() => {
+    if (!currentTrack?.audio_url) return;
+    downloadTrack({
+      id: currentVersionId || currentTrack.id,
+      title: currentTrack.title,
+      audio_url: currentTrack.audio_url,
+    });
+  }, [currentTrack, currentVersionId, downloadTrack]);
 
   if (!currentTrack) return null;
 
@@ -102,189 +89,131 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
         zIndex: 'var(--z-mini-player)'
       }}
     >
-      {/* Компактный плеер - современный дизайн */}
-      <div className="flex items-center gap-2 px-3 py-2">
-        {/* Album Art - кликабельно для expand */}
-        <div 
-          onClick={handleExpand}
-          className={cn(
-            "relative rounded-md overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 flex-shrink-0 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer group",
-            "w-12 h-12"
-          )}
-        >
-          {currentTrack.cover_url ? (
-            <img
-              key={currentTrack.id}
-              src={currentTrack.cover_url}
-              alt={currentTrack.title}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-primary animate-pulse" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent group-hover:from-black/30 transition-colors duration-300" />
-          {isPlaying && (
-            <div className="absolute inset-0 border-2 border-primary/50 rounded-md animate-pulse" />
-          )}
-        </div>
-
-        {/* Track Info - кликабельно для expand */}
-        <div 
-          onClick={handleExpand}
-          className="flex-1 min-w-0 cursor-pointer"
-        >
-          <div className="flex items-center gap-1.5">
-            <h4 className="text-sm font-semibold text-foreground truncate max-w-[180px] sm:max-w-none">
-              {currentTrack.title.replace(/\s*\(V\d+\)$/i, '')}
-            </h4>
-            {hasVersions && (
-              <Badge variant="secondary" className="text-[10px] h-4 px-1 flex-shrink-0">
-                V{currentTrack.versionNumber ?? currentVersionIndex + 1}
-              </Badge>
+      {/* Компактная двухстрочная разметка */}
+      <div className="px-3 py-2 space-y-2">
+        {/* Строка 1: Обложка + Инфо + Кнопки управления */}
+        <div className="flex items-center gap-2">
+          {/* Album Art */}
+          <div 
+            onClick={handleExpand}
+            className={cn(
+              "relative rounded-md overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 flex-shrink-0 shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer group",
+              "w-12 h-12"
             )}
-          </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/80">
-            <span className="truncate max-w-[150px] sm:max-w-none">
-              {currentTrack.style_tags?.slice(0, 2).join(' • ') || 'AI Generated'}
-            </span>
-            {queue.length > 0 && (
-              <>
-                <span className="opacity-50">•</span>
-                <span className="flex-shrink-0">{currentQueueIndex + 1}/{queue.length}</span>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Playback Controls - компактные */}
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {/* Previous - только на tablet+ */}
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={handlePrevious}
-            className="h-9 w-9 hidden sm:inline-flex hover:bg-primary/10 transition-all"
           >
-            <SkipBack className="h-4 w-4" />
-          </Button>
-
-          {/* Play/Pause - главная кнопка */}
-          <Button
-            size="icon"
-            variant="default"
-            onClick={handlePlayPause}
-            className="h-10 w-10 rounded-full shadow-lg hover:scale-105 transition-all bg-primary hover:bg-primary/90"
-          >
-            {isPlaying ? (
-              <Pause className="h-4 w-4" />
+            {currentTrack.cover_url ? (
+              <img
+                src={currentTrack.cover_url}
+                alt={currentTrack.title}
+                className="w-full h-full object-cover"
+              />
             ) : (
-              <Play className="h-4 w-4 ml-0.5" />
+              <div className="w-full h-full bg-gradient-primary animate-pulse" />
             )}
-          </Button>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent group-hover:from-black/30 transition-colors duration-300" />
+            {isPlaying && (
+              <div className="absolute inset-0 border-2 border-primary/50 rounded-md animate-pulse" />
+            )}
+          </div>
 
-          {/* Next */}
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={handleNext}
-            className="h-9 w-9 hover:bg-primary/10 transition-all"
+          {/* Track Info */}
+          <div 
+            onClick={handleExpand}
+            className="flex-1 min-w-0 cursor-pointer"
           >
-            <SkipForward className="h-4 w-4" />
-          </Button>
-
-          {/* Context Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-9 w-9 hidden xs:inline-flex hover:bg-primary/10 transition-all"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={handleLike}>
-                <Heart className={cn("h-4 w-4 mr-2", isLiked && "fill-red-500 text-red-500")} />
-                {isLiked ? 'Убрать из избранного' : 'Добавить в избранное'}
-              </DropdownMenuItem>
-              
-              {hasVersions && (
-                <DropdownMenuItem onClick={(e) => {
-                  e.stopPropagation();
-                  setIsVersionsSheetOpen(true);
-                }}>
-                  <List className="h-4 w-4 mr-2" />
-                  Версии ({availableVersions.length})
-                </DropdownMenuItem>
+            <div className="flex items-center gap-1.5">
+              <h4 className="text-sm font-semibold text-foreground truncate">
+                {currentTrack.title.replace(/\s*\(V\d+\)$/i, '')}
+              </h4>
+              {availableVersions.length > 1 && (
+                <Badge variant="secondary" className="text-[10px] h-4 px-1 flex-shrink-0">
+                  V{currentTrack.versionNumber ?? currentVersionIndex + 1}
+                </Badge>
               )}
-              
-              <DropdownMenuItem onClick={handleExpand}>
-                <Play className="h-4 w-4 mr-2" />
-                Открыть полный плеер
-              </DropdownMenuItem>
-              
-              <DropdownMenuSeparator />
-              
-              <DropdownMenuItem onClick={handleClose} className="text-destructive">
-                <X className="h-4 w-4 mr-2" />
-                Закрыть плеер
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/80">
+              <span className="truncate">
+                {currentTrack.style_tags?.slice(0, 2).join(' • ') || 'AI Generated'}
+              </span>
+              {queue.length > 0 && (
+                <>
+                  <span className="opacity-50">•</span>
+                  <span className="flex-shrink-0">{currentQueueIndex + 1}/{queue.length}</span>
+                </>
+              )}
+            </div>
+          </div>
 
-          {/* Close Button - всегда видна */}
+          {/* Кнопка закрытия */}
           <Button
             size="icon"
             variant="ghost"
             onClick={handleClose}
-            className="h-9 w-9 hover:bg-destructive/10 hover:text-destructive transition-all"
+            className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-all flex-shrink-0"
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
-      </div>
 
-      {/* Versions Sheet */}
-      {hasVersions && (
-        <Sheet open={isVersionsSheetOpen} onOpenChange={setIsVersionsSheetOpen}>
-          <SheetContent side="bottom" className="bg-card/95 backdrop-blur-xl border-primary/20">
-            <SheetHeader>
-              <SheetTitle>Версии трека</SheetTitle>
-            </SheetHeader>
-            <div className="py-4 space-y-2 max-h-96 overflow-y-auto">
-              {availableVersions.map((version, idx) => (
-                <Button
-                  key={version.id}
-                  variant={currentVersionIndex === idx ? "default" : "outline"}
-                  size="lg"
-                  className="w-full justify-start"
-                  onClick={() => {
-                    switchToVersion(version.id);
-                    setIsVersionsSheetOpen(false);
-                  }}
-                >
-                  <div className="flex items-center gap-2 w-full">
-                    {version.isMasterVersion && (
-                      <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
-                    )}
-                    <span className="flex-1 text-left">
-                      {getVersionLabel({
-                        versionNumber: version.versionNumber,
-                        isMaster: version.isMasterVersion,
-                      })}
-                    </span>
-                    {currentVersionIndex === idx && (
-                      <Play className="h-4 w-4" />
-                    )}
-                  </div>
-                </Button>
-              ))}
-            </div>
-          </SheetContent>
-        </Sheet>
-      )}
+        {/* Строка 2: Управление воспроизведением + Действия */}
+        <div className="flex items-center gap-2">
+          {/* Playback Controls */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={handlePrevious}
+              className="h-8 w-8 hover:bg-primary/10 transition-all"
+            >
+              <SkipBack className="h-4 w-4" />
+            </Button>
+
+            <Button
+              size="icon"
+              variant="default"
+              onClick={handlePlayPause}
+              className="h-9 w-9 rounded-full shadow-lg hover:scale-105 transition-all bg-primary hover:bg-primary/90"
+            >
+              {isPlaying ? (
+                <Pause className="h-4 w-4" />
+              ) : (
+                <Play className="h-4 w-4 ml-0.5" />
+              )}
+            </Button>
+
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={handleNext}
+              className="h-8 w-8 hover:bg-primary/10 transition-all"
+            >
+              <SkipForward className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Unified Actions Menu */}
+          <div className="flex-1 flex justify-end">
+            <UnifiedTrackActionsMenu
+              trackId={currentTrack.id}
+              trackStatus={currentTrack.status || 'completed'}
+              trackMetadata={null}
+              currentVersionId={currentVersionId || currentTrack.id}
+              versionNumber={currentTrack.versionNumber}
+              isMasterVersion={availableVersions[currentVersionIndex]?.isMasterVersion ?? false}
+              variant="compact"
+              showQuickActions={true}
+              layout="flat"
+              enableAITools={false}
+              isPublic={false}
+              hasVocals={false}
+              isLiked={isLiked}
+              onLike={toggleLike}
+              onDownload={handleDownloadClick}
+              onShare={() => {}}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 });
