@@ -25,7 +25,6 @@ import { cn } from '@/lib/utils';
 interface ModernDetailPanelProps {
   track: any;
   onClose?: () => void;
-  onUpdate?: () => void;
   onDelete?: () => void;
   onRemix?: (track: any) => void;
   defaultTab?: 'overview' | 'lyrics' | 'analysis';
@@ -34,7 +33,6 @@ interface ModernDetailPanelProps {
 export const ModernDetailPanel = ({
   track,
   onClose,
-  onUpdate,
   onDelete,
   onRemix,
   defaultTab = 'overview',
@@ -288,11 +286,7 @@ export const ModernDetailPanel = ({
             value="overview" 
             className="h-full mt-0 data-[state=active]:animate-in data-[state=active]:fade-in-50"
           >
-            <OverviewContent
-              track={track}
-              onUpdate={onUpdate}
-              onDelete={onDelete}
-            />
+            <OverviewContent track={track} />
           </TabsContent>
 
           <TabsContent 

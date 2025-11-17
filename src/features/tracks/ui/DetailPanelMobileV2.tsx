@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { CompactTrackHero } from './CompactTrackHero';
 import { OverviewContent } from './tabs/OverviewContent';
 import { LyricsContent } from './tabs/LyricsContent';
+import { VersionsStemsContent } from './tabs/VersionsStemsContent';
 import { AnalysisContent } from './tabs/AnalysisContent';
 import { useTrackState } from '@/hooks/useTrackState';
 import { useDownloadTrack } from '@/hooks/useDownloadTrack';
@@ -22,7 +23,6 @@ interface DetailPanelMobileV2Props {
   track: any;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUpdate?: () => void;
   onDelete?: () => void;
   onRemix?: (track: any) => void;
 }
@@ -31,11 +31,10 @@ export const DetailPanelMobileV2 = ({
   track,
   open,
   onOpenChange,
-  onUpdate,
   onDelete,
   onRemix,
 }: DetailPanelMobileV2Props) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'lyrics' | 'analysis'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'lyrics' | 'versions' | 'analysis'>('overview');
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -206,17 +205,16 @@ export const DetailPanelMobileV2 = ({
               <TabsTrigger value="lyrics" disabled={!hasLyrics} className="data-[state=active]:bg-muted">
                 Текст
               </TabsTrigger>
+              <TabsTrigger value="versions" className="data-[state=active]:bg-muted">
+                Версии
+              </TabsTrigger>
               <TabsTrigger value="analysis" className="data-[state=active]:bg-muted">
                 Анализ
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="flex-1 mt-0 p-4">
-              <OverviewContent
-                track={track}
-                onUpdate={onUpdate}
-                onDelete={onDelete}
-              />
+              <OverviewContent track={track} />
             </TabsContent>
 
             <TabsContent value="lyrics" className="flex-1 mt-0 p-4">
@@ -225,6 +223,10 @@ export const DetailPanelMobileV2 = ({
                 sunoTaskId={track.suno_task_id}
                 sunoId={track.suno_id}
               />
+            </TabsContent>
+
+            <TabsContent value="versions" className="flex-1 mt-0 p-4">
+              <VersionsStemsContent track={track} />
             </TabsContent>
 
             <TabsContent value="analysis" className="flex-1 mt-0 p-4">

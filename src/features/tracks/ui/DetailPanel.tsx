@@ -35,7 +35,6 @@ interface DetailPanelProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   onClose?: () => void;
-  onUpdate?: () => void;
   onDelete?: () => void;
   onRemix?: (track: any) => void;
   variant?: 'desktop' | 'mobile';
@@ -46,7 +45,6 @@ export const DetailPanel = ({
   open, 
   onOpenChange, 
   onClose, 
-  onUpdate, 
   onDelete, 
   onRemix,
   variant 
@@ -61,7 +59,6 @@ export const DetailPanel = ({
         track={track} 
         open={open ?? true}
         onOpenChange={onOpenChange ?? (() => onClose?.())}
-        onUpdate={onUpdate} 
         onDelete={onDelete}
         onRemix={onRemix}
       />
@@ -70,12 +67,11 @@ export const DetailPanel = ({
 
   // Desktop panel version
   return (
-    <ModernDetailPanel 
-      track={track} 
-      onClose={onClose} 
-      onUpdate={onUpdate} 
-      onDelete={onDelete}
-      onRemix={onRemix}
-    />
+      <ModernDetailPanel 
+        track={track} 
+        onClose={onClose}
+        onDelete={onDelete}
+        onRemix={onRemix}
+      />
   );
 };
