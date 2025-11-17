@@ -71,6 +71,9 @@ export interface UnifiedTrackActionsMenuProps {
   hasVocals?: boolean;
   isLiked?: boolean;
 
+  // Callbacks
+  onVersionChange?: (versionId: string, versionNumber: number) => void;
+
   // Actions (all optional for flexibility)
   onLike?: () => void;
   onDownload?: () => void;
