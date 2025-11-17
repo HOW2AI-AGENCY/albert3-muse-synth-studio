@@ -8,6 +8,7 @@ import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
 import { usePromptHistory } from '@/hooks/usePromptHistory';
 import { useBreakpoints } from '@/hooks/useBreakpoints';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 import {
@@ -30,6 +31,7 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
   const { vibrate } = useHapticFeedback();
   const isOnline = useOnlineStatus();
   const { projects } = useProjects();
+  const { checkGenerationLimit, incrementGenerationUsage } = useSubscription();
 
   const { generate, isGenerating } = useGenerateMusic({
     provider: selectedProvider as ProviderType,
@@ -176,6 +178,17 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
       return;
     }
 
+    // ✅ Check generation limits before proceeding
+    const canGenerate = await checkGenerationLimit();
+    if (!canGenerate) {
+      toast({
+        title: 'Достигнут дневной лимит',
+        description: 'Обновите план для увеличения лимита генераций',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     vibrate('heavy');
 
     const hasPrompt = state.params.prompt.trim().length > 0;
@@ -260,6 +273,9 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
 
     const started = await generate(requestParams);
     if (started) {
+      // ✅ Increment usage after successful generation
+      await incrementGenerationUsage();
+      
       state.setParams((prev) => ({
         ...prev,
         title: '',
@@ -277,6 +293,9 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
     state,
     toast,
     vibrate,
+    isOnline,
+    checkGenerationLimit,
+    incrementGenerationUsage,
   ]);
 
   const handleBoostPrompt = useCallback(async () => {

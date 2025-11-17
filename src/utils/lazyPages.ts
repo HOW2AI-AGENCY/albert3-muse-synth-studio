@@ -21,4 +21,5 @@ export const LazyPersonas = lazy(() => import('@/pages/workspace/Personas'));
 export const LazyPromptDJPage = lazy(() => import('@/pages/workspace/PromptDJPage').then(m => ({ default: m.PromptDJPage })));
 export const LazyEdgeFunctionsDebug = lazy(() => import('@/pages/debug/EdgeFunctionsDebug'));
 export const LazyTrackDetail = lazy(() => import('@/pages/workspace/TrackDetail'));
+export const LazySubscription = lazy(() => import('@/pages/workspace/Subscription'));
 
