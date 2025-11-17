@@ -27,7 +27,22 @@ export const useResyncTrack = () => {
 
       if (error) {
         logger.error('Resync failed', error, 'useResyncTrack', { trackId });
-        throw error;
+        
+        // Parse error message if it's from Edge Function
+        const errorData = typeof error === 'object' && error !== null ? error as any : null;
+        const statusCode = errorData?.context?.statusCode || errorData?.statusCode;
+        
+        // Create user-friendly error
+        const userError = new Error(
+          errorData?.message || 
+          errorData?.error || 
+          error.message || 
+          'Не удалось обновить данные трека'
+        );
+        (userError as any).statusCode = statusCode;
+        (userError as any).details = errorData;
+        
+        throw userError;
       }
 
       return data;
@@ -42,14 +57,23 @@ export const useResyncTrack = () => {
       queryClient.invalidateQueries({ queryKey: ['track-stems', trackId] });
 
       toast.success('Данные трека обновлены', {
-        description: `Синхронизировано версий: ${data.variantsCount}`,
+        description: `Синхронизировано версий: ${data.variantsCount || 1}`,
       });
     },
-    onError: (error: Error, { trackId }) => {
+    onError: (error: any, { trackId }) => {
       logger.error('Resync error', error, 'useResyncTrack', { trackId });
-      toast.error('Ошибка синхронизации', {
-        description: error.message || 'Не удалось обновить данные трека',
-      });
+      
+      // Show user-friendly message based on status code
+      if (error?.statusCode === 404) {
+        toast.error('Данные недоступны', {
+          description: 'Этот трек слишком старый - данные генерации уже удалены из Suno API. Обновление невозможно.',
+          duration: 5000,
+        });
+      } else {
+        toast.error('Ошибка синхронизации', {
+          description: error.message || 'Не удалось обновить данные трека. Попробуйте позже.',
+        });
+      }
     },
   });
 };
