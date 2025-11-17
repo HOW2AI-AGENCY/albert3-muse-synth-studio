@@ -198,18 +198,32 @@ export const useTrackCardState = (track: Track) => {
     toggleLike();
   }, [toggleLike]);
 
-  const handleDownloadClick = useCallback(() => {
+  const handleDownloadClick = useCallback(async () => {
     if (!displayedVersion.audio_url) {
       toast({ title: 'Ошибка', description: 'Аудиофайл недоступен', variant: 'destructive' });
       return;
     }
-    const link = document.createElement('a');
-    link.href = displayedVersion.audio_url;
-    link.download = `${displayedVersion.title || track.title}.mp3`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast({ title: 'Скачивание начато', description: `${displayedVersion.title || track.title}` });
+
+    try {
+      // Fetch the audio file as blob
+      const response = await fetch(displayedVersion.audio_url);
+      const blob = await response.blob();
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${displayedVersion.title || track.title}.mp3`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({ title: 'Скачивание начато', description: `${displayedVersion.title || track.title}` });
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({ title: 'Ошибка', description: 'Не удалось скачать файл', variant: 'destructive' });
+    }
   }, [displayedVersion, track.title, toast]);
 
   const handleTogglePublic = useCallback(async () => {

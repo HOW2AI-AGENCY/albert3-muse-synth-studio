@@ -26,7 +26,9 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
     taskId !== 'undefined' &&
     audioId && 
     typeof audioId === 'string' && 
-    audioId.trim().length > 0
+    audioId.trim().length > 0 &&
+    audioId !== 'null' &&
+    audioId !== 'undefined'
   );
 
   const { data: lyricsData, isLoading, isError } = useTimestampedLyrics({
@@ -35,35 +37,35 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
     enabled: shouldFetchTimestamped
   });
 
-  const hasValidLyrics = Boolean(
+  // Better validation for lyrics data
+  const hasTimestampedLyrics = Boolean(
     lyricsData?.alignedWords &&
     Array.isArray(lyricsData.alignedWords) &&
     lyricsData.alignedWords.length > 0
   );
+
+  // Show skeleton during loading
+  if (isLoading && !hasTimestampedLyrics) {
+    return <LyricsSkeleton />;
+  }
+
+  // Show plain text lyrics if timestamped failed but we have fallback
+  if ((isError || !hasTimestampedLyrics) && fallbackLyrics) {
 
   // ✅ P1 FIX: Get player controls for keyboard/gesture support
   const currentTime = useAudioPlayerStore((state) => state.currentTime);
   const seekTo = useAudioPlayerStore((state) => state.seekTo);
   const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
 
-  if (!shouldFetchTimestamped) {
-    if (fallbackLyrics) {
-      return (
-        <div className="lyrics-display w-full h-full max-h-60 overflow-y-auto text-center py-4 px-2">
-          <p className="text-sm sm:text-base text-muted-foreground whitespace-pre-line leading-relaxed">
-            {fallbackLyrics}
-          </p>
-        </div>
-      );
-    }
-    return <div className="text-center text-muted-foreground py-8">Текст не найден.</div>;
+  if (!shouldFetchTimestamped && fallbackLyrics) {
+    return (
+      <div className="lyrics-display w-full h-full max-h-60 overflow-y-auto text-center py-4 px-2">
+        <p className="text-sm sm:text-base text-muted-foreground whitespace-pre-line leading-relaxed">
+          {fallbackLyrics}
+        </p>
+      </div>
+    );
   }
-
-  if (isLoading) {
-    return <LyricsSkeleton className="w-full h-full" />;
-  }
-
-  if (isError || !hasValidLyrics) {
     if (fallbackLyrics) {
       return (
         <div className="lyrics-display w-full h-full max-h-60 overflow-y-auto text-center py-4 px-2">
@@ -90,7 +92,7 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
       </Button>
 
       {/* Lyrics Display */}
-      {lyricsData && (
+      {hasTimestampedLyrics && lyricsData && (
         <TimestampedLyricsDisplay
           lyricsData={lyricsData.alignedWords}
           currentTime={currentTime}
@@ -99,6 +101,15 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
           onSeek={seekTo}
           onTogglePlayPause={togglePlayPause}
         />
+      )}
+
+      {/* Fallback to plain text if no timestamped lyrics */}
+      {!hasTimestampedLyrics && fallbackLyrics && (
+        <div className="w-full h-full p-4 overflow-y-auto">
+          <pre className="whitespace-pre-wrap text-sm text-muted-foreground font-sans">
+            {fallbackLyrics}
+          </pre>
+        </div>
       )}
 
       {/* Settings Dialog */}

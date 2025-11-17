@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
+import { useResyncTrack } from '@/hooks/useResyncTrack';
 import {
   Heart,
   Download,
@@ -29,6 +30,8 @@ import type {
 } from './TrackActionsMenu.types';
 
 export const useTrackMenuItems = (props: UnifiedTrackActionsMenuProps): MenuItem[] => {
+  const { mutate: resyncTrack } = useResyncTrack();
+
   const {
     trackId,
     trackStatus,
@@ -71,6 +74,11 @@ export const useTrackMenuItems = (props: UnifiedTrackActionsMenuProps): MenuItem
     onReport,
     onDelete,
   } = props;
+
+  // ✅ Resync handler
+  const handleSync = useCallback((trackId: string) => {
+    resyncTrack({ trackId, force: false });
+  }, [resyncTrack]);
 
   return useMemo<MenuItem[]>(() => {
     const isMurekaTrackLocal = trackMetadata?.provider === 'mureka';
@@ -288,6 +296,16 @@ export const useTrackMenuItems = (props: UnifiedTrackActionsMenuProps): MenuItem
           action: () => onCreatePersona(trackId),
         });
       }
+    }
+
+    // ✅ Add resync option for all completed tracks
+    if (isCompletedLocal) {
+      items.push({
+        id: 'resync',
+        label: 'Синхронизировать данные',
+        icon: <RefreshCw className="w-4 h-4" />,
+        action: () => handleSync(trackId),
+      });
     }
 
     if (onSync && isProcessingLocal) {

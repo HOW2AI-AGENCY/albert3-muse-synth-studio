@@ -34,6 +34,7 @@ export type TrackActionId =
 
   // System actions
   | 'sync'
+  | 'resync' // ✅ NEW: Resync track data from API
   | 'retry'
   | 'report'
   | 'trash';
