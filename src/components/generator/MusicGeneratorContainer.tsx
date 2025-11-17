@@ -20,12 +20,16 @@ import type { MusicGeneratorV2Props } from '@/components/MusicGeneratorV2.types'
 import { MusicGeneratorContent } from '@/components/generator/MusicGeneratorContent';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { sanitize } from '@/utils/sanitization';
+import { useProjects } from '@/contexts/project/useProjects';
+import { LyricsSuggestionDialog } from '@/components/generator/LyricsSuggestionDialog';
+import { generateLyricsPrompt } from '@/utils/lyricsPromptGenerator';
 
 const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2Props) => {
   const { selectedProvider, setProvider } = useMusicGenerationStore();
   const { toast } = useToast();
   const { vibrate } = useHapticFeedback();
   const isOnline = useOnlineStatus();
+  const { projects } = useProjects();
 
   const { generate, isGenerating } = useGenerateMusic({
     provider: selectedProvider as ProviderType,
@@ -43,6 +47,13 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
   const [personaDialogOpen, setPersonaDialogOpen] = useState(false);
   const [projectDialogOpen, setProjectDialogOpen] = useState(false);
   const [audioSourceDialogOpen, setAudioSourceDialogOpen] = useState(false);
+  const [lyricsSuggestionOpen, setLyricsSuggestionOpen] = useState(false);
+  const [selectedTrackContext, setSelectedTrackContext] = useState<{
+    title: string;
+    projectName?: string;
+    genre?: string;
+    mood?: string;
+  } | null>(null);
 
   // Check for remix data on mount
   useEffect(() => {
@@ -473,7 +484,7 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
   );
 
   const handleProjectTrackSelect = useCallback(
-    (track: {
+    async (track: {
       id: string;
       title: string;
       prompt?: string;
@@ -490,16 +501,40 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
         state.setDebouncedPrompt(track.prompt);
       }
 
-      if (track.lyrics) {
-        state.setParam('lyrics', track.lyrics);
-        state.setDebouncedLyrics(track.lyrics);
-      }
-
       if (track.style_tags?.length) {
         state.setParam('tags', track.style_tags.join(', '));
       }
 
-      setProjectDialogOpen(false);
+      // Проверяем наличие лирики
+      if (track.lyrics && track.lyrics.trim()) {
+        // Лирика есть - заполняем поле
+        state.setParam('lyrics', track.lyrics);
+        state.setDebouncedLyrics(track.lyrics);
+        
+        setProjectDialogOpen(false);
+        
+        toast({
+          title: '✅ Данные трека применены',
+          description: 'Название, промпт, лирика и теги заполнены автоматически',
+          duration: 3000,
+        });
+      } else {
+        // Лирики нет - предлагаем сгенерировать
+        setProjectDialogOpen(false);
+        
+        // Получаем информацию о проекте для контекста
+        const project = projects.find(p => p.id === state.params.activeProjectId);
+        
+        setSelectedTrackContext({
+          title: track.title,
+          projectName: project?.name,
+          genre: project?.genre || undefined,
+          mood: project?.mood || undefined,
+        });
+        
+        // Открываем диалог предложения генерации
+        setLyricsSuggestionOpen(true);
+      }
 
       logger.info('✅ Project track data auto-filled', 'MusicGeneratorContainer', {
         trackId: track.id,
@@ -508,15 +543,35 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
         hasLyrics: !!track.lyrics,
         tagsCount: track.style_tags?.length || 0,
       });
-
-      toast({
-        title: '✅ Данные трека применены',
-        description: `Трек "${track.title}" добавлен в форму`,
-        duration: 3000,
-      });
     },
-    [state, toast]
+    [state, setLyricsSuggestionOpen, setSelectedTrackContext, toast, projects]
   );
+
+  const handleLyricsSuggestionGenerate = useCallback(() => {
+    if (!selectedTrackContext) return;
+
+    // Генерируем промпт на основе контекста
+    const project = projects.find((p: any) => p.id === state.params.activeProjectId);
+    const aiPrompt = generateLyricsPrompt({
+      trackTitle: selectedTrackContext.title,
+      trackPrompt: state.params.prompt,
+      projectName: project?.name,
+      projectGenre: project?.genre || undefined,
+      projectMood: project?.mood || undefined,
+      projectDescription: project?.description || undefined,
+      styleTags: state.params.tags ? state.params.tags.split(',').map(t => t.trim()) : undefined,
+    });
+
+    // Открываем диалог генерации лирики с автозаполненным промптом
+    state.setLyricsDialogOpen(true);
+    
+    // Сохраняем промпт для автозаполнения в диалоге
+    sessionStorage.setItem('autoLyricsPrompt', aiPrompt);
+    
+    logger.info('🎵 Auto-generated lyrics prompt', 'MusicGeneratorContainer', {
+      prompt: aiPrompt.substring(0, 100),
+    });
+  }, [selectedTrackContext, state, projects, generateLyricsPrompt]);
 
   const handleQuickProjectClick = useCallback(() => {
     setProjectDialogOpen(true);
@@ -555,40 +610,55 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
   );
 
   return (
-    <MusicGeneratorContent
-      state={state}
-      isMobile={isMobile}
-      isGenerating={isGenerating || !isOnline}
-      isEnhancing={state.isEnhancing}
-      currentModels={[...currentModels]}
-      audioSourceDialogOpen={audioSourceDialogOpen}
-      personaDialogOpen={personaDialogOpen}
-      projectDialogOpen={projectDialogOpen}
-      onAudioSourceDialogOpenChange={setAudioSourceDialogOpen}
-      onPersonaDialogOpenChange={setPersonaDialogOpen}
-      onProjectDialogOpenChange={setProjectDialogOpen}
-      onQuickAudioClick={() => setAudioSourceDialogOpen(true)}
-      onQuickPersonaClick={() => setPersonaDialogOpen(true)}
-      onQuickProjectClick={handleQuickProjectClick}
-      onAudioSelect={handleAudioSelect}
-      onReferenceTrackSelect={handleReferenceTrackSelect}
-      onGenerate={handleGenerate}
-      onBoostPrompt={handleBoostPrompt}
-      onEnhancedPromptAccept={handleEnhancedPromptAccept}
-      onEnhancedPromptReject={handleEnhancedPromptReject}
-      audioPreviewUrl={tempAudioUrl}
-      audioPreviewFileName={state.pendingAudioFile?.name || ''}
-      onAudioPreviewConfirm={audioUpload.handleAudioConfirm}
-      onAudioPreviewRemove={audioUpload.handleRemoveAudio}
-      onAudioPreviewOpenChange={handleAudioPreviewOpenChange}
-      onLyricsGenerated={handleLyricsGenerated}
-      onLyricsDialogOpenChange={handleLyricsDialogOpenChange}
-      onHistoryDialogOpenChange={handleHistoryDialogOpenChange}
-      onHistorySelect={handleHistorySelect}
-      onPersonaSelect={handlePersonaSelect}
-      onProjectSelect={handleProjectSelect}
-      onProjectTrackSelect={handleProjectTrackSelect}
-    />
+    <>
+      <MusicGeneratorContent
+        state={state}
+        isMobile={isMobile}
+        isGenerating={isGenerating || !isOnline}
+        isEnhancing={state.isEnhancing}
+        currentModels={[...currentModels]}
+        audioSourceDialogOpen={audioSourceDialogOpen}
+        personaDialogOpen={personaDialogOpen}
+        projectDialogOpen={projectDialogOpen}
+        onAudioSourceDialogOpenChange={setAudioSourceDialogOpen}
+        onPersonaDialogOpenChange={setPersonaDialogOpen}
+        onProjectDialogOpenChange={setProjectDialogOpen}
+        onQuickAudioClick={() => setAudioSourceDialogOpen(true)}
+        onQuickPersonaClick={() => setPersonaDialogOpen(true)}
+        onQuickProjectClick={handleQuickProjectClick}
+        onAudioSelect={handleAudioSelect}
+        onReferenceTrackSelect={handleReferenceTrackSelect}
+        onGenerate={handleGenerate}
+        onBoostPrompt={handleBoostPrompt}
+        onEnhancedPromptAccept={handleEnhancedPromptAccept}
+        onEnhancedPromptReject={handleEnhancedPromptReject}
+        audioPreviewUrl={tempAudioUrl}
+        audioPreviewFileName={state.pendingAudioFile?.name || ''}
+        onAudioPreviewConfirm={audioUpload.handleAudioConfirm}
+        onAudioPreviewRemove={audioUpload.handleRemoveAudio}
+        onAudioPreviewOpenChange={handleAudioPreviewOpenChange}
+        onLyricsGenerated={handleLyricsGenerated}
+        onLyricsDialogOpenChange={handleLyricsDialogOpenChange}
+        onHistoryDialogOpenChange={handleHistoryDialogOpenChange}
+        onHistorySelect={handleHistorySelect}
+        onPersonaSelect={handlePersonaSelect}
+        onProjectSelect={handleProjectSelect}
+        onProjectTrackSelect={handleProjectTrackSelect}
+      />
+
+      {/* Диалог предложения генерации лирики */}
+      {selectedTrackContext && (
+        <LyricsSuggestionDialog
+          open={lyricsSuggestionOpen}
+          onOpenChange={setLyricsSuggestionOpen}
+          trackTitle={selectedTrackContext.title}
+          projectName={selectedTrackContext.projectName}
+          genre={selectedTrackContext.genre}
+          mood={selectedTrackContext.mood}
+          onGenerate={handleLyricsSuggestionGenerate}
+        />
+      )}
+    </>
   );
 };
 
