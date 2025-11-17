@@ -33,6 +33,7 @@ import {
   LazyPromptDJPage,
   LazyEdgeFunctionsDebug,
   LazyTrackDetail,
+  LazySubscription,
 } from "./utils/lazyPages";
 
 
@@ -161,6 +162,14 @@ export const router = createBrowserRouter(
           element: (
             <Suspense fallback={<FullPageSpinner />}>
               <LazySettings />
+            </Suspense>
+          )
+        },
+        {
+          path: "subscription",
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <LazySubscription />
             </Suspense>
           )
         },

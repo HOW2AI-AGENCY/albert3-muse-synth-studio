@@ -10,6 +10,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { TelegramAuthProvider } from "@/contexts/TelegramAuthProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/i18n";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { toast } from "@/hooks/use-toast";
 import { reportWebVitals, logMetric } from "@/utils/web-vitals";
 import {
@@ -114,35 +115,37 @@ const App = () => {
         <LanguageProvider>
           <TelegramAuthProvider>
             <AuthProvider>
-              <TooltipProvider delayDuration={200}>
-                <AppLayout>
-                  <Profiler id="AppLayout" onRender={(id, phase, actualDuration) => {
-                    // Записываем метрику рендера компонента через PerformanceMonitor и Sentry
-                    recordPerformanceMetric('rendering', actualDuration, 'ReactProfiler', { id, phase });
-                    if (actualDuration > 1000) {
-                      // 1s+ рендер считаем потенциально проблемным
-                      trackPerformanceMetric('component_render', actualDuration, { component: id, phase });
-                    }
-                  }}>
-                  <Suspense fallback={<FullPageSpinner />}>
-                    <Toaster />
-                    <RouterProvider router={router} />
+              <SubscriptionProvider>
+                <TooltipProvider delayDuration={200}>
+                  <AppLayout>
+                    <Profiler id="AppLayout" onRender={(id, phase, actualDuration) => {
+                      // Записываем метрику рендера компонента через PerformanceMonitor и Sentry
+                      recordPerformanceMetric('rendering', actualDuration, 'ReactProfiler', { id, phase });
+                      if (actualDuration > 1000) {
+                        // 1s+ рендер считаем потенциально проблемным
+                        trackPerformanceMetric('component_render', actualDuration, { component: id, phase });
+                      }
+                    }}>
+                    <Suspense fallback={<FullPageSpinner />}>
+                      <Toaster />
+                      <RouterProvider router={router} />
 
-                    {/* ✅ Lazy load heavy components */}
-                    <Suspense fallback={null}>
-                      <LazyGlobalAudioPlayer />
-                    </Suspense>
-
-                    {/* ✅ FIX: Hide PerformanceMonitor on mobile devices to avoid UI clutter */}
-                    {import.meta.env.DEV && !isMobile && (
+                      {/* ✅ Lazy load heavy components */}
                       <Suspense fallback={null}>
-                        <LazyPerformanceMonitorWidget />
+                        <LazyGlobalAudioPlayer />
                       </Suspense>
-                    )}
-                  </Suspense>
-                  </Profiler>
-                </AppLayout>
-              </TooltipProvider>
+
+                      {/* ✅ FIX: Hide PerformanceMonitor on mobile devices to avoid UI clutter */}
+                      {import.meta.env.DEV && !isMobile && (
+                        <Suspense fallback={null}>
+                          <LazyPerformanceMonitorWidget />
+                        </Suspense>
+                      )}
+                    </Suspense>
+                    </Profiler>
+                  </AppLayout>
+                </TooltipProvider>
+              </SubscriptionProvider>
             </AuthProvider>
           </TelegramAuthProvider>
         </LanguageProvider>
