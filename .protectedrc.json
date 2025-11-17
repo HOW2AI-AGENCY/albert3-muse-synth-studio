@@ -15,7 +15,14 @@
       "src/features/tracks/api/trackVersions.ts",
       "src/features/tracks/hooks/useTrackVersions.ts",
       "src/hooks/useTrackVersions.ts",
-      "docs/PROTECTED_FILES.md"
+      "docs/PROTECTED_FILES.md",
+      "docs/CURRENT_STATUS.md",
+      "docs/DOCUMENTATION_INDEX.md",
+      "docs/STAGE_1_IMPLEMENTATION_COMPLETE.md",
+      "docs/CLEANUP_SUMMARY_2025-11-16.md",
+      "docs/REPOSITORY_MAP.md",
+      "docs/ARCHITECTURE.md",
+      "docs/DATABASE_SCHEMA.md"
     ],
     "patterns": [
       "supabase/functions/_shared/suno.ts",
