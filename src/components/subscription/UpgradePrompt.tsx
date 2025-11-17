@@ -52,7 +52,6 @@ const PLAN_BENEFITS: Record<string, string[]> = {
 export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
   feature,
   requiredPlan,
-  currentPlan,
 }) => {
   const navigate = useNavigate();
   const featureName = FEATURE_NAMES[feature] || feature;
