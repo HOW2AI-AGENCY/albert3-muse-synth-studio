@@ -133,6 +133,19 @@ flowchart LR
     style H fill:#51CF66
 ```
 
+## 🆕 Latest Updates (2025-11-17)
+
+### Music Classification System (Phase 1)
+- ✅ **Database Tables**: `music_classifications`, `classification_jobs`
+- ✅ **TypeScript Types**: `MusicClassificationMetadata` interface
+- ✅ **RLS Policies**: Secure access control for classifications
+- ✅ **Cleanup Functions**: Auto-delete old jobs (30 days retention)
+- 📖 **Documentation**: [MUSIC_CLASSIFICATION_GUIDE.md](./MUSIC_CLASSIFICATION_GUIDE.md)
+
+**Next**: Phase 2 - Edge Functions (`classify-music-mtg`, `classify-music-discogs`)
+
+---
+
 **Testing Stack**:
 - **Unit**: Vitest + Testing Library
 - **E2E**: Playwright

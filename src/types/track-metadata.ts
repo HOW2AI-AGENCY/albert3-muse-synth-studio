@@ -109,6 +109,59 @@ export interface AnalysisMetadata {
   analyzed_at?: string;
 }
 
+/**
+ * Music Classification metadata (from MTG/Discogs classifiers)
+ * @version 1.0.0
+ * @since 2025-11-17
+ */
+export interface MusicClassificationMetadata {
+  /** Classification job ID for tracking */
+  classification_job_id?: string;
+  
+  /** Auto-classification enabled on track completion */
+  auto_classify_on_complete?: boolean;
+  
+  /** MTG MusiCNN results (genres, moods, instruments) */
+  mtg_musicnn?: {
+    /** Primary detected genre */
+    primary_genre: string;
+    /** Primary detected mood */
+    primary_mood: string;
+    /** Detected instruments array */
+    instruments: string[];
+    /** Overall confidence score (0.0 - 1.0) */
+    confidence: number;
+    /** Top 10 genres with scores */
+    top_genres: Array<{ genre: string; score: number }>;
+    /** Top 10 moods with scores */
+    top_moods: Array<{ mood: string; score: number }>;
+    /** Top 10 instruments with detection confidence */
+    top_instruments?: Array<{ instrument: string; score: number }>;
+    /** Classifier model version */
+    model_version?: string;
+    /** Timestamp when classification completed */
+    classified_at: string;
+  };
+  
+  /** Discogs EfficientNet results (400 music styles) */
+  effnet_discogs?: {
+    /** Primary detected Discogs style */
+    primary_style: string;
+    /** Parent genre in Discogs taxonomy */
+    parent_genre: string;
+    /** Overall confidence score (0.0 - 1.0) */
+    confidence: number;
+    /** Top 10 Discogs styles with scores */
+    top_styles: Array<{ style: string; score: number }>;
+    /** URL to PNG visualization (bar chart) */
+    visualization_url?: string;
+    /** Classifier model version */
+    model_version?: string;
+    /** Timestamp when classification completed */
+    classified_at: string;
+  };
+}
+
 // ============================================================================
 // Complete Track Metadata Interface
 // ============================================================================
@@ -116,13 +169,17 @@ export interface AnalysisMetadata {
 /**
  * Complete metadata structure for tracks table
  * Combines all possible metadata fields with strict typing
+ * 
+ * @version 2.0.0 - Added MusicClassificationMetadata
+ * @since 2025-11-17
  */
 export interface TrackMetadata 
   extends Partial<SunoMetadata>,
           Partial<MurekaMetadata>,
           Partial<AIDescriptionMetadata>,
           Partial<ExtensionMetadata>,
-          Partial<AnalysisMetadata> {
+          Partial<AnalysisMetadata>,
+          Partial<MusicClassificationMetadata> {
   /** Allow additional custom fields */
   [key: string]: unknown;
 }
