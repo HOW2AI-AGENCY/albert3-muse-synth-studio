@@ -1,0 +1,223 @@
+/**
+ * Full Screen Player Styling System
+ * Spacing, effects, and animations for the player
+ */
+
+/* ============================================================================
+   SPACING SYSTEM
+   ============================================================================ */
+
+/* Mobile fullscreen player */
+.fullscreen-mobile-container {
+  padding: var(--space-6);
+  gap: var(--space-4);
+}
+
+.fullscreen-mobile-header {
+  padding-top: var(--space-6);
+  padding-bottom: var(--space-4);
+}
+
+.fullscreen-mobile-controls {
+  padding: var(--space-4) var(--space-6);
+  gap: var(--space-3);
+}
+
+/* Desktop fullscreen player */
+.fullscreen-desktop-container {
+  padding: var(--space-8);
+  gap: var(--space-6);
+}
+
+.fullscreen-desktop-header {
+  padding-top: var(--space-8);
+  padding-bottom: var(--space-6);
+}
+
+.fullscreen-desktop-controls {
+  padding: var(--space-6) var(--space-8);
+  gap: var(--space-4);
+}
+
+/* ============================================================================
+   TOUCH TARGETS
+   ============================================================================ */
+
+.touch-target-optimal {
+  min-width: 48px;
+  min-height: 48px;
+}
+
+.touch-target-min {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.touch-optimized {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ============================================================================
+   GRADIENT BACKGROUNDS
+   ============================================================================ */
+
+.gradient-player-header {
+  background: linear-gradient(
+    180deg,
+    hsl(var(--background)) 0%,
+    hsl(var(--surface)) 100%
+  );
+}
+
+.gradient-player-footer {
+  background: linear-gradient(
+    0deg,
+    hsl(var(--background)) 0%,
+    hsl(var(--surface)) 100%
+  );
+}
+
+/* ============================================================================
+   GLOW EFFECTS
+   ============================================================================ */
+
+.glow-primary {
+  box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+}
+
+.glow-primary-strong {
+  box-shadow: 
+    0 0 20px hsl(var(--primary) / 0.4),
+    0 0 40px hsl(var(--primary) / 0.2);
+}
+
+.glow-active-word {
+  text-shadow: 
+    0 0 8px hsl(var(--primary) / 0.4),
+    0 0 16px hsl(var(--primary) / 0.2);
+}
+
+/* ============================================================================
+   GLASS MORPHISM
+   ============================================================================ */
+
+.glass-effect {
+  background: hsl(var(--surface) / 0.8);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid hsl(var(--outline-variant) / 0.2);
+}
+
+.glass-effect-strong {
+  background: hsl(var(--surface) / 0.9);
+  backdrop-filter: blur(30px) saturate(200%);
+  -webkit-backdrop-filter: blur(30px) saturate(200%);
+  border: 1px solid hsl(var(--outline-variant) / 0.3);
+}
+
+/* ============================================================================
+   LOADING EFFECTS
+   ============================================================================ */
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.shimmer {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--primary) / 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 1000px 100%;
+}
+
+/* ============================================================================
+   ANIMATIONS
+   ============================================================================ */
+
+/* Fade in from bottom */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* Scale in */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out;
+}
+
+/* Pulse effect for playing indicator */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.6);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ============================================================================
+   RESPONSIVE UTILITIES
+   ============================================================================ */
+
+@media (min-width: 640px) {
+  .fullscreen-mobile-container {
+    padding: var(--space-8);
+    gap: var(--space-6);
+  }
+}
+
+@media (min-width: 1024px) {
+  .fullscreen-desktop-container {
+    padding: var(--space-12);
+    gap: var(--space-8);
+  }
+}
+
+/* ============================================================================
+   PERFORMANCE OPTIMIZATIONS
+   ============================================================================ */
+
+/* Enable GPU acceleration */
+.glass-effect,
+.glow-primary,
+.glow-primary-strong {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+/* Contain layout shifts */
+.fullscreen-mobile-container,
+.fullscreen-desktop-container {
+  contain: layout style paint;
+}

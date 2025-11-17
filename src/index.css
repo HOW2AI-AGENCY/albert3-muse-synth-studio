@@ -9,6 +9,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import player and lyrics styles */
+@import './styles/player.css';
+@import './styles/lyrics.css';
+
 @layer base {
   :root {
     /* Совместимость с существующими компонентами */
