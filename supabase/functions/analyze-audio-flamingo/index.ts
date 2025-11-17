@@ -73,7 +73,7 @@ Be specific (e.g., "electric guitar", "synthesizer pad", "808 bass", "acoustic d
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: 'zsxkib/audio-flamingo-3',
+        version: '00536cbb98ad08b95e7c54f0bcf054b13bfd1cdfef7afdf25a9223cca93c1293', // zsxkib/audio-flamingo-3
         input: {
           audio: audioUrl,
           prompt: prompt,
