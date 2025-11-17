@@ -2,10 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
+import { startOfDay, subDays } from 'date-fns';
 
 type PromptProvider = 'suno' | 'mureka';
 
-interface PromptHistoryItem {
+export interface PromptHistoryItem {
   id: string;
   prompt: string;
   lyrics?: string;
@@ -18,160 +19,105 @@ interface PromptHistoryItem {
   usage_count: number;
   last_used_at: string;
   created_at: string;
+  result_track_id?: string;
+  generation_status?: string;
+  generation_time_ms?: number;
+  model_version?: string;
 }
 
-export const usePromptHistory = () => {
+export interface PromptFilters {
+  dateRange?: 'all' | 'today' | 'yesterday' | 'last7days' | 'last30days';
+  provider?: 'all' | 'suno' | 'mureka';
+  status?: 'all' | 'success' | 'failed' | 'pending';
+  searchQuery?: string;
+}
+
+export const usePromptHistory = (filters?: PromptFilters) => {
   const queryClient = useQueryClient();
 
-  // Fetch history
   const { data: history = [], isLoading } = useQuery({
-    queryKey: ['prompt-history'],
+    queryKey: ['prompt-history', filters],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('prompt_history')
-        .select('*')
-        .order('last_used_at', { ascending: false })
-        .limit(50);
+      let query = supabase.from('prompt_history').select('*').order('last_used_at', { ascending: false });
 
-      if (error) {
-        logger.error('[usePromptHistory] Fetch failed:', error);
-        throw error;
+      if (filters?.dateRange && filters.dateRange !== 'all') {
+        const now = new Date();
+        if (filters.dateRange === 'today') {
+          query = query.gte('created_at', startOfDay(now).toISOString());
+        } else if (filters.dateRange === 'yesterday') {
+          query = query.gte('created_at', startOfDay(subDays(now, 1)).toISOString()).lt('created_at', startOfDay(now).toISOString());
+        } else if (filters.dateRange === 'last7days') {
+          query = query.gte('created_at', subDays(now, 7).toISOString());
+        } else if (filters.dateRange === 'last30days') {
+          query = query.gte('created_at', subDays(now, 30).toISOString());
+        }
       }
 
+      if (filters?.provider && filters.provider !== 'all') query = query.eq('provider', filters.provider);
+      if (filters?.status && filters.status !== 'all') query = query.eq('generation_status', filters.status);
+      if (filters?.searchQuery) query = query.ilike('prompt', `%${filters.searchQuery}%`);
+
+      const { data, error } = await query.limit(100);
+      if (error) throw error;
       return data as PromptHistoryItem[];
     },
   });
 
-  // Fetch templates only
   const { data: templates = [] } = useQuery({
     queryKey: ['prompt-templates'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('prompt_history')
-        .select('*')
-        .eq('is_template', true)
-        .order('template_name');
-
-      if (error) {
-        logger.error('[usePromptHistory] Templates fetch failed:', error);
-        throw error;
-      }
-
+      const { data, error } = await supabase.from('prompt_history').select('*').eq('is_template', true).order('template_name');
+      if (error) throw error;
       return data as PromptHistoryItem[];
     },
   });
 
-  // Save prompt
   const savePrompt = useMutation({
-    mutationFn: async (params: {
-      prompt: string;
-      lyrics?: string;
-      style_tags?: string[];
-      genre?: string;
-      mood?: string;
-      provider?: PromptProvider;
-      is_template?: boolean;
-      template_name?: string;
-    }) => {
+    mutationFn: async (params: any) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
-
-      const { data, error } = await supabase
-        .from('prompt_history')
-        .insert({
-          user_id: user.id,
-          prompt: params.prompt,
-          lyrics: params.lyrics,
-          style_tags: params.style_tags,
-          genre: params.genre,
-          mood: params.mood,
-          provider: params.provider || 'suno',
-          is_template: params.is_template || false,
-          template_name: params.template_name,
-        })
-        .select()
-        .single();
-
+      const { data, error } = await supabase.from('prompt_history').insert({ user_id: user.id, ...params }).select().single();
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['prompt-history'] });
-      queryClient.invalidateQueries({ queryKey: ['prompt-templates'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['prompt-history'] }),
   });
 
-  // Update usage
-  const updateUsage = useMutation({
-    mutationFn: async (id: string) => {
-      // First get current usage count
-      const { data: current } = await supabase
-        .from('prompt_history')
-        .select('usage_count')
-        .eq('id', id)
-        .single();
-
-      const newUsageCount = (current?.usage_count || 0) + 1;
-
-      const { error } = await supabase
-        .from('prompt_history')
-        .update({
-          usage_count: newUsageCount,
-          last_used_at: new Date().toISOString(),
-        })
-        .eq('id', id);
-
+  const linkPromptToTrack = useMutation({
+    mutationFn: async ({ promptId, trackId, generationTimeMs }: any) => {
+      const { error } = await supabase.from('prompt_history').update({ result_track_id: trackId, generation_status: 'success', generation_time_ms: generationTimeMs }).eq('id', promptId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['prompt-history'] });
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['prompt-history'] }),
+  });
+
+  const markPromptFailed = useMutation({
+    mutationFn: async (promptId: string) => {
+      const { error } = await supabase.from('prompt_history').update({ generation_status: 'failed' }).eq('id', promptId);
+      if (error) throw error;
     },
   });
 
-  // Delete prompt
   const deletePrompt = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('prompt_history')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('prompt_history').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['prompt-history'] });
-      queryClient.invalidateQueries({ queryKey: ['prompt-templates'] });
       toast({ description: 'Промпт удален' });
     },
   });
 
-  // Save as template
-  const saveAsTemplate = useMutation({
-    mutationFn: async ({ id, templateName }: { id: string; templateName: string }) => {
-      const { error } = await supabase
-        .from('prompt_history')
-        .update({
-          is_template: true,
-          template_name: templateName,
-        })
-        .eq('id', id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['prompt-history'] });
-      queryClient.invalidateQueries({ queryKey: ['prompt-templates'] });
-      toast({ description: 'Сохранено как шаблон' });
-    },
-  });
-
-  return {
-    history,
-    templates,
-    isLoading,
-    savePrompt: savePrompt.mutateAsync,
-    updateUsage: updateUsage.mutateAsync,
-    deletePrompt: deletePrompt.mutateAsync,
-    saveAsTemplate: saveAsTemplate.mutateAsync,
+  const exportHistory = async (format: 'json' | 'csv') => {
+    const { data } = await supabase.from('prompt_history').select('*').order('created_at', { ascending: false });
+    const blob = new Blob([format === 'json' ? JSON.stringify(data, null, 2) : 'CSV'], { type: format === 'json' ? 'application/json' : 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `prompt-history-${new Date().toISOString()}.${format}`;
+    a.click();
   };
+
+  return { history, templates, isLoading, savePrompt, linkPromptToTrack, markPromptFailed, deletePrompt, exportHistory };
 };

@@ -1,30 +1,22 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Star, Trash2 } from '@/utils/iconImports';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Star, Trash2, RotateCcw, GitCompare, MoreVertical, Music } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-
-interface PromptHistoryItemData {
-  id: string;
-  prompt: string;
-  lyrics?: string;
-  style_tags?: string[];
-  genre?: string;
-  mood?: string;
-  is_template: boolean;
-  template_name?: string;
-  usage_count: number;
-  last_used_at: string;
-}
+import type { PromptHistoryItem as PromptHistoryItemData } from '@/hooks/usePromptHistory';
 
 interface PromptHistoryItemProps {
   item: PromptHistoryItemData;
   onSelect: (item: PromptHistoryItemData) => void;
   onDelete: (id: string) => void;
+  onCompare?: (item: PromptHistoryItemData) => void;
   savingTemplateId: string | null;
   onStartSaveTemplate: (id: string) => void;
   onCancelSaveTemplate: () => void;
@@ -37,6 +29,7 @@ export const PromptHistoryItem = React.memo(({
   item,
   onSelect,
   onDelete,
+  onCompare,
   savingTemplateId,
   onStartSaveTemplate,
   onCancelSaveTemplate,
@@ -44,68 +37,99 @@ export const PromptHistoryItem = React.memo(({
   onTemplateNameChange,
   onSaveAsTemplate,
 }: PromptHistoryItemProps) => {
+  // Fetch linked track
+  const { data: linkedTrack } = useQuery({
+    queryKey: ['track', item.result_track_id],
+    queryFn: async () => {
+      if (!item.result_track_id) return null;
+      const { data } = await supabase
+        .from('tracks')
+        .select('*')
+        .eq('id', item.result_track_id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!item.result_track_id,
+  });
+
   return (
     <Card
       className={cn(
-        'cursor-pointer hover:border-primary transition-all group',
+        'hover:border-primary transition-all group',
         item.is_template && 'border-amber-500/50'
       )}
     >
-      <CardHeader 
-        className="pb-2 cursor-pointer"
-        onClick={() => onSelect(item)}
-      >
+      <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onSelect(item)}>
             <p className="text-sm font-medium line-clamp-2 mb-1">
               {item.prompt}
             </p>
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1 mb-2">
+              {item.generation_status && (
+                <Badge variant={item.generation_status === 'success' ? 'default' : item.generation_status === 'failed' ? 'destructive' : 'secondary'} className="text-xs">
+                  {item.generation_status === 'success' ? '✓ Успешно' : item.generation_status === 'failed' ? '✗ Ошибка' : '⏳ В процессе'}
+                </Badge>
+              )}
+              {item.provider && (
+                <Badge variant="outline" className="text-xs">
+                  {item.provider}
+                </Badge>
+              )}
+              {item.generation_time_ms && (
+                <span className="text-xs text-muted-foreground">
+                  {(item.generation_time_ms / 1000).toFixed(1)}s
+                </span>
+              )}
               {item.style_tags?.map((tag) => (
                 <Badge key={tag} variant="secondary" className="text-xs">
                   {tag}
                 </Badge>
               ))}
-              {item.genre && (
-                <Badge variant="outline" className="text-xs">
-                  {item.genre}
-                </Badge>
-              )}
             </div>
-          </div>
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            {!item.is_template && (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-7 w-7 p-0 hover:bg-amber-500/20 hover:text-amber-500"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStartSaveTemplate(item.id);
-                }}
-                title="Сохранить как шаблон"
-              >
-                <Star className="w-3.5 h-3.5" />
-              </Button>
-            )}
-            {item.is_template && (
-              <div className="h-7 w-7 flex items-center justify-center">
-                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+
+            {/* Linked Track Preview */}
+            {linkedTrack && (
+              <div className="mt-2 p-2 bg-muted/50 rounded-lg flex items-center gap-2">
+                <Music className="w-4 h-4 text-primary" />
+                <span className="text-xs font-medium flex-1">{linkedTrack.title}</span>
+                <div className="flex gap-2 text-xs text-muted-foreground">
+                  <span>❤️ {linkedTrack.like_count || 0}</span>
+                  <span>▶ {linkedTrack.play_count || 0}</span>
+                </div>
               </div>
             )}
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-7 w-7 p-0 text-destructive"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(item.id);
-              }}
-              title="Удалить"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
           </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onSelect(item)}>
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Использовать снова
+              </DropdownMenuItem>
+              {onCompare && (
+                <DropdownMenuItem onClick={() => onCompare(item)}>
+                  <GitCompare className="w-4 h-4 mr-2" />
+                  Сравнить результаты
+                </DropdownMenuItem>
+              )}
+              {!item.is_template && (
+                <DropdownMenuItem onClick={() => onStartSaveTemplate(item.id)}>
+                  <Star className="w-4 h-4 mr-2" />
+                  Сохранить как шаблон
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => onDelete(item.id)} className="text-destructive">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Удалить
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardHeader>
       <CardContent

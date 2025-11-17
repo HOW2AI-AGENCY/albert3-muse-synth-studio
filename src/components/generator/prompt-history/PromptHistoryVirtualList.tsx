@@ -2,18 +2,7 @@ import { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { PromptHistoryItem } from './PromptHistoryItem';
 
-interface PromptHistoryItemData {
-  id: string;
-  prompt: string;
-  lyrics?: string;
-  style_tags?: string[];
-  genre?: string;
-  mood?: string;
-  is_template: boolean;
-  template_name?: string;
-  usage_count: number;
-  last_used_at: string;
-}
+import type { PromptHistoryItem as PromptHistoryItemData } from '@/hooks/usePromptHistory';
 
 interface PromptHistoryVirtualListProps {
   items: PromptHistoryItemData[];
@@ -74,6 +63,7 @@ export const PromptHistoryVirtualList = ({
                 item={item}
                 onSelect={onSelect}
                 onDelete={onDelete}
+                onCompare={undefined}
                 savingTemplateId={savingTemplateId}
                 onStartSaveTemplate={onStartSaveTemplate}
                 onCancelSaveTemplate={onCancelSaveTemplate}
