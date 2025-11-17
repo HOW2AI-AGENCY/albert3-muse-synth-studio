@@ -43,7 +43,9 @@ export const TrackCardInfo = memo(({
             {hasStems && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Split className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <div className="shrink-0">
+                    <Split className="h-3.5 w-3.5 text-primary" aria-label="Доступны стемы" />
+                  </div>
                 </TooltipTrigger>
                 <TooltipContent>Доступны стемы</TooltipContent>
               </Tooltip>
@@ -51,7 +53,9 @@ export const TrackCardInfo = memo(({
             {isMasterVersion && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500 shrink-0" />
+                  <div className="shrink-0">
+                    <Star className="h-3.5 w-3.5 fill-yellow-500 text-yellow-500" aria-label="Мастер-версия" />
+                  </div>
                 </TooltipTrigger>
                 <TooltipContent>Мастер-версия</TooltipContent>
               </Tooltip>
