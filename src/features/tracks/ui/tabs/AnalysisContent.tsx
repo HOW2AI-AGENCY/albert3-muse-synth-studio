@@ -36,13 +36,15 @@ export const AnalysisContent = ({ track }: AnalysisContentProps) => {
           />
         )}
 
-        {/* Style Recommendations (AI) */}
-        <StyleRecommendationsPanel
-          mood={track.mood || ''}
-          genre={track.genre || ''}
-          currentTags={track.style_tags || []}
-          className="bg-card"
-        />
+        {/* Style Recommendations (AI) - Only show if there's mood or genre */}
+        {(track.mood || track.genre) && (
+          <StyleRecommendationsPanel
+            mood={track.mood || undefined}
+            genre={track.genre || undefined}
+            currentTags={track.style_tags || []}
+            className="bg-card"
+          />
+        )}
 
         {/* Reference Sources */}
         <ReferenceSourcesPanel
