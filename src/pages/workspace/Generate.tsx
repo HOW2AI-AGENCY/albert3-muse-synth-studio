@@ -554,18 +554,17 @@ const Generate = () => {
                   exit={{ scale: 0, opacity: 0 }}
                   transition={{ type: 'spring', stiffness: 260, damping: 20 }}
                   whileTap={{ scale: 0.95 }}
+                  className="fixed"
+                  style={{
+                    right: 'max(1rem, env(safe-area-inset-right))',
+                    bottom: 'calc(var(--workspace-bottom-offset) + 1rem + env(safe-area-inset-bottom))',
+                    zIndex: 'var(--z-fab)',
+                  }}
                 >
                   <Button
                     variant="fab"
                     size="fab"
                     onClick={() => setShowGenerator(true)}
-                    className="fixed"
-                    style={{
-                      right: 'max(1rem, env(safe-area-inset-right))',
-                      bottom: 'calc(var(--workspace-bottom-offset) + 1rem + env(safe-area-inset-bottom))',
-                      zIndex: 'var(--z-fab)',
-                      willChange: 'transform'
-                    }}
                     aria-label="Создать музыку"
                   >
                     <Plus className="h-6 w-6" />
