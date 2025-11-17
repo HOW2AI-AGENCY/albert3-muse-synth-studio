@@ -323,6 +323,39 @@ export type Database = {
         }
         Relationships: []
       }
+      generation_limits: {
+        Row: {
+          created_at: string | null
+          generations_limit_daily: number | null
+          generations_used_today: number | null
+          id: string
+          last_reset_at: string | null
+          plan_name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          generations_limit_daily?: number | null
+          generations_used_today?: number | null
+          id?: string
+          last_reset_at?: string | null
+          plan_name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          generations_limit_daily?: number | null
+          generations_used_today?: number | null
+          id?: string
+          last_reset_at?: string | null
+          plan_name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       lyrics_generation_log: {
         Row: {
           created_at: string
@@ -489,6 +522,9 @@ export type Database = {
       }
       music_projects: {
         Row: {
+          ai_context: Json | null
+          ai_context_updated_at: string | null
+          ai_context_version: number | null
           ai_generation_params: Json | null
           completed_tracks: number | null
           concept_description: string | null
@@ -515,6 +551,9 @@ export type Database = {
           visual_references: string[] | null
         }
         Insert: {
+          ai_context?: Json | null
+          ai_context_updated_at?: string | null
+          ai_context_version?: number | null
           ai_generation_params?: Json | null
           completed_tracks?: number | null
           concept_description?: string | null
@@ -541,6 +580,9 @@ export type Database = {
           visual_references?: string[] | null
         }
         Update: {
+          ai_context?: Json | null
+          ai_context_updated_at?: string | null
+          ai_context_version?: number | null
           ai_generation_params?: Json | null
           completed_tracks?: number | null
           concept_description?: string | null
@@ -616,27 +658,45 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          credits_remaining: number | null
+          credits_used_today: number | null
           email: string | null
           full_name: string | null
           id: string
+          last_credit_reset_at: string | null
+          subscription_expires_at: string | null
+          subscription_plan: string | null
+          subscription_status: string | null
           subscription_tier: string
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          credits_remaining?: number | null
+          credits_used_today?: number | null
           email?: string | null
           full_name?: string | null
           id: string
+          last_credit_reset_at?: string | null
+          subscription_expires_at?: string | null
+          subscription_plan?: string | null
+          subscription_status?: string | null
           subscription_tier?: string
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          credits_remaining?: number | null
+          credits_used_today?: number | null
           email?: string | null
           full_name?: string | null
           id?: string
+          last_credit_reset_at?: string | null
+          subscription_expires_at?: string | null
+          subscription_plan?: string | null
+          subscription_status?: string | null
           subscription_tier?: string
           updated_at?: string
         }
@@ -1066,6 +1126,60 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      subscription_plans: {
+        Row: {
+          created_at: string | null
+          credits_daily_limit: number | null
+          credits_monthly: number
+          description: string | null
+          display_name: string
+          features: Json
+          id: string
+          is_active: boolean | null
+          max_concurrent_generations: number | null
+          max_projects: number | null
+          max_reference_audios: number | null
+          name: string
+          price_annual: number | null
+          price_monthly: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          credits_daily_limit?: number | null
+          credits_monthly?: number
+          description?: string | null
+          display_name: string
+          features?: Json
+          id?: string
+          is_active?: boolean | null
+          max_concurrent_generations?: number | null
+          max_projects?: number | null
+          max_reference_audios?: number | null
+          name: string
+          price_annual?: number | null
+          price_monthly?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          credits_daily_limit?: number | null
+          credits_monthly?: number
+          description?: string | null
+          display_name?: string
+          features?: Json
+          id?: string
+          is_active?: boolean | null
+          max_concurrent_generations?: number | null
+          max_projects?: number | null
+          max_reference_audios?: number | null
+          name?: string
+          price_annual?: number | null
+          price_monthly?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -1800,6 +1914,7 @@ export type Database = {
         Args: { amounts: number[]; field_name: string; track_ids: string[] }
         Returns: undefined
       }
+      check_generation_limit: { Args: { _user_id: string }; Returns: boolean }
       decrement_production_credits: {
         Args: { _amount: number; _user_id: string }
         Returns: undefined
@@ -1886,6 +2001,7 @@ export type Database = {
           total_duration: number
         }[]
       }
+      get_track_ai_context: { Args: { _track_id: string }; Returns: Json }
       get_tracks_needing_archiving: {
         Args: { _limit?: number }
         Returns: {
@@ -1920,6 +2036,10 @@ export type Database = {
         Args: { track_id: string }
         Returns: undefined
       }
+      increment_generation_usage: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
       increment_play_count: { Args: { track_id: string }; Returns: undefined }
       increment_view_count: { Args: { track_id: string }; Returns: undefined }
       is_version_liked: {
@@ -1936,6 +2056,7 @@ export type Database = {
         Returns: undefined
       }
       refresh_analytics_views: { Args: never; Returns: undefined }
+      reset_daily_generation_limits: { Args: never; Returns: undefined }
       update_track_video_metadata: {
         Args: {
           p_track_id: string
