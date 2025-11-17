@@ -40,7 +40,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const { updateProject } = useProjects();
-  const { tracks: allTracks, isLoading } = useTracks(undefined, { 
+  const { tracks: allTracks } = useTracks(undefined, { 
     projectId: project?.id 
   });
   const { generateTracklist, isGenerating } = useGenerateProjectTracklist();
@@ -67,12 +67,6 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
       track.status !== 'completed' && track.status !== 'failed'
     );
   }, [projectTracks]);
-
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   if (!project) return null;
 
@@ -223,7 +217,7 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                         </div>
                         {track.prompt && <p className="text-xs text-muted-foreground line-clamp-2">{track.prompt}</p>}
                         <TrackActions
-                          track={track}
+                          track={track as any}
                           projectId={project.id}
                           projectName={project.name}
                           projectDescription={project.description}
