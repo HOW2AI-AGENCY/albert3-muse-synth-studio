@@ -38,17 +38,12 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
 
   const { vibrate } = useHapticFeedback();
   
-  // Like functionality для текущей версии
   const currentVersionId = useMemo(() => {
     if (!currentTrack) return null;
     return availableVersions[currentVersionIndex]?.id || currentTrack.id;
   }, [currentTrack, availableVersions, currentVersionIndex]);
   
-  const { isLiked, toggleLike } = useTrackVersionLike(
-    currentVersionId,
-    0
-  );
-
+  const { isLiked, toggleLike } = useTrackVersionLike(currentVersionId, 0);
   const { downloadTrack } = useDownloadTrack();
 
   const handlePlayPause = useCallback((e: React.MouseEvent) => {
@@ -99,104 +94,53 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
         zIndex: 'var(--z-mini-player)'
       }}
     >
-      {/* Прогресс бар сверху */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-border/30">
         <div 
-          className="h-full bg-gradient-to-r from-primary via-primary/90 to-primary transition-all duration-300"
+          className="h-full bg-gradient-to-r from-primary/60 via-primary to-primary/60 transition-all duration-300"
           style={{ 
-            width: `${(useAudioPlayerStore.getState().currentTime / useAudioPlayerStore.getState().duration) * 100}%` 
+            width: `${(useAudioPlayerStore.getState().currentTime / (useAudioPlayerStore.getState().duration || 1)) * 100}%` 
           }}
         />
       </div>
 
-      {/* Компактная двухстрочная разметка */}
-      <div className="px-4 py-3 space-y-3">
-        {/* Строка 1: Обложка + Инфо + Кнопки управления */}
+      <div 
+        className="flex flex-col gap-2 px-4 py-3 touch-target-comfortable animate-fade-in"
+        onClick={handleExpand}
+      >
         <div className="flex items-center gap-3">
-          {/* Album Art с анимацией */}
-          <div
-            onClick={handleExpand}
-            className="relative flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden cursor-pointer group shadow-lg hover:shadow-xl transition-all duration-300"
-          >
+          <div className="relative flex-shrink-0">
             <img
               src={currentTrack.cover_url || '/placeholder.svg'}
               alt={currentTrack.title}
               className={cn(
-                "w-full h-full object-cover transition-all duration-500",
-                isPlaying ? "scale-105 brightness-105" : "scale-100"
+                "w-12 h-12 rounded-lg object-cover shadow-lg ring-1 ring-white/10 transition-all duration-300",
+                isPlaying && "ring-2 ring-primary/50 shadow-primary/20"
               )}
             />
             {isPlaying && (
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-transparent animate-pulse">
-                <div className="absolute bottom-1 right-1 w-2 h-2 bg-primary rounded-full shadow-[0_0_8px_hsl(var(--primary))]" />
-              </div>
-            )}
-            <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-xl" />
-          </div>
-
-          {/* Track Info */}
-          <div className="flex-1 min-w-0 cursor-pointer group" onClick={handleExpand}>
-            <h3 className="text-sm font-bold text-foreground truncate leading-tight mb-1 group-hover:text-primary transition-colors">
-              {currentTrack.title}
-            </h3>
-            <div className="flex items-center gap-2">
-              {currentTrack.style_tags && currentTrack.style_tags.length > 0 && (
-                <div className="flex gap-1">
-                  {currentTrack.style_tags.slice(0, 2).map((tag, idx) => (
-                    <Badge 
-                      key={idx} 
-                      variant="secondary" 
-                      className="text-[10px] px-1.5 py-0 h-4 bg-primary/10 text-primary border-primary/20"
-                    >
-                      {tag}
-                    </Badge>
+              <div className="absolute inset-0 rounded-lg bg-primary/10 backdrop-blur-[1px] flex items-center justify-center">
+                <div className="flex gap-0.5">
+                  {[...Array(3)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="w-0.5 bg-white rounded-full animate-pulse"
+                      style={{
+                        height: '12px',
+                        animationDelay: `${i * 0.15}s`,
+                        animationDuration: '0.6s'
+                      }}
+                    />
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-              {availableVersions.length > 1 && (
-                <DropdownMenu open={isVersionMenuOpen} onOpenChange={setIsVersionMenuOpen}>
-                  <DropdownMenuTrigger asChild>
-                    <Badge 
-                      variant="secondary" 
-                      className="text-[10px] h-4 px-1.5 flex-shrink-0 cursor-pointer hover:bg-secondary/80 transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        vibrate('light');
-                      }}
-                    >
-                      V{currentTrack.versionNumber ?? currentVersionIndex + 1}
-                    </Badge>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="min-w-[200px]">
-                    {availableVersions.map((version, idx) => (
-                      <DropdownMenuItem
-                        key={version.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          vibrate('light');
-                          switchToVersion(version.id);
-                          setIsVersionMenuOpen(false);
-                        }}
-                        className={cn(
-                          "cursor-pointer",
-                          currentVersionIndex === idx && "bg-primary/10 font-medium"
-                        )}
-                      >
-                        <div className="flex items-center justify-between w-full">
-                          <span>Версия {idx + 1}</span>
-                          {currentVersionIndex === idx && (
-                            <span className="text-xs text-primary">●</span>
-                          )}
-                        </div>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/80">
+
+          <div className="flex-1 min-w-0 pr-2">
+            <h3 className="font-semibold text-sm leading-tight truncate mb-0.5 text-foreground">
+              {currentTrack.title}
+            </h3>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span className="truncate">
                 {currentTrack.style_tags?.slice(0, 2).join(' • ') || 'AI Generated'}
               </span>
@@ -209,7 +153,6 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
             </div>
           </div>
 
-          {/* Кнопка закрытия */}
           <Button
             size="icon"
             variant="ghost"
@@ -220,9 +163,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
           </Button>
         </div>
 
-        {/* Строка 2: Управление воспроизведением + Действия */}
         <div className="flex items-center gap-2">
-          {/* Playback Controls */}
           <div className="flex items-center gap-1 flex-shrink-0">
             <Button
               size="icon"
@@ -239,11 +180,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
               onClick={handlePlayPause}
               className="h-9 w-9 rounded-full shadow-lg hover:scale-105 transition-all bg-primary hover:bg-primary/90"
             >
-              {isPlaying ? (
-                <Pause className="h-4 w-4" />
-              ) : (
-                <Play className="h-4 w-4 ml-0.5" />
-              )}
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
             </Button>
 
             <Button
@@ -256,21 +193,42 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
             </Button>
           </div>
 
-          {/* Unified Actions Menu - Direct Component (No Extra Dropdown) */}
           <div className="flex items-center gap-1">
+            {availableVersions.length > 1 && (
+              <DropdownMenu open={isVersionMenuOpen} onOpenChange={setIsVersionMenuOpen}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 hover:bg-primary/10 transition-all relative"
+                  >
+                    <Badge variant="outline" className="text-xs px-1 py-0">
+                      V{currentVersionIndex + 1}
+                    </Badge>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="min-w-[120px]">
+                  {availableVersions.map((version, idx) => (
+                    <DropdownMenuItem
+                      key={version.id}
+                      onClick={() => {
+                        switchToVersion(version.id);
+                        setIsVersionMenuOpen(false);
+                      }}
+                      className={cn(
+                        "gap-2",
+                        currentVersionIndex === idx && "bg-primary/10"
+                      )}
+                    >
+                      <span>Version {version.versionNumber || idx + 1}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
             <UnifiedTrackActionsMenu
               trackId={currentTrack.id}
-              trackStatus={currentTrack.status || 'completed'}
-              trackMetadata={null}
-              currentVersionId={currentVersionId || currentTrack.id}
-              versionNumber={currentTrack.versionNumber}
-              isMasterVersion={availableVersions[currentVersionIndex]?.isMasterVersion ?? false}
-              variant="minimal"
-              showQuickActions={false}
-              layout="flat"
-              enableAITools={false}
-              isPublic={false}
-              hasVocals={false}
               isLiked={isLiked}
               onLike={toggleLike}
               onDownload={handleDownloadClick}
@@ -288,4 +246,3 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
 });
 
 MiniPlayer.displayName = 'MiniPlayer';
-

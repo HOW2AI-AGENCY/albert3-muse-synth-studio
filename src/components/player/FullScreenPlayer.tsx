@@ -9,7 +9,6 @@ import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 import { useTrackLike } from "@/features/tracks";
 import { useToast } from "@/hooks/use-toast";
-import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +18,7 @@ import {
 import { logger } from "@/utils/logger";
 import { MobileProgressBar } from './mobile/MobileProgressBar';
 import { LyricsDisplay } from './LyricsDisplay';
+import { cn } from "@/lib/utils";
 
 interface FullScreenPlayerProps {
   onMinimize: () => void;
@@ -50,7 +50,6 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
       setIsMuted(shouldBeMuted);
     }
   }, [volume, isMuted]);
-
 
   const hasVersions = useMemo(() => availableVersions.length > 1, [availableVersions]);
   
@@ -112,34 +111,35 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
         description: "Ссылка на трек скопирована в буфер обмена",
       });
     }
-  }, [vibrate, currentTrack?.title, toast]);
+  }, [vibrate, currentTrack, toast]);
 
   const handleDownload = useCallback(() => {
-    vibrate('medium');
+    vibrate('light');
     if (currentTrack?.audio_url) {
-      const a = document.createElement('a');
-      a.href = currentTrack.audio_url;
-      a.download = `${currentTrack.title}.mp3`;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-
+      const link = document.createElement('a');
+      link.href = currentTrack.audio_url;
+      link.download = `${currentTrack.title || 'track'}.mp3`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       toast({
-        title: "Скачивание начато",
-        description: `Скачивание "${currentTrack.title}"`,
+        title: "Загрузка началась",
+        description: "Трек скачивается на устройство",
       });
     }
-  }, [vibrate, currentTrack?.audio_url, currentTrack?.title, toast]);
+  }, [vibrate, currentTrack, toast]);
 
   const handleLike = useCallback(() => {
-    vibrate(isLiked ? 'light' : 'success');
+    vibrate('light');
     toggleLike();
-  }, [vibrate, isLiked, toggleLike]);
+  }, [vibrate, toggleLike]);
 
-  const swipeRef = useSwipeGesture({
-    onSwipeLeft: handleNext,
-    onSwipeRight: handlePrevious,
+  const toggleLyricsVisibility = useCallback(() => {
+    vibrate('light');
+    setShowLyrics(prev => !prev);
+  }, [vibrate]);
+
+  const swipeHandlers = useSwipeGesture({
     onSwipeDown: useCallback(() => {
       vibrate('medium');
       onMinimize();
@@ -150,7 +150,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
 
   return (
     <div
-      ref={swipeRef as React.RefObject<HTMLDivElement>}
+      ref={swipeHandlers.ref as React.RefObject<HTMLDivElement>}
       className="fixed inset-0 bg-gradient-to-b from-background via-background/95 to-card/90 backdrop-blur-xl animate-fade-in overflow-y-auto touch-optimized"
       style={{
         paddingTop: 'env(safe-area-inset-top)',
@@ -158,45 +158,43 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
         zIndex: 'var(--z-fullscreen-player)'
       }}
       role="dialog"
-      aria-label="Full Screen Player"
+      aria-label="Полноэкранный плеер"
     >
-      <VisuallyHidden.Root>
-        <h1>Now playing: {currentTrack?.title || 'No track selected'}</h1>
-      </VisuallyHidden.Root>
-      <div className="flex flex-col min-h-screen p-4 sm:p-6">
-        <div className="flex items-center justify-between mb-6 sm:mb-8 animate-slide-up">
+      {/* Header */}
+      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/40">
+        <div className="flex items-center justify-between px-6 py-4 touch-target-comfortable">
           <Button
             variant="ghost"
             size="icon"
-            onClick={onMinimize}
+            onClick={() => {
+              vibrate('medium');
+              onMinimize();
+            }}
             className="h-11 w-11 min-h-[44px] min-w-[44px] hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+            aria-label="Свернуть плеер"
           >
             <Minimize2 className="h-5 w-5" />
           </Button>
 
-          <div className="flex gap-2">
-            {currentTrack?.suno_task_id && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  vibrate('light');
-                  setShowLyrics(!showLyrics);
-                }}
-                className="h-11 w-11 min-h-[44px] min-w-[44px] hover:bg-primary/10 hover:scale-105 transition-all duration-200"
-              >
-                {showLyrics ? (
-                  <EyeOff className="h-5 w-5" />
-                ) : (
-                  <Eye className="h-5 w-5" />
-                )}
-              </Button>
-            )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleLyricsVisibility}
+            className={`h-11 w-11 min-h-[44px] min-w-[44px] hover:scale-105 transition-all duration-200 ${
+              showLyrics ? 'bg-primary/10 text-primary' : 'hover:bg-primary/10'
+            }`}
+            aria-label={showLyrics ? "Скрыть текст" : "Показать текст"}
+          >
+            {showLyrics ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+          </Button>
+
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
               onClick={handleShare}
               className="h-11 w-11 min-h-[44px] min-w-[44px] hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+              aria-label="Поделиться"
             >
               <Share2 className="h-5 w-5" />
             </Button>
@@ -237,12 +235,12 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
             <PlayerQueue />
           </div>
         </div>
+      </div>
 
       {/* Main Content Area */}
       <div className="relative flex-1 flex flex-col items-center justify-start px-6 py-8 overflow-y-auto">
-        {/* Album Art with enhanced visuals */}
+        {/* Album Art */}
         <div className="relative w-full max-w-sm aspect-square mb-8">
-          {/* Animated glow */}
           <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/10 to-transparent rounded-3xl blur-3xl opacity-60 animate-pulse" />
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-primary/5 to-primary/20 rounded-3xl blur-2xl" />
           
@@ -256,7 +254,6 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
             )}
           />
           
-          {/* Playing indicator */}
           {isPlaying && (
             <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-primary/90 backdrop-blur-sm flex items-center gap-2 shadow-lg">
               <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
@@ -264,13 +261,10 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
             </div>
           )}
         </div>
-              <div className="absolute inset-0 border-4 border-primary/40 rounded-3xl animate-pulse" />
-            )}
-          </div>
-        </div>
 
         {/* Track Info */}
-          <div className="flex items-center justify-center gap-2 mb-2 animate-fade-in">
+        <div className="text-center px-4 mb-6 animate-fade-in">
+          <div className="flex items-center justify-center gap-2 mb-2">
             <h2 className="text-xl sm:text-2xl font-bold text-gradient-primary line-clamp-2 transition-all duration-300">
               {currentTrack.title}
             </h2>
@@ -280,21 +274,27 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
               </Badge>
             )}
           </div>
-          <p className="text-sm sm:text-base text-muted-foreground/80 truncate animate-fade-in transition-opacity duration-300">
+          <p className="text-sm sm:text-base text-muted-foreground/80 truncate transition-opacity duration-300">
             {currentTrack.style_tags?.join(' • ') || 'AI Generated'}
           </p>
         </div>
 
-        {showLyrics && currentTrack?.suno_task_id && currentTrack?.suno_id ? (
-          <div className="flex-1 w-full">
+        {/* Lyrics */}
+        {showLyrics && currentTrack?.suno_task_id && currentTrack?.suno_id && (
+          <div className="flex-1 w-full overflow-hidden mb-6">
             <LyricsDisplay
-              sunoTaskId={currentTrack.suno_task_id}
-              sunoId={currentTrack.suno_id}
-              className="h-full"
+              taskId={currentTrack.suno_task_id}
+              audioId={currentTrack.suno_id}
+              fallbackLyrics={currentTrack.lyrics}
             />
           </div>
-        ) : null}
-      </div>
+        )}
+
+        {/* Progress */}
+        <MobileProgressBar onSeek={handleSeek} className="w-full mb-6" />
+
+        {/* Playback Controls */}
+        <div className="flex items-center justify-center gap-4 sm:gap-8 mb-6 animate-slide-up">
           <Button
             variant="ghost"
             size="icon"
@@ -309,11 +309,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
             onClick={handlePlayPause}
             className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-gradient-primary hover:shadow-glow-primary hover:scale-110 transition-all duration-200"
           >
-            {isPlaying ? (
-              <Pause className="h-8 w-8 sm:h-10 sm:w-10" fill="currentColor" />
-            ) : (
-              <Play className="h-8 w-8 sm:h-10 sm:w-10 ml-1" fill="currentColor" />
-            )}
+            {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8 ml-1" />}
           </Button>
 
           <Button
@@ -326,7 +322,8 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
           </Button>
         </div>
 
-        <div className="flex items-center justify-between mb-4 sm:mb-6 px-4 animate-slide-up">
+        {/* Secondary Controls */}
+        <div className="flex items-center justify-between mb-4 sm:mb-6 px-4 animate-slide-up w-full max-w-lg">
           <Button
             variant="ghost"
             size="icon"
@@ -335,11 +332,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
               isLiked ? 'text-accent hover:bg-accent/10' : 'hover:bg-primary/10'
             }`}
           >
-            <Heart
-              className={`h-5 w-5 transition-all duration-200 ${
-                isLiked ? 'fill-accent text-accent animate-pulse' : ''
-              }`}
-            />
+            <Heart className={`h-5 w-5 transition-all duration-200 ${isLiked ? 'fill-accent text-accent animate-pulse' : ''}`} />
           </Button>
 
           <div className="flex items-center gap-2 flex-1 max-w-xs mx-4">
@@ -349,11 +342,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
               onClick={toggleMute}
               className="h-11 w-11 min-h-[44px] min-w-[44px] sm:h-8 sm:w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
             >
-              {isMuted ? (
-                <VolumeX className="h-5 w-5 sm:h-4 sm:w-4" />
-              ) : (
-                <Volume2 className="h-5 w-5 sm:h-4 sm:w-4" />
-              )}
+              {isMuted ? <VolumeX className="h-5 w-5 sm:h-4 sm:w-4" /> : <Volume2 className="h-5 w-5 sm:h-4 sm:w-4" />}
             </Button>
             <Slider
               value={[volume]}
