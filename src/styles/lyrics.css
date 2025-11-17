@@ -9,7 +9,7 @@
 
 /* Base container */
 .lyrics-container {
-  font-family: var(--font-sans);
+  font-family: var(--font-family-sans);
   line-height: var(--line-height-relaxed);
   letter-spacing: 0.01em;
   scroll-behavior: smooth;
