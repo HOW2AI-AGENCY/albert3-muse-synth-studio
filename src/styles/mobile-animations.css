@@ -2,12 +2,24 @@
 :root {
   --hover-lift-offset: -4px;
   --tap-scale: 0.98;
+  --touch-target-min: 44px; /* iOS/Android minimum touch target size */
 }
 
 @media (max-width: 767px) {
   :root {
     --hover-lift-offset: -2px;
     --tap-scale: 0.96;
+  }
+  
+  /* Better touch optimization for mobile */
+  * {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  
+  /* Smooth scrolling for mobile */
+  html {
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -16,5 +28,11 @@
   :root {
     --hover-lift-offset: 0px;
     --tap-scale: 1;
+  }
+  
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

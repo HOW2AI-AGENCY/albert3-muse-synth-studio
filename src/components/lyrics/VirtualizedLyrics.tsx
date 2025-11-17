@@ -24,11 +24,15 @@ export const VirtualizedLyrics = memo(({
 }: VirtualizedLyricsProps) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
+  // Mobile-optimized line height
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const mobileLineHeight = isMobile ? 56 : estimateLineHeight;
+
   const virtualizer = useVirtualizer({
     count: lines.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => estimateLineHeight,
-    overscan: 5, // Render 5 extra items above/below viewport
+    estimateSize: () => mobileLineHeight,
+    overscan: isMobile ? 3 : 5, // Fewer overscan items on mobile for better performance
   });
 
   return (

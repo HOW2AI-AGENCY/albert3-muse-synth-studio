@@ -96,13 +96,13 @@ export const LyricsDisplay = memo(({ sunoTaskId, sunoId, className }: LyricsDisp
       className={cn(
         "relative h-full overflow-y-auto overflow-x-hidden",
         "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-border/40",
-        "px-4 py-8 md:px-6 md:py-12",
+        "px-3 py-6 md:px-6 md:py-12", // Smaller padding on mobile
         "bg-gradient-to-b from-background/50 via-transparent to-background/50",
         className
       )}
     >
-      {/* Gradient overlays for smooth fade */}
-      <div className="sticky top-0 left-0 right-0 h-16 bg-gradient-to-b from-background to-transparent pointer-events-none z-10" />
+      {/* Gradient overlays for smooth fade - smaller on mobile */}
+      <div className="sticky top-0 left-0 right-0 h-12 md:h-16 bg-gradient-to-b from-background to-transparent pointer-events-none z-10" />
       
       <VirtualizedLyrics
         lines={lines}
@@ -111,7 +111,7 @@ export const LyricsDisplay = memo(({ sunoTaskId, sunoId, className }: LyricsDisp
         timingTolerance={0.2}
       />
 
-      <div className="sticky bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-background to-transparent pointer-events-none" />
+      <div className="sticky bottom-0 left-0 right-0 h-12 md:h-16 bg-gradient-to-t from-background to-transparent pointer-events-none" />
     </div>
   );
 });
