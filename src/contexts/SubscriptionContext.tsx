@@ -138,18 +138,27 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
       const remaining = dailyLimit !== null ? Math.max(0, dailyLimit - usedToday) : null;
 
       setSubscription({
-        plan: profile.subscription_plan as SubscriptionPlan,
-        status: profile.subscription_status as SubscriptionStatus,
-        expires_at: profile.subscription_expires_at,
+        plan: (profile.subscription_plan as SubscriptionPlan) || 'free',
+        status: (profile.subscription_status as SubscriptionStatus) || 'active',
+        expires_at: profile.subscription_expires_at || null,
         credits_remaining: profile.credits_remaining ?? 0,
         credits_used_today: profile.credits_used_today ?? 0,
-        last_credit_reset_at: profile.last_credit_reset_at,
+        last_credit_reset_at: profile.last_credit_reset_at || new Date().toISOString(),
       });
 
-      setPlan({
-        ...planData,
-        features: Array.isArray(planData.features) ? planData.features : [],
-      });
+      const features = Array.isArray(planData.features) 
+        ? (planData.features as string[]).filter((f): f is string => typeof f === 'string')
+        : [];
+      
+      const planWithFeatures: SubscriptionPlanData = {
+        ...(planData as any),
+        name: (planData.name as SubscriptionPlan) || 'free',
+        max_concurrent_generations: planData.max_concurrent_generations ?? 1,
+        max_reference_audios: planData.max_reference_audios ?? 0,
+        features,
+      };
+      
+      setPlan(planWithFeatures);
 
       setLimits({
         daily_limit: dailyLimit,
