@@ -13,10 +13,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Sparkles, Music2, Wand2, FileText, Eye, Music } from "@/utils/iconImports";
 import { useToast } from "@/hooks/use-toast";
 import { ApiService } from "@/services/api.service";
-import { supabase } from "@/integrations/supabase/client";
 import { logError } from "@/utils/logger";
 import { LyricsEditorAdvanced } from "./lyrics/LyricsEditorAdvanced";
 import { LyricsVariantSelector } from "./lyrics/LyricsVariantSelector";
+import { useAIImproveField } from "@/hooks/useAIImproveField";
 
 const limitWords = (value: string, limit: number): string => {
   if (!value.trim()) return "";
@@ -49,12 +49,30 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
   const [includeOutro, setIncludeOutro] = useState(false);
   
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isImproving, setIsImproving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [useAdvancedEditor, setUseAdvancedEditor] = useState(false);
   const [generatedJobId, setGeneratedJobId] = useState<string | null>(null);
   const [showVariantSelector, setShowVariantSelector] = useState(false);
   const { toast } = useToast();
+
+  // AI improvement hook
+  const { improveField, isImproving } = useAIImproveField({
+    onSuccess: (result) => {
+      const safeLyrics = sanitizeLyrics(result);
+      onLyricsChange(safeLyrics);
+      toast({
+        title: "✨ Текст улучшен!",
+        description: "AI оптимизировал вашу лирику",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Ошибка",
+        description: error,
+        variant: "destructive",
+      });
+    },
+  });
 
   // Character and line count
   const lineCount = lyrics.split('\n').filter(line => line.trim()).length;
@@ -182,48 +200,39 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
     });
   };
 
-  const improveLyrics = async () => {
-    if (!lyrics.trim()) {
+  const handleAIAction = async (action: 'improve' | 'generate' | 'rewrite') => {
+    if (action !== 'generate' && !lyrics.trim()) {
       toast({
-        title: "Нет текста для улучшения",
-        description: "Введите текст песни, который хотите улучшить",
+        title: "Нет текста",
+        description: "Введите текст песни для работы AI",
         variant: "destructive",
       });
       return;
     }
 
-    setIsImproving(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('improve-lyrics', {
-        body: {
-          currentLyrics: lyrics,
-          language,
-          style: genre || vocalStyle,
-          instructions: references,
-        }
-      });
+    const context = [
+      theme && `theme: ${theme}`,
+      mood && `mood: ${mood}`,
+      genre && `genre: ${genre}`,
+      vocalStyle && `style: ${vocalStyle}`,
+    ].filter(Boolean).join(', ');
 
-      if (error) throw error;
-
-      // ✅ FIX: Sanitize improved lyrics before applying
-      const safeLyrics = sanitizeLyrics(data.improvedLyrics);
-      onLyricsChange(safeLyrics);
-      
-      toast({
-        title: "✨ Текст улучшен!",
-        description: "AI оптимизировал вашу лирику",
-      });
-    } catch (error) {
-      logError("Ошибка при улучшении текста", error as Error, "LyricsEditor");
-      
-      toast({
-        title: "Ошибка",
-        description: "Не удалось улучшить текст. Попробуйте еще раз.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsImproving(false);
-    }
+    await improveField({
+      field: 'lyrics',
+      value: lyrics,
+      action,
+      context,
+      additionalContext: {
+        language,
+        structure: {
+          intro: includeIntro,
+          verse: includeVerse,
+          chorus: includeChorus,
+          bridge: includeBridge,
+          outro: includeOutro,
+        },
+      },
+    });
   };
 
   return (
@@ -414,15 +423,35 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
                   />
                 </div>
 
-                <Button
-                  onClick={improveLyrics}
-                  disabled={isImproving || !lyrics.trim()}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <Wand2 className="mr-2 h-4 w-4" />
-                  {isImproving ? "Улучшение..." : "Улучшить с AI"}
-                </Button>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    onClick={() => handleAIAction('improve')}
+                    disabled={isImproving || !lyrics.trim()}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Wand2 className="mr-1 h-3 w-3" />
+                    {isImproving ? "..." : "Улучшить"}
+                  </Button>
+                  <Button
+                    onClick={() => handleAIAction('rewrite')}
+                    disabled={isImproving || !lyrics.trim()}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Sparkles className="mr-1 h-3 w-3" />
+                    {isImproving ? "..." : "Переписать"}
+                  </Button>
+                  <Button
+                    onClick={() => handleAIAction('generate')}
+                    disabled={isImproving}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Music className="mr-1 h-3 w-3" />
+                    {isImproving ? "..." : "Создать"}
+                  </Button>
+                </div>
               </TabsContent>
             </Tabs>
 
