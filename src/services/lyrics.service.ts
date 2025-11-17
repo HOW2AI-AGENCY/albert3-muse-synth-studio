@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
-import { lyricsCache } from './lyrics/lyricsCache';
+import { lyricsCache } from '@/utils/lyricsCache';
 import { retryWithBackoff, RETRY_CONFIGS } from '@/utils/retryWithBackoff';
 
 interface GetTimestampedLyricsPayload {
