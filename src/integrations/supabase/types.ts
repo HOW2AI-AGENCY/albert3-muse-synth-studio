@@ -44,6 +44,13 @@ export type Database = {
             foreignKeyName: "analytics_events_track_id_fkey"
             columns: ["track_id"]
             isOneToOne: false
+            referencedRelation: "prompt_statistics"
+            referencedColumns: ["track_id"]
+          },
+          {
+            foreignKeyName: "analytics_events_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
@@ -246,6 +253,13 @@ export type Database = {
             foreignKeyName: "audio_upscale_jobs_track_id_fkey"
             columns: ["track_id"]
             isOneToOne: false
+            referencedRelation: "prompt_statistics"
+            referencedColumns: ["track_id"]
+          },
+          {
+            foreignKeyName: "audio_upscale_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
@@ -284,6 +298,13 @@ export type Database = {
           track_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "callback_logs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_statistics"
+            referencedColumns: ["track_id"]
+          },
           {
             foreignKeyName: "callback_logs_track_id_fkey"
             columns: ["track_id"]
@@ -365,6 +386,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "music_classifications"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classification_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_statistics"
+            referencedColumns: ["track_id"]
           },
           {
             foreignKeyName: "classification_jobs_track_id_fkey"
@@ -628,6 +656,13 @@ export type Database = {
             foreignKeyName: "lyrics_jobs_track_id_fkey"
             columns: ["track_id"]
             isOneToOne: false
+            referencedRelation: "prompt_statistics"
+            referencedColumns: ["track_id"]
+          },
+          {
+            foreignKeyName: "lyrics_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
@@ -755,6 +790,13 @@ export type Database = {
           version_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "music_classifications_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_statistics"
+            referencedColumns: ["track_id"]
+          },
           {
             foreignKeyName: "music_classifications_track_id_fkey"
             columns: ["track_id"]
@@ -1050,6 +1092,13 @@ export type Database = {
             foreignKeyName: "project_tracks_track_id_fkey"
             columns: ["track_id"]
             isOneToOne: false
+            referencedRelation: "prompt_statistics"
+            referencedColumns: ["track_id"]
+          },
+          {
+            foreignKeyName: "project_tracks_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
@@ -1065,15 +1114,19 @@ export type Database = {
       prompt_history: {
         Row: {
           created_at: string | null
+          generation_status: string | null
+          generation_time_ms: number | null
           genre: string | null
           id: string
           is_template: boolean | null
           last_used_at: string | null
           lyrics: string | null
           metadata: Json | null
+          model_version: string | null
           mood: string | null
           prompt: string
           provider: string | null
+          result_track_id: string | null
           style_tags: string[] | null
           template_name: string | null
           usage_count: number | null
@@ -1081,15 +1134,19 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          generation_status?: string | null
+          generation_time_ms?: number | null
           genre?: string | null
           id?: string
           is_template?: boolean | null
           last_used_at?: string | null
           lyrics?: string | null
           metadata?: Json | null
+          model_version?: string | null
           mood?: string | null
           prompt: string
           provider?: string | null
+          result_track_id?: string | null
           style_tags?: string[] | null
           template_name?: string | null
           usage_count?: number | null
@@ -1097,21 +1154,47 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          generation_status?: string | null
+          generation_time_ms?: number | null
           genre?: string | null
           id?: string
           is_template?: boolean | null
           last_used_at?: string | null
           lyrics?: string | null
           metadata?: Json | null
+          model_version?: string | null
           mood?: string | null
           prompt?: string
           provider?: string | null
+          result_track_id?: string | null
           style_tags?: string[] | null
           template_name?: string | null
           usage_count?: number | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "prompt_history_result_track_id_fkey"
+            columns: ["result_track_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_statistics"
+            referencedColumns: ["track_id"]
+          },
+          {
+            foreignKeyName: "prompt_history_result_track_id_fkey"
+            columns: ["result_track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompt_history_result_track_id_fkey"
+            columns: ["result_track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rate_limit_buckets: {
         Row: {
@@ -1312,6 +1395,13 @@ export type Database = {
             foreignKeyName: "song_descriptions_track_id_fkey"
             columns: ["track_id"]
             isOneToOne: true
+            referencedRelation: "prompt_statistics"
+            referencedColumns: ["track_id"]
+          },
+          {
+            foreignKeyName: "song_descriptions_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: true
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
@@ -1508,6 +1598,13 @@ export type Database = {
             foreignKeyName: "suno_personas_source_track_id_fkey"
             columns: ["source_track_id"]
             isOneToOne: false
+            referencedRelation: "prompt_statistics"
+            referencedColumns: ["track_id"]
+          },
+          {
+            foreignKeyName: "suno_personas_source_track_id_fkey"
+            columns: ["source_track_id"]
+            isOneToOne: false
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
@@ -1580,6 +1677,13 @@ export type Database = {
             foreignKeyName: "track_archiving_jobs_track_id_fkey"
             columns: ["track_id"]
             isOneToOne: false
+            referencedRelation: "prompt_statistics"
+            referencedColumns: ["track_id"]
+          },
+          {
+            foreignKeyName: "track_archiving_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
@@ -1612,6 +1716,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "track_likes_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_statistics"
+            referencedColumns: ["track_id"]
+          },
           {
             foreignKeyName: "track_likes_track_id_fkey"
             columns: ["track_id"]
@@ -1661,6 +1772,13 @@ export type Database = {
           track_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "track_retry_attempts_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_statistics"
+            referencedColumns: ["track_id"]
+          },
           {
             foreignKeyName: "track_retry_attempts_track_id_fkey"
             columns: ["track_id"]
@@ -1734,6 +1852,13 @@ export type Database = {
             foreignKeyName: "track_section_replacements_parent_track_id_fkey"
             columns: ["parent_track_id"]
             isOneToOne: false
+            referencedRelation: "prompt_statistics"
+            referencedColumns: ["track_id"]
+          },
+          {
+            foreignKeyName: "track_section_replacements_parent_track_id_fkey"
+            columns: ["parent_track_id"]
+            isOneToOne: false
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
@@ -1788,6 +1913,13 @@ export type Database = {
           version_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "track_stems_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_statistics"
+            referencedColumns: ["track_id"]
+          },
           {
             foreignKeyName: "track_stems_track_id_fkey"
             columns: ["track_id"]
@@ -1894,6 +2026,13 @@ export type Database = {
             foreignKeyName: "track_versions_parent_track_id_fkey"
             columns: ["parent_track_id"]
             isOneToOne: false
+            referencedRelation: "prompt_statistics"
+            referencedColumns: ["track_id"]
+          },
+          {
+            foreignKeyName: "track_versions_parent_track_id_fkey"
+            columns: ["parent_track_id"]
+            isOneToOne: false
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
@@ -1938,6 +2077,7 @@ export type Database = {
           prompt: string
           provider: string | null
           reference_audio_url: string | null
+          source_prompt_id: string | null
           status: string
           storage_audio_url: string | null
           storage_cover_url: string | null
@@ -1981,6 +2121,7 @@ export type Database = {
           prompt: string
           provider?: string | null
           reference_audio_url?: string | null
+          source_prompt_id?: string | null
           status?: string
           storage_audio_url?: string | null
           storage_cover_url?: string | null
@@ -2024,6 +2165,7 @@ export type Database = {
           prompt?: string
           provider?: string | null
           reference_audio_url?: string | null
+          source_prompt_id?: string | null
           status?: string
           storage_audio_url?: string | null
           storage_cover_url?: string | null
@@ -2042,6 +2184,20 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "music_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tracks_source_prompt_id_fkey"
+            columns: ["source_prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_history"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tracks_source_prompt_id_fkey"
+            columns: ["source_prompt_id"]
+            isOneToOne: false
+            referencedRelation: "prompt_statistics"
             referencedColumns: ["id"]
           },
           {
@@ -2125,6 +2281,13 @@ export type Database = {
             foreignKeyName: "wav_jobs_track_id_fkey"
             columns: ["track_id"]
             isOneToOne: false
+            referencedRelation: "prompt_statistics"
+            referencedColumns: ["track_id"]
+          },
+          {
+            foreignKeyName: "wav_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
             referencedRelation: "tracks"
             referencedColumns: ["id"]
           },
@@ -2139,6 +2302,35 @@ export type Database = {
       }
     }
     Views: {
+      prompt_statistics: {
+        Row: {
+          audio_url: string | null
+          cover_url: string | null
+          created_at: string | null
+          download_count: number | null
+          generation_status: string | null
+          generation_time_ms: number | null
+          genre: string | null
+          id: string | null
+          is_template: boolean | null
+          last_used_at: string | null
+          like_count: number | null
+          lyrics: string | null
+          model_version: string | null
+          mood: string | null
+          play_count: number | null
+          prompt: string | null
+          provider: string | null
+          style_tags: string[] | null
+          template_name: string | null
+          track_id: string | null
+          track_status: string | null
+          track_title: string | null
+          usage_count: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       tracks_with_timestamped_lyrics: {
         Row: {
           audio_url: string | null
