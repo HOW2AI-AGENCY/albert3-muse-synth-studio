@@ -300,6 +300,95 @@ export type Database = {
           },
         ]
       }
+      classification_jobs: {
+        Row: {
+          classification_id: string | null
+          classifier_config: Json | null
+          classifier_type: string
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          input_audio_url: string
+          output_visualization_url: string | null
+          raw_output: Json | null
+          replicate_prediction_id: string | null
+          retry_count: number | null
+          status: string
+          track_id: string | null
+          updated_at: string
+          user_id: string
+          version_id: string | null
+        }
+        Insert: {
+          classification_id?: string | null
+          classifier_config?: Json | null
+          classifier_type: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          input_audio_url: string
+          output_visualization_url?: string | null
+          raw_output?: Json | null
+          replicate_prediction_id?: string | null
+          retry_count?: number | null
+          status?: string
+          track_id?: string | null
+          updated_at?: string
+          user_id: string
+          version_id?: string | null
+        }
+        Update: {
+          classification_id?: string | null
+          classifier_config?: Json | null
+          classifier_type?: string
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          input_audio_url?: string
+          output_visualization_url?: string | null
+          raw_output?: Json | null
+          replicate_prediction_id?: string | null
+          retry_count?: number | null
+          status?: string
+          track_id?: string | null
+          updated_at?: string
+          user_id?: string
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classification_jobs_classification_id_fkey"
+            columns: ["classification_id"]
+            isOneToOne: false
+            referencedRelation: "music_classifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classification_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classification_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classification_jobs_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "track_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cloud_folders: {
         Row: {
           category: string | null
@@ -591,6 +680,100 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "lyrics_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      music_classifications: {
+        Row: {
+          classifier_type: string
+          classifier_version: string | null
+          confidence_score: number | null
+          created_at: string
+          embeddings: Json | null
+          error_message: string | null
+          genres_ranked: Json | null
+          id: string
+          instruments_detected: string[] | null
+          instruments_ranked: Json | null
+          moods_ranked: Json | null
+          primary_genre: string | null
+          primary_mood: string | null
+          primary_style: string | null
+          processing_time_ms: number | null
+          replicate_prediction_id: string | null
+          status: string
+          styles_ranked: Json | null
+          track_id: string
+          updated_at: string
+          version_id: string | null
+        }
+        Insert: {
+          classifier_type: string
+          classifier_version?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          embeddings?: Json | null
+          error_message?: string | null
+          genres_ranked?: Json | null
+          id?: string
+          instruments_detected?: string[] | null
+          instruments_ranked?: Json | null
+          moods_ranked?: Json | null
+          primary_genre?: string | null
+          primary_mood?: string | null
+          primary_style?: string | null
+          processing_time_ms?: number | null
+          replicate_prediction_id?: string | null
+          status?: string
+          styles_ranked?: Json | null
+          track_id: string
+          updated_at?: string
+          version_id?: string | null
+        }
+        Update: {
+          classifier_type?: string
+          classifier_version?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          embeddings?: Json | null
+          error_message?: string | null
+          genres_ranked?: Json | null
+          id?: string
+          instruments_detected?: string[] | null
+          instruments_ranked?: Json | null
+          moods_ranked?: Json | null
+          primary_genre?: string | null
+          primary_mood?: string | null
+          primary_style?: string | null
+          processing_time_ms?: number | null
+          replicate_prediction_id?: string | null
+          status?: string
+          styles_ranked?: Json | null
+          track_id?: string
+          updated_at?: string
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "music_classifications_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "music_classifications_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "music_classifications_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "track_versions"
             referencedColumns: ["id"]
           },
         ]
@@ -1990,6 +2173,7 @@ export type Database = {
         Returns: undefined
       }
       check_generation_limit: { Args: { _user_id: string }; Returns: boolean }
+      cleanup_old_classification_jobs: { Args: never; Returns: number }
       decrement_production_credits: {
         Args: { _amount: number; _user_id: string }
         Returns: undefined
