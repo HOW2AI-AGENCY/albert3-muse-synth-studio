@@ -40,7 +40,8 @@ export {
   Wind,
   Sun,
   Moon,
-  Cloud
+  Cloud,
+  Bot
 } from 'lucide-react';
 
 // Player Controls
