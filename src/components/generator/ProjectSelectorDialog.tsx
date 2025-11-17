@@ -91,13 +91,30 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
       console.log('[ProjectSelector] Fetching junction tracks for project:', selectedProjectId);
       const { data, error } = await supabase
         .from('project_tracks')
-        .select('track_id, tracks(*)')
+        .select(`
+          track_id,
+          tracks:track_id (
+            id,
+            title,
+            prompt,
+            lyrics,
+            style_tags,
+            genre,
+            mood,
+            status,
+            cover_url,
+            audio_url,
+            duration_seconds,
+            created_at,
+            provider
+          )
+        `)
         .eq('project_id', selectedProjectId!);
       if (error) {
         console.error('[ProjectSelector] Junction query error:', error);
         throw error;
       }
-      console.log('[ProjectSelector] Junction rows fetched:', data?.length || 0);
+      console.log('[ProjectSelector] Junction rows fetched:', data?.length || 0, data?.[0]);
       return data || [];
     },
   });
