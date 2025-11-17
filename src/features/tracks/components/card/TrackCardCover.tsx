@@ -45,11 +45,11 @@ export const TrackCardCover = React.memo(({
       {/* Vocal/Instrumental badge - always visible */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="absolute top-2 left-2 z-10 bg-background/90 backdrop-blur-sm p-1.5 rounded-md cursor-help touch-target-min">
+          <div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 z-10 bg-background/90 backdrop-blur-sm p-1 sm:p-1.5 rounded-md cursor-help touch-target-min">
             {hasVocals ? (
-              <Mic className="h-4 w-4 text-primary" aria-label="С вокалом" />
+              <Mic className="h-3 w-3 sm:h-4 sm:w-4 text-primary" aria-label="С вокалом" />
             ) : (
-              <Music className="h-4 w-4 text-muted-foreground" aria-label="Инструментал" />
+              <Music className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" aria-label="Инструментал" />
             )}
           </div>
         </TooltipTrigger>
@@ -62,8 +62,8 @@ export const TrackCardCover = React.memo(({
       {hasReferenceAudio && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="absolute bottom-2 left-2 z-10 bg-amber-500/90 backdrop-blur-sm p-1.5 rounded-md cursor-help touch-target-min">
-              <FileAudio className="h-4 w-4 text-white" aria-label="С референсом" />
+            <div className="absolute bottom-1.5 left-1.5 sm:bottom-2 sm:left-2 z-10 bg-amber-500/90 backdrop-blur-sm p-1 sm:p-1.5 rounded-md cursor-help touch-target-min">
+              <FileAudio className="h-3 w-3 sm:h-4 sm:w-4 text-white" aria-label="С референсом" />
             </div>
           </TooltipTrigger>
           <TooltipContent>Создано с аудио-референсом</TooltipContent>
@@ -72,7 +72,7 @@ export const TrackCardCover = React.memo(({
 
       {/* Variant selector - only visible on desktop (md and up) */}
       {isCompleted && (
-        <div className="absolute top-2 right-2 z-10 hidden md:flex">
+        <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 z-10 hidden md:flex">
           <TrackVariantSelector
             trackId={trackId}
             currentVersionIndex={currentVersionIndex}
@@ -98,10 +98,11 @@ export const TrackCardCover = React.memo(({
               placeholder="/placeholder.svg"
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               wrapperClassName="w-full h-full"
+              loading="lazy"
             />
           ) : (
             <div className={cn("w-full h-full flex items-center justify-center bg-gradient-to-br", gradient)}>
-              <Music className="w-8 h-8 text-primary/50" />
+              <Music className="w-6 h-6 sm:w-8 sm:h-8 text-primary/50" />
             </div>
           )}
         </motion.div>
