@@ -303,9 +303,30 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
     }
 
     logger.info(
-      '🎵 [GENERATE] Starting generation',
+      '🎵 [GENERATE] Starting generation with full context',
       'MusicGeneratorContainer',
-      { prompt: !!state.params.prompt.trim(), lyrics: !!state.params.lyrics.trim(), audio: !!state.params.referenceAudioUrl, mode: state.mode }
+      { 
+        provider: selectedProvider,
+        mode: state.mode,
+        prompt: !!state.params.prompt.trim(), 
+        lyrics: !!state.params.lyrics.trim(), 
+        audio: !!state.params.referenceAudioUrl,
+        persona: state.params.personaId || null,
+        project: state.params.activeProjectId || null,
+        inspoProject: state.params.inspoProjectId || null,
+        analyzedData: {
+          genre: state.params.analyzedGenre || null,
+          mood: state.params.analyzedMood || null,
+          tempo: state.params.analyzedTempo || null,
+          instruments: state.params.analyzedInstruments?.length || 0
+        },
+        weights: {
+          style: state.params.styleWeight,
+          lyrics: hasLyricsContent ? state.params.lyricsWeight : null,
+          audio: state.params.referenceAudioUrl ? state.params.audioWeight : null,
+          weirdness: state.params.weirdnessConstraint
+        }
+      }
     );
 
     const started = await generate(requestParams);

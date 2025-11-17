@@ -75,6 +75,8 @@ Generate:
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
+        temperature: 0.8,
+        max_tokens: 3000,
         tools: [
           {
             type: 'function',
@@ -168,24 +170,43 @@ Generate:
     });
 
     if (!response.ok) {
+      const errorText = await response.text();
+      logger.error('Lovable AI API error', new Error(errorText), 'generate-project-concept', { 
+        status: response.status,
+        statusText: response.statusText 
+      });
+      
+      // Handle specific error codes with user-friendly messages
       if (response.status === 429) {
-        logger.error('Rate limit exceeded', new Error('429 Too Many Requests'), 'generate-project-concept');
         return new Response(
-          JSON.stringify({ error: 'Слишком много запросов к AI. Подождите минуту и попробуйте снова.' }),
+          JSON.stringify({ 
+            error: 'rate_limit_exceeded',
+            message: 'Слишком много запросов к AI. Подождите минуту и попробуйте снова.',
+            retryAfter: 60
+          }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+      
       if (response.status === 402) {
-        logger.error('Payment required', new Error('402 Payment Required'), 'generate-project-concept');
         return new Response(
-          JSON.stringify({ error: 'Недостаточно кредитов. Пополните баланс в Settings → Workspace → Usage.' }),
+          JSON.stringify({ 
+            error: 'insufficient_credits',
+            message: 'Недостаточно AI кредитов. Обновите тариф в настройках.',
+            upgradeUrl: '/workspace/subscription'
+          }),
           { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
       
-      const errorText = await response.text();
-      logger.error('AI gateway error', new Error(errorText), 'generate-project-concept', { status: response.status });
-      throw new Error('AI gateway error');
+      return new Response(
+        JSON.stringify({ 
+          error: 'ai_gateway_error',
+          message: 'Не удалось сгенерировать концепцию проекта. Попробуйте позже.',
+          details: errorText
+        }),
+        { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const result = await response.json();
