@@ -2,8 +2,6 @@ import { memo } from 'react';
 import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Slider } from '@/components/ui/slider';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info } from '@/utils/iconImports';
 import { VOCAL_GENDER_OPTIONS, type VocalGender } from '../types/generator.types';
 import { getProviderConfig, type MusicProvider } from '@/config/provider-limits';
 
@@ -45,15 +43,6 @@ export const AdvancedControls = memo(({
   
   return (
     <div className="space-y-4">
-      {/* Информация о провайдере */}
-      {provider === 'mureka' && (
-        <Alert variant="default" className="border-info/50 bg-info/5">
-          <Info className="h-4 w-4 text-info" />
-          <AlertDescription className="text-xs">
-            Mureka имеет ограниченный набор расширенных настроек. Используйте Suno для полного контроля.
-          </AlertDescription>
-        </Alert>
-      )}
       
       {/* Vocal Gender - только для Suno */}
       {features.vocalGenderSelection && (

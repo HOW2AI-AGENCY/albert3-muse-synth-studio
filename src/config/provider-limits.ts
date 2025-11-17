@@ -121,60 +121,6 @@ export const PROVIDER_CONFIGS: Record<MusicProvider, ProviderConfig> = {
       lyricsTooLong: 'Текст слишком длинный. Максимум 3000 символов',
     },
   },
-  mureka: {
-    name: 'mureka',
-    displayName: 'Mureka AI',
-    description: 'Быстрый AI генератор с автоматической генерацией текстов',
-    limits: {
-      prompt: {
-        min: 5,
-        max: 500, // ✅ Mureka тоже имеет лимит 500
-        recommended: 80,
-      },
-      lyrics: {
-        min: 0,
-        max: 2000,
-        recommended: 400,
-      },
-      title: {
-        min: 0,
-        max: 60,
-      },
-      tags: {
-        min: 0,
-        max: 100,
-        recommended: 40,
-      },
-      duration: {
-        min: 20,
-        max: 180, // 3 минуты
-      },
-    },
-    features: {
-      referenceAudio: false, // ❌ Mureka НЕ поддерживает референс
-      extend: false, // ❌ Mureka НЕ поддерживает extend
-      createCover: false, // ❌ Mureka НЕ поддерживает cover
-      customMode: true,
-      instrumentalMode: true, // через isBGM
-      vocalGenderSelection: false, // Mureka не поддерживает выбор пола
-      negativeTags: false,
-      styleWeight: false,
-      audioWeight: false,
-      lyricsWeight: false,
-      weirdnessConstraint: false,
-      stemSeparation: {
-        supported: true,
-        modes: ['split_stem'], // Только split_stem для Mureka
-        downloadAsZip: true, // ✅ Mureka возвращает ZIP-архив
-      },
-    },
-    warnings: {
-      promptTooShort: 'Короткое описание. Рекомендуется от 80 символов для лучшего результата',
-      promptTooLong: 'Описание слишком длинное. Максимум 500 символов',
-      lyricsTooLong: 'Текст слишком длинный. Максимум 2000 символов',
-      noReferenceAudio: 'Mureka не поддерживает референсное аудио. Используйте Suno для этой функции',
-    },
-  },
 };
 
 /**

@@ -10,7 +10,6 @@
 import type { MusicProvider } from '@/config/provider-models';
 import type { IProviderClient } from './base';
 import { SunoProviderAdapter } from './adapters/suno.adapter';
-import { MurekaProviderAdapter } from './adapters/mureka.adapter';
 import { logger } from '@/utils/logger';
 
 /**
@@ -56,21 +55,14 @@ export class ProviderFactory {
    * @throws Error если провайдер не поддерживается
    */
   private static createAdapter(provider: MusicProvider): IProviderClient {
-    switch (provider) {
-      case 'suno':
-        logger.debug('[ProviderFactory] Creating Suno adapter');
-        return new SunoProviderAdapter();
-
-      case 'mureka':
-        logger.debug('[ProviderFactory] Creating Mureka adapter');
-        return new MurekaProviderAdapter();
-
-      default: {
-        const errorMsg = `Unsupported provider: ${provider}`;
-        logger.error('[ProviderFactory] Provider not supported', new Error(errorMsg));
-        throw new Error(errorMsg);
-      }
+    if (provider === 'suno') {
+      logger.debug('[ProviderFactory] Creating Suno adapter');
+      return new SunoProviderAdapter();
     }
+
+    const errorMsg = `Unsupported provider: ${provider}`;
+    logger.error('[ProviderFactory] Provider not supported', new Error(errorMsg));
+    throw new Error(errorMsg);
   }
 
   /**
@@ -89,7 +81,7 @@ export class ProviderFactory {
    * @returns Массив идентификаторов провайдеров
    */
   static getSupportedProviders(): MusicProvider[] {
-    return ['suno', 'mureka'];
+    return ['suno'];
   }
 
   /**
@@ -99,7 +91,7 @@ export class ProviderFactory {
    * @returns true если провайдер поддерживается
    */
   static isProviderSupported(provider: string): provider is MusicProvider {
-    return provider === 'suno' || provider === 'mureka';
+    return provider === 'suno';
   }
 }
 
