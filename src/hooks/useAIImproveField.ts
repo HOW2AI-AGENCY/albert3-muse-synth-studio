@@ -64,11 +64,31 @@ export const useAIImproveField = ({ onSuccess, onError }: UseAIImproveFieldOptio
       });
 
       if (functionError) {
-        throw new Error(functionError.message || 'AI improvement failed');
+        // Check for specific error codes that should not be retried
+        const errorMessage = functionError.message || 'AI improvement failed';
+        const isRateLimit = errorMessage.includes('Rate limit') || errorMessage.includes('429');
+        const isPaymentRequired = errorMessage.includes('credits') || errorMessage.includes('402');
+        
+        if (isRateLimit) {
+          throw new Error('Rate limit exceeded. Please wait a moment and try again.');
+        }
+        
+        if (isPaymentRequired) {
+          throw new Error('Insufficient credits. Please add funds to your workspace.');
+        }
+        
+        throw new Error(errorMessage);
       }
 
       if (!data || !data.success) {
-        throw new Error(data?.error || 'AI improvement failed');
+        const errorMessage = data?.error || 'AI improvement failed';
+        
+        // Don't retry on specific error codes
+        if (data?.errorCode === 'RATE_LIMIT' || data?.errorCode === 'PAYMENT_REQUIRED') {
+          throw new Error(errorMessage);
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const result = data.result;

@@ -101,7 +101,36 @@ serve(async (req) => {
       }),
     });
 
+    // Handle rate limit and payment errors specifically
     if (!aiResponse.ok) {
+      if (aiResponse.status === 429) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Rate limit exceeded. Please try again in a moment.',
+            errorCode: 'RATE_LIMIT',
+            success: false,
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 429,
+          }
+        );
+      }
+      
+      if (aiResponse.status === 402) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Insufficient credits. Please add funds to your workspace.',
+            errorCode: 'PAYMENT_REQUIRED',
+            success: false,
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 402,
+          }
+        );
+      }
+
       throw new Error(`AI API error: ${aiResponse.statusText}`);
     }
 
