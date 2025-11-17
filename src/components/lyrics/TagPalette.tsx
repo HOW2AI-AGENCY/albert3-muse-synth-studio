@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { TagCategory, Tag } from '@/types/lyrics';
 import { TAG_DEFINITIONS } from '@/data/tagDefinitions';
+import { getTagInfo } from '@/data/tagTranslations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -121,11 +122,12 @@ export const TagPalette: React.FC<TagPaletteProps> = ({
     Sun, Moon, Cloud, Star, Sparkles, Flame, Droplet, Wind
   };
 
-  const renderTag = (value: string, categoryDef: any) => {
+  const renderTag = (value: string) => {
     const tag = parseTag(value, `[${value}]`);
     if (!tag) return null;
     
     const IconComponent = tag.icon ? iconMap[tag.icon] : null;
+    const tagInfo = getTagInfo(value);
 
     return (
       <Tooltip key={value} delayDuration={300}>
@@ -142,14 +144,14 @@ export const TagPalette: React.FC<TagPaletteProps> = ({
             )}
           >
             {IconComponent && <IconComponent className="mr-1 sm:mr-1.5 h-3 w-3 flex-shrink-0" />}
-            <span className="truncate">{value}</span>
+            <span className="truncate">{tagInfo.ru}</span>
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-[200px] text-xs">
-          <p className="font-semibold mb-1">{value}</p>
-          {categoryDef.description && (
-            <p className="text-muted-foreground text-[10px]">{categoryDef.description}</p>
-          )}
+        <TooltipContent side="top" className="max-w-xs text-xs">
+          <div className="space-y-1">
+            <p className="font-semibold text-primary">{value}</p>
+            <p className="text-muted-foreground">{tagInfo.description}</p>
+          </div>
         </TooltipContent>
       </Tooltip>
     );
@@ -195,7 +197,7 @@ export const TagPalette: React.FC<TagPaletteProps> = ({
         </div>
 
         {/* Tag Content */}
-        {categories.map(([key, def]) => (
+        {categories.map(([key]) => (
           <TabsContent key={key} value={key} className="mt-3 sm:mt-4 space-y-0">
             <div className="h-[40vh] sm:h-[45vh] md:h-[50vh] overflow-y-auto scrollbar-styled pr-2">
               <div className="space-y-4 pb-2">
@@ -212,7 +214,7 @@ export const TagPalette: React.FC<TagPaletteProps> = ({
                       </div>
                     )}
                     <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                      {values.map(value => renderTag(value, def))}
+                      {values.map(value => renderTag(value))}
                     </div>
                   </div>
                 ))}
