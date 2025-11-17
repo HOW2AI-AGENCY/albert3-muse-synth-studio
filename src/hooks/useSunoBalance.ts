@@ -24,7 +24,10 @@ export const useSunoBalance = () => {
         currency: data.currency || 'credits'
       };
     },
-    refetchInterval: 60000, // Refresh every minute
-    staleTime: 30000, // Consider stale after 30s
+    refetchInterval: 5 * 60 * 1000, // Обновлять каждые 5 минут
+    staleTime: 2 * 60 * 1000, // Считать устаревшим через 2 минуты
+    gcTime: 10 * 60 * 1000, // Хранить в кэше 10 минут
+    retry: 2, // Повторить 2 раза при ошибке
+    retryDelay: 1000, // Задержка между попытками 1 секунда
   });
 };

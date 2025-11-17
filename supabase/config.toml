@@ -42,10 +42,10 @@ verify_jwt = true
 [functions.ai-project-wizard]
 verify_jwt = true
 
-[functions.analyze-reference-audio]
+[functions.get-balance]
 verify_jwt = true
 
-[functions.get-balance]
+[functions.get-provider-balance]
 verify_jwt = true
 
 [functions.suggest-styles]
@@ -81,56 +81,26 @@ verify_jwt = true
 [functions.wav-callback]
 verify_jwt = false
 
-[functions.generate-mureka]
+[functions.generate-project-tracklist]
 verify_jwt = true
 
-[functions.get-mureka-balance]
+[functions.generate-project-concept]
 verify_jwt = true
 
-[functions.recognize-song]
-verify_jwt = true
-
-[functions.describe-song]
-verify_jwt = true
+[functions.prompt-dj-lyria-stream]
+verify_jwt = false
 
 [functions.describe-song-replicate]
 verify_jwt = true
 
-[functions.extend-lyrics-mureka]
+[functions.get-timestamped-lyrics]
 verify_jwt = true
 
-[functions.refresh-track-audio]
+[functions.replace-section]
 verify_jwt = true
 
-[functions.suno-webhook]
+[functions.replace-section-callback]
 verify_jwt = false
-
-[functions.health-check]
-verify_jwt = false
-
-[functions.cleanup-old-tracks]
-verify_jwt = false
-
-[functions.mureka-webhook]
-verify_jwt = false
-
-[functions.fix-stuck-mureka-track]
-verify_jwt = false
-
-[functions.restore-mureka-tracks]
-verify_jwt = false
-
-[functions.enhance-generation-prompt]
-verify_jwt = false
-
-[functions.generate-track-title]
-verify_jwt = true
-
-[functions.generate-lyrics-ai]
-verify_jwt = true
-
-[functions.generate-advanced-prompt]
-verify_jwt = true
 
 [functions.upload-and-extend]
 verify_jwt = true
@@ -162,23 +132,20 @@ verify_jwt = false
 [functions.export-wav]
 verify_jwt = true
 
-[functions.get-timestamped-lyrics]
-verify_jwt = true
-
-[functions.replace-section]
-verify_jwt = true
-
-[functions.replace-section-callback]
+[functions.enhance-generation-prompt]
 verify_jwt = false
 
-[functions.generate-project-tracklist]
+[functions.generate-track-title]
 verify_jwt = true
 
-[functions.generate-project-concept]
+[functions.generate-lyrics-ai]
 verify_jwt = true
 
-[functions.prompt-dj-lyria-stream]
+[functions.generate-advanced-prompt]
+verify_jwt = true
+
+[functions.health-check]
 verify_jwt = false
 
-[functions.describe-song-replicate]
-verify_jwt = true
+[functions.cleanup-old-tracks]
+verify_jwt = false
