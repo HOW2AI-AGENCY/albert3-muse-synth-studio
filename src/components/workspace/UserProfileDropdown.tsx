@@ -93,7 +93,10 @@ export const UserProfileDropdown = ({ userEmail }: UserProfileDropdownProps) => 
           <span>Настройки</span>
         </DropdownMenuItem>
 
-        <DropdownMenuItem className="cursor-pointer gap-2">
+        <DropdownMenuItem
+          onClick={() => navigate("/workspace/subscription")}
+          className="cursor-pointer gap-2"
+        >
           <CreditCard className="h-4 w-4" />
           <span>Подписка</span>
         </DropdownMenuItem>
