@@ -4,6 +4,7 @@ import { Sparkles } from '@/utils/iconImports';
 import { Section } from '@/components/ui/section';
 import { LyricsInput } from '@/components/lyrics/legacy/LyricsInput';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
+import { AIFieldImprovement } from '@/components/generator/ui/AIFieldImprovement';
 import { cn } from '@/lib/utils';
 
 interface FormLyricsProps {
@@ -13,6 +14,7 @@ interface FormLyricsProps {
     isGenerating: boolean;
     lyricsLineCount: number;
     isMobile: boolean;
+    projectContext?: string;
 }
 
 export const FormLyrics = ({
@@ -21,7 +23,8 @@ export const FormLyrics = ({
     onOpenLyricsDialog,
     isGenerating,
     lyricsLineCount,
-    isMobile
+    isMobile,
+    projectContext
 }: FormLyricsProps) => {
     return (
         <Section
@@ -51,22 +54,33 @@ export const FormLyrics = ({
                 </Badge>
             ) : undefined}
             action={
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onOpenLyricsDialog();
-                    }}
-                    className={cn(
-                        "h-9 px-2 text-[10px] gap-1 transition-opacity touch-target-min",
-                        isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                    )}
-                    aria-label="Сгенерировать текст"
-                >
-                    <Sparkles className="h-3 w-3" aria-hidden="true" />
-                    Generate
-                </Button>
+                <div className="flex items-center gap-1">
+                    <AIFieldImprovement
+                        field="lyrics"
+                        value={debouncedLyrics}
+                        context={projectContext}
+                        onResult={onDebouncedLyricsChange}
+                        disabled={isGenerating}
+                        size="sm"
+                        variant="ghost"
+                    />
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenLyricsDialog();
+                        }}
+                        className={cn(
+                            "h-9 px-2 text-[10px] gap-1 transition-opacity touch-target-min",
+                            isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                        )}
+                        aria-label="Сгенерировать текст"
+                    >
+                        <Sparkles className="h-3 w-3" aria-hidden="true" />
+                        Generate
+                    </Button>
+                </div>
             }
         >
             <LyricsInput

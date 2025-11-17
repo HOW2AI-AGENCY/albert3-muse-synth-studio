@@ -1,6 +1,7 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
+import { AIFieldImprovement } from '@/components/generator/ui/AIFieldImprovement';
 import { cn } from '@/lib/utils';
 import type { GenerationParams } from '../../types/generator.types';
 
@@ -9,16 +10,28 @@ interface FormTitleProps {
     onParamChange: <K extends keyof GenerationParams>(key: K, value: GenerationParams[K]) => void;
     isGenerating: boolean;
     isMobile: boolean;
+    projectContext?: string;
 }
 
-export const FormTitle = ({ params, onParamChange, isGenerating, isMobile }: FormTitleProps) => {
+export const FormTitle = ({ params, onParamChange, isGenerating, isMobile, projectContext }: FormTitleProps) => {
     return (
         <div className="space-y-[var(--space-1)] p-[var(--space-compact-md)] sm:p-[var(--space-comfortable-sm)]">
-            <div className="flex items-center gap-[var(--space-2)]">
-                <Label htmlFor="custom-title" className="text-xs font-medium">
-                    Название
-                </Label>
-                <InfoTooltip content="Укажите название вашего трека" />
+            <div className="flex items-center justify-between gap-[var(--space-2)]">
+                <div className="flex items-center gap-[var(--space-2)]">
+                    <Label htmlFor="custom-title" className="text-xs font-medium">
+                        Название
+                    </Label>
+                    <InfoTooltip content="Укажите название вашего трека" />
+                </div>
+                <AIFieldImprovement
+                    field="title"
+                    value={params.title}
+                    context={projectContext}
+                    onResult={(value) => onParamChange('title', value)}
+                    disabled={isGenerating}
+                    size="sm"
+                    variant="ghost"
+                />
             </div>
             <Input
                 id="custom-title"
