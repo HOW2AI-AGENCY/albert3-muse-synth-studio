@@ -116,7 +116,32 @@ serve(async (req) => {
 
     // 6. Call Mureka describe API (используем прямой URL, НЕ загружаем файл)
     logger.info('🎼 Calling Mureka describe API', { audioUrl: track.audio_url });
-    const describeResponse: any = await murekaClient.describeSong({ url: track.audio_url });
+    
+    let describeResponse: any;
+    try {
+      describeResponse = await murekaClient.describeSong({ url: track.audio_url });
+    } catch (apiError: any) {
+      logger.error('❌ Mureka API describeSong error', { error: apiError.message });
+      
+      await supabaseAdmin
+        .from('song_descriptions')
+        .update({
+          status: 'failed',
+          error_message: apiError.message || 'Failed to analyze track',
+        })
+        .eq('id', description.id);
+
+      return new Response(
+        JSON.stringify({
+          error: 'Failed to start track analysis',
+          details: apiError.message,
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
 
     // Handle both response shapes: task-based or immediate description
     let task_id: string | null = null;

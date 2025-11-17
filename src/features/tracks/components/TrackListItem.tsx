@@ -181,7 +181,7 @@ const TrackListItemComponent = ({ track, onClick, onDownload, onShare, onRetry, 
           versionNumber={displayedVersion?.versionNumber}
           isMasterVersion={displayedVersion?.isMasterVersion}
           variant="minimal"
-          showQuickActions={true}
+          showQuickActions={false}
           isLiked={isLiked}
           onLike={handleLikeClick}
           onDownload={() => { onDownload?.(); }}
