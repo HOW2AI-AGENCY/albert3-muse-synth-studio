@@ -81,13 +81,32 @@ export const LyricsContent: React.FC<LyricsContentProps> = ({
       })
       .join('\n\n');
 
+    const handleRawTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      // Пользователь может редактировать raw text
+      // TODO: Implement parsing and updating document from raw text
+      console.log('Raw text changed:', e.target.value);
+    };
+
     return (
       <ScrollArea className="flex-1 p-4 w-full min-w-0 overflow-auto scrollbar-styled">
         <Textarea
           value={rawText}
-          readOnly={readOnly}
+          onChange={handleRawTextChange}
+          readOnly={false}
+          disabled={readOnly}
           className="w-full max-w-full min-w-0 min-h-[500px] font-mono text-sm resize-none break-words"
-          placeholder="Enter lyrics in Suno format..."
+          placeholder="Введите текст песни в формате Suno...
+
+Пример:
+[Intro] [Piano] [Ambient]
+
+[Verse 1] [Lead Vocal] [Melancholic]
+Walking through the city lights
+Dreams fade into the night
+
+[Chorus] [Euphoric] [Building Intensity]
+We rise above the shadows
+Hearts beating as one"
         />
       </ScrollArea>
     );
