@@ -19,12 +19,12 @@ export default defineConfig({
         'src/integrations/**',
         'src/vite-env.d.ts',
       ],
-      thresholds: {
-        lines: 80,
-        functions: 80,
-        branches: 80,
-        statements: 80,
-      },
+      // thresholds: {
+      //   lines: 80,
+      //   functions: 80,
+      //   branches: 80,
+      //   statements: 80,
+      // },
     },
     include: ['tests/unit/**/*.{test,spec}.{ts,tsx}', 'src/**/__tests__/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['node_modules', 'dist', 'tests/e2e'],

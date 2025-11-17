@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { useTrackLike } from "@/features/tracks";
 import { CompactTrackHero } from "@/features/tracks/ui/CompactTrackHero";
@@ -6,9 +6,10 @@ import { AnalyticsService } from "@/services/analytics.service";
 import { OverviewTab } from "./detail-panel/OverviewTab";
 import { VersionsTab } from "./detail-panel/VersionsTab";
 import { StemsTab } from "./detail-panel/StemsTab";
-import { DetailsTab } from "./detail-panel/DetailsTab";
 import type { Track, TrackVersion, TrackStem } from "./detail-panel/types";
 import { logError } from "@/utils/logger";
+
+const DetailsTab = lazy(() => import("./detail-panel/DetailsTab").then(module => ({ default: module.DetailsTab })));
 
 interface DetailPanelContentProps {
   track: Track;
@@ -217,7 +218,9 @@ export const DetailPanelContent = ({
           />
         )}
         {tabView === "details" && (
-          <DetailsTab track={track} onDelete={onDelete} />
+          <Suspense fallback={<div>Loading...</div>}>
+            <DetailsTab track={track} onDelete={onDelete} />
+          </Suspense>
         )}
       </div>
     </div>
