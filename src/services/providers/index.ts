@@ -8,4 +8,3 @@ export * from './registry';
 export * from './base';
 export * from './factory';
 export { SunoProviderAdapter } from './adapters/suno.adapter';
-export { MurekaProviderAdapter } from './adapters/mureka.adapter';

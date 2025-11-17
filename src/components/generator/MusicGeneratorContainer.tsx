@@ -100,18 +100,7 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
     return () => clearTimeout(timer);
   }, [debouncedLyrics, setParamLyrics]);
 
-  const handleLyricsStage = useCallback(
-    ({ trackId, jobId }: { trackId: string; jobId: string }) => {
-      state.setMurekaLyricsDialog({ open: true, trackId, jobId });
-    },
-    [state]
-  );
-
-  useMurekaLyricsSubscription({
-    trackId: state.params.trackId,
-    enabled: !!state.params.trackId,
-    onLyricsStage: handleLyricsStage,
-  });
+  // Mureka removed - only Suno is supported
 
   useEffect(() => {
     const defaultModel = getDefaultModel(selectedProvider as ProviderType);
@@ -119,7 +108,7 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
     setParams((prev) => {
       const shouldUpdateProvider = prev.provider !== selectedProvider;
       const shouldUpdateModelVersion = prev.modelVersion !== defaultModel.value;
-      const shouldClearReference = selectedProvider === 'mureka' && !!prev.referenceAudioUrl;
+      const shouldClearReference = false; // Only Suno supported
 
       if (!shouldUpdateProvider && !shouldUpdateModelVersion && !shouldClearReference) {
         return prev;
@@ -156,44 +145,6 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
       };
     });
   }, [selectedProvider, setParams, toast]);
-
-  const handleMurekaLyricsSelect = useCallback(
-    async (lyrics: string, variantId: string) => {
-      if (!state.murekaLyricsDialog.trackId) return;
-
-      try {
-        logger.info('User selected Mureka lyrics variant', 'MusicGeneratorContainer', {
-          trackId: state.murekaLyricsDialog.trackId,
-          variantId,
-        });
-
-        const { error } = await supabase
-          .from('tracks')
-          .update({
-            lyrics,
-            metadata: {
-              selected_lyrics_variant_id: variantId,
-              stage: 'composing_music',
-              stage_description: 'Создание музыки...',
-            },
-          })
-          .eq('id', state.murekaLyricsDialog.trackId);
-
-        if (error) throw error;
-
-        sonnerToast.success('Текст выбран! Продолжаем создание музыки...', {
-          duration: 3000,
-        });
-
-        state.setParam('lyrics', lyrics);
-        state.setDebouncedLyrics(lyrics);
-      } catch (error) {
-        logger.error('Failed to apply lyrics variant', error as Error, 'MusicGeneratorContainer');
-        sonnerToast.error('Ошибка применения текста');
-      }
-    },
-    [state]
-  );
 
   const handleProviderChange = useCallback(
     (provider: string) => {
@@ -603,13 +554,6 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
     [state]
   );
 
-  const handleMurekaLyricsDialogChange = useCallback(
-    (dialog: typeof state.murekaLyricsDialog) => {
-      state.setMurekaLyricsDialog(dialog);
-    },
-    [state]
-  );
-
   return (
     <MusicGeneratorContent
       state={state}
@@ -639,9 +583,6 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
       onAudioPreviewOpenChange={handleAudioPreviewOpenChange}
       onLyricsGenerated={handleLyricsGenerated}
       onLyricsDialogOpenChange={handleLyricsDialogOpenChange}
-      murekaLyricsDialog={state.murekaLyricsDialog}
-      onMurekaLyricsDialogChange={handleMurekaLyricsDialogChange}
-      onMurekaLyricsSelect={handleMurekaLyricsSelect}
       onHistoryDialogOpenChange={handleHistoryDialogOpenChange}
       onHistorySelect={handleHistorySelect}
       onPersonaSelect={handlePersonaSelect}

@@ -8,7 +8,6 @@ import { SimpleModeCompact } from '@/components/generator/forms/SimpleModeCompac
 import { CompactCustomForm } from '@/components/generator/forms/CompactCustomForm';
 import { AudioPreviewDialog } from '@/components/audio/AudioPreviewDialog';
 import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog';
-import { MurekaLyricsVariantDialog } from '@/components/lyrics/MurekaLyricsVariantDialog';
 import { PromptHistoryDialog } from '@/components/generator/PromptHistoryDialog';
 import { PersonaPickerDialog } from '@/components/generator/PersonaPickerDialog';
 import { ProjectSelectorDialog } from '@/components/generator/ProjectSelectorDialog';
@@ -23,8 +22,6 @@ type PromptHistoryItem = {
   lyrics?: string;
   style_tags?: string[];
 };
-
-type LyricsDialogState = UseGeneratorStateReturn['murekaLyricsDialog'];
 
 type MusicGeneratorContentProps = {
   state: UseGeneratorStateReturn;
@@ -54,9 +51,6 @@ type MusicGeneratorContentProps = {
   onAudioPreviewOpenChange: (open: boolean) => void;
   onLyricsGenerated: (lyrics: string) => void;
   onLyricsDialogOpenChange: (open: boolean) => void;
-  murekaLyricsDialog: LyricsDialogState;
-  onMurekaLyricsDialogChange: (dialog: LyricsDialogState) => void;
-  onMurekaLyricsSelect: (lyrics: string, variantId: string) => Promise<void>;
   onHistoryDialogOpenChange: (open: boolean) => void;
   onHistorySelect: (item: PromptHistoryItem) => void;
   onPersonaSelect: (personaId: string | null) => void;
@@ -92,9 +86,6 @@ export const MusicGeneratorContent = memo(({
   onAudioPreviewOpenChange,
   onLyricsGenerated,
   onLyricsDialogOpenChange,
-  murekaLyricsDialog,
-  onMurekaLyricsDialogChange,
-  onMurekaLyricsSelect,
   onHistoryDialogOpenChange,
   onHistorySelect,
   onPersonaSelect,
@@ -207,13 +198,7 @@ export const MusicGeneratorContent = memo(({
         onGenerated={onLyricsGenerated}
       />
 
-      <MurekaLyricsVariantDialog
-        open={murekaLyricsDialog.open}
-        onOpenChange={(open) => onMurekaLyricsDialogChange({ ...murekaLyricsDialog, open })}
-        trackId={murekaLyricsDialog.trackId}
-        jobId={murekaLyricsDialog.jobId}
-        onSelectVariant={onMurekaLyricsSelect}
-      />
+      {/* Mureka removed - only Suno supported */}
 
       <PromptHistoryDialog
         open={state.historyDialogOpen}
