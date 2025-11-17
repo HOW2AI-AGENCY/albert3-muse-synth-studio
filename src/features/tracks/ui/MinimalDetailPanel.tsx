@@ -23,6 +23,7 @@ interface Track {
   id: string;
   title: string;
   prompt: string;
+  improved_prompt?: string;
   status: string;
   audio_url?: string;
   cover_url?: string;
@@ -35,7 +36,22 @@ interface Track {
   duration_seconds?: number;
   like_count?: number;
   play_count?: number;
+  download_count?: number;
+  view_count?: number;
   has_stems?: boolean;
+  has_vocals?: boolean;
+  provider?: string;
+  model_name?: string;
+  reference_audio_url?: string;
+  metadata?: {
+    ai_description?: string;
+    genre?: string;
+    mood?: string;
+    tempo_bpm?: number;
+    key?: string;
+    instruments?: string[];
+    [key: string]: unknown;
+  };
 }
 
 interface MinimalDetailPanelProps {
@@ -226,10 +242,29 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
                   />
                 </div>
 
-                {/* Теги из информации генерации вместо полей жанра/настроения */}
+                {/* Жанр и настроение */}
+                {(track.genre || track.mood) && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Жанр и настроение</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {track.genre && (
+                        <Badge variant="default" className="text-[10px] h-5 px-2">
+                          🎵 {track.genre}
+                        </Badge>
+                      )}
+                      {track.mood && (
+                        <Badge variant="outline" className="text-[10px] h-5 px-2">
+                          😊 {track.mood}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Теги из информации генерации */}
                 {track.style_tags && track.style_tags.length > 0 && (
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Теги</Label>
+                    <Label className="text-xs">Стиль-теги</Label>
                     <div className="flex flex-wrap gap-1.5">
                       {track.style_tags.map((tag) => (
                         <Badge key={tag} variant="secondary" className="text-[10px] h-4 px-1.5">
@@ -240,21 +275,138 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
                   </div>
                 )}
 
+                {/* Статистика */}
+                {(track.play_count || track.like_count || track.download_count || track.view_count) && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Статистика</Label>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {track.play_count !== undefined && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-muted-foreground">▶️ Прослушивания:</span>
+                          <span className="font-medium">{track.play_count}</span>
+                        </div>
+                      )}
+                      {track.like_count !== undefined && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-muted-foreground">❤️ Лайки:</span>
+                          <span className="font-medium">{track.like_count}</span>
+                        </div>
+                      )}
+                      {track.download_count !== undefined && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-muted-foreground">⬇️ Загрузки:</span>
+                          <span className="font-medium">{track.download_count}</span>
+                        </div>
+                      )}
+                      {track.view_count !== undefined && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-muted-foreground">👁️ Просмотры:</span>
+                          <span className="font-medium">{track.view_count}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Провайдер и модель */}
+                {(track.provider || track.model_name) && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Технические данные</Label>
+                    <div className="text-xs space-y-1">
+                      {track.provider && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Провайдер:</span>
+                          <Badge variant="outline" className="text-[10px] h-5">
+                            {track.provider === 'suno' ? '🎼 Suno AI' : track.provider === 'mureka' ? '🎹 Mureka AI' : track.provider}
+                          </Badge>
+                        </div>
+                      )}
+                      {track.model_name && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Модель:</span>
+                          <span className="font-mono text-[10px]">{track.model_name}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Анализ из metadata */}
+                {track.metadata && (track.metadata.tempo_bpm || track.metadata.key || (track.metadata.instruments && track.metadata.instruments.length > 0)) && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Музыкальный анализ</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {track.metadata.tempo_bpm && (
+                        <Badge variant="secondary" className="text-[10px] h-5 px-2">
+                          🥁 {track.metadata.tempo_bpm} BPM
+                        </Badge>
+                      )}
+                      {track.metadata.key && (
+                        <Badge variant="secondary" className="text-[10px] h-5 px-2">
+                          🎹 {track.metadata.key}
+                        </Badge>
+                      )}
+                      {track.metadata.instruments && track.metadata.instruments.map((instrument) => (
+                        <Badge key={instrument} variant="outline" className="text-[10px] h-5 px-2">
+                          🎸 {instrument}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* AI-описание из metadata */}
+                {track.metadata?.ai_description && (
+                  <details className="rounded border bg-muted/30">
+                    <summary className="text-xs px-2 py-1.5 cursor-pointer select-none">🤖 AI-описание</summary>
+                    <div className="px-2 pb-2">
+                      <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded max-h-24 overflow-y-auto">
+                        {track.metadata.ai_description}
+                      </p>
+                    </div>
+                  </details>
+                )}
+
                 <div className="flex items-center justify-between">
                   <Label htmlFor="public" className="text-xs">Публичный доступ</Label>
                   <Switch id="public" checked={isPublic} onCheckedChange={setIsPublic} />
                 </div>
 
-                {/* Второстепенная информация свернута и компактна */}
+                {/* Промпт */}
                 {track.prompt && (
                   <details className="rounded border bg-muted/30">
-                    <summary className="text-xs px-2 py-1.5 cursor-pointer select-none">Показать промпт</summary>
+                    <summary className="text-xs px-2 py-1.5 cursor-pointer select-none">💬 Промпт генерации</summary>
                     <div className="px-2 pb-2">
                       <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded max-h-24 overflow-y-auto">
                         {track.prompt}
                       </p>
                     </div>
                   </details>
+                )}
+
+                {/* Улучшенный промпт */}
+                {track.improved_prompt && (
+                  <details className="rounded border bg-muted/30">
+                    <summary className="text-xs px-2 py-1.5 cursor-pointer select-none">✨ Улучшенный промпт</summary>
+                    <div className="px-2 pb-2">
+                      <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded max-h-24 overflow-y-auto">
+                        {track.improved_prompt}
+                      </p>
+                    </div>
+                  </details>
+                )}
+
+                {/* Референсное аудио */}
+                {track.reference_audio_url && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">🎧 Референсное аудио</Label>
+                    <audio 
+                      controls 
+                      src={track.reference_audio_url} 
+                      className="w-full h-8"
+                      style={{ height: '32px' }}
+                    />
+                  </div>
                 )}
 
                 {/* Save button is moved to the sticky footer */}
