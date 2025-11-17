@@ -24,16 +24,22 @@ export const useAudioUploadHandler = (state: UseGeneratorStateReturn) => {
   const handleAudioConfirm = useCallback(async () => {
     if (!state.pendingAudioFile) return;
 
-    const url = await uploadAudio(state.pendingAudioFile);
-    if (url) {
-      state.setParam('referenceAudioUrl', url);
+    const result = await uploadAudio(state.pendingAudioFile);
+    if (result?.publicUrl) {
+      state.setParam('referenceAudioUrl', result.publicUrl);
       state.setParam('referenceFileName', state.pendingAudioFile.name);
       state.setMode('custom');
       state.setPendingAudioFile(null);
+      
       toast({
         title: '🎵 Референс добавлен',
-        description: 'Переключено на расширенный режим для настройки',
+        description: 'Запускаем анализ аудио...',
       });
+
+      // Автоматический анализ после загрузки
+      if (result.libraryId) {
+        await handleManualAnalyze(result.publicUrl, result.libraryId);
+      }
     }
   }, [state, uploadAudio, toast]);
 
@@ -101,6 +107,35 @@ export const useAudioUploadHandler = (state: UseGeneratorStateReturn) => {
   const handleRecordComplete = useCallback(async (audioUrl: string) => {
     state.setParam('referenceAudioUrl', audioUrl);
     state.setParam('referenceFileName', 'Записанное аудио');
+    
+    // Сохраняем записанное аудио в audio_library
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: libraryData } = await supabase
+          .from('audio_library')
+          .insert({
+            user_id: user.id,
+            file_name: 'Записанное аудио',
+            file_url: audioUrl,
+            source_type: 'recording',
+            analysis_status: 'pending',
+          })
+          .select('id')
+          .single();
+
+        logger.info('✅ Recorded audio saved to library', 'AudioUploadHandler', {
+          libraryId: libraryData?.id
+        });
+
+        // Автоматический анализ записанного аудио
+        if (libraryData?.id) {
+          await handleManualAnalyze(audioUrl, libraryData.id);
+        }
+      }
+    } catch (error) {
+      logger.error('[RECORD] Failed to save to library', error instanceof Error ? error : new Error(String(error)), 'AudioUploadHandler');
+    }
     state.setMode('custom');
     logger.info('Audio recorded', 'AudioUploadHandler', { audioUrl: audioUrl.substring(0, 50) });
     toast({

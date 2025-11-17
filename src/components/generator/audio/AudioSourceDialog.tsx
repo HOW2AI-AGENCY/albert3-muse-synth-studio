@@ -50,9 +50,9 @@ export const AudioSourceDialog = React.memo(({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const url = await uploadAudio(file);
-    if (url) {
-      onAudioSelect(url, file.name);
+    const result = await uploadAudio(file);
+    if (result?.publicUrl) {
+      onAudioSelect(result.publicUrl, file.name);
       onOpenChange(false);
       
       toast({
@@ -90,13 +90,13 @@ export const AudioSourceDialog = React.memo(({
 
     // Upload recorded audio
     const file = new File([audioBlob], `recording-${Date.now()}.webm`, { type: 'audio/webm' });
-    const url = await uploadAudio(file);
+    const result = await uploadAudio(file);
     
-    if (url) {
-      onAudioSelect(url, file.name);
+    if (result?.publicUrl) {
+      onAudioSelect(result.publicUrl, file.name);
       
       if (onRecordComplete) {
-        onRecordComplete(audioBlob, url);
+        onRecordComplete(audioBlob, result.publicUrl);
       }
       
       onOpenChange(false);

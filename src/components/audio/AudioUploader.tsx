@@ -23,11 +23,11 @@ export const AudioUploader = ({ onUploadComplete, onRemove, className }: AudioUp
     if (!file) return;
 
     setFileName(file.name);
-    const uploadedUrl = await uploadAudio(file);
+    const result = await uploadAudio(file);
     
-    if (uploadedUrl) {
-      setAudioUrl(uploadedUrl);
-      onUploadComplete?.(uploadedUrl);
+    if (result?.publicUrl) {
+      setAudioUrl(result.publicUrl);
+      onUploadComplete?.(result.publicUrl);
     }
   };
 
