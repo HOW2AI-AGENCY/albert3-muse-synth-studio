@@ -21,6 +21,8 @@ import { useProjects } from '@/contexts/project/useProjects';
 import { useTracks } from '@/hooks/useTracks';
 import { CreateProjectDialog } from '@/components/projects/CreateProjectDialog';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProjectSelectorDialogProps {
   open: boolean;
@@ -65,20 +67,43 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
   }, [projects, searchQuery]);
 
   // Get tracks for selected project (check both project_id field and project_tracks junction table)
-  const projectTracks = useMemo(() => {
-    if (!selectedProjectId) return [];
-    
-    // Filter tracks that are either:
-    // 1. Directly assigned via project_id field
-    // 2. Linked through project_tracks junction table
-    const directTracks = allTracks.filter(
-      t => t.project_id === selectedProjectId && t.status === 'completed'
-    );
-    
-    // For now, return direct tracks. Junction table support will be added when needed.
-    // TODO: Query project_tracks table to get additional linked tracks
-    return directTracks;
+  const directTracks = useMemo(() => {
+    if (!selectedProjectId) return [] as any[];
+    // Include all statuses to mirror Project Details behavior
+    return allTracks.filter((t) => t.project_id === selectedProjectId);
   }, [allTracks, selectedProjectId]);
+
+  // Also fetch links from junction table project_tracks -> tracks(*)
+  const { data: junctionRows } = useQuery({
+    queryKey: ['project-tracks-junction', selectedProjectId],
+    enabled: !!selectedProjectId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('project_tracks')
+        .select('track_id, tracks(*)')
+        .eq('project_id', selectedProjectId!);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const projectTracks = useMemo(() => {
+    if (!selectedProjectId) return [] as any[];
+    const linked = (junctionRows || [])
+      .map((r: any) => r.tracks)
+      .filter(Boolean);
+    const combined = [...directTracks, ...linked];
+    // Dedupe by id and sort by created_at desc if available
+    const byId = new Map<string, any>();
+    for (const t of combined) {
+      if (t && t.id && !byId.has(t.id)) byId.set(t.id, t);
+    }
+    return Array.from(byId.values()).sort((a, b) => {
+      const aTime = a?.created_at ? new Date(a.created_at).getTime() : 0;
+      const bTime = b?.created_at ? new Date(b.created_at).getTime() : 0;
+      return bTime - aTime;
+    });
+  }, [selectedProjectId, directTracks, junctionRows]);
 
   const handleProjectClick = (projectId: string) => {
     onProjectSelect(projectId);
@@ -194,7 +219,7 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                     <ScrollArea className="h-[300px] sm:h-[400px] pr-4">
                       {projectTracks.length === 0 ? (
                         <div className="text-sm text-muted-foreground text-center py-8">
-                          В проекте пока нет завершенных треков
+                          В проекте пока нет треков
                         </div>
                       ) : (
                         <div className="space-y-2">
