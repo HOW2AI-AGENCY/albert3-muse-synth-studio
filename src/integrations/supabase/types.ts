@@ -183,6 +183,81 @@ export type Database = {
           },
         ]
       }
+      audio_upscale_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          ddim_steps: number | null
+          error_message: string | null
+          guidance_scale: number | null
+          id: string
+          input_audio_url: string
+          metadata: Json | null
+          model_version: string | null
+          output_audio_url: string | null
+          replicate_prediction_id: string | null
+          seed: number | null
+          status: string
+          track_id: string | null
+          truncated_batches: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          ddim_steps?: number | null
+          error_message?: string | null
+          guidance_scale?: number | null
+          id?: string
+          input_audio_url: string
+          metadata?: Json | null
+          model_version?: string | null
+          output_audio_url?: string | null
+          replicate_prediction_id?: string | null
+          seed?: number | null
+          status?: string
+          track_id?: string | null
+          truncated_batches?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          ddim_steps?: number | null
+          error_message?: string | null
+          guidance_scale?: number | null
+          id?: string
+          input_audio_url?: string
+          metadata?: Json | null
+          model_version?: string | null
+          output_audio_url?: string | null
+          replicate_prediction_id?: string | null
+          seed?: number | null
+          status?: string
+          track_id?: string | null
+          truncated_batches?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audio_upscale_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audio_upscale_jobs_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks_with_timestamped_lyrics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       callback_logs: {
         Row: {
           callback_type: string
