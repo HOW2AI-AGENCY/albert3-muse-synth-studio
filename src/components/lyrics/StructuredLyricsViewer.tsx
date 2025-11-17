@@ -12,6 +12,7 @@ interface StructuredLyricsViewerProps {
   lyrics: string;
   compact?: boolean;
   className?: string;
+  showCopyButton?: boolean;
 }
 
 interface LyricsSection {
@@ -92,7 +93,8 @@ const getSectionColor = (title: string): string => {
 export const StructuredLyricsViewer: React.FC<StructuredLyricsViewerProps> = ({ 
   lyrics, 
   compact = false,
-  className = '' 
+  className = '',
+  showCopyButton = true,
 }) => {
   const [copied, setCopied] = useState(false);
   const sections = parseLyricsSections(lyrics);
@@ -117,27 +119,29 @@ export const StructuredLyricsViewer: React.FC<StructuredLyricsViewerProps> = ({
 
   return (
     <div className={`space-y-3 ${className}`}>
-      {/* Кнопка копирования */}
-      <div className="flex justify-end">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleCopy}
-          className="h-7 gap-1.5 text-xs"
-        >
-          {copied ? (
-            <>
-              <Check className="w-3.5 h-3.5" />
-              Скопировано
-            </>
-          ) : (
-            <>
-              <Copy className="w-3.5 h-3.5" />
-              Копировать
-            </>
-          )}
-        </Button>
-      </div>
+      {/* Кнопка копирования - только если включена */}
+      {showCopyButton && (
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCopy}
+            className="h-7 gap-1.5 text-xs"
+          >
+            {copied ? (
+              <>
+                <Check className="w-3.5 h-3.5" />
+                Скопировано
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5" />
+                Копировать
+              </>
+            )}
+          </Button>
+        </div>
+      )}
 
       {/* Секции лирики */}
       <div className={`space-y-${compact ? '2' : '3'}`}>

@@ -139,7 +139,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
     setShowLyrics(prev => !prev);
   }, [vibrate]);
 
-  const swipeHandlers = useSwipeGesture({
+  const swipeRef = useSwipeGesture({
     onSwipeDown: useCallback(() => {
       vibrate('medium');
       onMinimize();
@@ -150,7 +150,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
 
   return (
     <div
-      ref={swipeHandlers.ref as React.RefObject<HTMLDivElement>}
+      ref={swipeRef as React.RefObject<HTMLDivElement>}
       className="fixed inset-0 bg-gradient-to-b from-background via-background/95 to-card/90 backdrop-blur-xl animate-fade-in overflow-y-auto touch-optimized"
       style={{
         paddingTop: 'env(safe-area-inset-top)',
