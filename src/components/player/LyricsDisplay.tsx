@@ -36,7 +36,7 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
     audioId !== 'undefined'
   );
 
-  const { data: lyricsData, isLoading, isError } = useTimestampedLyrics({
+  const { data: lyricsData, isLoading } = useTimestampedLyrics({
     taskId: taskId || '',
     audioId: audioId || '',
     enabled: shouldFetchTimestamped
@@ -54,16 +54,7 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
     return <LyricsSkeleton />;
   }
 
-  // Show plain text lyrics if timestamped failed but we have fallback
-  if ((isError || !hasTimestampedLyrics) && fallbackLyrics) {
-    return (
-      <div className="lyrics-display w-full h-full overflow-y-auto text-center py-4 px-2">
-        <p className="text-sm sm:text-base text-muted-foreground whitespace-pre-line leading-relaxed">
-          {fallbackLyrics}
-        </p>
-      </div>
-    );
-  }
+  // Continue to main render; fallback and placeholders handled below
 
   return (
     <div className="w-full h-full relative flex flex-col overflow-hidden">
@@ -78,7 +69,6 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
         <Settings className="h-4 w-4" />
       </Button>
 
-      {/* Lyrics Display */}
       <div className="flex-1 overflow-hidden min-h-0">
         {hasTimestampedLyrics && lyricsData ? (
           <TimestampedLyricsDisplay
@@ -89,13 +79,17 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
             onSeek={seekTo}
             onTogglePlayPause={togglePlayPause}
           />
-        ) : !hasTimestampedLyrics && fallbackLyrics ? (
+        ) : (String(fallbackLyrics ?? '').trim().length > 0 ? (
           <div className="w-full h-full overflow-y-auto px-4 py-2">
             <pre className="whitespace-pre-wrap text-sm text-muted-foreground font-sans leading-relaxed">
               {fallbackLyrics}
             </pre>
           </div>
-        ) : null}
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground px-4">
+            <span className="text-sm">Текст не найден</span>
+          </div>
+        ))}
       </div>
 
       {/* Settings Dialog */}
