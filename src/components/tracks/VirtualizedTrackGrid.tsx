@@ -19,6 +19,7 @@ interface VirtualizedTrackGridProps {
   onCover?: (trackId: string) => void;
   onAddVocal?: (trackId: string) => void;
   onCreatePersona?: (trackId: string) => void;
+  onDescribeTrack?: (trackId: string) => void;
   onRetry?: (trackId: string) => void;
   onDelete?: (trackId: string) => void;
 }
@@ -36,6 +37,7 @@ export const VirtualizedTrackGrid = React.memo(({
   onCover,
   onAddVocal,
   onCreatePersona,
+  onDescribeTrack,
   onRetry,
   onDelete,
 }: VirtualizedTrackGridProps) => {
@@ -106,6 +108,7 @@ export const VirtualizedTrackGrid = React.memo(({
                       onCover={onCover ? () => onCover(track.id) : undefined}
                       onAddVocal={onAddVocal ? () => onAddVocal(track.id) : undefined}
                       onCreatePersona={onCreatePersona ? () => onCreatePersona(track.id) : undefined}
+                      onDescribeTrack={onDescribeTrack ? () => onDescribeTrack(track.id) : undefined}
                       onRetry={onRetry}
                       onDelete={onDelete}
                     />
