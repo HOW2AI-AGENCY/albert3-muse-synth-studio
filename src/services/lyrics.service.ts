@@ -57,7 +57,7 @@ export const LyricsService = {
         const { data: track, error: trackError } = await supabase
           .from('tracks')
           .select('metadata')
-          .eq('suno_task_id', taskId)
+          .eq('suno_id', audioId)
           .single();
 
         if (!trackError && track?.metadata) {

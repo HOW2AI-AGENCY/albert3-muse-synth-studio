@@ -13,6 +13,7 @@ import type { Track } from '@/types/domain/track.types';
 import { useRealtimeSubscription } from '../common/useRealtimeSubscription';
 import { logger } from '@/utils/logger';
 import { trackVersionsQueryKeys } from '@/features/tracks/api/trackVersions';
+import { lyricsCache } from '@/utils/lyricsCache';
 
 /**
  * Subscribe to track updates for current user
@@ -68,6 +69,20 @@ export const useTracksRealtime = (userId: string | undefined) => {
         queryClient.invalidateQueries({ 
           queryKey: ['tracks'] 
         });
+
+        // ✅ Invalidate timestamped lyrics when track is completed or metadata updated
+        if (updatedTrack.suno_task_id && updatedTrack.suno_id) {
+          queryClient.invalidateQueries({ 
+            queryKey: ['timestampedLyrics', updatedTrack.suno_task_id, updatedTrack.suno_id] 
+          });
+          // Clear in-memory cache
+          lyricsCache.clear();
+          logger.info('✅ Invalidated timestamped lyrics cache', 'useTracksRealtime', { 
+            trackId: updatedTrack.id,
+            sunoTaskId: updatedTrack.suno_task_id,
+            sunoId: updatedTrack.suno_id,
+          });
+        }
       }
     }
   );
@@ -93,6 +108,18 @@ export const useTracksRealtime = (userId: string | undefined) => {
       queryClient.invalidateQueries({ 
         queryKey: ['tracks'] 
       });
+
+      // ✅ Invalidate timestamped lyrics for version updates
+      if (updatedVersion.suno_id) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['timestampedLyrics'] 
+        });
+        lyricsCache.clear();
+        logger.info('✅ Cleared lyrics cache on version update', 'useTracksRealtime', {
+          versionId: updatedVersion.id,
+          sunoId: updatedVersion.suno_id,
+        });
+      }
     }
   );
 };

@@ -277,7 +277,7 @@ export const FullScreenPlayer = memo(({ onMinimize }: FullScreenPlayerProps) => 
           <div className="flex-1 flex flex-col min-h-0 mb-4 animate-fade-in">
             <LyricsDisplay
               taskId={currentTrack.suno_task_id || ''}
-              audioId={currentTrack.id}
+              audioId={currentTrack.suno_id || ''}
               fallbackLyrics={currentTrack.lyrics ?? ''}
             />
           </div>

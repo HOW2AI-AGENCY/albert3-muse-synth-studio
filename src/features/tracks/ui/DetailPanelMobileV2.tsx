@@ -220,7 +220,11 @@ export const DetailPanelMobileV2 = ({
             </TabsContent>
 
             <TabsContent value="lyrics" className="flex-1 mt-0 p-4">
-              <LyricsContent lyrics={track.lyrics || displayedVersion?.lyrics || ''} />
+              <LyricsContent 
+                lyrics={track.lyrics || displayedVersion?.lyrics || ''} 
+                sunoTaskId={track.suno_task_id}
+                sunoId={track.suno_id}
+              />
             </TabsContent>
 
             <TabsContent value="analysis" className="flex-1 mt-0 p-4">
