@@ -468,7 +468,6 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
   const handleProjectSelect = useCallback(
     (projectId: string | null) => {
       state.setParam('activeProjectId', projectId || undefined);
-      setProjectDialogOpen(false);
 
       if (projectId && state.mode === 'simple') {
         state.setMode('custom');
@@ -477,9 +476,55 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
       if (projectId) {
         toast({
           title: 'Проект выбран',
-          description: 'Проект будет использован для генерации',
+          description: 'Выберите трек из проекта или создайте новый',
         });
       }
+    },
+    [state, toast]
+  );
+
+  const handleProjectTrackSelect = useCallback(
+    (track: {
+      id: string;
+      title: string;
+      prompt?: string;
+      lyrics?: string;
+      style_tags?: string[];
+    }) => {
+      // Auto-fill form with track data
+      if (track.title) {
+        state.setParam('title', track.title);
+      }
+
+      if (track.prompt) {
+        state.setParam('prompt', track.prompt);
+        state.setDebouncedPrompt(track.prompt);
+      }
+
+      if (track.lyrics) {
+        state.setParam('lyrics', track.lyrics);
+        state.setDebouncedLyrics(track.lyrics);
+      }
+
+      if (track.style_tags?.length) {
+        state.setParam('tags', track.style_tags.join(', '));
+      }
+
+      setProjectDialogOpen(false);
+
+      logger.info('✅ Project track data auto-filled', 'MusicGeneratorContainer', {
+        trackId: track.id,
+        hasTitle: !!track.title,
+        hasPrompt: !!track.prompt,
+        hasLyrics: !!track.lyrics,
+        tagsCount: track.style_tags?.length || 0,
+      });
+
+      toast({
+        title: '✅ Данные трека применены',
+        description: `Трек "${track.title}" добавлен в форму`,
+        duration: 3000,
+      });
     },
     [state, toast]
   );
@@ -563,6 +608,7 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
       onHistorySelect={handleHistorySelect}
       onPersonaSelect={handlePersonaSelect}
       onProjectSelect={handleProjectSelect}
+      onProjectTrackSelect={handleProjectTrackSelect}
     />
   );
 };
