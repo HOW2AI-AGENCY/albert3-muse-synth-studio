@@ -218,6 +218,7 @@ export const DetailPanelMobileV2 = ({
             <TabsContent value="lyrics" className="flex-1 mt-0 p-4">
               <LyricsContent 
                 lyrics={track.lyrics || displayedVersion?.lyrics || ''} 
+                trackId={track.id}
                 sunoTaskId={track.suno_task_id}
                 sunoId={track.suno_id}
               />
