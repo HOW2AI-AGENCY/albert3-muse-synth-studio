@@ -1,4 +1,4 @@
-import React, { useState, useCallback, memo, useRef, useEffect, KeyboardEvent } from "react";
+import React, { useState, useCallback, memo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Music, Headphones, AlertTriangle, Loader2, Play, Pause } from "@/utils/iconImports";
 import { cn } from "@/lib/utils";
@@ -61,11 +61,8 @@ const TrackListItemComponent = ({
     isPlaying,
     isCurrentTrack,
     playButtonDisabled,
-    selectedVersionIndex,
     versionCount,
-    allVersions,
     operationTargetId,
-    handleVersionChange,
     handlePlayClick,
     isLiked
   } = useTrackState({
