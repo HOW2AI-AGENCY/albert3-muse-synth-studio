@@ -20,9 +20,11 @@ import { Search, Folder, Music, Plus, Check } from 'lucide-react';
 import { useProjects } from '@/contexts/project/useProjects';
 import { useTracks } from '@/hooks/useTracks';
 import { CreateProjectDialog } from '@/components/projects/CreateProjectDialog';
+import { TrackStatusBadge } from '@/components/tracks/TrackStatusBadge';
 import { cn } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { TrackStatus } from '@/components/tracks/track-status.types';
 
 interface ProjectSelectorDialogProps {
   open: boolean;
@@ -181,27 +183,44 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                             key={project.id}
                             variant="outline"
                             className={cn(
-                              "w-full justify-start h-auto p-3",
+                              "w-full justify-start h-auto p-4",
                               selectedProjectId === project.id && "border-primary bg-primary/5"
                             )}
                             onClick={() => handleProjectClick(project.id)}
                           >
-                            <div className="flex flex-col items-start gap-1 flex-1 min-w-0">
+                            <div className="flex flex-col items-start gap-2 flex-1 min-w-0">
                               <div className="flex items-center gap-2 w-full">
-                                <span className="font-medium truncate">{project.name}</span>
+                                <span className="font-medium line-clamp-2 leading-tight text-left flex-1">
+                                  {project.name}
+                                </span>
                                 {selectedProjectId === project.id && (
-                                  <Check className="h-4 w-4 text-primary ml-auto flex-shrink-0" />
+                                  <Check className="h-4 w-4 text-primary flex-shrink-0" />
                                 )}
                               </div>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                {project.genre && <Badge variant="secondary" className="text-[10px]">{project.genre}</Badge>}
-                                {project.mood && <Badge variant="secondary" className="text-[10px]">{project.mood}</Badge>}
-                              </div>
-                              {(project.total_tracks ?? 0) > 0 && (
-                                <span className="text-xs text-muted-foreground">
-                                  {project.completed_tracks ?? 0}/{project.total_tracks ?? 0} треков
-                                </span>
+                              
+                              {project.description && (
+                                <p className="text-xs text-muted-foreground/90 line-clamp-2 leading-relaxed w-full text-left">
+                                  {project.description}
+                                </p>
                               )}
+                              
+                              <div className="flex items-center gap-2 flex-wrap w-full">
+                                {project.genre && (
+                                  <Badge variant="secondary" className="text-[10px]">
+                                    {project.genre}
+                                  </Badge>
+                                )}
+                                {project.mood && (
+                                  <Badge variant="secondary" className="text-[10px]">
+                                    {project.mood}
+                                  </Badge>
+                                )}
+                                {(project.total_tracks ?? 0) > 0 && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {project.completed_tracks ?? 0}/{project.total_tracks ?? 0} треков
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </Button>
                         ))}
@@ -227,21 +246,37 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                             <Button
                               key={track.id}
                               variant="outline"
-                              className="w-full justify-start h-auto p-3"
+                              className="w-full justify-start h-auto p-4"
                               onClick={() => handleTrackClick(track)}
                             >
-                              <div className="flex items-center gap-3 w-full">
+                              <div className="flex items-start gap-3 w-full">
                                 {track.cover_url && (
                                   <img 
                                     src={track.cover_url} 
                                     alt={track.title}
-                                    className="w-10 h-10 rounded object-cover"
+                                    className="w-12 h-12 rounded object-cover flex-shrink-0"
                                     loading="lazy" decoding="async"
                                   />
                                 )}
-                                <div className="flex flex-col items-start gap-1 flex-1 min-w-0">
-                                  <span className="font-medium truncate w-full">{track.title}</span>
-                                  <div className="flex items-center gap-2">
+                                <div className="flex flex-col items-start gap-2 flex-1 min-w-0">
+                                  <div className="w-full space-y-1">
+                                    <span className="font-medium line-clamp-2 leading-tight text-left block">
+                                      {track.title}
+                                    </span>
+                                    {track.prompt && (
+                                      <p className="text-xs text-muted-foreground/90 line-clamp-2 leading-relaxed">
+                                        {track.prompt}
+                                      </p>
+                                    )}
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2 flex-wrap w-full">
+                                    <TrackStatusBadge 
+                                      status={track.status as TrackStatus}
+                                      variant="compact"
+                                      showIcon={true}
+                                    />
+                                    
                                     {track.style_tags && track.style_tags.length > 0 && (
                                       <Badge variant="secondary" className="text-[10px]">
                                         {track.style_tags[0]}
@@ -254,7 +289,7 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
                                     )}
                                   </div>
                                 </div>
-                                <Music className="h-4 w-4 text-muted-foreground" />
+                                <Music className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                               </div>
                             </Button>
                           ))}
