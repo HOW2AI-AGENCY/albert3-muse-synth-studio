@@ -16,6 +16,7 @@ import { Loader2, Sparkles, FileText } from 'lucide-react';
 import { useAIProjectCreation } from '@/hooks/useAIProjectCreation';
 import { useProjects } from '@/contexts/project/useProjects';
 import { useCreateProjectWithTracks } from '@/hooks/useCreateProjectWithTracks';
+import { PersonaSelector } from '@/components/generator/ui/PersonaSelector';
 import type { Database } from '@/integrations/supabase/types';
 
 type ProjectType = Database['public']['Enums']['project_type'];
@@ -39,6 +40,7 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
   const [projectType, setProjectType] = useState<ProjectType>('single');
   const [genre, setGenre] = useState('');
   const [mood, setMood] = useState('');
+  const [personaId, setPersonaId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
   // AI mode state
@@ -55,6 +57,7 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
         project_type: projectType,
         genre: genre.trim() || undefined,
         mood: mood.trim() || undefined,
+        persona_id: personaId || undefined,
         user_id: '', // Will be set by context
       });
 
@@ -64,6 +67,7 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
       setProjectType('single');
       setGenre('');
       setMood('');
+      setPersonaId(null);
       onOpenChange(false);
     } finally {
       setIsCreating(false);
@@ -186,6 +190,18 @@ export const CreateProjectDialog: React.FC<CreateProjectDialogProps> = ({
                 value={mood}
                 onChange={(e) => setMood(e.target.value)}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="persona">Музыкальная персона (опционально)</Label>
+              <PersonaSelector
+                value={personaId}
+                onValueChange={setPersonaId}
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground">
+                Персона определит стиль и звучание всех треков проекта
+              </p>
             </div>
 
             <Button
