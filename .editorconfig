@@ -1,0 +1,79 @@
+# 🎨 EditorConfig для Albert3 Muse Synth Studio
+# https://editorconfig.org
+
+root = true
+
+# Defaults для всех файлов
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# TypeScript & JavaScript
+[*.{ts,tsx,js,jsx}]
+indent_style = space
+indent_size = 2
+quote_type = single
+max_line_length = 100
+
+# JSON & JSONC
+[*.{json,jsonc}]
+indent_style = space
+indent_size = 2
+
+# YAML
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Markdown
+[*.md]
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = false
+max_line_length = off
+
+# SQL
+[*.sql]
+indent_style = space
+indent_size = 2
+
+# CSS & SCSS
+[*.{css,scss}]
+indent_style = space
+indent_size = 2
+
+# Shell scripts
+[*.sh]
+indent_style = space
+indent_size = 2
+
+# Batch files (Windows)
+[*.{bat,cmd}]
+end_of_line = crlf
+indent_style = space
+indent_size = 2
+
+# Package files
+[package*.json]
+indent_style = space
+indent_size = 2
+
+# Config files
+[{tsconfig,tailwind.config,vite.config,vitest.config,playwright.config}.{ts,js,json}]
+indent_style = space
+indent_size = 2
+
+# Environment files
+[.env*]
+insert_final_newline = false
+
+# Ignore node_modules
+[node_modules/**]
+charset = unset
+end_of_line = unset
+indent_size = unset
+indent_style = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
