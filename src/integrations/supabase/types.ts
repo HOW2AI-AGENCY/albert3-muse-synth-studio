@@ -2071,6 +2071,7 @@ export type Database = {
           model_name: string | null
           mood: string | null
           mureka_task_id: string | null
+          persona_id: string | null
           play_count: number | null
           progress_percent: number | null
           project_id: string | null
@@ -2115,6 +2116,7 @@ export type Database = {
           model_name?: string | null
           mood?: string | null
           mureka_task_id?: string | null
+          persona_id?: string | null
           play_count?: number | null
           progress_percent?: number | null
           project_id?: string | null
@@ -2159,6 +2161,7 @@ export type Database = {
           model_name?: string | null
           mood?: string | null
           mureka_task_id?: string | null
+          persona_id?: string | null
           play_count?: number | null
           progress_percent?: number | null
           project_id?: string | null
