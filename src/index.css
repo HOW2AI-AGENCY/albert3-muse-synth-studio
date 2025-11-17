@@ -65,13 +65,17 @@
     --mobile-font-base: 1rem;  /* 16px minimum to prevent zoom */
     --mobile-font-lg: 1.125rem;
     
-    /* Mobile input minimum (prevents iOS auto-zoom) */
-    --mobile-input-min: 16px;
+  /* Mobile input minimum (prevents iOS auto-zoom) */
+  --mobile-input-min: 16px;
 
-    /* Dynamic offsets - автоматически обновляются через useWorkspaceOffsets hook */
-    --workspace-bottom-offset: 0px;
-    --bottom-tab-bar-height: 0px;
-    --mini-player-height: 0px;
+  /* Dynamic offsets - автоматически обновляются через useWorkspaceOffsets hook */
+  --workspace-bottom-offset: 0px;
+  --bottom-tab-bar-height: 0px;
+  --mini-player-height: 0px;
+
+  /* Touch target utilities - WCAG 2.1 Level AAA */
+  --touch-target-min: 44px;
+  --touch-target-optimal: 48px;
 
     /* Z-index system is now unified in design-tokens.css */
     /* Use CSS variables from design-tokens.css: --z-bottom-nav, --z-mini-player, --z-drawer, etc. */
@@ -284,6 +288,37 @@
   .touch-optimized {
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Touch Target Utilities - WCAG 2.1 Level AAA */
+  .touch-target-min {
+    min-height: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+  }
+
+  .touch-target-optimal {
+    min-height: var(--touch-target-optimal);
+    min-width: var(--touch-target-optimal);
+  }
+
+  /* Hover Scale Animation */
+  .hover-scale {
+    transition: transform 0.2s ease;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .hover-scale:hover {
+      transform: scale(1.05);
+    }
+  }
+
+  /* Gradient utilities */
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .gradient-secondary {
+    background: var(--gradient-secondary);
   }
 
   .card-glass {
