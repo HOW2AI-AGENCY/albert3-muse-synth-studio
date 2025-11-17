@@ -6,11 +6,19 @@ import { logger } from "../_shared/logger.ts";
 
 interface ExtendTrackRequest {
   trackId: string;
-  continueAt?: number; // seconds from start to continue from
-  prompt?: string; // optional new prompt for extension
+  continueAt?: number;
+  prompt?: string;
   tags?: string[];
   model?: "V3_5" | "V4" | "V4_5" | "V4_5PLUS" | "V5";
   defaultParamFlag?: boolean;
+  title?: string;
+  instrumental?: boolean;
+  personaId?: string;
+  negativeTags?: string;
+  vocalGender?: 'm' | 'f';
+  styleWeight?: number;
+  weirdnessConstraint?: number;
+  audioWeight?: number;
 }
 
 const corsHeaders = createCorsHeaders();
@@ -45,7 +53,11 @@ serve(async (req: Request) => {
     }
 
     const body: ExtendTrackRequest = await req.json();
-    const { trackId, continueAt, prompt, tags, model, defaultParamFlag } = body;
+    const { 
+      trackId, continueAt, prompt, tags, model, defaultParamFlag,
+      title, instrumental, personaId, negativeTags, vocalGender,
+      styleWeight, weirdnessConstraint, audioWeight
+    } = body;
 
     if (!trackId) {
       return new Response(
@@ -138,31 +150,73 @@ serve(async (req: Request) => {
     const callbackUrl = `${SUPABASE_URL}/functions/v1/suno-callback`;
 
     // Determine if we use custom params or original track params
-    const useCustomParams = defaultParamFlag ?? (!!prompt || !!tags);
+    const useCustomParams = defaultParamFlag ?? (!!prompt || !!tags || !!title);
 
-    // ✅ CRITICAL FIX: Build payload according to Suno extend API spec
+    // ✅ UPDATED: Build payload with all Suno extend parameters
     const sunoPayload: any = {
-      audioId: originalTrack.suno_id, // Required: the Suno audio ID
+      audioId: originalTrack.suno_id,
+      defaultParamFlag: useCustomParams,
       model: extractedModel,
       callBackUrl: callbackUrl
     };
 
-    // Add optional continueAt parameter
+    // Add continueAt parameter
     if (continueAt !== undefined) {
       sunoPayload.continueAt = continueAt;
+    } else if (originalTrack.duration_seconds) {
+      sunoPayload.continueAt = Math.max(0, originalTrack.duration_seconds - 20);
     } else if (originalTrack.duration) {
-      // Default: continue from 20 seconds before the end
       sunoPayload.continueAt = Math.max(0, originalTrack.duration - 20);
     }
 
-    // ✅ FIX: Only add custom params when explicitly requested
+    // Add custom parameters if provided or use original params
     if (useCustomParams) {
-      sunoPayload.defaultParamFlag = true;
-      sunoPayload.prompt = prompt || originalTrack.prompt || '';
-      sunoPayload.tags = tags || originalTrack.style_tags || [];
-      sunoPayload.title = `${originalTrack.title} (Extended)`;
-    } else {
-      sunoPayload.defaultParamFlag = false;
+      if (prompt) {
+        sunoPayload.prompt = prompt;
+      } else if (originalTrack.prompt) {
+        sunoPayload.prompt = originalTrack.prompt;
+      }
+
+      if (tags && tags.length > 0) {
+        sunoPayload.style = tags.join(', ');
+      } else if (originalTrack.style_tags && originalTrack.style_tags.length > 0) {
+        sunoPayload.style = originalTrack.style_tags.join(', ');
+      }
+
+      if (title) {
+        sunoPayload.title = title;
+      } else {
+        sunoPayload.title = `${originalTrack.title} (Extended)`;
+      }
+    }
+
+    // ✅ NEW: Add advanced parameters (these are always optional)
+    if (instrumental !== undefined) {
+      sunoPayload.instrumental = instrumental;
+    }
+
+    if (personaId) {
+      sunoPayload.personaId = personaId;
+    }
+
+    if (negativeTags) {
+      sunoPayload.negativeTags = negativeTags;
+    }
+
+    if (vocalGender) {
+      sunoPayload.vocalGender = vocalGender;
+    }
+
+    if (styleWeight !== undefined) {
+      sunoPayload.styleWeight = styleWeight;
+    }
+
+    if (weirdnessConstraint !== undefined) {
+      sunoPayload.weirdnessConstraint = weirdnessConstraint;
+    }
+
+    if (audioWeight !== undefined) {
+      sunoPayload.audioWeight = audioWeight;
     }
 
     logger.info('📤 [EXTEND] Calling Suno extend API', { 

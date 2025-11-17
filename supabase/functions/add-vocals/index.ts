@@ -45,7 +45,8 @@ serve(async (req: Request) => {
       weirdnessConstraint,
       audioWeight,
       model = 'V4_5PLUS',
-      trackId
+      trackId,
+      personaId
     } = body;
 
     // Validate required fields
@@ -92,6 +93,7 @@ serve(async (req: Request) => {
     if (styleWeight !== undefined) sunoPayload.styleWeight = styleWeight;
     if (weirdnessConstraint !== undefined) sunoPayload.weirdnessConstraint = weirdnessConstraint;
     if (audioWeight !== undefined) sunoPayload.audioWeight = audioWeight;
+    if (personaId) sunoPayload.personaId = personaId;
 
     const sunoResponse = await fetch("https://api.sunoapi.org/api/v1/generate/add-vocals", {
       method: "POST",

@@ -1,3 +1,18 @@
+import {
+  createExtendTrack,
+  createGenerateCoverImage,
+  createBoostStyle,
+  createGetTimestampedLyrics,
+  type SunoExtendRequest,
+  type SunoExtendResult,
+  type SunoCoverImageRequest,
+  type SunoCoverImageResult,
+  type SunoBoostStyleRequest,
+  type SunoBoostStyleResult,
+  type SunoTimestampedLyricsRequest,
+  type SunoTimestampedLyricsResult,
+} from "./suno-extended.ts";
+
 export interface SunoGenerationPayload {
   prompt: string;
   tags?: string[];
@@ -142,6 +157,18 @@ export interface SunoWavQueryResult {
   code?: number;
   message?: string | null;
 }
+
+// ✅ Re-export extended types from Phase 1
+export type {
+  SunoExtendRequest,
+  SunoExtendResult,
+  SunoCoverImageRequest,
+  SunoCoverImageResult,
+  SunoBoostStyleRequest,
+  SunoBoostStyleResult,
+  SunoTimestampedLyricsRequest,
+  SunoTimestampedLyricsResult,
+} from "./suno-extended.ts";
 
 export interface CreateSunoClientOptions {
   apiKey: string;
@@ -1110,6 +1137,12 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
     });
   };
 
+  // ✅ NEW: Extended methods from Phase 1
+  const extendTrack = createExtendTrack(apiKey, fetchImpl);
+  const generateCoverImage = createGenerateCoverImage(apiKey, fetchImpl);
+  const boostStyle = createBoostStyle(apiKey, fetchImpl);
+  const getTimestampedLyrics = createGetTimestampedLyrics(apiKey, fetchImpl);
+
   return {
     generateTrack,
     generateLyrics,
@@ -1119,6 +1152,11 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
     queryStemTask,
     convertToWav,
     queryWavTask,
+    // ✅ NEW: Phase 1 methods
+    extendTrack,
+    generateCoverImage,
+    boostStyle,
+    getTimestampedLyrics,
   };
 };
 

@@ -15,6 +15,7 @@ interface AddInstrumentalRequest {
   weirdnessConstraint?: number;
   audioWeight?: number;
   model?: 'V4_5PLUS' | 'V5';
+  personaId?: string;
 }
 
 Deno.serve(async (req) => {
@@ -84,6 +85,7 @@ Deno.serve(async (req) => {
     if (typeof body.styleWeight === 'number') sunoPayload.styleWeight = body.styleWeight;
     if (typeof body.weirdnessConstraint === 'number') sunoPayload.weirdnessConstraint = body.weirdnessConstraint;
     if (typeof body.audioWeight === 'number') sunoPayload.audioWeight = body.audioWeight;
+    if (body.personaId) sunoPayload.personaId = body.personaId;
 
     logger.info('🎵 [ADD-INSTRUMENTAL] Calling Suno API', { payload: sunoPayload });
 

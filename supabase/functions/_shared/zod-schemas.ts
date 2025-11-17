@@ -11,8 +11,26 @@ export const SUNO_MODELS = [
   'chirp-v3-0',
   'chirp-v2-0',
   'V5',
-  'V4'
+  'V4_5PLUS',
+  'V4_5',
+  'V4',
+  'V3_5'
 ] as const;
+
+// ✅ Get prompt limit based on model
+export const getPromptLimit = (model?: string, customMode?: boolean): number => {
+  if (!customMode) return 500; // Non-custom mode max 500 chars
+  if (!model) return 3000;
+  if (['V4_5', 'V4_5PLUS', 'V5'].includes(model)) return 5000;
+  return 3000; // V3_5, V4, chirp variants
+};
+
+// ✅ Get style/tags limit based on model
+export const getStyleLimit = (model?: string): number => {
+  if (!model) return 200;
+  if (['V4_5', 'V4_5PLUS', 'V5'].includes(model)) return 1000;
+  return 200; // V3_5, V4, chirp variants
+};
 
 // ✅ Separation modes enum
 export const SEPARATION_MODES = [
@@ -42,12 +60,12 @@ export const uuidSchema = z.string().uuid();
 // ✅ generate-suno request schema
 export const generateSunoSchema = z.object({
   trackId: uuidSchema.optional(),
-  prompt: z.string().min(1).max(3000).trim().optional(),
+  prompt: z.string().min(1).max(5000).trim().optional(),
   tags: z.array(z.string().max(50)).max(20).optional(),
   title: z.string().max(200).optional(),
   make_instrumental: z.boolean().optional(),
   model_version: z.enum(SUNO_MODELS).optional(),
-  lyrics: z.string().max(3000).nullable().optional(),
+  lyrics: z.string().max(5000).nullable().optional(),
   hasVocals: z.boolean().optional(),
   customMode: z.boolean().optional(),
   negativeTags: z.string().max(500).optional(),
@@ -59,8 +77,8 @@ export const generateSunoSchema = z.object({
   referenceTrackId: uuidSchema.optional(),
   idempotencyKey: uuidSchema.optional(),
   wait_audio: z.boolean().optional(),
-  projectId: uuidSchema.optional(), // ✅ НОВОЕ: ID проекта
-  personaId: uuidSchema.optional(), // ✅ НОВОЕ: ID персоны (уже есть в хендлере)
+  projectId: uuidSchema.optional(),
+  personaId: uuidSchema.optional(),
 }).refine(data => data.prompt || data.lyrics, {
   message: "Either 'prompt' or 'lyrics' must be provided.",
   path: ["prompt"],
@@ -75,15 +93,83 @@ export const generateSunoSchema = z.object({
 }).refine(data => !(data.referenceAudioUrl && data.referenceTrackId), {
   message: "Cannot provide both 'referenceAudioUrl' and 'referenceTrackId'.",
   path: ["referenceAudioUrl"],
+}).superRefine((data, ctx) => {
+  // Dynamic prompt validation based on model
+  const promptLimit = getPromptLimit(data.model_version, data.customMode);
+  if (data.prompt && data.prompt.length > promptLimit) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['prompt'],
+      message: `Prompt exceeds ${promptLimit} characters for ${data.model_version || 'this model'}`
+    });
+  }
+
+  // Dynamic style/tags validation based on model
+  if (data.customMode && data.tags) {
+    const styleStr = data.tags.join(', ');
+    const styleLimit = getStyleLimit(data.model_version);
+    if (styleStr.length > styleLimit) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['tags'],
+        message: `Style exceeds ${styleLimit} characters for ${data.model_version || 'this model'}`
+      });
+    }
+  }
+
+  // Lyrics validation
+  if (data.lyrics) {
+    const lyricsLimit = getPromptLimit(data.model_version, true);
+    if (data.lyrics.length > lyricsLimit) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['lyrics'],
+        message: `Lyrics exceed ${lyricsLimit} characters for ${data.model_version || 'this model'}`
+      });
+    }
+  }
 });
 
 // ✅ extend-track request schema
 export const extendTrackSchema = z.object({
   trackId: uuidSchema,
   audioUrl: httpsUrlSchema.optional(),
-  prompt: z.string().max(3000).optional(),
+  prompt: z.string().max(5000).optional(),
   continueAt: z.number().min(0).max(300).optional(),
-  tags: z.array(z.string().max(50)).max(20).optional()
+  tags: z.array(z.string().max(50)).max(20).optional(),
+  title: z.string().max(80).optional(),
+  instrumental: z.boolean().optional(),
+  model: z.enum(['V3_5', 'V4', 'V4_5', 'V4_5PLUS', 'V5']).optional(),
+  defaultParamFlag: z.boolean().optional(),
+  personaId: z.string().optional(),
+  negativeTags: z.string().max(200).optional(),
+  vocalGender: z.enum(['m', 'f']).optional(),
+  styleWeight: z.number().min(0).max(1).optional(),
+  weirdnessConstraint: z.number().min(0).max(1).optional(),
+  audioWeight: z.number().min(0).max(1).optional(),
+}).superRefine((data, ctx) => {
+  // Dynamic prompt validation for extend
+  const promptLimit = data.defaultParamFlag ? getPromptLimit(data.model, true) : 5000;
+  if (data.prompt && data.prompt.length > promptLimit) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['prompt'],
+      message: `Prompt exceeds ${promptLimit} characters`
+    });
+  }
+
+  // Dynamic style validation
+  if (data.tags) {
+    const styleStr = data.tags.join(', ');
+    const styleLimit = getStyleLimit(data.model);
+    if (styleStr.length > styleLimit) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['tags'],
+        message: `Style exceeds ${styleLimit} characters`
+      });
+    }
+  }
 });
 
 // ✅ create-cover request schema
