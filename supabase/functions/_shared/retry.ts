@@ -21,6 +21,23 @@ const DEFAULT_OPTIONS: Required<RetryOptions> = {
   onRetry: () => {},
 };
 
+// Check if error is retryable
+function isRetryableError(error: Error): boolean {
+  const message = error.message.toLowerCase();
+  
+  // Don't retry on these errors - they won't succeed on retry
+  const nonRetryablePatterns = [
+    'unauthorized', // 401
+    'недостаточно кредитов', // 402
+    'insufficient credits',
+    'bad request', // 400
+    'invalid', // validation errors
+    'missing authorization',
+  ];
+  
+  return !nonRetryablePatterns.some(pattern => message.includes(pattern));
+}
+
 export async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   options: RetryOptions = {}
@@ -45,6 +62,15 @@ export async function retryWithBackoff<T>(
       const err = error instanceof Error ? error : new Error(String(error));
       errors.push(err);
       
+      // Check if error is retryable
+      if (!isRetryableError(err)) {
+        logger.warn('Non-retryable error detected, stopping retry', { 
+          error: err.message,
+          attempt: attempt + 1 
+        });
+        throw err;
+      }
+      
       if (attempt >= config.maxRetries) {
         logger.error('Operation failed after all retries', {
           totalAttempts: attempt + 1,
@@ -62,7 +88,7 @@ export async function retryWithBackoff<T>(
         config.maxDelayMs
       );
       
-      logger.warn('Operation failed, will retry', { attempt: attempt + 1, delayMs });
+      logger.warn('Operation failed, will retry', { attempt: attempt + 1, delayMs, error: err.message });
       config.onRetry(attempt + 1, err, delayMs);
       await new Promise(resolve => setTimeout(resolve, delayMs));
     }
