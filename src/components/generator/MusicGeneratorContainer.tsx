@@ -253,7 +253,7 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
     };
 
     try {
-      await savePrompt({
+      await savePrompt.mutateAsync({
         prompt: state.params.prompt,
         lyrics: state.params.lyrics || undefined,
         style_tags: state.params.tags

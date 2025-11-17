@@ -44,6 +44,10 @@ export const PromptHistoryDialog = ({ open, onOpenChange, onSelect }: PromptHist
     deletePrompt.mutate(id);
   };
 
+  const handleSaveAsTemplate = (_id: string) => {
+    // This will be handled by GroupedPromptHistory component
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -90,7 +94,7 @@ export const PromptHistoryDialog = ({ open, onOpenChange, onSelect }: PromptHist
               onCancelSaveTemplate={() => setSavingTemplateId(null)}
               templateName={templateName}
               onTemplateNameChange={setTemplateName}
-              onSaveAsTemplate={() => {}}
+              onSaveAsTemplate={handleSaveAsTemplate}
             />
           )}
         </div>

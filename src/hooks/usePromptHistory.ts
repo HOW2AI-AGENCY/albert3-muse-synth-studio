@@ -1,10 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { logger } from '@/utils/logger';
 import { startOfDay, subDays } from 'date-fns';
-
-type PromptProvider = 'suno' | 'mureka';
 
 export interface PromptHistoryItem {
   id: string;
@@ -109,6 +106,21 @@ export const usePromptHistory = (filters?: PromptFilters) => {
     },
   });
 
+  const saveAsTemplate = useMutation({
+    mutationFn: async ({ id, templateName }: { id: string; templateName: string }) => {
+      const { error } = await supabase
+        .from('prompt_history')
+        .update({ is_template: true, template_name: templateName })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prompt-history'] });
+      queryClient.invalidateQueries({ queryKey: ['prompt-templates'] });
+      toast({ description: 'Шаблон сохранен' });
+    },
+  });
+
   const exportHistory = async (format: 'json' | 'csv') => {
     const { data } = await supabase.from('prompt_history').select('*').order('created_at', { ascending: false });
     const blob = new Blob([format === 'json' ? JSON.stringify(data, null, 2) : 'CSV'], { type: format === 'json' ? 'application/json' : 'text/csv' });
@@ -119,5 +131,5 @@ export const usePromptHistory = (filters?: PromptFilters) => {
     a.click();
   };
 
-  return { history, templates, isLoading, savePrompt, linkPromptToTrack, markPromptFailed, deletePrompt, exportHistory };
+  return { history, templates, isLoading, savePrompt, linkPromptToTrack, markPromptFailed, deletePrompt, saveAsTemplate, exportHistory };
 };
