@@ -123,13 +123,13 @@ export const TrackCardCover = React.memo(({
             size="icon"
             onClick={onPlayClick}
             disabled={playButtonDisabled}
-            className="rounded-full w-10 h-10 shadow-lg hover:scale-110 transition-transform"
+            className="rounded-full w-8 h-8 sm:w-10 sm:h-10 shadow-lg hover:scale-110 transition-transform"
             aria-label={isCurrentTrack && isPlaying ? "Приостановить" : "Воспроизвести"}
           >
             {isCurrentTrack && isPlaying ? (
-              <Pause className="w-4 h-4" />
+              <Pause className="w-3 h-3 sm:w-4 sm:h-4" />
             ) : (
-              <Play className="w-4 h-4 ml-0.5" />
+              <Play className="w-3 h-3 sm:w-4 sm:h-4 ml-0.5" />
             )}
           </Button>
         </div>
