@@ -72,15 +72,7 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
   // Get tracks for selected project (check both project_id field and project_tracks junction table)
   const directTracks = useMemo(() => {
     if (!selectedProjectId) return [] as any[];
-    // Include all statuses to mirror Project Details behavior
-    const filtered = allTracks.filter((t) => t.project_id === selectedProjectId);
-    console.log('[ProjectSelector] directTracks:', { 
-      selectedProjectId, 
-      allTracksCount: allTracks.length,
-      filteredCount: filtered.length,
-      sample: filtered[0]?.title 
-    });
-    return filtered;
+    return allTracks.filter((t) => t.project_id === selectedProjectId);
   }, [allTracks, selectedProjectId]);
 
   // Also fetch links from junction table project_tracks -> tracks(*)
@@ -88,7 +80,6 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
     queryKey: ['project-tracks-junction', selectedProjectId],
     enabled: !!selectedProjectId,
     queryFn: async () => {
-      console.log('[ProjectSelector] Fetching junction tracks for project:', selectedProjectId);
       const { data, error } = await supabase
         .from('project_tracks')
         .select(`
@@ -110,11 +101,7 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
           )
         `)
         .eq('project_id', selectedProjectId!);
-      if (error) {
-        console.error('[ProjectSelector] Junction query error:', error);
-        throw error;
-      }
-      console.log('[ProjectSelector] Junction rows fetched:', data?.length || 0, data?.[0]);
+      if (error) throw error;
       return data || [];
     },
   });
@@ -125,23 +112,16 @@ export const ProjectSelectorDialog: React.FC<ProjectSelectorDialogProps> = ({
       .map((r: any) => r.tracks)
       .filter(Boolean);
     const combined = [...directTracks, ...linked];
-    console.log('[ProjectSelector] projectTracks computed:', {
-      directCount: directTracks.length,
-      linkedCount: linked.length,
-      combinedCount: combined.length
-    });
     // Dedupe by id and sort by created_at desc if available
     const byId = new Map<string, any>();
     for (const t of combined) {
       if (t && t.id && !byId.has(t.id)) byId.set(t.id, t);
     }
-    const result = Array.from(byId.values()).sort((a, b) => {
+    return Array.from(byId.values()).sort((a, b) => {
       const aTime = a?.created_at ? new Date(a.created_at).getTime() : 0;
       const bTime = b?.created_at ? new Date(b.created_at).getTime() : 0;
       return bTime - aTime;
     });
-    console.log('[ProjectSelector] Final projectTracks:', result.length);
-    return result;
   }, [selectedProjectId, directTracks, junctionRows]);
 
   const handleProjectClick = (projectId: string) => {

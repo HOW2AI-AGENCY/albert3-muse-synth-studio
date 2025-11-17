@@ -1,5 +1,5 @@
 import React from 'react';
-import { SongDocument, Tag, Section } from '@/types/lyrics';
+import { SongDocument, Tag, Section, TagCategory } from '@/types/lyrics';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
@@ -82,9 +82,50 @@ export const LyricsContent: React.FC<LyricsContentProps> = ({
       .join('\n\n');
 
     const handleRawTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      // Пользователь может редактировать raw text
-      // TODO: Implement parsing and updating document from raw text
-      console.log('Raw text changed:', e.target.value);
+      // Parse raw text and update document structure
+      const text = e.target.value;
+      const sections: Section[] = [];
+      const blocks = text.split(/\n\n+/);
+      
+      blocks.forEach((block, index) => {
+        const lines = block.trim().split('\n');
+        if (lines.length === 0) return;
+        
+        const firstLine = lines[0];
+        const headerMatch = firstLine.match(/^\[(.*?)\](.*)$/);
+        
+        if (headerMatch) {
+          const title = headerMatch[1].trim();
+          const tagsText = headerMatch[2].trim();
+          const tags: Tag[] = tagsText.match(/\[([^\]]+)\]/g)?.map((t, i) => {
+            const tagValue = t.replace(/[\[\]]/g, '');
+            return {
+              id: `tag-${index}-${i}`,
+              raw: t,
+              value: tagValue,
+              category: 'vocal' as TagCategory, // Default category
+            };
+          }) || [];
+          
+          sections.push({
+            id: `section-${index}`,
+            title,
+            lines: lines.slice(1).filter(l => l.trim()),
+            tags,
+            order: index
+          });
+        } else {
+          sections.push({
+            id: `section-${index}`,
+            title: 'Section',
+            lines: lines.filter(l => l.trim()),
+            tags: [],
+            order: index
+          });
+        }
+      });
+      
+      onReorder(sections);
     };
 
     return (
