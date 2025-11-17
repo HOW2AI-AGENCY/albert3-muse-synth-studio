@@ -62,7 +62,6 @@ const Generate = () => {
   // Глобальное состояние UI для управления видимостью FAB
   const registerDialog = useUIStateStore((state) => state.registerDialog);
   const unregisterDialog = useUIStateStore((state) => state.unregisterDialog);
-  const shouldHideFAB = useUIStateStore((state) => state.shouldHideFAB());
 
   useTrackSync(userId || undefined, {
     onTrackCompleted: refreshTracks,
@@ -235,24 +234,21 @@ const Generate = () => {
           </div>
         )}
 
-        {/* FAB для мобильных */}
-        {!isDesktop && !isTablet && !shouldHideFAB && (
+        {/* FAB для мобильных - всегда видимый */}
+        {!isDesktop && !isTablet && !state.showGenerator && (
           <Portal>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   onClick={() => state.setShowGenerator(true)}
-                  className="fixed right-4 h-14 w-14 rounded-full shadow-glow-primary touch-target-optimal z-40"
-                  style={{ 
-                    bottom: 'calc(var(--mobile-nav-height, 64px) + var(--space-4))'
-                  }}
+                  className="fixed right-4 bottom-20 h-16 w-16 rounded-full shadow-glow-primary touch-target-optimal z-50 bg-primary hover:bg-primary/90 transition-all hover:scale-110"
                   size="icon"
                   aria-label="Создать музыку"
                 >
-                  <Plus className="h-6 w-6" />
+                  <Plus className="h-7 w-7" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="left">Создать музыку</TooltipContent>
+              <TooltipContent side="left" className="text-base">Создать музыку</TooltipContent>
             </Tooltip>
           </Portal>
         )}

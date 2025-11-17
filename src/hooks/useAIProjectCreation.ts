@@ -43,32 +43,41 @@ export const useAIProjectCreation = () => {
       });
 
       if (error) {
-        throw error;
+        logger.error('Supabase function error', error, 'useAIProjectCreation');
+        throw new Error(error.message || 'Ошибка вызова функции');
       }
 
       if (!data) {
-        throw new Error('No data returned from AI');
+        throw new Error('Пустой ответ от AI');
+      }
+
+      // Проверяем наличие error в data
+      if ((data as any).error) {
+        throw new Error((data as any).error);
       }
 
       setAISuggestions(data as AIProjectSuggestions);
       
       toast({
         title: '✨ Концепция готова',
-        description: 'AI сгенерировал идею проекта',
+        description: `Создан проект "${(data as any).name}" с ${(data as any).planned_tracks?.length || 0} треками`,
       });
 
       logger.info('Project concept generated', 'useAIProjectCreation', { 
-        name: data.name,
-        trackCount: data.planned_tracks?.length || 0
+        name: (data as any).name,
+        trackCount: (data as any).planned_tracks?.length || 0
       });
 
       return data as AIProjectSuggestions;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Неизвестная ошибка';
       logger.error('Failed to generate project concept', error as Error, 'useAIProjectCreation');
       
       toast({
-        title: 'Ошибка генерации',
-        description: 'Не удалось создать концепцию проекта',
+        title: 'Ошибка генерации концепции',
+        description: errorMessage.includes('429') ? 'Слишком много запросов. Попробуйте позже.' :
+                     errorMessage.includes('402') ? 'Требуется пополнение баланса.' :
+                     errorMessage,
         variant: 'destructive',
       });
 
