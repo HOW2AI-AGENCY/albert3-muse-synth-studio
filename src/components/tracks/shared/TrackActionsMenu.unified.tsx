@@ -1,7 +1,7 @@
 /**
  * Unified TrackActionsMenu Component
  * Refactored to use hooks for logic separation.
- * @version 2.1.0
+ * @version 2.2.0
  * @created 2025-11-15
  */
 
@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { useTrackMenuItems } from './useTrackMenuItems';
 import { useGroupedMenuItems } from './useGroupedMenuItems';
 import { TrackActionMenuItem } from './TrackActionMenuItem';
+import { VersionSwitcher } from './VersionSwitcher';
 import type { UnifiedTrackActionsMenuProps } from './TrackActionsMenu.types';
 
 export const UnifiedTrackActionsMenu = memo((props: UnifiedTrackActionsMenuProps) => {
@@ -110,7 +111,12 @@ export const UnifiedTrackActionsMenu = memo((props: UnifiedTrackActionsMenuProps
             <Button
               variant="ghost"
               size="icon"
-              className={cn('h-8 w-8 touch-target-min', variant === 'minimal' && 'h-7 w-7')}
+              className={cn(
+                'h-8 w-8 touch-target-min shrink-0',
+                variant === 'minimal' && 'h-7 w-7',
+                'md:relative md:opacity-100', // Всегда видна на desktop
+                'opacity-100 relative' // Всегда видна на mobile
+              )}
               aria-label="Track actions menu"
               aria-haspopup="menu"
             >
@@ -133,6 +139,11 @@ export const UnifiedTrackActionsMenu = memo((props: UnifiedTrackActionsMenuProps
                     </Badge>
                   )}
                 </div>
+                <VersionSwitcher
+                  trackId={trackId}
+                  currentVersionId={props.currentVersionId}
+                  onVersionChange={props.onVersionChange}
+                />
                 <DropdownMenuSeparator />
               </>
             )}
