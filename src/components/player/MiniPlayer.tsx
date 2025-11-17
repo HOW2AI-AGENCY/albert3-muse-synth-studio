@@ -229,6 +229,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
 
             <UnifiedTrackActionsMenu
               trackId={currentTrack.id}
+              trackStatus={currentTrack.status || 'completed'}
               isLiked={isLiked}
               onLike={toggleLike}
               onDownload={handleDownloadClick}

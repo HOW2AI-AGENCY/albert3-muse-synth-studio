@@ -86,7 +86,7 @@ export const LyricsContent = ({ lyrics, sunoTaskId, sunoId }: LyricsContentProps
         </div>
       ) : (
         /* Static Lyrics Viewer */
-        <StructuredLyricsViewer lyrics={lyrics} />
+        <StructuredLyricsViewer lyrics={lyrics} showCopyButton={false} />
       )}
 
       {/* Copy Button */}

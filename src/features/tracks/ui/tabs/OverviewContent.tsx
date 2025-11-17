@@ -3,7 +3,6 @@
  * Stats, basic info, versions, stems
  */
 
-import { StatsGrid } from '../cards/StatsGrid';
 import { GenreMoodCard } from '../cards/GenreMoodCard';
 import { VersionsCard } from '../cards/VersionsCard';
 import { StemsCard } from '../cards/StemsCard';
@@ -42,14 +41,6 @@ export const OverviewContent = ({
   }));
   return (
     <div className="space-y-4">
-      {/* Stats Grid */}
-      <StatsGrid
-        playCount={track.play_count || 0}
-        likeCount={track.like_count || 0}
-        downloadCount={track.download_count || 0}
-        viewCount={track.view_count || 0}
-      />
-
       {/* Genre & Mood */}
       {(track.genre || track.mood || (track.style_tags && track.style_tags.length > 0)) && (
         <GenreMoodCard
