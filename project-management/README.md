@@ -16,14 +16,12 @@ gantt
     dateFormat  YYYY-MM-DD
     axisFormat %b %d
 
-    section Phase 1: AI Foundation
-    Спринт 35: Subscription + AI Context :active, crit, 2025-11-17, 7d
+    section Phase 8: DAW & UI Polish
+    Спринт 36: DAW & Bulk Ops :done, 2025-11-17, 1d
+    Спринт 37: Optimization & UI Polish :active, crit, 2025-11-18, 7d
     
-    section Phase 8: DAW & Bulk Ops
-    Спринт 36: DAW + Bulk (Deferred) :crit, 2025-11-25, 14d
-
     section Phase 9: Analytics
-    Спринт 37: Analytics & Insights :2025-12-09, 14d
+    Спринт 38: Analytics & Insights :2025-11-25, 14d
 ```
 
 ---
@@ -32,9 +30,9 @@ gantt
 
 | Спринт | Статус | Даты | Цель | Ссылка |
 |---|---|---|---|---|
-| **Спринт 35: AI-First Foundation** | 🟢 **Активен** | 17–24 ноя | Subscription System + AI Context + Generation Limits | `sprints/SPRINT_35_AI_FOUNDATION.md` |
-| **Спринт 36: DAW & Bulk Ops** | 🟡 Запланирован | 25 ноя–8 дек | Завершить Phase 8 (отложено) | `sprints/SPRINT_36_DAW_BULK_OPS.md` |
-| **Спринт 27: UI/UX Enhancements** | ✅ Завершен | - | UI улучшения, темы, производительность | `tasks/sprint-27-plan.md` |
+| **Спринт 37: Optimization & UI Polish** | 🟢 **Активен** | 18–24 ноя | Оптимизация, улучшение UX и исправление тестов | `sprints/SPRINT_37_OPTIMIZATION_UI_POLISH.md` |
+| **Спринт 36: DAW & Bulk Ops** | ✅ Завершен | 17–18 ноя | Завершение Phase 8.4 и 8.5 | `sprints/SPRINT_36_DAW_BULK_OPS.md` |
+| **Спринт 35: AI-First Foundation** | ✅ Завершен | 17 ноя | Subscription System + AI Context + Generation Limits | `sprints/SPRINT_35_AI_FOUNDATION.md` |
 
 ---
 

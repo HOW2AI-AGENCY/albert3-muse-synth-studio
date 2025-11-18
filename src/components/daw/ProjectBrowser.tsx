@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,8 +9,9 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useDAWProjects } from '@/hooks/useDAWProjects';
 import type { DAWProject } from '@/types/daw-project.types';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface ProjectBrowserProps {
   open: boolean;
@@ -29,9 +30,18 @@ export function ProjectBrowser({
   isLoading,
   projects,
 }: ProjectBrowserProps) {
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: projects.length,
+    getScrollElement: (): HTMLElement => parentRef.current!,
+    estimateSize: () => 44, // Estimate height of a single item
+    overscan: 5,
+  });
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Open Project</DialogTitle>
           <DialogDescription>
@@ -42,18 +52,40 @@ export function ProjectBrowser({
           {isLoading ? (
             <p>Loading projects...</p>
           ) : (
-            <ul>
-              {projects.map((project) => (
-                <li key={project.id} className="flex justify-between items-center p-2 hover:bg-muted">
-                  <span onClick={() => onSelect(project)} className="cursor-pointer">
-                    {project.name}
-                  </span>
-                  <Button variant="destructive" size="sm" onClick={() => onDelete(project.id)}>
-                    Delete
-                  </Button>
-                </li>
-              ))}
-            </ul>
+            <ScrollArea className="h-[300px] w-full" ref={parentRef}>
+              <div
+                style={{
+                  height: `${rowVirtualizer.getTotalSize()}px`,
+                  width: '100%',
+                  position: 'relative',
+                }}
+              >
+                {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+                  const project = projects[virtualItem.index];
+                  return (
+                    <div
+                      key={virtualItem.key}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: `${virtualItem.size}px`,
+                        transform: `translateY(${virtualItem.start}px)`,
+                      }}
+                      className="flex justify-between items-center p-2 hover:bg-muted"
+                    >
+                      <span onClick={() => onSelect(project)} className="cursor-pointer truncate">
+                        {project.name}
+                      </span>
+                      <Button variant="destructive" size="sm" onClick={() => onDelete(project.id)}>
+                        Delete
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
           )}
         </div>
         <DialogFooter>
