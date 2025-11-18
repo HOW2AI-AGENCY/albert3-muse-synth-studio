@@ -22,8 +22,6 @@ import {
 import { useTracks } from "@/hooks/useTracks";
 import { useTrackSync } from "@/hooks/useTrackSync";
 import { useTrackRecovery } from "@/hooks/useTrackRecovery";
-import { normalizeTrack } from "@/utils/trackNormalizer";
-
 import { TrackDialogsManager } from "@/components/tracks/TrackDialogsManager";
 import { useMusicProjects } from "@/hooks/useMusicProjects";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -163,7 +161,7 @@ const Generate = () => {
                 <ResizablePanel ref={state.detailPanelRef} defaultSize={25} minSize={20} maxSize={40} collapsible>
                   <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
                     <DetailPanel
-                      track={normalizeTrack(state.selectedTrack)}
+                      track={state.selectedTrack}
                       onClose={handlers.handleCloseDetail}
                       onDelete={() => {
                         if (state.selectedTrack) {
@@ -285,7 +283,7 @@ const Generate = () => {
               {state.selectedTrack && (
                 <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
                   <DetailPanel
-                    track={normalizeTrack(state.selectedTrack)}
+                    track={state.selectedTrack}
                     onClose={handlers.handleCloseDetail}
                     onDelete={() => {
                       if (state.selectedTrack) {
