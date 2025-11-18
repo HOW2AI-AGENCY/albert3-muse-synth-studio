@@ -23,6 +23,7 @@ import {
   Eye,
   ThumbsUp
 } from 'lucide-react';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 import { formatDuration } from '@/utils/formatters';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -221,20 +222,9 @@ const TrackDetail = () => {
             {/* Cover & Info */}
             <div className="flex flex-col md:flex-row gap-6 mb-6">
               {/* Cover */}
-              <div className="flex-shrink-0">
-                <div className="relative aspect-square w-full md:w-64 rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 to-accent/20">
-                  {track.cover_url ? (
-                    <img
-                      src={track.cover_url}
-                      alt={track.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Music className="w-16 h-16 text-primary/50" />
-                    </div>
-                  )}
-                </div>
+              <div className="flex-shrink-0 w-full md:w-64">
+                {/* TODO: Implement actual image upload logic and connect to a save button */}
+                <ImageUpload onUpload={(url) => console.log('New image uploaded:', url)} />
               </div>
 
               {/* Info */}

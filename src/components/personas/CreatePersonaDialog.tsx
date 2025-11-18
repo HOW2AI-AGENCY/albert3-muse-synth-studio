@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getAIDescription } from '@/types/track-metadata';
 import type { TrackMetadata } from '@/types/track-metadata';
 import { logger } from '@/utils/logger';
+import { ImageUpload } from '../ui/ImageUpload';
 
 // ============================================================================
 // TYPES
@@ -203,24 +204,8 @@ export const CreatePersonaDialog = ({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* Preview */}
-          {track.cover_url && (
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
-              <img
-                src={track.cover_url}
-                alt={track.title}
-                className="w-16 h-16 rounded object-cover"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{track.title}</p>
-                {track.style_tags && track.style_tags.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    {track.style_tags.join(', ')}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
+          {/* TODO: Implement actual image upload logic and save URL to persona */}
+          <ImageUpload onUpload={(url) => console.log('New persona image:', url)} />
 
           {/* Name */}
           <div className="space-y-2">
