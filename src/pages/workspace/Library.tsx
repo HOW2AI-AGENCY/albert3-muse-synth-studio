@@ -335,8 +335,8 @@ const LibraryContent: React.FC = () => {
 
   // Calculate grid parameters (новая продвинутая версия)
   const gridParams = useResponsiveGrid(containerWidth);
-  // На мобильных ФОРСИРУЕМ ровно 2 колонки по UX-требованию
-  const effectiveColumns = gridParams.screenCategory === 'mobile' ? 2 : gridParams.columns;
+  // Per the audit, we now force a single column on mobile for better UX.
+  const effectiveColumns = gridParams.screenCategory === 'mobile' ? 1 : gridParams.columns;
   const shouldVirtualize = filteredAndSortedTracks.length > 50;
   
   // Prefetch adjacent tracks
