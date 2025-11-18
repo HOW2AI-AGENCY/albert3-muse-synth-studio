@@ -16,7 +16,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Music, Clock, Disc3, Sparkles, Upload, Edit2 as Edit, FileText } from "@/utils/iconImports";
+import { Music, Clock, Disc3, Sparkles, Upload, Edit2 as Edit } from "@/utils/iconImports";
 import { useTracks } from "@/hooks/useTracks";
 import { useGenerateProjectTracklist } from "@/hooks/useGenerateProjectTracklist";
 import { TrackActions } from "@/components/projects/TrackActions";
@@ -160,11 +160,6 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({ open
     },
     [project, updateProject],
   );
-
-  const handleGenerateLyrics = useCallback((track: any) => {
-    setSelectedTrackForLyrics(track);
-    setLyricsDialogOpen(true);
-  }, []);
 
   if (!project) return null;
 
