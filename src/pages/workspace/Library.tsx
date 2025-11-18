@@ -39,7 +39,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { DisplayTrack, convertToAudioPlayerTrack, convertToDisplayTrack, convertToOptimizedTrack } from "@/types/track";
 import { cn } from "@/lib/utils";
 import { logger } from "@/utils/logger";
-import { normalizeTrack } from "@/utils/trackNormalizer";
 import { getTrackWithVariants, trackVersionsQueryKeys } from "@/features/tracks/api/trackVersions";
 import { useQueryClient } from "@tanstack/react-query";
 import type { AudioPlayerTrack } from "@/types/track";
@@ -722,7 +721,7 @@ const LibraryContent: React.FC = () => {
                   {filteredAndSortedTracks.map((track) => (
                     <div key={track.id} className="relative w-full" aria-busy={loadingTrackId === track.id}>
                       <TrackCard
-                        track={normalizeTrack(track)}
+                        track={track}
                         onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
                         onShare={() => handleShare(track.id)}
                         onSeparateStems={() => handleSeparateStems(track.id)}

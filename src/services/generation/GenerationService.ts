@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { MusicProvider } from '@/config/provider-models';
+import type { SunoRequestDTO } from '@/types/generation';
 
 export interface GenerationRequest {
   provider: MusicProvider;
@@ -81,8 +82,30 @@ export class GenerationService {
     // Create promise and store it for deduplication
     const generationPromise = (async () => {
       try {
+        // Map to a lean DTO to avoid over-posting data
+        const payload: SunoRequestDTO = {
+          trackId: request.trackId,
+          prompt: request.prompt,
+          tags: request.tags,
+          title: request.title,
+          make_instrumental: request.make_instrumental,
+          model_version: request.modelVersion,
+          lyrics: request.lyrics,
+          hasVocals: request.hasVocals,
+          customMode: request.customMode,
+          negativeTags: request.negativeTags,
+          vocalGender: request.vocalGender as 'm' | 'f' | undefined,
+          styleWeight: request.styleWeight,
+          weirdnessConstraint: request.weirdnessConstraint,
+          audioWeight: request.audioWeight,
+          referenceAudioUrl: request.referenceAudioUrl,
+          idempotencyKey: request.idempotencyKey,
+          wait_audio: false, // Always false from client
+          projectId: request.projectId,
+        };
+
         const { data, error } = await supabase.functions.invoke(functionName, {
-          body: request,
+          body: payload,
         });
 
         if (error) {
