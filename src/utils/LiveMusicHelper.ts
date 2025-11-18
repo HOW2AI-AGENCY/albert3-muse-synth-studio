@@ -18,7 +18,7 @@ export interface WeightedPrompt {
 
 export type PlaybackState = 'idle' | 'connecting' | 'loading' | 'playing' | 'error';
 export type RecordingState = 'idle' | 'recording' | 'encoding';
-
+export type PlaybackCommand = 'PLAY' | 'PAUSE' | 'STOP';
 
 export class LiveMusicHelper extends EventTarget {
   private ws: WebSocket | null = null;
@@ -26,12 +26,13 @@ export class LiveMusicHelper extends EventTarget {
   private audioContext: AudioContext | null = null;
   private nextStartTime: number = 0;
   private bufferTime: number = 2;
-  private playbackState: PlaybackState = 'idle';
-  private recordingState: RecordingState = 'idle';
+  public playbackState: PlaybackState = 'idle';
+  public recordingState: RecordingState = 'idle';
   private outputNode: GainNode | null = null;
   private analyserNode: AnalyserNode | null = null;
   private isFirstAudio: boolean = true;
   private recorderNode: AudioWorkletNode | null = null;
+  public volume: number = 0.8;
 
   constructor() {
     super();
@@ -81,6 +82,14 @@ export class LiveMusicHelper extends EventTarget {
     this.ws.send(JSON.stringify({
       type: 'prompts.update',
       prompts: activePrompts.map(p => ({ text: p.text, weight: p.weight }))
+    }));
+  }
+
+  public setPlaybackControl(command: PlaybackCommand) {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+    this.ws.send(JSON.stringify({
+      type: 'playback.control',
+      command: command,
     }));
   }
 
@@ -241,7 +250,13 @@ export class LiveMusicHelper extends EventTarget {
   }
 
   getPlaybackState(): PlaybackState { return this.playbackState; }
-  setVolume(volume: number): void { if (this.outputNode) this.outputNode.gain.value = volume; }
+
+  public setVolume(volume: number): void {
+    this.volume = volume;
+    if (this.outputNode) {
+      this.outputNode.gain.value = this.volume;
+    }
+  }
 
   getAnalyserData(): { frequencyData: Uint8Array, waveformData: Uint8Array } | null {
     if (!this.analyserNode) return null;

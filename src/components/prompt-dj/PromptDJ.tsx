@@ -42,6 +42,9 @@ export const PromptDJ: React.FC = () => {
       });
     }
 
+    // Load presets on mount
+    controller.loadPresets();
+
     return () => {
       controller.removeEventListener('state-changed', onStateChanged);
       controller.stop();
@@ -56,17 +59,17 @@ export const PromptDJ: React.FC = () => {
       <div className="max-w-7xl mx-auto space-y-8">
         <PromptDJHeader
           playbackState={controller.playbackState}
-          volume={0.8} // This should also be in the controller state
-          onPlayPause={() => controller.playbackState === 'playing' ? controller.stop() : controller.play()}
-          onVolumeChange={() => {}} // TODO: Add volume control to PromptDjMidi
+          volume={controller.volume}
+          onPlayPause={() => (controller.playbackState === 'playing' || controller.playbackState === 'loading') ? controller.stop() : controller.play()}
+          onVolumeChange={(volume) => controller.setVolume(volume)}
           getAnalyserData={() => (controller as any).liveMusicHelper.getAnalyserData()}
         />
         <WarningCard />
         <PromptDJToolbar
-          presets={[]} // TODO: Add preset logic to PromptDjMidi
-          onSelectPreset={() => {}}
-          onSavePreset={() => {}}
-          onDeletePreset={() => {}}
+          presets={controller.presets}
+          onSelectPreset={(id) => controller.applyPreset(id)}
+          onSavePreset={(name) => controller.savePreset(name)}
+          onDeletePreset={(id) => controller.deletePreset(id)}
           recordingState={controller.recordingState}
           onStartRecording={() => controller.startRecording()}
           onStopRecording={() => controller.stopRecording()}
@@ -75,9 +78,9 @@ export const PromptDJ: React.FC = () => {
         />
         <PromptGrid
           prompts={controller.prompts}
-          audioLevel={0} // TODO: Add audio level to PromptDjMidi state
+          audioLevel={0} // This is a nice-to-have, can be implemented later
           onWeightChange={(id, weight) => controller.updateWeight(id, weight)}
-          onTextChange={() => {}} // TODO: Add text change logic to PromptDjMidi
+          onTextChange={(id, text) => controller.updatePromptText(id, text)}
         />
       </div>
     </div>
