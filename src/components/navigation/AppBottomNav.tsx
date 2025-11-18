@@ -8,13 +8,20 @@ import { cn } from '@/lib/utils';
 import { useUserRole } from '@/hooks/useUserRole';
 import { getWorkspaceNavItems, WorkspaceNavItem } from '@/config/workspace-navigation';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { useBreakpoints } from '@/hooks/useBreakpoints';
 
 const AppBottomNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAdmin } = useUserRole();
   const { vibrate } = useHapticFeedback();
+  const { isMobile } = useBreakpoints();
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+
+  // Don't render on desktop/tablet
+  if (!isMobile) {
+    return null;
+  }
 
   const allNavItems = useMemo(() => getWorkspaceNavItems({ isAdmin }), [isAdmin]);
 
