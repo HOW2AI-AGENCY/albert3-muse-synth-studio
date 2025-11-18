@@ -54,7 +54,7 @@ export const UnifiedTrackActionsMenu = memo((props: UnifiedTrackActionsMenuProps
                   variant="ghost"
                   size="icon"
                   onClick={onLike}
-                  className={cn('h-8 w-8 touch-target-min', variant === 'minimal' && 'h-7 w-7')}
+                  className={cn('touch-target-min', variant === 'minimal' && 'h-7 w-7')}
                   aria-label={isLiked ? 'Убрать из избранного' : 'В избранное'}
                 >
                   <Heart className={cn('w-4 h-4', isLiked && 'fill-red-500 text-red-500')} />
@@ -71,7 +71,7 @@ export const UnifiedTrackActionsMenu = memo((props: UnifiedTrackActionsMenuProps
                   variant="ghost"
                   size="icon"
                   onClick={onDownload}
-                  className="h-8 w-8 touch-target-min"
+                  className="touch-target-min"
                   aria-label="Скачать MP3"
                 >
                   <Download className="w-4 h-4" />
@@ -92,7 +92,7 @@ export const UnifiedTrackActionsMenu = memo((props: UnifiedTrackActionsMenuProps
               variant="ghost"
               size="icon"
               className={cn(
-                'h-8 w-8 touch-target-min shrink-0',
+                'touch-target-min shrink-0',
                 variant === 'minimal' && 'h-7 w-7',
                 'md:relative md:opacity-100', // Всегда видна на desktop
                 'opacity-100 relative' // Всегда видна на mobile
