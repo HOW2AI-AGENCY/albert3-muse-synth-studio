@@ -12,6 +12,8 @@ import { ProjectDetailsDialog } from '@/components/projects/ProjectDetailsDialog
 import { useProjects } from '@/contexts/project/useProjects';
 import { TrackListSkeleton } from '@/components/skeletons';
 import type { Database } from '@/integrations/supabase/types';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AdaptiveGrid } from '@/components/layout/ResponsiveLayout';
@@ -32,6 +34,7 @@ type MusicProject = Database['public']['Tables']['music_projects']['Row'];
 
 export const ProjectOverview: React.FC = () => {
   const { projects, isLoading, deleteProject } = useProjects();
+  const { subscription, plan } = useSubscription();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -127,10 +130,24 @@ export const ProjectOverview: React.FC = () => {
             {projects.length} {projects.length === 1 ? 'проект' : 'проектов'}
           </p>
         </div>
-        <Button onClick={() => setCreateDialogOpen(true)} className="h-11 sm:h-10 px-4">
-          <Plus className="h-4 w-4 mr-2" />
-          Новый проект
-        </Button>
+        <FeatureGate
+          feature="pro_mode"
+          customCheck={() => {
+            if (!plan?.max_projects) return true; // No limit
+            return (projects?.length || 0) < plan.max_projects;
+          }}
+          fallback={
+            <Button disabled className="h-11 sm:h-10 px-4">
+              <Plus className="h-4 w-4 mr-2" />
+              Достигнут лимит проектов
+            </Button>
+          }
+        >
+          <Button onClick={() => setCreateDialogOpen(true)} className="h-11 sm:h-10 px-4">
+            <Plus className="h-4 w-4 mr-2" />
+            Новый проект
+          </Button>
+        </FeatureGate>
       </div>
 
       {/* Панель инструментов: поиск, фильтры, сортировка */}

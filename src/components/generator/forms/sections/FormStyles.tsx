@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { Section } from '@/components/ui/section';
 import { StyleTagsInput } from '../StyleTagsInput';
 import { StyleRecommendationsInline } from '@/components/generator/StyleRecommendationsInline';
@@ -61,13 +62,15 @@ export const FormStyles = ({
             contentClassName="space-y-[var(--space-2)] p-[var(--space-compact-md)] sm:p-[var(--space-comfortable-sm)]"
         >
             {debouncedPrompt.length >= 10 && (
-                <StyleRecommendationsInline
-                    prompt={debouncedPrompt}
-                    currentTags={params.tags.split(',').map(t => t.trim()).filter(Boolean)}
-                    lyrics={params.lyrics}
-                    onApplyTags={handleApplyTags}
-                    onAdvancedPromptGenerated={handleAdvancedPromptGenerated}
-                />
+                <FeatureGate feature="ai_field_actions" fallback={<></>}>
+                    <StyleRecommendationsInline
+                        prompt={debouncedPrompt}
+                        currentTags={params.tags.split(',').map(t => t.trim()).filter(Boolean)}
+                        lyrics={params.lyrics}
+                        onApplyTags={handleApplyTags}
+                        onAdvancedPromptGenerated={handleAdvancedPromptGenerated}
+                    />
+                </FeatureGate>
             )}
 
             <StyleTagsInput

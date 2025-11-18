@@ -21,6 +21,7 @@ import type { MusicGeneratorV2Props } from '@/components/MusicGeneratorV2.types'
 import { MusicGeneratorContent } from '@/components/generator/MusicGeneratorContent';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { sanitize } from '@/utils/sanitization';
+import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { useProjects } from '@/contexts/project/useProjects';
 import { LyricsSuggestionDialog } from '@/components/generator/LyricsSuggestionDialog';
 import { generateLyricsPrompt } from '@/utils/lyricsPromptGenerator';
@@ -373,9 +374,10 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
     vibrate('light');
 
     try {
-      const { data, error } = await supabase.functions.invoke('boost-style', {
+      const { data, error } = await supabase.functions.invoke('ai-improve-field', {
         body: {
-          content: contentToBoost.substring(0, 200), // Max 200 chars for best results
+          field: 'prompt',
+          value: contentToBoost.substring(0, 500),
         },
       });
 
@@ -383,16 +385,15 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
         throw error;
       }
 
-      if (!data?.success) {
-        throw new Error(data?.error || 'Boost style failed');
+      if (!data?.improvedValue) {
+        throw new Error(data?.error || 'AI field improvement failed');
       }
 
-      // Update tags with boosted result
-      const boostedStyle = data.result;
-      state.setParam('tags', boostedStyle);
+      // Update prompt with improved result
+      state.setParam('prompt', data.improvedValue);
+      state.setDebouncedPrompt(data.improvedValue);
 
-      sonnerToast.success('✨ Стиль улучшен!', {
-        description: `Кредиты: ${data.creditsConsumed} | Осталось: ${data.creditsRemaining}`,
+      sonnerToast.success('✨ Промпт улучшен с помощью AI!', {
         duration: 3000,
       });
 
@@ -711,7 +712,7 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
   );
 
   return (
-    <>
+    <FeatureGate feature="basic_generation">
       <MusicGeneratorContent
         state={state}
         isMobile={isMobile}
@@ -759,7 +760,7 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
           onGenerate={handleLyricsSuggestionGenerate}
         />
       )}
-    </>
+    </FeatureGate>
   );
 };
 

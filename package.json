@@ -8,8 +8,8 @@
     "npm": ">=9.0.0"
   },
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
-    "build": "vite build",
+    "dev": "npx vite --host 127.0.0.1",
+    "build": "npx vite build",
     "build:dev": "vite build --mode development",
     "build:analyze": "vite build && echo 'Bundle analysis saved to stats.html - open it in your browser'",
     "bundle:check": "node scripts/performance/check-bundle-size.mjs",
