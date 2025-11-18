@@ -126,22 +126,15 @@ const App = () => {
                         trackPerformanceMetric('component_render', actualDuration, { component: id, phase });
                       }
                     }}>
-                    <Suspense fallback={<FullPageSpinner />}>
                       <Toaster />
                       <RouterProvider router={router} />
-
-                      {/* ✅ Lazy load heavy components */}
+                      {/* ✅ Lazy load heavy components outside of the main Suspense block */}
                       <Suspense fallback={null}>
                         <LazyGlobalAudioPlayer />
+                        {import.meta.env.DEV && !isMobile && (
+                            <LazyPerformanceMonitorWidget />
+                        )}
                       </Suspense>
-
-                      {/* ✅ FIX: Hide PerformanceMonitor on mobile devices to avoid UI clutter */}
-                      {import.meta.env.DEV && !isMobile && (
-                        <Suspense fallback={null}>
-                          <LazyPerformanceMonitorWidget />
-                        </Suspense>
-                      )}
-                    </Suspense>
                     </Profiler>
                   </AppLayout>
                 </TooltipProvider>
