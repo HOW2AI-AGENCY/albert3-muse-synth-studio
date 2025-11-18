@@ -1,5 +1,5 @@
 import React from 'react';
-import type { WeightedPrompt } from '@/utils/PromptDJHelper';
+import type { WeightedPrompt } from '@/utils/LiveMusicHelper';
 import { PromptController } from './PromptController';
 
 interface PromptGridProps {

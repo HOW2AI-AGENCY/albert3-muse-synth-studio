@@ -2,8 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Mic, StopCircle, Download } from 'lucide-react';
 import { PresetManager, Preset } from './PresetManager';
-import { RecordingState } from '@/utils/PromptDJHelper';
-import { cn } from '@/lib/utils';
+import { RecordingState } from '@/utils/LiveMusicHelper';
 
 interface PromptDJToolbarProps {
   presets: Preset[];
