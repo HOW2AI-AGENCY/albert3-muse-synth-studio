@@ -5,7 +5,6 @@
 import React, { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { TrackCard } from '@/features/tracks/components/TrackCard';
-import { normalizeTrack } from '@/utils/trackNormalizer';
 import type { Track } from '@/services/api.service';
 
 interface VirtualizedTrackGridProps {
@@ -100,7 +99,7 @@ export const VirtualizedTrackGrid = React.memo(({
                 {rowTracks.map((track) => (
                   <div key={track.id}>
                     <TrackCard
-                      track={normalizeTrack(track)}
+                      track={track}
                       onClick={() => onTrackPlay(track)}
                       onShare={() => onShare(track.id)}
                       onSeparateStems={() => onSeparateStems(track.id)}
