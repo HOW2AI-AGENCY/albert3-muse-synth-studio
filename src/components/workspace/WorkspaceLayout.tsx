@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Outlet } from "react-router-dom";
 import MinimalSidebar from "./MinimalSidebar";
 import WorkspaceHeader from "./WorkspaceHeader";
-import { BottomTabBar } from "@/components/navigation/BottomTabBar";
+import AppBottomNav from "@/components/navigation/AppBottomNav";
 import { NavigationTracker } from "@/components/NavigationTracker";
 import { cn } from "@/lib/utils";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -52,7 +52,7 @@ const WorkspaceLayout = () => {
           </main>
 
           {/* Bottom Tab Bar - Mobile only */}
-          <BottomTabBar items={navigationItems} />
+          <AppBottomNav />
         </div>
       </div>
     </NavigationTracker>

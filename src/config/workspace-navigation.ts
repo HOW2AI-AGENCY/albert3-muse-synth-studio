@@ -1,25 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  Home,
-  Sparkles,
-  Library,
-  Heart,
-  BarChart3,
-  Settings,
-  Wand2,
-  Headphones,
-  Music4,
+  Home, Sparkles, Library, Heart, BarChart3, Settings, Wand2, Headphones, Music4
 } from "@/utils/iconImports";
 import {
-  preloadDashboard,
-  preloadGenerate,
-  preloadProjects,
-  preloadMonitoringHub,
-  preloadStudio,
-  preloadDAW,
-  preloadFavorites,
-  preloadSettings,
-  preloadPromptDJPage,
+  preloadDashboard, preloadGenerate, preloadProjects, preloadMonitoringHub,
+  preloadStudio, preloadDAW, preloadFavorites, preloadSettings, preloadPromptDJPage
 } from "@/utils/lazyPreloaders";
 
 export type WorkspaceNavRole = "admin";
@@ -35,6 +20,7 @@ export interface WorkspaceNavItem {
   children?: WorkspaceNavItem[];
 }
 
+// ✅ Priorities updated as per audit recommendations
 export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
   {
     id: "dashboard",
@@ -42,7 +28,7 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     path: "/workspace/dashboard",
     icon: Home,
     preload: preloadDashboard,
-    isMobilePrimary: true,
+    isMobilePrimary: true, // P0
   },
   {
     id: "generate",
@@ -50,7 +36,7 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     path: "/workspace/generate",
     icon: Sparkles,
     preload: preloadGenerate,
-    isMobilePrimary: true,
+    isMobilePrimary: true, // P0
   },
   {
     id: "projects",
@@ -58,23 +44,7 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     path: "/workspace/projects",
     icon: Library,
     preload: () => { void preloadProjects(); },
-    isMobilePrimary: true,
-  },
-  {
-    id: "prompt-dj",
-    label: "Prompt DJ",
-    path: "/workspace/prompt-dj",
-    icon: Wand2,
-    preload: () => { void preloadPromptDJPage(); },
-    isMobilePrimary: true,
-  },
-  {
-    id: "studio",
-    label: "Studio",
-    path: "/workspace/studio",
-    icon: Headphones,
-    preload: () => { void preloadStudio(); },
-    isMobilePrimary: true,
+    isMobilePrimary: true, // P0
   },
   {
     id: "daw",
@@ -82,7 +52,23 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     path: "/workspace/daw",
     icon: Music4,
     preload: () => { void preloadDAW(); },
-    isMobilePrimary: true,
+    isMobilePrimary: true, // P0
+  },
+  {
+    id: "prompt-dj",
+    label: "Prompt DJ",
+    path: "/workspace/prompt-dj",
+    icon: Wand2,
+    preload: () => { void preloadPromptDJPage(); },
+    isMobilePrimary: false, // P1 - Moved to overflow
+  },
+  {
+    id: "studio",
+    label: "Studio",
+    path: "/workspace/studio",
+    icon: Headphones,
+    preload: () => { void preloadStudio(); },
+    isMobilePrimary: false, // P1 - Moved to overflow
   },
   {
     id: "favorites",
@@ -109,16 +95,10 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
 
 export const getWorkspaceNavItems = (options?: { isAdmin?: boolean }) => {
   const { isAdmin } = options ?? {};
-
-  return WORKSPACE_NAV_ITEMS.filter((item) => {
-    if (!item.roles?.length) {
-      return true;
-    }
-
-    if (item.roles.includes("admin")) {
-      return Boolean(isAdmin);
-    }
-
+  // ... (rest of the function remains the same)
+  return WORKSPACE_NAV_ITEMS.filter(item => {
+    if (!item.roles?.length) return true;
+    if (item.roles.includes("admin")) return Boolean(isAdmin);
     return true;
   }).map(item => {
     if (item.children) {
