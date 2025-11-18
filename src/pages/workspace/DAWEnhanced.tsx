@@ -13,7 +13,7 @@
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { useDAWStore } from '@/stores/dawStore';
+import { useDAWStore, DAWProject as StoreDAWProject } from '@/stores/dawStore';
 import { TransportControls } from '@/components/daw/TransportControls';
 import { TimelineEnhanced } from '@/components/daw/TimelineEnhanced';
 import { TrackLaneEnhanced } from '@/components/daw/TrackLaneEnhanced';
@@ -28,7 +28,6 @@ import {
 } from '@/components/ui/dialog';
 import {
   Plus,
-  Save,
   Undo2,
   Redo2,
   ZoomIn,
@@ -42,6 +41,9 @@ import {
 } from 'lucide-react';
 import { useTracks } from '@/hooks/useTracks';
 import { TrackStem } from '@/types/domain/track.types';
+import { ProjectMenu } from '@/components/daw/ProjectMenu';
+import { useDAWProjects } from '@/hooks/useDAWProjects';
+import type { DAWProject } from '@/types/daw-project.types';
 import {
   Select,
   SelectContent,
@@ -57,7 +59,7 @@ export const DAWEnhanced: React.FC = () => {
   const [containerWidth, setContainerWidth] = useState(1200);
 
   // DAW Store
-  const project = useDAWStore((state) => state.project);
+  const dawProject = useDAWStore((state) => state.project);
   const timeline = useDAWStore((state) => state.timeline);
   const tracks = useDAWStore((state) => state.project?.tracks || []);
   const toolMode = useDAWStore((state) => state.toolMode);
@@ -74,13 +76,99 @@ export const DAWEnhanced: React.FC = () => {
 
   // Load user's tracks for stem loading
   const { tracks: userTracks } = useTracks();
+  const { saveProject: saveProjectToDb, loadProject: loadProjectFromDb } = useDAWProjects();
+  const [currentDbProject, setCurrentDbProject] = useState<DAWProject | null>(null);
 
   // Initialize project if none exists
   useEffect(() => {
-    if (!project) {
+    if (!dawProject) {
       createProject('Untitled Project');
     }
-  }, [project, createProject]);
+  }, [dawProject, createProject]);
+
+  const handleNewProject = useCallback(() => {
+    createProject('Untitled Project');
+    setCurrentDbProject(null);
+    toast.success('New project created');
+  }, [createProject]);
+
+  const handleSaveProject = useCallback(async () => {
+    if (!dawProject) return;
+
+    const projectId = currentDbProject?.id || crypto.randomUUID();
+
+    // Map store data to the database-compatible format
+    const projectDataToSave = {
+      name: dawProject.name,
+      bpm: dawProject.bpm,
+      regions: dawProject.regions,
+      tracks: dawProject.tracks,
+      metadata: {}, // Add any other metadata here
+    };
+
+    try {
+      const savedProject = await saveProjectToDb({
+        projectId: projectId,
+        data: projectDataToSave,
+      });
+      setCurrentDbProject(savedProject as DAWProject);
+      toast.success('Project saved successfully!');
+    } catch (error) {
+      toast.error('Failed to save project.');
+      console.error('Save project error:', error);
+    }
+  }, [dawProject, currentDbProject, saveProjectToDb]);
+
+  const handleSaveAsProject = useCallback(async () => {
+    // For now, this will just save as a new project.
+    // A proper implementation would include a dialog to ask for a new name.
+    if (!dawProject) return;
+
+    const newProjectId = crypto.randomUUID();
+    const newProjectName = `${dawProject.name} (Copy)`;
+
+    const projectDataToSave = {
+      name: newProjectName,
+      bpm: dawProject.bpm,
+      regions: dawProject.regions,
+      tracks: dawProject.tracks,
+      metadata: {},
+    };
+
+    try {
+      const savedProject = await saveProjectToDb({
+        projectId: newProjectId,
+        data: projectDataToSave,
+      });
+      setCurrentDbProject(savedProject as DAWProject);
+      useDAWStore.getState().updateProjectName(newProjectName);
+      toast.success(`Project saved as "${newProjectName}"`);
+    } catch (error) {
+      toast.error('Failed to save project.');
+    }
+  }, [dawProject, saveProjectToDb]);
+
+  const handleLoadProject = useCallback((projectToLoad: DAWProject) => {
+    // Map the data from the database `data` field to the store's project structure
+    const projectStateForStore: StoreDAWProject = {
+      id: projectToLoad.id,
+      name: projectToLoad.data.name,
+      bpm: projectToLoad.data.bpm,
+      tracks: projectToLoad.data.tracks,
+      regions: projectToLoad.data.regions,
+      // Provide default values for any fields not stored in the DB `data` field
+      timeSignature: [4, 4],
+      sampleRate: 44100,
+      markers: [],
+      masterVolume: 1.0,
+      created_at: projectToLoad.created_at,
+      updated_at: projectToLoad.updated_at,
+    };
+
+    useDAWStore.getState().loadProject(projectStateForStore);
+    setCurrentDbProject(projectToLoad);
+    toast.success(`Project "${projectToLoad.name}" loaded`);
+  }, []);
 
   // Update container width on resize
   useEffect(() => {
@@ -206,11 +294,14 @@ export const DAWEnhanced: React.FC = () => {
       <div className="flex items-center justify-between gap-2 px-4 py-2 border-b border-border bg-surface">
         {/* Left: File operations */}
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold">{project?.name || 'DAW Editor'}</span>
-          <Button variant="ghost" size="sm" onClick={() => saveProject()}>
-            <Save className="h-4 w-4 mr-1" />
-            Save
-          </Button>
+          <span className="text-sm font-semibold">{dawProject?.name || 'DAW Editor'}</span>
+          <ProjectMenu
+            currentProject={currentDbProject}
+            onSave={handleSaveProject}
+            onSaveAs={handleSaveAsProject}
+            onLoadProject={handleLoadProject}
+            onNew={handleNewProject}
+          />
           <Button variant="ghost" size="sm" onClick={undo}>
             <Undo2 className="h-4 w-4" />
           </Button>
