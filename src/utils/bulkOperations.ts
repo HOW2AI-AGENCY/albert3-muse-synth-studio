@@ -3,8 +3,11 @@
  * Handles batch operations on multiple tracks
  */
 
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 import { supabase } from '@/integrations/supabase/client';
 import { logError, logInfo } from './logger';
+import type { Track } from '@/types/track';
 
 export interface BulkOperationProgress {
   current: number;
@@ -233,4 +236,62 @@ export function decodeShareLink(encodedIds: string): string[] {
     logError('Failed to decode share link', error as Error, 'bulkOperations');
     return [];
   }
+}
+
+/**
+ * Bulk export tracks to a ZIP file
+ */
+export async function bulkExportToZip(
+  tracks: Track[],
+  onProgress?: (progress: BulkOperationProgress) => void
+): Promise<{ success: number; failed: number }> {
+  logInfo('Starting bulk export to ZIP', 'bulkOperations', { count: tracks.length });
+  const zip = new JSZip();
+  let success = 0;
+  let failed = 0;
+  const total = tracks.length;
+
+  for (let i = 0; i < tracks.length; i++) {
+    const track = tracks[i];
+    try {
+      if (!track.audio_url) {
+        throw new Error('Track has no audio URL');
+      }
+
+      const response = await fetch(track.audio_url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch audio: ${response.statusText}`);
+      }
+      const audioBlob = await response.blob();
+
+      // Sanitize filename
+      const filename = `${track.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.mp3`;
+      zip.file(filename, audioBlob);
+      success++;
+
+    } catch (error) {
+      failed++;
+      logError('Failed to process track for ZIP export', error as Error, 'bulkOperations', { trackId: track.id });
+    } finally {
+      onProgress?.({
+        current: i + 1,
+        total,
+        percentage: Math.round(((i + 1) / total) * 100),
+      });
+    }
+  }
+
+  if (success > 0) {
+    try {
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      saveAs(zipBlob, `albert3_muse_synth_studio_export_${new Date().toISOString()}.zip`);
+    } catch (error) {
+      logError('Failed to generate or save ZIP file', error as Error, 'bulkOperations');
+      // All tracks were processed but the zip failed, so we mark all as failed at this stage.
+      return { success: 0, failed: total };
+    }
+  }
+
+  logInfo('Bulk export to ZIP completed', 'bulkOperations', { success, failed });
+  return { success, failed };
 }
