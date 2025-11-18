@@ -1,7 +1,7 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { NavLink } from "react-router-dom";
-import { MoreHorizontal } from "@/utils/iconImports";
+import { Grid3X3 } from "@/utils/iconImports";
 import type { WorkspaceNavItem } from "@/config/workspace-navigation";
 import { cn } from "@/lib/utils";
 
@@ -19,8 +19,8 @@ export const MobileMoreMenu = ({ items }: MobileMoreMenuProps) => {
           className="flex flex-col items-center justify-center gap-0.5 min-h-[44px] px-2 py-1 rounded-lg hover:bg-accent/50 transition-colors flex-1"
           aria-label="Ещё"
         >
-          <MoreHorizontal className="h-4 w-4" />
-          <span className="text-[9px] font-medium truncate max-w-full">Ещё</span>
+          <Grid3X3 className="h-6 w-6" />
+          <span className="text-xs font-medium truncate max-w-full">Ещё</span>
         </Button>
       </SheetTrigger>
       <SheetContent side="bottom" className="h-auto max-h-[50vh]">

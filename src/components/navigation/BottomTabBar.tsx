@@ -25,13 +25,13 @@ export const BottomTabBar: FC<BottomTabBarProps> = ({
 
   const { primaryItems, secondaryItems } = useMemo(() => {
     // Flatten children for display
-    const flattenedItems = items.flatMap(item => 
+    const flattenedItems = items.flatMap(item =>
       item.children ? [item, ...item.children] : [item]
     );
-    
+
     const mobilePrimary = flattenedItems.filter(item => item.isMobilePrimary);
-    const primary = mobilePrimary.slice(0, 3);
-    const overflow = mobilePrimary.slice(3);
+    const primary = mobilePrimary.slice(0, 4); // Increased from 3 to 4 visible slots
+    const overflow = mobilePrimary.slice(4);
     const nonPrimary = flattenedItems.filter(item => !item.isMobilePrimary);
     const secondary = [...overflow, ...nonPrimary];
     return { primaryItems: primary, secondaryItems: secondary };
@@ -119,7 +119,7 @@ export const BottomTabBar: FC<BottomTabBarProps> = ({
               {/* Active indicator */}
               {isActive && (
                 <motion.div
-                  className="absolute inset-0 bg-primary/10 rounded-md" /* Subtle background for active tab */
+                  className="absolute inset-0 bg-primary/15 rounded-md border-b-2 border-primary" /* Strengthened background and border for active tab */
                   layoutId="activeTab"
                   initial={false}
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -133,12 +133,12 @@ export const BottomTabBar: FC<BottomTabBarProps> = ({
                 transition={{ type: 'spring', stiffness: 300, damping: 20 }}
               >
                 <motion.div
-                  whileTap={{ scale: 0.85 }} /* Tap animation for icons */
+                  whileTap={{ scale: 0.92 }} /* Softer tap animation for icons (iOS-like) */
                   transition={{ type: 'spring', stiffness: 400, damping: 17 }}
                 >
-                  <Icon className="h-4 w-4" aria-hidden="true" />
+                  <Icon className="h-6 w-6" aria-hidden="true" />
                 </motion.div>
-                <span className="text-[11px] leading-tight font-medium truncate max-w-[80px]">{item.label}</span>
+                <span className="text-xs leading-tight font-medium truncate max-w-[80px]">{item.label}</span>
               </motion.div>
             </NavLink>
           );

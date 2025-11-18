@@ -8,6 +8,7 @@ import {
   Settings,
   Wand2,
   Headphones,
+  Music4,
 } from "@/utils/iconImports";
 import {
   preloadDashboard,
@@ -79,7 +80,7 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     id: "daw",
     label: "DAW",
     path: "/workspace/daw",
-    icon: Headphones,
+    icon: Music4,
     preload: () => { void preloadDAW(); },
     isMobilePrimary: true,
   },
