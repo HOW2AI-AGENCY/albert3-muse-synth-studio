@@ -56,7 +56,7 @@ export class GenerationService {
   /**
    * Generate music using specified provider
    */
-  static async generate(request: GenerationRequest): Promise<GenerationResult> {
+  static generate(request: GenerationRequest): Promise<GenerationResult> {
     const startTime = Date.now();
     const functionName = request.provider === 'suno' ? 'generate-suno' : 'generate-mureka';
     const requestKey = this.getRequestKey(request);
