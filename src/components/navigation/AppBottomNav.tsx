@@ -1,58 +1,114 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Users, LayoutGrid } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Grid3x3 } from 'lucide-react';
 import InteractiveMenu, { MenuItem } from '@/components/ui/InteractiveMenu';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
+import { useUserRole } from '@/hooks/useUserRole';
+import { getWorkspaceNavItems, WorkspaceNavItem } from '@/config/workspace-navigation';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
 const AppBottomNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAdmin } = useUserRole();
+  const { vibrate } = useHapticFeedback();
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
-  const menuItems = useMemo<MenuItem[]>(() => [
-    { id: 'home', label: 'Главная', icon: Home, color: 'hsl(var(--accent-purple))' },
-    { id: 'artists', label: 'Артисты', icon: Users, color: 'hsl(var(--accent-blue))' },
-    { id: 'projects', label: 'Проекты', icon: LayoutGrid, color: 'hsl(var(--accent-green))' },
-  ], []);
+  const allNavItems = useMemo(() => getWorkspaceNavItems({ isAdmin }), [isAdmin]);
 
-  const pathToIdMap: { [key: string]: string } = {
-    '/workspace/dashboard': 'home',
-    '/workspace/artists': 'artists',
-    '/workspace/projects': 'projects',
+  const { primaryItems, secondaryItems, overflowItems } = useMemo(() => {
+    const flattenedItems = allNavItems.flatMap(item => item.children ? [item, ...item.children] : [item]);
+    const mobilePrimary = flattenedItems.filter(item => item.isMobilePrimary);
+
+    return {
+      primaryItems: mobilePrimary.slice(0, 4),
+      overflowItems: mobilePrimary.slice(4),
+      secondaryItems: flattenedItems.filter(item => !item.isMobilePrimary),
+    };
+  }, [allNavItems]);
+
+  const mapToMenuItem = (item: WorkspaceNavItem): MenuItem => ({
+    id: item.id,
+    label: item.label,
+    icon: item.icon,
+  });
+
+  const activeItemId = useMemo(() => {
+    const currentPath = location.pathname;
+    // Find the most specific match first
+    const allItems = [...primaryItems, ...overflowItems, ...secondaryItems];
+    const bestMatch = allItems
+      .filter(item => currentPath.startsWith(item.path))
+      .sort((a, b) => b.path.length - a.path.length)[0];
+    return bestMatch?.id;
+  }, [location.pathname, primaryItems, overflowItems, secondaryItems]);
+
+  const handleItemClick = (path: string) => {
+    navigate(path);
+    setIsMoreMenuOpen(false);
   };
 
-  // Find the most specific match for the active item
-  const activeItem = Object.keys(pathToIdMap)
-    .sort((a, b) => b.length - a.length) // Sort by path length descending
-    .find(path => location.pathname.startsWith(path));
+  const menuItems = primaryItems.map(mapToMenuItem);
 
-  const activeId = activeItem ? pathToIdMap[activeItem] : 'home';
+  const hasOverflow = overflowItems.length > 0 || secondaryItems.length > 0;
+  if (hasOverflow) {
+    menuItems.push({
+      id: 'more',
+      label: 'Ещё',
+      icon: Grid3x3, // Using the recommended icon
+    });
+  }
 
-  const handleItemClick = (id: string) => {
-    switch (id) {
-      case 'home':
-        navigate('/workspace/dashboard');
-        break;
-      case 'artists':
-        navigate('/workspace/artists');
-        break;
-      case 'projects':
-        navigate('/workspace/projects');
-        break;
+  const onMenuItemClick = (id: string) => {
+    if (id === 'more') {
+      vibrate('light');
+      setIsMoreMenuOpen(true);
+    } else {
+      const item = allNavItems.find(i => i.id === id);
+      if (item) {
+        navigate(item.path);
+      }
     }
   };
 
   return (
-    <div className={cn(
-      "fixed bottom-0 left-0 right-0 z-50 p-2",
-      "bg-background/80 backdrop-blur-xl border-t border-border/50",
-      "pb-safe" // Utility class for safe area padding
-    )}>
-      <InteractiveMenu
-        items={menuItems}
-        activeItem={activeId}
-        onItemClick={handleItemClick}
-      />
-    </div>
+    <>
+      <div className={cn(
+        "fixed bottom-0 left-0 right-0 z-bottom-nav p-2",
+        "bg-background/80 backdrop-blur-xl border-t border-border/50",
+        "pb-safe"
+      )}>
+        <InteractiveMenu
+          items={menuItems}
+          activeItem={activeItemId || ''}
+          onItemClick={onMenuItemClick}
+        />
+      </div>
+
+      <Sheet open={isMoreMenuOpen} onOpenChange={setIsMoreMenuOpen}>
+        <SheetContent side="bottom" className="rounded-t-2xl">
+          <SheetHeader>
+            <SheetTitle>Больше разделов</SheetTitle>
+          </SheetHeader>
+          <div className="grid grid-cols-3 gap-4 py-4">
+            {[...overflowItems, ...secondaryItems].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => handleItemClick(item.path)}
+                className="flex flex-col items-center justify-center gap-2 p-2 rounded-lg hover:bg-muted active:scale-95 transition-all"
+              >
+                <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center">
+                  <item.icon className="w-6 h-6" />
+                </div>
+                <span className="text-xs text-center">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 };
 

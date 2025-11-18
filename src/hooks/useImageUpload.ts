@@ -2,9 +2,13 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
+import { STORAGE_BUCKETS } from '@/config/storage.config';
+
+interface UseImageUploadProps {
+  onUploadSuccess?: (url: string) => void;
+}
 
 interface UseImageUploadResult {
-  uploadImage: (file: File) => Promise<string | null>;
   isUploading: boolean;
   uploadProgress: number;
   previewUrl: string | null;
@@ -15,16 +19,15 @@ interface UseImageUploadResult {
   handleRemove: () => void;
 }
 
-export const useImageUpload = (): UseImageUploadResult => {
+export const useImageUpload = ({ onUploadSuccess }: UseImageUploadProps = {}): UseImageUploadResult => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // To prevent memory leaks with object URLs
   const previewUrlRef = useRef<string | null>(null);
+
   useEffect(() => {
     return () => {
       if (previewUrlRef.current) {
@@ -34,20 +37,16 @@ export const useImageUpload = (): UseImageUploadResult => {
   }, []);
 
   const uploadImage = async (file: File): Promise<string | null> => {
-    // 1. Validate file type
     if (!file.type.startsWith('image/')) {
       const errorMsg = 'Only image files are allowed';
       toast({ variant: 'destructive', title: 'Invalid File Type', description: errorMsg });
-      logger.warn(`[UPLOAD] Invalid file type: ${file.type}`);
       return null;
     }
 
-    // 2. Validate file size (e.g., 5MB limit)
     const MAX_SIZE = 5 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
       const errorMsg = 'File size must be less than 5MB';
       toast({ variant: 'destructive', title: 'File Too Large', description: errorMsg });
-      logger.warn(`[UPLOAD] File too large: ${file.size} bytes`);
       return null;
     }
 
@@ -55,7 +54,6 @@ export const useImageUpload = (): UseImageUploadResult => {
     setUploadProgress(0);
     setFileName(file.name);
 
-    // Create a local preview immediately
     const localPreviewUrl = URL.createObjectURL(file);
     if (previewUrlRef.current) {
       URL.revokeObjectURL(previewUrlRef.current);
@@ -65,40 +63,32 @@ export const useImageUpload = (): UseImageUploadResult => {
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
+      if (!user) throw new Error('User not authenticated');
 
       const fileExt = file.name.split('.').pop();
       const newFileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-      logger.info(`📤 [UPLOAD] Starting image upload: ${file.name} to bucket 'images'`);
+      logger.info(`📤 [UPLOAD] Starting image upload: ${file.name} to bucket '${STORAGE_BUCKETS.IMAGES}'`);
       setUploadProgress(30);
 
       const { error } = await supabase.storage
-        .from('images') // Target 'images' bucket
-        .upload(newFileName, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
+        .from(STORAGE_BUCKETS.IMAGES)
+        .upload(newFileName, file, { cacheControl: '3600', upsert: false });
 
-      if (error) {
-        throw error;
-      }
-
+      if (error) throw error;
       setUploadProgress(70);
 
       const { data } = supabase.storage
-        .from('images')
+        .from(STORAGE_BUCKETS.IMAGES)
         .getPublicUrl(newFileName);
 
-      if (!data?.publicUrl) {
-        throw new Error('Failed to get public URL for the uploaded image.');
-      }
+      if (!data?.publicUrl) throw new Error('Failed to get public URL for the uploaded image.');
 
       setUploadProgress(100);
       logger.info(`✅ [UPLOAD] Image uploaded successfully: ${data.publicUrl}`);
       toast({ title: 'Image Uploaded', description: 'Your image has been successfully uploaded.' });
+
+      onUploadSuccess?.(data.publicUrl);
 
       return data.publicUrl;
 
@@ -106,12 +96,10 @@ export const useImageUpload = (): UseImageUploadResult => {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       logger.error(`❌ [UPLOAD] Image upload failed: ${errorMessage}`);
       toast({ variant: 'destructive', title: 'Upload Failed', description: errorMessage });
-      // Reset UI on failure
       handleRemove();
       return null;
     } finally {
       setIsUploading(false);
-      // Let the progress bar finish before hiding
       setTimeout(() => setUploadProgress(0), 1500);
     }
   };
@@ -127,7 +115,7 @@ export const useImageUpload = (): UseImageUploadResult => {
         await uploadImage(file);
       }
     },
-    [], // uploadImage is stable due to useState setters
+    [onUploadSuccess],
   );
 
   const handleRemove = useCallback(() => {
@@ -142,9 +130,7 @@ export const useImageUpload = (): UseImageUploadResult => {
     }
   }, []);
 
-
   return {
-    uploadImage,
     isUploading,
     uploadProgress,
     previewUrl,

@@ -51,11 +51,35 @@
   flex-grow: 1;
   padding: 0.5rem;
   border-radius: 9999px;
+  -webkit-tap-highlight-color: transparent; /* Disable tap highlight */
+}
+
+.menu__item {
+  position: relative;
+  /* ... existing styles ... */
+  transform: scale(1);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.menu__item:active {
+  transform: scale(0.92); /* Softer tap animation */
 }
 
 .menu__item.active {
   color: var(--component-active-color, var(--component-active-color-default));
-  background-color: var(--component-active-bg);
+  background-color: hsla(var(--primary-hsl) / 0.15); /* Increased opacity */
+}
+
+.menu__item.active::before {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40%;
+  height: 3px;
+  border-radius: 2px;
+  background-color: var(--component-active-color, var(--component-active-color-default));
 }
 
 .menu__item.active .icon {
@@ -70,13 +94,16 @@
   transition: transform 0.3s ease;
 }
 
+/* ✅ Increased icon size to 24px (1.5rem) */
 .menu__icon .icon {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.5rem;
+  height: 1.5rem;
 }
 
+/* ✅ Increased font size to 12px (text-xs) and improved readability */
 .menu__text {
-  font-size: 0.75rem;
+  font-size: 0.75rem; /* 12px */
+  line-height: 1rem; /* 16px */
   font-weight: 500;
   white-space: nowrap;
   transition: opacity 0.3s ease;

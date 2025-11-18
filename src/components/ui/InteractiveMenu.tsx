@@ -1,12 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
 export interface MenuItem {
   id: string;
   label: string;
   icon: React.ElementType;
-  color?: string; // e.g., 'hsl(var(--primary))'
+  color?: string;
 }
 
 interface InteractiveMenuProps {
@@ -22,7 +23,12 @@ const InteractiveMenu: React.FC<InteractiveMenuProps> = ({
   onItemClick,
   className,
 }) => {
-  const activeMenuItem = items.find(item => item.id === activeItem);
+  const { vibrate } = useHapticFeedback();
+
+  const handleClick = (id: string) => {
+    vibrate('light');
+    onItemClick(id);
+  };
 
   return (
     <nav className={cn('w-full', className)}>
@@ -30,7 +36,7 @@ const InteractiveMenu: React.FC<InteractiveMenuProps> = ({
         {items.map(item => (
           <button
             key={item.id}
-            onClick={() => onItemClick(item.id)}
+            onClick={() => handleClick(item.id)}
             className={cn(
               'menu__item',
               { active: activeItem === item.id }
