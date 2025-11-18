@@ -34,6 +34,7 @@ import {
   LazyEdgeFunctionsDebug,
   LazyTrackDetail,
   LazySubscription,
+  LazyImageCropperDemo,
 } from "./utils/lazyPages";
 
 
@@ -226,6 +227,14 @@ export const router = createBrowserRouter(
           element: (
             <Suspense fallback={<FullPageSpinner />}>
               <LazyPromptDJPage />
+            </Suspense>
+          )
+        },
+        {
+          path: "image-cropper-demo",
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <LazyImageCropperDemo />
             </Suspense>
           )
         },
