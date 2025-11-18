@@ -5,14 +5,12 @@
  * @version 3.0.0
  * @since 2025-11-17
  */
-import React, { useState, useEffect, useRef, useReducer } from 'react';
+import React, { useEffect, useRef, useReducer } from 'react';
 import { PromptDjMidi } from '@/utils/PromptDjMidi';
-import { type WeightedPrompt } from '@/utils/LiveMusicHelper';
 import { PromptDJHeader } from './components/PromptDJHeader';
 import { PromptGrid } from './components/PromptGrid';
 import { WarningCard } from './components/WarningCard';
 import { PromptDJToolbar } from './components/PromptDJToolbar';
-import type { Preset } from './components/PresetManager';
 
 const DEFAULT_PROMPTS = [
   'Epic orchestral symphony', 'Ambient electronic soundscape', 'Jazz piano improvisation', 'Heavy metal guitar riffs',
@@ -32,14 +30,17 @@ export const PromptDJ: React.FC = () => {
     const onStateChanged = () => forceUpdate();
     controller.addEventListener('state-changed', onStateChanged);
 
-    // This is a bit of a hack to get the recording blob, a more robust solution would be a dedicated event
-    controller.liveMusicHelper.addEventListener('recording-complete', (e: Event) => {
-        const { blob } = (e as CustomEvent).detail;
-        (controller as any).lastRecordingBlob = blob; // Storing it on the controller for simplicity here
-        const url = URL.createObjectURL(blob);
-        (controller as any).lastRecordingUrl = url;
-        forceUpdate();
-    });
+    // Recording complete event handler
+    const liveMusicHelper = (controller as any).liveMusicHelper;
+    if (liveMusicHelper) {
+      liveMusicHelper.addEventListener('recording-complete', (e: Event) => {
+          const { blob } = (e as CustomEvent).detail;
+          (controller as any).lastRecordingBlob = blob;
+          const url = URL.createObjectURL(blob);
+          (controller as any).lastRecordingUrl = url;
+          forceUpdate();
+      });
+    }
 
     return () => {
       controller.removeEventListener('state-changed', onStateChanged);

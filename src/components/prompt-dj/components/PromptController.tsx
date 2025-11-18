@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import type { WeightedPrompt } from '@/utils/PromptDJHelper';
+import type { WeightedPrompt } from '@/utils/LiveMusicHelper';
 
 interface PromptControllerProps {
   prompt: WeightedPrompt;

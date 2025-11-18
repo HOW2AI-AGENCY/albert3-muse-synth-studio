@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
-import type { PlaybackState } from '@/utils/PromptDJHelper';
+import type { PlaybackState } from '@/utils/LiveMusicHelper';
 import { SpectrumAnalyzer } from './SpectrumAnalyzer';
 
 interface PromptDJHeaderProps {

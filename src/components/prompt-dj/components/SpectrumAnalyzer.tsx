@@ -35,8 +35,6 @@ export const SpectrumAnalyzer: React.FC<SpectrumAnalyzerProps> = ({ getAnalyserD
       let barHeight;
       let x = 0;
 
-      const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
-
       for (let i = 0; i < bufferLength; i++) {
         barHeight = frequencyData[i];
 

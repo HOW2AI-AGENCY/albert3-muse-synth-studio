@@ -1,14 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { ZodSchema } from "zod";
 import { createSecurityHeaders } from "./security.ts";
 import { createCorsHeaders } from "./cors.ts";
 import { createSupabaseUserClient } from "./supabase.ts";
 import { logger } from "./logger.ts";
 import { validateAndParse } from "./zod-schemas.ts";
-import { checkRateLimitRedis, RateLimitType } from "./rate-limit.ts";
+import { rateLimiter, rateLimitConfigs, RateLimitType } from "./rate-limit.ts";
 
-interface HandlerOptions<T> {
-  schema: ZodSchema<T>;
+interface HandlerOptions<T = any> {
+  schema: any;
   rateLimit: RateLimitType;
   handler: (data: T, user: any) => Promise<Response>;
 }
@@ -44,7 +43,8 @@ export function createAuthenticatedHandler<T>(options: HandlerOptions<T>) {
       }
 
       // 2. Rate Limiting
-      const rateLimitResult = await checkRateLimitRedis(user.id, options.rateLimit);
+      const rateLimitConfig = rateLimitConfigs[options.rateLimit];
+      const rateLimitResult = rateLimiter.check(user.id, rateLimitConfig);
       if (!rateLimitResult.allowed) {
         return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
             status: 429,
@@ -63,11 +63,12 @@ export function createAuthenticatedHandler<T>(options: HandlerOptions<T>) {
       }
 
       // 4. Execute business logic
-      return await options.handler(validation.data, user);
+      return await options.handler(validation.data as T, user);
 
     } catch (error) {
-      logger.error('🔴 Unhandled error in handler', { error });
-      return new Response(JSON.stringify({ error: error.message || 'Internal Server Error' }), {
+      const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
+      logger.error('🔴 Unhandled error in handler', { error: errorMessage });
+      return new Response(JSON.stringify({ error: errorMessage }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });

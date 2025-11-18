@@ -133,6 +133,9 @@ export const rateLimitConfigs = {
   },
 } as const;
 
+// Export type for rate limit configurations
+export type RateLimitType = keyof typeof rateLimitConfigs;
+
 /**
  * Create rate limit headers for HTTP responses
  */
