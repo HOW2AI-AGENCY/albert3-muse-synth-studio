@@ -7,14 +7,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render as renderWithProviders, screen, fireEvent, waitFor } from '../test-utils';
 import { UnifiedTrackActionsMenu } from '@/components/tracks/shared/TrackActionsMenu.unified';
-import { TooltipProvider } from '@/components/ui/tooltip';
-
-// Wrapper with TooltipProvider for all tests
-const renderWithProviders = (ui: React.ReactElement) => {
-  return render(<TooltipProvider>{ui}</TooltipProvider>);
-};
 
 describe('UnifiedTrackActionsMenu', () => {
   const mockTrackId = 'track-123';
