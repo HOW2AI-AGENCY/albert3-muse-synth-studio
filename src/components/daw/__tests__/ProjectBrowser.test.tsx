@@ -1,19 +1,23 @@
 
-import { render, screen, fireEvent } from '@testing-library/react';
+import React from 'react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { vi } from 'vitest';
 import { ProjectBrowser } from '../ProjectBrowser';
-import React from 'react';
 
-// Mock the useDAWProjects hook
-vi.mock('@/hooks/useDAWProjects', () => ({
-  useDAWProjects: () => ({
-    projects: [
-      { id: '1', name: 'Project Alpha' },
-      { id: '2', name: 'Project Beta' },
-    ],
-    isLoading: false,
-    deleteProject: vi.fn(),
-  }),
+// Mock the useVirtualizer hook to control what is "visible"
+vi.mock('@tanstack/react-virtual', () => ({
+  useVirtualizer: ({ count }) => {
+    const virtualItems = Array.from({ length: count }, (_, index) => ({
+      index,
+      key: index,
+      start: index * 44,
+      size: 44,
+    }));
+    return {
+      getVirtualItems: () => virtualItems,
+      getTotalSize: () => count * 44,
+    };
+  },
 }));
 
 describe('ProjectBrowser', () => {
@@ -22,9 +26,13 @@ describe('ProjectBrowser', () => {
   const mockOnOpenChange = vi.fn();
 
   const mockProjects = [
-    { id: '1', name: 'Project Alpha', data: { name: 'Project Alpha' } },
-    { id: '2', name: 'Project Beta', data: { name: 'Project Beta' } },
-  ];
+    { id: '1', name: 'Project Alpha', data: {} },
+    { id: '2', name: 'Project Beta', data: {} },
+  ] as any;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it('renders a list of projects', () => {
     render(
@@ -79,7 +87,7 @@ describe('ProjectBrowser', () => {
     render(
       <ProjectBrowser
         open={true}
-        onOpenChange={mockOnOpenChange}
+        onOpen-change={mockOnOpenChange}
         onSelect={mockOnSelect}
         onDelete={mockOnDelete}
         isLoading={true}
