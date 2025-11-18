@@ -1,0 +1,95 @@
+:root {
+  --component-inactive-color: var(--muted-foreground);
+  --component-bg: var(--card);
+  --component-shadow: var(--border);
+  --component-active-bg: var(--secondary);
+  --component-line-inactive-color: var(--border);
+  --component-active-color-default: var(--accent-foreground);
+}
+
+.dark {
+  --component-inactive-color: var(--muted-foreground);
+  --component-bg: var(--card);
+  --component-shadow: var(--border);
+  --component-active-bg: var(--secondary);
+  --component-line-inactive-color: var(--muted-foreground);
+  --component-active-color-default: var(--accent-foreground);
+}
+
+@keyframes iconBounce {
+  0%, 100% { transform: translateY(0); }
+  20% { transform: translateY(-0.3em); }
+  40% { transform: translateY(0); }
+  60% { transform: translateY(-0.1em); }
+  80% { transform: translateY(0); }
+}
+
+.menu {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background-color: var(--component-bg);
+  border-radius: 9999px;
+  padding: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--component-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.menu__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--component-inactive-color);
+  cursor: pointer;
+  position: relative;
+  transition: color 0.3s ease;
+  flex-grow: 1;
+  padding: 0.5rem;
+  border-radius: 9999px;
+}
+
+.menu__item.active {
+  color: var(--component-active-color, var(--component-active-color-default));
+  background-color: var(--component-active-bg);
+}
+
+.menu__item.active .icon {
+  animation: iconBounce 0.6s ease;
+}
+
+.menu__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+  transition: transform 0.3s ease;
+}
+
+.menu__icon .icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.menu__text {
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: opacity 0.3s ease;
+}
+
+.menu__item::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: var(--lineWidth, 0px);
+  height: 2px;
+  background-color: var(--component-active-color, var(--component-active-color-default));
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}

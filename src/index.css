@@ -1,5 +1,6 @@
 /* Импорт системы дизайн-токенов */
 @import './styles/design-tokens.css';
+@import './styles/interactive-menu.css';
 /* Импорт улучшенной контрастности для мобильных устройств (Phase 2) */
 @import './styles/mobile-contrast.css';
 /* Импорт Fluid Typography System (Phase 4) */
