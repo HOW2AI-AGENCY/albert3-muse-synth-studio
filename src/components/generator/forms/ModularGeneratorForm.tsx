@@ -6,11 +6,11 @@
  * для обеспечения консистентного и профессионального интерфейса
  */
 
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Music, AlertCircle } from 'lucide-react';
+import { Music, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Импорт модульных секций
@@ -21,6 +21,7 @@ import {
   AdvancedSection 
 } from '@/components/generator/sections';
 
+import { useBreakpoints } from '@/hooks/useBreakpoints';
 import type { GenerationParams } from '../types/generator.types';
 
 interface ModularGeneratorFormProps {
@@ -36,7 +37,6 @@ interface ModularGeneratorFormProps {
   debouncedLyrics: string;
   onDebouncedPromptChange: (value: string) => void;
   onDebouncedLyricsChange: (value: string) => void;
-  isMobile?: boolean;
   className?: string;
 }
 
@@ -55,6 +55,15 @@ export const ModularGeneratorForm = memo(({
   onDebouncedLyricsChange,
   className,
 }: ModularGeneratorFormProps) => {
+  const { isMobile } = useBreakpoints();
+  const [currentStep, setCurrentStep] = useState(0);
+
+  // Определяем шаги для мобильного визарда
+  const steps = useMemo(() =>
+    mode === 'custom' ? ['Style & Prompt', 'Lyrics', 'Advanced'] : ['Style & Prompt'],
+    [mode]
+  );
+
   // Валидация
   const errors = useMemo(() => {
     const errs: string[] = [];
@@ -77,110 +86,152 @@ export const ModularGeneratorForm = memo(({
     );
   }, [errors, isGenerating, mode, debouncedPrompt, debouncedLyrics, params.title]);
 
+  const renderContent = () => {
+    // Desktop: render all sections
+    if (!isMobile) {
+      return (
+        <>
+          <PromptSection value={debouncedPrompt} onChange={onDebouncedPromptChange} onBoost={onBoostPrompt} isEnhancing={isBoosting} disabled={isGenerating} />
+          <StyleSection tags={params.tags} onChange={(tags) => onParamChange('tags', tags as string)} disabled={isGenerating} />
+          {mode === 'custom' && (
+            <>
+              <LyricsSection value={debouncedLyrics} onChange={onDebouncedLyricsChange} onGenerate={onOpenLyricsDialog} isGenerating={isGenerating} disabled={isGenerating} />
+              <AdvancedSection
+                modelVersion={params.modelVersion || 'V5'}
+                onModelChange={(model) => onParamChange('modelVersion', model)}
+                vocalGender={params.vocalGender || 'any'}
+                onVocalGenderChange={(gender) => onParamChange('vocalGender', gender as any)}
+                instrumental={params.vocalGender === 'instrumental'}
+                onInstrumentalChange={(instrumental) => onParamChange('vocalGender', instrumental ? 'instrumental' : 'any')}
+                audioWeight={params.audioWeight}
+                onAudioWeightChange={(weight) => onParamChange('audioWeight', weight)}
+                styleWeight={params.styleWeight}
+                onStyleWeightChange={(weight) => onParamChange('styleWeight', weight)}
+                disabled={isGenerating}
+              />
+            </>
+          )}
+        </>
+      );
+    }
+
+    // Mobile: render step by step
+    switch (currentStep) {
+      case 0:
+        return (
+          <>
+            <PromptSection value={debouncedPrompt} onChange={onDebouncedPromptChange} onBoost={onBoostPrompt} isEnhancing={isBoosting} disabled={isGenerating} />
+            <StyleSection tags={params.tags} onChange={(tags) => onParamChange('tags', tags as string)} disabled={isGenerating} />
+          </>
+        );
+      case 1:
+        return <LyricsSection value={debouncedLyrics} onChange={onDebouncedLyricsChange} onGenerate={onOpenLyricsDialog} isGenerating={isGenerating} disabled={isGenerating} />;
+      case 2:
+        return (
+          <AdvancedSection
+            modelVersion={params.modelVersion || 'V5'}
+            onModelChange={(model) => onParamChange('modelVersion', model)}
+            vocalGender={params.vocalGender || 'any'}
+            onVocalGenderChange={(gender) => onParamChange('vocalGender', gender as any)}
+            instrumental={params.vocalGender === 'instrumental'}
+            onInstrumentalChange={(instrumental) => onParamChange('vocalGender', instrumental ? 'instrumental' : 'any')}
+            audioWeight={params.audioWeight}
+            onAudioWeightChange={(weight) => onParamChange('audioWeight', weight)}
+            styleWeight={params.styleWeight}
+            onStyleWeightChange={(weight) => onParamChange('styleWeight', weight)}
+            disabled={isGenerating}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  const renderFooter = () => {
+    if (isMobile) {
+      return (
+        <div className="p-3 safe-area-bottom grid grid-cols-2 gap-3">
+          <Button variant="outline" onClick={() => setCurrentStep(s => s - 1)} disabled={currentStep === 0}>
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Назад
+          </Button>
+          {currentStep < steps.length - 1 ? (
+            <Button onClick={() => setCurrentStep(s => s + 1)}>
+              Далее
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          ) : (
+            <Button
+              onClick={onGenerate}
+              disabled={!canGenerate}
+              className={cn(
+                'bg-gradient-to-r from-primary via-primary to-primary/90',
+                'shadow-glow-primary',
+              )}
+            >
+              <Music className={cn('h-5 w-5 mr-2', isGenerating && 'animate-spin')} />
+              {isGenerating ? 'Генерация...' : 'Создать'}
+            </Button>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="p-3 sm:p-4 safe-area-bottom">
+        <Button
+          data-tour="generate-button"
+          onClick={onGenerate}
+          disabled={!canGenerate}
+          size="lg"
+          className={cn(
+            'w-full h-12 sm:h-13 text-base font-semibold',
+            'bg-gradient-to-r from-primary via-primary to-primary/90',
+            'hover:from-primary/90 hover:via-primary hover:to-primary',
+            'shadow-glow-primary hover:shadow-glow-primary-strong',
+            'transition-all duration-300 hover:scale-[1.02]',
+            'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100'
+          )}
+        >
+          <Music className={cn('h-5 w-5 mr-2', isGenerating && 'animate-spin')} />
+          {isGenerating ? 'Генерируем...' : 'Создать музыку'}
+        </Button>
+        {mode === 'simple' && !debouncedPrompt.trim() && !debouncedLyrics.trim() && (
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            💡 Опишите желаемую музыку или вставьте текст песни
+          </p>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className={cn('flex flex-col h-full', className)}>
-      {/* Scrollable Content */}
       <ScrollArea className="flex-1 px-2 sm:px-3 md:px-4">
+        {isMobile && (
+          <div className="p-2 text-center text-sm font-medium text-muted-foreground">
+            Шаг {currentStep + 1} / {steps.length}: {steps[currentStep]}
+          </div>
+        )}
         <div className="space-y-4 py-4">
-          {/* Секция Промпта */}
-          <PromptSection
-            value={debouncedPrompt}
-            onChange={onDebouncedPromptChange}
-            onBoost={onBoostPrompt}
-            isEnhancing={isBoosting}
-            disabled={isGenerating}
-          />
-
-          {/* Секция Стилей */}
-          <StyleSection
-            tags={params.tags}
-            onChange={(tags: string) => onParamChange('tags', tags)}
-            disabled={isGenerating}
-          />
-
-          {/* Секция Текстов (только для custom mode) */}
-          {mode === 'custom' && (
-            <LyricsSection
-              value={debouncedLyrics}
-              onChange={onDebouncedLyricsChange}
-              onGenerate={onOpenLyricsDialog}
-              isGenerating={isGenerating}
-              disabled={isGenerating}
-            />
-          )}
-
-          {/* Расширенные настройки (только для custom mode) */}
-          {mode === 'custom' && (
-            <AdvancedSection
-              modelVersion={params.modelVersion || 'V5'}
-              onModelChange={(model) => onParamChange('modelVersion', model)}
-              vocalGender={params.vocalGender || 'any'}
-              onVocalGenderChange={(gender) => onParamChange('vocalGender', gender as any)}
-              instrumental={params.vocalGender === 'instrumental'}
-              onInstrumentalChange={(instrumental) => 
-                onParamChange('vocalGender', instrumental ? 'instrumental' : 'any')
-              }
-              audioWeight={params.audioWeight}
-              onAudioWeightChange={(weight) => onParamChange('audioWeight', weight)}
-              styleWeight={params.styleWeight}
-              onStyleWeightChange={(weight) => onParamChange('styleWeight', weight)}
-              disabled={isGenerating}
-            />
-          )}
-
-          {/* Errors Alert */}
-          {errors.length > 0 && (
+          {renderContent()}
+          {errors.length > 0 && (!isMobile || currentStep === steps.length - 1) && (
             <Alert variant="destructive" className="animate-in slide-in-from-top-2">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 <ul className="list-disc list-inside space-y-1">
-                  {errors.map((error, idx) => (
-                    <li key={idx} className="text-sm">{error}</li>
-                  ))}
+                  {errors.map((error, idx) => <li key={idx} className="text-sm">{error}</li>)}
                 </ul>
               </AlertDescription>
             </Alert>
           )}
         </div>
       </ScrollArea>
-
-      {/* Sticky Footer - Generate Button */}
-      <div
-        className="border-t border-border/20 bg-background/95 backdrop-blur-sm"
-        style={{ zIndex: 'var(--z-mini-player)' }}
-      >
-        <div className="p-3 sm:p-4 safe-area-bottom">
-          <Button
-            data-tour="generate-button"
-            onClick={onGenerate}
-            disabled={!canGenerate}
-            size="lg"
-            className={cn(
-              'w-full h-12 sm:h-13 text-base font-semibold',
-              'bg-gradient-to-r from-primary via-primary to-primary/90',
-              'hover:from-primary/90 hover:via-primary hover:to-primary',
-              'shadow-glow-primary hover:shadow-glow-primary-strong',
-              'transition-all duration-300 hover:scale-[1.02]',
-              'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100'
-            )}
-          >
-            <Music className={cn(
-              'h-5 w-5 mr-2',
-              isGenerating && 'animate-spin'
-            )} />
-            {isGenerating ? 'Генерируем...' : 'Создать музыку'}
-          </Button>
-
-          {/* Hints */}
-          {mode === 'simple' && !debouncedPrompt.trim() && !debouncedLyrics.trim() && (
-            <p className="text-xs text-muted-foreground text-center mt-2">
-              💡 Опишите желаемую музыку или вставьте текст песни
-            </p>
-          )}
-        </div>
+      <div className="border-t border-border/20 bg-background/95 backdrop-blur-sm" style={{ zIndex: 'var(--z-mini-player)' }}>
+        {renderFooter()}
       </div>
     </div>
-  );
+  )
 });
 
 ModularGeneratorForm.displayName = 'ModularGeneratorForm';

@@ -39,7 +39,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { DisplayTrack, convertToAudioPlayerTrack, convertToDisplayTrack, convertToOptimizedTrack } from "@/types/track";
 import { cn } from "@/lib/utils";
 import { logger } from "@/utils/logger";
-import { normalizeTrack } from "@/utils/trackNormalizer";
 import { getTrackWithVariants, trackVersionsQueryKeys } from "@/features/tracks/api/trackVersions";
 import { useQueryClient } from "@tanstack/react-query";
 import type { AudioPlayerTrack } from "@/types/track";
@@ -335,8 +334,8 @@ const LibraryContent: React.FC = () => {
 
   // Calculate grid parameters (новая продвинутая версия)
   const gridParams = useResponsiveGrid(containerWidth);
-  // На мобильных ФОРСИРУЕМ ровно 2 колонки по UX-требованию
-  const effectiveColumns = gridParams.screenCategory === 'mobile' ? 2 : gridParams.columns;
+  // Per the audit, we now force a single column on mobile for better UX.
+  const effectiveColumns = gridParams.screenCategory === 'mobile' ? 1 : gridParams.columns;
   const shouldVirtualize = filteredAndSortedTracks.length > 50;
   
   // Prefetch adjacent tracks
@@ -722,7 +721,7 @@ const LibraryContent: React.FC = () => {
                   {filteredAndSortedTracks.map((track) => (
                     <div key={track.id} className="relative w-full" aria-busy={loadingTrackId === track.id}>
                       <TrackCard
-                        track={normalizeTrack(track)}
+                        track={track}
                         onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
                         onShare={() => handleShare(track.id)}
                         onSeparateStems={() => handleSeparateStems(track.id)}
