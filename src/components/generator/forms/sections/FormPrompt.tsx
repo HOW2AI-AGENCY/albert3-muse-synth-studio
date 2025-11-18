@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Sparkles, History } from '@/utils/iconImports';
 import { PromptCharacterCounter } from '@/components/generator/PromptCharacterCounter';
@@ -54,23 +55,25 @@ export const FormPrompt = ({
                     aria-describedby={promptError ? "prompt-error" : "prompt-counter"}
                 />
                 {onBoostPrompt && debouncedPrompt.trim() && (
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute right-2 top-2 touch-target-min text-primary hover:text-primary hover:bg-primary/10"
-                                onClick={onBoostPrompt}
-                                disabled={isBoosting || isGenerating}
-                                aria-label="Улучшить промпт с помощью AI"
-                            >
-                                <Sparkles className={cn("h-4 w-4", isBoosting && "animate-spin")} aria-hidden="true" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="left">
-                            <p className="text-xs">Улучшить промпт с помощью AI</p>
-                        </TooltipContent>
-                    </Tooltip>
+                    <FeatureGate feature="ai_field_actions" fallback={<></>}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute right-2 top-2 touch-target-min text-primary hover:text-primary hover:bg-primary/10"
+                                    onClick={onBoostPrompt}
+                                    disabled={isBoosting || isGenerating}
+                                    aria-label="Улучшить промпт с помощью AI"
+                                >
+                                    <Sparkles className={cn("h-4 w-4", isBoosting && "animate-spin")} aria-hidden="true" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="left">
+                                <p className="text-xs">Улучшить промпт с помощью AI</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </FeatureGate>
                 )}
             </div>
             {promptError && (
