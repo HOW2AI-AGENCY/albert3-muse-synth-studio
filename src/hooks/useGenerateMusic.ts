@@ -10,6 +10,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useLatest } from '@/hooks/useLatest';
 import { GenerationService, GenerationRequest } from '@/services/generation';
 import { logger } from '@/utils/logger';
 import { rateLimiter, RATE_LIMIT_CONFIGS, formatResetTime } from '@/utils/rateLimiter';
@@ -45,6 +46,8 @@ const MAX_POLLING_DURATION = 10 * 60 * 1000; // 10 minutes
 
 export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGenerateMusicOptions) => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const toastRef = useLatest(toast);
+  const onSuccessRef = useLatest(onSuccess);
   const unsubscribeRef = useRef<(() => void) | null>(null); // ✅ Changed to unsubscribe function
   const cleanupTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -91,7 +94,6 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
     const pollTrack = async () => {
       const elapsedTime = Date.now() - pollingStartTimeRef.current;
       
-      // Stop polling if max duration exceeded
       if (elapsedTime > MAX_POLLING_DURATION) {
         logger.warn('Polling timeout reached', 'useGenerateMusic', { trackId, elapsedTime });
         cleanup();
@@ -109,11 +111,11 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
         
         if (track?.status === 'completed') {
           logger.info('✅ Track completed (polling)', 'useGenerateMusic', { trackId });
-          toast({
+          toastRef.current({
             title: '✅ Трек готов!',
             description: `Ваш трек "${track.title}" успешно сгенерирован.`,
           });
-          onSuccess?.();
+          onSuccessRef.current?.();
           cleanup();
           return;
         } else if (track && track.status === 'failed') {
@@ -121,7 +123,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
             trackId,
             errorMessage: track.error_message 
           });
-          toast({
+          toastRef.current({
             title: '❌ Ошибка генерации',
             description: `К сожалению, не удалось сгенерировать трек. ${track.error_message || 'Попробуйте изменить промпт или выбрать другую модель.'}`,
             variant: 'destructive',
@@ -131,7 +133,6 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
           return;
         }
         
-        // Continue polling if still processing
         if (track && (track.status === 'processing' || track.status === 'pending')) {
           pollingTimerRef.current = setTimeout(pollTrack, POLLING_INTERVAL);
         } else if (!track) {
@@ -140,14 +141,12 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
         }
       } catch (error) {
         logger.error('Polling error', error as Error, 'useGenerateMusic', { trackId });
-        // Continue polling despite errors
         pollingTimerRef.current = setTimeout(pollTrack, POLLING_INTERVAL);
       }
     };
     
-    // Start first poll
     pollTrack();
-  }, [cleanup, toast, onSuccess]);
+  }, [cleanup, toastRef, onSuccessRef]);
 
   // ✅ REFACTORED: Setup realtime subscription via RealtimeSubscriptionManager
   const setupSubscription = useCallback((trackId: string, isCached: boolean = false) => {
@@ -175,18 +174,18 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
           trackGenerationEvent('completed', trackId, provider, {
             duration: track.duration ?? undefined,
           });
-          toast({
+          toastRef.current({
             title: '✅ Трек готов!',
             description: `Ваш трек "${track.title || 'Новый трек'}" успешно сгенерирован.`,
           });
           setIsGenerating(false);
-          onSuccess?.();
+          onSuccessRef.current?.();
           cleanup();
         } else if (track.status === 'failed') {
           trackGenerationEvent('failed', trackId, provider, {
             errorMessage: track.error_message ?? undefined,
           });
-          toast({
+          toastRef.current({
             title: '❌ Ошибка генерации',
             description: track.error_message || 'Произошла ошибка при обработке вашего трека.',
             variant: 'destructive',
@@ -199,20 +198,15 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
 
     unsubscribeRef.current = unsubscribe;
 
-    // Auto-cleanup after timeout, then start polling as fallback
     cleanupTimerRef.current = setTimeout(() => {
-      logger.warn('Auto-cleaning stale subscription after 3 minutes, starting polling fallback', 'useGenerateMusic', { trackId });
-
-      // Unsubscribe from realtime
+      logger.warn('Auto-cleaning stale subscription, starting polling fallback', 'useGenerateMusic', { trackId });
       if (unsubscribeRef.current) {
         unsubscribeRef.current();
         unsubscribeRef.current = null;
       }
-
-      // Start polling as fallback
       startPolling(trackId);
     }, AUTO_CLEANUP_TIMEOUT);
-  }, [cleanup, toast, onSuccess, startPolling, provider]);
+  }, [cleanup, provider, startPolling, toastRef, onSuccessRef]);
 
   // Main generation function
   const generate = useCallback(async (options: GenerationRequest): Promise<boolean> => {
@@ -253,7 +247,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
     // Validation
     if (!effectivePrompt) {
       logger.warn('[HOOK] Validation failed: empty prompt', 'useGenerateMusic');
-      toast({ 
+      toastRef.current({
         title: 'Ошибка', 
         description: 'Пожалуйста, введите описание музыки', 
         variant: 'destructive' 
@@ -263,7 +257,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
 
     if (isGenerating) {
       logger.warn('[HOOK] Generation already in progress', 'useGenerateMusic');
-      toast({ 
+      toastRef.current({
         title: 'Подождите', 
         description: 'Предыдущая генерация ещё выполняется', 
         variant: 'destructive' 
@@ -283,7 +277,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
           resetAt: rateLimit.resetAt,
         });
         
-        toast({
+        toastRef.current({
           title: '⏱️ Превышен лимит запросов',
           description: `Вы можете создать не более ${RATE_LIMIT_CONFIGS.GENERATION.maxRequests} треков в минуту. Попробуйте снова через ${resetTime}.`,
           variant: 'destructive',
@@ -334,7 +328,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
           provider: effectiveProvider,
         });
 
-        toast({
+        toastRef.current({
           title: 'Ошибка инициализации генерации',
           description: `${errorMsg}. Пожалуйста, проверьте свой запрос и попробуйте снова.`,
           variant: 'destructive',
@@ -352,7 +346,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
           provider: effectiveProvider,
         });
 
-        toast({
+        toastRef.current({
           title: 'Внутренняя ошибка сервера',
           description: 'Сервер вернул некорректный идентификатор трека. Пожалуйста, попробуйте позже.',
           variant: 'destructive',
@@ -366,7 +360,6 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
       const isCachedResult = result.taskId === 'cached';
 
       if (!isCachedResult) {
-        // For new generations, taskId must be present and valid
         if (!result.taskId || typeof result.taskId !== 'string' || result.taskId.trim().length === 0) {
           const error = new Error('Invalid task ID received from server');
           logger.error('[HOOK] Invalid task ID validation failed', error, 'useGenerateMusic', {
@@ -375,7 +368,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
             provider: effectiveProvider,
           });
 
-          toast({
+            toastRef.current({
             title: 'Внутренняя ошибка сервера',
             description: 'Сервер вернул некорректный идентификатор задачи. Пожалуйста, попробуйте еще раз.',
             variant: 'destructive',
@@ -392,28 +385,24 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
       }
 
       if (isCachedResult) {
-        // Show toast with info about cached track
-        toast({
+        toastRef.current({
           title: '⚡ Трек найден!',
           description: 'Используется ранее созданный трек с такими же параметрами. Откройте Библиотеку для просмотра.',
         });
         
-        // Log option to force new generation
         logger.info('Cached track returned. User can force new generation by adding forceNew: true', 'useGenerateMusic', {
           cachedTrackId: result.trackId,
         });
 
-        // Sentry breadcrumb for cached
         addBreadcrumb('Music generation cached', 'generation', {
           trackId: result.trackId,
         });
       } else {
-        toast({
+        toastRef.current({
           title: '🎵 Генерация началась!',
           description: 'Ваш трек создаётся. Это может занять около минуты...',
         });
 
-        // Sentry breadcrumb for new generation
         addBreadcrumb('Music generation initiated', 'generation', {
           trackId: result.trackId,
           taskId: result.taskId,
@@ -452,7 +441,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
         rawMessage.toLowerCase().includes('network')
       );
 
-      toast({
+      toastRef.current({
         title: isNetworkError ? 'Проблема соединения' : 'Ошибка генерации',
         description: isNetworkError
           ? 'Нет связи с сервером. Проверьте подключение к интернету.'
@@ -465,7 +454,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
     } finally {
       setIsGenerating(false);
     }
-  }, [isGenerating, provider, toast, onSuccess, cleanup, setupSubscription]);
+  }, [isGenerating, provider, cleanup, setupSubscription, toastRef, onSuccessRef]);
 
   // Auto-cleanup on unmount to prevent memory leaks
   useEffect(() => {

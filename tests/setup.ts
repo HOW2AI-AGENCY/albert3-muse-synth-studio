@@ -19,26 +19,49 @@ vi.mock('@/integrations/supabase/client', () => ({
       getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
       signIn: vi.fn(),
       signOut: vi.fn(),
-      onAuthStateChange: vi.fn(),
+      onAuthStateChange: vi.fn().mockReturnValue({
+        data: {
+          subscription: {
+            unsubscribe: vi.fn(),
+          },
+        },
+      }),
     },
-    from: vi.fn((table: string) => {
-      const mockChain = {
-        select: vi.fn().mockReturnThis(),
-        insert: vi.fn().mockReturnThis(),
-        update: vi.fn().mockReturnThis(),
-        delete: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: {}, error: null }),
-        maybeSingle: vi.fn().mockResolvedValue({ data: {}, error: null }),
-        gte: vi.fn().mockReturnThis(),
-        order: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        range: vi.fn().mockResolvedValue({ data: [{ id: 'track-1', title: 'Test Track', status: 'completed', audio_url: 'url1', created_at: new Date().toISOString() }], error: null, count: 1 }),
-        returns: vi.fn().mockResolvedValue({ data: [], error: null }),
+    from: vi.fn().mockImplementation((table: string) => {
+      const mockData = {
+        'tracks': [{ id: 'track-1', title: 'Test Track', status: 'completed', audio_url: 'url1', created_at: new Date().toISOString() }],
+        'track_versions': [{ id: 'version-1', track_id: 'track-1', version_number: 1 }],
       };
-      return mockChain;
+
+      const handler = {
+        get(target: any, prop: string) {
+          if (prop === 'then') {
+            return target[prop];
+          }
+          return (...args: any[]) => {
+            const newPromise = target.then((result: any) => {
+              // This is a simplified mock. For real tests, you'd implement the logic for
+              // select, eq, order, etc. For now, we just return the mock data.
+              if (prop === 'select') {
+                return { data: mockData[table as keyof typeof mockData] || [], error: null };
+              }
+              if (prop === 'single' || prop === 'maybeSingle') {
+                return { data: (mockData[table as keyof typeof mockData] || [])[0] || null, error: null };
+              }
+              return result;
+            });
+            // Make the new promise chainable
+            Object.assign(newPromise, handler);
+            return newPromise;
+          };
+        }
+      };
+
+      const promise = Promise.resolve({ data: mockData[table as keyof typeof mockData] || [], error: null });
+      Object.assign(promise, handler);
+      return promise;
     }),
-    rpc: vi.fn(),
+    rpc: vi.fn().mockResolvedValue({ data: [], error: null }),
     functions: {
       invoke: vi.fn(),
     },

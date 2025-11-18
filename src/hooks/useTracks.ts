@@ -247,7 +247,7 @@ export const useTracks = (refreshTrigger?: number, options: UseTracksOptions = {
       firstPageTracks: data?.pages?.[0]?.tracks?.length || 0,
     });
     return result;
-  }, [data]);
+  }, [data?.pages]);
 
   useEffect(() => {
     if (!pollingEnabled) {

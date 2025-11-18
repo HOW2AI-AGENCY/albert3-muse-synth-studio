@@ -51,7 +51,7 @@ export interface Track {
   mureka_task_id?: string | null;
   model_name?: string | null;
   idempotency_key?: string | null;
-  metadata?: Record<string, any> | null;
+  metadata?: TrackMetadata | null;
   created_at: string;
   updated_at: string;
   archive_scheduled_at?: string | null;
@@ -106,8 +106,18 @@ export interface TrackVersion {
   lyrics?: string | null;
   duration?: number | null;
   suno_id?: string | null;
-  metadata?: Record<string, any> | null;
+  metadata?: TrackMetadata | null;
   created_at: string;
+}
+
+/**
+ * Structured metadata for a track
+ */
+export interface TrackMetadata {
+  provider_task_id?: string;
+  provider_response?: unknown;
+  reference_audio_url?: string;
+  [key: string]: unknown; // Allow other unknown properties
 }
 
 /**
@@ -121,7 +131,7 @@ export interface TrackStem {
   separation_mode: string;
   audio_url: string;
   suno_task_id?: string | null;
-  metadata?: Record<string, any> | null;
+  metadata?: TrackMetadata | null;
   created_at: string;
 }
 
@@ -159,7 +169,7 @@ export const trackConverters = {
       view_count: dbTrack.view_count ?? 0,
       provider: dbTrack.provider ?? 'suno',
       status: dbTrack.status ?? 'pending',
-      metadata: dbTrack.metadata as Record<string, any> | null,
+      metadata: dbTrack.metadata as TrackMetadata | null,
     };
   },
 
