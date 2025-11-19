@@ -182,18 +182,16 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
                 <TrackBadge type="instrumental" size="xs" />
               )}
 
-              {/* Version badge */}
-              {track.version_number && (
-                <TrackBadge type="version" versionNumber={track.version_number} size="xs" />
-              )}
+              {/* Version badge - removed as Track doesn't have version_number */}
+
             </TrackBadgeGroup>
           </div>
 
           {/* Metrics */}
           <TrackMetrics
-            duration={track.duration}
-            likes={track.likes_count}
-            views={track.views_count}
+            duration={track.duration ?? undefined}
+            likes={track.like_count ?? undefined}
+            views={track.view_count ?? undefined}
             layout="compact"
             size="sm"
             display={['duration', 'likes']}
