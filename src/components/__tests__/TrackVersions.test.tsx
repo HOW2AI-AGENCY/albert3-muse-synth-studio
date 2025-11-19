@@ -55,8 +55,16 @@ vi.mock('@/features/tracks/api/trackVersions', () => ({
 }));
 
 vi.mock('@/utils/logger', () => ({
+  logger: {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+  },
   logError: vi.fn(),
+  logWarn: vi.fn(),
   logInfo: vi.fn(),
+  logDebug: vi.fn(),
 }));
 
 describe('TrackVersions component', () => {
