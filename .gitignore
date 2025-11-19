@@ -1,49 +1,57 @@
-# Logs
-logs
-*.log
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+tests/e2e/artifacts/
+tests/e2e/html-report/
+
+# Production
+dist/
+dist-ssr/
+build/
+out/
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 *.local
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Archive and temporary files
-archive/*.zip
-archive/*.tar.gz
-archive/*.rar
-*.tmp
-*.temp
-*.bak
-*.backup
-
-# Documentation drafts and temporary files
-docs/**/*.tmp
-reports/**/*.tmp
-*.draft.md
-*.wip.md
+# Supabase
+supabase/.temp/
+supabase/functions/**/.env
 
 # OS generated files
 Thumbs.db
@@ -51,62 +59,48 @@ ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 
-# Coverage directory used by tools like istanbul
-coverage/
-*.lcov
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+stats.html
 
-# nyc test coverage
-.nyc_output
-
-# Dependency directories
-jspm_packages/
-
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
+# Cache
 .eslintcache
-
-# Microbundle cache
+.npm
+.cache
+.parcel-cache
 .rpt2_cache/
 .rts2_cache_cjs/
 .rts2_cache_es/
 .rts2_cache_umd/
 
-# Optional REPL history
-.node_repl_history
+# Framework specific
+.next/
+.nuxt/
+.output/
+.svelte-kit/
+.astro/
 
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
-
-# Next.js build output
-.next
-
-# Nuxt.js build / generate output
-.nuxt
-dist
-
-# Storybook build outputs
+# Storybook
 .out
 .storybook-out
+storybook-static/
 
-# Temporary folders
-tmp/
-temp/
-stats.html
+# Archives
+archive/*.zip
+archive/*.tar.gz
+archive/*.rar
+*.tgz
 
-# Playwright reports and test artifacts
-playwright-report/
-test-results/
-tests/e2e/artifacts/
-tests/e2e/html-report/
+# Documentation drafts
+docs/**/*.tmp
+reports/**/*.tmp
+*.draft.md
+*.wip.md
 
-# Supabase local temp files
-supabase/.temp/
+# Antigravity
+.antigravityignore
