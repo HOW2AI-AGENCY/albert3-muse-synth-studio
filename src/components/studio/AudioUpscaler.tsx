@@ -163,7 +163,7 @@ export const AudioUpscaler: React.FC = () => {
             <div className="space-y-2">
               <Progress value={progress} />
               <p className="text-sm text-center text-muted-foreground">
-                {statusData?.status === 'processing' 
+                {status?.status === 'processing' 
                   ? 'Upscaling audio...' 
                   : 'Initializing...'}
               </p>
@@ -202,7 +202,7 @@ export const AudioUpscaler: React.FC = () => {
       )}
 
       {/* Failed State */}
-      {statusData?.status === 'failed' && (
+      {status?.status === 'failed' && (
         <Card className="border-red-500/50 bg-red-500/5">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-red-500">
@@ -212,7 +212,7 @@ export const AudioUpscaler: React.FC = () => {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              {statusData.error || 'An error occurred during upscaling. Please try again.'}
+              {status.error || 'An error occurred during upscaling. Please try again.'}
             </p>
           </CardContent>
         </Card>
