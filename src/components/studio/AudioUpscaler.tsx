@@ -54,10 +54,11 @@ export const AudioUpscaler: React.FC = () => {
   // Handle status updates
   React.useEffect(() => {
     if (statusData) {
-      if (statusData.status === 'succeeded' && statusData.output) {
-        setUpscaledUrl(statusData.output as string);
+      const status = statusData as any;
+      if (status.status === 'succeeded' && status.output) {
+        setUpscaledUrl(status.output as string);
         toast.success('Audio upscaled successfully! 🎉');
-      } else if (statusData.status === 'failed') {
+      } else if (status.status === 'failed') {
         toast.error('Upscaling failed. Please try again.');
         setPredictionId(null);
       }
@@ -65,7 +66,8 @@ export const AudioUpscaler: React.FC = () => {
   }, [statusData]);
 
   const isProcessing = isStarting || (isPolling && !upscaledUrl);
-  const progress = statusData?.status === 'processing' ? 50 : isStarting ? 10 : upscaledUrl ? 100 : 0;
+  const status = statusData as any;
+  const progress = status?.status === 'processing' ? 50 : isStarting ? 10 : upscaledUrl ? 100 : 0;
 
   return (
     <div className="space-y-6">

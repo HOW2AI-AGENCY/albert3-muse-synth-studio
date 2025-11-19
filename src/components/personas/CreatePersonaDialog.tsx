@@ -88,7 +88,7 @@ export const CreatePersonaDialog = ({
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const uploadedUrl = await imageUpload.uploadImage(file);
+      const uploadedUrl = await imageUpload.handleUpload(file);
       if (uploadedUrl) {
         setAvatarUrl(uploadedUrl);
       }
