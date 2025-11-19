@@ -10,22 +10,22 @@ export interface TrackMetricsProps {
   /**
    * Track duration in seconds
    */
-  duration?: number;
+  duration?: number | null;
 
   /**
    * Number of likes/favorites
    */
-  likes?: number;
+  likes?: number | null;
 
   /**
    * Number of views
    */
-  views?: number;
+  views?: number | null;
 
   /**
    * Number of plays
    */
-  plays?: number;
+  plays?: number | null;
 
   /**
    * Layout orientation
@@ -189,15 +189,13 @@ export const TrackMetrics = memo<TrackMetricsProps>(
     display,
     className,
   }) => {
-    const sizeConfig = SIZE_CLASSES[size];
-
     // Build metrics array based on what's available and what's requested
     const metrics = [];
 
     const shouldShow = (metric: string) =>
       !display || display.includes(metric as any);
 
-    if (duration !== undefined && shouldShow('duration')) {
+    if (duration != null && shouldShow('duration')) {
       metrics.push({
         key: 'duration',
         icon: Clock,
@@ -206,7 +204,7 @@ export const TrackMetrics = memo<TrackMetricsProps>(
       });
     }
 
-    if (likes !== undefined && shouldShow('likes')) {
+    if (likes != null && shouldShow('likes')) {
       metrics.push({
         key: 'likes',
         icon: Heart,
@@ -215,7 +213,7 @@ export const TrackMetrics = memo<TrackMetricsProps>(
       });
     }
 
-    if (views !== undefined && shouldShow('views')) {
+    if (views != null && shouldShow('views')) {
       metrics.push({
         key: 'views',
         icon: Eye,
@@ -224,7 +222,7 @@ export const TrackMetrics = memo<TrackMetricsProps>(
       });
     }
 
-    if (plays !== undefined && shouldShow('plays')) {
+    if (plays != null && shouldShow('plays')) {
       metrics.push({
         key: 'plays',
         icon: Play,
