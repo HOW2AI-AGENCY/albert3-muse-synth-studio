@@ -80,7 +80,6 @@ export const useResponsiveGrid = (
   options: UseResponsiveGridOptions = {}
 ): ResponsiveGridParams => {
   const { isDetailPanelOpen = false, orientation = 'landscape' } = options;
-  const { isMobile, isTablet, isDesktop, isXl, is2xl } = useBreakpoints();
 
   return useMemo(() => {
     if (containerWidth === 0) {
@@ -88,7 +87,7 @@ export const useResponsiveGrid = (
         columns: 3, 
         gap: 16, 
         cardWidth: 220,
-        screenCategory: 'desktop',
+        screenCategory: 'desktop' as const,
       };
     }
 
@@ -106,7 +105,7 @@ export const useResponsiveGrid = (
     }
 
     // Adjust for portrait orientation on tablets
-    if (orientation === 'portrait' && isTablet) {
+    if (orientation === 'portrait' && screenCategory === 'tablet') {
       minColumns = Math.max(2, minColumns - 1);
       maxColumns = Math.max(minColumns, maxColumns - 1);
     }
@@ -123,11 +122,11 @@ export const useResponsiveGrid = (
 
     // Dynamic gap based on screen category
     let gap = 24;
-    if (isMobile) gap = 12;
-    else if (isTablet) gap = 16;
-    else if (isDesktop) gap = 20;
-    else if (isXl) gap = 24;
-    else if (is2xl) gap = 32;
+    if (screenCategory === 'mobile') gap = 12;
+    else if (screenCategory === 'tablet') gap = 16;
+    else if (screenCategory === 'desktop') gap = 20;
+    else if (screenCategory === 'wide') gap = 24;
+    else if (screenCategory === 'ultrawide') gap = 32;
 
     // Calculate actual card width
     const availableWidth = containerWidth - (gap * (columns - 1));
@@ -139,5 +138,5 @@ export const useResponsiveGrid = (
       cardWidth,
       screenCategory,
     };
-  }, [containerWidth, isDetailPanelOpen, orientation, isMobile, isTablet, isDesktop, isXl, is2xl]);
+  }, [containerWidth, isDetailPanelOpen, orientation]);
 };

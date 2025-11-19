@@ -40,6 +40,6 @@ return (
           animation-delay: -1.25s;
         }
       `}</style>
-  < /div>
+    </div>
   );
 };

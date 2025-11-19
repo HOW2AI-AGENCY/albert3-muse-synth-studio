@@ -1,4 +1,4 @@
-import { memo, useRef } from 'react';
+import { memo, useRef, useState, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { LyricLine } from './LyricLine';
 import { TimestampedWord } from '@/hooks/useTimestampedLyrics';
@@ -23,9 +23,21 @@ export const VirtualizedLyrics = memo(({
   estimateLineHeight = 64, // Estimated height in pixels
 }: VirtualizedLyricsProps) => {
   const parentRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(() => 
+    typeof window !== 'undefined' && window.innerWidth < 768
+  );
+
+  // Update mobile state on resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Mobile-optimized line height
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const mobileLineHeight = isMobile ? 56 : estimateLineHeight;
 
   const virtualizer = useVirtualizer({
