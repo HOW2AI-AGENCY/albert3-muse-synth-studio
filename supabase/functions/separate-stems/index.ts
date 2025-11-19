@@ -281,17 +281,18 @@ const mainHandler = async (req: Request) => {
       );
     }
 
-    if (error instanceof SunoApiError || error instanceof MurekaApiError) {
-      const status = error.details.status ?? 500;
+    if (error instanceof SunoApiError) {
+      const apiError = error as SunoApiError;
+      const status = apiError.details.status ?? 500;
       return new Response(
         JSON.stringify({
           error: status === 429
             ? "API rate limit reached. Please retry later."
-            : error.message,
+            : apiError.message,
           details: {
-            endpoint: error.details.endpoint,
-            status: error.details.status ?? null,
-            body: error.details.body ?? null,
+            endpoint: apiError.details.endpoint,
+            status: apiError.details.status ?? null,
+            body: apiError.details.body ?? null,
           },
         }),
         {
