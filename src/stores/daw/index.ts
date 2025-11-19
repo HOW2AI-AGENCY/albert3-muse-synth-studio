@@ -1,12 +1,12 @@
 /**
- * DAW Store
+ * DAW Store - Unified Store
  *
- * Centralized state management for the DAW editor, composed of multiple slices:
- * - Project: Core project data (tracks, metadata)
- * - Timeline: Playback and view state
- * - Track: Track operations
- * - Clip: Clip operations and selection
- * - History: Undo/redo
+ * Combines all DAW slices into a single Zustand store:
+ * - ProjectSlice: Project management
+ * - TimelineSlice: Timeline and playback
+ * - TrackSlice: Track operations
+ * - ClipSlice: Clip management and selection
+ * - HistorySlice: Undo/redo
  *
  * @module stores/daw
  * @since v4.1.0
@@ -14,74 +14,129 @@
 
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import { createProjectSlice, ProjectSlice } from './slices/projectSlice';
-import { createTimelineSlice, TimelineSlice } from './slices/timelineSlice';
-import { createTrackSlice, TrackSlice } from './slices/trackSlice';
-import { createClipSlice, ClipSlice } from './slices/clipSlice';
-import { createHistorySlice, HistorySlice } from './slices/historySlice';
+import { logInfo } from '@/utils/logger';
 
-export * from './types';
-
-// ==========================================
-// STORE INTERFACE
-// ==========================================
-
-export type DAWState = ProjectSlice &
-    TimelineSlice &
-    TrackSlice &
-    ClipSlice &
-    HistorySlice;
+import { ProjectSlice, createProjectSlice } from './slices/projectSlice';
+import { TimelineSlice, createTimelineSlice } from './slices/timelineSlice';
+import { TrackSlice, createTrackSlice } from './slices/trackSlice';
+import { ClipSlice, createClipSlice } from './slices/clipSlice';
+import { HistorySlice, createHistorySlice } from './slices/historySlice';
 
 // ==========================================
-// STORE CREATOR
+// COMBINED STORE TYPE
 // ==========================================
 
-export const useDAWStore = create<DAWState>()(
-    devtools(
-        persist(
-            (...a) => ({
-                ...createProjectSlice(...a),
-                ...createTimelineSlice(...a),
-                ...createTrackSlice(...a),
-                ...createClipSlice(...a),
-                ...createHistorySlice(...a),
-            }),
-            {
-                name: 'daw-storage',
-                partialize: (state) => ({
-                    // Persist project and UI state, but not playback state
-                    project: state.project,
-                    toolMode: state.toolMode,
-                    // Timeline state that should be persisted
-                    timeline: {
-                        ...state.timeline,
-                        currentTime: 0, // Reset playhead on load
-                        isPlaying: false,
-                    },
-                }),
+export type DAWStore = ProjectSlice &
+  TimelineSlice &
+  TrackSlice &
+  ClipSlice &
+  HistorySlice;
+
+// ==========================================
+// STORE CREATION
+// ==========================================
+
+export const useDAWStore = create<DAWStore>()(
+  devtools(
+    persist(
+      (...a) => ({
+        // Combine all slices
+        ...createProjectSlice(...a),
+        ...createTimelineSlice(...a),
+        ...createTrackSlice(...a),
+        ...createClipSlice(...a),
+        ...createHistorySlice(...a),
+      }),
+      {
+        name: 'daw-store',
+        // Only persist essential state, not transient UI state
+        partialize: (state) => ({
+          project: state.project,
+          // Don't persist: timeline, selection, clipboard, history
+        }),
+        onRehydrateStorage: () => {
+          logInfo('Rehydrating DAW store from persistence', 'DAWStore');
+
+          return (state, error) => {
+            if (error) {
+              logInfo('Failed to rehydrate DAW store', 'DAWStore', { error });
+            } else if (state?.project) {
+              logInfo('DAW store rehydrated successfully', 'DAWStore', {
+                projectName: state.project.name,
+                trackCount: state.project.tracks.length,
+              });
             }
-        ),
-        {
-            name: 'DAWStore',
-            enabled: process.env.NODE_ENV === 'development',
-        }
-    )
+          };
+        },
+      }
+    ),
+    {
+      name: 'DAW Store',
+      enabled: import.meta.env.DEV, // Only enable devtools in development
+    }
+  )
 );
 
 // ==========================================
-// SELECTORS
+// SELECTOR HOOKS (for performance optimization)
 // ==========================================
 
-export const useDAWProject = () => useDAWStore((state) => state.project);
-export const useDAWTimeline = () => useDAWStore((state) => state.timeline);
-export const useDAWTracks = () => useDAWStore((state) => state.project?.tracks || []);
-export const useDAWSelection = () => useDAWStore((state) => state.selection);
-export const useDAWIsPlaying = () => useDAWStore((state) => state.isPlaying);
+/**
+ * Select project name
+ */
+export const useProjectName = () => useDAWStore((state) => state.project?.name);
 
-export const useDAWControls = () =>
-    useDAWStore((state) => ({
-        play: state.play,
-        pause: state.pause,
-        stop: state.stop,
-        seekTo: state.seekTo,
-    }));
+/**
+ * Select all tracks
+ */
+export const useTracks = () => useDAWStore((state) => state.project?.tracks || []);
+
+/**
+ * Select playback state
+ */
+export const useIsPlaying = () => useDAWStore((state) => state.isPlaying);
+
+/**
+ * Select current time
+ */
+export const useCurrentTime = () => useDAWStore((state) => state.timeline.currentTime);
+
+/**
+ * Select zoom level
+ */
+export const useZoom = () => useDAWStore((state) => state.timeline.zoom);
+
+/**
+ * Select selected clips
+ */
+export const useSelectedClipIds = () => useDAWStore((state) => state.selection.selectedClipIds);
+
+/**
+ * Select undo/redo capabilities
+ */
+export const useHistoryState = () =>
+  useDAWStore((state) => ({
+    canUndo: state.canUndo(),
+    canRedo: state.canRedo(),
+    historyLength: state.getHistoryLength(),
+  }));
+
+// ==========================================
+// EXPORTS
+// ==========================================
+
+// Re-export types for convenience
+export type {
+  DAWProject,
+  DAWTrack,
+  DAWClip,
+  DAWEffect,
+  DAWMarker,
+  DAWRegion,
+  TimelineState,
+  SelectionState,
+  ClipboardState,
+  ToolMode,
+} from './types';
+
+export { generateId, createDefaultProject, createDefaultTrack } from './types';
