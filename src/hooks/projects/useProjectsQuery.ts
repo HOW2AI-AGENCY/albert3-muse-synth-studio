@@ -33,7 +33,7 @@ const fetchProjects = async (userId: string | null): Promise<MusicProject[]> => 
 
   const { data, error } = await supabase
     .from('music_projects')
-    .select('*')
+    .select('id, user_id, created_at, name, description, concept_description, cover_url, genre, mood, is_public, persona_id, total_tracks, completed_tracks, total_duration')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
@@ -118,7 +118,7 @@ export const useProjectQuery = (projectId: string | null) => {
 
       const { data, error } = await supabase
         .from('music_projects')
-        .select('*')
+        .select('id, user_id, created_at, name, description, concept_description, cover_url, genre, mood, is_public, persona_id, total_tracks, completed_tracks, total_duration')
         .eq('id', projectId)
         .single();
 

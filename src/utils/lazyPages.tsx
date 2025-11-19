@@ -187,6 +187,11 @@ export const LazyEdgeFunctionsDebug = createLazyPage(
   'EdgeFunctionsDebug'
 );
 
+export const LazyImageCropperDemo = createLazyPage(
+  () => import('../pages/workspace/ImageCropperDemo'),
+  'ImageCropperDemo'
+);
+
 /**
  * Lazy-loaded компоненты для дополнительной оптимизации
  */
