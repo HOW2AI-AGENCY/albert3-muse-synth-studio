@@ -10,9 +10,9 @@
  * @module components/daw/mobile/MobileTrackList
  */
 
-import React, { useCallback } from 'react';
-import { DAWTrack } from '@/stores/dawStore';
-import { useDAWStore } from '@/stores/dawStore';
+import { useCallback, type FC } from 'react';
+import { DAWTrack } from '@/stores/daw/types';
+import { useDAWStore } from '@/stores/daw';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import {
@@ -36,7 +36,7 @@ interface MobileTrackListProps {
   tracks: DAWTrack[];
 }
 
-export const MobileTrackList: React.FC<MobileTrackListProps> = ({ tracks }) => {
+export const MobileTrackList: FC<MobileTrackListProps> = ({ tracks }) => {
   const colors = getCanvasColors();
   const updateTrack = useDAWStore((state) => state.updateTrack);
   const removeTrack = useDAWStore((state) => state.removeTrack);

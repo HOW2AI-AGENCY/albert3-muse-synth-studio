@@ -11,10 +11,10 @@
  * @module components/daw/TransportControls
  */
 
-import React, { useCallback } from 'react';
+import { useCallback, type FC, type ChangeEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useDAWStore } from '@/stores/dawStore';
+import { useDAWStore } from '@/stores/daw';
 import {
   Play,
   Pause,
@@ -31,7 +31,7 @@ interface TransportControlsProps {
   className?: string;
 }
 
-export const TransportControls: React.FC<TransportControlsProps> = ({ className }) => {
+export const TransportControls: FC<TransportControlsProps> = ({ className }) => {
   const isPlaying = useDAWStore((state) => state.isPlaying);
   const isRecording = useDAWStore((state) => state.isRecording);
   const timeline = useDAWStore((state) => state.timeline);
@@ -68,7 +68,7 @@ export const TransportControls: React.FC<TransportControlsProps> = ({ className 
   }, [currentTime, duration, seekTo]);
 
   const handleBPMChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    (e: ChangeEvent<HTMLInputElement>) => {
       const newBPM = parseInt(e.target.value);
       if (!isNaN(newBPM) && newBPM > 0 && newBPM <= 300) {
         updateBPM(newBPM);

@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useRef, useCallback } from 'react';
-import { useDAWStore } from '@/stores/dawStore';
+import { useDAWStore } from '@/stores/daw';
 import { useDAWProjects } from './useDAWProjects';
 import { useDebouncedCallback } from 'use-debounce';
 import { logInfo } from '@/utils/logger';
@@ -51,9 +51,9 @@ export const useDAWAutoSave = (options: UseDAWAutoSaveOptions = {}) => {
         return;
       }
 
-      logInfo('Auto-saving DAW project', 'useDAWAutoSave', { 
+      logInfo('Auto-saving DAW project', 'useDAWAutoSave', {
         projectName: project.name,
-        trackCount: project.tracks.length 
+        trackCount: project.tracks.length
       });
 
       // Save to Supabase

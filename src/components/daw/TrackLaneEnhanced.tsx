@@ -11,9 +11,10 @@
  * @module components/daw/TrackLaneEnhanced
  */
 
-import React, { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { useDAWStore, type DAWTrack } from '@/stores/dawStore';
+import { useDAWStore } from '@/stores/daw';
+import { type DAWTrack } from '@/stores/daw/types';
 import { AudioClipEnhanced } from './AudioClipEnhanced';
 import { Volume2, VolumeX, Music2, Trash2, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -34,13 +35,13 @@ interface TrackLaneEnhancedProps {
   onTrackClick?: () => void;
 }
 
-export const TrackLaneEnhanced: React.FC<TrackLaneEnhancedProps> = ({
+export const TrackLaneEnhanced = ({
   track,
   zoom,
   scrollLeft,
   isSelected = false,
   onTrackClick,
-}) => {
+}: TrackLaneEnhancedProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const colors = getCanvasColors();

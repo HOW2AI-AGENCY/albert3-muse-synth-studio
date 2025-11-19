@@ -10,12 +10,12 @@
  * @module components/daw/mobile/MobileTimeline
  */
 
-import React, { useRef, useEffect, useState } from 'react';
-import { useDAWStore } from '@/stores/dawStore';
+import { useRef, useEffect, useState, type FC } from 'react';
+import { useDAWStore } from '@/stores/daw';
 import { useTouchGestures } from '@/hooks/useTouchGestures';
 import { getCanvasColors } from '@/utils/canvas-colors';
 
-export const MobileTimeline: React.FC = () => {
+export const MobileTimeline: FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(320);

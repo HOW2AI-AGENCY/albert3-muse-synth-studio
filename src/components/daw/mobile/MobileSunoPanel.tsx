@@ -10,7 +10,7 @@
  * @module components/daw/mobile/MobileSunoPanel
  */
 
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback, type FC } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -27,7 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sparkles, Wand2, Loader2, Music, Download, Layers } from 'lucide-react';
-import { useDAWStore } from '@/stores/dawStore';
+import { useDAWStore } from '@/stores/daw';
 import { useTracks } from '@/hooks/useTracks';
 import { useStemSeparation } from '@/hooks/useStemSeparation';
 import { toast } from 'sonner';
@@ -70,7 +70,7 @@ const QUICK_PRESETS: QuickPreset[] = [
   },
 ];
 
-export const MobileSunoPanel: React.FC = () => {
+export const MobileSunoPanel: FC = () => {
   const [activeTab, setActiveTab] = useState<'generate' | 'stems'>('generate');
 
   // Generation state
@@ -153,7 +153,7 @@ export const MobileSunoPanel: React.FC = () => {
   const handleLoadStems = useCallback(
     async (trackId: string) => {
       try {
-        const track = userTracks?.find((t) => t.id === trackId);
+        const track = userTracks?.find((t: { id: string }) => t.id === trackId);
         if (!track) return;
 
         const { data: stems, error } = await supabase
@@ -344,8 +344,8 @@ export const MobileSunoPanel: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {userTracks
-                        ?.filter((t) => t.has_stems)
-                        .map((track) => (
+                        ?.filter((t: { has_stems: boolean }) => t.has_stems)
+                        .map((track: { id: string; title: string }) => (
                           <SelectItem key={track.id} value={track.id}>
                             <div className="flex items-center gap-2">
                               <Music className="h-3 w-3" />
@@ -383,7 +383,7 @@ export const MobileSunoPanel: React.FC = () => {
                       <SelectValue placeholder="Select a track..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {userTracks?.map((track) => (
+                      {userTracks?.map((track: { id: string; title: string }) => (
                         <SelectItem key={track.id} value={track.id}>
                           <div className="flex items-center gap-2">
                             <Music className="h-3 w-3" />

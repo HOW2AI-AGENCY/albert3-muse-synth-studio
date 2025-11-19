@@ -5,10 +5,10 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useDAWStore } from '@/stores/dawStore';
+import { useDAWStore } from '@/stores/daw';
+import { DAWProject } from '@/stores/daw/types';
 import { toast } from 'sonner';
 import { logError, logInfo } from '@/utils/logger';
-import type { DAWProject } from '@/stores/dawStore';
 
 interface DAWProjectRecord {
   id: string;
@@ -62,7 +62,7 @@ export const useDAWProjects = () => {
         data: project,
         bpm: project.bpm,
         duration_seconds: project.tracks.reduce((sum, track) => {
-          const trackDuration = track.clips.reduce((max, clip) => 
+          const trackDuration = track.clips.reduce((max, clip) =>
             Math.max(max, clip.startTime + clip.duration), 0
           );
           return Math.max(sum, trackDuration);
@@ -94,12 +94,12 @@ export const useDAWProjects = () => {
         return data;
       }
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['daw-projects'] });
       logInfo('DAW project saved', 'useDAWProjects', { projectId: data.id });
       toast.success('Проект сохранен');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       logError('Failed to save DAW project', error as Error, 'useDAWProjects');
       toast.error('Ошибка сохранения проекта');
     },
@@ -117,7 +117,7 @@ export const useDAWProjects = () => {
       if (error) throw error;
       return data as unknown as DAWProjectRecord;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       // Load project into DAW store
       const dawStore = useDAWStore.getState();
       dawStore.loadProject(data.data);
@@ -125,7 +125,7 @@ export const useDAWProjects = () => {
       logInfo('DAW project loaded', 'useDAWProjects', { projectId: data.id });
       toast.success(`Проект "${data.name}" загружен`);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       logError('Failed to load DAW project', error as Error, 'useDAWProjects');
       toast.error('Ошибка загрузки проекта');
     },
@@ -146,7 +146,7 @@ export const useDAWProjects = () => {
       queryClient.invalidateQueries({ queryKey: ['daw-projects'] });
       toast.success('Проект удален');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       logError('Failed to delete DAW project', error as Error, 'useDAWProjects');
       toast.error('Ошибка удаления проекта');
     },

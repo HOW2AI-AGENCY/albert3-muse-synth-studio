@@ -10,8 +10,8 @@
  * @module components/daw/mobile/MobileTransportBar
  */
 
-import React, { useCallback } from 'react';
-import { useDAWStore } from '@/stores/dawStore';
+import { FC, useCallback } from 'react';
+import { useDAWStore } from '@/stores/daw';
 import { Button } from '@/components/ui/button';
 import {
   Play,
@@ -23,7 +23,7 @@ import {
   Repeat1,
 } from 'lucide-react';
 
-export const MobileTransportBar: React.FC = () => {
+export const MobileTransportBar: FC = () => {
   const isPlaying = useDAWStore((state) => state.isPlaying);
   const timeline = useDAWStore((state) => state.timeline);
   const project = useDAWStore((state) => state.project);
