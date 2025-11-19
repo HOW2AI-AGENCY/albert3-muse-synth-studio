@@ -74,7 +74,7 @@ export const PlaybackControls = memo(({
               variant="ghost"
               onClick={onPreviousClick}
               aria-label={hasVersions ? "Предыдущая версия" : "Предыдущий трек"}
-              className="h-6 w-6 hover:bg-primary/10 transition-all duration-200 group"
+              className="touch-target-min sm:h-6 sm:w-6 hover:bg-primary/10 transition-all duration-200 group"
             >
               <SkipBack className="h-3 w-3 group-hover:text-primary transition-colors duration-200" aria-hidden="true" />
             </Button>
@@ -95,7 +95,7 @@ export const PlaybackControls = memo(({
               onClick={onTogglePlayPause}
               aria-label={isPlaying ? "Пауза" : "Воспроизвести"}
               aria-pressed={isPlaying}
-              className="h-8 w-8 rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-300 group relative overflow-hidden"
+              className="touch-target-min sm:h-8 sm:w-8 rounded-full bg-gradient-primary hover:shadow-glow-primary transition-all duration-300 group relative overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               <AnimatePresence mode="wait">
@@ -140,7 +140,7 @@ export const PlaybackControls = memo(({
               variant="ghost"
               onClick={onNextClick}
               aria-label={hasVersions ? "Следующая версия" : "Следующий трек"}
-              className="h-6 w-6 hover:bg-primary/10 transition-all duration-200 group"
+              className="touch-target-min sm:h-6 sm:w-6 hover:bg-primary/10 transition-all duration-200 group"
             >
               <SkipForward className="h-3 w-3 group-hover:text-primary transition-colors duration-200" aria-hidden="true" />
             </Button>
@@ -159,7 +159,7 @@ export const PlaybackControls = memo(({
               size="icon"
               variant="ghost"
               onClick={toggleShuffle}
-              className={`h-6 w-6 hover:bg-primary/10 transition-all duration-200 group ${
+              className={`touch-target-min sm:h-6 sm:w-6 hover:bg-primary/10 transition-all duration-200 group ${
                 isShuffleEnabled ? 'text-primary' : ''
               }`}
               aria-label={isShuffleEnabled ? 'Выключить случайный порядок' : 'Включить случайный порядок'}
@@ -187,7 +187,7 @@ export const PlaybackControls = memo(({
               size="icon"
               variant="ghost"
               onClick={toggleRepeatMode}
-              className={`h-6 w-6 hover:bg-primary/10 transition-all duration-200 group ${
+              className={`touch-target-min sm:h-6 sm:w-6 hover:bg-primary/10 transition-all duration-200 group ${
                 repeatMode !== 'off' ? 'text-primary' : ''
               }`}
               aria-label={`Режим повтора: ${repeatTooltip}`}
@@ -217,7 +217,7 @@ export const PlaybackControls = memo(({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="relative h-6 w-6 hover:bg-primary/10 transition-all duration-200"
+                    className="relative touch-target-min sm:h-6 sm:w-6 hover:bg-primary/10 transition-all duration-200"
                     aria-label={`${availableVersions.length} версий трека`}
                   >
                     <List className="h-3 w-3" aria-hidden="true" />

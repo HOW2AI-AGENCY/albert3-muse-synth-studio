@@ -39,11 +39,11 @@ interface UseResponsiveGridOptions {
  */
 const GRID_CONFIGS: Record<string, ResponsiveGridConfig> = {
   mobile: {
-    minCardWidth: 160, // ✅ Уменьшено для размещения 2 колонок
-    maxCardWidth: 200, // ✅ Компактнее для мобильных
-    idealCardWidth: 180,
-    minColumns: 2, // ✅ ИСПРАВЛЕНО: 2 колонки на мобильных
-    maxColumns: 2,
+    minCardWidth: 280, // ✅ Full width for single column on mobile
+    maxCardWidth: 480, // ✅ Allow expansion on larger mobile devices
+    idealCardWidth: 360,
+    minColumns: 1, // ✅ Sprint 39: Single column on mobile (<768px)
+    maxColumns: 1,
   },
   tablet: {
     minCardWidth: 200, // ✅ FIXED: Match TrackCard sm:min-w-[200px]

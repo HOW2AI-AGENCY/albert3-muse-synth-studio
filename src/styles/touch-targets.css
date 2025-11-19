@@ -1,0 +1,62 @@
+/* Touch Target Utilities - WCAG AAA Compliance */
+
+/**
+ * Minimum touch target size for mobile devices
+ * WCAG AAA: 44x44px minimum
+ * Best practice: 48x48px recommended
+ */
+.touch-target-min {
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.touch-target-recommended {
+  min-width: 48px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure icons inside touch targets maintain visual size */
+.touch-target-min > svg,
+.touch-target-min > * {
+  width: 1rem; /* 16px */
+  height: 1rem;
+}
+
+.touch-target-recommended > svg,
+.touch-target-recommended > * {
+  width: 1.25rem; /* 20px */
+  height: 1.25rem;
+}
+
+/* Interactive states for touch targets */
+.touch-target-min:active,
+.touch-target-recommended:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease-in-out;
+}
+
+/* Ensure proper spacing between touch targets */
+.touch-target-group {
+  display: flex;
+  gap: 0.5rem; /* 8px minimum spacing */
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  /* Reduce touch target size on desktop for better density */
+  .touch-target-min {
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .touch-target-recommended {
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
