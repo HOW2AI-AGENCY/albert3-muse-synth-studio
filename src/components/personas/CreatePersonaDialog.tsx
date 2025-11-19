@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from '@/utils/iconImports';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { getAIDescription } from '@/types/track-metadata';
 import type { TrackMetadata } from '@/types/track-metadata';
@@ -51,7 +50,6 @@ export const CreatePersonaDialog = ({
   onSuccess,
 }: CreatePersonaDialogProps) => {
   const [isCreating, setIsCreating] = useState(false);
-  const [isBoosting, setIsBoosting] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isPublic, setIsPublic] = useState(false);
@@ -88,15 +86,11 @@ export const CreatePersonaDialog = ({
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const uploadedUrl = await imageUpload.uploadImage(file);
+      const uploadedUrl = await imageUpload.handleUpload(file);
       if (uploadedUrl) {
         setAvatarUrl(uploadedUrl);
       }
     }
-  };
-
-  const boostDescription = async () => {
-    // ... (omitted for brevity)
   };
 
   const handleCreate = async () => {

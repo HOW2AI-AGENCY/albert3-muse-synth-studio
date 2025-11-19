@@ -151,7 +151,7 @@ export const FullScreenPlayerMobile = memo(({ onMinimize }: FullScreenPlayerMobi
 
         {/* Waveform Progress */}
         <WaveformProgressBar
-          audioUrl={currentTrack.audio_url || currentTrack.storage_audio_url || ''}
+          audioUrl={currentTrack.audio_url || ''}
           onSeek={(time: number) => seekTo(time)}
           className="w-full mb-[--space-4] md:mb-[--space-6]"
           height={64}
