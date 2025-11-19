@@ -61,7 +61,7 @@ export const PromptDJ: React.FC = () => {
           playbackState={controller.playbackState}
           volume={controller.volume}
           onPlayPause={() => (controller.playbackState === 'playing' || controller.playbackState === 'loading') ? controller.stop() : controller.play()}
-          onVolumeChange={(volume: number) => controller.setVolume(volume)}
+          onVolumeChange={(value: number[]) => controller.setVolume(value[0])}
           getAnalyserData={() => (controller as any).liveMusicHelper.getAnalyserData()}
         />
         <WarningCard />

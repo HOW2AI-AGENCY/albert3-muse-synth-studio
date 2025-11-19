@@ -126,8 +126,8 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                 <Label htmlFor="cover">Обложка проекта</Label>
                 {/* Step 2: Integrate ImageUploadField */}
             <ImageUploadField
-              initialValue={formData.cover_url}
-              onFileChange={handleFileChange}
+              value={formData.cover_url}
+              onChange={(value) => setFormData(prev => ({ ...prev, cover_url: typeof value === 'string' ? value : null }))}
             />
               </div>
               <div className="space-y-2">

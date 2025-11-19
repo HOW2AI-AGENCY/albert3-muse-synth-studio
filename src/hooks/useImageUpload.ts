@@ -140,5 +140,6 @@ export const useImageUpload = ({ onUploadSuccess }: UseImageUploadProps = {}): U
     handleThumbnailClick,
     handleFileChange,
     handleRemove,
+    uploadImage,
   };
 };
