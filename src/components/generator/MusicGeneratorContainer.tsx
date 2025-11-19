@@ -9,7 +9,6 @@ import { useToast } from '@/hooks/use-toast';
 import { usePromptHistory } from '@/hooks/usePromptHistory';
 import { useBreakpoints } from '@/hooks/useBreakpoints';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logger } from '@/utils/logger';
 import {
@@ -386,13 +385,14 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
         throw error;
       }
 
-      if (!data?.improvedValue) {
-        throw new Error(data?.error || 'AI field improvement failed');
+      const result = data as any;
+      if (!result?.improvedValue) {
+        throw new Error(result?.error || 'AI field improvement failed');
       }
 
       // Update prompt with improved result
-      state.setParam('prompt', data.improvedValue);
-      state.setDebouncedPrompt(data.improvedValue);
+      state.setParam('prompt', result.improvedValue);
+      state.setDebouncedPrompt(result.improvedValue);
 
       sonnerToast.success('✨ Промпт улучшен с помощью AI!', {
         duration: 3000,

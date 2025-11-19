@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Music, Activity, Clock, Loader2 } from '@/utils/iconImports';
-import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logger } from '@/utils/logger';
 
@@ -46,8 +45,8 @@ export const AudioAnalyzer = ({ audioUrl }: AudioAnalyzerProps) => {
         }
 
         if (data) {
-          logger.info('[AudioAnalyzer] Analysis complete:', data);
-          setAnalysis(data);
+          logger.info('[AudioAnalyzer] Analysis complete:', data as any);
+          setAnalysis(data as AudioAnalysis);
         }
       } catch (err) {
         logger.error('[AudioAnalyzer] Analysis failed:', err instanceof Error ? err : undefined);

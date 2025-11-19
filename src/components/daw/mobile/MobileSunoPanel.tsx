@@ -344,7 +344,7 @@ export const MobileSunoPanel: FC = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {userTracks
-                        ?.filter((t: { has_stems: boolean }) => t.has_stems)
+                        ?.filter((t: { has_stems: boolean | null }) => t.has_stems === true)
                         .map((track: { id: string; title: string }) => (
                           <SelectItem key={track.id} value={track.id}>
                             <div className="flex items-center gap-2">

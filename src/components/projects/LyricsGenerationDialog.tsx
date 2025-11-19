@@ -62,8 +62,9 @@ export const LyricsGenerationDialog: React.FC<LyricsGenerationDialogProps> = ({
 
       if (error) throw error;
 
-      if (data?.lyrics) {
-        setGeneratedLyrics(data.lyrics);
+      const result = data as any;
+      if (result?.lyrics) {
+        setGeneratedLyrics(result.lyrics);
         toast.success('Лирика сгенерирована');
       } else {
         throw new Error('Пустой ответ от сервера');

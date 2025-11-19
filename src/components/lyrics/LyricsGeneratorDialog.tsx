@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/utils/logger";
@@ -103,20 +102,21 @@ export function LyricsGeneratorDialog({
         throw error;
       }
 
-      logger.info(`✅ [LYRICS] Lyrics generation completed`, data);
+      logger.info(`✅ [LYRICS] Lyrics generation completed`, data as any);
 
+      const result = data as any;
       // Lovable AI возвращает лирику напрямую
-      if (data?.lyrics) {
-        setGeneratedLyrics(data.lyrics);
+      if (result?.lyrics) {
+        setGeneratedLyrics(result.lyrics);
         
         // Передаем лирику в callback
         if (onGenerated) {
-          onGenerated(data.lyrics);
+          onGenerated(result.lyrics);
         }
 
         toast({
           title: "✨ Текст готов!",
-          description: trackId 
+          description: trackId
             ? "Текст сгенерирован и автоматически сохранен в трек"
             : "Посмотрите результат ниже"
         });
@@ -180,16 +180,17 @@ export function LyricsGeneratorDialog({
         throw error;
       }
 
-      if (data?.lyrics) {
-        setGeneratedLyrics(data.lyrics);
+      const result = data as any;
+      if (result?.lyrics) {
+        setGeneratedLyrics(result.lyrics);
         
         if (onGenerated) {
-          onGenerated(data.lyrics);
+          onGenerated(result.lyrics);
         }
 
         toast({
           title: "✨ Текст отредактирован!",
-          description: trackId 
+          description: trackId
             ? "Изменения автоматически сохранены в трек"
             : "Посмотрите обновленный результат"
         });

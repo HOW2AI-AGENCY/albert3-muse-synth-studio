@@ -49,7 +49,7 @@ export const TrackStatusMonitor = ({ userId }: { userId: string }) => {
       if (error) throw error;
       
       toast.success('Проверка завершена', {
-        description: `Проверено треков: ${data?.checkedCount || 0}`
+        description: `Проверено треков: ${(data as any)?.checkedCount || 0}`
       });
       
       await loadProcessingTracks();
