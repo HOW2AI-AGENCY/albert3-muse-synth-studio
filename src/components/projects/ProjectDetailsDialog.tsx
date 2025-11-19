@@ -81,11 +81,11 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (file: File | null) => {
-    // Note: This assumes ImageUploadField handles the actual upload and returns a URL.
-    // For now, we'll just simulate this. A real implementation needs to call a service.
-    if (file) {
+  const handleFileChange = (file: File | string | null) => {
+    if (file instanceof File) {
       setFormData(prev => ({ ...prev, cover_url: URL.createObjectURL(file) }));
+    } else if (typeof file === 'string') {
+      setFormData(prev => ({ ...prev, cover_url: file }));
     } else {
       setFormData(prev => ({ ...prev, cover_url: null }));
     }
