@@ -1,6 +1,7 @@
 /**
  * Provider-specific limits and configurations
- * Централизованные лимиты и настройки для Suno и Mureka
+ * Централизованные лимиты и настройки для Suno AI
+ * ⚠️ Mureka AI удален - используется только Suno AI
  */
 
 import type { MusicProvider } from './provider-models';

@@ -24,11 +24,11 @@ export const LyricLine = memo(({ words, currentTime, onWordClick, timingToleranc
   return (
     <div 
       className={cn(
-        "flex flex-wrap gap-1.5 md:gap-2 mb-4 md:mb-6 p-2 md:p-3 rounded-lg transition-all duration-300",
-        "leading-relaxed", // Better line spacing
+        "flex flex-wrap gap-1 md:gap-1.5 mb-2 md:mb-3 p-1.5 md:p-2.5 rounded-lg transition-all duration-200",
+        "leading-snug", // Компактное расстояние между строками
         hasActiveWord 
-          ? "bg-primary/5 border border-primary/20 shadow-md md:shadow-lg scale-[1.01] md:scale-[1.02]" 
-          : "border border-transparent"
+          ? "bg-primary/10 border border-primary/30 shadow-lg scale-[1.02] md:scale-[1.03]" 
+          : "border border-transparent opacity-70 hover:opacity-100"
       )}
       data-active={hasActiveWord}
     >

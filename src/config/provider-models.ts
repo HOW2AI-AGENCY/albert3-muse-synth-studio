@@ -1,6 +1,7 @@
 /**
- * Константы моделей для различных музыкальных провайдеров
+ * Константы моделей для музыкального провайдера Suno AI
  * ✅ SINGLE SOURCE OF TRUTH для типа MusicProvider
+ * ⚠️ Mureka AI удален - используется только Suno AI
  */
 
 export type MusicProvider = 'suno';
