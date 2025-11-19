@@ -5,7 +5,7 @@
 
 import { memo, useState, useCallback, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { MobileProgressBar } from '../mobile/MobileProgressBar';
+import { WaveformProgressBar } from '../mobile/WaveformProgressBar';
 import { useAudioPlayerStore, useCurrentTrack, useIsPlaying, useVolume } from '@/stores/audioPlayerStore';
 import { useTrackLike } from '@/features/tracks';
 import { useFullScreenGestures } from './hooks/useFullScreenGestures';
@@ -149,10 +149,12 @@ export const FullScreenPlayerMobile = memo(({ onMinimize }: FullScreenPlayerMobi
           />
         )}
 
-        {/* Progress */}
-        <MobileProgressBar 
-          onSeek={(value: number[]) => seekTo(value[0])} 
-          className="w-full mb-[--space-4] md:mb-[--space-6]" 
+        {/* Waveform Progress */}
+        <WaveformProgressBar
+          audioUrl={currentTrack.audio_url || currentTrack.storage_audio_url || ''}
+          onSeek={(time: number) => seekTo(time)}
+          className="w-full mb-[--space-4] md:mb-[--space-6]"
+          height={64}
         />
 
         {/* Controls */}

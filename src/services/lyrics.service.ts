@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logger } from '@/utils/logger';
 import { lyricsCache } from '@/utils/lyricsCache';
 import { retryWithBackoff, RETRY_CONFIGS } from '@/utils/retryWithBackoff';
@@ -100,7 +101,7 @@ export const LyricsService = {
           const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
           try {
-            const { data, error } = await supabase.functions.invoke('get-timestamped-lyrics', {
+            const { data, error } = await SupabaseFunctions.invoke('get-timestamped-lyrics', {
               method: 'POST',
               body: { taskId, audioId },
               signal: controller.signal,

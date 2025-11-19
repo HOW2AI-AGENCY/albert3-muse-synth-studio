@@ -3,6 +3,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from "@/hooks/use-toast";
 
 interface TrackSyncStatusProps {
@@ -33,7 +34,7 @@ export const TrackSyncStatus = ({ track }: TrackSyncStatusProps) => {
     try {
       toast({ title: 'Проверяем статус трека...' });
       
-      await supabase.functions.invoke('check-stuck-tracks', {
+      await SupabaseFunctions.invoke('check-stuck-tracks', {
         body: { trackIds: [track.id] }
       });
       

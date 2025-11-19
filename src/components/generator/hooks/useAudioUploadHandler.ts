@@ -6,6 +6,7 @@ import { logger } from '@/utils/logger';
 import { useAudioUpload } from '@/hooks/useAudioUpload';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import type { UseGeneratorStateReturn } from './useGeneratorState';
 
 export const useAudioUploadHandler = (state: UseGeneratorStateReturn) => {
@@ -75,7 +76,7 @@ export const useAudioUploadHandler = (state: UseGeneratorStateReturn) => {
         throw new Error('Необходима авторизация');
       }
 
-      const { data, error } = await supabase.functions.invoke('analyze-reference-audio', {
+      const { data, error } = await SupabaseFunctions.invoke('analyze-reference-audio', {
         body: { audioUrl, audioLibraryId },
         headers: {
           Authorization: `Bearer ${session.access_token}`

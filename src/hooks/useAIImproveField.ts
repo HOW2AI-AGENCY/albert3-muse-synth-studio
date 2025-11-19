@@ -8,6 +8,7 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logger } from '@/utils/logger';
 import * as Sentry from '@sentry/react';
 
@@ -53,7 +54,7 @@ export const useAIImproveField = ({ onSuccess, onError }: UseAIImproveFieldOptio
     try {
       logger.info(`AI ${action} started for field: ${field}`, 'useAIImproveField', { action, field });
 
-      const { data, error: functionError } = await supabase.functions.invoke('ai-improve-field', {
+      const { data, error: functionError } = await SupabaseFunctions.invoke('ai-improve-field', {
         body: {
           field,
           value,

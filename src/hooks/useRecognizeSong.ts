@@ -5,6 +5,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 
@@ -41,7 +42,7 @@ export const useRecognizeSong = () => {
         audioUrl: params.audioFileUrl,
       });
 
-      const { data, error } = await supabase.functions.invoke<RecognizeSongResponse>(
+      const { data, error } = await SupabaseFunctions.invoke<RecognizeSongResponse>(
         'recognize-song',
         {
           body: {

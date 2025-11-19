@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -43,7 +44,7 @@ export const TrackStatusMonitor = ({ userId }: { userId: string }) => {
   const checkStuckTracks = useCallback(async () => {
     setChecking(true);
     try {
-      const { data, error } = await supabase.functions.invoke('check-stuck-tracks');
+      const { data, error } = await SupabaseFunctions.invoke('check-stuck-tracks');
       
       if (error) throw error;
       

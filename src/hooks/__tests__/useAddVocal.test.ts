@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useAddVocal } from '../useAddVocal';
-import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from '@/integrations/supabase/functions';
 
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    from: vi.fn(),
-    functions: {
-      invoke: vi.fn()
-    }
+vi.mock('@/integrations/supabase/functions', () => ({
+  SupabaseFunctions: {
+    invoke: vi.fn()
+  },
+  functions: {
+    invoke: vi.fn()
   }
 }));
 
@@ -24,7 +24,7 @@ describe('useAddVocal', () => {
   });
 
   it('should call add-vocals with correct parameters', async () => {
-    (supabase.functions.invoke as any).mockResolvedValue({
+    (SupabaseFunctions.invoke as any).mockResolvedValue({
       data: { success: true, taskId: 'test-task-id' },
       error: null
     });
@@ -43,7 +43,7 @@ describe('useAddVocal', () => {
       });
     });
 
-    expect(supabase.functions.invoke).toHaveBeenCalledWith('add-vocals', {
+    expect(SupabaseFunctions.invoke).toHaveBeenCalledWith('add-vocals', {
       body: expect.objectContaining({
         uploadUrl: 'https://example.com/instrumental.mp3',
         prompt: 'Calm piano track with soothing vocals',
@@ -57,7 +57,7 @@ describe('useAddVocal', () => {
   });
 
   it('should handle API errors', async () => {
-    (supabase.functions.invoke as any).mockResolvedValue({
+    (SupabaseFunctions.invoke as any).mockResolvedValue({
       data: null,
       error: { message: 'API error' }
     });
@@ -76,7 +76,7 @@ describe('useAddVocal', () => {
   });
 
   it('should include optional parameters when provided', async () => {
-    (supabase.functions.invoke as any).mockResolvedValue({
+    (SupabaseFunctions.invoke as any).mockResolvedValue({
       data: { success: true, taskId: 'test-task-id' },
       error: null
     });
@@ -98,7 +98,7 @@ describe('useAddVocal', () => {
       });
     });
 
-    expect(supabase.functions.invoke).toHaveBeenCalledWith('add-vocals', {
+    expect(SupabaseFunctions.invoke).toHaveBeenCalledWith('add-vocals', {
       body: expect.objectContaining({
         vocalGender: 'f',
         styleWeight: 0.7,

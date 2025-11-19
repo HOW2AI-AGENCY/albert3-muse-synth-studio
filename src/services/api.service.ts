@@ -1,16 +1,32 @@
 /**
- * API Service Layer
- * Centralized service for all API calls - keeps business logic separate from UI
+ * API Service Layer (DEPRECATED)
+ *
+ * @deprecated This God Class is being split into domain-specific services.
+ * Please use the new domain services instead:
+ *
+ * - `TrackService` from '@/services/tracks/track.service' for track operations
+ * - `LyricsService` from '@/services/lyrics/lyrics.service' for lyrics generation
+ * - `PromptService` from '@/services/prompts/prompt.service' for prompt improvement
+ * - `BalanceService` from '@/services/balance/balance.service' for provider balance
+ * - `StemService` from '@/services/stems/stem.service' for stem operations
+ *
+ * This service will be removed in v3.0.0
+ *
+ * @see {@link https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/blob/main/docs/audit/COMPREHENSIVE_AUDIT_REPORT_2025-11-19.md Audit Report}
  */
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import { handlePostgrestError, handleSupabaseFunctionError } from "@/services/api/errors";
-import { logError, logWarn } from "@/utils/logger";
-import { retryWithBackoff, RETRY_CONFIGS } from "@/utils/retryWithBackoff";
+import { handlePostgrestError } from "@/services/api/errors";
+import { logError } from "@/utils/logger";
 import type { TrackMetadata } from "@/types/track-metadata";
-import { startKpiTimer, endKpiTimer } from "@/utils/kpi";
-import { trackAPIRequest } from "@/utils/sentry-enhanced";
+
+// Import new domain services
+import { TrackService, type Track, type TrackRowWithVersions, type TrackStatus, type TrackVersion, mapTrackRowToTrack } from "@/services/tracks/track.service";
+import { LyricsService, type GenerateLyricsRequest, type GenerateLyricsResponse } from "@/services/lyrics/lyrics.service";
+import { PromptService, type ImprovePromptRequest, type ImprovePromptResponse } from "@/services/prompts/prompt.service";
+import { BalanceService, type ProviderBalanceResponse } from "@/services/balance/balance.service";
+import { StemService } from "@/services/stems/stem.service";
 
 type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
 type TrackVersionRow = Database["public"]["Tables"]["track_versions"]["Row"];
@@ -146,7 +162,7 @@ export class ApiService {
     
     // Используем retry logic для улучшения промпта
     const { data, error } = await retryWithBackoff(
-      () => supabase.functions.invoke<ImprovePromptResponse>(
+      () => SupabaseFunctions.invoke<ImprovePromptResponse>(
         "improve-prompt",
         { body: request }
       ),
@@ -191,7 +207,7 @@ export class ApiService {
     
     // Используем retry logic для генерации текстов
     const { data, error } = await retryWithBackoff(
-      () => supabase.functions.invoke<GenerateLyricsResponse>(
+      () => SupabaseFunctions.invoke<GenerateLyricsResponse>(
         "generate-lyrics",
         { body: request }
       ),
@@ -240,7 +256,7 @@ export class ApiService {
   }): Promise<boolean> {
     const context = "ApiService.syncStemJob";
 
-    const { data, error } = await supabase.functions.invoke<{
+    const { data, error } = await SupabaseFunctions.invoke<{
       success: boolean;
       status?: string;
       code?: number | null;
@@ -522,7 +538,7 @@ export class ApiService {
       startKpiTimer(timerId);
 
       try {
-        const invokePromise = supabase.functions.invoke(functionName, { body: { provider } });
+        const invokePromise = SupabaseFunctions.invoke(functionName, { body: { provider } });
         const { data, error } = await Promise.race([invokePromise, timeout]) as any;
         const duration = endKpiTimer(timerId, 'api_latency', { endpoint: functionName, provider }) ?? 0;
         trackAPIRequest(functionName, 'POST', error ? 500 : 200, duration, error ?? undefined);

@@ -8,6 +8,7 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logger } from '@/utils/logger';
 import { toast } from 'sonner';
 
@@ -32,7 +33,7 @@ export const useTrackTitleGenerator = () => {
     setIsGenerating(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('generate-track-title', {
+      const { data, error } = await SupabaseFunctions.invoke('generate-track-title', {
         body: params,
       });
 

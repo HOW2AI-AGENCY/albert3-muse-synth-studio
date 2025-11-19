@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logInfo, logError } from '@/utils/logger';
 
 interface UseTrackRecoveryOptions {
@@ -66,7 +67,7 @@ export const useTrackRecovery = (
           
           // Вызвать edge function для проверки
           try {
-            const { data, error } = await supabase.functions.invoke('check-stuck-tracks', {
+            const { data, error } = await SupabaseFunctions.invoke('check-stuck-tracks', {
               body: { trackIds: stuckProcessing.map(t => t.id) }
             });
             

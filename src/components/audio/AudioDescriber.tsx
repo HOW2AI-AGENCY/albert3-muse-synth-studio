@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Sparkles } from '@/utils/iconImports';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 
@@ -20,7 +21,7 @@ export const AudioDescriber = ({ audioUrl, onDescriptionGenerated, disabled }: A
     logger.info('[AudioDescriber] Generating description for audio:', audioUrl.substring(0, 50));
 
     try {
-      const { data, error } = await supabase.functions.invoke('analyze-audio', {
+      const { data, error } = await SupabaseFunctions.invoke('analyze-audio', {
         body: { audioUrl, fullDescription: true }
       });
 

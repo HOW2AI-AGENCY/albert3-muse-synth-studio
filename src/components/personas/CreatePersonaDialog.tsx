@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from '@/utils/iconImports';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { getAIDescription } from '@/types/track-metadata';
 import type { TrackMetadata } from '@/types/track-metadata';
 import { ImageUpload } from '../ui/ImageUpload';
@@ -108,7 +109,7 @@ export const CreatePersonaDialog = ({
     setIsCreating(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('create-suno-persona', {
+      const { data, error } = await SupabaseFunctions.invoke('create-suno-persona', {
         body: {
           trackId: track.id,
           musicIndex,

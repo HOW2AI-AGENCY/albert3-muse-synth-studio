@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Music, Activity, Clock, Loader2 } from '@/utils/iconImports';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logger } from '@/utils/logger';
 
 interface AudioAnalysis {
@@ -34,7 +35,7 @@ export const AudioAnalyzer = ({ audioUrl }: AudioAnalyzerProps) => {
       try {
         logger.info('[AudioAnalyzer] Analyzing audio:', audioUrl.substring(0, 50));
         
-        const { data, error: functionError } = await supabase.functions.invoke('analyze-audio', {
+        const { data, error: functionError } = await SupabaseFunctions.invoke('analyze-audio', {
           body: { audioUrl }
         });
 

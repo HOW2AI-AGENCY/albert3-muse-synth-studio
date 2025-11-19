@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logger } from '@/utils/logger';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { MusicProvider } from '@/config/provider-models';
@@ -104,7 +105,7 @@ export class GenerationService {
           projectId: request.projectId,
         };
 
-        const { data, error } = await supabase.functions.invoke(functionName, {
+        const { data, error } = await SupabaseFunctions.invoke(functionName, {
           body: payload,
         });
 

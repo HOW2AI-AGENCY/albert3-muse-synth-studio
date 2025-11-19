@@ -40,7 +40,7 @@ export class TimeoutError extends Error {
  * ```typescript
  * // Supabase Edge Function call with 30s timeout
  * const { data } = await withTimeout(
- *   supabase.functions.invoke('generate-suno', { body: payload }),
+ *   SupabaseFunctions.invoke('generate-suno', { body: payload }),
  *   30000,
  *   'Suno generation'
  * );
@@ -119,7 +119,7 @@ export const TIMEOUT_DEFAULTS = {
  * @example
  * ```typescript
  * const { data, error } = await withEdgeFunctionTimeout(
- *   supabase.functions.invoke('generate-suno', { body }),
+ *   SupabaseFunctions.invoke('generate-suno', { body }),
  *   'generate-suno'
  * );
  * ```

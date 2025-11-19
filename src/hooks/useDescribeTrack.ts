@@ -5,6 +5,7 @@
 import { useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
 
 export const useDescribeTrack = () => {
@@ -12,7 +13,7 @@ export const useDescribeTrack = () => {
 
   const mutation = useMutation({
     mutationFn: async (trackId: string) => {
-      const { data, error } = await supabase.functions.invoke('describe-song', {
+      const { data, error } = await SupabaseFunctions.invoke('describe-song', {
         body: { trackId }
       });
 

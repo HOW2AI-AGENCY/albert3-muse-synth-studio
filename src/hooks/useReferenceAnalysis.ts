@@ -30,6 +30,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 import type { Database } from '@/integrations/supabase/types';
@@ -208,7 +209,7 @@ export function useReferenceAnalysis() {
       }
 
       // ▶️ Не нашли готовых — вызываем edge function
-      const { data, error } = await supabase.functions.invoke('analyze-reference-audio', {
+      const { data, error } = await SupabaseFunctions.invoke('analyze-reference-audio', {
         body: params,
         headers: {
           Authorization: `Bearer ${session.access_token}`

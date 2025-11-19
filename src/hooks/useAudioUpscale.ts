@@ -7,6 +7,7 @@
 
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 
@@ -30,7 +31,7 @@ export interface AudioUpscaleResult {
 export const useAudioUpscale = () => {
   return useMutation({
     mutationFn: async (params: AudioUpscaleParams) => {
-      const { data, error } = await supabase.functions.invoke('upscale-audio-sr', {
+      const { data, error } = await SupabaseFunctions.invoke('upscale-audio-sr', {
         body: params
       });
 
@@ -57,7 +58,7 @@ export const useAudioUpscaleStatus = (jobId: string | null, enabled: boolean = t
     queryFn: async () => {
       if (!jobId) throw new Error('No job ID');
 
-      const { data, error } = await supabase.functions.invoke('upscale-audio-sr', {
+      const { data, error } = await SupabaseFunctions.invoke('upscale-audio-sr', {
         body: { jobId }
       });
 

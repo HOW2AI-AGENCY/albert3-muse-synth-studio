@@ -27,31 +27,6 @@ const resolveGlobalHeaders = (): Record<string, string> => {
   return {};
 };
 
-const normalizeHeaders = (init?: HeadersInit): Record<string, string> => {
-  if (typeof Headers !== "undefined" && init instanceof Headers) {
-    const headers = new Headers(init);
-    const result: Record<string, string> = {};
-    headers.forEach((value, key) => {
-      result[key] = value;
-    });
-    return result;
-  }
-
-  if (!init) {
-    return {};
-  }
-
-  if (Array.isArray(init)) {
-    const result: Record<string, string> = {};
-    init.forEach(([key, value]) => {
-      result[key] = value;
-    });
-    return result;
-  }
-
-  return init as Record<string, string>;
-};
-
 const clientOptions: SupabaseClientOptions<"public"> = {
   auth: {
     storage: resolveStorage(),
@@ -67,75 +42,24 @@ const clientOptions: SupabaseClientOptions<"public"> = {
 export const createSupabaseClient = () =>
   createClient<Database>(appEnv.supabaseUrl, appEnv.supabaseAnonKey, clientOptions);
 
+/**
+ * Supabase client instance
+ *
+ * @example
+ * ```typescript
+ * import { supabase } from '@/integrations/supabase/client';
+ *
+ * // Database operations
+ * const { data, error } = await supabase
+ *   .from('tracks')
+ *   .select('*')
+ *   .eq('user_id', userId);
+ *
+ * // For Edge Functions, use SupabaseFunctions wrapper instead:
+ * import { SupabaseFunctions } from '@/integrations/supabase/functions';
+ * const { data, error } = await SupabaseFunctions.invoke('get-balance', {
+ *   body: { provider: 'suno' }
+ * });
+ * ```
+ */
 export const supabase = createSupabaseClient();
-
-const originalInvoke = supabase.functions.invoke.bind(supabase.functions);
-
-const ensureAuthHeader = async (
-  headers: Record<string, string>
-): Promise<Record<string, string>> => {
-  if (typeof window === "undefined") {
-    return headers;
-  }
-
-  const hasAuthHeader = Object.keys(headers).some(
-    (key) => key.toLowerCase() === "authorization"
-  );
-
-  if (hasAuthHeader) {
-    return headers;
-  }
-
-  try {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (session?.access_token) {
-      return {
-        ...headers,
-        Authorization: `Bearer ${session.access_token}`,
-      };
-    }
-  } catch (error) {
-    // Using dynamic import to avoid circular dependencies
-    import('@/utils/logger').then(({ logger }) => {
-      logger.warn('Failed to attach Supabase auth header for edge function invoke', undefined, { error });
-    });
-  }
-
-  return headers;
-};
-
-supabase.functions.invoke = (async (functionName, options = {}) => {
-  const normalizedHeaders = normalizeHeaders(options.headers);
-  const headersWithAuth = await ensureAuthHeader(normalizedHeaders);
-
-  const headers =
-    typeof window === "undefined"
-      ? { ...headersWithAuth, "x-app-environment": appEnv.appEnv }
-      : headersWithAuth;
-
-  // Lightweight diagnostics to help track 401s on specific functions
-  try {
-    if (typeof window !== "undefined" && (functionName.startsWith("get-balance") || functionName === "separate-stems")) {
-      const method = (options as { method?: string }).method ?? "POST";
-      const hasAuth = Object.keys(headers).some(
-        (key) => key.toLowerCase() === "authorization"
-      );
-      // Using dynamic import to avoid circular dependencies
-      import('@/utils/logger').then(({ logger }) => {
-        logger.debug(`Function invocation: ${functionName}`, undefined, { method, hasAuth });
-      });
-    }
-  } catch (_) {
-    // no-op: diagnostics should never break invoke
-  }
-
-  return originalInvoke(functionName, {
-    ...options,
-    // Avoid adding custom headers in the browser to prevent CORS/preflight failures.
-    // On server-side (SSR) we can include environment hint header if needed.
-    headers,
-  });
-}) as typeof supabase.functions.invoke;

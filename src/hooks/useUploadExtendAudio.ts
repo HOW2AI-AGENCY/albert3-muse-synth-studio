@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 
@@ -28,7 +29,7 @@ export const useUploadExtendAudio = () => {
     try {
       logger.info(`🎵 [UPLOAD-EXTEND] Starting upload and extend audio`);
 
-      const { data, error } = await supabase.functions.invoke('upload-extend-audio', {
+      const { data, error } = await SupabaseFunctions.invoke('upload-extend-audio', {
         body: params
       });
 

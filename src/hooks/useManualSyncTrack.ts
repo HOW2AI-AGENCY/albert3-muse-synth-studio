@@ -5,6 +5,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 import * as Sentry from '@sentry/react';
@@ -63,7 +64,7 @@ export const useManualSyncTrack = () => {
         }
       }
 
-      const { data, error } = await supabase.functions.invoke<ManualSyncResponse>(
+      const { data, error } = await SupabaseFunctions.invoke<ManualSyncResponse>(
         'check-stuck-tracks',
         {
           body: {

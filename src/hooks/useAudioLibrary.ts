@@ -5,6 +5,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 
@@ -90,7 +91,7 @@ export function useAudioLibrary(filters?: {
   // Save audio to library
   const saveAudio = useMutation({
     mutationFn: async (params: SaveAudioParams) => {
-      const { data, error } = await supabase.functions.invoke('audio-library', {
+      const { data, error } = await SupabaseFunctions.invoke('audio-library', {
         method: 'POST',
         body: params,
       });

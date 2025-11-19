@@ -7,6 +7,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 
@@ -30,7 +31,7 @@ export interface MinimaxGenerationResult {
 export const useMinimaxGeneration = () => {
   return useMutation({
     mutationFn: async (params: MinimaxGenerationParams) => {
-      const { data, error } = await supabase.functions.invoke('generate-minimax', {
+      const { data, error } = await SupabaseFunctions.invoke('generate-minimax', {
         body: params
       });
 
