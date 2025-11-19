@@ -61,13 +61,13 @@ export const PromptDJ: React.FC = () => {
           playbackState={controller.playbackState}
           volume={controller.volume}
           onPlayPause={() => (controller.playbackState === 'playing' || controller.playbackState === 'loading') ? controller.stop() : controller.play()}
-          onVolumeChange={(volume) => controller.setVolume(volume)}
+          onVolumeChange={(volume) => controller.setVolume(Array.isArray(volume) ? volume[0] : volume)}
           getAnalyserData={() => (controller as any).liveMusicHelper.getAnalyserData()}
         />
         <WarningCard />
         <PromptDJToolbar
           presets={controller.presets}
-          onSelectPreset={(id) => controller.applyPreset(id)}
+          onSelectPreset={(preset) => controller.applyPreset(typeof preset === 'string' ? preset : preset.id)}
           onSavePreset={(name) => controller.savePreset(name)}
           onDeletePreset={(id) => controller.deletePreset(id)}
           recordingState={controller.recordingState}

@@ -219,7 +219,7 @@ export const TrackListItem = memo<TrackListItemProps>(
               className={cn(
                 'text-xs font-medium',
                 track.status === 'processing' && 'text-blue-600',
-                track.status === 'error' && 'text-destructive'
+                track.status === 'failed' && 'text-destructive'
               )}
             >
               {track.status}
