@@ -36,18 +36,6 @@ interface ProjectDetailsDialogProps {
   project: MusicProject | null;
 }
 
-const ProjectSkeleton = () => (
-  <div className="space-y-4 p-6">
-    <Skeleton className="h-8 w-3/4" />
-    <Skeleton className="h-20 w-full" />
-    <div className="grid grid-cols-2 gap-4">
-      <Skeleton className="h-16 w-full" />
-      <Skeleton className="h-16 w-full" />
-    </div>
-    <Skeleton className="h-10 w-full" />
-  </div>
-);
-
 export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
   open,
   onOpenChange,
@@ -107,19 +95,6 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
       return orderA - orderB;
     });
   }, [allTracks]);
-
-  const completedTracks = useMemo(() => {
-    return projectTracks.filter((track) => track.status === "completed");
-  }, [projectTracks]);
-
-  const draftTracks = useMemo(() => {
-    return projectTracks.filter((track) => track.status !== "completed" && track.status !== "failed");
-  }, [projectTracks]);
-
-  const completionPercent = useMemo(() => {
-    if (!project?.total_tracks || project.total_tracks === 0) return 0;
-    return Math.round(((project.completed_tracks || 0) / project.total_tracks) * 100);
-  }, [project]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
