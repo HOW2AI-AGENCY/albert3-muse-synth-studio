@@ -72,8 +72,6 @@ export const WaveformProgressBar = memo<WaveformProgressBarProps>(({
   const currentTime = useAudioPlayerStore((state) => state.currentTime);
   const duration = useAudioPlayerStore((state) => state.duration);
 
-  const colors = getCanvasColors();
-
   /**
    * Initialize AudioContext on mount
    */

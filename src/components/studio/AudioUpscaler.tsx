@@ -54,10 +54,11 @@ export const AudioUpscaler: React.FC = () => {
   // Handle status updates
   React.useEffect(() => {
     if (statusData) {
-      if (statusData.status === 'succeeded' && statusData.output) {
-        setUpscaledUrl(statusData.output as string);
+      const data = statusData as any;
+      if (data.status === 'succeeded' && data.output) {
+        setUpscaledUrl(data.output as string);
         toast.success('Audio upscaled successfully! 🎉');
-      } else if (statusData.status === 'failed') {
+      } else if (data.status === 'failed') {
         toast.error('Upscaling failed. Please try again.');
         setPredictionId(null);
       }
@@ -65,7 +66,8 @@ export const AudioUpscaler: React.FC = () => {
   }, [statusData]);
 
   const isProcessing = isStarting || (isPolling && !upscaledUrl);
-  const progress = statusData?.status === 'processing' ? 50 : isStarting ? 10 : upscaledUrl ? 100 : 0;
+  const data = statusData as any;
+  const progress = data?.status === 'processing' ? 50 : isStarting ? 10 : upscaledUrl ? 100 : 0;
 
   return (
     <div className="space-y-6">
@@ -161,7 +163,7 @@ export const AudioUpscaler: React.FC = () => {
             <div className="space-y-2">
               <Progress value={progress} />
               <p className="text-sm text-center text-muted-foreground">
-                {statusData?.status === 'processing' 
+                {(statusData as any)?.status === 'processing' 
                   ? 'Upscaling audio...' 
                   : 'Initializing...'}
               </p>
@@ -200,7 +202,7 @@ export const AudioUpscaler: React.FC = () => {
       )}
 
       {/* Failed State */}
-      {statusData?.status === 'failed' && (
+      {(statusData as any)?.status === 'failed' && (
         <Card className="border-red-500/50 bg-red-500/5">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-red-500">
@@ -210,7 +212,7 @@ export const AudioUpscaler: React.FC = () => {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              {statusData.error || 'An error occurred during upscaling. Please try again.'}
+              {(statusData as any).error || 'An error occurred during upscaling. Please try again.'}
             </p>
           </CardContent>
         </Card>
