@@ -123,11 +123,6 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
     return Math.round(((project.completed_tracks || 0) / project.total_tracks) * 100);
   }, [project]);
 
-  const handleCoverUpload = useCallback(
-    async (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (!file || !project) return;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
