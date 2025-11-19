@@ -155,3 +155,16 @@ vi.mock('@/components/ui/tooltip', () => ({
     asChild ? children : React.createElement('div', {}, children),
   TooltipContent: ({ children }: { children: React.ReactNode }) => React.createElement('div', {}, children),
 }));
+
+// Mock DropdownMenu components for testing
+vi.mock('@/components/ui/dropdown-menu', () => ({
+  DropdownMenu: ({ children }: { children: React.ReactNode }) => React.createElement('div', {}, children),
+  DropdownMenuTrigger: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) =>
+    asChild ? children : React.createElement('button', {}, children),
+  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => React.createElement('div', { role: 'menu' }, children),
+  DropdownMenuItem: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) =>
+    React.createElement('div', { role: 'menuitem', onClick }, children),
+  DropdownMenuSeparator: () => React.createElement('div', { role: 'separator' }),
+  DropdownMenuLabel: ({ children }: { children: React.ReactNode }) => React.createElement('div', {}, children),
+  DropdownMenuGroup: ({ children }: { children: React.ReactNode }) => React.createElement('div', {}, children),
+}));
