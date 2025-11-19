@@ -11,7 +11,8 @@ import {
   FolderOpen, 
   X,
   Play,
-  Share2
+  Share2,
+  FileArchive
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
@@ -19,6 +20,7 @@ import {
   bulkDeleteTracks, 
   bulkAddToProject, 
   generateShareLink,
+  bulkExportToZip,
   type BulkOperationProgress as ProgressType
 } from '@/utils/bulkOperations';
 import { BulkOperationProgress } from './BulkOperationProgress';
@@ -220,6 +222,44 @@ export const SelectionToolbar: React.FC<SelectionToolbarProps> = ({ className = 
     toast.success('ID треков скопированы в буфер обмена');
   };
 
+  // ===== BULK EXPORT TO ZIP =====
+  const handleExportToZip = async () => {
+    setProgressDialog({
+      open: true,
+      title: 'Экспорт в ZIP',
+      description: `Архивация ${selectedTracksCount} треков`,
+      progress: null,
+      isCompleted: false,
+    });
+
+    const { data: tracks, error } = await supabase
+        .from('tracks')
+        .select('*')
+        .in('id', trackIdsArray)
+        .eq('status', 'completed');
+
+    if (error || !tracks || tracks.length === 0) {
+        toast.error('Не удалось загрузить треки для экспорта');
+        setProgressDialog(prev => ({ ...prev, isCompleted: true, result: { success: 0, failed: selectedTracksCount } }));
+        return;
+    }
+
+    const result = await bulkExportToZip(tracks, (progress) => {
+      setProgressDialog(prev => ({ ...prev, progress }));
+    });
+
+    setProgressDialog(prev => ({
+      ...prev,
+      isCompleted: true,
+      result,
+    }));
+
+    if (result.failed > 0) {
+      toast.error(`Не удалось экспортировать треков: ${result.failed}`);
+    }
+    // Success toast is handled by the browser's download prompt
+  };
+
   return (
     <>
       <div
@@ -252,6 +292,16 @@ export const SelectionToolbar: React.FC<SelectionToolbarProps> = ({ className = 
             >
               <Play className="h-4 w-4 mr-1" />
               Play
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportToZip}
+              className="flex-1 min-w-0"
+            >
+              <FileArchive className="h-4 w-4 mr-1" />
+              Export
             </Button>
 
             <Button

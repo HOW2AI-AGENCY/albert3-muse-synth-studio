@@ -151,8 +151,15 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
         : [];
       
       const planWithFeatures: SubscriptionPlanData = {
-        ...(planData as any),
+        id: planData.id,
         name: (planData.name as SubscriptionPlan) || 'free',
+        display_name: planData.display_name,
+        description: planData.description,
+        price_monthly: planData.price_monthly,
+        price_annual: planData.price_annual,
+        credits_monthly: planData.credits_monthly,
+        credits_daily_limit: planData.credits_daily_limit,
+        max_projects: planData.max_projects,
         max_concurrent_generations: planData.max_concurrent_generations ?? 1,
         max_reference_audios: planData.max_reference_audios ?? 0,
         features,

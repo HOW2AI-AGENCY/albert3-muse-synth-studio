@@ -1,129 +1,164 @@
 /**
- * Professional Image Upload Field Component
- * Features: Preview, Hover Overlay, Deletion, Validation, Skeleton, Error State
- * Russian localization included.
+ * ImageUploadField - Professional image upload component
+ * Adapted from origin UI for React (non-Next.js)
  */
-import React, { useState, useRef, useCallback } from 'react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Upload, X, AlertTriangle } from '@/utils/iconImports';
+import { AlertCircle, UploadCloud, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+import { cn } from "@/lib/utils";
+
+import { Button } from "./button";
+import { Input } from "./input";
+import { Skeleton } from "./skeleton";
 
 interface ImageUploadFieldProps {
-  initialImage?: string | null;
-  onFileChange: (file: File | null) => void;
+  value?: File | string | null;
+  onChange?: (value: File | string | null) => void;
+  onBlur?: () => void;
   className?: string;
-  imageClassName?: string;
-  maxSizeMb?: number;
+  disabled?: boolean;
+  error?: boolean;
+  aspectRatio?: number;
+  defaultImage?: string;
+  isLoading?: boolean;
+  maxSize?: number; // in bytes
 }
 
-export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
-  initialImage,
-  onFileChange,
+export function ImageUploadField({
+  value,
+  onChange,
+  onBlur,
   className,
-  imageClassName,
-  maxSizeMb = 5,
-}) => {
-  const [preview, setPreview] = useState<string | null>(initialImage || null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  disabled = false,
+  error = false,
+  aspectRatio = 1,
+  defaultImage,
+  isLoading = false,
+  maxSize = 4 * 1024 * 1024, // 4MB default
+}: ImageUploadFieldProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  // Handle preview URL generation and cleanup
+  useEffect(() => {
+    if (typeof value === "string") {
+      setPreviewUrl(value);
+    } else if (value instanceof File) {
+      const url = URL.createObjectURL(value);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setPreviewUrl(defaultImage || null);
+    }
+  }, [value, defaultImage]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validation
-    if (file.size > maxSizeMb * 1024 * 1024) {
-      setError(`Файл слишком большой (макс. ${maxSizeMb} МБ)`);
-      return;
-    }
-    if (!file.type.startsWith('image/')) {
-      setError('Неверный формат файла (нужно изображение)');
+    // Validate file size
+    if (file.size > maxSize) {
+      // Could add error handling here
       return;
     }
 
-    setError(null);
-    setIsLoading(true);
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreview(reader.result as string);
-      setIsLoading(false);
-      onFileChange(file);
-    };
-    reader.readAsDataURL(file);
+    onChange?.(file);
+    onBlur?.();
   };
 
-  const handleRemoveImage = useCallback((e: React.MouseEvent) => {
+  const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setPreview(null);
-    setError(null);
-    onFileChange(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  }, [onFileChange]);
-
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
+    onChange?.(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   if (isLoading) {
-    return <Skeleton className={cn("aspect-square w-full rounded-lg", className)} />;
-  }
-
-  if (error) {
     return (
-      <div
-        className={cn("aspect-square w-full rounded-lg border-2 border-dashed border-destructive/50 bg-destructive/10 flex flex-col items-center justify-center text-center p-4", className)}
-        onClick={triggerFileInput}
-      >
-        <AlertTriangle className="h-8 w-8 text-destructive mb-2" />
-        <p className="text-sm font-semibold text-destructive">Ошибка</p>
-        <p className="text-xs text-destructive/80">{error}</p>
-        <Button variant="link" size="sm" className="mt-2 text-destructive">Попробовать снова</Button>
-      </div>
-    )
+      <Skeleton
+        className={cn(
+          "rounded-lg border-2 border-dashed border-muted",
+          className,
+        )}
+        style={{ aspectRatio }}
+      />
+    );
   }
 
   return (
-    <div
-      className={cn("aspect-square w-full rounded-lg border-2 border-dashed border-muted-foreground/30 hover:border-primary transition-colors cursor-pointer group relative", className)}
-      onClick={triggerFileInput}
-    >
-      <input
+    <div className={cn("group relative", className)}>
+      <Input
         type="file"
-        ref={fileInputRef}
-        onChange={handleFileSelect}
         accept="image/*"
         className="hidden"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        disabled={disabled}
+        aria-invalid={error}
       />
-      {preview ? (
-        <>
-          <img
-            src={preview}
-            alt="Предпросмотр"
-            className={cn("w-full h-full object-cover rounded-md", imageClassName)}
-          />
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <Button
-              variant="destructive"
-              size="icon"
-              className="rounded-full h-9 w-9"
-              onClick={handleRemoveImage}
-            >
-              <X className="h-5 w-5" />
-            </Button>
+
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-lg border-2 transition-all",
+          "hover:border-primary/50 cursor-pointer bg-background",
+          error
+            ? "border-destructive hover:border-destructive"
+            : "border-muted",
+          disabled && "pointer-events-none opacity-50 cursor-not-allowed",
+          previewUrl ? "border-solid" : "border-dashed",
+        )}
+        style={{ aspectRatio }}
+        onClick={() => !disabled && fileInputRef.current?.click()}
+      >
+        {previewUrl ? (
+          <>
+            {/* Using regular img instead of Next.js Image */}
+            <img
+              src={previewUrl}
+              alt="Preview"
+              className="absolute inset-0 w-full h-full object-cover transition-opacity group-hover:opacity-50"
+            />
+
+            {!disabled && (
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50">
+                <UploadCloud className="w-8 h-8 text-white/80" />
+              </div>
+            )}
+
+            {!disabled && (
+              <Button
+                variant="ghost"
+                size="icon"
+                type="button"
+                className="absolute top-2 right-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background"
+                onClick={handleRemove}
+              >
+                <X className="w-4 h-4 text-foreground/70" />
+              </Button>
+            )}
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full gap-2 p-4 text-center">
+            <UploadCloud className="w-8 h-8 text-muted-foreground" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">
+                Нажмите для загрузки
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {maxSize
+                  ? `Макс. размер: ${(maxSize / 1024 / 1024).toFixed(0)} МБ`
+                  : "Поддерживаемые форматы: JPG, PNG, GIF"}
+              </p>
+            </div>
           </div>
-        </>
-      ) : (
-        <div className="w-full h-full flex flex-col items-center justify-center text-center p-4">
-          <Upload className="h-8 w-8 text-muted-foreground/70 mb-2" />
-          <p className="text-sm font-semibold text-muted-foreground">Загрузить обложку</p>
-          <p className="text-xs text-muted-foreground/80">Макс. {maxSizeMb} МБ</p>
-        </div>
-      )}
+        )}
+
+        {error && (
+          <div className="absolute bottom-2 left-2 flex items-center gap-1 px-2 py-1 text-sm text-destructive bg-destructive/10 rounded-md">
+            <AlertCircle className="w-4 h-4" />
+            Неверное изображение
+          </div>
+        )}
+      </div>
     </div>
   );
-};
+}

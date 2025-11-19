@@ -12,12 +12,17 @@ export const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:shadow-lg",
         ghost: "hover:bg-accent hover:text-accent-foreground hover:shadow-md",
         link: "text-primary underline-offset-4 hover:underline hover:text-primary/80",
+        hero: "bg-gradient-to-r from-primary via-primary/90 to-primary text-primary-foreground hover:shadow-2xl hover:scale-105 font-bold",
+        glass: "bg-background/20 backdrop-blur-md border border-border/50 hover:bg-background/30 hover:border-border text-foreground",
+        glow: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/50 hover:shadow-primary/80 hover:shadow-2xl",
       },
       size: {
         default: "h-control-xl px-4",
         sm: "h-control-sm rounded-sm px-3 text-xs",
         lg: "h-control-lg rounded-lg px-8 text-base",
+        xl: "h-14 rounded-xl px-10 text-lg",
         icon: "h-control-xl w-control-xl",
+        "icon-sm": "h-8 w-8",
       },
     },
     defaultVariants: {

@@ -7,6 +7,8 @@ import { useSelectedTracks } from '@/contexts/selected-tracks/useSelectedTracks'
 import { Play, Pause, MoreHorizontal, Download, Share2 } from 'lucide-react';
 import type { Track } from '@/services/api.service';
 import { TrackVersions } from './TrackVersions';
+import { TrackBadge, TrackBadgeGroup } from './TrackBadge';
+import { TrackMetrics } from './TrackMetrics';
 
 interface TrackCardProps {
   track: Track;
@@ -143,26 +145,64 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
             </Button>
           </div>
 
-          {/* Duration Badge */}
-          {formattedDuration && (
-            <Badge
-              variant="secondary"
-              className="absolute bottom-2 right-2 text-xs bg-black/70 text-white"
-            >
-              {formattedDuration}
-            </Badge>
-          )}
+          {/* Track Type & Duration Badges */}
+          <div className="absolute bottom-2 right-2 flex flex-col items-end gap-1">
+            {track.duration && (
+              <Badge
+                variant="secondary"
+                className="text-[10px] h-5 px-1.5 bg-black/70 text-white backdrop-blur-sm"
+              >
+                {formattedDuration}
+              </Badge>
+            )}
+          </div>
+
+          {/* Track Type Indicators (top-left) */}
+          <div className="absolute top-2 left-2">
+            <TrackBadgeGroup>
+              {track.has_stems && <TrackBadge type="stems" size="xs" />}
+            </TrackBadgeGroup>
+          </div>
         </div>
 
         {/* Track Info */}
         <div className="space-y-2">
-          <h3 className="font-semibold text-sm leading-tight line-clamp-2">
-            {track.title}
-          </h3>
-          
+          {/* Title and Badges Row */}
+          <div className="space-y-1.5">
+            <h3 className="font-semibold text-sm leading-tight line-clamp-2">
+              {track.title}
+            </h3>
+
+            {/* Track Characteristics Badges */}
+            <TrackBadgeGroup>
+              {/* Vocal/Instrumental indicator */}
+              {track.lyrics || track.has_vocals ? (
+                <TrackBadge type="vocals" size="xs" />
+              ) : (
+                <TrackBadge type="instrumental" size="xs" />
+              )}
+
+              {/* Version badge */}
+              {track.version_number && (
+                <TrackBadge type="version" versionNumber={track.version_number} size="xs" />
+              )}
+            </TrackBadgeGroup>
+          </div>
+
+          {/* Metrics */}
+          <TrackMetrics
+            duration={track.duration}
+            likes={track.likes_count}
+            views={track.views_count}
+            layout="compact"
+            size="sm"
+            display={['duration', 'likes']}
+          />
+
+          {/* Genre Tags */}
           {track.genre && (
             <div className="flex flex-wrap gap-1">
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-[10px] h-5 px-1.5">
                 {track.genre}
               </Badge>
             </div>
@@ -175,14 +215,13 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
           />
 
           {/* Track Status */}
-          {track.status && (
-            <Badge 
+          {track.status && track.status !== 'completed' && (
+            <Badge
               variant={
-                track.status === 'completed' ? 'default' :
                 track.status === 'processing' ? 'secondary' :
                 'destructive'
               }
-              className="text-xs"
+              className="text-[10px] h-5 px-1.5"
             >
               {track.status}
             </Badge>

@@ -1,50 +1,68 @@
 /**
- * Feature Gate Component - Restricts access based on subscription
+ * FeatureGate - Access control component for subscription-gated features
  * @module components/subscription/FeatureGate
- * @version 1.0.0
- */
-
-import { ReactNode } from 'react';
-import { useSubscription } from '@/contexts/SubscriptionContext';
-import { UpgradePrompt } from './UpgradePrompt';
-
-interface FeatureGateProps {
-  feature: string;
-  children: ReactNode;
-  fallback?: ReactNode;
-  showUpgradePrompt?: boolean;
-}
-
-/**
- * Conditionally renders children based on feature access
- * 
+ * @version 1.1.0
+ *
+ * @description
+ * Wraps features that require specific subscription tiers.
+ * Shows upgrade prompt when user lacks access.
+ *
  * @example
  * ```tsx
- * <FeatureGate feature="reference_audio">
- *   <ReferenceAudioUpload />
+ * <FeatureGate feature="creative_director">
+ *   <CreativeDirectorPanel />
+ * </FeatureGate>
+ *
+ * // With custom fallback
+ * <FeatureGate
+ *   feature="stems"
+ *   fallback={<CustomUpgradeUI />}
+ * >
+ *   <StemSeparationTool />
  * </FeatureGate>
  * ```
  */
-export const FeatureGate = ({ 
-  feature, 
-  children, 
-  fallback,
-  showUpgradePrompt = true 
-}: FeatureGateProps) => {
-  const { canAccess, upgradeRequired } = useSubscription();
 
-  if (canAccess(feature)) {
+import React, { ReactNode } from 'react';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { UpgradePrompt } from '@/components/subscription/UpgradePrompt';
+
+interface FeatureGateProps {
+  feature: string;
+  fallback?: ReactNode;
+  children: ReactNode;
+  customCheck?: () => boolean;
+  className?: string;
+}
+
+export const FeatureGate: React.FC<FeatureGateProps> = ({
+  feature,
+  fallback,
+  children,
+  customCheck,
+  className,
+}) => {
+  const { canAccess, upgradeRequired, plan } = useSubscription();
+
+  const hasAccess = customCheck ? customCheck() : canAccess(feature);
+
+  if (hasAccess) {
     return <>{children}</>;
   }
 
   if (fallback) {
-    return <>{fallback}</>;
+    return <div className={className}>{fallback}</div>;
   }
 
-  if (showUpgradePrompt) {
-    const requiredPlan = upgradeRequired(feature);
-    return <UpgradePrompt feature={feature} requiredPlan={requiredPlan} />;
-  }
+  const requiredPlan = upgradeRequired(feature);
 
-  return null;
+  return (
+    <div className={className}>
+      <UpgradePrompt
+        feature={feature}
+        requiredPlan={requiredPlan}
+        currentPlan={plan?.name}
+      />
+    </div>
+  );
 };

@@ -6,6 +6,7 @@
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { FeatureGate } from '@/components/subscription/FeatureGate';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Upload, X } from 'lucide-react';
@@ -125,9 +126,10 @@ export const AudioUpload = React.memo<AudioUploadProps>(({ onUploadComplete }) =
   }, [file, description, tags, folder, saveAudio, onUploadComplete]);
 
   return (
-    <div className="space-y-4">
-      {/* File input */}
-      <div className="space-y-2">
+    <FeatureGate feature="reference_audio">
+      <div className="space-y-4">
+        {/* File input */}
+        <div className="space-y-2">
         <Label>Аудио файл</Label>
         <div className="flex items-center gap-2">
           <Input
@@ -204,7 +206,8 @@ export const AudioUpload = React.memo<AudioUploadProps>(({ onUploadComplete }) =
           </>
         )}
       </Button>
-    </div>
+      </div>
+    </FeatureGate>
   );
 });
 

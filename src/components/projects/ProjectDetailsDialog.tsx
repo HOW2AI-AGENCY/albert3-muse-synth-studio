@@ -1,8 +1,12 @@
 /**
- * Project Details Dialog - Now with editing capabilities
+ * Project Details Dialog - Enhanced Mobile Optimized
+ *
+ * @version 3.0.0
  */
-import React, { useMemo, useEffect, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+
+import React, { useMemo, useEffect, useState, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useDebounce } from "use-debounce";
 import {
   ResponsiveDialog as Dialog,
   ResponsiveDialogContent as DialogContent,
@@ -106,8 +110,23 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
     });
   }, [allTracks]);
 
+  const completedTracks = useMemo(() => {
+    return projectTracks.filter((track) => track.status === "completed");
+  }, [projectTracks]);
 
-  if (!project) return null;
+  const draftTracks = useMemo(() => {
+    return projectTracks.filter((track) => track.status !== "completed" && track.status !== "failed");
+  }, [projectTracks]);
+
+  const completionPercent = useMemo(() => {
+    if (!project?.total_tracks || project.total_tracks === 0) return 0;
+    return Math.round(((project.completed_tracks || 0) / project.total_tracks) * 100);
+  }, [project]);
+
+  const handleCoverUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file || !project) return;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
