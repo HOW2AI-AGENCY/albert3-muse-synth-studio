@@ -5,6 +5,7 @@
 import { expect, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
+import React from 'react';
 
 // Cleanup after each test
 afterEach(() => {
@@ -33,33 +34,31 @@ vi.mock('@/integrations/supabase/client', () => ({
         'track_versions': [{ id: 'version-1', track_id: 'track-1', version_number: 1 }],
       };
 
-      const handler = {
-        get(target: any, prop: string) {
-          if (prop === 'then') {
-            return target[prop];
-          }
-          return (...args: any[]) => {
-            const newPromise = target.then((result: any) => {
-              // This is a simplified mock. For real tests, you'd implement the logic for
-              // select, eq, order, etc. For now, we just return the mock data.
-              if (prop === 'select') {
-                return { data: mockData[table as keyof typeof mockData] || [], error: null };
-              }
-              if (prop === 'single' || prop === 'maybeSingle') {
-                return { data: (mockData[table as keyof typeof mockData] || [])[0] || null, error: null };
-              }
-              return result;
-            });
-            // Make the new promise chainable
-            Object.assign(newPromise, handler);
-            return newPromise;
-          };
-        }
-      };
+      // Create chainable query builder mock
+      const createChain = (initialData: any) => ({
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        neq: vi.fn().mockReturnThis(),
+        gt: vi.fn().mockReturnThis(),
+        gte: vi.fn().mockReturnThis(),
+        lt: vi.fn().mockReturnThis(),
+        lte: vi.fn().mockReturnThis(),
+        like: vi.fn().mockReturnThis(),
+        ilike: vi.fn().mockReturnThis(),
+        is: vi.fn().mockReturnThis(),
+        in: vi.fn().mockReturnThis(),
+        contains: vi.fn().mockReturnThis(),
+        containedBy: vi.fn().mockReturnThis(),
+        range: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        offset: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: initialData[0] || null, error: null }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: initialData[0] || null, error: null }),
+        then: vi.fn((resolve) => Promise.resolve({ data: initialData, error: null }).then(resolve)),
+      });
 
-      const promise = Promise.resolve({ data: mockData[table as keyof typeof mockData] || [], error: null });
-      Object.assign(promise, handler);
-      return promise;
+      return createChain(mockData[table as keyof typeof mockData] || []);
     }),
     rpc: vi.fn().mockResolvedValue({ data: [], error: null }),
     functions: {
@@ -147,3 +146,12 @@ vi.mock('@/contexts/AuthContext', async () => {
     }),
   };
 });
+
+// Mock Tooltip components to avoid TooltipProvider requirement
+vi.mock('@/components/ui/tooltip', () => ({
+  TooltipProvider: ({ children }: { children: React.ReactNode }) => children,
+  Tooltip: ({ children }: { children: React.ReactNode }) => children,
+  TooltipTrigger: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) =>
+    asChild ? children : React.createElement('div', {}, children),
+  TooltipContent: ({ children }: { children: React.ReactNode }) => React.createElement('div', {}, children),
+}));
