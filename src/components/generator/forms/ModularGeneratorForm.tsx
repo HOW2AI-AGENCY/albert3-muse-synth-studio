@@ -151,12 +151,20 @@ export const ModularGeneratorForm = memo(({
     if (isMobile) {
       return (
         <div className="p-3 safe-area-bottom grid grid-cols-2 gap-3">
-          <Button variant="outline" onClick={() => setCurrentStep(s => s - 1)} disabled={currentStep === 0}>
+          <Button
+            variant="outline"
+            onClick={() => setCurrentStep(s => s - 1)}
+            disabled={currentStep === 0}
+            className="touch-target-min h-11"
+          >
             <ChevronLeft className="h-4 w-4 mr-1" />
             Назад
           </Button>
           {currentStep < steps.length - 1 ? (
-            <Button onClick={() => setCurrentStep(s => s + 1)}>
+            <Button
+              onClick={() => setCurrentStep(s => s + 1)}
+              className="touch-target-min h-11"
+            >
               Далее
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
@@ -165,6 +173,7 @@ export const ModularGeneratorForm = memo(({
               onClick={onGenerate}
               disabled={!canGenerate}
               className={cn(
+                'touch-target-min h-11',
                 'bg-gradient-to-r from-primary via-primary to-primary/90',
                 'shadow-glow-primary',
               )}
@@ -209,8 +218,28 @@ export const ModularGeneratorForm = memo(({
     <div className={cn('flex flex-col h-full', className)}>
       <ScrollArea className="flex-1 px-2 sm:px-3 md:px-4">
         {isMobile && (
-          <div className="p-2 text-center text-sm font-medium text-muted-foreground">
-            Шаг {currentStep + 1} / {steps.length}: {steps[currentStep]}
+          <div className="p-3 pb-2 space-y-2">
+            {/* Visual stepper with dots */}
+            <div className="flex items-center justify-center gap-2">
+              {steps.map((_, idx) => (
+                <div
+                  key={idx}
+                  className={cn(
+                    'h-2 rounded-full transition-all duration-300',
+                    idx === currentStep
+                      ? 'w-8 bg-primary'
+                      : idx < currentStep
+                      ? 'w-2 bg-primary/60'
+                      : 'w-2 bg-muted-foreground/30'
+                  )}
+                  aria-hidden="true"
+                />
+              ))}
+            </div>
+            {/* Step label */}
+            <div className="text-center text-sm font-medium text-muted-foreground">
+              Шаг {currentStep + 1} из {steps.length}: {steps[currentStep]}
+            </div>
           </div>
         )}
         <div className="space-y-4 py-4">

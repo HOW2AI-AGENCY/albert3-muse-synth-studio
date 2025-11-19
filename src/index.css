@@ -5,6 +5,8 @@
 @import './styles/mobile-contrast.css';
 /* Импорт Fluid Typography System (Phase 4) */
 @import './styles/fluid-typography.css';
+/* Импорт Touch Targets для WCAG AAA (Sprint 39) */
+@import './styles/touch-targets.css';
 
 /* Import design system styles */
 @import './styles/player.css';
