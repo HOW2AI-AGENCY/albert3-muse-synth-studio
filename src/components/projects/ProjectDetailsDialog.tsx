@@ -25,7 +25,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ImageUploadField } from '@/components/ui/image-uploader';
 import { useProjects } from '@/contexts/project/useProjects';
-import { Skeleton } from '@/components/ui/skeleton';
 
 type MusicProject = Database['public']['Tables']['music_projects']['Row'];
 type MusicProjectUpdate = Database['public']['Tables']['music_projects']['Update'];
