@@ -86,7 +86,7 @@ export const CreatePersonaDialog = ({
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const uploadedUrl = await imageUpload.handleUpload(file);
+      const uploadedUrl = await imageUpload.uploadImage(file);
       if (uploadedUrl) {
         setAvatarUrl(uploadedUrl);
       }
@@ -115,10 +115,10 @@ export const CreatePersonaDialog = ({
       });
 
       if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      if ((data as any)?.error) throw new Error((data as any).error);
 
       toast.success('Персона успешно создана!');
-      onSuccess?.(data.persona);
+      onSuccess?.((data as any)?.persona);
       onOpenChange(false);
       resetForm();
 
