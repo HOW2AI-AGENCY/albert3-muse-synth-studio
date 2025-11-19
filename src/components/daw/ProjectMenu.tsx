@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useDAWProjects } from '@/hooks/useDAWProjects';
 import { ProjectBrowser } from './ProjectBrowser';
@@ -53,7 +53,7 @@ export function ProjectMenu({
       <ProjectBrowser
         open={isBrowserOpen}
         onOpenChange={setIsBrowserOpen}
-        projects={projects}
+        projects={projects || []}
         isLoading={isLoading}
         onSelect={handleSelectProject}
         onDelete={handleDeleteProject}

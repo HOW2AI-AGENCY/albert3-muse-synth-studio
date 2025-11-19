@@ -5,20 +5,17 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogHeader } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Loader2, Sparkles } from '@/utils/iconImports';
+import { Loader2 } from '@/utils/iconImports';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { getAIDescription } from '@/types/track-metadata';
 import type { TrackMetadata } from '@/types/track-metadata';
-import { logger } from '@/utils/logger';
 import { ImageUpload } from '../ui/ImageUpload';
-import { useImageUpload } from '@/hooks/useImageUpload'; // Import the hook
+import { useImageUpload } from '@/hooks/useImageUpload';
 
 // ============================================================================
 // TYPES

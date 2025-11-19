@@ -4,9 +4,7 @@
  * @version 3.0.0
  */
 
-import React, { useMemo, useEffect, useState, useCallback } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useDebounce } from "use-debounce";
+import React, { useMemo, useEffect, useState } from "react";
 import {
   ResponsiveDialog as Dialog,
   ResponsiveDialogContent as DialogContent,
@@ -15,12 +13,10 @@ import {
   ResponsiveDialogFooter as DialogFooter,
 } from '@/components/ui/responsive-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Music, Clock, Disc3, Sparkles, Save } from '@/utils/iconImports';
+import { Music, Sparkles, Save } from '@/utils/iconImports';
 import { useTracks } from '@/hooks/useTracks';
 import { useGenerateProjectTracklist } from '@/hooks/useGenerateProjectTracklist';
-import { TrackActions } from '@/components/projects/TrackActions';
 import type { Database } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -57,8 +53,8 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
   onOpenChange,
   project,
 }) => {
-  const queryClient = useQueryClient();
-  const { updateProject, isUpdating } = useProjects();
+  const { updateProject } = useProjects();
+  const [isUpdating, setIsUpdating] = useState(false);
   const { tracks: allTracks, isLoading: isLoadingTracks } = useTracks(undefined, {
     projectId: project?.id 
   });
@@ -97,7 +93,9 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
 
   const handleSave = async () => {
     if (project) {
+      setIsUpdating(true);
       await updateProject(project.id, formData);
+      setIsUpdating(false);
       onOpenChange(false); // Close dialog on save
     }
   };
