@@ -256,11 +256,11 @@ export const BalanceDisplay = memo<BalanceDisplayProps>(
                   Низкий баланс. Рекомендуем пополнить.
                 </p>
               )}
-              {balance?.lastUpdated && (
+              {balance?.lastUpdated && typeof balance.lastUpdated === 'string' ? (
                 <p className="text-xs text-muted-foreground">
                   Обновлено: {new Date(balance.lastUpdated).toLocaleTimeString()}
                 </p>
-              )}
+              ) : null}
             </div>
           </TooltipContent>
         </Tooltip>
