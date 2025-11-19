@@ -191,15 +191,8 @@ export const TrackListItem = memo<TrackListItemProps>(
                 <TrackBadge type="stems" size="xs" showIcon={false} />
               )}
 
-              {/* Version */}
-              {track.version_number && (
-                <TrackBadge
-                  type="version"
-                  versionNumber={track.version_number}
-                  size="xs"
-                  showIcon={false}
-                />
-              )}
+              {/* Version - removed as Track doesn't have version_number */}
+
             </TrackBadgeGroup>
 
             {/* Separator */}
@@ -207,8 +200,8 @@ export const TrackListItem = memo<TrackListItemProps>(
 
             {/* Metrics */}
             <TrackMetrics
-              duration={track.duration}
-              likes={track.likes_count}
+              duration={track.duration ?? undefined}
+              likes={track.like_count ?? undefined}
               layout="compact"
               size="sm"
               display={['duration', 'likes']}
