@@ -25,8 +25,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ImageUploadField } from '@/components/ui/image-uploader';
 import { useProjects } from '@/contexts/project/useProjects';
-import { Skeleton } from '@/components/ui/skeleton';
-
 type MusicProject = Database['public']['Tables']['music_projects']['Row'];
 type MusicProjectUpdate = Database['public']['Tables']['music_projects']['Update'];
 
@@ -35,18 +33,6 @@ interface ProjectDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
   project: MusicProject | null;
 }
-
-const ProjectSkeleton = () => (
-  <div className="space-y-4 p-6">
-    <Skeleton className="h-8 w-3/4" />
-    <Skeleton className="h-20 w-full" />
-    <div className="grid grid-cols-2 gap-4">
-      <Skeleton className="h-16 w-full" />
-      <Skeleton className="h-16 w-full" />
-    </div>
-    <Skeleton className="h-10 w-full" />
-  </div>
-);
 
 export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
   open,
@@ -139,10 +125,10 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
               <div className="space-y-2">
                 <Label htmlFor="cover">Обложка проекта</Label>
                 {/* Step 2: Integrate ImageUploadField */}
-                <ImageUploadField
-                  initialImage={formData.cover_url}
-                  onFileChange={handleFileChange}
-                />
+            <ImageUploadField
+              initialValue={formData.cover_url}
+              onFileChange={handleFileChange}
+            />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="name">Название проекта</Label>

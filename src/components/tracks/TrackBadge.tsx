@@ -4,7 +4,7 @@
  */
 import { memo } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Music, Mic2, Waveform, GitBranch } from '@/utils/iconImports';
+import { Music, Mic2, GitBranch, Split } from '@/utils/iconImports';
 import { cn } from '@/lib/utils';
 
 export type TrackBadgeType =
@@ -39,7 +39,7 @@ export interface TrackBadgeProps {
    * Variant style
    * @default 'secondary'
    */
-  variant?: 'default' | 'secondary' | 'outline' | 'ghost';
+  variant?: 'default' | 'secondary' | 'outline' | 'destructive';
 
   /**
    * Size of badge
@@ -72,7 +72,7 @@ const BADGE_CONFIG = {
     colors: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20',
   },
   stems: {
-    icon: Waveform,
+    icon: Split,
     label: 'Stems',
     variant: 'secondary' as const,
     colors: 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20',
