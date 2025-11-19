@@ -192,6 +192,16 @@ export const LazyImageCropperDemo = createLazyPage(
   'ImageCropperDemo'
 );
 
+export const LazyTrackDetail = createLazyPage(
+  () => import('../pages/workspace/TrackDetail'),
+  'TrackDetail'
+);
+
+export const LazySubscription = createLazyPage(
+  () => import('../pages/workspace/Subscription'),
+  'Subscription'
+);
+
 /**
  * Lazy-loaded компоненты для дополнительной оптимизации
  */
