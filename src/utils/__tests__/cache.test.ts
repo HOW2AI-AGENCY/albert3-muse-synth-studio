@@ -46,9 +46,13 @@ describe('Audio Cache Utils', () => {
     });
 
     it('should handle service worker not ready', async () => {
+      const rejectedPromise = Promise.reject(new Error('Not ready'));
+      // Prevent unhandled rejection warning
+      rejectedPromise.catch(() => {});
+
       Object.defineProperty(navigator, 'serviceWorker', {
         value: {
-          ready: Promise.reject(new Error('Not ready')),
+          ready: rejectedPromise,
         },
         writable: true,
         configurable: true,
