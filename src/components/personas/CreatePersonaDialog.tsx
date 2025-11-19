@@ -50,7 +50,6 @@ export const CreatePersonaDialog = ({
   onSuccess,
 }: CreatePersonaDialogProps) => {
   const [isCreating, setIsCreating] = useState(false);
-  const [isBoosting, setIsBoosting] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isPublic, setIsPublic] = useState(false);
