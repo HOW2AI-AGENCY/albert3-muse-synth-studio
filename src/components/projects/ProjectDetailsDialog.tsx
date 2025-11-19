@@ -67,16 +67,6 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (file: File | null) => {
-    // Note: This assumes ImageUploadField handles the actual upload and returns a URL.
-    // For now, we'll just simulate this. A real implementation needs to call a service.
-    if (file) {
-      setFormData(prev => ({ ...prev, cover_url: URL.createObjectURL(file) }));
-    } else {
-      setFormData(prev => ({ ...prev, cover_url: null }));
-    }
-  };
-
   const handleSave = async () => {
     if (project) {
       setIsUpdating(true);
