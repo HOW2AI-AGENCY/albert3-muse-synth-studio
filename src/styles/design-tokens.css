@@ -56,6 +56,69 @@
     --outline: 217 11% 65%;
     --outline-variant: 215 25% 27%;
 
+    /* ===== MUSICVERSE TOKENS ===== */
+
+    /* MusicVerse Surface Colors - Glassmorphism */
+    --mv-surface-glass: 217 33% 17% / 0.6;        /* Semi-transparent surface */
+    --mv-surface-glass-hover: 217 33% 20% / 0.7;  /* Hover state */
+    --mv-surface-glass-active: 217 33% 23% / 0.8; /* Active/pressed state */
+    --mv-surface-elevated: 217 33% 20%;           /* Elevated cards */
+    --mv-surface-player: 217 33% 14%;             /* Player background */
+
+    /* MusicVerse Backdrop Blur Values */
+    --mv-blur-none: 0;
+    --mv-blur-sm: 4px;        /* Subtle blur */
+    --mv-blur-md: 8px;        /* Standard blur */
+    --mv-blur-lg: 16px;       /* Strong blur */
+    --mv-blur-xl: 24px;       /* Extra strong blur */
+    --mv-blur-player: 40px;   /* Full-screen player */
+
+    /* MusicVerse Gradients */
+    --mv-gradient-hero: linear-gradient(180deg,
+                        hsl(222 47% 11%) 0%,
+                        hsl(262 83% 58% / 0.1) 50%,
+                        hsl(222 47% 8%) 100%);
+    --mv-gradient-card: linear-gradient(135deg,
+                        hsl(262 83% 58% / 0.15) 0%,
+                        hsl(189 94% 43% / 0.1) 100%);
+    --mv-gradient-player: linear-gradient(180deg,
+                          hsl(222 47% 14%) 0%,
+                          hsl(222 47% 11%) 40%,
+                          hsl(222 47% 8%) 100%);
+    --mv-gradient-overlay: linear-gradient(180deg,
+                           hsl(222 47% 11% / 0) 0%,
+                           hsl(222 47% 11% / 0.8) 100%);
+
+    /* MusicVerse Waveform Colors */
+    --mv-waveform-played: var(--color-accent-purple);    /* Purple for played portion */
+    --mv-waveform-unplayed: 217 11% 65% / 0.25;          /* Muted for unplayed */
+    --mv-waveform-progress: var(--color-accent-purple);  /* Progress indicator */
+    --mv-waveform-background: 222 47% 11%;               /* Waveform background */
+
+    /* MusicVerse Hero Card Colors */
+    --mv-hero-card-bg: 217 33% 17% / 0.4;
+    --mv-hero-card-border: 262 83% 58% / 0.2;
+    --mv-hero-card-glow: 0 8px 32px hsl(262 83% 58% / 0.2);
+
+    /* MusicVerse Typography Weights (Optimized for Music UI) */
+    --mv-font-weight-light: 300;
+    --mv-font-weight-regular: 400;
+    --mv-font-weight-medium: 500;
+    --mv-font-weight-semibold: 600;
+    --mv-font-weight-bold: 700;
+
+    /* MusicVerse Spacing for Music Player */
+    --mv-player-padding-mobile: var(--space-4);
+    --mv-player-padding-desktop: var(--space-8);
+    --mv-player-control-size: 48px;        /* WCAG AAA compliant */
+    --mv-player-control-size-large: 64px;  /* Primary play button */
+
+    /* MusicVerse Border Radius Presets */
+    --mv-radius-card: var(--radius-2xl);        /* 16px - Cards */
+    --mv-radius-player: var(--radius-3xl);      /* 20px - Player */
+    --mv-radius-button: var(--radius-xl);       /* 12px - Buttons */
+    --mv-radius-waveform: var(--radius-lg);     /* 8px - Waveform */
+
     /* ===== ТИПОГРАФИКА (КОМПАКТНАЯ ВЕРСИЯ) ===== */
     
     /* Размеры шрифтов (Более компактная шкала) */

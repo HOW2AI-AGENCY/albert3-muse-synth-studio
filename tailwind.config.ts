@@ -200,6 +200,11 @@ const config: Config = {
         "gradient-success": "var(--gradient-success)",
         "gradient-hero": "var(--gradient-hero)",
         "gradient-glass": "var(--gradient-glass)",
+        // MusicVerse gradients
+        "mv-gradient-hero": "var(--mv-gradient-hero)",
+        "mv-gradient-card": "var(--mv-gradient-card)",
+        "mv-gradient-player": "var(--mv-gradient-player)",
+        "mv-gradient-overlay": "var(--mv-gradient-overlay)",
       },
       transitionDuration: {
         'instant': 'var(--duration-instant)',
@@ -263,6 +268,24 @@ const config: Config = {
         'container-5xl': 'var(--container-5xl)',
         'container-6xl': 'var(--container-6xl)',
         'container-7xl': 'var(--container-7xl)',
+      },
+      // MusicVerse backdrop blur utilities
+      backdropBlur: {
+        'mv-none': 'var(--mv-blur-none)',
+        'mv-sm': 'var(--mv-blur-sm)',
+        'mv': 'var(--mv-blur-md)',
+        'mv-md': 'var(--mv-blur-md)',
+        'mv-lg': 'var(--mv-blur-lg)',
+        'mv-xl': 'var(--mv-blur-xl)',
+        'mv-player': 'var(--mv-blur-player)',
+      },
+      // MusicVerse colors for direct usage
+      backgroundColor: {
+        'mv-surface-glass': 'hsl(var(--mv-surface-glass))',
+        'mv-surface-elevated': 'hsl(var(--mv-surface-elevated))',
+        'mv-surface-player': 'hsl(var(--mv-surface-player))',
+        'mv-waveform-bg': 'hsl(var(--mv-waveform-background))',
+        'mv-hero-card': 'hsl(var(--mv-hero-card-bg))',
       },
       keyframes: {
         "accordion-down": {
