@@ -84,19 +84,6 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
     });
   }, [allTracks]);
 
-  const _completedTracks = useMemo(() => {
-    return projectTracks.filter((track) => track.status === "completed");
-  }, [projectTracks]);
-
-  const _draftTracks = useMemo(() => {
-    return projectTracks.filter((track) => track.status !== "completed" && track.status !== "failed");
-  }, [projectTracks]);
-
-  const _completionPercent = useMemo(() => {
-    if (!project?.total_tracks || project.total_tracks === 0) return 0;
-    return Math.round(((project.completed_tracks || 0) / project.total_tracks) * 100);
-  }, [project]);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
