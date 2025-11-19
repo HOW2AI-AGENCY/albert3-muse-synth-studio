@@ -4,7 +4,7 @@
  */
 import { memo } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Music, Mic2, Waveform, GitBranch } from '@/utils/iconImports';
+import { Music, Mic2, GitBranch } from '@/utils/iconImports';
 import { cn } from '@/lib/utils';
 
 export type TrackBadgeType =
