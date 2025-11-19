@@ -32,6 +32,7 @@ import {
 } from '@/utils/iconImports';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from '@/hooks/use-toast';
 import { useSaveLyrics } from '@/hooks/useSaveLyrics';
 
@@ -117,7 +118,7 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
 
     setIsGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-lyrics-ai', {
+      const { data, error } = await SupabaseFunctions.invoke('generate-lyrics-ai', {
         body: {
           prompt: aiPrompt,
           style: aiStyle,

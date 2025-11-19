@@ -6,6 +6,7 @@
 import { onCLS, onFCP, onLCP, onTTFB, onINP } from 'web-vitals';
 import * as Sentry from '@sentry/react';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logger } from '@/utils/logger';
 
 type MetricName = 'CLS' | 'FCP' | 'LCP' | 'TTFB' | 'INP';
@@ -109,7 +110,7 @@ export interface CombinedHealthStatus {
  */
 export async function checkSunoHealth(): Promise<ServiceHealthStatus> {
   try {
-    const { data, error } = await supabase.functions.invoke('get-balance', {
+    const { data, error } = await SupabaseFunctions.invoke('get-balance', {
       body: { provider: 'suno' }
     });
 
@@ -136,7 +137,7 @@ export async function checkSunoHealth(): Promise<ServiceHealthStatus> {
  */
 export async function checkMurekaHealth(): Promise<ServiceHealthStatus> {
   try {
-    const { data, error } = await supabase.functions.invoke('get-mureka-balance');
+    const { data, error } = await SupabaseFunctions.invoke('get-mureka-balance');
 
     if (error) throw error;
 

@@ -4,6 +4,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { 
   isTelegramWebApp, 
   getTelegramInitData, 
@@ -53,7 +54,7 @@ export const TelegramAuthProvider: React.FC<TelegramAuthProviderProps> = ({ chil
         setTelegramUser(user);
 
         // Call Edge Function to verify and authenticate
-        const { data, error } = await supabase.functions.invoke('telegram-auth', {
+        const { data, error } = await SupabaseFunctions.invoke('telegram-auth', {
           body: { initData, user }
         });
 

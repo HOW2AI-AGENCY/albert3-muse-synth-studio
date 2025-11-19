@@ -33,6 +33,7 @@ import { useStemSeparation } from '@/hooks/useStemSeparation';
 import { toast } from 'sonner';
 import { logInfo } from '@/utils/logger';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { TrackStem } from '@/types/domain/track.types';
 
 interface QuickPreset {
@@ -120,7 +121,7 @@ export const MobileSunoPanel: React.FC = () => {
         hasVocals,
       });
 
-      const response = await supabase.functions.invoke('generate-suno', {
+      const response = await SupabaseFunctions.invoke('generate-suno', {
         body: {
           prompt,
           genre,

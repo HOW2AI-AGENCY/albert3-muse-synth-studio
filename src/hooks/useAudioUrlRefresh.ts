@@ -4,6 +4,7 @@
  */
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logInfo, logError } from '@/utils/logger';
 
 interface UseAudioUrlRefreshOptions {
@@ -70,7 +71,7 @@ export function useAudioUrlRefresh({
       refreshInProgressRef.current = true;
 
       try {
-        const { data, error } = await supabase.functions.invoke('refresh-track-audio', {
+        const { data, error } = await SupabaseFunctions.invoke('refresh-track-audio', {
           body: { trackId, mode: 'production' }
         });
 

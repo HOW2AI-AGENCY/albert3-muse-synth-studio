@@ -6,6 +6,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 
@@ -21,7 +22,7 @@ export const useResyncTrack = () => {
     mutationFn: async ({ trackId, force = false }: ResyncTrackParams) => {
       logger.info('Starting track resync', 'useResyncTrack', { trackId, force });
 
-      const { data, error } = await supabase.functions.invoke('resync-track-data', {
+      const { data, error } = await SupabaseFunctions.invoke('resync-track-data', {
         body: { trackId, force },
       });
 

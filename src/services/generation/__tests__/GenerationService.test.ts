@@ -1,7 +1,7 @@
 // src/services/generation/__tests__/GenerationService.test.ts
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GenerationService } from '../GenerationService';
-import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from '@/integrations/supabase/functions';
 
 // Mock the logger to prevent console noise
 vi.mock('@/utils/logger', () => ({
@@ -9,6 +9,16 @@ vi.mock('@/utils/logger', () => ({
     info: vi.fn(),
     error: vi.fn(),
     warn: vi.fn(),
+  },
+}));
+
+// Mock SupabaseFunctions
+vi.mock('@/integrations/supabase/functions', () => ({
+  SupabaseFunctions: {
+    invoke: vi.fn(),
+  },
+  functions: {
+    invoke: vi.fn(),
   },
 }));
 
@@ -32,7 +42,7 @@ describe('GenerationService', () => {
       };
 
       // Mock the invoke function to resolve successfully
-      vi.mocked(supabase.functions.invoke).mockResolvedValue({
+      vi.mocked(SupabaseFunctions.invoke).mockResolvedValue({
         data: { success: true, trackId: 'track-123' },
         error: null,
       });
@@ -42,7 +52,7 @@ describe('GenerationService', () => {
 
       expect(promise1).toBe(promise2);
       // Ensure the function was only called once
-      expect(supabase.functions.invoke).toHaveBeenCalledTimes(1);
+      expect(SupabaseFunctions.invoke).toHaveBeenCalledTimes(1);
     });
 
     it('should treat requests with different idempotency keys as unique', async () => {
@@ -56,7 +66,7 @@ describe('GenerationService', () => {
         idempotencyKey: 'key-2',
       };
 
-      vi.mocked(supabase.functions.invoke).mockResolvedValue({
+      vi.mocked(SupabaseFunctions.invoke).mockResolvedValue({
         data: { success: true, trackId: 'track-123' },
         error: null,
       });
@@ -65,7 +75,7 @@ describe('GenerationService', () => {
       const promise2 = GenerationService.generate(request2);
 
       expect(promise1).not.toBe(promise2);
-      expect(supabase.functions.invoke).toHaveBeenCalledTimes(2);
+      expect(SupabaseFunctions.invoke).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -76,14 +86,14 @@ describe('GenerationService', () => {
         prompt: 'Dark ambient music',
       };
 
-      vi.mocked(supabase.functions.invoke).mockResolvedValue({
+      vi.mocked(SupabaseFunctions.invoke).mockResolvedValue({
         data: { success: true, trackId: 'track-suno-123' },
         error: null,
       });
 
       await GenerationService.generate(request);
 
-      expect(supabase.functions.invoke).toHaveBeenCalledWith('generate-suno', {
+      expect(SupabaseFunctions.invoke).toHaveBeenCalledWith('generate-suno', {
         body: request,
       });
     });
@@ -94,14 +104,14 @@ describe('GenerationService', () => {
         prompt: 'Lofi hip-hop beats',
       };
 
-      vi.mocked(supabase.functions.invoke).mockResolvedValue({
+      vi.mocked(SupabaseFunctions.invoke).mockResolvedValue({
         data: { success: true, trackId: 'track-mureka-123' },
         error: null,
       });
 
       await GenerationService.generate(request);
 
-      expect(supabase.functions.invoke).toHaveBeenCalledWith('generate-mureka', {
+      expect(SupabaseFunctions.invoke).toHaveBeenCalledWith('generate-mureka', {
         body: request,
       });
     });
@@ -112,7 +122,7 @@ describe('GenerationService', () => {
       const request = { provider: 'suno' as const, prompt: 'Test' };
       const errorMessage = 'Internal Server Error';
 
-      vi.mocked(supabase.functions.invoke).mockResolvedValue({
+      vi.mocked(SupabaseFunctions.invoke).mockResolvedValue({
         data: null,
         error: { message: errorMessage },
       });
@@ -128,7 +138,7 @@ describe('GenerationService', () => {
       const request = { provider: 'suno' as const, prompt: 'Test' };
       const failureReason = 'Insufficient credits';
 
-      vi.mocked(supabase.functions.invoke).mockResolvedValue({
+      vi.mocked(SupabaseFunctions.invoke).mockResolvedValue({
         data: { success: false, error: failureReason },
         error: null,
       });

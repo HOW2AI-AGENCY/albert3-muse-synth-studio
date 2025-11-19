@@ -10,6 +10,7 @@ import { usePromptHistory } from '@/hooks/usePromptHistory';
 import { useBreakpoints } from '@/hooks/useBreakpoints';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logger } from '@/utils/logger';
 import {
   useGeneratorState,
@@ -374,7 +375,7 @@ const MusicGeneratorContainerComponent = ({ onTrackGenerated }: MusicGeneratorV2
     vibrate('light');
 
     try {
-      const { data, error } = await supabase.functions.invoke('ai-improve-field', {
+      const { data, error } = await SupabaseFunctions.invoke('ai-improve-field', {
         body: {
           field: 'prompt',
           value: contentToBoost.substring(0, 500),

@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Sparkles, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { cn } from '@/lib/utils';
 
 interface LyricsGenerationDialogProps {
@@ -51,7 +52,7 @@ export const LyricsGenerationDialog: React.FC<LyricsGenerationDialogProps> = ({
     setGeneratedLyrics(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke('generate-lyrics', {
+      const { data, error } = await SupabaseFunctions.invoke('generate-lyrics', {
         body: {
           prompt: prompt.trim(),
           trackId: track?.id,

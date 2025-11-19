@@ -5,6 +5,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 
@@ -25,7 +26,7 @@ export const useCreatePersona = () => {
 
       logger.info('Creating Suno persona', 'useCreatePersona', { trackId, name });
 
-      const { data, error } = await supabase.functions.invoke('create-suno-persona', {
+      const { data, error } = await SupabaseFunctions.invoke('create-suno-persona', {
         body: {
           trackId,
           musicIndex,

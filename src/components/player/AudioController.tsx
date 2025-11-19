@@ -8,6 +8,7 @@ import type { AudioPlayerTrack } from '@/stores/audioPlayerStore';
 import { logger } from '@/utils/logger';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 export const AudioController = () => {
   const currentTrack = useCurrentTrack();
   const isPlaying = useIsPlaying();
@@ -377,7 +378,7 @@ export const AudioController = () => {
 
         (async () => {
           try {
-            const proxyPromise = supabase.functions.invoke('fetch-audio-proxy', {
+            const proxyPromise = SupabaseFunctions.invoke('fetch-audio-proxy', {
               body: { url: audioUrl },
             });
 

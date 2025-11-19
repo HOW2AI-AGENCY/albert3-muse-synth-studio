@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logger } from '@/utils/logger';
 import { toast } from 'sonner';
 import { useTracks } from '@/hooks/useTracks';
@@ -22,7 +23,7 @@ export const useGenerateProjectTracklist = () => {
     try {
       toast.loading('Генерируем треклист...', { id: 'generating-tracklist' });
 
-      const { data, error } = await supabase.functions.invoke('generate-project-tracklist', {
+      const { data, error } = await SupabaseFunctions.invoke('generate-project-tracklist', {
         body: {
           projectId: project.id,
           projectName: project.name,

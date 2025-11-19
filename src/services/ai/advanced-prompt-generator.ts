@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import type { StyleRecommendationResult } from "@/types/styles";
 import { logger } from "@/utils/logger";
 
@@ -31,7 +32,7 @@ export async function generateAdvancedPrompt(
       throw new Error('Вы должны быть авторизованы для использования этой функции');
     }
 
-    const { data, error } = await supabase.functions.invoke('generate-advanced-prompt', {
+    const { data, error } = await SupabaseFunctions.invoke('generate-advanced-prompt', {
       body: request,
       headers: {
         Authorization: `Bearer ${session.access_token}`

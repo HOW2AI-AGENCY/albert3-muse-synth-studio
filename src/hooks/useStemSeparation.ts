@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { ApiService } from "@/services/api.service";
@@ -74,7 +75,7 @@ export const useStemSeparation = ({
           requestBody.versionId = versionId;
         }
 
-        const { data: response, error } = await supabase.functions.invoke<{
+        const { data: response, error } = await SupabaseFunctions.invoke<{
           success?: boolean;
           taskId?: string;
           zipUrl?: string;

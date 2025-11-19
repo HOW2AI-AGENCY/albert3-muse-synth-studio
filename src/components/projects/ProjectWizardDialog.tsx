@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Sparkles, RefreshCw, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 import type { MusicProject, ProjectType } from '@/types/project.types';
@@ -64,7 +65,7 @@ export const ProjectWizardDialog = ({ open, onOpenChange, onProjectCreated }: Pr
     try {
       logger.info('Generating project draft', 'ProjectWizard', { prompt, projectType, trackCount });
       
-      const { data, error } = await supabase.functions.invoke('ai-project-wizard', {
+      const { data, error } = await SupabaseFunctions.invoke('ai-project-wizard', {
         body: {
           prompt,
           mode: 'draft',

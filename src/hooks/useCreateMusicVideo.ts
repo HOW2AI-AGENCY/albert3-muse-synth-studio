@@ -5,6 +5,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
 import { logInfo, logError } from '@/utils/logger';
 
@@ -28,7 +29,7 @@ export const useCreateMusicVideo = () => {
     mutationFn: async (params: CreateMusicVideoParams) => {
       logInfo('Creating music video', 'useCreateMusicVideo', { params });
 
-      const { data, error } = await supabase.functions.invoke('create-music-video', {
+      const { data, error } = await SupabaseFunctions.invoke('create-music-video', {
         body: params
       });
 

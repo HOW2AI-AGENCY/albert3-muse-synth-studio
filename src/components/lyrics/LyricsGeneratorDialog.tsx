@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/utils/logger";
 import { isNetworkAbortError } from "@/utils/errors";
@@ -86,7 +87,7 @@ export function LyricsGeneratorDialog({
       logger.info(`✍️ [LYRICS] Generating lyrics with AI: ${prompt.substring(0, 50)}...`);
 
       // Используем Lovable AI для генерации лирики
-      const { data, error } = await supabase.functions.invoke('generate-lyrics-ai', {
+      const { data, error } = await SupabaseFunctions.invoke('generate-lyrics-ai', {
         body: {
           prompt: prompt.trim(),
           trackId: trackId, // Передаем trackId для автосохранения
@@ -164,7 +165,7 @@ export function LyricsGeneratorDialog({
     try {
       logger.info(`✏️ [LYRICS] Editing lyrics with AI: ${editPrompt.substring(0, 50)}...`);
 
-      const { data, error } = await supabase.functions.invoke('generate-lyrics-ai', {
+      const { data, error } = await SupabaseFunctions.invoke('generate-lyrics-ai', {
         body: {
           prompt: `Edit the following lyrics based on this instruction: "${editPrompt}"\n\nOriginal lyrics:\n${generatedLyrics}`,
           trackId: trackId,

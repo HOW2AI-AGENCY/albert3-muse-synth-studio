@@ -3,6 +3,7 @@
  */
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast as sonnerToast } from 'sonner';
 import { logger } from '@/utils/logger';
 
@@ -50,7 +51,7 @@ export const useAudioFlamingoAnalysis = () => {
 
       setProgress(30);
 
-      const { data, error } = await supabase.functions.invoke('analyze-audio-flamingo', {
+      const { data, error } = await SupabaseFunctions.invoke('analyze-audio-flamingo', {
         body: { audioUrl, analysisType }
       });
 

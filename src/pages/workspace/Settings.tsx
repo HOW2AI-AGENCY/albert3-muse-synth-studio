@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -22,7 +23,7 @@ const Settings = () => {
         description: "Это может занять несколько минут",
       });
 
-      const { data, error } = await supabase.functions.invoke('migrate-tracks-to-storage');
+      const { data, error } = await SupabaseFunctions.invoke('migrate-tracks-to-storage');
 
       if (error) throw error;
 
@@ -46,7 +47,7 @@ const Settings = () => {
         description: "Запрашиваем данные из Suno API",
       });
 
-      const { data, error } = await supabase.functions.invoke('migrate-track-versions');
+      const { data, error } = await SupabaseFunctions.invoke('migrate-track-versions');
 
       if (error) throw error;
 

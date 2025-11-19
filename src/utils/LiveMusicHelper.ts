@@ -7,6 +7,7 @@
  */
 import { logger } from './logger';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
 
 export interface WeightedPrompt {
@@ -41,7 +42,7 @@ export class LiveMusicHelper extends EventTarget {
   async connect(initialPrompts: WeightedPrompt[]): Promise<void> {
     try {
       this.setPlaybackState('connecting');
-      const { data, error } = await supabase.functions.invoke('prompt-dj-lyria-stream', {
+      const { data, error } = await SupabaseFunctions.invoke('prompt-dj-lyria-stream', {
         body: { initialPrompts: initialPrompts.map(p => ({ text: p.text, weight: p.weight })) }
       });
       if (error) throw error;

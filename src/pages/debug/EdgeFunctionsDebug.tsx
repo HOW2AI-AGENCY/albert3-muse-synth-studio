@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { appEnv } from "@/config/env";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,7 @@ export default function EdgeFunctionsDebug() {
     const endpoint = getNetworkEndpoint(fn);
     pushLog({ level: "info", message: "Calling unauth function", context: { endpoint, fn } });
     try {
-      const { data, error } = await supabase.functions.invoke(fn, {
+      const { data, error } = await SupabaseFunctions.invoke(fn, {
         body: { ping: true },
       });
       if (error) {
@@ -55,7 +56,7 @@ export default function EdgeFunctionsDebug() {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke(fn, {
+      const { data, error } = await SupabaseFunctions.invoke(fn, {
         body: { provider },
       });
       if (error) {

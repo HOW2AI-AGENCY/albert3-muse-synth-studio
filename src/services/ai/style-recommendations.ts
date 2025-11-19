@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { handleSupabaseFunctionError } from "@/services/api/errors";
 import { logger } from "@/utils/logger";
 import type {
@@ -67,7 +68,7 @@ export const fetchStyleRecommendations = async (
   const context = `${SERVICE_CONTEXT}.fetch`;
 
   try {
-    const { data, error } = await supabase.functions.invoke<StyleRecommendationResponse>(
+    const { data, error } = await SupabaseFunctions.invoke<StyleRecommendationResponse>(
       SUGGEST_STYLES_FUNCTION,
       {
         body: sanitisedPayload,

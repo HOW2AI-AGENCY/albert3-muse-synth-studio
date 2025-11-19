@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 
@@ -28,7 +29,7 @@ export const useCreateCover = () => {
     try {
       logger.info(`🎤 [COVER] Starting cover creation: ${params.prompt}`);
 
-      const { data, error } = await supabase.functions.invoke('create-cover', {
+      const { data, error } = await SupabaseFunctions.invoke('create-cover', {
         body: params
       });
 

@@ -5,6 +5,7 @@
 import { useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
 
 interface SeparateStemsParams {
@@ -17,7 +18,7 @@ export const useSeparateStems = () => {
 
   const mutation = useMutation({
     mutationFn: async ({ trackId, separationMode = 'split_stem' }: SeparateStemsParams) => {
-      const { data, error } = await supabase.functions.invoke('separate-stems', {
+      const { data, error } = await SupabaseFunctions.invoke('separate-stems', {
         body: { trackId, separationMode }
       });
 

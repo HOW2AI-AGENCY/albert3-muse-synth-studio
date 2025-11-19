@@ -28,6 +28,7 @@ import {
   Clock
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 import { logger } from '@/utils/logger';
@@ -122,7 +123,7 @@ export const TrackLyricsViewDialog: React.FC<TrackLyricsViewDialogProps> = ({
 
     setIsGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-lyrics-ai', {
+      const { data, error } = await SupabaseFunctions.invoke('generate-lyrics-ai', {
         body: {
           prompt: `${aiPrompt}\n\nОригинальный текст для редактирования:\n${track.lyrics}`,
           trackId: track.id,

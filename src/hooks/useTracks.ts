@@ -8,6 +8,7 @@ import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/r
 import { useToast } from '@/hooks/use-toast';
 import { ApiService, type Track, mapTrackRowToTrack } from '@/services/api.service';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import type { Database } from '@/integrations/supabase/types';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { logger, logError, logInfo, logWarn } from '@/utils/logger';
@@ -315,7 +316,7 @@ export const useTracks = (refreshTrigger?: number, options: UseTracksOptions = {
       logInfo('Auto-checking stuck tracks', 'useTracks', { count: stuckTracks.length });
 
       try {
-        await supabase.functions.invoke('check-stuck-tracks', {
+        await SupabaseFunctions.invoke('check-stuck-tracks', {
           body: { trackIds: stuckTracks.map((t) => t.id) },
         });
 

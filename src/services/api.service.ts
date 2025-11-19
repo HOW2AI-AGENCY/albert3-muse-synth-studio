@@ -4,6 +4,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import type { Database } from "@/integrations/supabase/types";
 import { handlePostgrestError, handleSupabaseFunctionError } from "@/services/api/errors";
 import { logError, logWarn } from "@/utils/logger";
@@ -146,7 +147,7 @@ export class ApiService {
     
     // Используем retry logic для улучшения промпта
     const { data, error } = await retryWithBackoff(
-      () => supabase.functions.invoke<ImprovePromptResponse>(
+      () => SupabaseFunctions.invoke<ImprovePromptResponse>(
         "improve-prompt",
         { body: request }
       ),
@@ -191,7 +192,7 @@ export class ApiService {
     
     // Используем retry logic для генерации текстов
     const { data, error } = await retryWithBackoff(
-      () => supabase.functions.invoke<GenerateLyricsResponse>(
+      () => SupabaseFunctions.invoke<GenerateLyricsResponse>(
         "generate-lyrics",
         { body: request }
       ),
@@ -240,7 +241,7 @@ export class ApiService {
   }): Promise<boolean> {
     const context = "ApiService.syncStemJob";
 
-    const { data, error } = await supabase.functions.invoke<{
+    const { data, error } = await SupabaseFunctions.invoke<{
       success: boolean;
       status?: string;
       code?: number | null;
@@ -522,7 +523,7 @@ export class ApiService {
       startKpiTimer(timerId);
 
       try {
-        const invokePromise = supabase.functions.invoke(functionName, { body: { provider } });
+        const invokePromise = SupabaseFunctions.invoke(functionName, { body: { provider } });
         const { data, error } = await Promise.race([invokePromise, timeout]) as any;
         const duration = endKpiTimer(timerId, 'api_latency', { endpoint: functionName, provider }) ?? 0;
         trackAPIRequest(functionName, 'POST', error ? 500 : 200, duration, error ?? undefined);

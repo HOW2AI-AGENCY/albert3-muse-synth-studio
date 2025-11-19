@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 
@@ -27,7 +28,7 @@ export const useAddVocal = () => {
       logger.info(`🎤 [ADD-VOCAL] Starting vocal generation`, 'useAddVocal', params);
 
       // Call new add-vocals endpoint
-      const { data, error } = await supabase.functions.invoke('add-vocals', {
+      const { data, error } = await SupabaseFunctions.invoke('add-vocals', {
         body: {
           uploadUrl: params.uploadUrl,
           prompt: params.prompt,

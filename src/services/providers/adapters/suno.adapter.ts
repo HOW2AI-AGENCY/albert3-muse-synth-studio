@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { IProviderClient } from '../base';
 import {
   GenerationParams,
@@ -32,7 +33,7 @@ export class SunoProviderAdapter implements IProviderClient {
     try {
       // SEC-003: Add timeout to prevent indefinite hanging
       const { data, error } = await withEdgeFunctionTimeout(
-        supabase.functions.invoke('generate-suno', {
+        SupabaseFunctions.invoke('generate-suno', {
           body: payload,
         }),
         'generate-suno'
@@ -99,7 +100,7 @@ export class SunoProviderAdapter implements IProviderClient {
 
     // SEC-003: Add timeout
     const { data, error } = await withEdgeFunctionTimeout(
-      supabase.functions.invoke('extend-track', {
+      SupabaseFunctions.invoke('extend-track', {
         body: {
           trackId: params.originalTrackId,
           prompt: params.prompt,
@@ -131,7 +132,7 @@ export class SunoProviderAdapter implements IProviderClient {
 
     // SEC-003: Add timeout (stem separation can take longer)
     const { data, error } = await withEdgeFunctionTimeout(
-      supabase.functions.invoke('separate-stems', {
+      SupabaseFunctions.invoke('separate-stems', {
         body: {
           taskId: params.trackId,
           audioId: params.audioId,
@@ -178,7 +179,7 @@ export class SunoProviderAdapter implements IProviderClient {
   async getBalance(): Promise<BalanceInfo> {
     // SEC-003: Add timeout
     const { data, error } = await withEdgeFunctionTimeout(
-      supabase.functions.invoke('get-balance', {
+      SupabaseFunctions.invoke('get-balance', {
         body: { provider: 'suno' },
       }),
       'get-balance',

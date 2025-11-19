@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logger } from '@/utils/logger';
 
 export interface EnhancePromptParams {
@@ -22,7 +23,7 @@ export const enhancePrompt = async (
   params: EnhancePromptParams
 ): Promise<EnhancePromptResult> => {
   try {
-    const { data, error } = await supabase.functions.invoke('enhance-generation-prompt', {
+    const { data, error } = await SupabaseFunctions.invoke('enhance-generation-prompt', {
       body: params,
     });
 

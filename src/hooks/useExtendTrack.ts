@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 
@@ -30,7 +31,7 @@ export const useExtendTrack = () => {
     try {
       logger.info(`🎵 [EXTEND] Starting track extension: ${params.trackId}`);
 
-      const { data, error } = await supabase.functions.invoke('extend-track', {
+      const { data, error } = await SupabaseFunctions.invoke('extend-track', {
         body: params
       });
 

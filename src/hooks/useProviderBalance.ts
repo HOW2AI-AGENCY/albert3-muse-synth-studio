@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 
 interface ProviderBalance {
   provider: string;
@@ -20,7 +21,7 @@ const fetchBalance = async (): Promise<ProviderBalance> => {
     throw new Error('Unauthorized: sign in to view balance');
   }
 
-  const { data, error } = await supabase.functions.invoke<ProviderBalance>(
+  const { data, error } = await SupabaseFunctions.invoke<ProviderBalance>(
     'get-balance',
     { body: { provider: PRIMARY_PROVIDER } }
   );

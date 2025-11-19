@@ -5,6 +5,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 
@@ -76,7 +77,7 @@ export function useSavedLyrics(filters?: {
   // Save lyrics mutation
   const saveLyrics = useMutation({
     mutationFn: async (params: SaveLyricsParams) => {
-      const { data, error } = await supabase.functions.invoke('save-lyrics', {
+      const { data, error } = await SupabaseFunctions.invoke('save-lyrics', {
         body: params,
       });
 

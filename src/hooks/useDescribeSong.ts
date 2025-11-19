@@ -5,6 +5,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 
@@ -45,7 +46,7 @@ export const useDescribeSong = () => {
         trackId: params.trackId,
       });
 
-    const { data, error } = await supabase.functions.invoke<DescribeSongResponse>(
+    const { data, error } = await SupabaseFunctions.invoke<DescribeSongResponse>(
       'describe-song-replicate',
       {
         body: {

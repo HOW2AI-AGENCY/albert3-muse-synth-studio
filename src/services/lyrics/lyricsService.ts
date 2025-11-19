@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logger } from '@/utils/logger';
 
 export interface SaveLyricsResult {
@@ -75,7 +76,7 @@ export async function saveLyrics(
     if (generateTitle) {
       // Generate title using AI
       try {
-        const { data: titleData, error: titleError } = await supabase.functions.invoke('generate-track-title', {
+        const { data: titleData, error: titleError } = await SupabaseFunctions.invoke('generate-track-title', {
           body: { lyrics }
         });
 
