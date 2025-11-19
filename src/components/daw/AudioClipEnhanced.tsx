@@ -12,9 +12,10 @@
  * @module components/daw/AudioClipEnhanced
  */
 
-import React, { useCallback, useRef, useState, useEffect } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { useDAWStore, DAWClip } from '@/stores/dawStore';
+import { useDAWStore } from '@/stores/daw';
+import { DAWClip } from '@/stores/daw/types';
 import { WaveformVisualization } from './WaveformVisualization';
 import {
   ContextMenu,
@@ -37,14 +38,14 @@ interface AudioClipEnhancedProps {
 
 type DragMode = 'move' | 'trim-start' | 'trim-end' | 'fade-in' | 'fade-out' | null;
 
-export const AudioClipEnhanced: React.FC<AudioClipEnhancedProps> = ({
+export const AudioClipEnhanced = ({
   clip,
   trackId: _trackId,
   zoom,
   scrollLeft,
   trackHeight,
   color,
-}) => {
+}: AudioClipEnhancedProps) => {
   const colors = getCanvasColors();
   const clipColor = color || colors.primary;
   const clipRef = useRef<HTMLDivElement>(null);
@@ -59,6 +60,8 @@ export const AudioClipEnhanced: React.FC<AudioClipEnhancedProps> = ({
   const selectClip = useDAWStore((state) => state.selectClip);
   const currentTime = useDAWStore((state) => state.timeline.currentTime);
   const snapTimeToGrid = useDAWStore((state) => state.snapTimeToGrid);
+  const project = useDAWStore((state) => state.project);
+  const bpm = project?.bpm || 120;
 
   const isSelected = selection.selectedClipIds.has(clip.id);
 
@@ -94,14 +97,14 @@ export const AudioClipEnhanced: React.FC<AudioClipEnhancedProps> = ({
 
       switch (dragMode) {
         case 'move': {
-          const newStartTime = snapTimeToGrid(dragStart.startTime + deltaTime);
+          const newStartTime = snapTimeToGrid(dragStart.startTime + deltaTime, bpm);
           if (newStartTime >= 0) {
             updateClip(clip.id, { startTime: Math.max(0, newStartTime) });
           }
           break;
         }
         case 'trim-start': {
-          const newStartTime = snapTimeToGrid(dragStart.startTime + deltaTime);
+          const newStartTime = snapTimeToGrid(dragStart.startTime + deltaTime, bpm);
           const newDuration = dragStart.duration - deltaTime;
           if (newDuration > 0.1 && newStartTime >= 0) {
             updateClip(clip.id, {
@@ -131,7 +134,7 @@ export const AudioClipEnhanced: React.FC<AudioClipEnhancedProps> = ({
         }
       }
     },
-    [dragMode, dragStart, clip.id, clip.duration, clip.offset, zoom, snapTimeToGrid, updateClip]
+    [dragMode, dragStart, clip.id, clip.duration, clip.offset, zoom, snapTimeToGrid, updateClip, bpm]
   );
 
   const handleMouseUp = useCallback(() => {

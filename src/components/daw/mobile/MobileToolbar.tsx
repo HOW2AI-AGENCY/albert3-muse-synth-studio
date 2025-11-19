@@ -10,8 +10,8 @@
  * @module components/daw/mobile/MobileToolbar
  */
 
-import React from 'react';
-import { useDAWStore } from '@/stores/dawStore';
+import { type FC } from 'react';
+import { useDAWStore } from '@/stores/daw';
 import { Button } from '@/components/ui/button';
 import {
   Undo2,
@@ -22,7 +22,7 @@ import {
   ZoomOut,
 } from 'lucide-react';
 
-export const MobileToolbar: React.FC = () => {
+export const MobileToolbar: FC = () => {
   const timeline = useDAWStore((state) => state.timeline);
   const undo = useDAWStore((state) => state.undo);
   const redo = useDAWStore((state) => state.redo);

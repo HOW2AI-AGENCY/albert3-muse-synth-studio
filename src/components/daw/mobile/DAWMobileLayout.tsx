@@ -11,8 +11,8 @@
  * @module components/daw/mobile/DAWMobileLayout
  */
 
-import React, { useState } from 'react';
-import { useDAWStore } from '@/stores/dawStore';
+import { useState, type FC } from 'react';
+import { useDAWStore } from '@/stores/daw';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -31,7 +31,7 @@ import { MobileSunoPanel } from './MobileSunoPanel';
 
 type MobileView = 'tracks' | 'timeline' | 'mixer' | 'suno' | 'settings';
 
-export const DAWMobileLayout: React.FC = () => {
+export const DAWMobileLayout: FC = () => {
   const [activeView, setActiveView] = useState<MobileView>('tracks');
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
 

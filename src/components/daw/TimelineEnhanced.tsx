@@ -11,8 +11,8 @@
  * @module components/daw/TimelineEnhanced
  */
 
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { useDAWStore } from '@/stores/dawStore';
+import { useRef, useEffect, useState, useCallback } from 'react';
+import { useDAWStore } from '@/stores/daw';
 import { cn } from '@/lib/utils';
 import { getCanvasColors } from '@/utils/canvas-colors';
 
@@ -23,12 +23,12 @@ interface TimelineEnhancedProps {
   onSeek?: (time: number) => void;
 }
 
-export const TimelineEnhanced: React.FC<TimelineEnhancedProps> = ({
+export const TimelineEnhanced = ({
   width,
   height = 48,
   className = '',
   onSeek,
-}) => {
+}: TimelineEnhancedProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -54,9 +54,9 @@ export const TimelineEnhanced: React.FC<TimelineEnhancedProps> = ({
   const pixelToTime = useCallback(
     (pixel: number) => {
       const time = (pixel + scrollLeft) / zoom;
-      return snapToGrid ? snapTimeToGrid(time) : time;
+      return snapToGrid ? snapTimeToGrid(time, bpm) : time;
     },
-    [zoom, scrollLeft, snapToGrid, snapTimeToGrid]
+    [zoom, scrollLeft, snapToGrid, snapTimeToGrid, bpm]
   );
 
   // Draw timeline
