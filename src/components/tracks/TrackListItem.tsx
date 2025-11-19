@@ -190,16 +190,6 @@ export const TrackListItem = memo<TrackListItemProps>(
               {track.has_stems && (
                 <TrackBadge type="stems" size="xs" showIcon={false} />
               )}
-
-              {/* Version */}
-              {track.version_number && (
-                <TrackBadge
-                  type="version"
-                  versionNumber={track.version_number}
-                  size="xs"
-                  showIcon={false}
-                />
-              )}
             </TrackBadgeGroup>
 
             {/* Separator */}
@@ -207,8 +197,8 @@ export const TrackListItem = memo<TrackListItemProps>(
 
             {/* Metrics */}
             <TrackMetrics
-              duration={track.duration}
-              likes={track.likes_count}
+              duration={track.duration || undefined}
+              likes={track.like_count || 0}
               layout="compact"
               size="sm"
               display={['duration', 'likes']}
@@ -221,12 +211,12 @@ export const TrackListItem = memo<TrackListItemProps>(
           {track.genre && (
             <span className="text-xs text-muted-foreground">{track.genre}</span>
           )}
-          {track.status && track.status !== 'completed' && (
+          {track.status && track.status !== 'completed' && track.status !== 'draft' && (
             <span
               className={cn(
                 'text-xs font-medium',
                 track.status === 'processing' && 'text-blue-600',
-                track.status === 'error' && 'text-destructive'
+                track.status === 'failed' && 'text-destructive'
               )}
             >
               {track.status}
