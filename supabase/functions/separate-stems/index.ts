@@ -6,7 +6,6 @@ import {
 } from "../_shared/cors.ts";
 import { logger, withSentry } from "../_shared/logger.ts";
 import { createSunoClient, SunoApiError } from "../_shared/suno.ts";
-import { createMurekaStemClient, MurekaApiError } from "../_shared/mureka-stem.ts";
 import {
   createSupabaseAdminClient,
   createSupabaseUserClient,
