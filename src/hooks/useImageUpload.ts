@@ -19,7 +19,7 @@ interface UseImageUploadResult {
   handleRemove: () => void;
 }
 
-export const useImageUpload = ({ onUploadSuccess }: UseImageUploadProps = {}): UseImageUploadResult => {
+export const useImageUpload = ({ onUploadSuccess }: UseImageUploadProps = {}): UseImageUploadResult & { uploadImage: (file: File) => Promise<string | null>; handleUpload: (file: File) => Promise<string | null> } => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -139,5 +139,7 @@ export const useImageUpload = ({ onUploadSuccess }: UseImageUploadProps = {}): U
     handleThumbnailClick,
     handleFileChange,
     handleRemove,
+    uploadImage,
+    handleUpload: uploadImage,
   };
 };
