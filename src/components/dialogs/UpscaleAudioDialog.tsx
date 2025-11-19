@@ -41,10 +41,11 @@ export const UpscaleAudioDialog = ({
 
   // Handle status updates
   useEffect(() => {
-    if (statusData?.status === 'succeeded' && statusData?.output) {
-      setUpscaledUrl(statusData.output as string);
+    const status = statusData as any;
+    if (status?.status === 'succeeded' && status?.output) {
+      setUpscaledUrl(status.output as string);
       toast.success('Качество аудио улучшено! 🎉');
-    } else if (statusData?.status === 'failed') {
+    } else if (status?.status === 'failed') {
       toast.error('Не удалось улучшить качество аудио');
       setPredictionId(null);
     }
@@ -101,8 +102,9 @@ export const UpscaleAudioDialog = ({
     onOpenChange(false);
   };
 
-  const isProcessing = isStarting || isPolling || (predictionId && statusData?.status === 'processing');
-  const progress = statusData?.status === 'processing' 
+  const status = statusData as any;
+  const isProcessing = isStarting || isPolling || (predictionId && status?.status === 'processing');
+  const progress = status?.status === 'processing'
     ? ((statusData as any)?.progress || 0) * 100 
     : isStarting 
     ? 10 
@@ -181,7 +183,7 @@ export const UpscaleAudioDialog = ({
               <p className="text-xs text-muted-foreground text-center">
                 {isStarting 
                   ? 'Инициализация...' 
-                  : statusData?.status === 'processing'
+                  : status?.status === 'processing'
                   ? 'AI улучшает качество аудио. Это может занять 1-3 минуты.'
                   : 'Ожидание...'}
               </p>
@@ -208,7 +210,7 @@ export const UpscaleAudioDialog = ({
           )}
 
           {/* Error State */}
-          {statusData?.status === 'failed' && (
+          {status?.status === 'failed' && (
             <div className="flex items-center gap-2 text-destructive">
               <XCircle className="h-5 w-5" />
               <span className="text-sm">Не удалось улучшить качество</span>

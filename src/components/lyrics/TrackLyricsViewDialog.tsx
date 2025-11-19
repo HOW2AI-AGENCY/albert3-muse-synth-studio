@@ -132,8 +132,9 @@ export const TrackLyricsViewDialog: React.FC<TrackLyricsViewDialogProps> = ({
 
       if (error) throw error;
 
-      if (data?.lyrics) {
-        setEditedLyrics(data.lyrics);
+      const result = data as any;
+      if (result?.lyrics) {
+        setEditedLyrics(result.lyrics);
         setShowAIEdit(false);
         setAIPrompt('');
         toast({

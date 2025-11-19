@@ -84,8 +84,9 @@ export const ProjectWizardDialog = ({ open, onOpenChange, onProjectCreated }: Pr
         throw error;
       }
 
-      if (data?.draft) {
-        setDraft(data.draft);
+      const result = data as any;
+      if (result?.draft) {
+        setDraft(result.draft);
         setStep('draft');
         toast({
           title: '✨ Черновик готов!',

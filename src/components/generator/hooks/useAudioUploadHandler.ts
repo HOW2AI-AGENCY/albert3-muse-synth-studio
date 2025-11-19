@@ -85,9 +85,10 @@ export const useAudioUploadHandler = (state: UseGeneratorStateReturn) => {
 
       if (error) throw error;
 
+      const result = data as any;
       logger.info('✅ [MANUAL-ANALYSIS] Analysis started', 'AudioUploadHandler', {
-        recognitionId: data?.recognitionId,
-        descriptionId: data?.descriptionId,
+        recognitionId: result?.recognitionId,
+        descriptionId: result?.descriptionId,
         audioLibraryId: audioLibraryId ?? 'null'
       });
 

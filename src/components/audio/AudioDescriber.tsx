@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Sparkles } from '@/utils/iconImports';
-import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
@@ -27,18 +26,19 @@ export const AudioDescriber = ({ audioUrl, onDescriptionGenerated, disabled }: A
 
       if (error) throw error;
 
-      if (data?.fullDescription) {
-        onDescriptionGenerated(data.fullDescription);
+      const result = data as any;
+      if (result?.fullDescription) {
+        onDescriptionGenerated(result.fullDescription);
         toast({
           title: '✨ Описание готово',
           description: 'Текстовое описание музыки добавлено в промпт',
         });
         logger.info('[AudioDescriber] Description generated', '[AudioDescriber]', {
-          descriptionLength: data.fullDescription.length,
+          descriptionLength: result.fullDescription.length,
           audioUrlPreview: audioUrl.substring(0, 50),
-          hasGenre: !!data.genre,
-          hasBpm: !!data.bpm,
-          hasKey: !!data.key
+          hasGenre: !!result.genre,
+          hasBpm: !!result.bpm,
+          hasKey: !!result.key
         });
       } else {
         throw new Error('No description returned');

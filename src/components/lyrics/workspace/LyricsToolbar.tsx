@@ -31,7 +31,6 @@ import {
   Save
 } from '@/utils/iconImports';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from '@/hooks/use-toast';
 import { useSaveLyrics } from '@/hooks/useSaveLyrics';
@@ -137,17 +136,18 @@ export const LyricsToolbar: React.FC<LyricsToolbarProps> = ({
         toast({
           title: "Ошибка генерации",
           description: error.message || "Не удалось сгенерировать текст",
-          variant: "destructive"
-        });
-        return;
-      }
+        variant: "destructive"
+      });
+      return;
+    }
 
-      if (data?.lyrics && onGenerateLyrics) {
-        onGenerateLyrics(data.lyrics);
-        setShowAIDialog(false);
-        setAIPrompt('');
-        setAIStyle('');
-        setAIMood('');
+    const result = data as any;
+    if (result?.lyrics && onGenerateLyrics) {
+      onGenerateLyrics(result.lyrics);
+      setShowAIDialog(false);
+      setAIPrompt('');
+      setAIStyle('');
+      setAIMood('');
         toast({
           title: "Готово!",
           description: "Текст успешно сгенерирован",
