@@ -165,61 +165,26 @@ const mainHandler = async (req: Request) => {
       timestamp: new Date().toISOString()
     });
 
-    // ✅ Route to appropriate provider
-    let stemTaskId: string;
-    let stemEndpoint: string;
-
-    if (trackProvider === 'mureka') {
-      // === MUREKA STEM SEPARATION ===
-      const MUREKA_API_KEY = Deno.env.get('MUREKA_API_KEY');
-      if (!MUREKA_API_KEY) {
-        throw new Error('MUREKA_API_KEY not configured');
-      }
-
-      const murekaClient = createMurekaStemClient({ apiKey: MUREKA_API_KEY });
-
-      if (!trackRecord.audio_url) {
-        throw new Error('Track audio_url required for Mureka stem separation');
-      }
-
-      logger.info('[MUREKA-STEM] Initiating stem separation', { 
-        trackId, 
-        audioUrl: trackRecord.audio_url.substring(0, 100) 
-      });
-
-      const murekaResult = await murekaClient.requestStemSeparation({
-        audio_file: trackRecord.audio_url,
-      });
-
-      stemTaskId = murekaResult.taskId; // This is the ZIP URL
-      stemEndpoint = murekaResult.endpoint;
-
-      logger.info('[MUREKA-STEM] ZIP created (ready to download)', { 
-        zipUrl: stemTaskId, 
-        trackId 
-      });
-
-    } else {
-      // === SUNO STEM SEPARATION ===
-      if (!taskId) {
-        throw new Error("Missing Suno task identifier for track");
-      }
-      if (!audioId) {
-        throw new Error("Missing Suno audio identifier for track or version");
-      }
-
-      const stemResult = await sunoClient.requestStemSeparation({
-        taskId,
-        audioId,
-        type: (separationMode === 'split_stem' || separationMode === 'separate_vocal') ? separationMode : 'separate_vocal',
-        callBackUrl: `${SUPABASE_URL}/functions/v1/stems-callback`,
-      });
-
-      stemTaskId = stemResult.taskId;
-      stemEndpoint = stemResult.endpoint;
-
-      logger.info('[SUNO-STEM] Task created', { stemTaskId, trackId });
+    // ✅ Only Suno is supported now (Mureka removed)
+    // === SUNO STEM SEPARATION ===
+    if (!taskId) {
+      throw new Error("Missing Suno task identifier for track");
     }
+    if (!audioId) {
+      throw new Error("Missing Suno audio identifier for track or version");
+    }
+
+    const stemResult = await sunoClient.requestStemSeparation({
+      taskId,
+      audioId,
+      type: (separationMode === 'split_stem' || separationMode === 'separate_vocal') ? separationMode : 'separate_vocal',
+      callBackUrl: `${SUPABASE_URL}/functions/v1/stems-callback`,
+    });
+
+    const stemTaskId = stemResult.taskId;
+    const stemEndpoint = stemResult.endpoint;
+
+    logger.info('[SUNO-STEM] Task created', { stemTaskId, trackId });
     const nowIso = new Date().toISOString();
 
     const updatedTrackMetadata = {
