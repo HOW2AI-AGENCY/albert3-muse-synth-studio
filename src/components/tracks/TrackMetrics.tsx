@@ -189,8 +189,6 @@ export const TrackMetrics = memo<TrackMetricsProps>(
     display,
     className,
   }) => {
-    const sizeConfig = SIZE_CLASSES[size];
-
     // Build metrics array based on what's available and what's requested
     const metrics = [];
 

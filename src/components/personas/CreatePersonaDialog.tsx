@@ -93,10 +93,6 @@ export const CreatePersonaDialog = ({
     }
   };
 
-  const boostDescription = async () => {
-    // ... (omitted for brevity)
-  };
-
   const handleCreate = async () => {
     if (!name.trim()) {
       toast.error('Введите название персоны');
