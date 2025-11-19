@@ -27,7 +27,6 @@ export {
   VolumeX,
   Volume1,
   FileAudio,
-  Waveform,
   Wand2,
   Sparkles,
   Radio,
