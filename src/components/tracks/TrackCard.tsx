@@ -93,7 +93,7 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
   }, [toggleTrack, track.id]);
 
   return (
-    <Card 
+    <Card
       className={`
         group relative transition-all duration-200 hover:shadow-md
         ${isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}
@@ -176,57 +176,33 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
             {/* Track Characteristics Badges */}
             <TrackBadgeGroup>
               {/* Vocal/Instrumental indicator */}
-              {track.lyrics || track.has_vocals ? (
-                <TrackBadge type="vocals" size="xs" />
-              ) : (
-                <TrackBadge type="instrumental" size="xs" />
+              {track.genre && (
+                <div className="flex flex-wrap gap-1">
+                  <Badge variant="outline" className="text-[10px] h-5 px-1.5">
+                    {track.genre}
+                  </Badge>
+                </div>
               )}
 
-              {/* Version badge */}
-              {track.version_number && (
-                <TrackBadge type="version" versionNumber={track.version_number} size="xs" />
+              <TrackVersions
+                trackId={track.id}
+                selectedVersionId={selectedVersionId}
+                onVersionSelect={handleVersionSelect}
+              />
+
+              {/* Track Status */}
+              {track.status && track.status !== 'completed' && (
+                <Badge
+                  variant={
+                    track.status === 'processing' ? 'secondary' :
+                      'destructive'
+                  }
+                  className="text-[10px] h-5 px-1.5"
+                >
+                  {track.status}
+                </Badge>
               )}
-            </TrackBadgeGroup>
           </div>
-
-          {/* Metrics */}
-          <TrackMetrics
-            duration={track.duration}
-            likes={track.likes_count}
-            views={track.views_count}
-            layout="compact"
-            size="sm"
-            display={['duration', 'likes']}
-          />
-
-          {/* Genre Tags */}
-          {track.genre && (
-            <div className="flex flex-wrap gap-1">
-              <Badge variant="outline" className="text-[10px] h-5 px-1.5">
-                {track.genre}
-              </Badge>
-            </div>
-          )}
-
-          <TrackVersions
-            trackId={track.id}
-            selectedVersionId={selectedVersionId}
-            onVersionSelect={handleVersionSelect}
-          />
-
-          {/* Track Status */}
-          {track.status && track.status !== 'completed' && (
-            <Badge
-              variant={
-                track.status === 'processing' ? 'secondary' :
-                'destructive'
-              }
-              className="text-[10px] h-5 px-1.5"
-            >
-              {track.status}
-            </Badge>
-          )}
-        </div>
       </CardContent>
 
       <CardFooter className="p-3 pt-0">
