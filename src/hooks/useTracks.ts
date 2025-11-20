@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { ApiService, type Track, mapTrackRowToTrack } from '@/services/api.service';
+import { TrackService, type Track } from '@/services/tracks/track.service';
 import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import type { Database } from '@/integrations/supabase/types';
@@ -369,7 +369,7 @@ export const useTracks = (refreshTrigger?: number, options: UseTracksOptions = {
   const deleteTrack = useCallback(
     async (trackId: string) => {
       try {
-        await ApiService.deleteTrack(trackId);
+        await TrackService.deleteTrack(trackId);
 
         queryClient.setQueryData<InfiniteData<TracksPage>>(queryKey, (old) => {
           if (!old) return old;

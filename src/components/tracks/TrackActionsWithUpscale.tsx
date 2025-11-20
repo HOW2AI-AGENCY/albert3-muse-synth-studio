@@ -10,7 +10,7 @@ import React, { useCallback } from 'react';
 import { UnifiedTrackActionsMenu } from './shared/TrackActionsMenu.unified';
 import { useAudioUpscaleWithVersion } from '@/hooks/useAudioUpscaleWithVersion';
 import type { UnifiedTrackActionsMenuProps } from './shared/TrackActionsMenu.types';
-import type { Track } from '@/services/api.service';
+import type { Track } from '@/services/tracks/track.service';
 
 interface TrackActionsWithUpscaleProps extends Omit<UnifiedTrackActionsMenuProps, 'onUpscaleAudio'> {
   track: Track;

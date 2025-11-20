@@ -3,7 +3,7 @@ import { TrackCard } from "@/features/tracks/components/TrackCard";
 import { TrackListItem } from "@/features/tracks/components/TrackListItem";
 import { VirtualizedTrackGrid } from "./tracks/VirtualizedTrackGrid";
 import { TrackListSkeleton } from "@/components/skeletons";
-import { Track } from "@/services/api.service";
+import type { Track } from "@/services/tracks/track.service";
 import { Music } from "@/utils/iconImports";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";

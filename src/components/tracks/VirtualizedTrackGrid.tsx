@@ -5,7 +5,7 @@
 import React, { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { TrackCard } from '@/features/tracks/components/TrackCard';
-import type { Track } from '@/services/api.service';
+import type { Track } from '@/services/tracks/track.service';
 
 interface VirtualizedTrackGridProps {
   tracks: Track[];

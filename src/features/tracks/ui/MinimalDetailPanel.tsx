@@ -15,7 +15,7 @@ import { useTrackState } from "@/hooks/useTrackState";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { ApiService } from "@/services/api.service";
+import { TrackService } from '@/services/tracks/track.service';
 import { formatDuration, formatDate } from "@/utils/formatters";
 import { MinimalStemsList } from "./MinimalStemsList";
 import { UnifiedTrackActionsMenu } from "@/components/tracks/shared/TrackActionsMenu.unified";
@@ -117,7 +117,7 @@ export const MinimalDetailPanel = memo(({ track, onClose, onUpdate, onDelete }: 
     if (!confirm("Удалить трек безвозвратно?")) return;
 
     try {
-      await ApiService.deleteTrackCompletely(track.id);
+      await TrackService.deleteTrackCompletely(track.id);
       toast({ title: "🗑️ Удалено" });
       onDelete?.();
       onClose?.();

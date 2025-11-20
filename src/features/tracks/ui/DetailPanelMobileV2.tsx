@@ -15,7 +15,7 @@ import { VersionsStemsContent } from './tabs/VersionsStemsContent';
 import { AnalysisContent } from './tabs/AnalysisContent';
 import { useTrackState } from '@/hooks/useTrackState';
 import { useDownloadTrack } from '@/hooks/useDownloadTrack';
-import { ApiService } from '@/services/api.service';
+import { TrackService } from '@/services/tracks/track.service';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -87,7 +87,7 @@ export const DetailPanelMobileV2 = ({
 
     setIsDeleting(true);
     try {
-      await ApiService.deleteTrackCompletely(track.id);
+      await TrackService.deleteTrackCompletely(track.id);
       toast({
         title: '✅ Трек удален',
       });

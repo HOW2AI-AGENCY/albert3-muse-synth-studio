@@ -1,57 +1,30 @@
-/**
- * Lyrics Service
- *
- * Handles all lyrics-related operations including generation.
- *
- * @module services/lyrics/lyrics.service
- * @since v2.6.3
- */
-
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { handleSupabaseFunctionError } from "@/services/api/errors";
 import { logWarn } from "@/utils/logger";
 import { retryWithBackoff, RETRY_CONFIGS } from "@/utils/retryWithBackoff";
 
 export interface GenerateLyricsRequest {
-  prompt: string;
-  trackId?: string;
-  metadata?: Record<string, unknown>;
-}
+    prompt: string;
+    trackId?: string;
+    llmModel?: 'claude-haiku' | 'claude-sonnet' | 'gpt-4o';
+  }
 
-export interface GenerateLyricsResponse {
-  success: boolean;
-  jobId: string;
-  taskId: string;
-  status: string;
-}
+  export interface GenerateLyricsResponse {
+    success: boolean;
+    jobId: string;
+    message?: string;
+    error?: string;
+  }
 
-/**
- * Lyrics Service - handles all lyrics-related operations
- */
 export class LyricsService {
   /**
    * Generate lyrics using AI
-   *
-   * @param request - Lyrics generation request
-   * @returns Promise with generation response
-   *
-   * @example
-   * ```typescript
-   * const result = await LyricsService.generate({
-   *   prompt: 'A love song about summer nights',
-   *   trackId: 'track-123'
-   * });
-   *
-   * console.log('Job ID:', result.jobId);
-   * console.log('Task ID:', result.taskId);
-   * ```
    */
-  static async generate(
+  static async generateLyrics(
     request: GenerateLyricsRequest
   ): Promise<GenerateLyricsResponse> {
-    const context = "LyricsService.generate";
+    const context = "LyricsService.generateLyrics";
 
-    // Use retry logic for lyrics generation
     const { data, error } = await retryWithBackoff(
       () => SupabaseFunctions.invoke<GenerateLyricsResponse>(
         "generate-lyrics",

@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { ApiService } from "@/services/api.service";
+import { StemService } from "@/services/stems/stem.service";
 
 interface UseStemSeparationOptions {
   trackId: string;
@@ -222,7 +222,7 @@ export const useStemSeparation = ({
               return;
             }
 
-            await ApiService.syncStemJob({
+            await StemService.syncStemJob({
               trackId,
               versionId,
               taskId: targetTaskId,

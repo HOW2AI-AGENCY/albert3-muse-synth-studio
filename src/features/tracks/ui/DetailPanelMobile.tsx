@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { LazyImage } from "@/components/ui/lazy-image";
 import { formatDuration } from "@/utils/formatters";
-import { ApiService } from "@/services/api.service";
+import { TrackService } from '@/services/tracks/track.service';
 import { logger } from "@/utils/logger";
 import { supabase } from "@/integrations/supabase/client";
 import { useTrackLike } from "@/features/tracks/hooks/useTrackLike";
@@ -104,7 +104,7 @@ export const DetailPanelMobile = ({ track, onClose, onUpdate, onDelete }: Detail
 
     setIsDeleting(true);
     try {
-      await ApiService.deleteTrackCompletely(track.id);
+      await TrackService.deleteTrackCompletely(track.id);
       toast({ title: t('trackDetails.trackDeleted') });
       onDelete?.();
       onClose?.();

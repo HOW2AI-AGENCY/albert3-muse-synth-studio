@@ -3,7 +3,7 @@
  * Оптимизация: вынесено из основного компонента
  */
 import { useCallback } from 'react';
-import type { Track } from '@/services/api.service';
+import type { Track } from '@/services/tracks/track.service';
 import type { ImperativePanelHandle } from 'react-resizable-panels';
 
 interface UseGeneratePageHandlersProps {

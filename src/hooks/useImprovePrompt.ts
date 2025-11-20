@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { ApiService } from '@/services/api.service';
+import { PromptService } from '@/services/prompts/prompt.service';
 import { logger } from '@/utils/logger';
 
 type ToastFunction = (options: { 
@@ -39,7 +39,7 @@ export const useImprovePrompt = ({ toast }: UseImprovePromptOptions) => {
     setIsImproving(true);
     
     try {
-      const response = await ApiService.improvePrompt({ prompt: promptToImprove });
+      const response = await PromptService.improvePrompt({ prompt: promptToImprove });
       
       // ✅ FIX: Truncate improved prompt to 500 characters
       let improvedPrompt = response.improvedPrompt;

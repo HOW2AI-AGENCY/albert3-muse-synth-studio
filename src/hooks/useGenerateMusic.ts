@@ -1,471 +1,95 @@
-/**
- * Hook for music generation with realtime updates
- *
- * ✅ REFACTORED: Now uses RealtimeSubscriptionManager (P0-2 fix)
- * ✅ ENHANCED: Added XSS sanitization (P0)
- * - Eliminates duplicate subscriptions
- * - Centralized channel management
- * - Automatic cleanup and deduplication
- * - Input sanitization for security
- */
-
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { useLatest } from '@/hooks/useLatest';
+import { useCallback } from 'react';
+import { useGenerationState } from './generation/useGenerationState';
+import { useGenerationValidation } from './generation/useGenerationValidation';
+import { useGenerationRateLimit } from './generation/useGenerationRateLimit';
+import { useGenerationSubscription } from './generation/useGenerationSubscription';
+import { useAuth } from '@/contexts/auth/useAuth';
 import { GenerationService, GenerationRequest } from '@/services/generation';
-import { logger } from '@/utils/logger';
-import { rateLimiter, RATE_LIMIT_CONFIGS, formatResetTime } from '@/utils/rateLimiter';
-import { supabase } from '@/integrations/supabase/client';
-import RealtimeSubscriptionManager from '@/services/realtimeSubscriptionManager';
-import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
-import type { MusicProvider } from '@/config/provider-models';
-import type { Database } from '@/integrations/supabase/types';
-import * as Sentry from '@sentry/react';
-import { addBreadcrumb } from '@/utils/sentry';
-import { trackGenerationEvent } from '@/utils/sentry-enhanced';
 import { sanitizePrompt, sanitizeLyrics, sanitizeTitle } from '@/utils/sanitization';
 
-type TrackRow = Database['public']['Tables']['tracks']['Row'];
-
-type ToastFunction = (options: { 
-  title: string; 
-  description: string; 
-  variant?: 'destructive' | 'default' | null 
-}) => void;
-
-interface UseGenerateMusicOptions {
-  provider?: MusicProvider;
-  onSuccess?: () => void;
-  toast: ToastFunction;
+export interface GenerationResult {
+    success: boolean;
+    trackId?: string;
+    errors?: string[];
 }
 
-// ✅ FIX: Увеличено до 3 минут для стабильной работы realtime
-const AUTO_CLEANUP_TIMEOUT = 3 * 60 * 1000; // 3 minutes
-const DEBOUNCE_DELAY = 2000; // 2 seconds
-const POLLING_INTERVAL = 10000; // 10 seconds
-const MAX_POLLING_DURATION = 10 * 60 * 1000; // 10 minutes
+interface UseGenerateMusicOptions {
+  provider?: 'suno' | 'replicate';
+  onSuccess?: (trackId: string) => void;
+}
 
-export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGenerateMusicOptions) => {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const toastRef = useLatest(toast);
-  const onSuccessRef = useLatest(onSuccess);
-  const unsubscribeRef = useRef<(() => void) | null>(null); // ✅ Changed to unsubscribe function
-  const cleanupTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const pollingTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const pollingStartTimeRef = useRef<number>(0);
-  const lastGenerationTimeRef = useRef<number>(0);
-  const currentTrackIdRef = useRef<string | null>(null);
+export const useGenerateMusic = ({ provider = 'suno', onSuccess }: UseGenerateMusicOptions = {}) => {
+  const { isGenerating, setIsGenerating, error, setError } = useGenerationState();
+  const { validate } = useGenerationValidation();
+  const { user } = useAuth();
+  const { check: checkRateLimit } = useGenerationRateLimit(user?.id);
+  const { subscribe, cleanup } = useGenerationSubscription();
 
-  // Cleanup subscription, timers and polling
-  const cleanup = useCallback(() => {
-    if (cleanupTimerRef.current) {
-      clearTimeout(cleanupTimerRef.current);
-      cleanupTimerRef.current = null;
+  const generate = useCallback(async (options: GenerationRequest): Promise<GenerationResult> => {
+    // 1. Validation
+    const validation = validate(options);
+    if (!validation.isValid) {
+      return {
+        success: false,
+        errors: validation.errors,
+      };
     }
 
-    if (pollingTimerRef.current) {
-      clearTimeout(pollingTimerRef.current);
-      pollingTimerRef.current = null;
+    // 2. Rate limiting
+    const rateLimit = checkRateLimit();
+    if (!rateLimit.allowed) {
+      return {
+        success: false,
+        errors: [rateLimit.message!],
+      };
     }
 
-    // ✅ Call unsubscribe function instead of channel.unsubscribe()
-    if (unsubscribeRef.current) {
-      unsubscribeRef.current();
-      unsubscribeRef.current = null;
-    }
-
-    currentTrackIdRef.current = null;
-    pollingStartTimeRef.current = 0;
-  }, []);
-
-  // ✅ Force cleanup on unmount (memory leak prevention)
-  useEffect(() => {
-    return () => {
-      cleanup();
-    };
-  }, [cleanup]);
-
-  // Polling fallback for stuck tracks
-  const startPolling = useCallback((trackId: string) => {
-    if (!trackId) return;
-    
-    pollingStartTimeRef.current = Date.now();
-    currentTrackIdRef.current = trackId;
-    
-    const pollTrack = async () => {
-      const elapsedTime = Date.now() - pollingStartTimeRef.current;
-      
-      if (elapsedTime > MAX_POLLING_DURATION) {
-        logger.warn('Polling timeout reached', 'useGenerateMusic', { trackId, elapsedTime });
-        cleanup();
-        return;
-      }
-      
-      try {
-        const { data: track, error } = await supabase
-          .from('tracks')
-          .select('id, title, status, error_message')
-          .eq('id', trackId)
-          .single();
-        
-        if (error) throw error;
-        
-        if (track?.status === 'completed') {
-          logger.info('✅ Track completed (polling)', 'useGenerateMusic', { trackId });
-          toastRef.current({
-            title: '✅ Трек готов!',
-            description: `Ваш трек "${track.title}" успешно сгенерирован.`,
-          });
-          onSuccessRef.current?.();
-          cleanup();
-          return;
-        } else if (track && track.status === 'failed') {
-          logger.error('❌ Track failed (polling)', new Error('Track generation failed'), 'useGenerateMusic', { 
-            trackId,
-            errorMessage: track.error_message 
-          });
-          toastRef.current({
-            title: '❌ Ошибка генерации',
-            description: `К сожалению, не удалось сгенерировать трек. ${track.error_message || 'Попробуйте изменить промпт или выбрать другую модель.'}`,
-            variant: 'destructive',
-          });
-          setIsGenerating(false);
-          cleanup();
-          return;
-        }
-        
-        if (track && (track.status === 'processing' || track.status === 'pending')) {
-          pollingTimerRef.current = setTimeout(pollTrack, POLLING_INTERVAL);
-        } else if (!track) {
-          logger.warn('Track not found during polling', 'useGenerateMusic', { trackId });
-          cleanup();
-        }
-      } catch (error) {
-        logger.error('Polling error', error as Error, 'useGenerateMusic', { trackId });
-        pollingTimerRef.current = setTimeout(pollTrack, POLLING_INTERVAL);
-      }
-    };
-    
-    pollTrack();
-  }, [cleanup, toastRef, onSuccessRef]);
-
-  // ✅ REFACTORED: Setup realtime subscription via RealtimeSubscriptionManager
-  const setupSubscription = useCallback((trackId: string, isCached: boolean = false) => {
-    cleanup();
-
-    // ✅ Пропускаем подписку для закешированных треков
-    if (isCached) {
-      logger.info('Skipping subscription for cached track', 'useGenerateMusic', { trackId });
-      return;
-    }
-
-    // Subscribe via centralized manager
-    const unsubscribe = RealtimeSubscriptionManager.subscribeToTrack<TrackRow>(
-      trackId,
-      (payload: RealtimePostgresChangesPayload<TrackRow>) => {
-        const track = payload.new as TrackRow;
-        if (!track || !track.id) return;
-
-        logger.info('Track update received via manager', 'useGenerateMusic', {
-          trackId,
-          status: track.status,
-        });
-
-        if (track.status === 'completed') {
-          trackGenerationEvent('completed', trackId, provider, {
-            duration: track.duration ?? undefined,
-          });
-          toastRef.current({
-            title: '✅ Трек готов!',
-            description: `Ваш трек "${track.title || 'Новый трек'}" успешно сгенерирован.`,
-          });
-          setIsGenerating(false);
-          onSuccessRef.current?.();
-          cleanup();
-        } else if (track.status === 'failed') {
-          trackGenerationEvent('failed', trackId, provider, {
-            errorMessage: track.error_message ?? undefined,
-          });
-          toastRef.current({
-            title: '❌ Ошибка генерации',
-            description: track.error_message || 'Произошла ошибка при обработке вашего трека.',
-            variant: 'destructive',
-          });
-          setIsGenerating(false);
-          cleanup();
-        }
-      }
-    );
-
-    unsubscribeRef.current = unsubscribe;
-
-    cleanupTimerRef.current = setTimeout(() => {
-      logger.warn('Auto-cleaning stale subscription, starting polling fallback', 'useGenerateMusic', { trackId });
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-        unsubscribeRef.current = null;
-      }
-      startPolling(trackId);
-    }, AUTO_CLEANUP_TIMEOUT);
-  }, [cleanup, provider, startPolling, toastRef, onSuccessRef]);
-
-  // Main generation function
-  const generate = useCallback(async (options: GenerationRequest): Promise<boolean> => {
-    // ✅ Sanitize inputs before processing
-    const sanitizedOptions: GenerationRequest = {
+    // 3. Sanitization
+    const sanitized: GenerationRequest = {
       ...options,
-      prompt: sanitizePrompt(options.prompt || ''),
+      prompt: sanitizePrompt(options.prompt),
       title: options.title ? sanitizeTitle(options.title) : undefined,
       lyrics: options.lyrics ? sanitizeLyrics(options.lyrics) : undefined,
+      provider: options.provider || provider,
     };
 
-    const effectivePrompt = sanitizedOptions.prompt?.trim() ?? '';
-    const effectiveProvider = sanitizedOptions.provider || provider;
-
-    logger.info('🎸 [HOOK] Generation request received', 'useGenerateMusic', {
-      promptLength: effectivePrompt.length,
-      provider: effectiveProvider,
-      hasLyrics: !!options.lyrics,
-      lyricsLength: options.lyrics?.length || 0,
-      isCyrillic: /[А-Яа-яЁё]/.test(effectivePrompt),
-    });
-
-    // Add Sentry breadcrumb
-    addBreadcrumb('Music generation started', 'generation', {
-      provider: effectiveProvider,
-      prompt: effectivePrompt.slice(0, 50),
-      hasVocals: options.hasVocals,
-      hasLyrics: !!options.lyrics,
-    });
-
-    // Set Sentry tags & track event
-    Sentry.setTag('generation.provider', effectiveProvider);
-    Sentry.setTag('generation.has_vocals', options.hasVocals || false);
-    trackGenerationEvent('started', 'pending', effectiveProvider, {
-      prompt: effectivePrompt,
-    });
-
-    // Validation
-    if (!effectivePrompt) {
-      logger.warn('[HOOK] Validation failed: empty prompt', 'useGenerateMusic');
-      toastRef.current({
-        title: 'Ошибка', 
-        description: 'Пожалуйста, введите описание музыки', 
-        variant: 'destructive' 
-      });
-      return false;
-    }
-
-    if (isGenerating) {
-      logger.warn('[HOOK] Generation already in progress', 'useGenerateMusic');
-      toastRef.current({
-        title: 'Подождите', 
-        description: 'Предыдущая генерация ещё выполняется', 
-        variant: 'destructive' 
-      });
-      return false;
-    }
-
-    // ✅ Rate limiting check
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const rateLimit = rateLimiter.check(user.id, RATE_LIMIT_CONFIGS.GENERATION);
-      
-      if (!rateLimit.allowed) {
-        const resetTime = formatResetTime(rateLimit.resetAt);
-        logger.warn('[HOOK] Rate limit exceeded', 'useGenerateMusic', {
-          userId: user.id,
-          resetAt: rateLimit.resetAt,
-        });
-        
-        toastRef.current({
-          title: '⏱️ Превышен лимит запросов',
-          description: `Вы можете создать не более ${RATE_LIMIT_CONFIGS.GENERATION.maxRequests} треков в минуту. Попробуйте снова через ${resetTime}.`,
-          variant: 'destructive',
-        });
-        return false;
-      }
-      
-      logger.info('[HOOK] Rate limit OK', 'useGenerateMusic', {
-        remaining: rateLimit.remaining,
-        resetAt: new Date(rateLimit.resetAt).toISOString(),
-      });
-    }
-
-    // Debounce protection
-    const now = Date.now();
-    if (now - lastGenerationTimeRef.current < DEBOUNCE_DELAY) {
-      logger.warn('[HOOK] Debounce protection triggered', 'useGenerateMusic');
-      return false;
-    }
-    lastGenerationTimeRef.current = now;
-
-    cleanup();
     setIsGenerating(true);
+    setError(null);
 
     try {
-      logger.info('[HOOK] Calling GenerationService...', 'useGenerateMusic', {
-        provider: effectiveProvider,
-      });
+      // 4. API call
+      const result = await GenerationService.generate(sanitized);
 
-      // Use unified GenerationService
-      const result = await GenerationService.generate({
-        ...options,
-        provider: effectiveProvider,
-      });
-
-      logger.info('[HOOK] GenerationService returned result', 'useGenerateMusic', {
-        success: result.success,
-        trackId: result.trackId,
-        taskId: result.taskId,
-        isCached: result.taskId === 'cached',
-      });
-
-      // ✅ FIX: Validate result.success before accessing taskId
-      if (!result.success) {
-        const errorMsg = result.error || 'Генерация не удалась';
-        logger.error('[HOOK] Generation failed', new Error(errorMsg), 'useGenerateMusic', {
-          trackId: result.trackId,
-          provider: effectiveProvider,
-        });
-
-        toastRef.current({
-          title: 'Ошибка инициализации генерации',
-          description: `${errorMsg}. Пожалуйста, проверьте свой запрос и попробуйте снова.`,
-          variant: 'destructive',
-        });
-
-        cleanup();
-        return false;
+      if (!result.success || !result.trackId) {
+        setError(new Error(result.error || 'Generation failed'));
+        return { success: false, errors: [result.error || 'Generation failed'] };
       }
 
-      // ✅ FIX: Validate trackId presence
-      if (!result.trackId || typeof result.trackId !== 'string' || result.trackId.trim().length === 0) {
-        const error = new Error('Invalid track ID received from server');
-        logger.error('[HOOK] Invalid track ID', error, 'useGenerateMusic', {
-          result,
-          provider: effectiveProvider,
-        });
-
-        toastRef.current({
-          title: 'Внутренняя ошибка сервера',
-          description: 'Сервер вернул некорректный идентификатор трека. Пожалуйста, попробуйте позже.',
-          variant: 'destructive',
-        });
-
-        cleanup();
-        return false;
-      }
-
-      // ✅ FIX: Validate taskId before proceeding (unless cached)
-      const isCachedResult = result.taskId === 'cached';
-
-      if (!isCachedResult) {
-        if (!result.taskId || typeof result.taskId !== 'string' || result.taskId.trim().length === 0) {
-          const error = new Error('Invalid task ID received from server');
-          logger.error('[HOOK] Invalid task ID validation failed', error, 'useGenerateMusic', {
-            trackId: result.trackId,
-            taskId: result.taskId,
-            provider: effectiveProvider,
-          });
-
-            toastRef.current({
-            title: 'Внутренняя ошибка сервера',
-            description: 'Сервер вернул некорректный идентификатор задачи. Пожалуйста, попробуйте еще раз.',
-            variant: 'destructive',
-          });
-
+      // 5. Setup subscription
+      subscribe(result.trackId, (payload) => {
+        const track = payload.new;
+        if (track.status === 'completed' || track.status === 'failed') {
+          onSuccess?.(track.id);
           cleanup();
-          return false;
+          setIsGenerating(false);
         }
-
-        logger.info('[HOOK] Task ID validation passed', 'useGenerateMusic', {
-          taskId: result.taskId,
-          taskIdLength: result.taskId.length,
-        });
-      }
-
-      if (isCachedResult) {
-        toastRef.current({
-          title: '⚡ Трек найден!',
-          description: 'Используется ранее созданный трек с такими же параметрами. Откройте Библиотеку для просмотра.',
-        });
-        
-        logger.info('Cached track returned. User can force new generation by adding forceNew: true', 'useGenerateMusic', {
-          cachedTrackId: result.trackId,
-        });
-
-        addBreadcrumb('Music generation cached', 'generation', {
-          trackId: result.trackId,
-        });
-      } else {
-        toastRef.current({
-          title: '🎵 Генерация началась!',
-          description: 'Ваш трек создаётся. Это может занять около минуты...',
-        });
-
-        addBreadcrumb('Music generation initiated', 'generation', {
-          trackId: result.trackId,
-          taskId: result.taskId,
-        });
-      }
-
-      // Setup realtime updates only for new generations
-      setupSubscription(result.trackId, isCachedResult);
-      onSuccess?.();
-
-      return true;
-    } catch (error) {
-      logger.error('❌ [HOOK] Generation error caught', error as Error, 'useGenerateMusic', {
-        errorName: error instanceof Error ? error.name : 'Unknown',
-        errorMessage: error instanceof Error ? error.message : String(error),
-        provider: effectiveProvider,
       });
 
-      // Capture to Sentry with context
-      Sentry.captureException(error, {
-        tags: {
-          'generation.provider': effectiveProvider,
-          'generation.prompt_length': effectivePrompt.length,
-        },
-        extra: {
-          prompt: effectivePrompt,
-          hasVocals: options.hasVocals,
-          hasLyrics: !!options.lyrics,
-        },
-      });
-      
-      const rawMessage = error instanceof Error ? error.message : 'Не удалось сгенерировать музыку.';
-      const isNetworkError = typeof rawMessage === 'string' && (
-        rawMessage.includes('Failed to fetch') ||
-        rawMessage.includes('ERR_ABORTED') ||
-        rawMessage.toLowerCase().includes('network')
-      );
-
-      toastRef.current({
-        title: isNetworkError ? 'Проблема соединения' : 'Ошибка генерации',
-        description: isNetworkError
-          ? 'Нет связи с сервером. Проверьте подключение к интернету.'
-          : rawMessage,
-        variant: 'destructive',
-      });
-      
-      cleanup();
-      return false;
-    } finally {
-      setIsGenerating(false);
+      return { success: true, trackId: result.trackId };
+    } catch (err) {
+      const error = err as Error;
+      setError(error);
+      return {
+        success: false,
+        errors: [error.message],
+      };
     }
-  }, [isGenerating, provider, cleanup, setupSubscription, toastRef, onSuccessRef]);
-
-  // Auto-cleanup on unmount to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      cleanup();
-    };
-  }, [cleanup]);
+  }, [validate, checkRateLimit, subscribe, cleanup, onSuccess, provider, setIsGenerating, setError]);
 
   return {
     generate,
     isGenerating,
+    error,
     cleanup,
   };
 };

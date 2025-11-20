@@ -20,6 +20,7 @@ import { useGenerateProjectTracklist } from '@/hooks/useGenerateProjectTracklist
 import type { Database } from '@/integrations/supabase/types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { ImageUpload } from '@/components/ui/ImageUpload';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';

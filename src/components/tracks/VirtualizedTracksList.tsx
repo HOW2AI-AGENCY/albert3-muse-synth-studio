@@ -11,7 +11,7 @@
 
 import { useRef, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Track } from '@/services/api.service';
+import type { Track } from '@/services/tracks/track.service';
 import { TrackCard } from '@/features/tracks/components/TrackCard';
 import { Skeleton } from '@/components/ui/skeleton';
 

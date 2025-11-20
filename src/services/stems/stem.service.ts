@@ -1,47 +1,19 @@
-/**
- * Stem Service
- *
- * Handles audio stem separation operations.
- *
- * @module services/stems/stem.service
- * @since v2.6.3
- */
-
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { handleSupabaseFunctionError } from "@/services/api/errors";
 import { logWarn } from "@/utils/logger";
 
-/**
- * Stem Service - handles audio stem separation operations
- */
 export class StemService {
   /**
-   * Request Suno stem job synchronization (fallback polling)
-   *
-   * @param params - Stem job parameters
-   * @returns Promise with success status
-   *
-   * @example
-   * ```typescript
-   * const success = await StemService.syncJob({
-   *   trackId: 'track-123',
-   *   versionId: 'version-456',
-   *   separationMode: '4stems'
-   * });
-   *
-   * if (success) {
-   *   console.log('Stem job synced successfully');
-   * }
-   * ```
+   * Request Suno stem job synchronisation (fallback polling)
    */
-  static async syncJob(params: {
+  static async syncStemJob(params: {
     trackId: string;
     versionId?: string;
     taskId?: string;
     separationMode?: string;
     forceRefresh?: boolean;
   }): Promise<boolean> {
-    const context = "StemService.syncJob";
+    const context = "StemService.syncStemJob";
 
     const { data, error } = await SupabaseFunctions.invoke<{
       success: boolean;
@@ -58,7 +30,7 @@ export class StemService {
     }
 
     if (!data?.success) {
-      logWarn("⚠️ Sync stem job response indicated no success", context, {
+      logWarn("⚠️ [Stem Service] Sync stem job response indicated no success", context, {
         ...params,
         status: data?.status ?? null,
         code: data?.code ?? null,
@@ -67,7 +39,7 @@ export class StemService {
     }
 
     if (data.code && data.code !== 200) {
-      logWarn("⚠️ Sync stem job completed with non-200 Suno code", context, {
+      logWarn("⚠️ [Stem Service] Sync stem job completed with non-200 Suno code", context, {
         ...params,
         code: data.code,
         message: data.message ?? null,

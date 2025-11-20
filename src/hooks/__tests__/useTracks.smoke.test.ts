@@ -38,12 +38,10 @@ vi.mock('@/integrations/supabase/client', () => ({
   },
 }));
 
-vi.mock('@/services/api.service', () => ({
-  ApiService: {
+vi.mock('@/services/tracks/track.service', () => ({
+  TrackService: {
     getUserTracks: getUserTracksMock,
     deleteTrack: deleteTrackMock,
-    createTrack: vi.fn(),
-    generateMusic: vi.fn(),
   },
 }));
 

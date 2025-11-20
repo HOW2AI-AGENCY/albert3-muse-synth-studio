@@ -4,7 +4,7 @@ import {
   LazyCreateCoverDialog,
   LazyCreatePersonaDialog
 } from "@/components/LazyDialogs";
-import type { Track } from "@/services/api.service";
+import type { Track } from "@/services/tracks/track.service";
 
 interface TrackDialogsManagerProps {
   // Stems Dialog
