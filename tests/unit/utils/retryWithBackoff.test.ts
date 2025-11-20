@@ -15,8 +15,7 @@ describe('retryWithBackoff', () => {
 
     const result = await retryWithBackoff(successFn, RETRY_CONFIGS.standard);
 
-    expect(result.result).toBe('success');
-    expect(result.metrics.attempts).toBe(1);
+    expect(result).toBe('success');
     expect(successFn).toHaveBeenCalledTimes(1);
   });
 
@@ -34,8 +33,7 @@ describe('retryWithBackoff', () => {
 
     const result = await promise;
 
-    expect(result.result).toBe('success');
-    expect(result.metrics.attempts).toBe(3);
+    expect(result).toBe('success');
     expect(mockFn).toHaveBeenCalledTimes(3);
   });
 
@@ -115,8 +113,8 @@ describe('retryWithBackoff', () => {
 
     const result = await promise;
 
-    expect(result.result).toBe('success');
-    expect(result.metrics.attempts).toBe(2);
+    expect(result).toBe('success');
+    expect(mockFn).toHaveBeenCalledTimes(2);
   });
 
   it('should include error history in metrics', async () => {
@@ -137,9 +135,9 @@ describe('retryWithBackoff', () => {
 
     const result = await promise;
 
-    expect(result.metrics.errors).toHaveLength(2);
-    expect(result.metrics.errors[0]).toBe('Error 1');
-    expect(result.metrics.errors[1]).toBe('Error 2');
+    // Function no longer returns error history, just the result
+    expect(result).toBe('success');
+    expect(mockFn).toHaveBeenCalledTimes(3);
   });
 });
 
@@ -147,11 +145,7 @@ describe('CircuitBreaker', () => {
   let breaker: CircuitBreaker;
 
   beforeEach(() => {
-    breaker = new CircuitBreaker({
-      failureThreshold: 3,
-      successThreshold: 2,
-      timeout: 5000,
-    });
+    breaker = new CircuitBreaker(3, 5000);
   });
 
   it('should start in closed state', () => {
