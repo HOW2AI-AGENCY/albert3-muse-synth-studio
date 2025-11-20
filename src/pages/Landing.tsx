@@ -4,7 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { Music, Sparkles, Zap, Headphones, Wand2, Play, Heart } from "@/utils/iconImports";
-import { ApiService, Track } from "@/services/api.service";
+import { TrackService } from "@/services/tracks/track.service";
+import type { Track } from "@/services/tracks/track.service";
 import { AnalyticsService } from "@/services/analytics.service";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import heroBg from "@/assets/hero-bg.jpg";
@@ -17,7 +18,7 @@ const Landing = () => {
   useEffect(() => {
     const fetchFeaturedTracks = async () => {
       try {
-        const tracks = await ApiService.getPublicTracks(6, 'like_count');
+        const tracks = await TrackService.getPublicTracks(6, 'like_count');
         setFeaturedTracks(tracks);
       } catch (error) {
         logger.error('Failed to fetch featured tracks', error as Error, 'Landing');

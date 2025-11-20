@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ApiService } from '@/services/api.service';
+import { BalanceService } from '@/services/balance/balance.service';
 import { useToast } from '@/hooks/use-toast';
 import { logError, logInfo } from '@/utils/logger';
 import { DollarSign, Zap } from '@/utils/iconImports';
@@ -16,7 +16,7 @@ const ProviderBalance = () => {
         setIsLoading(true);
         setError(null);
         logInfo('Fetching provider balance...', 'ProviderBalance');
-        const sunoBalance = await ApiService.getProviderBalance('suno');
+        const sunoBalance = await BalanceService.getProviderBalance('suno');
 
         if (sunoBalance && typeof sunoBalance.balance === 'number' && !sunoBalance.error) {
           setBalance(sunoBalance.balance);
@@ -24,7 +24,7 @@ const ProviderBalance = () => {
         } else {
           // Fallback to Replicate if Suno fails or returns invalid data
           logInfo('Suno balance not available, trying Replicate...', 'ProviderBalance', { sunoError: sunoBalance?.error });
-          const replicateBalance = await ApiService.getProviderBalance('replicate');
+          const replicateBalance = await BalanceService.getProviderBalance('replicate');
           if (replicateBalance && typeof replicateBalance.balance === 'number' && !replicateBalance.error) {
             setBalance(replicateBalance.balance);
             logInfo('Replicate balance fetched successfully', 'ProviderBalance', { balance: replicateBalance.balance });

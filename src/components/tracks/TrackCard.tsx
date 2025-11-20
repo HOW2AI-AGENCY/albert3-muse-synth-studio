@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useSelectedTracks } from '@/contexts/selected-tracks/useSelectedTracks';
 import { Play, Pause, MoreHorizontal, Download, Share2 } from 'lucide-react';
-import type { Track } from '@/services/api.service';
+import type { Track } from '@/services/tracks/track.service';
 import { TrackVersions } from './TrackVersions';
 import { TrackBadge, TrackBadgeGroup } from './TrackBadge';
 import { TrackMetrics } from './TrackMetrics';

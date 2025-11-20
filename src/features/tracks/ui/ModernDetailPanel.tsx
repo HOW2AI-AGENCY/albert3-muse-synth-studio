@@ -17,7 +17,7 @@ import { LyricsContent } from './tabs/LyricsContent';
 import { AnalysisContent } from './tabs/AnalysisContent';
 import { useTrackState } from '@/hooks/useTrackState';
 import { useDownloadTrack } from '@/hooks/useDownloadTrack';
-import { ApiService } from '@/services/api.service';
+import { TrackService } from '@/services/tracks/track.service';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -112,7 +112,7 @@ export const ModernDetailPanel = ({
 
     setIsDeleting(true);
     try {
-      await ApiService.deleteTrackCompletely(track.id);
+      await TrackService.deleteTrackCompletely(track.id);
       toast({
         title: '✅ Трек удален',
         description: 'Трек и все связанные данные успешно удалены',

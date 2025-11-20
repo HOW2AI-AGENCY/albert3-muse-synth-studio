@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { ApiService } from '@/services/api.service';
+import { TrackService } from '@/services/tracks/track.service';
 import { logInfo, logError } from '@/utils/logger';
 
 interface UseTrackCleanupOptions {
@@ -113,7 +113,7 @@ export const useTrackCleanup = (
       let deletedCount = 0;
       for (const track of tracksToDelete) {
         try {
-          await ApiService.deleteTrack(track.id);
+          await TrackService.deleteTrack(track.id);
           deletedCount++;
           
           logInfo(`Deleted failed track: ${track.title}`, 'useTrackCleanup', {

@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import type { Track } from "@/services/api.service";
+import type { Track } from "@/services/tracks/track.service";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth/useAuth";
 import { logError, logInfo } from "@/utils/logger";

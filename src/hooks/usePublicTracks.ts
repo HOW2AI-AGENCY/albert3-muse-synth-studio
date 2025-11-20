@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Track } from "@/services/api.service";
+import type { Track } from "@/services/tracks/track.service";
 import { logger } from "@/utils/logger";
 
 export type SortOption = "newest" | "popular" | "trending" | "most_liked";

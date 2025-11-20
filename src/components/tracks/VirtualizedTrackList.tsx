@@ -6,7 +6,7 @@ import React, { useRef, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { TrackListItem } from '@/features/tracks';
 import { convertToDisplayTrack } from '@/types/track';
-import type { Track } from '@/services/api.service';
+import type { Track } from '@/services/tracks/track.service';
 
 interface VirtualizedTrackListProps {
   tracks: Track[];

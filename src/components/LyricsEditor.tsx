@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sparkles, Music2, Wand2, FileText, Eye, Music } from "@/utils/iconImports";
 import { useToast } from "@/hooks/use-toast";
-import { ApiService } from "@/services/api.service";
+import { LyricsService } from "@/services/lyrics/lyrics.service";
 import { logError } from "@/utils/logger";
 import { LyricsEditorAdvanced } from "./lyrics/LyricsEditorAdvanced";
 import { LyricsVariantSelector } from "./lyrics/LyricsVariantSelector";
@@ -152,7 +152,7 @@ export const LyricsEditor = ({ lyrics, onLyricsChange }: LyricsEditorProps) => {
 
     setIsGenerating(true);
     try {
-      const response = await ApiService.generateLyrics({
+      const response = await LyricsService.generateLyrics({
         prompt,
         metadata,
       });

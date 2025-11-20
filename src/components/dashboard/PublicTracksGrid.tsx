@@ -7,7 +7,7 @@ import { BREAKPOINTS } from "@/config/breakpoints.config";
 import { Loader2 } from "@/utils/iconImports";
 import { EmptyState } from "@/components/layout/EmptyState";
 import { Music } from "@/utils/iconImports";
-import type { Track } from "@/services/api.service";
+import type { Track } from "@/services/tracks/track.service";
 import { cn } from "@/lib/utils";
 
 interface PublicTracksGridProps {

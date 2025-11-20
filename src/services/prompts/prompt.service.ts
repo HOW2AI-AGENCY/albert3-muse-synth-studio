@@ -1,56 +1,51 @@
-/**
- * Prompt Service
- *
- * Handles all prompt-related operations including AI improvement.
- *
- * @module services/prompts/prompt.service
- * @since v2.6.3
- */
-
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { handleSupabaseFunctionError } from "@/services/api/errors";
 import { logWarn } from "@/utils/logger";
 import { retryWithBackoff, RETRY_CONFIGS } from "@/utils/retryWithBackoff";
 import { startKpiTimer, endKpiTimer } from "@/utils/kpi";
-import { trackAPIRequest } from "@/utils/sentry-enhanced";
+import { recordPerformanceMetric } from "@/utils/performanceMonitor";
 
 export interface ImprovePromptRequest {
-  prompt: string;
-}
+    prompt: string;
+    llmModel?: 'claude-haiku' | 'claude-sonnet' | 'gpt-4o';
+  }
 
-export interface ImprovePromptResponse {
-  improvedPrompt: string;
-}
+  export interface ImprovePromptResponse {
+    improvedPrompt: string;
+    originalPrompt: string;
+    modelUsed: string;
+    latency: number;
+    success: boolean;
+    error?: string;
+  }
 
-/**
- * Prompt Service - handles all prompt-related operations
- */
+  // Helper for tracking API requests
+const trackAPIRequest = (
+    endpoint: string,
+    method: string,
+    statusCode: number,
+    duration: number,
+    error?: any
+  ) => {
+    recordPerformanceMetric('api_call', duration, 'PromptService', {
+      endpoint,
+      method,
+      statusCode,
+      error: error ? (error.message || String(error)) : undefined
+    });
+  };
+
 export class PromptService {
   /**
    * Improve a music prompt using AI
-   *
-   * @param request - Prompt improvement request
-   * @returns Promise with improved prompt
-   *
-   * @example
-   * ```typescript
-   * const result = await PromptService.improve({
-   *   prompt: 'upbeat music'
-   * });
-   *
-   * console.log('Original:', 'upbeat music');
-   * console.log('Improved:', result.improvedPrompt);
-   * // Output: "An energetic and uplifting electronic dance track with..."
-   * ```
    */
-  static async improve(
+  static async improvePrompt(
     request: ImprovePromptRequest
   ): Promise<ImprovePromptResponse> {
-    const context = "PromptService.improve";
+    const context = "PromptService.improvePrompt";
     const timerId = `${context}:${Date.now()}`;
     startKpiTimer(timerId);
 
-    // Use retry logic for prompt improvement
     const { data, error } = await retryWithBackoff(
       () => SupabaseFunctions.invoke<ImprovePromptResponse>(
         "improve-prompt",
@@ -71,7 +66,6 @@ export class PromptService {
       }
     );
 
-    // KPI + Sentry
     const duration = endKpiTimer(timerId, 'api_latency', { endpoint: 'improve-prompt' }) ?? 0;
     trackAPIRequest('improve-prompt', 'POST', error ? 500 : 200, duration, error ?? undefined as any);
 

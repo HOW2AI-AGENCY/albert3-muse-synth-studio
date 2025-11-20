@@ -3,7 +3,7 @@ import type { QueryFunctionContext } from "@tanstack/react-query";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import type { Track } from "@/services/api.service";
+import type { Track } from "@/services/tracks/track.service";
 import { logger } from "@/utils/logger";
 
 export interface DashboardStats {

@@ -7,7 +7,7 @@ import { TrackCard, getTrackWithVariants, trackVersionsQueryKeys } from "@/featu
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { convertToAudioPlayerTrack } from "@/types/track";
-import type { TrackStatus } from "@/services/api.service";
+import type { TrackStatus } from "@/services/tracks/track.service";
 import { logger } from "@/utils/logger";
 
 const isTrackStatus = (status: string): status is TrackStatus =>

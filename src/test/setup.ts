@@ -109,17 +109,38 @@ vi.mock('@/stores/audioPlayerStore', async () => {
 });
 
 // Mock API Service - corrected to use a named export
-vi.mock('@/services/api.service', () => ({
-  ApiService: {
+vi.mock('@/services/tracks/track.service', () => ({
+  TrackService: {
     getUserTracks: vi.fn(),
     deleteTrack: vi.fn(),
+    deleteTrackCompletely: vi.fn(),
     likeTrack: vi.fn(),
     unlikeTrack: vi.fn(),
-    downloadTrack: vi.fn(),
-    createTrack: vi.fn(),
-    generateMusic: vi.fn(),
-    improvePrompt: vi.fn(),
   },
+}));
+
+vi.mock('@/services/lyrics/lyrics.service', () => ({
+    LyricsService: {
+        generateLyrics: vi.fn(),
+    },
+}));
+
+vi.mock('@/services/prompts/prompt.service', () => ({
+    PromptService: {
+        improvePrompt: vi.fn(),
+    },
+}));
+
+vi.mock('@/services/balance/balance.service', () => ({
+    BalanceService: {
+        getProviderBalance: vi.fn(),
+    },
+}));
+
+vi.mock('@/services/stems/stem.service', () => ({
+    StemService: {
+        syncStemJob: vi.fn(),
+    },
 }));
 
 // Mock window.matchMedia for useMediaQuery hook
