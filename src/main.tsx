@@ -97,7 +97,7 @@ if (typeof window !== 'undefined') {
         // ignore header introspection errors
       }
 
-      const response = await originalFetch(input as any, init as any);
+      const response = await originalFetch(input, init);
 
       try {
         if (

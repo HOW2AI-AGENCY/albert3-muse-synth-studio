@@ -5,6 +5,12 @@
 
 import { logger } from '@/utils/logger';
 
+interface PerformanceMemory {
+  readonly jsHeapSizeLimit: number;
+  readonly totalJSHeapSize: number;
+  readonly usedJSHeapSize: number;
+}
+
 interface PerformanceMetric {
   name: string;
   value: number;
@@ -263,9 +269,9 @@ class PerformanceMonitor {
   monitorMemory(): void {
     if (typeof window === 'undefined') return;
 
-    const performance = (window as any).performance;
-    if (performance?.memory) {
-      const memoryInfo = performance.memory;
+    const perf = window.performance as Performance & { memory?: PerformanceMemory };
+    if (perf?.memory) {
+      const memoryInfo = perf.memory;
       
       this.recordMetric('memory.used', memoryInfo.usedJSHeapSize / 1048576, 'PerformanceMonitor', {
         unit: 'MB',
