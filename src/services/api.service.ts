@@ -29,6 +29,9 @@ import { type GenerateLyricsRequest, type GenerateLyricsResponse } from "@/servi
 import { type ProviderBalanceResponse } from "@/services/balance/balance.service";
 import { type Track, type TrackRowWithVersions, type TrackStatus, mapTrackRowToTrack } from "@/services/tracks/track.service";
 
+// Re-export Track type for backwards compatibility
+export type { Track, TrackStatus } from "@/services/tracks/track.service";
+
 
 
 

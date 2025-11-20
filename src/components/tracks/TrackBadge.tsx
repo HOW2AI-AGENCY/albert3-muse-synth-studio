@@ -39,7 +39,7 @@ export interface TrackBadgeProps {
    * Variant style
    * @default 'secondary'
    */
-  variant?: 'default' | 'secondary' | 'outline' | 'ghost';
+  variant?: 'default' | 'secondary' | 'outline' | 'destructive';
 
   /**
    * Size of badge

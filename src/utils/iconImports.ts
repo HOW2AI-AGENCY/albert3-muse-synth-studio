@@ -54,7 +54,8 @@ export {
   Repeat1,
   Shuffle,
   Star,
-  Split
+  Split,
+  Waves
 } from 'lucide-react';
 
 // UI Controls
