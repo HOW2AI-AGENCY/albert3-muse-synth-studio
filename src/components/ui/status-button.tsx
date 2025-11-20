@@ -204,7 +204,7 @@ const StatusButton = React.forwardRef<HTMLButtonElement, StatusButtonProps>(
     const isDisabled = disabled || status === "loading";
 
     return (
-      <motion.button
+      <button
         ref={ref}
         className={cn(
           buttonVariants({ variant: effectiveVariant, size, className }),
@@ -227,7 +227,7 @@ const StatusButton = React.forwardRef<HTMLButtonElement, StatusButtonProps>(
             transition={{ duration: 0.6 }}
           />
         )}
-      </motion.button>
+      </button>
     );
   }
 );

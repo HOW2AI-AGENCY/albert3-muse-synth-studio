@@ -65,7 +65,6 @@ export const DAWEnhanced: React.FC = () => {
   const toolMode = useDAWStore((state) => state.toolMode);
 
   const createProject = useDAWStore((state) => state.createProject);
-  const saveProject = useDAWStore((state) => state.saveProject);
   const addTrack = useDAWStore((state) => state.addTrack);
   const undo = useDAWStore((state) => state.undo);
   const redo = useDAWStore((state) => state.redo);
@@ -73,12 +72,10 @@ export const DAWEnhanced: React.FC = () => {
   const setToolMode = useDAWStore((state) => state.setToolMode);
   const toggleSnapToGrid = useDAWStore((state) => state.toggleSnapToGrid);
   const loadStemsAsMultitrack = useDAWStore((state) => state.loadStemsAsMultitrack);
-  const selectTrack = useDAWStore((state) => state.selectTrack);
-  const seekTo = useDAWStore((state) => state.seekTo);
 
   // Load user's tracks for stem loading
   const { tracks: userTracks } = useTracks();
-  const { saveProject: saveProjectToDb, loadProject: loadProjectFromDb } = useDAWProjects();
+  const { saveProject: saveProjectToDb } = useDAWProjects();
   const [currentDbProject, setCurrentDbProject] = useState<DAWProject | null>(null);
 
   // Initialize project if none exists
@@ -99,17 +96,8 @@ export const DAWEnhanced: React.FC = () => {
 
     const projectId = currentDbProject?.id;
 
-    // Map store data to the database-compatible format
-    const projectDataToSave = {
-      name: dawProject.name,
-      bpm: dawProject.bpm,
-      regions: dawProject.regions,
-      tracks: dawProject.tracks,
-      metadata: {}, // Add any other metadata here
-    };
-
     try {
-      const savedProject = await saveProjectToDb({
+      await saveProjectToDb({
         projectId: projectId,
         description: 'Saved from DAW',
       });

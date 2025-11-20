@@ -34,7 +34,7 @@ import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 import type { Database } from '@/integrations/supabase/types';
-import type { ReferenceAnalysisResponse } from '@/types/edge-functions';
+
 
 // ============================================================================
 // TYPES
@@ -128,7 +128,7 @@ export function useReferenceAnalysis() {
     error: analysisError
   } = useMutation<AnalyzeAudioResponse, Error, AnalyzeAudioParams>({
     mutationKey: ['analyzeReferenceAudio'],
-    mutationFn: async (params: AnalyzeAudioParams) => {
+    mutationFn: async (params: AnalyzeAudioParams): Promise<AnalyzeAudioResponse> => {
       logger.info('🔍 [ANALYZE] Starting reference audio analysis', 'useReferenceAnalysis', {
         audioUrl: params.audioUrl.substring(0, 100),
         trackId: params.trackId,
@@ -222,17 +222,24 @@ export function useReferenceAnalysis() {
         throw error;
       }
 
-      if (!data?.success) {
+      const typedData = data as any;
+      
+      if (!typedData?.success) {
         throw new Error('Analysis failed');
       }
 
       logger.info('✅ [ANALYZE] Analysis initiated', 'useReferenceAnalysis', {
-        recognitionId: data.recognitionId?.substring(0, 8),
-        descriptionId: data.descriptionId?.substring(0, 8),
-        uploadedFileId: data.uploadedFileId
+        recognitionId: typedData.recognitionId?.substring(0, 8),
+        descriptionId: typedData.descriptionId?.substring(0, 8),
+        uploadedFileId: typedData.uploadedFileId
       });
 
-      return data;
+      return {
+        success: typedData.success,
+        recognitionId: typedData.recognitionId,
+        descriptionId: typedData.descriptionId,
+        uploadedFileId: typedData.uploadedFileId
+      };
     },
     onSuccess: (data) => {
       // ✅ Сохраняем IDs для polling

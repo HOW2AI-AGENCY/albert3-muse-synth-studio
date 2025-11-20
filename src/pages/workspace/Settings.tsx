@@ -27,8 +27,9 @@ const Settings = () => {
 
       if (error) throw error;
 
+      const typedData = data as any;
       toast.success("Миграция завершена", {
-        description: `Перенесено: ${data?.migrated || 0}, Ошибок: ${data?.failed || 0}`,
+        description: `Перенесено: ${typedData?.migrated || 0}, Ошибок: ${typedData?.failed || 0}`,
       });
     } catch (error) {
       logger.error('Migration error', error instanceof Error ? error : new Error(String(error)), 'Settings');
@@ -51,8 +52,9 @@ const Settings = () => {
 
       if (error) throw error;
 
+      const typedData = data as any;
       toast.success("Версии восстановлены", {
-        description: `Треков: ${data?.migrated || 0}, Ошибок: ${data?.failed || 0}`,
+        description: `Треков: ${typedData?.migrated || 0}, Ошибок: ${typedData?.failed || 0}`,
       });
     } catch (error) {
       logger.error('Version migration error', error instanceof Error ? error : new Error(String(error)), 'Settings');

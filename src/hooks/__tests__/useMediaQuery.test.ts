@@ -15,7 +15,7 @@ interface MockMediaQueryList {
 }
 
 describe('useMediaQuery', () => {
-  let matchMediaMock: Mock<[string], MockMediaQueryList>;
+  let matchMediaMock: Mock;
 
   beforeEach(() => {
     matchMediaMock = vi.fn();
@@ -71,7 +71,7 @@ describe('useMediaQuery', () => {
     matchMediaMock.mockImplementation((query: string): MockMediaQueryList => ({
       get matches() { return currentMatches; },
       media: query,
-      addEventListener: (_event: 'change', listener: (e: MockMediaQueryList_Event) => void) => {
+      addEventListener: (_event: 'change', listener: (e: MockMediaQueryListEvent) => void) => {
         listeners.push(listener);
       },
       removeEventListener: (_event: 'change', listener: (e: MockMediaQueryListEvent) => void) => {
