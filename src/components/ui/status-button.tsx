@@ -204,7 +204,7 @@ const StatusButton = React.forwardRef<HTMLButtonElement, StatusButtonProps>(
     const isDisabled = disabled || status === "loading";
 
     return (
-      <motion.button
+      <button
         ref={ref}
         className={cn(
           buttonVariants({ variant: effectiveVariant, size, className }),
@@ -213,11 +213,10 @@ const StatusButton = React.forwardRef<HTMLButtonElement, StatusButtonProps>(
           status === "loading" && "cursor-wait"
         )}
         disabled={isDisabled}
-        whileTap={!isDisabled ? { scale: 0.98 } : undefined}
         {...props}
       >
-        <AnimatePresence mode="wait">{getContent()}</AnimatePresence>
-
+        {getContent()}
+      </button>
         {/* Success ripple effect */}
         {status === "success" && (
           <motion.div

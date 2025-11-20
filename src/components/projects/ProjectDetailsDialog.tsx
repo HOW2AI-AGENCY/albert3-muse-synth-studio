@@ -67,16 +67,6 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (file: File | null) => {
-    // Note: This assumes ImageUploadField handles the actual upload and returns a URL.
-    // For now, we'll just simulate this. A real implementation needs to call a service.
-    if (file) {
-      setFormData(prev => ({ ...prev, cover_url: URL.createObjectURL(file) }));
-    } else {
-      setFormData(prev => ({ ...prev, cover_url: null }));
-    }
-  };
-
   const handleSave = async () => {
     if (project) {
       setIsUpdating(true);
@@ -111,10 +101,13 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
             <div className="md:col-span-1 space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="cover">Обложка проекта</Label>
-                <ImageUpload
-                  currentImage={formData.cover_url || null}
-                  onImageChange={(url) => setFormData(prev => ({ ...prev, cover_url: url }))}
-                />
+                <div className="border-2 border-dashed rounded-lg p-4 text-center">
+                  {formData.cover_url ? (
+                    <img src={formData.cover_url} alt="Cover" className="max-w-full h-auto rounded" />
+                  ) : (
+                    <p className="text-muted-foreground text-sm">Загрузите изображение</p>
+                  )}
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="name">Название проекта</Label>

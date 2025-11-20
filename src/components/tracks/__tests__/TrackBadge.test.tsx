@@ -140,7 +140,7 @@ describe('TrackBadge', () => {
     });
 
     it('applies ghost variant', () => {
-      render(<TrackBadge type="instrumental" variant="ghost" />);
+      render(<TrackBadge type="instrumental" variant="outline" />);
 
       expect(screen.getByText('Instrumental')).toBeInTheDocument();
     });
