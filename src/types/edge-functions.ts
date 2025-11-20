@@ -79,4 +79,11 @@ export interface ReplaceSectionResponse {
 export interface ResyncTrackResponse {
   success: boolean;
   data?: any;
+  variantsCount?: number;
+}
+
+export interface MigrationResponse {
+  success: boolean;
+  migrated?: number;
+  failed?: number;
 }

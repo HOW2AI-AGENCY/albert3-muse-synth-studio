@@ -221,21 +221,23 @@ export function useReferenceAnalysis() {
         throw error;
       }
 
-      if (!data?.success) {
+      const responseData = data as any;
+      
+      if (!responseData?.success) {
         throw new Error('Analysis failed');
       }
 
       logger.info('✅ [ANALYZE] Analysis initiated', 'useReferenceAnalysis', {
-        recognitionId: data.recognitionId?.substring(0, 8),
-        descriptionId: data.descriptionId?.substring(0, 8),
-        uploadedFileId: data.uploadedFileId
+        recognitionId: responseData.recognitionId?.substring(0, 8),
+        descriptionId: responseData.descriptionId?.substring(0, 8),
+        uploadedFileId: responseData.uploadedFileId
       });
 
       return {
-        success: data.success,
-        uploadedFileId: data.uploadedFileId,
-        recognitionId: data.recognitionId,
-        descriptionId: data.descriptionId
+        success: responseData.success,
+        uploadedFileId: responseData.uploadedFileId,
+        recognitionId: responseData.recognitionId,
+        descriptionId: responseData.descriptionId
       };
     },
     onSuccess: (data) => {

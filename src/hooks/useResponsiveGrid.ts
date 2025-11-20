@@ -11,7 +11,6 @@
  * @protected
  */
 import { useMemo } from 'react';
-import { useBreakpoints } from './useBreakpoints';
 import { getScreenCategory } from '@/config/breakpoints.config';
 
 interface ResponsiveGridConfig {
