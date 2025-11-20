@@ -34,6 +34,8 @@ import { useTrackCleanup } from "@/hooks/useTrackCleanup";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { usePrefetchTracks } from "@/hooks/usePrefetchTracks";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useLibraryDialogs } from "@/hooks/useLibraryDialogs";
+import { useLibraryFilters } from "@/hooks/useLibraryFilters";
 // import { LikesService } from "@/services/likes.service"; // Now handled in TrackCard
 import { supabase } from "@/integrations/supabase/client";
 import { DisplayTrack, convertToAudioPlayerTrack, convertToDisplayTrack, convertToOptimizedTrack } from "@/types/track";
@@ -48,10 +50,7 @@ import { VirtualizedTrackList } from '@/components/tracks/VirtualizedTrackList';
 import { useAuth } from "@/contexts/auth/useAuth";
 import { SelectedTracksProvider, useSelectedTracks } from '@/contexts/SelectedTracksContext';
 import { SelectionToolbar } from '@/components/tracks/SelectionToolbar';
-
-type ViewMode = 'grid' | 'list' | 'optimized';
-type SortBy = 'created_at' | 'title' | 'duration' | 'like_count';
-type SortOrder = 'asc' | 'desc';
+import type { SortBy } from '@/hooks/useLibraryFilters';
 
 const LibraryContent: React.FC = () => {
   const { isSelectionMode, setSelectionMode, clearSelection } = useSelectedTracks();
@@ -71,46 +70,21 @@ const LibraryContent: React.FC = () => {
 
   // Get current user
   const { userId } = useAuth();
-  
+
   // Automatic cleanup of failed tracks
   // Ensure userId is string or undefined, not null
   useTrackCleanup(userId ?? undefined, refreshTracks);
-  
-  // Состояние UI
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    const saved = localStorage.getItem('library-view-mode');
-    return (saved as ViewMode) || 'grid';
-  });
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300); // ✅ Debounce search
-  const [sortBy, setSortBy] = useState<SortBy>('created_at');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+
+  // ✅ OPTIMIZED: Use custom hooks to manage filters and dialogs
+  const filters = useLibraryFilters({ tracks });
+  const dialogs = useLibraryDialogs();
+
+  // Debounced search for better performance
+  const debouncedSearchQuery = useDebouncedValue(filters.searchQuery, 300);
+
+  // Track loading state for individual tracks
   const [loadingTrackId, setLoadingTrackId] = useState<string | null>(null);
-  
-  // Диалоги
-  const [separateStemsDialogOpen, setSeparateStemsDialogOpen] = useState(false);
-  const [selectedTrackForStems, setSelectedTrackForStems] = useState<{ id: string; title: string } | null>(null);
-  
-  const [extendDialogOpen, setExtendDialogOpen] = useState(false);
-  const [selectedTrackForExtend, setSelectedTrackForExtend] = useState<DisplayTrack | null>(null);
-  
-  const [coverDialogOpen, setCoverDialogOpen] = useState(false);
-  const [selectedTrackForCover, setSelectedTrackForCover] = useState<{ id: string; title: string } | null>(null);
-  
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedTrackForDelete, setSelectedTrackForDelete] = useState<{ id: string; title: string } | null>(null);
-  
-  const [addVocalDialogOpen, setAddVocalDialogOpen] = useState(false);
-  const [selectedTrackForVocal, setSelectedTrackForVocal] = useState<string | null>(null);
-  
-  const [createPersonaDialogOpen, setCreatePersonaDialogOpen] = useState(false);
-  const [selectedTrackForPersona, setSelectedTrackForPersona] = useState<DisplayTrack | null>(null);
-  
-  const [upscaleDialogOpen, setUpscaleDialogOpen] = useState(false);
-  const [selectedTrackForUpscale, setSelectedTrackForUpscale] = useState<{ id: string; title: string; audioUrl: string | null } | null>(null);
-  
+
   // Container width tracking for responsive grid
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -139,74 +113,9 @@ const LibraryContent: React.FC = () => {
     
     return () => resizeObserver.disconnect();
   }, [containerWidth]); // Add containerWidth to dependencies to ensure updateWidth has the latest state
-  
-  // Сохранение настроек просмотра
-  useEffect(() => {
-    localStorage.setItem('library-view-mode', viewMode);
-  }, [viewMode]);
 
-  // Мемоизированная фильтрация и сортировка треков
-  const filteredAndSortedTracks = useMemo(() => {
-    const filtered = tracks.filter(track => {
-      const matchesSearch = !debouncedSearchQuery || 
-        track.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-        (track.style_tags && track.style_tags.some(tag => 
-          tag.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
-        ));
-      
-      const matchesStatus = selectedStatus === 'all' || track.status === selectedStatus;
-      
-      return matchesSearch && matchesStatus;
-    });
-
-    // Сортировка
-    filtered.sort((a, b) => {
-      let aValue: number | string;
-      let bValue: number | string;
-      
-      switch (sortBy) {
-        case 'title':
-          aValue = a.title.toLowerCase();
-          bValue = b.title.toLowerCase();
-          break;
-        case 'duration':
-          aValue = a.duration || 0;
-          bValue = b.duration || 0;
-          break;
-        case 'like_count':
-          aValue = a.like_count || 0;
-          bValue = b.like_count || 0;
-          break;
-        case 'created_at':
-        default:
-          aValue = new Date(a.created_at || 0).getTime();
-          bValue = new Date(b.created_at || 0).getTime();
-          break;
-      }
-      
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
-      }
-    });
-
-    return filtered;
-  }, [tracks, debouncedSearchQuery, selectedStatus, sortBy, sortOrder]);
-
-  // Обработчики событий
-  const handleViewModeChange = useCallback((mode: ViewMode) => {
-    setViewMode(mode);
-  }, []);
-
-  const handleSortChange = useCallback((newSortBy: SortBy) => {
-    if (sortBy === newSortBy) {
-      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(newSortBy);
-      setSortOrder('desc');
-    }
-  }, [sortBy]);
+  // ✅ OPTIMIZED: Use filtered tracks from useLibraryFilters hook
+  const filteredAndSortedTracks = filters.filteredTracks;
 
   const mapDisplayTrackToAudio = useCallback((item: DisplayTrack): AudioPlayerTrack | null => {
     return convertToAudioPlayerTrack({
@@ -406,26 +315,23 @@ const LibraryContent: React.FC = () => {
   const handleSeparateStems = useCallback((trackId: string) => {
     const track = tracks.find(t => t.id === trackId);
     if (!track) return;
-    
-    setSelectedTrackForStems({ id: trackId, title: track.title });
-    setSeparateStemsDialogOpen(true);
-  }, [tracks]);
+
+    dialogs.openSeparateStems(trackId, track.title);
+  }, [tracks, dialogs]);
 
   const handleExtend = useCallback((trackId: string) => {
     const track = tracks.find(t => t.id === trackId);
     if (!track) return;
-    
-    setSelectedTrackForExtend(convertToDisplayTrack(track));
-    setExtendDialogOpen(true);
-  }, [tracks]);
+
+    dialogs.openExtend(convertToDisplayTrack(track));
+  }, [tracks, dialogs]);
 
   const handleCover = useCallback((trackId: string) => {
     const track = tracks.find(t => t.id === trackId);
     if (!track) return;
-    
-    setSelectedTrackForCover({ id: trackId, title: track.title });
-    setCoverDialogOpen(true);
-  }, [tracks]);
+
+    dialogs.openCover(trackId, track.title);
+  }, [tracks, dialogs]);
 
   const handleRetry = useCallback(async (trackId: string) => {
     try {
@@ -462,59 +368,45 @@ const LibraryContent: React.FC = () => {
   const handleDelete = useCallback((trackId: string) => {
     const track = tracks.find(t => t.id === trackId);
     if (!track) return;
-    
-    setSelectedTrackForDelete({ id: trackId, title: track.title });
-    setDeleteDialogOpen(true);
-  }, [tracks]);
+
+    dialogs.openDelete(trackId, track.title);
+  }, [tracks, dialogs]);
 
   const confirmDelete = useCallback(async () => {
-    if (!selectedTrackForDelete) return;
+    if (!dialogs.delete.data) return;
 
     try {
-      await deleteTrack(selectedTrackForDelete.id);
-      setSelectedTrackForDelete(null);
+      await deleteTrack(dialogs.delete.data.id);
+      dialogs.closeDelete();
 
-      logger.info('Track deleted', `trackId: ${selectedTrackForDelete.id}, title: ${selectedTrackForDelete.title}`);
+      logger.info('Track deleted', `trackId: ${dialogs.delete.data.id}, title: ${dialogs.delete.data.title}`);
     } catch (error) {
-      logger.error('Failed to delete track', error instanceof Error ? error : new Error(`trackId: ${selectedTrackForDelete.id}`));
+      logger.error('Failed to delete track', error instanceof Error ? error : new Error(`trackId: ${dialogs.delete.data.id}`));
     }
-  }, [selectedTrackForDelete, deleteTrack]);
+  }, [dialogs, deleteTrack]);
 
   const handleAddVocal = useCallback((trackId: string) => {
-    setSelectedTrackForVocal(trackId);
-    setAddVocalDialogOpen(true);
-  }, []);
+    dialogs.openAddVocal(trackId);
+  }, [dialogs]);
 
   const handleCreatePersona = useCallback((trackId: string) => {
     const track = tracks.find(t => t.id === trackId);
     if (!track) return;
-    
-    setSelectedTrackForPersona(convertToDisplayTrack(track));
-    setCreatePersonaDialogOpen(true);
-  }, [tracks]);
+
+    dialogs.openCreatePersona(convertToDisplayTrack(track));
+  }, [tracks, dialogs]);
 
   const handleUpscaleAudio = useCallback((trackId: string) => {
     const track = tracks.find(t => t.id === trackId);
     if (!track) return;
-    
-    setSelectedTrackForUpscale({
-      id: track.id,
-      title: track.title,
-      audioUrl: track.audio_url
-    });
-    setUpscaleDialogOpen(true);
-  }, [tracks]);
+
+    dialogs.openUpscale(track.id, track.title, track.audio_url);
+  }, [tracks, dialogs]);
 
   const handleGenerateCover = useCallback((trackId: string) => {
     const { generateCoverImage } = require('@/hooks/useGenerateCoverImage');
     generateCoverImage(trackId);
   }, []);
-
-  // Уникальные статусы для фильтра
-  const availableStatuses = useMemo(() => {
-    const statuses = new Set(tracks.map(track => track.status));
-    return Array.from(statuses);
-  }, [tracks]);
 
   if (isLoading) {
     return (
@@ -559,27 +451,27 @@ const LibraryContent: React.FC = () => {
           {/* Переключатель вида */}
           <div className="flex items-center border border-border/30 rounded-lg p-1 bg-background/50 backdrop-blur-sm">
             <Button
-              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              variant={filters.viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => handleViewModeChange('grid')}
+              onClick={() => filters.setViewMode('grid')}
               aria-label="Сетка"
               className="transition-all duration-300"
             >
               <Grid3X3 className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              variant={filters.viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => handleViewModeChange('list')}
+              onClick={() => filters.setViewMode('list')}
               aria-label="Список"
               className="transition-all duration-300"
             >
               <List className="h-4 w-4" />
             </Button>
             <Button
-              variant={viewMode === 'optimized' ? 'default' : 'ghost'}
+              variant={filters.viewMode === 'optimized' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => handleViewModeChange('optimized')}
+              onClick={() => filters.setViewMode('optimized')}
               aria-label="Оптимизированный список"
               className="transition-all duration-300"
             >
@@ -598,26 +490,24 @@ const LibraryContent: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-primary animate-pulse" />
               <Input
                 placeholder="Поиск по названию или тегам..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={filters.searchQuery}
+                onChange={(e) => filters.setSearchQuery(e.target.value)}
                 className="pl-10 bg-background/50 backdrop-blur-sm border-primary/20 focus:border-primary/50 transition-all duration-300"
                 aria-label="Поиск треков"
               />
             </div>
-            
+
             {/* Фильтр по статусу */}
             <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
+              value={filters.selectedStatus}
+              onChange={(e) => filters.setSelectedStatus(e.target.value)}
               className="px-3 py-2 border border-border/30 rounded-md bg-background/50 backdrop-blur-sm hover:border-primary/30 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/20"
               aria-label="Фильтр по статусу"
             >
               <option value="all">Все статусы</option>
-              {availableStatuses.map(status => (
-                <option key={status} value={status}>
-                  {status === 'completed' ? 'Завершено' : 
-                   status === 'processing' ? 'Обработка' : 
-                   status === 'pending' ? 'Ожидание' : status}
+              {filters.availableStatuses.map(status => (
+                <option key={status.value} value={status.value}>
+                  {status.label}
                 </option>
               ))}
             </select>
@@ -627,24 +517,24 @@ const LibraryContent: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleSortChange('created_at')}
+                onClick={() => filters.handleSortChange('created_at')}
                 className={cn(
-                  sortBy === 'created_at' && 'bg-primary/10 border-primary/50',
+                  filters.sortBy === 'created_at' && 'bg-primary/10 border-primary/50',
                   "hover:scale-105 transition-all duration-300"
                 )}
               >
-                Дата {sortBy === 'created_at' && (sortOrder === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
+                Дата {filters.sortBy === 'created_at' && (filters.sortOrder === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleSortChange('title')}
+                onClick={() => filters.handleSortChange('title')}
                 className={cn(
-                  sortBy === 'title' && 'bg-primary/10 border-primary/50',
+                  filters.sortBy === 'title' && 'bg-primary/10 border-primary/50',
                   "hover:scale-105 transition-all duration-300"
                 )}
               >
-                Название {sortBy === 'title' && (sortOrder === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
+                Название {filters.sortBy === 'title' && (filters.sortOrder === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
               </Button>
               <Button
                 variant="outline"
@@ -678,10 +568,10 @@ const LibraryContent: React.FC = () => {
             </div>
           </div>
           <h3 className="text-3xl font-black mb-3 text-gradient-primary">
-            {searchQuery ? 'Треки не найдены' : 'Библиотека пуста'}
+            {filters.searchQuery ? 'Треки не найдены' : 'Библиотека пуста'}
           </h3>
           <p className="text-muted-foreground max-w-md text-lg">
-            {searchQuery 
+            {filters.searchQuery
               ? 'Попробуйте изменить поисковый запрос или фильтры'
               : 'Создайте свой первый AI-трек в разделе "Генерация"'
             }
@@ -689,7 +579,7 @@ const LibraryContent: React.FC = () => {
         </div>
       ) : (
         <>
-          {viewMode === 'grid' && (
+          {filters.viewMode === 'grid' && (
             <div ref={containerRef} className="w-full">
               <div className="w-full" style={{ height: 'calc(100vh - 280px)' }}>
                 {shouldVirtualize ? (
@@ -747,8 +637,8 @@ const LibraryContent: React.FC = () => {
               </div>
             </div>
           )}
-          
-          {viewMode === 'list' && (
+
+          {filters.viewMode === 'list' && (
             <div className="w-full" style={{ height: 'calc(100vh - 280px)' }}>
               <VirtualizedTrackList
                 tracks={filteredAndSortedTracks}
@@ -762,8 +652,8 @@ const LibraryContent: React.FC = () => {
               />
             </div>
           )}
-          
-          {viewMode === 'optimized' && (
+
+          {filters.viewMode === 'optimized' && (
             <OptimizedTrackList
               tracks={filteredAndSortedTracks.map(convertToOptimizedTrack)}
               onShare={handleShare}
@@ -786,85 +676,84 @@ const LibraryContent: React.FC = () => {
       )}
 
       {/* Диалоги */}
-      {separateStemsDialogOpen && selectedTrackForStems && (
+      {dialogs.separateStems.isOpen && dialogs.separateStems.data && (
         <LazySeparateStemsDialog
-          open={separateStemsDialogOpen}
-          onOpenChange={setSeparateStemsDialogOpen}
-          trackId={selectedTrackForStems.id}
-          trackTitle={selectedTrackForStems.title}
+          open={dialogs.separateStems.isOpen}
+          onOpenChange={dialogs.closeSeparateStems}
+          trackId={dialogs.separateStems.data.id}
+          trackTitle={dialogs.separateStems.data.title}
           onSuccess={() => {
             refreshTracks();
-            setSelectedTrackForStems(null);
+            dialogs.closeSeparateStems();
           }}
         />
       )}
 
-      {extendDialogOpen && selectedTrackForExtend && (
+      {dialogs.extend.isOpen && dialogs.extend.data && (
         <LazyExtendTrackDialog
-          open={extendDialogOpen}
-          onOpenChange={setExtendDialogOpen}
+          open={dialogs.extend.isOpen}
+          onOpenChange={dialogs.closeExtend}
           track={{
-            id: selectedTrackForExtend.id,
-            title: selectedTrackForExtend.title,
-            duration: selectedTrackForExtend.duration || selectedTrackForExtend.duration_seconds,
-            prompt: selectedTrackForExtend.prompt,
-            style_tags: selectedTrackForExtend.style_tags,
+            id: dialogs.extend.data.id,
+            title: dialogs.extend.data.title,
+            duration: dialogs.extend.data.duration || dialogs.extend.data.duration_seconds,
+            prompt: dialogs.extend.data.prompt,
+            style_tags: dialogs.extend.data.style_tags,
           }}
         />
       )}
 
-      {coverDialogOpen && selectedTrackForCover && (
+      {dialogs.cover.isOpen && dialogs.cover.data && (
         <LazyCreateCoverDialog
-          open={coverDialogOpen}
-          onOpenChange={setCoverDialogOpen}
+          open={dialogs.cover.isOpen}
+          onOpenChange={dialogs.closeCover}
           track={{
-            id: selectedTrackForCover.id,
-            title: selectedTrackForCover.title,
+            id: dialogs.cover.data.id,
+            title: dialogs.cover.data.title,
           }}
         />
       )}
 
-      {addVocalDialogOpen && selectedTrackForVocal && (
+      {dialogs.addVocal.isOpen && dialogs.addVocal.data && (
         <LazyAddVocalDialog
-          open={addVocalDialogOpen}
-          onOpenChange={setAddVocalDialogOpen}
-          trackId={selectedTrackForVocal}
+          open={dialogs.addVocal.isOpen}
+          onOpenChange={dialogs.closeAddVocal}
+          trackId={dialogs.addVocal.data}
           onSuccess={() => {
             refreshTracks();
           }}
         />
       )}
 
-      {createPersonaDialogOpen && selectedTrackForPersona && (
+      {dialogs.createPersona.isOpen && dialogs.createPersona.data && (
         <LazyCreatePersonaDialog
-          open={createPersonaDialogOpen}
-          onOpenChange={setCreatePersonaDialogOpen}
+          open={dialogs.createPersona.isOpen}
+          onOpenChange={dialogs.closeCreatePersona}
           track={{
-            id: selectedTrackForPersona.id,
-            title: selectedTrackForPersona.title,
+            id: dialogs.createPersona.data.id,
+            title: dialogs.createPersona.data.title,
           }}
           onSuccess={() => {
-            setCreatePersonaDialogOpen(false);
-            setSelectedTrackForPersona(null);
+            dialogs.closeCreatePersona();
           }}
         />
       )}
 
-      {upscaleDialogOpen && selectedTrackForUpscale && (
+      {dialogs.upscale.isOpen && dialogs.upscale.data && (
         <LazyUpscaleAudioDialog
-          open={upscaleDialogOpen}
-          onOpenChange={setUpscaleDialogOpen}
-          trackTitle={selectedTrackForUpscale.title}
-          audioUrl={selectedTrackForUpscale.audioUrl}
+          open={dialogs.upscale.isOpen}
+          onOpenChange={dialogs.closeUpscale}
+          trackTitle={dialogs.upscale.data.title}
+          audioUrl={dialogs.upscale.data.audioUrl}
         />
       )}
 
-      {deleteDialogOpen && selectedTrackForDelete && (
+      {dialogs.delete.isOpen && dialogs.delete.data && (
         <LazyTrackDeleteDialog
-          open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
-          trackId={selectedTrackForDelete.id}
-          trackTitle={selectedTrackForDelete.title}
+          open={dialogs.delete.isOpen}
+          onOpenChange={dialogs.closeDelete}
+          trackId={dialogs.delete.data.id}
+          trackTitle={dialogs.delete.data.title}
           onConfirm={confirmDelete}
         />
       )}
