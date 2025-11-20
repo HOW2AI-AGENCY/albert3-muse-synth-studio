@@ -83,7 +83,9 @@ export const useAudioUpscaleWithVersion = () => {
       });
 
       // Create "Remaster" version
-      createRemasterVersion(jobStatus.track_id, jobStatus.output_audio_url, activeJobId);
+      if (jobStatus.track_id && jobStatus.output_audio_url) {
+        createRemasterVersion(jobStatus.track_id, jobStatus.output_audio_url, activeJobId);
+      }
     } else if (status === 'failed') {
       logger.error('[UPSCALE] Job failed', new Error(jobStatus.error_message || 'Unknown error'));
       toast.error('Ошибка улучшения аудио', {

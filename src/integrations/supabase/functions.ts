@@ -73,9 +73,9 @@ export class SupabaseFunctions {
 
     // Call original Supabase function
     return supabase.functions.invoke<TResponse>(functionName, {
-      ...options,
+      body: options.body,
       headers,
-    });
+    } as any);
   }
 
   /**

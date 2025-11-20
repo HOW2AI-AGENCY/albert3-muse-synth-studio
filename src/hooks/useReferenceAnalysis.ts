@@ -34,7 +34,6 @@ import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 import type { Database } from '@/integrations/supabase/types';
-import type { ReferenceAnalysisResponse } from '@/types/edge-functions';
 
 // ============================================================================
 // TYPES
@@ -128,7 +127,7 @@ export function useReferenceAnalysis() {
     error: analysisError
   } = useMutation<AnalyzeAudioResponse, Error, AnalyzeAudioParams>({
     mutationKey: ['analyzeReferenceAudio'],
-    mutationFn: async (params: AnalyzeAudioParams) => {
+    mutationFn: async (params: AnalyzeAudioParams): Promise<AnalyzeAudioResponse> => {
       logger.info('🔍 [ANALYZE] Starting reference audio analysis', 'useReferenceAnalysis', {
         audioUrl: params.audioUrl.substring(0, 100),
         trackId: params.trackId,
@@ -232,7 +231,12 @@ export function useReferenceAnalysis() {
         uploadedFileId: data.uploadedFileId
       });
 
-      return data;
+      return {
+        success: data.success,
+        uploadedFileId: data.uploadedFileId,
+        recognitionId: data.recognitionId,
+        descriptionId: data.descriptionId
+      };
     },
     onSuccess: (data) => {
       // ✅ Сохраняем IDs для polling

@@ -58,7 +58,7 @@ export const useResyncTrack = () => {
       queryClient.invalidateQueries({ queryKey: ['track-stems', trackId] });
 
       toast.success('Данные трека обновлены', {
-        description: `Синхронизировано версий: ${data.variantsCount || 1}`,
+        description: `Синхронизировано версий: ${(data as any)?.variantsCount || 1}`,
       });
     },
     onError: (error: any, { trackId }) => {

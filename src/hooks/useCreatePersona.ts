@@ -49,13 +49,13 @@ export const useCreatePersona = () => {
 
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast.success('🎤 Персона создана!', {
-        description: `"${data.name}" готова к использованию`
+        description: `"${data?.name}" готова к использованию`
       });
       
       queryClient.invalidateQueries({ queryKey: ['suno-personas'] });
-      logger.info('Persona created successfully', 'useCreatePersona', { personaId: data.id });
+      logger.info('Persona created successfully', 'useCreatePersona', { personaId: data?.id });
     },
     onError: (error: Error) => {
       const status = (error as any)?.status as number | undefined;

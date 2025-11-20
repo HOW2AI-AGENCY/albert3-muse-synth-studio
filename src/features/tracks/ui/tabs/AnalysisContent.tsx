@@ -19,7 +19,7 @@ export const AnalysisContent = ({ track }: AnalysisContentProps) => {
     <div className="space-y-4">
       {/* AI Description */}
       {track.metadata?.ai_description && (
-        <AIDescriptionCard description={track.metadata.ai_description as string} />
+        <AIDescriptionCard description={String(track.metadata.ai_description)} />
       )}
 
       {/* Music Analysis */}
