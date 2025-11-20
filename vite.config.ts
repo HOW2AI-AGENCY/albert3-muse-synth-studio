@@ -12,8 +12,8 @@ export default defineConfig(async ({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const productionEnv = loadEnv('production', process.cwd(), '');
 
-  // Merge with production env as fallback
-  const mergedEnv = { ...productionEnv, ...env };
+  // Merge envs. Note: production values will overwrite mode-specific values.
+  const mergedEnv = { ...env, ...productionEnv };
 
   // Expose merged env vars to the app
   process.env = { ...process.env, ...mergedEnv };

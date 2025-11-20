@@ -41,7 +41,7 @@ export default tseslint.config(
       ],
       "@typescript-eslint/no-unused-vars": "off",
       "no-console": "error", // ✅ P0: Строгий запрет console.*, используем централизованный logger
-      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-explicit-any": "warn",
       // Базовый контроль нейминга
       "@typescript-eslint/naming-convention": [
         "error",
