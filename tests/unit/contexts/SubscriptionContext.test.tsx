@@ -9,29 +9,8 @@ import { SubscriptionProvider, useSubscription } from '@/contexts/SubscriptionCo
 import { supabase } from '@/integrations/supabase/client';
 import { ReactNode } from 'react';
 
-// Mock Supabase client
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    auth: {
-      getUser: vi.fn(),
-    },
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          single: vi.fn(),
-        })),
-        maybeSingle: vi.fn(),
-      })),
-    })),
-  },
-}));
-
-// Mock useAuth
-vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({
-    user: { id: 'test-user-id' },
-  }),
-}));
+// Note: Supabase mock is in tests/setup.ts
+// We only configure specific method responses here
 
 describe('SubscriptionContext', () => {
   const wrapper = ({ children }: { children: ReactNode }) => (
@@ -40,6 +19,12 @@ describe('SubscriptionContext', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Default: mock authenticated user
+    vi.mocked(supabase.auth.getUser).mockResolvedValue({
+      data: { user: { id: 'test-user-id' } },
+      error: null,
+    } as any);
   });
 
   describe('Provider Initialization', () => {
@@ -95,6 +80,54 @@ describe('SubscriptionContext', () => {
         features: ['ai_context', 'reference_audio', 'stems'],
       };
 
+      // First call: profiles table
+      const profileBuilder = {
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            single: vi.fn().mockResolvedValue({
+              data: {
+                subscription_plan: 'pro',
+                subscription_status: 'active',
+                credits_remaining: 100,
+                credits_used_today: 5,
+              },
+              error: null,
+            }),
+          })),
+        })),
+      };
+
+      // Second call: subscription_plans table (has .eq().eq().single() chain)
+      const plansEqBuilder = {
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: mockPlan,
+          error: null,
+        }),
+      };
+
+      const plansBuilder = {
+        select: vi.fn(() => ({
+          eq: vi.fn(() => plansEqBuilder),
+        })),
+      };
+
+      let callCount = 0;
+      vi.mocked(supabase.from).mockImplementation((table: string) => {
+        callCount++;
+        if (table === 'profiles') return profileBuilder as any;
+        if (table === 'subscription_plans') return plansBuilder as any;
+        return profileBuilder as any; // fallback
+      });
+
+      const { result } = renderHook(() => useSubscription(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.plan).toEqual(mockPlan);
+      });
+    });
+
+    it('should handle plan loading errors', async () => {
       vi.mocked(supabase.from).mockReturnValue({
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
