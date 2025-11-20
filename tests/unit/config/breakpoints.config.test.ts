@@ -31,11 +31,11 @@ describe('breakpoints.config contract', () => {
   });
 
   it('getScreenCategory maps widths to expected categories', () => {
-    expect(getScreenCategory(500)).toBe('mobile');
-    expect(getScreenCategory(700)).toBe('tablet');
-    expect(getScreenCategory(1100)).toBe('desktop');
-    expect(getScreenCategory(1500)).toBe('wide');
-    expect(getScreenCategory(2000)).toBe('ultrawide');
+    expect(getScreenCategory(500)).toBe('mobile');    // < 768
+    expect(getScreenCategory(800)).toBe('tablet');    // >= 768, < 1024
+    expect(getScreenCategory(1100)).toBe('desktop');  // >= 1024, < 1280
+    expect(getScreenCategory(1500)).toBe('wide');     // >= 1280, < 1536
+    expect(getScreenCategory(2000)).toBe('ultrawide'); // >= 1536
   });
 
   it('breakpointCSSVars exposes CSS custom properties matching BREAKPOINTS', () => {
