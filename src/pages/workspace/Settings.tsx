@@ -47,12 +47,12 @@ const Settings = () => {
         description: "Запрашиваем данные из Suno API",
       });
 
-      const { data, error } = await SupabaseFunctions.invoke('migrate-track-versions');
+      const { data, error } = await SupabaseFunctions.invoke<MigrationResponse>('migrate-track-versions');
 
       if (error) throw error;
 
       toast.success("Версии восстановлены", {
-        description: `Треков: ${(data as any)?.migrated || 0}, Ошибок: ${(data as any)?.failed || 0}`,
+        description: `Треков: ${data?.migrated || 0}, Ошибок: ${data?.failed || 0}`,
       });
     } catch (error) {
       logger.error('Version migration error', error instanceof Error ? error : new Error(String(error)), 'Settings');

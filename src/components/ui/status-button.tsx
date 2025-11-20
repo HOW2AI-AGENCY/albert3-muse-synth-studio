@@ -217,16 +217,6 @@ const StatusButton = React.forwardRef<HTMLButtonElement, StatusButtonProps>(
       >
         {getContent()}
       </button>
-        {/* Success ripple effect */}
-        {status === "success" && (
-          <motion.div
-            className="absolute inset-0 bg-white/20 rounded-md"
-            initial={{ scale: 0, opacity: 0.5 }}
-            animate={{ scale: 2, opacity: 0 }}
-            transition={{ duration: 0.6 }}
-          />
-        )}
-      </motion.button>
     );
   }
 );
