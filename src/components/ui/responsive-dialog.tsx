@@ -47,36 +47,66 @@ type ContentProps = React.ComponentPropsWithoutRef<typeof BaseDialogContent> & {
   side?: "top" | "bottom" | "left" | "right";
 };
 
-export const ResponsiveDialogContent = React.forwardRef<React.ElementRef<typeof BaseDialogContent>, ContentProps>(
+export const ResponsiveDialogContent = React.forwardRef<HTMLDivElement, ContentProps>(
+
   ({ className, side = "bottom", children, ...props }, ref) => {
+
     const isMobile = useIsMobile();
+
     if (isMobile) {
+
       return (
+
         <BaseSheetContent
-          ref={ref as any}
+
+          ref={ref}
+
           side={side}
+
           className={[
+
             "rounded-t-lg",
+
             "pb-[env(safe-area-inset-bottom)]",
+
             "max-h-[92vh] overflow-auto",
+
             className || "",
+
           ].join(" ")}
-          {...(props as any)}
+
+          {...props}
+
         >
+
           {children}
+
         </BaseSheetContent>
+
       );
+
     }
+
     return (
+
       <BaseDialogContent
+
         ref={ref}
+
         className={className}
+
         {...props}
+
       >
+
         {children}
+
       </BaseDialogContent>
+
     );
+
   },
+
 );
 ResponsiveDialogContent.displayName = "ResponsiveDialogContent";
 
@@ -96,22 +126,22 @@ export const ResponsiveDialogFooter: React.FC<React.HTMLAttributes<HTMLDivElemen
 
 // Title
 export const ResponsiveDialogTitle = React.forwardRef<
-  React.ElementRef<typeof BaseDialogTitle>,
+  HTMLHeadingElement,
   React.ComponentPropsWithoutRef<typeof BaseDialogTitle>
 >(({ children, ...props }, ref) => {
   const isMobile = useIsMobile();
-  if (isMobile) return <BaseSheetTitle ref={ref as any} {...props}>{children}</BaseSheetTitle>;
+  if (isMobile) return <BaseSheetTitle ref={ref} {...props}>{children}</BaseSheetTitle>;
   return <BaseDialogTitle ref={ref} {...props}>{children}</BaseDialogTitle>;
 });
 ResponsiveDialogTitle.displayName = "ResponsiveDialogTitle";
 
 // Description
 export const ResponsiveDialogDescription = React.forwardRef<
-  React.ElementRef<typeof BaseDialogDescription>,
+  HTMLParagraphElement,
   React.ComponentPropsWithoutRef<typeof BaseDialogDescription>
 >(({ children, ...props }, ref) => {
   const isMobile = useIsMobile();
-  if (isMobile) return <BaseSheetDescription ref={ref as any} {...props}>{children}</BaseSheetDescription>;
+  if (isMobile) return <BaseSheetDescription ref={ref} {...props}>{children}</BaseSheetDescription>;
   return <BaseDialogDescription ref={ref} {...props}>{children}</BaseDialogDescription>;
 });
 ResponsiveDialogDescription.displayName = "ResponsiveDialogDescription";
