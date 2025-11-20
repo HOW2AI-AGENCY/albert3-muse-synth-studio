@@ -4,10 +4,10 @@
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
 import { logInfo, logError } from '@/utils/logger';
+import type { EdgeFunctionResponse } from '@/types/edge-functions';
 
 interface CreateMusicVideoParams {
   trackId: string;
@@ -29,7 +29,7 @@ export const useCreateMusicVideo = () => {
     mutationFn: async (params: CreateMusicVideoParams) => {
       logInfo('Creating music video', 'useCreateMusicVideo', { params });
 
-      const { data, error } = await SupabaseFunctions.invoke('create-music-video', {
+      const { data, error } = await SupabaseFunctions.invoke<EdgeFunctionResponse<CreateMusicVideoResponse>>('create-music-video', {
         body: params
       });
 
@@ -42,7 +42,7 @@ export const useCreateMusicVideo = () => {
         throw new Error(data?.error || 'Failed to create music video');
       }
 
-      return data as CreateMusicVideoResponse;
+      return (data.data || data) as CreateMusicVideoResponse;
     },
 
     onSuccess: (data, variables) => {

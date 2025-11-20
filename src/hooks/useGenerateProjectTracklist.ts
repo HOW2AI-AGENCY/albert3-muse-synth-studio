@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logger } from '@/utils/logger';
 import { toast } from 'sonner';
 import { useTracks } from '@/hooks/useTracks';
+import type { ProjectTracklistResponse } from '@/types/edge-functions';
 
 export const useGenerateProjectTracklist = () => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -23,7 +23,7 @@ export const useGenerateProjectTracklist = () => {
     try {
       toast.loading('Генерируем треклист...', { id: 'generating-tracklist' });
 
-      const { data, error } = await SupabaseFunctions.invoke('generate-project-tracklist', {
+      const { data, error } = await SupabaseFunctions.invoke<ProjectTracklistResponse>('generate-project-tracklist', {
         body: {
           projectId: project.id,
           projectName: project.name,
@@ -63,8 +63,8 @@ export const useGenerateProjectTracklist = () => {
       // Refresh tracks list
       await refreshTracks();
 
-      toast.success(`Создано ${data.count} треков для проекта`, { id: 'generating-tracklist' });
-      return data.tracks;
+      toast.success(`Создано ${data?.count || 0} треков для проекта`, { id: 'generating-tracklist' });
+      return data?.tracks || [];
     } catch (error) {
       logger.error('Error generating tracklist', error as Error, 'useGenerateProjectTracklist');
       

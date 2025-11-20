@@ -3,9 +3,9 @@
  * SPRINT 28: PLAYER-FIX-001
  */
 import { useEffect, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logInfo, logError } from '@/utils/logger';
+import type { RefreshUrlResponse } from '@/types/edge-functions';
 
 interface UseAudioUrlRefreshOptions {
   trackId: string | null;
@@ -71,7 +71,7 @@ export function useAudioUrlRefresh({
       refreshInProgressRef.current = true;
 
       try {
-        const { data, error } = await SupabaseFunctions.invoke('refresh-track-audio', {
+        const { data, error } = await SupabaseFunctions.invoke<RefreshUrlResponse>('refresh-track-audio', {
           body: { trackId, mode: 'production' }
         });
 

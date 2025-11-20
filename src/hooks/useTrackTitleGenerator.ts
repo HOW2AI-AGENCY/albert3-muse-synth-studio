@@ -7,10 +7,10 @@
  */
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logger } from '@/utils/logger';
 import { toast } from 'sonner';
+import type { TitleGenerationResponse } from '@/types/edge-functions';
 
 interface GenerateTitleParams {
   prompt?: string;
@@ -33,7 +33,7 @@ export const useTrackTitleGenerator = () => {
     setIsGenerating(true);
     
     try {
-      const { data, error } = await SupabaseFunctions.invoke('generate-track-title', {
+      const { data, error } = await SupabaseFunctions.invoke<TitleGenerationResponse>('generate-track-title', {
         body: params,
       });
 
@@ -43,7 +43,7 @@ export const useTrackTitleGenerator = () => {
         return null;
       }
 
-      if (!data.success || !data.title) {
+      if (!data?.success || !data?.title) {
         logger.error('Invalid response from title generator', new Error('No title in response'));
         toast.error('Не удалось сгенерировать название');
         return null;

@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
+import type { WavConversionResponse } from '@/types/edge-functions';
 
 interface ConvertToWavOptions {
   trackId: string;
@@ -21,7 +21,7 @@ export const useConvertToWav = () => {
     try {
       logger.info('Starting WAV conversion', 'useConvertToWav', { trackId, audioId });
 
-      const { data, error } = await SupabaseFunctions.invoke('convert-to-wav', {
+      const { data, error } = await SupabaseFunctions.invoke<WavConversionResponse>('convert-to-wav', {
         body: { trackId, audioId },
       });
 
@@ -29,14 +29,14 @@ export const useConvertToWav = () => {
         throw new Error(error.message || 'Failed to start WAV conversion');
       }
 
-      if (data.error) {
+      if (data?.error) {
         throw new Error(data.error);
       }
 
       logger.info('WAV conversion started', 'useConvertToWav', { 
         trackId, 
-        jobId: data.jobId, 
-        sunoTaskId: data.sunoTaskId 
+        jobId: data?.jobId, 
+        sunoTaskId: data?.sunoTaskId 
       });
 
       // ✅ Phase 3: WAV Conversion Tracking
@@ -46,8 +46,8 @@ export const useConvertToWav = () => {
           trackId,
           metadata: {
             audioId: audioId || null,
-            jobId: data.jobId,
-            sunoTaskId: data.sunoTaskId,
+            jobId: data?.jobId || '',
+            sunoTaskId: data?.sunoTaskId || '',
           },
         });
       });
@@ -59,8 +59,8 @@ export const useConvertToWav = () => {
 
       return {
         success: true,
-        jobId: data.jobId,
-        sunoTaskId: data.sunoTaskId,
+        jobId: data?.jobId || '',
+        sunoTaskId: data?.sunoTaskId || '',
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
