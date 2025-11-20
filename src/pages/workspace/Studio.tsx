@@ -13,7 +13,7 @@ import { MinimaxGenerator } from '@/components/studio/MinimaxGenerator';
 import { AudioUpscaler } from '@/components/studio/AudioUpscaler';
 import { PromptDJ } from '@/components/prompt-dj/PromptDJ';
 
-export const Studio: React.FC = () => {
+const Studio: React.FC = () => {
   const [activeTab, setActiveTab] = useState('minimax');
 
   return (
@@ -61,3 +61,5 @@ export const Studio: React.FC = () => {
     </div>
   );
 };
+
+export default Studio;

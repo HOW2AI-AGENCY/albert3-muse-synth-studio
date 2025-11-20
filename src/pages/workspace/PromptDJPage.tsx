@@ -9,6 +9,8 @@
 import React from 'react';
 import { PromptDJ } from '@/components/prompt-dj/PromptDJ';
 
-export const PromptDJPage: React.FC = () => {
+const PromptDJPage: React.FC = () => {
   return <PromptDJ />;
 };
+
+export default PromptDJPage;

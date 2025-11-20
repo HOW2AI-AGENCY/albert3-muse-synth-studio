@@ -23,6 +23,8 @@
 import React from 'react';
 import { DAWResponsive } from './DAWResponsive';
 
-export const DAW: React.FC = () => {
+const DAW: React.FC = () => {
   return <DAWResponsive />;
 };
+
+export default DAW;

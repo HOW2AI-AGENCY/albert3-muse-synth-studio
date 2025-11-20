@@ -129,15 +129,13 @@ export const LazyMonitoringHub = createLazyPage(
   'MonitoringHub'
 );
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export const LazyStudio = createLazyPage<{}>(
-  () => import('../pages/workspace/Studio').then(module => ({ default: module.Studio as any })),
+export const LazyStudio = createLazyPage(
+  () => import('../pages/workspace/Studio'),
   'Studio'
 );
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export const LazyDAW = createLazyPage<{}>(
-  () => import('../pages/workspace/DAW').then(module => ({ default: module.DAW as any })),
+export const LazyDAW = createLazyPage(
+  () => import('../pages/workspace/DAW'),
   'DAW'
 );
 
@@ -176,9 +174,8 @@ export const LazyPersonas = createLazyPage(
   'Personas'
 );
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export const LazyPromptDJPage = createLazyPage<{}>(
-  () => import('../pages/workspace/PromptDJPage').then(module => ({ default: module.PromptDJPage as any })),
+export const LazyPromptDJPage = createLazyPage(
+  () => import('../pages/workspace/PromptDJPage'),
   'PromptDJPage'
 );
 
