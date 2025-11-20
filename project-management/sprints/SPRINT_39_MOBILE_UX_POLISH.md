@@ -158,8 +158,8 @@
 - [ ] Обеспечить 100% проходимость в CI ⏸️ (цель: 80% достигнуто на 94%)
 
 **Критерии приемки:**
-- 🟡 Прогресс тестов: 73% → 75.3% (+2.3%, +14 тестов)
-- 🟡 CI pipeline: 463/615 passing (target: 492/615 for 80%)
+- 🟡 Прогресс тестов: 73% → 75.7% (+2.7%, +21 тестов)
+- 🟡 CI pipeline: 470/621 passing (target: 492/615 for 80%)
 - 🟡 Coverage: текущее ~65%, цель ≥80%
 
 **Файлы:**
@@ -169,6 +169,8 @@
 - ✅ `src/utils/__tests__/cache.test.ts` (исправлено)
 
 **Коммиты:**
+- `af8c7e7` - fix(tests): update retryWithBackoff tests to match current implementation
+- `f5245f4` - fix(tests): fix logger mock, breakpoints test, and ProjectCard assertions
 - `8af39fd` - fix(tests): handle unhandled Promise rejections in cache.test.ts
 - `3c1f0b7` - fix(tests): enhance Supabase mock and add Tooltip mocks
 - `c85efdf` - fix(tests): stabilize unit tests - reduce failures from 39 to 36
