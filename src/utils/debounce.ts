@@ -3,13 +3,13 @@
  * Используется в audio player для seekTo и setVolume
  */
 
-export function debounce<T extends (...args: any[]) => any>(
-  func: T,
+export function debounce<A extends unknown[], R>(
+  func: (...args: A) => R,
   wait: number
-): (...args: Parameters<T>) => void {
+): (...args: A) => void {
   let timeout: ReturnType<typeof setTimeout> | null = null;
 
-  return function executedFunction(...args: Parameters<T>) {
+  return function executedFunction(...args: A) {
     const later = () => {
       timeout = null;
       func(...args);
@@ -22,13 +22,13 @@ export function debounce<T extends (...args: any[]) => any>(
   };
 }
 
-export function throttle<T extends (...args: any[]) => any>(
-  func: T,
+export function throttle<A extends unknown[], R>(
+  func: (...args: A) => R,
   limit: number
-): (...args: Parameters<T>) => void {
+): (...args: A) => void {
   let inThrottle: boolean;
   
-  return function executedFunction(...args: Parameters<T>) {
+  return function executedFunction(...args: A) {
     if (!inThrottle) {
       func(...args);
       inThrottle = true;

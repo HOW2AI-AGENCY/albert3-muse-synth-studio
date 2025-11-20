@@ -16,6 +16,17 @@ import type { MusicProvider } from '@/config/provider-models';
 const SUNO_MODELS = ['V5', 'V4_5PLUS', 'V4_5', 'V4', 'V3_5'] as const;
 const MUREKA_MODELS = ['auto', 'mureka-6', 'mureka-7.5', 'mureka-o1'] as const;
 
+export type SunoModel = typeof SUNO_MODELS[number];
+export type MurekaModel = typeof MUREKA_MODELS[number];
+
+function isSunoModel(model: string): model is SunoModel {
+  return (SUNO_MODELS as readonly string[]).includes(model);
+}
+
+function isMurekaModel(model: string): model is MurekaModel {
+  return (MUREKA_MODELS as readonly string[]).includes(model);
+}
+
 /**
  * Base generation parameters schema (common for all providers)
  */
@@ -61,7 +72,7 @@ export const GenerationParamsSchema = baseGenerationSchema
   .superRefine((data, ctx) => {
     // Provider-specific model validation
     if (data.provider === 'suno' && data.modelVersion) {
-      if (!SUNO_MODELS.includes(data.modelVersion as any)) {
+      if (!isSunoModel(data.modelVersion)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['modelVersion'],
@@ -71,7 +82,7 @@ export const GenerationParamsSchema = baseGenerationSchema
     }
 
     if (data.provider === 'mureka' && data.modelVersion) {
-      if (!MUREKA_MODELS.includes(data.modelVersion as any)) {
+      if (!isMurekaModel(data.modelVersion)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['modelVersion'],
@@ -167,10 +178,10 @@ export function safeValidateGenerationParams(params: unknown) {
  */
 export function isValidModelForProvider(provider: MusicProvider, model: string): boolean {
   if (provider === 'suno') {
-    return SUNO_MODELS.includes(model as any);
+    return isSunoModel(model);
   }
   if (provider === 'mureka') {
-    return MUREKA_MODELS.includes(model as any);
+    return isMurekaModel(model);
   }
   return false;
 }

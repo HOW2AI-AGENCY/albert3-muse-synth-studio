@@ -24,6 +24,7 @@ import { useRef } from 'react';
 import { getTrackWithVariants } from '@/features/tracks/api/trackVersions';
 import { logInfo, logError } from '@/utils/logger';
 import { toast } from 'sonner';
+import { type TrackVersion as ApiTrackVersion } from '@/services/tracks/track.service';
 
 export type RepeatMode = 'off' | 'one' | 'all';
 
@@ -45,6 +46,7 @@ export interface AudioPlayerTrack {
   suno_id?: string; // ✅ FIX: Added for lyrics API calls
   mureka_task_id?: string; // ✅ FIX: Added for Mureka provider
   selectedVersionId?: string;
+  versions?: ApiTrackVersion[];
 }
 
 export interface TrackVersion {
@@ -577,7 +579,7 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             {
               id: track.id,
               versionNumber: 1,
-              isMasterVersion: !versionsData.some((v: any) => v.is_preferred_variant),
+              isMasterVersion: !versionsData.some((v: ApiTrackVersion) => v.is_preferred_variant),
               audio_url: track.audio_url,
               cover_url: track.cover_url,
               video_url: track.video_url,
@@ -587,7 +589,7 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               style_tags: track.style_tags,
               suno_id: track.suno_id,
             },
-            ...versionsData.map((variant: any) => ({
+            ...versionsData.map((variant: ApiTrackVersion) => ({
               id: variant.id,
               versionNumber: (variant.variant_index ?? 0) + 1,
               isMasterVersion: variant.is_preferred_variant ?? false,
@@ -602,9 +604,9 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             }))
           ];
 
-          const preferredVariant = versionsData.find((v: any) => v.is_preferred_variant);
+          const preferredVariant = versionsData.find((v: ApiTrackVersion) => v.is_preferred_variant);
           const currentVersionIndex = preferredVariant
-            ? versions.findIndex((v: any) => v.id === preferredVariant.id)
+            ? versions.findIndex((v: TrackVersion) => v.id === preferredVariant.id)
             : 0;
 
           set({

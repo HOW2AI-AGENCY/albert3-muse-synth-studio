@@ -1,40 +1,64 @@
 // Общие утилиты обработки ошибок сети и отмененных запросов
 // Позволяет единообразно подавлять ложные критические ошибки при навигации/HMR
 
-export function isNetworkAbortError(error: unknown): boolean {
-  const msg = typeof error === 'string' ? error : (error as any)?.message || (error as any)?.toString?.() || '';
-  const name = (error as any)?.name || '';
-  const code = (error as any)?.code || '';
+interface ErrorWithMessage {
+  message?: string;
+  name?: string;
+  code?: string;
+  status?: number;
+}
 
-  const m = String(msg).toLowerCase();
-  const n = String(name).toLowerCase();
-  const c = String(code).toLowerCase();
-
-  // Распространенные сигнатуры для отмененных/сетевых ошибок в браузере и Supabase
+function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
   return (
-    n === 'aborterror' ||
-    m.includes('aborterror') ||
-    m.includes('failed to fetch') ||
-    m.includes('networkerror') ||
-    m.includes('net::err_aborted') ||
-    c === 'err_aborted' ||
-    (typeof (error as any)?.status === 'number' && (error as any)?.status === 0)
+    typeof error === 'object' &&
+    error !== null &&
+    ('message' in error || 'name' in error || 'code' in error || 'status' in error)
   );
+}
+
+export function isNetworkAbortError(error: unknown): boolean {
+  if (isErrorWithMessage(error)) {
+    const msg = String(error.message || '').toLowerCase();
+    const name = String(error.name || '').toLowerCase();
+    const code = String(error.code || '').toLowerCase();
+
+    return (
+      name === 'aborterror' ||
+      msg.includes('aborterror') ||
+      msg.includes('failed to fetch') ||
+      msg.includes('networkerror') ||
+      msg.includes('net::err_aborted') ||
+      code === 'err_aborted' ||
+      (typeof error.status === 'number' && error.status === 0)
+    );
+  }
+
+  const msg = typeof error === 'string' ? error.toLowerCase() : '';
+  return msg.includes('aborterror');
 }
 
 export function isTransientNetworkError(error: unknown): boolean {
   if (isNetworkAbortError(error)) return true;
 
-  const msg = typeof error === 'string' ? error : (error as any)?.message || '';
-  const m = String(msg).toLowerCase();
-
-  // Временные сетевые сбои, которые не должны считаться критическими
+  if (isErrorWithMessage(error)) {
+    const msg = String(error.message || '').toLowerCase();
+    return (
+      msg.includes('timeout') ||
+      msg.includes('temporarily unavailable') ||
+      msg.includes('rate limit') ||
+      msg.includes('too many requests') ||
+      msg.includes('503') ||
+      msg.includes('502')
+    );
+  }
+  
+  const msg = typeof error === 'string' ? error.toLowerCase() : '';
   return (
-    m.includes('timeout') ||
-    m.includes('temporarily unavailable') ||
-    m.includes('rate limit') ||
-    m.includes('too many requests') ||
-    m.includes('503') ||
-    m.includes('502')
+    msg.includes('timeout') ||
+    msg.includes('temporarily unavailable') ||
+    msg.includes('rate limit') ||
+    msg.includes('too many requests') ||
+    msg.includes('503') ||
+    msg.includes('502')
   );
 }

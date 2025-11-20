@@ -81,8 +81,8 @@ export const saveLanguagePreference = (lang: Language): void => {
  * @example
  * getNestedValue({ status: { pending: 'Pending' } }, 'status.pending') // 'Pending'
  */
-export const getNestedValue = (obj: any, path: string): any => {
-  return path.split('.').reduce((current, key) => current?.[key], obj);
+export const getNestedValue = (obj: Record<string, unknown>, path: string): unknown => {
+  return path.split('.').reduce((current: any, key) => current?.[key], obj);
 };
 
 /**

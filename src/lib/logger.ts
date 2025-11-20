@@ -1,6 +1,6 @@
 // src/lib/logger.ts
 interface LogContext {
-  [key: string]: any;
+  [key:string]: unknown;
 }
 
 export const logger = {

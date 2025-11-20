@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { usePublicTracks } from "@/hooks/usePublicTracks";
 import { usePlatformStats } from "@/hooks/usePlatformStats";
 import type { SortOption } from "@/hooks/usePublicTracks";
+import { type Track } from "@/services/tracks/track.service";
 import { DashboardSkeleton } from "@/components/ui/loading-states";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -71,7 +72,7 @@ const Dashboard = () => {
   const handleGenerateClick = useCallback(() => navigate("/workspace/generate"), [navigate]);
   const handleLibraryClick = useCallback(() => navigate("/workspace/library"), [navigate]);
   const handleSettingsClick = useCallback(() => navigate("/workspace/settings"), [navigate]);
-  const handleTrackClick = useCallback((track: any) => {
+  const handleTrackClick = useCallback((track: Track) => {
     logger.info("Track clicked on dashboard", "Dashboard", { trackId: track.id });
     // TODO: Open track details modal or navigate to track page
   }, []);

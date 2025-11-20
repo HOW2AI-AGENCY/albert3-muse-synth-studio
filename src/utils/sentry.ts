@@ -4,6 +4,17 @@
  * Provides centralized error monitoring, performance tracking, and user session replay
  */
 
+// Add interfaces for non-standard browser APIs to avoid using 'any'
+interface NetworkInformation extends EventTarget {
+  readonly effectiveType: 'slow-2g' | '2g' | '3g' | '4g';
+}
+
+interface PerformanceMemory {
+  readonly jsHeapSizeLimit: number;
+  readonly totalJSHeapSize: number;
+  readonly usedJSHeapSize: number;
+}
+
 import * as Sentry from '@sentry/react';
 
 const IS_PRODUCTION = import.meta.env.MODE === 'production';
@@ -124,15 +135,18 @@ export const initSentry = () => {
 
         // Add custom device context
         if (event.exception) {
+          const nav = navigator as Navigator & { connection?: NetworkInformation };
+          const perf = performance as Performance & { memory?: PerformanceMemory };
+
           event.contexts = {
             ...event.contexts,
             device: {
               userAgent: navigator.userAgent,
               screenResolution: `${screen.width}x${screen.height}`,
               viewportSize: `${window.innerWidth}x${window.innerHeight}`,
-              connection: (navigator as any).connection?.effectiveType || 'unknown',
-              memory: (performance as any).memory 
-                ? `${Math.round((performance as any).memory.usedJSHeapSize / 1048576)}MB` 
+              connection: nav.connection?.effectiveType || 'unknown',
+              memory: perf.memory
+                ? `${Math.round(perf.memory.usedJSHeapSize / 1048576)}MB`
                 : 'unknown',
             },
           };
