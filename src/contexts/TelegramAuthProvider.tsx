@@ -14,6 +14,7 @@ import {
 import { FullPageSpinner } from '@/components/ui/loading-states';
 import { logger } from '@/utils/logger';
 import { TelegramAuthContext } from './telegram-auth/context';
+import type { TelegramAuthResponse } from '@/types/edge-functions';
 
 // Контекст вынесен в ./telegram-auth/context, хук вынесен в ./telegram-auth/useTelegramAuth
 
@@ -54,7 +55,7 @@ export const TelegramAuthProvider: React.FC<TelegramAuthProviderProps> = ({ chil
         setTelegramUser(user);
 
         // Call Edge Function to verify and authenticate
-        const { data, error } = await SupabaseFunctions.invoke('telegram-auth', {
+        const { data, error } = await SupabaseFunctions.invoke<TelegramAuthResponse>('telegram-auth', {
           body: { initData, user }
         });
 

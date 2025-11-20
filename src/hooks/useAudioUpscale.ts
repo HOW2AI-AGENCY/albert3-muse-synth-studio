@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
+import type { UpscaleJobResponse, EdgeFunctionResponse } from '@/types/edge-functions';
 
 export interface AudioUpscaleParams {
   trackId?: string;
@@ -31,12 +32,12 @@ export interface AudioUpscaleResult {
 export const useAudioUpscale = () => {
   return useMutation({
     mutationFn: async (params: AudioUpscaleParams) => {
-      const { data, error } = await SupabaseFunctions.invoke('upscale-audio-sr', {
+      const { data, error } = await SupabaseFunctions.invoke<UpscaleJobResponse>('upscale-audio-sr', {
         body: params
       });
 
       if (error) throw error;
-      if (!data.success) throw new Error(data.error || 'Upscale failed');
+      if (!data?.success) throw new Error(data?.error_message || 'Upscale failed');
 
       return data as AudioUpscaleResult;
     },
@@ -58,7 +59,7 @@ export const useAudioUpscaleStatus = (jobId: string | null, enabled: boolean = t
     queryFn: async () => {
       if (!jobId) throw new Error('No job ID');
 
-      const { data, error } = await SupabaseFunctions.invoke('upscale-audio-sr', {
+      const { data, error } = await SupabaseFunctions.invoke<EdgeFunctionResponse<UpscaleJobResponse>>('upscale-audio-sr', {
         body: { jobId }
       });
 
@@ -67,7 +68,7 @@ export const useAudioUpscaleStatus = (jobId: string | null, enabled: boolean = t
     },
     enabled: enabled && !!jobId,
     refetchInterval: (query) => {
-      const data = query.state.data;
+      const data = query.state.data as EdgeFunctionResponse<UpscaleJobResponse> | undefined;
       // Stop polling when completed or failed
       if (data?.status === 'completed' || data?.status === 'failed') {
         return false;
