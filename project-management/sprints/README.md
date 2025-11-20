@@ -78,7 +78,7 @@
 3. ✅ Увеличение touch targets (≥44px) - `PlaybackControls`, touch-targets.css
 
 **P1: Technical Debt:** 🟡 **ЧАСТИЧНО (50%)**
-4. 🟡 Стабилизация unit-тестов (73% → 75.3%, +14 тестов)
+4. 🟡 Стабилизация unit-тестов (73% → 75.7%, +21 тестов)
 5. ⏸️ Устранение `any` в типах (Deferred to Sprint 40)
 
 **P2: MusicVerse Components:** ⏸️ **НЕ НАЧАТО (0%)**
@@ -93,22 +93,24 @@
 - 🟡 Mobile Lighthouse Score ≥90 (WCAG AAA achieved, full Lighthouse pending)
 
 ### Метрики
-- **Тесты:** 463/615 passing (75.3%, target: 80%, gap: -4.7%)
+- **Тесты:** 470/621 passing (75.7%, target: 80%, gap: -4.3%)
 - **TypeScript:** 0 errors, 851 files compiled
-- **Коммитов:** 9
-- **Тестов исправлено:** +14 тестов
-- **Файлов изменено:** 15+ (components, hooks, tests, styles, docs)
+- **Коммитов:** 11 (9 Sprint 39 + 2 Extension)
+- **Тестов исправлено:** +21 тестов (7 test files)
+- **Файлов изменено:** 18+ (components, hooks, tests, styles, docs)
 
 ### Коммиты (All)
-- `92add71` - docs(sprint39): mark P0 tasks as completed (100%)
-- `c85efdf` - fix(tests): stabilize unit tests - reduce failures from 39 to 36
-- `3c1f0b7` - fix(tests): enhance Supabase mock and add Tooltip mocks
-- `8af39fd` - fix(tests): handle unhandled Promise rejections in cache.test.ts
+- `af8c7e7` - fix(tests): update retryWithBackoff tests to match current implementation
+- `f5245f4` - fix(tests): fix logger mock, breakpoints test, and ProjectCard assertions
+- `cde4d8e` - docs(sprint39): close Sprint 39 with comprehensive final audit
 - `62cddb5` - feat(tests): add DropdownMenu mocks for component testing
+- `8af39fd` - fix(tests): handle unhandled Promise rejections in cache.test.ts
+- `3c1f0b7` - fix(tests): enhance Supabase mock and add Tooltip mocks
+- `c85efdf` - fix(tests): stabilize unit tests - reduce failures from 39 to 36
+- `92add71` - docs(sprint39): mark P0 tasks as completed (100%)
 - `a74d5ad` - feat(a11y): apply WCAG AAA touch targets to Player controls
 - `2bf4d0e` - feat(mobile): enhance generator form with visual stepper
-- `d8e2f3a` - feat(mobile): fix responsive grid - 1 column on mobile
-- `b9c1d4e` - feat(a11y): create touch-targets.css utility classes
+- `782c08c` - feat(mcp): add Supabase MCP server integration
 
 ---
 

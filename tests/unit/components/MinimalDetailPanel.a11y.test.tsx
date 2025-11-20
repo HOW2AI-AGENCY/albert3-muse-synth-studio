@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen } from '../test-utils'; // Use test-utils for QueryClientProvider
 import React from 'react';
 
 vi.mock('@/hooks/useTrackState', () => {
