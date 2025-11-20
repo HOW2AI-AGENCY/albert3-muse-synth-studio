@@ -1,10 +1,12 @@
 
+import { DAWRegion, DAWTrack } from '@/stores/daw/types';
+
 export interface DAWProjectData {
   name: string;
   bpm: number;
-  regions: any[]; // Define more specific types for regions if available
-  tracks: any[]; // Define more specific types for tracks if available
-  metadata?: Record<string, any>;
+  regions: DAWRegion[];
+  tracks: DAWTrack[];
+  metadata?: Record<string, unknown>;
 }
 
 export interface DAWProject {

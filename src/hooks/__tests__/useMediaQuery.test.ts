@@ -1,9 +1,21 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useMediaQuery } from '../useMediaQuery';
 
+// Define types for our mock objects to avoid 'any'
+interface MockMediaQueryListEvent {
+  matches: boolean;
+}
+
+interface MockMediaQueryList {
+  matches: boolean;
+  media: string;
+  addEventListener: (event: 'change', listener: (e: MockMediaQueryListEvent) => void) => void;
+  removeEventListener: (event: 'change', listener: (e: MockMediaQueryListEvent) => void) => void;
+}
+
 describe('useMediaQuery', () => {
-  let matchMediaMock: any;
+  let matchMediaMock: Mock<[string], MockMediaQueryList>;
 
   beforeEach(() => {
     matchMediaMock = vi.fn();
@@ -15,15 +27,15 @@ describe('useMediaQuery', () => {
   });
 
   it('returns true when media query matches', () => {
-    const listeners: Array<(e: any) => void> = [];
+    const listeners: Array<(e: MockMediaQueryListEvent) => void> = [];
     
-    matchMediaMock.mockImplementation((query: string) => ({
+    matchMediaMock.mockImplementation((query: string): MockMediaQueryList => ({
       matches: true,
       media: query,
-      addEventListener: (_event: string, listener: (e: any) => void) => {
+      addEventListener: (_event: 'change', listener: (e: MockMediaQueryListEvent) => void) => {
         listeners.push(listener);
       },
-      removeEventListener: (_event: string, listener: (e: any) => void) => {
+      removeEventListener: (_event: 'change', listener: (e: MockMediaQueryListEvent) => void) => {
         const index = listeners.indexOf(listener);
         if (index > -1) listeners.splice(index, 1);
       },
@@ -34,15 +46,15 @@ describe('useMediaQuery', () => {
   });
 
   it('returns false when media query does not match', () => {
-    const listeners: Array<(e: any) => void> = [];
+    const listeners: Array<(e: MockMediaQueryListEvent) => void> = [];
     
-    matchMediaMock.mockImplementation((query: string) => ({
+    matchMediaMock.mockImplementation((query: string): MockMediaQueryList => ({
       matches: false,
       media: query,
-      addEventListener: (_event: string, listener: (e: any) => void) => {
+      addEventListener: (_event: 'change', listener: (e: MockMediaQueryListEvent) => void) => {
         listeners.push(listener);
       },
-      removeEventListener: (_event: string, listener: (e: any) => void) => {
+      removeEventListener: (_event: 'change', listener: (e: MockMediaQueryListEvent) => void) => {
         const index = listeners.indexOf(listener);
         if (index > -1) listeners.splice(index, 1);
       },
@@ -53,16 +65,16 @@ describe('useMediaQuery', () => {
   });
 
   it('updates when media query match changes', () => {
-    const listeners: Array<(e: any) => void> = [];
+    const listeners: Array<(e: MockMediaQueryListEvent) => void> = [];
     let currentMatches = false;
 
-    matchMediaMock.mockImplementation((query: string) => ({
+    matchMediaMock.mockImplementation((query: string): MockMediaQueryList => ({
       get matches() { return currentMatches; },
       media: query,
-      addEventListener: (_event: string, listener: (e: any) => void) => {
+      addEventListener: (_event: 'change', listener: (e: MockMediaQueryList_Event) => void) => {
         listeners.push(listener);
       },
-      removeEventListener: (_event: string, listener: (e: any) => void) => {
+      removeEventListener: (_event: 'change', listener: (e: MockMediaQueryListEvent) => void) => {
         const index = listeners.indexOf(listener);
         if (index > -1) listeners.splice(index, 1);
       },
@@ -82,12 +94,12 @@ describe('useMediaQuery', () => {
 
   it('cleans up event listeners on unmount', () => {
     const removeEventListenerSpy = vi.fn();
-    const listeners: Array<(e: any) => void> = [];
+    const listeners: Array<(e: MockMediaQueryListEvent) => void> = [];
 
-    matchMediaMock.mockImplementation((query: string) => ({
+    matchMediaMock.mockImplementation((query: string): MockMediaQueryList => ({
       matches: false,
       media: query,
-      addEventListener: (_event: string, listener: (e: any) => void) => {
+      addEventListener: (_event: 'change', listener: (e: MockMediaQueryListEvent) => void) => {
         listeners.push(listener);
       },
       removeEventListener: removeEventListenerSpy,
