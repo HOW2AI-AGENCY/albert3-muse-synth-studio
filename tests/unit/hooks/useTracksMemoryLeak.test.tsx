@@ -41,9 +41,16 @@ vi.mock('@/integrations/supabase/client', () => {
 
 // Mock logger
 vi.mock('@/utils/logger', () => ({
-  logInfo: vi.fn(),
-  logWarn: vi.fn(),
+  logger: {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+  },
   logError: vi.fn(),
+  logWarn: vi.fn(),
+  logInfo: vi.fn(),
+  logDebug: vi.fn(),
 }));
 
 // Mock auth context
