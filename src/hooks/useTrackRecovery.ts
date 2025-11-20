@@ -74,7 +74,7 @@ export const useTrackRecovery = (
             if (error) {
               logError('Failed to invoke check-stuck-tracks', error, 'useTrackRecovery');
             } else {
-              logInfo('Stuck tracks check completed', 'useTrackRecovery', data);
+              logInfo('Stuck tracks check completed', 'useTrackRecovery', data as Record<string, unknown>);
               refreshTracks(); // Обновить список после проверки
             }
           } catch (err) {

@@ -21,7 +21,6 @@ import { cn } from '@/lib/utils';
 import { logError, logInfo } from '@/utils/logger';
 import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getCanvasColors } from '@/utils/canvas-colors';
 
 interface WaveformProgressBarProps {
   audioUrl: string;

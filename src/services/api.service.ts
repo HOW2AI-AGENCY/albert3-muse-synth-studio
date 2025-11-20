@@ -31,6 +31,7 @@ import { type Track, type TrackRowWithVersions, type TrackStatus, mapTrackRowToT
 
 // Re-export Track type for backwards compatibility
 export type { Track, TrackStatus } from "@/services/tracks/track.service";
+export { mapTrackRowToTrack } from "@/services/tracks/track.service";
 
 
 

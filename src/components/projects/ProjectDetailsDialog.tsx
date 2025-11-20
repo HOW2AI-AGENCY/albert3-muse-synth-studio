@@ -23,9 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { ImageUploadField } from '@/components/ui/image-uploader';
 import { useProjects } from '@/contexts/project/useProjects';
-import { Skeleton } from '@/components/ui/skeleton';
 
 type MusicProject = Database['public']['Tables']['music_projects']['Row'];
 type MusicProjectUpdate = Database['public']['Tables']['music_projects']['Update'];
@@ -69,15 +67,6 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (file: File | null) => {
-    // Note: This assumes ImageUploadField handles the actual upload and returns a URL.
-    // For now, we'll just simulate this. A real implementation needs to call a service.
-    if (file) {
-      setFormData(prev => ({ ...prev, cover_url: URL.createObjectURL(file) }));
-    } else {
-      setFormData(prev => ({ ...prev, cover_url: null }));
-    }
-  };
 
   const handleSave = async () => {
     if (project) {
@@ -134,9 +123,18 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                   id="persona"
                   name="persona_id"
                   value={formData.persona_id || 'Не выбрана'}
+                  disabled
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cover_url">Обложка</Label>
+                <Input
+                  id="cover_url"
+                  name="cover_url"
+                  value={formData.cover_url || ''}
                   onChange={handleInputChange}
-                  disabled // Placeholder
-                  className="disabled:opacity-75"
+                  placeholder="URL изображения обложки"
                 />
               </div>
             </div>

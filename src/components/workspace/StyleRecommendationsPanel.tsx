@@ -88,7 +88,7 @@ export const StyleRecommendationsPanel = ({
             Предложения формируются на основе жанра, настроения и существующих тегов.
           </p>
         </div>
-        <Button variant="ghost" size="icon-sm" className="shrink-0" onClick={() => refetch()} disabled={!hasInput || isPending}>
+        <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={() => refetch()} disabled={!hasInput || isPending}>
           {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
         </Button>
       </div>

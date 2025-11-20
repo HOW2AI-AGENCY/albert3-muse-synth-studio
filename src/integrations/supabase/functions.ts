@@ -72,10 +72,12 @@ export class SupabaseFunctions {
     this.logInvocation(functionName, options.method ?? 'POST', headers);
 
     // Call original Supabase function
-    return supabase.functions.invoke<TResponse>(functionName, {
+    const invokeOptions: any = {
       ...options,
       headers,
-    });
+    };
+    
+    return supabase.functions.invoke<TResponse>(functionName, invokeOptions);
   }
 
   /**

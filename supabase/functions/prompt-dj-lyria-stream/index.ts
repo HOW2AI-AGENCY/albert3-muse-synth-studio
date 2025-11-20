@@ -177,7 +177,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    logger.error('Unhandled error in prompt-dj-lyria', error, 'prompt-dj-lyria');
+    logger.error('Unhandled error in prompt-dj-lyria', error instanceof Error ? error : new Error(String(error)), 'prompt-dj-lyria');
     return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -262,7 +262,8 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
             <Button
               type="button"
               variant="ghost"
-              size="icon-sm"
+              size="icon"
+              className="h-8 w-8"
               onClick={handleFlipActive}
               aria-label="Переключить активную версию между A и B"
               disabled={!primarySelection || !secondarySelection}
@@ -302,7 +303,8 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
               <Button
                 type="button"
                 variant={isPlayingCurrent ? "default" : "outline"}
-                size="icon-sm"
+                size="icon"
+                className="h-8 w-8"
                 aria-label={
                   isCurrent
                     ? isPlayingCurrent
@@ -344,7 +346,8 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
                 <Button
                   type="button"
                   variant={isAssignedToPrimary ? "default" : "outline"}
-                  size="icon-sm"
+                  size="icon"
+                  className="h-8 w-8"
                   aria-label={`Назначить вариант ${version.variant_index} как A`}
                   aria-pressed={isAssignedToPrimary}
                   onClick={() =>
@@ -358,7 +361,8 @@ export const TrackVersionSelector = ({ versions, selectedVersionId, onSelect }: 
                 <Button
                   type="button"
                   variant={isAssignedToSecondary ? "default" : "outline"}
-                  size="icon-sm"
+                  size="icon"
+                  className="h-8 w-8"
                   aria-label={`Назначить вариант ${version.variant_index} как B`}
                   aria-pressed={isAssignedToSecondary}
                   onClick={() =>

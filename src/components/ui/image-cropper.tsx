@@ -244,9 +244,6 @@ export function ImageCropper({
       const img = imageRef.current;
       const imgRect = img.getBoundingClientRect();
 
-      const scaleX = imgRect.width / img.naturalWidth;
-      const scaleY = imgRect.height / img.naturalHeight;
-
       // Calculate crop dimensions to take full width
       let cropWidth = imgRect.width;
       let cropHeight = imgRect.height;
