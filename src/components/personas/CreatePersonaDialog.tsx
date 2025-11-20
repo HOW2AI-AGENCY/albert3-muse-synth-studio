@@ -16,6 +16,7 @@ import { getAIDescription } from '@/types/track-metadata';
 import type { TrackMetadata } from '@/types/track-metadata';
 import { ImageUpload } from '../ui/ImageUpload';
 import { useImageUpload } from '@/hooks/useImageUpload';
+import type { PersonaResponse } from '@/types/edge-functions';
 
 // ============================================================================
 // TYPES
@@ -86,7 +87,7 @@ export const CreatePersonaDialog = ({
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const uploadedUrl = await imageUpload.handleUpload(file);
+      const uploadedUrl = await imageUpload.uploadImage(file);
       if (uploadedUrl) {
         setAvatarUrl(uploadedUrl);
       }
@@ -103,7 +104,7 @@ export const CreatePersonaDialog = ({
     setIsCreating(true);
 
     try {
-      const { data, error } = await SupabaseFunctions.invoke('create-suno-persona', {
+      const { data, error } = await SupabaseFunctions.invoke<PersonaResponse>('create-suno-persona', {
         body: {
           trackId: track.id,
           musicIndex,
@@ -115,7 +116,7 @@ export const CreatePersonaDialog = ({
       });
 
       if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      if (!data || data.error) throw new Error(data?.error || 'Failed to create persona');
 
       toast.success('Персона успешно создана!');
       onSuccess?.(data.persona);

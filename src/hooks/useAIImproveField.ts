@@ -7,10 +7,10 @@
  */
 
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logger } from '@/utils/logger';
 import * as Sentry from '@sentry/react';
+import type { EdgeFunctionResponse } from '@/types/edge-functions';
 
 export type AIAction = 'improve' | 'generate' | 'rewrite';
 
@@ -54,7 +54,7 @@ export const useAIImproveField = ({ onSuccess, onError }: UseAIImproveFieldOptio
     try {
       logger.info(`AI ${action} started for field: ${field}`, 'useAIImproveField', { action, field });
 
-      const { data, error: functionError } = await SupabaseFunctions.invoke('ai-improve-field', {
+      const { data, error: functionError } = await SupabaseFunctions.invoke<EdgeFunctionResponse<{ result: string }>>('ai-improve-field', {
         body: {
           field,
           value,
@@ -92,7 +92,7 @@ export const useAIImproveField = ({ onSuccess, onError }: UseAIImproveFieldOptio
         throw new Error(errorMessage);
       }
 
-      const result = data.result;
+      const result = typeof data.result === 'string' ? data.result : '';
       logger.info(`AI ${action} completed for field: ${field}`, 'useAIImproveField', { 
         action, 
         field,

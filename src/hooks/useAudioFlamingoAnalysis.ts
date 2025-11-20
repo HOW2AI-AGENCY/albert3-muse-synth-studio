@@ -2,10 +2,10 @@
  * Hook для анализа аудио через Audio Flamingo 3
  */
 import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast as sonnerToast } from 'sonner';
 import { logger } from '@/utils/logger';
+import type { EdgeFunctionResponse } from '@/types/edge-functions';
 
 export type AnalysisType = 'full' | 'quick' | 'lyrics' | 'instruments';
 
@@ -51,7 +51,7 @@ export const useAudioFlamingoAnalysis = () => {
 
       setProgress(30);
 
-      const { data, error } = await SupabaseFunctions.invoke('analyze-audio-flamingo', {
+      const { data, error } = await SupabaseFunctions.invoke<EdgeFunctionResponse<FlamingoAnalysisResult>>('analyze-audio-flamingo', {
         body: { audioUrl, analysisType }
       });
 
@@ -65,20 +65,21 @@ export const useAudioFlamingoAnalysis = () => {
 
       setProgress(90);
 
+      const result = data as FlamingoAnalysisResult;
       logger.info('✅ [FLAMINGO] Analysis complete', 'AudioFlamingo', {
-        hasGenre: !!data.parsed?.genre,
-        hasMood: !!data.parsed?.mood,
-        hasTempo: !!data.parsed?.tempo_bpm,
-        hasLyrics: !!data.parsed?.lyrics,
+        hasGenre: !!result.parsed?.genre,
+        hasMood: !!result.parsed?.mood,
+        hasTempo: !!result.parsed?.tempo_bpm,
+        hasLyrics: !!result.parsed?.lyrics,
       });
 
       setProgress(100);
 
       sonnerToast.success('🎧 Анализ завершён', {
-        description: `${data.parsed?.genre || 'Unknown'} · ${data.parsed?.mood || 'Unknown'}${data.parsed?.tempo_bpm ? ` · ${data.parsed.tempo_bpm} BPM` : ''}`
+        description: `${result.parsed?.genre || 'Unknown'} · ${result.parsed?.mood || 'Unknown'}${result.parsed?.tempo_bpm ? ` · ${result.parsed.tempo_bpm} BPM` : ''}`
       });
 
-      return data as FlamingoAnalysisResult;
+      return result;
     } catch (error) {
       logger.error('[FLAMINGO] Unexpected error', error as Error, 'AudioFlamingo');
       sonnerToast.error('Неожиданная ошибка при анализе');
