@@ -22,8 +22,8 @@ const fetchBalance = async (): Promise<ProviderBalance> => {
   }
 
   const { data, error } = await SupabaseFunctions.invoke<ProviderBalance>(
-    'get-balance',
-    { body: { provider: PRIMARY_PROVIDER } }
+    `get-balance?provider=${PRIMARY_PROVIDER}`,
+    { method: 'GET' }
   );
 
   if (error) {
