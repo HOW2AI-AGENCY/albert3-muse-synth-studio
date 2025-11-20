@@ -81,11 +81,12 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (file: File | null) => {
-    // Note: This assumes ImageUploadField handles the actual upload and returns a URL.
-    // For now, we'll just simulate this. A real implementation needs to call a service.
-    if (file) {
+  const handleFileChange = (file: File | string | null) => {
+    // ImageUploadField passes File (new upload), string (existing URL), or null (removed)
+    if (file instanceof File) {
       setFormData(prev => ({ ...prev, cover_url: URL.createObjectURL(file) }));
+    } else if (typeof file === 'string') {
+      setFormData(prev => ({ ...prev, cover_url: file }));
     } else {
       setFormData(prev => ({ ...prev, cover_url: null }));
     }
@@ -140,8 +141,8 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
                 <Label htmlFor="cover">Обложка проекта</Label>
                 {/* Step 2: Integrate ImageUploadField */}
                 <ImageUploadField
-                  initialImage={formData.cover_url}
-                  onFileChange={handleFileChange}
+                  defaultImage={formData.cover_url || undefined}
+                  onChange={handleFileChange}
                 />
               </div>
               <div className="space-y-2">
