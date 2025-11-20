@@ -177,11 +177,9 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
             <TrackBadgeGroup>
               {/* Vocal/Instrumental indicator */}
               {track.genre && (
-                <div className="flex flex-wrap gap-1">
-                  <Badge variant="outline" className="text-[10px] h-5 px-1.5">
-                    {track.genre}
-                  </Badge>
-                </div>
+                <Badge variant="outline" className="text-[10px] h-5 px-1.5">
+                  {track.genre}
+                </Badge>
               )}
 
               <TrackVersions
@@ -202,7 +200,18 @@ export const TrackCard: React.FC<TrackCardProps> = memo(({
                   {track.status}
                 </Badge>
               )}
+            </TrackBadgeGroup>
           </div>
+
+          {/* Track Metrics */}
+          <TrackMetrics
+            duration={track.duration || undefined}
+            likes={track.like_count || 0}
+            views={track.view_count || 0}
+            size="sm"
+            className="text-muted-foreground"
+          />
+        </div>
       </CardContent>
 
       <CardFooter className="p-3 pt-0">

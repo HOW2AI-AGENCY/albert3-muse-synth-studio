@@ -199,8 +199,8 @@ export const TrackListItem = memo<TrackListItemProps>(
 
             {/* Metrics */}
             <TrackMetrics
-              duration={track.duration ?? undefined}
-              likes={track.like_count ?? undefined}
+              duration={track.duration || undefined}
+              likes={track.like_count || 0}
               layout="compact"
               size="sm"
               display={['duration', 'likes']}
