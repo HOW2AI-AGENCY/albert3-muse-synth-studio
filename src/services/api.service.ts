@@ -17,78 +17,27 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import { handlePostgrestError } from "@/services/api/errors";
-import { logError } from "@/utils/logger";
-import type { TrackMetadata } from "@/types/track-metadata";
+import { handlePostgrestError, handleSupabaseFunctionError } from "@/services/api/errors";
+import { logError, logWarn } from "@/utils/logger";
 
-// Import new domain services
-import { TrackService, type Track, type TrackRowWithVersions, type TrackStatus, type TrackVersion, mapTrackRowToTrack } from "@/services/tracks/track.service";
-import { LyricsService, type GenerateLyricsRequest, type GenerateLyricsResponse } from "@/services/lyrics/lyrics.service";
-import { PromptService, type ImprovePromptRequest, type ImprovePromptResponse } from "@/services/prompts/prompt.service";
-import { BalanceService, type ProviderBalanceResponse } from "@/services/balance/balance.service";
-import { StemService } from "@/services/stems/stem.service";
+import { startKpiTimer, endKpiTimer } from "@/utils/kpi";
+import { retryWithBackoff, RETRY_CONFIGS } from "@/utils/retryWithBackoff";
+import { SupabaseFunctions } from "@/integrations/supabase/functions";
+import { recordPerformanceMetric } from "@/utils/performanceMonitor";
+import { type ImprovePromptRequest, type ImprovePromptResponse } from "@/services/prompts/prompt.service";
+import { type GenerateLyricsRequest, type GenerateLyricsResponse } from "@/services/lyrics/lyrics.service";
+import { type ProviderBalanceResponse } from "@/services/balance/balance.service";
+import { type Track, type TrackRowWithVersions, type TrackStatus, mapTrackRowToTrack } from "@/services/tracks/track.service";
+
+
+
 
 type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
-type TrackVersionRow = Database["public"]["Tables"]["track_versions"]["Row"];
 
-export type TrackRowWithVersions = TrackRow & {
-  track_versions: TrackVersionRow[];
-};
 
-export type TrackStatus = "pending" | "draft" | "processing" | "completed" | "failed";
 
-export type TrackVersion = {
-  id: string;
-  variant_index: number | null;
-  audio_url: string | null;
-  cover_url: string | null;
-  duration: number | null;
-  is_primary_variant: boolean | null;
-  is_preferred_variant: boolean | null;
-};
 
-export type Track = Omit<TrackRow, 'metadata'> & {
-  status: TrackStatus;
-  style?: string | null;
-  mureka_task_id?: string | null;
-  metadata: TrackMetadata | null;
-  selectedVersionId?: string;
-  versions?: TrackVersion[];
-};
 
-const isTrackStatus = (status: TrackRow["status"]): status is TrackStatus =>
-  status === "pending" ||
-  status === "draft" ||
-  status === "processing" ||
-  status === "completed" ||
-  status === "failed";
-
-export const mapTrackRowToTrack = (track: TrackRow | TrackRowWithVersions): Track => {
-  const trackWithVersions = track as TrackRowWithVersions;
-  return {
-    ...track,
-    status: isTrackStatus(track.status) ? track.status : "pending",
-    idempotency_key: track.idempotency_key ?? null,
-    archived_to_storage: track.archived_to_storage ?? false,
-    storage_audio_url: track.storage_audio_url ?? null,
-    storage_cover_url: track.storage_cover_url ?? null,
-    storage_video_url: track.storage_video_url ?? null,
-    archive_scheduled_at: track.archive_scheduled_at ?? null,
-    archived_at: track.archived_at ?? null,
-    mureka_task_id: track.mureka_task_id ?? null,
-    project_id: track.project_id ?? null,
-    metadata: track.metadata as TrackMetadata | null,
-    versions: Array.isArray(trackWithVersions.track_versions) ? trackWithVersions.track_versions : [],
-  };
-};
-
-export interface ImprovePromptRequest {
-  prompt: string;
-}
-
-export interface ImprovePromptResponse {
-  improvedPrompt: string;
-}
 
 export type SunoModelVersion = 'V3_5' | 'V4' | 'V4_5' | 'V4_5PLUS' | 'V5';
 
@@ -99,7 +48,7 @@ export interface GenerateMusicRequest {
   userId?: string;
   title?: string;
   prompt: string;
-  provider?: 'replicate' | 'suno' | 'mureka';
+  provider?: 'replicate' | 'suno';
   lyrics?: string;
   hasVocals?: boolean;
   styleTags?: string[];
@@ -121,30 +70,32 @@ export interface GenerateMusicResponse {
   trackId: string;
 }
 
-export interface GenerateLyricsRequest {
-  prompt: string;
-  trackId?: string;
-  metadata?: Record<string, unknown>;
-}
 
-export interface GenerateLyricsResponse {
-  success: boolean;
-  jobId: string;
-  taskId: string;
-  status: string;
-}
 
 // NOTE: Legacy lyrics_jobs system removed - functionality now integrated into tracks table
 // Keeping types for backward compatibility but they should not be used
 
-export type ProviderBalanceResponse = {
-  balance: number | null;
-  error?: string | null;
-} & Record<string, unknown>;
+
 
 /**
  * API Service - handles all backend communication
  */
+
+// Helper for tracking API requests
+const trackAPIRequest = (
+  endpoint: string,
+  method: string,
+  statusCode: number,
+  duration: number,
+  error?: any
+) => {
+  recordPerformanceMetric('api_call', duration, 'ApiService', {
+    endpoint,
+    method,
+    statusCode,
+    error: error ? (error.message || String(error)) : undefined
+  });
+};
 
 export class ApiService {
   // Ин-флайт запросы и кеш последнего успешного ответа для баланса провайдеров
@@ -159,7 +110,7 @@ export class ApiService {
     const context = "ApiService.improvePrompt";
     const timerId = `${context}:${Date.now()}`;
     startKpiTimer(timerId);
-    
+
     // Используем retry logic для улучшения промпта
     const { data, error } = await retryWithBackoff(
       () => SupabaseFunctions.invoke<ImprovePromptResponse>(
@@ -204,7 +155,7 @@ export class ApiService {
     request: GenerateLyricsRequest
   ): Promise<GenerateLyricsResponse> {
     const context = "ApiService.generateLyrics";
-    
+
     // Используем retry logic для генерации текстов
     const { data, error } = await retryWithBackoff(
       () => SupabaseFunctions.invoke<GenerateLyricsResponse>(
@@ -341,7 +292,6 @@ export class ApiService {
           storage_video_url,
           archive_scheduled_at,
           archived_at,
-          mureka_task_id,
           project_id
         `)
         .eq("user_id", userId)
@@ -393,7 +343,7 @@ export class ApiService {
       .eq("id", trackId);
 
     handlePostgrestError(error, "Failed to delete track", context, { trackId });
-    
+
     // Кэш теперь управляется только в useTracks через IndexedDB
   }
 

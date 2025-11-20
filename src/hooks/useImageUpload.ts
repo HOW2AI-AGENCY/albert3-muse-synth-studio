@@ -17,6 +17,7 @@ interface UseImageUploadResult {
   handleThumbnailClick: () => void;
   handleFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleRemove: () => void;
+  uploadImage: (file: File) => Promise<string | null>;
 }
 
 export const useImageUpload = ({ onUploadSuccess }: UseImageUploadProps = {}): UseImageUploadResult => {
@@ -139,5 +140,6 @@ export const useImageUpload = ({ onUploadSuccess }: UseImageUploadProps = {}): U
     handleThumbnailClick,
     handleFileChange,
     handleRemove,
+    uploadImage,
   };
 };

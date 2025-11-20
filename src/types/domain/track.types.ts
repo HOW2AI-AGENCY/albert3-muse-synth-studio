@@ -48,7 +48,6 @@ export interface Track {
   view_count?: number | null;
   suno_id?: string | null;
   suno_task_id?: string | null;
-  mureka_task_id?: string | null;
   model_name?: string | null;
   idempotency_key?: string | null;
   metadata?: TrackMetadata | null;
@@ -192,7 +191,7 @@ export const trackConverters = {
    */
   toAudioPlayer(track: Track): AudioPlayerTrack | null {
     if (!track.audio_url) return null;
-    
+
     return {
       id: track.id,
       title: track.title,
@@ -220,10 +219,10 @@ function formatDate(dateString: string): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
-  
+
   if (diffMins < 60) return `${diffMins} мин назад`;
   if (diffMins < 1440) return `${Math.floor(diffMins / 60)} ч назад`;
   if (diffMins < 10080) return `${Math.floor(diffMins / 1440)} дн назад`;
-  
+
   return date.toLocaleDateString('ru-RU');
 }

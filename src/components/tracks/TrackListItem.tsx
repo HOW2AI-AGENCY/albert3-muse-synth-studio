@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Play, Pause, MoreHorizontal } from '@/utils/iconImports';
 import { useSelectedTracks } from '@/contexts/selected-tracks/useSelectedTracks';
-import type { Track } from '@/services/api.service';
+import type { Track } from '@/services/tracks/track.service';
 import { TrackBadge, TrackBadgeGroup } from './TrackBadge';
 import { TrackMetrics } from './TrackMetrics';
 import { cn } from '@/lib/utils';

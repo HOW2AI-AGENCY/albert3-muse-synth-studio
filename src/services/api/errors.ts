@@ -76,7 +76,7 @@ export const ensureData = <T>(
 };
 
 export const handleSupabaseFunctionError = (
-  error: SupabaseFunctionError | null,
+  error: SupabaseFunctionError | Error | null,
   fallbackMessage: string,
   context: string,
   payload?: Record<string, unknown>
@@ -84,7 +84,7 @@ export const handleSupabaseFunctionError = (
   if (error) {
     const errorMessage = 'message' in error ? error.message : fallbackMessage;
     const errorObj = error instanceof Error ? error : new Error(errorMessage);
-    
+
     logError(fallbackMessage, errorObj, context, {
       ...payload,
       status: "status" in error ? error.status : undefined,
