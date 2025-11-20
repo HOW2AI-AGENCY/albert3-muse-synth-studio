@@ -15,7 +15,7 @@ const GlobalAudioPlayer = memo(() => {
   const currentTrack = useCurrentTrack();
   const isMobile = useIsMobile();
   
-  const { isExpanded, setIsExpanded } = usePlayerVisibility(currentTrack);
+  const { isExpanded, setIsExpanded } = usePlayerVisibility(currentTrack as any);
 
   if (!currentTrack || !currentTrack.audio_url) {
     return null;

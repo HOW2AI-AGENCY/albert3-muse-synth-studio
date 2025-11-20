@@ -6,10 +6,10 @@
  */
 
 import { useMutation } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
+import type { EdgeFunctionResponse } from '@/types/edge-functions';
 
 export interface MinimaxGenerationParams {
   prompt: string;
@@ -31,14 +31,14 @@ export interface MinimaxGenerationResult {
 export const useMinimaxGeneration = () => {
   return useMutation({
     mutationFn: async (params: MinimaxGenerationParams) => {
-      const { data, error } = await SupabaseFunctions.invoke('generate-minimax', {
+      const { data, error } = await SupabaseFunctions.invoke<EdgeFunctionResponse<MinimaxGenerationResult>>('generate-minimax', {
         body: params
       });
 
       if (error) throw error;
-      if (!data.success) throw new Error(data.error || 'Generation failed');
+      if (!data?.success) throw new Error(data?.error || 'Generation failed');
 
-      return data as MinimaxGenerationResult;
+      return (data.data || data) as MinimaxGenerationResult;
     },
     onSuccess: () => {
       toast.success('Music generated successfully! 🎵');

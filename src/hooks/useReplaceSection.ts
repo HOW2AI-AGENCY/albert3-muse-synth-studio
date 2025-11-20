@@ -10,6 +10,7 @@ import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logger } from '@/utils/logger';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import type { ReplaceSectionResponse } from '@/types/edge-functions';
 
 export interface ReplaceSectionParams {
   trackId: string;
@@ -119,7 +120,7 @@ export const useReplaceSection = (): UseReplaceSectionReturn => {
         end: params.infillEndS,
       });
 
-      const { data, error: functionError } = await SupabaseFunctions.invoke(
+      const { data, error: functionError } = await SupabaseFunctions.invoke<ReplaceSectionResponse>(
         'replace-section',
         {
           body: params,

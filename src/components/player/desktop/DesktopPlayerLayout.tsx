@@ -23,7 +23,7 @@ export interface DesktopPlayerLayoutProps {
 }
 
 export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) => {
-  const { isVisible } = usePlayerVisibility(track);
+  const { isVisible } = usePlayerVisibility(track as any);
   const [showKaraoke, setShowKaraoke] = useState(false);
 
   const isPlaying = useIsPlaying();

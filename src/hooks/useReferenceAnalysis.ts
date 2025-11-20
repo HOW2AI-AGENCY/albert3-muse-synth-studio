@@ -34,6 +34,7 @@ import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 import type { Database } from '@/integrations/supabase/types';
+import type { ReferenceAnalysisResponse } from '@/types/edge-functions';
 
 // ============================================================================
 // TYPES

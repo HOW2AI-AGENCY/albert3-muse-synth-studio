@@ -34,3 +34,49 @@ export interface TelegramAuthResponse {
   success: boolean;
   session?: any;
 }
+
+export interface RefreshUrlResponse {
+  success: boolean;
+  refreshed?: {
+    audio_url: string;
+  };
+}
+
+export interface WavConversionResponse {
+  success: boolean;
+  jobId: string;
+  sunoTaskId: string;
+  error?: string;
+}
+
+export interface TitleGenerationResponse {
+  success: boolean;
+  title: string;
+  suggestions: string[];
+  error?: string;
+}
+
+export interface ProjectTracklistResponse {
+  success: boolean;
+  count: number;
+  tracks: any[];
+  error?: string;
+}
+
+export interface ReferenceAnalysisResponse {
+  success: boolean;
+  recognitionId?: string;
+  descriptionId?: string;
+  uploadedFileId: string;
+}
+
+export interface ReplaceSectionResponse {
+  success: boolean;
+  replacementId?: string;
+  error?: string;
+}
+
+export interface ResyncTrackResponse {
+  success: boolean;
+  data?: any;
+}
