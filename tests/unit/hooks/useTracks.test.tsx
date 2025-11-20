@@ -8,9 +8,23 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useTracks } from '@/hooks/useTracks';
 import { supabase } from '@/integrations/supabase/client';
-import { AuthContext } from '@/contexts/AuthContext';
 import { ApiService } from '@/services/api.service';
 import { trackCacheService } from '@/services/track-cache.service';
+
+// Create local AuthContext for tests
+const AuthContext = React.createContext<{
+  user: any;
+  userId: string | null;
+  session: any;
+  isLoading: boolean;
+  refresh: () => void;
+}>({
+  user: null,
+  userId: null,
+  session: null,
+  isLoading: false,
+  refresh: () => {},
+});
 
 vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
@@ -25,27 +39,37 @@ vi.mock('@/services/track-cache.service', () => ({
   },
 }));
 
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    from: vi.fn(),
-    channel: vi.fn(),
-    removeChannel: vi.fn().mockResolvedValue(undefined),
-    functions: {
-      invoke: vi.fn().mockResolvedValue({ data: null, error: null }),
-    },
-  },
-}));
-
 const createSupabaseBuilder = (data: any[], overrides: Record<string, any> = {}) => {
+  let signal: AbortSignal | undefined;
+
   const builder: any = {
-    select: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    neq: vi.fn().mockReturnThis(),
-    order: vi.fn().mockReturnThis(),
-    range: vi.fn().mockReturnThis(),
-    abortSignal: vi.fn().mockReturnThis(),
-    then: (onFulfilled: any, onRejected?: any) =>
-      Promise.resolve({ data, error: null, count: data.length }).then(onFulfilled, onRejected),
+    select: vi.fn((...args: any[]) => {
+      console.log('[TEST MOCK] select called with args:', args.length);
+      return builder;
+    }),
+    eq: vi.fn((field: string, value: any) => {
+      console.log('[TEST MOCK] eq called:', field, value);
+      return builder;
+    }),
+    neq: vi.fn((field: string, value: any) => {
+      console.log('[TEST MOCK] neq called:', field, value);
+      return builder;
+    }),
+    order: vi.fn(() => builder),
+    range: vi.fn(() => builder),
+    abortSignal: vi.fn((s: AbortSignal) => {
+      console.log('[TEST MOCK] abortSignal called');
+      signal = s;
+      return builder;
+    }),
+    then: (onFulfilled: any, onRejected?: any) => {
+      console.log('[TEST MOCK] builder.then() called, data length:', data.length);
+      if (signal?.aborted) {
+        console.log('[TEST MOCK] Signal was aborted, returning empty data');
+        return Promise.resolve({ data: [], error: null, count: 0 }).then(onFulfilled, onRejected);
+      }
+      return Promise.resolve({ data, error: null, count: data.length }).then(onFulfilled, onRejected);
+    },
   };
 
   Object.assign(builder, overrides);
@@ -84,10 +108,6 @@ const createWrapper = (authOverrides?: Partial<React.ContextType<typeof AuthCont
 describe('useTracks', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(supabase.channel).mockReturnValue({
-      on: vi.fn().mockReturnThis(),
-      subscribe: vi.fn().mockReturnThis(),
-    } as any);
   });
 
   afterEach(() => {
@@ -110,6 +130,10 @@ describe('useTracks', () => {
 
     const builder = createSupabaseBuilder(mockTracks);
     vi.mocked(supabase.from).mockReturnValue(builder);
+    vi.mocked(supabase.channel).mockReturnValue({
+      on: vi.fn().mockReturnThis(),
+      subscribe: vi.fn().mockReturnThis(),
+    } as any);
 
     const { wrapper, queryClient } = createWrapper();
     const { result } = renderHook(() => useTracks(), { wrapper });
@@ -124,6 +148,10 @@ describe('useTracks', () => {
   it('returns empty list when user is missing', async () => {
     const builder = createSupabaseBuilder([]);
     vi.mocked(supabase.from).mockReturnValue(builder);
+    vi.mocked(supabase.channel).mockReturnValue({
+      on: vi.fn().mockReturnThis(),
+      subscribe: vi.fn().mockReturnThis(),
+    } as any);
 
     const { wrapper, queryClient } = createWrapper({ userId: null, user: null });
     const { result } = renderHook(() => useTracks(), { wrapper });
@@ -137,6 +165,10 @@ describe('useTracks', () => {
   it('applies project filter and excludes drafts', async () => {
     const builder = createSupabaseBuilder([]);
     vi.mocked(supabase.from).mockReturnValue(builder);
+    vi.mocked(supabase.channel).mockReturnValue({
+      on: vi.fn().mockReturnThis(),
+      subscribe: vi.fn().mockReturnThis(),
+    } as any);
 
     const { wrapper, queryClient } = createWrapper();
     renderHook(() => useTracks(undefined, { projectId: 'project-1', excludeDraftTracks: true }), { wrapper });
@@ -157,6 +189,10 @@ describe('useTracks', () => {
 
     const builder = createSupabaseBuilder(mockTracks);
     vi.mocked(supabase.from).mockReturnValue(builder);
+    vi.mocked(supabase.channel).mockReturnValue({
+      on: vi.fn().mockReturnThis(),
+      subscribe: vi.fn().mockReturnThis(),
+    } as any);
     vi.spyOn(ApiService, 'deleteTrack').mockResolvedValue();
 
     const { wrapper, queryClient } = createWrapper();
