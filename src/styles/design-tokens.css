@@ -380,17 +380,22 @@
       --spacing-input-padding-x: var(--space-2);
       --generator-max-height-mobile: calc(100vh - var(--workspace-header-height, 56px) - var(--bottom-tab-bar-height));
 
-      /* Mobile z-index adjustments - ensure proper stacking on small screens */
-      --z-bottom-nav: 50;            /* Bottom navigation - always visible */
-      --z-mini-player: 60;
-      --z-fab: 70;
-      --z-drawer-backdrop: 199;
-      --z-drawer: 200;
-      --z-modal-backdrop: 1000;
-      --z-modal: 1010;
-      --z-sheet: 1020;
-      --z-popover: 1040;
-      --z-toast: 1060;
+    /* ✅ Mobile z-index adjustments - ensure proper stacking on small screens */
+    --z-bottom-nav: 50;              /* ✅ Bottom navigation - always visible */
+    --z-generator-footer: 54;        /* ✅ Generator sticky footer - below player */
+    --z-mini-player: 55;             /* ✅ Audio player - above nav and generator */
+    --z-fab: 65;                     /* ✅ FAB button - above player */
+    --z-drawer-backdrop: 199;
+    --z-drawer: 200;
+    --z-modal-backdrop: 1000;
+    --z-modal: 1010;
+    --z-sheet: 1020;
+    --z-popover: 1040;
+    --z-toast: 1060;
+
+    /* ✅ Offsets для правильного позиционирования мобильных элементов */
+    --mobile-nav-height: 64px;       /* Height of AppBottomNav */
+    --mobile-player-height: 96px;    /* Height of MiniPlayer */
     }
   }
 

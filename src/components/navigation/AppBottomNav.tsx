@@ -82,11 +82,15 @@ const AppBottomNav: React.FC = () => {
 
   return (
     <>
-      <div className={cn(
-        "fixed bottom-0 left-0 right-0 z-bottom-nav p-2",
-        "bg-background/80 backdrop-blur-xl border-t border-border/50",
-        "pb-safe"
-      )}>
+      {/* ✅ ДОБАВЛЕНО: data-bottom-tab-bar для useWorkspaceOffsets */}
+      <div 
+        data-bottom-tab-bar="true"
+        className={cn(
+          "fixed bottom-0 left-0 right-0 z-bottom-nav p-2",
+          "bg-background/80 backdrop-blur-xl border-t border-border/50",
+          "pb-safe"
+        )}
+      >
         <InteractiveMenu
           items={menuItems}
           activeItem={activeItemId || ''}

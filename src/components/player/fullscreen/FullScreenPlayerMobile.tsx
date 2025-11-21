@@ -98,22 +98,39 @@ export const FullScreenPlayerMobile = memo(({ onMinimize }: FullScreenPlayerMobi
 
       {/* Main Content Area */}
       <div className="relative flex-1 flex flex-col items-center justify-start px-[--space-3] md:px-[--space-6] py-[--space-4] md:py-[--space-8] overflow-y-auto">
-        {/* Album Art */}
+        {/* ✅ ОПТИМИЗИРОВАНО: Album Art с упрощенными эффектами */}
         <div className="relative w-full max-w-[280px] md:max-w-sm aspect-square mb-[--space-4] md:mb-[--space-8]">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/10 to-transparent rounded-3xl blur-3xl opacity-60 animate-pulse" />
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-primary/5 to-primary/20 rounded-3xl blur-2xl" />
+          {/* ✅ ИЗМЕНЕНО: Объединены все фоновые эффекты в один слой для производительности */}
+          <div 
+            className="absolute inset-0 rounded-3xl opacity-60"
+            style={{
+              background: 'radial-gradient(circle at 30% 30%, hsl(var(--primary) / 0.3) 0%, transparent 50%), radial-gradient(circle at 70% 70%, hsl(var(--primary) / 0.2) 0%, transparent 50%)',
+              filter: 'blur(40px)',
+              willChange: 'opacity'  // ✅ GPU acceleration
+            }}
+          />
           
+          {/* ✅ ОПТИМИЗИРОВАНО: Изображение с lazy loading + async decoding */}
           <img
             src={currentTrack?.cover_url || '/placeholder.svg'}
             alt={currentTrack?.title || 'Track'}
+            loading="lazy"  // ✅ УЖЕ ЕСТЬ
+            decoding="async"  // ✅ ДОБАВЛЕНО: асинхронная декодировка
             className={cn(
               "relative w-full h-full object-cover rounded-3xl shadow-[0_8px_40px_-12px_hsl(var(--primary)/0.4)]",
-              "ring-1 ring-white/10 transition-all duration-500",
-              isPlaying && "scale-[1.02] shadow-[0_12px_48px_-12px_hsl(var(--primary)/0.6)]"
+              "ring-1 ring-white/10 transition-transform duration-500",  // ✅ ИЗМЕНЕНО: transition только на transform
+              isPlaying && "scale-[1.02]"  // ✅ УБРАНО: shadow из transition
             )}
-            loading="lazy"
+            style={{
+              willChange: isPlaying ? 'transform' : 'auto'  // ✅ ДОБАВЛЕНО: условная оптимизация
+            }}
+            // ✅ ДОБАВЛЕНО: fallback при ошибке загрузки
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/placeholder.svg';
+            }}
           />
           
+          {/* ✅ Playing badge */}
           {isPlaying && (
             <div className="absolute bottom-3 right-3 px-3 py-1.5 rounded-full bg-primary/90 backdrop-blur-sm flex items-center gap-2 shadow-lg">
               <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
