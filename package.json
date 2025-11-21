@@ -109,6 +109,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.0",
     "@playwright/test": "^1.56.1",
+    "@rollup/rollup-win32-x64-msvc": "^4.53.3",
     "@sentry/cli": "^2.56.0",
     "@sentry/vite-plugin": "^4.3.0",
     "@swc/core": "^1.15.0",
@@ -129,7 +130,7 @@
     "lovable-tagger": "^1.1.10",
     "playwright": "^1.49.0",
     "postcss": "^8.5.6",
-    "rollup": "^4.52.5",
+    "rollup": "^4.53.3",
     "rollup-plugin-visualizer": "^5.12.0",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.20.6",
