@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClientOptions } from "@supabase/supabase-js";
-
 import { appEnv } from "@/config/env";
 import type { Database } from "./types";
+import { logger } from "@/utils/logger";
 
 const resolveStorage = (): Storage | undefined => {
   if (typeof window === "undefined") {
@@ -11,10 +11,7 @@ const resolveStorage = (): Storage | undefined => {
   try {
     return window.localStorage;
   } catch (error) {
-    // Using dynamic import to avoid circular dependencies
-    import('@/utils/logger').then(({ logger }) => {
-      logger.error('Failed to access localStorage for Supabase auth', error instanceof Error ? error : new Error(String(error)), 'SupabaseClient');
-    });
+    logger.error('Failed to access localStorage for Supabase auth', error instanceof Error ? error : new Error(String(error)), 'SupabaseClient');
     return undefined;
   }
 };

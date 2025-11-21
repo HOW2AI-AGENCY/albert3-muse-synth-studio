@@ -830,12 +830,14 @@
   }
 
   /* When MiniPlayer is active */
+  /*
+   * FIX-ME: esbuild выдает предупреждение о синтаксической ошибке в этом блоке,
+   * хотя синтаксис корректен. Вероятно, это проблема в самом сборщике.
+   * Оставлено для дальнейшего расследования.
+   */
   .workspace-main[data-player-active="true"] {
-    --workspace-bottom-offset: calc(
-      var(--bottom-tab-bar-height) +
-      var(--mini-player-height) +
-      env(safe-area-inset-bottom)
-    );
+    --safe-area-bottom-inset: env(safe-area-inset-bottom, 0px);
+    --workspace-bottom-offset: calc(var(--bottom-tab-bar-height) + var(--mini-player-height) + var(--safe-area-bottom-inset));
   }
 }
 

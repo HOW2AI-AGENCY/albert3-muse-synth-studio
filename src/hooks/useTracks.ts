@@ -6,7 +6,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useInfiniteQuery, useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { ApiService, type Track, mapTrackRowToTrack } from '@/services/api.service';
+import { ApiService, mapTrackRowToTrack } from '@/services/api.service';
+import type { Track } from '@/types/track.types';
 import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import type { Database } from '@/integrations/supabase/types';

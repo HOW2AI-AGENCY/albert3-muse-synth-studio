@@ -1,5 +1,5 @@
 import { trackCacheIDB } from '@/features/tracks';
-import type { Track } from '@/services/api.service';
+import type { Track } from '@/types/track.types';
 import { logError, logInfo, logWarn } from '@/utils/logger';
 
 interface CacheableTrack {

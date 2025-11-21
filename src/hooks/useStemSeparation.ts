@@ -4,6 +4,8 @@ import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { ApiService } from "@/services/api.service";
+import { logError } from "@/utils/logger";
+import { AnalyticsService } from "@/services/analytics.service";
 
 interface UseStemSeparationOptions {
   trackId: string;
@@ -106,17 +108,15 @@ export const useStemSeparation = ({
         }
 
         // ✅ Phase 3: Stem Separation Metrics
-        import('@/services/analytics.service').then(({ AnalyticsService }) => {
-          AnalyticsService.recordEvent({
-            eventType: 'stem_separation_started',
-            trackId,
-            metadata: {
-              separationMode: mode,
-              versionId: versionId || null,
-              taskId: targetTaskId,
-              provider: isMureka ? 'mureka' : 'suno',
-            },
-          });
+        AnalyticsService.recordEvent({
+          eventType: 'stem_separation_started',
+          trackId,
+          metadata: {
+            separationMode: mode,
+            versionId: versionId || null,
+            taskId: targetTaskId,
+            provider: isMureka ? 'mureka' : 'suno',
+          },
         });
 
         if (isMureka) {
@@ -132,18 +132,16 @@ export const useStemSeparation = ({
           link.click();
           document.body.removeChild(link);
 
-          import('@/services/analytics.service').then(({ AnalyticsService }) => {
-            AnalyticsService.recordEvent({
-              eventType: 'stem_separation_completed',
-              trackId,
-              metadata: {
-                separationMode: mode,
-                versionId: versionId || null,
-                taskId: targetTaskId,
-                provider: 'mureka',
-                downloadType: 'zip_archive',
-              },
-            });
+          AnalyticsService.recordEvent({
+            eventType: 'stem_separation_completed',
+            trackId,
+            metadata: {
+              separationMode: mode,
+              versionId: versionId || null,
+              taskId: targetTaskId,
+              provider: 'mureka',
+              downloadType: 'zip_archive',
+            },
           });
 
           setIsGenerating(false);
@@ -172,11 +170,9 @@ export const useStemSeparation = ({
             .eq("track_id", trackId);
 
           if (stemsError) {
-            import('@/utils/logger').then(({ logError }) => {
-              logError('Error polling stems', new Error(stemsError.message), 'useStemSeparation', {
-                trackId,
-                versionId
-              });
+            logError('Error polling stems', new Error(stemsError.message), 'useStemSeparation', {
+              trackId,
+              versionId
             });
             return;
           }
@@ -187,18 +183,16 @@ export const useStemSeparation = ({
             clearAllTimers();
             
             // ✅ Phase 3: Stem Separation Success Metrics
-            import('@/services/analytics.service').then(({ AnalyticsService }) => {
-              AnalyticsService.recordEvent({
-                eventType: 'stem_separation_completed',
-                trackId,
-                metadata: {
-                  separationMode: mode,
-                  versionId: versionId || null,
-                  taskId: targetTaskId,
-                  stemCount: matchingStems.length,
-                  duration: Date.now(),
-                },
-              });
+            AnalyticsService.recordEvent({
+              eventType: 'stem_separation_completed',
+              trackId,
+              metadata: {
+                separationMode: mode,
+                versionId: versionId || null,
+                taskId: targetTaskId,
+                stemCount: matchingStems.length,
+                duration: Date.now(),
+              },
             });
 
             onStemsReady?.();
@@ -229,12 +223,10 @@ export const useStemSeparation = ({
               separationMode: mode,
             });
           } catch (syncError) {
-            import('@/utils/logger').then(({ logError }) => {
-              logError('Error synchronising stem job', syncError as Error, 'useStemSeparation', {
-                trackId,
-                versionId,
-                taskId: targetTaskId
-              });
+            logError('Error synchronising stem job', syncError as Error, 'useStemSeparation', {
+              trackId,
+              versionId,
+              taskId: targetTaskId
             });
           } finally {
             syncInFlightRef.current = false;
@@ -258,27 +250,23 @@ export const useStemSeparation = ({
         const message = error instanceof Error ? error.message : "Ошибка при создании стемов";
         
         // ✅ Phase 3: Stem Separation Error Metrics
-        import('@/utils/logger').then(({ logError }) => {
-          logError('Stem generation failed', error as Error, 'useStemSeparation', {
-            trackId,
-            versionId,
-            separationMode: mode
-          });
+        logError('Stem generation failed', error as Error, 'useStemSeparation', {
+          trackId,
+          versionId,
+          separationMode: mode
         });
 
-        import('@/services/analytics.service').then(({ AnalyticsService }) => {
-          AnalyticsService.recordEvent({
-            eventType: 'stem_separation_failed',
-            trackId,
-            metadata: {
-              separationMode: mode,
-              versionId: versionId || null,
-              errorMessage: message,
-              errorType: message.includes("429") ? 'rate_limit' :
+        AnalyticsService.recordEvent({
+          eventType: 'stem_separation_failed',
+          trackId,
+          metadata: {
+            separationMode: mode,
+            versionId: versionId || null,
+            errorMessage: message,
+            errorType: message.includes("429") ? 'rate_limit' :
                          message.includes("402") ? 'insufficient_credits' :
                          message.includes("400") ? 'bad_request' : 'unknown',
-            },
-          });
+          },
         });
         
         if (message.includes("429")) {
