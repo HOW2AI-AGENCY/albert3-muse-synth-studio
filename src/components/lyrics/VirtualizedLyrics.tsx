@@ -69,6 +69,7 @@ export const VirtualizedLyrics = memo(({
             <div
               key={virtualRow.key}
               data-index={virtualRow.index}
+              className="scroll-snap-align-center"
               style={{
                 position: 'absolute',
                 top: 0,

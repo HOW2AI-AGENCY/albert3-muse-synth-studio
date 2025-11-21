@@ -452,6 +452,11 @@
     animation: shimmer 2s ease-in-out infinite;
   }
 
+  /* Added for lyrics snap-scroll feature */
+  .scroll-snap-align-center {
+    scroll-snap-align: center;
+  }
+
   @keyframes pulse-glow {
     0%, 100% {
       opacity: 1;
@@ -754,24 +759,24 @@
 
   /* Dynamic layout adjustments - deduplicated */
   --workspace-bottom-offset: calc(var(--bottom-tab-bar-height) + var(--mini-player-height));
-}
 
-/* Compact screens optimization */
-@media (max-height: 667px) {
-  :root {
-    --hero-height-mobile: 100px;
-    --card-padding-mobile: 0.5rem;
-    --spacing-mobile-md: 0.75rem;
+  /* Compact screens optimization */
+  @media (max-height: 667px) {
+    :root {
+      --hero-height-mobile: 100px;
+      --card-padding-mobile: 0.5rem;
+      --spacing-mobile-md: 0.75rem;
+    }
   }
-}
 
-/* When MiniPlayer is active */
-.workspace-main[data-player-active="true"] {
-  --workspace-bottom-offset: calc(
-    var(--bottom-tab-bar-height) + 
-    var(--mini-player-height) + 
-    env(safe-area-inset-bottom)
-  );
+  /* When MiniPlayer is active */
+  .workspace-main[data-player-active="true"] {
+    --workspace-bottom-offset: calc(
+      var(--bottom-tab-bar-height) +
+      var(--mini-player-height) +
+      env(safe-area-inset-bottom)
+    );
+  }
 }
 
 /* Компактные layout-примитивы - встроено для совместимости с @layer */
