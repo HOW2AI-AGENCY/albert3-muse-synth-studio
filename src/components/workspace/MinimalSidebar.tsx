@@ -1,4 +1,4 @@
-import { X, Sparkles, Coins } from "@/utils/iconImports";
+import { X, Sparkles, Coins, ChevronsLeftRight } from "@/utils/iconImports";
 import { NavLink, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,8 +11,7 @@ import { useAuth } from "@/contexts/auth/useAuth";
 
 interface MinimalSidebarProps {
   isExpanded: boolean;
-  onMouseEnter: () => void;
-  onMouseLeave: () => void;
+  onToggle: () => void;
   onClose?: () => void;
   items: WorkspaceNavItem[];
 }
@@ -22,8 +21,7 @@ const baseLinkClasses =
 
 const MinimalSidebar = ({
   isExpanded,
-  onMouseEnter,
-  onMouseLeave,
+  onToggle,
   onClose,
   items,
 }: MinimalSidebarProps) => {
@@ -41,12 +39,10 @@ const MinimalSidebar = ({
       )}
       style={{
         zIndex: 'var(--z-sidebar)',
-        width: isExpanded 
-          ? 'var(--sidebar-width-expanded, 13rem)' 
+        width: isExpanded
+          ? 'var(--sidebar-width-expanded, 13rem)'
           : 'var(--sidebar-width-collapsed, 3.5rem)'
       }}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
       aria-label="Навигация по рабочему пространству"
     >
       <div className="flex w-full flex-col gap-6 px-3 py-6">
@@ -103,6 +99,28 @@ const MinimalSidebar = ({
         </nav>
 
         <div className="mt-auto space-y-2">
+          {/* Toggle Button */}
+          <div
+            className={cn(
+              "flex items-center",
+              isExpanded ? "justify-end" : "justify-center"
+            )}
+          >
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggle}
+              className="h-9 w-9"
+              aria-label={isExpanded ? "Свернуть панель" : "Развернуть панель"}
+            >
+              <ChevronsLeftRight
+                className={cn(
+                  "h-4 w-4 transition-transform",
+                  !isExpanded && "transform rotate-180"
+                )}
+              />
+            </Button>
+          </div>
           {/* Notifications & Credits */}
           <div className={cn(
             "flex items-center gap-2",

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { Outlet } from "react-router-dom";
 import MinimalSidebar from "./MinimalSidebar";
 import WorkspaceHeader from "./WorkspaceHeader";
@@ -18,6 +18,10 @@ const WorkspaceLayout = () => {
     [isAdmin]
   );
 
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarExpanded(prev => !prev);
+  }, []);
+
   // Use dynamic offsets hook
   useWorkspaceOffsets();
 
@@ -28,8 +32,7 @@ const WorkspaceLayout = () => {
         {/* Sidebar - Desktop only */}
         <MinimalSidebar
           isExpanded={isSidebarExpanded}
-          onMouseEnter={() => setIsSidebarExpanded(true)}
-          onMouseLeave={() => setIsSidebarExpanded(false)}
+          onToggle={toggleSidebar}
           items={navigationItems}
         />
 

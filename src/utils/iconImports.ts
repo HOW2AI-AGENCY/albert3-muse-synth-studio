@@ -119,6 +119,7 @@ export {
   Globe,
   GitBranch,
   ArrowLeftRight,
+  ChevronsLeftRight,
   RefreshCcw,
   Grid3X3,
   SortAsc,

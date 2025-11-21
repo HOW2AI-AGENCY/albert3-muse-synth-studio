@@ -8,13 +8,9 @@ import { cn } from "@/lib/utils";
 import { UnifiedTrackActionsMenu } from "@/components/tracks/shared/TrackActionsMenu.unified";
 import { useTrackVersionLike } from "@/features/tracks/hooks/useTrackVersionLike";
 import { useDownloadTrack } from "@/hooks/useDownloadTrack";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { ResponsiveDropdownMenu } from "@/components/ui/responsive-dropdown-menu";
 
 interface MiniPlayerProps {
   onExpand: () => void;
@@ -171,24 +167,24 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
             size="icon"
             variant="ghost"
             onClick={handleClose}
-            className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive transition-all flex-shrink-0"
+            className="h-10 w-10 hover:bg-destructive/10 hover:text-destructive transition-all flex-shrink-0"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </Button>
         </div>
 
         {/* ✅ ОПТИМИЗИРОВАНО: Компактная компоновка кнопок для мобильных */}
         <div className="flex items-center gap-2">
           {/* ✅ Основные кнопки управления */}
-          <div className="flex items-center gap-1 flex-1">
+          <div className="flex items-center gap-2 flex-1">
             <Button
               size="icon"
               variant="ghost"
               onClick={handlePrevious}
-              className="h-8 w-8 hover:bg-primary/10 transition-all flex-shrink-0"
+              className="h-10 w-10 hover:bg-primary/10 transition-all flex-shrink-0"
               aria-label="Предыдущий трек"  // ✅ ДОБАВЛЕНО: a11y
             >
-              <SkipBack className="h-4 w-4" />
+              <SkipBack className="h-5 w-5" />
             </Button>
 
             {/* ✅ ИЗМЕНЕНО: Увеличена главная кнопка Play/Pause для удобства */}
@@ -206,46 +202,45 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
               size="icon"
               variant="ghost"
               onClick={handleNext}
-              className="h-8 w-8 hover:bg-primary/10 transition-all flex-shrink-0"
+              className="h-10 w-10 hover:bg-primary/10 transition-all flex-shrink-0"
               aria-label="Следующий трек"  // ✅ ДОБАВЛЕНО: a11y
             >
-              <SkipForward className="h-4 w-4" />
+              <SkipForward className="h-5 w-5" />
             </Button>
           </div>
 
           {/* ✅ Дополнительные действия (версии + меню) */}
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {availableVersions.length > 1 && (
-              <DropdownMenu open={isVersionMenuOpen} onOpenChange={setIsVersionMenuOpen}>
-                <DropdownMenuTrigger asChild>
+              <ResponsiveDropdownMenu
+                trigger={
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-8 w-8 hover:bg-primary/10 transition-all relative"
+                    className="h-10 w-10 hover:bg-primary/10 transition-all relative"
                   >
                     <Badge variant="outline" className="text-xs px-1 py-0">
                       V{currentVersionIndex + 1}
                     </Badge>
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="min-w-[120px]">
-                  {availableVersions.map((version, idx) => (
-                    <DropdownMenuItem
-                      key={version.id}
-                      onClick={() => {
-                        switchToVersion(version.id);
-                        setIsVersionMenuOpen(false);
-                      }}
-                      className={cn(
-                        "gap-2",
-                        currentVersionIndex === idx && "bg-primary/10"
-                      )}
-                    >
-                      <span>Version {version.versionNumber || idx + 1}</span>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                }
+              >
+                {availableVersions.map((version, idx) => (
+                  <DropdownMenuItem
+                    key={version.id}
+                    onClick={() => {
+                      switchToVersion(version.id);
+                      setIsVersionMenuOpen(false);
+                    }}
+                    className={cn(
+                      "gap-2",
+                      currentVersionIndex === idx && "bg-primary/10"
+                    )}
+                  >
+                    <span>Version {version.versionNumber || idx + 1}</span>
+                  </DropdownMenuItem>
+                ))}
+              </ResponsiveDropdownMenu>
             )}
 
             {/* ✅ Unified Track Actions Menu */}
