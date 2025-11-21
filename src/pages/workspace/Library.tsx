@@ -53,7 +53,7 @@ import { SelectionToolbar } from '@/components/tracks/SelectionToolbar';
 // import type { SortBy } from '@/hooks/useLibraryFilters';
 import { useGenerateCoverImage } from '@/hooks/useGenerateCoverImage';
 import type { DisplayTrack as DisplayTrackType } from '@/types/track';
-// import type { Track as DomainTrack } from '@/types/domain/track.types';
+import { trackConverters } from '@/types/domain/track.types';
 
 const LibraryContent: React.FC = () => {
   const { isSelectionMode, setSelectionMode, clearSelection } = useSelectedTracks();
@@ -119,6 +119,19 @@ const LibraryContent: React.FC = () => {
 
   // ✅ OPTIMIZED: Use filtered tracks from useLibraryFilters hook
   const filteredAndSortedTracks = filters.filteredTracks;
+  const domainById = React.useMemo(() => {
+    const map = new Map<string, typeof tracks[number]>();
+    for (const t of tracks) map.set(t.id, t);
+    return map;
+  }, [tracks]);
+  const filteredDomainDisplayTracks = React.useMemo(() => {
+    const result: Array<ReturnType<typeof trackConverters.toDisplay>> = [];
+    for (const dt of filteredAndSortedTracks) {
+      const dom = domainById.get(dt.id);
+      if (dom) result.push(trackConverters.toDisplay(dom));
+    }
+    return result;
+  }, [filteredAndSortedTracks, domainById]);
 
   const mapDisplayTrackToAudio = useCallback((item: DisplayTrack): AudioPlayerTrack | null => {
     return convertToAudioPlayerTrack({
@@ -561,7 +574,7 @@ const LibraryContent: React.FC = () => {
               <div className="w-full" style={{ height: 'calc(100vh - 280px)' }}>
                 {shouldVirtualize ? (
                   <VirtualizedTrackGrid
-                    tracks={filteredAndSortedTracks as any}
+                    tracks={filteredDomainDisplayTracks}
                     columns={effectiveColumns}
                     gap={gridParams.gap}
                     onTrackPlay={handleTrackPlay}
@@ -585,11 +598,14 @@ const LibraryContent: React.FC = () => {
                       justifyContent: 'center'
                     }}
                   >
-                  {filteredAndSortedTracks.map((track) => (
+                  {filteredAndSortedTracks.map((track) => {
+                    const domain = domainById.get(track.id);
+                    if (!domain) return null;
+                    return (
                     <div key={track.id} className="relative w-full" aria-busy={loadingTrackId === track.id}>
                       <TrackCard
-                        track={track as any}
-                        onClick={() => handleTrackPlay(track as any)}
+                        track={domain}
+                        onClick={() => handleTrackPlay(track)}
                         onShare={() => handleShare(track.id)}
                         onSeparateStems={() => handleSeparateStems(track.id)}
                         onExtend={() => handleExtend(track.id)}
@@ -608,7 +624,7 @@ const LibraryContent: React.FC = () => {
                         </div>
                       )}
                     </div>
-                  ))}
+                  );})}
                   </div>
                 )}
               </div>
@@ -618,7 +634,7 @@ const LibraryContent: React.FC = () => {
           {filters.viewMode === 'list' && (
             <div className="w-full" style={{ height: 'calc(100vh - 280px)' }}>
               <VirtualizedTrackList
-                tracks={filteredAndSortedTracks as any}
+                tracks={filteredDomainDisplayTracks}
                 height={600}
                 onTrackPlay={handleTrackPlay}
                 onShare={handleShare}

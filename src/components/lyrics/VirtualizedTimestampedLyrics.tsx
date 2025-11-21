@@ -32,7 +32,7 @@ interface LyricLine {
   endTime: number;
 }
 
-const TIMING_TOLERANCE = 0.05; // 50ms
+const TIMING_TOLERANCE = 0.05;
 
 // ✅ Optimized Word Component with better animations
 const VirtualizedWord = memo(({ 
@@ -52,8 +52,8 @@ const VirtualizedWord = memo(({
     <motion.span
       onClick={onClick}
       className={cn(
-        "inline-block cursor-pointer select-none px-1.5 py-1 rounded-md transition-all duration-200",
-        "touch-manipulation min-h-[32px] md:min-h-[28px]",
+        "inline-block cursor-pointer select-none px-1 py-0.5 rounded-md transition-all duration-200",
+        "touch-manipulation min-h-[24px] md:min-h-[22px]",
         "hover:bg-primary/10 active:scale-95",
         
         // Active state
@@ -113,10 +113,10 @@ const VirtualizedLine = memo(({
   }, [onSeek]);
 
   return (
-    <div 
+    <div
       className={cn(
-        "flex flex-wrap gap-1.5 md:gap-2 p-2 md:p-3 rounded-lg transition-all duration-300",
-        "leading-relaxed lyrics-line",
+        "flex flex-wrap gap-1 md:gap-1.5 p-1 md:p-2 rounded-lg transition-all duration-200",
+        "leading-normal lyrics-line",
         isActive 
           ? "lyrics-line-focused bg-primary/5 border border-primary/20 shadow-md scale-[1.01]" 
           : "lyrics-line-unfocused border border-transparent opacity-70"
@@ -213,8 +213,8 @@ export const VirtualizedTimestampedLyrics = memo(({
   const virtualizer = useVirtualizer({
     count: lines.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 80, // Estimated line height
-    overscan: 3, // Render 3 extra lines above/below viewport
+    estimateSize: () => 60,
+    overscan: 4,
   });
 
   // ✅ Find active line index
@@ -257,7 +257,7 @@ export const VirtualizedTimestampedLyrics = memo(({
       style={{ contain: 'strict' }}
     >
       {/* Top gradient overlay */}
-      <div className="sticky top-0 left-0 right-0 h-16 gradient-lyrics-overlay-top pointer-events-none z-10" />
+      <div className="sticky top-0 left-0 right-0 h-10 gradient-lyrics-overlay-top pointer-events-none z-10" />
 
       <div
         style={{
@@ -296,8 +296,7 @@ export const VirtualizedTimestampedLyrics = memo(({
         })}
       </div>
 
-      {/* Bottom gradient overlay */}
-      <div className="sticky bottom-0 left-0 right-0 h-16 gradient-lyrics-overlay-bottom pointer-events-none z-10" />
+      <div className="sticky bottom-0 left-0 right-0 h-10 gradient-lyrics-overlay-bottom pointer-events-none z-10" />
     </div>
   );
 });
