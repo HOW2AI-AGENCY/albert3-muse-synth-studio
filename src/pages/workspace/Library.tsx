@@ -50,9 +50,10 @@ import { VirtualizedTrackList } from '@/components/tracks/VirtualizedTrackList';
 import { useAuth } from "@/contexts/auth/useAuth";
 import { SelectedTracksProvider, useSelectedTracks } from '@/contexts/SelectedTracksContext';
 import { SelectionToolbar } from '@/components/tracks/SelectionToolbar';
-// @ts-expect-error - Type for future sorting features
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { SortBy } from '@/hooks/useLibraryFilters';
+import { useGenerateCoverImage } from '@/hooks/useGenerateCoverImage';
+import type { DisplayTrack as DisplayTrackType } from '@/types/track';
+import type { Track as DomainTrack } from '@/types/domain/track.types';
 
 const LibraryContent: React.FC = () => {
   const { isSelectionMode, setSelectionMode, clearSelection } = useSelectedTracks();
@@ -78,13 +79,11 @@ const LibraryContent: React.FC = () => {
   useTrackCleanup(userId ?? undefined, refreshTracks);
 
   // ✅ OPTIMIZED: Use custom hooks to manage filters and dialogs
-  const filters = useLibraryFilters({ tracks: tracks as any });
+  const filters = useLibraryFilters({ tracks: tracks as DisplayTrackType[] });
   const dialogs = useLibraryDialogs();
 
   // Debounced search for better performance
-  // @ts-expect-error - For future search optimization
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const debouncedSearchQuery = useDebouncedValue(filters.searchQuery, 300);
+  // const debouncedSearchQuery = useDebouncedValue(filters.searchQuery, 300);
 
   // Track loading state for individual tracks
   const [loadingTrackId, setLoadingTrackId] = useState<string | null>(null);
@@ -172,7 +171,7 @@ const LibraryContent: React.FC = () => {
         const startTrack = audioTracks.find(t => t.id === preferredOrMain.id);
         const remainingTracks = filteredAndSortedTracks
           .filter(t => t.id !== track.id && t.audio_url)
-          .map(displayTrack => mapDisplayTrackToAudio(convertToDisplayTrack(displayTrack as any)))
+          .map(displayTrack => mapDisplayTrackToAudio(displayTrack as DisplayTrackType))
           .filter((audioTrack): audioTrack is AudioPlayerTrack => Boolean(audioTrack));
 
         if (startTrack) {
@@ -185,7 +184,7 @@ const LibraryContent: React.FC = () => {
       if (fallbackAudio) {
         const remainingTracks = filteredAndSortedTracks
           .filter(t => t.id !== track.id && t.audio_url)
-          .map(displayTrack => mapDisplayTrackToAudio(convertToDisplayTrack(displayTrack as any)))
+          .map(displayTrack => mapDisplayTrackToAudio(displayTrack as DisplayTrackType))
           .filter((audioTrack): audioTrack is AudioPlayerTrack => Boolean(audioTrack));
         playTrackWithQueue(fallbackAudio, [fallbackAudio, ...remainingTracks]);
         return;
@@ -253,7 +252,7 @@ const LibraryContent: React.FC = () => {
   
   // Prefetch adjacent tracks
   usePrefetchTracks(
-    filteredAndSortedTracks.map(t => convertToDisplayTrack(t as any)),
+    filteredAndSortedTracks.map(t => t as DisplayTrackType),
     currentTrack?.id ?? null,
     { enabled: true, prefetchCount: 3 }
   );
@@ -407,10 +406,10 @@ const LibraryContent: React.FC = () => {
     dialogs.openUpscale(track.id, track.title, track.audio_url);
   }, [tracks, dialogs]);
 
-  const handleGenerateCover = useCallback((trackId: string) => {
-    const { generateCoverImage } = require('@/hooks/useGenerateCoverImage');
-    generateCoverImage(trackId);
-  }, []);
+  const { generateCoverImage } = useGenerateCoverImage();
+  const handleGenerateCover = useCallback(async (trackId: string) => {
+    await generateCoverImage(trackId);
+  }, [generateCoverImage]);
 
   if (isLoading) {
     return (
@@ -616,7 +615,7 @@ const LibraryContent: React.FC = () => {
                     <div key={track.id} className="relative w-full" aria-busy={loadingTrackId === track.id}>
                       <TrackCard
                         track={track as any}
-                        onClick={() => handleTrackPlay(convertToDisplayTrack(track as any))}
+                        onClick={() => handleTrackPlay(track as any)}
                         onShare={() => handleShare(track.id)}
                         onSeparateStems={() => handleSeparateStems(track.id)}
                         onExtend={() => handleExtend(track.id)}

@@ -44,28 +44,28 @@ const createSupabaseBuilder = (data: any[], overrides: Record<string, any> = {})
 
   const builder: any = {
     select: vi.fn((...args: any[]) => {
-      console.log('[TEST MOCK] select called with args:', args.length);
+      void args.length;
       return builder;
     }),
     eq: vi.fn((field: string, value: any) => {
-      console.log('[TEST MOCK] eq called:', field, value);
+      void field; void value;
       return builder;
     }),
     neq: vi.fn((field: string, value: any) => {
-      console.log('[TEST MOCK] neq called:', field, value);
+      void field; void value;
       return builder;
     }),
     order: vi.fn(() => builder),
     range: vi.fn(() => builder),
     abortSignal: vi.fn((s: AbortSignal) => {
-      console.log('[TEST MOCK] abortSignal called');
+      void 0;
       signal = s;
       return builder;
     }),
     then: (onFulfilled: any, onRejected?: any) => {
-      console.log('[TEST MOCK] builder.then() called, data length:', data.length);
+      void data.length;
       if (signal?.aborted) {
-        console.log('[TEST MOCK] Signal was aborted, returning empty data');
+        void 0;
         return Promise.resolve({ data: [], error: null, count: 0 }).then(onFulfilled, onRejected);
       }
       return Promise.resolve({ data, error: null, count: data.length }).then(onFulfilled, onRejected);

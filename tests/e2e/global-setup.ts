@@ -8,7 +8,7 @@ export default async function globalSetup() {
   try {
     execSync('npm run db:seed', { stdio: 'inherit' });
   } catch (error) {
-    console.error('Failed to seed Supabase data for e2e tests.');
+    throw new Error('Failed to seed Supabase data for e2e tests.');
     throw error;
   }
 }

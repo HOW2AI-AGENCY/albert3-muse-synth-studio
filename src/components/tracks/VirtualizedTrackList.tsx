@@ -5,11 +5,10 @@
 import React, { useRef, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { TrackListItem } from '@/features/tracks';
-import { convertToDisplayTrack } from '@/types/track';
-import type { Track } from '@/services/api.service';
+import type { DisplayTrack } from '@/types/domain/track.types';
 
 interface VirtualizedTrackListProps {
-  tracks: Track[];
+  tracks: DisplayTrack[];
   height: number;
   onTrackPlay: (track: any) => void;
   onShare: (trackId: string) => void;
@@ -79,7 +78,7 @@ export const VirtualizedTrackList = React.memo(({
       >
         {virtualItems.map((virtualItem) => {
           const track = tracks[virtualItem.index];
-          const displayTrack = convertToDisplayTrack(track);
+          const displayTrack = track;
           const isLoading = loadingTrackId === track.id;
 
           return (

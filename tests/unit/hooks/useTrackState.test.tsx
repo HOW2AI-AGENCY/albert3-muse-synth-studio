@@ -54,11 +54,11 @@ describe('useTrackState', () => {
     preferredVariant: null,
   };
 
-  beforeEach(() => {
-    const { useTrackVariants } = require('@/features/tracks/hooks');
+  beforeEach(async () => {
+    const mod = await import('@/features/tracks/hooks');
     vi.clearAllMocks();
     localStorage.clear();
-    useTrackVariants.mockReturnValue({ data: mockVariantsData, isLoading: false });
+    mod.useTrackVariants.mockReturnValue({ data: mockVariantsData, isLoading: false });
     vi.mocked(AudioPlayerStore.useAudioPlayerStore).mockReturnValue({
         playTrack: vi.fn(),
         switchToVersion: vi.fn(),
