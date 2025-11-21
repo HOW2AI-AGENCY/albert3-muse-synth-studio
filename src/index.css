@@ -805,6 +805,11 @@
       width: 4px;
       height: 4px;
     }
+
+/* Added for lyrics snap-scroll feature */
+.scroll-snap-align-center {
+  scroll-snap-align: center;
+}
   }
 
   /* Dynamic layout adjustments - deduplicated */

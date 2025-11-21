@@ -132,12 +132,9 @@ export const MusicGeneratorContent = memo(({
       <ScrollArea
         className={cn('flex-grow', isMobile && 'max-h-[var(--generator-max-height-mobile)]')}
       >
-        <div
-          className="space-y-2"
-          style={{
-            padding: isMobile ? 'var(--spacing-card-padding)' : 'var(--space-2_5, 0.625rem)',
-          }}
-        >
+        {/* ✅ TODO: Replaced inline style with responsive Tailwind classes. */}
+        {/* Uses the new `p-2.5` token for desktop compactness. */}
+        <div className="space-y-2 p-3 md:p-2.5">
           {state.enhancedPrompt && (
             <div className="px-1">
               <EnhancedPromptPreviewWrapper

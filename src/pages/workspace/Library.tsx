@@ -250,9 +250,7 @@ const LibraryContent: React.FC = () => {
 
 
   // Calculate grid parameters (новая продвинутая версия)
-  const gridParams = useResponsiveGrid(containerWidth);
-  // Per the audit, we now force a single column on mobile for better UX.
-  const effectiveColumns = gridParams.screenCategory === 'mobile' ? 1 : gridParams.columns;
+  const { columns, gap, gridClass, gapClass } = useResponsiveGrid(containerWidth);
   const shouldVirtualize = filteredAndSortedTracks.length > 50;
   
   // Prefetch adjacent tracks
@@ -575,8 +573,8 @@ const LibraryContent: React.FC = () => {
                 {shouldVirtualize ? (
                   <VirtualizedTrackGrid
                     tracks={filteredAndSortedTracks as DisplayTrackType[]}
-                    columns={effectiveColumns}
-                    gap={gridParams.gap}
+                    columns={columns}
+                    gap={gap}
                     onTrackPlay={handleTrackPlay}
                     onShare={handleShare}
                     onSeparateStems={handleSeparateStems}
@@ -589,14 +587,11 @@ const LibraryContent: React.FC = () => {
                   />
                 ) : (
                   <div
-                    className="grid overflow-auto h-full scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent"
-                    style={{
-                      gridTemplateColumns: gridParams.screenCategory === 'mobile'
-                        ? '1fr' // ✅ MOBILE: Single column, full width
-                        : `repeat(${effectiveColumns}, minmax(${gridParams.screenCategory === 'tablet' ? 320 : 320}px, 1fr))`,
-                      gap: `${gridParams.gap}px`,
-                      justifyContent: 'center'
-                    }}
+                    className={cn(
+                      "grid overflow-auto h-full scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent justify-center",
+                      gapClass,
+                      gridClass
+                    )}
                   >
                   {filteredAndSortedTracks.map((track) => {
                     const domain = domainById.get(track.id);
