@@ -53,11 +53,11 @@ export async function generateAdvancedPrompt(
       throw new Error(error.message || 'Не удалось сгенерировать промпт');
     }
 
-    if (!data?.result) {
+    if (!(data as any)?.result) {
       throw new Error('Некорректный ответ от AI-сервиса');
     }
 
-    return data.result;
+    return (data as any).result;
   } catch (error) {
     logger.error('Failed to generate advanced prompt', error instanceof Error ? error : undefined, 'AdvancedPromptGenerator', {
       hasSession: !!request,
