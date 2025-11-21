@@ -20,10 +20,7 @@ export const LazyLoadWrapper: React.FC<LazyLoadWrapperProps> = memo(({
   errorFallback,
   className
 }) => {
-  const defaultFallback = useMemo(() => 
-    fallback || <Skeleton className={className} />, 
-    [fallback, className]
-  );
+  const defaultFallback = fallback || <Skeleton className={className} />;
   
   return (
     <ErrorBoundary fallback={errorFallback}>
