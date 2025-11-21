@@ -8,15 +8,10 @@
 import { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuLabel,
-} from '@/components/ui/dropdown-menu';
+import { DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Heart, Download, MoreVertical, FileAudio } from 'lucide-react';
+import { ResponsiveDropdownMenu } from '@/components/ui/responsive-dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useTrackMenuItems } from './useTrackMenuItems';
 import { useGroupedMenuItems } from './useGroupedMenuItems';
@@ -54,10 +49,10 @@ export const UnifiedTrackActionsMenu = memo((props: UnifiedTrackActionsMenuProps
                   variant="ghost"
                   size="icon"
                   onClick={onLike}
-                  className={cn('touch-target-min', variant === 'minimal' && 'h-7 w-7')}
+                  className={cn('h-10 w-10', variant === 'minimal' && 'h-8 w-8')}
                   aria-label={isLiked ? 'Убрать из избранного' : 'В избранное'}
                 >
-                  <Heart className={cn('w-4 h-4', isLiked && 'fill-red-500 text-red-500')} />
+                  <Heart className={cn('w-5 h-5', isLiked && 'fill-red-500 text-red-500')} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{isLiked ? 'Убрать из избранного' : 'В избранное'}</TooltipContent>
@@ -71,10 +66,10 @@ export const UnifiedTrackActionsMenu = memo((props: UnifiedTrackActionsMenuProps
                   variant="ghost"
                   size="icon"
                   onClick={onDownload}
-                  className="touch-target-min"
+                  className="h-10 w-10"
                   aria-label="Скачать MP3"
                 >
-                  <Download className="w-4 h-4" />
+                  <Download className="w-5 h-5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Скачать MP3</TooltipContent>
@@ -86,28 +81,25 @@ export const UnifiedTrackActionsMenu = memo((props: UnifiedTrackActionsMenuProps
       )}
 
       {menuItems.length > 0 && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        <ResponsiveDropdownMenu
+          trigger={
             <Button
               variant="ghost"
               size="icon"
               className={cn(
-                'touch-target-min shrink-0',
-                variant === 'minimal' && 'h-7 w-7',
+                'h-10 w-10 shrink-0',
+                variant === 'minimal' && 'h-8 w-8',
                 'md:relative md:opacity-100', // Всегда видна на desktop
                 'opacity-100 relative' // Всегда видна на mobile
               )}
               aria-label="Track actions menu"
               aria-haspopup="menu"
             >
-              <MoreVertical className="w-4 h-4" />
+              <MoreVertical className="w-5 h-5" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="w-56"
-            onCloseAutoFocus={(e) => e.preventDefault()}
-          >
+          }
+        >
+          <>
             {versionNumber && (
               <>
                 <div className="px-2 py-1.5 text-xs text-muted-foreground flex items-center gap-2">
@@ -155,8 +147,8 @@ export const UnifiedTrackActionsMenu = memo((props: UnifiedTrackActionsMenuProps
                 </div>
               </>
             )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </>
+        </ResponsiveDropdownMenu>
       )}
     </div>
   );
