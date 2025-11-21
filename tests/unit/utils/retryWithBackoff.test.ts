@@ -5,6 +5,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { retryWithBackoff, RETRY_CONFIGS, CircuitBreaker } from '@/utils/retryWithBackoff';
 
+vi.mock('@/utils/logger', () => {
+  const mockLogger = {
+    warn: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+    flush: vi.fn(),
+    addTransport: vi.fn(),
+    removeTransport: vi.fn(),
+  };
+  return {
+    logger: mockLogger,
+    logWarn: mockLogger.warn,
+    logError: mockLogger.error,
+  };
+});
+
 describe('retryWithBackoff', () => {
   beforeEach(() => {
     vi.useFakeTimers();

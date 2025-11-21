@@ -66,6 +66,10 @@ if (import.meta.env.PROD) {
 }
 
 const registerWebVitals = async () => {
+  // FIX-ME: Vite выдает предупреждение о смешанном импорте 'web-vitals'.
+  // Это сделано намеренно: статический импорт используется для быстрой отправки
+  // ключевых метрик в Sentry, а динамический - для отложенной загрузки
+  // и отправки всех метрик в сервис аналитики, чтобы не блокировать рендеринг.
   const vitals = await import('web-vitals');
   const report = (metric: Metric) => {
     void AnalyticsService.reportWebVital(metric);

@@ -4,6 +4,8 @@ import { useTrackVariants } from '@/features/tracks/hooks';
 import { useTrackVersionLike } from '@/features/tracks/hooks/useTrackVersionLike';
 import { useToast } from '@/hooks/use-toast';
 import type { Track } from '@/types/domain/track.types';
+import { supabase } from '@/integrations/supabase/client';
+import { logError } from '@/utils/logger';
 
 export const useTrackCardState = (track: Track) => {
   const { toast } = useToast();
@@ -74,7 +76,6 @@ export const useTrackCardState = (track: Track) => {
 
   useEffect(() => {
     const checkStems = async () => {
-      const { supabase } = await import('@/integrations/supabase/client');
       const { data } = await supabase
         .from('track_stems')
         .select('id')
@@ -228,7 +229,6 @@ export const useTrackCardState = (track: Track) => {
 
   const handleTogglePublic = useCallback(async () => {
     try {
-      const { supabase } = await import('@/integrations/supabase/client');
       const { error } = await supabase.from('tracks').update({ is_public: !track.is_public }).eq('id', track.id);
       if (error) throw error;
       toast({
@@ -236,7 +236,6 @@ export const useTrackCardState = (track: Track) => {
         description: track.is_public ? 'Трек теперь виден только вам' : 'Трек теперь доступен всем пользователям',
       });
     } catch (error) {
-      const { logError } = await import('@/utils/logger');
       logError('Failed to toggle track public status', error as Error, 'TrackCard');
       toast({ title: 'Ошибка', description: 'Не удалось изменить статус публикации', variant: 'destructive' });
     }

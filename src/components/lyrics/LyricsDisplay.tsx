@@ -38,22 +38,30 @@ export const LyricsDisplay = memo(({ sunoTaskId, sunoId, className }: LyricsDisp
     return acc;
   }, []);
 
+  const activeLineIndex = lines.findIndex(line =>
+    currentTime >= line[0].startTime && currentTime <= line[line.length - 1].endTime
+  );
+  const lastActiveLineIndex = useRef(-1);
+
   const handleWordClick = (time: number) => {
     seekTo(time);
   };
 
-  // Auto-scroll to active line
+  // ✅ TODO: Improved auto-scroll logic.
+  // It now only scrolls when the active line changes, preventing scroll jitter
+  // and allowing the user to manually scroll without fighting the component.
   useEffect(() => {
-    if (!scrollContainerRef.current) return;
-
-    const activeLineElement = scrollContainerRef.current.querySelector('[data-active="true"]');
-    if (activeLineElement) {
-      activeLineElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      });
+    if (scrollContainerRef.current && activeLineIndex !== -1 && activeLineIndex !== lastActiveLineIndex.current) {
+      const activeLineElement = scrollContainerRef.current.querySelector(`[data-line-index="${activeLineIndex}"]`);
+      if (activeLineElement) {
+        activeLineElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+        lastActiveLineIndex.current = activeLineIndex;
+      }
     }
-  }, [currentTime]);
+  }, [activeLineIndex]);
 
   if (queryResult.isLoading) {
     return (
@@ -95,14 +103,17 @@ export const LyricsDisplay = memo(({ sunoTaskId, sunoId, className }: LyricsDisp
       ref={scrollContainerRef}
       className={cn(
         "relative h-full overflow-y-auto overflow-x-hidden",
+        "scroll-snap-y-mandatory", // ✅ Added for smooth scroll snapping
         "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-border/40",
-        "px-3 py-6 md:px-6 md:py-12", // Smaller padding on mobile
+        // ✅ TODO: Reduced padding on mobile for a more compact view
+        "px-3 py-4 md:px-6 md:py-10",
         "bg-gradient-to-b from-background/50 via-transparent to-background/50",
         className
       )}
     >
       {/* Gradient overlays for smooth fade - smaller on mobile */}
-      <div className="sticky top-0 left-0 right-0 h-12 md:h-16 bg-gradient-to-b from-background to-transparent pointer-events-none z-10" />
+      {/* ✅ TODO: Reduced gradient height on mobile */}
+      <div className="sticky top-0 left-0 right-0 h-8 md:h-12 bg-gradient-to-b from-background to-transparent pointer-events-none z-10" />
       
       <VirtualizedLyrics
         lines={lines}

@@ -17,7 +17,6 @@
  */
 
 import { create } from 'zustand';
-// removed shallow import — используем раздельные селекторы со стабильными ссылками
 import { devtools, persist } from 'zustand/middleware';
 import { logger } from '@/utils/logger';
 import { useRef } from 'react';
@@ -25,6 +24,7 @@ import { getTrackWithVariants } from '@/features/tracks/api/trackVersions';
 import { logInfo, logError } from '@/utils/logger';
 import { toast } from 'sonner';
 import { type TrackVersion as ApiTrackVersion } from '@/services/tracks/track.service';
+import { supabase } from '@/integrations/supabase/client';
 
 export type RepeatMode = 'off' | 'one' | 'all';
 
@@ -645,7 +645,6 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
           set({ _loadVersionsAbortController: abortController });
 
           try {
-            const supabase = (await import('@/integrations/supabase/client')).supabase;
             const { data: versionCheck } = await supabase
               .from('track_versions')
               .select('parent_track_id')

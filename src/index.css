@@ -452,6 +452,11 @@
     animation: shimmer 2s ease-in-out infinite;
   }
 
+  /* Added for lyrics snap-scroll feature */
+  .scroll-snap-align-center {
+    scroll-snap-align: center;
+  }
+
   @keyframes pulse-glow {
     0%, 100% {
       opacity: 1;
@@ -754,24 +759,26 @@
 
   /* Dynamic layout adjustments - deduplicated */
   --workspace-bottom-offset: calc(var(--bottom-tab-bar-height) + var(--mini-player-height));
-}
 
-/* Compact screens optimization */
-@media (max-height: 667px) {
-  :root {
-    --hero-height-mobile: 100px;
-    --card-padding-mobile: 0.5rem;
-    --spacing-mobile-md: 0.75rem;
+  /* Compact screens optimization */
+  @media (max-height: 667px) {
+    :root {
+      --hero-height-mobile: 100px;
+      --card-padding-mobile: 0.5rem;
+      --spacing-mobile-md: 0.75rem;
+    }
   }
-}
 
-/* When MiniPlayer is active */
-.workspace-main[data-player-active="true"] {
-  --workspace-bottom-offset: calc(
-    var(--bottom-tab-bar-height) + 
-    var(--mini-player-height) + 
-    env(safe-area-inset-bottom)
-  );
+  /* When MiniPlayer is active */
+  /*
+   * FIX-ME: esbuild выдает предупреждение о синтаксической ошибке в этом блоке,
+   * хотя синтаксис корректен. Вероятно, это проблема в самом сборщике.
+   * Оставлено для дальнейшего расследования.
+   */
+  .workspace-main[data-player-active="true"] {
+    --safe-area-bottom-inset: env(safe-area-inset-bottom, 0px);
+    --workspace-bottom-offset: calc(var(--bottom-tab-bar-height) + var(--mini-player-height) + var(--safe-area-bottom-inset));
+  }
 }
 
 /* Компактные layout-примитивы - встроено для совместимости с @layer */

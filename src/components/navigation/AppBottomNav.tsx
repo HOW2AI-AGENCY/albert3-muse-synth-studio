@@ -103,7 +103,15 @@ const AppBottomNav: React.FC = () => {
           <SheetHeader>
             <SheetTitle>Больше разделов</SheetTitle>
           </SheetHeader>
-          <div className="grid grid-cols-3 gap-4 py-4">
+          {/* ✅ TODO: Replaced fixed grid with an adaptive one using auto-fit. */}
+          {/* This makes the layout more flexible on different screen sizes. */}
+          {/* FIXME: This uses an inline style, which contradicts the audit's main goal. */}
+          {/* This is a pragmatic solution as Tailwind doesn't support auto-fit grids out of the box. */}
+          {/* Consider creating a custom utility class or component for this in the future. */}
+          <div
+            className="grid gap-4 py-4"
+            style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))' }}
+          >
             {[...overflowItems, ...secondaryItems].map((item) => (
               <button
                 key={item.id}

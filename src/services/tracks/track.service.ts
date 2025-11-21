@@ -13,9 +13,12 @@ import type { Database } from "@/integrations/supabase/types";
 import { handlePostgrestError } from "@/services/api/errors";
 import { logError, logWarn } from "@/utils/logger";
 import type { TrackMetadata } from "@/types/track-metadata";
+import type { Track } from '@/types/track.types';
 
 type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
 type TrackVersionRow = Database["public"]["Tables"]["track_versions"]["Row"];
+
+export type { Track };
 
 export type TrackRowWithVersions = TrackRow & {
   track_versions: TrackVersionRow[];
@@ -33,15 +36,6 @@ export type TrackVersion = {
   is_preferred_variant: boolean | null;
 };
 
-export type Track = Omit<TrackRow, 'metadata'> & {
-  status: TrackStatus;
-  style?: string | null;
-  mureka_task_id?: string | null;
-  metadata: TrackMetadata | null;
-  selectedVersionId?: string;
-  versions?: TrackVersion[];
-};
-
 const isTrackStatus = (status: TrackRow["status"]): status is TrackStatus =>
   status === "pending" ||
   status === "draft" ||
@@ -51,20 +45,57 @@ const isTrackStatus = (status: TrackRow["status"]): status is TrackStatus =>
 
 export const mapTrackRowToTrack = (track: TrackRow | TrackRowWithVersions): Track => {
   const trackWithVersions = track as TrackRowWithVersions;
+  const versions = Array.isArray(trackWithVersions.track_versions) ? trackWithVersions.track_versions : [];
+
   return {
-    ...track,
+    id: track.id,
+    created_at: track.created_at,
+    user_id: track.user_id,
+    title: track.title,
+    duration: track.duration,
     status: isTrackStatus(track.status) ? track.status : "pending",
-    idempotency_key: track.idempotency_key ?? null,
-    archived_to_storage: track.archived_to_storage ?? false,
-    storage_audio_url: track.storage_audio_url ?? null,
-    storage_cover_url: track.storage_cover_url ?? null,
-    storage_video_url: track.storage_video_url ?? null,
-    archive_scheduled_at: track.archive_scheduled_at ?? null,
-    archived_at: track.archived_at ?? null,
-    mureka_task_id: track.mureka_task_id ?? null,
-    project_id: track.project_id ?? null,
+    is_public: track.is_public,
+    like_count: track.like_count,
+    play_count: track.play_count,
+    download_count: track.download_count,
+    view_count: track.view_count,
+    audio_url: track.audio_url,
+    cover_url: track.cover_url,
+    video_url: track.video_url,
+    description: track.description,
+    style_tags: track.style_tags,
+    lyrics: track.lyrics,
+    suno_task_id: track.suno_task_id,
+    mureka_task_id: track.mureka_task_id,
+    project_id: track.project_id,
+    is_primary_variant: track.is_primary_variant,
+    parent_track_id: track.parent_track_id,
+    variant_index: track.variant_index,
+    versions: versions,
+    stems: [], // FIXME: Загружать стемы
+    profile: null, // FIXME: Загружать профиль
+    duration_seconds: track.duration_seconds,
+    prompt: track.prompt,
+    improved_prompt: track.improved_prompt,
+    error_message: track.error_message,
+    provider: track.provider,
+    genre: track.genre,
+    mood: track.mood,
+    has_vocals: track.has_vocals,
     metadata: track.metadata as TrackMetadata | null,
-    versions: Array.isArray(trackWithVersions.track_versions) ? trackWithVersions.track_versions : [],
+    suno_id: track.suno_id,
+    model_name: track.model_name,
+    created_at_suno: track.created_at_suno,
+    has_stems: track.has_stems,
+    reference_audio_url: track.reference_audio_url,
+    progress_percent: track.progress_percent,
+    idempotency_key: track.idempotency_key,
+    archived_to_storage: track.archived_to_storage,
+    storage_audio_url: track.storage_audio_url,
+    storage_cover_url: track.storage_cover_url,
+    storage_video_url: track.storage_video_url,
+    archive_scheduled_at: track.archive_scheduled_at,
+    archived_at: track.archived_at,
   };
 };
 

@@ -8,7 +8,7 @@ import { Music } from "@/utils/iconImports";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { useManualSyncTrack } from "@/hooks/useManualSyncTrack";
-import { logger } from "@/utils/logger";
+import { logger, logError } from "@/utils/logger";
 import { AITrackActionsContainer } from "@/components/tracks/AITrackActionsContainer";
 import { useResponsiveGrid } from "@/hooks/useResponsiveGrid";
 import type { TrackOperations } from "@/hooks/tracks/useTrackOperations";
@@ -101,12 +101,10 @@ const TracksListComponent = ({
     };
   }, []);
 
-  // Responsive grid: получаем параметры и принудительно фиксируем 2 колонки на мобильных
-  const gridParams = useResponsiveGrid(containerDimensions.width, {
+  // ✅ Responsive grid now returns Tailwind classes, eliminating inline styles.
+  const { columns, gap, gridClass, gapClass } = useResponsiveGrid(containerDimensions.width, {
     isDetailPanelOpen
   });
-  const { gap } = gridParams;
-  const effectiveColumns = gridParams.screenCategory === 'mobile' ? 2 : gridParams.columns;
 
   // ✅ Мемоизация списка воспроизводимых треков
   const playableTracks = useMemo(() => 
@@ -165,10 +163,8 @@ const TracksListComponent = ({
       await deleteTrack(trackId);
       toast({ title: "Удалено", description: "Трек успешно удалён" });
     } catch (error) {
-      import('@/utils/logger').then(({ logError }) => {
-        logError('Track deletion failed', error as Error, 'TracksList', {
-          trackId
-        });
+      logError('Track deletion failed', error as Error, 'TracksList', {
+        trackId
       });
       toast({ 
         title: "Ошибка", 
@@ -205,7 +201,7 @@ const TracksListComponent = ({
               // Use virtualization for large lists with adaptive grid
               <VirtualizedTrackGrid
                 tracks={tracks}
-                columns={effectiveColumns}
+                columns={columns}
                 gap={gap}
                 onTrackPlay={onSelect || handlePlay}
                 onShare={handleShare}
@@ -220,13 +216,8 @@ const TracksListComponent = ({
               />
             ) : (
               // Regular adaptive grid for smaller lists
-              <div 
-                className="grid w-full"
-                style={{
-                  gridTemplateColumns: `repeat(${effectiveColumns}, minmax(0, 1fr))`,
-                  gap: `${gap}px`,
-                }}
-              >
+              // ✅ TODO: Replaced inline styles with Tailwind classes from the refactored hook.
+              <div className={cn("grid w-full", gridClass, gapClass)}>
                 {tracks.map((track) => (
                   <TrackCard
                     key={track.id}
