@@ -11,12 +11,8 @@ import { PlayerQueue } from '../PlayerQueue';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { ResponsiveDropdownMenu } from '@/components/ui/responsive-dropdown-menu';
 
 interface FullScreenPlayerHeaderProps {
   currentTrack: {
@@ -113,11 +109,11 @@ export const FullScreenPlayerHeader = memo(({
           </Button>
 
           {hasVersions && onSwitchVersion && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+            <ResponsiveDropdownMenu
+              trigger={
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="relative h-11 w-11 min-h-[44px] min-w-[44px] hover:bg-primary/10 hover:scale-105 transition-all duration-200"
                 >
                   <Repeat className="h-5 w-5" />
@@ -125,30 +121,29 @@ export const FullScreenPlayerHeader = memo(({
                     {availableVersions.length}
                   </Badge>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-xl border-primary/20 shadow-glow z-[100]">
-                {availableVersions.map((version, idx) => (
-                  <DropdownMenuItem
-                    key={version.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      vibrate('light');
-                      onSwitchVersion(version.id);
-                    }}
-                    className={`hover:bg-primary/10 transition-colors ${currentVersionIndex === idx ? 'bg-primary/20' : ''}`}
-                  >
-                    <div className="flex items-center gap-2 w-full">
-                      <span className="flex-1">
-                        V{version.versionNumber || idx + 1}
-                      </span>
-                      {version.isMasterVersion && (
-                        <Star className="h-3 w-3 fill-amber-500 text-amber-500 animate-pulse" />
-                      )}
-                    </div>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+              }
+            >
+              {availableVersions.map((version, idx) => (
+                <DropdownMenuItem
+                  key={version.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    vibrate('light');
+                    onSwitchVersion(version.id);
+                  }}
+                  className={`hover:bg-primary/10 transition-colors ${currentVersionIndex === idx ? 'bg-primary/20' : ''}`}
+                >
+                  <div className="flex items-center gap-2 w-full">
+                    <span className="flex-1">
+                      V{version.versionNumber || idx + 1}
+                    </span>
+                    {version.isMasterVersion && (
+                      <Star className="h-3 w-3 fill-amber-500 text-amber-500 animate-pulse" />
+                    )}
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </ResponsiveDropdownMenu>
           )}
 
           <PlayerQueue />
