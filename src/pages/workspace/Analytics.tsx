@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -8,20 +8,6 @@ import { BarChart3, TrendingUp, Download, Heart, Eye, Music } from 'lucide-react
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 import { Badge } from '@/components/ui/badge';
 import { logger } from '@/utils/logger';
-import {
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from 'recharts';
-
 interface TrackStats {
   id: string;
   title: string;
@@ -53,7 +39,8 @@ interface GenreData {
   value: number;
 }
 
-const COLORS = ['#3b82f6', '#10b981', '#ef4444', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6'];
+const ActivityChart = lazy(() => import('@/components/analytics/ActivityChart'));
+const GenreBreakdownChart = lazy(() => import('@/components/analytics/GenreBreakdownChart'));
 
 const Analytics = () => {
   const [topTracks, setTopTracks] = useState<TrackStats[]>([]);
@@ -285,93 +272,12 @@ const Analytics = () => {
 
       {/* Charts Row */}
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Activity Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Динамика активности</CardTitle>
-            <CardDescription>Просмотры, прослушивания и лайки за период</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="date" 
-                  className="text-xs"
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                />
-                <YAxis 
-                  className="text-xs"
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="views" 
-                  stroke="#3b82f6" 
-                  name="Просмотры"
-                  strokeWidth={2}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="plays" 
-                  stroke="#10b981" 
-                  name="Прослушивания"
-                  strokeWidth={2}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="likes" 
-                  stroke="#ef4444" 
-                  name="Лайки"
-                  strokeWidth={2}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Genre Breakdown */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Распределение по жанрам</CardTitle>
-            <CardDescription>Топ жанров по прослушиваниям</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={genreBreakdown}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {genreBreakdown.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <Suspense fallback={<LoadingSkeleton className="h-[300px]" />}>
+          <ActivityChart data={chartData} />
+        </Suspense>
+        <Suspense fallback={<LoadingSkeleton className="h-[300px]" />}>
+          <GenreBreakdownChart data={genreBreakdown} />
+        </Suspense>
       </div>
 
       {/* Top Tracks */}

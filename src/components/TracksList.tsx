@@ -8,7 +8,7 @@ import { Music } from "@/utils/iconImports";
 import { useToast } from "@/hooks/use-toast";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { useManualSyncTrack } from "@/hooks/useManualSyncTrack";
-import { logger } from "@/utils/logger";
+import { logger, logError } from "@/utils/logger";
 import { AITrackActionsContainer } from "@/components/tracks/AITrackActionsContainer";
 import { useResponsiveGrid } from "@/hooks/useResponsiveGrid";
 import type { TrackOperations } from "@/hooks/tracks/useTrackOperations";
@@ -163,10 +163,8 @@ const TracksListComponent = ({
       await deleteTrack(trackId);
       toast({ title: "Удалено", description: "Трек успешно удалён" });
     } catch (error) {
-      import('@/utils/logger').then(({ logError }) => {
-        logError('Track deletion failed', error as Error, 'TracksList', {
-          trackId
-        });
+      logError('Track deletion failed', error as Error, 'TracksList', {
+        trackId
       });
       toast({ 
         title: "Ошибка", 

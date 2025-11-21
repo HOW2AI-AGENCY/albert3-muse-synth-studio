@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from '@/hooks/use-toast';
+import { logError } from '@/utils/logger';
 
 interface BoostStyleResponse {
   success: boolean;
@@ -69,10 +70,8 @@ export const useBoostStyle = () => {
 
       return data.result;
     } catch (error: any) {
-      import('@/utils/logger').then(({ logError }) => {
-        logError('Boost style failed', error, 'useBoostStyle', {
-          contentLength: content.length
-        });
+      logError('Boost style failed', error, 'useBoostStyle', {
+        contentLength: content.length
       });
       
       let errorMessage = 'Failed to boost style';
