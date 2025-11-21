@@ -53,12 +53,25 @@ export const TelegramAuthProvider: React.FC<TelegramAuthProviderProps> = ({ chil
 
         logger.info(`Authenticating Telegram user: ${user.id} (${user.first_name})`, 'TelegramAuthProvider');
         setTelegramUser(user);
-
-        // Call Edge Function to verify and authenticate
-        const { data, error } = await SupabaseFunctions.invoke<TelegramAuthResponse>('telegram-auth', {
+        // Edge Function authenticate with safety timeout to avoid UI hang
+        const AUTH_TIMEOUT_MS = Number(import.meta.env.VITE_TG_AUTH_TIMEOUT_MS ?? 3000);
+        const authPromise = SupabaseFunctions.invoke<TelegramAuthResponse>('telegram-auth', {
           body: { initData, user }
         });
 
+        const raced = await Promise.race([
+          authPromise,
+          new Promise<{ timeout: true }>((resolve) => setTimeout(() => resolve({ timeout: true }), AUTH_TIMEOUT_MS)),
+        ]);
+
+        // Timeout: proceed with app without blocking
+        if ((raced as any)?.timeout) {
+          logger.warn('Telegram auth timed out — continuing without TWA session', 'TelegramAuthProvider');
+          setIsInitialized(true);
+          return;
+        }
+
+        const { data, error } = raced as Awaited<ReturnType<typeof authPromise>>;
         if (error) {
           logger.error('Telegram auth failed', error instanceof Error ? error : new Error(String(error)), 'TelegramAuthProvider');
           setIsInitialized(true);
@@ -66,7 +79,6 @@ export const TelegramAuthProvider: React.FC<TelegramAuthProviderProps> = ({ chil
         }
 
         if (data?.success && data?.session) {
-          // Set Supabase session
           const { error: sessionError } = await supabase.auth.setSession({
             access_token: data.session.access_token,
             refresh_token: data.session.refresh_token,
