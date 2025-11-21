@@ -42,6 +42,10 @@ export const NotificationsDropdown = () => {
     deleteNotification 
   } = useNotifications();
 
+  const items = notifications ?? [];
+  const hasItems = items.length > 0;
+  const unread = unreadCount ?? 0;
+
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.read) {
       markAsRead(notification.id);
@@ -71,12 +75,12 @@ export const NotificationsDropdown = () => {
           className="relative w-11 h-11 sm:w-10 sm:h-10 p-0 hover:bg-accent/10 rounded-xl transition-all duration-300 hover:scale-105"
         >
           <Bell className="w-5 h-5" />
-          {unreadCount > 0 && (
+          {unread > 0 && (
             <Badge
               variant="destructive"
               className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center text-xs shadow-glow-primary animate-pulse-glow"
             >
-              {unreadCount}
+              {unread}
             </Badge>
           )}
         </Button>
@@ -93,7 +97,7 @@ export const NotificationsDropdown = () => {
             size="sm"
             className="h-7 text-xs text-muted-foreground hover:text-foreground"
             onClick={() => markAllAsRead()}
-            disabled={unreadCount === 0}
+            disabled={unread === 0}
           >
             Отметить все прочитанными
           </Button>
@@ -106,9 +110,9 @@ export const NotificationsDropdown = () => {
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
             </div>
-          ) : notifications.length > 0 ? (
+          ) : hasItems ? (
             <div className="space-y-1">
-              {notifications.map((notification) => (
+              {items.map((notification) => (
                 <DropdownMenuItem
                   key={notification.id}
                   className={`flex items-start gap-3 p-3 cursor-pointer transition-colors ${
@@ -155,7 +159,7 @@ export const NotificationsDropdown = () => {
           )}
         </ScrollArea>
 
-        {notifications.length > 0 && (
+        {hasItems && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem 
