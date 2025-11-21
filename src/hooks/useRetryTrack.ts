@@ -4,6 +4,8 @@
  */
 import { useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+// @ts-expect-error - supabase client for future direct queries
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';

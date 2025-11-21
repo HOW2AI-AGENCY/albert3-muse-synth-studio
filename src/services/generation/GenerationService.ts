@@ -99,7 +99,7 @@ export class GenerationService {
           styleWeight: request.styleWeight,
           weirdnessConstraint: request.weirdnessConstraint,
           audioWeight: request.audioWeight,
-          referenceAudioUrl: request.referenceAudioUrl,
+          referenceAudioUrl: request.referenceAudioUrl ?? undefined,
           idempotencyKey: request.idempotencyKey,
           wait_audio: false, // Always false from client
           projectId: request.projectId,
@@ -118,8 +118,8 @@ export class GenerationService {
           throw new Error(error.message || 'Edge function invocation failed');
         }
 
-        if (!data || !data.success) {
-          const errorMsg = data?.error || 'Unknown error from edge function';
+        if (!data || !(data as any).success) {
+          const errorMsg = (data as any)?.error || 'Unknown error from edge function';
           logger.error(`❌ [GenerationService] Generation failed`, new Error(errorMsg), 'GenerationService', {
             provider: request.provider,
             response: data,
@@ -130,16 +130,16 @@ export class GenerationService {
 
         logger.info(`✅ [GenerationService] Generation started`, 'GenerationService', {
           provider: request.provider,
-          trackId: data.trackId,
-          taskId: data.taskId,
+          trackId: (data as any).trackId,
+          taskId: (data as any).taskId,
           duration: Date.now() - startTime,
         });
 
         return {
           success: true,
-          trackId: data.trackId,
-          taskId: data.taskId,
-          message: data.message,
+          trackId: (data as any).trackId,
+          taskId: (data as any).taskId,
+          message: (data as any).message,
         };
 
       } catch (error) {

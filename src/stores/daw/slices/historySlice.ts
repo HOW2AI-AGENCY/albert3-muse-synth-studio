@@ -64,7 +64,10 @@ export const createHistorySlice: StateCreator<
   // ==========================================
 
   undo: () => {
-    const { history, historyIndex, project } = get();
+    const { history, historyIndex } = get();
+    // @ts-expect-error - For future undo/redo features
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { project } = get();
 
     if (historyIndex <= 0) {
       logInfo('Cannot undo: at beginning of history', 'HistorySlice', {

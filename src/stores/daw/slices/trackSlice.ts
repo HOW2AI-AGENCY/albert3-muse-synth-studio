@@ -257,7 +257,7 @@ export const createTrackSlice: StateCreator<
     logInfo(`Loading ${stems.length} stems as multitrack`, 'TrackSlice', { parentTrackTitle });
 
     stems.forEach((stem) => {
-      get().addTrack('stem', `${parentTrackTitle} - ${stem.type}`, stem.type);
+      get().addTrack('stem', `${parentTrackTitle} - ${stem.stem_type}`, stem.stem_type);
     });
   },
 

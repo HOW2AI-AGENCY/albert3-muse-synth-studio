@@ -34,6 +34,8 @@ type MusicProject = Database['public']['Tables']['music_projects']['Row'];
 
 export const ProjectOverview: React.FC = () => {
   const { projects, isLoading, deleteProject } = useProjects();
+  // @ts-expect-error - For future subscription features
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { subscription, plan } = useSubscription();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);

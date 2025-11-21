@@ -189,10 +189,11 @@ export const LazyImageCropperDemo = createLazyPage(
   'ImageCropperDemo'
 );
 
-export const LazyTrackDetail = createLazyPage(
-  () => import('../pages/workspace/TrackDetail'),
-  'TrackDetail'
-);
+// Track detail page removed - using detail panel instead
+// export const LazyTrackDetail = createLazyPage(
+//   () => import('../pages/workspace/TrackDetail'),
+//   'TrackDetail'
+// );
 
 export const LazySubscription = createLazyPage(
   () => import('../pages/workspace/Subscription'),
