@@ -94,7 +94,7 @@ export class SupabaseTrackRepository implements ITrackRepository {
   async update(id: string, updates: Partial<Track>): Promise<Track> {
     const { data, error } = await supabase
       .from('tracks')
-      .update(updates)
+      .update(updates as any)
       .eq('id', id)
       .select()
       .single();

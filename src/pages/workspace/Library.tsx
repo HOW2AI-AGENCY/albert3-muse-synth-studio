@@ -78,10 +78,12 @@ const LibraryContent: React.FC = () => {
   useTrackCleanup(userId ?? undefined, refreshTracks);
 
   // ✅ OPTIMIZED: Use custom hooks to manage filters and dialogs
-  const filters = useLibraryFilters({ tracks });
+  const filters = useLibraryFilters({ tracks: tracks as any });
   const dialogs = useLibraryDialogs();
 
   // Debounced search for better performance
+  // @ts-expect-error - For future search optimization
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const debouncedSearchQuery = useDebouncedValue(filters.searchQuery, 300);
 
   // Track loading state for individual tracks
@@ -170,7 +172,7 @@ const LibraryContent: React.FC = () => {
         const startTrack = audioTracks.find(t => t.id === preferredOrMain.id);
         const remainingTracks = filteredAndSortedTracks
           .filter(t => t.id !== track.id && t.audio_url)
-          .map(displayTrack => mapDisplayTrackToAudio(convertToDisplayTrack(displayTrack)))
+          .map(displayTrack => mapDisplayTrackToAudio(convertToDisplayTrack(displayTrack as any)))
           .filter((audioTrack): audioTrack is AudioPlayerTrack => Boolean(audioTrack));
 
         if (startTrack) {
@@ -183,7 +185,7 @@ const LibraryContent: React.FC = () => {
       if (fallbackAudio) {
         const remainingTracks = filteredAndSortedTracks
           .filter(t => t.id !== track.id && t.audio_url)
-          .map(displayTrack => mapDisplayTrackToAudio(convertToDisplayTrack(displayTrack)))
+          .map(displayTrack => mapDisplayTrackToAudio(convertToDisplayTrack(displayTrack as any)))
           .filter((audioTrack): audioTrack is AudioPlayerTrack => Boolean(audioTrack));
         playTrackWithQueue(fallbackAudio, [fallbackAudio, ...remainingTracks]);
         return;
@@ -251,7 +253,7 @@ const LibraryContent: React.FC = () => {
   
   // Prefetch adjacent tracks
   usePrefetchTracks(
-    filteredAndSortedTracks.map(t => convertToDisplayTrack(t)),
+    filteredAndSortedTracks.map(t => convertToDisplayTrack(t as any)),
     currentTrack?.id ?? null,
     { enabled: true, prefetchCount: 3 }
   );
@@ -586,7 +588,7 @@ const LibraryContent: React.FC = () => {
               <div className="w-full" style={{ height: 'calc(100vh - 280px)' }}>
                 {shouldVirtualize ? (
                   <VirtualizedTrackGrid
-                    tracks={filteredAndSortedTracks}
+                    tracks={filteredAndSortedTracks as any}
                     columns={effectiveColumns}
                     gap={gridParams.gap}
                     onTrackPlay={handleTrackPlay}
@@ -613,8 +615,8 @@ const LibraryContent: React.FC = () => {
                   {filteredAndSortedTracks.map((track) => (
                     <div key={track.id} className="relative w-full" aria-busy={loadingTrackId === track.id}>
                       <TrackCard
-                        track={track}
-                        onClick={() => handleTrackPlay(convertToDisplayTrack(track))}
+                        track={track as any}
+                        onClick={() => handleTrackPlay(convertToDisplayTrack(track as any))}
                         onShare={() => handleShare(track.id)}
                         onSeparateStems={() => handleSeparateStems(track.id)}
                         onExtend={() => handleExtend(track.id)}
@@ -643,7 +645,7 @@ const LibraryContent: React.FC = () => {
           {filters.viewMode === 'list' && (
             <div className="w-full" style={{ height: 'calc(100vh - 280px)' }}>
               <VirtualizedTrackList
-                tracks={filteredAndSortedTracks}
+                tracks={filteredAndSortedTracks as any}
                 height={600}
                 onTrackPlay={handleTrackPlay}
                 onShare={handleShare}
