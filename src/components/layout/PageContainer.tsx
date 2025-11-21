@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
-import { cn } from "@/lib/utils";
+import { ResponsiveLayout } from "./ResponsiveLayout";
 
-const sizeClassMap = {
-  narrow: "max-w-4xl",
-  default: "max-w-6xl",
-  wide: "max-w-7xl",
+const sizeMap = {
+  narrow: "4xl",
+  default: "6xl",
+  wide: "7xl",
 } as const;
 
-type ContainerSize = keyof typeof sizeClassMap;
+type ContainerSize = keyof typeof sizeMap;
 
 interface PageContainerProps {
   children: ReactNode;
@@ -15,21 +15,24 @@ interface PageContainerProps {
   size?: ContainerSize;
 }
 
+/**
+ * PageContainer - Wrapper around ResponsiveLayout for standard page structures
+ * Refactored to use the unified layout system
+ */
 export const PageContainer = ({
   children,
   className,
   size = "default",
 }: PageContainerProps) => (
-  <div className={cn("w-full", className)}>
-    <div
-      className={cn(
-        "mx-auto w-full px-4 py-5 sm:px-5 lg:px-6",
-        sizeClassMap[size]
-      )}
-    >
-      {children}
-    </div>
-  </div>
+  <ResponsiveLayout
+    maxWidth={sizeMap[size]}
+    className={className}
+    enableSafeArea={true}
+    padding="md"
+    centerContent={true}
+  >
+    {children}
+  </ResponsiveLayout>
 );
 
 PageContainer.displayName = "PageContainer";

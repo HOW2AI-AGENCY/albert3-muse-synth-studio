@@ -423,98 +423,202 @@
   @media (min-width: 2560px) {
     :root {
       --space-container: var(--space-6); /* 24px */
-      --font-size-display: var(--font-size-5xl); /* 36px */
-      --font-size-heading: var(--font-size-4xl); /* 30px */
+    /* Кривые анимации */
+    --ease-linear: linear;
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    /* Готовые переходы */
+    --transition-fast: all var(--duration-fast) var(--ease-out);
+    --transition-normal: all var(--duration-normal) var(--ease-out);
+    --transition-slow: all var(--duration-slow) var(--ease-out);
+    --transition-colors: color var(--duration-fast) var(--ease-out), 
+                        background-color var(--duration-fast) var(--ease-out),
+                        border-color var(--duration-fast) var(--ease-out);
+    --transition-transform: transform var(--duration-normal) var(--ease-out);
+    --transition-opacity: opacity var(--duration-fast) var(--ease-out);
+
+    /* ===== БРЕЙКПОИНТЫ (для JS) ===== */
+    --breakpoint-xs: 375px;
+    --breakpoint-sm: 640px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 1024px;
+    --breakpoint-xl: 1280px;
+    --breakpoint-2xl: 1536px;
+    --breakpoint-3xl: 1920px;
+    --breakpoint-4k: 2560px;
+
+    /* ===== Z-INDEX HIERARCHY (CORRECTED) ===== */
+    /* Base layers (0-99) */
+    --z-base: 0;
+    --z-sidebar: 40;
+    --z-header: 45;                  /* For sticky header */
+    --z-bottom-nav: 50;              /* Bottom tab bar */
+    --z-mini-player: 60;             /* Audio player */
+    --z-desktop-player: 60;
+    --z-fab: 70;                     /* Floating Action Button */
+
+    /* Interactive (100-999) */
+    --z-dropdown: 100;
+    --z-sticky: 110;
+    --z-drawer-backdrop: 199;        /* Backdrop for drawer */
+    --z-drawer: 200;
+
+    /* Overlays (1000+) */
+    --z-modal-backdrop: 1000;
+    --z-modal: 1010;
+    --z-sheet: 1020;
+    --z-fullscreen-player: 1030;
+    --z-popover: 1040;
+    --z-tooltip: 1050;
+    --z-toast: 1060;                 /* Highest */
+    --z-maximum: 2147483647;
+    
+    /* ===== SEMANTIC SPACING ===== */
+    --spacing-card-padding: var(--space-4);
+    --spacing-card-gap: var(--space-3);
+    --spacing-button-padding-x: var(--space-4);
+    --spacing-button-padding-y: var(--space-2);
+    --spacing-input-padding-x: var(--space-3);
+    --spacing-input-padding-y: var(--space-2);
+    --generator-max-height-mobile: calc(100vh - 180px);
+    
+    /* ===== TOUCH TARGETS (WCAG AAA) ===== */
+    --mobile-touch-min: 44px;
+    --desktop-touch-min: 40px;
+    
+    /* ===== SIDEBAR DIMENSIONS ===== */
+    --sidebar-width-expanded: 13rem;
+    --sidebar-width-collapsed: 3.5rem;
+    
+    /* ===== MOBILE SPACING ===== */
+    --mobile-spacing-xs: var(--space-1);
+    --mobile-spacing-sm: var(--space-2);
+    --mobile-spacing-md: var(--space-3);
+    --mobile-spacing-lg: var(--space-4);
+    
+    /* ===== MOBILE TYPOGRAPHY ===== */
+    --mobile-font-xs: 0.75rem;
+    --mobile-font-sm: 0.875rem;
+    --mobile-font-base: 1rem;
+    --mobile-font-lg: 1.125rem;
+
+    /* ===== ГРАДИЕНТЫ ===== */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--color-accent-purple)) 0%, hsl(var(--color-accent-pink)) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--color-accent-blue)) 0%, hsl(var(--color-accent-purple)) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(var(--color-success)) 0%, hsl(var(--color-accent-blue)) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(222 47% 8%) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+
+    /* ===== РАЗМЕРЫ КОМПОНЕНТОВ (КОМПАКТНАЯ ВЕРСИЯ) ===== */
+    
+    /* Высоты элементов управления */
+    --height-control-sm: 1.75rem;   /* 28px */
+    --height-control-md: 2rem;      /* 32px */
+    --height-control-lg: 2.5rem;    /* 40px */
+    --height-control-xl: 3rem;      /* 48px */
+
+    /* Размеры иконок */
+    --icon-xs: 0.75rem;   /* 12px */
+    --icon-sm: 1rem;      /* 16px */
+    --icon-md: 1.125rem;  /* 18px */
+    --icon-lg: 1.25rem;   /* 20px */
+    --icon-xl: 1.5rem;    /* 24px */
+    --icon-2xl: 2rem;     /* 32px */
+
+    /* Ширины контейнеров */
+    --container-xs: 20rem;     /* 320px */
+    --container-sm: 24rem;     /* 384px */
+    --container-md: 28rem;     /* 448px */
+    --container-lg: 32rem;     /* 512px */
+    --container-xl: 36rem;     /* 576px */
+    --container-2xl: 42rem;    /* 672px */
+    --container-3xl: 48rem;    /* 768px */
+    --container-4xl: 56rem;    /* 896px */
+    --container-5xl: 64rem;    /* 1024px */
+    --container-6xl: 72rem;    /* 1152px */
+    --container-7xl: 80rem;    /* 1280px */
+
+    /* ===== CARD HIERARCHY ===== */
+    --card-primary-border: hsl(var(--outline) / 0.8);
+    --card-primary-shadow: var(--shadow-md);
+
+    --card-secondary-bg: hsl(var(--surface-variant) / 0.3);
+    --card-secondary-border: hsl(var(--outline) / 0.5);
+    --card-secondary-shadow: var(--shadow-sm);
+
+    --card-tertiary-bg: transparent;
+    --card-tertiary-border: hsl(var(--outline) / 0.3);
+    --card-tertiary-shadow: none;
+
+    /* ===== INTERACTIVE STATES ===== */
+    --interactive-hover-bg: hsl(var(--color-accent-purple) / 0.05);
+    --interactive-active-bg: hsl(var(--color-accent-purple) / 0.1);
+    --interactive-focus-ring: 0 0 0 3px hsl(var(--color-accent-purple) / 0.3);
+  }
+
+  /* ===== АДАПТИВНЫЕ ТОКЕНЫ (КОМПАКТНАЯ ВЕРСИЯ) ===== */
+  
+  /* Мобильные устройства (320px - 767px) */
+  @media (max-width: 767px) {
+    :root {
+      --space-container: var(--space-3); /* 12px */
+      --font-size-display: var(--font-size-2xl); /* 20px */
+      --font-size-heading: var(--font-size-xl); /* 18px */
+      --radius-default: var(--radius-md); /* 8px */
+      --spacing-card-padding: var(--space-3);
+      --spacing-card-gap: var(--space-2);
+      --spacing-button-padding-x: var(--space-3);
+      --spacing-input-padding-x: var(--space-2);
+      --generator-max-height-mobile: calc(100vh - var(--workspace-header-height, 56px) - var(--bottom-tab-bar-height));
+
+    /* ✅ Mobile z-index adjustments - ensure proper stacking on small screens */
+    --z-bottom-nav: 50;              /* ✅ Bottom navigation - always visible */
+    --z-generator-footer: 54;        /* ✅ Generator sticky footer - below player */
+    --z-mini-player: 55;             /* ✅ Audio player - above nav and generator */
+    --z-fab: 65;                     /* ✅ FAB button - above player */
+    --z-drawer-backdrop: 199;
+    --z-drawer: 200;
+    --z-modal-backdrop: 1000;
+    --z-modal: 1010;
+    --z-sheet: 1020;
+    --z-popover: 1040;
+    --z-toast: 1060;
+
+    /* ✅ Offsets для правильного позиционирования мобильных элементов */
+    --mobile-nav-height: 64px;       /* Height of AppBottomNav */
+    --mobile-player-height: 96px;    /* Height of MiniPlayer */
     }
   }
 
-/* ===== УТИЛИТАРНЫЕ КЛАССЫ ===== */
-  /* Быстрые переходы */
-  .transition-fast { transition: var(--transition-fast); }
-  .transition-normal { transition: var(--transition-normal); }
-  .transition-slow { transition: var(--transition-slow); }
-  .transition-colors { transition: var(--transition-colors); }
-  .transition-transform { transition: var(--transition-transform); }
-  .transition-opacity { transition: var(--transition-opacity); }
-
-  /* Светящиеся эффекты */
-  .glow-primary { box-shadow: var(--shadow-glow-primary); }
-  .glow-secondary { box-shadow: var(--shadow-glow-secondary); }
-  .glow-accent { box-shadow: var(--shadow-glow-accent); }
-  .glow-success { box-shadow: var(--shadow-glow-success); }
-  .glow-error { box-shadow: var(--shadow-glow-error); }
-
-  /* Градиентные тексты */
-  .text-gradient-primary {
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  /* Планшеты (768px - 1023px) */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    :root {
+      --space-container: var(--space-4); /* 16px */
+      --font-size-display: var(--font-size-3xl); /* 24px */
+      --font-size-heading: var(--font-size-2xl); /* 20px */
+      --radius-default: var(--radius-lg); /* 10px */
+    }
   }
 
-  .text-gradient-secondary {
-    background: var(--gradient-secondary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  /* Десктоп (1024px+) */
+  @media (min-width: 1024px) {
+    :root {
+      --space-container: var(--space-5); /* 20px */
+      --font-size-display: var(--font-size-4xl); /* 30px */
+      --font-size-heading: var(--font-size-3xl); /* 24px */
+      --radius-default: var(--radius-lg); /* 10px */
+    }
   }
 
-  /* Стеклянный эффект */
-  .glass-effect {
-    background: var(--gradient-glass);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  /* Безопасные зоны для мобильных устройств */
-  .safe-top { padding-top: env(safe-area-inset-top); }
-  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-  .safe-left { padding-left: env(safe-area-inset-left); }
-  .safe-right { padding-right: env(safe-area-inset-right); }
-  .safe-area { 
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-  }
-
-  /* Скрытие скроллбара */
-  .hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* Тактильная обратная связь */
-  .haptic-light { 
-    cursor: pointer;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-  }
-  
-  .haptic-medium {
-    cursor: pointer;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    transform: scale(1);
-    transition: transform var(--duration-fast) var(--ease-out);
-  }
-  
-  .haptic-medium:active {
-    transform: scale(0.98);
-  }
-
-  .haptic-heavy {
-    cursor: pointer;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    transform: scale(1);
-    transition: transform var(--duration-fast) var(--ease-out);
-  }
-  
-  .haptic-heavy:active {
-    transform: scale(0.95);
+  /* 4K и выше (2560px+) */
+  @media (min-width: 2560px) {
+    :root {
+      --space-container: var(--space-6); /* 24px */
+      --font-size-display: var(--font-size-5xl); /* 36px */
+      --font-size-heading: var(--font-size-4xl); /* 30px */
+    }
   }
