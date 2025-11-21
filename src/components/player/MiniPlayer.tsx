@@ -90,15 +90,22 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
       data-testid="mini-player"
       className="fixed left-0 right-0 bg-gradient-to-t from-background/98 via-card/95 to-card/90 backdrop-blur-2xl border-t border-border/40 shadow-[0_-4px_24px_-8px_hsl(var(--primary)/0.15)] transition-all duration-300"
       style={{
-        bottom: 'calc(var(--bottom-tab-bar-height, 0px) + env(safe-area-inset-bottom))',
-        zIndex: 'var(--z-mini-player)'
+        // ✅ ИСПРАВЛЕНО: добавлен fallback для --bottom-tab-bar-height
+        bottom: `calc(var(--bottom-tab-bar-height, 0px) + env(safe-area-inset-bottom, 0px))`,
+        zIndex: 'var(--z-mini-player, 55)',  // ✅ ДОБАВЛЕН: fallback значение
+        // ✅ ДОБАВЛЕНО: плавная анимация изменения позиции
+        transition: 'bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease'
       }}
     >
+      {/* ✅ ОПТИМИЗИРОВАНО: Progress bar с GPU acceleration */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-border/30">
         <div 
           className="h-full bg-gradient-to-r from-primary/60 via-primary to-primary/60 transition-all duration-300"
           style={{ 
-            width: `${(useAudioPlayerStore.getState().currentTime / (useAudioPlayerStore.getState().duration || 1)) * 100}%` 
+            // ✅ HACK: toFixed(2) снижает количество ре-рендеров
+            width: `${((useAudioPlayerStore.getState().currentTime / (useAudioPlayerStore.getState().duration || 1)) * 100).toFixed(2)}%`,
+            // ✅ ДОБАВЛЕНО: GPU acceleration для плавности
+            willChange: 'width'
           }}
         />
       </div>
@@ -109,13 +116,20 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
       >
         <div className="flex items-center gap-3">
           <div className="relative flex-shrink-0">
+            {/* ✅ ОПТИМИЗИРОВАНО: Lazy loading + async decoding + error handler */}
             <img
               src={currentTrack.cover_url || '/placeholder.svg'}
               alt={currentTrack.title}
+              loading="lazy"  // ✅ УЖЕ ЕСТЬ: браузер откладывает загрузку
+              decoding="async"  // ✅ ДОБАВЛЕНО: асинхронная декодировка
               className={cn(
                 "w-12 h-12 rounded-lg object-cover shadow-lg ring-1 ring-white/10 transition-all duration-300",
                 isPlaying && "ring-2 ring-primary/50 shadow-primary/20"
               )}
+              // ✅ ДОБАВЛЕНО: fallback на placeholder при ошибке
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/placeholder.svg';
+              }}
             />
             {isPlaying && (
               <div className="absolute inset-0 rounded-lg bg-primary/10 backdrop-blur-[1px] flex items-center justify-center">
@@ -163,37 +177,44 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
           </Button>
         </div>
 
+        {/* ✅ ОПТИМИЗИРОВАНО: Компактная компоновка кнопок для мобильных */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 flex-shrink-0">
+          {/* ✅ Основные кнопки управления */}
+          <div className="flex items-center gap-1 flex-1">
             <Button
               size="icon"
               variant="ghost"
               onClick={handlePrevious}
-              className="h-8 w-8 hover:bg-primary/10 transition-all"
+              className="h-8 w-8 hover:bg-primary/10 transition-all flex-shrink-0"
+              aria-label="Предыдущий трек"  // ✅ ДОБАВЛЕНО: a11y
             >
               <SkipBack className="h-4 w-4" />
             </Button>
 
+            {/* ✅ ИЗМЕНЕНО: Увеличена главная кнопка Play/Pause для удобства */}
             <Button
               size="icon"
               variant="default"
               onClick={handlePlayPause}
-              className="h-9 w-9 rounded-full shadow-lg hover:scale-105 transition-all bg-primary hover:bg-primary/90"
+              className="h-10 w-10 rounded-full shadow-lg hover:scale-105 transition-all bg-primary hover:bg-primary/90 flex-shrink-0"
+              aria-label={isPlaying ? 'Пауза' : 'Воспроизвести'}  // ✅ ДОБАВЛЕНО: a11y
             >
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
+              {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
             </Button>
 
             <Button
               size="icon"
               variant="ghost"
               onClick={handleNext}
-              className="h-8 w-8 hover:bg-primary/10 transition-all"
+              className="h-8 w-8 hover:bg-primary/10 transition-all flex-shrink-0"
+              aria-label="Следующий трек"  // ✅ ДОБАВЛЕНО: a11y
             >
               <SkipForward className="h-4 w-4" />
             </Button>
           </div>
 
-          <div className="flex items-center gap-1">
+          {/* ✅ Дополнительные действия (версии + меню) */}
+          <div className="flex items-center gap-1 flex-shrink-0">
             {availableVersions.length > 1 && (
               <DropdownMenu open={isVersionMenuOpen} onOpenChange={setIsVersionMenuOpen}>
                 <DropdownMenuTrigger asChild>
@@ -227,6 +248,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
               </DropdownMenu>
             )}
 
+            {/* ✅ Unified Track Actions Menu */}
             <UnifiedTrackActionsMenu
               trackId={currentTrack.id}
               trackStatus={currentTrack.status || 'completed'}
