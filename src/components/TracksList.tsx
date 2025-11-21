@@ -12,6 +12,7 @@ import { logger, logError } from "@/utils/logger";
 import { AITrackActionsContainer } from "@/components/tracks/AITrackActionsContainer";
 import { useResponsiveGrid } from "@/hooks/useResponsiveGrid";
 import type { TrackOperations } from "@/hooks/tracks/useTrackOperations";
+import { cn } from "@/lib/utils";
 
 /**
  * TracksList — компонент списка треков с адаптивной сеткой и виртуализацией.
