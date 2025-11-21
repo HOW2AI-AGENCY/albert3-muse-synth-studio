@@ -282,6 +282,19 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                                 Главная
                               </Badge>
                             )}
+                            {/* ✅ TODO: Add "Active" badge for the currently playing version */}
+                            {isCurrentVersion && (
+                              <Badge variant="secondary" className="gap-1 text-xs animate-pulse">
+                                <Play className="w-3 h-3 fill-current" />
+                                Активная
+                              </Badge>
+                            )}
+                            {/* ✅ TODO: Add "Extended" badge based on metadata */}
+                            {version.metadata?.operation === 'extend' && (
+                              <Badge variant="outline" className="text-xs">
+                                Продлённая
+                              </Badge>
+                            )}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {formatTrackVersionDuration(version.duration)}

@@ -1,14 +1,8 @@
 /**
  * Responsive Track Grid Component
  * 
- * Adaptive grid with:
- * - Dynamic column calculation
- * - Virtualization for 1000+ items
- * - Progressive image loading
- * - Mobile/tablet/desktop optimization
- * 
- * @version 1.0.0
- * @created 2025-11-17
+ * @version 2.0.0
+ * @refactor Jules, UI/UX Designer - Replaced inline styles with Tailwind classes from the refactored useResponsiveGrid hook.
  */
 
 import React, { useRef, useMemo, useCallback } from 'react';
@@ -33,21 +27,10 @@ interface ResponsiveTrackGridProps {
   currentTrackId?: string | null;
   likedTrackIds?: Set<string>;
   className?: string;
-  /** Use optimized version for better performance */
   optimized?: boolean;
-  /** Container padding (affects width calculation) */
   containerPadding?: number;
 }
 
-/**
- * Responsive grid that adapts to screen size
- * 
- * Mobile: 2 columns
- * Tablet: 3-4 columns
- * Desktop: 4-5 columns
- * Wide: 5-6 columns
- * Ultrawide: 6-8 columns
- */
 export const ResponsiveTrackGrid = React.memo(({
   tracks,
   onPlayPause,
@@ -66,8 +49,6 @@ export const ResponsiveTrackGrid = React.memo(({
 }: ResponsiveTrackGridProps) => {
   const parentRef = useRef<HTMLDivElement>(null);
   const { isMobile } = useBreakpoints();
-
-  // Measure container width
   const [containerWidth, setContainerWidth] = React.useState(0);
 
   React.useEffect(() => {
@@ -80,66 +61,43 @@ export const ResponsiveTrackGrid = React.memo(({
 
     if (parentRef.current) {
       observer.observe(parentRef.current);
-      // Initial measurement
       setContainerWidth(parentRef.current.offsetWidth - containerPadding);
     }
 
     return () => observer.disconnect();
   }, [containerPadding]);
 
-  // Calculate grid parameters
-  const { columns, gap, cardWidth, screenCategory } = useResponsiveGrid(containerWidth);
+  // ✅ TODO: Using refactored hook that returns Tailwind classes
+  const { columns, gap, cardWidth, screenCategory, gridClass, gapClass } = useResponsiveGrid(containerWidth);
 
-  // Calculate row height (aspect ratio 1:1.4 for card)
   const rowHeight = useMemo(() => {
-    const imageHeight = cardWidth; // Square aspect ratio
-    const infoHeight = isMobile ? 80 : 100; // Info section height
+    const imageHeight = cardWidth;
+    const infoHeight = isMobile ? 80 : 100;
     return imageHeight + infoHeight + gap;
   }, [cardWidth, gap, isMobile]);
 
-  // Calculate number of rows
   const rowCount = Math.ceil(tracks.length / columns);
 
-  // Virtualizer
   const virtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => parentRef.current,
     estimateSize: () => rowHeight,
-    overscan: 2, // Render 2 extra rows outside viewport
+    overscan: 2,
   });
 
-  // Get visible items
   const virtualItems = virtualizer.getVirtualItems();
-
-  // Track card component to use
   const CardComponent = optimized ? OptimizedTrackCard : TrackCard;
 
-  // Memoized handlers
-  const handleTrackClick = useCallback((track: Track) => {
-    onClick?.(track);
-  }, [onClick]);
-
-  const handleShare = useCallback((track: Track) => {
-    onShare?.(track);
-  }, [onShare]);
+  const handleTrackClick = useCallback((track: Track) => onClick?.(track), [onClick]);
+  const handleShare = useCallback((track: Track) => onShare?.(track), [onShare]);
 
   return (
     <div
       ref={parentRef}
-      className={cn(
-        'relative w-full h-full overflow-auto',
-        'scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent',
-        className
-      )}
+      className={cn('relative w-full h-full overflow-auto', 'scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent', className)}
       style={{ contain: 'strict' }}
     >
-      <div
-        style={{
-          height: `${virtualizer.getTotalSize()}px`,
-          width: '100%',
-          position: 'relative',
-        }}
-      >
+      <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
         {virtualItems.map((virtualRow) => {
           const startIndex = virtualRow.index * columns;
           const rowTracks = tracks.slice(startIndex, startIndex + columns);
@@ -156,26 +114,14 @@ export const ResponsiveTrackGrid = React.memo(({
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >
-              <div
-                className="grid"
-                style={{
-                  gridTemplateColumns: `repeat(${columns}, 1fr)`,
-                  gap: `${gap}px`,
-                  height: '100%',
-                }}
-              >
+              {/* ✅ TODO: Replaced inline grid styles with Tailwind classes */}
+              <div className={cn("grid h-full", gridClass, gapClass)}>
                 {rowTracks.map((track) => {
                   const isPlaying = currentTrackId === track.id;
                   const isLiked = likedTrackIds.has(track.id);
 
                   return (
-                    <div
-                      key={track.id}
-                      style={{
-                        minWidth: `${cardWidth}px`,
-                        maxWidth: `${cardWidth}px`,
-                      }}
-                    >
+                    <div key={track.id} style={{ minWidth: `${cardWidth}px`, maxWidth: `${cardWidth}px` }}>
                       {optimized ? (
                         <OptimizedTrackCard
                           track={track}
@@ -205,7 +151,6 @@ export const ResponsiveTrackGrid = React.memo(({
         })}
       </div>
 
-      {/* Debug info (dev only) */}
       {process.env.NODE_ENV === 'development' && (
         <div className="fixed bottom-4 right-4 p-2 bg-background/90 backdrop-blur-sm rounded-md text-xs border">
           <div>Screen: {screenCategory}</div>
