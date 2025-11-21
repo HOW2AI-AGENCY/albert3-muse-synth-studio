@@ -4,6 +4,8 @@
 
 export const STORAGE_BUCKETS = {
   IMAGES: 'images',
-  AUDIO: 'reference-audio',
-  MODELS: 'models',
+  AUDIO: 'tracks-audio',
+  COVERS: 'tracks-covers',
+  VIDEOS: 'tracks-videos',
+  PROJECT_COVERS: 'projects-covers',
 };

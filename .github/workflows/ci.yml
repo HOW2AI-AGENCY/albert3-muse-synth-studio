@@ -16,6 +16,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check merge conflict markers
+        shell: bash
+        run: |
+          set -e
+          CONFLICTS=$(grep -R -n -E '^(<<<<<<< HEAD|=======|>>>>>>>)' src supabase || true)
+          if [ -n "$CONFLICTS" ]; then
+            echo "Found conflict markers:" && echo "$CONFLICTS"
+            exit 1
+          else
+            echo "No conflict markers found"
+          fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:

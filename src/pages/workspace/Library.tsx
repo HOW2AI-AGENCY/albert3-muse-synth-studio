@@ -29,11 +29,11 @@ import {
   LazyUpscaleAudioDialog
 } from "@/components/LazyDialogs";
 import { useTracks } from "@/hooks/useTracks";
-import { useToast } from "@/hooks/use-toast";
+import { useNotifications } from "@/hooks/useNotifications";
 import { useTrackCleanup } from "@/hooks/useTrackCleanup";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { usePrefetchTracks } from "@/hooks/usePrefetchTracks";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+// import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useLibraryDialogs } from "@/hooks/useLibraryDialogs";
 import { useLibraryFilters } from "@/hooks/useLibraryFilters";
 // import { LikesService } from "@/services/likes.service"; // Now handled in TrackCard
@@ -50,10 +50,10 @@ import { VirtualizedTrackList } from '@/components/tracks/VirtualizedTrackList';
 import { useAuth } from "@/contexts/auth/useAuth";
 import { SelectedTracksProvider, useSelectedTracks } from '@/contexts/SelectedTracksContext';
 import { SelectionToolbar } from '@/components/tracks/SelectionToolbar';
-import type { SortBy } from '@/hooks/useLibraryFilters';
+// import type { SortBy } from '@/hooks/useLibraryFilters';
 import { useGenerateCoverImage } from '@/hooks/useGenerateCoverImage';
 import type { DisplayTrack as DisplayTrackType } from '@/types/track';
-import type { Track as DomainTrack } from '@/types/domain/track.types';
+// import type { Track as DomainTrack } from '@/types/domain/track.types';
 
 const LibraryContent: React.FC = () => {
   const { isSelectionMode, setSelectionMode, clearSelection } = useSelectedTracks();
@@ -66,7 +66,7 @@ const LibraryContent: React.FC = () => {
     isFetchingNextPage,
     deleteTrack,
   } = useTracks(undefined, { pageSize: 30 });
-  const { toast } = useToast();
+  const notify = useNotifications();
   const playTrackWithQueue = useAudioPlayerStore((state) => state.playTrackWithQueue);
   const currentTrack = useAudioPlayerStore((state) => state.currentTrack);
   const queryClient = useQueryClient();
@@ -190,22 +190,14 @@ const LibraryContent: React.FC = () => {
         return;
       }
 
-      toast({
-        title: "Невозможно воспроизвести",
-        description: "Не удалось найти доступные версии трека",
-        variant: "destructive",
-      });
+      notify.error("Невозможно воспроизвести", "Не удалось найти доступные версии трека");
     } catch (error) {
       logger.error('Failed to load track versions', error instanceof Error ? error : new Error(`trackId: ${track.id}`));
-      toast({
-        title: "Ошибка воспроизведения",
-        description: "Не удалось загрузить версии трека",
-        variant: "destructive",
-      });
+      notify.error("Ошибка воспроизведения", "Не удалось загрузить версии трека");
     } finally {
       setLoadingTrackId(prev => (prev === currentTrackId ? null : prev));
     }
-  }, [filteredAndSortedTracks, mapDisplayTrackToAudio, playTrackWithQueue, toast, queryClient]);
+  }, [filteredAndSortedTracks, mapDisplayTrackToAudio, playTrackWithQueue, notify, queryClient]);
 
   // handleLike is now handled by useTrackLike hook in TrackCard
   // const handleLike = useCallback(async (trackId: string) => {
@@ -261,22 +253,14 @@ const LibraryContent: React.FC = () => {
     try {
       const track = tracks.find(t => t.id === trackId);
       if (!track) {
-        toast({
-          title: "Ошибка",
-          description: "Трек не найден",
-          variant: "destructive",
-        });
+        notify.error("Ошибка", "Трек не найден");
         return;
       }
 
       // Check if track is public (some tracks may not have this field)
       const isPublic = Boolean(track.is_public);
       if (!isPublic) {
-        toast({
-          title: "Трек приватный",
-          description: "Сначала сделайте трек публичным, чтобы делиться им",
-          variant: "destructive",
-        });
+        notify.error("Трек приватный", "Сначала сделайте трек публичным, чтобы делиться им");
         return;
       }
 
@@ -296,10 +280,7 @@ const LibraryContent: React.FC = () => {
         // Fallback: Copy to clipboard
         await navigator.clipboard.writeText(shareUrl);
         
-        toast({
-          title: "🔗 Ссылка скопирована",
-          description: "Публичная ссылка скопирована в буфер обмена",
-        });
+        notify.success("🔗 Ссылка скопирована", "Публичная ссылка скопирована в буфер обмена");
 
         logger.info('Track share link copied', `trackId: ${trackId}, shareUrl: ${shareUrl}`);
       }
@@ -313,7 +294,7 @@ const LibraryContent: React.FC = () => {
         prompt('Скопируйте ссылку:', shareUrl);
       }
     }
-  }, [tracks, toast]);
+  }, [tracks, notify]);
 
   const handleSeparateStems = useCallback((trackId: string) => {
     const track = tracks.find(t => t.id === trackId);
@@ -341,10 +322,7 @@ const LibraryContent: React.FC = () => {
       const track = tracks.find(t => t.id === trackId);
       if (!track) return;
 
-      toast({
-        title: "Повторная генерация",
-        description: "Запускаем генерацию заново...",
-      });
+      notify.info("Повторная генерация", "Запускаем генерацию заново...");
 
       // Обновляем статус трека на pending
       await supabase
@@ -360,13 +338,9 @@ const LibraryContent: React.FC = () => {
       logger.info('Track retry initiated', `trackId: ${trackId}`);
     } catch (error) {
       logger.error('Failed to retry track', error instanceof Error ? error : new Error(`trackId: ${trackId}`));
-      toast({
-        title: "Ошибка",
-        description: "Не удалось повторить генерацию",
-        variant: "destructive",
-      });
+      notify.error("Ошибка", "Не удалось повторить генерацию");
     }
-  }, [tracks, toast, refreshTracks]);
+  }, [tracks, notify, refreshTracks]);
 
   const handleDelete = useCallback((trackId: string) => {
     const track = tracks.find(t => t.id === trackId);
