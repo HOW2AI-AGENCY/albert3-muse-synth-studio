@@ -56,7 +56,7 @@ export class SunoProviderAdapter implements IProviderClient {
 
       // Track success metric
       metricsCollector.trackGeneration({
-        trackId: data.trackId || params.trackId || 'unknown',
+        trackId: (data as any).trackId || params.trackId || 'unknown',
         provider: 'suno',
         status: 'completed',
         duration: Date.now() - startTime,
@@ -117,10 +117,10 @@ export class SunoProviderAdapter implements IProviderClient {
     }
 
     return {
-      taskId: data.taskId || data.id,
-      trackId: data.trackId,
+      taskId: (data as any).taskId || (data as any).id,
+      trackId: (data as any).trackId,
       status: 'processing',
-      message: data.message,
+      message: (data as any).message,
     };
   }
 
@@ -149,9 +149,9 @@ export class SunoProviderAdapter implements IProviderClient {
     }
 
     return {
-      taskId: data.taskId || params.trackId,
+      taskId: (data as any).taskId || params.trackId,
       status: 'processing',
-      message: data.message,
+      message: (data as any).message,
     };
   }
 
@@ -192,9 +192,9 @@ export class SunoProviderAdapter implements IProviderClient {
     }
 
     return {
-      balance: data.balance,
-      currency: data.currency,
-      details: data.details,
+      balance: (data as any).balance,
+      currency: (data as any).currency,
+      details: (data as any).details,
     };
   }
 

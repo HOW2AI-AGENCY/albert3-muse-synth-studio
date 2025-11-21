@@ -81,9 +81,9 @@ export async function saveLyrics(
         });
 
         if (titleError) {
-          logger.warn('Failed to generate title, using default', titleError);
-        } else if (titleData?.title) {
-          title = titleData.title;
+          logger.warn('Failed to generate title, using default', String(titleError));
+        } else if ((titleData as any)?.title) {
+          title = (titleData as any).title;
         }
       } catch (titleError) {
         logger.warn('Error generating title, using default');

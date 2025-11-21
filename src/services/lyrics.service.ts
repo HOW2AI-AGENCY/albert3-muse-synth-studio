@@ -104,8 +104,7 @@ export const LyricsService = {
             const { data, error } = await SupabaseFunctions.invoke('get-timestamped-lyrics', {
               method: 'POST',
               body: { taskId, audioId },
-              signal: controller.signal,
-            });
+            } as any);
 
             clearTimeout(timeoutId);
 

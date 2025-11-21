@@ -244,7 +244,7 @@ export const SelectionToolbar: React.FC<SelectionToolbarProps> = ({ className = 
         return;
     }
 
-    const result = await bulkExportToZip(tracks, (progress) => {
+    const result = await bulkExportToZip(tracks as any, (progress) => {
       setProgressDialog(prev => ({ ...prev, progress }));
     });
 

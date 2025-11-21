@@ -106,7 +106,7 @@ export class PromptDjMidi extends EventTarget {
     }
 
     const { data, error } = await supabase
-      .from('prompt_dj_presets')
+      .from('prompt_dj_presets' as any)
       .select('id, name, prompts')
       .eq('user_id', user.id)
       .order('name', { ascending: true });
@@ -116,7 +116,7 @@ export class PromptDjMidi extends EventTarget {
       return;
     }
 
-    this.presets = data || [];
+    this.presets = (data as any) || [];
     this.dispatchEvent(new CustomEvent('state-changed'));
     toast.success(`${this.presets.length} presets loaded.`);
   }
@@ -146,7 +146,7 @@ export class PromptDjMidi extends EventTarget {
       return;
     }
 
-    const { error } = await supabase.from('prompt_dj_presets').upsert({
+    const { error } = await supabase.from('prompt_dj_presets' as any).upsert({
       user_id: user.id,
       name,
       prompts: this.prompts,
@@ -162,7 +162,7 @@ export class PromptDjMidi extends EventTarget {
 
   public async deletePreset(presetId: string) {
     const { error } = await supabase
-        .from('prompt_dj_presets')
+        .from('prompt_dj_presets' as any)
         .delete()
         .eq('id', presetId);
 
