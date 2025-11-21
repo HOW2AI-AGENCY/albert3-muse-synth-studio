@@ -5,13 +5,13 @@
 import React, { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { TrackCard } from '@/features/tracks/components/TrackCard';
-import type { DisplayTrack } from '@/types/domain/track.types';
+import type { DisplayTrack } from '@/types/track';
 
 interface VirtualizedTrackGridProps {
   tracks: DisplayTrack[];
   columns: number;
   gap: number;
-  onTrackPlay: (track: DisplayTrack) => void;
+  onTrackPlay: (track: DisplayTrack) => Promise<void> | void;
   onShare: (trackId: string) => void;
   onSeparateStems: (trackId: string) => void;
   onExtend?: (trackId: string) => void;

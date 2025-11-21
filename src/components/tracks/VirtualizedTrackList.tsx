@@ -5,12 +5,12 @@
 import React, { useRef, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { TrackListItem } from '@/features/tracks';
-import type { DisplayTrack } from '@/types/domain/track.types';
+import type { DisplayTrack } from '@/types/track';
 
 interface VirtualizedTrackListProps {
   tracks: DisplayTrack[];
   height: number;
-  onTrackPlay: (track: DisplayTrack) => void;
+  onTrackPlay: (track: DisplayTrack) => Promise<void> | void;
   onShare: (trackId: string) => void;
   onSeparateStems: (trackId: string) => void;
   onRetry: (trackId: string) => void;

@@ -574,7 +574,7 @@ const LibraryContent: React.FC = () => {
               <div className="w-full" style={{ height: 'calc(100vh - 280px)' }}>
                 {shouldVirtualize ? (
                   <VirtualizedTrackGrid
-                    tracks={filteredDomainDisplayTracks}
+                    tracks={filteredAndSortedTracks as DisplayTrackType[]}
                     columns={effectiveColumns}
                     gap={gridParams.gap}
                     onTrackPlay={handleTrackPlay}
@@ -634,7 +634,7 @@ const LibraryContent: React.FC = () => {
           {filters.viewMode === 'list' && (
             <div className="w-full" style={{ height: 'calc(100vh - 280px)' }}>
               <VirtualizedTrackList
-                tracks={filteredDomainDisplayTracks}
+                tracks={filteredAndSortedTracks as DisplayTrackType[]}
                 height={600}
                 onTrackPlay={handleTrackPlay}
                 onShare={handleShare}
