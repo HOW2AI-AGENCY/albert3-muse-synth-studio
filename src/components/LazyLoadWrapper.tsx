@@ -1,4 +1,4 @@
-import React, { Suspense, memo, useMemo } from 'react';
+import React, { Suspense, memo } from 'react';
 import { Skeleton } from './ui/skeleton';
 import { ErrorBoundary } from '@/components/error/ErrorBoundary';
 import { createLazyComponent } from '@/utils/lazyComponentFactory';

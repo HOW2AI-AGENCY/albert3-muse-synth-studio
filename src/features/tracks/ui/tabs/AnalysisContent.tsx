@@ -15,22 +15,24 @@ interface AnalysisContentProps {
 }
 
 export const AnalysisContent = ({ track }: AnalysisContentProps) => {
+  const metadata = track.metadata as any || {};
+  
   return (
     <div className="space-y-4">
       {/* AI Description */}
-      {track.metadata?.ai_description && (
-        <AIDescriptionCard description={track.metadata.ai_description as string} />
+      {metadata.ai_description && (
+        <AIDescriptionCard description={String(metadata.ai_description)} />
       )}
 
       {/* Music Analysis */}
-      {(track.metadata?.tempo_bpm || track.metadata?.key_signature || track.metadata?.instruments) && (
+      {(metadata.tempo_bpm || metadata.key_signature || metadata.instruments) && (
         <MusicAnalysisCard
-          tempoBpm={track.metadata.tempo_bpm as number | undefined}
-          keySignature={track.metadata.key_signature as string | undefined}
-          instruments={track.metadata.instruments as string[] | undefined}
-          energyLevel={track.metadata.energy_level as number | undefined}
-          danceability={track.metadata.danceability as number | undefined}
-          valence={track.metadata.valence as number | undefined}
+          tempoBpm={metadata.tempo_bpm as number | undefined}
+          keySignature={metadata.key_signature as string | undefined}
+          instruments={metadata.instruments as string[] | undefined}
+          energyLevel={metadata.energy_level as number | undefined}
+          danceability={metadata.danceability as number | undefined}
+          valence={metadata.valence as number | undefined}
         />
       )}
 
@@ -46,7 +48,7 @@ export const AnalysisContent = ({ track }: AnalysisContentProps) => {
 
       {/* Reference Sources */}
       <ReferenceSourcesPanel
-        metadata={track.metadata || {}}
+        metadata={metadata}
         trackId={track.id}
         className="bg-card"
       />

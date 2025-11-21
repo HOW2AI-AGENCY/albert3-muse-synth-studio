@@ -17,11 +17,7 @@ const AppBottomNav: React.FC = () => {
   const { isMobile } = useBreakpoints();
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
-  // Don't render on desktop/tablet
-  if (!isMobile) {
-    return null;
-  }
-
+  // Hooks must be called before any conditional returns
   const allNavItems = useMemo(() => getWorkspaceNavItems({ isAdmin }), [isAdmin]);
 
   const { primaryItems, secondaryItems, overflowItems } = useMemo(() => {
@@ -35,12 +31,6 @@ const AppBottomNav: React.FC = () => {
     };
   }, [allNavItems]);
 
-  const mapToMenuItem = (item: WorkspaceNavItem): MenuItem => ({
-    id: item.id,
-    label: item.label,
-    icon: item.icon,
-  });
-
   const activeItemId = useMemo(() => {
     const currentPath = location.pathname;
     // Find the most specific match first
@@ -50,6 +40,17 @@ const AppBottomNav: React.FC = () => {
       .sort((a, b) => b.path.length - a.path.length)[0];
     return bestMatch?.id;
   }, [location.pathname, primaryItems, overflowItems, secondaryItems]);
+
+  // Don't render on desktop/tablet - check AFTER all hooks
+  if (!isMobile) {
+    return null;
+  }
+
+  const mapToMenuItem = (item: WorkspaceNavItem): MenuItem => ({
+    id: item.id,
+    label: item.label,
+    icon: item.icon,
+  });
 
   const handleItemClick = (path: string) => {
     navigate(path);

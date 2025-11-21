@@ -204,7 +204,7 @@ const StatusButton = React.forwardRef<HTMLButtonElement, StatusButtonProps>(
     const isDisabled = disabled || status === "loading";
 
     return (
-      <button
+      <motion.button
         ref={ref}
         className={cn(
           buttonVariants({ variant: effectiveVariant, size, className }),
@@ -214,7 +214,7 @@ const StatusButton = React.forwardRef<HTMLButtonElement, StatusButtonProps>(
         )}
         disabled={isDisabled}
         whileTap={!isDisabled ? { scale: 0.98 } : undefined}
-        {...props}
+        type={(props as any).type || "button"}
       >
         <AnimatePresence mode="wait">{getContent()}</AnimatePresence>
 
@@ -227,7 +227,7 @@ const StatusButton = React.forwardRef<HTMLButtonElement, StatusButtonProps>(
             transition={{ duration: 0.6 }}
           />
         )}
-      </button>
+      </motion.button>
     );
   }
 );
