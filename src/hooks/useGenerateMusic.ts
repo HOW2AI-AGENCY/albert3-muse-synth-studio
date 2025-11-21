@@ -309,7 +309,7 @@ export const useGenerateMusic = ({ provider = 'suno', onSuccess, toast }: UseGen
 
       // Use unified GenerationService
       const result = await GenerationService.generate({
-        ...options,
+        ...sanitizedOptions,
         provider: effectiveProvider,
       });
 

@@ -75,7 +75,7 @@ export class GenerationService {
 
     logger.info(`🎸 [GenerationService] Invoking ${functionName}`, 'GenerationService', {
       provider: request.provider,
-      promptLength: request.prompt.length,
+      promptLength: (request.prompt?.length ?? 0),
       hasLyrics: !!request.lyrics,
       modelVersion: request.modelVersion,
     });
