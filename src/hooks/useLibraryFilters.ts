@@ -112,8 +112,8 @@ export const useLibraryFilters = ({ tracks }: UseLibraryFiltersOptions): Library
       result = result.filter(
         (track) =>
           track.title?.toLowerCase().includes(query) ||
-          track.style?.toLowerCase().includes(query) ||
-          track.lyrics?.toLowerCase().includes(query)
+          track.style_tags?.join(' ').toLowerCase().includes(query) ||
+          track.prompt?.toLowerCase().includes(query)
       );
     }
 

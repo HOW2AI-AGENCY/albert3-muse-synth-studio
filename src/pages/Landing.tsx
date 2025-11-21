@@ -81,17 +81,19 @@ const Landing = () => {
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-20 animate-scale-in" style={{ animationDelay: '0.4s' }}>
             <Button 
-              size="xl" 
+              size="lg" 
               variant="hero"
               onClick={() => navigate('/auth')}
+              className="h-14 px-8"
             >
               <Sparkles className="mr-2 h-6 w-6" />
               Начать бесплатно
             </Button>
             <Button 
-              size="xl" 
+              size="lg" 
               variant="glass"
               onClick={() => navigate('/auth')}
+              className="h-14 px-8"
             >
               Войти
             </Button>
@@ -240,9 +242,10 @@ const Landing = () => {
 
             <div className="text-center">
               <Button
-                size="xl"
+                size="lg"
                 variant="hero"
                 onClick={() => navigate("/auth")}
+                className="h-14 px-8"
               >
                 <Sparkles className="mr-2 h-6 w-6" />
                 Создайте свою музыку
@@ -267,17 +270,19 @@ const Landing = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
-                size="xl" 
+                size="lg" 
                 variant="hero"
                 onClick={() => navigate('/auth')}
+                className="h-14 px-8"
               >
                 <Sparkles className="mr-2 h-6 w-6" />
                 Начать бесплатно
               </Button>
               <Button 
-                size="xl" 
+                size="lg" 
                 variant="glass"
                 onClick={() => navigate('/auth')}
+                className="h-14 px-8"
               >
                 <Music className="mr-2 h-6 w-6" />
                 Узнать больше

@@ -101,13 +101,6 @@ export const ProjectDetailsDialog: React.FC<ProjectDetailsDialogProps> = ({
             {/* Left Column: Cover & Main Info */}
             <div className="md:col-span-1 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="cover">Обложка проекта</Label>
-                <ImageUpload
-                  currentImage={formData.cover_url || null}
-                  onImageChange={(url) => setFormData(prev => ({ ...prev, cover_url: url }))}
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="name">Название проекта</Label>
                 <Input
                   id="name"
