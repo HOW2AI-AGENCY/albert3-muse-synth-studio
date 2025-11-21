@@ -105,7 +105,7 @@ export const useTrackState = (track: Track, options: UseTrackStateOptions = {}) 
       versionNumber: v.variantIndex + 1,
       like_count: v.likeCount,
     }));
-    return [mainAsVersion, ...variantsAsVersions].filter(v => v.audio_url);
+    return [mainAsVersion, ...variantsAsVersions];
   }, [variantsData]);
 
   const masterVersion: { id: string; versionNumber: number; isMasterVersion: boolean } | null = useMemo(() => {

@@ -15,6 +15,8 @@ import { CompactTrackHero } from './CompactTrackHero';
 import { OverviewContent } from './tabs/OverviewContent';
 import { LyricsContent } from './tabs/LyricsContent';
 import { AnalysisContent } from './tabs/AnalysisContent';
+import { TrackVersions } from '../components/TrackVersions';
+import { useTrackVariants } from '@/features/tracks/hooks/useTrackVariants';
 import { useTrackState } from '@/hooks/useTrackState';
 import { useDownloadTrack } from '@/hooks/useDownloadTrack';
 import { ApiService } from '@/services/api.service';
@@ -60,6 +62,21 @@ export const ModernDetailPanel = ({
   } as any);
 
   const hasAudio = !!(displayedVersion?.audio_url || track.audio_url);
+  const { data: variantsData } = useTrackVariants(track.id, true);
+  const versions = (variantsData?.variants || []).map(v => ({
+    id: v.id,
+    parentTrackId: v.parentTrackId,
+    variant_index: v.variantIndex,
+    is_preferred_variant: v.isPreferredVariant,
+    is_primary_variant: false,
+    audio_url: v.audioUrl,
+    cover_url: v.coverUrl,
+    video_url: v.videoUrl,
+    duration: v.duration,
+    lyrics: v.lyrics,
+    suno_id: v.sunoId || '',
+    metadata: v.metadata || null,
+  }));
 
   const handleDownload = () => {
     if (displayedVersion?.audio_url) {
@@ -265,6 +282,16 @@ export const ModernDetailPanel = ({
             Текст
           </TabsTrigger>
           <TabsTrigger 
+            value="versions" 
+            className={cn(
+              "data-[state=active]:bg-muted relative",
+              "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5",
+              "after:data-[state=active]:bg-primary after:transition-colors"
+            )}
+          >
+            Версии
+          </TabsTrigger>
+          <TabsTrigger 
             value="analysis" 
             className={cn(
               "data-[state=active]:bg-muted relative",
@@ -294,6 +321,18 @@ export const ModernDetailPanel = ({
               trackId={track.id}
               sunoTaskId={track.suno_task_id}
               sunoId={track.suno_id}
+            />
+          </TabsContent>
+
+          <TabsContent 
+            value="versions" 
+            className="h-full mt-0 data-[state=active]:animate-in data-[state=active]:fade-in-50"
+          >
+            <TrackVersions 
+              trackId={track.id}
+              versions={versions as any}
+              trackMetadata={variantsData?.mainTrack?.metadata || null}
+              onVersionUpdate={() => {}}
             />
           </TabsContent>
 
