@@ -374,6 +374,7 @@
     --interactive-active-bg: hsl(var(--color-accent-purple) / 0.1);
     --interactive-focus-ring: 0 0 0 3px hsl(var(--color-accent-purple) / 0.3);
   }
+}
 
   /* ===== АДАПТИВНЫЕ ТОКЕНЫ (КОМПАКТНАЯ ВЕРСИЯ) ===== */
   
