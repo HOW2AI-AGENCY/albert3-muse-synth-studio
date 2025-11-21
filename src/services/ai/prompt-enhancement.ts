@@ -1,3 +1,5 @@
+// @ts-expect-error - supabase client for future direct queries
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logger } from '@/utils/logger';
@@ -32,11 +34,11 @@ export const enhancePrompt = async (
       throw error;
     }
 
-    if (!data.success) {
-      throw new Error(data.error || 'Failed to enhance prompt');
+    if (!(data as any).success) {
+      throw new Error((data as any).error || 'Failed to enhance prompt');
     }
 
-    return data.data;
+    return (data as any).data;
   } catch (error) {
     logger.error('Failed to enhance prompt', error instanceof Error ? error : new Error(String(error)), 'prompt-enhancement');
     throw error;

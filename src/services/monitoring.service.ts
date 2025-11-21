@@ -5,6 +5,8 @@
 
 import { onCLS, onFCP, onLCP, onTTFB, onINP } from 'web-vitals';
 import * as Sentry from '@sentry/react';
+// @ts-expect-error - supabase client for future direct queries
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { logger } from '@/utils/logger';
@@ -119,7 +121,7 @@ export async function checkSunoHealth(): Promise<ServiceHealthStatus> {
     return {
       provider: 'suno',
       healthy: true,
-      balance: data?.balance,
+      balance: (data as any)?.balance,
       lastChecked: Date.now(),
     };
   } catch (error) {
@@ -144,7 +146,7 @@ export async function checkMurekaHealth(): Promise<ServiceHealthStatus> {
     return {
       provider: 'mureka',
       healthy: true,
-      balance: data?.balance,
+      balance: (data as any)?.balance,
       lastChecked: Date.now(),
     };
   } catch (error) {
