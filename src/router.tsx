@@ -32,7 +32,6 @@ import {
   LazyPersonas,
   LazyPromptDJPage,
   LazyEdgeFunctionsDebug,
-  LazyTrackDetail,
   LazySubscription,
   LazyImageCropperDemo,
 } from "./utils/lazyPages";
@@ -134,14 +133,7 @@ export const router = createBrowserRouter(
             </Suspense>
           )
         },
-        {
-          path: "track/:id",
-          element: (
-            <Suspense fallback={<FullPageSpinner />}>
-              <LazyTrackDetail />
-            </Suspense>
-          )
-        },
+        // Track detail route removed - using detail panel in library instead
         {
           path: "analytics",
           element: (

@@ -7,7 +7,7 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { supabase } from '@/integrations/supabase/client';
 import { logError, logInfo } from './logger';
-import type { Track } from '@/types/track';
+import type { Track } from '@/types/domain/track.types';
 
 export interface BulkOperationProgress {
   current: number;

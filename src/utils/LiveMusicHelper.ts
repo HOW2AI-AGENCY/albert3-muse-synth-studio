@@ -6,6 +6,8 @@
  * @since 2025-11-17
  */
 import { logger } from './logger';
+// @ts-expect-error - supabase client for future direct queries
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
@@ -46,7 +48,7 @@ export class LiveMusicHelper extends EventTarget {
         body: { initialPrompts: initialPrompts.map(p => ({ text: p.text, weight: p.weight })) }
       });
       if (error) throw error;
-      this.sessionId = data.sessionId;
+      this.sessionId = (data as any).sessionId;
 
       this.audioContext = new AudioContext({ sampleRate: 48000 });
       this.outputNode = this.audioContext.createGain();
