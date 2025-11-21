@@ -109,12 +109,13 @@ export const useLibraryFilters = ({ tracks }: UseLibraryFiltersOptions): Library
     // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (track) =>
-          track.title?.toLowerCase().includes(query) ||
-          track.style_tags?.join(' ').toLowerCase().includes(query) ||
-          track.prompt?.toLowerCase().includes(query)
-      );
+      result = result.filter((track) => {
+        const titleMatch = track.title?.toLowerCase().includes(query) || false;
+        const tagsText = (track.style_tags ?? []).join(' ').toLowerCase();
+        const tagsMatch = tagsText.includes(query);
+        const promptMatch = track.prompt?.toLowerCase().includes(query) || false;
+        return titleMatch || tagsMatch || promptMatch;
+      });
     }
 
     // Filter by status
@@ -137,8 +138,8 @@ export const useLibraryFilters = ({ tracks }: UseLibraryFiltersOptions): Library
           bValue = b.title?.toLowerCase() || '';
           break;
         case 'duration':
-          aValue = a.duration || 0;
-          bValue = b.duration || 0;
+          aValue = Number(a.duration) || 0;
+          bValue = Number(b.duration) || 0;
           break;
         case 'like_count':
           aValue = a.like_count || 0;

@@ -105,3 +105,7 @@ reports/**/*.tmp
 
 # Antigravity
 .antigravityignore
+
+.gemini/*
+.specify/*
+.trae/*

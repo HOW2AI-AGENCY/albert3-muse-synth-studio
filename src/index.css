@@ -50,11 +50,11 @@
     --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(330 81% 60%) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(189 94% 43%) 0%, hsl(262 83% 58%) 100%);
     --gradient-hero: linear-gradient(180deg, hsl(222 47% 11%) 0%, hsl(222 47% 8%) 100%);
-    
+
     --shadow-glow-primary: 0 0 40px hsl(262 83% 58% / 0.3);
     --shadow-glow-secondary: 0 0 40px hsl(189 94% 43% / 0.3);
     --shadow-glow-accent: 0 0 40px hsl(330 81% 60% / 0.3);
-    
+
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     /* Mobile spacing system */
@@ -63,28 +63,29 @@
     --mobile-spacing-md: 0.75rem;
     --mobile-spacing-lg: 1rem;
     --mobile-spacing-xl: 1.5rem;
-    
+
     /* Mobile touch targets - WCAG 2.1 Level AAA compliant */
     --mobile-touch-min: 44px;
     --mobile-touch-optimal: 48px;
-    
+
     /* Mobile typography - prevent iOS zoom */
     --mobile-font-xs: 0.625rem;
     --mobile-font-sm: 0.75rem;
-    --mobile-font-base: 1rem;  /* 16px minimum to prevent zoom */
+    --mobile-font-base: 1rem;
+    /* 16px minimum to prevent zoom */
     --mobile-font-lg: 1.125rem;
-    
-  /* Mobile input minimum (prevents iOS auto-zoom) */
-  --mobile-input-min: 16px;
 
-  /* Dynamic offsets - автоматически обновляются через useWorkspaceOffsets hook */
-  --workspace-bottom-offset: 0px;
-  --bottom-tab-bar-height: 0px;
-  --mini-player-height: 0px;
+    /* Mobile input minimum (prevents iOS auto-zoom) */
+    --mobile-input-min: 16px;
 
-  /* Touch target utilities - WCAG 2.1 Level AAA */
-  --touch-target-min: 44px;
-  --touch-target-optimal: 48px;
+    /* Dynamic offsets - автоматически обновляются через useWorkspaceOffsets hook */
+    --workspace-bottom-offset: 0px;
+    --bottom-tab-bar-height: 0px;
+    --mini-player-height: 0px;
+
+    /* Touch target utilities - WCAG 2.1 Level AAA */
+    --touch-target-min: 44px;
+    --touch-target-optimal: 48px;
 
     /* Z-index system is now unified in design-tokens.css */
     /* Use CSS variables from design-tokens.css: --z-bottom-nav, --z-mini-player, --z-drawer, etc. */
@@ -129,7 +130,9 @@
     line-height: 1.4;
   }
 
-  h4, h5, h6 {
+  h4,
+  h5,
+  h6 {
     @apply font-bold tracking-tight;
     font-size: clamp(1rem, 2.5vw, 1.5rem);
     line-height: 1.5;
@@ -172,6 +175,7 @@
 }
 
 @layer utilities {
+
   /* Container Queries Support */
   .container-inline {
     container-type: inline-size;
@@ -187,35 +191,72 @@
 
   /* Container query utilities */
   @container (min-width: 320px) {
-    .cq-xs\:block { display: block; }
-    .cq-xs\:flex { display: flex; }
-    .cq-xs\:grid { display: grid; }
+    .cq-xs\:block {
+      display: block;
+    }
+
+    .cq-xs\:flex {
+      display: flex;
+    }
+
+    .cq-xs\:grid {
+      display: grid;
+    }
   }
 
   @container (min-width: 480px) {
-    .cq-sm\:block { display: block; }
-    .cq-sm\:flex { display: flex; }
-    .cq-sm\:grid { display: grid; }
-    .cq-sm\:flex-row { flex-direction: row; }
+    .cq-sm\:block {
+      display: block;
+    }
+
+    .cq-sm\:flex {
+      display: flex;
+    }
+
+    .cq-sm\:grid {
+      display: grid;
+    }
+
+    .cq-sm\:flex-row {
+      flex-direction: row;
+    }
   }
 
   @container (min-width: 640px) {
-    .cq-md\:block { display: block; }
-    .cq-md\:flex { display: flex; }
-    .cq-md\:grid { display: grid; }
+    .cq-md\:block {
+      display: block;
+    }
+
+    .cq-md\:flex {
+      display: flex;
+    }
+
+    .cq-md\:grid {
+      display: grid;
+    }
   }
 
   @container (min-width: 768px) {
-    .cq-lg\:block { display: block; }
-    .cq-lg\:flex { display: flex; }
-    .cq-lg\:grid { display: grid; }
+    .cq-lg\:block {
+      display: block;
+    }
+
+    .cq-lg\:flex {
+      display: flex;
+    }
+
+    .cq-lg\:grid {
+      display: grid;
+    }
   }
+
   /* Workspace content margin synced with sidebar width */
   @media (min-width: 1024px) {
     .workspace-content {
       margin-left: var(--sidebar-width-collapsed);
       transition: margin-left var(--duration-normal) var(--ease-out);
     }
+
     .workspace-content--expanded {
       margin-left: var(--sidebar-width-expanded);
     }
@@ -225,13 +266,13 @@
   .mobile-input {
     font-size: max(16px, 1rem) !important;
   }
-  
+
   @media (min-width: 768px) {
     .mobile-input {
       font-size: 0.875rem !important;
     }
   }
-  
+
   /* P0 FIX: Touch target utilities - WCAG 2.1 compliant */
   .touch-target-min {
     min-height: var(--mobile-touch-min);
@@ -240,7 +281,7 @@
     align-items: center;
     justify-content: center;
   }
-  
+
   .touch-target-optimal {
     min-height: var(--mobile-touch-optimal);
     min-width: var(--mobile-touch-optimal);
@@ -439,12 +480,10 @@
   }
 
   .text-shimmer {
-    background: linear-gradient(
-      90deg,
-      hsl(var(--muted-foreground)) 0%,
-      hsl(var(--foreground)) 50%,
-      hsl(var(--muted-foreground)) 100%
-    );
+    background: linear-gradient(90deg,
+        hsl(var(--muted-foreground)) 0%,
+        hsl(var(--foreground)) 50%,
+        hsl(var(--muted-foreground)) 100%);
     background-size: 200% 100%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -458,10 +497,13 @@
   }
 
   @keyframes pulse-glow {
-    0%, 100% {
+
+    0%,
+    100% {
       opacity: 1;
       box-shadow: var(--shadow-glow-primary);
     }
+
     50% {
       opacity: 0.8;
       box-shadow: 0 0 60px hsl(262 83% 58% / 0.5);
@@ -469,9 +511,12 @@
   }
 
   @keyframes float {
-    0%, 100% {
+
+    0%,
+    100% {
       transform: translateY(0px);
     }
+
     50% {
       transform: translateY(-10px);
     }
@@ -482,6 +527,7 @@
       opacity: 0;
       transform: translateY(20px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -492,6 +538,7 @@
     from {
       opacity: 0;
     }
+
     to {
       opacity: 1;
     }
@@ -502,6 +549,7 @@
       opacity: 0;
       transform: scale(0.9);
     }
+
     to {
       opacity: 1;
       transform: scale(1);
@@ -512,15 +560,19 @@
     0% {
       background-position: -200% 0;
     }
+
     100% {
       background-position: 200% 0;
     }
   }
 
   @keyframes pulse-subtle {
-    0%, 100% {
+
+    0%,
+    100% {
       opacity: 1;
     }
+
     50% {
       opacity: 0.85;
     }
@@ -567,21 +619,21 @@
     .mobile-compact {
       @apply p-2 gap-2;
     }
-    
+
     .mobile-touch {
       min-height: var(--mobile-touch-min);
       min-width: var(--mobile-touch-min);
     }
-    
+
     .mobile-no-zoom {
       font-size: var(--mobile-font-base) !important;
     }
-    
+
     /* На мобильных убираем overflow-x полностью */
     body {
       overflow-x: hidden;
     }
-    
+
     /* Мобильная прокрутка с жестами */
     .workspace-main {
       -webkit-overflow-scrolling: touch;
@@ -592,6 +644,7 @@
 
   /* Reduce motion for accessibility and performance */
   @media (prefers-reduced-motion: reduce) {
+
     *,
     *::before,
     *::after {
@@ -599,7 +652,7 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
-    
+
     .animate-pulse-glow,
     .animate-float,
     .animate-shimmer {
@@ -623,6 +676,7 @@
     0% {
       background-position: -200% 0;
     }
+
     100% {
       background-position: 200% 0;
     }
@@ -696,7 +750,8 @@
   }
 
   .scrollbar-styled::-webkit-scrollbar {
-    width: 3px; /* Очень тонкий на мобильных */
+    width: 3px;
+    /* Очень тонкий на мобильных */
     height: 3px;
   }
 
@@ -713,48 +768,53 @@
   .scrollbar-styled::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--primary) / 0.3);
   }
-  
+
   /* На больших экранах делаем scrollbar чуть заметнее */
   @media (min-width: 768px) {
     .scrollbar-styled::-webkit-scrollbar {
       width: 5px;
       height: 5px;
     }
-    
+
     .scrollbar-styled::-webkit-scrollbar-thumb {
       background: hsl(var(--primary) / 0.2);
     }
-    
+
     .scrollbar-styled::-webkit-scrollbar-thumb:hover {
       background: hsl(var(--primary) / 0.4);
     }
   }
-  
+
   /* Ultra minimal для TabsList */
   .scrollbar-minimal {
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--muted) / 0.3) transparent;
   }
-  
+
   .scrollbar-minimal::-webkit-scrollbar {
     width: 2px;
     height: 2px;
   }
-  
+
   .scrollbar-minimal::-webkit-scrollbar-track {
     background: transparent;
   }
-  
+
   .scrollbar-minimal::-webkit-scrollbar-thumb {
     background: hsl(var(--muted) / 0.3);
     border-radius: 1px;
   }
-  
+
   @media (min-width: 768px) {
     .scrollbar-minimal::-webkit-scrollbar {
       width: 4px;
       height: 4px;
     }
+
+/* Added for lyrics snap-scroll feature */
+.scroll-snap-align-center {
+  scroll-snap-align: center;
+}
   }
 
   /* Dynamic layout adjustments - deduplicated */
@@ -924,11 +984,11 @@
   .scrollbar-thin {
     scrollbar-width: thin;
   }
-  
+
   .scrollbar-thumb-primary\/20::-webkit-scrollbar-thumb {
     background-color: hsl(var(--primary) / 0.2);
   }
-  
+
   .scrollbar-track-transparent::-webkit-scrollbar-track {
     background-color: transparent;
   }
@@ -942,4 +1002,104 @@
     border: 2px solid;
     border-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent))) 1;
   }
+}
+
+/* ===== MIGRATED UTILITIES FROM DESIGN-TOKENS.CSS ===== */
+
+/* Transitions */
+.transition-fast {
+  transition: var(--transition-fast);
+}
+
+.transition-normal {
+  transition: var(--transition-normal);
+}
+
+.transition-slow {
+  transition: var(--transition-slow);
+}
+
+.transition-colors {
+  transition: var(--transition-colors);
+}
+
+.transition-transform {
+  transition: var(--transition-transform);
+}
+
+.transition-opacity {
+  transition: var(--transition-opacity);
+}
+
+/* Glass Effect (Legacy support) */
+.glass-effect {
+  background: var(--gradient-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Safe Areas */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+.safe-area {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Scrollbar Hiding */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Haptic Feedback */
+.haptic-light {
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.haptic-medium {
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transform: scale(1);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.haptic-medium:active {
+  transform: scale(0.98);
+}
+
+.haptic-heavy {
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transform: scale(1);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.haptic-heavy:active {
+  transform: scale(0.95);
 }
