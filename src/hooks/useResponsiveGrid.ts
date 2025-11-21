@@ -11,6 +11,8 @@
  * @protected
  */
 import { useMemo } from 'react';
+// @ts-expect-error - For future responsive features
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useBreakpoints } from './useBreakpoints';
 import { getScreenCategory } from '@/config/breakpoints.config';
 

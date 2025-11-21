@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +50,8 @@ import { VirtualizedTrackList } from '@/components/tracks/VirtualizedTrackList';
 import { useAuth } from "@/contexts/auth/useAuth";
 import { SelectedTracksProvider, useSelectedTracks } from '@/contexts/SelectedTracksContext';
 import { SelectionToolbar } from '@/components/tracks/SelectionToolbar';
+// @ts-expect-error - Type for future sorting features
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { SortBy } from '@/hooks/useLibraryFilters';
 
 const LibraryContent: React.FC = () => {
