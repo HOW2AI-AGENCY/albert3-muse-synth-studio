@@ -136,13 +136,9 @@ export default defineConfig(async ({ mode }) => {
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      react: path.resolve(__dirname, "node_modules/react"),
-      "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
-      "react-router": path.resolve(__dirname, "node_modules/react-router"),
-      "react-router-dom": path.resolve(__dirname, "node_modules/react-router-dom"),
-      // Remove broken web-vitals alias; package entry resolution fails in current environment
+      "scheduler": path.resolve(__dirname, "./src/vendor/scheduler/index.js"),
+      "react-is": path.resolve(__dirname, "./src/vendor/react-is/index.js"),
     },
-    // Use Vite defaults for mainFields to avoid package resolution issues (e.g., scheduler)
     dedupe: [
       "react",
       "react-dom",
