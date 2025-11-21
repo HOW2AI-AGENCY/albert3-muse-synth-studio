@@ -1,6 +1,7 @@
 const REACT_ELEMENT_TYPE = Symbol.for('react.element');
 const REACT_FORWARD_REF_TYPE = Symbol.for('react.forward_ref');
 const REACT_MEMO_TYPE = Symbol.for('react.memo');
+const REACT_FRAGMENT_TYPE = Symbol.for('react.fragment');
 
 function typeOf(object) {
   if (object && typeof object === 'object') {
@@ -31,8 +32,13 @@ function isMemo(object) {
   return object && object.$$typeof === REACT_MEMO_TYPE;
 }
 
+function isFragment(object) {
+  return !!(object && object.$$typeof === REACT_ELEMENT_TYPE && object.type === REACT_FRAGMENT_TYPE);
+}
+
 export {
   REACT_ELEMENT_TYPE,
+  REACT_FRAGMENT_TYPE,
   REACT_FORWARD_REF_TYPE,
   REACT_MEMO_TYPE,
   typeOf,
@@ -40,4 +46,5 @@ export {
   isValidElementType,
   isForwardRef,
   isMemo,
+  isFragment,
 };

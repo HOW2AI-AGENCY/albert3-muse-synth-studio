@@ -138,6 +138,7 @@ export default defineConfig(async ({ mode }) => {
       "@": path.resolve(__dirname, "./src"),
       "scheduler": path.resolve(__dirname, "./src/vendor/scheduler/index.js"),
       "react-is": path.resolve(__dirname, "./src/vendor/react-is/index.js"),
+      "react-remove-scroll": path.resolve(__dirname, "./src/vendor/react-remove-scroll/index.tsx"),
     },
     dedupe: [
       "react",
