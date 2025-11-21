@@ -10,7 +10,7 @@ import type { DisplayTrack } from '@/types/domain/track.types';
 interface VirtualizedTrackListProps {
   tracks: DisplayTrack[];
   height: number;
-  onTrackPlay: (track: any) => void;
+  onTrackPlay: (track: DisplayTrack) => void;
   onShare: (trackId: string) => void;
   onSeparateStems: (trackId: string) => void;
   onRetry: (trackId: string) => void;
@@ -54,8 +54,9 @@ export const VirtualizedTrackList = React.memo(({
   }, [onDelete]);
 
   // Create virtualizer for the list
+  const safeTracks = Array.isArray(tracks) ? tracks : [];
   const virtualizer = useVirtualizer({
-    count: tracks.length,
+    count: safeTracks.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => ITEM_HEIGHT,
     overscan: 5, // Render extra items for smoother scrolling
@@ -77,7 +78,7 @@ export const VirtualizedTrackList = React.memo(({
         }}
       >
         {virtualItems.map((virtualItem) => {
-          const track = tracks[virtualItem.index];
+          const track = safeTracks[virtualItem.index];
           const displayTrack = track;
           const isLoading = loadingTrackId === track.id;
 

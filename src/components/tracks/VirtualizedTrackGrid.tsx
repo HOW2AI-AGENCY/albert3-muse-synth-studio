@@ -11,7 +11,7 @@ interface VirtualizedTrackGridProps {
   tracks: DisplayTrack[];
   columns: number;
   gap: number;
-  onTrackPlay: (track: any) => void;
+  onTrackPlay: (track: DisplayTrack) => void;
   onShare: (trackId: string) => void;
   onSeparateStems: (trackId: string) => void;
   onExtend?: (trackId: string) => void;
@@ -41,9 +41,11 @@ export const VirtualizedTrackGrid = React.memo(({
   onDelete,
 }: VirtualizedTrackGridProps) => {
   const parentRef = useRef<HTMLDivElement>(null);
+  const safeTracks = Array.isArray(tracks) ? tracks : [];
+  const safeColumns = Math.max(1, Number(columns) || 1);
   
   // Calculate number of rows based on current columns
-  const rowCount = Math.ceil(tracks.length / columns);
+  const rowCount = Math.ceil(safeTracks.length / safeColumns);
   const rowHeight = CARD_HEIGHT + gap;
   
   // Create virtualizer with key dependencies
@@ -75,8 +77,8 @@ export const VirtualizedTrackGrid = React.memo(({
         }}
       >
         {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-          const startIndex = virtualRow.index * columns;
-          const rowTracks = tracks.slice(startIndex, startIndex + columns);
+          const startIndex = virtualRow.index * safeColumns;
+          const rowTracks = safeTracks.slice(startIndex, startIndex + safeColumns);
           
           return (
             <div
@@ -91,7 +93,7 @@ export const VirtualizedTrackGrid = React.memo(({
               <div
                 className="grid w-full px-4"
                 style={{
-                  gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+                  gridTemplateColumns: `repeat(${safeColumns}, minmax(0, 1fr))`,
                   gap: `${gap}px`,
                   height: '100%',
                 }}
