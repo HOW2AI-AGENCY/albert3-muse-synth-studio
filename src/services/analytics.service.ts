@@ -1,6 +1,14 @@
 import { supabase } from '@/integrations/supabase/client';
 import * as Sentry from '@sentry/react';
-import type { Metric } from 'web-vitals';
+type Metric = {
+  name: string;
+  value: number;
+  delta: number;
+  id: string;
+  navigationType?: string;
+  rating: 'good' | 'needs-improvement' | 'poor';
+  entries?: Array<Record<string, unknown>>;
+};
 import { logger } from '@/utils/logger';
 
 type SerializableMetric = Pick<Metric, 'id' | 'name' | 'delta' | 'value' | 'rating'> & {

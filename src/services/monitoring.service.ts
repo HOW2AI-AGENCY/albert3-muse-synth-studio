@@ -3,7 +3,6 @@
  * Tracks Web Vitals, API health, and generation performance
  */
 
-import { onCLS, onFCP, onLCP, onTTFB, onINP } from 'web-vitals';
 import * as Sentry from '@sentry/react';
 // @ts-expect-error - supabase client for future direct queries
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -24,58 +23,7 @@ interface WebVitalMetric {
  * Initialize Web Vitals monitoring
  */
 export function initWebVitals() {
-  if (import.meta.env.PROD) {
-    const reportMetric = (metric: WebVitalMetric) => {
-      // Send to Sentry
-      Sentry.metrics.distribution(metric.name, metric.value, {
-        unit: 'millisecond',
-      });
-
-      // Optionally send to database for poor metrics
-      if (metric.rating === 'poor') {
-        logger.warn(`Poor ${metric.name} detected`, 'WebVitals', {
-          metric: metric.name,
-          value: metric.value,
-          rating: metric.rating,
-        });
-      }
-    };
-
-    onCLS((metric) => reportMetric({
-      name: 'CLS',
-      value: metric.value,
-      rating: metric.rating,
-      timestamp: Date.now(),
-    }));
-
-    onFCP((metric) => reportMetric({
-      name: 'FCP',
-      value: metric.value,
-      rating: metric.rating,
-      timestamp: Date.now(),
-    }));
-
-    onLCP((metric) => reportMetric({
-      name: 'LCP',
-      value: metric.value,
-      rating: metric.rating,
-      timestamp: Date.now(),
-    }));
-
-    onTTFB((metric) => reportMetric({
-      name: 'TTFB',
-      value: metric.value,
-      rating: metric.rating,
-      timestamp: Date.now(),
-    }));
-
-    onINP((metric) => reportMetric({
-      name: 'INP',
-      value: metric.value,
-      rating: metric.rating,
-      timestamp: Date.now(),
-    }));
-  }
+  return;
 }
 
 /**

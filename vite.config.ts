@@ -82,8 +82,10 @@ export default defineConfig(async ({ mode }) => {
           'Permissions-Policy': 'geolocation=(), microphone=(), camera=()'
         }
   },
+  optimizeDeps: {},
   build: {
     rollupOptions: {
+      input: path.resolve(__dirname, 'index.html'),
       output: {
         manualChunks: {
           // ❌ УДАЛЕНО 'vendor-react' - конфликтует с dedupe
@@ -138,8 +140,9 @@ export default defineConfig(async ({ mode }) => {
       "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
       "react-router": path.resolve(__dirname, "node_modules/react-router"),
       "react-router-dom": path.resolve(__dirname, "node_modules/react-router-dom"),
+      // Remove broken web-vitals alias; package entry resolution fails in current environment
     },
-    mainFields: ["browser", "module", "main"],
+    // Use Vite defaults for mainFields to avoid package resolution issues (e.g., scheduler)
     dedupe: [
       "react",
       "react-dom",

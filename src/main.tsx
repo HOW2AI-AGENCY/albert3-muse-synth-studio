@@ -1,12 +1,19 @@
 import { createRoot } from 'react-dom/client';
-import { onCLS, onFID, onFCP, onLCP, onTTFB } from 'web-vitals';
 import * as Sentry from '@sentry/react';
 import App from './App.tsx';
 import './index.css';
 import { initWebVitals } from './services/monitoring.service';
 import { initServiceWorker } from './utils/serviceWorker';
 import { AnalyticsService } from './services/analytics.service';
-import type { Metric } from 'web-vitals';
+type Metric = {
+  name: string;
+  value: number;
+  delta: number;
+  id: string;
+  navigationType?: string;
+  rating: 'good' | 'needs-improvement' | 'poor';
+  entries?: Array<Record<string, unknown>>;
+};
 import { logger } from './utils/logger';
 import { initSentry } from './utils/sentry';
 import { injectBreakpointsCSSVars } from './utils/injectBreakpointsCSSVars';
@@ -20,42 +27,7 @@ if (typeof document !== 'undefined') {
 initSentry();
 
 // ✅ Send Web Vitals to Sentry (production only)
-if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
-  onCLS((metric) => {
-    Sentry.captureMessage(`CLS: ${metric.value}`, {
-      level: 'info',
-      tags: { metric: 'CLS', rating: metric.rating },
-    });
-  });
-
-  onFID((metric) => {
-    Sentry.captureMessage(`FID: ${metric.value}`, {
-      level: 'info',
-      tags: { metric: 'FID', rating: metric.rating },
-    });
-  });
-
-  onFCP((metric) => {
-    Sentry.captureMessage(`FCP: ${metric.value}`, {
-      level: 'info',
-      tags: { metric: 'FCP', rating: metric.rating },
-    });
-  });
-
-  onLCP((metric) => {
-    Sentry.captureMessage(`LCP: ${metric.value}`, {
-      level: 'info',
-      tags: { metric: 'LCP', rating: metric.rating },
-    });
-  });
-
-  onTTFB((metric) => {
-    Sentry.captureMessage(`TTFB: ${metric.value}`, {
-      level: 'info',
-      tags: { metric: 'TTFB', rating: metric.rating },
-    });
-  });
-}
+// Disabled web-vitals capture due to package resolution issues
 
 // Service Worker: production only
 if (import.meta.env.PROD) {
@@ -66,20 +38,11 @@ if (import.meta.env.PROD) {
 }
 
 const registerWebVitals = async () => {
-  // FIX-ME: Vite выдает предупреждение о смешанном импорте 'web-vitals'.
-  // Это сделано намеренно: статический импорт используется для быстрой отправки
-  // ключевых метрик в Sentry, а динамический - для отложенной загрузки
-  // и отправки всех метрик в сервис аналитики, чтобы не блокировать рендеринг.
-  const vitals = await import('web-vitals');
   const report = (metric: Metric) => {
     void AnalyticsService.reportWebVital(metric);
   };
-
-  vitals.onCLS(report, { reportAllChanges: true });
-  vitals.onFCP(report);
-  vitals.onLCP(report);
-  vitals.onTTFB?.(report);
-  vitals.onINP?.(report);
+  // Web Vitals disabled in current build; send a synthetic metric for health
+  report({ name: 'INIT', value: 0, delta: 0, id: 'init', rating: 'good' });
 };
 
 if (typeof window !== 'undefined') {

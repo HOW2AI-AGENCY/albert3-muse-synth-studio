@@ -293,7 +293,7 @@ export const AnimatedTransition: React.FC<AnimatedTransitionProps> = ({
  * 🎪 AnimatedList - Анимированный список с поэтапным появлением элементов
  */
 interface AnimatedListProps {
-  children: ReactNode[];
+  children: ReactNode | ReactNode[];
   stagger?: number;
   animation?: AnimationType;
   config?: AnimationConfig;
@@ -307,11 +307,12 @@ export const AnimatedList: React.FC<AnimatedListProps> = ({
   config,
   className,
 }) => {
+  const items = React.Children.toArray(children ?? []);
   const [visibleItems, setVisibleItems] = useState<boolean[]>(
-    new Array(children.length).fill(false)
+    new Array(items.length).fill(false)
   );
 
-  const count = children.length;
+  const count = items.length;
   useEffect(() => {
     const timers: Array<ReturnType<typeof setTimeout>> = [];
     for (let index = 0; index < count; index++) {
@@ -333,7 +334,7 @@ export const AnimatedList: React.FC<AnimatedListProps> = ({
 
   return (
     <div className={className}>
-      {children.map((child, index) => (
+      {items.map((child, index) => (
         <SmoothAnimation
           key={index}
           type={animation}

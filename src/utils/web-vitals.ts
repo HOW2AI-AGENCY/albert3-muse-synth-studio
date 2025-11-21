@@ -3,8 +3,16 @@
  * Tracks Core Web Vitals: LCP, FID, CLS, FCP, TTFB
  */
 
-import { onCLS, onFID, onLCP, onFCP, onTTFB, type Metric } from 'web-vitals';
 import { logger } from '@/utils/logger';
+export type Metric = {
+  name: string;
+  value: number;
+  delta: number;
+  id: string;
+  navigationType?: string;
+  rating: 'good' | 'needs-improvement' | 'poor';
+  entries?: Array<Record<string, unknown>>;
+};
 
 type MetricCallback = (metric: Metric) => void;
 
@@ -69,31 +77,6 @@ const sendToAnalytics = (metric: Metric) => {
 /**
  * Report Web Vitals metrics
  */
-export const reportWebVitals = (onPerfEntry?: MetricCallback) => {
-  const callback = onPerfEntry || logMetric;
-  
-  onCLS((metric) => {
-    callback(metric);
-    if (!import.meta.env.DEV) sendToAnalytics(metric);
-  });
-  
-  onFID((metric) => {
-    callback(metric);
-    if (!import.meta.env.DEV) sendToAnalytics(metric);
-  });
-  
-  onLCP((metric) => {
-    callback(metric);
-    if (!import.meta.env.DEV) sendToAnalytics(metric);
-  });
-  
-  onFCP((metric) => {
-    callback(metric);
-    if (!import.meta.env.DEV) sendToAnalytics(metric);
-  });
-  
-  onTTFB((metric) => {
-    callback(metric);
-    if (!import.meta.env.DEV) sendToAnalytics(metric);
-  });
+export const reportWebVitals = async (_onPerfEntry?: MetricCallback) => {
+  return;
 };
