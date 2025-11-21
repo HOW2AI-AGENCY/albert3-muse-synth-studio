@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (2025-11-21)
+- SUNOAPI-ORG audit documentation:
+  - `docs/audit/SUNOAPI-ORG/UI_UX_AUDIT.md`
+  - `docs/audit/SUNOAPI-ORG/ACCESSIBILITY_REPORT.md`
+  - `docs/audit/SUNOAPI-ORG/API_INTEGRATION_AUDIT.md`
+  - `docs/audit/SUNOAPI-ORG/LOAD_TEST_PLAN.md`
+  - `docs/audit/SUNOAPI-ORG/SECURITY_AUDIT.md`
+  - `docs/audit/SUNOAPI-ORG/VERSIONING_AUDIT.md`
+  - `docs/audit/SUNOAPI-ORG/BUILD_PERFORMANCE_REPORT.md`
+  - `docs/audit/SUNOAPI-ORG/CI_CD_AUDIT.md`
+  - `docs/audit/SUNOAPI-ORG/MOBILE_PERFORMANCE_REPORT.md`
+  - `docs/audit/SUNOAPI-ORG/AUDIT_MASTER_PLAN.md`
+  - `docs/audit/SUNOAPI-ORG/ARCHITECTURE_DIAGRAMS.md`
+  - `docs/audit/SUNOAPI-ORG/TECHNICAL_AUDIT_REPORT.md`
+- Навигация документации: обновлён `docs/README.md`, добавлен `docs/DOCUMENTATION_INDEX.md`.
+
+### Changed (2025-11-21)
+- Оптимизирована структура раздела `docs/` — актуальные материалы сконцентрированы в `docs/audit/SUNOAPI-ORG/`.
+- Обновлены диаграммы архитектуры и схемы взаимодействия (Mermaid).
+
+### Removed (2025-11-21)
+- Удалены устаревшие папки документации и отчётов:
+  - `archive`, `project-management`, `reports`
+  - `docs/api`, `docs/architecture`, `docs/archive`, `docs/assets`, `docs/components`, `docs/deployment`, `docs/design`, `docs/design_mockups`, `docs/development`, `docs/diagrams`, `docs/features`, `docs/guides`, `docs/integrations`, `docs/interface`, `docs/maintenance`, `docs/meetings`, `docs/mobile`, `docs/monitoring`, `docs/performance`, `docs/security`, `docs/specs`, `docs/sprint`, `docs/sprints`, `docs/storage`, `docs/testing`, `docs/versioning`, `docs/workspace`
+- Удалены устаревшие отчёты в корне: `AUDIT_REPORT_2025-11-17.md`, `AUDIT_REPORT_2025-11-19.md`, `INTEGRATION_AND_UI_AUDIT_REPORT.md`, `PLAYER_AUDIT_REPORT.md`, `TRACK_CARD_AUDIT_REPORT.md`, `TRACK_CARD_MENU_FIX_REPORT.md`, `IMPROVEMENTS_SUMMARY.md`, `REFACTORING_PLAN.md`.
+ - Удалены устаревшие аудиты/планы в `docs/audit/*` (кроме `SUNOAPI-ORG/`) и большинство файлов в корне `docs/` (сохранены `README.md`, `DOCUMENTATION_INDEX.md`).
+
+Author: Trae AI Assistant
+Links: See `docs/audit/SUNOAPI-ORG/CLEANUP_REPORT.md`
+
 ### Added
 
 #### MusicVerse UI/UX Phase 1 (2025-11-19)
