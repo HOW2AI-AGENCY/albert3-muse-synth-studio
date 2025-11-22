@@ -1,0 +1,484 @@
+{
+  "summary": {
+    "timestamp": "2025-11-22T17:22:58.773Z",
+    "totalDependencies": 84,
+    "bundleSize": 682.5,
+    "gzippedSize": 194.3,
+    "optimizationOpportunities": 1,
+    "overallHealth": 65
+  },
+  "dependencies": {
+    "total": 84,
+    "dev": 35,
+    "peer": 0,
+    "list": {
+      "production": [
+        "@dnd-kit/core",
+        "@dnd-kit/sortable",
+        "@dnd-kit/utilities",
+        "@fullhuman/postcss-purgecss",
+        "@hookform/resolvers",
+        "@loadable/component",
+        "@radix-ui/react-accordion",
+        "@radix-ui/react-alert-dialog",
+        "@radix-ui/react-aspect-ratio",
+        "@radix-ui/react-avatar",
+        "@radix-ui/react-checkbox",
+        "@radix-ui/react-collapsible",
+        "@radix-ui/react-context-menu",
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-dropdown-menu",
+        "@radix-ui/react-hover-card",
+        "@radix-ui/react-label",
+        "@radix-ui/react-menubar",
+        "@radix-ui/react-navigation-menu",
+        "@radix-ui/react-popover",
+        "@radix-ui/react-progress",
+        "@radix-ui/react-radio-group",
+        "@radix-ui/react-scroll-area",
+        "@radix-ui/react-select",
+        "@radix-ui/react-separator",
+        "@radix-ui/react-slider",
+        "@radix-ui/react-slot",
+        "@radix-ui/react-switch",
+        "@radix-ui/react-tabs",
+        "@radix-ui/react-toast",
+        "@radix-ui/react-toggle",
+        "@radix-ui/react-toggle-group",
+        "@radix-ui/react-tooltip",
+        "@radix-ui/react-visually-hidden",
+        "@sentry/react",
+        "@supabase/supabase-js",
+        "@tanstack/react-query",
+        "@tanstack/react-virtual",
+        "@testing-library/dom",
+        "@testing-library/jest-dom",
+        "@testing-library/react",
+        "@twa-dev/sdk",
+        "@types/dompurify",
+        "@types/file-saver",
+        "@types/jszip",
+        "@use-gesture/react",
+        "@vitest/ui",
+        "class-variance-authority",
+        "clsx",
+        "cmdk",
+        "date-fns",
+        "dompurify",
+        "embla-carousel-react",
+        "file-saver",
+        "framer-motion",
+        "glob",
+        "husky",
+        "idb",
+        "input-otp",
+        "jszip",
+        "lint-staged",
+        "lucide-react",
+        "next-themes",
+        "react",
+        "react-autosuggest",
+        "react-day-picker",
+        "react-dom",
+        "react-hook-form",
+        "react-joyride",
+        "react-query",
+        "react-resizable-panels",
+        "react-router-dom",
+        "react-window",
+        "recharts",
+        "scheduler",
+        "sonner",
+        "tailwind-merge",
+        "tailwindcss-animate",
+        "use-debounce",
+        "vaul",
+        "vitest",
+        "web-vitals",
+        "zod",
+        "zustand"
+      ],
+      "development": [
+        "@eslint/js",
+        "@playwright/test",
+        "@rollup/plugin-html",
+        "@rollup/rollup-win32-x64-msvc",
+        "@sentry/cli",
+        "@sentry/vite-plugin",
+        "@swc/core",
+        "@tailwindcss/typography",
+        "@testing-library/user-event",
+        "@types/node",
+        "@types/react",
+        "@types/react-autosuggest",
+        "@types/react-dom",
+        "@types/react-window",
+        "@vitejs/plugin-react",
+        "@vitest/coverage-v8",
+        "autoprefixer",
+        "eslint",
+        "eslint-plugin-markdown",
+        "eslint-plugin-react-hooks",
+        "eslint-plugin-react-refresh",
+        "globals",
+        "jsdom",
+        "lovable-tagger",
+        "playwright",
+        "postcss",
+        "rollup",
+        "rollup-plugin-visualizer",
+        "tailwindcss",
+        "tsx",
+        "typescript",
+        "typescript-eslint",
+        "vite",
+        "vite-tsconfig-paths",
+        "vitest-dom"
+      ]
+    },
+    "largeDependencies": [
+      "@radix-ui/react-accordion",
+      "@radix-ui/react-alert-dialog",
+      "@radix-ui/react-aspect-ratio",
+      "@radix-ui/react-avatar",
+      "@radix-ui/react-checkbox",
+      "@radix-ui/react-collapsible",
+      "@radix-ui/react-context-menu",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-hover-card",
+      "@radix-ui/react-label",
+      "@radix-ui/react-menubar",
+      "@radix-ui/react-navigation-menu",
+      "@radix-ui/react-popover",
+      "@radix-ui/react-progress",
+      "@radix-ui/react-radio-group",
+      "@radix-ui/react-scroll-area",
+      "@radix-ui/react-select",
+      "@radix-ui/react-separator",
+      "@radix-ui/react-slider",
+      "@radix-ui/react-slot",
+      "@radix-ui/react-switch",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-toast",
+      "@radix-ui/react-toggle",
+      "@radix-ui/react-toggle-group",
+      "@radix-ui/react-tooltip",
+      "@radix-ui/react-visually-hidden",
+      "@sentry/react",
+      "@tanstack/react-query",
+      "@tanstack/react-virtual",
+      "@testing-library/react",
+      "@use-gesture/react",
+      "embla-carousel-react",
+      "lucide-react",
+      "react",
+      "react-autosuggest",
+      "react-day-picker",
+      "react-dom",
+      "react-hook-form",
+      "react-joyride",
+      "react-query",
+      "react-resizable-panels",
+      "react-router-dom",
+      "react-window",
+      "recharts"
+    ],
+    "bundleImpact": [
+      {
+        "name": "@radix-ui/react-accordion",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-alert-dialog",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-aspect-ratio",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-avatar",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-checkbox",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-collapsible",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-context-menu",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-dialog",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-dropdown-menu",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-hover-card",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-label",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-menubar",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-navigation-menu",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-popover",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-progress",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-radio-group",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-scroll-area",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-select",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-separator",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-slider",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-slot",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-switch",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-tabs",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-toast",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-toggle",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-toggle-group",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-tooltip",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@radix-ui/react-visually-hidden",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@sentry/react",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@tanstack/react-query",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@tanstack/react-virtual",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@testing-library/react",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "@use-gesture/react",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "embla-carousel-react",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "lucide-react",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "react",
+        "estimatedSize": "~30KB (gzipped)"
+      },
+      {
+        "name": "react-autosuggest",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "react-day-picker",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "react-dom",
+        "estimatedSize": "~40KB (gzipped)"
+      },
+      {
+        "name": "react-hook-form",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "react-joyride",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "react-query",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "react-resizable-panels",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "react-router-dom",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "react-window",
+        "estimatedSize": "Unknown size"
+      },
+      {
+        "name": "recharts",
+        "estimatedSize": "~45KB (gzipped)"
+      }
+    ]
+  },
+  "bundleAnalysis": {
+    "total": {
+      "size": 682.5,
+      "gzipped": 194.3,
+      "modules": 127
+    },
+    "chunks": {
+      "main": {
+        "size": 245.8,
+        "gzipped": 78.2,
+        "modules": 45
+      },
+      "vendor": {
+        "size": 312.4,
+        "gzipped": 89.7,
+        "modules": 32
+      },
+      "ui": {
+        "size": 89.3,
+        "gzipped": 21.8,
+        "modules": 23
+      },
+      "styles": {
+        "size": 35,
+        "gzipped": 4.6,
+        "modules": 27
+      }
+    },
+    "assets": {
+      "js": 647.5,
+      "css": 35,
+      "images": 0,
+      "fonts": 0
+    }
+  },
+  "optimizations": [
+    {
+      "type": "dependency-cleanup",
+      "issue": "Found 26 potentially unused dependencies",
+      "recommendation": "Review and remove unused dependencies",
+      "impact": "medium",
+      "effort": "low",
+      "details": [
+        "@dnd-kit/core",
+        "@fullhuman/postcss-purgecss",
+        "@hookform/resolvers",
+        "@loadable/component",
+        "@radix-ui/react-avatar",
+        "@radix-ui/react-progress",
+        "@radix-ui/react-select",
+        "@radix-ui/react-switch",
+        "@radix-ui/react-tabs",
+        "@radix-ui/react-tooltip",
+        "@testing-library/dom",
+        "@testing-library/jest-dom",
+        "@twa-dev/sdk",
+        "@types/dompurify",
+        "@types/file-saver",
+        "@types/jszip",
+        "@vitest/ui",
+        "glob",
+        "husky",
+        "lint-staged",
+        "next-themes",
+        "react-query",
+        "react-window",
+        "scheduler",
+        "tailwindcss-animate",
+        "web-vitals"
+      ]
+    }
+  ],
+  "recommendations": [
+    {
+      "category": "Code Splitting",
+      "items": [
+        "Используйте React.lazy() для ленивой загрузки компонентов",
+        "Разделите маршруты с помощью динамического импорта",
+        "Вынесите библиотеки в отдельные чанки",
+        "Используйте webpack magic comments для оптимизации"
+      ]
+    },
+    {
+      "category": "Tree Shaking",
+      "items": [
+        "Используйте ES-модули вместо CommonJS",
+        "Импортируйте только нужные функции из библиотек",
+        "Избегайте сайд-эффектов в модулях",
+        "Настройте webpack для оптимального tree-shaking"
+      ]
+    },
+    {
+      "category": "Bundle Analysis",
+      "items": [
+        "Установите webpack-bundle-analyzer",
+        "Регулярно анализируйте размер бандла",
+        "Отслеживайте изменения размера в CI/CD",
+        "Установите бюджет на размер бандла"
+      ]
+    },
+    {
+      "category": "Performance",
+      "items": [
+        "Минифицируйте JavaScript и CSS",
+        "Используйте gzip/br сжатие",
+        "Оптимизируйте изображения",
+        "Используйте CDN для статических ресурсов"
+      ]
+    }
+  ]
+}

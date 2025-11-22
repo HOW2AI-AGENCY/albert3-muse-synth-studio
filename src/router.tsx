@@ -35,6 +35,7 @@ import {
   LazyEdgeFunctionsDebug,
   LazySubscription,
   LazyImageCropperDemo,
+  LazyDesignSystemTest,
 } from "./utils/lazyPages";
 
 
@@ -232,6 +233,14 @@ export const router = createBrowserRouter(
           element: (
             <Suspense fallback={<FullPageSpinner />}>
               <LazyImageCropperDemo />
+            </Suspense>
+          )
+        },
+        {
+          path: "design-system-test",
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <LazyDesignSystemTest />
             </Suspense>
           )
         },

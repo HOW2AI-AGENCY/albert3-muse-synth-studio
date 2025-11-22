@@ -200,6 +200,11 @@ export const LazySubscription = createLazyPage(
   'Subscription'
 );
 
+export const LazyDesignSystemTest = createLazyPage(
+  () => import('../pages/DesignSystemTest'),
+  'DesignSystemTest'
+);
+
 /**
  * Lazy-loaded компоненты для дополнительной оптимизации
  */

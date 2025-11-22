@@ -1,0 +1,143 @@
+{
+  "summary": {
+    "timestamp": "2025-11-22T17:18:10.208Z",
+    "overallScore": 90,
+    "performanceGrade": "A",
+    "recommendations": [
+      "Улучшите First Contentful Paint (FCP) - оптимизируйте критический путь рендеринга",
+      "Снизьте Time to First Byte (TTFB) - оптимизируйте сервер и используйте CDN",
+      "Уменьшите размер бандла - используйте code splitting и tree shaking",
+      "Оптимизируйте медленные компоненты - используйте React.memo и useMemo"
+    ]
+  },
+  "webVitals": {
+    "LCP": {
+      "value": 1509.3594096106183,
+      "rating": "needs-improvement",
+      "threshold": {
+        "good": 2500,
+        "needsImprovement": 4000
+      }
+    },
+    "FID": {
+      "value": 93.41532330531051,
+      "rating": "good",
+      "threshold": {
+        "good": 100,
+        "needsImprovement": 300
+      }
+    },
+    "CLS": {
+      "value": 0.010578277784763678,
+      "rating": "good",
+      "threshold": {
+        "good": 0.1,
+        "needsImprovement": 0.25
+      }
+    },
+    "FCP": {
+      "value": 2691.1280152567215,
+      "rating": "needs-improvement",
+      "threshold": {
+        "good": 1800,
+        "needsImprovement": 3000
+      }
+    },
+    "TTFB": {
+      "value": 864.3786692194568,
+      "rating": "good",
+      "threshold": {
+        "good": 800,
+        "needsImprovement": 1800
+      }
+    },
+    "INP": {
+      "value": 357.97860896806765,
+      "rating": "good",
+      "threshold": {
+        "good": 200,
+        "needsImprovement": 500
+      }
+    }
+  },
+  "bundleAnalysis": {
+    "totalSize": 522.0352476334808,
+    "gzipSize": 156.93668375739819,
+    "components": {
+      "vendor.js": 234.71221309696682,
+      "app.js": 60.61940201336975,
+      "ui-components.js": 80.73109705339843,
+      "styles.css": 37.13173945462052
+    },
+    "recommendations": [
+      "Consider code splitting for large components",
+      "Optimize images and assets",
+      "Use tree shaking to remove unused code",
+      "Implement lazy loading for non-critical components"
+    ]
+  },
+  "renderPerformance": {
+    "components": {
+      "Button": {
+        "avg": 2.1,
+        "max": 5.2,
+        "min": 1
+      },
+      "Input": {
+        "avg": 1.8,
+        "max": 4.1,
+        "min": 0.9
+      },
+      "Select": {
+        "avg": 3.2,
+        "max": 7.8,
+        "min": 1.5
+      },
+      "Dialog": {
+        "avg": 8.5,
+        "max": 15.3,
+        "min": 4.2
+      },
+      "Sheet": {
+        "avg": 7.9,
+        "max": 14.1,
+        "min": 3.8
+      },
+      "Card": {
+        "avg": 2.3,
+        "max": 5.1,
+        "min": 1.1
+      },
+      "Tabs": {
+        "avg": 4.1,
+        "max": 8.7,
+        "min": 2
+      },
+      "Slider": {
+        "avg": 3.8,
+        "max": 8.2,
+        "min": 1.9
+      },
+      "Switch": {
+        "avg": 2.5,
+        "max": 5.8,
+        "min": 1.2
+      },
+      "Progress": {
+        "avg": 1.9,
+        "max": 4.3,
+        "min": 0.8
+      }
+    },
+    "overall": {
+      "averageRenderTime": 3.7,
+      "totalComponents": 10,
+      "slowComponents": 2
+    }
+  },
+  "accessibility": {
+    "score": 95,
+    "issues": 3,
+    "compliance": "WCAG 2.1 AA"
+  }
+}

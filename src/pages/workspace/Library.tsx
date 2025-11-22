@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 // import { Badge } from "@/components/ui/badge";
 import {
   Search,
@@ -410,52 +413,89 @@ const LibraryContent: React.FC = () => {
             <h1 className="text-3xl md:text-4xl font-black text-gradient-primary">
               Библиотека
             </h1>
-            <p className="text-muted-foreground mt-1">
-              {tracks.length} {tracks.length === 1 ? "трек" : "треков"} всего
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-muted-foreground">
+                {tracks.length} {tracks.length === 1 ? "трек" : "треков"} всего
+              </p>
+              {filteredAndSortedTracks.length !== tracks.length && (
+                <Badge variant="secondary" className="text-xs">
+                  {filteredAndSortedTracks.length} отфильтровано
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
         
         <div className="flex items-center gap-2">
-          <Button
-            variant="glass"
-            size="sm"
-            onClick={refreshTracks}
-            aria-label="Обновить список треков"
-            className="hover:scale-105 transition-all duration-300"
-          >
-            <RefreshCcw className="h-4 w-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="glass"
+                size="sm"
+                onClick={refreshTracks}
+                aria-label="Обновить список треков"
+                className="hover:scale-105 transition-all duration-300"
+              >
+                <RefreshCcw className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Обновить список треков</p>
+            </TooltipContent>
+          </Tooltip>
           
           {/* Переключатель вида */}
           <div className="flex items-center border border-border/30 rounded-lg p-1 bg-background/50 backdrop-blur-sm">
-            <Button
-              variant={filters.viewMode === 'grid' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => filters.setViewMode('grid')}
-              aria-label="Сетка"
-              className="transition-all duration-300"
-            >
-              <Grid3X3 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={filters.viewMode === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => filters.setViewMode('list')}
-              aria-label="Список"
-              className="transition-all duration-300"
-            >
-              <List className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={filters.viewMode === 'optimized' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => filters.setViewMode('optimized')}
-              aria-label="Оптимизированный список"
-              className="transition-all duration-300"
-            >
-              <Music className="h-4 w-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={filters.viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => filters.setViewMode('grid')}
+                  aria-label="Сетка"
+                  className="transition-all duration-300"
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Показать в виде сетки</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={filters.viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => filters.setViewMode('list')}
+                  aria-label="Список"
+                  className="transition-all duration-300"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Показать в виде списка</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={filters.viewMode === 'optimized' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => filters.setViewMode('optimized')}
+                  aria-label="Оптимизированный список"
+                  className="transition-all duration-300"
+                >
+                  <Music className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Оптимизированный список</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
       </div>
@@ -477,61 +517,84 @@ const LibraryContent: React.FC = () => {
             </div>
 
             {/* Фильтр по статусу */}
-            <select
-              value={filters.selectedStatus}
-              onChange={(e) => filters.setSelectedStatus(e.target.value)}
-              className="px-3 py-2 border border-border/30 rounded-md bg-background/50 backdrop-blur-sm hover:border-primary/30 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary/20"
-              aria-label="Фильтр по статусу"
-            >
-              <option value="all">Все статусы</option>
-              {filters.availableStatuses.map(status => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
-                </option>
-              ))}
-            </select>
+            <Select value={filters.selectedStatus} onValueChange={filters.setSelectedStatus}>
+              <SelectTrigger className="w-[180px] bg-background/50 backdrop-blur-sm border-border/30">
+                <SelectValue placeholder="Фильтр по статусу" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все статусы</SelectItem>
+                {filters.availableStatuses.map(status => (
+                  <SelectItem key={status.value} value={status.value}>
+                    {status.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             
             {/* Сортировка */}
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => filters.handleSortChange('created_at')}
-                className={cn(
-                  filters.sortBy === 'created_at' && 'bg-primary/10 border-primary/50',
-                  "hover:scale-105 transition-all duration-300"
-                )}
-              >
-                Дата {filters.sortBy === 'created_at' && (filters.sortOrder === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => filters.handleSortChange('title')}
-                className={cn(
-                  filters.sortBy === 'title' && 'bg-primary/10 border-primary/50',
-                  "hover:scale-105 transition-all duration-300"
-                )}
-              >
-                Название {filters.sortBy === 'title' && (filters.sortOrder === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (isSelectionMode) {
-                    clearSelection();
-                  }
-                  setSelectionMode(!isSelectionMode);
-                }}
-                className={cn(
-                  isSelectionMode && 'bg-primary/10 border-primary/50',
-                  "hover:scale-105 transition-all duration-300"
-                )}
-              >
-                <Check className="h-4 w-4" />
-                <span className="ml-1">Выбрать</span>
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => filters.handleSortChange('created_at')}
+                    className={cn(
+                      filters.sortBy === 'created_at' && 'bg-primary/10 border-primary/50',
+                      "hover:scale-105 transition-all duration-300"
+                    )}
+                  >
+                    Дата {filters.sortBy === 'created_at' && (filters.sortOrder === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Сортировать по дате создания</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => filters.handleSortChange('title')}
+                    className={cn(
+                      filters.sortBy === 'title' && 'bg-primary/10 border-primary/50',
+                      "hover:scale-105 transition-all duration-300"
+                    )}
+                  >
+                    Название {filters.sortBy === 'title' && (filters.sortOrder === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Сортировать по названию</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (isSelectionMode) {
+                        clearSelection();
+                      }
+                      setSelectionMode(!isSelectionMode);
+                    }}
+                    className={cn(
+                      isSelectionMode && 'bg-primary/10 border-primary/50',
+                      "hover:scale-105 transition-all duration-300"
+                    )}
+                  >
+                    <Check className="h-4 w-4" />
+                    <span className="ml-1">Выбрать</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isSelectionMode ? 'Отключить режим выбора' : 'Включить режим множественного выбора'}</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
         </CardContent>
@@ -643,14 +706,31 @@ const LibraryContent: React.FC = () => {
 
       {hasNextPage && filteredAndSortedTracks.length > 0 && (
         <div className="flex justify-center">
-          <Button
-            variant="outline"
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-            className="min-w-[200px]"
-          >
-            {isFetchingNextPage ? "Загрузка..." : "Загрузить ещё"}
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                onClick={() => fetchNextPage()}
+                disabled={isFetchingNextPage}
+                className="min-w-[200px] relative overflow-hidden"
+              >
+                {isFetchingNextPage ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Загрузка...
+                  </>
+                ) : (
+                  "Загрузить ещё"
+                )}
+                {isFetchingNextPage && (
+                  <div className="absolute inset-0 bg-primary/10 animate-pulse" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Загрузить следующую страницу треков</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       )}
 
