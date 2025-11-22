@@ -8,7 +8,7 @@
  * @created 2025-11-05
  */
 
-import type { Track } from './domain/track.types';
+
 
 // ============================================================================
 // TRACK STATUS & STATES
@@ -57,7 +57,7 @@ export interface TrackRef {
  * Enhanced track model for UI display (Feed, Lists, Cards)
  * Extends base Track with UI-specific fields
  */
-export interface UITrack extends Partial<Track> {
+export interface UITrack {
   id: string;
   title: string;
   durationSec: number;

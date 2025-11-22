@@ -193,9 +193,9 @@ const Landing = () => {
                     <div className="flex items-start gap-4 mb-4">
                       <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-lg mb-2 truncate text-gradient-primary">{track.title}</h3>
-                        {track.style && (
+                        {track.style_tags && track.style_tags.length > 0 && (
                           <Badge variant="secondary" className="text-xs">
-                            {track.style}
+                            {track.style_tags[0]}
                           </Badge>
                         )}
                       </div>

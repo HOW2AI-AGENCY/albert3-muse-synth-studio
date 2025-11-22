@@ -3,7 +3,7 @@
  */
 
 // Реализация уведомлений
-function notify(message: string) {
+function notify(_message: string) {
   // Логика уведомлений
 }
 

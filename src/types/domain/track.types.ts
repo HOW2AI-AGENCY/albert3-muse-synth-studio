@@ -88,17 +88,16 @@ export const trackConverters = {
   toDomain(dbTrack: any): BaseTrack {
     return {
       ...dbTrack,
-      has_vocals: dbTrack.has_vocals ?? false,
-      has_stems: dbTrack.has_stems ?? false,
-      is_public: dbTrack.is_public ?? false,
-      play_count: dbTrack.play_count ?? 0,
-      like_count: dbTrack.like_count ?? 0,
-      download_count: dbTrack.download_count ?? 0,
-      view_count: dbTrack.view_count ?? 0,
-      provider: dbTrack.provider ?? 'suno',
+      has_vocals: dbTrack.has_vocals ?? null,
+      has_stems: dbTrack.has_stems ?? null,
+      is_public: dbTrack.is_public ?? null,
+      play_count: dbTrack.play_count ?? null,
+      like_count: dbTrack.like_count ?? null,
+      download_count: dbTrack.download_count ?? null,
+      view_count: dbTrack.view_count ?? null,
+      provider: dbTrack.provider ?? null,
       status: dbTrack.status ?? 'pending',
       metadata: dbTrack.metadata as TrackMetadata | null,
-      is_primary_variant: dbTrack.is_primary_variant ?? false,
     };
   },
 
@@ -120,8 +119,8 @@ export const trackConverters = {
       id: track.id,
       title: track.title,
       audio_url: track.audio_url,
-      cover_url: track.cover_url || undefined,
-      duration: track.duration_seconds || undefined,
+      cover_url: track.cover_url ?? undefined,
+      duration: track.duration_seconds ?? undefined,
     };
   },
 };

@@ -71,15 +71,14 @@ export const useTracksRealtime = (userId: string | undefined) => {
         });
 
         // ✅ Invalidate timestamped lyrics when track is completed or metadata updated
-        if (updatedTrack.suno_task_id && updatedTrack.suno_id) {
+        if (updatedTrack.suno_id) {
           queryClient.invalidateQueries({ 
-            queryKey: ['timestampedLyrics', updatedTrack.suno_task_id, updatedTrack.suno_id] 
+            queryKey: ['timestampedLyrics', updatedTrack.suno_id] 
           });
           // Clear in-memory cache
           lyricsCache.clear();
           logger.info('✅ Invalidated timestamped lyrics cache', 'useTracksRealtime', { 
             trackId: updatedTrack.id,
-            sunoTaskId: updatedTrack.suno_task_id,
             sunoId: updatedTrack.suno_id,
           });
         }

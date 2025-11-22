@@ -53,9 +53,8 @@ export const getMetricRating = (name: string, value: number): 'good' | 'needs-im
   return 'poor';
 };
 
-/**
- * Send metrics to analytics endpoint
- */
+// Commented out as currently unused - can be re-enabled when analytics endpoint is ready
+/*
 const sendToAnalytics = (metric: Metric) => {
   const body = JSON.stringify({
     name: metric.name,
@@ -73,6 +72,7 @@ const sendToAnalytics = (metric: Metric) => {
     fetch('/api/analytics/web-vitals', { body, method: 'POST', keepalive: true }).catch(err => logger.error('Failed to send web vitals', err, 'WebVitals'));
   }
 };
+*/
 
 /**
  * Report Web Vitals metrics
