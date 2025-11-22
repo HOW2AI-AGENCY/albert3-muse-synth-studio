@@ -1,75 +1,10 @@
 /**
- * 🔒 CRITICAL: PROTECTED FILE - DO NOT MODIFY WITHOUT TEAM LEAD APPROVAL
- * 
- * Single Source of Truth for Track-related types
- * Used by: Components, Hooks, Services, Database
- * 
- * @version 1.0.0
- * @protected
- * @critical
- * @author Team Lead
+ * 🔒 DEPRECATED: Use @/types/track.types.ts instead
+ * This file is kept for backward compatibility only
  */
 
-import type { Database } from '@/integrations/supabase/types';
-
-/**
- * Raw database track type (from Supabase)
- */
-export type DatabaseTrack = Database['public']['Tables']['tracks']['Row'];
-
-/**
- * Domain model for Track (used in business logic)
- */
-export interface Track {
-  id: string;
-  user_id: string;
-  title: string;
-  prompt: string | null;
-  improved_prompt?: string | null;
-  audio_url?: string | null;
-  cover_url?: string | null;
-  video_url?: string | null;
-  status: string;
-  error_message?: string | null;
-  provider: string | null;
-  lyrics?: string | null;
-  style_tags?: string[] | null;
-  genre?: string | null;
-  mood?: string | null;
-  has_vocals?: boolean | null;
-  has_stems?: boolean | null;
-  is_public?: boolean | null;
-  duration?: number | null;
-  duration_seconds?: number | null;
-  progress_percent?: number | null;
-  play_count?: number | null;
-  like_count?: number | null;
-  download_count?: number | null;
-  view_count?: number | null;
-  suno_id?: string | null;
-  suno_task_id?: string | null;
-  mureka_task_id?: string | null;
-  model_name?: string | null;
-  idempotency_key?: string | null;
-  metadata?: TrackMetadata | null;
-  created_at: string;
-  updated_at: string;
-  archive_scheduled_at?: string | null;
-  archived_at?: string | null;
-  archived_to_storage?: boolean | null;
-}
-
-/**
- * View model for displaying tracks in UI
- */
-export interface DisplayTrack extends Track {
-  isLiked?: boolean;
-  isPlaying?: boolean;
-  formattedDuration?: string;
-  formattedDate?: string;
-  artistName?: string;
-  genreLabel?: string;
-}
+export type { Track, TrackVersion } from '@/types/track.types';
+export type { Track as DisplayTrack } from '@/types/track.types';
 
 /**
  * Track model for audio player
