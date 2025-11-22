@@ -83,15 +83,15 @@ serve(async (req) => {
       userPrompt += `\n\nAdditional Context:\n${JSON.stringify(additionalContext, null, 2)}`;
     }
 
-    // Call Lovable AI (using Gemini Flash by default)
-    const aiResponse = await fetch('https://api.lovable.ai/v1/chat/completions', {
+    // ✅ FIX: Call Lovable AI Gateway (correct URL)
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-2.5-flash',  // Default model per specification
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
