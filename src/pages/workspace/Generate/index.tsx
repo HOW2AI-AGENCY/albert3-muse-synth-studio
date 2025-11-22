@@ -1,12 +1,12 @@
 /**
- * Generate Page - оптимизированная версия
- * Разделена на модули для улучшения производительности и bundle size
+ * Generate Page - оптимизированная версия с новым дизайном
+ * Glass effects и градиенты на основе AI Audio Architect
  */
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { MusicGeneratorV2 } from "@/components/MusicGeneratorV2";
 import MobileGeneratorWindow from "@/components/generator/mobile/MobileGeneratorWindow";
 import { TracksList } from "@/components/TracksList";
-const DetailPanel = lazy(() => import("@/features/tracks/ui/DetailPanel").then(m => ({ default: m.DetailPanel })));
+import { DetailPanel } from "@/features/tracks/ui/DetailPanel";
 import { useBreakpoints } from "@/hooks/useBreakpoints";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";

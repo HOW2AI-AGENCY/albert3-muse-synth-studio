@@ -331,7 +331,7 @@ const DesignSystemTest: React.FC = () => {
                 <CardTitle>Скелетоны</CardTitle>
                 <CardDescription>Загрузочные состояния</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4"></CardContent>
+              <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Skeleton className="h-4 w-full" />
                   <Skeleton className="h-4 w-3/4" />
@@ -339,8 +339,19 @@ const DesignSystemTest: React.FC = () => {
                 </div>
                 <div className="flex items-center space-x-4">
                   <Skeleton className="h-12 w-12 rounded-full" />
-                  <div className="space-
-          <h2 className="text-2xl font-semibold text-foreground">Компоненты пользователя</h2>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        {/* Диалоги и модальные окна */}
+        <section className="space-y-6">
+          <h2 className="text-2xl font-semibold text-foreground">Диалоги и модальные окна</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
