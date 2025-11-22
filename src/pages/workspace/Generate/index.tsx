@@ -4,6 +4,7 @@
  */
 import { Suspense, lazy, useEffect } from "react";
 import { MusicGeneratorV2 } from "@/components/MusicGeneratorV2";
+import MobileGeneratorWindow from "@/components/generator/mobile/MobileGeneratorWindow";
 import { TracksList } from "@/components/TracksList";
 const DetailPanel = lazy(() => import("@/features/tracks/ui/DetailPanel").then(m => ({ default: m.DetailPanel })));
 import { useBreakpoints } from "@/hooks/useBreakpoints";
@@ -304,15 +305,13 @@ const Generate = () => {
 
         {/* Generator Drawer для мобильных */}
         <Drawer open={state.showGenerator} onOpenChange={state.setShowGenerator}>
-          <DrawerContent className="h-[92vh] max-h-[92vh]">
+          <DrawerContent className="h-[92vh] max-h-[92vh] p-0">
             <VisuallyHidden>
               <DrawerTitle>Создать музыку</DrawerTitle>
             </VisuallyHidden>
-            <div className="overflow-y-auto h-full px-3 py-4 pb-safe">
-              <EnhancedErrorBoundary>
-                <MusicGeneratorV2 onTrackGenerated={handlers.handleTrackGenerated} />
-              </EnhancedErrorBoundary>
-            </div>
+            <EnhancedErrorBoundary>
+              <MobileGeneratorWindow onClose={() => state.setShowGenerator(false)} onTrackGenerated={handlers.handleTrackGenerated} />
+            </EnhancedErrorBoundary>
           </DrawerContent>
         </Drawer>
       </div>

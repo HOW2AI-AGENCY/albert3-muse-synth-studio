@@ -10,6 +10,7 @@ const rawEnv = {
   appEnv: import.meta.env.VITE_APP_ENV ?? import.meta.env.MODE,
   isDevelopment: import.meta.env.DEV,
   isProduction: import.meta.env.PROD,
+  mobileNavV2: (import.meta.env.VITE_MOBILE_NAV_V2 ?? 'false') === 'true',
 };
 
 const envSchema = z.object({
@@ -25,6 +26,7 @@ const envSchema = z.object({
     .transform((value) => value ?? "development"),
   isDevelopment: z.boolean(),
   isProduction: z.boolean(),
+  mobileNavV2: z.boolean().default(false),
 });
 
 const result = envSchema.safeParse(rawEnv);
@@ -50,6 +52,7 @@ if (result.success) {
       appEnv: "development",
       isDevelopment: true,
       isProduction: false,
+      mobileNavV2: false,
     };
   } else {
     throw new Error(`Environment validation failed:\n${formattedErrors}`);
@@ -62,6 +65,7 @@ export const appEnv = {
   appEnv: envData.appEnv,
   isDevelopment: envData.isDevelopment,
   isProduction: envData.isProduction,
+  mobileNavV2: envData.mobileNavV2,
 };
 
 export type AppEnvironment = typeof appEnv;

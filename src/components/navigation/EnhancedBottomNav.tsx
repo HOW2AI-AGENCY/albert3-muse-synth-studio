@@ -319,6 +319,7 @@ const EnhancedBottomNav: React.FC = () => {
                   { active: activeItemId === item.id }
                 )}
                 onClick={() => handleItemClick(item)}
+                aria-label={item.label}
                 style={
                   item.id === 'generate' ? {
                     '--component-active-color': 'var(--accent-purple)',
