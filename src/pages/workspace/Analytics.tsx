@@ -217,9 +217,6 @@ const Analytics = () => {
           </div>
         </div>
       </Card>
-          </Button>
-        </div>
-      </div>
 
       {/* Overall Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
