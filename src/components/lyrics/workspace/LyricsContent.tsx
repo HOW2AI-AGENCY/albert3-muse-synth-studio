@@ -98,7 +98,7 @@ export const LyricsContent: React.FC<LyricsContentProps> = ({
           const title = headerMatch[1].trim();
           const tagsText = headerMatch[2].trim();
           const tags: Tag[] = tagsText.match(/\[([^\]]+)\]/g)?.map((t, i) => {
-            const tagValue = t.replace(/[\[\]]/g, '');
+            const tagValue = t.replace(/[\\[\\]]/g, '');
             return {
               id: `tag-${index}-${i}`,
               raw: t,

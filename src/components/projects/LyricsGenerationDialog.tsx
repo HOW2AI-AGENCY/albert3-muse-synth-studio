@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { cn } from '@/lib/utils';
+import { logger } from '@/utils/logger';
 
 interface LyricsGenerationDialogProps {
   open: boolean;
@@ -70,7 +71,7 @@ export const LyricsGenerationDialog: React.FC<LyricsGenerationDialogProps> = ({
         throw new Error('Пустой ответ от сервера');
       }
     } catch (error) {
-      console.error('Lyrics generation error:', error);
+      logger.error('Lyrics generation error:', error as Error, 'LyricsGenerationDialog');
       toast.error('Ошибка генерации лирики');
     } finally {
       setIsGenerating(false);
@@ -104,7 +105,7 @@ export const LyricsGenerationDialog: React.FC<LyricsGenerationDialogProps> = ({
       toast.success('Лирика применена к треку');
       onOpenChange(false);
     } catch (error) {
-      console.error('Apply lyrics error:', error);
+      logger.error('Apply lyrics error:', error as Error, 'LyricsGenerationDialog');
       toast.error('Ошибка применения лирики');
     }
   }, [generatedLyrics, track, onOpenChange]);

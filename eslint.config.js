@@ -74,6 +74,17 @@ export default tseslint.config(
       "@typescript-eslint/naming-convention": "off",
     },
   },
+  {
+    files: [
+      "tests/**/*.{ts,tsx}",
+      "src/**/__tests__/**/*.{ts,tsx}"
+    ],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "react-refresh/only-export-components": "off",
+      "no-console": "off"
+    }
+  },
   // Перенос правил из .eslintignore: в flat-конфиге нельзя использовать отрицательные шаблоны (!pattern),
   // поэтому вместо "игнорировать всё, кроме конкретных файлов" мы явно настраиваем отдельный блок для нужных файлов.
   // Это сохраняет намерение: гарантировать проверку для указанных путей, не ломая общие проверки проекта.

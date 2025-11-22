@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { Crop, Upload, UploadCloud, X } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { logger } from '@/utils/logger';
 
 interface CropArea {
   x: number;
@@ -192,7 +193,7 @@ export function ImageCropper({
         };
         reader.readAsDataURL(file);
       } catch (error) {
-        console.error("File processing error:", error);
+        logger.error("File processing error:", error as Error, 'ImageCropper');
         setValidationError("An error occurred while processing the file");
         setIsProcessing(false);
         resetFileInput();
@@ -419,7 +420,7 @@ export function ImageCropper({
         );
       }, 0);
     } catch (error) {
-      console.error("Error cropping image:", error);
+      logger.error("Error cropping image:", error as Error, 'ImageCropper');
       setValidationError("Failed to crop image. Please try again.");
       setIsProcessing(false);
     }

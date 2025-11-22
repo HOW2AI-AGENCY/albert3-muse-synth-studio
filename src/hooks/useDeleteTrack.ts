@@ -6,6 +6,7 @@ import { useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export const useDeleteTrack = () => {
   const queryClient = useQueryClient();
@@ -24,7 +25,7 @@ export const useDeleteTrack = () => {
       queryClient.invalidateQueries({ queryKey: ['tracks'] });
     },
     onError: (error: Error) => {
-      console.error('Delete track error:', error);
+      logger.error('Delete track error:', error, 'useDeleteTrack');
       toast.error('Ошибка при удалении трека');
     }
   });

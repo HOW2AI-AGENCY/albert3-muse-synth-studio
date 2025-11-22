@@ -11,6 +11,7 @@ import { UnifiedTrackActionsMenu } from './shared/TrackActionsMenu.unified';
 import { useAudioUpscaleWithVersion } from '@/hooks/useAudioUpscaleWithVersion';
 import type { UnifiedTrackActionsMenuProps } from './shared/TrackActionsMenu.types';
 import type { Track } from '@/services/api.service';
+import { logger } from '@/utils/logger';
 
 interface TrackActionsWithUpscaleProps extends Omit<UnifiedTrackActionsMenuProps, 'onUpscaleAudio'> {
   track: Track;
@@ -24,7 +25,7 @@ export const TrackActionsWithUpscale: React.FC<TrackActionsWithUpscaleProps> = (
 
   const handleUpscale = useCallback((trackId: string) => {
     if (!track.audio_url) {
-      console.error('[UPSCALE] No audio URL');
+      logger.warn('[UPSCALE] No audio URL', 'TrackActionsWithUpscale', { trackId });
       return;
     }
 

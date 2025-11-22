@@ -1,4 +1,5 @@
 import { Component, ReactNode } from 'react';
+import { logger } from '@/utils/logger';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -37,7 +38,7 @@ export class LyricsErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('LyricsErrorBoundary caught error:', error, errorInfo);
+    logger.error('LyricsErrorBoundary caught error:', error, 'LyricsErrorBoundary', { componentStack: errorInfo.componentStack });
     
     // Log to Sentry or other error tracking service
     if (typeof window !== 'undefined' && (window as any).Sentry) {

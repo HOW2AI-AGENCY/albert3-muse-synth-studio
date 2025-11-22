@@ -222,7 +222,7 @@ export const useTrackCardState = (track: Track) => {
 
       toast({ title: 'Скачивание начато', description: `${displayedVersion.title || track.title}` });
     } catch (error) {
-      console.error('Download error:', error);
+      logError('Download error', error as Error, 'TrackCard');
       toast({ title: 'Ошибка', description: 'Не удалось скачать файл', variant: 'destructive' });
     }
   }, [displayedVersion, track.title, toast]);
