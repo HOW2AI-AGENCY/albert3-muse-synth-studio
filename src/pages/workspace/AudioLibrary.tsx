@@ -58,7 +58,13 @@ const AudioLibrary = () => {
   }, [audioItems, debouncedSearchQuery]);
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-background">
+    <div className="flex h-full flex-col bg-background">
+{isMobile && (
+  <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
+    <h1 className="text-lg font-semibold">Аудио библиотека</h1>
+  </div>
+)}
+      <div className="flex-1">
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
         <div className="border-b border-border px-4">
@@ -335,6 +341,7 @@ const AudioLibrary = () => {
           setActiveTab('library');
         }}
       />
+      </div>
     </div>
   );
 };
