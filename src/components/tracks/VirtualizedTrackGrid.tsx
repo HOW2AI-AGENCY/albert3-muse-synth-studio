@@ -101,7 +101,7 @@ export const VirtualizedTrackGrid = React.memo(({
                 {rowTracks.map((track) => (
                   <div key={track.id}>
                     <TrackCard
-                      track={track}
+                      track={track as any}
                       onClick={() => onTrackPlay(track)}
                       onShare={() => onShare(track.id)}
                       onSeparateStems={() => onSeparateStems(track.id)}

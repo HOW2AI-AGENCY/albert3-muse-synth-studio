@@ -53,7 +53,6 @@ import { SelectionToolbar } from '@/components/tracks/SelectionToolbar';
 // import type { SortBy } from '@/hooks/useLibraryFilters';
 import { useGenerateCoverImage } from '@/hooks/useGenerateCoverImage';
 import type { DisplayTrack as DisplayTrackType } from '@/types/track';
-import { trackConverters } from '@/types/domain/track.types';
 
 const LibraryContent: React.FC = () => {
   const { isSelectionMode, setSelectionMode, clearSelection } = useSelectedTracks();

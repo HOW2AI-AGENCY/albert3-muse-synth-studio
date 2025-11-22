@@ -6,7 +6,6 @@
  * @since 2025-11-17
  */
 import { logger } from './logger';
-// @ts-expect-error - supabase client for future direct queries
 import { supabase as _supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';

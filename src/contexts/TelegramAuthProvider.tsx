@@ -71,7 +71,7 @@ export const TelegramAuthProvider: React.FC<TelegramAuthProviderProps> = ({ chil
           return;
         }
 
-        const { data, error } = raced as Awaited<ReturnType<typeof authPromise>>;
+        const { data, error } = raced as any;
         if (error) {
           logger.error('Telegram auth failed', error instanceof Error ? error : new Error(String(error)), 'TelegramAuthProvider');
           setIsInitialized(true);

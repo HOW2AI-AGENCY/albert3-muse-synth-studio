@@ -55,8 +55,8 @@ export const AnalysisContent = ({ track }: AnalysisContentProps) => {
 
       {/* Prompts (Collapsible) */}
       <PromptsCard
-        prompt={track.prompt}
-        improvedPrompt={track.improved_prompt}
+        prompt={track.prompt ?? ''}
+        improvedPrompt={track.improved_prompt ?? undefined}
       />
     </div>
   );
