@@ -12,7 +12,7 @@ import { logger } from '@/utils/logger';
 
 type MetricName = 'CLS' | 'FCP' | 'LCP' | 'TTFB' | 'INP';
 
-interface WebVitalMetric {
+export interface WebVitalMetric {
   name: MetricName;
   value: number;
   rating: 'good' | 'needs-improvement' | 'poor';

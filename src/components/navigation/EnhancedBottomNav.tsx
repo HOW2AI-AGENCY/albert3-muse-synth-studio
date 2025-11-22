@@ -219,27 +219,7 @@ const EnhancedBottomNav: React.FC = () => {
     return bestMatch?.id || 'home';
   }, [location.pathname, visibleItems]);
 
-  // Индекс активного элемента
-  const currentActiveIndex = useMemo(() => {
-    return visibleItems.findIndex(item => item.id === activeItemId);
-  }, [visibleItems, activeItemId]);
 
-  // Обработчик свайпов по навигации
-  const handleNavSwipe = useCallback((direction: 'left' | 'right') => {
-    if (direction === 'left' && activeIndex < visibleItems.length - 1) {
-      const nextItem = visibleItems[activeIndex + 1];
-      if (nextItem.path !== '#') {
-        vibrate('light');
-        navigate(nextItem.path);
-      }
-    } else if (direction === 'right' && activeIndex > 0) {
-      const prevItem = visibleItems[activeIndex - 1];
-      if (prevItem.path !== '#') {
-        vibrate('light');
-        navigate(prevItem.path);
-      }
-    }
-  }, [activeIndex, visibleItems, navigate, vibrate]);
 
   // Обработчик клика по элементу
   const handleItemClick = useCallback((item: NavItem) => {
@@ -255,24 +235,6 @@ const EnhancedBottomNav: React.FC = () => {
     }
   }, [navigate, vibrate]);
 
-  // Глобальные свайпы по экрану для навигации
-  const handleGlobalSwipeLeft = useCallback(() => {
-    const nextIndex = Math.min(currentActiveIndex + 1, visibleItems.length - 1);
-    const nextItem = visibleItems[nextIndex];
-    if (nextItem && nextItem.path !== '#') {
-      vibrate('light');
-      navigate(nextItem.path);
-    }
-  }, [currentActiveIndex, visibleItems, navigate, vibrate]);
-
-  const handleGlobalSwipeRight = useCallback(() => {
-    const prevIndex = Math.max(currentActiveIndex - 1, 0);
-    const prevItem = visibleItems[prevIndex];
-    if (prevItem && prevItem.path !== '#') {
-      vibrate('light');
-      navigate(prevItem.path);
-    }
-  }, [currentActiveIndex, visibleItems, navigate, vibrate]);
 
   // Не показываем на десктопе
   if (!isMobile) {
