@@ -7,8 +7,7 @@
  */
 import { logger } from './logger';
 // @ts-expect-error - supabase client for future direct queries
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { supabase } from '@/integrations/supabase/client';
+import { supabase as _supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
 
@@ -44,11 +43,14 @@ export class LiveMusicHelper extends EventTarget {
   async connect(initialPrompts: WeightedPrompt[]): Promise<void> {
     try {
       this.setPlaybackState('connecting');
-      const { data, error } = await SupabaseFunctions.invoke('prompt-dj-lyria-stream', {
+      type StartStreamResponse = { sessionId: string };
+      type StartStreamBody = { initialPrompts: { text: string; weight: number }[] };
+      const { data, error } = await SupabaseFunctions.invoke<StartStreamResponse, StartStreamBody>('prompt-dj-lyria-stream', {
         body: { initialPrompts: initialPrompts.map(p => ({ text: p.text, weight: p.weight })) }
       });
       if (error) throw error;
-      this.sessionId = (data as any).sessionId;
+      this.sessionId = data?.sessionId ?? null;
+      if (!this.sessionId) throw new Error('Missing sessionId from start stream response');
 
       this.audioContext = new AudioContext({ sampleRate: 48000 });
       this.outputNode = this.audioContext.createGain();
@@ -197,8 +199,8 @@ export class LiveMusicHelper extends EventTarget {
   }
 
   private interleave(inputL: Float32Array, inputR: Float32Array): Float32Array {
-    let length = inputL.length + inputR.length;
-    let result = new Float32Array(length);
+    const length = inputL.length + inputR.length;
+    const result = new Float32Array(length);
     let index = 0, inputIndex = 0;
     while (index < length) {
         result[index++] = inputL[inputIndex];

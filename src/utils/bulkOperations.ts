@@ -158,7 +158,7 @@ export async function bulkAddToProject(
       .order('position', { ascending: false })
       .limit(1);
 
-    let startPosition = existingTracks?.[0]?.position ?? 0;
+    const startPosition = existingTracks?.[0]?.position ?? 0;
 
     // Prepare inserts
     const inserts = trackIds.map((trackId, index) => ({

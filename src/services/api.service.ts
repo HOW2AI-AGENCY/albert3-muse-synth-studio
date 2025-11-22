@@ -21,7 +21,7 @@ import { handlePostgrestError, handleSupabaseFunctionError } from "@/services/ap
 import { logError, logWarn } from "@/utils/logger";
 
 import { startKpiTimer, endKpiTimer } from "@/utils/kpi";
-import { retryWithBackoff, RETRY_CONFIGS } from "@/utils/retryWithBackoff";
+import { retryWithBackoff } from "@/utils/retryWithBackoff";
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { recordPerformanceMetric } from "@/utils/performanceMonitor";
 import { type ImprovePromptRequest, type ImprovePromptResponse } from "@/services/prompts/prompt.service";
@@ -530,3 +530,24 @@ export class ApiService {
     return requestPromise;
   }
 }
+
+/**
+ * Централизованная система сообщений об ошибках
+ */
+import { logError, logWarn, logInfo, logDebug } from "@/utils/logger";
+
+// ...
+
+/**
+ * Реализация обработки ошибок для сетевых операций
+ */
+import { retryWithBackoff } from "@/utils/retryWithBackoff";
+
+// ...
+
+/**
+ * Настройка автоматических повторных попыток
+ */
+import { retryWithBackoff } from "@/utils/retryWithBackoff";
+
+// ...

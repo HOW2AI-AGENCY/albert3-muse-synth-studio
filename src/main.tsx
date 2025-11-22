@@ -111,4 +111,28 @@ if (typeof window !== 'undefined') {
   }
 }
 
+// Inline встраивание критических стилей в HTML head
+import { createRoot } from 'react-dom/client';
+import { Helmet } from 'react-helmet';
+
+const root = createRoot(document.getElementById('root')!);
+
+root.render(
+  <Helmet>
+    <style>
+      {/* критические стили */}
+    </style>
+  </Helmet>
+);
 createRoot(document.getElementById('root')!).render(<App />);
+
+import { createRoot } from 'react-dom/client';
+import { Helmet } from 'react-helmet';
+
+const root = createRoot(document.getElementById('root')!);
+
+root.render(
+  <Helmet>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" as="style" />
+  </Helmet>
+);

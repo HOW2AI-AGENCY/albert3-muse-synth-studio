@@ -140,11 +140,13 @@ class LyricsCacheManager {
 export const lyricsCache = new LyricsCacheManager();
 
 // Optional: Run garbage collection every 5 minutes
+import { logger } from './logger';
+
 if (typeof window !== 'undefined') {
   setInterval(() => {
     const removed = lyricsCache.gc();
     if (removed > 0) {
-      console.log(`[LyricsCache] Garbage collected ${removed} expired entries`);
+      logger.info(`[LyricsCache] Garbage collected ${removed} expired entries`, 'LyricsCache', { removed });
     }
   }, 5 * 60 * 1000);
 }

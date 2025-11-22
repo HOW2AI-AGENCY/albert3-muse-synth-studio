@@ -633,3 +633,10 @@
       --font-size-heading: var(--font-size-4xl); /* 30px */
     }
   }
+
+/* Оптимизация font-display для веб-шрифтов */
+@font-face {
+  font-family: 'Montserrat';
+  src: url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+  font-display: swap;
+}

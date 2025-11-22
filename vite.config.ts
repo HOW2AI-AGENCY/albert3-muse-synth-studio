@@ -37,28 +37,28 @@ export default defineConfig(async ({ mode }) => {
   }
 
   return ({
-  // Define env vars for client-side code
-  // Use production values as fallback for preview/dev builds in Lovable Cloud
-  define: {
-    'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(mergedEnv.VITE_SUPABASE_URL),
-    'import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY': JSON.stringify(mergedEnv.VITE_SUPABASE_PUBLISHABLE_KEY),
-    'import.meta.env.VITE_SUPABASE_PROJECT_ID': JSON.stringify(mergedEnv.VITE_SUPABASE_PROJECT_ID),
-    'import.meta.env.VITE_SENTRY_DSN': JSON.stringify(mergedEnv.VITE_SENTRY_DSN),
-    'import.meta.env.VITE_APP_VERSION': JSON.stringify(mergedEnv.VITE_APP_VERSION),
-  },
-  // Разрешаем встраивание только в продакшене; в dev убираем блокировки iframe
-  // чтобы корректно работать в редакторах, использующих iframe (например, Lovable)
-  server: {
-    host: "0.0.0.0", // Разрешаем доступ через все интерфейсы для Lovable preview
-    port: 8080,
-    // Добавляем заголовки безопасности для dev-сервера
-    headers: mode === 'development'
-      ? {
+    // Define env vars for client-side code
+    // Use production values as fallback for preview/dev builds in Lovable Cloud
+    define: {
+      'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(mergedEnv.VITE_SUPABASE_URL),
+      'import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY': JSON.stringify(mergedEnv.VITE_SUPABASE_PUBLISHABLE_KEY),
+      'import.meta.env.VITE_SUPABASE_PROJECT_ID': JSON.stringify(mergedEnv.VITE_SUPABASE_PROJECT_ID),
+      'import.meta.env.VITE_SENTRY_DSN': JSON.stringify(mergedEnv.VITE_SENTRY_DSN),
+      'import.meta.env.VITE_APP_VERSION': JSON.stringify(mergedEnv.VITE_APP_VERSION),
+    },
+    // Разрешаем встраивание только в продакшене; в dev убираем блокировки iframe
+    // чтобы корректно работать в редакторах, использующих iframe (например, Lovable)
+    server: {
+      host: "0.0.0.0", // Разрешаем доступ через все интерфейсы для Lovable preview
+      port: 8080,
+      // Добавляем заголовки безопасности для dev-сервера
+      headers: mode === 'development'
+        ? {
           // В dev-режиме: минимальные ограничения для Lovable preview
           // CSP отключаем в dev, чтобы не блокировать Lovable iframe
           // 'Content-Security-Policy' намеренно не устанавливаем
         }
-      : {
+        : {
           // Production CSP: строгие правила безопасности
           'Content-Security-Policy': [
             "default-src 'self'",
@@ -81,46 +81,46 @@ export default defineConfig(async ({ mode }) => {
           'Referrer-Policy': 'strict-origin-when-cross-origin',
           'Permissions-Policy': 'geolocation=(), microphone=(), camera=()'
         }
-  },
-  optimizeDeps: {},
-  build: {
-    rollupOptions: {
-      input: path.resolve(__dirname, 'index.html'),
-      output: {
-        manualChunks: {
-          // ❌ УДАЛЕНО 'vendor-react' - конфликтует с dedupe
-          // React должен управляться через dedupe, не через manualChunks
-          'vendor-ui': [
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-select',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-toast',
-            '@radix-ui/react-tooltip',
-            '@radix-ui/react-slider',
-            '@radix-ui/react-scroll-area',
-          ],
-          'vendor-charts': ['recharts'],
-          'vendor-motion': ['framer-motion'],
-          'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-query': ['@tanstack/react-query', '@tanstack/react-virtual'],
+    },
+    optimizeDeps: {},
+    build: {
+      rollupOptions: {
+        input: path.resolve(__dirname, 'index.html'),
+        output: {
+          manualChunks: {
+            // ❌ УДАЛЕНО 'vendor-react' - конфликтует с dedupe
+            // React должен управляться через dedupe, не через manualChunks
+            'vendor-ui': [
+              '@radix-ui/react-dialog',
+              '@radix-ui/react-dropdown-menu',
+              '@radix-ui/react-select',
+              '@radix-ui/react-tabs',
+              '@radix-ui/react-toast',
+              '@radix-ui/react-tooltip',
+              '@radix-ui/react-slider',
+              '@radix-ui/react-scroll-area',
+            ],
+            'vendor-charts': ['recharts'],
+            'vendor-motion': ['framer-motion'],
+            'vendor-supabase': ['@supabase/supabase-js'],
+            'vendor-query': ['@tanstack/react-query', '@tanstack/react-virtual'],
+          },
         },
       },
+      chunkSizeWarningLimit: 800,
+      sourcemap: false,
+      commonjsOptions: {
+        include: [/node_modules/],
+      },
     },
-    chunkSizeWarningLimit: 800,
-    sourcemap: false,
-    commonjsOptions: {
-      include: [/node_modules/],
-    },
-  },
-  plugins: [
-    react(),
-    mode === 'development' && componentTagger(),
-    tsconfigPaths(),
-    // ✅ Анализатор бандла — добавляется только при наличии пакета и в production
-    visualizerPlugin,
-    mode !== "development" && process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT
-      ? sentryVitePlugin({
+    plugins: [
+      react(),
+      mode === 'development' && componentTagger(),
+      tsconfigPaths(),
+      // ✅ Анализатор бандла — добавляется только при наличии пакета и в production
+      visualizerPlugin,
+      mode !== "development" && process.env.SENTRY_AUTH_TOKEN && process.env.SENTRY_ORG && process.env.SENTRY_PROJECT
+        ? sentryVitePlugin({
           org: process.env.SENTRY_ORG,
           project: process.env.SENTRY_PROJECT,
           authToken: process.env.SENTRY_AUTH_TOKEN,
@@ -131,23 +131,23 @@ export default defineConfig(async ({ mode }) => {
             assets: "./dist/**",
           },
         })
-      : null,
-  ].filter(Boolean),
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "react-is": path.resolve(__dirname, "./src/vendor/react-is/index.js"),
-      "react-remove-scroll": path.resolve(__dirname, "./src/vendor/react-remove-scroll/index.tsx"),
+        : null,
+    ].filter(Boolean),
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+        "react-is": path.resolve(__dirname, "./src/vendor/react-is/index.js"),
+        "react-remove-scroll": path.resolve(__dirname, "./src/vendor/react-remove-scroll/index.tsx"),
+      },
+      dedupe: [
+        "react",
+        "react-dom",
+        "react-dom/client",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime",
+        "react-router",
+        "react-router-dom",
+      ],
     },
-    dedupe: [
-      "react",
-      "react-dom",
-      "react-dom/client",
-      "react/jsx-runtime",
-      "react/jsx-dev-runtime",
-      "react-router",
-      "react-router-dom",
-    ],
-  },
   });
 });
