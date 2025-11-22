@@ -234,7 +234,7 @@ export function normalizeStatus(rawStatus: string | null | undefined): TrackGene
     case 'waiting':
       return 'pending';
     default:
-      console.warn(`Unknown track status: ${rawStatus}, defaulting to 'draft'`);
+      logger.warn(`Unknown track status: ${rawStatus}, defaulting to 'draft'`, 'generation-status');
       return 'draft';
   }
 }
@@ -309,3 +309,4 @@ export function isValidTransition(
 export function getNextValidStatuses(status: TrackGenerationStatus): TrackGenerationStatus[] {
   return VALID_TRANSITIONS[status];
 }
+import { logger } from '@/utils/logger';

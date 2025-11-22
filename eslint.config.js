@@ -77,12 +77,16 @@ export default tseslint.config(
   {
     files: [
       "tests/**/*.{ts,tsx}",
-      "src/**/__tests__/**/*.{ts,tsx}"
+      "src/**/__tests__/**/*.{ts,tsx}",
+      "supabase/functions/**/*.test.ts",
+      "supabase/functions/**/*_test.ts",
+      "supabase/functions/**/*.spec.ts"
     ],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
       "react-refresh/only-export-components": "off",
-      "no-console": "off"
+      "no-console": "off",
+      "@typescript-eslint/ban-ts-comment": "off"
     }
   },
   // Перенос правил из .eslintignore: в flat-конфиге нельзя использовать отрицательные шаблоны (!pattern),

@@ -4,6 +4,7 @@
  */
 import { useCallback } from 'react';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export const useShareTrack = () => {
   const shareTrack = useCallback(async (trackId: string) => {
@@ -21,8 +22,11 @@ export const useShareTrack = () => {
         toast.success('Ссылка скопирована в буфер обмена');
       }
     } catch (error) {
-      console.error('Share error:', error);
-      if ((error as Error).name !== 'AbortError') {
+      const err = error as Error;
+      if (err.name === 'AbortError') {
+        logger.warn('Share aborted by user', 'useShareTrack', { trackId });
+      } else {
+        logger.error('Share error', err, 'useShareTrack');
         toast.error('Ошибка при попытке поделиться');
       }
     }

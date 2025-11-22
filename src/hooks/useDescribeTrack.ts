@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export const useDescribeTrack = () => {
   const queryClient = useQueryClient();
@@ -27,7 +28,7 @@ export const useDescribeTrack = () => {
       queryClient.invalidateQueries({ queryKey: ['tracks'] });
     },
     onError: (error: Error) => {
-      console.error('Describe track error:', error);
+      logger.error('Describe track error', error, 'useDescribeTrack');
       toast.error('Ошибка при анализе трека');
     }
   });

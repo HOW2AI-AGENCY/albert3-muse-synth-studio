@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export const useRetryTrack = () => {
   const queryClient = useQueryClient();
@@ -27,7 +28,7 @@ export const useRetryTrack = () => {
       queryClient.invalidateQueries({ queryKey: ['tracks'] });
     },
     onError: (error: Error) => {
-      console.error('Retry track error:', error);
+      logger.error('Retry track error', error, 'useRetryTrack');
       toast.error('Ошибка при повторной генерации');
     }
   });

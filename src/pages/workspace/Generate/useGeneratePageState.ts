@@ -5,6 +5,7 @@
 import { useState, useCallback, useRef } from 'react';
 import type { Track } from '@/services/api.service';
 import type { ImperativePanelHandle } from 'react-resizable-panels';
+import { logger } from '@/utils/logger';
 
 export const useGeneratePageState = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>();
@@ -37,7 +38,7 @@ export const useGeneratePageState = () => {
     try {
       localStorage.setItem('tracks-view-mode', mode);
     } catch (error) {
-      console.error('Failed to save view mode:', error);
+      logger.error('Failed to save view mode', error as Error, 'useGeneratePageState');
     }
   }, []);
 

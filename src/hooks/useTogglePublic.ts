@@ -6,6 +6,7 @@ import { useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export const useTogglePublic = () => {
   const queryClient = useQueryClient();
@@ -26,7 +27,7 @@ export const useTogglePublic = () => {
       queryClient.invalidateQueries({ queryKey: ['track', trackId] });
     },
     onError: (error: Error) => {
-      console.error('Toggle public error:', error);
+      logger.error('Toggle public error', error, 'useTogglePublic');
       toast.error('Ошибка при изменении видимости');
     }
   });

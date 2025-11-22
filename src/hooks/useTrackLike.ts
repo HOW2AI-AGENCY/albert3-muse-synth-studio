@@ -6,6 +6,7 @@ import { useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export const useTrackLike = () => {
   const queryClient = useQueryClient();
@@ -27,7 +28,7 @@ export const useTrackLike = () => {
       queryClient.invalidateQueries({ queryKey: ['track-likes'] });
     },
     onError: (error: Error) => {
-      console.error('Like track error:', error);
+      logger.error('Like track error', error, 'useTrackLike');
       toast.error('Не удалось добавить в избранное');
     }
   });
@@ -51,7 +52,7 @@ export const useTrackLike = () => {
       queryClient.invalidateQueries({ queryKey: ['track-likes'] });
     },
     onError: (error: Error) => {
-      console.error('Unlike track error:', error);
+      logger.error('Unlike track error', error, 'useTrackLike');
       toast.error('Не удалось убрать из избранного');
     }
   });

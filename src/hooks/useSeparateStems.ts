@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 interface SeparateStemsParams {
   trackId: string;
@@ -34,7 +35,7 @@ export const useSeparateStems = () => {
       queryClient.invalidateQueries({ queryKey: ['track', trackId] });
     },
     onError: (error: Error) => {
-      console.error('Stem separation error:', error);
+      logger.error('Stem separation error', error, 'useSeparateStems');
       toast.error('Ошибка при разделении на стемы');
     }
   });

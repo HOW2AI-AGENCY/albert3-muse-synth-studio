@@ -5,6 +5,7 @@
 import { useCallback } from 'react';
 import type { Track } from '@/services/api.service';
 import type { ImperativePanelHandle } from 'react-resizable-panels';
+import { logger } from '@/utils/logger';
 
 interface UseGeneratePageHandlersProps {
   setSelectedTrack: (track: Track | null) => void;
@@ -78,13 +79,12 @@ export const useGeneratePageHandlers = ({
       handleCloseDetail();
       refreshTracks();
     } catch (error) {
-      console.error('Delete error:', error);
+      logger.error('Delete error', error as Error, 'useGeneratePageHandlers');
     }
   }, [deleteTrack, handleCloseDetail, refreshTracks]);
 
   const handleRemix = useCallback((track: Track) => {
-    // Remix functionality removed as not in TrackOperations
-    console.log('Remix track:', track.id);
+    logger.info('Remix track requested', 'useGeneratePageHandlers', { trackId: track.id });
   }, []);
 
   return {
