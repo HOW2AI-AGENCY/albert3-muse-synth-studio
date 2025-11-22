@@ -71,7 +71,7 @@ export function TrackDialogsManager({
             id: selectedTrackForExtend.id,
             title: selectedTrackForExtend.title,
             duration: selectedTrackForExtend.duration ?? undefined,
-            prompt: selectedTrackForExtend.prompt,
+            prompt: selectedTrackForExtend.prompt ?? '',
             style_tags: selectedTrackForExtend.style_tags ?? [],
           }}
         />

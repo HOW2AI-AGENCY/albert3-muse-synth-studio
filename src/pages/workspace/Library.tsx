@@ -53,7 +53,6 @@ import { SelectionToolbar } from '@/components/tracks/SelectionToolbar';
 // import type { SortBy } from '@/hooks/useLibraryFilters';
 import { useGenerateCoverImage } from '@/hooks/useGenerateCoverImage';
 import type { DisplayTrack as DisplayTrackType } from '@/types/track';
-import { trackConverters } from '@/types/domain/track.types';
 
 const LibraryContent: React.FC = () => {
   const { isSelectionMode, setSelectionMode, clearSelection } = useSelectedTracks();
@@ -124,14 +123,6 @@ const LibraryContent: React.FC = () => {
     for (const t of tracks) map.set(t.id, t);
     return map;
   }, [tracks]);
-  const filteredDomainDisplayTracks = React.useMemo(() => {
-    const result: Array<ReturnType<typeof trackConverters.toDisplay>> = [];
-    for (const dt of filteredAndSortedTracks) {
-      const dom = domainById.get(dt.id);
-      if (dom) result.push(trackConverters.toDisplay(dom));
-    }
-    return result;
-  }, [filteredAndSortedTracks, domainById]);
 
   const mapDisplayTrackToAudio = useCallback((item: DisplayTrack): AudioPlayerTrack | null => {
     return convertToAudioPlayerTrack({

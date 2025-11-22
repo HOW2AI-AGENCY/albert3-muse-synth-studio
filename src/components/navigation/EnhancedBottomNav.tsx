@@ -1,12 +1,12 @@
-import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Grid3x3, Home, Search, Library, Settings, Plus } from 'lucide-react';
+import { Grid3x3, Home, Search, Library, Plus } from 'lucide-react';
 import { TouchGestureHandler } from '@/components/mobile/MobileUIPatterns';
 import { HapticButton } from '@/components/ui/HapticButton';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useUserRole } from '@/hooks/useUserRole';
-import { getWorkspaceNavItems, WorkspaceNavItem } from '@/config/workspace-navigation';
+import { getWorkspaceNavItems } from '@/config/workspace-navigation';
 import { useBreakpoints } from '@/hooks/useBreakpoints';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
@@ -152,7 +152,6 @@ const EnhancedBottomNav: React.FC = () => {
   const { isMobile } = useBreakpoints();
 
   // Состояние компонента
-  const [activeIndex, setActiveIndex] = useState(0);
   const [isGenerationOpen, setIsGenerationOpen] = useState(false);
   const [generationMode, setGenerationMode] = useState<'simple' | 'advanced'>('simple');
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -221,27 +220,7 @@ const EnhancedBottomNav: React.FC = () => {
     return bestMatch?.id || 'home';
   }, [location.pathname, visibleItems]);
 
-  // Индекс активного элемента
-  const currentActiveIndex = useMemo(() => {
-    return visibleItems.findIndex(item => item.id === activeItemId);
-  }, [visibleItems, activeItemId]);
 
-  // Обработчик свайпов по навигации
-  const handleNavSwipe = useCallback((direction: 'left' | 'right') => {
-    if (direction === 'left' && activeIndex < visibleItems.length - 1) {
-      const nextItem = visibleItems[activeIndex + 1];
-      if (nextItem.path !== '#') {
-        vibrate('light');
-        navigate(nextItem.path);
-      }
-    } else if (direction === 'right' && activeIndex > 0) {
-      const prevItem = visibleItems[activeIndex - 1];
-      if (prevItem.path !== '#') {
-        vibrate('light');
-        navigate(prevItem.path);
-      }
-    }
-  }, [activeIndex, visibleItems, navigate, vibrate]);
 
   // Обработчик клика по элементу
   const handleItemClick = useCallback((item: NavItem) => {
@@ -257,24 +236,23 @@ const EnhancedBottomNav: React.FC = () => {
     }
   }, [navigate, vibrate]);
 
-  // Глобальные свайпы по экрану для навигации
-  const handleGlobalSwipeLeft = useCallback(() => {
-    const nextIndex = Math.min(currentActiveIndex + 1, visibleItems.length - 1);
-    const nextItem = visibleItems[nextIndex];
-    if (nextItem && nextItem.path !== '#') {
-      vibrate('light');
-      navigate(nextItem.path);
+  const handleNavSwipe = useCallback((direction: 'left' | 'right') => {
+    const index = visibleItems.findIndex(item => item.id === activeItemId);
+    if (direction === 'left' && index < visibleItems.length - 1) {
+      const next = visibleItems[index + 1];
+      if (next.path !== '#') {
+        vibrate('light');
+        navigate(next.path);
+      }
+    } else if (direction === 'right' && index > 0) {
+      const prev = visibleItems[index - 1];
+      if (prev.path !== '#') {
+        vibrate('light');
+        navigate(prev.path);
+      }
     }
-  }, [currentActiveIndex, visibleItems, navigate, vibrate]);
+  }, [visibleItems, activeItemId, navigate, vibrate]);
 
-  const handleGlobalSwipeRight = useCallback(() => {
-    const prevIndex = Math.max(currentActiveIndex - 1, 0);
-    const prevItem = visibleItems[prevIndex];
-    if (prevItem && prevItem.path !== '#') {
-      vibrate('light');
-      navigate(prevItem.path);
-    }
-  }, [currentActiveIndex, visibleItems, navigate, vibrate]);
 
   // Не показываем на десктопе
   if (!isMobile) {
@@ -283,14 +261,6 @@ const EnhancedBottomNav: React.FC = () => {
 
   return (
     <>
-      {/* Глобальные свайпы по экрану */}
-      <TouchGestureHandler
-        onSwipeLeft={handleGlobalSwipeLeft}
-        onSwipeRight={handleGlobalSwipeRight}
-        threshold={100}
-        className="fixed inset-0 pointer-events-none z-0"
-      />
-
       {/* Нижняя навигация */}
       <div
         ref={navRef}
@@ -309,7 +279,7 @@ const EnhancedBottomNav: React.FC = () => {
           className="w-full"
         >
           <nav className="menu relative">
-            {visibleItems.map((item, index) => (
+            {visibleItems.map((item) => (
               <HapticButton
                 key={item.id}
                 variant="ghost"

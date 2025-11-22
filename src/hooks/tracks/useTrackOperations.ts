@@ -58,11 +58,11 @@ export const useTrackOperations = (): TrackOperations => {
 
         await GenerationService.generate({
           title: track.title,
-          prompt: track.prompt,
+          prompt: track.prompt ?? '',
           provider: provider as any,
-          lyrics: track.lyrics || undefined,
+          lyrics: track.lyrics ?? undefined,
           hasVocals: track.has_vocals ?? false,
-          styleTags: track.style_tags || undefined,
+          styleTags: track.style_tags ?? undefined,
         });
 
         if (onSuccess) {

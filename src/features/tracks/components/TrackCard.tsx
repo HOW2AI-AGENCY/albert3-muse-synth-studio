@@ -167,7 +167,7 @@ const TrackCardComponent = memo(({
         <CardContent className="p-3 flex-1 flex flex-col">
           <TrackCardInfo
             title={displayedVersion.title || track.title}
-            prompt={track.prompt}
+            prompt={track.prompt ?? ''}
             duration={displayedVersion.duration || track.duration}
             versionCount={versionCount}
             selectedVersionIndex={selectedVersionIndex}

@@ -225,8 +225,8 @@ export class AnalyticsService {
       navigationType: metric.navigationType,
       entries: metric.entries?.map((entry) => ({
         name: entry.name,
-        startTime: Number(entry.startTime?.toFixed?.(2) ?? entry.startTime ?? 0),
-        duration: Number(entry.duration?.toFixed?.(2) ?? entry.duration ?? 0),
+        startTime: Number((typeof entry.startTime === 'number' && !isNaN(entry.startTime) ? entry.startTime : 0).toFixed?.(2) ?? 0),
+        duration: Number((typeof entry.duration === 'number' && !isNaN(entry.duration) ? entry.duration : 0).toFixed?.(2) ?? 0),
         entryType: entry.entryType,
       })),
       timestamp: new Date().toISOString(),

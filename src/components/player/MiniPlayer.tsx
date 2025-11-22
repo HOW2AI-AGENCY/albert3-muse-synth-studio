@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { Play, Pause, SkipBack, SkipForward, X } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { useAudioPlayerStore, useCurrentTrack, useIsPlaying } from "@/stores/audioPlayerStore";
@@ -30,7 +30,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
   const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
   const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
 
-  const [isVersionMenuOpen, setIsVersionMenuOpen] = useState(false);
+  
 
   const { vibrate } = useHapticFeedback();
   
@@ -230,7 +230,6 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
                     key={version.id}
                     onClick={() => {
                       switchToVersion(version.id);
-                      setIsVersionMenuOpen(false);
                     }}
                     className={cn(
                       "gap-2",

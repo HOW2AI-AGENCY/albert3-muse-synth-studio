@@ -2,11 +2,12 @@
  * Mock implementation of Track Repository for testing
  */
 import type { ITrackRepository } from './interfaces/TrackRepository';
-import type { Track, TrackFilters, TrackVersion, TrackStem } from '@/types/domain/track.types';
+import type { Track, TrackFilters, TrackStem } from '@/types/domain/track.types';
+import type { TrackVersion } from '@/types/track.types';
 
 export class MockTrackRepository implements ITrackRepository {
   private tracks: Track[] = [];
-  private versions: TrackVersion[] = [];
+  private versions: any[] = [];
   private stems: TrackStem[] = [];
 
   constructor(initialTracks: Track[] = []) {
@@ -29,7 +30,7 @@ export class MockTrackRepository implements ITrackRepository {
       const search = filters.search.toLowerCase();
       result = result.filter(t => 
         t.title.toLowerCase().includes(search) || 
-        t.prompt.toLowerCase().includes(search)
+        (t.prompt || '').toLowerCase().includes(search)
       );
     }
 
@@ -97,7 +98,15 @@ export class MockTrackRepository implements ITrackRepository {
   }
 
   async findVersions(trackId: string): Promise<TrackVersion[]> {
-    return this.versions.filter(v => v.parent_track_id === trackId);
+    return this.versions.filter(v => v.parent_track_id === trackId).map(v => ({
+      id: v.id,
+      variant_index: v.variant_index,
+      audio_url: v.audio_url,
+      cover_url: v.cover_url,
+      duration: v.duration,
+      is_primary_variant: v.is_primary_variant,
+      is_preferred_variant: v.is_preferred_variant,
+    }));
   }
 
   async findStems(trackId: string): Promise<TrackStem[]> {

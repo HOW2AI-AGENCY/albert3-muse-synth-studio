@@ -16,7 +16,7 @@
  */
 
 
-import { retryWithBackoff, RETRY_CONFIGS } from "@/utils/retryWithBackoff";
+import { retryWithBackoff } from "@/utils/retryWithBackoff";
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { recordPerformanceMetric } from "@/utils/performanceMonitor";
 import { type ImprovePromptRequest, type ImprovePromptResponse } from "@/services/prompts/prompt.service";
@@ -25,7 +25,7 @@ import { type ProviderBalanceResponse } from "@/services/balance/balance.service
 import { type Track, type TrackRowWithVersions, type TrackStatus, mapTrackRowToTrack } from "@/services/tracks/track.service";
 
 // Re-export Track type for backwards compatibility
-export type { TrackStatus } from "@/services/tracks/track.service";
+export type { Track, TrackStatus } from "@/services/tracks/track.service";
 export { mapTrackRowToTrack } from "@/services/tracks/track.service";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -85,6 +85,12 @@ export interface GenerateMusicResponse {
 /**
  * API Service - handles all backend communication
  */
+
+// Retry configurations
+const RETRY_CONFIGS = {
+  standard: { maxRetries: 3, initialDelay: 1000 },
+  critical: { maxRetries: 5, initialDelay: 2000 },
+};
 
 // Helper for tracking API requests
 const trackAPIRequest = (

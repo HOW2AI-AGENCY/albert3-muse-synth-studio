@@ -58,7 +58,9 @@ const Landing = () => {
             src={heroBg} 
             alt="Music waves background" 
             className="w-full h-full object-cover opacity-20"
-            loading="eager" decoding="async" fetchpriority="high"
+            loading="eager" 
+            decoding="async" 
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/80 to-background/95" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
@@ -199,9 +201,9 @@ const Landing = () => {
                     <div className="flex items-start gap-4 mb-4">
                       <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-lg mb-2 truncate text-gradient-primary">{track.title}</h3>
-                        {track.style && (
+                        {track.style_tags && track.style_tags.length > 0 && (
                           <Badge variant="secondary" className="text-xs">
-                            {track.style}
+                            {track.style_tags[0]}
                           </Badge>
                         )}
                       </div>
