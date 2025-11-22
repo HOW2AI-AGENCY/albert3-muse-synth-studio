@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Grid3x3, Home, Search, Library, Plus } from 'lucide-react';
-import { TouchGestureHandler } from '@/components/mobile/MobileUIPatterns';
 import { HapticButton } from '@/components/ui/HapticButton';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
@@ -236,22 +235,6 @@ const EnhancedBottomNav: React.FC = () => {
     }
   }, [navigate, vibrate]);
 
-  const handleNavSwipe = useCallback((direction: 'left' | 'right') => {
-    const index = visibleItems.findIndex(item => item.id === activeItemId);
-    if (direction === 'left' && index < visibleItems.length - 1) {
-      const next = visibleItems[index + 1];
-      if (next.path !== '#') {
-        vibrate('light');
-        navigate(next.path);
-      }
-    } else if (direction === 'right' && index > 0) {
-      const prev = visibleItems[index - 1];
-      if (prev.path !== '#') {
-        vibrate('light');
-        navigate(prev.path);
-      }
-    }
-  }, [visibleItems, activeItemId, navigate, vibrate]);
 
 
   // Не показываем на десктопе
@@ -271,39 +254,31 @@ const EnhancedBottomNav: React.FC = () => {
           "pb-safe"
         )}
       >
-        {/* Локальные свайпы по навигации */}
-        <TouchGestureHandler
-          onSwipeLeft={() => handleNavSwipe('left')}
-          onSwipeRight={() => handleNavSwipe('right')}
-          threshold={50}
-          className="w-full"
-        >
-          <nav className="menu relative">
-            {visibleItems.map((item) => (
-              <HapticButton
-                key={item.id}
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  'menu__item',
-                  { active: activeItemId === item.id }
-                )}
-                onClick={() => handleItemClick(item)}
-                aria-label={item.label}
-                style={
-                  item.id === 'generate' ? {
-                    '--component-active-color': 'var(--accent-purple)',
-                  } as React.CSSProperties : undefined
-                }
-              >
-                <div className="menu__icon">
-                  <item.icon className="icon" />
-                </div>
-                <span className="menu__text">{item.label}</span>
-              </HapticButton>
-            ))}
-          </nav>
-        </TouchGestureHandler>
+        <nav className="menu relative">
+          {visibleItems.map((item) => (
+            <HapticButton
+              key={item.id}
+              variant="ghost"
+              size="sm"
+              className={cn(
+                'menu__item',
+                { active: activeItemId === item.id }
+              )}
+              onClick={() => handleItemClick(item)}
+              aria-label={item.label}
+              style={
+                item.id === 'generate' ? {
+                  '--component-active-color': 'var(--accent-purple)',
+                } as React.CSSProperties : undefined
+              }
+            >
+              <div className="menu__icon">
+                <item.icon className="icon" />
+              </div>
+              <span className="menu__text">{item.label}</span>
+            </HapticButton>
+          ))}
+        </nav>
       </div>
 
       {/* Панель генерации */}
