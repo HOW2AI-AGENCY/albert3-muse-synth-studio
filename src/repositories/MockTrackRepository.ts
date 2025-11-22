@@ -29,7 +29,7 @@ export class MockTrackRepository implements ITrackRepository {
       const search = filters.search.toLowerCase();
       result = result.filter(t => 
         t.title.toLowerCase().includes(search) || 
-        t.prompt.toLowerCase().includes(search)
+        (t.prompt || '').toLowerCase().includes(search)
       );
     }
 

@@ -69,12 +69,12 @@ export const mapTrackRowToTrack = (track: TrackRow | TrackRowWithVersions): Trac
     suno_task_id: track.suno_task_id,
     mureka_task_id: track.mureka_task_id,
     project_id: track.project_id,
-    is_primary_variant: track.is_primary_variant,
+    is_primary_variant: track.is_primary_variant ?? false,
     parent_track_id: track.parent_track_id,
     variant_index: track.variant_index,
     versions: versions,
-    stems: [], // FIXME: Загружать стемы
-    profile: null, // FIXME: Загружать профиль
+    stems: [],
+    profile: null,
     duration_seconds: track.duration_seconds,
     prompt: track.prompt,
     improved_prompt: track.improved_prompt,
