@@ -24,7 +24,7 @@ export interface Track {
   id: string;
   user_id: string;
   title: string;
-  prompt: string;
+  prompt: string | null;
   improved_prompt?: string | null;
   audio_url?: string | null;
   cover_url?: string | null;
@@ -48,6 +48,7 @@ export interface Track {
   view_count?: number | null;
   suno_id?: string | null;
   suno_task_id?: string | null;
+  mureka_task_id?: string | null;
   model_name?: string | null;
   idempotency_key?: string | null;
   metadata?: TrackMetadata | null;
