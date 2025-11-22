@@ -30,7 +30,7 @@ import { type ProviderBalanceResponse } from "@/services/balance/balance.service
 import { type Track, type TrackRowWithVersions, type TrackStatus, mapTrackRowToTrack } from "@/services/tracks/track.service";
 
 // Re-export Track type for backwards compatibility
-export type { TrackStatus } from "@/services/tracks/track.service";
+export type { Track, TrackStatus } from "@/services/tracks/track.service";
 export { mapTrackRowToTrack } from "@/services/tracks/track.service";
 
 
@@ -84,6 +84,12 @@ export interface GenerateMusicResponse {
 /**
  * API Service - handles all backend communication
  */
+
+// Retry configurations
+const RETRY_CONFIGS = {
+  standard: { maxRetries: 3, initialDelay: 1000 },
+  critical: { maxRetries: 5, initialDelay: 2000 },
+};
 
 // Helper for tracking API requests
 const trackAPIRequest = (
@@ -531,23 +537,4 @@ export class ApiService {
   }
 }
 
-/**
- * Централизованная система сообщений об ошибках
- */
-import { logError, logWarn, logInfo, logDebug } from "@/utils/logger";
-
-// ...
-
-/**
- * Реализация обработки ошибок для сетевых операций
- */
-import { retryWithBackoff } from "@/utils/retryWithBackoff";
-
-// ...
-
-/**
- * Настройка автоматических повторных попыток
- */
-import { retryWithBackoff } from "@/utils/retryWithBackoff";
-
-// ...
+// End of ApiService class

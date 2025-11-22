@@ -30,7 +30,7 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
   const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
   const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
 
-  const [isVersionMenuOpen, setIsVersionMenuOpen] = useState(false);
+  
 
   const { vibrate } = useHapticFeedback();
   

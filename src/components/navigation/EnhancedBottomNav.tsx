@@ -1,12 +1,11 @@
-import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Grid3x3, Home, Search, Library, Settings, Plus } from 'lucide-react';
-import { TouchGestureHandler } from '@/components/mobile/MobileUIPatterns';
+import { Grid3x3, Home, Search, Library, Plus } from 'lucide-react';
 import { HapticButton } from '@/components/ui/HapticButton';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useUserRole } from '@/hooks/useUserRole';
-import { getWorkspaceNavItems, WorkspaceNavItem } from '@/config/workspace-navigation';
+import { getWorkspaceNavItems } from '@/config/workspace-navigation';
 import { useBreakpoints } from '@/hooks/useBreakpoints';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
@@ -152,7 +151,6 @@ const EnhancedBottomNav: React.FC = () => {
   const { isMobile } = useBreakpoints();
 
   // Состояние компонента
-  const [activeIndex, setActiveIndex] = useState(0);
   const [isGenerationOpen, setIsGenerationOpen] = useState(false);
   const [generationMode, setGenerationMode] = useState<'simple' | 'advanced'>('simple');
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -283,14 +281,6 @@ const EnhancedBottomNav: React.FC = () => {
 
   return (
     <>
-      {/* Глобальные свайпы по экрану */}
-      <TouchGestureHandler
-        onSwipeLeft={handleGlobalSwipeLeft}
-        onSwipeRight={handleGlobalSwipeRight}
-        threshold={100}
-        className="fixed inset-0 pointer-events-none z-0"
-      />
-
       {/* Нижняя навигация */}
       <div
         ref={navRef}
@@ -301,38 +291,30 @@ const EnhancedBottomNav: React.FC = () => {
           "pb-safe"
         )}
       >
-        {/* Локальные свайпы по навигации */}
-        <TouchGestureHandler
-          onSwipeLeft={() => handleNavSwipe('left')}
-          onSwipeRight={() => handleNavSwipe('right')}
-          threshold={50}
-          className="w-full"
-        >
-          <nav className="menu relative">
-            {visibleItems.map((item, index) => (
-              <HapticButton
-                key={item.id}
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  'menu__item',
-                  { active: activeItemId === item.id }
-                )}
-                onClick={() => handleItemClick(item)}
-                style={
-                  item.id === 'generate' ? {
-                    '--component-active-color': 'var(--accent-purple)',
-                  } as React.CSSProperties : undefined
-                }
-              >
-                <div className="menu__icon">
-                  <item.icon className="icon" />
-                </div>
-                <span className="menu__text">{item.label}</span>
-              </HapticButton>
-            ))}
-          </nav>
-        </TouchGestureHandler>
+        <nav className="menu relative">
+          {visibleItems.map((item) => (
+            <HapticButton
+              key={item.id}
+              variant="ghost"
+              size="sm"
+              className={cn(
+                'menu__item',
+                { active: activeItemId === item.id }
+              )}
+              onClick={() => handleItemClick(item)}
+              style={
+                item.id === 'generate' ? {
+                  '--component-active-color': 'var(--accent-purple)',
+                } as React.CSSProperties : undefined
+              }
+            >
+              <div className="menu__icon">
+                <item.icon className="icon" />
+              </div>
+              <span className="menu__text">{item.label}</span>
+            </HapticButton>
+          ))}
+        </nav>
       </div>
 
       {/* Панель генерации */}

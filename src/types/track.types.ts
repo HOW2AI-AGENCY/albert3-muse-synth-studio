@@ -21,6 +21,7 @@ export interface TrackVersion {
 export interface Track {
   id: string;
   created_at: string;
+  updated_at: string;
   user_id: string;
   title: string;
   duration: number | null;

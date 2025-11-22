@@ -50,7 +50,9 @@ const Landing = () => {
             src={heroBg} 
             alt="Music waves background" 
             className="w-full h-full object-cover opacity-20"
-            loading="eager" decoding="async" fetchpriority="high"
+            loading="eager" 
+            decoding="async" 
+            fetchPriority="high"
           />
           <div className="absolute inset-0 bg-gradient-to-br from-background/95 via-background/80 to-background/95" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
