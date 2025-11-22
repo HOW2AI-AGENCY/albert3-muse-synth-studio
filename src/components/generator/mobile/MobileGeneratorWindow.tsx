@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
-import { ArrowLeft, MoreHorizontal, Wand2, FolderOpen, User, AudioLines } from 'lucide-react'
+import { MoreHorizontal, Wand2, FolderOpen, User, AudioLines } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { PromptSection } from '@/components/generator/sections/PromptSection'
@@ -19,6 +19,7 @@ import { useSubscription } from '@/contexts/SubscriptionContext'
 import { LyricsGeneratorDialog } from '@/components/lyrics/LyricsGeneratorDialog'
 import { sanitize } from '@/utils/sanitization'
 import { cn } from '@/lib/utils'
+import { MobileHeader } from '@/components/mobile/MobileHeader'
 
 type MobileGeneratorWindowProps = {
   onClose: () => void
@@ -83,15 +84,7 @@ const MobileGeneratorWindow: React.FC<MobileGeneratorWindowProps> = ({ onClose, 
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between border-b bg-background/95 backdrop-blur-sm p-4">
-        <Button variant="outline" size="icon" className="h-10 w-10" onClick={onClose}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-lg font-semibold">Новый проект</h1>
-        <Button variant="outline" size="icon" className="h-10 w-10">
-          <MoreHorizontal className="h-5 w-5" />
-        </Button>
-      </div>
+      <MobileHeader title="Новый проект" onBackClick={onClose} rightSlot={<Button variant="outline" size="icon" className="h-10 w-10"><MoreHorizontal className="h-5 w-5" /></Button>} />
 
       <ScrollArea className="flex-1 p-4 space-y-6">
         <div className="flex items-center gap-2">
