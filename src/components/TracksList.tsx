@@ -201,10 +201,10 @@ const TracksListComponent = ({
             tracks.length > 50 && containerDimensions.width > 0 ? (
               // Use virtualization for large lists with adaptive grid
               <VirtualizedTrackGrid
-                tracks={tracks}
+                tracks={tracks as any}
                 columns={columns}
                 gap={gap}
-                onTrackPlay={onSelect || handlePlay}
+                onTrackPlay={(onSelect || handlePlay) as any}
                 onShare={handleShare}
                 onSeparateStems={onSeparateStems || (() => {})}
                 onExtend={onExtend}
