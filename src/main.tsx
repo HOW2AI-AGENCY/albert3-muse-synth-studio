@@ -99,7 +99,7 @@ if (typeof window !== 'undefined') {
     registerWebVitals().catch((error) => {
       logger.error('Failed to register Web Vitals collection', error, 'WebVitals');
     });
-    
+
     // Initialize monitoring service
     initWebVitals();
   };
@@ -109,6 +109,28 @@ if (typeof window !== 'undefined') {
   } else {
     setTimeout(scheduleRegistration, 0);
   }
+
+  // ✅ Global Error Handler for Quota Exceeded
+  window.addEventListener('unhandledrejection', (event) => {
+    const error = event.reason;
+    if (
+      error &&
+      (error.name === 'QuotaExceededError' ||
+        error.message?.includes('quota exceeded') ||
+        error.message?.includes('QuotaBytesPerItem'))
+    ) {
+      logger.error('Storage quota exceeded', error, 'GlobalErrorHandler');
+      // Attempt to clear storage if critical
+      import('./utils/serviceWorker').then(({ clearAppStorage }) => {
+        // Optional: Show a toast or confirm dialog before clearing?
+        // For now, we just log it, but we could auto-clear or prompt.
+        // Let's just log and maybe dispatch an event for the UI to handle.
+        logger.warn('Storage quota exceeded, clearing storage...', 'GlobalErrorHandler');
+        clearAppStorage();
+        window.dispatchEvent(new CustomEvent('storage-quota-exceeded'));
+      });
+    }
+  });
 }
 
 // Inline встраивание критических стилей в HTML head

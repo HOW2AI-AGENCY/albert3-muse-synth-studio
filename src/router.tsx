@@ -38,12 +38,12 @@ import {
 
 export const router = createBrowserRouter(
   [
-    { 
-      path: "/", 
+    {
+      path: "/",
       element: <Landing />
     },
-    { 
-      path: "/auth", 
+    {
+      path: "/auth",
       element: <Auth />
     },
     {
@@ -223,8 +223,8 @@ export const router = createBrowserRouter(
         },
       ],
     },
-    { 
-      path: "*", 
+    {
+      path: "*",
       element: <NotFound />
     },
   ],
@@ -232,6 +232,7 @@ export const router = createBrowserRouter(
     future: {
       v7_relativeSplatPath: true,
       v7_fetcherPersist: true,  // ✅ Better navigation state
+      v7_startTransition: true, // ✅ Opt-in to v7 state update wrapping
     },
   }
 );
