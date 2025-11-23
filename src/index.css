@@ -20,32 +20,46 @@
 
 @layer base {
   :root {
-    /* Совместимость с существующими компонентами */
-    --background: var(--color-neutral-900);
-    --foreground: var(--color-neutral-50);
-    --card: var(--surface);
-    --card-foreground: var(--foreground);
-    --popover: var(--surface);
-    --popover-foreground: var(--foreground);
-    --primary: var(--color-accent-purple);
-    --primary-foreground: var(--foreground);
-    --secondary: var(--surface-variant);
-    --secondary-foreground: var(--foreground);
-    --muted: var(--color-neutral-700);
-    --muted-foreground: var(--color-neutral-400);
-    --accent: var(--color-accent-blue);
-    --accent-foreground: var(--foreground);
-    --destructive: var(--color-error);
-    --destructive-foreground: var(--foreground);
-    --border: var(--outline-variant);
-    --input: var(--surface-variant);
-    --ring: var(--color-accent-purple);
-    --radius: var(--radius-lg);
-    --chart-1: var(--color-accent-blue);
-    --chart-2: var(--color-accent-green);
-    --chart-3: var(--color-accent-orange);
-    --chart-4: var(--color-accent-purple);
-    --chart-5: var(--color-accent-pink);
+    /* 🎨 AI Audio Architect Platform - Design System v2 */
+    --background: 240 30% 4%;           /* #0a0a0f - Main dark background */
+    --foreground: 0 0% 100%;            /* #ffffff - Text */
+    --card: 240 10% 9%;                 /* #18181b - Card backgrounds */
+    --card-foreground: 0 0% 100%;
+    --popover: 240 10% 9%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 258 84% 65%;             /* #8b5cf6 - Purple accent */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 6% 15%;            /* #27272a - Elevated surfaces */
+    --secondary-foreground: 0 0% 100%;
+    --muted: 240 5% 21%;                /* #36363a - Muted surfaces */
+    --muted-foreground: 240 5% 65%;     /* #a1a1aa - Muted text */
+    --accent: 258 84% 65%;              /* Purple accent */
+    --accent-foreground: 0 0% 100%;
+    --accent-primary: 258 84% 65%;      /* #8b5cf6 - Purple */
+    --accent-secondary: 330 81% 60%;    /* #ec4899 - Pink */
+    --accent-tertiary: 189 94% 43%;     /* #06b6d4 - Cyan */
+    --destructive: 0 84% 60%;           /* #ef4444 - Error red */
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 4% 25%;               /* #3f3f46 - Borders */
+    --input: 240 4% 25%;
+    --ring: 258 84% 65%;                /* Purple focus ring */
+    --radius: 0.75rem;
+    
+    /* Legacy compatibility (will be removed in Phase 3) */
+    --color-neutral-900: 240 30% 4%;
+    --color-neutral-50: 0 0% 100%;
+    --surface: 240 10% 9%;
+    --surface-variant: 240 6% 15%;
+    --color-accent-purple: 258 84% 65%;
+    --color-neutral-700: 240 5% 21%;
+    --color-neutral-400: 240 5% 65%;
+    --color-accent-blue: 189 94% 43%;
+    --color-error: 0 84% 60%;
+    --outline-variant: 240 4% 25%;
+    --radius-lg: 0.75rem;
+    --color-accent-green: 142 71% 45%;
+    --color-accent-orange: 48 96% 53%;
+    --color-accent-pink: 330 81% 60%;
 
     --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(330 81% 60%) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(189 94% 43%) 0%, hsl(262 83% 58%) 100%);
