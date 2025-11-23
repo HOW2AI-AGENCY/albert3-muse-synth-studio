@@ -1,4 +1,4 @@
-import { trackCacheIDB } from '@/features/tracks';
+import { trackCache } from '@/features/tracks';
 import type { Track } from '@/types/track.types';
 import { logError, logInfo, logWarn } from '@/utils/logger';
 
@@ -25,7 +25,7 @@ class TrackCacheService {
         logInfo('Clearing track cache after logout', 'TrackCacheService');
       }
       this.currentUserId = null;
-      await trackCacheIDB.clearAll();
+      await trackCache.clearCache();
       return;
     }
 
@@ -34,7 +34,7 @@ class TrackCacheService {
         previousUserId: this.currentUserId,
         nextUserId: userId,
       });
-      await trackCacheIDB.clearAll();
+      await trackCache.clearCache();
     }
 
     this.currentUserId = userId;
@@ -66,7 +66,7 @@ class TrackCacheService {
     }
 
     try {
-      await trackCacheIDB.setTracks(tracksToCache);
+      await trackCache.setTracks(tracksToCache);
     } catch (error) {
       logWarn('Failed to cache tracks in IndexedDB', 'TrackCacheService', { error });
     }
@@ -74,7 +74,7 @@ class TrackCacheService {
 
   async removeTrack(trackId: string) {
     try {
-      await trackCacheIDB.removeTrack(trackId);
+      await trackCache.removeTrack(trackId);
     } catch (error) {
       logError('Failed to remove track from cache', error as Error, 'TrackCacheService', { trackId });
     }
@@ -82,7 +82,7 @@ class TrackCacheService {
 
   async clearAll() {
     try {
-      await trackCacheIDB.clearAll();
+      await trackCache.clearCache();
       this.currentUserId = null;
     } catch (error) {
       logError('Failed to clear track cache', error as Error, 'TrackCacheService');
