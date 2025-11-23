@@ -73,8 +73,9 @@ const VirtualizedWord = memo(({
         !isFocused && !isActive && "text-foreground/70 hover:text-foreground/90"
       )}
       animate={{
-        scale: isActive && !settings.disableWordHighlight ? [1, 1.08, 1.05] : 1,
-        y: isActive && !settings.disableWordHighlight ? -3 : 0,
+        scale: isActive && !settings.disableWordHighlight ? [1, 1.1, 1.05] : 1,
+        y: isActive && !settings.disableWordHighlight ? -5 : 0,
+        backgroundColor: isActive && !settings.disableWordHighlight ? 'hsla(var(--primary), 0.2)' : 'hsla(var(--primary), 0)',
       }}
       transition={{
         type: "spring",

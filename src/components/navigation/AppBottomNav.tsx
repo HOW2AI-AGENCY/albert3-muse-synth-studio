@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Grid3x3, Plus, Home, Library, FolderOpen, Sparkles } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { MusicGeneratorContainer } from '@/components/generator/MusicGeneratorContainer';
 import { cn } from '@/lib/utils';
 import { useUserRole } from '@/hooks/useUserRole';
 import { getWorkspaceNavItems } from '@/config/workspace-navigation';
@@ -167,12 +168,8 @@ const AppBottomNav: React.FC = () => {
               Создать трек
             </SheetTitle>
           </SheetHeader>
-          <div className="overflow-y-auto h-[calc(85vh-60px)] p-4">
-            {/* This will be filled with MusicGenerator component */}
-            <div className="text-center py-12 text-muted-foreground">
-              <p>Здесь будет форма генерации</p>
-              <p className="text-sm mt-2">Переход на /workspace/generate</p>
-            </div>
+          <div className="overflow-y-auto h-[calc(85vh-60px)]">
+            <MusicGeneratorContainer onTrackGenerated={() => setIsGenerateSheetOpen(false)} />
           </div>
         </SheetContent>
       </Sheet>
@@ -184,8 +181,7 @@ const AppBottomNav: React.FC = () => {
             <SheetTitle>Больше разделов</SheetTitle>
           </SheetHeader>
           <div
-            className="grid gap-4 py-4"
-            style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))' }}
+            className="grid gap-4 py-4 grid-cols-[repeat(auto-fit,minmax(90px,1fr))]"
           >
             {navStructure.overflow.map((item) => (
               <button
