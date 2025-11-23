@@ -30,17 +30,8 @@ export const useDeleteTrack = () => {
     }
   });
 
-  const deleteTrack = useCallback(
-    (trackId: string) => {
-      if (confirm('Вы уверены, что хотите удалить этот трек?')) {
-        mutation.mutate(trackId);
-      }
-    },
-    [mutation]
-  );
-
   return {
-    deleteTrack,
-    isLoading: mutation.isPending
+    deleteTrack: mutation.mutate,
+    isLoading: mutation.isPending,
   };
 };

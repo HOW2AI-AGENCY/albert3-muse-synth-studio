@@ -388,7 +388,41 @@ describe('UnifiedTrackActionsMenu', () => {
       fireEvent.click(menuTrigger);
 
       await waitFor(() => {
-        expect(screen.queryByText(/move to trash/i)).not.toBeInTheDocument();
+        // Updated label
+        expect(screen.queryByText(/удалить трек/i)).not.toBeInTheDocument();
+      });
+    });
+
+    it('deletes a track after confirmation', async () => {
+      const onDelete = vi.fn();
+      renderWithProviders(
+        <UnifiedTrackActionsMenu
+          trackId={mockTrackId}
+          trackStatus="completed"
+          canDelete={true}
+          onDelete={onDelete}
+        />
+      );
+
+      // Open menu
+      const menuTrigger = screen.getByRole('button', { name: /track actions menu/i });
+      fireEvent.click(menuTrigger);
+
+      // Click delete button
+      const deleteButton = await screen.findByText(/удалить трек/i);
+      fireEvent.click(deleteButton);
+
+      // Check for confirmation dialog
+      const dialogTitle = await screen.findByText(/вы уверены/i);
+      expect(dialogTitle).toBeInTheDocument();
+
+      // Click confirm button
+      const confirmButton = screen.getByRole('button', { name: /удалить/i });
+      fireEvent.click(confirmButton);
+
+      // Check if onDelete was called
+      await waitFor(() => {
+        expect(onDelete).toHaveBeenCalledWith(mockTrackId);
       });
     });
   });
