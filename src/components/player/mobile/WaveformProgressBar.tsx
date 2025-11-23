@@ -205,6 +205,18 @@ export const WaveformProgressBar = memo<WaveformProgressBarProps>(({
     ctx.lineTo(progressX, canvasHeight);
     ctx.stroke();
 
+    // Draw thumb (circle) at the current progress position
+    ctx.fillStyle = 'hsl(var(--primary))';
+    ctx.beginPath();
+    ctx.arc(progressX, canvasHeight / 2, 6, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // Add a white inner circle for better visibility
+    ctx.fillStyle = 'hsl(var(--primary-foreground))';
+    ctx.beginPath();
+    ctx.arc(progressX, canvasHeight / 2, 3, 0, 2 * Math.PI);
+    ctx.fill();
+
   }, [waveformData, progressPercent]);
 
   /**
