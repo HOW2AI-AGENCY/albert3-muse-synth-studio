@@ -33,7 +33,6 @@ export { useAudioUpload } from './useAudioUpload';
 
 // Track Interactions (from features/tracks)
 export { useTrackLike } from '../features/tracks/hooks/useTrackLike';
-export { useTrackState } from './useTrackState';
 
 // Smart Playback
 export { useSmartTrackPlay } from './useSmartTrackPlay';

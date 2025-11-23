@@ -17,8 +17,6 @@ export const FEATURE_PERMISSIONS: Record<string, string[]> = {
   stems: ['pro', 'studio', 'enterprise'],
   lyrics_ai_tools: ['pro', 'studio', 'enterprise'],
   creative_director: ['studio', 'enterprise'],
-  ai_context: ['studio', 'enterprise'],
-  daw_advanced: ['studio', 'enterprise'],
   lyrics_drag_drop: ['studio', 'enterprise'],
   multi_reference: ['studio', 'enterprise'],
   project_templates: ['studio', 'enterprise'],

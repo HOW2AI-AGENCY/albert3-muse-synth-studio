@@ -239,7 +239,7 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
     
     // Simple mapping: most features require pro or higher
     const proFeatures = ['pro_mode', 'ai_field_actions', 'reference_audio', 'stems'];
-    const studioFeatures = ['creative_director', 'ai_context', 'daw_advanced'];
+    const studioFeatures = ['creative_director', 'ai_context'];
     
     if (studioFeatures.includes(feature)) return 'studio';
     if (proFeatures.includes(feature)) return 'pro';

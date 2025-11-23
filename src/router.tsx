@@ -21,8 +21,6 @@ import {
   LazySettings,
   LazyProjects,
   LazyMonitoringHub,
-  LazyStudio,
-  LazyDAW,
   LazyProfile,
   LazyMetrics,
   LazyAdmin,
@@ -34,6 +32,7 @@ import {
   LazyEdgeFunctionsDebug,
   LazySubscription,
   LazyImageCropperDemo,
+  LazyStemStudio,
 } from "./utils/lazyPages";
 
 
@@ -74,6 +73,14 @@ export const router = createBrowserRouter(
           )
         },
         {
+          path: "studio/:trackId",
+          element: (
+            <Suspense fallback={<FullPageSpinner />}>
+              <LazyStemStudio />
+            </Suspense>
+          )
+        },
+        {
           path: "generate",
           element: (
             <EnhancedErrorBoundary>
@@ -88,22 +95,6 @@ export const router = createBrowserRouter(
           element: (
             <Suspense fallback={<FullPageSpinner />}>
               <LazyProjects />
-            </Suspense>
-          )
-        },
-        {
-          path: "studio",
-          element: (
-            <Suspense fallback={<FullPageSpinner />}>
-              <LazyStudio />
-            </Suspense>
-          )
-        },
-        {
-          path: "daw",
-          element: (
-            <Suspense fallback={<FullPageSpinner />}>
-              <LazyDAW />
             </Suspense>
           )
         },

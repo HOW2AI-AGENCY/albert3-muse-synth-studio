@@ -17,8 +17,8 @@ import { LyricsContent } from './tabs/LyricsContent';
 import { AnalysisContent } from './tabs/AnalysisContent';
 import { TrackVersions } from '../components/TrackVersions';
 import { useTrackVariants } from '@/features/tracks/hooks/useTrackVariants';
-import { useTrackState } from '@/hooks/useTrackState';
 import { useDownloadTrack } from '@/hooks/useDownloadTrack';
+import { useTrackLike } from '@/features/tracks/hooks/useTrackLike';
 import { ApiService } from '@/services/api.service';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -44,24 +44,9 @@ export const ModernDetailPanel = ({
   const { toast } = useToast();
   const navigate = useNavigate();
   const { downloadTrack, isDownloading } = useDownloadTrack();
+  const { isLiked, likeCount, toggleLike } = useTrackLike(track.id, track.like_count);
 
-  const {
-    isLiked,
-    handleLikeClick,
-    displayedVersion,
-  } = useTrackState({
-    id: track.id,
-    title: track.title,
-    audio_url: track.audio_url,
-    cover_url: track.cover_url,
-    duration: track.duration_seconds,
-    status: track.status as any,
-    style_tags: track.style_tags || [],
-    lyrics: track.lyrics,
-    parentTrackId: track.id,
-  } as any);
-
-  const hasAudio = !!(displayedVersion?.audio_url || track.audio_url);
+  const hasAudio = !!(track.audio_url);
   const { data: variantsData } = useTrackVariants(track.id, true);
   const versions = (variantsData?.variants || []).map(v => ({
     id: v.id,
@@ -79,8 +64,8 @@ export const ModernDetailPanel = ({
   }));
 
   const handleDownload = () => {
-    if (displayedVersion?.audio_url) {
-      window.open(displayedVersion.audio_url, '_blank');
+    if (track.audio_url) {
+      window.open(track.audio_url, '_blank');
     }
   };
 
@@ -240,14 +225,14 @@ export const ModernDetailPanel = ({
             play_count: track.play_count || 0,
             download_count: track.download_count || 0,
           }}
-          activeVersion={displayedVersion && displayedVersion.audio_url ? {
+          activeVersion={track.audio_url ? {
             variant_index: 0,
             created_at: track.created_at,
-            duration: displayedVersion.duration,
+            duration: track.duration,
           } : undefined}
           isLiked={isLiked}
-          likeCount={track.like_count || 0}
-          onLike={handleLikeClick}
+          likeCount={likeCount || 0}
+          onLike={toggleLike}
           onDownload={handleDownload}
           onShare={handleShare}
         />
@@ -317,7 +302,7 @@ export const ModernDetailPanel = ({
             className="h-full mt-0 data-[state=active]:animate-in data-[state=active]:fade-in-50"
           >
             <LyricsContent 
-              lyrics={track.lyrics || displayedVersion?.lyrics || ''} 
+              lyrics={track.lyrics || ''}
               trackId={track.id}
               sunoTaskId={track.suno_task_id}
               sunoId={track.suno_id}

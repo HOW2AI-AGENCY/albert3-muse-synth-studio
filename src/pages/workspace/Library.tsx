@@ -38,7 +38,7 @@ import { useLibraryDialogs } from "@/hooks/useLibraryDialogs";
 import { useLibraryFilters } from "@/hooks/useLibraryFilters";
 // import { LikesService } from "@/services/likes.service"; // Now handled in TrackCard
 import { supabase } from "@/integrations/supabase/client";
-import { DisplayTrack, convertToAudioPlayerTrack, convertToDisplayTrack, convertToOptimizedTrack } from "@/types/track";
+import { trackConverters } from "@/types/domain/track.types";
 import { cn } from "@/lib/utils";
 import { logger } from "@/utils/logger";
 import { getTrackWithVariants, trackVersionsQueryKeys } from "@/features/tracks/api/trackVersions";
@@ -126,7 +126,7 @@ const LibraryContent: React.FC = () => {
   }, [tracks]);
 
   const mapDisplayTrackToAudio = useCallback((item: DisplayTrack): AudioPlayerTrack | null => {
-    return convertToAudioPlayerTrack({
+    return trackConverters.toAudioPlayerTrack({
       id: item.id,
       title: item.title,
       audio_url: item.audio_url ?? null,
@@ -160,7 +160,7 @@ const LibraryContent: React.FC = () => {
             status: 'completed' as const,
           }))
         ];
-        const audioTracks = allVersions.map(v => convertToAudioPlayerTrack({
+        const audioTracks = allVersions.map(v => trackConverters.toAudioPlayerTrack({
           id: v.id,
           title: v.title,
           audio_url: v.audioUrl ?? null,
@@ -310,7 +310,7 @@ const LibraryContent: React.FC = () => {
     const track = tracks.find(t => t.id === trackId);
     if (!track) return;
 
-    dialogs.openExtend(convertToDisplayTrack(track));
+    dialogs.openExtend(trackConverters.toDisplayTrack(track));
   }, [tracks, dialogs]);
 
   const handleCover = useCallback((trackId: string) => {
@@ -373,7 +373,7 @@ const LibraryContent: React.FC = () => {
     const track = tracks.find(t => t.id === trackId);
     if (!track) return;
 
-    dialogs.openCreatePersona(convertToDisplayTrack(track));
+    dialogs.openCreatePersona(trackConverters.toDisplayTrack(track));
   }, [tracks, dialogs]);
 
   const handleUpscaleAudio = useCallback((trackId: string) => {
@@ -631,7 +631,7 @@ const LibraryContent: React.FC = () => {
 
           {filters.viewMode === 'optimized' && (
             <OptimizedTrackList
-              tracks={filteredAndSortedTracks.map(convertToOptimizedTrack)}
+              tracks={filteredAndSortedTracks.map(trackConverters.toOptimizedTrack)}
               onShare={handleShare}
             />
           )}

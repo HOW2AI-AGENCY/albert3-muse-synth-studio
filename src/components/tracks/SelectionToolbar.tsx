@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSelectedTracks } from '@/contexts/selected-tracks/useSelectedTracks';
 import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
-import { convertToAudioPlayerTrack } from '@/types/track';
+import { trackConverters } from '@/types/domain/track.types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -179,7 +179,7 @@ export const SelectionToolbar: React.FC<SelectionToolbarProps> = ({ className = 
 
       // Convert to AudioPlayerTrack and filter nulls
       const audioTracks = tracks
-        .map(convertToAudioPlayerTrack)
+        .map(trackConverters.toAudioPlayerTrack)
         .filter((track): track is NonNullable<typeof track> => track !== null);
 
       if (audioTracks.length === 0) {

@@ -6,7 +6,7 @@ import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { TrackCard, getTrackWithVariants, trackVersionsQueryKeys } from "@/features/tracks";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { convertToAudioPlayerTrack } from "@/types/track";
+import { trackConverters } from "@/types/domain/track.types";
 import type { TrackStatus } from "@/services/api.service";
 import { logger } from "@/utils/logger";
 
@@ -76,7 +76,7 @@ const Favorites = () => {
           status: 'completed' as const,
         }))
       ];
-      const audioTracks = allVersions.map(v => convertToAudioPlayerTrack({
+      const audioTracks = allVersions.map(v => trackConverters.toAudioPlayerTrack({
         id: v.id,
         title: v.title,
         audio_url: v.audioUrl ?? null,

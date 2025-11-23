@@ -11,7 +11,7 @@ interface UseStemSeparationOptions {
   trackId: string;
   versionId?: string;
   onSuccess?: () => void;
-  onStemsReady?: () => void;
+  onStemsReady?: (trackId: string) => void;
 }
 
 export const useStemSeparation = ({
@@ -60,6 +60,12 @@ export const useStemSeparation = ({
       clearAllTimers();
     };
   }, [clearAllTimers]);
+
+  const defaultOnStemsReady = useCallback((id: string) => {
+    navigate(`/workspace/studio/${id}`);
+  }, [navigate]);
+
+  const finalOnStemsReady = onStemsReady || defaultOnStemsReady;
 
   const generateStems = useCallback(
     async (mode: "separate_vocal" | "split_stem") => {
@@ -195,7 +201,7 @@ export const useStemSeparation = ({
               },
             });
 
-            onStemsReady?.();
+            finalOnStemsReady(trackId);
             toast.success("Стемы успешно созданы!");
             setIsGenerating(false);
           }
@@ -281,7 +287,7 @@ export const useStemSeparation = ({
         setIsGenerating(false);
       }
     },
-    [trackId, versionId, navigate, onSuccess, onStemsReady, clearAllTimers]
+    [trackId, versionId, navigate, onSuccess, finalOnStemsReady, clearAllTimers]
   );
 
   return {

@@ -4,7 +4,7 @@ import {
 } from "@/utils/iconImports";
 import {
   preloadDashboard, preloadGenerate, preloadProjects, preloadMonitoringHub,
-  preloadStudio, preloadDAW, preloadFavorites, preloadSettings, preloadPromptDJPage
+  preloadFavorites, preloadSettings, preloadPromptDJPage
 } from "@/utils/lazyPreloaders";
 
 export type WorkspaceNavRole = "admin";
@@ -47,27 +47,11 @@ export const WORKSPACE_NAV_ITEMS: WorkspaceNavItem[] = [
     isMobilePrimary: true, // P0
   },
   {
-    id: "daw",
-    label: "DAW",
-    path: "/workspace/daw",
-    icon: Music4,
-    preload: () => { void preloadDAW(); },
-    isMobilePrimary: true, // P0
-  },
-  {
     id: "prompt-dj",
     label: "Prompt DJ",
     path: "/workspace/prompt-dj",
     icon: Wand2,
     preload: () => { void preloadPromptDJPage(); },
-    isMobilePrimary: false, // P1 - Moved to overflow
-  },
-  {
-    id: "studio",
-    label: "Studio",
-    path: "/workspace/studio",
-    icon: Headphones,
-    preload: () => { void preloadStudio(); },
     isMobilePrimary: false, // P1 - Moved to overflow
   },
   {
