@@ -1,8 +1,10 @@
 /**
- * Утилиты для кэширования треков в localStorage
+ * Утилиты для кэширования треков в IndexedDB
  * Обеспечивает быстрый доступ к данным треков и уменьшает количество API-запросов
+ * Использует IndexedDB для обхода лимитов localStorage
  */
-import { logWarn, logError } from '@/utils/logger';
+import { logWarn } from '@/utils/logger';
+import { openDB, DBSchema, IDBPDatabase } from 'idb';
 
 export interface CachedTrack {
   id: string;
@@ -21,28 +23,50 @@ export interface TrackCacheOptions {
   maxSize?: number; // максимальное количество треков в кэше (по умолчанию 100)
 }
 
+interface TrackDB extends DBSchema {
+  tracks: {
+    key: string;
+    value: CachedTrack;
+    indexes: { 'by-date': number };
+  };
+  metadata: {
+    key: string;
+    value: { lastUpdated: number; version: string };
+  };
+}
+
 class TrackCacheManager {
-  private readonly CACHE_KEY = 'music_tracks_cache';
-  private readonly CACHE_METADATA_KEY = 'music_tracks_cache_metadata';
+  private readonly DB_NAME = 'music_tracks_db';
+  private readonly STORE_NAME = 'tracks';
+  private readonly METADATA_STORE_NAME = 'metadata';
   private readonly DEFAULT_MAX_AGE = 24 * 60 * 60 * 1000; // 24 часа
   private readonly DEFAULT_MAX_SIZE = 100;
 
   private options: Required<TrackCacheOptions>;
+  private dbPromise: Promise<IDBPDatabase<TrackDB>>;
 
   constructor(options: TrackCacheOptions = {}) {
     this.options = {
       maxAge: options.maxAge || this.DEFAULT_MAX_AGE,
       maxSize: options.maxSize || this.DEFAULT_MAX_SIZE,
     };
+
+    this.dbPromise = openDB<TrackDB>(this.DB_NAME, 1, {
+      upgrade(db) {
+        const trackStore = db.createObjectStore('tracks', { keyPath: 'id' });
+        trackStore.createIndex('by-date', 'cached_at');
+        db.createObjectStore('metadata', { keyPath: 'key' });
+      },
+    });
   }
 
   /**
    * Получить трек из кэша
    */
-  getTrack(trackId: string): CachedTrack | null {
+  async getTrack(trackId: string): Promise<CachedTrack | null> {
     try {
-      const cache = this.getCache();
-      const track = cache[trackId];
+      const db = await this.dbPromise;
+      const track = await db.get(this.STORE_NAME, trackId);
 
       if (!track) {
         return null;
@@ -50,7 +74,7 @@ class TrackCacheManager {
 
       // Проверяем, не устарел ли кэш
       if (this.isExpired(track.cached_at)) {
-        this.removeTrack(trackId);
+        await this.removeTrack(trackId);
         return null;
       }
 
@@ -67,68 +91,43 @@ class TrackCacheManager {
   /**
    * Сохранить трек в кэш
    */
-  setTrack(track: Omit<CachedTrack, 'cached_at'>): void {
+  async setTrack(track: Omit<CachedTrack, 'cached_at'>): Promise<void> {
     try {
-      const cache = this.getCache();
+      const db = await this.dbPromise;
       const cachedTrack: CachedTrack = {
         ...track,
         cached_at: Date.now(),
       };
 
-      cache[track.id] = cachedTrack;
+      await db.put(this.STORE_NAME, cachedTrack);
 
       // Проверяем размер кэша и удаляем старые записи при необходимости
-      this.enforceMaxSize(cache);
-
-      this.saveCache(cache);
-      this.updateMetadata();
+      await this.enforceMaxSize();
+      await this.updateMetadata();
     } catch (error) {
-      // Handle quota exceeded error
-      if (error instanceof DOMException && (error.name === 'QuotaExceededError' || error.code === 22)) {
-        logWarn('Storage quota exceeded, clearing cache', 'TrackCache', {
-          operation: 'cache',
-          trackId: track.id,
-          quotaExceeded: true
-        });
-        this.cleanExpiredTracks();
-        // If still failing, reduce cache size by 50%
-        const cache = this.getCache();
-        const entries = Object.entries(cache).sort((a, b) => a[1].cached_at - b[1].cached_at);
-        const half = Math.floor(entries.length / 2);
-        const reducedCache = Object.fromEntries(entries.slice(half));
-        try {
-          localStorage.setItem(this.CACHE_KEY, JSON.stringify(reducedCache));
-          // Retry with reduced cache
-          const newCache = this.getCache();
-          newCache[track.id] = { ...track, cached_at: Date.now() };
-          localStorage.setItem(this.CACHE_KEY, JSON.stringify(newCache));
-        } catch (retryError) {
-          logError('Cache failed after cleanup', retryError as Error, 'TrackCache', {
-            operation: 'cache',
-            trackId: track.id,
-            retriesExhausted: true
-          });
-        }
-      } else {
-        logWarn('Failed to save track to cache', 'TrackCache', {
-          operation: 'cache',
-          trackId: track.id,
-          error: error instanceof Error ? error.message : String(error)
-        });
-      }
+      logWarn('Failed to save track to cache', 'TrackCache', {
+        operation: 'cache',
+        trackId: track.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   }
 
   /**
    * Получить несколько треков из кэша
    */
-  getTracks(trackIds: string[]): Record<string, CachedTrack> {
+  async getTracks(trackIds: string[]): Promise<Record<string, CachedTrack>> {
     const result: Record<string, CachedTrack> = {};
+    const db = await this.dbPromise;
 
     for (const id of trackIds) {
-      const track = this.getTrack(id);
-      if (track) {
-        result[id] = track;
+      try {
+        const track = await db.get(this.STORE_NAME, id);
+        if (track && !this.isExpired(track.cached_at)) {
+          result[id] = track;
+        }
+      } catch (e) {
+        // ignore individual errors
       }
     }
 
@@ -138,28 +137,30 @@ class TrackCacheManager {
   /**
    * Получить все актуальные треки из кэша
    */
-  getValidTracks(): CachedTrack[] {
+  async getValidTracks(): Promise<CachedTrack[]> {
     try {
-      const cache = this.getCache();
+      const db = await this.dbPromise;
+      const tracks = await db.getAllFromIndex(this.STORE_NAME, 'by-date');
       const validTracks: CachedTrack[] = [];
       let hasExpiredTracks = false;
 
-      for (const [trackId, track] of Object.entries(cache)) {
+      // tracks are sorted by date ascending (oldest first)
+      // we want newest first, so we'll reverse at the end
+
+      for (const track of tracks) {
         if (this.isExpired(track.cached_at)) {
-          delete cache[trackId];
+          await db.delete(this.STORE_NAME, track.id);
           hasExpiredTracks = true;
           continue;
         }
-
         validTracks.push(track);
       }
 
       if (hasExpiredTracks) {
-        this.saveCache(cache);
-        this.updateMetadata();
+        await this.updateMetadata();
       }
 
-      return validTracks.sort((a, b) => b.cached_at - a.cached_at);
+      return validTracks.reverse();
     } catch (error) {
       logWarn('Failed to get valid tracks from cache', 'TrackCache', {
         operation: 'getValidTracks',
@@ -172,21 +173,29 @@ class TrackCacheManager {
   /**
    * Сохранить несколько треков в кэш
    */
-  setTracks(tracks: Omit<CachedTrack, 'cached_at'>[]): void {
-    for (const track of tracks) {
-      this.setTrack(track);
-    }
+  async setTracks(tracks: Omit<CachedTrack, 'cached_at'>[]): Promise<void> {
+    const db = await this.dbPromise;
+    const tx = db.transaction(this.STORE_NAME, 'readwrite');
+
+    await Promise.all([
+      ...tracks.map(track => tx.store.put({
+        ...track,
+        cached_at: Date.now(),
+      })),
+      tx.done
+    ]);
+
+    await this.enforceMaxSize();
   }
 
   /**
    * Удалить трек из кэша
    */
-  removeTrack(trackId: string): void {
+  async removeTrack(trackId: string): Promise<void> {
     try {
-      const cache = this.getCache();
-      delete cache[trackId];
-      this.saveCache(cache);
-      this.updateMetadata();
+      const db = await this.dbPromise;
+      await db.delete(this.STORE_NAME, trackId);
+      await this.updateMetadata();
     } catch (error) {
       logWarn('Failed to remove track from cache', 'TrackCache', {
         operation: 'remove',
@@ -199,10 +208,11 @@ class TrackCacheManager {
   /**
    * Очистить весь кэш
    */
-  clearCache(): void {
+  async clearCache(): Promise<void> {
     try {
-      localStorage.removeItem(this.CACHE_KEY);
-      localStorage.removeItem(this.CACHE_METADATA_KEY);
+      const db = await this.dbPromise;
+      await db.clear(this.STORE_NAME);
+      await db.clear(this.METADATA_STORE_NAME);
     } catch (error) {
       logWarn('Failed to clear cache', 'TrackCache', {
         operation: 'clearCache',
@@ -214,38 +224,31 @@ class TrackCacheManager {
   /**
    * Получить статистику кэша
    */
-  getCacheStats(): {
+  async getCacheStats(): Promise<{
     totalTracks: number;
-    cacheSize: number; // размер в байтах
+    cacheSize: number; // приблизительный размер в байтах (сложно точно посчитать в IDB)
     oldestTrack?: string;
     newestTrack?: string;
-  } {
+  }> {
     try {
-      const cache = this.getCache();
-      const tracks = Object.values(cache);
-      const cacheString = JSON.stringify(cache);
+      const db = await this.dbPromise;
+      const tracks = await db.getAllFromIndex(this.STORE_NAME, 'by-date');
 
-      let oldestTrack: string | undefined;
-      let newestTrack: string | undefined;
-      let oldestTime = Infinity;
-      let newestTime = 0;
-
-      for (const track of tracks) {
-        if (track.cached_at < oldestTime) {
-          oldestTime = track.cached_at;
-          oldestTrack = track.title;
-        }
-        if (track.cached_at > newestTime) {
-          newestTime = track.cached_at;
-          newestTrack = track.title;
-        }
+      if (tracks.length === 0) {
+        return { totalTracks: 0, cacheSize: 0 };
       }
+
+      const oldestTrack = tracks[0];
+      const newestTrack = tracks[tracks.length - 1];
+
+      // Rough estimation
+      const cacheSize = JSON.stringify(tracks).length;
 
       return {
         totalTracks: tracks.length,
-        cacheSize: new Blob([cacheString]).size,
-        oldestTrack,
-        newestTrack,
+        cacheSize,
+        oldestTrack: oldestTrack.title,
+        newestTrack: newestTrack.title,
       };
     } catch (error) {
       logWarn('Failed to get cache stats', 'TrackCache', {
@@ -262,22 +265,25 @@ class TrackCacheManager {
   /**
    * Очистить устаревшие записи
    */
-  cleanExpiredTracks(): number {
+  async cleanExpiredTracks(): Promise<number> {
     try {
-      const cache = this.getCache();
-      // const initialCount = Object.keys(cache).length;
+      const db = await this.dbPromise;
+      const tracks = await db.getAll(this.STORE_NAME);
       let removedCount = 0;
 
-      for (const [trackId, track] of Object.entries(cache)) {
+      const tx = db.transaction(this.STORE_NAME, 'readwrite');
+
+      for (const track of tracks) {
         if (this.isExpired(track.cached_at)) {
-          delete cache[trackId];
+          await tx.store.delete(track.id);
           removedCount++;
         }
       }
 
+      await tx.done;
+
       if (removedCount > 0) {
-        this.saveCache(cache);
-        this.updateMetadata();
+        await this.updateMetadata();
       }
 
       return removedCount;
@@ -290,50 +296,36 @@ class TrackCacheManager {
     }
   }
 
-  private getCache(): Record<string, CachedTrack> {
-    try {
-      const cacheString = localStorage.getItem(this.CACHE_KEY);
-      return cacheString ? JSON.parse(cacheString) : {};
-    } catch (error) {
-      logWarn('Failed to read cache, creating new', 'TrackCache', {
-        operation: 'getCache',
-        error: error instanceof Error ? error.message : String(error)
-      });
-      return {};
-    }
-  }
-
-  private saveCache(cache: Record<string, CachedTrack>): void {
-    localStorage.setItem(this.CACHE_KEY, JSON.stringify(cache));
-  }
-
   private isExpired(cachedAt: number): boolean {
     return Date.now() - cachedAt > this.options.maxAge;
   }
 
-  private enforceMaxSize(cache: Record<string, CachedTrack>): void {
-    const tracks = Object.values(cache);
-    if (tracks.length <= this.options.maxSize) {
+  private async enforceMaxSize(): Promise<void> {
+    const db = await this.dbPromise;
+    const count = await db.count(this.STORE_NAME);
+
+    if (count <= this.options.maxSize) {
       return;
     }
 
-    // Сортируем по времени кэширования (старые первыми)
-    tracks.sort((a, b) => a.cached_at - b.cached_at);
+    // Удаляем самые старые
+    const tracksToDelete = count - this.options.maxSize;
+    const keys = await db.getAllKeysFromIndex(this.STORE_NAME, 'by-date', IDBKeyRange.upperBound(Infinity), tracksToDelete);
 
-    // Удаляем старые треки
-    const tracksToRemove = tracks.slice(0, tracks.length - this.options.maxSize);
-    for (const track of tracksToRemove) {
-      delete cache[track.id];
-    }
+    const tx = db.transaction(this.STORE_NAME, 'readwrite');
+    await Promise.all([
+      ...keys.map(key => tx.store.delete(key)),
+      tx.done
+    ]);
   }
 
-  private updateMetadata(): void {
+  private async updateMetadata(): Promise<void> {
     try {
-      const metadata = {
+      const db = await this.dbPromise;
+      await db.put(this.METADATA_STORE_NAME, {
         lastUpdated: Date.now(),
         version: '1.0.0',
-      };
-      localStorage.setItem(this.CACHE_METADATA_KEY, JSON.stringify(metadata));
+      }, 'metadata');
     } catch (error) {
       logWarn('Failed to update cache metadata', 'TrackCache', {
         operation: 'updateMetadata',
