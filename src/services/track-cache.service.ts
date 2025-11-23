@@ -5,6 +5,7 @@ import { logError, logInfo, logWarn } from '@/utils/logger';
 interface CacheableTrack {
   id: string;
   title: string;
+  artist: string;
   audio_url: string;
   image_url?: string;
   duration?: number;
@@ -54,6 +55,7 @@ class TrackCacheService {
       .map(track => ({
         id: track.id,
         title: track.title,
+        artist: track.profile?.full_name || track.profile?.username || 'Unknown Artist',
         audio_url: track.audio_url!,
         image_url: track.cover_url || undefined,
         duration: track.duration_seconds ?? track.duration ?? undefined,
