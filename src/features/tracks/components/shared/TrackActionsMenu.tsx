@@ -32,7 +32,7 @@ interface TrackActionsMenuProps {
   hasVocals?: boolean;
   isLiked?: boolean;
   operationTargetId?: string;
-  
+
   // Actions (все опциональные для гибкости)
   onLikeClick?: () => void;
   onDownloadClick?: () => void;
@@ -47,11 +47,11 @@ interface TrackActionsMenuProps {
   onSync?: (trackId: string) => void;
   onRetry?: (trackId: string) => void;
   onDelete?: (trackId: string) => void;
-  
+
   // Aliases для совместимости с TrackListItem
   onDownload?: () => void;
   onShare?: () => void;
-  
+
   // Display variant
   variant?: 'full' | 'compact' | 'minimal';
   className?: string;
@@ -88,7 +88,7 @@ export const TrackActionsMenu = memo(({
   const finalOnShareClick = onShareClick || onShare;
   const isMurekaTrack = trackMetadata?.provider === 'mureka';
   const isSunoTrack = !isMurekaTrack;
-  
+
   // Suppress unused warnings (will be used in future refactor)
   void onDelete;
 
@@ -97,9 +97,9 @@ export const TrackActionsMenu = memo(({
       {/* Always visible: Like button */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onLikeClick}
             className={cn(
               'h-8 w-8',
@@ -122,9 +122,9 @@ export const TrackActionsMenu = memo(({
         <>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={finalOnDownloadClick}
                 className="h-8 w-8"
               >
@@ -136,9 +136,9 @@ export const TrackActionsMenu = memo(({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={finalOnShareClick}
                 className="h-8 w-8"
               >
@@ -150,142 +150,127 @@ export const TrackActionsMenu = memo(({
         </>
       )}
 
-      {/* DropdownMenu with context-aware options */}
-      {trackStatus === 'completed' && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className={cn(
-                'h-8 w-8',
-                variant === 'minimal' && 'h-7 w-7'
-              )}
-            >
-              <MoreVertical className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            {/* Mobile-only quick actions */}
-            {variant === 'minimal' && (
-              <>
-                <DropdownMenuItem onClick={onDownloadClick}>
-                  <Download className="w-4 h-4 mr-2" />
-                  Скачать MP3
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onShareClick}>
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Поделиться
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-              </>
+      {/* DropdownMenu with context-aware options - Always visible now */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              'h-8 w-8',
+              variant === 'minimal' && 'h-7 w-7'
             )}
-
-            {/* Download MP3 (if not already visible) */}
-            {variant !== 'minimal' && (
+          >
+            <MoreVertical className="w-4 h-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          {/* Mobile-only quick actions */}
+          {variant === 'minimal' && (
+            <>
               <DropdownMenuItem onClick={onDownloadClick}>
                 <Download className="w-4 h-4 mr-2" />
                 Скачать MP3
               </DropdownMenuItem>
-            )}
+              <DropdownMenuItem onClick={onShareClick}>
+                <Share2 className="w-4 h-4 mr-2" />
+                Поделиться
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
 
-            <DropdownMenuSeparator />
-
-            {/* Sharing */}
-            <DropdownMenuItem onClick={onTogglePublic}>
-              <Globe className="w-4 h-4 mr-2" />
-              {isPublic ? 'Скрыть' : 'Опубликовать'}
+          {/* Download MP3 (if not already visible) */}
+          {variant !== 'minimal' && (
+            <DropdownMenuItem onClick={onDownloadClick}>
+              <Download className="w-4 h-4 mr-2" />
+              Скачать MP3
             </DropdownMenuItem>
+          )}
 
-            <DropdownMenuSeparator />
+          <DropdownMenuSeparator />
 
-            {/* AI Features (выделено) */}
-            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-              AI Инструменты
-            </div>
-            
-            {onDescribeTrack && (
-              <DropdownMenuItem 
-                onClick={() => onDescribeTrack(trackId)} 
-                className="text-primary"
-              >
-                <Sparkles className="w-4 h-4 mr-2 text-primary" />
-                AI Описание
-              </DropdownMenuItem>
-            )}
+          {/* Sharing */}
+          <DropdownMenuItem onClick={onTogglePublic}>
+            <Globe className="w-4 h-4 mr-2" />
+            {isPublic ? 'Скрыть' : 'Опубликовать'}
+          </DropdownMenuItem>
 
-            {/* Processing */}
-            <DropdownMenuSeparator />
-            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-              Обработка
-            </div>
-            
-            {onSeparateStems && (
-              <DropdownMenuItem onClick={() => onSeparateStems(operationTargetId || trackId)}>
-                <Split className="w-4 h-4 mr-2" />
-                Разделить на стемы
-              </DropdownMenuItem>
-            )}
+          <DropdownMenuSeparator />
 
-            {/* Suno-only features */}
-            {isSunoTrack && (
-              <>
-                {onExtend && (
-                  <DropdownMenuItem onClick={() => onExtend(operationTargetId || trackId)}>
-                    <Expand className="w-4 h-4 mr-2" />
-                    Расширить трек
+          {/* AI Features (выделено) */}
+          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+            AI Инструменты
+          </div>
+
+          {onDescribeTrack && (
+            <DropdownMenuItem
+              onClick={() => onDescribeTrack(trackId)}
+              className="text-primary"
+            >
+              <Sparkles className="w-4 h-4 mr-2 text-primary" />
+              AI Описание
+            </DropdownMenuItem>
+          )}
+
+          {/* Processing */}
+          <DropdownMenuSeparator />
+          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+            Обработка
+          </div>
+
+          {onSeparateStems && (
+            <DropdownMenuItem onClick={() => onSeparateStems(operationTargetId || trackId)}>
+              <Split className="w-4 h-4 mr-2" />
+              Разделить на стемы
+            </DropdownMenuItem>
+          )}
+
+          {/* Suno-only features */}
+          {isSunoTrack && (
+            <>
+              {onExtend && (
+                <DropdownMenuItem onClick={() => onExtend(operationTargetId || trackId)}>
+                  <Expand className="w-4 h-4 mr-2" />
+                  Расширить трек
+                </DropdownMenuItem>
+              )}
+
+              {onCover && (
+                <DropdownMenuItem onClick={() => onCover(operationTargetId || trackId)}>
+                  <Mic2 className="w-4 h-4 mr-2" />
+                  Создать кавер
+                </DropdownMenuItem>
+              )}
+
+              {!hasVocals && onAddVocal && (
+                <DropdownMenuItem onClick={() => onAddVocal(operationTargetId || trackId)}>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Добавить вокал
+                </DropdownMenuItem>
+              )}
+
+              {onCreatePersona && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => onCreatePersona(trackId)}
+                    className="text-primary"
+                  >
+                    <User className="w-4 h-4 mr-2 text-primary" />
+                    Создать персону
                   </DropdownMenuItem>
-                )}
+                </>
+              )}
+            </>
+          )}
 
-                {onCover && (
-                  <DropdownMenuItem onClick={() => onCover(operationTargetId || trackId)}>
-                    <Mic2 className="w-4 h-4 mr-2" />
-                    Создать кавер
-                  </DropdownMenuItem>
-                )}
-
-                {!hasVocals && onAddVocal && (
-                  <DropdownMenuItem onClick={() => onAddVocal(operationTargetId || trackId)}>
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Добавить вокал
-                  </DropdownMenuItem>
-                )}
-
-                {onCreatePersona && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => onCreatePersona(trackId)}
-                      className="text-primary"
-                    >
-                      <User className="w-4 h-4 mr-2 text-primary" />
-                      Создать персону
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </>
-            )}
-
-            {/* Mureka-specific hint */}
-            {isMurekaTrack && (
-              <>
-                <DropdownMenuSeparator />
-                <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                  💡 Расширение/кавер доступны только для Suno
-                </div>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
-
-      {/* Processing/Failed states */}
-      {(trackStatus === 'processing' || trackStatus === 'pending') && onSync && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+          {/* Mureka-specific hint */}
+          {isMurekaTrack && (
+            <>
+              <DropdownMenuSeparator />
+              variant="ghost"
+              size="icon"
               onClick={() => onSync(trackId)}
               className={cn(
                 'h-8 w-8',
@@ -294,17 +279,17 @@ export const TrackActionsMenu = memo(({
             >
               <RefreshCw className="w-4 h-4" />
             </Button>
-          </TooltipTrigger>
-          <TooltipContent>Обновить статус</TooltipContent>
-        </Tooltip>
+        </TooltipTrigger>
+        <TooltipContent>Обновить статус</TooltipContent>
+      </Tooltip>
       )}
 
       {trackStatus === 'failed' && onRetry && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => onRetry(trackId)}
               className={cn(
                 'h-8 w-8',

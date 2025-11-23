@@ -6,7 +6,7 @@
  * @audit-date 2025-11-17
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -48,7 +48,9 @@ export const ModernDetailPanel = ({
 
   const hasAudio = !!(track.audio_url);
   const { data: variantsData } = useTrackVariants(track.id, true);
-  const versions = (variantsData?.variants || []).map(v => ({
+
+  // ✅ Memoize versions to prevent infinite loops in child components
+  const versions = useMemo(() => (variantsData?.variants || []).map(v => ({
     id: v.id,
     parentTrackId: v.parentTrackId,
     variant_index: v.variantIndex,
@@ -61,7 +63,7 @@ export const ModernDetailPanel = ({
     lyrics: v.lyrics,
     suno_id: v.sunoId || '',
     metadata: v.metadata || null,
-  }));
+  })), [variantsData]);
 
   const handleDownload = () => {
     if (track.audio_url) {
@@ -146,7 +148,7 @@ export const ModernDetailPanel = ({
       <div className="flex-shrink-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
         <div className="flex items-center justify-between px-4 py-3">
           <h2 className="text-lg font-semibold truncate pr-4">Детали трека</h2>
-          
+
           <div className="flex items-center gap-1.5">
             <Button
               variant="ghost"
@@ -158,7 +160,7 @@ export const ModernDetailPanel = ({
               <Sparkles className="h-4 w-4" />
               <span className="hidden sm:inline">Ремикс</span>
             </Button>
-            
+
             <Button
               variant="ghost"
               size="sm"
@@ -176,7 +178,7 @@ export const ModernDetailPanel = ({
                 {isDownloading ? 'Загрузка...' : 'Скачать'}
               </span>
             </Button>
-            
+
             <Button
               variant="ghost"
               size="sm"
@@ -194,9 +196,9 @@ export const ModernDetailPanel = ({
                 {isDeleting ? 'Удаление...' : 'Удалить'}
               </span>
             </Button>
-            
+
             <Separator orientation="vertical" className="h-6 mx-1" />
-            
+
             {onClose && (
               <Button
                 variant="ghost"
@@ -239,15 +241,15 @@ export const ModernDetailPanel = ({
       </div>
 
       {/* Tabs - Scrollable Content */}
-      <Tabs 
-        value={activeTab} 
-        onValueChange={(v) => setActiveTab(v as typeof activeTab)} 
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as typeof activeTab)}
         className="flex-1 flex flex-col min-h-0"
       >
         {/* Tab Navigation - Sticky */}
         <TabsList className="w-full justify-start border-b rounded-none bg-transparent h-12 flex-shrink-0 sticky top-[57px] z-10 bg-background">
-          <TabsTrigger 
-            value="overview" 
+          <TabsTrigger
+            value="overview"
             className={cn(
               "data-[state=active]:bg-muted relative",
               "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5",
@@ -256,8 +258,8 @@ export const ModernDetailPanel = ({
           >
             Обзор
           </TabsTrigger>
-          <TabsTrigger 
-            value="lyrics" 
+          <TabsTrigger
+            value="lyrics"
             className={cn(
               "data-[state=active]:bg-muted relative",
               "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5",
@@ -266,8 +268,8 @@ export const ModernDetailPanel = ({
           >
             Текст
           </TabsTrigger>
-          <TabsTrigger 
-            value="versions" 
+          <TabsTrigger
+            value="versions"
             className={cn(
               "data-[state=active]:bg-muted relative",
               "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5",
@@ -276,8 +278,8 @@ export const ModernDetailPanel = ({
           >
             Версии
           </TabsTrigger>
-          <TabsTrigger 
-            value="analysis" 
+          <TabsTrigger
+            value="analysis"
             className={cn(
               "data-[state=active]:bg-muted relative",
               "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5",
@@ -290,18 +292,18 @@ export const ModernDetailPanel = ({
 
         {/* Tab Content - Scrollable */}
         <div className="flex-1 min-h-0 overflow-hidden">
-          <TabsContent 
-            value="overview" 
+          <TabsContent
+            value="overview"
             className="h-full mt-0 data-[state=active]:animate-in data-[state=active]:fade-in-50"
           >
             <OverviewContent track={track} />
           </TabsContent>
 
-          <TabsContent 
-            value="lyrics" 
+          <TabsContent
+            value="lyrics"
             className="h-full mt-0 data-[state=active]:animate-in data-[state=active]:fade-in-50"
           >
-            <LyricsContent 
+            <LyricsContent
               lyrics={track.lyrics || ''}
               trackId={track.id}
               sunoTaskId={track.suno_task_id}
@@ -309,20 +311,20 @@ export const ModernDetailPanel = ({
             />
           </TabsContent>
 
-          <TabsContent 
-            value="versions" 
+          <TabsContent
+            value="versions"
             className="h-full mt-0 data-[state=active]:animate-in data-[state=active]:fade-in-50"
           >
-            <TrackVersions 
+            <TrackVersions
               trackId={track.id}
               versions={versions as any}
               trackMetadata={variantsData?.mainTrack?.metadata || null}
-              onVersionUpdate={() => {}}
+              onVersionUpdate={() => { }}
             />
           </TabsContent>
 
-          <TabsContent 
-            value="analysis" 
+          <TabsContent
+            value="analysis"
             className="h-full mt-0 data-[state=active]:animate-in data-[state=active]:fade-in-50"
           >
             <AnalysisContent track={track} />
