@@ -67,7 +67,7 @@ export function createAuthenticatedHandler<T>(options: HandlerOptions<T>) {
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
-      logger.error('🔴 Unhandled error in handler', { error: errorMessage });
+      logger.error('🔴 Unhandled error in handler', { error: error, errorMessage: errorMessage });
       return new Response(JSON.stringify({ error: errorMessage }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }

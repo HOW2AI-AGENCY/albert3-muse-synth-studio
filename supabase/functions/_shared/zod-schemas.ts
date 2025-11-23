@@ -4,6 +4,8 @@
  */
 
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { timestampedLyricsSchema as responseTimestampedLyricsSchema } from './types/lyrics.ts';
+
 
 // ✅ Suno model versions enum
 export const SUNO_MODELS = [
@@ -322,22 +324,33 @@ export const musicVideoCallbackSchema = z.object({
   })
 });
 
-// ✅ AlignedWord schema for timestamped lyrics
-export const AlignedWordSchema = z.object({
-  word: z.string(),
-  success: z.boolean(),
-  startS: z.number(),
-  endS: z.number(),
-  palign: z.number(),
+// ✅ analyze-audio request schema
+export const analyzeAudioSchema = z.object({
+  audioUrl: httpsUrlSchema,
+  trackId: uuidSchema,
+  prompt: z.string().min(1).max(3000).trim(),
 });
 
-// ✅ Timestamped lyrics response schema (frontend expectation)
-export const TimestampedLyricsResponseSchema = z.object({
-  alignedWords: z.array(AlignedWordSchema),
-  waveformData: z.array(z.number()),
-  hootCer: z.number(),
-  isStreamed: z.boolean(),
-});
+// ✅ Suno API response schema for timestamped lyrics
+export const timestampedLyricsSchema = responseTimestampedLyricsSchema;
+
+export const sunoResponseSchema = z.union([
+  z.object({
+    code: z.number(),
+    msg: z.string(),
+    data: responseTimestampedLyricsSchema.nullable(),
+  }),
+  z.object({
+    success: z.boolean(),
+    data: responseTimestampedLyricsSchema.nullable(),
+  }),
+  responseTimestampedLyricsSchema,
+  z.object({
+    error: z.string(),
+    code: z.number().optional(),
+  }),
+  z.object({}).passthrough(),
+]);
 
 // ✅ Helper function to validate and parse
 export function validateAndParse<T>(

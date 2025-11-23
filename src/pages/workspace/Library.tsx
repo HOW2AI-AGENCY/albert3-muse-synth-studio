@@ -49,6 +49,7 @@ import { VirtualizedTrackGrid } from '@/components/tracks/VirtualizedTrackGrid';
 import { VirtualizedTrackList } from '@/components/tracks/VirtualizedTrackList';
 import { useAuth } from "@/contexts/auth/useAuth";
 import { SelectedTracksProvider, useSelectedTracks } from '@/contexts/SelectedTracksContext';
+import { LibraryTrackCard } from './LibraryTrackCard';
 import { SelectionToolbar } from '@/components/tracks/SelectionToolbar';
 // import type { SortBy } from '@/hooks/useLibraryFilters';
 import { useGenerateCoverImage } from '@/hooks/useGenerateCoverImage';
@@ -588,29 +589,25 @@ const LibraryContent: React.FC = () => {
                     const domain = domainById.get(track.id);
                     if (!domain) return null;
                     return (
-                    <div key={track.id} className="relative w-full" aria-busy={loadingTrackId === track.id}>
-                      <TrackCard
-                        track={domain}
-                        onClick={() => handleTrackPlay(track)}
-                        onShare={() => handleShare(track.id)}
-                        onSeparateStems={() => handleSeparateStems(track.id)}
-                        onExtend={() => handleExtend(track.id)}
-                        onCover={() => handleCover(track.id)}
-                        onAddVocal={() => handleAddVocal(track.id)}
-                        onCreatePersona={() => handleCreatePersona(track.id)}
-                        onUpscaleAudio={() => handleUpscaleAudio(track.id)}
-                        onGenerateCover={() => handleGenerateCover(track.id)}
-                        onRetry={handleRetry}
-                        onDelete={handleDelete}
+                      <LibraryTrackCard
+                        key={track.id}
+                        track={track}
+                        domain={domain}
+                        loadingTrackId={loadingTrackId}
+                        handleTrackPlay={handleTrackPlay}
+                        handleShare={handleShare}
+                        handleSeparateStems={handleSeparateStems}
+                        handleExtend={handleExtend}
+                        handleCover={handleCover}
+                        handleAddVocal={handleAddVocal}
+                        handleCreatePersona={handleCreatePersona}
+                        handleUpscaleAudio={handleUpscaleAudio}
+                        handleGenerateCover={handleGenerateCover}
+                        handleRetry={handleRetry}
+                        handleDelete={handleDelete}
                       />
-                      {loadingTrackId === track.id && (
-                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-3xl bg-background/80 backdrop-blur-sm">
-                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                          <span className="text-xs font-medium text-muted-foreground">Загрузка версий…</span>
-                        </div>
-                      )}
-                    </div>
-                  );})}
+                    );
+                  })}
                   </div>
                 )}
               </div>
