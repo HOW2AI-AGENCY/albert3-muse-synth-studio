@@ -1,46 +1,30 @@
-import { memo, useCallback, useMemo } from "react";
-import { Play, Pause, SkipBack, SkipForward, X } from "@/utils/iconImports";
-import { Button } from "@/components/ui/button";
-import { useAudioPlayerStore, useCurrentTrack, useIsPlaying } from "@/stores/audioPlayerStore";
-import { useHapticFeedback } from "@/hooks/useHapticFeedback";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { UnifiedTrackActionsMenu } from "@/components/tracks/shared/TrackActionsMenu.unified";
-import { useTrackVersionLike } from "@/features/tracks/hooks/useTrackVersionLike";
-import { useDownloadTrack } from "@/hooks/useDownloadTrack";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { toast } from "sonner";
-import { ResponsiveDropdownMenu } from "@/components/ui/responsive-dropdown-menu";
+/**
+ * @file MiniPlayer.tsx
+ * @description A sleek, compact, and performant mini audio player for mobile devices.
+ * @version 2.0.0
+ */
+import { memo, useCallback } from 'react';
+import { Play, Pause, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useAudioPlayerStore, useCurrentTrack, useIsPlaying } from '@/stores/audioPlayerStore';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { cn } from '@/lib/utils';
+import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 
 interface MiniPlayerProps {
   onExpand: () => void;
 }
 
-export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
+const MiniPlayerComponent = ({ onExpand }: MiniPlayerProps) => {
   const currentTrack = useCurrentTrack();
   const isPlaying = useIsPlaying();
-
-  const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
-  const playNext = useAudioPlayerStore((state) => state.playNext);
-  const playPrevious = useAudioPlayerStore((state) => state.playPrevious);
-  const queue = useAudioPlayerStore((state) => state.queue);
-  const currentQueueIndex = useAudioPlayerStore((state) => state.currentQueueIndex);
-  const clearCurrentTrack = useAudioPlayerStore((state) => state.clearCurrentTrack);
-  const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
-  const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
-  const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
-
-  
-
+  const { togglePlayPause, clearCurrentTrack, currentTime, duration } = useAudioPlayerStore(state => ({
+    togglePlayPause: state.togglePlayPause,
+    clearCurrentTrack: state.clearCurrentTrack,
+    currentTime: state.currentTime,
+    duration: state.duration,
+  }));
   const { vibrate } = useHapticFeedback();
-  
-  const currentVersionId = useMemo(() => {
-    if (!currentTrack) return null;
-    return availableVersions[currentVersionIndex]?.id || currentTrack.id;
-  }, [currentTrack, availableVersions, currentVersionIndex]);
-  
-  const { isLiked, toggleLike } = useTrackVersionLike(currentVersionId, 0);
-  const { downloadTrack } = useDownloadTrack();
 
   const handlePlayPause = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -48,218 +32,93 @@ export const MiniPlayer = memo(({ onExpand }: MiniPlayerProps) => {
     togglePlayPause();
   }, [togglePlayPause, vibrate]);
 
-  const handleNext = useCallback((e: React.MouseEvent) => {
+  const handleClose = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    vibrate('medium');
-    playNext();
-  }, [playNext, vibrate]);
-
-  const handlePrevious = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    vibrate('medium');
-    playPrevious();
-  }, [playPrevious, vibrate]);
-
-  const handleExpand = useCallback(() => {
-    vibrate('medium');
-    onExpand();
-  }, [onExpand, vibrate]);
-
-  const handleClose = useCallback(() => {
     vibrate('medium');
     clearCurrentTrack();
   }, [clearCurrentTrack, vibrate]);
 
-  const handleDownloadClick = useCallback(() => {
-    if (!currentTrack?.audio_url) return;
-    downloadTrack({
-      id: currentVersionId || currentTrack.id,
-      title: currentTrack.title,
-      audio_url: currentTrack.audio_url,
-    });
-  }, [currentTrack, currentVersionId, downloadTrack]);
+  const { onTouchStart, onTouchMove, onTouchEnd } = useSwipeGesture({
+    onSwipeUp: onExpand,
+    onSwipeDown: clearCurrentTrack,
+  });
 
   if (!currentTrack) return null;
+
+  const progress = (currentTime / (duration || 1)) * 100;
 
   return (
     <div
       data-testid="mini-player"
-      className="fixed left-0 right-0 bg-gradient-to-t from-background/98 via-card/95 to-card/90 backdrop-blur-2xl border-t border-border/40 shadow-[0_-4px_24px_-8px_hsl(var(--primary)/0.15)] transition-all duration-300"
+      className="fixed left-2 right-2 rounded-lg bg-background/80 backdrop-blur-xl border border-border/20 shadow-2xl shadow-primary/10 transition-transform duration-300 ease-in-out animate-slide-in-bottom"
       style={{
-        // ✅ ИСПРАВЛЕНО: добавлен fallback для --bottom-tab-bar-height
-        bottom: `calc(var(--bottom-tab-bar-height, 0px) + env(safe-area-inset-bottom, 0px))`,
-        zIndex: 'var(--z-mini-player, 55)',  // ✅ ДОБАВЛЕН: fallback значение
-        // ✅ ДОБАВЛЕНО: плавная анимация изменения позиции
-        transition: 'bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease'
+        bottom: `calc(var(--bottom-tab-bar-height, 0px) + 0.5rem + env(safe-area-inset-bottom, 0px))`,
+        zIndex: 'var(--z-mini-player, 55)',
+        willChange: 'transform',
       }}
+      onClick={onExpand}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      role="button"
+      aria-label="Expand player"
     >
-      {/* ✅ ОПТИМИЗИРОВАНО: Progress bar с GPU acceleration */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-border/30">
-        <div 
-          className="h-full bg-gradient-to-r from-primary/60 via-primary to-primary/60 transition-all duration-300"
-          style={{ 
-            // ✅ HACK: toFixed(2) снижает количество ре-рендеров
-            width: `${((useAudioPlayerStore.getState().currentTime / (useAudioPlayerStore.getState().duration || 1)) * 100).toFixed(2)}%`,
-            // ✅ ДОБАВЛЕНО: GPU acceleration для плавности
-            willChange: 'width'
+      {/* Progress Bar */}
+      <div className="absolute top-0 left-0 right-0 h-0.5 bg-border/20">
+        <div
+          className="h-full bg-primary"
+          style={{
+            width: `${progress}%`,
+            willChange: 'width',
           }}
         />
       </div>
 
-      <div 
-        className="flex flex-col gap-2 px-4 py-3 touch-target-comfortable animate-fade-in"
-        onClick={handleExpand}
-      >
-        <div className="flex items-center gap-3">
-          <div className="relative flex-shrink-0">
-            {/* ✅ ОПТИМИЗИРОВАНО: Lazy loading + async decoding + error handler */}
-            <img
-              src={currentTrack.cover_url || '/placeholder.svg'}
-              alt={currentTrack.title}
-              loading="lazy"  // ✅ УЖЕ ЕСТЬ: браузер откладывает загрузку
-              decoding="async"  // ✅ ДОБАВЛЕНО: асинхронная декодировка
-              className={cn(
-                "w-12 h-12 rounded-lg object-cover shadow-lg ring-1 ring-white/10 transition-all duration-300",
-                isPlaying && "ring-2 ring-primary/50 shadow-primary/20"
-              )}
-              // ✅ ДОБАВЛЕНО: fallback на placeholder при ошибке
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/placeholder.svg';
-              }}
-            />
-            {isPlaying && (
-              <div className="absolute inset-0 rounded-lg bg-primary/10 backdrop-blur-[1px] flex items-center justify-center">
-                <div className="flex gap-0.5">
-                  {[...Array(3)].map((_, i) => (
-                    <div
-                      key={i}
-                      className="w-0.5 bg-white rounded-full animate-pulse"
-                      style={{
-                        height: '12px',
-                        animationDelay: `${i * 0.15}s`,
-                        animationDuration: '0.6s'
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+      {/* Content */}
+      <div className="flex items-center gap-3 p-2.5">
+        <div className="relative flex-shrink-0 w-10 h-10">
+          <img
+            src={currentTrack.cover_url || '/placeholder.svg'}
+            alt={currentTrack.title}
+            className="w-full h-full rounded-md object-cover"
+            loading="lazy"
+            decoding="async"
+            onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
+          />
+        </div>
 
-          <div className="flex-1 min-w-0 pr-2">
-            <h3 className="font-semibold text-sm leading-tight truncate mb-0.5 text-foreground">
-              {currentTrack.title}
-            </h3>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="truncate">
-                {currentTrack.style_tags?.slice(0, 2).join(' • ') || 'AI Generated'}
-              </span>
-              {queue.length > 0 && (
-                <>
-                  <span className="opacity-50">•</span>
-                  <span className="flex-shrink-0">{currentQueueIndex + 1}/{queue.length}</span>
-                </>
-              )}
-            </div>
-          </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-sm truncate">{currentTrack.title}</h3>
+          <p className="text-xs text-muted-foreground truncate">
+            {currentTrack.style_tags?.[0] || 'AI Generated Music'}
+          </p>
+        </div>
 
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={handlePlayPause}
+            className="h-10 w-10 rounded-full"
+            aria-label={isPlaying ? 'Pause' : 'Play'}
+          >
+            {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
+          </Button>
           <Button
             size="icon"
             variant="ghost"
             onClick={handleClose}
-            className="h-10 w-10 hover:bg-destructive/10 hover:text-destructive transition-all flex-shrink-0"
+            className="h-10 w-10 rounded-full hover:bg-destructive/10 hover:text-destructive"
+            aria-label="Close player"
           >
             <X className="h-5 w-5" />
           </Button>
         </div>
-
-        {/* ✅ ОПТИМИЗИРОВАНО: Компактная компоновка кнопок для мобильных */}
-        <div className="flex items-center gap-2">
-          {/* ✅ Основные кнопки управления */}
-          <div className="flex items-center gap-2 flex-1">
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={handlePrevious}
-              className="h-10 w-10 hover:bg-primary/10 transition-all flex-shrink-0"
-              aria-label="Предыдущий трек"  // ✅ ДОБАВЛЕНО: a11y
-            >
-              <SkipBack className="h-5 w-5" />
-            </Button>
-
-            {/* ✅ ИЗМЕНЕНО: Увеличена главная кнопка Play/Pause для удобства */}
-            <Button
-              size="icon"
-              variant="default"
-              onClick={handlePlayPause}
-              className="h-10 w-10 rounded-full shadow-lg hover:scale-105 transition-all bg-primary hover:bg-primary/90 flex-shrink-0"
-              aria-label={isPlaying ? 'Пауза' : 'Воспроизвести'}  // ✅ ДОБАВЛЕНО: a11y
-            >
-              {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
-            </Button>
-
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={handleNext}
-              className="h-10 w-10 hover:bg-primary/10 transition-all flex-shrink-0"
-              aria-label="Следующий трек"  // ✅ ДОБАВЛЕНО: a11y
-            >
-              <SkipForward className="h-5 w-5" />
-            </Button>
-          </div>
-
-          {/* ✅ Дополнительные действия (версии + меню) */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {availableVersions.length > 1 && (
-              <ResponsiveDropdownMenu
-                trigger={
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-10 w-10 hover:bg-primary/10 transition-all relative"
-                  >
-                    <Badge variant="outline" className="text-xs px-1 py-0">
-                      V{currentVersionIndex + 1}
-                    </Badge>
-                  </Button>
-                }
-              >
-                {availableVersions.map((version, idx) => (
-                  <DropdownMenuItem
-                    key={version.id}
-                    onClick={() => {
-                      switchToVersion(version.id);
-                    }}
-                    className={cn(
-                      "gap-2",
-                      currentVersionIndex === idx && "bg-primary/10"
-                    )}
-                  >
-                    <span>Version {version.versionNumber || idx + 1}</span>
-                  </DropdownMenuItem>
-                ))}
-              </ResponsiveDropdownMenu>
-            )}
-
-            {/* ✅ Unified Track Actions Menu */}
-            <UnifiedTrackActionsMenu
-              trackId={currentTrack.id}
-              trackStatus={currentTrack.status || 'completed'}
-              isLiked={isLiked}
-              onLike={toggleLike}
-              onDownload={handleDownloadClick}
-              onShare={() => {}}
-              onDelete={() => {
-                clearCurrentTrack();
-                toast.success('Трек удален');
-              }}
-            />
-          </div>
-        </div>
       </div>
     </div>
   );
-});
+};
 
-MiniPlayer.displayName = 'MiniPlayer';
+const MemoizedMiniPlayer = memo(MiniPlayerComponent);
+MemoizedMiniPlayer.displayName = 'MiniPlayer';
+export { MemoizedMiniPlayer as MiniPlayer };
