@@ -21,6 +21,9 @@ vi.mock('@/hooks/useTrackState', () => {
 });
 
 import { MinimalDetailPanel } from '../../../src/features/tracks/ui/MinimalDetailPanel';
+import { useIsMobile } from '@/hooks/use-mobile';
+
+vi.mock('@/hooks/use-mobile');
 
 const mockTrack = {
   id: 't1',
@@ -35,12 +38,28 @@ const mockTrack = {
 };
 
 describe('MinimalDetailPanel a11y', () => {
-  it('renders versions tablist with accessible roles', () => {
+  beforeEach(() => {
+    (useIsMobile as vi.Mock).mockReturnValue(true);
+  });
+
+  it('renders an accessible mobile actions menu', async () => {
     render(<MinimalDetailPanel track={mockTrack as any} onClose={() => {}} />);
-    const tablist = screen.getByRole('tablist', { name: /Список вариантов трека/i });
-expect(tablist).toBeTruthy();
-    const tabs = screen.getAllByRole('tab');
-    expect(tabs.length).toBeGreaterThan(0);
+
+    // Find and open the actions menu
+    const menuTrigger = screen.getByRole('button', { name: /Track actions menu/i });
+    fireEvent.click(menuTrigger);
+
+    // The drawer content should now be visible. We can check for a class.
+    const drawer = await screen.findByTestId('drawer-content');
+    expect(drawer).toBeTruthy();
+
+    // Check for some items within the drawer to ensure it's populated
+    // These would be buttons in the mobile view
+    const downloadButton = await screen.findByRole('button', { name: /Скачать/i });
+    expect(downloadButton).toBeTruthy();
+
+    const shareButton = await screen.findByRole('button', { name: /Поделиться/i });
+    expect(shareButton).toBeTruthy();
   });
 
   it('renders quick actions with proper labels', () => {

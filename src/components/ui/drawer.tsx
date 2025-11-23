@@ -35,6 +35,7 @@ const DrawerContent = React.forwardRef<
     <DrawerOverlay />
     <DrawerPrimitive.Content
       ref={ref}
+      data-testid="drawer-content"
       className={cn(
         "fixed inset-x-0 bottom-0 flex h-auto flex-col rounded-t-xl border-t bg-background",
         "safe-area-inset-bottom",
