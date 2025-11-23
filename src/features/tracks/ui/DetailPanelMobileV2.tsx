@@ -17,7 +17,7 @@ import { LyricsContent } from './tabs/LyricsContent';
 import { VersionsStemsContent } from './tabs/VersionsStemsContent';
 import { AnalysisContent } from './tabs/AnalysisContent';
 import { UnifiedTrackActionsMenu } from '@/components/tracks/shared/TrackActionsMenu.unified';
-import { useTrackLike } from '@/features/tracks/hooks/useTrackVersionLike';
+import { useTrackLike } from '@/features/tracks/hooks/useTrackLike';
 import { Track } from '@/types/track';
 
 interface DetailPanelMobileV2Props {

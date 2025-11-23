@@ -1,95 +1,18 @@
-/**
- * Утилиты для форматирования данных
- */
+// src/utils/formatters.ts
 
 /**
- * Форматирует длительность в секундах в формат MM:SS
- * @param seconds - Длительность в секундах
- * @returns Отформатированная строка в формате MM:SS или "—" если значение не задано
- */
-export const formatDuration = (seconds?: number): string => {
-  if (typeof seconds === 'undefined' || seconds === null || isNaN(seconds)) {
-    return "—";
-  }
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-};
-
-/**
- * Форматирует время в секундах в формат MM:SS для аудиоплеера
- * @param seconds - Время в секундах
- * @returns Отформатированная строка в формате MM:SS или "0:00" если значение не задано
+ * Formats a given time in seconds into a mm:ss string format.
+ *
+ * @param {number} seconds - The time in seconds to format.
+ * @returns {string} The formatted time string (e.g., "02:45").
  */
 export const formatTime = (seconds: number): string => {
-  if (typeof seconds === 'undefined' || seconds === null || isNaN(seconds)) {
-    return "0:00";
+  if (seconds === null || seconds === undefined || isNaN(seconds)) {
+    return '00:00';
   }
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
 };
 
-/**
- * Форматирует дату в локальном формате
- * @param date - Дата в виде строки или объекта Date
- * @returns Отформатированная дата
- */
-export const formatDate = (date: string | Date | null | undefined): string => {
-  if (!date) {
-    return "";
-  }
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  if (isNaN(dateObj.getTime())) {
-    return "";
-  }
-  return dateObj.toLocaleDateString("ru-RU", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-};
-
-/**
- * Форматирует размер файла в человекочитаемый формат
- * @param bytes - Размер в байтах
- * @returns Отформатированная строка с единицами измерения
- */
-export const formatFileSize = (bytes: number): string => {
-  if (bytes === null || typeof bytes === 'undefined' || isNaN(bytes) || bytes < 0) {
-    return "0 Б";
-  }
-  if (bytes === 0) return "0 Б";
-  
-  const k = 1024;
-  const sizes = ["Б", "КБ", "МБ", "ГБ"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  if (i === 0) {
-    return `${bytes} ${sizes[i]}`;
-  }
-
-  return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
-};
-
-/**
- * Форматирует число с разделителями тысяч
- * @param num - Число для форматирования
- * @returns Отформатированная строка с разделителями
- */
-export const formatNumber = (num: number): string => {
-  return num.toLocaleString("ru-RU");
-};
-
-/**
- * Обрезает текст до указанной длины и добавляет многоточие
- * @param text - Текст для обрезки
- * @param maxLength - Максимальная длина
- * @returns Обрезанный текст с многоточием или исходный текст
- */
-export const truncateText = (text: string, maxLength: number): string => {
-  if (!text || text.length <= maxLength) {
-    return text;
-  }
-  return text.slice(0, maxLength - 3) + '...';
-};
+export const formatDuration = formatTime;

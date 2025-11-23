@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.7.0] - 2025-11-23
+
+### Added
+- **Stem Studio:** A new, intuitive interface for working with audio stems, based on a mobile-first mockup.
+  - **Playback Control:** Listen to the full track or individual stems with volume, solo, and mute controls.
+  - **Synchronized Lyrics:** View lyrics with real-time highlighting as the track plays.
+  - **Stem Export:** Download individual stems in MP3 format or all stems together as a ZIP archive.
+  - **Reference Track:** Use any stem as a reference audio for generating new tracks.
+
+### Changed
+- The stem separation process now redirects to the new Stem Studio page upon completion.
+
+### Removed
+- **DAW & Studio:** The old DAW and Studio features have been completely removed from the application. This includes all related components, pages, stores, and routes.
+
+---
+
 ## [Unreleased]
 
 ### Added (2025-11-21)

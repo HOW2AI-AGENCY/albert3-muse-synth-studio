@@ -129,15 +129,6 @@ export const LazyMonitoringHub = createLazyPage(
   'MonitoringHub'
 );
 
-export const LazyStudio = createLazyPage(
-  () => import('../pages/workspace/Studio'),
-  'Studio'
-);
-
-export const LazyDAW = createLazyPage(
-  () => import('../pages/workspace/DAW'),
-  'DAW'
-);
 
 export const LazyProfile = createLazyPage(
   () => import('../pages/workspace/Profile'),
@@ -198,6 +189,11 @@ export const LazyImageCropperDemo = createLazyPage(
 export const LazySubscription = createLazyPage(
   () => import('../pages/workspace/Subscription'),
   'Subscription'
+);
+
+export const LazyStemStudio = createLazyPage(
+  () => import('../pages/workspace/StemStudio'),
+  'StemStudio'
 );
 
 /**

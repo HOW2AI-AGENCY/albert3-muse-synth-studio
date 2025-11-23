@@ -20,7 +20,6 @@ const FEATURE_NAMES: Record<string, string> = {
   creative_director: 'Creative Director AI',
   ai_context: 'AI Context System',
   reference_audio: 'Reference Audio Upload',
-  daw_advanced: 'Advanced DAW Tools',
   stems: 'Stem Separation',
   multi_reference: 'Multi-Reference Blending',
   collaboration: 'Team Collaboration',
