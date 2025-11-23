@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Grid3x3 } from 'lucide-react';
-import InteractiveMenu, { MenuItem } from '@/components/ui/InteractiveMenu';
+import { Grid3x3, Plus, Home, Library, FolderOpen, Sparkles } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useUserRole } from '@/hooks/useUserRole';
-import { getWorkspaceNavItems, WorkspaceNavItem } from '@/config/workspace-navigation';
+import { getWorkspaceNavItems } from '@/config/workspace-navigation';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useBreakpoints } from '@/hooks/useBreakpoints';
 
@@ -16,112 +15,192 @@ const AppBottomNav: React.FC = () => {
   const { vibrate } = useHapticFeedback();
   const { isMobile } = useBreakpoints();
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [isGenerateSheetOpen, setIsGenerateSheetOpen] = useState(false);
 
   // Hooks must be called before any conditional returns
   const allNavItems = useMemo(() => getWorkspaceNavItems({ isAdmin }), [isAdmin]);
 
-  const { primaryItems, secondaryItems, overflowItems } = useMemo(() => {
-    const flattenedItems = allNavItems.flatMap(item => item.children ? [item, ...item.children] : [item]);
-    const mobilePrimary = flattenedItems.filter(item => item.isMobilePrimary);
-
+  // Fixed navigation structure as requested
+  const navStructure = useMemo(() => {
+    const allItems = allNavItems.flatMap(item => item.children ? [item, ...item.children] : [item]);
+    
     return {
-      primaryItems: mobilePrimary.slice(0, 4),
-      overflowItems: mobilePrimary.slice(4),
-      secondaryItems: flattenedItems.filter(item => !item.isMobilePrimary),
+      primary: [
+        { id: 'home', label: 'Главная', icon: Home, path: '/workspace/dashboard' },
+        { id: 'projects', label: 'Проекты', icon: FolderOpen, path: '/workspace/projects' },
+        { id: 'generate', label: 'Создать', icon: Plus, path: '/workspace/generate', isCenter: true },
+        { id: 'library', label: 'Библиотека', icon: Library, path: '/workspace/generate' },
+        { id: 'more', label: 'Ещё', icon: Grid3x3, path: '' },
+      ],
+      overflow: allItems.filter(item => 
+        !['dashboard', 'projects', 'generate'].includes(item.id)
+      ),
     };
   }, [allNavItems]);
 
   const activeItemId = useMemo(() => {
     const currentPath = location.pathname;
-    // Find the most specific match first
-    const allItems = [...primaryItems, ...overflowItems, ...secondaryItems];
-    const bestMatch = allItems
-      .filter(item => currentPath.startsWith(item.path))
-      .sort((a, b) => b.path.length - a.path.length)[0];
-    return bestMatch?.id;
-  }, [location.pathname, primaryItems, overflowItems, secondaryItems]);
+    const match = navStructure.primary.find(item => 
+      item.path && currentPath.startsWith(item.path)
+    );
+    return match?.id || 'home';
+  }, [location.pathname, navStructure]);
 
   // Don't render on desktop/tablet - check AFTER all hooks
   if (!isMobile) {
     return null;
   }
 
-  const mapToMenuItem = (item: WorkspaceNavItem): MenuItem => ({
-    id: item.id,
-    label: item.label,
-    icon: item.icon,
-  });
-
   const handleItemClick = (path: string) => {
-    navigate(path);
+    vibrate('light');
+    if (path) {
+      navigate(path);
+    }
     setIsMoreMenuOpen(false);
+    setIsGenerateSheetOpen(false);
   };
 
-  const menuItems = primaryItems.map(mapToMenuItem);
-
-  const hasOverflow = overflowItems.length > 0 || secondaryItems.length > 0;
-  if (hasOverflow) {
-    menuItems.push({
-      id: 'more',
-      label: 'Ещё',
-      icon: Grid3x3, // Using the recommended icon
-    });
-  }
-
-  const onMenuItemClick = (id: string) => {
+  const onNavItemClick = (id: string) => {
+    vibrate('light');
+    const item = navStructure.primary.find(i => i.id === id);
+    
     if (id === 'more') {
-      vibrate('light');
       setIsMoreMenuOpen(true);
-    } else {
-      const item = allNavItems.find(i => i.id === id);
-      if (item) {
-        navigate(item.path);
-      }
+    } else if (id === 'generate' && item?.isCenter) {
+      setIsGenerateSheetOpen(true);
+    } else if (item?.path) {
+      navigate(item.path);
     }
   };
 
   return (
     <>
-      {/* ✅ ДОБАВЛЕНО: data-bottom-tab-bar для useWorkspaceOffsets */}
+      {/* Modern mobile navbar with center FAB */}
       <div 
         data-bottom-tab-bar="true"
         className={cn(
-          "fixed bottom-0 left-0 right-0 z-bottom-nav p-2",
-          "bg-background/80 backdrop-blur-xl border-t border-border/50",
+          "fixed bottom-0 left-0 right-0 z-bottom-nav",
+          "bg-background/95 backdrop-blur-xl border-t border-border/30",
           "pb-safe"
         )}
       >
-        <InteractiveMenu
-          items={menuItems}
-          activeItem={activeItemId || ''}
-          onItemClick={onMenuItemClick}
-        />
+        <div className="relative flex items-center justify-around px-2 py-3">
+          {navStructure.primary.map((item) => {
+            const isActive = activeItemId === item.id;
+            const isCenter = item.isCenter;
+            
+            if (isCenter) {
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onNavItemClick(item.id)}
+                  className={cn(
+                    "relative -mt-8 flex flex-col items-center justify-center",
+                    "h-16 w-16 rounded-full",
+                    "bg-gradient-to-br from-primary via-primary to-accent",
+                    "shadow-[0_8px_32px_-8px_hsl(var(--primary)/0.6)]",
+                    "hover:scale-110 active:scale-95",
+                    "transition-all duration-300 ease-out",
+                    "touch-manipulation",
+                    "group"
+                  )}
+                  aria-label={item.label}
+                >
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <item.icon className="h-7 w-7 text-white relative z-10" strokeWidth={2.5} />
+                  <span className="absolute -bottom-6 text-[10px] font-medium text-primary whitespace-nowrap">
+                    {item.label}
+                  </span>
+                </button>
+              );
+            }
+            
+            return (
+              <button
+                key={item.id}
+                onClick={() => onNavItemClick(item.id)}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-1 py-2 px-3",
+                  "min-w-[60px] rounded-xl",
+                  "hover:bg-muted/50 active:scale-95",
+                  "transition-all duration-200",
+                  "touch-manipulation",
+                  "group relative"
+                )}
+                aria-label={item.label}
+              >
+                <div className={cn(
+                  "p-1.5 rounded-lg transition-all duration-200",
+                  isActive && "bg-primary/10"
+                )}>
+                  <item.icon 
+                    className={cn(
+                      "h-5 w-5 transition-all duration-200",
+                      isActive ? "text-primary scale-110" : "text-muted-foreground group-hover:text-foreground"
+                    )}
+                    strokeWidth={isActive ? 2.5 : 2}
+                  />
+                </div>
+                <span className={cn(
+                  "text-[10px] font-medium transition-colors duration-200",
+                  isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                )}>
+                  {item.label}
+                </span>
+                
+                {/* Active indicator */}
+                {isActive && (
+                  <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary animate-pulse" />
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
+      {/* Generate Sheet */}
+      <Sheet open={isGenerateSheetOpen} onOpenChange={setIsGenerateSheetOpen}>
+        <SheetContent side="bottom" className="rounded-t-2xl h-[85vh] p-0">
+          <SheetHeader className="p-4 border-b border-border/50">
+            <SheetTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Создать трек
+            </SheetTitle>
+          </SheetHeader>
+          <div className="overflow-y-auto h-[calc(85vh-60px)] p-4">
+            {/* This will be filled with MusicGenerator component */}
+            <div className="text-center py-12 text-muted-foreground">
+              <p>Здесь будет форма генерации</p>
+              <p className="text-sm mt-2">Переход на /workspace/generate</p>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* More Menu Sheet */}
       <Sheet open={isMoreMenuOpen} onOpenChange={setIsMoreMenuOpen}>
         <SheetContent side="bottom" className="rounded-t-2xl">
           <SheetHeader>
             <SheetTitle>Больше разделов</SheetTitle>
           </SheetHeader>
-          {/* ✅ TODO: Replaced fixed grid with an adaptive one using auto-fit. */}
-          {/* This makes the layout more flexible on different screen sizes. */}
-          {/* FIXME: This uses an inline style, which contradicts the audit's main goal. */}
-          {/* This is a pragmatic solution as Tailwind doesn't support auto-fit grids out of the box. */}
-          {/* Consider creating a custom utility class or component for this in the future. */}
           <div
             className="grid gap-4 py-4"
             style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))' }}
           >
-            {[...overflowItems, ...secondaryItems].map((item) => (
+            {navStructure.overflow.map((item) => (
               <button
                 key={item.id}
                 onClick={() => handleItemClick(item.path)}
-                className="flex flex-col items-center justify-center gap-2 p-2 rounded-lg hover:bg-muted active:scale-95 transition-all"
+                className={cn(
+                  "flex flex-col items-center justify-center gap-2 p-3 rounded-xl",
+                  "hover:bg-muted active:scale-95 transition-all",
+                  "touch-manipulation"
+                )}
               >
                 <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center">
-                  <item.icon className="w-6 h-6" />
+                  <item.icon className="w-6 h-6 text-primary" />
                 </div>
-                <span className="text-xs text-center">{item.label}</span>
+                <span className="text-xs text-center font-medium">{item.label}</span>
               </button>
             ))}
           </div>
