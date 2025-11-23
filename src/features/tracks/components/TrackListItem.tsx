@@ -1,234 +1,198 @@
-import React, { useState, useCallback, memo, useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Music, Headphones, AlertTriangle, Loader2, Play, Pause } from "@/utils/iconImports";
-import { cn } from "@/lib/utils";
-import { formatDuration } from "@/utils/formatters";
-import { UnifiedTrackActionsMenu } from "@/components/tracks/shared/TrackActionsMenu.unified";
-import { useTrackState } from "@/hooks/useTrackState";
-import { useTrackLike } from "@/hooks/useTrackLike";
-import { useShareTrack } from "@/hooks/useShareTrack";
-import { useTogglePublic } from "@/hooks/useTogglePublic";
-import { useSeparateStems } from "@/hooks/useSeparateStems";
-import { useExtendTrack } from "@/hooks/useExtendTrack";
-import { useCreateCover } from "@/hooks/useCreateCover";
-import { useDescribeTrack } from "@/hooks/useDescribeTrack";
-import { useDeleteTrack } from "@/hooks/useDeleteTrack";
-import { useRetryTrack } from "@/hooks/useRetryTrack";
-import { useDownloadTrack } from "@/hooks/useDownloadTrack";
+/**
+ * @file TrackListItem.tsx
+ * @description A performant, stylish, and accessible list item for a single track.
+ * @version 2.0.0
+ */
 
-// Упрощенный интерфейс, аналогичный TrackCard
-interface Track {
+import { memo, useCallback } from 'react';
+import { Play, Pause, Music, Headphones, Loader2, AlertTriangle, MoreVertical } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { formatDuration } from '@/utils/formatters';
+import { Button } from '@/components/ui/button';
+import { useAudioPlayerStore, useCurrentTrack, useIsPlaying } from '@/stores/audioPlayerStore';
+import { Badge } from '@/components/ui/badge';
+import { UnifiedTrackActionsMenu } from '@/components/tracks/shared/TrackActionsMenu.unified';
+import { useTrackVersionLike } from '@/features/tracks/hooks/useTrackVersionLike';
+import { useDownloadTrack } from '@/hooks/useDownloadTrack';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { toast } from 'sonner';
+
+// Simplified Track type for this component's needs
+type TrackListItemData = {
   id: string;
   title: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
   audio_url?: string;
   cover_url?: string;
   duration?: number;
-  status: "pending" | "processing" | "completed" | "failed";
-  error_message?: string;
   style_tags?: string[];
-  like_count?: number;
-  created_at?: string;
+  version_count?: number;
+  is_public?: boolean;
   has_vocals?: boolean;
-}
-interface TrackListItemProps {
-  track: Track;
-  onClick?: () => void;
-  onDownload?: () => void;
-  onShare?: () => void;
-  onRetry?: (trackId: string) => void;
-  onSync?: (trackId: string) => void;
-  onDelete?: (trackId: string) => void;
-  onSeparateStems?: (trackId: string) => void;
-  className?: string;
-}
-const TrackListItemComponent = ({
-  track,
-  onClick,
-  onDownload,
-  onShare,
-  onRetry,
-  onSync,
-  onDelete,
-  onSeparateStems,
-  className
-}: TrackListItemProps) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
-
-  // Состояние трека и воспроизведение
-  const {
-    displayedVersion,
-    isPlaying,
-    isCurrentTrack,
-    playButtonDisabled,
-    versionCount,
-    operationTargetId,
-    handlePlayClick,
-    isLiked
-  } = useTrackState({
-    id: track.id,
-    title: track.title,
-    audio_url: track.audio_url,
-    cover_url: track.cover_url,
-    duration: track.duration,
-    status: track.status,
-    style_tags: track.style_tags || [],
-    like_count: track.like_count
-  } as any);
-
-  // Операции с треками
-  const {
-    likeTrack,
-    unlikeTrack
-  } = useTrackLike();
-  const {
-    shareTrack
-  } = useShareTrack();
-  const {
-    togglePublic
-  } = useTogglePublic();
-  const {
-    separateStems
-  } = useSeparateStems();
-  const {
-    extendTrack
-  } = useExtendTrack();
-  const {
-    createCover
-  } = useCreateCover();
-  const {
-    describeTrack
-  } = useDescribeTrack();
-  const {
-    deleteTrack
-  } = useDeleteTrack();
-  const {
-    retryTrack
-  } = useRetryTrack();
-  const {
-    downloadTrack
-  } = useDownloadTrack();
-  const itemRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const element = itemRef.current;
-    if (element) {
-      element.classList.add('animate-fade-in');
-    }
-    setIsVisible(true);
-  }, []);
-
-  // Обработчики действий
-  const handleLikeClick = useCallback(() => {
-    if (isLiked) {
-      unlikeTrack(track.id);
-    } else {
-      likeTrack(track.id);
-    }
-  }, [track.id, isLiked, likeTrack, unlikeTrack]);
-  const handleDownloadClick = useCallback(() => {
-    if (track.audio_url) {
-      downloadTrack({
-        id: track.id,
-        title: track.title,
-        audio_url: track.audio_url
-      });
-    }
-    onDownload?.();
-  }, [track.id, track.title, track.audio_url, downloadTrack, onDownload]);
-  const handleShareClick = useCallback(() => {
-    shareTrack(track.id);
-    onShare?.();
-  }, [track.id, shareTrack, onShare]);
-  const handleTogglePublic = useCallback(() => {
-    togglePublic(track.id, false); // Assuming track.is_public is false, adjust as needed
-  }, [track.id, togglePublic]);
-  const handleSeparateStems = useCallback(() => {
-    separateStems(track.id);
-    onSeparateStems?.(track.id);
-  }, [track.id, separateStems, onSeparateStems]);
-  const handleExtend = useCallback(() => {
-    extendTrack({
-      trackId: track.id
-    });
-  }, [track.id, extendTrack]);
-  const handleCreateCover = useCallback(() => {
-    createCover({
-      prompt: `Cover of ${track.title}`
-    });
-  }, [track.title, createCover]);
-  const handleDescribeTrack = useCallback(() => {
-    describeTrack(track.id);
-  }, [track.id, describeTrack]);
-  const handleDelete = useCallback(() => {
-    deleteTrack(track.id);
-    onDelete?.(track.id);
-  }, [track.id, deleteTrack, onDelete]);
-  const handleRetry = useCallback(() => {
-    retryTrack(track.id);
-    onRetry?.(track.id);
-  }, [track.id, retryTrack, onRetry]);
-
-  // Обёртка: сохраняем стоп-распространение и используем общую логику проигрывания
-  const handlePlayClickWrapped = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (playButtonDisabled) return;
-    handlePlayClick();
-  }, [playButtonDisabled, handlePlayClick]);
-  const formattedDuration = displayedVersion?.duration ? formatDuration(displayedVersion.duration) : null;
-  return <div ref={itemRef} data-testid={`track-list-item-${track.id}`} className={cn(isVisible ? "group flex items-center gap-3 p-2 rounded-lg transition-colors duration-200 opacity-100 animate-fade-in" : "group flex items-center gap-3 p-2 rounded-lg transition-colors duration-200 opacity-0", "hover:bg-muted/50 border-b border-border", isCurrentTrack && "bg-primary/10", className)} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)} onClick={onClick} role="button" tabIndex={0} aria-label={`Трек ${track.title}`}>
-      <div className="relative flex-shrink-0 w-10 h-10 rounded-md overflow-hidden bg-muted">
-        {displayedVersion?.cover_url ? <img src={displayedVersion.cover_url} alt={track.title} className="w-full h-full object-cover" loading="lazy" decoding="async" /> : <div className="w-full h-full flex items-center justify-center">
-            <Music className="h-5 w-5 text-muted-foreground" />
-          </div>}
-
-        {versionCount > 0}
-
-        <div className={cn("absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-200", isHovered && track.status === 'completed' || isCurrentTrack ? "opacity-100" : "opacity-0")}>
-          {track.status === 'completed' ? <Button size="icon" variant="ghost" className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white" onClick={handlePlayClickWrapped} aria-label={isCurrentTrack && isPlaying ? "Приостановить" : "Воспроизвести"}>
-              {isCurrentTrack && isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
-            </Button> : track.status === 'processing' ? <Loader2 className="h-5 w-5 text-white animate-spin" /> : <AlertTriangle className="h-5 w-5 text-yellow-400" />}
-        </div>
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
-          <p className={cn("font-medium text-sm truncate", isCurrentTrack && "text-primary")}>{track.title}</p>
-          {isCurrentTrack && isPlaying && <Headphones className="h-4 w-4 text-primary flex-shrink-0" />}
-        </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          {track.status === 'completed' ? <>
-              {track.style_tags && <span>{track.style_tags.slice(0, 2).join(', ')}</span>}
-              {track.style_tags && track.style_tags.length > 2 && '...'}
-            </> : <span className="capitalize">{track.status}</span>}
-          {formattedDuration && <span>· {formattedDuration}</span>}
-        </div>
-      </div>
-
-      <div className={cn("flex items-center gap-0.5 transition-opacity duration-200", isHovered || isCurrentTrack ? "opacity-100" : "opacity-0 group-focus-within:opacity-100")} onClick={e => e.stopPropagation()}>
-        <UnifiedTrackActionsMenu trackId={track.id} trackStatus={track.status} hasVocals={track.has_vocals ?? true} trackMetadata={{
-        provider: 'suno'
-      }} currentVersionId={operationTargetId} versionNumber={displayedVersion?.versionNumber} isMasterVersion={displayedVersion?.isMasterVersion} variant="minimal" showQuickActions={false} isLiked={isLiked} onLike={handleLikeClick} onDownload={handleDownloadClick} onShare={handleShareClick} onTogglePublic={handleTogglePublic} onSeparateStems={handleSeparateStems} onExtend={handleExtend} onCover={handleCreateCover} onDescribeTrack={handleDescribeTrack} onDelete={handleDelete} onRetry={handleRetry} onSync={onSync} />
-      </div>
-    </div>;
+  like_count?: number;
 };
 
-// Оптимизированная мемоизация: перерендер только при изменении критичных пропсов
-export const TrackListItem = memo(TrackListItemComponent, (prevProps, nextProps) => {
-  return prevProps.track.id === nextProps.track.id && prevProps.track.status === nextProps.track.status && prevProps.track.like_count === nextProps.track.like_count && prevProps.track.audio_url === nextProps.track.audio_url && prevProps.onClick === nextProps.onClick && prevProps.onDownload === nextProps.onDownload && prevProps.onShare === nextProps.onShare && prevProps.onRetry === nextProps.onRetry && prevProps.onDelete === nextProps.onDelete && prevProps.onSeparateStems === nextProps.onSeparateStems;
-});
-
-// Inject keyframes for fade-in animation once if not already present
-if (typeof document !== "undefined" && !document.getElementById('track-card-animation-style')) {
-  const style = document.createElement("style");
-  style.id = 'track-card-animation-style';
-  style.textContent = `
-    @keyframes fade-in {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .animate-fade-in {
-      animation: fade-in 0.4s ease-out forwards;
-    }
-  `;
-  document.head.appendChild(style);
+interface TrackListItemProps {
+  track: TrackListItemData;
+  onSelect?: (track: TrackListItemData) => void;
+  onDeleteSuccess?: (trackId: string) => void;
+  className?: string;
 }
+
+const TrackListItemComponent = ({ track, onSelect, onDeleteSuccess, className }: TrackListItemProps) => {
+  const currentTrack = useCurrentTrack();
+  const isPlaying = useIsPlaying();
+  const playTrack = useAudioPlayerStore((state) => state.playTrack);
+  const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
+
+  const { isLiked, toggleLike } = useTrackVersionLike(track.id, track.like_count || 0);
+  const { downloadTrack, isDownloading } = useDownloadTrack();
+  const { vibrate } = useHapticFeedback();
+
+  const isCurrentTrack = currentTrack?.id === track.id || currentTrack?.parentTrackId === track.id;
+  const isThisTrackPlaying = isCurrentTrack && isPlaying;
+  const playButtonDisabled = track.status !== 'completed' || !track.audio_url;
+
+  const handlePlayClick = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
+    vibrate('light');
+
+    if (isCurrentTrack) {
+      togglePlayPause();
+    } else if (!playButtonDisabled) {
+      playTrack({
+        id: track.id,
+        title: track.title,
+        audio_url: track.audio_url!,
+        cover_url: track.cover_url,
+        duration: track.duration,
+        style_tags: track.style_tags,
+        status: track.status,
+      });
+    }
+  }, [
+    isCurrentTrack,
+    playButtonDisabled,
+    track,
+    togglePlayPause,
+    playTrack,
+    vibrate,
+  ]);
+
+  const handleDownloadClick = useCallback(() => {
+    if (!track.audio_url) {
+      toast.error('Файл недоступен для скачивания');
+      return;
+    }
+    downloadTrack({
+      id: track.id,
+      title: track.title,
+      audio_url: track.audio_url,
+    });
+  }, [track, downloadTrack]);
+
+  const renderStatusIndicator = () => {
+    switch (track.status) {
+      case 'processing':
+      case 'pending':
+        return <Loader2 className="h-5 w-5 text-primary animate-spin" />;
+      case 'failed':
+        return <AlertTriangle className="h-5 w-5 text-destructive" />;
+      default:
+        return (
+          <Button
+            size="icon"
+            variant="ghost"
+            className="w-8 h-8 rounded-full bg-black/20 text-white hover:bg-black/40"
+            onClick={handlePlayClick}
+            disabled={playButtonDisabled}
+            aria-label={isThisTrackPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
+          >
+            {isThisTrackPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 ml-0.5" />}
+          </Button>
+        );
+    }
+  };
+
+  const formattedDuration = track.duration ? formatDuration(track.duration) : '0:00';
+  const trackTags = track.style_tags?.slice(0, 2).join(' • ') || 'AI Music';
+
+  return (
+    <div
+      data-testid={`track-list-item-${track.id}`}
+      className={cn(
+        "group flex items-center gap-3 p-2 rounded-lg transition-all duration-200 ease-in-out border-b border-transparent",
+        "hover:bg-muted/60 focus-within:bg-muted/80",
+        isCurrentTrack && "bg-primary/10 border-b-primary/20",
+        className
+      )}
+      onClick={() => onSelect?.(track)}
+      role="button"
+      tabIndex={0}
+      aria-label={`Select track: ${track.title}`}
+    >
+      {/* Cover Art & Play Button */}
+      <div className="relative flex-shrink-0 w-12 h-12 rounded-md overflow-hidden bg-card-foreground/5 shadow-inner">
+        <img
+          src={track.cover_url || '/placeholder.svg'}
+          alt={track.title}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          loading="lazy"
+          decoding="async"
+          onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
+        />
+        <div
+          className={cn(
+            "absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity duration-200",
+            isCurrentTrack ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          )}
+        >
+          {renderStatusIndicator()}
+        </div>
+      </div>
+
+      {/* Track Info */}
+      <div className="flex-1 min-w-0">
+        <p className={cn("font-semibold text-sm truncate", isCurrentTrack && "text-primary")}>
+          {track.title}
+        </p>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {isThisTrackPlaying && (
+            <div className="flex items-center gap-1 text-primary">
+              <Headphones className="h-3 w-3" />
+              <span>Playing</span>
+            </div>
+          )}
+          {!isThisTrackPlaying && (
+            <>
+              <span>{formattedDuration}</span>
+              <span className="truncate hidden sm:inline">• {trackTags}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Actions & Badges */}
+      <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+        {track.version_count && track.version_count > 1 && (
+          <Badge variant="secondary" className="hidden sm:block">
+            V{track.version_count}
+          </Badge>
+        )}
+        <UnifiedTrackActionsMenu
+          trackId={track.id}
+          trackStatus={track.status}
+          isLiked={isLiked}
+          onLike={toggleLike}
+          onDownload={handleDownloadClick}
+          onDelete={() => onDeleteSuccess?.(track.id)}
+          // Pass other necessary props...
+          variant="icon"
+          triggerIcon={<MoreVertical className="h-5 w-5" />}
+        />
+      </div>
+    </div>
+  );
+};
+
+export const TrackListItem = memo(TrackListItemComponent);
