@@ -147,6 +147,10 @@ vi.mock('@/contexts/AuthContext', async () => {
   };
 });
 
+vi.mock('@/hooks/use-mobile', () => ({
+  useIsMobile: () => false,
+}));
+
 // Mock Tooltip components to avoid TooltipProvider requirement
 vi.mock('@/components/ui/tooltip', () => ({
   TooltipProvider: ({ children }: { children: React.ReactNode }) => children,

@@ -8,7 +8,8 @@
 import { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
+import { ResponsiveDropdownMenuSeparator } from '@/components/ui/ResponsiveDropdownMenuSeparator';
+import { ResponsiveDropdownMenuLabel } from '@/components/ui/ResponsiveDropdownMenuLabel';
 import { Badge } from '@/components/ui/badge';
 import { Heart, Download, MoreVertical, FileAudio } from 'lucide-react';
 import { ResponsiveDropdownMenu } from '@/components/ui/responsive-dropdown-menu';
@@ -116,17 +117,17 @@ export const UnifiedTrackActionsMenu = memo((props: UnifiedTrackActionsMenuProps
                   currentVersionId={props.currentVersionId}
                   onVersionChange={props.onVersionChange}
                 />
-                <DropdownMenuSeparator />
+                <ResponsiveDropdownMenuSeparator />
               </>
             )}
 
             {groupedItems.map((group, groupIdx) => (
               <div key={groupIdx}>
-                {groupIdx > 0 && <DropdownMenuSeparator />}
+                {groupIdx > 0 && <ResponsiveDropdownMenuSeparator />}
                 {group.label && (
-                  <DropdownMenuLabel className="text-xs text-muted-foreground">
+                  <ResponsiveDropdownMenuLabel>
                     {group.label}
-                  </DropdownMenuLabel>
+                  </ResponsiveDropdownMenuLabel>
                 )}
                 {group.items.map((item) => (
                   <TrackActionMenuItem
