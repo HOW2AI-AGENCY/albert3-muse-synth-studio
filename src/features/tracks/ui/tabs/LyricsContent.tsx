@@ -6,17 +6,13 @@
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { StructuredLyricsViewer } from '@/components/lyrics/StructuredLyricsViewer';
-import { LyricsDisplay } from '@/components/player/LyricsDisplay';
-import { Copy, Check, Mic2 } from 'lucide-react';
+import { Copy, Check } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { Badge } from '@/components/ui/badge';
 import { useTrackVariants } from '@/features/tracks/hooks/useTrackVariants';
 
 interface LyricsContentProps {
   lyrics: string;
   trackId?: string;
-  sunoTaskId?: string;
-  sunoId?: string;
 }
 
 export const LyricsContent = ({ lyrics, trackId }: LyricsContentProps) => {
