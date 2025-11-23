@@ -1,3 +1,3 @@
 export * from './trackVersions';
-export { trackCacheIDB } from './trackCache.idb';
-export type { CachedTrack } from './trackCache.idb';
+export { trackCache } from './trackCache';
+export type { CachedTrack } from './trackCache';
