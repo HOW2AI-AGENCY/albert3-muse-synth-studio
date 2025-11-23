@@ -19,12 +19,12 @@ interface LyricsContentProps {
   sunoId?: string;
 }
 
-export const LyricsContent = ({ lyrics, trackId, sunoTaskId, sunoId }: LyricsContentProps) => {
+export const LyricsContent = ({ lyrics, trackId }: LyricsContentProps) => {
   const [copied, setCopied] = useState(false);
-  const [showKaraoke, setShowKaraoke] = useState(false);
 
   // Load variants only if lyrics are missing but we have a trackId
   const { data: variantsData } = useTrackVariants(trackId || null, !lyrics && !!trackId);
+
   const effectiveLyrics = useMemo(() => {
     if (lyrics) return lyrics;
     const variants = (variantsData as any)?.variants || [];
@@ -33,8 +33,6 @@ export const LyricsContent = ({ lyrics, trackId, sunoTaskId, sunoId }: LyricsCon
     const firstWithLyrics = variants.find((v: any) => v?.lyrics);
     return (firstWithLyrics?.lyrics as string) || '';
   }, [lyrics, variantsData]);
-  // Check if karaoke mode is available
-  const hasKaraokeData = Boolean(sunoTaskId && sunoId);
 
   const handleCopy = async () => {
     try {
@@ -64,41 +62,7 @@ export const LyricsContent = ({ lyrics, trackId, sunoTaskId, sunoId }: LyricsCon
 
   return (
     <div className="space-y-4">
-      {/* Karaoke Toggle */}
-      {hasKaraokeData && (
-        <div className="flex items-center justify-between gap-2 pb-2 border-b">
-          <div className="flex items-center gap-2">
-            <Mic2 className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Караоке режим</span>
-            {showKaraoke && (
-              <Badge variant="secondary" className="text-xs">
-                Синхронизировано
-              </Badge>
-            )}
-          </div>
-          <Button
-            variant={showKaraoke ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setShowKaraoke(!showKaraoke)}
-          >
-            {showKaraoke ? 'Показать текст' : 'Включить караоке'}
-          </Button>
-        </div>
-      )}
-
-      {/* Synchronized Karaoke Display */}
-      {showKaraoke && hasKaraokeData ? (
-        <div className="min-h-[300px] max-h-[500px] overflow-hidden rounded-lg border bg-muted/30">
-          <LyricsDisplay
-            taskId={sunoTaskId || ''}
-            audioId={sunoId || ''}
-            fallbackLyrics={effectiveLyrics}
-          />
-        </div>
-      ) : (
-        /* Static Lyrics Viewer */
-        <StructuredLyricsViewer lyrics={effectiveLyrics} showCopyButton={false} />
-      )}
+      <StructuredLyricsViewer lyrics={effectiveLyrics} showCopyButton={false} />
 
       {/* Copy Button */}
       <div className="sticky bottom-0 bg-gradient-to-t from-background via-background to-transparent pt-4">

@@ -17,25 +17,8 @@ interface OverviewContentProps {
 export const OverviewContent = ({ track }: OverviewContentProps) => {
   return (
     <div className="space-y-4">
-      {/* Statistics */}
-      <TrackStatsCard
-        playCount={track.play_count}
-        likeCount={track.like_count}
-        viewCount={track.view_count}
-        downloadCount={track.download_count}
-      />
-
       {/* AI Analysis */}
       <AIAnalysisCard trackId={track.id} />
-
-      {/* Genre & Mood */}
-      {(track.genre || track.mood || (track.style_tags && track.style_tags.length > 0)) && (
-        <GenreMoodCard
-          genre={track.genre}
-          mood={track.mood}
-          tags={track.style_tags || []}
-        />
-      )}
 
       {/* Generation Prompts */}
       <PromptCard
