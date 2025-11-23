@@ -234,30 +234,6 @@ const Generate = () => {
           </div>
         )}
 
-        {/* FAB для мобильных - всегда видимый */}
-        {!isDesktop && !isTablet && !state.showGenerator && (
-          <Portal>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={() => state.setShowGenerator(true)}
-                  style={{
-                    bottom: 'calc(var(--workspace-bottom-offset, 0px) + env(safe-area-inset-bottom, 0px) + var(--space-4, 1rem))',
-                    right: 'calc(env(safe-area-inset-right, 0px) + var(--space-4, 1rem))',
-                    zIndex: 'var(--z-fab)'
-                  }}
-                  className="fixed h-16 w-16 rounded-full shadow-glow-primary touch-target-optimal bg-primary hover:bg-primary/90 transition-all hover:scale-110"
-                  size="icon"
-                  aria-label="Создать музыку"
-                >
-                  <Plus className="h-7 w-7" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left" className="text-base">Создать музыку</TooltipContent>
-            </Tooltip>
-          </Portal>
-        )}
-
         {/* Track Dialogs */}
         <TrackDialogsManager
           separateStemsOpen={state.separateStemsOpen}
