@@ -10,7 +10,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { useResponsiveGrid } from '@/hooks/useResponsiveGrid';
 import { useBreakpoints } from '@/hooks/useBreakpoints';
 import { OptimizedTrackCard } from './OptimizedTrackCard';
-import { TrackCard } from '@/features/tracks/components/TrackCard';
+import { TrackCard } from '@/features/tracks';
 import type { Track } from '@/types/domain/track.types';
 import { cn } from '@/lib/utils';
 
