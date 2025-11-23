@@ -52,16 +52,17 @@ const VirtualizedWord = memo(({
     <motion.span
       onClick={onClick}
       className={cn(
-        "inline-block cursor-pointer select-none px-1 py-0.5 rounded-md transition-all duration-200",
-        "touch-manipulation min-h-[24px] md:min-h-[22px]",
+        "inline-block cursor-pointer select-none px-1.5 py-1 md:px-1 md:py-0.5 rounded-md transition-all duration-200",
+        "touch-manipulation min-h-[32px] md:min-h-[24px]",
         "hover:bg-primary/10 active:scale-95",
         
-        // Active state
+        // Active state - improved for mobile
         isActive && !settings.disableWordHighlight && [
           settings.highContrast
             ? "text-yellow-400 font-bold" 
             : "text-primary font-semibold",
-          "bg-primary/15 shadow-[0_0_12px_hsl(var(--primary)/0.3)]",
+          "bg-primary/15 shadow-[0_0_16px_hsl(var(--primary)/0.4)]",
+          "scale-105 -translate-y-0.5",
           "lyrics-word-active"
         ],
         
@@ -72,13 +73,14 @@ const VirtualizedWord = memo(({
         !isFocused && !isActive && "text-foreground/70 hover:text-foreground/90"
       )}
       animate={{
-        scale: isActive && !settings.disableWordHighlight ? 1.05 : 1,
-        y: isActive && !settings.disableWordHighlight ? -2 : 0,
+        scale: isActive && !settings.disableWordHighlight ? [1, 1.08, 1.05] : 1,
+        y: isActive && !settings.disableWordHighlight ? -3 : 0,
       }}
       transition={{
         type: "spring",
-        stiffness: 300,
-        damping: 20,
+        stiffness: 400,
+        damping: 25,
+        duration: 0.3,
       }}
     >
       {word.word.replace(/[\n\r]/g, ' ').trim()}

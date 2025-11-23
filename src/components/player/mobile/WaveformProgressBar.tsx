@@ -185,10 +185,10 @@ export const WaveformProgressBar = memo<WaveformProgressBarProps>(({
       // Determine color based on progress
       const isPast = x < progressX;
 
-      // MusicVerse color scheme: purple for played, muted for unplayed
+      // High contrast colors for better visibility
       ctx.fillStyle = isPast
-        ? 'hsl(var(--primary))' // Purple accent
-        : 'hsl(var(--muted-foreground) / 0.25)'; // Muted gray
+        ? 'hsl(var(--primary))' // Primary accent for played
+        : 'hsl(var(--muted-foreground) / 0.35)'; // Slightly more visible muted
 
       // Draw bar with rounded corners
       const actualBarWidth = Math.max(barWidth - 2, 1); // 2px gap between bars

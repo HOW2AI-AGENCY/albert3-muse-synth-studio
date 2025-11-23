@@ -151,9 +151,20 @@ export const FullScreenPlayerMobile = memo(({ onMinimize }: FullScreenPlayerMobi
               </Badge>
             )}
           </div>
-          <p className="text-xs md:text-sm lg:text-base text-muted-foreground/80 truncate transition-opacity duration-300">
-            {currentTrack.style_tags?.join(' • ') || 'AI Generated'}
-          </p>
+          <div className="flex flex-wrap items-center justify-center gap-1.5 max-w-full overflow-x-hidden px-2">
+            {currentTrack.style_tags && currentTrack.style_tags.length > 0 ? (
+              currentTrack.style_tags.map((tag, index) => (
+                <span 
+                  key={index} 
+                  className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] md:text-xs font-medium border border-primary/20 whitespace-nowrap"
+                >
+                  {tag}
+                </span>
+              ))
+            ) : (
+              <span className="text-xs md:text-sm text-muted-foreground/80">AI Generated</span>
+            )}
+          </div>
         </div>
 
         {/* Lyrics */}
