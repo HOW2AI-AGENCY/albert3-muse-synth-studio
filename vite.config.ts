@@ -115,7 +115,7 @@ export default defineConfig(async ({ mode }) => {
     },
     plugins: [
       react(),
-      mode === 'development' && componentTagger(),
+      // mode === 'development' && componentTagger(),
       tsconfigPaths(),
       // ✅ Анализатор бандла — добавляется только при наличии пакета и в production
       visualizerPlugin,
