@@ -4,7 +4,6 @@
  */
 
 import { useState } from 'react';
-import { MobileHeader } from '@/components/mobile/MobileHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FolderOpen, Music, FileText, Headphones, User } from 'lucide-react';
 import { ProjectProvider } from '@/contexts/ProjectContext';
@@ -22,7 +21,12 @@ const Projects = () => {
   return (
     <ProjectProvider>
       <div className="h-full flex flex-col">
-        <MobileHeader title="Проекты" showBack={false} />
+        <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-border/40">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Проекты</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
+            Создавайте проекты, управляйте треками и ресурсами
+          </p>
+        </div>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ProjectTab)} className="flex-1 flex flex-col">
           <div className="px-4 sm:px-6 pt-3 sm:pt-4">

@@ -41,7 +41,7 @@ export const TrackCardCover = React.memo(({
   onPlayClick,
 }: TrackCardCoverProps) => {
   return (
-    <div className="relative aspect-square max-h-[200px] sm:max-h-none bg-gradient-to-br from-gray-800 to-gray-900">
+    <div className="relative aspect-square bg-gradient-to-br from-gray-800 to-gray-900">
       {/* Vocal/Instrumental badge - always visible */}
       <Tooltip>
         <TooltipTrigger asChild>
@@ -111,24 +111,24 @@ export const TrackCardCover = React.memo(({
       {isCompleted && (
         <div
           className={cn(
-            "absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-center justify-center transition-opacity duration-300",
+            "absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300",
             isHovered || (isCurrentTrack && isPlaying)
               ? "opacity-100"
               : "opacity-0 group-focus-within:opacity-100 pointer-events-none"
           )}
         >
           <Button
-            variant="ghost"
+            variant="secondary"
             size="icon"
             onClick={onPlayClick}
             disabled={playButtonDisabled}
-            className="rounded-full w-12 h-12 bg-mv-surface-glass backdrop-blur-mv-sm shadow-lg hover:scale-110 hover:bg-mv-surface-glass-hover transition-all"
+            className="rounded-full w-10 h-10 shadow-lg hover:scale-110 transition-transform"
             aria-label={isCurrentTrack && isPlaying ? "Приостановить" : "Воспроизвести"}
           >
             {isCurrentTrack && isPlaying ? (
-              <Pause className="w-5 h-5 text-white" />
+              <Pause className="w-4 h-4" />
             ) : (
-              <Play className="w-5 h-5 ml-0.5 text-white" />
+              <Play className="w-4 h-4 ml-0.5" />
             )}
           </Button>
         </div>

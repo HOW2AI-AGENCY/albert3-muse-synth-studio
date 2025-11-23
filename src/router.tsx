@@ -8,7 +8,6 @@ import { ProjectProvider } from "@/contexts/ProjectContext";
 // Critical routes - direct imports (no lazy loading)
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
-import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -35,7 +34,6 @@ import {
   LazyEdgeFunctionsDebug,
   LazySubscription,
   LazyImageCropperDemo,
-  LazyDesignSystemTest,
 } from "./utils/lazyPages";
 
 
@@ -48,10 +46,6 @@ export const router = createBrowserRouter(
     { 
       path: "/auth", 
       element: <Auth />
-    },
-    {
-      path: "/onboarding",
-      element: <Onboarding />
     },
     {
       path: "/debug/edge-functions",
@@ -233,14 +227,6 @@ export const router = createBrowserRouter(
           element: (
             <Suspense fallback={<FullPageSpinner />}>
               <LazyImageCropperDemo />
-            </Suspense>
-          )
-        },
-        {
-          path: "design-system-test",
-          element: (
-            <Suspense fallback={<FullPageSpinner />}>
-              <LazyDesignSystemTest />
             </Suspense>
           )
         },

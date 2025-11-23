@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Music, Sparkles, Zap, Headphones, Wand2, Play, Heart } from "@/utils/iconImports";
 import { ApiService, Track } from "@/services/api.service";
 import { AnalyticsService } from "@/services/analytics.service";
@@ -16,13 +15,6 @@ const Landing = () => {
   const [featuredTracks, setFeaturedTracks] = useState<Track[]>([]);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const seen = localStorage.getItem('onboardingSeen')
-      if (!session && !seen) {
-        localStorage.setItem('onboardingSeen', 'true')
-        navigate('/onboarding')
-      }
-    })
     const fetchFeaturedTracks = async () => {
       try {
         const tracks = await ApiService.getPublicTracks(6, 'like_count');

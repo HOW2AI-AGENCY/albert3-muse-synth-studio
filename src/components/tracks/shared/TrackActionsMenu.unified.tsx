@@ -49,10 +49,10 @@ export const UnifiedTrackActionsMenu = memo((props: UnifiedTrackActionsMenuProps
                   variant="ghost"
                   size="icon"
                   onClick={onLike}
-                  className="w-8 h-8 rounded-full"
+                  className={cn('h-10 w-10', variant === 'minimal' && 'h-8 w-8')}
                   aria-label={isLiked ? 'Убрать из избранного' : 'В избранное'}
                 >
-                  <Heart className={cn('w-4 h-4', isLiked ? 'fill-red-500 text-red-500' : 'text-gray-400')} />
+                  <Heart className={cn('w-5 h-5', isLiked && 'fill-red-500 text-red-500')} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{isLiked ? 'Убрать из избранного' : 'В избранное'}</TooltipContent>
@@ -66,10 +66,10 @@ export const UnifiedTrackActionsMenu = memo((props: UnifiedTrackActionsMenuProps
                   variant="ghost"
                   size="icon"
                   onClick={onDownload}
-                  className="w-8 h-8 rounded-full"
+                  className="h-10 w-10"
                   aria-label="Скачать MP3"
                 >
-                  <Download className="w-4 h-4 text-gray-400" />
+                  <Download className="w-5 h-5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Скачать MP3</TooltipContent>
@@ -86,11 +86,16 @@ export const UnifiedTrackActionsMenu = memo((props: UnifiedTrackActionsMenuProps
             <Button
               variant="ghost"
               size="icon"
-              className="w-8 h-8 rounded-full"
+              className={cn(
+                'h-10 w-10 shrink-0',
+                variant === 'minimal' && 'h-8 w-8',
+                'md:relative md:opacity-100', // Всегда видна на desktop
+                'opacity-100 relative' // Всегда видна на mobile
+              )}
               aria-label="Track actions menu"
               aria-haspopup="menu"
             >
-              <MoreVertical className="w-4 h-4 text-gray-400" />
+              <MoreVertical className="w-5 h-5" />
             </Button>
           }
         >

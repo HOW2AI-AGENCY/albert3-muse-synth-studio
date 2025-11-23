@@ -1,32 +1,26 @@
-import { memo, useRef, useEffect } from 'react';
+/**
+ * ✅ REFACTORED: Pure presentation component (v2.0.0)
+ * 
+ * Separated UI from business logic
+ * Uses centralized types from domain layer
+ * 
+ * @version 2.0.0
+ */
+import React, { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { fadeInUp } from '@/utils/animations';
-import { withErrorBoundary } from '@/hoc/withErrorBoundary'; // Updated import path
+import { withErrorBoundary } from '@/hoc/withErrorBoundary';
 import { cn } from '@/lib/utils';
-import { TrackCardCover } from './card/TrackCardCover';
-import { TrackCardInfo } from './card/TrackCardInfo';
-import { TrackCardActions } from './card/TrackCardActions';
-import { GenerationProgress, FailedState } from './card/TrackCardStates';
-import { useTrackCardState } from './card/useTrackCardState';
+import { TrackCardCover } from '../components/card/TrackCardCover';
+import { TrackCardInfo } from '../components/card/TrackCardInfo';
+import { TrackCardActions } from '../components/card/TrackCardActions';
+import { GenerationProgress, FailedState } from '../components/card/TrackCardStates';
+import { useTrackCard, type TrackCardCallbacks } from '../hooks/useTrackCard';
 import type { Track } from '@/types/domain/track.types';
 
-interface TrackCardProps {
+interface TrackCardProps extends TrackCardCallbacks {
   track: Track;
-  onShare?: () => void;
-  onClick?: () => void;
-  onRetry?: (trackId: string) => void;
-  onSync?: (trackId: string) => void;
-  onDelete?: (trackId: string) => void;
-  onExtend?: (trackId: string) => void;
-  onCover?: (trackId: string) => void;
-  onSeparateStems?: (trackId: string) => void;
-  onAddVocal?: (trackId: string) => void;
-  onDescribeTrack?: (trackId: string) => void;
-  onCreatePersona?: (trackId: string) => void;
-  onToggleLyrics?: (trackId: string, lyrics: string) => void;
-  onUpscaleAudio?: (trackId: string) => void; // ✅ NEW
-  onGenerateCover?: (trackId: string) => void; // ✅ NEW
   className?: string;
 }
 
@@ -42,22 +36,13 @@ const getGradientByTrackId = (trackId: string) => {
   return gradients[index];
 };
 
-const TrackCardComponent = memo(({
+/**
+ * Pure presentation component - receives all logic from useTrackCard hook
+ */
+const TrackCardComponent = React.memo(({
   track,
-  onShare,
-  onClick,
-  onRetry,
-  onSync,
-  onDelete,
-  onExtend,
-  onCover,
-  onSeparateStems,
-  onAddVocal,
-  onDescribeTrack,
-  onCreatePersona,
-  onUpscaleAudio,
-  onGenerateCover,
   className,
+  ...callbacks
 }: TrackCardProps) => {
   const cardRef = useRef<HTMLDivElement>(null);
   
@@ -69,7 +54,7 @@ const TrackCardComponent = memo(({
     hasStems,
     selectedVersionIndex,
     isLiked,
-    likeCount, // ✅ FIXED: Added missing likeCount from hook
+    likeCount, // ✅ FIXED: Added missing likeCount from useTrackCard hook
     versionCount,
     masterVersion,
     displayedVersion,
@@ -83,7 +68,10 @@ const TrackCardComponent = memo(({
     handleLikeClick,
     handleDownloadClick,
     handleTogglePublic,
-  } = useTrackCardState(track);
+    handleShareClick,
+    handleCardClick,
+    handleKeyDown,
+  } = useTrackCard(track, callbacks);
 
   useEffect(() => {
     const element = cardRef.current;
@@ -94,10 +82,6 @@ const TrackCardComponent = memo(({
   }, [setIsVisible]);
 
   const gradient = getGradientByTrackId(track.id);
-
-  const handleShareClick = () => {
-    onShare?.();
-  };
 
   return (
     <motion.div
@@ -112,37 +96,32 @@ const TrackCardComponent = memo(({
       aria-live={track.status === 'processing' || track.status === 'pending' ? 'polite' : undefined}
       aria-busy={track.status === 'processing' || track.status === 'pending'}
       tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onClick?.();
-        }
-      }}
-      className="touch-optimized focus-ring container-inline group"
+      onKeyDown={handleKeyDown}
+      className="touch-optimized focus-ring"
+      data-testid="track-card"
     >
       <Card
         className={cn(
           'group relative overflow-hidden cursor-pointer transition-all duration-300',
           'border-border/50 bg-card hover:bg-muted/30 card-elevated',
-          'w-full sm:min-w-[320px]', // ✅ MOBILE: Full width | TABLET+: Min 320px
           isVisible ? 'h-full flex flex-col opacity-100' : 'h-full flex flex-col opacity-0',
           isCurrentTrack && 'ring-2 ring-primary/80 shadow-glow-primary-strong',
           className
         )}
-        onClick={onClick}
+        onClick={handleCardClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="relative aspect-square max-h-[200px] sm:max-h-none bg-gradient-to-br from-gray-800 to-gray-900"> {/* P1-2 FIX: Limit height on mobile for better information density */}
+        <div className="relative aspect-square bg-gradient-to-br from-gray-800 to-gray-900">
           {(track.status === 'processing' || track.status === 'pending') && (
-            <GenerationProgress track={track} onSync={onSync} onDelete={onDelete} />
+            <GenerationProgress track={track} onSync={callbacks.onSync} onDelete={callbacks.onDelete} />
           )}
           {track.status === 'failed' && (
             <FailedState
               message={track.error_message}
               trackId={track.id}
-              onRetry={onRetry}
-              onDelete={onDelete}
+              onRetry={callbacks.onRetry}
+              onDelete={callbacks.onDelete}
             />
           )}
 
@@ -164,18 +143,18 @@ const TrackCardComponent = memo(({
           />
         </div>
 
-        <CardContent className="p-3 flex-1 flex flex-col">
+        <CardContent className="p-2 flex-1 flex flex-col">
           <TrackCardInfo
             title={displayedVersion.title || track.title}
             prompt={track.prompt ?? ''}
-            duration={displayedVersion.duration || track.duration}
+            duration={displayedVersion.duration || track.duration || undefined}
             versionCount={versionCount}
             selectedVersionIndex={selectedVersionIndex}
             hasStems={hasStems}
             status={track.status}
-            progressPercent={track.progress_percent}
+            progressPercent={track.progress_percent ?? undefined}
             createdAt={track.created_at}
-            likeCount={likeCount}
+            likeCount={likeCount} // ✅ FIXED: Use likeCount from hook, not track.like_count
             isMasterVersion={displayedVersion.isMasterVersion}
             onVersionChange={handleVersionChange}
           />
@@ -194,14 +173,12 @@ const TrackCardComponent = memo(({
             onDownloadClick={handleDownloadClick}
             onShareClick={handleShareClick}
             onTogglePublic={handleTogglePublic}
-            onDescribeTrack={onDescribeTrack}
-            onSeparateStems={onSeparateStems}
-            onExtend={onExtend}
-            onCover={onCover}
-            onAddVocal={onAddVocal}
-            onCreatePersona={onCreatePersona}
-            onUpscaleAudio={onUpscaleAudio}
-            onGenerateCover={onGenerateCover}
+            onDescribeTrack={callbacks.onDescribeTrack}
+            onSeparateStems={callbacks.onSeparateStems}
+            onExtend={callbacks.onExtend}
+            onCover={callbacks.onCover}
+            onAddVocal={callbacks.onAddVocal}
+            onCreatePersona={callbacks.onCreatePersona}
           />
         </CardContent>
       </Card>
@@ -209,11 +186,11 @@ const TrackCardComponent = memo(({
   );
 });
 
-const MemoizedTrackCard = memo(TrackCardComponent, (prevProps: TrackCardProps, nextProps: TrackCardProps) => {
+const MemoizedTrackCard = React.memo(TrackCardComponent, (prevProps, nextProps) => {
   return (
     prevProps.track.id === nextProps.track.id &&
     prevProps.track.status === nextProps.track.status &&
-    (prevProps.track.like_count ?? 0) === (nextProps.track.like_count ?? 0) &&
+    prevProps.track.like_count === nextProps.track.like_count &&
     prevProps.track.is_public === nextProps.track.is_public &&
     prevProps.track.audio_url === nextProps.track.audio_url &&
     prevProps.track.cover_url === nextProps.track.cover_url &&
@@ -225,7 +202,6 @@ const MemoizedTrackCard = memo(TrackCardComponent, (prevProps: TrackCardProps, n
 });
 
 const TrackCardWithErrorBoundary = withErrorBoundary(MemoizedTrackCard);
-MemoizedTrackCard.displayName = 'TrackCard';
 export { TrackCardWithErrorBoundary as TrackCard };
 
 // Inject keyframes for fade-in animation once

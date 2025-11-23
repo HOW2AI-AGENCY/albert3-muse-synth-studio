@@ -15,7 +15,12 @@
  * @see {@link https://github.com/HOW2AI-AGENCY/albert3-muse-synth-studio/blob/main/docs/audit/COMPREHENSIVE_AUDIT_REPORT_2025-11-19.md Audit Report}
  */
 
+import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+import { handlePostgrestError, handleSupabaseFunctionError } from "@/services/api/errors";
+import { logError, logWarn } from "@/utils/logger";
 
+import { startKpiTimer, endKpiTimer } from "@/utils/kpi";
 import { retryWithBackoff } from "@/utils/retryWithBackoff";
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { recordPerformanceMetric } from "@/utils/performanceMonitor";
@@ -27,12 +32,6 @@ import { type Track, type TrackRowWithVersions, type TrackStatus, mapTrackRowToT
 // Re-export Track type for backwards compatibility
 export type { Track, TrackStatus } from "@/services/tracks/track.service";
 export { mapTrackRowToTrack } from "@/services/tracks/track.service";
-import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
-import { handlePostgrestError, handleSupabaseFunctionError } from "@/services/api/errors";
-import { logError, logWarn } from "@/utils/logger";
-
-import { startKpiTimer, endKpiTimer } from "@/utils/kpi";
 
 
 
@@ -98,13 +97,13 @@ const trackAPIRequest = (
   method: string,
   statusCode: number,
   duration: number,
-  error?: unknown
+  error?: any
 ) => {
   recordPerformanceMetric('api_call', duration, 'ApiService', {
     endpoint,
     method,
     statusCode,
-    error: error ? (error instanceof Error ? error.message : String(error)) : undefined
+    error: error ? (error.message || String(error)) : undefined
   });
 };
 
@@ -145,7 +144,7 @@ export class ApiService {
 
     // KPI + Sentry
     const duration = endKpiTimer(timerId, 'api_latency', { endpoint: 'improve-prompt' }) ?? 0;
-    trackAPIRequest('improve-prompt', 'POST', error ? 500 : 200, duration, error ?? undefined);
+    trackAPIRequest('improve-prompt', 'POST', error ? 500 : 200, duration, error ?? undefined as any);
 
     if (error || !data) {
       return handleSupabaseFunctionError(
@@ -310,7 +309,7 @@ export class ApiService {
 
       handlePostgrestError(error, "Failed to fetch tracks", context, { userId });
 
-      const tracks = (data ?? []).map((row: unknown) => mapTrackRowToTrack(row as TrackRowWithVersions));
+      const tracks = (data ?? []).map((row) => mapTrackRowToTrack(row as TrackRowWithVersions));
 
       // Кэширование теперь происходит только в useTracks, убираем дублирование
       return tracks;
@@ -489,10 +488,10 @@ export class ApiService {
 
     const requestPromise: Promise<ProviderBalanceResponse> = (async () => {
       const TIMEOUT_MS = 15000;
-      // Реализуем таймаут через гонку промисов (без any)
-      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+      // Реализуем таймаут через гонку промисов
       const timeout = new Promise<never>((_, reject) => {
-        timeoutId = setTimeout(() => reject(new Error('get-balance timeout')), TIMEOUT_MS);
+        const id = setTimeout(() => reject(new Error('get-balance timeout')), TIMEOUT_MS);
+        (timeout as any).id = id;
       });
 
       const timerId = `${context}:${provider}:${Date.now()}`;
@@ -500,14 +499,12 @@ export class ApiService {
 
       try {
         const invokePromise = SupabaseFunctions.invoke(functionName, { body: { provider } });
-        const result = await Promise.race([invokePromise, timeout]);
-        const { data, error } = result as { data: ProviderBalanceResponse; error: unknown };
+        const { data, error } = await Promise.race([invokePromise, timeout]) as any;
         const duration = endKpiTimer(timerId, 'api_latency', { endpoint: functionName, provider }) ?? 0;
         trackAPIRequest(functionName, 'POST', error ? 500 : 200, duration, error ?? undefined);
         if (error || !data) {
-          const normalizedError = error instanceof Error ? error : null;
           return handleSupabaseFunctionError(
-            normalizedError,
+            error,
             `Failed to get balance for ${provider}`,
             context,
             { provider }
@@ -529,7 +526,8 @@ export class ApiService {
           { provider }
         );
       } finally {
-        if (timeoutId) clearTimeout(timeoutId);
+        const t: any = timeout as any;
+        if (t.id) clearTimeout(t.id);
         ApiService.inFlightBalance.delete(provider);
       }
     })();
@@ -538,3 +536,5 @@ export class ApiService {
     return requestPromise;
   }
 }
+
+// End of ApiService class

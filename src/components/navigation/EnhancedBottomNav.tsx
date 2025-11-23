@@ -236,7 +236,6 @@ const EnhancedBottomNav: React.FC = () => {
   }, [navigate, vibrate]);
 
 
-
   // Не показываем на десктопе
   if (!isMobile) {
     return null;
@@ -265,7 +264,6 @@ const EnhancedBottomNav: React.FC = () => {
                 { active: activeItemId === item.id }
               )}
               onClick={() => handleItemClick(item)}
-              aria-label={item.label}
               style={
                 item.id === 'generate' ? {
                   '--component-active-color': 'var(--accent-purple)',

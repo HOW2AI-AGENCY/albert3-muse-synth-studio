@@ -40,7 +40,7 @@ export const TrackCardInfo = memo(({
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0 space-y-1">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <h3 className="font-bold text-lg md:text-xl leading-tight line-clamp-2 group-hover:text-primary flex-1 text-white">
+              <h3 className="font-semibold text-base md:text-lg leading-tight line-clamp-2 group-hover:text-primary flex-1">
                 {title}
               </h3>
               <div className="flex items-center gap-1 shrink-0">
@@ -68,7 +68,7 @@ export const TrackCardInfo = memo(({
             </div>
             
             {prompt && (
-              <p className="text-sm text-gray-400 leading-snug line-clamp-2">
+              <p className="text-xs md:text-sm text-muted-foreground/90 leading-relaxed line-clamp-2">
                 {prompt}
               </p>
             )}
@@ -95,19 +95,19 @@ export const TrackCardInfo = memo(({
         </div>
       )}
 
-      <div className="flex items-center justify-between text-sm text-gray-400 mt-auto pt-2 border-t border-white/10">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto">
+        <div className="flex items-center gap-2">
           {formattedDuration && (
-            <div className="flex items-center gap-1.5">
-              <Clock className="w-4 h-4" />
+            <div className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
               <span>{formattedDuration}</span>
             </div>
           )}
           
           {/* ✅ FIX: Отображение лайков */}
           {likeCount !== null && likeCount !== undefined && likeCount > 0 && (
-            <div className="flex items-center gap-1.5">
-              <Heart className="w-4 h-4" />
+            <div className="flex items-center gap-1">
+              <Heart className="w-3 h-3" />
               <span>{likeCount}</span>
             </div>
           )}

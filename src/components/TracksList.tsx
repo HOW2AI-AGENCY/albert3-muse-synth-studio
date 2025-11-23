@@ -1,5 +1,5 @@
 import { useState, memo, useCallback, useRef, useEffect, useMemo } from "react";
-import { TrackCard } from "@/features/tracks";
+import { TrackCard } from "@/features/tracks/components/TrackCard";
 import { TrackListItem } from "@/features/tracks/components/TrackListItem";
 import { VirtualizedTrackGrid } from "./tracks/VirtualizedTrackGrid";
 import { TrackListSkeleton } from "@/components/skeletons";

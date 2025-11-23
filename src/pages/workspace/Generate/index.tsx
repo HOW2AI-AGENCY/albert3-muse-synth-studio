@@ -1,12 +1,11 @@
 /**
- * Generate Page - оптимизированная версия с новым дизайном
- * Glass effects и градиенты на основе AI Audio Architect
+ * Generate Page - оптимизированная версия
+ * Разделена на модули для улучшения производительности и bundle size
  */
-import { Suspense, useEffect } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { MusicGeneratorV2 } from "@/components/MusicGeneratorV2";
-import MobileGeneratorWindow from "@/components/generator/mobile/MobileGeneratorWindow";
 import { TracksList } from "@/components/TracksList";
-import { DetailPanel } from "@/features/tracks/ui/DetailPanel";
+const DetailPanel = lazy(() => import("@/features/tracks/ui/DetailPanel").then(m => ({ default: m.DetailPanel })));
 import { useBreakpoints } from "@/hooks/useBreakpoints";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -305,13 +304,15 @@ const Generate = () => {
 
         {/* Generator Drawer для мобильных */}
         <Drawer open={state.showGenerator} onOpenChange={state.setShowGenerator}>
-          <DrawerContent className="h-[92vh] max-h-[92vh] p-0">
+          <DrawerContent className="h-[92vh] max-h-[92vh]">
             <VisuallyHidden>
               <DrawerTitle>Создать музыку</DrawerTitle>
             </VisuallyHidden>
-            <EnhancedErrorBoundary>
-              <MobileGeneratorWindow onClose={() => state.setShowGenerator(false)} onTrackGenerated={handlers.handleTrackGenerated} />
-            </EnhancedErrorBoundary>
+            <div className="overflow-y-auto h-full px-3 py-4 pb-safe">
+              <EnhancedErrorBoundary>
+                <MusicGeneratorV2 onTrackGenerated={handlers.handleTrackGenerated} />
+              </EnhancedErrorBoundary>
+            </div>
           </DrawerContent>
         </Drawer>
       </div>

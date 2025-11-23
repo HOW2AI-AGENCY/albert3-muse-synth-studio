@@ -4,12 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Progress } from '@/components/ui/progress';
 import { BarChart3, TrendingUp, Download, Heart, Eye, Music } from 'lucide-react';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
+import { Badge } from '@/components/ui/badge';
 import { logger } from '@/utils/logger';
 interface TrackStats {
   id: string;
@@ -177,61 +174,48 @@ const Analytics = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <Card variant="modern" className="p-6 animate-fade-in">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 backdrop-blur-xl">
-              <BarChart3 className="h-8 w-8 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-black text-gradient-primary">Аналитика</h1>
-              <p className="text-muted-foreground mt-1">Статистика ваших треков и активности</p>
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <Tabs
-              value={timeRange}
-              onValueChange={(value) => {
-                if (isTimeRange(value)) {
-                  setTimeRange(value);
-                }
-              }}
-            >
-              <TabsList>
-                <TabsTrigger value="7d">7 дней</TabsTrigger>
-                <TabsTrigger value="30d">30 дней</TabsTrigger>
-                <TabsTrigger value="all">Все время</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" onClick={exportToCSV}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Экспорт CSV
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Скачать данные в формате CSV</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gradient-primary">Аналитика</h1>
+          <p className="text-muted-foreground mt-1">Статистика ваших треков</p>
         </div>
-      </Card>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <Tabs
+            value={timeRange}
+            onValueChange={(value) => {
+              if (isTimeRange(value)) {
+                setTimeRange(value);
+              }
+            }}
+          >
+            <TabsList>
+              <TabsTrigger value="7d">7 дней</TabsTrigger>
+              <TabsTrigger value="30d">30 дней</TabsTrigger>
+              <TabsTrigger value="all">Все время</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <Button variant="outline" size="sm" onClick={exportToCSV}>
+            <Download className="h-4 w-4 mr-2" />
+            Экспорт CSV
+          </Button>
+        </div>
+      </div>
 
       {/* Overall Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <Card variant="modern" className="p-4 animate-scale-in" style={{animationDelay: '0.1s'}}>
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Всего треков</CardTitle>
             <Music className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gradient-primary">{overallStats?.totalTracks || 0}</div>
-            <Progress value={100} className="mt-2" />
+            <div className="text-2xl font-bold text-gradient-primary">
+              {overallStats?.totalTracks || 0}
+            </div>
           </CardContent>
         </Card>
 
-        <Card variant="modern" className="p-4 animate-scale-in" style={{animationDelay: '0.2s'}}>
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Просмотры</CardTitle>
             <Eye className="h-4 w-4 text-blue-500" />
@@ -243,11 +227,10 @@ const Analytics = () => {
             >
               {overallStats?.totalViews || 0}
             </div>
-            <Progress value={Math.min((overallStats?.totalViews || 0) / 1000 * 100, 100)} className="mt-2" />
           </CardContent>
         </Card>
 
-        <Card variant="modern" className="p-4 animate-scale-in" style={{animationDelay: '0.3s'}}>
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Прослушивания</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-500" />
@@ -259,11 +242,10 @@ const Analytics = () => {
             >
               {overallStats?.totalPlays || 0}
             </div>
-            <Progress value={Math.min((overallStats?.totalPlays || 0) / 1000 * 100, 100)} className="mt-2" />
           </CardContent>
         </Card>
 
-        <Card variant="modern" className="p-4 animate-scale-in" style={{animationDelay: '0.4s'}}>
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Лайки</CardTitle>
             <Heart className="h-4 w-4 text-red-500" />
@@ -272,11 +254,10 @@ const Analytics = () => {
             <div className="text-2xl font-bold text-gradient-primary">
               {overallStats?.totalLikes || 0}
             </div>
-            <Progress value={Math.min((overallStats?.totalLikes || 0) / 500 * 100, 100)} className="mt-2" />
           </CardContent>
         </Card>
 
-        <Card variant="modern" className="p-4 animate-scale-in" style={{animationDelay: '0.5s'}}>
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Скачивания</CardTitle>
             <Download className="h-4 w-4 text-purple-500" />
@@ -285,7 +266,6 @@ const Analytics = () => {
             <div className="text-2xl font-bold text-gradient-primary">
               {overallStats?.totalDownloads || 0}
             </div>
-            <Progress value={Math.min((overallStats?.totalDownloads || 0) / 200 * 100, 100)} className="mt-2" />
           </CardContent>
         </Card>
       </div>
