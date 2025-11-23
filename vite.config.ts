@@ -108,7 +108,7 @@ export default defineConfig(async ({ mode }) => {
         },
       },
       chunkSizeWarningLimit: 800,
-      sourcemap: false,
+      sourcemap: true,
       commonjsOptions: {
         include: [/node_modules/],
       },

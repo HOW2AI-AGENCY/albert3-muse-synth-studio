@@ -11,11 +11,7 @@ interface LogContext {
 }
 
 export const logger = {
-  info: (message: string, contextOrData?: string | LogContext, data?: LogContext) => {
-    const context = typeof contextOrData === 'string' 
-      ? { context: contextOrData, ...data } 
-      : contextOrData;
-    
+  info: (message: string, context?: LogContext) => {
     console.log(JSON.stringify({
       timestamp: new Date().toISOString(),
       level: 'info',
@@ -23,34 +19,22 @@ export const logger = {
       ...(context && { context })
     }));
   },
-  
-  error: (message: string, errorOrContext?: Error | string | LogContext, contextOrData?: string | LogContext, data?: LogContext) => {
-    let error: Error | undefined;
-    let context: LogContext | undefined;
-    
-    if (errorOrContext instanceof Error) {
-      error = errorOrContext;
-      context = typeof contextOrData === 'string' 
-        ? { context: contextOrData, ...data }
-        : contextOrData as LogContext;
-    } else {
-      context = typeof errorOrContext === 'string'
-        ? { context: errorOrContext, ...contextOrData as LogContext }
-        : errorOrContext;
-    }
-    
+
+  error: (message: string, context?: LogContext) => {
+    const error = context?.error instanceof Error ? context.error : undefined;
+
     console.error(JSON.stringify({
       timestamp: new Date().toISOString(),
       level: 'error',
       message,
       ...(error && { error: error.message, stack: error.stack }),
-      ...(context && { context })
+      ...(context && { context: { ...context, error: "Error object logged separately" } })
     }));
-    
+
     if (!message.includes('[SENTRY]') && !message.includes('sentry')) {
       try {
         captureSentryException(
-          error || new Error(message), 
+          error || new Error(message),
           context as SentryContext
         );
       } catch (sentryError) {
@@ -58,24 +42,20 @@ export const logger = {
       }
     }
   },
-  
-  warn: (message: string, contextOrData?: string | LogContext, data?: LogContext) => {
-    const context = typeof contextOrData === 'string' 
-      ? { context: contextOrData, ...data } 
-      : contextOrData;
-    
+
+  warn: (message: string, context?: LogContext) => {
     console.warn(JSON.stringify({
       timestamp: new Date().toISOString(),
       level: 'warn',
       message,
       ...(context && { context })
     }));
-    
+
     if (!message.includes('[SENTRY]') && !message.includes('sentry')) {
       try {
         captureSentryMessage(
-          message, 
-          'warning', 
+          message,
+          'warning',
           context as SentryContext
         );
       } catch (sentryError) {
@@ -83,12 +63,8 @@ export const logger = {
       }
     }
   },
-  
-  debug: (message: string, contextOrData?: string | LogContext, data?: LogContext) => {
-    const context = typeof contextOrData === 'string' 
-      ? { context: contextOrData, ...data } 
-      : contextOrData;
-    
+
+  debug: (message: string, context?: LogContext) => {
     console.debug(JSON.stringify({
       timestamp: new Date().toISOString(),
       level: 'debug',
@@ -115,12 +91,12 @@ export const withSentry = (
 ): ((req: Request) => Promise<Response>) => {
   return async (req: Request): Promise<Response> => {
     const startTime = Date.now();
-    
+
     try {
       const response = await handler(req);
-      
+
       const duration = Date.now() - startTime;
-      
+
       // ✅ FIX: Логируем только важные запросы (> 1s или ошибки)
       if (duration > 1000 || response.status >= 400) {
         logger.info(`Request completed: ${options?.transaction || 'unknown'}`, {
@@ -130,23 +106,21 @@ export const withSentry = (
           correlationId: options?.correlationId,
         });
       }
-      
+
       return response;
     } catch (error) {
       const duration = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : String(error);
-      
+
       logger.error(`Request failed: ${options?.transaction || 'unknown'}`, {
         duration,
-        error: errorMessage,
+        error: error,
+        errorMessage: errorMessage,
         transaction: options?.transaction,
         correlationId: options?.correlationId,
         userId: options?.userId,
       });
-      
-      // ✅ FIX: Не отправляем в Sentry здесь - уже отправлено через logger.error
-      // Избегаем дублирования
-      
+
       // Re-throw to allow error handling by caller
       throw error;
     }
