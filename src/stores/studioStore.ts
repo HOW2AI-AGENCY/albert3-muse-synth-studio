@@ -1,6 +1,5 @@
 // src/stores/studioStore.ts
 import { create } from 'zustand';
-import { immer } from 'zustand/middleware/immer';
 
 type StemType = 'drums' | 'bass' | 'vocals' | 'atmosphere';
 
@@ -45,51 +44,43 @@ interface StudioState {
  *
  * It uses the 'immer' middleware to allow for direct, immutable updates to the state.
  */
-export const useStudioStore = create<StudioState>()(
-  immer((set) => ({
-    stems: [],
-    isPlaying: false,
-    currentTime: 0,
-    lyrics: {
-      lines: [],
-      currentLineIndex: -1,
-    },
-    setStems: (stems) =>
-      set((state) => {
-        state.stems = stems;
-      }),
-    togglePlay: () =>
-      set((state) => {
-        state.isPlaying = !state.isPlaying;
-      }),
-    setCurrentTime: (time) =>
-      set((state) => {
-        state.currentTime = time;
-      }),
-    updateStemVolume: (stemId, volume) =>
-      set((state: any) => {
-        const stem = state.stems.find((s: any) => s.id === stemId);
-        if (stem) {
-          stem.volume = volume;
-        }
-      }),
-    toggleMute: (stemId) =>
-      set((state: any) => {
-        const stem = state.stems.find((s: any) => s.id === stemId);
-        if (stem) {
-          stem.isMuted = !stem.isMuted;
-        }
-      }),
-    toggleSolo: (stemId) =>
-      set((state: any) => {
-        const soloStem = state.stems.find((s: any) => s.id === stemId);
-        if (soloStem) {
-          const isTurningSoloOn = !soloStem.isSolo;
-          state.stems.forEach((s: any) => {
-            s.isSolo = false;
-          });
-          soloStem.isSolo = isTurningSoloOn;
-        }
-      }),
-  }))
-);
+export const useStudioStore = create<StudioState>((set) => ({
+  stems: [],
+  isPlaying: false,
+  currentTime: 0,
+  lyrics: {
+    lines: [],
+    currentLineIndex: -1,
+  },
+  setStems: (stems) =>
+    set({ stems }),
+  togglePlay: () =>
+    set((state) => ({ isPlaying: !state.isPlaying })),
+  setCurrentTime: (time) =>
+    set({ currentTime: time }),
+  updateStemVolume: (stemId, volume) =>
+    set((state) => ({
+      stems: state.stems.map((s) =>
+        s.id === stemId ? { ...s, volume } : s
+      ),
+    })),
+  toggleMute: (stemId) =>
+    set((state) => ({
+      stems: state.stems.map((s) =>
+        s.id === stemId ? { ...s, isMuted: !s.isMuted } : s
+      ),
+    })),
+  toggleSolo: (stemId) =>
+    set((state) => {
+      const soloStem = state.stems.find((s) => s.id === stemId);
+      if (!soloStem) return state;
+      
+      const isTurningSoloOn = !soloStem.isSolo;
+      return {
+        stems: state.stems.map((s) => ({
+          ...s,
+          isSolo: s.id === stemId ? isTurningSoloOn : false,
+        })),
+      };
+    }),
+}));
