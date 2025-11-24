@@ -825,38 +825,58 @@
       width: 4px;
       height: 4px;
     }
+  }
 
-/* Added for lyrics snap-scroll feature */
-.scroll-snap-align-center {
-  scroll-snap-align: center;
-}
+  /* Added for lyrics snap-scroll feature */
+  .scroll-snap-align-center {
+    scroll-snap-align: center;
+  }
 
   /* Animations for Player components */
   @keyframes slide-in-bottom {
-    from { transform: translateY(120%); }
-    to { transform: translateY(0); }
+    from {
+      transform: translateY(120%);
+    }
+    to {
+      transform: translateY(0);
+    }
   }
+
   .animate-slide-in-bottom {
     animation: slide-in-bottom 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
   }
+
   @keyframes fade-in-fast {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
+
   .animate-fade-in-fast {
     animation: fade-in-fast 0.3s ease-in-out forwards;
   }
+
   @keyframes subtle-breathing {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.02); }
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.02);
+    }
   }
+
   .animate-subtle-breathing {
     animation: subtle-breathing 5s ease-in-out infinite;
   }
-  }
 
   /* Dynamic layout adjustments - deduplicated */
-  --workspace-bottom-offset: calc(var(--bottom-tab-bar-height) + var(--mini-player-height));
+  :root {
+    --workspace-bottom-offset: calc(var(--bottom-tab-bar-height) + var(--mini-player-height));
+  }
 
   /* Compact screens optimization */
   @media (max-height: 667px) {
