@@ -4,19 +4,13 @@ import { OptimizedTrack } from '../types/track';
 
 interface OptimizedTrackListProps {
   tracks: OptimizedTrack[];
-  onDownload?: (trackId: string) => void;
-  onShare?: (trackId: string) => void;
   className?: string;
 }
 
-
 export const OptimizedTrackList: React.FC<OptimizedTrackListProps> = memo(({
   tracks,
-  onDownload,
-  onShare,
   className = '',
 }) => {
-  // Нормализуем статус трека: undefined считаем как pending
   const normalizeStatus = useCallback((status?: OptimizedTrack['status']): OptimizedTrack['status'] => {
     if (!status || status === 'pending') return 'pending';
     if (status === 'processing') return 'processing';

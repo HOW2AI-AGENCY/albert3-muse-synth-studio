@@ -50,7 +50,7 @@ const MiniPlayerComponent = ({ onExpand }: MiniPlayerProps) => {
   return (
     <div
       data-testid="mini-player"
-      ref={miniPlayerRef}
+      ref={miniPlayerRef as any}
       className="fixed left-2 right-2 rounded-lg bg-background/80 backdrop-blur-xl border border-border/20 shadow-2xl shadow-primary/10 transition-transform duration-300 ease-in-out animate-slide-in-bottom"
       style={{
         bottom: `calc(var(--bottom-tab-bar-height, 0px) + 0.5rem + env(safe-area-inset-bottom, 0px))`,

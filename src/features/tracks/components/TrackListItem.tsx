@@ -5,7 +5,7 @@
  */
 
 import { memo, useCallback } from 'react';
-import { Play, Pause, Headphones, Loader2, AlertTriangle, MoreVertical } from 'lucide-react';
+import { Play, Pause, Headphones, Loader2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDuration } from '@/utils/formatters';
 import { Button } from '@/components/ui/button';
@@ -35,7 +35,6 @@ type TrackListItemData = {
 interface TrackListItemProps {
   track: TrackListItemData;
   onSelect?: (track: TrackListItemData) => void;
-  onDeleteSuccess?: (trackId: string) => void;
   className?: string;
 }
 

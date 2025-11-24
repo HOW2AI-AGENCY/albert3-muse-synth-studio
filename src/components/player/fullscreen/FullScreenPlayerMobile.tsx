@@ -24,12 +24,6 @@ const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileP
   const isPlaying = useIsPlaying();
   const { vibrate } = useHapticFeedback();
   const { togglePlayPause } = useAudioPlayerStore();
-  const { isLiked, toggleLike } = useTrackLike(currentTrack?.id || '', currentTrack?.like_count || 0);
-
-  const handleTogglePlayPause = useCallback(() => {
-    vibrate('light');
-    togglePlayPause();
-  }, [togglePlayPause, vibrate]);
 
   const swipeRef = useSwipeGesture({
     onSwipeDown: onMinimize,
@@ -40,7 +34,7 @@ const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileP
   return (
     <div
       data-testid="fullscreen-player-mobile"
-      ref={swipeRef}
+      ref={swipeRef as any}
       className="fixed inset-0 bg-background flex flex-col overflow-hidden animate-fade-in-fast"
       style={{
         paddingTop: 'env(safe-area-inset-top)',
