@@ -14,6 +14,7 @@
 @import './styles/spacing.css';
 @import './styles/effects.css';
 
+@import './styles/z-index.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

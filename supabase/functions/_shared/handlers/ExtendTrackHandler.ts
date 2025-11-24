@@ -43,7 +43,7 @@ export class ExtendTrackHandler extends BaseSunoHandler {
       .single();
 
     if (error || !track) {
-      logger.error('Original track not found', error ? new Error(error.message) : new Error('Track not found'), { trackId, userId: this.userId });
+      logger.error('Original track not found', { error: error ? new Error(error.message) : new Error('Track not found'), trackId, userId: this.userId });
       throw new Error('Track not found or access denied');
     }
 

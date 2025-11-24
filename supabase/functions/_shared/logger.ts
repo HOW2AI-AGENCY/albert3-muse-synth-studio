@@ -11,24 +11,66 @@ interface LogContext {
 }
 
 export const logger = {
-  info: (message: string, context?: LogContext) => {
+  info: (message: string, contextOrLegacyParam?: LogContext | string, legacyContext?: LogContext | any) => {
+    // Поддержка обоих форматов: новый info(msg, {context}) и старый info(msg, 'func-name', {context})
+    let context = contextOrLegacyParam;
+    if (typeof contextOrLegacyParam === 'string' && legacyContext) {
+      // Старый формат: info(message, 'function-name', { data })
+      context = { ...legacyContext, _legacy_function: contextOrLegacyParam };
+    } else if (typeof contextOrLegacyParam === 'string') {
+      // Старый формат: info(message, 'function-name')
+      context = { _legacy_function: contextOrLegacyParam };
+    }
+    
     console.log(JSON.stringify({
       timestamp: new Date().toISOString(),
       level: 'info',
       message,
-      ...(context && { context })
+      ...(context && typeof context === 'object' && { context })
     }));
   },
 
-  error: (message: string, context?: LogContext) => {
-    const error = context?.error instanceof Error ? context.error : undefined;
+  error: (message: string, contextOrError?: any, legacyContext?: any, fourthParam?: any) => {
+    let error: Error | undefined;
+    let context: LogContext | undefined;
+
+    // Поддержка ВСЕХ форматов:
+    // 1. error(msg, { error, ...context }) - новый (2 параметра)
+    // 2. error(msg, errorObj, {context}) - старый (3 параметра)
+    // 3. error(msg, errorObj, 'func-name') - старый (3 параметра)
+    // 4. error(msg, 'func-name') - старый (2 параметра)
+    // 5. error(msg, errorObj, 'func-name', {context}) - старый (4 параметра)
+    
+    if (fourthParam) {
+      // 4 параметра: error(msg, errorObj, 'func-name', {context})
+      error = contextOrError instanceof Error ? contextOrError : new Error(String(contextOrError));
+      context = typeof fourthParam === 'object' ? { ...fourthParam, _legacy_function: legacyContext } : { _legacy_function: String(legacyContext) };
+    } else if (contextOrError instanceof Error) {
+      error = contextOrError;
+      if (legacyContext) {
+        context = typeof legacyContext === 'string' 
+          ? { _legacy_function: legacyContext }
+          : legacyContext;
+      }
+    } else if (typeof contextOrError === 'string') {
+      context = { _legacy_function: contextOrError };
+      if (legacyContext && typeof legacyContext === 'object') {
+        context = { ...context, ...legacyContext };
+      }
+    } else if (contextOrError && typeof contextOrError === 'object') {
+      // Новый формат
+      context = contextOrError;
+      if (context && 'error' in context) {
+        error = context.error instanceof Error ? context.error : undefined;
+      }
+    }
 
     console.error(JSON.stringify({
       timestamp: new Date().toISOString(),
       level: 'error',
       message,
       ...(error && { error: error.message, stack: error.stack }),
-      ...(context && { context: { ...context, error: "Error object logged separately" } })
+      ...(context && { context: { ...context, error: error ? "Error object logged separately" : undefined } })
     }));
 
     if (!message.includes('[SENTRY]') && !message.includes('sentry')) {
@@ -43,12 +85,19 @@ export const logger = {
     }
   },
 
-  warn: (message: string, context?: LogContext) => {
+  warn: (message: string, contextOrLegacyParam?: LogContext | string | any, legacyContext?: LogContext | any) => {
+    let context = contextOrLegacyParam;
+    if (typeof contextOrLegacyParam === 'string' && legacyContext) {
+      context = { ...legacyContext, _legacy_function: contextOrLegacyParam };
+    } else if (typeof contextOrLegacyParam === 'string') {
+      context = { _legacy_function: contextOrLegacyParam };
+    }
+    
     console.warn(JSON.stringify({
       timestamp: new Date().toISOString(),
       level: 'warn',
       message,
-      ...(context && { context })
+      ...(context && typeof context === 'object' && { context })
     }));
 
     if (!message.includes('[SENTRY]') && !message.includes('sentry')) {

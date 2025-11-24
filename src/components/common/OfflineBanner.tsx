@@ -13,7 +13,7 @@ export const OfflineBanner = () => {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -50, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-          className="fixed top-0 left-0 right-0 bg-destructive text-destructive-foreground p-3 text-center text-sm font-medium z-[9999]"
+          className="fixed top-0 left-0 right-0 bg-destructive text-destructive-foreground p-3 text-center text-sm font-medium z-offline-banner"
           role="alert"
         >
           <div className="container mx-auto flex items-center justify-center gap-2">
