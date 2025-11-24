@@ -108,10 +108,7 @@ export const validateAudioFile = async (file: File): Promise<void> => {
   try {
     await validateFile(file, 'audio');
   } catch (error) {
-    // Re-throw as original error type if needed, though FileValidationError is more generic
-    if (error instanceof FileValidationError) {
-        throw new FileValidationError(error.message, error.code);
-    }
+    // Re-throw the original error to preserve the stack trace.
     throw error;
   }
 };
