@@ -9,8 +9,8 @@ interface LyricsPanelProps {
 
 export const LyricsPanel = memo(({ track }: LyricsPanelProps) => {
   const { data } = useTimestampedLyrics({
-    taskId: track.suno_task_id,
-    audioId: track.suno_id,
+    taskId: track.suno_task_id || undefined,
+    audioId: track.suno_id || undefined,
   });
   
   const alignedWords = data?.alignedWords ?? [];

@@ -37,21 +37,6 @@ export const VirtualizedTrackList = React.memo(({
     onTrackPlay(track);
   }, [onTrackPlay]);
 
-  const handleShare = useCallback((trackId: string) => {
-    onShare(trackId);
-  }, [onShare]);
-
-  const handleSeparateStems = useCallback((trackId: string) => {
-    onSeparateStems(trackId);
-  }, [onSeparateStems]);
-
-  const handleRetry = useCallback((trackId: string) => {
-    onRetry(trackId);
-  }, [onRetry]);
-
-  const handleDelete = useCallback((trackId: string) => {
-    onDelete(trackId);
-  }, [onDelete]);
 
   // Create virtualizer for the list
   const safeTracks = Array.isArray(tracks) ? tracks : [];

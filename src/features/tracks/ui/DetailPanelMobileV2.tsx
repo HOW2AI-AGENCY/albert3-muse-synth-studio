@@ -3,9 +3,9 @@
  * @description A redesigned, streamlined, and more functional mobile detail panel.
  * @version 2.0.0
  */
-import { memo, useState, useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import { X, MoreVertical } from 'lucide-react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDownloadTrack } from '@/hooks/useDownloadTrack';
@@ -31,7 +31,7 @@ interface DetailPanelMobileV2Props {
 const DetailPanelMobileV2Component = ({ track, open, onOpenChange, onDelete, onRemix }: DetailPanelMobileV2Props) => {
   const { toast } = useToast();
   const { downloadTrack } = useDownloadTrack();
-  const { deleteTrack, isDeleting } = useDeleteTrack();
+  const { deleteTrack } = useDeleteTrack();
   const { isLiked, toggleLike } = useTrackLike(track.id, track.like_count || 0);
 
   const handleDelete = useCallback(async () => {
@@ -47,7 +47,7 @@ const DetailPanelMobileV2Component = ({ track, open, onOpenChange, onDelete, onR
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[95vh] p-0 flex flex-col" hideCloseButton>
+      <SheetContent side="bottom" className="h-[95vh] p-0 flex flex-col">
         <SheetHeader className="p-4 border-b">
           <div className="flex items-center justify-between">
             <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="-ml-2">
@@ -62,7 +62,6 @@ const DetailPanelMobileV2Component = ({ track, open, onOpenChange, onDelete, onR
               onDownload={() => downloadTrack(track)}
               onDelete={handleDelete}
               onRemix={() => onRemix?.(track)}
-              variant="icon"
               triggerIcon={<MoreVertical className="h-5 w-5" />}
             />
           </div>
@@ -72,16 +71,16 @@ const DetailPanelMobileV2Component = ({ track, open, onOpenChange, onDelete, onR
           <CompactTrackHero
             track={{
               title: track.title,
-              cover_url: track.cover_url,
+              cover_url: track.cover_url || undefined,
               status: track.status,
-              created_at: track.created_at,
-              duration_seconds: track.duration_seconds,
-              style_tags: track.style_tags,
-              play_count: track.play_count,
-              download_count: track.download_count,
+              created_at: track.created_at || undefined,
+              duration_seconds: track.duration_seconds ?? undefined,
+              style_tags: track.style_tags ?? undefined,
+              play_count: track.play_count ?? undefined,
+              download_count: track.download_count ?? undefined,
             }}
             isLiked={isLiked}
-            likeCount={track.like_count}
+            likeCount={track.like_count ?? 0}
             onLike={toggleLike}
           />
 
@@ -94,16 +93,16 @@ const DetailPanelMobileV2Component = ({ track, open, onOpenChange, onDelete, onR
             </TabsList>
             <div className="p-4">
               <TabsContent value="overview">
-                <OverviewContent track={track} />
+                <OverviewContent track={track as any} />
               </TabsContent>
               <TabsContent value="lyrics">
-                <LyricsContent lyrics={track.lyrics} trackId={track.id} sunoId={track.suno_id} />
+                <LyricsContent lyrics={track.lyrics || undefined} trackId={track.id} sunoId={track.suno_id || undefined} />
               </TabsContent>
               <TabsContent value="versions">
-                <VersionsStemsContent track={track} />
+                <VersionsStemsContent track={track as any} />
               </TabsContent>
               <TabsContent value="analysis">
-                <AnalysisContent track={track} />
+                <AnalysisContent track={track as any} />
               </TabsContent>
             </div>
           </Tabs>
