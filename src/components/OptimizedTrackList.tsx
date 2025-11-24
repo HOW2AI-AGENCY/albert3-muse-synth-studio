@@ -16,35 +16,27 @@ export const OptimizedTrackList: React.FC<OptimizedTrackListProps> = memo(({
   onShare,
   className = '',
 }) => {
-  // Нормализуем статус трека: draft/undefined считаем как pending
+  // Нормализуем статус трека: undefined считаем как pending
   const normalizeStatus = useCallback((status?: OptimizedTrack['status']): OptimizedTrack['status'] => {
-    if (!status || status === 'draft' || status === 'pending') return 'pending';
+    if (!status || status === 'pending') return 'pending';
     if (status === 'processing') return 'processing';
     if (status === 'failed') return 'failed';
     return 'completed';
   }, []);
-  // Мемоизируем обработчики для предотвращения лишних ререндеров
-  const handleDownload = useCallback((trackId: string) => {
-    onDownload?.(trackId);
-  }, [onDownload]);
 
-  const handleShare = useCallback((trackId: string) => {
-    onShare?.(trackId);
-  }, [onShare]);
-
-  // Обычный рендер с оптимизацией
   return useMemo(() => (
     <div className={`space-y-2 ${className}`}>
       {tracks.map((track) => (
         <TrackListItem
           key={track.id}
-          track={{ ...track, status: normalizeStatus(track.status) as 'pending' | 'processing' | 'completed' | 'failed' }}
-          onDownload={() => handleDownload(track.id)}
-          onShare={() => handleShare(track.id)}
+          track={{
+            ...track,
+            status: normalizeStatus(track.status) as 'pending' | 'processing' | 'completed' | 'failed',
+          } as any}
         />
       ))}
     </div>
-  ), [tracks, handleDownload, handleShare, className, normalizeStatus]);
+  ), [tracks, className, normalizeStatus]);
 });
 
 OptimizedTrackList.displayName = 'OptimizedTrackList';

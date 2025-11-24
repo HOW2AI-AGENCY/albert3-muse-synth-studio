@@ -9,10 +9,9 @@ interface LyricsPanelProps {
 }
 
 export const LyricsPanel = memo(({ track }: LyricsPanelProps) => {
-  const { lyrics, currentLine } = useTimestampedLyrics(
-    track.suno_id,
-    track.lyrics
-  );
+  const { data } = useTimestampedLyrics(track.suno_id, track.lyrics);
+  const lyrics = data?.lines ?? [];
+  const currentLine = data?.currentLine ?? 0;
 
   return (
     <ScrollArea className="h-full">

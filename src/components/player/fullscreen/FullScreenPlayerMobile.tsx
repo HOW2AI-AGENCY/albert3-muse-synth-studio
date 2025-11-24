@@ -5,6 +5,7 @@
  */
 import { memo, useCallback } from 'react';
 import { ChevronDown, MoreVertical } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useAudioPlayerStore, useCurrentTrack, useIsPlaying } from '@/stores/audioPlayerStore';
 import { useTrackLike } from '@/features/tracks/hooks/useTrackLike';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
@@ -30,9 +31,8 @@ const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileP
     togglePlayPause();
   }, [togglePlayPause, vibrate]);
 
-  const { onTouchStart, onTouchMove, onTouchEnd } = useSwipeGesture({
+  const swipeRef = useSwipeGesture({
     onSwipeDown: onMinimize,
-    onDoubleTap: handleTogglePlayPause,
   });
 
   if (!currentTrack) return null;
@@ -40,15 +40,13 @@ const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileP
   return (
     <div
       data-testid="fullscreen-player-mobile"
+      ref={swipeRef}
       className="fixed inset-0 bg-background flex flex-col overflow-hidden animate-fade-in-fast"
       style={{
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         zIndex: 'var(--z-fullscreen-player, 100)',
       }}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
     >
       {/* Background Image */}
       <div className="absolute inset-0 z-0">

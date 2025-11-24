@@ -243,12 +243,7 @@ const TracksListComponent = ({
                 <TrackListItem
                   key={track.id}
                   track={track as any}
-                  onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
-                  onShare={() => handleShare(track.id)}
-                  onRetry={handleRetry}
-                  onSync={handleSync}
-                  onDelete={handleDelete}
-                  onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
+                  onSelect={onSelect ? () => onSelect(track) : () => handlePlay(track)}
                 />
               ))}
             </div>
