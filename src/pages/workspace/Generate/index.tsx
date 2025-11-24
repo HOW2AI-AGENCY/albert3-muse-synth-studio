@@ -9,7 +9,6 @@ const DetailPanel = lazy(() => import("@/features/tracks/ui/DetailPanel").then(m
 import { useBreakpoints } from "@/hooks/useBreakpoints";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import {
   ResizablePanelGroup,

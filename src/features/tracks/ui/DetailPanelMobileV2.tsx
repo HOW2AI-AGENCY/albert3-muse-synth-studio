@@ -13,9 +13,7 @@ import type { Track } from '@/types/track';
 import { OverviewContent } from './tabs/OverviewContent';
 import { LyricsContent } from './tabs/LyricsContent';
 import { VersionsStemsContent } from './tabs/VersionsStemsContent';
-import { useTrackVersionLike } from '@/features/tracks/hooks/useTrackVersionLike';
-import { VisualsContent } from './tabs/VisualsContent';
-import { useTracks } from '@/features/tracks/hooks';
+import { useTracks } from '@/hooks/useTracks';
 
 interface DetailPanelMobileV2Props {
   track: Track;
@@ -25,12 +23,8 @@ interface DetailPanelMobileV2Props {
   onRemix?: (track: any) => void;
 }
 
-const DetailPanelMobileV2Component = ({ track, open, onOpenChange, onDelete: onDeleteProp }: DetailPanelMobileV2Props) => {
+const DetailPanelMobileV2Component = ({ track, open, onOpenChange, onDelete }: DetailPanelMobileV2Props) => {
   const { deleteTrack } = useTracks();
-  const { isLiked, toggleLike } = useTrackVersionLike({
-    trackId: track.id,
-    versionId: track.id,
-  });
 
   const handleDelete = useCallback(async () => {
     try {
@@ -41,7 +35,7 @@ const DetailPanelMobileV2Component = ({ track, open, onOpenChange, onDelete: onD
     } catch (error) {
       toast({ title: 'Ошибка при удалении трека', variant: 'destructive' });
     }
-  }, [deleteTrack, track.id, toast, onOpenChange, onDelete]);
+  }, [deleteTrack, track.id, onOpenChange, onDelete]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -84,7 +78,7 @@ const DetailPanelMobileV2Component = ({ track, open, onOpenChange, onDelete: onD
                 <VersionsStemsContent track={track as any} />
               </TabsContent>
               <TabsContent value="analysis">
-                <AnalysisContent track={track as any} />
+                <div className="p-4 text-center text-muted-foreground">AI-анализ скоро будет доступен</div>
               </TabsContent>
             </div>
           </Tabs>

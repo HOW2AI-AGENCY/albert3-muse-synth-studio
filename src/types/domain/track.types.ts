@@ -25,7 +25,7 @@ export interface AudioPlayerTrack {
   cover_url?: string;
   duration?: number;
   artist?: string;
-  status?: string;
+  status?: 'pending' | 'processing' | 'completed' | 'failed';
   style_tags?: string[];
   lyrics?: string;
   suno_id?: string;

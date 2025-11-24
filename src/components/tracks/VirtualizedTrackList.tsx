@@ -5,20 +5,6 @@
 import React, { useRef, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { TrackListItem } from '@/features/tracks';
-import type { DisplayTrack } from '@/types/track';
-
-interface VirtualizedTrackListProps {
-  tracks: DisplayTrack[];
-  height: number;
-  onTrackPlay: (track: DisplayTrack) => Promise<void> | void;
-  onShare: (trackId: string) => void;
-  onSeparateStems: (trackId: string) => void;
-  onRetry: (trackId: string) => void;
-  onDelete: (trackId: string) => void;
-  loadingTrackId?: string | null;
-}
-
-const ITEM_HEIGHT = 72; // Height of TrackListItem in pixels
 
 interface VirtualizedTrackListProps {
   tracks: any[];
@@ -26,6 +12,8 @@ interface VirtualizedTrackListProps {
   onTrackPlay?: (trackId: string) => void;
   loadingTrackId?: string | null;
 }
+
+const ITEM_HEIGHT = 72; // Height of TrackListItem in pixels
 
 export const VirtualizedTrackList = React.memo(({
   tracks,
@@ -37,7 +25,9 @@ export const VirtualizedTrackList = React.memo(({
 
   // Memoize callbacks to prevent unnecessary re-renders
   const handleTrackPlay = useCallback((track: any) => {
-    onTrackPlay(track);
+    if (onTrackPlay) {
+      onTrackPlay(track);
+    }
   }, [onTrackPlay]);
 
 
