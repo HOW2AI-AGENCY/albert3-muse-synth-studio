@@ -88,6 +88,7 @@ interface AudioPlayerState {
 
   // ✅ FIX: Request cancellation
   _loadVersionsAbortController: AbortController | null;
+  _playTrackRequestId: number;
 
   // ==========================================
   // PLAYBACK ACTIONS
@@ -168,11 +169,15 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
         availableVersions: [],
         currentVersionIndex: -1,
         _loadVersionsAbortController: null,
+        _playTrackRequestId: 0,
 
         // ==========================================
         // PLAYBACK ACTIONS
         // ==========================================
         playTrack: async (track) => {
+          const requestId = Date.now();
+          set({ _playTrackRequestId: requestId });
+
           const state = get();
 
           // If a specific version is selected, handle it first
@@ -187,13 +192,10 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
 
             // ✅ FIX: Check if user switched to another track during loading
             const updatedState = get();
-            const currentlyRequestedTrackId = updatedState.currentTrack?.id;
-
-            // If current track changed during loading, abort this playback request
-            if (currentlyRequestedTrackId && currentlyRequestedTrackId !== requestedTrackId && currentlyRequestedTrackId !== track.selectedVersionId) {
+            if (updatedState._playTrackRequestId !== requestId) {
               logInfo('Playback request aborted - user switched tracks', 'audioPlayerStore', {
                 requestedTrackId,
-                currentTrackId: currentlyRequestedTrackId,
+                currentTrackId: updatedState.currentTrack?.id,
               });
               return;
             }
