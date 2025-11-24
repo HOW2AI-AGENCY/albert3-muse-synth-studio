@@ -94,13 +94,10 @@ export const VirtualizedTrackList = React.memo(({
               <div className="px-2 py-1 h-full">
                 <TrackListItem
                   track={displayTrack as any}
-                  onShare={() => handleShare(track.id)}
-                  onClick={() => handleTrackPlay(displayTrack)}
-                  onSeparateStems={() => handleSeparateStems(track.id)}
-                  onRetry={() => handleRetry(track.id)}
-                  onDelete={() => handleDelete(track.id)}
+                  onSelect={() => handleTrackPlay(displayTrack)}
                 />
                 {isLoading && (
+
                   <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-xl bg-background/80 backdrop-blur-sm">
                     <div className="flex items-center gap-2 text-primary">
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />

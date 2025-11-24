@@ -38,7 +38,7 @@ const MiniPlayerComponent = ({ onExpand }: MiniPlayerProps) => {
     clearCurrentTrack();
   }, [clearCurrentTrack, vibrate]);
 
-  const { onTouchStart, onTouchMove, onTouchEnd } = useSwipeGesture({
+  const miniPlayerRef = useSwipeGesture({
     onSwipeUp: onExpand,
     onSwipeDown: clearCurrentTrack,
   });
@@ -50,6 +50,7 @@ const MiniPlayerComponent = ({ onExpand }: MiniPlayerProps) => {
   return (
     <div
       data-testid="mini-player"
+      ref={miniPlayerRef}
       className="fixed left-2 right-2 rounded-lg bg-background/80 backdrop-blur-xl border border-border/20 shadow-2xl shadow-primary/10 transition-transform duration-300 ease-in-out animate-slide-in-bottom"
       style={{
         bottom: `calc(var(--bottom-tab-bar-height, 0px) + 0.5rem + env(safe-area-inset-bottom, 0px))`,
@@ -57,9 +58,6 @@ const MiniPlayerComponent = ({ onExpand }: MiniPlayerProps) => {
         willChange: 'transform',
       }}
       onClick={onExpand}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
       role="button"
       aria-label="Expand player"
     >

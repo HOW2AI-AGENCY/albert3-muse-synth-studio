@@ -177,9 +177,8 @@ export const SelectionToolbar: React.FC<SelectionToolbarProps> = ({ className = 
         return;
       }
 
-      // Convert to AudioPlayerTrack and filter nulls
       const audioTracks = tracks
-        .map(trackConverters.toAudioPlayerTrack)
+        .map(trackConverters.toAudioPlayer)
         .filter((track): track is NonNullable<typeof track> => track !== null);
 
       if (audioTracks.length === 0) {
