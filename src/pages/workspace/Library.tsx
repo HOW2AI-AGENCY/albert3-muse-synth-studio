@@ -12,7 +12,6 @@ import {
   List,
   SortAsc,
   SortDesc,
-  Loader2,
   Check,
 } from "@/utils/iconImports";
 import { TrackCard } from "@/features/tracks";
@@ -125,8 +124,8 @@ const LibraryContent: React.FC = () => {
     return map;
   }, [tracks]);
 
-  const mapDisplayTrackToAudio = useCallback((item: DisplayTrack): AudioPlayerTrack | null => {
-    return trackConverters.toAudioPlayerTrack({
+  const mapDisplayTrackToAudio = useCallback((item: any): AudioPlayerTrack | null => {
+    return trackConverters.toAudioPlayer({
       id: item.id,
       title: item.title,
       audio_url: item.audio_url ?? null,

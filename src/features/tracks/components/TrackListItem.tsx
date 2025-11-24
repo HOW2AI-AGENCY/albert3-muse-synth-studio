@@ -38,14 +38,14 @@ interface TrackListItemProps {
   className?: string;
 }
 
-const TrackListItemComponent = ({ track, onSelect, onDeleteSuccess, className }: TrackListItemProps) => {
+const TrackListItemComponent = ({ track, onSelect, className }: TrackListItemProps) => {
   const currentTrack = useCurrentTrack();
   const isPlaying = useIsPlaying();
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
   const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
 
   const { isLiked, toggleLike } = useTrackVersionLike(track.id, track.like_count || 0);
-  const { downloadTrack, isDownloading } = useDownloadTrack();
+  const { downloadTrack } = useDownloadTrack();
   const { vibrate } = useHapticFeedback();
 
   const isCurrentTrack = currentTrack?.id === track.id || currentTrack?.parentTrackId === track.id;

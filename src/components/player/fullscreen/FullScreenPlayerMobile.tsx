@@ -3,14 +3,11 @@
  * @description An immersive, gesture-driven, and visually rich full-screen player for mobile.
  * @version 2.0.0
  */
-import { memo, useCallback } from 'react';
+import { memo } from 'react';
 import { ChevronDown, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAudioPlayerStore, useCurrentTrack, useIsPlaying } from '@/stores/audioPlayerStore';
-import { useTrackLike } from '@/features/tracks/hooks/useTrackLike';
-import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { useCurrentTrack, useIsPlaying } from '@/stores/audioPlayerStore';
 import { useSwipeGesture } from '@/hooks/useSwipeGesture';
-import { cn } from '@/lib/utils';
 import { PlayerControls } from '../shared/PlayerControls';
 import { ProgressBar } from '../shared/ProgressBar';
 import { LyricsPanel } from '../shared/LyricsPanel';
@@ -22,8 +19,6 @@ interface FullScreenPlayerMobileProps {
 const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileProps) => {
   const currentTrack = useCurrentTrack();
   const isPlaying = useIsPlaying();
-  const { vibrate } = useHapticFeedback();
-  const { togglePlayPause } = useAudioPlayerStore();
 
   const swipeRef = useSwipeGesture({
     onSwipeDown: onMinimize,
@@ -75,10 +70,7 @@ const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileP
             <img
               src={currentTrack.cover_url || '/placeholder.svg'}
               alt={currentTrack.title}
-              className={cn(
-                "w-full h-full object-cover rounded-lg transition-transform duration-700 ease-in-out",
-                isPlaying && "animate-subtle-breathing"
-              )}
+              className="w-full h-full object-cover rounded-lg transition-transform duration-700 ease-in-out"
               style={{ willChange: 'transform' }}
               onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
             />
@@ -101,7 +93,7 @@ const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileP
 
         {/* Lyrics */}
         <footer className="h-48 flex-shrink-0 overflow-hidden">
-            <LyricsPanel track={currentTrack} />
+            <LyricsPanel track={currentTrack as any} />
         </footer>
       </div>
     </div>

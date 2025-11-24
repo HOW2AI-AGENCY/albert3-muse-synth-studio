@@ -76,7 +76,7 @@ const Favorites = () => {
           status: 'completed' as const,
         }))
       ];
-      const audioTracks = allVersions.map(v => trackConverters.toAudioPlayerTrack({
+      const audioTracks = allVersions.map(v => trackConverters.toAudioPlayer({
         id: v.id,
         title: v.title,
         audio_url: v.audioUrl ?? null,
