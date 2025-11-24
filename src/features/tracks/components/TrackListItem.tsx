@@ -5,7 +5,7 @@
  */
 
 import { memo, useCallback } from 'react';
-import { Play, Pause, Music, Headphones, Loader2, AlertTriangle, MoreVertical } from 'lucide-react';
+import { Play, Pause, Headphones, Loader2, AlertTriangle, MoreVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDuration } from '@/utils/formatters';
 import { Button } from '@/components/ui/button';
@@ -182,13 +182,16 @@ const TrackListItemComponent = ({ track, onSelect, onDeleteSuccess, className }:
         <UnifiedTrackActionsMenu
           trackId={track.id}
           trackStatus={track.status}
+          currentVersionId={track.id}
+          variant="compact"
+          showQuickActions={true}
+          layout="flat"
+          enableAITools={true}
+          isPublic={track.is_public ?? false}
+          hasVocals={track.has_vocals ?? false}
           isLiked={isLiked}
           onLike={toggleLike}
           onDownload={handleDownloadClick}
-          onDelete={() => onDeleteSuccess?.(track.id)}
-          // Pass other necessary props...
-          variant="icon"
-          triggerIcon={<MoreVertical className="h-5 w-5" />}
         />
       </div>
     </div>

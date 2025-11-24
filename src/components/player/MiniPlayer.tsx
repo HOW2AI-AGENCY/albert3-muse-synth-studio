@@ -8,7 +8,7 @@ import { Play, Pause, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAudioPlayerStore, useCurrentTrack, useIsPlaying } from '@/stores/audioPlayerStore';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
-import { cn } from '@/lib/utils';
+
 import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 
 interface MiniPlayerProps {
