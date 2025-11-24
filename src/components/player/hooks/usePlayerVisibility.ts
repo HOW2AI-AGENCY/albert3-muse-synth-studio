@@ -4,9 +4,9 @@
  */
 import { useState, useEffect } from 'react';
 import { useUIStateStore } from '@/stores/uiStateStore';
-import { Track } from '@/types/domain/track.types';
+import { AudioPlayerTrack } from '@/stores/audioPlayerStore';
 
-export const usePlayerVisibility = (currentTrack: Track | null | undefined) => {
+export const usePlayerVisibility = (currentTrack: AudioPlayerTrack | null | undefined) => {
   const [isVisible, setIsVisible] = useState(false);
   const setPlayerExpanded = useUIStateStore((state) => state.setPlayerExpanded);
   const isPlayerExpanded = useUIStateStore((state) => state.isPlayerExpanded);
