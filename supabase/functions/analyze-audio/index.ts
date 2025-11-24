@@ -10,7 +10,7 @@ const WEBHOOK_URL = `${Deno.env.get('SUPABASE_URL')}/functions/v1/replicate-call
 
 createAuthenticatedHandler<AnalyzeAudioParams>({
     schema: analyzeAudioSchema,
-    rateLimit: 'DEFAULT',
+    rateLimit: 'default',
     handler: async (body, user) => {
         const { audioUrl, trackId, prompt } = body;
 

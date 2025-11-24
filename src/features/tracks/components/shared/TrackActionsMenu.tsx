@@ -269,20 +269,24 @@ export const TrackActionsMenu = memo(({
           {isMurekaTrack && (
             <>
               <DropdownMenuSeparator />
-              variant="ghost"
-              size="icon"
-              onClick={() => onSync(trackId)}
-              className={cn(
-                'h-8 w-8',
-                variant === 'minimal' && 'h-7 w-7'
-              )}
-            >
-              <RefreshCw className="w-4 h-4" />
-            </Button>
-        </TooltipTrigger>
-        <TooltipContent>Обновить статус</TooltipContent>
-      </Tooltip>
-      )}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onSync(trackId)}
+                    className={cn(
+                      'h-8 w-8',
+                      variant === 'minimal' && 'h-7 w-7'
+                    )}
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Обновить статус</TooltipContent>
+              </Tooltip>
+            </>
+          )}
 
       {trackStatus === 'failed' && onRetry && (
         <Tooltip>
@@ -296,7 +300,7 @@ export const TrackActionsMenu = memo(({
                 variant === 'minimal' && 'h-7 w-7'
               )}
             >
-              <RefreshCw className="w-4 h-4" />
+              <RotateCcw className="w-4 h-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>Повторить генерацию</TooltipContent>

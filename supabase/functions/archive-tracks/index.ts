@@ -28,7 +28,7 @@ serve(async (req) => {
     // Authenticate user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      logger.error('Missing authorization header', 'archive-tracks');
+      logger.error('Missing authorization header', { context: 'archive-tracks' });
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -40,7 +40,7 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await userClient.auth.getUser(token);
 
     if (userError || !user) {
-      logger.error('Authentication failed', userError ?? new Error('No user'), 'archive-tracks');
+      logger.error('Authentication failed', { error: userError ?? new Error('No user'), context: 'archive-tracks' });
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -52,26 +52,26 @@ serve(async (req) => {
 
     const { trackId, limit = 50 } = await req.json().catch(() => ({}));
 
-    logger.info('Starting archiving process', 'archive-tracks', { trackId, limit, userId: user.id });
+    logger.info('Starting archiving process', { trackId, limit, userId: user.id, context: 'archive-tracks' });
 
     // Get tracks needing archiving
     const { data: tracks, error: fetchError } = await supabaseClient
       .rpc('get_tracks_needing_archiving', { _limit: limit });
 
     if (fetchError) {
-      logger.error('Failed to fetch tracks', fetchError, 'archive-tracks');
+      logger.error('Failed to fetch tracks', { error: fetchError, context: 'archive-tracks' });
       throw new Error(`Failed to fetch tracks: ${fetchError.message}`);
     }
 
     if (!tracks || tracks.length === 0) {
-      logger.info('No tracks need archiving', 'archive-tracks');
+      logger.info('No tracks need archiving', { context: 'archive-tracks' });
       return new Response(
         JSON.stringify({ success: true, archived: 0, failed: 0, message: 'No tracks to archive' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    logger.info(`Found ${tracks.length} tracks to archive`, 'archive-tracks');
+    logger.info(`Found ${tracks.length} tracks to archive`, { context: 'archive-tracks' });
 
     const results = {
       success: 0,
@@ -81,7 +81,7 @@ serve(async (req) => {
 
     for (const track of tracks as Track[]) {
       try {
-        logger.info(`Archiving track ${track.track_id}: "${track.title}"`, 'archive-tracks');
+        logger.info(`Archiving track ${track.track_id}: "${track.title}"`, { context: 'archive-tracks' });
 
         // Create archiving job
         const { data: job, error: jobError } = await supabaseClient
@@ -181,14 +181,14 @@ serve(async (req) => {
           .eq('id', job.id);
 
         results.success++;
-        logger.info(`Successfully archived track ${track.track_id}`, 'archive-tracks');
+        logger.info(`Successfully archived track ${track.track_id}`, { context: 'archive-tracks' });
 
       } catch (error) {
         results.failed++;
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         results.errors.push({ trackId: track.track_id, error: errorMessage });
 
-        logger.error(`Failed to archive track ${track.track_id}`, error instanceof Error ? error : new Error(errorMessage), 'archive-tracks');
+        logger.error(`Failed to archive track ${track.track_id}`, { error: error instanceof Error ? error : new Error(errorMessage), context: 'archive-tracks' });
 
         // Update job as failed
         await supabaseClient
@@ -203,7 +203,7 @@ serve(async (req) => {
       }
     }
 
-    logger.info(`Archiving complete: ${results.success} success, ${results.failed} failed`, 'archive-tracks');
+    logger.info(`Archiving complete: ${results.success} success, ${results.failed} failed`, { context: 'archive-tracks' });
 
     return new Response(
       JSON.stringify({
@@ -216,7 +216,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    logger.error('Archive tracks error', error instanceof Error ? error : new Error(String(error)), 'archive-tracks');
+    logger.error('Archive tracks error', { error: error instanceof Error ? error : new Error(String(error)), context: 'archive-tracks' });
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

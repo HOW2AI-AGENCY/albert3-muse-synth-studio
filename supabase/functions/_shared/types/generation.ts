@@ -39,6 +39,12 @@ export interface MurekaGenerationParams extends BaseGenerationParams {
   isBGM?: boolean;
 }
 
+export interface AnalyzeAudioParams {
+  audioUrl: string;
+  trackId: string;
+  prompt: string;
+}
+
 // ============= Response Types =============
 
 export interface GenerationResult {

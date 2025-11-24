@@ -1,0 +1,72 @@
+/**
+ * Z-Index Management System
+ * ✅ Централизованное управление z-index для всех слоев UI
+ */
+
+:root {
+  /* Base layers */
+  --z-base: 0;
+  --z-content: 1;
+  
+  /* Navigation */
+  --z-navbar: 40;
+  --z-sidebar: 50;
+  --z-bottom-nav: 100;
+  
+  /* Overlays */
+  --z-dropdown: 200;
+  --z-popover: 300;
+  --z-tooltip: 400;
+  
+  /* Modals & Sheets */
+  --z-sheet: 500;
+  --z-dialog: 600;
+  --z-drawer: 700;
+  
+  /* Full-screen components */
+  --z-fullscreen-player: 800;
+  
+  /* Alerts & Notifications */
+  --z-toast: 900;
+  --z-notification: 950;
+  
+  /* Critical UI */
+  --z-offline-banner: 999;
+  --z-loading-overlay: 1000;
+  
+  /* Maximum */
+  --z-maximum: 9999;
+}
+
+/* Apply to components */
+.z-navbar {
+  z-index: var(--z-navbar);
+}
+
+.z-bottom-nav {
+  z-index: var(--z-bottom-nav);
+}
+
+.z-dropdown {
+  z-index: var(--z-dropdown);
+}
+
+.z-sheet {
+  z-index: var(--z-sheet);
+}
+
+.z-dialog {
+  z-index: var(--z-dialog);
+}
+
+.z-fullscreen-player {
+  z-index: var(--z-fullscreen-player);
+}
+
+.z-toast {
+  z-index: var(--z-toast);
+}
+
+.z-offline-banner {
+  z-index: var(--z-offline-banner);
+}

@@ -33,7 +33,7 @@ serve(async (req) => {
     // ✅ 1. Authenticate user via JWT
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      logger.error('Missing authorization header', 'create-music-video');
+      logger.error('Missing authorization header', { context: 'create-music-video' });
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: corsHeaders }
@@ -45,7 +45,7 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
 
     if (userError || !user) {
-      logger.error('Authentication failed', userError ?? new Error('No user'), 'create-music-video');
+      logger.error('Authentication failed', { error: userError ?? new Error('No user'), context: 'create-music-video' });
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: corsHeaders }
@@ -71,12 +71,13 @@ serve(async (req) => {
 
     const { trackId, audioId, author, domainName } = validationResult.data as CreateMusicVideoRequest;
 
-    logger.info('Creating music video', 'create-music-video', {
+    logger.info('Creating music video', {
       trackId,
       audioId,
       userId,
       hasAuthor: !!author,
-      hasDomain: !!domainName
+      hasDomain: !!domainName,
+      context: 'create-music-video'
     });
 
     // ✅ 3. Verify track ownership

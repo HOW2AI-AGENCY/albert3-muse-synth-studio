@@ -8,7 +8,7 @@ import { sanitizePrompt, sanitizeLyrics, sanitizeTitle, sanitizeStyleTags } from
 
 createAuthenticatedHandler<SunoGenerationParams>({
     schema: generateSunoSchema,
-    rateLimit: 'GENERATION',
+    rateLimit: 'generation',
     handler: async (rawBody, user) => {
         const body = rawBody;
         const params: SunoGenerationParams = {
@@ -16,14 +16,14 @@ createAuthenticatedHandler<SunoGenerationParams>({
             title: body.title ? sanitizeTitle(body.title) : undefined,
             prompt: sanitizePrompt(body.prompt || ''),
             lyrics: body.lyrics ? sanitizeLyrics(body.lyrics) : undefined,
-            styleTags: body.tags
-                ? (Array.isArray(body.tags)
-                    ? body.tags.map((t: string) => t.trim())
-                    : sanitizeStyleTags(body.tags).split(',').map((t: string) => t.trim())
+            styleTags: body.styleTags
+                ? (Array.isArray(body.styleTags)
+                    ? body.styleTags.map((t: string) => t.trim())
+                    : (typeof body.styleTags === 'string' ? sanitizeStyleTags(body.styleTags).split(',').map((t: string) => t.trim()) : [])
                 )
                 : undefined,
             hasVocals: body.hasVocals,
-            modelVersion: body.model_version,
+            modelVersion: body.modelVersion,
             idempotencyKey: body.idempotencyKey,
             make_instrumental: body.make_instrumental,
             wait_audio: body.wait_audio,

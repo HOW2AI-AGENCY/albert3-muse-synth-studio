@@ -118,7 +118,7 @@ export abstract class BaseSunoHandler {
       .eq('id', trackId);
 
     if (error) {
-      logger.error('Failed to update track status', error, { trackId, status });
+      logger.error('Failed to update track status', { error, trackId, status });
       throw new Error(`Failed to update track: ${error.message}`);
     }
 
@@ -193,7 +193,8 @@ export abstract class BaseSunoHandler {
         return data;
       } catch (error) {
         if (attempt === maxRetries - 1) {
-          logger.error('Suno API call failed after retries', error as Error, {
+          logger.error('Suno API call failed after retries', {
+            error: error as Error,
             endpoint,
             attempts: maxRetries,
           });
