@@ -4,7 +4,7 @@
  * @version 2.0.0
  */
 import { memo, useCallback } from 'react';
-import { X, MoreVertical } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -54,35 +54,19 @@ const DetailPanelMobileV2Component = ({ track, open, onOpenChange, onDelete, onR
               <X className="h-5 w-5" />
             </Button>
             <SheetTitle className="truncate">{track.title}</SheetTitle>
-            <UnifiedTrackActionsMenu
-              trackId={track.id}
-              trackStatus={track.status}
-              isLiked={isLiked}
-              onLike={toggleLike}
-              onDownload={() => downloadTrack(track)}
-              onDelete={handleDelete}
-              onRemix={() => onRemix?.(track)}
-              triggerIcon={<MoreVertical className="h-5 w-5" />}
-            />
+            <Button variant="ghost" size="icon" onClick={handleDelete} aria-label="Delete track">
+              <X className="h-5 w-5" />
+            </Button>
           </div>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto">
-          <CompactTrackHero
-            track={{
-              title: track.title,
-              cover_url: track.cover_url || undefined,
-              status: track.status,
-              created_at: track.created_at || undefined,
-              duration_seconds: track.duration_seconds ?? undefined,
-              style_tags: track.style_tags ?? undefined,
-              play_count: track.play_count ?? undefined,
-              download_count: track.download_count ?? undefined,
-            }}
-            isLiked={isLiked}
-            likeCount={track.like_count ?? 0}
-            onLike={toggleLike}
-          />
+          <div className="px-4 py-4">
+            <h1 className="text-2xl font-bold mb-2">{track.title}</h1>
+            <p className="text-muted-foreground mb-4">
+              {track.style_tags?.join(', ') || 'AI Music'}
+            </p>
+          </div>
 
           <Tabs defaultValue="overview" className="w-full">
             <TabsList className="sticky top-0 z-10 grid w-full grid-cols-4 bg-background/95 backdrop-blur-sm">
@@ -96,7 +80,7 @@ const DetailPanelMobileV2Component = ({ track, open, onOpenChange, onDelete, onR
                 <OverviewContent track={track as any} />
               </TabsContent>
               <TabsContent value="lyrics">
-                <LyricsContent lyrics={track.lyrics || undefined} trackId={track.id} sunoId={track.suno_id || undefined} />
+                <LyricsContent lyrics={track.lyrics || ''} trackId={track.id} sunoId={track.suno_id || ''} />
               </TabsContent>
               <TabsContent value="versions">
                 <VersionsStemsContent track={track as any} />

@@ -6,7 +6,7 @@
 import { memo } from 'react';
 import { ChevronDown, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useCurrentTrack, useIsPlaying } from '@/stores/audioPlayerStore';
+import { useCurrentTrack } from '@/stores/audioPlayerStore';
 import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 import { PlayerControls } from '../shared/PlayerControls';
 import { ProgressBar } from '../shared/ProgressBar';
@@ -18,7 +18,6 @@ interface FullScreenPlayerMobileProps {
 
 const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileProps) => {
   const currentTrack = useCurrentTrack();
-  const isPlaying = useIsPlaying();
 
   const swipeRef = useSwipeGesture({
     onSwipeDown: onMinimize,
