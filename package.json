@@ -107,7 +107,7 @@
     "vaul": "^0.9.9",
     "vitest": "^4.0.8",
     "web-vitals": "^3.5.2",
-    "zod": "^4.1.12",
+    "zod": "^4.1.13",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
