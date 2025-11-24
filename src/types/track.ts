@@ -35,3 +35,44 @@ export interface Track {
   selectedVersionId?: string;
   versions?: any[];
 }
+
+// Audio Player Track type (совместим с audioPlayerStore)
+export interface AudioPlayerTrack {
+  id: string;
+  title: string;
+  audio_url: string;
+  cover_url?: string;
+  video_url?: string;
+  duration?: number;
+  lyrics?: string;
+  style_tags?: string[];
+  status?: 'pending' | 'processing' | 'completed' | 'failed';
+  parentTrackId?: string;
+  versionNumber?: number;
+  isMasterVersion?: boolean;
+  sourceVersionNumber?: number | null;
+  suno_task_id?: string;
+  suno_id?: string;
+  mureka_task_id?: string;
+  selectedVersionId?: string;
+  versions?: any[];
+  like_count?: number;
+}
+
+// Display Track type (для UI компонентов)
+export interface DisplayTrack extends Track {
+  isLiked?: boolean;
+  isPlaying?: boolean;
+}
+
+// Optimized Track type (для виртуализированных списков)
+export interface OptimizedTrack {
+  id: string;
+  title: string;
+  status: Track['status'];
+  audio_url?: string;
+  cover_url?: string;
+  duration?: number;
+  style_tags?: string[];
+  version_count?: number;
+}

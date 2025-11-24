@@ -4,7 +4,7 @@
  * @version 2.0.0
  */
 import { memo, useCallback } from 'react';
-import { ChevronDown, MoreVertical, ThumbsUp, ThumbsDown, User, Music, BarChart, Download } from 'lucide-react';
+import { ChevronDown, MoreVertical } from 'lucide-react';
 import { useAudioPlayerStore, useCurrentTrack, useIsPlaying } from '@/stores/audioPlayerStore';
 import { useTrackLike } from '@/features/tracks/hooks/useTrackLike';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';

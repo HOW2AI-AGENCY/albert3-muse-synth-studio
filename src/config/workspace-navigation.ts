@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  Home, Sparkles, Library, Heart, BarChart3, Settings, Wand2, Headphones, Music4
+  Home, Sparkles, Library, Heart, BarChart3, Settings, Wand2
 } from "@/utils/iconImports";
 import {
   preloadDashboard, preloadGenerate, preloadProjects, preloadMonitoringHub,
