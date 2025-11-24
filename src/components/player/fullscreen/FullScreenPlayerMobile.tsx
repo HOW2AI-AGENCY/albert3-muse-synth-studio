@@ -8,9 +8,11 @@ import { ChevronDown, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCurrentTrack } from '@/stores/audioPlayerStore';
 import { useSwipeGesture } from '@/hooks/useSwipeGesture';
+import { useTrackQuery } from '@/hooks/tracks/useTracksQuery';
 import { PlayerControls } from '../shared/PlayerControls';
 import { ProgressBar } from '../shared/ProgressBar';
 import { LyricsPanel } from '../shared/LyricsPanel';
+import { LyricsSkeleton } from '../LyricsSkeleton';
 
 interface FullScreenPlayerMobileProps {
   onMinimize: () => void;
@@ -18,12 +20,15 @@ interface FullScreenPlayerMobileProps {
 
 const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileProps) => {
   const currentTrack = useCurrentTrack();
+  const { data: fullTrack, isLoading, isError } = useTrackQuery(currentTrack?.id || null);
 
   const swipeRef = useSwipeGesture({
     onSwipeDown: onMinimize,
   });
 
   if (!currentTrack) return null;
+
+  const displayTrack = fullTrack || currentTrack;
 
   return (
     <div
@@ -39,7 +44,7 @@ const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileP
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <img
-          src={currentTrack.cover_url || '/placeholder.svg'}
+          src={displayTrack.cover_url || '/placeholder.svg'}
           alt="background"
           className="w-full h-full object-cover blur-3xl scale-125 opacity-30"
           decoding="async"
@@ -55,7 +60,7 @@ const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileP
           </Button>
           <div className="text-center">
             <p className="text-xs text-muted-foreground">PLAYING FROM LIBRARY</p>
-            <h2 className="text-sm font-semibold truncate">{currentTrack.title}</h2>
+            <h2 className="text-sm font-semibold truncate">{displayTrack.title}</h2>
           </div>
           <Button variant="ghost" size="icon" aria-label="More options">
             <MoreVertical className="h-6 w-6" />
@@ -67,8 +72,8 @@ const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileP
           {/* Cover Art */}
           <div className="relative w-full max-w-xs aspect-square shadow-2xl shadow-primary/10 rounded-lg">
             <img
-              src={currentTrack.cover_url || '/placeholder.svg'}
-              alt={currentTrack.title}
+              src={displayTrack.cover_url || '/placeholder.svg'}
+              alt={displayTrack.title}
               className="w-full h-full object-cover rounded-lg transition-transform duration-700 ease-in-out"
               style={{ willChange: 'transform' }}
               onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
@@ -77,8 +82,8 @@ const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileP
 
           {/* Track Info */}
           <div className="w-full text-left mt-6">
-            <h1 className="text-2xl font-bold">{currentTrack.title}</h1>
-            <p className="text-muted-foreground">{currentTrack.style_tags?.join(', ') || 'AI Music'}</p>
+            <h1 className="text-2xl font-bold">{displayTrack.title}</h1>
+            <p className="text-muted-foreground">{displayTrack.style_tags?.join(', ') || 'AI Music'}</p>
           </div>
 
           <div className="w-full mt-4">
@@ -92,7 +97,11 @@ const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileP
 
         {/* Lyrics */}
         <footer className="h-48 flex-shrink-0 overflow-hidden">
-            <LyricsPanel track={currentTrack as any} />
+          {isLoading ? (
+            <LyricsSkeleton />
+          ) : fullTrack ? (
+            <LyricsPanel track={fullTrack} />
+          ) : null}
         </footer>
       </div>
     </div>
