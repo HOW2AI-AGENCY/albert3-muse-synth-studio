@@ -1,6 +1,5 @@
 import { memo } from 'react';
 import { useTimestampedLyrics } from '@/hooks/useTimestampedLyrics';
-import { useCurrentTrack } from '@/stores/audioPlayerStore';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Track } from '@/types/track';
 
@@ -9,24 +8,23 @@ interface LyricsPanelProps {
 }
 
 export const LyricsPanel = memo(({ track }: LyricsPanelProps) => {
-  const { data } = useTimestampedLyrics(track.suno_id, track.lyrics);
-  const lyrics = data?.lines ?? [];
-  const currentLine = data?.currentLine ?? 0;
+  const { data } = useTimestampedLyrics({
+    taskId: track.suno_task_id,
+    audioId: track.suno_id,
+  });
+  
+  const alignedWords = data?.alignedWords ?? [];
 
   return (
     <ScrollArea className="h-full">
       <div className="px-4 py-2">
-        {lyrics.map((line, index) => (
-          <p
+        {alignedWords.map((word, index) => (
+          <span
             key={index}
-            className={`transition-all duration-300 ${
-              index === currentLine
-                ? 'text-lg font-bold text-primary'
-                : 'text-muted-foreground'
-            }`}
+            className="mr-1 transition-all duration-300 text-muted-foreground"
           >
-            {line.text}
-          </p>
+            {word.word}
+          </span>
         ))}
       </div>
     </ScrollArea>

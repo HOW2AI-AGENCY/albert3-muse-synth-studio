@@ -178,7 +178,7 @@ export const SelectionToolbar: React.FC<SelectionToolbarProps> = ({ className = 
       }
 
       const audioTracks = tracks
-        .map(trackConverters.toAudioPlayer)
+        .map((t) => trackConverters.toAudioPlayer(t as any))
         .filter((track): track is NonNullable<typeof track> => track !== null);
 
       if (audioTracks.length === 0) {
@@ -186,10 +186,11 @@ export const SelectionToolbar: React.FC<SelectionToolbarProps> = ({ className = 
         return;
       }
 
-      // Play first track with queue
       const firstTrack = audioTracks[0];
-
-      playTrackWithQueue(firstTrack, audioTracks);
+      playTrackWithQueue({
+        ...firstTrack,
+        cover_url: firstTrack.cover_url ?? undefined,
+      }, audioTracks.map(t => ({ ...t, cover_url: t.cover_url ?? undefined })));
 
       toast.success(`Воспроизведение ${audioTracks.length} треков`);
     } catch (error) {
