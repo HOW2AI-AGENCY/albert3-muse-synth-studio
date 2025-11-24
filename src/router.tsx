@@ -231,8 +231,7 @@ export const router = createBrowserRouter(
   {
     future: {
       v7_relativeSplatPath: true,
-      v7_fetcherPersist: true,  // ✅ Better navigation state
-      v7_startTransition: true, // ✅ Opt-in to v7 state update wrapping
+      v7_fetcherPersist: true,
     },
   }
 );

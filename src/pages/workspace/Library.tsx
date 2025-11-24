@@ -14,7 +14,7 @@ import {
   SortDesc,
   Check,
 } from "@/utils/iconImports";
-import { TrackCard } from "@/features/tracks";
+
 import { OptimizedTrackList } from "@/components/OptimizedTrackList";
 import { LibrarySkeleton } from "@/components/skeletons/LibrarySkeleton";
 import { TrackStatusMonitor } from "@/components/TrackStatusMonitor";
@@ -124,20 +124,12 @@ const LibraryContent: React.FC = () => {
     return map;
   }, [tracks]);
 
-  const mapDisplayTrackToAudio = useCallback((item: any): AudioPlayerTrack | null => {
-    return trackConverters.toAudioPlayer({
-      id: item.id,
-      title: item.title,
-      audio_url: item.audio_url ?? null,
-      cover_url: item.cover_url ?? null,
-      duration: item.duration ?? item.duration_seconds ?? null,
-      duration_seconds: item.duration_seconds ?? null,
-      style_tags: item.style_tags ?? null,
-      status: item.status ?? null,
-    }) as AudioPlayerTrack | null;
+  const mapDisplayTrackToAudio = useCallback((item: any) => {
+    const audioTrack = trackConverters.toAudioPlayer(item as any);
+    return audioTrack;
   }, []);
 
-  const handleTrackPlay = useCallback(async (track: DisplayTrack) => {
+  const handleTrackPlay = useCallback(async (track: any) => {
     if (!track.audio_url || track.status !== 'completed') {
       return;
     }
@@ -159,17 +151,8 @@ const LibraryContent: React.FC = () => {
             status: 'completed' as const,
           }))
         ];
-        const audioTracks = allVersions.map(v => trackConverters.toAudioPlayerTrack({
-          id: v.id,
-          title: v.title,
-          audio_url: v.audioUrl ?? null,
-          cover_url: v.coverUrl ?? null,
-          duration: v.duration ?? null,
-          duration_seconds: v.duration ?? null,
-          style_tags: v.styleTags ?? null,
-          lyrics: v.lyrics ?? null,
-          status: v.status ?? 'completed',
-        })).filter((t): t is NonNullable<typeof t> => t !== null);
+        const audioTracks = allVersions.map(v => trackConverters.toAudioPlayer(v as any))
+          .filter((t): t is NonNullable<typeof t> => t !== null);
 
         const preferredOrMain = variantsData.preferredVariant || variantsData.mainTrack;
         const startTrack = audioTracks.find(t => t.id === preferredOrMain.id);
@@ -309,7 +292,7 @@ const LibraryContent: React.FC = () => {
     const track = tracks.find(t => t.id === trackId);
     if (!track) return;
 
-    dialogs.openExtend(trackConverters.toDisplay(track as any));
+    dialogs.openExtend(track as any);
   }, [tracks, dialogs]);
 
   const handleCover = useCallback((trackId: string) => {
@@ -372,7 +355,7 @@ const LibraryContent: React.FC = () => {
     const track = tracks.find(t => t.id === trackId);
     if (!track) return;
 
-    dialogs.openCreatePersona(trackConverters.toDisplay(track as any));
+    dialogs.openCreatePersona(track as any);
   }, [tracks, dialogs]);
 
   const handleUpscaleAudio = useCallback((trackId: string) => {
@@ -616,13 +599,9 @@ const LibraryContent: React.FC = () => {
           {filters.viewMode === 'list' && (
             <div className="w-full" style={{ height: 'calc(100vh - 280px)' }}>
               <VirtualizedTrackList
-                tracks={filteredAndSortedTracks as DisplayTrackType[]}
+                tracks={filteredAndSortedTracks as any[]}
                 height={600}
                 onTrackPlay={handleTrackPlay}
-                onShare={handleShare}
-                onSeparateStems={handleSeparateStems}
-                onRetry={handleRetry}
-                onDelete={handleDelete}
                 loadingTrackId={loadingTrackId}
               />
             </div>
@@ -670,7 +649,7 @@ const LibraryContent: React.FC = () => {
           track={{
             id: dialogs.extend.data.id,
             title: dialogs.extend.data.title,
-            duration: (dialogs.extend.data.duration ?? dialogs.extend.data.duration_seconds) || undefined,
+            duration: ((dialogs.extend.data as any).duration ?? (dialogs.extend.data as any).duration_seconds) || undefined,
             prompt: dialogs.extend.data.prompt,
             style_tags: dialogs.extend.data.style_tags ?? undefined,
           }}

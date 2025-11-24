@@ -45,7 +45,6 @@ export const DetailPanel = ({
   onOpenChange, 
   onClose, 
   onDelete, 
-  onRemix,
   variant 
 }: DetailPanelProps) => {
   const { isMobile } = useBreakpoints();
@@ -55,11 +54,10 @@ export const DetailPanel = ({
   if (effectiveVariant === 'mobile') {
     return (
       <DetailPanelMobileV2 
-        track={track} 
+        track={track as any}
         open={open ?? true}
         onOpenChange={onOpenChange ?? (() => onClose?.())}
         onDelete={onDelete}
-        onRemix={onRemix}
       />
     );
   }
@@ -67,7 +65,7 @@ export const DetailPanel = ({
   // Desktop panel version - fallback to mobile for now
   return (
     <DetailPanelMobileV2 
-      track={track} 
+      track={track as any}
       open={open ?? true}
       onOpenChange={onOpenChange ?? (() => onClose?.())}
       onDelete={onDelete}
