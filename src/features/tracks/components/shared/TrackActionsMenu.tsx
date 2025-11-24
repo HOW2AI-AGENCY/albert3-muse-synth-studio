@@ -266,46 +266,27 @@ export const TrackActionsMenu = memo(({
           )}
 
           {/* Mureka-specific hint */}
-          {isMurekaTrack && (
+          {isMurekaTrack && onSync && (
             <>
               <DropdownMenuSeparator />
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onSync(trackId)}
-                    className={cn(
-                      'h-8 w-8',
-                      variant === 'minimal' && 'h-7 w-7'
-                    )}
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Обновить статус</TooltipContent>
-              </Tooltip>
+              <DropdownMenuItem onClick={() => onSync(trackId)}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Обновить статус
+              </DropdownMenuItem>
             </>
           )}
 
-      {trackStatus === 'failed' && onRetry && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onRetry(trackId)}
-              className={cn(
-                'h-8 w-8',
-                variant === 'minimal' && 'h-7 w-7'
-              )}
-            >
-              <RotateCcw className="w-4 h-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Повторить генерацию</TooltipContent>
-        </Tooltip>
-      )}
+          {trackStatus === 'failed' && onRetry && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onRetry(trackId)}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Повторить генерацию
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 });
