@@ -67,25 +67,25 @@ export const useStudioStore = create<StudioState>()(
         state.currentTime = time;
       }),
     updateStemVolume: (stemId, volume) =>
-      set((state) => {
-        const stem = state.stems.find((s) => s.id === stemId);
+      set((state: any) => {
+        const stem = state.stems.find((s: any) => s.id === stemId);
         if (stem) {
           stem.volume = volume;
         }
       }),
     toggleMute: (stemId) =>
-      set((state) => {
-        const stem = state.stems.find((s) => s.id === stemId);
+      set((state: any) => {
+        const stem = state.stems.find((s: any) => s.id === stemId);
         if (stem) {
           stem.isMuted = !stem.isMuted;
         }
       }),
     toggleSolo: (stemId) =>
-      set((state) => {
-        const soloStem = state.stems.find((s) => s.id === stemId);
+      set((state: any) => {
+        const soloStem = state.stems.find((s: any) => s.id === stemId);
         if (soloStem) {
           const isTurningSoloOn = !soloStem.isSolo;
-          state.stems.forEach(s => {
+          state.stems.forEach((s: any) => {
             s.isSolo = false;
           });
           soloStem.isSolo = isTurningSoloOn;

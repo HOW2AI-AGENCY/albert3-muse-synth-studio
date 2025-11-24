@@ -8,21 +8,22 @@ export type { Track, TrackVersion } from '@/types/track.types';
 // DisplayTrack is just Track with optional UI properties
 import type { Track as BaseTrack } from '@/types/track.types';
 
-export interface DisplayTrack extends BaseTrack {
+export interface DisplayTrack extends Omit<BaseTrack, 'duration'> {
   isLiked?: boolean;
   isPlaying?: boolean;
   formattedDuration?: string;
   formattedDate?: string;
   artistName?: string;
   genreLabel?: string;
+  duration?: number | null;
 }
 
 export interface AudioPlayerTrack {
   id: string;
   title: string;
   audio_url: string;
-  cover_url?: string | null;
-  duration?: number | null;
+  cover_url?: string;
+  duration?: number;
   artist?: string;
   status?: string;
   style_tags?: string[];

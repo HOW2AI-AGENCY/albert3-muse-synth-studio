@@ -10,7 +10,7 @@ export interface TrackState {
   isFavorite: boolean;
 }
 
-export const useTrackState = (trackId: string, initialState?: Partial<TrackState>) => {
+export const useTrackState = (_trackId: string, initialState?: Partial<TrackState>) => {
   const [state, setState] = useState<TrackState>({
     isPlaying: initialState?.isPlaying ?? false,
     isLiked: initialState?.isLiked ?? false,

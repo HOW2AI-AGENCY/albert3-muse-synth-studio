@@ -3,8 +3,6 @@
  * Main information: stats, genre/mood, prompts, technical details, AI analysis
  */
 
-import { GenreMoodCard } from '../cards/GenreMoodCard';
-import { TrackStatsCard } from '../cards/TrackStatsCard';
 import { PromptCard } from '../cards/PromptCard';
 import { TechnicalDetailsCard } from '../cards/TechnicalDetailsCard';
 import { AIAnalysisCard } from '../cards/AIAnalysisCard';

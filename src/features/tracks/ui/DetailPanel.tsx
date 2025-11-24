@@ -1,5 +1,4 @@
 import { DetailPanelMobileV2 } from "./DetailPanelMobileV2";
-import { ModernDetailPanel } from "./ModernDetailPanel";
 import { useBreakpoints } from "@/hooks/useBreakpoints";
 
 interface DetailPanelProps {
@@ -65,13 +64,13 @@ export const DetailPanel = ({
     );
   }
 
-  // Desktop panel version
+  // Desktop panel version - fallback to mobile for now
   return (
-      <ModernDetailPanel 
-        track={track} 
-        onClose={onClose}
-        onDelete={onDelete}
-        onRemix={onRemix}
-      />
+    <DetailPanelMobileV2 
+      track={track} 
+      open={open ?? true}
+      onOpenChange={onOpenChange ?? (() => onClose?.())}
+      onDelete={onDelete}
+    />
   );
 };

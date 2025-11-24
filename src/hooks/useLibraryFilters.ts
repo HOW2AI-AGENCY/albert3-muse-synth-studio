@@ -138,8 +138,8 @@ export const useLibraryFilters = ({ tracks }: UseLibraryFiltersOptions): Library
           bValue = b.title?.toLowerCase() || '';
           break;
         case 'duration':
-          aValue = Number(a.duration) || 0;
-          bValue = Number(b.duration) || 0;
+          aValue = Number(a.duration ?? a.duration_seconds) || 0;
+          bValue = Number(b.duration ?? b.duration_seconds) || 0;
           break;
         case 'like_count':
           aValue = a.like_count || 0;

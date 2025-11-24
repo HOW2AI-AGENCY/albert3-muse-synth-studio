@@ -21,7 +21,7 @@ describe('formatDuration', () => {
 
   it('handles null and undefined', () => {
     expect(formatDuration(null as unknown as number)).toBe('—');
-    expect(formatDuration(undefined)).toBe('—');
+    expect(formatDuration(undefined as unknown as number)).toBe('—');
     expect(formatDuration(NaN)).toBe('—');
   });
 
