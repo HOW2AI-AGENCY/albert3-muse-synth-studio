@@ -309,7 +309,7 @@ const LibraryContent: React.FC = () => {
     const track = tracks.find(t => t.id === trackId);
     if (!track) return;
 
-    dialogs.openExtend(trackConverters.toDisplayTrack(track));
+    dialogs.openExtend(trackConverters.toDisplay(track as any));
   }, [tracks, dialogs]);
 
   const handleCover = useCallback((trackId: string) => {
@@ -372,7 +372,7 @@ const LibraryContent: React.FC = () => {
     const track = tracks.find(t => t.id === trackId);
     if (!track) return;
 
-    dialogs.openCreatePersona(trackConverters.toDisplayTrack(track));
+    dialogs.openCreatePersona(trackConverters.toDisplay(track as any));
   }, [tracks, dialogs]);
 
   const handleUpscaleAudio = useCallback((trackId: string) => {
@@ -630,8 +630,7 @@ const LibraryContent: React.FC = () => {
 
           {filters.viewMode === 'optimized' && (
             <OptimizedTrackList
-              tracks={filteredAndSortedTracks.map(trackConverters.toOptimizedTrack)}
-              onShare={handleShare}
+              tracks={filteredAndSortedTracks as any}
             />
           )}
         </>
@@ -671,9 +670,9 @@ const LibraryContent: React.FC = () => {
           track={{
             id: dialogs.extend.data.id,
             title: dialogs.extend.data.title,
-            duration: dialogs.extend.data.duration || dialogs.extend.data.duration_seconds,
+            duration: (dialogs.extend.data.duration ?? dialogs.extend.data.duration_seconds) || undefined,
             prompt: dialogs.extend.data.prompt,
-            style_tags: dialogs.extend.data.style_tags,
+            style_tags: dialogs.extend.data.style_tags ?? undefined,
           }}
         />
       )}

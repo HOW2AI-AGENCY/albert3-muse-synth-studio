@@ -76,17 +76,8 @@ const Favorites = () => {
           status: 'completed' as const,
         }))
       ];
-      const audioTracks = allVersions.map(v => trackConverters.toAudioPlayer({
-        id: v.id,
-        title: v.title,
-        audio_url: v.audioUrl ?? null,
-        cover_url: v.coverUrl ?? null,
-        duration: v.duration ?? null,
-        duration_seconds: v.duration ?? null,
-        style_tags: v.styleTags ?? null,
-        lyrics: v.lyrics ?? null,
-        status: v.status ?? 'completed',
-      })).filter((t): t is NonNullable<typeof t> => t !== null);
+      const audioTracks = allVersions.map(v => trackConverters.toAudioPlayer(v as any))
+        .filter((t): t is NonNullable<typeof t> => t !== null);
 
       const preferredOrMain = variantsData.preferredVariant || variantsData.mainTrack;
       const startTrack = audioTracks.find(t => t.id === preferredOrMain.id);

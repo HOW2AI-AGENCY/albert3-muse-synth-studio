@@ -8,17 +8,14 @@ import { X } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useDownloadTrack } from '@/hooks/useDownloadTrack';
-import { useDeleteTrack } from '@/hooks/useDeleteTrack';
-import { useToast } from '@/hooks/use-toast';
-import { CompactTrackHero } from './CompactTrackHero';
+import { toast } from '@/hooks/use-toast';
+import type { Track } from '@/types/track';
 import { OverviewContent } from './tabs/OverviewContent';
 import { LyricsContent } from './tabs/LyricsContent';
 import { VersionsStemsContent } from './tabs/VersionsStemsContent';
-import { AnalysisContent } from './tabs/AnalysisContent';
-import { UnifiedTrackActionsMenu } from '@/components/tracks/shared/TrackActionsMenu.unified';
-import { useTrackLike } from '@/features/tracks/hooks/useTrackLike';
-import { Track } from '@/types/track';
+import { useTrackVersionLike } from '@/features/tracks/hooks/useTrackVersionLike';
+import { VisualsContent } from './tabs/VisualsContent';
+import { useTracks } from '@/features/tracks/hooks';
 
 interface DetailPanelMobileV2Props {
   track: Track;
@@ -28,11 +25,12 @@ interface DetailPanelMobileV2Props {
   onRemix?: (track: any) => void;
 }
 
-const DetailPanelMobileV2Component = ({ track, open, onOpenChange, onDelete, onRemix }: DetailPanelMobileV2Props) => {
-  const { toast } = useToast();
-  const { downloadTrack } = useDownloadTrack();
-  const { deleteTrack } = useDeleteTrack();
-  const { isLiked, toggleLike } = useTrackLike(track.id, track.like_count || 0);
+const DetailPanelMobileV2Component = ({ track, open, onOpenChange, onDelete: onDeleteProp }: DetailPanelMobileV2Props) => {
+  const { deleteTrack } = useTracks();
+  const { isLiked, toggleLike } = useTrackVersionLike({
+    trackId: track.id,
+    versionId: track.id,
+  });
 
   const handleDelete = useCallback(async () => {
     try {
@@ -80,7 +78,7 @@ const DetailPanelMobileV2Component = ({ track, open, onOpenChange, onDelete, onR
                 <OverviewContent track={track as any} />
               </TabsContent>
               <TabsContent value="lyrics">
-                <LyricsContent lyrics={track.lyrics || ''} trackId={track.id} sunoId={track.suno_id || ''} />
+                <LyricsContent lyrics={track.lyrics || ''} trackId={track.id} />
               </TabsContent>
               <TabsContent value="versions">
                 <VersionsStemsContent track={track as any} />

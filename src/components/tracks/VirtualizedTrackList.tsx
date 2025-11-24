@@ -20,14 +20,17 @@ interface VirtualizedTrackListProps {
 
 const ITEM_HEIGHT = 72; // Height of TrackListItem in pixels
 
+interface VirtualizedTrackListProps {
+  tracks: any[];
+  height?: number;
+  onTrackPlay?: (trackId: string) => void;
+  loadingTrackId?: string | null;
+}
+
 export const VirtualizedTrackList = React.memo(({
   tracks,
   height,
   onTrackPlay,
-  onShare,
-  onSeparateStems,
-  onRetry,
-  onDelete,
   loadingTrackId
 }: VirtualizedTrackListProps) => {
   const parentRef = useRef<HTMLDivElement>(null);
