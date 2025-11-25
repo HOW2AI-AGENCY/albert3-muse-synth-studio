@@ -20,7 +20,7 @@ interface FullScreenPlayerMobileProps {
 
 const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileProps) => {
   const currentTrack = useCurrentTrack();
-  const { data: fullTrack, isLoading, isError } = useTrackQuery(currentTrack?.id || null);
+  const { data: fullTrack, isLoading } = useTrackQuery(currentTrack?.id || null);
 
   const swipeRef = useSwipeGesture({
     onSwipeDown: onMinimize,
@@ -100,7 +100,7 @@ const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileP
           {isLoading ? (
             <LyricsSkeleton />
           ) : fullTrack ? (
-            <LyricsPanel track={fullTrack} />
+            <LyricsPanel track={fullTrack as any} />
           ) : null}
         </footer>
       </div>
