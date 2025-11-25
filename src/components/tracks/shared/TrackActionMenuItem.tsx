@@ -1,4 +1,5 @@
 import React from 'react';
+import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
@@ -79,7 +80,54 @@ export const TrackActionMenuItem: React.FC<TrackActionMenuItemProps> = ({
     );
   }
 
-  // На десктопе рендерим DropdownMenuItem с Tooltip
+  // Если требуется подтверждение, оборачиваем триггер в диалог
+  if (item.confirmation) {
+    const trigger = isMobile ? (
+      <Button
+        variant="ghost"
+        disabled={isDisabled}
+        className={cn(commonClassName, 'justify-start px-2 py-1.5 h-auto text-sm')}
+      >
+        {children}
+      </Button>
+    ) : (
+      <DropdownMenuItem
+        disabled={isDisabled}
+        onSelect={(e) => e.preventDefault()} // Prevent dropdown from closing on click
+        className={cn(commonClassName, 'cursor-pointer focus:bg-destructive/10')}
+      >
+        {children}
+      </DropdownMenuItem>
+    );
+
+    return (
+      <ConfirmationDialog
+        onConfirm={handleClick}
+        title={item.confirmation.title}
+        description={item.confirmation.description}
+        confirmText={item.confirmation.confirmText}
+        cancelText={item.confirmation.cancelText}
+      >
+        {trigger}
+      </ConfirmationDialog>
+    );
+  }
+
+  // Стандартное поведение для элементов без подтверждения
+  if (isMobile) {
+    return (
+      <Button
+        variant="ghost"
+        key={item.id}
+        disabled={isDisabled}
+        onClick={handleClick}
+        className={cn(commonClassName, 'justify-start px-2 py-1.5 h-auto text-sm')}
+      >
+        {children}
+      </Button>
+    );
+  }
+
   const menuItemElement = (
     <DropdownMenuItem
       key={item.id}

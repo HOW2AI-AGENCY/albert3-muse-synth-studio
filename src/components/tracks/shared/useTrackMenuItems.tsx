@@ -360,10 +360,16 @@ export const useTrackMenuItems = (props: UnifiedTrackActionsMenuProps): MenuItem
     if (onDelete && canDelete) {
       items.push({
         id: 'trash',
-        label: 'Move to Trash',
+        label: 'Удалить трек',
         icon: <Trash2 className="w-4 h-4" />,
         action: () => onDelete(trackId),
         danger: true,
+        confirmation: {
+          title: 'Вы уверены, что хотите удалить этот трек?',
+          description: 'Это действие нельзя будет отменить. Все связанные данные, включая версии и стемы, будут удалены безвозвратно.',
+          confirmText: 'Удалить',
+          cancelText: 'Отмена',
+        }
       });
     }
 

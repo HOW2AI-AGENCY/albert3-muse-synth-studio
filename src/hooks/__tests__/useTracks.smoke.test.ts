@@ -1,5 +1,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import React from 'react';
 import { useTracks } from '../useTracks';
 
 // Hoist all mocks to prevent initialization errors
@@ -89,8 +91,22 @@ describe('useTracks smoke test', () => {
     deleteTrackMock.mockResolvedValue(undefined);
   });
 
+  const createWrapper = () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+    return ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+  };
+
   it('loads tracks for the current user and updates cache', async () => {
-    const { result } = renderHook(() => useTracks());
+    const wrapper = createWrapper();
+    const { result } = renderHook(() => useTracks(), { wrapper });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -102,9 +118,12 @@ describe('useTracks smoke test', () => {
   });
 
   it('deletes a track and updates state', async () => {
-    const { result } = renderHook(() => useTracks());
+    const wrapper = createWrapper();
+    const { result } = renderHook(() => useTracks(), { wrapper });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
+    // The confirmation logic is now handled by the UI component,
+    // so the hook should proceed with deletion directly.
     await act(async () => {
       await result.current.deleteTrack('track-1');
     });

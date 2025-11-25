@@ -108,4 +108,4 @@ reports/**/*.tmp
 
 .gemini/*
 .specify/*
-.trae/*
+.trae/*\n# Test reports\nplaywright-report/\ntest-results/

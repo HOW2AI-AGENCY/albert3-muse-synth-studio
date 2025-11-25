@@ -125,4 +125,10 @@ export interface MenuItem {
   shortcut?: string;
   tooltip?: string;
   showInVariant?: MenuVariant[];
+  confirmation?: {
+    title: string;
+    description: string;
+    confirmText?: string;
+    cancelText?: string;
+  };
 }
