@@ -12,9 +12,10 @@ interface LyricsDisplayProps {
   taskId: string;
   audioId: string;
   fallbackLyrics?: string;
+  isVisible?: boolean;
 }
 
-export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audioId, fallbackLyrics }) => {
+export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audioId, fallbackLyrics, isVisible = true }) => {
   const [showSettings, setShowSettings] = useState(false);
   const { settings, updateSettings } = useLyricsSettings();
 
@@ -23,6 +24,7 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
   const seekTo = useAudioPlayerStore((state) => state.seekTo);
 
   const shouldFetchTimestamped = Boolean(
+    isVisible &&
     taskId && 
     typeof taskId === 'string' && 
     taskId.trim().length > 0 &&
@@ -51,6 +53,11 @@ export const LyricsDisplay: React.FC<LyricsDisplayProps> = memo(({ taskId, audio
   // Show skeleton during loading
   if (isLoading && !hasTimestampedLyrics) {
     return <LyricsSkeleton />;
+  }
+
+  // Don't render if not visible
+  if (!isVisible) {
+    return null;
   }
 
   // Continue to main render; fallback and placeholders handled below

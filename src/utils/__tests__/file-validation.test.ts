@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { validateAudioFile, FileValidationError, validateFile } from '../file-validation';
+import { describe, it, expect } from 'vitest';
+import { validateAudioFile, FileValidationError } from '../file-validation';
 
 describe('file-validation', () => {
   describe('validateAudioFile', () => {
