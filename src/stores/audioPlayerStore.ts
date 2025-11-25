@@ -148,28 +148,27 @@ interface AudioPlayerState {
  * ```
  */
 export const useAudioPlayerStore = create<AudioPlayerState>()(
-  devtools(
-    persist(
-      (set, get) => ({
-        // ==========================================
-        // INITIAL STATE
-        // ==========================================
-        currentTrack: null,
-        queue: [],
-        isPlaying: false,
-        volume: 0.8,
-        currentTime: 0,
-        duration: 0,
-        bufferingProgress: 0,
-        currentQueueIndex: -1,
-        repeatMode: 'off',
-        isShuffleEnabled: false,
-        shuffledQueue: [],
-        shuffleHistory: [],
-        availableVersions: [],
-        currentVersionIndex: -1,
-        _loadVersionsAbortController: null,
-        _playTrackRequestId: 0,
+  persist(
+    (set, get) => ({
+      // ==========================================
+      // INITIAL STATE
+      // ==========================================
+      currentTrack: null,
+      queue: [],
+      isPlaying: false,
+      volume: 0.8,
+      currentTime: 0,
+      duration: 0,
+      bufferingProgress: 0,
+      currentQueueIndex: -1,
+      repeatMode: 'off',
+      isShuffleEnabled: false,
+      shuffledQueue: [],
+      shuffleHistory: [],
+      availableVersions: [],
+      currentVersionIndex: -1,
+      _loadVersionsAbortController: null,
+      _playTrackRequestId: 0,
 
         // ==========================================
         // PLAYBACK ACTIONS
@@ -730,9 +729,8 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             set({ availableVersions: [], currentVersionIndex: -1, _loadVersionsAbortController: null });
           }
         },
-      }),
-      {
-        name: 'audio-player-storage',
+        {
+          name: 'audio-player-storage',
         // Only persist user preferences, not playback state
         partialize: (state) => ({
           volume: state.volume,
@@ -741,13 +739,8 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
           shuffleHistory: state.shuffleHistory, // ✅ P1.3: Persist shuffle history
         }),
       }
-    ),
-    {
-      name: 'AudioPlayerStore',
-      enabled: process.env.NODE_ENV === 'development',
-    }
-  )
-);
+    )
+  );
 
 // ==========================================
 // AUDIO REF HOOK
