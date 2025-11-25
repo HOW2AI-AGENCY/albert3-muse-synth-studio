@@ -18,8 +18,8 @@ export const usePlayerVisibility = (currentTrack: AudioPlayerTrack | null | unde
       setIsVisible(false);
       setPlayerExpanded(false); // Сбрасываем состояние когда трек закрыт
     }
-    // Добавляем setPlayerExpanded в зависимости, чтобы удовлетворить правила eslint-react-hooks
-  }, [currentTrack, setPlayerExpanded]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTrack?.id]); // Only depend on track ID to prevent infinite loops
 
   const setIsExpanded = (expanded: boolean) => {
     setPlayerExpanded(expanded);
