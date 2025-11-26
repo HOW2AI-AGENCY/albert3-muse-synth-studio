@@ -1,6 +1,5 @@
 export { TrackCard } from './TrackCard';
 export { TrackContextMenu } from './TrackContextMenu';
-export { TrackListItem } from './TrackListItem';
 export { TrackVersions } from './TrackVersions';
 export { TrackStemsPanel } from './TrackStemsPanel';
 export { TrackVersionMetadataPanel } from './TrackVersionMetadataPanel';
