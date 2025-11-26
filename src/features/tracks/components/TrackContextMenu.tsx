@@ -3,16 +3,14 @@
  * @description Context menu для треков с полным набором действий
  */
 import { memo } from 'react';
+import { ResponsiveDropdownMenu } from '@/components/ui/responsive-dropdown-menu';
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-} from '@/components/ui/context-menu';
+  ResponsiveDropdownMenuItem,
+  ResponsiveDropdownMenuSeparator,
+  ResponsiveDropdownMenuSub,
+  ResponsiveDropdownMenuSubContent,
+  ResponsiveDropdownMenuSubTrigger,
+} from '@/components/ui/responsive-dropdown-menu-items';
 import {
   Play,
   Heart,
@@ -78,140 +76,136 @@ export const TrackContextMenu = memo(({
   onSwitchVersion,
 }: TrackContextMenuProps) => {
   return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
-        {children}
-      </ContextMenuTrigger>
-      <ContextMenuContent className="w-56">
+    <ResponsiveDropdownMenu trigger={children}>
         {/* Playback */}
         {onPlay && (
           <>
-            <ContextMenuItem onClick={onPlay}>
+            <ResponsiveDropdownMenuItem onClick={onPlay}>
               <Play className="mr-2 h-4 w-4" />
               Воспроизвести
-            </ContextMenuItem>
-            <ContextMenuSeparator />
+            </ResponsiveDropdownMenuItem>
+            <ResponsiveDropdownMenuSeparator />
           </>
         )}
 
         {/* Actions */}
         {onLike && (
-          <ContextMenuItem onClick={onLike}>
+          <ResponsiveDropdownMenuItem onClick={onLike}>
             <Heart className={`mr-2 h-4 w-4 ${isLiked ? 'fill-current text-red-500' : ''}`} />
             {isLiked ? 'Убрать из избранного' : 'Добавить в избранное'}
-          </ContextMenuItem>
+          </ResponsiveDropdownMenuItem>
         )}
 
         {onDownload && (
-          <ContextMenuItem onClick={onDownload}>
+          <ResponsiveDropdownMenuItem onClick={onDownload}>
             <Download className="mr-2 h-4 w-4" />
             Скачать
-          </ContextMenuItem>
+          </ResponsiveDropdownMenuItem>
         )}
 
         {onShare && (
-          <ContextMenuItem onClick={onShare}>
+          <ResponsiveDropdownMenuItem onClick={onShare}>
             <Share2 className="mr-2 h-4 w-4" />
             Поделиться
-          </ContextMenuItem>
+          </ResponsiveDropdownMenuItem>
         )}
 
         {/* Generation Actions */}
         {onSwitchVersion && (
-          <ContextMenuItem onClick={onSwitchVersion}>
+          <ResponsiveDropdownMenuItem onClick={onSwitchVersion}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Сменить версию
-          </ContextMenuItem>
+          </ResponsiveDropdownMenuItem>
         )}
 
         {enableAITools && (onExtend || onCover || onSeparateStems || onAddVocal || onUpscaleAudio || onGenerateCover) && (
           <>
-            <ContextMenuSeparator />
-            <ContextMenuSub>
-              <ContextMenuSubTrigger>
+            <ResponsiveDropdownMenuSeparator />
+            <ResponsiveDropdownMenuSub>
+              <ResponsiveDropdownMenuSubTrigger>
                 <Sparkles className="mr-2 h-4 w-4" />
                 AI Обработка
-              </ContextMenuSubTrigger>
-              <ContextMenuSubContent>
+              </ResponsiveDropdownMenuSubTrigger>
+              <ResponsiveDropdownMenuSubContent>
                 {onExtend && track.provider === 'suno' && (
-                  <ContextMenuItem onClick={onExtend}>
+                  <ResponsiveDropdownMenuItem onClick={onExtend}>
                     <Music className="mr-2 h-4 w-4" />
                     Продлить трек
-                  </ContextMenuItem>
+                  </ResponsiveDropdownMenuItem>
                 )}
 
                 {onCover && track.provider === 'suno' && (
-                  <ContextMenuItem onClick={onCover}>
+                  <ResponsiveDropdownMenuItem onClick={onCover}>
                     <Copy className="mr-2 h-4 w-4" />
                     Создать кавер
-                  </ContextMenuItem>
+                  </ResponsiveDropdownMenuItem>
                 )}
 
                 {onSeparateStems && (
-                  <ContextMenuItem onClick={onSeparateStems}>
+                  <ResponsiveDropdownMenuItem onClick={onSeparateStems}>
                     <Music className="mr-2 h-4 w-4" />
                     Разделить на стемы
-                  </ContextMenuItem>
+                  </ResponsiveDropdownMenuItem>
                 )}
 
                 {onAddVocal && !track.has_vocals && (
-                  <ContextMenuItem onClick={onAddVocal}>
+                  <ResponsiveDropdownMenuItem onClick={onAddVocal}>
                     <Mic2 className="mr-2 h-4 w-4" />
                     Добавить вокал
-                  </ContextMenuItem>
+                  </ResponsiveDropdownMenuItem>
                 )}
 
                 {onUpscaleAudio && (
-                  <ContextMenuItem onClick={onUpscaleAudio}>
+                  <ResponsiveDropdownMenuItem onClick={onUpscaleAudio}>
                     <Upload className="mr-2 h-4 w-4" />
                     Улучшить качество
-                  </ContextMenuItem>
+                  </ResponsiveDropdownMenuItem>
                 )}
 
                 {onGenerateCover && (
-                  <ContextMenuItem onClick={onGenerateCover}>
+                  <ResponsiveDropdownMenuItem onClick={onGenerateCover}>
                     <ImagePlus className="mr-2 h-4 w-4" />
                     Создать обложку
-                  </ContextMenuItem>
+                  </ResponsiveDropdownMenuItem>
                 )}
-              </ContextMenuSubContent>
-            </ContextMenuSub>
+              </ResponsiveDropdownMenuSubContent>
+            </ResponsiveDropdownMenuSub>
           </>
         )}
 
         {/* Analysis */}
         {(onDescribeTrack || onCreatePersona) && (
           <>
-            <ContextMenuSeparator />
-            <ContextMenuSub>
-              <ContextMenuSubTrigger>
+            <ResponsiveDropdownMenuSeparator />
+            <ResponsiveDropdownMenuSub>
+              <ResponsiveDropdownMenuSubTrigger>
                 <Sparkles className="mr-2 h-4 w-4" />
                 Анализ
-              </ContextMenuSubTrigger>
-              <ContextMenuSubContent>
+              </ResponsiveDropdownMenuSubTrigger>
+              <ResponsiveDropdownMenuSubContent>
                 {onDescribeTrack && track.provider === 'mureka' && (
-                  <ContextMenuItem onClick={onDescribeTrack}>
+                  <ResponsiveDropdownMenuItem onClick={onDescribeTrack}>
                     <Sparkles className="mr-2 h-4 w-4" />
                     AI описание
-                  </ContextMenuItem>
+                  </ResponsiveDropdownMenuItem>
                 )}
 
                 {onCreatePersona && track.provider === 'suno' && (
-                  <ContextMenuItem onClick={onCreatePersona}>
+                  <ResponsiveDropdownMenuItem onClick={onCreatePersona}>
                     <User className="mr-2 h-4 w-4" />
                     Создать персону
-                  </ContextMenuItem>
+                  </ResponsiveDropdownMenuItem>
                 )}
-              </ContextMenuSubContent>
-            </ContextMenuSub>
+              </ResponsiveDropdownMenuSubContent>
+            </ResponsiveDropdownMenuSub>
           </>
         )}
 
         {/* Settings */}
         {onTogglePublic && (
           <>
-            <ContextMenuSeparator />
-            <ContextMenuItem onClick={onTogglePublic}>
+            <ResponsiveDropdownMenuSeparator />
+            <ResponsiveDropdownMenuItem onClick={onTogglePublic}>
               {track.is_public ? (
                 <>
                   <GlobeLock className="mr-2 h-4 w-4" />
@@ -223,33 +217,32 @@ export const TrackContextMenu = memo(({
                   Опубликовать
                 </>
               )}
-            </ContextMenuItem>
+            </ResponsiveDropdownMenuItem>
           </>
         )}
 
         {/* Error Handling */}
         {onRetry && track.status === 'failed' && (
           <>
-            <ContextMenuSeparator />
-            <ContextMenuItem onClick={onRetry}>
+            <ResponsiveDropdownMenuSeparator />
+            <ResponsiveDropdownMenuItem onClick={onRetry}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Повторить генерацию
-            </ContextMenuItem>
+            </ResponsiveDropdownMenuItem>
           </>
         )}
 
         {/* Delete */}
         {onDelete && (
           <>
-            <ContextMenuSeparator />
-            <ContextMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
+            <ResponsiveDropdownMenuSeparator />
+            <ResponsiveDropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
               <Trash2 className="mr-2 h-4 w-4" />
               Удалить
-            </ContextMenuItem>
+            </ResponsiveDropdownMenuItem>
           </>
         )}
-      </ContextMenuContent>
-    </ContextMenu>
+    </ResponsiveDropdownMenu>
   );
 });
 
