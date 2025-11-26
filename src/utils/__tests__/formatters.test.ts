@@ -92,6 +92,10 @@ describe('formatFileSize', () => {
   it('handles negative values gracefully', () => {
     expect(formatFileSize(-100)).toBe('0 Б');
   });
+
+  it('should handle decimal values for bytes correctly', () => {
+    expect(formatFileSize(500.5)).toBe('500,5 Б');
+  });
 });
 
 describe('formatNumber', () => {
