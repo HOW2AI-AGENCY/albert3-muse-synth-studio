@@ -51,6 +51,8 @@ interface TrackContextMenuProps {
   onTogglePublic?: () => void;
   onRetry?: () => void;
   isLiked?: boolean;
+  enableAITools?: boolean;
+  onSwitchVersion?: () => void;
 }
 
 export const TrackContextMenu = memo(({
@@ -72,6 +74,8 @@ export const TrackContextMenu = memo(({
   onTogglePublic,
   onRetry,
   isLiked,
+  enableAITools,
+  onSwitchVersion,
 }: TrackContextMenuProps) => {
   return (
     <ContextMenu>
@@ -113,7 +117,14 @@ export const TrackContextMenu = memo(({
         )}
 
         {/* Generation Actions */}
-        {(onExtend || onCover || onSeparateStems || onAddVocal || onUpscaleAudio || onGenerateCover) && (
+        {onSwitchVersion && (
+          <ContextMenuItem onClick={onSwitchVersion}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Сменить версию
+          </ContextMenuItem>
+        )}
+
+        {enableAITools && (onExtend || onCover || onSeparateStems || onAddVocal || onUpscaleAudio || onGenerateCover) && (
           <>
             <ContextMenuSeparator />
             <ContextMenuSub>

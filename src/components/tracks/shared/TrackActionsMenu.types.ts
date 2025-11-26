@@ -31,6 +31,7 @@ export type TrackActionId =
   | 'convertWav'
   | 'upscale' // ✅ NEW
   | 'generateCover' // ✅ NEW
+  | 'switchVersion'
 
   // System actions
   | 'sync'
@@ -76,6 +77,7 @@ export interface UnifiedTrackActionsMenuProps {
 
   // Callbacks
   onVersionChange?: (versionId: string, versionNumber: number) => void;
+  onSwitchVersion?: () => void;
 
   // Actions (all optional for flexibility)
   onLike?: () => void;

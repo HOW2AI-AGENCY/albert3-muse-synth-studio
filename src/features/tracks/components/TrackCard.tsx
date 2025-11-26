@@ -29,6 +29,8 @@ interface TrackCardProps {
   onUpscaleAudio?: (trackId: string) => void; // ✅ NEW
   onGenerateCover?: (trackId: string) => void; // ✅ NEW
   className?: string;
+  enableAITools?: boolean;
+  onSwitchVersion?: () => void;
 }
 
 const gradients = [
@@ -59,6 +61,8 @@ const TrackCardComponent = memo(({
   onUpscaleAudio,
   onGenerateCover,
   className,
+  enableAITools,
+  onSwitchVersion,
 }: TrackCardProps) => {
   const cardRef = useRef<HTMLDivElement>(null);
   
@@ -137,6 +141,8 @@ const TrackCardComponent = memo(({
       onTogglePublic={handleTogglePublic}
       onRetry={onRetry ? () => onRetry(track.id) : undefined}
       isLiked={isLiked}
+      enableAITools={enableAITools}
+      onSwitchVersion={onSwitchVersion}
     >
       <motion.div
         ref={cardRef}
