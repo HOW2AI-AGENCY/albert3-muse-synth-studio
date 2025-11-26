@@ -17,7 +17,7 @@
  */
 
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 import { logger } from '@/utils/logger';
 import { useRef } from 'react';
 import { getTrackWithVariants } from '@/features/tracks/api/trackVersions';
@@ -729,14 +729,15 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             set({ availableVersions: [], currentVersionIndex: -1, _loadVersionsAbortController: null });
           }
         },
-        {
-          name: 'audio-player-storage',
+      }),
+      {
+        name: 'audio-player-storage',
         // Only persist user preferences, not playback state
         partialize: (state) => ({
           volume: state.volume,
           repeatMode: state.repeatMode,
           isShuffleEnabled: state.isShuffleEnabled,
-          shuffleHistory: state.shuffleHistory, // ✅ P1.3: Persist shuffle history
+          shuffleHistory: state.shuffleHistory,
         }),
       }
     )
