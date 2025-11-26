@@ -11,34 +11,41 @@ import { formatDuration } from '@/utils/formatters';
 import { Button } from '@/components/ui/button';
 import { useAudioPlayerStore, useCurrentTrack, useIsPlaying } from '@/stores/audioPlayerStore';
 import { Badge } from '@/components/ui/badge';
-import { UnifiedTrackActionsMenu } from '@/components/tracks/shared/TrackActionsMenu.unified';
 import { useTrackVersionLike } from '@/features/tracks/hooks/useTrackVersionLike';
 import { useDownloadTrack } from '@/hooks/useDownloadTrack';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { toast } from 'sonner';
+import { TrackContextMenu } from './TrackContextMenu';
+import type { Track } from '@/types/domain/track.types';
 
-// Simplified Track type for this component's needs
-type TrackListItemData = {
-  id: string;
-  title: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  audio_url?: string;
-  cover_url?: string;
-  duration?: number;
-  style_tags?: string[];
-  version_count?: number;
-  is_public?: boolean;
-  has_vocals?: boolean;
-  like_count?: number;
-};
-
+// Track type that matches database schema
 interface TrackListItemProps {
-  track: TrackListItemData;
-  onSelect?: (track: TrackListItemData) => void;
+  track: Track;
+  onSelect?: (track: Track) => void;
+  onDelete?: (trackId: string) => void;
+  onExtend?: (trackId: string) => void;
+  onCover?: (trackId: string) => void;
+  onSeparateStems?: (trackId: string) => void;
+  onAddVocal?: (trackId: string) => void;
+  onDescribeTrack?: (trackId: string) => void;
+  onCreatePersona?: (trackId: string) => void;
+  onRetry?: (trackId: string) => void;
   className?: string;
 }
 
-const TrackListItemComponent = ({ track, onSelect, className }: TrackListItemProps) => {
+const TrackListItemComponent = ({ 
+  track, 
+  onSelect, 
+  onDelete,
+  onExtend,
+  onCover,
+  onSeparateStems,
+  onAddVocal,
+  onDescribeTrack,
+  onCreatePersona,
+  onRetry,
+  className 
+}: TrackListItemProps) => {
   const currentTrack = useCurrentTrack();
   const isPlaying = useIsPlaying();
   const playTrack = useAudioPlayerStore((state) => state.playTrack);
@@ -63,10 +70,10 @@ const TrackListItemComponent = ({ track, onSelect, className }: TrackListItemPro
         id: track.id,
         title: track.title,
         audio_url: track.audio_url!,
-        cover_url: track.cover_url,
-        duration: track.duration,
-        style_tags: track.style_tags,
-        status: track.status,
+        cover_url: track.cover_url || undefined,
+        duration: track.duration || undefined,
+        style_tags: track.style_tags || undefined,
+        status: track.status !== 'draft' ? track.status : 'pending',
       });
     }
   }, [
@@ -117,32 +124,49 @@ const TrackListItemComponent = ({ track, onSelect, className }: TrackListItemPro
   const trackTags = track.style_tags?.slice(0, 2).join(' • ') || 'AI Music';
 
   return (
-    <div
-      data-testid={`track-list-item-${track.id}`}
-      className={cn(
-        "group flex items-center gap-3 p-2 rounded-lg transition-all duration-200 ease-in-out border-b border-transparent",
-        "hover:bg-muted/60 focus-within:bg-muted/80",
-        isCurrentTrack && "bg-primary/10 border-b-primary/20",
-        className
-      )}
-      onClick={() => onSelect?.(track)}
-      role="button"
-      tabIndex={0}
-      aria-label={`Select track: ${track.title}`}
+    <TrackContextMenu
+      track={track}
+      onPlay={() => handlePlayClick({} as React.MouseEvent<Element>)}
+      onLike={toggleLike}
+      onDownload={handleDownloadClick}
+      onDelete={onDelete ? () => onDelete(track.id) : undefined}
+      onExtend={onExtend ? () => onExtend(track.id) : undefined}
+      onCover={onCover ? () => onCover(track.id) : undefined}
+      onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
+      onAddVocal={onAddVocal ? () => onAddVocal(track.id) : undefined}
+      onDescribeTrack={onDescribeTrack ? () => onDescribeTrack(track.id) : undefined}
+      onCreatePersona={onCreatePersona ? () => onCreatePersona(track.id) : undefined}
+      onRetry={onRetry ? () => onRetry(track.id) : undefined}
+      isLiked={isLiked}
     >
+      <div
+        data-testid={`track-list-item-${track.id}`}
+        className={cn(
+          "group flex items-center gap-4 p-3 rounded-xl transition-all duration-300",
+          "hover:bg-gradient-to-r hover:from-primary/5 hover:to-accent-secondary/5",
+          "border border-border/50 hover:border-primary/30",
+          "backdrop-blur-sm bg-card/50",
+          isCurrentTrack && "bg-gradient-to-r from-primary/10 to-accent-secondary/10 border-primary/50 shadow-glow-primary",
+          className
+        )}
+        onClick={() => onSelect?.(track)}
+        role="button"
+        tabIndex={0}
+        aria-label={`Select track: ${track.title}`}
+      >
       {/* Cover Art & Play Button */}
-      <div className="relative flex-shrink-0 w-12 h-12 rounded-md overflow-hidden bg-card-foreground/5 shadow-inner">
+      <div className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden shadow-lg group-hover:shadow-glow-primary transition-shadow duration-300">
         <img
           src={track.cover_url || '/placeholder.svg'}
           alt={track.title}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           loading="lazy"
           decoding="async"
           onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
         />
         <div
           className={cn(
-            "absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity duration-200",
+            "absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-center justify-center transition-opacity duration-300",
             isCurrentTrack ? "opacity-100" : "opacity-0 group-hover:opacity-100"
           )}
         >
@@ -152,20 +176,24 @@ const TrackListItemComponent = ({ track, onSelect, className }: TrackListItemPro
 
       {/* Track Info */}
       <div className="flex-1 min-w-0">
-        <p className={cn("font-semibold text-sm truncate", isCurrentTrack && "text-primary")}>
+        <p className={cn(
+          "font-semibold text-base mb-1 truncate transition-colors duration-200",
+          isCurrentTrack && "text-primary"
+        )}>
           {track.title}
         </p>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
           {isThisTrackPlaying && (
-            <div className="flex items-center gap-1 text-primary">
-              <Headphones className="h-3 w-3" />
-              <span>Playing</span>
+            <div className="flex items-center gap-1.5 text-primary animate-pulse">
+              <Headphones className="h-4 w-4" />
+              <span className="font-medium">Playing</span>
             </div>
           )}
           {!isThisTrackPlaying && (
             <>
-              <span>{formattedDuration}</span>
-              <span className="truncate hidden sm:inline">• {trackTags}</span>
+              <span className="font-medium">{formattedDuration}</span>
+              <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
+              <span className="truncate">{trackTags}</span>
             </>
           )}
         </div>
@@ -173,27 +201,15 @@ const TrackListItemComponent = ({ track, onSelect, className }: TrackListItemPro
 
       {/* Actions & Badges */}
       <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-        {track.version_count && track.version_count > 1 && (
-          <Badge variant="secondary" className="hidden sm:block">
-            V{track.version_count}
+        {typeof track.metadata === 'object' && track.metadata !== null && 'version_count' in track.metadata && 
+         typeof track.metadata.version_count === 'number' && track.metadata.version_count > 1 && (
+          <Badge variant="outline" className="bg-primary/10 border-primary/30 text-primary">
+            V{track.metadata.version_count}
           </Badge>
         )}
-        <UnifiedTrackActionsMenu
-          trackId={track.id}
-          trackStatus={track.status}
-          currentVersionId={track.id}
-          variant="compact"
-          showQuickActions={true}
-          layout="flat"
-          enableAITools={true}
-          isPublic={track.is_public ?? false}
-          hasVocals={track.has_vocals ?? false}
-          isLiked={isLiked}
-          onLike={toggleLike}
-          onDownload={handleDownloadClick}
-        />
       </div>
     </div>
+    </TrackContextMenu>
   );
 };
 

@@ -120,17 +120,20 @@ const TrackCardComponent = React.memo(({
       >
       <Card
         className={cn(
-          'group relative overflow-hidden cursor-pointer transition-all duration-300',
-          'border-border/50 bg-card hover:bg-muted/30 card-elevated',
+          'group relative overflow-hidden cursor-pointer transition-all duration-500',
+          'border border-border/30 hover:border-primary/50',
+          'bg-gradient-to-br from-card via-card/95 to-card/90',
+          'hover:shadow-2xl hover:shadow-primary/20',
+          'backdrop-blur-sm',
           isVisible ? 'h-full flex flex-col opacity-100' : 'h-full flex flex-col opacity-0',
-          isCurrentTrack && 'ring-2 ring-primary/80 shadow-glow-primary-strong',
+          isCurrentTrack && 'ring-2 ring-primary shadow-glow-primary-strong border-primary/70',
           className
         )}
         onClick={handleCardClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="relative aspect-square bg-gradient-to-br from-gray-800 to-gray-900">
+        <div className="relative aspect-square bg-gradient-to-br from-neutral-900 to-neutral-950 overflow-hidden group-hover:shadow-inner transition-shadow duration-300">
           {(track.status === 'processing' || track.status === 'pending') && (
             <GenerationProgress track={track} onSync={callbacks.onSync} onDelete={callbacks.onDelete} />
           )}
@@ -161,7 +164,7 @@ const TrackCardComponent = React.memo(({
           />
         </div>
 
-        <CardContent className="p-2 flex-1 flex flex-col">
+        <CardContent className="p-3 flex-1 flex flex-col gap-2 bg-gradient-to-b from-transparent to-card/50">
           <TrackCardInfo
             title={displayedVersion.title || track.title}
             prompt={track.prompt ?? ''}
