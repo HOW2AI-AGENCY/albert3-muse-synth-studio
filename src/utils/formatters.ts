@@ -16,7 +16,6 @@ export const formatDate = (date: string | Date | null | undefined): string => {
   }
   try {
     const dateObj = typeof date === 'string' ? parseISO(date) : date;
-    // Use 'd MMM yyyy г.' to get abbreviated month name as expected by tests
     return format(dateObj, 'd MMM yyyy г.', { locale: ru });
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -32,19 +31,47 @@ export const formatDate = (date: string | Date | null | undefined): string => {
  * @returns {string} The formatted time string (e.g., "2:05").
  */
 export const formatTime = (seconds: number): string => {
-  // Handle invalid inputs as expected by formatDuration tests
-  if (seconds === null || seconds === undefined || isNaN(seconds)) {
-    return '—';
+  if (seconds === null || seconds === undefined || isNaN(seconds) || seconds < 0) {
+    return '0:00';
   }
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = Math.floor(seconds % 60);
-  // Do not pad minutes as per test expectations (e.g., '1:05', not '01:05')
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 };
 
-// formatDuration is an alias for formatTime.
-// The tests for both are compatible with the single implementation above.
 export const formatDuration = formatTime;
+
+/**
+ * Formats a number with non-breaking spaces as thousands separators (Russian locale).
+ *
+ * @param {number} num - The number to format.
+ * @returns {string} The formatted number string.
+ */
+export const formatNumber = (num: number): string => {
+  if (num === null || num === undefined) {
+    return '0';
+  }
+  // Using Intl.NumberFormat for robust, locale-aware formatting.
+  // The \u00A0 is a non-breaking space, which is correct for ru-RU locale.
+  return new Intl.NumberFormat('ru-RU').format(num);
+};
+
+/**
+ * Truncates a string to a specified maximum length, appending an ellipsis if truncated.
+ *
+ * @param {string} text - The text to truncate.
+ * @param {number} maxLength - The maximum length of the output string (including ellipsis).
+ * @returns {string} The truncated string.
+ */
+export const truncateText = (text: string, maxLength: number): string => {
+  if (!text || text.length <= maxLength) {
+    return text;
+  }
+  if (maxLength <= 3) {
+    return '...';
+  }
+  return `${text.substring(0, maxLength - 3)}...`;
+};
 
 /**
  * Formats a file size in bytes into a human-readable string with units (Б, КБ, МБ, ГБ).
@@ -67,5 +94,5 @@ export const formatFileSize = (bytes: number | null | undefined): string => {
     return `${bytes} ${sizes[i]}`;
   }
 
-  return `${(bytes / 1024 ** i).toFixed(1)} ${sizes[i]}`;
+  return `${(bytes / 1024 ** i).toFixed(1).replace('.', ',')} ${sizes[i]}`;
 };

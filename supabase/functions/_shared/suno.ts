@@ -27,7 +27,7 @@ export interface SunoGenerationPayload {
   audioWeight?: number;
   callBackUrl?: string;
   referenceAudioUrl?: string;
-  personaId?: string; // ✅ НОВОЕ: ID Suno Persona
+  personaId?: string;
 }
 
 export interface SunoLyricsPayload {
@@ -121,7 +121,7 @@ export interface SunoStemResult {
 }
 
 export interface SunoStemAsset {
-  instrument: string; // e.g., 'vocal', 'instrumental', 'drums'
+  instrument: string;
   url: string;
 }
 
@@ -158,7 +158,6 @@ export interface SunoWavQueryResult {
   message?: string | null;
 }
 
-// ✅ Re-export extended types from Phase 1
 export type {
   SunoExtendRequest,
   SunoExtendResult,
@@ -198,7 +197,6 @@ export class SunoApiError extends Error {
   }
 }
 
-// ✅ ФАЗА 2.2: Circuit Breaker для Suno API
 import { CircuitBreaker } from "./circuit-breaker.ts";
 const sunoCircuitBreaker = new CircuitBreaker(5, 60000, 30000);
 
@@ -355,10 +353,8 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
   const TASK_ID_KEYS = ["taskId", "task_id", "id"] as const;
   const JOB_ID_KEYS = ["jobId", "job_id"] as const;
 
-  // ✅ ФАЗА 1.2: Попытка извлечь taskId из разных форматов ответа
   const record = payload as Record<string, unknown>;
-  
-  // Формат 1: Прямой объект с taskId
+
   for (const key of TASK_ID_KEYS) {
     const candidate = normaliseString(record[key]);
     if (candidate) {
@@ -366,8 +362,7 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
       return { taskId: candidate, jobId: normaliseString(record.jobId || record.job_id) ?? null };
     }
   }
-  
-  // ✅ ИСПРАВЛЕНИЕ: Формат 2a - Объект data (начальный ответ /api/v1/generate)
+
   if ('data' in record && record.data && typeof record.data === 'object' && !Array.isArray(record.data)) {
     const result = parseTaskId(record.data);
     if (result.taskId) {
@@ -376,18 +371,16 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
     }
   }
 
-  // ✅ НОВОЕ: Формат 2a.1 - data как строка (taskId строкой)
-  if ('data' in record && typeof (record as any).data === 'string') {
-    const candidate = normaliseString((record as any).data);
+  if ('data' in record && typeof record.data === 'string') {
+    const candidate = normaliseString(record.data);
     if (candidate) {
       logger.info('Found taskId in data string');
-      return { taskId: candidate, jobId: normaliseString((record as any).jobId || (record as any).job_id) ?? null };
+      return { taskId: candidate, jobId: normaliseString(record.jobId || record.job_id) ?? null };
     }
   }
-  
-  // Формат 2b: Массив с data/results (callback ответы)
-  if ('data' in record && Array.isArray((record as any).data) && (record as any).data.length > 0) {
-    const first = (record as any).data[0];
+
+  if ('data' in record && Array.isArray(record.data) && record.data.length > 0) {
+    const first = record.data[0];
     if (first && typeof first === 'object') {
       const result = parseTaskId(first);
       if (result.taskId) {
@@ -396,8 +389,7 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
       }
     }
   }
-  
-  // Формат 3: Вложенный объект result/response
+
   if ('result' in record || 'response' in record) {
     const nested = record.result || record.response;
     if (nested && typeof nested === 'object') {
@@ -408,15 +400,14 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
       }
     }
   }
-  
-  // Fallback: deep scan for fields like taskId/task_id anywhere in payload
+
   try {
     const queue: unknown[] = [record];
     const seen = new Set<unknown>();
     let foundTask: string | undefined;
     let foundJob: string | undefined;
     while (queue.length) {
-      const node = queue.shift() as any;
+      const node = queue.shift();
       if (!node || typeof node !== 'object' || seen.has(node)) continue;
       seen.add(node);
 
@@ -444,13 +435,6 @@ const parseTaskId = (payload: unknown): { taskId?: string; jobId?: string | null
   return {};
 };
 
-// This function is no longer needed with the new, simplified API response structure.
-
-// This function is no longer needed with the new, simplified API response structure.
-
-// Helper functions `extractStemContainer` and `parseStemAssets` are no longer needed
-// and have been removed. The logic is now simplified and integrated into `queryStemTask`.
-
 export const createSunoClient = (options: CreateSunoClientOptions) => {
   const {
     apiKey,
@@ -470,28 +454,23 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
   }
 
   const generateTrack = async (payload: SunoGenerationPayload): Promise<SunoGenerationResult> => {
-    // ✅ ФАЗА 2.2: Используем circuit breaker
     return await sunoCircuitBreaker.call(async () => {
       const errors: SunoApiError[] = [];
       const MAX_RETRIES = 3;
       const BACKOFF_BASE_MS = 1000;
 
-    // The new API has a single, stable endpoint. We iterate for resilience, but it's less critical.
     for (const endpoint of generateEndpoints) {
-      // Retry logic with exponential backoff for 429 errors
       for (let retryAttempt = 0; retryAttempt <= MAX_RETRIES; retryAttempt++) {
         try {
-    // ✅ КРИТИЧНОЕ ИСПРАВЛЕНИЕ: Явная трансформация параметров для Suno API
     const apiPayload: Record<string, unknown> = {
       prompt: payload.prompt,
       tags: payload.tags || [],
       title: payload.title,
-      instrumental: payload.make_instrumental ?? false, // ← API ожидает "instrumental", а не "make_instrumental"
+      instrumental: payload.make_instrumental ?? false,
       model: payload.model || 'V5',
       customMode: payload.customMode ?? false,
     };
 
-    // Добавляем опциональные параметры
     if (payload.callBackUrl) apiPayload.callBackUrl = payload.callBackUrl;
     if (payload.negativeTags) apiPayload.negativeTags = payload.negativeTags;
     if (payload.vocalGender) apiPayload.vocalGender = payload.vocalGender;
@@ -500,7 +479,6 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
     if (payload.audioWeight !== undefined) apiPayload.audioWeight = payload.audioWeight;
     if (payload.referenceAudioUrl) apiPayload.referenceAudioUrl = payload.referenceAudioUrl;
 
-    // Логирование трансформации для отладки
     logger.debug('Suno payload transformation', {
       before: { make_instrumental: payload.make_instrumental },
       after: { instrumental: apiPayload.instrumental },
@@ -516,7 +494,6 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           const rawText = await response.text();
           const { json, parseError } = safeParseJson(rawText);
 
-          // ✅ ФАЗА 1.1: Полное логирование ответа Suno API
           logger.debug('Suno API raw response', {
             endpoint,
             status: response.status,
@@ -532,7 +509,6 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
             });
           }
 
-          // Handle 429 Rate Limit with exponential backoff
           if (response.status === 429 && retryAttempt < MAX_RETRIES) {
             const backoffMs = BACKOFF_BASE_MS * Math.pow(2, retryAttempt);
             logger.warn(`Suno rate limit hit, retry ${retryAttempt + 1}/${MAX_RETRIES}`, {
@@ -540,7 +516,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
               backoffMs
             });
             await new Promise(resolve => setTimeout(resolve, backoffMs));
-            continue; // Retry same endpoint
+            continue;
           }
 
           if (!response.ok) {
@@ -559,11 +535,10 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
             cause: parseError,
           });
         }
-        // Handle API-level error codes returned with HTTP 200
-        if (json && typeof json === 'object' && 'code' in (json as Record<string, unknown>)) {
-          const codeVal = Number((json as any).code);
+        if (json && typeof json === 'object' && 'code' in json) {
+          const codeVal = Number((json as Record<string, unknown>).code);
           if (!Number.isNaN(codeVal) && codeVal !== 200) {
-            const apiMsg = (json as any).msg || 'Suno API responded with an error';
+            const apiMsg = (json as Record<string, unknown>).msg || 'Suno API responded with an error';
             throw new SunoApiError(String(apiMsg), {
               endpoint,
               status: response.status,
@@ -597,7 +572,6 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
             retryAttempt,
           });
           
-          // Don't retry on non-429 errors, move to next endpoint
           break;
         }
       }
@@ -641,7 +615,6 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        // ✅ LOG: Фактический ответ от Suno lyrics API
         logger.info("🔍 Suno lyrics raw response", {
           endpoint,
           json: JSON.stringify(json),
@@ -651,7 +624,6 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
         const { taskId, jobId } = parseTaskId(json);
 
         if (typeof taskId !== "string" || !taskId) {
-          // ✅ ENHANCED ERROR: Детальная информация для отладки
           logger.error("❌ Failed to extract taskId from lyrics response", {
             endpoint,
             responseStructure: json && typeof json === 'object' ? Object.keys(json) : [],
@@ -718,9 +690,9 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        const data = (json as any)?.data;
-        const status = data?.status;
-        const tasks = data?.response?.sunoData ?? [];
+        const data = (json as Record<string, unknown>)?.data as Record<string, unknown>;
+        const status = data?.status as SunoTaskStatus["status"];
+        const tasks = (data?.response as Record<string, unknown>)?.sunoData as SunoTrack[] ?? [];
 
         if (!status) {
            throw new SunoApiError("Suno query response did not include task status", {
@@ -730,7 +702,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        const code = typeof (json as any)?.code === "number" ? (json as any).code : undefined;
+        const code = typeof (json as Record<string, unknown>)?.code === "number" ? (json as Record<string, unknown>).code as number : undefined;
         return { status, tasks, rawResponse: json, endpoint: url, code };
 
       } catch (error) {
@@ -784,11 +756,11 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        const data = (json as any)?.data;
-        const status = data?.status;
-        const variants = data?.data ?? []; // The variants are in `data.data`
-        const resolvedTaskId = data?.taskId ?? taskId;
-        const code = (json as any)?.code;
+        const data = (json as Record<string, unknown>)?.data as Record<string, unknown>;
+        const status = data?.status as string;
+        const variants = data?.data as SunoLyricsVariantStatus[] ?? [];
+        const resolvedTaskId = (data?.taskId as string) ?? taskId;
+        const code = (json as Record<string, unknown>)?.code;
 
         if (!status) {
           throw new SunoApiError("Suno lyrics query response did not include status", {
@@ -859,8 +831,8 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        const data = (json as any)?.data;
-        const taskId = data?.taskId;
+        const data = (json as Record<string, unknown>)?.data as Record<string, unknown>;
+        const taskId = data?.taskId as string;
         if (typeof taskId !== 'string' || !taskId) {
           throw new SunoApiError("Suno stem response did not include a task identifier", {
             endpoint,
@@ -923,11 +895,11 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        const data = (json as any)?.data;
-        const status = data?.successFlag;
-        const message = data?.errorMessage ?? (json as any)?.msg;
-        const code = (json as any)?.code;
-        const resolvedTaskId = data?.taskId ?? taskId;
+        const data = (json as Record<string, unknown>)?.data as Record<string, unknown>;
+        const status = data?.successFlag as SunoStemQueryResult["status"];
+        const message = (data?.errorMessage ?? (json as Record<string, unknown>)?.msg) as string | null;
+        const code = (json as Record<string, unknown>)?.code;
+        const resolvedTaskId = (data?.taskId as string) ?? taskId;
 
         if (!status) {
           throw new SunoApiError("Suno stem query response did not include status", {
@@ -1018,7 +990,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        const taskId = (json as any)?.data?.taskId;
+        const taskId = (json as Record<string, any>)?.data?.taskId;
         if (!taskId) {
           throw new SunoApiError("Suno WAV response did not include taskId", {
             endpoint,
@@ -1089,10 +1061,10 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
           });
         }
 
-        const data = (json as any)?.data;
+        const data = (json as Record<string, any>)?.data;
         const status = data?.successFlag;
-        const message = data?.errorMessage ?? (json as any)?.msg;
-        const code = (json as any)?.code;
+        const message = data?.errorMessage ?? (json as Record<string, any>)?.msg;
+        const code = (json as Record<string, any>)?.code;
         const resolvedTaskId = data?.taskId ?? taskId;
         const musicId = data?.musicId;
         const wavUrl = data?.response?.audioWavUrl;
@@ -1137,7 +1109,6 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
     });
   };
 
-  // ✅ NEW: Extended methods from Phase 1
   const extendTrack = createExtendTrack(apiKey, fetchImpl);
   const generateCoverImage = createGenerateCoverImage(apiKey, fetchImpl);
   const boostStyle = createBoostStyle(apiKey, fetchImpl);
@@ -1152,7 +1123,6 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
     queryStemTask,
     convertToWav,
     queryWavTask,
-    // ✅ NEW: Phase 1 methods
     extendTrack,
     generateCoverImage,
     boostStyle,

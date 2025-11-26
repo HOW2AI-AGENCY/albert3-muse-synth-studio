@@ -1,243 +1,192 @@
 /**
  * Unit tests for retryWithBackoff
  */
-
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { retryWithBackoff, RETRY_CONFIGS, CircuitBreaker } from '@/utils/retryWithBackoff';
 
-vi.mock('@/utils/logger', () => {
-  const mockLogger = {
+// Mock logger to prevent console noise during tests
+vi.mock('@/utils/logger', () => ({
+  logger: {
     warn: vi.fn(),
     error: vi.fn(),
     info: vi.fn(),
     debug: vi.fn(),
-    flush: vi.fn(),
-    addTransport: vi.fn(),
-    removeTransport: vi.fn(),
-  };
-  return {
-    logger: mockLogger,
-    logWarn: mockLogger.warn,
-    logError: mockLogger.error,
-  };
-});
+  },
+  logWarn: vi.fn(),
+  logError: vi.fn(),
+}));
 
 describe('retryWithBackoff', () => {
   beforeEach(() => {
     vi.useFakeTimers();
   });
 
-  it('should succeed on first attempt', async () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
+  });
+
+  it('should succeed on the first attempt without delays', async () => {
     const successFn = vi.fn().mockResolvedValue('success');
+    const promise = retryWithBackoff(successFn, RETRY_CONFIGS.standard);
 
-    const result = await retryWithBackoff(successFn, RETRY_CONFIGS.standard);
-
-    expect(result).toBe('success');
+    await expect(promise).resolves.toBe('success');
     expect(successFn).toHaveBeenCalledTimes(1);
   });
 
   it('should retry on failure and eventually succeed', async () => {
-    const mockFn = vi
-      .fn()
-      .mockRejectedValueOnce(new Error('Fail 1'))
-      .mockRejectedValueOnce(new Error('Fail 2'))
+    const mockFn = vi.fn()
+      .mockImplementationOnce(() => Promise.reject(new Error('Fail 1')))
+      .mockImplementationOnce(() => Promise.reject(new Error('Fail 2')))
       .mockResolvedValue('success');
 
     const promise = retryWithBackoff(mockFn, RETRY_CONFIGS.fast);
 
-    // Advance timers for retries
+    const assertion = expect(promise).resolves.toBe('success');
     await vi.runAllTimersAsync();
+    await assertion;
 
-    const result = await promise;
-
-    expect(result).toBe('success');
     expect(mockFn).toHaveBeenCalledTimes(3);
   });
 
-  it('should respect maxAttempts', async () => {
-    const failFn = vi.fn().mockRejectedValue(new Error('Always fail'));
+  it('should reject after exhausting maxAttempts', async () => {
+    const failFn = vi.fn().mockImplementation(() => Promise.reject(new Error('Always fail')));
+    const config = { ...RETRY_CONFIGS.fast, maxAttempts: 3 };
 
-    const promise = retryWithBackoff(failFn, {
-      ...RETRY_CONFIGS.fast,
-      maxAttempts: 3,
-    });
+    const promise = retryWithBackoff(failFn, config);
 
+    const assertion = expect(promise).rejects.toThrow('Always fail');
     await vi.runAllTimersAsync();
+    await assertion;
 
-    await expect(promise).rejects.toThrow('Always fail');
     expect(failFn).toHaveBeenCalledTimes(3);
   });
 
-  it('should implement exponential backoff', async () => {
-    const delays: number[] = [];
-    const failFn = vi.fn().mockRejectedValue(new Error('Fail'));
+  it('should implement exponential backoff with jitter', async () => {
+    const failFn = vi.fn().mockImplementation(() => Promise.reject(new Error('Fail')));
+    const config = { maxAttempts: 4, baseDelay: 100, maxDelay: 1000, shouldRetry: () => true };
+    const setTimeoutSpy = vi.spyOn(global, 'setTimeout');
 
-    const promise = retryWithBackoff(failFn, {
-      maxAttempts: 4,
-      baseDelay: 100,
-      maxDelay: 10000,
-      shouldRetry: () => true,
-    });
+    const promise = retryWithBackoff(failFn, config);
 
-    // Capture delay timings
-    let lastTime = Date.now();
-    failFn.mockImplementation(() => {
-      const now = Date.now();
-      if (delays.length > 0) {
-        delays.push(now - lastTime);
-      }
-      lastTime = now;
-      return Promise.reject(new Error('Fail'));
-    });
-
+    const assertion = expect(promise).rejects.toThrow();
     await vi.runAllTimersAsync();
+    await assertion;
 
-    await expect(promise).rejects.toThrow();
+    expect(failFn).toHaveBeenCalledTimes(4);
+    expect(setTimeoutSpy).toHaveBeenCalledTimes(3);
 
-    // Delays should increase exponentially
-    expect(delays.length).toBeGreaterThan(0);
-    for (let i = 1; i < delays.length; i++) {
-      expect(delays[i]).toBeGreaterThan(delays[i - 1]);
-    }
+    const expectedDelays = [100, 200, 400];
+    setTimeoutSpy.mock.calls.forEach((call, index) => {
+      const delay = call[1] as number;
+      const baseDelay = expectedDelays[index];
+      const jitter = baseDelay * 0.2;
+      expect(delay).toBeGreaterThanOrEqual(baseDelay - jitter);
+      expect(delay).toBeLessThanOrEqual(baseDelay + jitter);
+    });
   });
 
-  it('should not retry non-retryable errors', async () => {
-    const error = new Error('Bad Request');
-    (error as any).status = 400;
-
-    const failFn = vi.fn().mockRejectedValue(error);
+  it('should not retry on a non-retryable error (e.g., 400)', async () => {
+    const error = new Error('Bad Request') as Error & { status: number };
+    error.status = 400;
+    const failFn = vi.fn().mockImplementation(() => Promise.reject(error));
 
     const promise = retryWithBackoff(failFn, RETRY_CONFIGS.critical);
 
-    await vi.runAllTimersAsync();
+    const assertion = expect(promise).rejects.toThrow('Bad Request');
+    await vi.runAllTimersAsync(); // Should do nothing
+    await assertion;
 
-    await expect(promise).rejects.toThrow('Bad Request');
-    expect(failFn).toHaveBeenCalledTimes(1); // No retries
+    expect(failFn).toHaveBeenCalledTimes(1);
   });
 
-  it('should retry rate limit errors (429)', async () => {
-    const error = new Error('Rate Limit');
-    (error as any).status = 429;
-
-    const mockFn = vi
-      .fn()
-      .mockRejectedValueOnce(error)
+  it('should retry on a rate limit error (429)', async () => {
+    const error = new Error('Rate Limit') as Error & { status: number };
+    error.status = 429;
+    const mockFn = vi.fn()
+      .mockImplementationOnce(() => Promise.reject(error))
       .mockResolvedValue('success');
 
     const promise = retryWithBackoff(mockFn, RETRY_CONFIGS.critical);
 
+    const assertion = expect(promise).resolves.toBe('success');
     await vi.runAllTimersAsync();
+    await assertion;
 
-    const result = await promise;
-
-    expect(result).toBe('success');
     expect(mockFn).toHaveBeenCalledTimes(2);
-  });
-
-  it('should include error history in metrics', async () => {
-    const errors = [
-      new Error('Error 1'),
-      new Error('Error 2'),
-    ];
-
-    const mockFn = vi
-      .fn()
-      .mockRejectedValueOnce(errors[0])
-      .mockRejectedValueOnce(errors[1])
-      .mockResolvedValue('success');
-
-    const promise = retryWithBackoff(mockFn, RETRY_CONFIGS.fast);
-
-    await vi.runAllTimersAsync();
-
-    const result = await promise;
-
-    // Function no longer returns error history, just the result
-    expect(result).toBe('success');
-    expect(mockFn).toHaveBeenCalledTimes(3);
   });
 });
 
 describe('CircuitBreaker', () => {
-  let breaker: CircuitBreaker;
-
   beforeEach(() => {
-    breaker = new CircuitBreaker(3, 5000);
+    vi.useFakeTimers();
   });
 
-  it('should start in closed state', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should start in a closed state', () => {
+    const breaker = new CircuitBreaker(3, 5000);
     expect(breaker.getState()).toBe('closed');
   });
 
-  it('should open after failure threshold', () => {
-    breaker.recordFailure();
-    expect(breaker.getState()).toBe('closed');
-
-    breaker.recordFailure();
-    expect(breaker.getState()).toBe('closed');
-
-    breaker.recordFailure();
+  it('should open after reaching the failure threshold', () => {
+    const breaker = new CircuitBreaker(3, 5000);
+    breaker.execute(() => Promise.reject(new Error('fail'))).catch(() => {});
+    breaker.execute(() => Promise.reject(new Error('fail'))).catch(() => {});
+    breaker.execute(() => Promise.reject(new Error('fail'))).catch(() => {});
     expect(breaker.getState()).toBe('open');
   });
 
-  it('should reject calls when open', async () => {
-    breaker.recordFailure();
-    breaker.recordFailure();
-    breaker.recordFailure();
-
-    expect(breaker.getState()).toBe('open');
+  it('should reject calls immediately when open', async () => {
+    const breaker = new CircuitBreaker(3, 5000);
+    await breaker.execute(() => Promise.reject(new Error('fail'))).catch(() => {});
+    await breaker.execute(() => Promise.reject(new Error('fail'))).catch(() => {});
+    await breaker.execute(() => Promise.reject(new Error('fail'))).catch(() => {});
 
     const fn = vi.fn().mockResolvedValue('success');
-
     await expect(breaker.execute(fn)).rejects.toThrow('Circuit breaker is open');
     expect(fn).not.toHaveBeenCalled();
   });
 
-  it('should transition to half-open after timeout', async () => {
-    vi.useFakeTimers();
-
-    breaker.recordFailure();
-    breaker.recordFailure();
-    breaker.recordFailure();
-
+  it('should transition to half-open after the reset timeout', async () => {
+    const breaker = new CircuitBreaker(3, 5000);
+    await breaker.execute(() => Promise.reject(new Error('fail'))).catch(() => {});
+    await breaker.execute(() => Promise.reject(new Error('fail'))).catch(() => {});
+    await breaker.execute(() => Promise.reject(new Error('fail'))).catch(() => {});
     expect(breaker.getState()).toBe('open');
 
-    vi.advanceTimersByTime(5000);
+    await vi.advanceTimersByTimeAsync(5000);
 
     expect(breaker.getState()).toBe('half-open');
   });
 
-  it('should close after success threshold in half-open', () => {
-    breaker.recordFailure();
-    breaker.recordFailure();
-    breaker.recordFailure();
+  it('should close on success when in half-open state', async () => {
+    const breaker = new CircuitBreaker(3, 5000);
+    // Manually set to half-open for the test
+    (breaker as any).state = 'half-open';
 
-    breaker['state'] = 'half-open';
-
-    breaker.recordSuccess();
-    expect(breaker.getState()).toBe('half-open');
-
-    breaker.recordSuccess();
+    const fn = vi.fn().mockResolvedValue('success');
+    await breaker.execute(fn);
     expect(breaker.getState()).toBe('closed');
   });
 
-  it('should reopen on failure in half-open', () => {
-    breaker.recordFailure();
-    breaker.recordFailure();
-    breaker.recordFailure();
+  it('should re-open on failure when in half-open state', async () => {
+    const breaker = new CircuitBreaker(3, 5000);
+    (breaker as any).state = 'half-open';
 
-    breaker['state'] = 'half-open';
-
-    breaker.recordFailure();
+    const fn = vi.fn().mockImplementation(() => Promise.reject(new Error('Fail')));
+    await expect(breaker.execute(fn)).rejects.toThrow('Fail');
     expect(breaker.getState()).toBe('open');
   });
 
-  it('should reset failure count on success in closed state', () => {
-    breaker.recordFailure();
-    breaker.recordFailure();
-
-    breaker.recordSuccess();
-
-    expect(breaker['failureCount']).toBe(0);
+  it('should reset the failure count on success', async () => {
+    const breaker = new CircuitBreaker(3, 5000);
+    await breaker.execute(() => Promise.reject(new Error('fail'))).catch(() => {});
+    await breaker.execute(() => Promise.reject(new Error('fail'))).catch(() => {});
+    expect((breaker as any).failureCount).toBe(2);
+    await breaker.execute(() => Promise.resolve('success')).catch(() => {});
+    expect((breaker as any).failureCount).toBe(0);
   });
 });

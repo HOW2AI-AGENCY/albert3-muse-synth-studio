@@ -1,145 +1,182 @@
 /**
  * Vitest Setup File
- * Global test configuration and mocks
+ *
+ * This file contains global test configuration and mocks for the Vitest environment.
+ * It ensures that common dependencies like Supabase, React Router, and UI components
+ * are consistently mocked across all unit tests, preventing boilerplate and side effects.
  */
 import { expect, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
 
-// Cleanup after each test
+// Automatically clean up the DOM after each test
 afterEach(() => {
   cleanup();
 });
 
-// Mock Supabase client
+// --- MOCKS ---
+
+/**
+ * Mock Supabase Client
+ *
+ * This is a configurable mock for the Supabase client. It allows tests to
+ * dynamically provide mock data, RPC responses, and function results.
+ *
+ * To use in a test:
+ *
+ * import { supabase } from '@/integrations/supabase/client';
+ * import { vi } from 'vitest';
+ *
+ * vi.mocked(supabase.from).mockReturnValue({
+ *   select: vi.fn().mockResolvedValue({ data: [{ id: 1, name: 'Test' }], error: null }),
+ * } as any);
+ */
+const createDeepMock = (name = 'deepMock') => {
+  const mock = vi.fn().mockName(name);
+  // @ts-ignore
+  mock.mockReturnValue(new Proxy({}, {
+    get: (target, prop) => {
+      // @ts-ignore
+      if (!target[prop]) {
+        // @ts-ignore
+        target[prop] = createDeepMock(`${name}.${String(prop)}`);
+      }
+      // @ts-ignore
+      return target[prop];
+    },
+  }));
+  return mock;
+};
+
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     auth: {
       getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
-      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
-      signIn: vi.fn(),
-      signOut: vi.fn(),
-      onAuthStateChange: vi.fn().mockReturnValue({
-        data: {
-          subscription: {
-            unsubscribe: vi.fn(),
+      getSession: vi.fn().mockResolvedValue({ data: { session: { access_token: 'test-token' } }, error: null }),
+      signIn: vi.fn().mockResolvedValue({ data: {}, error: null }),
+      signOut: vi.fn().mockResolvedValue({ error: null }),
+      onAuthStateChange: vi.fn((callback) => {
+        // Immediately invoke callback with a mock session
+        callback('SIGNED_IN', { access_token: 'test-token' });
+        return {
+          data: {
+            subscription: {
+              unsubscribe: vi.fn(),
+            },
           },
-        },
+        };
       }),
     },
-    from: vi.fn().mockImplementation((table: string) => {
-      const mockData = {
-        'tracks': [{ id: 'track-1', title: 'Test Track', status: 'completed', audio_url: 'url1', created_at: new Date().toISOString() }],
-        'track_versions': [{ id: 'version-1', track_id: 'track-1', version_number: 1 }],
-      };
-
-      // Create chainable query builder mock
-      const createChain = (initialData: any) => ({
-        select: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockReturnThis(),
-        neq: vi.fn().mockReturnThis(),
-        gt: vi.fn().mockReturnThis(),
-        gte: vi.fn().mockReturnThis(),
-        lt: vi.fn().mockReturnThis(),
-        lte: vi.fn().mockReturnThis(),
-        like: vi.fn().mockReturnThis(),
-        ilike: vi.fn().mockReturnThis(),
-        is: vi.fn().mockReturnThis(),
-        in: vi.fn().mockReturnThis(),
-        contains: vi.fn().mockReturnThis(),
-        containedBy: vi.fn().mockReturnThis(),
-        range: vi.fn().mockReturnThis(),
-        order: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        offset: vi.fn().mockReturnThis(),
-        single: vi.fn().mockResolvedValue({ data: initialData[0] || null, error: null }),
-        maybeSingle: vi.fn().mockResolvedValue({ data: initialData[0] || null, error: null }),
-        then: vi.fn((resolve) => Promise.resolve({ data: initialData, error: null }).then(resolve)),
-      });
-
-      return createChain(mockData[table as keyof typeof mockData] || []);
-    }),
-    rpc: vi.fn().mockResolvedValue({ data: [], error: null }),
+    from: createDeepMock('supabase.from'),
+    rpc: createDeepMock('supabase.rpc'),
     functions: {
-      invoke: vi.fn(),
+      invoke: createDeepMock('supabase.functions.invoke'),
     },
     storage: {
       from: vi.fn(() => ({
-        upload: vi.fn(),
-        download: vi.fn(),
-        getPublicUrl: vi.fn(),
+        upload: vi.fn().mockResolvedValue({ data: { path: 'mock/path.mp3' }, error: null }),
+        download: vi.fn().mockResolvedValue({ data: new Blob(), error: null }),
+        getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: 'https://example.com/mock/path.mp3' } }),
       })),
     },
     channel: vi.fn(() => ({
       on: vi.fn().mockReturnThis(),
-      subscribe: vi.fn(),
+      subscribe: vi.fn((callback) => {
+        // Allow tests to optionally invoke the callback
+        if (callback) {
+          setTimeout(() => callback('SUBSCRIBED'), 0);
+        }
+        return {
+          unsubscribe: vi.fn(),
+        };
+      }),
       unsubscribe: vi.fn(),
     })),
     removeChannel: vi.fn(),
   },
 }));
 
-// Mock React Router
+
+/**
+ * Mock React Router
+ * Provides default mocks for common React Router hooks.
+ */
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
-    useNavigate: () => vi.fn(),
-    useLocation: () => ({ pathname: '/' }),
+    useNavigate: () => vi.fn((path) => console.log(`Mock navigate to: ${path}`)),
+    useLocation: () => ({ pathname: '/', search: '', hash: '', state: null }),
     useParams: () => ({}),
+    Link: ({ children, to }: { children: React.ReactNode, to: string }) => React.createElement('a', { href: to }, children),
   };
 });
 
-// Mock sonner toast
+/**
+ * Mock `sonner` for toast notifications
+ */
 vi.mock('sonner', () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
     info: vi.fn(),
     warning: vi.fn(),
+    loading: vi.fn(),
+    dismiss: vi.fn(),
   },
 }));
 
-// Mock window.matchMedia
+// --- BROWSER API MOCKS ---
+
+/**
+ * Mock `window.matchMedia`
+ * Used by responsive hooks and components.
+ */
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
+    addListener: vi.fn(), // deprecated
+    removeListener: vi.fn(), // deprecated
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
   })),
 });
 
-// Mock IntersectionObserver
-global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
-  disconnect() {}
-  observe() {}
-  takeRecords() {
-    return [];
-  }
-  unobserve() {}
-} as any;
+/**
+ * Mock IntersectionObserver and ResizeObserver
+ * Used by components that react to visibility or size changes.
+ */
+const observerMock = {
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+};
 
-// Mock ResizeObserver
-global.ResizeObserver = class ResizeObserver {
-  constructor() {}
-  disconnect() {}
-  observe() {}
-  unobserve() {}
-} as any;
+global.IntersectionObserver = vi.fn().mockImplementation(() => observerMock);
+global.ResizeObserver = vi.fn().mockImplementation(() => observerMock);
 
-// Mock AuthContext
+
+// --- CONTEXT & HOOK MOCKS ---
+
+/**
+ * Mock AuthContext
+ * Provides a default authenticated user.
+ */
 vi.mock('@/contexts/AuthContext', async () => {
   const actual = await vi.importActual('@/contexts/AuthContext');
+  const AuthContext = React.createContext({
+      userId: 'test-user-id',
+      isLoading: false,
+  });
+
   return {
     ...actual,
+    AuthContext,
     useAuth: () => ({
       userId: 'test-user-id',
       isLoading: false,
@@ -147,28 +184,41 @@ vi.mock('@/contexts/AuthContext', async () => {
   };
 });
 
+
+/**
+ * Mock `use-mobile` hook
+ * Defaults to desktop view for tests.
+ */
 vi.mock('@/hooks/use-mobile', () => ({
   useIsMobile: () => false,
 }));
 
-// Mock Tooltip components to avoid TooltipProvider requirement
-vi.mock('@/components/ui/tooltip', () => ({
-  TooltipProvider: ({ children }: { children: React.ReactNode }) => children,
-  Tooltip: ({ children }: { children: React.ReactNode }) => children,
-  TooltipTrigger: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) =>
-    asChild ? children : React.createElement('div', {}, children),
-  TooltipContent: ({ children }: { children: React.ReactNode }) => React.createElement('div', {}, children),
-}));
 
-// Mock DropdownMenu components for testing
-vi.mock('@/components/ui/dropdown-menu', () => ({
-  DropdownMenu: ({ children }: { children: React.ReactNode }) => React.createElement('div', {}, children),
-  DropdownMenuTrigger: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) =>
-    asChild ? children : React.createElement('button', {}, children),
-  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => React.createElement('div', { role: 'menu' }, children),
-  DropdownMenuItem: ({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) =>
-    React.createElement('div', { role: 'menuitem', onClick }, children),
-  DropdownMenuSeparator: () => React.createElement('div', { role: 'separator' }),
-  DropdownMenuLabel: ({ children }: { children: React.ReactNode }) => React.createElement('div', {}, children),
-  DropdownMenuGroup: ({ children }: { children: React.ReactNode }) => React.createElement('div', {}, children),
-}));
+// --- UI COMPONENT MOCKS ---
+
+/**
+ * Mock shadcn/ui Tooltip
+ * The actual component requires a TooltipProvider, which complicates testing.
+ * This mock renders children directly, bypassing the provider requirement.
+ */
+vi.mock('@/components/ui/tooltip', async () => {
+    const actual = await vi.importActual('@/components/ui/tooltip');
+    return {
+        ...actual,
+        TooltipProvider: ({ children }: { children: React.ReactNode }) => children,
+    };
+});
+
+/**
+ * Mock `react-resizable-panels`
+ * The library has complex internal logic not suitable for a JSDOM environment.
+ */
+vi.mock("react-resizable-panels", async () => {
+  const actual = await vi.importActual("react-resizable-panels");
+  return {
+    ...actual,
+    PanelGroup: ({ children }: { children: React.ReactNode }) => React.createElement('div', { 'data-testid': 'panel-group' }, children),
+    Panel: ({ children }: { children: React.ReactNode }) => React.createElement('div', { 'data-testid': 'panel' }, children),
+    PanelResizeHandle: () => React.createElement('div', { 'data-testid': 'resize-handle' }),
+  };
+});

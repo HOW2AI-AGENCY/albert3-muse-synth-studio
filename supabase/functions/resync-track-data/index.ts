@@ -193,7 +193,7 @@ async function updateTrackFromSunoData(
   return { success: true, variantsCount: sunoData.length };
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });

@@ -24,7 +24,7 @@ export interface SentryContext {
   provider?: string;
   correlationId?: string;
   stage?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**

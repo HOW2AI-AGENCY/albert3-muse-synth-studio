@@ -1,7 +1,11 @@
 import { logger } from './logger.ts';
+import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Database } from "../_shared/database.types.ts";
+
+type Track = Database['public']['Tables']['tracks']['Row'];
 
 export async function findOrCreateTrack(
-  supabaseAdmin: any,
+  supabaseAdmin: SupabaseClient<Database>,
   userId: string,
   { trackId, title, prompt, lyrics, hasVocals, styleTags, genre, mood, requestMetadata, idempotencyKey, provider, projectId }: {
     trackId?: string;
@@ -15,9 +19,9 @@ export async function findOrCreateTrack(
     requestMetadata: Record<string, unknown>;
     idempotencyKey?: string;
     provider?: string;
-    projectId?: string; // ✅ НОВОЕ: поддержка project_id
+    projectId?: string;
   }
-): Promise<{ trackId: string; track: any }> {
+): Promise<{ trackId: string; track: Track }> {
   if (trackId) {
     const { data: existingTrack, error } = await supabaseAdmin
       .from('tracks')
@@ -38,11 +42,9 @@ export async function findOrCreateTrack(
     return { trackId, track: existingTrack };
   }
 
-  // ✅ Generate AI title if not provided (with fallback)
   const generateTitle = async () => {
     if (title) return title;
     
-    // Try AI title generation for Mureka and Suno
     if (provider === 'mureka' || provider === 'suno') {
       try {
         const { data: titleData, error: titleError } = await supabaseAdmin.functions.invoke('generate-track-title', {
@@ -65,9 +67,7 @@ export async function findOrCreateTrack(
       }
     }
     
-    // Fallback: Extract from prompt
     if (prompt) {
-      // Remove service words and special characters, support Cyrillic
       const cleaned = prompt
         .replace(/\b(music|track|song|create|generate|трек|музыка|песня|создай|сгенерируй)\b/gi, '')
         .replace(/[^\wА-Яа-яЁё\s-]/g, ' ')
@@ -76,12 +76,10 @@ export async function findOrCreateTrack(
         .slice(0, 60);
       
       if (cleaned.length > 3) {
-        // Capitalize first letter
         return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
       }
     }
     
-    // Final fallback with genre and timestamp
     const timestamp = new Date().toLocaleString('ru-RU', {
       day: '2-digit',
       month: '2-digit',
@@ -113,7 +111,7 @@ export async function findOrCreateTrack(
       mood: mood ?? null,
       metadata: requestMetadata,
       idempotency_key: idempotencyKey,
-      project_id: projectId ?? null, // ✅ НОВОЕ: сохраняем project_id
+      project_id: projectId ?? null,
     })
     .select('*')
     .single();
