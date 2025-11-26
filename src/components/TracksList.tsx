@@ -1,256 +1,283 @@
-import { useState, memo, useCallback, useRef, useEffect, useMemo } from "react";
-import { TrackCard } from "@/features/tracks/components/TrackCard";
-import { TrackListItem } from "@/features/tracks/components/TrackListItem";
-import { VirtualizedTrackGrid } from "./tracks/VirtualizedTrackGrid";
-import { TrackListSkeleton } from "@/components/skeletons";
-import { Track } from "@/services/api.service";
-import { Music } from "@/utils/iconImports";
-import { useToast } from "@/hooks/use-toast";
-import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
-import { useManualSyncTrack } from "@/hooks/useManualSyncTrack";
-import { logger, logError } from "@/utils/logger";
-import { AITrackActionsContainer } from "@/components/tracks/AITrackActionsContainer";
-import { useResponsiveGrid } from "@/hooks/useResponsiveGrid";
-import type { TrackOperations } from "@/hooks/tracks/useTrackOperations";
-import { cn } from "@/lib/utils";
-
 /**
  * TracksList — компонент списка треков с адаптивной сеткой и виртуализацией.
+ * Используется на странице Генерации.
  *
- * Назначение:
- * - Отображение треков в режимах `grid` и `list` с поддержкой больших коллекций (виртуализация)
- * - Управление действиями над треком: воспроизведение, шаринг, повтор генерации, синхронизация, удаление
- * - Интеграция с глобальным аудиоплеером и контейнером действий ИИ
- *
- * Ключевые особенности производительности:
- * - Измерение размеров контейнера через `ResizeObserver` для точной виртуализации
- * - Мемоизация воспроизводимого плейлиста (`playableTracks`) и обработчиков
- * - Адаптивное вычисление количества колонок в сетке с учётом мобильной вёрстки
- *
- * Пропсы:
- * - `tracks`: список треков
- * - `isLoading`: индикатор загрузки
- * - `deleteTrack`, `refreshTracks`: операции управления
- * - коллбеки действий (`onSeparateStems`, `onExtend`, `onCover`, `onCreatePersona`, `onSelect`)
- * - `isDetailPanelOpen`: влияет на расчёт колонок сетки
- * - `trackOperations`: контейнер бизнес-операций над треком
- * - `viewMode`: режим отображения (`grid` | `list`)
+ * @version 3.0.0
+ * @author Jules
  */
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/contexts/auth/useAuth';
+import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
+import { useDeleteTrack } from '@/hooks/useDeleteTrack';
+import { useManualSyncTrack } from '@/hooks/useManualSyncTrack';
+import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/utils/logger';
+import { useResponsiveGrid } from '@/hooks/useResponsiveGrid';
+import { VirtualizedTrackGrid } from '@/components/tracks/VirtualizedTrackGrid';
+import { cn } from '@/lib/utils';
+import type { DisplayTrack } from '@/types/track.types';
+import { TrackCard } from '@/features/tracks/components/TrackCard';
+import { TrackListItem } from '@/design-system/components/compositions/TrackListItem/TrackListItem';
+import {
+  LazyTrackDeleteDialog,
+  LazySeparateStemsDialog,
+  LazyExtendTrackDialog,
+  LazyCreateCoverDialog,
+  LazyAddVocalDialog,
+  LazyCreatePersonaDialog
+} from '@/components/LazyDialogs';
+import { useLibraryDialogs } from '@/hooks/useLibraryDialogs';
+import { useTrackOperations } from '@/hooks/tracks/useTrackOperations';
+import type { Track } from '@/types/track.types';
+
 interface TracksListProps {
   tracks: Track[];
-  isLoading: boolean;
-  deleteTrack: (trackId: string) => Promise<void>;
-  refreshTracks: () => void;
-  onSeparateStems?: (trackId: string) => void;
-  onExtend?: (trackId: string) => void;
-  onCover?: (trackId: string) => void;
-  onCreatePersona?: (trackId: string) => void;
-  onSelect?: (track: Track) => void;
-  isDetailPanelOpen?: boolean;
-  trackOperations: TrackOperations;
-  viewMode: 'grid' | 'list';
+  viewMode?: 'grid' | 'list';
+  onRefresh?: () => void;
+  isLoading?: boolean;
 }
 
-/**
- * Основной компонент реализации списка треков.
- * Не рендерит лишние элементы при больших объёмах данных,
- * корректно кеширует обработчики и поддерживает режимы сетка/список.
- */
 const TracksListComponent = ({
   tracks,
-  isLoading,
-  deleteTrack,
-  refreshTracks,
-  onSeparateStems,
-  onExtend,
-  onCover,
-  onCreatePersona,
-  onSelect,
-  isDetailPanelOpen = false,
-  trackOperations,
-  viewMode,
+  viewMode = 'grid',
+  onRefresh,
 }: TracksListProps) => {
-  const playTrackWithQueue = useAudioPlayerStore((state) => state.playTrackWithQueue);
+  const { user } = useAuth();
+  const { playTrack, currentTrack, isPlaying } = useAudioPlayerStore();
+  const { deleteTrack, isDeleting } = useDeleteTrack();
+  const { syncTrack, isSyncing } = useManualSyncTrack();
   const { toast } = useToast();
-  const { mutateAsync: syncTrack } = useManualSyncTrack();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
+  const dialogs = useLibraryDialogs();
+  const {
+    handleShare,
+    handleRetry,
+    handleSeparateStems,
+    handleExtend,
+    handleCover,
+    handleAddVocal,
+    handleCreatePersona,
+    handleUpscaleAudio,
+    handleGenerateCover,
+    handleDescribeTrack,
+    handleSwitchVersion,
+  } = useTrackOperations({ tracks, refresh: onRefresh });
 
-  // Track container dimensions for virtualization
-  useEffect(() => {
-    if (!containerRef.current) return;
-    
-    const updateDimensions = () => {
-      if (containerRef.current) {
-        const { width, height } = containerRef.current.getBoundingClientRect();
-        setContainerDimensions({ width, height: Math.max(height, 600) });
-      }
-    };
+  const [dialogState, setDialogState] = useState<{
+    delete?: { id: string; title: string };
+  }>({});
 
-    // Initial measurement
-    updateDimensions();
-    
-    // Use ResizeObserver for precise tracking
-    const resizeObserver = new ResizeObserver(() => {
-      updateDimensions();
-    });
-    
-    resizeObserver.observe(containerRef.current);
-    
-    return () => {
-      resizeObserver.disconnect();
-    };
+  const handleDelete = useCallback((id: string, title: string) => {
+    setDialogState((prev) => ({ ...prev, delete: { id, title } }));
   }, []);
 
-  // ✅ Responsive grid now returns Tailwind classes, eliminating inline styles.
-  const { columns, gap, gridClass, gapClass } = useResponsiveGrid(containerDimensions.width, {
-    isDetailPanelOpen
-  });
+  const confirmDelete = useCallback(async () => {
+    if (!dialogState.delete) return;
+    try {
+      await deleteTrack(dialogState.delete.id);
+      toast({
+        title: 'Трек удален',
+        description: `Трек "${dialogState.delete.title}" был успешно удален.`,
+      });
+      setDialogState((prev) => ({ ...prev, delete: undefined }));
+      onRefresh?.();
+    } catch (error) {
+      logger.error('Track deletion failed', error as Error, 'TracksList', {
+        trackId: dialogState.delete.id,
+      });
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось удалить трек.',
+        variant: 'destructive',
+      });
+    }
+  }, [dialogState.delete, deleteTrack, onRefresh, toast]);
 
-  // ✅ Мемоизация списка воспроизводимых треков
-  const playableTracks = useMemo(() => 
-    tracks
-      .filter(t => t.status === 'completed' && t.audio_url)
-      .map(t => ({
-        id: t.id,
-        title: t.title,
-        audio_url: t.audio_url!,
-        cover_url: t.cover_url || undefined,
-        duration: t.duration || undefined,
-      })),
-    [tracks]
+  const memoizedTracks = useMemo(() => tracks, [tracks]);
+
+  // Container width tracking for responsive grid
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      const observer = new ResizeObserver(entries => {
+        if (entries[0]) {
+          setContainerWidth(entries[0].contentRect.width);
+        }
+      });
+      observer.observe(containerRef.current);
+      return () => observer.disconnect();
+    }
+  }, []);
+
+  const { columns, gap, gridClass, gapClass } = useResponsiveGrid(containerWidth);
+  const shouldVirtualize = memoizedTracks.length > 50 && viewMode === 'grid';
+
+
+  const renderTrackItem = useCallback(
+    (track: Track) => {
+      const isCurrent = currentTrack?.id === track.id;
+
+      if (viewMode === 'list') {
+        return (
+          <TrackListItem
+            track={track}
+            isPlaying={isCurrent && isPlaying}
+            onPlay={() => playTrack(track as any, memoizedTracks as any)}
+            actionMenuProps={{
+                onShare: () => handleShare(track.id),
+                onDelete: () => handleDelete(track.id, track.title),
+                onSeparateStems: () => handleSeparateStems(track.id),
+                onExtend: () => handleExtend(track.id),
+                onCover: () => handleCover(track.id),
+                onAddVocal: () => handleAddVocal(track.id),
+                onCreatePersona: () => handleCreatePersona(track.id),
+                onUpscaleAudio: () => handleUpscaleAudio(track.id),
+                onGenerateCover: () => handleGenerateCover(track.id),
+                onDescribeTrack: () => handleDescribeTrack(track.id),
+                onSwitchVersion: () => handleSwitchVersion(track.id),
+                onRetry: () => handleRetry(track.id),
+                onSync: () => syncTrack(track.id),
+            }}
+          />
+        );
+      }
+
+      return (
+        <TrackCard
+          track={track as any}
+          isPlaying={isCurrent && isPlaying}
+          onPlay={() => playTrack(track as any, memoizedTracks as any)}
+          onShare={() => handleShare(track.id)}
+          onDelete={() => handleDelete(track.id, track.title)}
+          onSeparateStems={() => handleSeparateStems(track.id)}
+          onExtend={() => handleExtend(track.id)}
+          onCover={() => handleCover(track.id)}
+          onAddVocal={() => handleAddVocal(track.id)}
+          onCreatePersona={() => handleCreatePersona(track.id)}
+          onUpscaleAudio={() => handleUpscaleAudio(track.id)}
+          onGenerateCover={() => handleGenerateCover(track.id)}
+          onDescribeTrack={() => handleDescribeTrack(track.id)}
+          onSwitchVersion={() => handleSwitchVersion(track.id)}
+          onRetry={() => handleRetry(track.id)}
+          onSync={() => syncTrack(track.id)}
+        />
+      );
+    },
+    [
+      viewMode,
+      currentTrack,
+      isPlaying,
+      playTrack,
+      memoizedTracks,
+      handleShare,
+      handleDelete,
+      handleSeparateStems,
+      handleExtend,
+      handleCover,
+      handleAddVocal,
+      handleCreatePersona,
+      handleUpscaleAudio,
+      handleGenerateCover,
+      handleDescribeTrack,
+      handleSwitchVersion,
+      handleRetry,
+      syncTrack,
+    ]
   );
 
-  const handlePlay = useCallback((track: Track) => {
-    playTrackWithQueue({
-      id: track.id,
-      title: track.title,
-      audio_url: track.audio_url!,
-      cover_url: track.cover_url || undefined,
-      duration: track.duration || undefined,
-    }, playableTracks);
-  }, [playableTracks, playTrackWithQueue]);
-
-
-  const handleShare = useCallback((trackId: string) => {
-    const url = `${window.location.origin}/track/${trackId}`;
-    navigator.clipboard.writeText(url);
-    toast({ title: "Ссылка скопирована" });
-  }, [toast]);
-
-  const handleRetry = useCallback(async (trackId: string) => {
-    const track = tracks.find(t => t.id === trackId);
-    if (!track) return;
-
-    await trackOperations.retryTrackGeneration({
-      track,
-      onSuccess: refreshTracks,
-    });
-  }, [trackOperations, tracks, refreshTracks]);
-
-  const handleSync = useCallback(async (trackId: string) => {
-    try {
-      await syncTrack({ trackId });
-      // Обновляем список после синхронизации
-      setTimeout(() => refreshTracks(), 1000);
-    } catch (error) {
-      // Ошибка уже обработана в хуке useManualSyncTrack
-      logger.error('Sync failed', error instanceof Error ? error : new Error(String(error)), 'TracksList');
-    }
-  }, [syncTrack, refreshTracks]);
-
-  const handleDelete = useCallback(async (trackId: string) => {
-    try {
-      await deleteTrack(trackId);
-      toast({ title: "Удалено", description: "Трек успешно удалён" });
-    } catch (error) {
-      logError('Track deletion failed', error as Error, 'TracksList', {
-        trackId
-      });
-      toast({ 
-        title: "Ошибка", 
-        description: "Не удалось удалить трек", 
-        variant: "destructive" 
-      });
-    }
-  }, [deleteTrack, toast]);
-
-  if (isLoading) {
-    return <TrackListSkeleton count={12} />;
-  }
-
-  if (tracks.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center text-center py-16">
-        <div className="p-4 mb-4 rounded-full bg-primary/10">
-          <Music className="h-10 w-10 text-primary" />
-        </div>
-        <h3 className="text-lg font-semibold">Библиотека пуста</h3>
-        <p className="text-sm text-muted-foreground max-w-sm mt-1">
-          Создайте свой первый трек в панели слева. Он появится здесь, как только будет готов.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <AITrackActionsContainer>
-      {({ onDescribeTrack }) => (
-        <div className="space-y-4" ref={containerRef}>
-          {viewMode === 'grid' ? (
-            tracks.length > 50 && containerDimensions.width > 0 ? (
-              // Use virtualization for large lists with adaptive grid
-              <VirtualizedTrackGrid
-                tracks={tracks as any}
+    <>
+      <AnimatePresence>
+        <div ref={containerRef} className="w-full h-full">
+          {shouldVirtualize ? (
+             <VirtualizedTrackGrid
+                tracks={memoizedTracks as DisplayTrack[]}
                 columns={columns}
                 gap={gap}
-                onTrackPlay={(onSelect || handlePlay) as any}
+                onTrackPlay={(track) => playTrack(track as any, memoizedTracks as any)}
                 onShare={handleShare}
-                onSeparateStems={onSeparateStems || (() => {})}
-                onExtend={onExtend}
-                onCover={onCover}
-                onAddVocal={undefined}
-                onCreatePersona={onCreatePersona}
-                onDescribeTrack={onDescribeTrack}
-                onRetry={handleRetry}
-                onDelete={handleDelete}
+                onSeparateStems={handleSeparateStems}
+                onExtend={handleExtend}
+                onCover={handleCover}
+                onAddVocal={handleAddVocal}
+                onCreatePersona={handleCreatePersona}
+                onDescribeTrack={handleDescribeTrack}
+                onRetry={(trackId) => handleRetry(trackId)}
+                onDelete={(trackId) => handleDelete(trackId, tracks.find(t => t.id === trackId)?.title ?? '')}
               />
-            ) : (
-              // Regular adaptive grid for smaller lists
-              // ✅ TODO: Replaced inline styles with Tailwind classes from the refactored hook.
-              <div className={cn("grid w-full", gridClass, gapClass)}>
-                {tracks.map((track) => (
-                  <TrackCard
-                    key={track.id}
-                    track={track as any}
-                    onClick={onSelect ? () => onSelect(track) : () => handlePlay(track)}
-                    onShare={() => handleShare(track.id)}
-                    onRetry={handleRetry}
-                    onSync={handleSync}
-                    onDelete={handleDelete}
-                    onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
-                    onExtend={onExtend ? () => onExtend(track.id) : undefined}
-                    onCover={onCover ? () => onCover(track.id) : undefined}
-                    onCreatePersona={onCreatePersona ? () => onCreatePersona(track.id) : undefined}
-                    onDescribeTrack={() => onDescribeTrack(track.id)}
-                  />
-                ))}
-              </div>
-            )
           ) : (
-            <div className="space-y-2">
-              {tracks.map((track) => (
-                <TrackListItem
-                  key={track.id}
-                  track={track as any}
-                  onSelect={onSelect ? () => onSelect(track) : () => handlePlay(track)}
-                />
-              ))}
-            </div>
+            <motion.div
+              className={viewMode === 'grid' ? cn('grid', gridClass, gapClass) : 'space-y-2'}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              {memoizedTracks.map(renderTrackItem)}
+            </motion.div>
           )}
         </div>
+      </AnimatePresence>
+
+      <LazyTrackDeleteDialog
+        open={!!dialogState.delete}
+        onOpenChange={() =>
+          setDialogState((prev) => ({ ...prev, delete: undefined }))
+        }
+        trackId={dialogState.delete?.id ?? ''}
+        trackTitle={dialogState.delete?.title ?? ''}
+        onConfirm={confirmDelete}
+        isDeleting={isDeleting}
+      />
+
+      {dialogs.separateStems.isOpen && dialogs.separateStems.data && (
+        <LazySeparateStemsDialog
+          open={dialogs.separateStems.isOpen}
+          onOpenChange={dialogs.closeSeparateStems}
+          trackId={dialogs.separateStems.data.id}
+          trackTitle={dialogs.separateStems.data.title}
+          onSuccess={() => {
+            onRefresh?.();
+            dialogs.closeSeparateStems();
+          }}
+        />
       )}
-    </AITrackActionsContainer>
+
+      {dialogs.extend.isOpen && dialogs.extend.data && (
+        <LazyExtendTrackDialog
+          open={dialogs.extend.isOpen}
+          onOpenChange={dialogs.closeExtend}
+          track={dialogs.extend.data as any}
+        />
+      )}
+
+      {dialogs.cover.isOpen && dialogs.cover.data && (
+        <LazyCreateCoverDialog
+          open={dialogs.cover.isOpen}
+          onOpenChange={dialogs.closeCover}
+          track={dialogs.cover.data as any}
+        />
+      )}
+
+      {dialogs.addVocal.isOpen && dialogs.addVocal.data && (
+        <LazyAddVocalDialog
+          open={dialogs.addVocal.isOpen}
+          onOpenChange={dialogs.closeAddVocal}
+          trackId={dialogs.addVocal.data}
+          onSuccess={onRefresh}
+        />
+      )}
+
+      {dialogs.createPersona.isOpen && dialogs.createPersona.data && (
+        <LazyCreatePersonaDialog
+          open={dialogs.createPersona.isOpen}
+          onOpenChange={dialogs.closeCreatePersona}
+          track={dialogs.createPersona.data as any}
+          onSuccess={dialogs.closeCreatePersona}
+        />
+      )}
+    </>
   );
 };
 

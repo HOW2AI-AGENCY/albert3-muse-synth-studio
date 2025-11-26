@@ -20,7 +20,7 @@ const DrawerOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Overlay
     ref={ref}
-    className={cn("fixed inset-0 bg-black/50", className)}
+    className={cn("fixed inset-0 bg-background/80 backdrop-blur-sm", className)}
     style={{ zIndex: 'var(--z-drawer-backdrop)' }}
     {...props}
   />
