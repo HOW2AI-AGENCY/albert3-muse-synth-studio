@@ -30,7 +30,7 @@ const AppBottomNav: React.FC = () => {
         { id: 'home', label: 'Главная', icon: Home, path: '/workspace/dashboard' },
         { id: 'projects', label: 'Проекты', icon: FolderOpen, path: '/workspace/projects' },
         { id: 'generate', label: 'Создать', icon: Plus, path: '/workspace/generate', isCenter: true },
-        { id: 'library', label: 'Библиотека', icon: Library, path: '/workspace/library' },
+        { id: 'library', label: 'Библиотека', icon: Library, path: '/workspace/generate' },
         { id: 'more', label: 'Ещё', icon: Grid3x3, path: '' },
       ],
       overflow: allItems.filter(item => 
