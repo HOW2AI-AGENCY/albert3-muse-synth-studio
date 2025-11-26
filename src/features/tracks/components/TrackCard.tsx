@@ -70,7 +70,7 @@ const TrackCardComponent = memo(({
     hasStems,
     selectedVersionIndex,
     isLiked,
-    likeCount, // ✅ FIXED: Added missing likeCount from hook
+    likeCount,
     versionCount,
     masterVersion,
     displayedVersion,
@@ -84,7 +84,25 @@ const TrackCardComponent = memo(({
     handleLikeClick,
     handleDownloadClick,
     handleTogglePublic,
-  } = useTrackCardState(track);
+    handleExtend,
+    handleCover,
+    handleSeparateStems,
+    handleAddVocal,
+    handleDescribeTrack,
+    handleCreatePersona,
+    handleUpscaleAudio,
+    handleGenerateCover,
+  } = useTrackCardState({
+    track,
+    onExtend,
+    onCover,
+    onSeparateStems,
+    onAddVocal,
+    onDescribeTrack,
+    onCreatePersona,
+    onUpscaleAudio,
+    onGenerateCover,
+  });
 
   useEffect(() => {
     const element = cardRef.current;
@@ -108,14 +126,14 @@ const TrackCardComponent = memo(({
       onDownload={handleDownloadClick}
       onShare={handleShareClick}
       onDelete={onDelete ? () => onDelete(track.id) : undefined}
-      onExtend={onExtend ? () => onExtend(track.id) : undefined}
-      onCover={onCover ? () => onCover(track.id) : undefined}
-      onSeparateStems={onSeparateStems ? () => onSeparateStems(track.id) : undefined}
-      onAddVocal={onAddVocal ? () => onAddVocal(track.id) : undefined}
-      onDescribeTrack={onDescribeTrack ? () => onDescribeTrack(track.id) : undefined}
-      onCreatePersona={onCreatePersona ? () => onCreatePersona(track.id) : undefined}
-      onUpscaleAudio={onUpscaleAudio ? () => onUpscaleAudio(track.id) : undefined}
-      onGenerateCover={onGenerateCover ? () => onGenerateCover(track.id) : undefined}
+      onExtend={handleExtend}
+      onCover={handleCover}
+      onSeparateStems={handleSeparateStems}
+      onAddVocal={handleAddVocal}
+      onDescribeTrack={handleDescribeTrack}
+      onCreatePersona={handleCreatePersona}
+      onUpscaleAudio={handleUpscaleAudio}
+      onGenerateCover={handleGenerateCover}
       onTogglePublic={handleTogglePublic}
       onRetry={onRetry ? () => onRetry(track.id) : undefined}
       isLiked={isLiked}
@@ -217,14 +235,14 @@ const TrackCardComponent = memo(({
             onDownloadClick={handleDownloadClick}
             onShareClick={handleShareClick}
             onTogglePublic={handleTogglePublic}
-            onDescribeTrack={onDescribeTrack}
-            onSeparateStems={onSeparateStems}
-            onExtend={onExtend}
-            onCover={onCover}
-            onAddVocal={onAddVocal}
-            onCreatePersona={onCreatePersona}
-            onUpscaleAudio={onUpscaleAudio}
-            onGenerateCover={onGenerateCover}
+            onDescribeTrack={handleDescribeTrack}
+            onSeparateStems={handleSeparateStems}
+            onExtend={handleExtend}
+            onCover={handleCover}
+            onAddVocal={handleAddVocal}
+            onCreatePersona={handleCreatePersona}
+            onUpscaleAudio={handleUpscaleAudio}
+            onGenerateCover={handleGenerateCover}
           />
         </CardContent>
       </Card>
