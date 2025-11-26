@@ -125,8 +125,8 @@ const TrackCardComponent = memo(({
         variants={fadeInUp}
         initial="initial"
         animate="animate"
-        whileHover={{ y: 'var(--hover-lift-offset, -4px)' }}
-        whileTap={{ scale: 'var(--tap-scale, 0.98)' }}
+        whileHover={{ y: -4 }}
+        whileTap={{ scale: 0.98 }}
         role="article"
         aria-label={`Трек: ${track.title}. Статус: ${track.status === 'completed' ? 'завершён' : track.status === 'processing' ? 'в обработке' : track.status === 'failed' ? 'ошибка' : 'ожидание'}${track.duration ? `. Длительность: ${Math.floor(track.duration / 60)} минут ${track.duration % 60} секунд` : ''}`}
         aria-live={track.status === 'processing' || track.status === 'pending' ? 'polite' : undefined}

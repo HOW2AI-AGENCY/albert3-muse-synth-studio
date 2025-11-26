@@ -17,6 +17,7 @@ import { TrackCardInfo } from '../components/card/TrackCardInfo';
 import { TrackCardActions } from '../components/card/TrackCardActions';
 import { GenerationProgress, FailedState } from '../components/card/TrackCardStates';
 import { useTrackCard, type TrackCardCallbacks } from '../hooks/useTrackCard';
+import { TrackContextMenu } from '../components/TrackContextMenu';
 import type { Track } from '@/types/domain/track.types';
 
 interface TrackCardProps extends TrackCardCallbacks {
@@ -84,22 +85,39 @@ const TrackCardComponent = React.memo(({
   const gradient = getGradientByTrackId(track.id);
 
   return (
-    <motion.div
-      ref={cardRef}
-      variants={fadeInUp}
-      initial="initial"
-      animate="animate"
-      whileHover={{ y: 'var(--hover-lift-offset, -4px)' }}
-      whileTap={{ scale: 'var(--tap-scale, 0.98)' }}
-      role="article"
-      aria-label={`Трек: ${track.title}. Статус: ${track.status === 'completed' ? 'завершён' : track.status === 'processing' ? 'в обработке' : track.status === 'failed' ? 'ошибка' : 'ожидание'}${track.duration ? `. Длительность: ${Math.floor(track.duration / 60)} минут ${track.duration % 60} секунд` : ''}`}
-      aria-live={track.status === 'processing' || track.status === 'pending' ? 'polite' : undefined}
-      aria-busy={track.status === 'processing' || track.status === 'pending'}
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-      className="touch-optimized focus-ring"
-      data-testid="track-card"
+    <TrackContextMenu
+      track={track}
+      onPlay={() => handlePlayClick({} as React.MouseEvent<Element>)}
+      onLike={handleLikeClick}
+      onDownload={handleDownloadClick}
+      onShare={handleShareClick}
+      onDelete={callbacks.onDelete ? () => callbacks.onDelete!(track.id) : undefined}
+      onExtend={callbacks.onExtend ? () => callbacks.onExtend!(track.id) : undefined}
+      onCover={callbacks.onCover ? () => callbacks.onCover!(track.id) : undefined}
+      onSeparateStems={callbacks.onSeparateStems ? () => callbacks.onSeparateStems!(track.id) : undefined}
+      onAddVocal={callbacks.onAddVocal ? () => callbacks.onAddVocal!(track.id) : undefined}
+      onDescribeTrack={callbacks.onDescribeTrack ? () => callbacks.onDescribeTrack!(track.id) : undefined}
+      onCreatePersona={callbacks.onCreatePersona ? () => callbacks.onCreatePersona!(track.id) : undefined}
+      onTogglePublic={handleTogglePublic}
+      onRetry={callbacks.onRetry ? () => callbacks.onRetry!(track.id) : undefined}
+      isLiked={isLiked}
     >
+      <motion.div
+        ref={cardRef}
+        variants={fadeInUp}
+        initial="initial"
+        animate="animate"
+        whileHover={{ y: -4 }}
+        whileTap={{ scale: 0.98 }}
+        role="article"
+        aria-label={`Трек: ${track.title}. Статус: ${track.status === 'completed' ? 'завершён' : track.status === 'processing' ? 'в обработке' : track.status === 'failed' ? 'ошибка' : 'ожидание'}${track.duration ? `. Длительность: ${Math.floor(track.duration / 60)} минут ${track.duration % 60} секунд` : ''}`}
+        aria-live={track.status === 'processing' || track.status === 'pending' ? 'polite' : undefined}
+        aria-busy={track.status === 'processing' || track.status === 'pending'}
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+        className="touch-optimized focus-ring"
+        data-testid="track-card"
+      >
       <Card
         className={cn(
           'group relative overflow-hidden cursor-pointer transition-all duration-300',
@@ -183,6 +201,7 @@ const TrackCardComponent = React.memo(({
         </CardContent>
       </Card>
     </motion.div>
+    </TrackContextMenu>
   );
 });
 
