@@ -19,9 +19,9 @@ export const useAudioUpload = () => {
       throw error;
     }
 
-    const MAX_SIZE = 20 * 1024 * 1024; // 20MB limit
+    const MAX_SIZE = 50 * 1024 * 1024; // 50MB limit
     if (file.size > MAX_SIZE) {
-      const error = new Error('File size must be less than 20MB');
+      const error = new Error('File size must be less than 50MB');
       toast({
         variant: 'destructive',
         title: 'File Too Large',
