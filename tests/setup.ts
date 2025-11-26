@@ -5,6 +5,7 @@
  * It ensures that common dependencies like Supabase, React Router, and UI components
  * are consistently mocked across all unit tests, preventing boilerplate and side effects.
  */
+import 'fake-indexeddb/auto';
 import { expect, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';

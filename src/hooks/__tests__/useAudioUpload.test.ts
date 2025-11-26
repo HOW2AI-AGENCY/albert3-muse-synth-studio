@@ -30,11 +30,17 @@ describe('useAudioUpload', () => {
     } as any);
   });
 
-  it('should reject files larger than 20MB', async () => {
+  it('should reject files larger than 50MB', async () => {
     const { result } = renderHook(() => useAudioUpload());
-    const largeFile = new File(['x'.repeat(21 * 1024 * 1024)], 'large.mp3', { type: 'audio/mpeg' });
+    // Mock a large file without creating a large buffer in memory
+    const largeFile = {
+      name: 'large.mp3',
+      type: 'audio/mpeg',
+      size: 51 * 1024 * 1024, // 51MB
+    } as File;
 
-    await expect(result.current.uploadAudio(largeFile)).rejects.toThrow('File size must be less than 20MB');
+    // The hook should throw an error with a specific message
+    await expect(result.current.uploadAudio(largeFile)).rejects.toThrow('File size must be less than 50MB');
   });
 
   it('should reject non-audio files', async () => {
@@ -47,12 +53,17 @@ describe('useAudioUpload', () => {
   it('should upload valid audio file', async () => {
     const mockUpload = vi.fn().mockResolvedValue({ data: { path: 'reference-audio/test.mp3' }, error: null });
     const mockGetPublicUrl = vi.fn().mockReturnValue({ data: { publicUrl: 'https://example.com/test.mp3' } });
-    const mockInsert = vi.fn().mockResolvedValue({ error: null });
+
+    // Correctly mock the chained DB call
+    const mockSingle = vi.fn().mockResolvedValue({ data: { id: 'new-library-id' }, error: null });
+    const mockSelect = vi.fn().mockReturnValue({ single: mockSingle });
+    const mockInsert = vi.fn().mockReturnValue({ select: mockSelect });
 
     vi.mocked(supabase.storage.from).mockReturnValue({
       upload: mockUpload,
       getPublicUrl: mockGetPublicUrl,
     } as any);
+
     vi.mocked(supabase.from).mockReturnValue({
       insert: mockInsert,
     } as any);
@@ -60,11 +71,14 @@ describe('useAudioUpload', () => {
     const { result } = renderHook(() => useAudioUpload());
     const audioFile = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' });
 
-    const url = await result.current.uploadAudio(audioFile);
+    const { publicUrl, libraryId } = await result.current.uploadAudio(audioFile);
 
-    expect(url).toBe('https://example.com/test.mp3');
+    expect(publicUrl).toBe('https://example.com/test.mp3');
+    expect(libraryId).toBe('new-library-id');
     expect(mockUpload).toHaveBeenCalled();
     expect(mockInsert).toHaveBeenCalled();
+    expect(mockSelect).toHaveBeenCalled();
+    expect(mockSingle).toHaveBeenCalled();
   });
 
   it('should handle upload errors', async () => {
