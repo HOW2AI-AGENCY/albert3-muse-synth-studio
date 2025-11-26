@@ -6,28 +6,30 @@
  */
 
 import React from 'react';
-import { Play, Pause, MoreVertical } from 'lucide-react';
+import { Play, Pause } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Track } from '@/types/track.types';
+import { UnifiedTrackActionsMenu } from '@/components/tracks/shared/TrackActionsMenu.unified';
+import type { UnifiedTrackActionsMenuProps } from '@/components/tracks/shared/TrackActionsMenu.types';
 
 export interface TrackListItemProps {
   track: Track;
   isPlaying?: boolean;
-  isLiked?: boolean;
   onPlay?: () => void;
-  onMenu?: () => void;
+  // All props for the action menu are now passed in a single object
+  actionMenuProps?: Omit<UnifiedTrackActionsMenuProps, 'trackId' | 'trackStatus' | 'trackMetadata' | 'isLiked' | 'currentVersionId' | 'versionNumber' | 'isMasterVersion'>;
 }
 
 export const TrackListItem = React.memo<TrackListItemProps>(({
   track,
   isPlaying = false,
   onPlay,
-  onMenu,
+  actionMenuProps,
 }) => {
   const formatDuration = (seconds?: number | null) => {
     if (!seconds) return '--:--';
     const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const secs = Math.floor(seconds % 60); // Use Math.floor to avoid fractional seconds
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
@@ -43,6 +45,7 @@ export const TrackListItem = React.memo<TrackListItemProps>(({
           src={track.cover_url || '/placeholder.svg'} 
           alt={track.title}
           className="w-full h-full object-cover"
+          loading="lazy"
         />
         <button 
           onClick={onPlay}
@@ -52,6 +55,7 @@ export const TrackListItem = React.memo<TrackListItemProps>(({
             "opacity-0 group-hover:opacity-100 transition-opacity",
             isPlaying && "opacity-100"
           )}
+          aria-label={isPlaying ? "Pause" : "Play"}
         >
           {isPlaying ? (
             <Pause className="w-5 h-5 text-white" fill="currentColor" />
@@ -79,12 +83,19 @@ export const TrackListItem = React.memo<TrackListItemProps>(({
         <span className="text-xs text-muted-foreground tabular-nums">
           {formatDuration(track.duration_seconds)}
         </span>
-        <button 
-          onClick={onMenu}
-          className="p-2 hover:bg-muted/20 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-        >
-          <MoreVertical className="w-4 h-4 text-muted-foreground" />
-        </button>
+        {actionMenuProps && (
+          <UnifiedTrackActionsMenu
+            trackId={track.id}
+            trackStatus={track.status}
+            trackMetadata={track.metadata}
+            isLiked={track.is_liked ?? false}
+            currentVersionId={track.id} // Default to track id, can be overridden
+            {...actionMenuProps}
+            variant="minimal"
+            layout="flat"
+            showQuickActions={false}
+          />
+        )}
       </div>
     </div>
   );

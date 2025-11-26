@@ -4,40 +4,42 @@
  */
 import React, { useRef, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { TrackListItem } from '@/features/tracks';
+import { TrackListItem, TrackListItemProps } from '@/design-system/components/compositions/TrackListItem/TrackListItem';
+import type { UnifiedTrackActionsMenuProps } from '@/components/tracks/shared/TrackActionsMenu.types';
 
-interface VirtualizedTrackListProps {
+// Omit props that are handled internally by the list item
+type ActionMenuProps = Omit<UnifiedTrackActionsMenuProps, 'trackId' | 'trackStatus' | 'trackMetadata' | 'isLiked' | 'currentVersionId' | 'versionNumber' | 'isMasterVersion'>;
+
+interface VirtualizedTrackListProps extends ActionMenuProps {
   tracks: any[];
   height?: number;
-  onTrackPlay?: (trackId: string) => void;
+  onTrackPlay?: (track: any) => void;
   loadingTrackId?: string | null;
 }
 
 const ITEM_HEIGHT = 72; // Height of TrackListItem in pixels
 
-export const VirtualizedTrackList = React.memo(({
+export const VirtualizedTrackList = React.memo<VirtualizedTrackListProps>(({
   tracks,
   height,
   onTrackPlay,
-  loadingTrackId
-}: VirtualizedTrackListProps) => {
+  loadingTrackId,
+  ...actionMenuProps
+}) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
-  // Memoize callbacks to prevent unnecessary re-renders
   const handleTrackPlay = useCallback((track: any) => {
     if (onTrackPlay) {
       onTrackPlay(track);
     }
   }, [onTrackPlay]);
 
-
-  // Create virtualizer for the list
   const safeTracks = Array.isArray(tracks) ? tracks : [];
   const virtualizer = useVirtualizer({
     count: safeTracks.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => ITEM_HEIGHT,
-    overscan: 5, // Render extra items for smoother scrolling
+    overscan: 5,
   });
 
   const virtualItems = virtualizer.getVirtualItems();
@@ -46,7 +48,7 @@ export const VirtualizedTrackList = React.memo(({
     <div
       ref={parentRef}
       className="w-full overflow-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent"
-      style={{ height }}
+      style={{ height: height ? `${height}px` : '100%' }}
     >
       <div
         style={{
@@ -57,7 +59,8 @@ export const VirtualizedTrackList = React.memo(({
       >
         {virtualItems.map((virtualItem) => {
           const track = safeTracks[virtualItem.index];
-          const displayTrack = track;
+          if (!track) return null;
+
           const isLoading = loadingTrackId === track.id;
 
           return (
@@ -69,13 +72,14 @@ export const VirtualizedTrackList = React.memo(({
                 transform: `translateY(${virtualItem.start}px)`,
               }}
             >
-              <div className="px-2 py-1 h-full">
+              <div className="px-2 py-1 h-full relative">
                 <TrackListItem
-                  track={displayTrack as any}
-                  onSelect={() => handleTrackPlay(displayTrack)}
+                  track={track}
+                  onPlay={() => handleTrackPlay(track)}
+                  // Pass all action menu props to the list item
+                  actionMenuProps={actionMenuProps}
                 />
                 {isLoading && (
-
                   <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-xl bg-background/80 backdrop-blur-sm">
                     <div className="flex items-center gap-2 text-primary">
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -90,21 +94,6 @@ export const VirtualizedTrackList = React.memo(({
       </div>
     </div>
   );
-}, (prevProps, nextProps) => {
-  // Custom comparison function to prevent unnecessary re-renders
-  const shouldUpdate = !(
-    prevProps.tracks.length === nextProps.tracks.length &&
-    prevProps.height === nextProps.height &&
-    prevProps.loadingTrackId === nextProps.loadingTrackId &&
-    prevProps.tracks.every((track, i) => 
-      track.id === nextProps.tracks[i]?.id &&
-      track.status === nextProps.tracks[i]?.status &&
-      track.audio_url === nextProps.tracks[i]?.audio_url &&
-      track.title === nextProps.tracks[i]?.title
-    )
-  );
-  
-  return !shouldUpdate;
 });
 
 VirtualizedTrackList.displayName = 'VirtualizedTrackList';
