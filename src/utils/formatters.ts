@@ -94,10 +94,13 @@ export const formatFileSize = (bytes: number | null | undefined): string => {
 
   const sizes = ['Б', 'КБ', 'МБ', 'ГБ'];
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  const value = i === 0 ? bytes : bytes / 1024 ** i;
 
-  if (i === 0) {
-    return `${bytes} ${sizes[i]}`;
-  }
+  const formatter = new Intl.NumberFormat('ru-RU', {
+    minimumFractionDigits: i === 0 ? 0 : 1,
+    maximumFractionDigits: 1,
+    useGrouping: i > 0,
+  });
 
-  return `${(bytes / 1024 ** i).toFixed(1).replace('.', ',')} ${sizes[i]}`;
+  return `${formatter.format(value)} ${sizes[i]}`;
 };
