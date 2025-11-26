@@ -1,4 +1,3 @@
-// deno-lint-ignore-file no-explicit-any
 import { logger } from './logger.ts';
 
 const REPLICATE_API_URL = 'https://api.replicate.com/v1';
@@ -10,7 +9,7 @@ interface ReplicateClientOptions {
 }
 
 export class ReplicateApiError extends Error {
-  constructor(message: string, public details?: any, public status?: number) {
+  constructor(message: string, public details?: unknown, public status?: number) {
     super(message);
     this.name = 'ReplicateApiError';
   }
@@ -34,10 +33,10 @@ export const createReplicateClient = (options: ReplicateClientOptions) => {
    * @param webhook - URL для получения уведомления о завершении
    * @returns Объект запущенной задачи
    */
-  const run = async (modelVersion: string, input: Record<string, any>, webhook?: string) => {
+  const run = async (modelVersion: string, input: Record<string, unknown>, webhook?: string) => {
     logger.info('🚀 Starting Replicate prediction', { modelVersion });
 
-    const body: Record<string, any> = {
+    const body: Record<string, unknown> = {
       version: modelVersion,
       input,
     };

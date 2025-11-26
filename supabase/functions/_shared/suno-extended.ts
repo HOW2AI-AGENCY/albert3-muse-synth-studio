@@ -135,10 +135,10 @@ export const createExtendTrack = (apiKey: string, fetchImpl: typeof fetch = fetc
           });
         }
 
-        const data = json as any;
-        const taskId = data?.data?.taskId || data?.taskId;
+        const data = json as Record<string, unknown>;
+        const taskId = (data?.data as Record<string, unknown>)?.taskId || data?.taskId;
 
-        if (!taskId) {
+        if (typeof taskId !== 'string' || !taskId) {
           throw new SunoApiError("Suno extend response did not include taskId", {
             endpoint,
             status: response.status,
@@ -205,10 +205,10 @@ export const createGenerateCoverImage = (apiKey: string, fetchImpl: typeof fetch
           });
         }
 
-        const data = json as any;
-        const taskId = data?.data?.taskId || data?.taskId;
+        const data = json as Record<string, unknown>;
+        const taskId = (data?.data as Record<string, unknown>)?.taskId || data?.taskId;
 
-        if (!taskId) {
+        if (typeof taskId !== 'string' || !taskId) {
           throw new SunoApiError("Suno cover image response did not include taskId", {
             endpoint,
             status: response.status,
@@ -218,7 +218,7 @@ export const createGenerateCoverImage = (apiKey: string, fetchImpl: typeof fetch
 
         return {
           taskId,
-          images: data?.data?.images,
+          images: (data?.data as Record<string, unknown>)?.images as string[],
           rawResponse: json,
           endpoint,
         };
@@ -273,8 +273,8 @@ export const createBoostStyle = (apiKey: string, fetchImpl: typeof fetch = fetch
           });
         }
 
-        const data = json as any;
-        if (!data?.data?.result) {
+        const data = json as Record<string, unknown>;
+        if (!data?.data || typeof data.data !== 'object' || !('result' in data.data)) {
           throw new SunoApiError("Suno boost style response did not include result", {
             endpoint,
             status: response.status,
@@ -282,11 +282,13 @@ export const createBoostStyle = (apiKey: string, fetchImpl: typeof fetch = fetch
           });
         }
 
+        const dataRecord = data.data as Record<string, unknown>;
+
         return {
-          taskId: data.data.taskId || "",
-          result: data.data.result,
-          creditsConsumed: data.data.creditsConsumed || 0,
-          creditsRemaining: data.data.creditsRemaining || 0,
+          taskId: (dataRecord.taskId as string) || "",
+          result: (dataRecord.result as string),
+          creditsConsumed: (dataRecord.creditsConsumed as number) || 0,
+          creditsRemaining: (dataRecord.creditsRemaining as number) || 0,
           rawResponse: json,
           endpoint,
         };
@@ -344,8 +346,8 @@ export const createGetTimestampedLyrics = (apiKey: string, fetchImpl: typeof fet
           });
         }
 
-        const data = json as any;
-        if (!data?.data) {
+        const data = json as Record<string, unknown>;
+        if (!data?.data || typeof data.data !== 'object') {
           throw new SunoApiError("Suno timestamped lyrics response invalid", {
             endpoint,
             status: response.status,
@@ -353,11 +355,13 @@ export const createGetTimestampedLyrics = (apiKey: string, fetchImpl: typeof fet
           });
         }
 
+        const dataRecord = data.data as Record<string, unknown>;
+
         return {
-          alignedWords: data.data.alignedWords || [],
-          waveformData: data.data.waveformData || [],
-          hootCer: data.data.hootCer || 0,
-          isStreamed: data.data.isStreamed || false,
+          alignedWords: (dataRecord.alignedWords as []) || [],
+          waveformData: (dataRecord.waveformData as number[]) || [],
+          hootCer: (dataRecord.hootCer as number) || 0,
+          isStreamed: (dataRecord.isStreamed as boolean) || false,
           rawResponse: json,
           endpoint,
         };

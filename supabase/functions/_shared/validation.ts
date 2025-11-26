@@ -156,7 +156,6 @@ export const validateData = (data: Record<string, unknown>, schema: ValidationSc
   for (const [fieldName, validatorFunctions] of Object.entries(schema)) {
     const value = data[fieldName];
     
-    // Skip validation if field is not present (unless it's required)
     if (value === undefined) {
       const hasRequired = validatorFunctions.some(fn => fn === validators.required);
       if (!hasRequired) continue;
@@ -176,10 +175,12 @@ export const validateData = (data: Record<string, unknown>, schema: ValidationSc
   }
 };
 
+type SanitizedObject = { [key: string]: unknown };
+
 /**
  * Санитизирует входные данные
  */
-export const sanitizeInput = (data: any): any => {
+export const sanitizeInput = (data: unknown): unknown => {
   if (typeof data === 'string') {
     return validators.sanitizeString(data);
   }
@@ -189,7 +190,7 @@ export const sanitizeInput = (data: any): any => {
   }
 
   if (typeof data === 'object' && data !== null) {
-    const sanitized: any = {};
+    const sanitized: SanitizedObject = {};
     for (const [key, value] of Object.entries(data)) {
       sanitized[key] = sanitizeInput(value);
     }

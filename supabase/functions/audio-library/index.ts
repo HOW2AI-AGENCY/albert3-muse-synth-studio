@@ -4,7 +4,7 @@ import { logger } from '../_shared/logger.ts';
 
 const corsHeaders = createCorsHeaders();
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }

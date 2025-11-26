@@ -18,7 +18,7 @@ interface AddInstrumentalRequest {
   personaId?: string;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: any) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
