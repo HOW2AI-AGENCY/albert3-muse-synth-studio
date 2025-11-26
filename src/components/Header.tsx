@@ -3,7 +3,7 @@ import { Music2, LogOut, User } from "@/utils/iconImports";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
-import ProviderBalance from "./layout/ProviderBalance";
+import { UserBalance } from "./layout/UserBalance";
 import { LanguageSwitcher, useTranslation } from "@/i18n";
 
 interface HeaderProps {
@@ -73,7 +73,7 @@ export const Header = ({ user, onAuthClick }: HeaderProps) => {
 
           {user ? (
             <>
-              <ProviderBalance />
+              <UserBalance />
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20">
                 <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center">
                   <User className="h-4 w-4 text-white" />
