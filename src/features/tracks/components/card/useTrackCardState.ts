@@ -7,7 +7,29 @@ import type { Track } from '@/types/domain/track.types';
 import { supabase } from '@/integrations/supabase/client';
 import { logError } from '@/utils/logger';
 
-export const useTrackCardState = (track: Track) => {
+interface UseTrackCardStateProps {
+  track: Track;
+  onExtend?: (trackId: string) => void;
+  onCover?: (trackId: string) => void;
+  onSeparateStems?: (trackId: string) => void;
+  onAddVocal?: (trackId: string) => void;
+  onDescribeTrack?: (trackId: string) => void;
+  onCreatePersona?: (trackId: string) => void;
+  onUpscaleAudio?: (trackId: string) => void;
+  onGenerateCover?: (trackId: string) => void;
+}
+
+export const useTrackCardState = ({
+  track,
+  onExtend,
+  onCover,
+  onSeparateStems,
+  onAddVocal,
+  onDescribeTrack,
+  onCreatePersona,
+  onUpscaleAudio,
+  onGenerateCover,
+}: UseTrackCardStateProps) => {
   const { toast } = useToast();
   const currentTrack = useCurrentTrack();
   const isPlaying = useIsPlaying();
@@ -241,6 +263,15 @@ export const useTrackCardState = (track: Track) => {
     }
   }, [track.id, track.is_public, toast]);
 
+  const handleExtend = useCallback(() => onExtend?.(operationTargetId), [onExtend, operationTargetId]);
+  const handleCover = useCallback(() => onCover?.(operationTargetId), [onCover, operationTargetId]);
+  const handleSeparateStems = useCallback(() => onSeparateStems?.(operationTargetId), [onSeparateStems, operationTargetId]);
+  const handleAddVocal = useCallback(() => onAddVocal?.(operationTargetId), [onAddVocal, operationTargetId]);
+  const handleDescribeTrack = useCallback(() => onDescribeTrack?.(track.id), [onDescribeTrack, track.id]);
+  const handleCreatePersona = useCallback(() => onCreatePersona?.(track.id), [onCreatePersona, track.id]);
+  const handleUpscaleAudio = useCallback(() => onUpscaleAudio?.(operationTargetId), [onUpscaleAudio, operationTargetId]);
+  const handleGenerateCover = useCallback(() => onGenerateCover?.(track.id), [onGenerateCover, track.id]);
+
   return {
     isHovered,
     setIsHovered,
@@ -263,5 +294,13 @@ export const useTrackCardState = (track: Track) => {
     handleLikeClick,
     handleDownloadClick,
     handleTogglePublic,
+    handleExtend,
+    handleCover,
+    handleSeparateStems,
+    handleAddVocal,
+    handleDescribeTrack,
+    handleCreatePersona,
+    handleUpscaleAudio,
+    handleGenerateCover,
   };
 };
