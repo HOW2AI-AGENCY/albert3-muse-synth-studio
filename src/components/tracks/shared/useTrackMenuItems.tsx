@@ -75,12 +75,13 @@ export const useTrackMenuItems = (props: UnifiedTrackActionsMenuProps): MenuItem
     onDelete,
   } = props;
 
-  // ✅ Resync handler
+  // COMMENT: Обработчик для принудительной синхронизации данных о треке.
   const handleSync = useCallback((trackId: string) => {
     resyncTrack({ trackId, force: false });
   }, [resyncTrack]);
 
   return useMemo<MenuItem[]>(() => {
+    // COMMENT: Локальные переменные для упрощения условий и повышения читаемости.
     const isMurekaTrackLocal = trackMetadata?.provider === 'mureka';
     const isSunoTrackLocal = !isMurekaTrackLocal;
     const isCompletedLocal = trackStatus === 'completed';
@@ -88,6 +89,7 @@ export const useTrackMenuItems = (props: UnifiedTrackActionsMenuProps): MenuItem
     const isFailedLocal = trackStatus === 'failed';
     const items: MenuItem[] = [];
 
+    // COMMENT: Добавляем базовые действия (лайк, скачать), если они не отображаются как "быстрые действия".
     if (!showQuickActions) {
       if (onLike) {
         items.push({
@@ -118,7 +120,7 @@ export const useTrackMenuItems = (props: UnifiedTrackActionsMenuProps): MenuItem
       }
     }
 
-    // ✅ Always show Share in context menu for completed tracks
+    // COMMENT: Действие "Поделиться" всегда доступно для завершенных треков.
     if (onShare && isCompletedLocal) {
       items.push({
         id: 'share',
@@ -148,45 +150,101 @@ export const useTrackMenuItems = (props: UnifiedTrackActionsMenuProps): MenuItem
       });
     }
 
-    if (onSeparateStems && isCompletedLocal) {
-      items.push({
-        id: 'stems',
-        label: 'Разделить на стемы',
-        icon: <Split className="w-4 h-4" />,
-        action: () => onSeparateStems(currentVersionId || trackId),
-        disabled: false,
-      });
-    }
+    // COMMENT: Группировка всех AI-функций под одним флагом `enableAITools` для чистоты и предсказуемости кода.
+    // Этот блок будет добавлен только если AI-инструменты включены и трек успешно сгенерирован.
+    if (enableAITools && isCompletedLocal) {
 
-    const isConvertingWav = !!(trackMetadata && (trackMetadata as any).wavConverting);
-    if (onConvertToWav && isCompletedLocal) {
-      items.push({
-        id: 'convertWav',
-        label: isConvertingWav ? 'Конвертация в WAV…' : 'Конвертировать в WAV',
-        icon: <FileAudio className="w-4 h-4" />,
-        action: () => onConvertToWav(currentVersionId || trackId),
-        disabled: isConvertingWav,
-      });
-    }
+      // COMMENT: Разделение на стемы. Доступно для всех треков.
+      if (onSeparateStems) {
+        items.push({
+          id: 'stems',
+          label: 'Разделить на стемы',
+          icon: <Split className="w-4 h-4" />,
+          action: () => onSeparateStems(currentVersionId || trackId),
+          disabled: false,
+        });
+      }
 
-    // ✅ NEW: Audio Upscaling
-    if (onUpscaleAudio && isCompletedLocal && enableAITools) {
-      items.push({
-        id: 'upscale',
-        label: 'Повысить качество (48kHz)',
-        icon: <Sparkles className="w-4 h-4" />,
-        action: () => onUpscaleAudio(currentVersionId || trackId),
-      });
-    }
+      // COMMENT: Конвертация в WAV. Показывает статус конвертации.
+      const isConvertingWav = !!(trackMetadata && (trackMetadata as any).wavConverting);
+      if (onConvertToWav) {
+        items.push({
+          id: 'convertWav',
+          label: isConvertingWav ? 'Конвертация в WAV…' : 'Конвертировать в WAV',
+          icon: <FileAudio className="w-4 h-4" />,
+          action: () => onConvertToWav(currentVersionId || trackId),
+          disabled: isConvertingWav,
+        });
+      }
 
-    // ✅ NEW: Generate Cover Image
-    if (onGenerateCover && isCompletedLocal && isSunoTrackLocal && enableAITools) {
-      items.push({
-        id: 'generateCover',
-        label: 'Создать обложку AI',
-        icon: <Wand2 className="w-4 h-4" />,
-        action: () => onGenerateCover(trackId),
-      });
+      // COMMENT: Улучшение качества аудио до 48kHz.
+      if (onUpscaleAudio) {
+        items.push({
+          id: 'upscale',
+          label: 'Повысить качество (48kHz)',
+          icon: <Sparkles className="w-4 h-4" />,
+          action: () => onUpscaleAudio(currentVersionId || trackId),
+        });
+      }
+
+      // COMMENT: Генерация обложки с помощью AI. Доступно только для треков Suno.
+      if (onGenerateCover && isSunoTrackLocal) {
+        items.push({
+          id: 'generateCover',
+          label: 'Создать обложку AI',
+          icon: <Wand2 className="w-4 h-4" />,
+          action: () => onGenerateCover(trackId),
+        });
+      }
+
+      // COMMENT: Создание AI-описания для трека.
+      if (onDescribeTrack) {
+        items.push({
+          id: 'describe',
+          label: 'AI Описание',
+          icon: <Sparkles className="w-4 h-4 text-primary" />,
+          action: () => onDescribeTrack(trackId),
+        });
+      }
+
+      // COMMENT: Функции, специфичные для провайдера Suno.
+      if (isSunoTrackLocal) {
+        if (onExtend) {
+          items.push({
+            id: 'extend',
+            label: 'Расширить трек',
+            icon: <Expand className="w-4 h-4" />,
+            action: () => onExtend(currentVersionId || trackId),
+          });
+        }
+
+        if (onCover) {
+          items.push({
+            id: 'cover',
+            label: 'Создать кавер',
+            icon: <Mic2 className="w-4 h-4" />,
+            action: () => onCover(currentVersionId || trackId),
+          });
+        }
+
+        if (!hasVocals && onAddVocal) {
+          items.push({
+            id: 'addVocal',
+            label: 'Добавить вокал',
+            icon: <UserPlus className="w-4 h-4" />,
+            action: () => onAddVocal(currentVersionId || trackId),
+          });
+        }
+
+        if (onCreatePersona) {
+          items.push({
+            id: 'createPersona',
+            label: 'Создать персону',
+            icon: <User className="w-4 h-4 text-primary" />,
+            action: () => onCreatePersona(trackId),
+          });
+        }
+      }
     }
 
     if (onAddToQueue && isCompletedLocal) {
@@ -253,73 +311,7 @@ export const useTrackMenuItems = (props: UnifiedTrackActionsMenuProps): MenuItem
       });
     }
 
-    if (enableAITools && onDescribeTrack && isCompletedLocal) {
-      items.push({
-        id: 'describe',
-        label: 'AI Описание',
-        icon: <Sparkles className="w-4 h-4 text-primary" />,
-        action: () => onDescribeTrack(trackId),
-      });
-    }
-
-    if (isSunoTrackLocal && isCompletedLocal) {
-      if (onExtend) {
-        items.push({
-          id: 'extend',
-          label: 'Расширить трек',
-          icon: <Expand className="w-4 h-4" />,
-          action: () => onExtend(currentVersionId || trackId),
-        });
-      }
-
-      if (onCover) {
-        items.push({
-          id: 'cover',
-          label: 'Создать кавер',
-          icon: <Mic2 className="w-4 h-4" />,
-          action: () => onCover(currentVersionId || trackId),
-        });
-      }
-
-      if (!hasVocals && onAddVocal) {
-        items.push({
-          id: 'addVocal',
-          label: 'Добавить вокал',
-          icon: <UserPlus className="w-4 h-4" />,
-          action: () => onAddVocal(currentVersionId || trackId),
-        });
-      }
-
-      if (onCreatePersona) {
-        items.push({
-          id: 'createPersona',
-          label: 'Создать персону',
-          icon: <User className="w-4 h-4 text-primary" />,
-          action: () => onCreatePersona(trackId),
-        });
-      }
-    }
-
-    // Processing actions
-    if (onConvertToWav && isCompletedLocal && isSunoTrackLocal) {
-      items.push({
-        id: 'convertWav',
-        label: 'Конвертировать в WAV',
-        icon: <FileAudio className="w-4 h-4" />,
-        action: () => onConvertToWav(trackId),
-      });
-    }
-
-    if (onUpscaleAudio && isCompletedLocal) {
-      items.push({
-        id: 'upscale',
-        label: 'Улучшить качество аудио',
-        icon: <Sparkles className="w-4 h-4" />,
-        action: () => onUpscaleAudio(trackId),
-      });
-    }
-
-    // ✅ Add resync option for all completed tracks
+    // COMMENT: Добавляем опцию синхронизации для всех завершенных треков.
     if (isCompletedLocal) {
       items.push({
         id: 'resync',
@@ -329,6 +321,7 @@ export const useTrackMenuItems = (props: UnifiedTrackActionsMenuProps): MenuItem
       });
     }
 
+    // COMMENT: Действия для треков в процессе обработки или с ошибкой.
     if (onSync && isProcessingLocal) {
       items.push({
         id: 'sync',
@@ -391,8 +384,10 @@ export const useTrackMenuItems = (props: UnifiedTrackActionsMenuProps): MenuItem
     onDescribeTrack,
     onSeparateStems,
     onConvertToWav,
+    onUpscaleAudio,
     onExtend,
     onCover,
+    onGenerateCover,
     onAddVocal,
     onCreatePersona,
     onRemix,
@@ -407,5 +402,6 @@ export const useTrackMenuItems = (props: UnifiedTrackActionsMenuProps): MenuItem
     onRetry,
     onReport,
     onDelete,
+    handleSync
   ]);
 };
