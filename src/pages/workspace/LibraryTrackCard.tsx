@@ -18,6 +18,9 @@ interface LibraryTrackCardProps {
     handleGenerateCover: (trackId: string) => void;
     handleRetry: (trackId: string) => void;
     handleDelete: (trackId: string) => void;
+    enableAITools?: boolean;
+    handleSwitchVersion?: (trackId: string) => void;
+    handleDescribeTrack?: (trackId: string) => void;
 }
 
 export const LibraryTrackCard = React.memo(({
@@ -35,10 +38,15 @@ export const LibraryTrackCard = React.memo(({
     handleGenerateCover,
     handleRetry,
     handleDelete,
+    enableAITools,
+    handleSwitchVersion,
+    handleDescribeTrack,
 }: LibraryTrackCardProps) => {
     const memoizedOnClick = useCallback(() => handleTrackPlay(track), [handleTrackPlay, track]);
     const memoizedOnShare = useCallback(() => handleShare(track.id), [handleShare, track.id]);
     const memoizedOnSeparateStems = useCallback(() => handleSeparateStems(track.id), [handleSeparateStems, track.id]);
+    const memoizedOnSwitchVersion = useCallback(() => handleSwitchVersion?.(track.id), [handleSwitchVersion, track.id]);
+    const memoizedOnDescribeTrack = useCallback(() => handleDescribeTrack?.(track.id), [handleDescribeTrack, track.id]);
     const memoizedOnExtend = useCallback(() => handleExtend(track.id), [handleExtend, track.id]);
     const memoizedOnCover = useCallback(() => handleCover(track.id), [handleCover, track.id]);
     const memoizedOnAddVocal = useCallback(() => handleAddVocal(track.id), [handleAddVocal, track.id]);
@@ -63,6 +71,9 @@ export const LibraryTrackCard = React.memo(({
                 onGenerateCover={memoizedOnGenerateCover}
                 onRetry={memoizedOnRetry}
                 onDelete={memoizedOnDelete}
+                enableAITools={enableAITools}
+                onSwitchVersion={memoizedOnSwitchVersion}
+                onDescribeTrack={memoizedOnDescribeTrack}
             />
             {loadingTrackId === track.id && (
                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-3xl bg-background/80 backdrop-blur-sm">

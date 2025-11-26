@@ -351,12 +351,26 @@ const LibraryContent: React.FC = () => {
     dialogs.openAddVocal(trackId);
   }, [dialogs]);
 
-  const handleCreatePersona = useCallback((trackId: string) => {
+  const handleCreatePersona = useCallback((trackId:string) => {
     const track = tracks.find(t => t.id === trackId);
     if (!track) return;
 
     dialogs.openCreatePersona(track as any);
   }, [tracks, dialogs]);
+
+  const handleSwitchVersion = useCallback((trackId: string) => {
+    const track = tracks.find(t => t.id === trackId);
+    if (!track) return;
+    // NOTE: This is a placeholder for the actual implementation
+    console.log("Switching version for track:", trackId);
+  }, [tracks]);
+
+  const handleDescribeTrack = useCallback((trackId: string) => {
+    const track = tracks.find(t => t.id === trackId);
+    if (!track) return;
+    // NOTE: This is a placeholder for the actual implementation
+    console.log("Describing track:", trackId);
+  }, [tracks]);
 
   const handleUpscaleAudio = useCallback((trackId: string) => {
     const track = tracks.find(t => t.id === trackId);
@@ -587,6 +601,9 @@ const LibraryContent: React.FC = () => {
                         handleGenerateCover={handleGenerateCover}
                         handleRetry={handleRetry}
                         handleDelete={handleDelete}
+                        handleSwitchVersion={handleSwitchVersion}
+                        handleDescribeTrack={handleDescribeTrack}
+                        enableAITools={true}
                       />
                     );
                   })}

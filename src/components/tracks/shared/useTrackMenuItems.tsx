@@ -56,6 +56,7 @@ export const useTrackMenuItems = (props: UnifiedTrackActionsMenuProps): MenuItem
     onSeparateStems,
     onConvertToWav,
     onUpscaleAudio,
+    onSwitchVersion,
     onExtend,
     onCover,
     onGenerateCover,
@@ -118,6 +119,15 @@ export const useTrackMenuItems = (props: UnifiedTrackActionsMenuProps): MenuItem
           shortcut: enableKeyboardShortcuts ? 'W' : undefined,
         });
       }
+    }
+
+    if (onSwitchVersion) {
+      items.push({
+        id: 'switchVersion',
+        label: 'Сменить версию',
+        icon: <RefreshCw className="w-4 h-4" />,
+        action: onSwitchVersion,
+      });
     }
 
     // COMMENT: Действие "Поделиться" всегда доступно для завершенных треков.
