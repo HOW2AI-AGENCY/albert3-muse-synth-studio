@@ -2,6 +2,7 @@ import { Search } from "@/utils/iconImports";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { UserBalance } from '@/components/balance/UserBalance';
 
 interface WorkspaceHeaderProps {
   className?: string;
@@ -26,6 +27,7 @@ const WorkspaceHeader = ({ className }: WorkspaceHeaderProps) => {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">
+        <UserBalance />
         <Button
           variant="ghost"
           size="icon"

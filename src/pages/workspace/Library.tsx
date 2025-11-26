@@ -639,9 +639,32 @@ const LibraryContent: React.FC = () => {
           )}
 
           {filters.viewMode === 'optimized' && (
+            // START: AI-generated code
+            // JULES: Восстанавливаем интерактивность "оптимизированного" вида.
+            // Теперь он не просто "read-only", а полнофункциональный список.
             <OptimizedTrackList
               tracks={filteredAndSortedTracks as any}
+              playingTrackId={currentTrack?.id}
+              onPlay={handleTrackPlay as any}
+              actionMenuProps={{
+                // JULES: Собираем все необходимые обработчики в один объект
+                // для передачи в меню действий.
+                onShare,
+                onSeparateStems,
+                onExtend,
+                onCover,
+                onAddVocal,
+                onCreatePersona,
+                onUpscaleAudio,
+                onGenerateCover: handleGenerateCover,
+                onRetry,
+                onDelete,
+                onSwitchVersion,
+                onDescribeTrack,
+                enableAITools: true,
+              }}
             />
+            // END: AI-generated code
           )}
         </>
       )}
