@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatDuration, formatDate, formatFileSize, formatTime } from '../formatters';
+import { formatDuration, formatDate, formatFileSize, formatTime, formatNumber, truncateText } from '../formatters';
 
 describe('formatDuration', () => {
   it('formats seconds correctly', () => {
@@ -69,19 +69,19 @@ describe('formatFileSize', () => {
   });
 
   it('formats kilobytes correctly', () => {
-    expect(formatFileSize(1024)).toBe('1.0 КБ');
-    expect(formatFileSize(1536)).toBe('1.5 КБ');
-    expect(formatFileSize(10240)).toBe('10.0 КБ');
+    expect(formatFileSize(1024)).toBe('1,0 КБ');
+    expect(formatFileSize(1536)).toBe('1,5 КБ');
+    expect(formatFileSize(10240)).toBe('10,0 КБ');
   });
 
   it('formats megabytes correctly', () => {
-    expect(formatFileSize(1048576)).toBe('1.0 МБ');
-    expect(formatFileSize(5242880)).toBe('5.0 МБ');
+    expect(formatFileSize(1048576)).toBe('1,0 МБ');
+    expect(formatFileSize(5242880)).toBe('5,0 МБ');
   });
 
   it('formats gigabytes correctly', () => {
-    expect(formatFileSize(1073741824)).toBe('1.0 ГБ');
-    expect(formatFileSize(2147483648)).toBe('2.0 ГБ');
+    expect(formatFileSize(1073741824)).toBe('1,0 ГБ');
+    expect(formatFileSize(2147483648)).toBe('2,0 ГБ');
   });
 
   it('handles null and undefined gracefully', () => {
@@ -91,5 +91,48 @@ describe('formatFileSize', () => {
 
   it('handles negative values gracefully', () => {
     expect(formatFileSize(-100)).toBe('0 Б');
+  });
+});
+
+describe('formatNumber', () => {
+  it('should format small numbers as-is', () => {
+    expect(formatNumber(0)).toBe('0');
+    expect(formatNumber(42)).toBe('42');
+    expect(formatNumber(999)).toBe('999');
+  });
+
+  it('should format thousands with a non-breaking space separator', () => {
+    expect(formatNumber(1000)).toBe('1\u00A0000');
+    expect(formatNumber(1500)).toBe('1\u00A0500');
+    expect(formatNumber(999999)).toBe('999\u00A0999');
+  });
+
+  it('should format millions with non-breaking space separators', () => {
+    expect(formatNumber(1000000)).toBe('1\u00A0000\u00A0000');
+    expect(formatNumber(2500000)).toBe('2\u00A0500\u00A0000');
+  });
+});
+
+describe('truncateText', () => {
+  it('should not truncate text shorter than maxLength', () => {
+    expect(truncateText('Hello', 10)).toBe('Hello');
+  });
+
+  it('should truncate long text and add ellipsis', () => {
+    const longText = 'This is a very long text';
+    expect(truncateText(longText, 15)).toBe('This is a ve...');
+  });
+
+  it('should return ellipsis if maxLength is 3 or less', () => {
+    expect(truncateText('Looooong', 3)).toBe('...');
+    expect(truncateText('Looooong', 2)).toBe('...');
+  });
+
+  it('should return original text if it equals maxLength', () => {
+      expect(truncateText('Hello', 5)).toBe('Hello');
+  });
+
+  it('should return empty string for empty input', () => {
+      expect(truncateText('', 10)).toBe('');
   });
 });

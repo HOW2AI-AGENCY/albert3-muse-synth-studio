@@ -39,7 +39,12 @@ export const formatTime = (seconds: number): string => {
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 };
 
-export const formatDuration = formatTime;
+export const formatDuration = (seconds: number): string => {
+  if (seconds === null || seconds === undefined || isNaN(seconds)) {
+    return '—';
+  }
+  return formatTime(seconds);
+};
 
 /**
  * Formats a number with non-breaking spaces as thousands separators (Russian locale).
