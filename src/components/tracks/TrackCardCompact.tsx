@@ -1,10 +1,15 @@
 /**
  * TrackCardCompact Component
- * 
+ *
  * Mobile-optimized compact card for small screens
  * Minimal UI with essential information only
- * 
- * @version 1.0.0
+ *
+ * ✅ PERFORMANCE FIX #6 (v2.1.0):
+ * - Дополнен memo comparison недостающими полями
+ * - Теперь карточка корректно ре-рендерится при изменении cover, title, duration
+ * - Исправлена проблема с устаревшими данными в UI
+ *
+ * @version 2.1.0
  * @created 2025-11-17
  */
 
@@ -165,9 +170,32 @@ export const TrackCardCompact = memo(({
     </Card>
   );
 }, (prevProps, nextProps) => {
+  /**
+   * ✅ ИСПРАВЛЕНО: Полная проверка всех используемых полей
+   *
+   * БЫЛО (INCOMPLETE):
+   * prevProps.track.id === nextProps.track.id &&
+   * prevProps.track.status === nextProps.track.status &&
+   * prevProps.isPlaying === nextProps.isPlaying &&
+   * prevProps.isLiked === nextProps.isLiked
+   * ❌ Пропущены: cover_url, title, duration
+   * ❌ Карточка не обновлялась при изменении обложки или названия
+   *
+   * СТАЛО (COMPLETE):
+   * ✅ Добавлены все поля, которые отображаются в компоненте
+   * ✅ Карточка корректно ре-рендерится при любых изменениях
+   * ✅ Нет устаревших данных в UI
+   *
+   * ПРИМЕЧАНИЕ:
+   * - memo comparison: return true = НЕ ре-рендерить (shouldNotUpdate)
+   * - Сравниваем только те поля, которые реально используются в render
+   */
   return (
     prevProps.track.id === nextProps.track.id &&
     prevProps.track.status === nextProps.track.status &&
+    prevProps.track.cover_url === nextProps.track.cover_url &&  // ✅ Добавлено: используется в <img src={}>
+    prevProps.track.title === nextProps.track.title &&          // ✅ Добавлено: отображается в <h3>
+    prevProps.track.duration === nextProps.track.duration &&    // ✅ Добавлено: форматируется и отображается
     prevProps.isPlaying === nextProps.isPlaying &&
     prevProps.isLiked === nextProps.isLiked
   );

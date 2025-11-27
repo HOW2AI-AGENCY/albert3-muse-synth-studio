@@ -1,29 +1,72 @@
 /**
  * @file MiniPlayer.tsx
  * @description A sleek, compact, and performant mini audio player for mobile devices.
- * @version 2.0.0
+ *
+ * ✅ PERFORMANCE FIX #4 (v2.1.0):
+ * - Объединены 3 подписки на store в одну
+ * - Добавлен shallow comparison для оптимизации
+ * - Уменьшен overhead от множественных подписок
+ * - Компонент все еще ре-рендерится при currentTime (60 FPS), но с меньшими затратами
+ *
+ * @version 2.1.0
  */
 import { memo, useCallback } from 'react';
 import { Play, Pause, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAudioPlayerStore, useCurrentTrack, useIsPlaying } from '@/stores/audioPlayerStore';
+import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
-
 import { useSwipeGesture } from '@/hooks/useSwipeGesture';
+import { shallow } from 'zustand/shallow';
 
 interface MiniPlayerProps {
   onExpand: () => void;
 }
 
 const MiniPlayerComponent = ({ onExpand }: MiniPlayerProps) => {
-  const currentTrack = useCurrentTrack();
-  const isPlaying = useIsPlaying();
-  const { togglePlayPause, clearCurrentTrack, currentTime, duration } = useAudioPlayerStore(state => ({
-    togglePlayPause: state.togglePlayPause,
-    clearCurrentTrack: state.clearCurrentTrack,
-    currentTime: state.currentTime,
-    duration: state.duration,
-  }));
+  /**
+   * ✅ PERFORMANCE FIX #4: Единая подписка на store
+   *
+   * ПРОБЛЕМА (до исправления):
+   * const currentTrack = useCurrentTrack();              // Подписка 1
+   * const isPlaying = useIsPlaying();                    // Подписка 2
+   * const { ... } = useAudioPlayerStore(state => ...);   // Подписка 3
+   * ❌ 3 отдельных подписки на один store
+   * ❌ Лишний overhead при обновлении state
+   *
+   * РЕШЕНИЕ:
+   * - Объединяем все в одну подписку с селектором
+   * - Используем shallow comparison для избежания лишних ре-рендеров
+   * - Одна подписка = меньше overhead
+   *
+   * PERFORMANCE GAIN:
+   * - 66% reduction в количестве подписок (3 → 1)
+   * - Меньше работы для Zustand при обновлении state
+   * - Оптимизация памяти (меньше listener'ов)
+   *
+   * NOTE:
+   * - Компонент все еще ре-рендерится при обновлении currentTime (60 FPS)
+   * - Это ожидаемое поведение для progress bar
+   * - Главное - уменьшен overhead от множественных подписок
+   */
+  const {
+    currentTrack,
+    isPlaying,
+    togglePlayPause,
+    clearCurrentTrack,
+    currentTime,
+    duration,
+  } = useAudioPlayerStore(
+    (state) => ({
+      currentTrack: state.currentTrack,
+      isPlaying: state.isPlaying,
+      togglePlayPause: state.togglePlayPause,
+      clearCurrentTrack: state.clearCurrentTrack,
+      currentTime: state.currentTime,
+      duration: state.duration,
+    }),
+    shallow  // ✅ Shallow comparison для оптимизации
+  );
+
   const { vibrate } = useHapticFeedback();
 
   const handlePlayPause = useCallback((e: React.MouseEvent) => {
