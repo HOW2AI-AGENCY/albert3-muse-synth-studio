@@ -62,6 +62,33 @@ export const FullScreenPlayerControls = memo(({
     }
   }, [vibrate, currentTrack, toast]);
 
+  // ✅ FIX: Wrap inline event handlers with vibrate in useCallback
+  // Prevents creating new function instances on every render
+  const handlePrevious = useCallback(() => {
+    vibrate('light');
+    onPrevious();
+  }, [vibrate, onPrevious]);
+
+  const handlePlayPause = useCallback(() => {
+    vibrate('light');
+    onPlayPause();
+  }, [vibrate, onPlayPause]);
+
+  const handleNext = useCallback(() => {
+    vibrate('light');
+    onNext();
+  }, [vibrate, onNext]);
+
+  const handleToggleLike = useCallback(() => {
+    vibrate('light');
+    onToggleLike();
+  }, [vibrate, onToggleLike]);
+
+  const handleToggleMute = useCallback(() => {
+    vibrate('light');
+    onToggleMute();
+  }, [vibrate, onToggleMute]);
+
   return (
     <div className={cn("w-full animate-fade-in", className)}>
       {/* Primary Controls */}
@@ -69,10 +96,7 @@ export const FullScreenPlayerControls = memo(({
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => {
-            vibrate('light');
-            onPrevious();
-          }}
+          onClick={handlePrevious}
           className="h-11 w-11 md:h-12 md:w-12 lg:h-14 lg:w-14 hover:bg-primary/10 hover:scale-110 transition-all duration-200 touch-manipulation"
           aria-label="Предыдущий трек"
         >
@@ -81,10 +105,7 @@ export const FullScreenPlayerControls = memo(({
 
         <Button
           size="icon"
-          onClick={() => {
-            vibrate('light');
-            onPlayPause();
-          }}
+          onClick={handlePlayPause}
           className="h-14 w-14 md:h-16 md:w-16 lg:h-20 lg:w-20 rounded-full bg-gradient-primary hover:shadow-glow-primary hover:scale-110 transition-all duration-200 touch-manipulation"
           aria-label={isPlaying ? "Пауза" : "Воспроизвести"}
         >
@@ -94,10 +115,7 @@ export const FullScreenPlayerControls = memo(({
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => {
-            vibrate('light');
-            onNext();
-          }}
+          onClick={handleNext}
           className="h-12 w-12 sm:h-14 sm:w-14 hover:bg-primary/10 hover:scale-110 transition-all duration-200"
           aria-label="Следующий трек"
         >
@@ -110,10 +128,7 @@ export const FullScreenPlayerControls = memo(({
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => {
-            vibrate('light');
-            onToggleLike();
-          }}
+          onClick={handleToggleLike}
           className={cn(
             "h-11 w-11 min-h-[44px] min-w-[44px] hover:scale-110 transition-all duration-200",
             isLiked ? 'text-accent hover:bg-accent/10' : 'hover:bg-primary/10'
@@ -131,10 +146,7 @@ export const FullScreenPlayerControls = memo(({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => {
-              vibrate('light');
-              onToggleMute();
-            }}
+            onClick={handleToggleMute}
             className="h-11 w-11 min-h-[44px] min-w-[44px] md:h-8 md:w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
             aria-label={isMuted ? "Включить звук" : "Выключить звук"}
           >
@@ -162,12 +174,20 @@ export const FullScreenPlayerControls = memo(({
       </div>
     </div>
   );
-}, (prev, next) => 
+}, (prev, next) =>
   prev.isPlaying === next.isPlaying &&
   prev.volume === next.volume &&
   prev.isMuted === next.isMuted &&
   prev.isLiked === next.isLiked &&
-  prev.currentTrack.audio_url === next.currentTrack.audio_url
+  prev.currentTrack.audio_url === next.currentTrack.audio_url &&
+  prev.currentTrack.title === next.currentTrack.title &&
+  prev.className === next.className &&
+  prev.onPlayPause === next.onPlayPause &&
+  prev.onPrevious === next.onPrevious &&
+  prev.onNext === next.onNext &&
+  prev.onVolumeChange === next.onVolumeChange &&
+  prev.onToggleMute === next.onToggleMute &&
+  prev.onToggleLike === next.onToggleLike
 );
 
 FullScreenPlayerControls.displayName = 'FullScreenPlayerControls';
