@@ -116,7 +116,9 @@ describe('audioPlayerReducer', () => {
 
   describe('SET_CURRENT_TIME', () => {
     it('should update current time', () => {
-      const state = audioPlayerReducer(initialAudioState, {
+      // First set duration to allow currentTime to be set
+      const stateWithDuration = { ...initialAudioState, duration: 120 };
+      const state = audioPlayerReducer(stateWithDuration, {
         type: 'SET_CURRENT_TIME',
         payload: 60,
       });

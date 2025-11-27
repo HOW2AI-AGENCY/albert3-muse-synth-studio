@@ -159,8 +159,15 @@ describe('useAudioQueue', () => {
         result.current.addToQueue(mockTrack1);
       });
 
+      // First playNext should play the track
       act(() => {
         result.current.playNext(mockPlayTrack);
+      });
+
+      expect(mockPlayTrack).toHaveBeenCalledTimes(1);
+
+      // Second playNext should not play anything (end of queue)
+      act(() => {
         result.current.playNext(mockPlayTrack);
       });
 
@@ -178,10 +185,16 @@ describe('useAudioQueue', () => {
         result.current.addToQueue(mockTrack3);
       });
 
-      // Переход к track-3
+      // Переход к track-3 (вызываем playNext отдельно для каждого перехода)
       act(() => {
         result.current.playNext(mockPlayTrack);
+      });
+
+      act(() => {
         result.current.playNext(mockPlayTrack);
+      });
+
+      act(() => {
         result.current.playNext(mockPlayTrack);
       });
 
