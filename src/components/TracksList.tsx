@@ -1,18 +1,17 @@
 /**
  * TracksList — упрощенный компонент списка треков
  * Используется на странице Генерации.
+ * Отображает треки в виде сетки с минимальным набором действий
  *
- * @version 3.1.0
+ * @version 3.2.0
  */
-import { memo, useState, useMemo, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDeleteTrack } from '@/hooks/useDeleteTrack';
 import { useToast } from '@/hooks/use-toast';
 import { logger } from '@/utils/logger';
 import { TrackCard } from '@/features/tracks/components/TrackCard';
-import {
-  LazyTrackDeleteDialog,
-} from '@/components/LazyDialogs';
+import { LazyTrackDeleteDialog } from '@/components/LazyDialogs';
 import type { Track } from '@/types/track.types';
 
 interface TracksListProps {
@@ -72,9 +71,6 @@ const TracksListComponent = ({
     }
   }, [dialogState.delete, deleteTrack, onRefresh, toast]);
 
-  // Мемоизируем треки для оптимизации
-  const memoizedTracks = useMemo(() => tracks, [tracks]);
-
   /**
    * Рендер одного трека
    * Использует TrackCard с полным набором callbacks для контекстного меню
@@ -113,10 +109,7 @@ const TracksListComponent = ({
         />
       );
     },
-    [
-      handleDelete,
-      tracks,
-    ]
+    [handleDelete, tracks]
   );
 
   return (
@@ -128,7 +121,7 @@ const TracksListComponent = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          {memoizedTracks.map(renderTrackItem)}
+          {tracks.map(renderTrackItem)}
         </motion.div>
       </AnimatePresence>
 
@@ -146,4 +139,4 @@ const TracksListComponent = ({
   );
 };
 
-export const TracksList = memo(TracksListComponent);
+export const TracksList = TracksListComponent;

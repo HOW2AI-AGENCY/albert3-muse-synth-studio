@@ -88,8 +88,8 @@ export const TrackListItem = React.memo<TrackListItemProps>(({
             trackId={track.id}
             trackStatus={track.status}
             trackMetadata={track.metadata}
-            isLiked={false} // Track likes are not supported on list items yet
-            currentVersionId={track.id} // Default to track id, can be overridden
+            isLiked={false} // Лайки пока не поддерживаются для строчных элементов
+            currentVersionId={track.id} // По умолчанию ID трека, может быть переопределен
             {...actionMenuProps}
             variant="minimal"
             layout="flat"
