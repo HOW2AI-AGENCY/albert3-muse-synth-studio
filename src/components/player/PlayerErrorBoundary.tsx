@@ -149,5 +149,3 @@ export class PlayerErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
-
-PlayerErrorBoundary.displayName = 'PlayerErrorBoundary';

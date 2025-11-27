@@ -16,7 +16,6 @@ import { Button } from '@/components/ui/button';
 import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 import { useSwipeGesture } from '@/hooks/useSwipeGesture';
-import { shallow } from 'zustand/shallow';
 
 interface MiniPlayerProps {
   onExpand: () => void;
@@ -63,8 +62,7 @@ const MiniPlayerComponent = ({ onExpand }: MiniPlayerProps) => {
       clearCurrentTrack: state.clearCurrentTrack,
       currentTime: state.currentTime,
       duration: state.duration,
-    }),
-    shallow  // ✅ Shallow comparison для оптимизации
+    })
   );
 
   const { vibrate } = useHapticFeedback();
