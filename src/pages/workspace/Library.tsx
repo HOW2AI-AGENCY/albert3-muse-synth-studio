@@ -16,6 +16,7 @@ import { OptimizedTrackList } from "@/components/OptimizedTrackList";
 import { VirtualizedTrackGrid } from "@/components/tracks/VirtualizedTrackGrid";
 import { LibrarySkeleton } from "@/components/skeletons/LibrarySkeleton";
 import { TrackStatusMonitor } from "@/components/TrackStatusMonitor";
+import { DetailPanelMobileV2 } from "@/features/tracks/ui/DetailPanelMobileV2";
 import {
   LazySeparateStemsDialog,
   LazyExtendTrackDialog,
@@ -78,6 +79,10 @@ const LibraryContent: React.FC = () => {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
+
+  // ✅ FIX #10: Detail panel state for mobile
+  const [detailPanelTrack, setDetailPanelTrack] = useState<any | null>(null);
+  const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
 
   // Automatic cleanup of failed tracks
   // Ensure userId is string or undefined, not null
@@ -371,11 +376,19 @@ const LibraryContent: React.FC = () => {
     logger.info("Switching version for track", 'Library', { trackId });
   }, [tracks]);
 
+  /**
+   * ✅ FIX #10: Open detail panel for track
+   * Открывает мобильную панель с полной информацией о треке
+   */
   const handleDescribeTrack = useCallback((trackId: string) => {
     const track = tracks.find(t => t.id === trackId);
-    if (!track) return;
-    // NOTE: This is a placeholder for the actual implementation
-    logger.info("Describing track", 'Library', { trackId });
+    if (!track) {
+      logger.warn("Track not found for detail panel", 'Library', { trackId });
+      return;
+    }
+    logger.info("Opening detail panel for track", 'Library', { trackId, title: track.title });
+    setDetailPanelTrack(track);
+    setIsDetailPanelOpen(true);
   }, [tracks]);
 
   const handleUpscaleAudio = useCallback((trackId: string) => {
@@ -606,6 +619,16 @@ const LibraryContent: React.FC = () => {
             <div className="w-full" style={{ height: 'calc(100vh - 280px)' }}>
               <OptimizedTrackList
                 tracks={filteredAndSortedTracks as any}
+                onTrackPlay={handleTrackPlay}
+                onShare={handleShare}
+                onSeparateStems={handleSeparateStems}
+                onExtend={handleExtend}
+                onCover={handleCover}
+                onAddVocal={handleAddVocal}
+                onCreatePersona={handleCreatePersona}
+                onRetry={handleRetry}
+                onDelete={handleDelete}
+                onDescribeTrack={handleDescribeTrack}
               />
             </div>
           )}
@@ -613,6 +636,16 @@ const LibraryContent: React.FC = () => {
           {filters.viewMode === 'optimized' && (
             <OptimizedTrackList
               tracks={filteredAndSortedTracks as any}
+              onTrackPlay={handleTrackPlay}
+              onShare={handleShare}
+              onSeparateStems={handleSeparateStems}
+              onExtend={handleExtend}
+              onCover={handleCover}
+              onAddVocal={handleAddVocal}
+              onCreatePersona={handleCreatePersona}
+              onRetry={handleRetry}
+              onDelete={handleDelete}
+              onDescribeTrack={handleDescribeTrack}
             />
           )}
         </>
@@ -711,6 +744,21 @@ const LibraryContent: React.FC = () => {
           trackId={dialogs.delete.data.id}
           trackTitle={dialogs.delete.data.title}
           onConfirm={confirmDelete}
+        />
+      )}
+
+      {/* ✅ FIX #10: Mobile detail panel for track details */}
+      {detailPanelTrack && (
+        <DetailPanelMobileV2
+          track={detailPanelTrack}
+          open={isDetailPanelOpen}
+          onOpenChange={setIsDetailPanelOpen}
+          onDelete={() => {
+            // Close panel and refresh tracks after delete
+            setIsDetailPanelOpen(false);
+            setDetailPanelTrack(null);
+            refreshTracks();
+          }}
         />
       )}
     </div>

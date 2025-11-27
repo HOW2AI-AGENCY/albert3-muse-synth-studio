@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "react-router-dom";
 import { GlobalErrorBoundary } from "@/components/errors/GlobalErrorBoundary";
+import { PlayerErrorBoundary } from "@/components/player/PlayerErrorBoundary";
 
 import router from "./router";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -130,7 +131,10 @@ const App = () => {
                       <RouterProvider router={router} />
                       {/* ✅ Lazy load heavy components outside of the main Suspense block */}
                       <Suspense fallback={null}>
-                        <LazyGlobalAudioPlayer />
+                        {/* ✅ FIX #8: Wrap player in PlayerErrorBoundary to prevent fullscreen crashes */}
+                        <PlayerErrorBoundary>
+                          <LazyGlobalAudioPlayer />
+                        </PlayerErrorBoundary>
                         {import.meta.env.DEV && !isMobile && (
                             <LazyPerformanceMonitorWidget />
                         )}
