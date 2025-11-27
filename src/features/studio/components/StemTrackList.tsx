@@ -4,6 +4,7 @@ import StemTrack from './StemTrack';
 import { useStudioStore } from '@/stores/studioStore';
 import { useStemPlayer } from '../hooks/useStemPlayer';
 import { useStemExporter } from '../hooks/useStemExporter';
+import { logger } from '@/utils/logger';
 
 /**
  * StemTrackList
@@ -21,7 +22,7 @@ const StemTrackList: React.FC = () => {
 
   const handleUseAsReference = (stemId: string) => {
     const stem = stems.find(s => s.id === stemId);
-    console.log(`Using ${stem?.name} as a reference for a new track.`);
+    logger.info(`Using ${stem?.name} as a reference for a new track`, 'StemTrackList', { stemId, stemName: stem?.name });
     // Here you would typically navigate to the generation page
     // with the stem's audioUrl as a parameter.
   };
@@ -48,7 +49,7 @@ const StemTrackList: React.FC = () => {
           onVolumeChange={(volume) => updateStemVolume(stem.id, volume)}
           onMuteToggle={() => toggleMute(stem.id)}
           onSoloToggle={() => toggleSolo(stem.id)}
-          onRegenerate={() => console.log(`Regenerate ${stem.name}`)}
+          onRegenerate={() => logger.info(`Regenerate ${stem.name}`, 'StemTrackList', { stemId: stem.id, stemName: stem.name })}
           onDownload={() => downloadStem(stem.id)}
           onUseAsReference={() => handleUseAsReference(stem.id)}
         />

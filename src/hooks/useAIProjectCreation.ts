@@ -5,7 +5,7 @@
 
 import { useState, useCallback } from 'react';
 // @ts-expect-error - supabase client for future direct queries
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import { supabase } from '@/integrations/supabase/client';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
 import { useToast } from '@/hooks/use-toast';

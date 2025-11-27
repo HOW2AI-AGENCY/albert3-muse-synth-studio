@@ -105,12 +105,7 @@ export const validateFile = async (file: File, type: FileType): Promise<void> =>
  * Kept for backward compatibility.
  */
 export const validateAudioFile = async (file: File): Promise<void> => {
-  try {
-    await validateFile(file, 'audio');
-  } catch (error) {
-    // Re-throw the original error to preserve the stack trace.
-    throw error;
-  }
+  await validateFile(file, 'audio');
 };
 
 export const formatFileSize = (bytes: number): string => {

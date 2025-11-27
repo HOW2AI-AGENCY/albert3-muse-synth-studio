@@ -86,25 +86,25 @@ const TracksListComponent = ({
             if (t) handleDelete(trackId, t.title);
           }}
           onExtend={(trackId: string) => {
-            console.log('Extend track:', trackId);
+            logger.info('Extend track:', 'TracksList', { trackId });
           }}
           onCover={(trackId: string) => {
-            console.log('Create cover:', trackId);
+            logger.info('Create cover:', 'TracksList', { trackId });
           }}
           onSeparateStems={(trackId: string) => {
-            console.log('Separate stems:', trackId);
+            logger.info('Separate stems:', 'TracksList', { trackId });
           }}
           onAddVocal={(trackId: string) => {
-            console.log('Add vocal:', trackId);
+            logger.info('Add vocal:', 'TracksList', { trackId });
           }}
           onDescribeTrack={(trackId: string) => {
-            console.log('Describe track:', trackId);
+            logger.info('Describe track:', 'TracksList', { trackId });
           }}
           onCreatePersona={(trackId: string) => {
-            console.log('Create persona:', trackId);
+            logger.info('Create persona:', 'TracksList', { trackId });
           }}
           onRetry={(trackId: string) => {
-            console.log('Retry track:', trackId);
+            logger.info('Retry track:', 'TracksList', { trackId });
           }}
         />
       );
