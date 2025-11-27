@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { TrackVersions, TrackVersionComparison } from "@/features/tracks";
 import { TrackVersionSelector } from "@/features/tracks/ui/TrackVersionSelector";
 import { EmptyStateCard } from "@/components/layout/EmptyStateCard";
-import type { Track, TrackVersion } from "./types";
+import type { Track } from "./types";
+import type { TrackVersion } from "@/types/track.types";
 
 interface VersionsTabProps {
     track: Track;
@@ -48,7 +49,7 @@ export const VersionsTab = ({
                             is_original: version.is_original
                         }))} selectedVersionId={selectedVersionId} onSelect={handleVersionSelect} />
                         {versions.length >= 2 && <TrackVersionComparison trackId={track.id} versions={versions} trackMetadata={track.metadata ?? null} leftVersionId={comparisonLeftId} rightVersionId={comparisonRightId} onLeftVersionChange={handleComparisonLeftChange} onRightVersionChange={handleComparisonRightChange} onSwapSides={handleComparisonSwap} />}
-                        <TrackVersions trackId={track.id} versions={versions} trackMetadata={track.metadata ?? null} onVersionUpdate={loadVersionsAndStems} />
+                        <TrackVersions trackId={track.id} versions={versions as any} trackMetadata={track.metadata ?? null} onVersionUpdate={loadVersionsAndStems} />
                     </CardContent>
                 </Card>
             </>}

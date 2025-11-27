@@ -3,7 +3,7 @@ import type { AudioPlayerTrack } from "@/types/track.types";
 
 export interface TrackVersionLike {
   id: string;
-  variant_index: number;
+  variant_index: number | null;
   is_preferred_variant: boolean | null;
   is_primary_variant?: boolean | null;
   source_variant_index?: number | null;
@@ -33,15 +33,15 @@ export const buildAudioPlayerTrack = (
   trackId: string
 ): AudioPlayerTrack => ({
   id: version.id,
-  title: `V${version.variant_index + 1}`,
+  title: `V${(version.variant_index ?? 0) + 1}`,
   audio_url: version.audio_url || '',
-  cover_url: version.cover_url,
-  duration: version.duration,
+  cover_url: version.cover_url ?? undefined,
+  duration: version.duration ?? undefined,
   status: "completed",
   style_tags: [],
-  lyrics: version.lyrics,
+  lyrics: version.lyrics ?? undefined,
   parentTrackId: trackId,
-  versionNumber: version.variant_index + 1,
-  isMasterVersion: version.is_preferred_variant,
+  versionNumber: (version.variant_index ?? 0) + 1,
+  isMasterVersion: version.is_preferred_variant ?? undefined,
   sourceVersionNumber: version.source_variant_index ?? null,
 });

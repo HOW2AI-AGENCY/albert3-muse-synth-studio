@@ -2,20 +2,18 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-// import { Badge } from "@/components/ui/badge";
 import {
   Search,
-  // Filter,
   Music,
   RefreshCcw,
   Grid3X3,
   List,
   SortAsc,
   SortDesc,
-  Check,
 } from "@/utils/iconImports";
 
 import { OptimizedTrackList } from "@/components/OptimizedTrackList";
+import { VirtualizedTrackGrid } from "@/components/tracks/VirtualizedTrackGrid";
 import { LibrarySkeleton } from "@/components/skeletons/LibrarySkeleton";
 import { TrackStatusMonitor } from "@/components/TrackStatusMonitor";
 import {
@@ -32,10 +30,8 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useTrackCleanup } from "@/hooks/useTrackCleanup";
 import { useAudioPlayerStore } from "@/stores/audioPlayerStore";
 import { usePrefetchTracks } from "@/hooks/usePrefetchTracks";
-// import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useLibraryDialogs } from "@/hooks/useLibraryDialogs";
 import { useLibraryFilters } from "@/hooks/useLibraryFilters";
-// import { LikesService } from "@/services/likes.service"; // Now handled in TrackCard
 import { supabase } from "@/integrations/supabase/client";
 import { trackConverters } from "@/types/domain/track.types";
 import { cn } from "@/lib/utils";
@@ -43,9 +39,26 @@ import { logger } from "@/utils/logger";
 import { getTrackWithVariants, trackVersionsQueryKeys } from "@/features/tracks/api/trackVersions";
 import { useQueryClient } from "@tanstack/react-query";
 import type { AudioPlayerTrack, DisplayTrack as DisplayTrackType } from "@/types/track.types";
+import { LibraryTrackCard } from "./LibraryTrackCard";
+
+const useResponsiveGrid = (containerWidth: number) => {
+  const getColumns = () => {
+    if (containerWidth >= 1536) return 4;
+    if (containerWidth >= 1280) return 3;
+    if (containerWidth >= 768) return 2;
+    return 1;
+  };
+  
+  const columns = getColumns();
+  return {
+    columns,
+    gap: 16,
+    gridClass: `grid-cols-${columns}`,
+    gapClass: 'gap-4'
+  };
+};
 
 const LibraryContent: React.FC = () => {
-  const { isSelectionMode, setSelectionMode, clearSelection } = useSelectedTracks();
   const {
     tracks,
     isLoading,
@@ -60,8 +73,11 @@ const LibraryContent: React.FC = () => {
   const currentTrack = useAudioPlayerStore((state) => state.currentTrack);
   const queryClient = useQueryClient();
 
-  // Get current user
-  const { userId } = useAuth();
+  // Get current user from supabase
+  const [userId, setUserId] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+  }, []);
 
   // Automatic cleanup of failed tracks
   // Ensure userId is string or undefined, not null
@@ -369,10 +385,10 @@ const LibraryContent: React.FC = () => {
     dialogs.openUpscale(track.id, track.title, track.audio_url);
   }, [tracks, dialogs]);
 
-  const { generateCoverImage } = useGenerateCoverImage();
   const handleGenerateCover = useCallback(async (trackId: string) => {
-    await generateCoverImage(trackId);
-  }, [generateCoverImage]);
+    logger.info('Generate cover requested', `trackId: ${trackId}`);
+    notify.info("Скоро", "Генерация обложки скоро будет доступна");
+  }, [notify]);
 
   if (isLoading) {
     return (
@@ -502,23 +518,6 @@ const LibraryContent: React.FC = () => {
               >
                 Название {filters.sortBy === 'title' && (filters.sortOrder === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (isSelectionMode) {
-                    clearSelection();
-                  }
-                  setSelectionMode(!isSelectionMode);
-                }}
-                className={cn(
-                  isSelectionMode && 'bg-primary/10 border-primary/50',
-                  "hover:scale-105 transition-all duration-300"
-                )}
-              >
-                <Check className="h-4 w-4" />
-                <span className="ml-1">Выбрать</span>
-              </Button>
             </div>
           </div>
         </CardContent>
@@ -605,24 +604,8 @@ const LibraryContent: React.FC = () => {
 
           {filters.viewMode === 'list' && (
             <div className="w-full" style={{ height: 'calc(100vh - 280px)' }}>
-              <VirtualizedTrackList
-                tracks={filteredAndSortedTracks as any[]}
-                height={600}
-                onTrackPlay={handleTrackPlay}
-                loadingTrackId={loadingTrackId}
-                onShare={handleShare}
-                onSeparateStems={handleSeparateStems}
-                onExtend={handleExtend}
-                onCover={handleCover}
-                onAddVocal={handleAddVocal}
-                onCreatePersona={handleCreatePersona}
-                onUpscaleAudio={(trackId: string) => console.log('Upscale:', trackId)}
-                onGenerateCover={(trackId: string) => console.log('Generate cover:', trackId)}
-                onRetry={handleRetry}
-                onDelete={handleDelete}
-                onSwitchVersion={(trackId: string) => console.log('Switch version:', trackId)}
-                onDescribeTrack={handleDescribeTrack}
-                enableAITools={true}
+              <OptimizedTrackList
+                tracks={filteredAndSortedTracks as any}
               />
             </div>
           )}
@@ -735,15 +718,7 @@ const LibraryContent: React.FC = () => {
 };
 
 const Library: React.FC = () => {
-  return (
-    <SelectedTracksProvider>
-      <div className="relative">
-        <LibraryContent />
-        {/* ✅ FIX P0.2: Removed z-50, now handled by SelectionToolbar component */}
-        <SelectionToolbar />
-      </div>
-    </SelectedTracksProvider>
-  );
+  return <LibraryContent />;
 };
 
 export default Library;

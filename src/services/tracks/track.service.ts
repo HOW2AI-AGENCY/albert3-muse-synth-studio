@@ -13,28 +13,18 @@ import type { Database } from "@/integrations/supabase/types";
 import { handlePostgrestError } from "@/services/api/errors";
 import { logError, logWarn } from "@/utils/logger";
 import type { TrackMetadata } from "@/types/track-metadata";
-import type { Track } from '@/types/track.types';
+import type { Track, TrackVersion } from '@/types/track.types';
 
 type TrackRow = Database["public"]["Tables"]["tracks"]["Row"];
 type TrackVersionRow = Database["public"]["Tables"]["track_versions"]["Row"];
 
-export type { Track };
+export type { Track, TrackVersion };
 
 export type TrackRowWithVersions = TrackRow & {
   track_versions: TrackVersionRow[];
 };
 
 export type TrackStatus = "pending" | "draft" | "processing" | "completed" | "failed";
-
-export type TrackVersion = {
-  id: string;
-  variant_index: number | null;
-  audio_url: string | null;
-  cover_url: string | null;
-  duration: number | null;
-  is_primary_variant: boolean | null;
-  is_preferred_variant: boolean | null;
-};
 
 const isTrackStatus = (status: TrackRow["status"]): status is TrackStatus =>
   status === "pending" ||
@@ -89,7 +79,22 @@ export const mapTrackRowToTrack = (track: TrackRow | TrackRowWithVersions): Trac
     archive_scheduled_at: track.archive_scheduled_at,
     archived_at: track.archived_at,
     metadata: track.metadata as TrackMetadata | null,
-    versions: versions,
+    versions: versions.map((v): TrackVersion => ({
+      id: v.id,
+      variant_index: v.variant_index,
+      is_preferred_variant: v.is_preferred_variant,
+      is_primary_variant: v.is_primary_variant,
+      audio_url: v.audio_url,
+      cover_url: v.cover_url,
+      duration: v.duration,
+      suno_id: v.suno_id,
+      video_url: v.video_url,
+      lyrics: v.lyrics,
+      metadata: v.metadata as TrackMetadata | null,
+      created_at: v.created_at,
+      is_original: false,
+      source_variant_index: null,
+    })),
     stems: [],
     profile: null,
   };
