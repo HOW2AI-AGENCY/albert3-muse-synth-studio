@@ -2,7 +2,7 @@
  * Virtualized Track Grid with Adaptive Layout
  * Uses @tanstack/react-virtual for performance optimization
  */
-import React, { useRef } from 'react';
+import React, { useRef, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { TrackCard } from '@/features/tracks/components/TrackCard';
 import type { DisplayTrack } from '@/types/track.types';
@@ -24,6 +24,59 @@ interface VirtualizedTrackGridProps {
 }
 
 const CARD_HEIGHT = 340; // Approximate TrackCard height
+
+// Memoized TrackCard wrapper to prevent re-creation of callbacks
+const MemoizedTrackCard = React.memo<{
+  track: DisplayTrack;
+  onTrackPlay: (track: DisplayTrack) => void;
+  onShare: (trackId: string) => void;
+  onSeparateStems: (trackId: string) => void;
+  onExtend?: (trackId: string) => void;
+  onCover?: (trackId: string) => void;
+  onAddVocal?: (trackId: string) => void;
+  onCreatePersona?: (trackId: string) => void;
+  onDescribeTrack?: (trackId: string) => void;
+  onRetry?: (trackId: string) => void;
+  onDelete?: (trackId: string) => void;
+}>(({
+  track,
+  onTrackPlay,
+  onShare,
+  onSeparateStems,
+  onExtend,
+  onCover,
+  onAddVocal,
+  onCreatePersona,
+  onDescribeTrack,
+  onRetry,
+  onDelete,
+}) => {
+  const handlePlay = useCallback(() => onTrackPlay(track), [onTrackPlay, track]);
+  const handleShare = useCallback(() => onShare(track.id), [onShare, track.id]);
+  const handleSeparateStems = useCallback(() => onSeparateStems(track.id), [onSeparateStems, track.id]);
+  const handleExtend = useCallback(() => onExtend?.(track.id), [onExtend, track.id]);
+  const handleCover = useCallback(() => onCover?.(track.id), [onCover, track.id]);
+  const handleAddVocal = useCallback(() => onAddVocal?.(track.id), [onAddVocal, track.id]);
+  const handleCreatePersona = useCallback(() => onCreatePersona?.(track.id), [onCreatePersona, track.id]);
+  const handleDescribeTrack = useCallback(() => onDescribeTrack?.(track.id), [onDescribeTrack, track.id]);
+
+  return (
+    <TrackCard
+      track={track as any}
+      onClick={handlePlay}
+      onShare={handleShare}
+      onSeparateStems={handleSeparateStems}
+      onExtend={onExtend ? handleExtend : undefined}
+      onCover={onCover ? handleCover : undefined}
+      onAddVocal={onAddVocal ? handleAddVocal : undefined}
+      onCreatePersona={onCreatePersona ? handleCreatePersona : undefined}
+      onDescribeTrack={onDescribeTrack ? handleDescribeTrack : undefined}
+      onRetry={onRetry}
+      onDelete={onDelete}
+    />
+  );
+});
+MemoizedTrackCard.displayName = 'MemoizedTrackCard';
 
 export const VirtualizedTrackGrid = React.memo(({
   tracks,
@@ -100,16 +153,16 @@ export const VirtualizedTrackGrid = React.memo(({
               >
                 {rowTracks.map((track) => (
                   <div key={track.id}>
-                    <TrackCard
-                      track={track as any}
-                      onClick={() => onTrackPlay(track)}
-                      onShare={() => onShare(track.id)}
-                      onSeparateStems={() => onSeparateStems(track.id)}
-                      onExtend={onExtend ? () => onExtend(track.id) : undefined}
-                      onCover={onCover ? () => onCover(track.id) : undefined}
-                      onAddVocal={onAddVocal ? () => onAddVocal(track.id) : undefined}
-                      onCreatePersona={onCreatePersona ? () => onCreatePersona(track.id) : undefined}
-                      onDescribeTrack={onDescribeTrack ? () => onDescribeTrack(track.id) : undefined}
+                    <MemoizedTrackCard
+                      track={track}
+                      onTrackPlay={onTrackPlay}
+                      onShare={onShare}
+                      onSeparateStems={onSeparateStems}
+                      onExtend={onExtend}
+                      onCover={onCover}
+                      onAddVocal={onAddVocal}
+                      onCreatePersona={onCreatePersona}
+                      onDescribeTrack={onDescribeTrack}
                       onRetry={onRetry}
                       onDelete={onDelete}
                     />
