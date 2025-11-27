@@ -176,7 +176,12 @@ export class CircuitBreaker {
     } catch (error) {
       this.failureCount++;
       this.lastFailureTime = Date.now();
-      if (this.failureCount >= this.failureThreshold) {
+
+      // In half-open state, any failure immediately opens the breaker
+      if (this.state === 'half-open') {
+        this.state = 'open';
+        logger.error('Circuit breaker re-opened from half-open state', error instanceof Error ? error : undefined, 'CircuitBreaker');
+      } else if (this.failureCount >= this.failureThreshold) {
         this.state = 'open';
         logger.error('Circuit breaker opened', error instanceof Error ? error : undefined, 'CircuitBreaker');
       }
