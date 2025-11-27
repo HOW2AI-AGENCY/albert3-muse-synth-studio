@@ -67,6 +67,8 @@ const Generate = () => {
   useTrackRecovery(userId || undefined, refreshTracks);
 
   // Регистрация диалогов для управления FAB
+  // ✅ FIX: Removed registerDialog/unregisterDialog from deps to prevent infinite loop
+  // Store action functions are stable and should not be used as dependencies
   useEffect(() => {
     if (state.showGenerator) {
       registerDialog('generator');
@@ -74,7 +76,8 @@ const Generate = () => {
       unregisterDialog('generator');
     }
     return () => unregisterDialog('generator');
-  }, [state.showGenerator, registerDialog, unregisterDialog]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.showGenerator]);
 
   return (
     <>

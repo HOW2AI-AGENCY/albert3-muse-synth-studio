@@ -134,7 +134,8 @@ export const FullScreenPlayerControls = memo(({
               vibrate('light');
               onToggleMute();
             }}
-            className="h-11 w-11 min-h-[44px] min-w-[44px] sm:h-8 sm:w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+            className="h-11 w-11 min-h-[44px] min-w-[44px] md:h-8 md:w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
+            {/* ✅ FIX: Changed sm:h-8 to md:h-8 to maintain 44px minimum on mobile (HIGH) */}
             aria-label={isMuted ? "Включить звук" : "Выключить звук"}
           >
             {isMuted ? <VolumeX className="h-5 w-5 sm:h-4 sm:w-4" /> : <Volume2 className="h-5 w-5 sm:h-4 sm:w-4" />}

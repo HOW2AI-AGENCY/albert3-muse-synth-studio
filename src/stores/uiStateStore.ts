@@ -58,5 +58,13 @@ export const useUIStateStore = create<UIState>((set, get) => ({
 
 // Селекторы для оптимизации ре-рендеров
 export const useIsPlayerExpanded = () => useUIStateStore((state) => state.isPlayerExpanded);
-export const useShouldHideFAB = () => useUIStateStore((state) => state.shouldHideFAB());
-export const useHasOpenDialogs = () => useUIStateStore((state) => state.hasOpenDialogs());
+
+// ✅ FIX: Derive computed values inline instead of calling functions
+// This prevents unnecessary re-renders and potential infinite loops
+export const useShouldHideFAB = () => useUIStateStore((state) =>
+  state.isPlayerExpanded || state.openDialogs.size > 0
+);
+
+export const useHasOpenDialogs = () => useUIStateStore((state) =>
+  state.openDialogs.size > 0
+);

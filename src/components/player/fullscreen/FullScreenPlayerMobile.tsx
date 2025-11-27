@@ -96,7 +96,8 @@ const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileP
         </main>
 
         {/* Lyrics */}
-        <footer className="h-48 flex-shrink-0 overflow-hidden">
+        {/* ✅ FIX: Added pb-safe and overflow-auto for proper safe area handling on notched devices (CRITICAL) */}
+        <footer className="h-48 flex-shrink-0 overflow-auto pb-safe">
           {isLoading ? (
             <LyricsSkeleton />
           ) : fullTrack ? (
