@@ -257,40 +257,12 @@
     --breakpoint-3xl: 1920px;
     --breakpoint-4k: 2560px;
 
-    /* ===== Z-INDEX HIERARCHY (CORRECTED) ===== */
+    /* ===== Z-INDEX HIERARCHY ===== */
     /*
-     * Стратегия управления z-index:
-     * Эта шкала токенов — единственный источник правды для управления слоями.
-     * Она обеспечивает предсказуемое наложение элементов в сложных интерфейсах.
-     *
-     * Base layers (0-99): Основные элементы макета, такие как сайдбар и шапка.
-     * Interactive (100-999): Элементы, которые появляются над основным контентом, например, дропдауны и выдвижные панели.
-     * Overlays (1000+): Модальные окна, уведомления и другие элементы, блокирующие основной интерфейс.
+     * Z-index values are now managed centrally in /src/styles/z-index.css
+     * ✅ See z-index.css for the single source of truth
+     * This prevents conflicts and ensures consistent layering across the app
      */
-    /* Base layers (0-99) */
-    --z-base: 0;
-    --z-sidebar: 40;
-    --z-header: 45;                  /* For sticky header */
-    --z-bottom-nav: 50;              /* Bottom tab bar */
-    --z-mini-player: 60;             /* Audio player */
-    --z-desktop-player: 60;
-    --z-fab: 70;                     /* Floating Action Button */
-
-    /* Interactive (100-999) */
-    --z-dropdown: 100;
-    --z-sticky: 110;
-    --z-drawer-backdrop: 199;        /* Backdrop for drawer */
-    --z-drawer: 200;
-
-    /* Overlays (1000+) */
-    --z-modal-backdrop: 1000;
-    --z-modal: 1010;
-    --z-sheet: 1020;
-    --z-fullscreen-player: 1030;
-    --z-popover: 1040;
-    --z-tooltip: 1050;
-    --z-toast: 1060;                 /* Highest */
-    --z-maximum: 2147483647;
     
     /* ===== SEMANTIC SPACING ===== */
     --spacing-card-padding: var(--space-4);
@@ -390,18 +362,7 @@
       --spacing-input-padding-x: var(--space-2);
       --generator-max-height-mobile: calc(100vh - var(--workspace-header-height, 56px) - var(--bottom-tab-bar-height));
 
-    /* ✅ Mobile z-index adjustments - ensure proper stacking on small screens */
-    --z-bottom-nav: 50;              /* ✅ Bottom navigation - always visible */
-    --z-generator-footer: 54;        /* ✅ Generator sticky footer - below player */
-    --z-mini-player: 55;             /* ✅ Audio player - above nav and generator */
-    --z-fab: 65;                     /* ✅ FAB button - above player */
-    --z-drawer-backdrop: 199;
-    --z-drawer: 200;
-    --z-modal-backdrop: 1000;
-    --z-modal: 1010;
-    --z-sheet: 1020;
-    --z-popover: 1040;
-    --z-toast: 1060;
+    /* ✅ Z-index managed in z-index.css - no overrides needed here */
 
     /* ✅ Offsets для правильного позиционирования мобильных элементов */
     --mobile-nav-height: 64px;       /* Height of AppBottomNav */
@@ -461,31 +422,8 @@
     --breakpoint-3xl: 1920px;
     --breakpoint-4k: 2560px;
 
-    /* ===== Z-INDEX HIERARCHY (CORRECTED) ===== */
-    /* Base layers (0-99) */
-    --z-base: 0;
-    --z-sidebar: 40;
-    --z-header: 45;                  /* For sticky header */
-    --z-bottom-nav: 50;              /* Bottom tab bar */
-    --z-mini-player: 60;             /* Audio player */
-    --z-desktop-player: 60;
-    --z-fab: 70;                     /* Floating Action Button */
-
-    /* Interactive (100-999) */
-    --z-dropdown: 100;
-    --z-sticky: 110;
-    --z-drawer-backdrop: 199;        /* Backdrop for drawer */
-    --z-drawer: 200;
-
-    /* Overlays (1000+) */
-    --z-modal-backdrop: 1000;
-    --z-modal: 1010;
-    --z-sheet: 1020;
-    --z-fullscreen-player: 1030;
-    --z-popover: 1040;
-    --z-tooltip: 1050;
-    --z-toast: 1060;                 /* Highest */
-    --z-maximum: 2147483647;
+    /* ===== Z-INDEX HIERARCHY ===== */
+    /* Z-index values are managed in z-index.css */
     
     /* ===== SEMANTIC SPACING ===== */
     --spacing-card-padding: var(--space-4);
@@ -586,18 +524,7 @@
       --spacing-input-padding-x: var(--space-2);
       --generator-max-height-mobile: calc(100vh - var(--workspace-header-height, 56px) - var(--bottom-tab-bar-height));
 
-    /* ✅ Mobile z-index adjustments - ensure proper stacking on small screens */
-    --z-bottom-nav: 50;              /* ✅ Bottom navigation - always visible */
-    --z-generator-footer: 54;        /* ✅ Generator sticky footer - below player */
-    --z-mini-player: 55;             /* ✅ Audio player - above nav and generator */
-    --z-fab: 65;                     /* ✅ FAB button - above player */
-    --z-drawer-backdrop: 199;
-    --z-drawer: 200;
-    --z-modal-backdrop: 1000;
-    --z-modal: 1010;
-    --z-sheet: 1020;
-    --z-popover: 1040;
-    --z-toast: 1060;
+    /* ✅ Z-index managed in z-index.css - no overrides needed here */
 
     /* ✅ Offsets для правильного позиционирования мобильных элементов */
     --mobile-nav-height: 64px;       /* Height of AppBottomNav */

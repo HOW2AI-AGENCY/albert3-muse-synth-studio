@@ -109,7 +109,8 @@ const AppBottomNav: React.FC = () => {
                 >
                   <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   <item.icon className="h-7 w-7 text-white relative z-10" strokeWidth={2.5} />
-                  <span className="absolute -bottom-6 text-[10px] font-medium text-primary whitespace-nowrap">
+                  <span className="absolute -bottom-6 text-xs md:text-[10px] font-medium text-primary whitespace-nowrap">
+                    {/* ✅ FIX: Changed to text-xs (12px) on mobile for better readability (HIGH) */}
                     {item.label}
                   </span>
                 </button>
@@ -143,7 +144,8 @@ const AppBottomNav: React.FC = () => {
                   />
                 </div>
                 <span className={cn(
-                  "text-[10px] font-medium transition-colors duration-200",
+                  "text-xs md:text-[10px] font-medium transition-colors duration-200",
+                  /* ✅ FIX: Changed to text-xs (12px) on mobile for better readability (HIGH) */
                   isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                 )}>
                   {item.label}

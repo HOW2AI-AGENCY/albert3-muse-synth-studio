@@ -4,38 +4,59 @@
  */
 
 :root {
-  /* Base layers */
+  /* Base layers (0-99) */
   --z-base: 0;
   --z-content: 1;
-  
+
   /* Navigation */
   --z-navbar: 40;
   --z-sidebar: 50;
-  --z-bottom-nav: 100;
-  
-  /* Overlays */
+  --z-header: 45;
+
+  /* Mobile Bottom Nav & Players - CRITICAL STACKING ORDER */
+  --z-bottom-nav: 100;           /* ✅ Bottom navigation - base layer */
+  --z-mini-player: 110;          /* ✅ Mini player - ABOVE bottom nav */
+  --z-desktop-player: 60;        /* Desktop player (lower priority) */
+  --z-fab: 120;                  /* ✅ FAB button - above player */
+
+  /* Interactive (200-999) */
   --z-dropdown: 200;
+  --z-sticky: 210;
   --z-popover: 300;
   --z-tooltip: 400;
-  
-  /* Modals & Sheets */
+
+  /* Modals & Sheets (500+) */
   --z-sheet: 500;
   --z-dialog: 600;
   --z-drawer: 700;
-  
-  /* Full-screen components */
+  --z-drawer-backdrop: 699;
+
+  /* Full-screen components (800+) */
   --z-fullscreen-player: 800;
-  
-  /* Alerts & Notifications */
+
+  /* Alerts & Notifications (900+) */
   --z-toast: 900;
   --z-notification: 950;
-  
-  /* Critical UI */
+
+  /* Critical UI (999+) */
   --z-offline-banner: 999;
   --z-loading-overlay: 1000;
-  
+
   /* Maximum */
   --z-maximum: 9999;
+}
+
+/* Mobile-specific z-index overrides */
+@media (max-width: 767px) {
+  :root {
+    /* Maintain proper stacking on mobile */
+    --z-bottom-nav: 100;
+    --z-mini-player: 110;   /* ✅ Always above bottom nav */
+    --z-fab: 120;           /* ✅ FAB above player */
+    --z-drawer: 700;
+    --z-sheet: 500;
+    --z-fullscreen-player: 800;
+  }
 }
 
 /* Apply to components */
