@@ -305,35 +305,49 @@ export const AudioController = () => {
   }, [volume, audioRef]);
 
   // ============= СОБЫТИЯ АУДИО =============
+  // Ref-обертка для колбэков, чтобы избежать их в зависимостях useEffect
+  const latestActions = useRef({
+    updateCurrentTime,
+    updateBufferingProgress,
+    playNext,
+    pause,
+  });
+
+  // Обновляем ref при каждом рендере, чтобы иметь доступ к последним версиям функций
+  useEffect(() => {
+    latestActions.current = {
+      updateCurrentTime,
+      updateBufferingProgress,
+      playNext,
+      pause,
+    };
+  });
+
   useEffect(() => {
     const audio = audioRef?.current;
     if (!audio) return;
 
-    // ✅ FIX: Throttle time updates для лучшей производительности
     let lastUpdateTime = 0;
     const handleTimeUpdate = () => {
       const now = Date.now();
-      // Обновляем каждые 50ms для плавной подсветки лирики
-      if (now - lastUpdateTime >= 50) {
-        updateCurrentTime(audio.currentTime);
+      if (now - lastUpdateTime >= 250) { // Throttling до 250ms
+        latestActions.current.updateCurrentTime(audio.currentTime);
         lastUpdateTime = now;
       }
     };
-
-    // ✅ FIX: Removed duplicate loadedmetadata listener (already handled in track loading effect)
 
     const handleEnded = () => {
       logger.info('Track ended, playing next', 'AudioController', {
         trackId: currentTrack?.id
       });
-      playNext();
+      latestActions.current.playNext();
     };
 
     const handleProgress = () => {
       if (audio.buffered.length > 0) {
         const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
         const duration = audio.duration || 1;
-        updateBufferingProgress((bufferedEnd / duration) * 100);
+        latestActions.current.updateBufferingProgress((bufferedEnd / duration) * 100);
       }
     };
 
@@ -348,15 +362,13 @@ export const AudioController = () => {
         errorMessage,
       });
 
-      // ✅ Show specific error messages based on error code
       const errorMessages: Record<number, string> = {
-        1: 'Загрузка аудио прервана', // MEDIA_ERR_ABORTED
-        2: 'Ошибка сети при загрузке аудио', // MEDIA_ERR_NETWORK
-        3: 'Не удалось декодировать аудио', // MEDIA_ERR_DECODE
-        4: 'Формат аудио не поддерживается', // MEDIA_ERR_SRC_NOT_SUPPORTED
+        1: 'Загрузка аудио прервана',
+        2: 'Ошибка сети при загрузке аудио',
+        3: 'Не удалось декодировать аудио',
+        4: 'Формат аудио не поддерживается',
       };
 
-      // ✅ FIX: Improved fallback with URL-specific tracking and timeout
       const audioUrl = currentTrack?.audio_url || '';
       if (
         !proxyTriedRef.current[audioUrl] &&
@@ -365,11 +377,7 @@ export const AudioController = () => {
         (errorCode === 3 || errorCode === 4)
       ) {
         proxyTriedRef.current[audioUrl] = true;
-
-        // ✅ P2 FIX: Show loading toast with progress indicator
         const loadingToastId = toast.loading('Подготовка аудио для воспроизведения...');
-
-        // ✅ P2 FIX: Reduced timeout from 30s to 15s for better UX
         const PROXY_TIMEOUT = 15000;
         const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Proxy timeout after 15s')), PROXY_TIMEOUT)
@@ -380,7 +388,6 @@ export const AudioController = () => {
             const proxyPromise = SupabaseFunctions.invoke('fetch-audio-proxy', {
               body: { url: audioUrl },
             });
-
             const { data, error } = await Promise.race([proxyPromise, timeoutPromise]) as any;
 
             if (error || !data || !(data as any).base64) {
@@ -402,20 +409,16 @@ export const AudioController = () => {
               logger.error('Failed to play object URL audio', e as Error, 'AudioController', { trackId: currentTrack?.id });
             }
 
-            // ✅ P2 FIX: Update loading toast to success
             toast.success('Аудио готово к воспроизведению', { id: loadingToastId });
             return;
           } catch (e) {
             logger.error('Proxy audio fallback failed', e as Error, 'AudioController', { trackId: currentTrack?.id });
-
-            // ✅ P2 FIX: Update loading toast to error with specific message
             const isTimeout = (e as Error).message?.includes('timeout');
             const errorMsg = isTimeout
               ? 'Не удалось подготовить аудио: превышено время ожидания'
               : (errorCode ? errorMessages[errorCode] || 'Не удалось подготовить аудио' : 'Не удалось подготовить аудио');
-
             toast.error(errorMsg, { id: loadingToastId });
-            pause();
+            latestActions.current.pause();
           }
         })();
         return;
@@ -423,31 +426,21 @@ export const AudioController = () => {
 
       const userMessage = errorCode ? errorMessages[errorCode] || 'Ошибка загрузки аудио' : 'Ошибка загрузки аудио';
       toast.error(userMessage);
-      pause();
+      latestActions.current.pause();
     };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
-    // ✅ FIX: Removed duplicate loadedmetadata listener
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('progress', handleProgress);
     audio.addEventListener('error', handleError);
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
-      // ✅ FIX: Removed duplicate loadedmetadata listener
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('progress', handleProgress);
       audio.removeEventListener('error', handleError);
     };
-  }, [
-    audioRef,
-    currentTrack,
-    updateCurrentTime,
-    updateBufferingProgress,
-    playNext,
-    pause,
-    // ✅ FIX: Removed updateDuration and playTrack from deps (not used in this effect)
-  ]);
+  }, [audioRef, currentTrack]); // Зависимости теперь безопасны
 
   // ============= ПРЕДЗАГРУЗКА СЛЕДУЮЩЕГО ТРЕКА =============
   const nextTrackInQueue = useRef<HTMLAudioElement | null>(null);
