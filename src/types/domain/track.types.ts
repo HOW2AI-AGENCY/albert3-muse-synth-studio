@@ -8,32 +8,11 @@ export type { Track, TrackVersion } from '@/types/track.types';
 // DisplayTrack is just Track with optional UI properties
 import type { Track as BaseTrack } from '@/types/track.types';
 
-export interface DisplayTrack extends Omit<BaseTrack, 'duration'> {
-  isLiked?: boolean;
-  isPlaying?: boolean;
-  formattedDuration?: string;
-  formattedDate?: string;
-  artistName?: string;
-  genreLabel?: string;
-  duration?: number | null;
-}
+// Re-export DisplayTrack from single source
+export type { DisplayTrack } from '@/types/track.types';
 
-export interface AudioPlayerTrack {
-  id: string;
-  title: string;
-  audio_url: string;
-  cover_url?: string;
-  duration?: number;
-  artist?: string;
-  status?: 'pending' | 'processing' | 'completed' | 'failed';
-  style_tags?: string[];
-  lyrics?: string;
-  suno_id?: string;
-  suno_task_id?: string;
-  parentTrackId?: string;
-  versionNumber?: number;
-  isMasterVersion?: boolean;
-}
+// Re-export AudioPlayerTrack from single source
+export type { AudioPlayerTrack } from '@/types/track.types';
 
 export interface TrackMetadata {
   provider_task_id?: string;
@@ -102,7 +81,7 @@ export const trackConverters = {
     };
   },
 
-  toDisplay(track: BaseTrack, options: { isLiked?: boolean; isPlaying?: boolean } = {}): DisplayTrack {
+  toDisplay(track: BaseTrack, options: { isLiked?: boolean; isPlaying?: boolean } = {}) {
     return {
       ...track,
       isLiked: options.isLiked,
@@ -113,7 +92,7 @@ export const trackConverters = {
     };
   },
 
-  toAudioPlayer(track: BaseTrack): AudioPlayerTrack | null {
+  toAudioPlayer(track: BaseTrack) {
     if (!track.audio_url) return null;
 
     return {
@@ -122,6 +101,11 @@ export const trackConverters = {
       audio_url: track.audio_url,
       cover_url: track.cover_url ?? undefined,
       duration: track.duration_seconds ?? undefined,
+      status: track.status,
+      style_tags: track.style_tags ?? undefined,
+      lyrics: track.lyrics ?? undefined,
+      suno_id: track.suno_id ?? undefined,
+      mureka_task_id: track.mureka_task_id ?? undefined,
     };
   },
 };

@@ -186,13 +186,7 @@ export const SelectionToolbar: React.FC<SelectionToolbarProps> = ({ className = 
         return;
       }
 
-      const firstTrack = { ...audioTracks[0], duration: audioTracks[0].duration ?? undefined };
-      const queueTracks = audioTracks.map(t => ({ 
-        ...t, 
-        duration: t.duration ?? undefined,
-        cover_url: t.cover_url ?? undefined 
-      }));
-      playTrackWithQueue(firstTrack, queueTracks);
+      playTrackWithQueue(audioTracks[0], audioTracks);
 
       toast.success(`Воспроизведение ${audioTracks.length} треков`);
     } catch (error) {
