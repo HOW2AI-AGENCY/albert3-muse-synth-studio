@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { useTimestampedLyrics } from '@/hooks/useTimestampedLyrics';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Track } from '@/types/track';
+import { Track } from '@/types/track.types';
 
 interface LyricsPanelProps {
   track: Track;

@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import 'vitest-dom/extend-expect';
-import type { AudioPlayerTrack } from '@/types/track';
+import type { AudioPlayerTrack } from '@/types/track.types';
 
 vi.mock('@sentry/react', () => ({
   withErrorBoundary: (component: unknown) => component,

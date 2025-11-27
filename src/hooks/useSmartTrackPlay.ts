@@ -12,7 +12,7 @@ import { useCallback } from 'react';
 import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
 import { getTrackWithVersions, TrackWithVersions } from '@/features/tracks';
 import { logInfo } from '@/utils/logger';
-import type { AudioPlayerTrack } from '@/types/track';
+import type { AudioPlayerTrack } from '@/types/track.types';
 
 export interface SmartPlayOptions {
   /** Форсировать загрузку версий (игнорировать кэш) */

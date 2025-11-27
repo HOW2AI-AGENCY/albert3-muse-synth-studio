@@ -2,7 +2,7 @@
  * Hook для управления очередью воспроизведения
  */
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { AudioPlayerTrack } from '@/types/track';
+import { AudioPlayerTrack } from '@/types/track.types';
 import { logInfo } from '@/utils/logger';
 
 export const useAudioQueue = () => {
