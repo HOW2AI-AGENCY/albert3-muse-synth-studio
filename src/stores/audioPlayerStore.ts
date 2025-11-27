@@ -37,7 +37,7 @@ export interface AudioPlayerTrack {
   duration?: number;
   lyrics?: string;
   style_tags?: string[];
-  status?: 'pending' | 'processing' | 'completed' | 'failed';
+  status?: 'draft' | 'pending' | 'processing' | 'completed' | 'failed';
   parentTrackId?: string;
   versionNumber?: number;
   isMasterVersion?: boolean;
