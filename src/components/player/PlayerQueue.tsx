@@ -7,7 +7,7 @@ import { ListMusic, Play, X, GripVertical, Star } from "@/utils/iconImports";
 import { useAudioPlayerStore, useCurrentTrack } from "@/stores/audioPlayerStore";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { useToast } from "@/hooks/use-toast";
-import type { AudioPlayerTrack } from "@/types/track";
+import type { AudioPlayerTrack } from "@/types/track.types";
 
 // Мемоизированный компонент элемента очереди
 const QueueItem = memo(({ 

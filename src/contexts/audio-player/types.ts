@@ -1,7 +1,7 @@
 /**
  * Типы для Audio Player Context
  */
-import { AudioPlayerTrack } from '@/types/track';
+import { AudioPlayerTrack } from '@/types/track.types';
 
 export interface AudioPlayerContextType {
   currentTrack: AudioPlayerTrack | null;

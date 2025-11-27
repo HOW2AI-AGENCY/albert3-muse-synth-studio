@@ -14,6 +14,13 @@ export interface TrackVersion {
   duration: number | null;
   is_primary_variant: boolean | null;
   is_preferred_variant: boolean | null;
+  suno_id?: string | null;
+  video_url?: string | null;
+  lyrics?: string | null;
+  metadata?: TrackMetadata | null;
+  created_at?: string | null;
+  is_original?: boolean;
+  source_variant_index?: number | null;
 }
 
 export interface Track {
@@ -62,4 +69,62 @@ export interface Track {
   stems?: any[];
   profile?: any | null;
   selectedVersionId?: string;
+  // Legacy/compatibility fields
+  parentTrackId?: string;
+  versionNumber?: number;
+  isMasterVersion?: boolean;
+  sourceVersionNumber?: number | null;
+  suno_task_id?: string | null;
+}
+
+// Display Track type (для UI компонентов)
+export interface DisplayTrack extends Track {
+  isLiked?: boolean;
+  isPlaying?: boolean;
+}
+
+// Audio Player Track type (совместим с audioPlayerStore)
+export interface AudioPlayerTrack {
+  id: string;
+  title: string;
+  audio_url: string;
+  cover_url?: string;
+  video_url?: string;
+  duration?: number;
+  lyrics?: string;
+  style_tags?: string[];
+  status?: 'pending' | 'processing' | 'completed' | 'failed';
+  parentTrackId?: string;
+  versionNumber?: number;
+  isMasterVersion?: boolean;
+  sourceVersionNumber?: number | null;
+  suno_task_id?: string;
+  suno_id?: string;
+  mureka_task_id?: string;
+  selectedVersionId?: string;
+  versions?: any[];
+  like_count?: number;
+}
+
+// Optimized Track type (для виртуализированных списков)
+export interface OptimizedTrack {
+  id: string;
+  title: string;
+  status: Track['status'];
+  audio_url?: string;
+  cover_url?: string;
+  duration?: number;
+  style_tags?: string[];
+  version_count?: number;
+}
+
+// Track Stem interface
+export interface TrackStem {
+  id: string;
+  stem_type: string;
+  audio_url: string;
+  separation_mode: string;
+  track_id: string;
+  version_id?: string | null;
+  created_at?: string;
 }

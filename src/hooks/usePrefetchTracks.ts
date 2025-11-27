@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useRef } from 'react';
-import type { DisplayTrack } from '@/types/track';
+import type { DisplayTrack } from '@/types/track.types';
 
 interface UsePrefetchTracksOptions {
   enabled?: boolean;

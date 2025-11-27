@@ -1,5 +1,5 @@
 import type { TrackVersionMetadata } from "./TrackVersionMetadataPanel";
-import type { AudioPlayerTrack } from "@/types/track";
+import type { AudioPlayerTrack } from "@/types/track.types";
 
 export interface TrackVersionLike {
   id: string;

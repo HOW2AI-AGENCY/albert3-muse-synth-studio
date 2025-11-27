@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import type { DisplayTrack } from '@/types/track';
+import type { DisplayTrack } from '@/types/track.types';
 
 interface DialogState<T = { id: string; title: string }> {
   isOpen: boolean;

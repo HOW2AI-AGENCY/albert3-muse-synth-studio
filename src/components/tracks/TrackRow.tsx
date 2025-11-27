@@ -19,7 +19,7 @@ import { TrackActionsMenu } from './TrackActionsMenu';
 import { useTrackVariants } from '@/features/tracks/hooks/useTrackVariants';
 import { TrackVariantSelector } from '@/features/tracks/components/TrackVariantSelector';
 import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
-import type { AudioPlayerTrack } from '@/types/track';
+import type { AudioPlayerTrack } from '@/types/track.types';
 
 /**
  * Format duration from seconds to MM:SS

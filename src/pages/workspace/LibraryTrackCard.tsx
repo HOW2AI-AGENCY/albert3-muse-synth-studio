@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import { TrackCard } from '@/features/tracks';
-import type { DisplayTrack } from '@/types/track';
+import type { DisplayTrack } from '@/types/track.types';
 import { Loader2 } from "@/utils/iconImports";
 
 interface LibraryTrackCardProps {

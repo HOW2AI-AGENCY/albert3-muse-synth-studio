@@ -42,17 +42,7 @@ import { cn } from "@/lib/utils";
 import { logger } from "@/utils/logger";
 import { getTrackWithVariants, trackVersionsQueryKeys } from "@/features/tracks/api/trackVersions";
 import { useQueryClient } from "@tanstack/react-query";
-import type { AudioPlayerTrack } from "@/types/track";
-import { useResponsiveGrid } from '@/hooks/useResponsiveGrid';
-import { VirtualizedTrackGrid } from '@/components/tracks/VirtualizedTrackGrid';
-import { VirtualizedTrackList } from '@/components/tracks/VirtualizedTrackList';
-import { useAuth } from "@/contexts/auth/useAuth";
-import { SelectedTracksProvider, useSelectedTracks } from '@/contexts/SelectedTracksContext';
-import { LibraryTrackCard } from './LibraryTrackCard';
-import { SelectionToolbar } from '@/components/tracks/SelectionToolbar';
-// import type { SortBy } from '@/hooks/useLibraryFilters';
-import { useGenerateCoverImage } from '@/hooks/useGenerateCoverImage';
-import type { DisplayTrack as DisplayTrackType } from '@/types/track';
+import type { AudioPlayerTrack, DisplayTrack as DisplayTrackType } from "@/types/track.types";
 
 const LibraryContent: React.FC = () => {
   const { isSelectionMode, setSelectionMode, clearSelection } = useSelectedTracks();

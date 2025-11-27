@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RefObject } from 'react';
-import type { AudioPlayerTrack } from '@/types/track';
+import type { AudioPlayerTrack } from '@/types/track.types';
 
 import { TrackVersions } from '@/features/tracks';
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { AudioPlayerTrack } from '@/types/track';
+import type { AudioPlayerTrack } from '@/types/track.types';
 
 // Mock reducer functions (simplified test)
 const initialAudioState = {

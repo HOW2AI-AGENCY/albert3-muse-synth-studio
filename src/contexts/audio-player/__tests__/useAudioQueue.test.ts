@@ -5,7 +5,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useAudioQueue } from '../useAudioQueue';
-import type { AudioPlayerTrack } from '@/types/track';
+import type { AudioPlayerTrack } from '@/types/track.types';
 
 // Mock logger
 vi.mock('@/utils/logger', () => ({

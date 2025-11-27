@@ -4,7 +4,7 @@
  */
 
 import { useState, useMemo, useCallback } from 'react';
-import type { DisplayTrack } from '@/types/track';
+import type { DisplayTrack } from '@/types/track.types';
 
 export type ViewMode = 'grid' | 'list' | 'optimized';
 export type SortBy = 'created_at' | 'title' | 'duration' | 'like_count';
