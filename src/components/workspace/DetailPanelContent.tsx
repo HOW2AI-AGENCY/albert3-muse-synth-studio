@@ -158,7 +158,11 @@ export const DetailPanelContent = ({
     <div className="space-y-4">
       <CompactTrackHero 
         track={track} 
-        activeVersion={activeVersion ? { variant_index: activeVersion.variant_index, created_at: activeVersion.created_at, duration: activeVersion.duration } : null}
+        activeVersion={activeVersion ? { 
+          variant_index: activeVersion.variant_index ?? 0, 
+          created_at: activeVersion.created_at ?? undefined, 
+          duration: activeVersion.duration ?? undefined 
+        } : null}
         artist={artist} 
         isLiked={isLiked} 
         likeCount={likeCount} 
@@ -169,11 +173,11 @@ export const DetailPanelContent = ({
           id: track.id,
           title: track.title,
           audio_url: track.audio_url || '',
-          cover_url: track.cover_url,
-          duration: track.duration || track.duration_seconds,
+          cover_url: track.cover_url ?? undefined,
+          duration: track.duration ?? track.duration_seconds ?? undefined,
           status: track.status as any || "completed",
-          style_tags: track.style_tags || [],
-          lyrics: track.lyrics
+          style_tags: track.style_tags ?? [],
+          lyrics: track.lyrics ?? undefined
         })}
       />
 
@@ -192,7 +196,7 @@ export const DetailPanelContent = ({
             isSaving={isSaving}
             onSave={onSave}
             createdAtToDisplay={activeVersion?.created_at ?? track.created_at}
-            durationToDisplay={activeVersion?.duration ?? track.duration_seconds}
+            durationToDisplay={activeVersion?.duration ?? track.duration_seconds ?? undefined}
           />
         )}
         {tabView === "versions" && (

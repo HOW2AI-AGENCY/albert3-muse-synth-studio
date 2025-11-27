@@ -7,13 +7,13 @@ import { cn } from "@/lib/utils";
 interface CompactTrackHeroProps {
   track: {
     title: string;
-    cover_url?: string;
+    cover_url?: string | null;
     status?: string;
-    created_at?: string;
-    duration_seconds?: number;
+    created_at?: string | null;
+    duration_seconds?: number | null;
     style_tags?: string[] | null;
-    play_count?: number;
-    download_count?: number;
+    play_count?: number | null;
+    download_count?: number | null;
   };
   activeVersion?: {
     variant_index: number;
@@ -105,7 +105,7 @@ export const CompactTrackHero = ({
             <TooltipTrigger asChild>
               <Button size="sm" variant="ghost" className="gap-1 h-9 px-3">
                 <Play className="h-4 w-4" />
-                <span className="text-xs tabular-nums">{formatCount(track.play_count)}</span>
+                <span className="text-xs tabular-nums">{formatCount(track.play_count ?? 0)}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>Прослушиваний</TooltipContent>
@@ -115,7 +115,7 @@ export const CompactTrackHero = ({
             <TooltipTrigger asChild>
               <Button size="sm" variant="ghost" className="gap-1 h-9 px-3" onClick={onDownload}>
                 <Download className="h-4 w-4" />
-                <span className="text-xs tabular-nums">{formatCount(track.download_count)}</span>
+                <span className="text-xs tabular-nums">{formatCount(track.download_count ?? 0)}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>Скачать MP3</TooltipContent>

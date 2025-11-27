@@ -15,9 +15,10 @@ import {
 } from "./trackVersionUtils";
 
 interface ComparisonTrackVersion extends TrackVersionLike {
-  suno_id?: string;
-  video_url?: string;
-  created_at?: string;
+  variant_index: number | null;
+  suno_id?: string | null;
+  video_url?: string | null;
+  created_at?: string | null;
 }
 
 interface TrackVersionComparisonProps {

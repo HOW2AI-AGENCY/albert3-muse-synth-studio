@@ -4,13 +4,13 @@ import type { AudioPlayerTrack } from "@/types/track.types";
 export interface TrackVersionLike {
   id: string;
   variant_index: number;
-  is_preferred_variant: boolean;
-  is_primary_variant?: boolean;
+  is_preferred_variant: boolean | null;
+  is_primary_variant?: boolean | null;
   source_variant_index?: number | null;
-  audio_url: string;
-  cover_url?: string;
-  duration?: number;
-  lyrics?: string;
+  audio_url: string | null;
+  cover_url?: string | null;
+  duration?: number | null;
+  lyrics?: string | null;
   metadata?: TrackVersionMetadata | null;
 }
 
