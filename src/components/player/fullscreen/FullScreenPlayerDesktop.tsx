@@ -70,11 +70,28 @@ export const FullScreenPlayerDesktop = memo(({ onMinimize }: FullScreenPlayerDes
     setVolume(Math.max(volume - 0.1, 0));
   }, [volume, setVolume]);
 
+  // ✅ FIX: Wrap seekForward and seekBackward in useCallback to prevent infinite re-renders
+  // These functions capture currentTime in their closure, which updates 60 FPS
+  // Without memoization, they are recreated every render, causing event listeners to be re-attached
+  // This triggers Zustand updates which cause re-renders (infinite loop)
+  const seekForwardCallback = useCallback((seconds: number) => {
+    seekTo(Math.min(currentTime + seconds, 300));
+  }, [currentTime, seekTo]);
+
+  const seekBackwardCallback = useCallback((seconds: number) => {
+    seekTo(Math.max(currentTime - seconds, 0));
+  }, [currentTime, seekTo]);
+
+  // ✅ FIX: Callback for progress bar seek to prevent inline function recreation
+  const handleProgressBarSeek = useCallback((value: number[]) => {
+    seekTo(value[0]);
+  }, [seekTo]);
+
   // Keyboard shortcuts
   useFullScreenKeyboard({
     togglePlayPause,
-    seekForward: (seconds) => seekTo(Math.min(currentTime + seconds, 300)),
-    seekBackward: (seconds) => seekTo(Math.max(currentTime - seconds, 0)),
+    seekForward: seekForwardCallback,
+    seekBackward: seekBackwardCallback,
     toggleLyrics: toggleLyricsVisibility,
     exitFullScreen: onMinimize,
     increaseVolume,
@@ -161,9 +178,9 @@ export const FullScreenPlayerDesktop = memo(({ onMinimize }: FullScreenPlayerDes
         )}
 
         {/* Progress */}
-        <MobileProgressBar 
-          onSeek={(value: number[]) => seekTo(value[0])} 
-          className="w-full max-w-4xl mb-[--space-6]" 
+        <MobileProgressBar
+          onSeek={handleProgressBarSeek}
+          className="w-full max-w-4xl mb-[--space-6]"
         />
 
         {/* Controls */}

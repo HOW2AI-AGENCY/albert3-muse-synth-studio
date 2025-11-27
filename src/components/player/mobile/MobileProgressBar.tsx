@@ -11,7 +11,7 @@
  * @created 2025-11-07
  */
 
-import { memo, useCallback } from 'react';
+import { memo, useMemo } from 'react';
 import { Slider } from '@/components/ui/slider';
 import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
 import { cn } from '@/lib/utils';
@@ -35,9 +35,10 @@ export const MobileProgressBar = memo(({ onSeek, className }: MobileProgressBarP
   const duration = useAudioPlayerStore((state) => state.duration);
   const bufferingProgress = useAudioPlayerStore((state) => state.bufferingProgress);
 
-  // Memoize formatTime to avoid recreation on every render
-  const formattedCurrentTime = useCallback(() => formatTime(currentTime), [currentTime])();
-  const formattedDuration = useCallback(() => formatTime(duration), [duration])();
+  // ✅ FIX: Use useMemo (not useCallback) for memoizing computed values
+  // useCallback is for memoizing functions; useMemo is for memoizing values
+  const formattedCurrentTime = useMemo(() => formatTime(currentTime), [currentTime]);
+  const formattedDuration = useMemo(() => formatTime(duration), [duration]);
 
   return (
     <div className={cn("space-y-2", className)}>
