@@ -1,7 +1,13 @@
 /**
  * Responsive Track Grid Component
- * 
- * @version 2.0.0
+ *
+ * ✅ PERFORMANCE FIX #3 (v2.1.0):
+ * - Устранены бесполезные useCallback (которые обходились inline функциями)
+ * - Создана Map для кеширования обработчиков на основе track.id
+ * - Мемоизация карточек теперь работает корректно
+ * - Значительно снижена нагрузка при скроллинге responsive grid
+ *
+ * @version 2.1.0
  * @refactor Jules, UI/UX Designer - Replaced inline styles with Tailwind classes from the refactored useResponsiveGrid hook.
  */
 
@@ -88,8 +94,40 @@ export const ResponsiveTrackGrid = React.memo(({
   const virtualItems = virtualizer.getVirtualItems();
   const CardComponent = optimized ? OptimizedTrackCard : TrackCard;
 
-  const handleTrackClick = useCallback((track: Track) => onClick?.(track), [onClick]);
-  const handleShare = useCallback((track: Track) => onShare?.(track), [onShare]);
+  /**
+   * ✅ PERFORMANCE FIX #3: Map для кеширования обработчиков
+   *
+   * ПРОБЛЕМА (до исправления):
+   * const handleTrackClick = useCallback((track) => onClick?.(track), [onClick]);
+   * onClick={() => handleTrackClick(track)}  ❌ Inline функция обходит useCallback!
+   *
+   * РЕШЕНИЕ:
+   * - Создаем Map с обработчиками для каждого track.id
+   * - Map пересоздается только при изменении зависимостей (onClick, onShare)
+   * - Используем стабильные ссылки из Map напрямую в onClick
+   * - Никаких inline функций в render!
+   *
+   * PERFORMANCE GAIN:
+   * - Мемоизация карточек работает корректно
+   * - useCallback теперь имеет смысл
+   * - Оптимизация при изменении размера окна (responsive)
+   */
+  const trackHandlers = useMemo(() => {
+    const clickHandlers = new Map<string, () => void>();
+    const shareHandlers = new Map<string, () => void>();
+
+    tracks.forEach((track) => {
+      // Создаем стабильные обработчики для каждого track.id
+      if (onClick) {
+        clickHandlers.set(track.id, () => onClick(track));
+      }
+      if (onShare) {
+        shareHandlers.set(track.id, () => onShare(track));
+      }
+    });
+
+    return { clickHandlers, shareHandlers };
+  }, [tracks, onClick, onShare]);
 
   return (
     <div
@@ -122,20 +160,32 @@ export const ResponsiveTrackGrid = React.memo(({
 
                   return (
                     <div key={track.id} style={{ minWidth: `${cardWidth}px`, maxWidth: `${cardWidth}px` }}>
+                      {/**
+                        * ✅ ИСПРАВЛЕНО: Используем стабильные обработчики из Map
+                        *
+                        * БЫЛО (BAD):
+                        * onClick={() => handleTrackClick(track)}
+                        * ❌ Inline функция → новая ссылка при каждом рендере
+                        *
+                        * СТАЛО (GOOD):
+                        * onClick={trackHandlers.clickHandlers.get(track.id)}
+                        * ✅ Стабильная ссылка из Map
+                        * ✅ Мемоизация карточки работает
+                        */}
                       {optimized ? (
                         <OptimizedTrackCard
                           track={track}
                           isPlaying={isPlaying}
                           isLiked={isLiked}
-                          onClick={() => handleTrackClick(track)}
+                          onClick={trackHandlers.clickHandlers.get(track.id)}
                           onPlayPause={onPlayPause}
                           onLike={onLike}
                         />
                       ) : (
                         <CardComponent
                           track={track}
-                          onClick={() => handleTrackClick(track)}
-                          onShare={() => handleShare(track)}
+                          onClick={trackHandlers.clickHandlers.get(track.id)}
+                          onShare={trackHandlers.shareHandlers.get(track.id)}
                           onRetry={onRetry}
                           onDelete={onDelete}
                           onExtend={onExtend}

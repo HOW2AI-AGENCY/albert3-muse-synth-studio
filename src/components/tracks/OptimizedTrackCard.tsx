@@ -1,13 +1,19 @@
 /**
  * Optimized Track Card Component
- * 
+ *
  * Performance-optimized version of TrackCard with:
  * - Progressive image loading
  * - Intersection observer
  * - Aggressive memoization
  * - Reduced re-renders
- * 
- * @version 1.0.0
+ *
+ * ✅ PERFORMANCE FIX #5 (v2.1.0):
+ * - Удален дублирующий хук useResponsiveCardSize
+ * - Используется централизованный useBreakpoints
+ * - Устранено 100+ resize слушателей при большом количестве карточек
+ * - Единый media query для всего приложения
+ *
+ * @version 2.1.0
  * @created 2025-11-17
  */
 
@@ -18,6 +24,7 @@ import { ProgressiveImage } from '@/components/ui/progressive-image';
 import { Play, Pause, Heart, MoreVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDuration } from '@/utils/formatters';
+import { useBreakpoints } from '@/hooks/useBreakpoints';
 import type { Track } from '@/types/domain/track.types';
 
 interface OptimizedTrackCardProps {
@@ -33,32 +40,13 @@ interface OptimizedTrackCardProps {
 
 /**
  * Optimized Track Card with progressive loading
- * 
+ *
  * Performance features:
  * - Intersection observer for images
  * - Aggressive memoization
  * - Minimal re-renders
  * - CSS containment
  */
-/**
- * Responsive card sizing based on screen
- */
-const useResponsiveCardSize = () => {
-  const [isMobile, setIsMobile] = React.useState(false);
-
-  React.useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  return { isMobile };
-};
-
 export const OptimizedTrackCard = memo(({
   track,
   isPlaying = false,
@@ -69,7 +57,28 @@ export const OptimizedTrackCard = memo(({
   onMenu,
   className,
 }: OptimizedTrackCardProps) => {
-  const { isMobile } = useResponsiveCardSize();
+  /**
+   * ✅ ИСПРАВЛЕНО: Используем централизованный useBreakpoints
+   *
+   * БЫЛО (BAD):
+   * const useResponsiveCardSize = () => {
+   *   const [isMobile, setIsMobile] = React.useState(false);
+   *   React.useEffect(() => {
+   *     window.addEventListener('resize', handleResize);  ❌ Новый listener на каждую карточку!
+   *   }, []);
+   * }
+   * const { isMobile } = useResponsiveCardSize();  // 100 карточек = 100 resize слушателей
+   *
+   * СТАЛО (GOOD):
+   * const { isMobile } = useBreakpoints();  ✅ Один общий media query для всего приложения
+   *
+   * PERFORMANCE GAIN:
+   * - 100+ resize listeners → 1 media query listener
+   * - 99% reduction в event listeners
+   * - Меньше памяти, меньше CPU при resize окна
+   * - Консистентные breakpoint значения по всему приложению
+   */
+  const { isMobile } = useBreakpoints();
   // Memoized handlers
   const handleClick = useCallback(() => {
     onClick?.();
