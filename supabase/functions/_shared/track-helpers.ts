@@ -1,11 +1,24 @@
+/**
+ * Track Helpers - Database operations for track management
+ * 
+ * Provides utilities for creating and finding tracks in the database
+ * Used by generation handlers to maintain track records during music generation
+ */
+
 import { logger } from './logger.ts';
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Database } from "../_shared/database.types.ts";
 
-type Track = Database['public']['Tables']['tracks']['Row'];
-
+/**
+ * Find existing track or create a new one
+ * Handles both track updates (when trackId provided) and new track creation
+ * 
+ * @param supabaseAdmin - Supabase client with admin privileges
+ * @param userId - User ID for track ownership
+ * @param params - Track creation parameters
+ * @returns Object containing trackId and full track data
+ */
 export async function findOrCreateTrack(
-  supabaseAdmin: SupabaseClient<Database>,
+  supabaseAdmin: SupabaseClient<any>, // Changed from SupabaseClient<Database>
   userId: string,
   { trackId, title, prompt, lyrics, hasVocals, styleTags, genre, mood, requestMetadata, idempotencyKey, provider, projectId }: {
     trackId?: string;
@@ -21,7 +34,9 @@ export async function findOrCreateTrack(
     provider?: string;
     projectId?: string;
   }
-): Promise<{ trackId: string; track: Track }> {
+): Promise<{ trackId: string; track: any }> { // Changed from Track type
+  // ============= EXISTING TRACK FLOW =============
+  // If trackId provided, find and update the existing track
   if (trackId) {
     const { data: existingTrack, error } = await supabaseAdmin
       .from('tracks')
@@ -35,16 +50,26 @@ export async function findOrCreateTrack(
       throw new Error('Track not found or unauthorized');
     }
     
+    // Update status to processing and set provider
     await supabaseAdmin.from('tracks').update({ 
       status: 'processing', 
       provider: provider || 'suno' 
     }).eq('id', trackId);
+    
     return { trackId, track: existingTrack };
   }
 
+  // ============= NEW TRACK FLOW =============
+
+  /**
+   * Generate a meaningful title for the track
+   * Priority: 1) User-provided title, 2) AI-generated title, 3) Prompt-based title, 4) Fallback
+   */
   const generateTitle = async () => {
+    // Use provided title if available
     if (title) return title;
     
+    // Try AI title generation for supported providers
     if (provider === 'mureka' || provider === 'suno') {
       try {
         const { data: titleData, error: titleError } = await supabaseAdmin.functions.invoke('generate-track-title', {
@@ -67,6 +92,7 @@ export async function findOrCreateTrack(
       }
     }
     
+    // Extract title from prompt if no AI generation
     if (prompt) {
       const cleaned = prompt
         .replace(/\b(music|track|song|create|generate|трек|музыка|песня|создай|сгенерируй)\b/gi, '')
@@ -80,6 +106,7 @@ export async function findOrCreateTrack(
       }
     }
     
+    // Fallback: Generate title from genre and timestamp
     const timestamp = new Date().toLocaleString('ru-RU', {
       day: '2-digit',
       month: '2-digit',
@@ -96,6 +123,7 @@ export async function findOrCreateTrack(
 
   const generatedTitle = await generateTitle();
 
+  // ============= CREATE NEW TRACK RECORD =============
   const { data: newTrack, error: createError } = await supabaseAdmin
     .from('tracks')
     .insert({

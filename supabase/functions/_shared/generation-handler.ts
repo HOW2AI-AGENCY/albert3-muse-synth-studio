@@ -174,7 +174,7 @@ export abstract class GenerationHandler<TParams extends BaseGenerationParams = B
   protected async createTrackRecord(params: TParams, idempotencyKey: string): Promise<{ trackId: string }> {
     const metadata = this.buildMetadata(params);
 
-    const { trackId } = await findOrCreateTrack(this.supabase, this.userId, {
+    const { trackId } = await findOrCreateTrack(this.supabase as any, this.userId, {
       trackId: params.trackId,
       title: params.title,
       prompt: params.prompt,
