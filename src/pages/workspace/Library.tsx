@@ -368,14 +368,14 @@ const LibraryContent: React.FC = () => {
     const track = tracks.find(t => t.id === trackId);
     if (!track) return;
     // NOTE: This is a placeholder for the actual implementation
-    console.log("Switching version for track:", trackId);
+    logger.info("Switching version for track", 'Library', { trackId });
   }, [tracks]);
 
   const handleDescribeTrack = useCallback((trackId: string) => {
     const track = tracks.find(t => t.id === trackId);
     if (!track) return;
     // NOTE: This is a placeholder for the actual implementation
-    console.log("Describing track:", trackId);
+    logger.info("Describing track", 'Library', { trackId });
   }, [tracks]);
 
   const handleUpscaleAudio = useCallback((trackId: string) => {

@@ -1,6 +1,7 @@
 // src/features/studio/hooks/useStemPlayer.ts
 import { useEffect, useRef, useCallback } from 'react';
 import { useStudioStore } from '@/stores/studioStore';
+import { logger } from '@/utils/logger';
 
 /**
  * useStemPlayer
@@ -51,7 +52,7 @@ export const useStemPlayer = () => {
     // Handle play/pause
     if (isPlaying) {
       audioElements.current.forEach(audio => {
-        audio.play().catch(e => console.error("Audio play failed:", e));
+        audio.play().catch(e => logger.error("Audio play failed", e as Error, 'useStemPlayer'));
       });
       animationFrameId.current = requestAnimationFrame(updateTime);
     } else {
