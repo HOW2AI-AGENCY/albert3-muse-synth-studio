@@ -170,10 +170,10 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
       _loadVersionsAbortController: null,
       _playTrackRequestId: 0,
 
-        // ==========================================
-        // PLAYBACK ACTIONS
-        // ==========================================
-        playTrack: async (track) => {
+      // ==========================================
+      // PLAYBACK ACTIONS
+      // ==========================================
+      playTrack: async (track) => {
           const requestId = Date.now();
           set({ _playTrackRequestId: requestId });
 
@@ -300,10 +300,10 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
           });
         },
 
-        // ==========================================
-        // QUEUE ACTIONS
-        // ==========================================
-        addToQueue: (track) => {
+      // ==========================================
+      // QUEUE ACTIONS
+      // ==========================================
+      addToQueue: (track) => {
           set((state) => ({
             queue: [...state.queue, track],
           }));
@@ -458,13 +458,13 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             currentTime: 0,
             duration: track.duration || 0,
             shuffleHistory: [track.id], // Reset shuffle history with current track
-          });
-        },
+        });
+      },
 
-        // ==========================================
-        // PLAYBACK MODE ACTIONS
-        // ==========================================
-        toggleRepeatMode: () => {
+      // ==========================================
+      // PLAYBACK MODE ACTIONS
+      // ==========================================
+      toggleRepeatMode: () => {
           const state = get();
           const modes: RepeatMode[] = ['off', 'one', 'all'];
           const currentIndex = modes.indexOf(state.repeatMode);
@@ -496,13 +496,13 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
 
         setRepeatMode: (mode) => {
           logInfo('Setting repeat mode', 'audioPlayerStore', { mode });
-          set({ repeatMode: mode });
-        },
+        set({ repeatMode: mode });
+      },
 
-        // ==========================================
-        // VERSION ACTIONS
-        // ==========================================
-        switchToVersion: (versionId) => {
+      // ==========================================
+      // VERSION ACTIONS
+      // ==========================================
+      switchToVersion: (versionId) => {
           const { availableVersions, currentTrack, isPlaying, currentTime } = get();
           
           if (!currentTrack) {
@@ -613,13 +613,13 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
           set({
             availableVersions: versions,
             currentVersionIndex,
-          });
-        },
+        });
+      },
 
-        // ==========================================
-        // AUDIO CONTROLS
-        // ==========================================
-        setVolume: (volume) => {
+      // ==========================================
+      // AUDIO CONTROLS
+      // ==========================================
+      setVolume: (volume) => {
           set({
             volume: Math.max(0, Math.min(1, volume)),
           });
@@ -634,10 +634,10 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
         },
 
         updateBufferingProgress: (progress) => {
-          set({ bufferingProgress: progress });
-        },
+        set({ bufferingProgress: progress });
+      },
 
-        _fetchVersionsFromApi: async (trackId) => {
+      _fetchVersionsFromApi: async (trackId) => {
           const state = get();
           if (state._loadVersionsAbortController) {
             state._loadVersionsAbortController.abort();
@@ -729,8 +729,8 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             set({ availableVersions: [], currentVersionIndex: -1, _loadVersionsAbortController: null });
           }
         },
-      }),
-      {
+    }),
+    {
         name: 'audio-player-storage',
         // Only persist user preferences, not playback state
         partialize: (state) => ({
