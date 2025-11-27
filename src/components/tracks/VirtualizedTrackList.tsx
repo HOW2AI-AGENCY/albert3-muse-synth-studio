@@ -1,30 +1,62 @@
 /**
  * Virtualized Track List for List View
  * Uses @tanstack/react-virtual for high-performance list rendering
+ * 
+ * Оптимизирован для отображения больших списков треков
+ * с минимальным потреблением памяти
  */
 import React, { useRef, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { TrackListItem, TrackListItemProps } from '@/design-system/components/compositions/TrackListItem/TrackListItem';
-import type { UnifiedTrackActionsMenuProps } from '@/components/tracks/shared/TrackActionsMenu.types';
+import { TrackListItem } from '@/design-system/components/compositions/TrackListItem/TrackListItem';
 
-// Omit props that are handled internally by the list item
-type ActionMenuProps = Omit<UnifiedTrackActionsMenuProps, 'trackId' | 'trackStatus' | 'trackMetadata' | 'isLiked' | 'currentVersionId' | 'versionNumber' | 'isMasterVersion'>;
-
-interface VirtualizedTrackListProps extends ActionMenuProps {
+/**
+ * Props для VirtualizedTrackList
+ * Все callback функции принимают trackId как параметр
+ */
+interface VirtualizedTrackListProps {
   tracks: any[];
   height?: number;
   onTrackPlay?: (track: any) => void;
   loadingTrackId?: string | null;
+  onShare?: (trackId: string) => void | Promise<void>;
+  onSeparateStems?: (trackId: string) => void;
+  onExtend?: (trackId: string) => void;
+  onCover?: (trackId: string) => void;
+  onAddVocal?: (trackId: string) => void;
+  onCreatePersona?: (trackId: string) => void;
+  onUpscaleAudio?: (trackId: string) => void;
+  onGenerateCover?: (trackId: string) => void;
+  onRetry?: (trackId: string) => void | Promise<void>;
+  onDelete?: (trackId: string) => void | Promise<void>;
+  onSwitchVersion?: (trackId: string) => void;
+  onDescribeTrack?: (trackId: string) => void;
+  enableAITools?: boolean;
 }
 
 const ITEM_HEIGHT = 72; // Height of TrackListItem in pixels
 
+/**
+ * Virtualized track list component
+ * Рендерит только видимые элементы для оптимизации производительности
+ */
 export const VirtualizedTrackList = React.memo<VirtualizedTrackListProps>(({
   tracks,
   height,
   onTrackPlay,
   loadingTrackId,
-  ...actionMenuProps
+  onShare,
+  onSeparateStems,
+  onExtend,
+  onCover,
+  onAddVocal,
+  onCreatePersona,
+  onUpscaleAudio,
+  onGenerateCover,
+  onRetry,
+  onDelete,
+  onSwitchVersion,
+  onDescribeTrack,
+  enableAITools = true,
 }) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -76,8 +108,21 @@ export const VirtualizedTrackList = React.memo<VirtualizedTrackListProps>(({
                 <TrackListItem
                   track={track}
                   onPlay={() => handleTrackPlay(track)}
-                  // Pass all action menu props to the list item
-                  actionMenuProps={actionMenuProps}
+                  actionMenuProps={{
+                    onShare: onShare ? () => onShare(track.id) : undefined,
+                    onSeparateStems: onSeparateStems ? () => onSeparateStems(track.id) : undefined,
+                    onExtend: onExtend ? () => onExtend(track.id) : undefined,
+                    onCover: onCover ? () => onCover(track.id) : undefined,
+                    onAddVocal: onAddVocal ? () => onAddVocal(track.id) : undefined,
+                    onCreatePersona: onCreatePersona ? () => onCreatePersona(track.id) : undefined,
+                    onUpscaleAudio: onUpscaleAudio ? () => onUpscaleAudio(track.id) : undefined,
+                    onGenerateCover: onGenerateCover ? () => onGenerateCover(track.id) : undefined,
+                    onRetry: onRetry ? () => onRetry(track.id) : undefined,
+                    onDelete: onDelete ? () => onDelete(track.id) : undefined,
+                    onSwitchVersion: onSwitchVersion ? () => onSwitchVersion(track.id) : undefined,
+                    onDescribeTrack: onDescribeTrack ? () => onDescribeTrack(track.id) : undefined,
+                    enableAITools,
+                  }}
                 />
                 {isLoading && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-xl bg-background/80 backdrop-blur-sm">

@@ -46,7 +46,7 @@ export const UserBalance = ({ className }: { className?: string }) => {
     }
 
     // Используем Intl.NumberFormat для корректного форматирования для русской локали
-    const formattedCredits = new Intl.NumberFormat('ru-RU').format(Math.floor(balanceInfo.credits_left));
+    const formattedCredits = new Intl.NumberFormat('ru-RU').format(Math.floor(balanceInfo.credits_remaining || 0));
 
     return (
       <div className="flex items-center">
