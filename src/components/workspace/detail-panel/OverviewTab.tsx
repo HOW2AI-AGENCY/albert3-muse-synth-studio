@@ -223,7 +223,7 @@ export const OverviewTab = ({
                   onGenerateAdvancedPrompt={(request) => generateAdvanced(request)}
                   isGeneratingPrompt={isGeneratingPrompt || isRateLimited}
                   currentPrompt={track.prompt}
-                  currentLyrics={track.lyrics}
+                  currentLyrics={track.lyrics || undefined}
                 />
               </CardContent>
             </Card>
@@ -249,7 +249,7 @@ export const OverviewTab = ({
                 </div>
                 {track.video_url && <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Видео:</span>
-                    <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => window.open(track.video_url, "_blank")}>
+                    <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => window.open(track.video_url || '', "_blank")}>
                       Открыть
                       <ExternalLink className="h-3 w-3 ml-1" />
                     </Button>

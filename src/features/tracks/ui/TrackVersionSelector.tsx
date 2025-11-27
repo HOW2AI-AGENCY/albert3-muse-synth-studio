@@ -15,10 +15,10 @@ import { logger } from "@/utils/logger";
 
 export interface TrackVersionSelectorOption {
   id: string;
-  variant_index: number;
+  variant_index: number | null;
   created_at?: string | null;
-  is_preferred_variant?: boolean;
-  is_primary_variant?: boolean;
+  is_preferred_variant?: boolean | null;
+  is_primary_variant?: boolean | null;
   is_original?: boolean;
 }
 

@@ -39,7 +39,7 @@ export const DetailsTab = ({
                   <span className="text-muted-foreground">Suno ID:</span>
                   <span className="font-mono text-xs">{track.suno_id || "—"}</span>
                 </div>
-                {track.video_url && <Button variant="outline" size="sm" className="w-full" onClick={() => window.open(track.video_url, "_blank")}>
+                  {track.video_url && <Button variant="outline" size="sm" className="w-full" onClick={() => window.open(track.video_url || '', "_blank")}>
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Открыть видео
                   </Button>}
