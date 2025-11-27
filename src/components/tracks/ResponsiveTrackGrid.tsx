@@ -1,8 +1,8 @@
 /**
  * Responsive Track Grid Component
  * 
- * @version 2.1.0
- * @refactor Jules, UI/UX Designer - Addressed functional bug by creating a memoized child component to handle callbacks.
+ * @version 2.0.0
+ * @refactor Jules, UI/UX Designer - Replaced inline styles with Tailwind classes from the refactored useResponsiveGrid hook.
  */
 
 import React, { useRef, useMemo, useCallback } from 'react';
@@ -14,75 +14,22 @@ import { TrackCard } from '@/features/tracks/components/TrackCard';
 import type { Track } from '@/types/domain/track.types';
 import { cn } from '@/lib/utils';
 
-// ... (interface ResponsiveTrackGridProps remains the same)
 interface ResponsiveTrackGridProps {
-    tracks: Track[];
-    onPlayPause?: (trackId: string) => void;
-    onLike?: (trackId: string) => void;
-    onClick?: (track: Track) => void;
-    onShare?: (track: Track) => void;
-    onRetry?: (trackId: string) => void;
-    onDelete?: (trackId: string) => void;
-    onExtend?: (trackId: string) => void;
-    onSeparateStems?: (trackId: string) => void;
-    currentTrackId?: string | null;
-    likedTrackIds?: Set<string>;
-    className?: string;
-    optimized?: boolean;
-    containerPadding?: number;
-  }
-
-const MemoizedGridCard = React.memo<{
-    track: Track;
-    isLiked: boolean;
-    isPlaying: boolean;
-    CardComponent: typeof TrackCard | typeof OptimizedTrackCard;
-    cardWidth: number;
-    onClick?: (track: Track) => void;
-    onShare?: (track: Track) => void;
-    onPlayPause?: (trackId: string) => void;
-    onLike?: (trackId: string) => void;
-    onRetry?: (trackId: string) => void;
-    onDelete?: (trackId: string) => void;
-    onExtend?: (trackId: string) => void;
-    onSeparateStems?: (trackId: string) => void;
-    optimized: boolean;
-
-}>(({
-    track, isLiked, isPlaying, CardComponent, cardWidth,
-    onClick, onShare, onPlayPause, onLike, onRetry, onDelete, onExtend, onSeparateStems,
-    optimized
-}) => {
-    const handleTrackClick = useCallback(() => onClick?.(track), [onClick, track]);
-    const handleShare = useCallback(() => onShare?.(track), [onShare, track]);
-
-    return (
-        <div style={{ minWidth: `${cardWidth}px`, maxWidth: `${cardWidth}px` }}>
-            {optimized ? (
-                <OptimizedTrackCard
-                    track={track}
-                    isPlaying={isPlaying}
-                    isLiked={isLiked}
-                    onClick={handleTrackClick}
-                    onPlayPause={onPlayPause}
-                    onLike={onLike}
-                />
-            ) : (
-                <CardComponent
-                    track={track}
-                    onClick={handleTrackClick}
-                    onShare={handleShare}
-                    onRetry={onRetry}
-                    onDelete={onDelete}
-                    onExtend={onExtend}
-                    onSeparateStems={onSeparateStems}
-                />
-            )}
-        </div>
-    );
-});
-MemoizedGridCard.displayName = 'MemoizedGridCard';
-
+  tracks: Track[];
+  onPlayPause?: (trackId: string) => void;
+  onLike?: (trackId: string) => void;
+  onClick?: (track: Track) => void;
+  onShare?: (track: Track) => void;
+  onRetry?: (trackId: string) => void;
+  onDelete?: (trackId: string) => void;
+  onExtend?: (trackId: string) => void;
+  onSeparateStems?: (trackId: string) => void;
+  currentTrackId?: string | null;
+  likedTrackIds?: Set<string>;
+  className?: string;
+  optimized?: boolean;
+  containerPadding?: number;
+}
 
 export const ResponsiveTrackGrid = React.memo(({
   tracks,
@@ -120,6 +67,7 @@ export const ResponsiveTrackGrid = React.memo(({
     return () => observer.disconnect();
   }, [containerPadding]);
 
+  // ✅ TODO: Using refactored hook that returns Tailwind classes
   const { columns, gap, cardWidth, screenCategory, gridClass, gapClass } = useResponsiveGrid(containerWidth);
 
   const rowHeight = useMemo(() => {
@@ -139,6 +87,9 @@ export const ResponsiveTrackGrid = React.memo(({
 
   const virtualItems = virtualizer.getVirtualItems();
   const CardComponent = optimized ? OptimizedTrackCard : TrackCard;
+
+  const handleTrackClick = useCallback((track: Track) => onClick?.(track), [onClick]);
+  const handleShare = useCallback((track: Track) => onShare?.(track), [onShare]);
 
   return (
     <div
@@ -163,26 +114,37 @@ export const ResponsiveTrackGrid = React.memo(({
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >
+              {/* ✅ TODO: Replaced inline grid styles with Tailwind classes */}
               <div className={cn("grid h-full", gridClass, gapClass)}>
-                {rowTracks.map((track) => (
-                  <MemoizedGridCard
-                    key={track.id}
-                    track={track}
-                    isLiked={likedTrackIds.has(track.id)}
-                    isPlaying={currentTrackId === track.id}
-                    CardComponent={CardComponent}
-                    cardWidth={cardWidth}
-                    onClick={onClick}
-                    onShare={onShare}
-                    onPlayPause={onPlayPause}
-                    onLike={onLike}
-                    onRetry={onRetry}
-                    onDelete={onDelete}
-                    onExtend={onExtend}
-                    onSeparateStems={onSeparateStems}
-                    optimized={optimized}
-                  />
-                ))}
+                {rowTracks.map((track) => {
+                  const isPlaying = currentTrackId === track.id;
+                  const isLiked = likedTrackIds.has(track.id);
+
+                  return (
+                    <div key={track.id} style={{ minWidth: `${cardWidth}px`, maxWidth: `${cardWidth}px` }}>
+                      {optimized ? (
+                        <OptimizedTrackCard
+                          track={track}
+                          isPlaying={isPlaying}
+                          isLiked={isLiked}
+                          onClick={() => handleTrackClick(track)}
+                          onPlayPause={onPlayPause}
+                          onLike={onLike}
+                        />
+                      ) : (
+                        <CardComponent
+                          track={track}
+                          onClick={() => handleTrackClick(track)}
+                          onShare={() => handleShare(track)}
+                          onRetry={onRetry}
+                          onDelete={onDelete}
+                          onExtend={onExtend}
+                          onSeparateStems={onSeparateStems}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );
