@@ -1,53 +1,9 @@
 import { memo } from 'react';
 import { DetailPanelContent } from '@/components/workspace/DetailPanelContent';
-
-interface TrackVersion {
-  id: string;
-  variant_index: number;
-  is_preferred_variant: boolean;
-  is_primary_variant?: boolean;
-  suno_id: string;
-  audio_url: string;
-  video_url?: string;
-  cover_url?: string;
-  lyrics?: string;
-  duration?: number;
-  metadata?: Record<string, unknown> | null;
-  created_at?: string;
-}
-
-interface TrackStem {
-  id: string;
-  stem_type: string;
-  audio_url: string;
-  separation_mode: string;
-  track_id: string;
-  version_id?: string | null;
-  created_at?: string;
-}
+import type { Track, TrackVersion, TrackStem } from '@/types/track.types';
 
 interface DetailsTabProps {
-  track: {
-    id: string;
-    title: string;
-    prompt: string;
-    status: string;
-    audio_url?: string;
-    cover_url?: string;
-    video_url?: string;
-    suno_id?: string;
-    model_name?: string;
-    lyrics?: string;
-    style_tags?: string[];
-    genre?: string;
-    mood?: string;
-    is_public?: boolean;
-    view_count?: number;
-    like_count?: number;
-    created_at: string;
-    duration_seconds?: number;
-    has_stems?: boolean;
-  };
+  track: Track;
   title: string;
   setTitle: (value: string) => void;
   genre: string;

@@ -225,7 +225,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
               size="sm"
               variant={v.id === preferredVersion?.id ? 'default' : 'ghost'}
               className="h-7 px-2 text-xs"
-              onClick={() => handleSetMaster(v.id, getDisplayVersionNumber(v), v.is_primary_variant)}
+              onClick={() => handleSetMaster(v.id, getDisplayVersionNumber(v), v.is_primary_variant ?? undefined)}
               aria-label={`Выбрать версию V${getDisplayVersionNumber(v)}`}
             >
               {`V${getDisplayVersionNumber(v)}`}
@@ -297,7 +297,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                             )}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {formatTrackVersionDuration(version.duration)}
+                            {formatTrackVersionDuration(version.duration ?? undefined)}
                           </div>
                         </div>
                       </div>
@@ -323,7 +323,7 @@ const TrackVersionsComponent = ({ trackId, versions, trackMetadata, onVersionUpd
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleSetMaster(version.id, getDisplayVersionNumber(version), version.is_primary_variant)}
+                            onClick={() => handleSetMaster(version.id, getDisplayVersionNumber(version), version.is_primary_variant ?? undefined)}
                             aria-label={`Откатить на вариант ${getDisplayVersionNumber(version)}`}
                             className="text-xs h-8 transition-transform active:scale-95"
                           >

@@ -192,10 +192,10 @@ const TrackVersionComparisonComponent = ({
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              {formatTrackVersionDuration(version.duration)}
-            </div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            {formatTrackVersionDuration(version.duration ?? undefined)}
+          </div>
           </div>
           <Button
             size="icon"
@@ -234,7 +234,7 @@ const TrackVersionComparisonComponent = ({
                     {option.is_primary_variant ? 'Первичный' : `Вариант ${option.variant_index}`}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {formatTrackVersionDuration(option.duration)}
+                    {formatTrackVersionDuration(option.duration ?? undefined)}
                   </span>
                 </div>
                 {option.is_preferred_variant && (
