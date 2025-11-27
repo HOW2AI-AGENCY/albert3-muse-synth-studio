@@ -1,8 +1,8 @@
 /**
  * Hook для получения баланса кредитов пользователя
- * Использует react-query для кэширования и автоматического обновления
+ * Использует TanStack Query для кэширования и автоматического обновления
  * 
- * @version 2.0.0
+ * @version 2.1.0
  */
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,7 +16,7 @@ interface BalanceInfo {
 }
 
 /**
- * @description Hook для получения баланса кредитов через Supabase
+ * @description Hook для получения баланса кредитов через backend
  * Кэширует результат на 5 минут для оптимизации производительности
  */
 export const useBalance = () => {
@@ -52,7 +52,7 @@ export const useBalance = () => {
       }
     },
     staleTime: 5 * 60 * 1000, // 5 минут
-    gcTime: 10 * 60 * 1000, // 10 минут (заменяет устаревший cacheTime)
+    gcTime: 10 * 60 * 1000, // 10 минут (gcTime заменяет устаревший cacheTime)
     retry: 2,
   });
 };

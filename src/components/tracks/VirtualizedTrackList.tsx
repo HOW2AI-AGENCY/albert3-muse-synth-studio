@@ -4,6 +4,8 @@
  * 
  * Оптимизирован для отображения больших списков треков
  * с минимальным потреблением памяти
+ * 
+ * @version 2.0.0
  */
 import React, { useRef, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
