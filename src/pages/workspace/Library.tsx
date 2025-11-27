@@ -165,7 +165,7 @@ const LibraryContent: React.FC = () => {
         const remainingTracks = filteredAndSortedTracks
           .filter(t => t.id !== track.id && t.audio_url)
           .map(displayTrack => mapDisplayTrackToAudio(displayTrack as DisplayTrackType))
-          .filter((audioTrack): audioTrack is AudioPlayerTrack => Boolean(audioTrack));
+          .filter((audioTrack): audioTrack is NonNullable<typeof audioTrack> => audioTrack !== null);
 
         if (startTrack) {
           playTrackWithQueue(startTrack, [...audioTracks, ...remainingTracks]);
@@ -178,8 +178,8 @@ const LibraryContent: React.FC = () => {
         const remainingTracks = filteredAndSortedTracks
           .filter(t => t.id !== track.id && t.audio_url)
           .map(displayTrack => mapDisplayTrackToAudio(displayTrack as DisplayTrackType))
-          .filter((audioTrack): audioTrack is AudioPlayerTrack => Boolean(audioTrack));
-        playTrackWithQueue(fallbackAudio, [fallbackAudio, ...remainingTracks]);
+          .filter((audioTrack): audioTrack is NonNullable<typeof audioTrack> => audioTrack !== null);
+        playTrackWithQueue(fallbackAudio, [fallbackAudio, ...remainingTracks] as AudioPlayerTrack[]);
         return;
       }
 

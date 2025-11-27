@@ -31,7 +31,7 @@ export interface Track {
   title: string;
   prompt: string;
   improved_prompt: string | null;
-  status: 'draft' | 'processing' | 'completed' | 'failed' | 'pending';
+  status: 'draft' | 'pending' | 'processing' | 'completed' | 'failed';
   audio_url: string | null;
   cover_url: string | null;
   video_url: string | null;
@@ -81,6 +81,8 @@ export interface Track {
 export interface DisplayTrack extends Track {
   isLiked?: boolean;
   isPlaying?: boolean;
+  formattedDuration?: string;
+  formattedDate?: string;
 }
 
 // Audio Player Track type (совместим с audioPlayerStore)
@@ -93,7 +95,7 @@ export interface AudioPlayerTrack {
   duration?: number;
   lyrics?: string;
   style_tags?: string[];
-  status?: 'pending' | 'processing' | 'completed' | 'failed';
+  status?: 'draft' | 'pending' | 'processing' | 'completed' | 'failed';
   parentTrackId?: string;
   versionNumber?: number;
   isMasterVersion?: boolean;
