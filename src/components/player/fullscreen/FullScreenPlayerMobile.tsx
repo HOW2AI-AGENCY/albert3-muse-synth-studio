@@ -1,18 +1,33 @@
 /**
  * @file FullScreenPlayerMobile.tsx
  * @description An immersive, gesture-driven, and visually rich full-screen player for mobile.
- * @version 2.0.0
+ *
+ * ✅ MOBILE FIX #9 (v2.1.0):
+ * - Добавлена поддержка переключения версий трека
+ * - Теперь мобильный плеер имеет ту же функциональность что и десктопный
+ * - Меню версий доступно через кнопку "More options"
+ *
+ * @version 2.1.0
  */
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { ChevronDown, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useCurrentTrack } from '@/stores/audioPlayerStore';
+import { useAudioPlayerStore, useCurrentTrack } from '@/stores/audioPlayerStore';
 import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 import { useTrackQuery } from '@/hooks/tracks/useTracksQuery';
 import { PlayerControls } from '../shared/PlayerControls';
 import { ProgressBar } from '../shared/ProgressBar';
 import { LyricsPanel } from '../shared/LyricsPanel';
 import { LyricsSkeleton } from '../LyricsSkeleton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 
 interface FullScreenPlayerMobileProps {
   onMinimize: () => void;
@@ -21,6 +36,14 @@ interface FullScreenPlayerMobileProps {
 const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileProps) => {
   const currentTrack = useCurrentTrack();
   const { data: fullTrack, isLoading } = useTrackQuery(currentTrack?.id || null);
+
+  /**
+   * ✅ FIX #9: Version switching support for mobile player
+   */
+  const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
+  const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
+  const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const swipeRef = useSwipeGesture({
     onSwipeDown: onMinimize,
@@ -62,9 +85,46 @@ const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileP
             <p className="text-xs text-muted-foreground">PLAYING FROM LIBRARY</p>
             <h2 className="text-sm font-semibold truncate">{displayTrack.title}</h2>
           </div>
-          <Button variant="ghost" size="icon" aria-label="More options">
-            <MoreVertical className="h-6 w-6" />
-          </Button>
+          {/* ✅ FIX #9: Version switcher menu */}
+          {availableVersions && availableVersions.length > 1 ? (
+            <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="More options">
+                  <MoreVertical className="h-6 w-6" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel className="flex items-center justify-between">
+                  <span>Версии трека</span>
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                    {currentVersionIndex + 1}/{availableVersions.length}
+                  </Badge>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {availableVersions.map((version, index) => (
+                  <DropdownMenuItem
+                    key={version.id || index}
+                    onClick={() => {
+                      switchToVersion(index);
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex items-center justify-between"
+                  >
+                    <span>Версия {index + 1}</span>
+                    {index === currentVersionIndex && (
+                      <Badge variant="default" className="text-[10px] px-1 py-0">
+                        Текущая
+                      </Badge>
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button variant="ghost" size="icon" aria-label="More options" disabled>
+              <MoreVertical className="h-6 w-6" />
+            </Button>
+          )}
         </header>
 
         {/* Main Content */}
