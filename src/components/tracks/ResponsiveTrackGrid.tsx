@@ -11,7 +11,7 @@
  * @refactor Jules, UI/UX Designer - Replaced inline styles with Tailwind classes from the refactored useResponsiveGrid hook.
  */
 
-import React, { useRef, useMemo, useCallback } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useResponsiveGrid } from '@/hooks/useResponsiveGrid';
 import { useBreakpoints } from '@/hooks/useBreakpoints';
