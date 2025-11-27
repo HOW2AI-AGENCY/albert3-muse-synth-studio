@@ -127,6 +127,7 @@ export const FullScreenPlayerControls = memo(({
         </Button>
 
         <div className="flex items-center gap-[--space-2] flex-1 max-w-xs mx-[--space-4]">
+          {/* ✅ FIX: Changed sm:h-8 to md:h-8 to maintain 44px minimum on mobile (HIGH) */}
           <Button
             variant="ghost"
             size="icon"
@@ -135,7 +136,6 @@ export const FullScreenPlayerControls = memo(({
               onToggleMute();
             }}
             className="h-11 w-11 min-h-[44px] min-w-[44px] md:h-8 md:w-8 hover:bg-primary/10 hover:scale-105 transition-all duration-200"
-            {/* ✅ FIX: Changed sm:h-8 to md:h-8 to maintain 44px minimum on mobile (HIGH) */}
             aria-label={isMuted ? "Включить звук" : "Выключить звук"}
           >
             {isMuted ? <VolumeX className="h-5 w-5 sm:h-4 sm:w-4" /> : <Volume2 className="h-5 w-5 sm:h-4 sm:w-4" />}
