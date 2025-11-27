@@ -1,28 +1,58 @@
+/**
+ * Hook для получения баланса кредитов пользователя
+ * Использует react-query для кэширования и автоматического обновления
+ * 
+ * @version 2.0.0
+ */
 import { useQuery } from '@tanstack/react-query';
-import { sunoAdapter } from '@/services/providers/adapters/suno.adapter';
-import { QUERY_KEYS } from '@/config/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 
+interface BalanceInfo {
+  credits_remaining: number;
+  credits_used_today: number;
+  daily_limit: number;
+  subscription_tier: string;
+}
+
 /**
- * @description Hook to fetch user's Suno credits balance.
- * It uses react-query for caching and automatic refetching.
+ * @description Hook для получения баланса кредитов через Supabase
+ * Кэширует результат на 5 минут для оптимизации производительности
  */
 export const useBalance = () => {
   return useQuery({
-    queryKey: [QUERY_KEYS.USER_BALANCE],
-    queryFn: async () => {
+    queryKey: ['user-balance'],
+    queryFn: async (): Promise<BalanceInfo> => {
       try {
-        const balanceInfo = await sunoAdapter.getBalance();
-        return balanceInfo;
+        // Получаем текущего пользователя
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError || !user) {
+          throw new Error('User not authenticated');
+        }
+
+        // Получаем профиль с балансом
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('credits_remaining, credits_used_today, subscription_tier')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError) throw profileError;
+
+        return {
+          credits_remaining: profile?.credits_remaining || 0,
+          credits_used_today: profile?.credits_used_today || 0,
+          daily_limit: 100, // Default daily limit
+          subscription_tier: profile?.subscription_tier || 'free',
+        };
       } catch (error) {
-        logger.error('Failed to fetch balance:', { error });
-        // Re-throw the error so react-query can handle it
+        logger.error('Failed to fetch balance', error as Error, 'useBalance');
         throw error;
       }
     },
-    // Optional: Configure staleTime, cacheTime, refetch intervals etc.
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
-    retry: 2, // Retry failed requests 2 times
+    staleTime: 5 * 60 * 1000, // 5 минут
+    gcTime: 10 * 60 * 1000, // 10 минут (заменяет устаревший cacheTime)
+    retry: 2,
   });
 };

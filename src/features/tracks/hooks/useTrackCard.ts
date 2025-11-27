@@ -20,13 +20,26 @@ export interface TrackCardCallbacks {
   onAddVocal?: (trackId: string) => void;
   onDescribeTrack?: (trackId: string) => void;
   onCreatePersona?: (trackId: string) => void;
+  onUpscaleAudio?: (trackId: string) => void;
+  onGenerateCover?: (trackId: string) => void;
 }
 
 /**
  * Custom hook for TrackCard business logic
+ * Передает все необходимые callbacks в useTrackCardState
  */
 export const useTrackCard = (track: Track, callbacks: TrackCardCallbacks) => {
-  const state = useTrackCardState(track);
+  const state = useTrackCardState({
+    track,
+    onExtend: callbacks.onExtend,
+    onCover: callbacks.onCover,
+    onSeparateStems: callbacks.onSeparateStems,
+    onAddVocal: callbacks.onAddVocal,
+    onDescribeTrack: callbacks.onDescribeTrack,
+    onCreatePersona: callbacks.onCreatePersona,
+    onUpscaleAudio: callbacks.onUpscaleAudio,
+    onGenerateCover: callbacks.onGenerateCover,
+  });
 
   const handleShareClick = useCallback(() => {
     callbacks.onShare?.();

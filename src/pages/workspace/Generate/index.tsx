@@ -124,26 +124,7 @@ const Generate = () => {
                   <TracksList
                     tracks={tracks}
                     isLoading={isLoading}
-                    deleteTrack={deleteTrack}
-                    refreshTracks={refreshTracks}
-                    onSelect={handlers.handleTrackSelect}
-                    onSeparateStems={(trackId) => {
-                      const track = tracks.find(t => t.id === trackId);
-                      if (track) handlers.handleSeparateStems(track);
-                    }}
-                    onExtend={(trackId) => {
-                      const track = tracks.find(t => t.id === trackId);
-                      if (track) handlers.handleExtendTrack(track);
-                    }}
-                    onCover={(trackId) => {
-                      const track = tracks.find(t => t.id === trackId);
-                      if (track) handlers.handleCreateCover(track);
-                    }}
-                    onCreatePersona={(trackId) => {
-                      const track = tracks.find(t => t.id === trackId);
-                      if (track) handlers.handleCreatePersona(track);
-                    }}
-                    trackOperations={handlers.handleRemix as any}
+                    onRefresh={refreshTracks}
                     viewMode={state.viewMode}
                   />
                 </div>
@@ -204,27 +185,7 @@ const Generate = () => {
               <TracksList
                 tracks={tracks}
                 isLoading={isLoading}
-                deleteTrack={deleteTrack}
-                refreshTracks={refreshTracks}
-                onSelect={handlers.handleTrackSelect}
-                onSeparateStems={(trackId) => {
-                  const track = tracks.find(t => t.id === trackId);
-                  if (track) handlers.handleSeparateStems(track);
-                }}
-                onExtend={(trackId) => {
-                  const track = tracks.find(t => t.id === trackId);
-                  if (track) handlers.handleExtendTrack(track);
-                }}
-                onCover={(trackId) => {
-                  const track = tracks.find(t => t.id === trackId);
-                  if (track) handlers.handleCreateCover(track);
-                }}
-                onCreatePersona={(trackId) => {
-                  const track = tracks.find(t => t.id === trackId);
-                  if (track) handlers.handleCreatePersona(track);
-                }}
-                trackOperations={handlers.handleRemix as any}
-                viewMode={state.viewMode}
+                onRefresh={refreshTracks}
               />
             </div>
           </div>

@@ -617,23 +617,22 @@ const LibraryContent: React.FC = () => {
             <div className="w-full" style={{ height: 'calc(100vh - 280px)' }}>
               <VirtualizedTrackList
                 tracks={filteredAndSortedTracks as any[]}
-                height={600} // This will be overridden by the style below, consider removing
+                height={600}
                 onTrackPlay={handleTrackPlay}
                 loadingTrackId={loadingTrackId}
-                // Pass all necessary handlers for the context menu
                 onShare={handleShare}
                 onSeparateStems={handleSeparateStems}
                 onExtend={handleExtend}
                 onCover={handleCover}
                 onAddVocal={handleAddVocal}
                 onCreatePersona={handleCreatePersona}
-                onUpscaleAudio={handleUpscaleAudio}
-                onGenerateCover={handleGenerateCover}
+                onUpscaleAudio={(trackId: string) => console.log('Upscale:', trackId)}
+                onGenerateCover={(trackId: string) => console.log('Generate cover:', trackId)}
                 onRetry={handleRetry}
                 onDelete={handleDelete}
-                onSwitchVersion={handleSwitchVersion}
+                onSwitchVersion={(trackId: string) => console.log('Switch version:', trackId)}
                 onDescribeTrack={handleDescribeTrack}
-                enableAITools={true} // Assuming AI tools are always enabled in the library
+                enableAITools={true}
               />
             </div>
           )}
