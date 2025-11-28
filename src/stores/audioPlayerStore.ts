@@ -173,65 +173,65 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
       // ==========================================
       // PLAYBACK ACTIONS
       // ==========================================
-      playTrack: async (track) => {
+      playTrack: (track) => {
           const requestId = Date.now();
-          set({ _playTrackRequestId: requestId });
-
           const state = get();
+          
+          set({ _playTrackRequestId: requestId });
 
           // If a specific version is selected, handle it first
           if (track.selectedVersionId) {
             // Ensure versions are loaded for the parent track
             const parentId = track.parentTrackId || track.id;
-
-            // ✅ FIX: Store track ID before async operation to detect race conditions
             const requestedTrackId = track.id;
 
-            await get().loadVersions(parentId);
+            // Load versions asynchronously without blocking
+            get().loadVersions(parentId).then(() => {
+              // Check if still the same request
+              if (get()._playTrackRequestId !== requestId) {
+                logInfo('Version load aborted - user switched tracks', 'audioPlayerStore', {
+                  requestedTrackId,
+                  currentTrackId: get().currentTrack?.id,
+                });
+                return;
+              }
 
-            // ✅ FIX: Check if user switched to another track during loading
-            const updatedState = get();
-            if (updatedState._playTrackRequestId !== requestId) {
-              logInfo('Playback request aborted - user switched tracks', 'audioPlayerStore', {
-                requestedTrackId,
-                currentTrackId: updatedState.currentTrack?.id,
-              });
-              return;
-            }
+              const updatedState = get();
+              const selectedVersion = updatedState.availableVersions.find(v => v.id === track.selectedVersionId);
 
-            // After loading, get the latest state
-            const selectedVersion = updatedState.availableVersions.find(v => v.id === track.selectedVersionId);
+              if (selectedVersion && selectedVersion.audio_url) {
+                const versionTrack: AudioPlayerTrack = {
+                  ...track,
+                  id: selectedVersion.id,
+                  audio_url: selectedVersion.audio_url,
+                  cover_url: selectedVersion.cover_url || track.cover_url,
+                  duration: selectedVersion.duration || track.duration,
+                  versionNumber: selectedVersion.versionNumber,
+                  isMasterVersion: selectedVersion.isMasterVersion,
+                  parentTrackId: parentId,
+                  suno_task_id: selectedVersion.suno_id || track.suno_task_id,
+                };
 
-            if (selectedVersion && selectedVersion.audio_url) {
-              // Create a new track object for the player from the selected version
-              const versionTrack: AudioPlayerTrack = {
-                ...track,
-                id: selectedVersion.id,
-                audio_url: selectedVersion.audio_url,
-                cover_url: selectedVersion.cover_url || track.cover_url,
-                duration: selectedVersion.duration || track.duration,
-                versionNumber: selectedVersion.versionNumber,
-                isMasterVersion: selectedVersion.isMasterVersion,
-                parentTrackId: parentId,
-                suno_task_id: selectedVersion.suno_id || track.suno_task_id, // ✅ FIX: Pass suno_id for lyrics
-              };
-
-              // Now, play this specific version
-              set({
-                currentTrack: versionTrack,
-                isPlaying: true,
-                currentTime: 0,
-                duration: versionTrack.duration || 0,
-              });
-              return; // Exit after playing the selected version
-            } else {
-              logError('Selected version not found or has no audio URL', new Error('Version not playable'), 'audioPlayerStore', {
+                set({
+                  currentTrack: versionTrack,
+                  isPlaying: true,
+                  currentTime: 0,
+                  duration: versionTrack.duration || 0,
+                });
+              } else {
+                logError('Selected version not found', new Error('Version not playable'), 'audioPlayerStore', {
+                  trackId: track.id,
+                  selectedVersionId: track.selectedVersionId,
+                });
+                toast.error('Выбранная версия недоступна');
+              }
+            }).catch((error) => {
+              logError('Failed to load versions for selected track', error as Error, 'audioPlayerStore', {
                 trackId: track.id,
-                selectedVersionId: track.selectedVersionId,
+                parentId,
               });
-              toast.error('Выбранная версия недоступна');
-              // Fallback to playing the main track if the version is invalid
-            }
+            });
+            return;
           }
 
           // Standard playback logic
@@ -264,13 +264,16 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             duration: track.duration || 0,
           });
 
+          // Load versions in background without blocking
           const parentId = track.parentTrackId || track.id;
-          get().loadVersions(parentId).catch((error) => {
-            logError('Failed to load versions in playTrack', error as Error, 'audioPlayerStore', {
-              trackId: track.id,
-              parentId,
+          setTimeout(() => {
+            get().loadVersions(parentId).catch((error) => {
+              logError('Failed to load versions in playTrack', error as Error, 'audioPlayerStore', {
+                trackId: track.id,
+                parentId,
+              });
             });
-          });
+          }, 0);
         },
 
         pause: () => {
