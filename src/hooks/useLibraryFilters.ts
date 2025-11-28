@@ -45,21 +45,13 @@ export const useLibraryFilters = ({ tracks }: UseLibraryFiltersOptions): Library
   });
 
   const setViewMode = useCallback((mode: ViewMode) => {
-    // ✅ DEBUG: Логируем изменение viewMode через logger
-    logger.info(`ViewMode changed: ${viewMode} → ${mode}`, 'useLibraryFilters', {
-      from: viewMode,
-      to: mode
-    });
-
     setViewModeState(mode);
     localStorage.setItem('library-view-mode', mode);
-
-    // ✅ DEBUG: Подтверждаем обновление
-    logger.info(`ViewMode updated to ${mode}`, 'useLibraryFilters', {
-      newMode: mode,
-      localStorage: localStorage.getItem('library-view-mode')
+    
+    logger.info(`ViewMode changed to ${mode}`, 'useLibraryFilters', {
+      newMode: mode
     });
-  }, [viewMode]);
+  }, []); // ✅ FIX: Remove viewMode dependency to prevent infinite loop
 
   // Filter/sort state
   const [searchQuery, setSearchQuery] = useState('');
