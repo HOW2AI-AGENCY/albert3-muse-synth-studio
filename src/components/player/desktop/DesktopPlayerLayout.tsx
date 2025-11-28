@@ -42,6 +42,17 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
   const volumeRef = useRef(volume);
   const isMutedRef = useRef(isMuted);
 
+  // ✅ FIX [React error #185]: Отслеживание mounted состояния
+  // WHY: setIsMuted может быть вызван после unmount при изменении volume
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   useEffect(() => {
     volumeRef.current = volume;
   }, [volume]);
@@ -51,6 +62,10 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
   }, [isMuted]);
 
   useEffect(() => {
+    // ✅ FIX [React error #185]: Проверка mounted перед setState
+    // WHY: volume может обновиться в момент размонтирования компонента
+    if (!isMountedRef.current) return;
+
     const shouldBeMuted = volume === 0;
     if (isMutedRef.current !== shouldBeMuted) {
       setIsMuted(shouldBeMuted);

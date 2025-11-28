@@ -7,6 +7,7 @@ import { logger } from "@/utils/logger";
 const rawEnv = {
   supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
   supabaseAnonKey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+  suggestionsApiUrl: import.meta.env.VITE_SUGGESTIONS_API_URL,
   appEnv: import.meta.env.VITE_APP_ENV ?? import.meta.env.MODE,
   isDevelopment: import.meta.env.DEV,
   isProduction: import.meta.env.PROD,
@@ -19,6 +20,10 @@ const envSchema = z.object({
   supabaseAnonKey: z
     .string({ message: "VITE_SUPABASE_PUBLISHABLE_KEY is required" })
     .min(1, "VITE_SUPABASE_PUBLISHABLE_KEY cannot be empty"),
+  suggestionsApiUrl: z
+    .string()
+    .url("VITE_SUGGESTIONS_API_URL must be a valid URL")
+    .optional(),
   appEnv: z
     .enum(["development", "production", "test", "staging"])
     .optional()
@@ -47,6 +52,7 @@ if (result.success) {
     envData = {
       supabaseUrl: "https://localhost.invalid",
       supabaseAnonKey: "dev-placeholder-key",
+      suggestionsApiUrl: undefined,
       appEnv: "development",
       isDevelopment: true,
       isProduction: false,
@@ -59,6 +65,7 @@ if (result.success) {
 export const appEnv = {
   supabaseUrl: envData.supabaseUrl,
   supabaseAnonKey: envData.supabaseAnonKey,
+  suggestionsApiUrl: envData.suggestionsApiUrl,
   appEnv: envData.appEnv,
   isDevelopment: envData.isDevelopment,
   isProduction: envData.isProduction,

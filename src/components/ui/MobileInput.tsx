@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import Autosuggest, { type InputProps } from 'react-autosuggest';
 import { logger } from '@/utils/logger';
+import { appEnv } from '@/config/env';
 
 const MobileInput: React.FC = () => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -18,12 +19,20 @@ const MobileInput: React.FC = () => {
       return;
     }
 
+    // ✅ FIX [Security]: Использование env переменной вместо hardcoded endpoint
+    // WHY: Hardcoded URL создавал security risk и затруднял конфигурацию
+    if (!appEnv.suggestionsApiUrl) {
+      logger.warn('VITE_SUGGESTIONS_API_URL не настроен, suggestions отключены', 'MobileInput');
+      setSuggestions([]);
+      return;
+    }
+
     try {
       if (controllerRef.current) {
         controllerRef.current.abort();
       }
       controllerRef.current = new AbortController();
-      const response = await fetch(`https://example.com/suggestions?q=${encodeURIComponent(q)}`, {
+      const response = await fetch(`${appEnv.suggestionsApiUrl}?q=${encodeURIComponent(q)}`, {
         signal: controllerRef.current.signal,
       });
       if (!response.ok) {
