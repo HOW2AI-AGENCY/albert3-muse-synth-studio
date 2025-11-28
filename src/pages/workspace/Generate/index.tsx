@@ -215,30 +215,29 @@ const Generate = () => {
           onSuccess={refreshTracks}
         />
 
-        {/* Desktop Detail Sheet */}
-        {!isDesktop && !isTablet && (
-          <Sheet open={!!state.selectedTrack} onOpenChange={(open) => !open && handlers.handleCloseDetail()}>
-            <SheetContent side="right" className="w-full sm:w-[500px] p-0 border-l">
-              {state.selectedTrack && (
-                <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
-                  <DetailPanel
-                    track={state.selectedTrack}
-                    onClose={handlers.handleCloseDetail}
-                    onDelete={() => {
-                      if (state.selectedTrack) {
-                        handlers.handleDelete(state.selectedTrack.id);
-                      }
-                    }}
-                    onRemix={() => {
-                      if (state.selectedTrack) {
-                        handlers.handleRemix(state.selectedTrack);
-                      }
-                    }}
-                  />
-                </Suspense>
-              )}
-            </SheetContent>
-          </Sheet>
+        {/* Mobile Detail Panel */}
+        {/* ✅ FIX: DetailPanel для мобильных уже является Sheet (DetailPanelMobileV2),
+             поэтому НЕ нужно оборачивать его в еще один Sheet */}
+        {!isDesktop && !isTablet && state.selectedTrack && (
+          <Suspense fallback={null}>
+            <DetailPanel
+              track={state.selectedTrack}
+              open={!!state.selectedTrack}
+              onOpenChange={(open) => !open && handlers.handleCloseDetail()}
+              onClose={handlers.handleCloseDetail}
+              onDelete={() => {
+                if (state.selectedTrack) {
+                  handlers.handleDelete(state.selectedTrack.id);
+                }
+              }}
+              onRemix={() => {
+                if (state.selectedTrack) {
+                  handlers.handleRemix(state.selectedTrack);
+                }
+              }}
+              variant="mobile"
+            />
+          </Suspense>
         )}
 
         {/* Generator Drawer для мобильных */}

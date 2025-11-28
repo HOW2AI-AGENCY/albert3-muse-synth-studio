@@ -126,12 +126,54 @@ const DetailPanelMobileV2Component = ({ track, open, onOpenChange, onDelete }: D
 
         {/* ============= SCROLLABLE CONTENT ============= */}
         <div className="flex-1 overflow-y-auto overscroll-contain">
-          {/* Track info header */}
+          {/* Track info header with cover */}
           <div className="px-4 py-6 bg-gradient-to-b from-muted/20 to-transparent">
+            {/* Cover Image */}
+            {track.cover_url && (
+              <div className="mb-4 flex justify-center">
+                <img
+                  src={track.cover_url}
+                  alt={track.title}
+                  className="w-48 h-48 rounded-lg object-cover shadow-lg shadow-primary/10"
+                  loading="lazy"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+
             <h1 className="text-2xl font-bold mb-2 leading-tight">{track.title}</h1>
-            <p className="text-sm text-muted-foreground mb-1">
-              {track.style_tags?.join(', ') || 'AI Generated Music'}
-            </p>
+
+            {/* Style Tags */}
+            {track.style_tags && track.style_tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-2">
+                {track.style_tags.map((tag, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Genre & Mood */}
+            <div className="text-sm text-muted-foreground mb-2 space-y-1">
+              {track.genre && (
+                <p>
+                  <span className="font-medium">Жанр:</span> {track.genre}
+                </p>
+              )}
+              {track.mood && (
+                <p>
+                  <span className="font-medium">Настроение:</span> {track.mood}
+                </p>
+              )}
+            </div>
+
+            {/* Provider */}
             {track.provider && (
               <p className="text-xs text-muted-foreground/70 capitalize">
                 Создано через {track.provider}
