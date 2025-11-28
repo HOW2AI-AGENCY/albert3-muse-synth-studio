@@ -466,34 +466,61 @@ const LibraryContent: React.FC<{
             <RefreshCcw className="h-4 w-4" />
           </Button>
           
-          {/* Переключатель вида */}
+          {/* ✅ FIX: Переключатель вида с touch support */}
           <div className="flex items-center border border-border/30 rounded-lg p-1 bg-background/50 backdrop-blur-sm">
             <Button
               variant={filters.viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => filters.setViewMode('grid')}
+              onClick={(e) => {
+                e.stopPropagation();
+                filters.setViewMode('grid');
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                filters.setViewMode('grid');
+              }}
               aria-label="Сетка"
-              className="transition-all duration-300"
+              data-testid="view-toggle-grid"
+              className="transition-all duration-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
             >
-              <Grid3X3 className="h-4 w-4" />
+              <Grid3X3 className="h-5 w-5" />
             </Button>
             <Button
               variant={filters.viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => filters.setViewMode('list')}
+              onClick={(e) => {
+                e.stopPropagation();
+                filters.setViewMode('list');
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                filters.setViewMode('list');
+              }}
               aria-label="Список"
-              className="transition-all duration-300"
+              data-testid="view-toggle-list"
+              className="transition-all duration-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
             >
-              <List className="h-4 w-4" />
+              <List className="h-5 w-5" />
             </Button>
             <Button
               variant={filters.viewMode === 'optimized' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => filters.setViewMode('optimized')}
+              onClick={(e) => {
+                e.stopPropagation();
+                filters.setViewMode('optimized');
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                filters.setViewMode('optimized');
+              }}
               aria-label="Оптимизированный список"
-              className="transition-all duration-300"
+              data-testid="view-toggle-optimized"
+              className="transition-all duration-300 min-w-[44px] min-h-[44px] flex items-center justify-center"
             >
-              <Music className="h-4 w-4" />
+              <Music className="h-5 w-5" />
             </Button>
           </div>
         </div>

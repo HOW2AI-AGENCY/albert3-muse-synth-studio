@@ -50,7 +50,7 @@ export const UnifiedTrackActionsMenu = memo((props: UnifiedTrackActionsMenuProps
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={onLike}
+                  onClick={(e) => { e.stopPropagation(); onLike?.(); }}
                   className={cn('h-10 w-10', variant === 'minimal' && 'h-8 w-8')}
                   aria-label={isLiked ? 'Убрать из избранного' : 'В избранное'}
                 >
@@ -67,7 +67,7 @@ export const UnifiedTrackActionsMenu = memo((props: UnifiedTrackActionsMenuProps
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={onDownload}
+                  onClick={(e) => { e.stopPropagation(); onDownload?.(); }}
                   className="h-10 w-10"
                   aria-label="Скачать MP3"
                 >
@@ -88,6 +88,7 @@ export const UnifiedTrackActionsMenu = memo((props: UnifiedTrackActionsMenuProps
             <Button
               variant="ghost"
               size="icon"
+              onClick={(e) => e.stopPropagation()}
               className={cn(
                 'h-10 w-10 shrink-0',
                 variant === 'minimal' && 'h-8 w-8',

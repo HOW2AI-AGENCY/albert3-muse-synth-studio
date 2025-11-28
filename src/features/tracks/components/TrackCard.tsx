@@ -178,6 +178,8 @@ const TrackCardComponent = memo(({
         )}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        onClick={onClick}
+        data-testid="track-card"
       >
         <div className="relative aspect-square max-h-[200px] sm:max-h-none bg-gradient-to-br from-neutral-900 to-neutral-950 overflow-hidden group-hover:shadow-inner transition-shadow duration-300">
           {(track.status === 'processing' || track.status === 'pending') && (
@@ -210,7 +212,7 @@ const TrackCardComponent = memo(({
           />
         </div>
 
-        <CardContent className="p-4 flex-1 flex flex-col gap-3 bg-gradient-to-b from-transparent to-card/50" onClick={onClick}>
+        <CardContent className="p-4 flex-1 flex flex-col gap-3 bg-gradient-to-b from-transparent to-card/50">
           <TrackCardInfo
             title={displayedVersion.title || track.title}
             prompt={track.prompt ?? ''}
