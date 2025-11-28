@@ -9,7 +9,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useTrackVariants } from '@/features/tracks/hooks';
-import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
+import { useAudioPlayerStore, type AudioPlayerTrack } from '@/stores/audioPlayerStore';
 import { logInfo } from '@/utils/logger';
 
 interface VersionSwitcherProps {
@@ -38,27 +38,36 @@ export const VersionSwitcher = ({
         // Если передан колбэк, используем его
         if (onVersionChange) {
           onVersionChange(versionId, versionNumber);
-        } else if (versionsData) {
-          // Иначе воспроизводим версию
+          toast.success(`Переключено на версию ${versionNumber}`);
+          setIsOpen(false);
+          return;
+        }
+
+        // Иначе воспроизводим версию через store
+        if (versionsData) {
           const version = versionsData.variants.find((v) => v.id === versionId);
           if (version && version.audioUrl) {
-            playTrackWithQueue(
-              {
-                id: version.id,
-                title: versionsData.mainTrack.title,
-                audio_url: version.audioUrl,
-                cover_url: version.coverUrl || versionsData.mainTrack.coverUrl,
-                duration: version.duration,
-                style_tags: versionsData.mainTrack.styleTags,
-                lyrics: version.lyrics,
-                status: 'completed',
-              },
-              []
-            );
+            const audioTrack: AudioPlayerTrack = {
+              id: version.id,
+              title: versionsData.mainTrack.title,
+              audio_url: version.audioUrl,
+              cover_url: version.coverUrl || versionsData.mainTrack.coverUrl,
+              duration: version.duration,
+              style_tags: versionsData.mainTrack.styleTags || [],
+              lyrics: version.lyrics,
+              status: 'completed',
+              versionNumber: version.variantIndex + 1,
+              isMasterVersion: version.id === versionsData.preferredVariant?.id,
+              parentTrackId: trackId,
+            };
+            
+            playTrackWithQueue(audioTrack, []);
+            toast.success(`Переключено на версию ${versionNumber}`);
+          } else {
+            toast.error('Версия недоступна');
           }
         }
 
-        toast.success(`Переключено на версию ${versionNumber}`);
         setIsOpen(false);
       } catch (error) {
         toast.error('Ошибка переключения версии');
