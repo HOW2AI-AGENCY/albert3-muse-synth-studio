@@ -105,7 +105,7 @@ const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileP
                   <DropdownMenuItem
                     key={version.id || index}
                     onClick={() => {
-                      switchToVersion(index);
+                      switchToVersion(String(index));
                       setIsMenuOpen(false);
                     }}
                     className="flex items-center justify-between"
