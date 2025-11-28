@@ -26,7 +26,7 @@ interface PerformanceThresholds {
   audioLoad: number; // время загрузки аудио (мс)
 }
 
-class PerformanceMonitor {
+export class PerformanceMonitor {
   private metrics: PerformanceMetric[] = [];
   private maxMetrics = 500;
   private timers = new Map<string, number>();

@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCorsHeaders } from "../_shared/cors.ts";
 import { createSecurityHeaders } from "../_shared/security.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { buildSunoHeaders } from "../_shared/suno.ts";
+import { buildSunoHeaders } from "../_shared/suno.utils.ts";
 import { fetchSunoBalance } from "../_shared/suno-balance.ts";
 import { balanceCache, createCacheHeaders } from "../_shared/cache.ts";
 import { checkRateLimit, rateLimitConfigs } from "../_shared/rate-limit.ts";
