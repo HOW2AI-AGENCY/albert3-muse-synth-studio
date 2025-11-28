@@ -120,7 +120,10 @@ export const TrackCardCover = React.memo(({
           <Button
             variant="secondary"
             size="icon"
-            onClick={onPlayClick}
+            onClick={(e) => {
+              e.stopPropagation();
+              onPlayClick(e);
+            }}
             disabled={playButtonDisabled}
             className="rounded-full w-10 h-10 shadow-lg hover:scale-110 transition-transform"
             aria-label={isCurrentTrack && isPlaying ? "Приостановить" : "Воспроизвести"}

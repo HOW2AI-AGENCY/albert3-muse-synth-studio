@@ -17,7 +17,9 @@ const GlobalAudioPlayer = memo(() => {
   
   const { isExpanded, setIsExpanded } = usePlayerVisibility(currentTrack);
 
-  if (!currentTrack || !currentTrack.audio_url) {
+  // ✅ FIX: Allow player UI to render even if audio_url is loading
+  // AudioController handles async audio loading, UI should be visible
+  if (!currentTrack) {
     return null;
   }
 
