@@ -77,14 +77,16 @@ const TracksListComponent = ({
   /**
    * Рендер одного трека
    * Использует TrackCard с полным набором callbacks для контекстного меню
+   *
+   * ✅ FIX: onClick вызывается на обертке div, а не на TrackCard,
+   * чтобы не мешать play button и другим кнопкам внутри карточки
    */
   const renderTrackItem = useCallback(
     (track: Track) => {
-      return (
+      const cardElement = (
         <TrackCard
           key={track.id}
           track={track as any}
-          onClick={() => onTrackClick?.(track)}
           onDelete={(trackId: string) => {
             const t = tracks.find(t => t.id === trackId);
             if (t) handleDelete(trackId, t.title);
@@ -112,6 +114,33 @@ const TracksListComponent = ({
           }}
         />
       );
+
+      // ✅ Если есть onTrackClick, оборачиваем в div с обработчиком
+      // Клик по обложке/title откроет детали, play button останется рабочим
+      if (onTrackClick) {
+        return (
+          <div
+            key={track.id}
+            className="relative group cursor-pointer"
+            onClick={(e) => {
+              // Не открываем детали если клик был на кнопке или ссылке
+              const target = e.target as HTMLElement;
+              if (
+                target.closest('button') ||
+                target.closest('a') ||
+                target.closest('[role="button"]')
+              ) {
+                return;
+              }
+              onTrackClick(track);
+            }}
+          >
+            {cardElement}
+          </div>
+        );
+      }
+
+      return cardElement;
     },
     [handleDelete, tracks, onTrackClick]
   );
