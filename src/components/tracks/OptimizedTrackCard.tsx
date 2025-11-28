@@ -13,13 +13,14 @@
  * - Устранено 100+ resize слушателей при большом количестве карточек
  * - Единый media query для всего приложения
  *
- * ✅ MOBILE OPTIMIZATION FIX (v2.2.0):
- * - Улучшена визуальная разница между card и list view на мобильных
- * - Добавлены четкие визуальные границы и тени
+ * ✅ MOBILE OPTIMIZATION FIX (v2.3.0):
+ * - Значительно улучшена визуальная разница между card и list view на мобильных
+ * - Карточки имеют яркие тени и границы (vs плоские строки)
+ * - Добавлена анимация scale при hover для desktop
  * - Оптимизирован размер текста и иконок для мобильных
  * - Улучшена доступность с минимальными touch targets 44x44px
  *
- * @version 2.2.0
+ * @version 2.3.0
  * @created 2025-11-17
  * @updated 2025-11-28
  */
@@ -120,13 +121,20 @@ export const OptimizedTrackCard = memo(({
         'min-w-[160px] max-w-full', // Mobile: 160px min
         'sm:min-w-[200px]', // Tablet: 200px min
         'lg:min-w-[240px]', // Desktop: 240px min
-        // Hover effects (disabled on mobile for performance)
-        !isMobile && 'hover:shadow-glow-primary hover:-translate-y-1',
+        // ✅ v2.3: STRONG visual distinction between card and row
+        isMobile ? [
+          // Mobile cards: Elevated, prominent, card-like appearance
+          'shadow-lg border-2 border-primary/20 rounded-2xl',
+          'bg-gradient-to-br from-background via-background to-muted/10',
+          'hover:shadow-xl hover:border-primary/30',
+        ] : [
+          // Desktop cards: Subtle, with scale animation
+          'shadow-md rounded-lg border border-border/50',
+          'hover:shadow-glow-primary hover:-translate-y-1 hover:scale-[1.02]',
+        ],
         'focus-within:ring-2 focus-within:ring-primary/50',
-        // ✅ MOBILE OPTIMIZATION: Enhanced visual distinction
-        isMobile ? 'shadow-md border-2 border-primary/10 rounded-xl' : 'shadow-sm rounded-lg',
         // Active state for touch feedback
-        'active:scale-[0.98]',
+        isMobile ? 'active:scale-[0.97]' : 'active:scale-[0.98]',
         className
       )}
       style={{ contain: 'layout style paint' }}
