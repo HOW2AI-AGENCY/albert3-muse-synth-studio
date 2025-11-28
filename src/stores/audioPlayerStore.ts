@@ -130,7 +130,12 @@ interface AudioPlayerState {
   updateCurrentTime: (time: number) => void;
   updateDuration: (duration: number) => void;
   updateBufferingProgress: (progress: number) => void;
+
+  // ==========================================
+  // INTERNAL HELPERS
+  // ==========================================
   _fetchVersionsFromApi: (trackId: string) => Promise<void>;
+  _loadVersionsWithErrorHandling: (track: AudioPlayerTrack, context: string) => void;
 }
 
 /**
@@ -169,6 +174,25 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
       currentVersionIndex: -1,
       _loadVersionsAbortController: null,
       _playTrackRequestId: 0,
+
+      // ==========================================
+      // HELPER FUNCTIONS
+      // ==========================================
+      /**
+       * ✅ P0 FIX: Extract repeated loadVersions error handling pattern
+       * WHY: This pattern was duplicated 6+ times across playTrack, playNext, playPrevious
+       * BENEFIT: DRY principle, consistent error handling, easier maintenance
+       */
+      _loadVersionsWithErrorHandling: (track: AudioPlayerTrack, context: string) => {
+        const parentId = track.parentTrackId || track.id;
+        get().loadVersions(parentId).catch((error) => {
+          logError(`Failed to load versions in ${context}`, error as Error, 'audioPlayerStore', {
+            trackId: track.id,
+            parentId,
+            context,
+          });
+        });
+      },
 
       // ==========================================
       // PLAYBACK ACTIONS
@@ -264,15 +288,9 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             duration: track.duration || 0,
           });
 
-          // Load versions in background without blocking
-          const parentId = track.parentTrackId || track.id;
+          // ✅ P0 FIX: Use helper function for consistent error handling
           setTimeout(() => {
-            get().loadVersions(parentId).catch((error) => {
-              logError('Failed to load versions in playTrack', error as Error, 'audioPlayerStore', {
-                trackId: track.id,
-                parentId,
-              });
-            });
+            get()._loadVersionsWithErrorHandling(track, 'playTrack');
           }, 0);
         },
 
@@ -353,14 +371,8 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
                 shuffleHistory: [...state.shuffleHistory, nextTrack.id],
               });
 
-              // ✅ FIX: Handle errors
-              const parentId = nextTrack.parentTrackId || nextTrack.id;
-              get().loadVersions(parentId).catch((error) => {
-                logError('Failed to load versions in playNext (shuffle)', error as Error, 'audioPlayerStore', {
-                  trackId: nextTrack.id,
-                  parentId
-                });
-              });
+              // ✅ P0 FIX: Use helper function for consistent error handling
+              get()._loadVersionsWithErrorHandling(nextTrack, 'playNext:shuffle');
               return;
             } else if (state.repeatMode === 'all') {
               // ✅ All tracks played, restart shuffle if repeat all
@@ -387,14 +399,8 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               duration: nextTrack.duration || 0,
             });
 
-            // ✅ FIX: Handle errors
-            const parentId = nextTrack.parentTrackId || nextTrack.id;
-            get().loadVersions(parentId).catch((error) => {
-              logError('Failed to load versions in playNext (sequential)', error as Error, 'audioPlayerStore', {
-                trackId: nextTrack.id,
-                parentId
-              });
-            });
+            // ✅ P0 FIX: Use helper function for consistent error handling
+            get()._loadVersionsWithErrorHandling(nextTrack, 'playNext:sequential');
           } else if (state.repeatMode === 'all' && state.queue.length > 0) {
             // ✅ Repeat All: restart from beginning
             const firstTrack = state.queue[0];
@@ -406,14 +412,8 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               duration: firstTrack.duration || 0,
             });
 
-            // ✅ FIX: Handle errors
-            const parentId = firstTrack.parentTrackId || firstTrack.id;
-            get().loadVersions(parentId).catch((error) => {
-              logError('Failed to load versions in playNext (repeat all)', error as Error, 'audioPlayerStore', {
-                trackId: firstTrack.id,
-                parentId
-              });
-            });
+            // ✅ P0 FIX: Use helper function for consistent error handling
+            get()._loadVersionsWithErrorHandling(firstTrack, 'playNext:repeatAll');
           }
         },
 
@@ -437,14 +437,8 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               duration: prevTrack.duration || 0,
             });
 
-            // ✅ FIX: Handle errors
-            const parentId = prevTrack.parentTrackId || prevTrack.id;
-            get().loadVersions(parentId).catch((error) => {
-              logError('Failed to load versions in playPrevious', error as Error, 'audioPlayerStore', {
-                trackId: prevTrack.id,
-                parentId
-              });
-            });
+            // ✅ P0 FIX: Use helper function for consistent error handling
+            get()._loadVersionsWithErrorHandling(prevTrack, 'playPrevious');
           } else {
             // Just restart current track
             set({ currentTime: 0 });

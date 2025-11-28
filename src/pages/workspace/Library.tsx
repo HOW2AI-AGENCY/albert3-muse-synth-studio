@@ -109,30 +109,36 @@ const LibraryContent: React.FC<{
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
-  // Measure container width with immediate initialization (FIX: prevents 0-width flash)
+  // ✅ FIX P0: Prevent ResizeObserver infinite loop by removing containerWidth from dependencies
+  // WHY: containerWidth in deps causes useEffect to re-run on every width change, recreating observer
+  // SOLUTION: Use functional setState to access previous value, remove from deps
   useEffect(() => {
     if (!containerRef.current) return;
 
+    // Use functional setState to compare with previous width without causing re-renders
     const updateWidth = (width: number) => {
-      if (width > 0 && width !== containerWidth) { // Only update if width is positive and has changed
-        setContainerWidth(width);
+      if (width > 0) {
+        setContainerWidth(prevWidth => {
+          // Only update if width has actually changed to prevent unnecessary re-renders
+          return prevWidth !== width ? width : prevWidth;
+        });
       }
     };
-    
-    // ✅ FIX: Immediately set initial width to prevent single-column flash
+
+    // ✅ Immediately set initial width to prevent single-column flash
     const initialWidth = containerRef.current.clientWidth;
-    updateWidth(initialWidth); // Use the updateWidth function for initial set
+    updateWidth(initialWidth);
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        updateWidth(entry.contentRect.width); // Use the updateWidth function for observer updates
+        updateWidth(entry.contentRect.width);
       }
     });
-    
+
     resizeObserver.observe(containerRef.current);
-    
+
     return () => resizeObserver.disconnect();
-  }, [containerWidth]); // Add containerWidth to dependencies to ensure updateWidth has the latest state
+  }, []); // ✅ CRITICAL: Empty deps - only run once on mount
 
   // ✅ OPTIMIZED: Use filtered tracks from useLibraryFilters hook
   const filteredAndSortedTracks = filters.filteredTracks;
