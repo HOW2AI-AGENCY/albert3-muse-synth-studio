@@ -20,6 +20,10 @@ export const AudioController = () => {
   const lastLoadedTrackIdRef = useRef<string | null>(null);
   const retryTimeoutIdRef = useRef<number | null>(null);
   const mediaSessionSetRef = useRef(false);
+  // ✅ FIX [React error #185]: Отслеживание mounted состояния для предотвращения setState на размонтированном компоненте
+  const isMountedRef = useRef(true);
+  // ✅ FIX [React error #185]: AbortController для отмены proxy запросов при unmount
+  const proxyAbortControllerRef = useRef<AbortController | null>(null);
   
   const updateCurrentTime = useAudioPlayerStore((state) => state.updateCurrentTime);
   const updateDuration = useAudioPlayerStore((state) => state.updateDuration);
@@ -270,16 +274,32 @@ export const AudioController = () => {
     isSettingSourceRef.current = true;
     loadAudioWithRetry();
 
+    // ✅ FIX [React error #185]: Ref для отслеживания timeout из handleLoadedMetadataAndPlay
+    let playTimeoutId: number | null = null;
+
     // Add a listener for 'loadedmetadata' to trigger playback
     const handleLoadedMetadataAndPlay = () => {
+      // ✅ FIX [React error #185]: Проверка mounted перед обновлением состояния
+      // WHY: Событие loadedmetadata асинхронное, может произойти после unmount
+      if (!isMountedRef.current) {
+        logger.debug('Component unmounted, skipping metadata handler', 'AudioController');
+        return;
+      }
+
       updateDuration(audio.duration || 0);
       logger.info('Audio metadata loaded', 'AudioController', {
         duration: audio.duration,
         trackId: currentTrack?.id
       });
+
       if (isPlaying) {
+        // ✅ FIX [React error #185]: Сохранить timeoutId для cleanup
         // Небольшая задержка, чтобы избежать гонки с load()
-        setTimeout(() => safePlay(), 0);
+        playTimeoutId = window.setTimeout(() => {
+          if (isMountedRef.current) {
+            safePlay();
+          }
+        }, 0);
       }
     };
 
@@ -287,10 +307,20 @@ export const AudioController = () => {
 
     // Очистка при смене трека/размонтировании
     return () => {
+      // ✅ FIX [React error #185]: Установить unmounted флаг
+      isMountedRef.current = false;
+
       if (retryTimeoutIdRef.current) {
         clearTimeout(retryTimeoutIdRef.current);
         retryTimeoutIdRef.current = null;
       }
+
+      // ✅ FIX [React error #185]: Отменить timeout из handleLoadedMetadataAndPlay
+      if (playTimeoutId !== null) {
+        clearTimeout(playTimeoutId);
+        playTimeoutId = null;
+      }
+
       isSettingSourceRef.current = false;
       audio.removeEventListener('loadedmetadata', handleLoadedMetadataAndPlay);
     };
@@ -312,6 +342,12 @@ export const AudioController = () => {
     // ✅ FIX: Throttle time updates для лучшей производительности
     let lastUpdateTime = 0;
     const handleTimeUpdate = () => {
+      // ✅ FIX [React error #185]: Проверка mounted перед обновлением состояния
+      // WHY: Событие timeupdate вызывается ~4 раза/сек, может произойти после unmount
+      if (!isMountedRef.current) {
+        return;
+      }
+
       const now = Date.now();
       // Обновляем каждые 50ms для плавной подсветки лирики
       if (now - lastUpdateTime >= 50) {
@@ -366,22 +402,41 @@ export const AudioController = () => {
       ) {
         proxyTriedRef.current[audioUrl] = true;
 
+        // ✅ FIX [React error #185]: Создать AbortController для отмены запроса при unmount
+        // WHY: Proxy запрос может занять до 15s, компонент может размонтироваться за это время
+        const abortController = new AbortController();
+        proxyAbortControllerRef.current = abortController;
+
         // ✅ P2 FIX: Show loading toast with progress indicator
         const loadingToastId = toast.loading('Подготовка аудио для воспроизведения...');
 
         // ✅ P2 FIX: Reduced timeout from 30s to 15s for better UX
         const PROXY_TIMEOUT = 15000;
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Proxy timeout after 15s')), PROXY_TIMEOUT)
-        );
 
         (async () => {
           try {
-            const proxyPromise = SupabaseFunctions.invoke('fetch-audio-proxy', {
+            // ✅ FIX [React error #185]: Создать timeout с AbortController
+            const timeoutId = setTimeout(() => {
+              abortController.abort();
+            }, PROXY_TIMEOUT);
+
+            const { data, error } = await SupabaseFunctions.invoke('fetch-audio-proxy', {
               body: { url: audioUrl },
             });
 
-            const { data, error } = await Promise.race([proxyPromise, timeoutPromise]) as any;
+            clearTimeout(timeoutId);
+
+            // ✅ FIX [React error #185]: Проверить mounted перед продолжением
+            // WHY: Запрос может завершиться после unmount компонента
+            if (!isMountedRef.current) {
+              logger.debug('Component unmounted, aborting proxy fallback', 'AudioController');
+              return;
+            }
+
+            // ✅ FIX [React error #185]: Проверить abort signal
+            if (abortController.signal.aborted) {
+              throw new Error('Proxy timeout after 15s');
+            }
 
             if (error || !data || !(data as any).base64) {
               throw error || new Error('proxy failed');
@@ -396,17 +451,40 @@ export const AudioController = () => {
             const blob = new Blob([bytes], { type: contentType });
             const objectUrl = URL.createObjectURL(blob);
 
+            // ✅ FIX [React error #185]: Проверить mounted перед изменением audio
+            if (!isMountedRef.current) {
+              URL.revokeObjectURL(objectUrl);
+              return;
+            }
+
             audio.src = objectUrl;
             audio.load();
-            try { await audio.play(); } catch (e) {
+
+            try {
+              await audio.play();
+            } catch (e) {
               logger.error('Failed to play object URL audio', e as Error, 'AudioController', { trackId: currentTrack?.id });
             }
 
-            // ✅ P2 FIX: Update loading toast to success
-            toast.success('Аудио готово к воспроизведению', { id: loadingToastId });
+            // ✅ FIX [React error #185]: Проверить mounted перед toast
+            if (isMountedRef.current) {
+              toast.success('Аудио готово к воспроизведению', { id: loadingToastId });
+            }
             return;
           } catch (e) {
+            // ✅ FIX [React error #185]: Игнорировать abort errors
+            // HOW: AbortController.abort() бросает AbortError, это нормальное поведение при unmount
+            if ((e as Error).name === 'AbortError') {
+              logger.debug('Proxy request aborted', 'AudioController');
+              return;
+            }
+
             logger.error('Proxy audio fallback failed', e as Error, 'AudioController', { trackId: currentTrack?.id });
+
+            // ✅ FIX [React error #185]: Проверить mounted перед toast и pause
+            if (!isMountedRef.current) {
+              return;
+            }
 
             // ✅ P2 FIX: Update loading toast to error with specific message
             const isTimeout = (e as Error).message?.includes('timeout');
@@ -416,14 +494,20 @@ export const AudioController = () => {
 
             toast.error(errorMsg, { id: loadingToastId });
             pause();
+          } finally {
+            proxyAbortControllerRef.current = null;
           }
         })();
         return;
       }
 
       const userMessage = errorCode ? errorMessages[errorCode] || 'Ошибка загрузки аудио' : 'Ошибка загрузки аудио';
-      toast.error(userMessage);
-      pause();
+
+      // ✅ FIX [React error #185]: Проверить mounted перед toast и pause
+      if (isMountedRef.current) {
+        toast.error(userMessage);
+        pause();
+      }
     };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
@@ -433,6 +517,17 @@ export const AudioController = () => {
     audio.addEventListener('error', handleError);
 
     return () => {
+      // ✅ FIX [React error #185]: Установить unmounted флаг ПЕРЕД cleanup
+      // WHY: Все event handlers проверяют этот флаг перед setState
+      isMountedRef.current = false;
+
+      // ✅ FIX [React error #185]: Отменить активный proxy запрос
+      // HOW: AbortController прервет fetch и установит флаг aborted
+      if (proxyAbortControllerRef.current) {
+        proxyAbortControllerRef.current.abort();
+        proxyAbortControllerRef.current = null;
+      }
+
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       // ✅ FIX: Removed duplicate loadedmetadata listener
       audio.removeEventListener('ended', handleEnded);

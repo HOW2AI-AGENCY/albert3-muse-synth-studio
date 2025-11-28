@@ -3,7 +3,7 @@
  * Desktop-optimized fullscreen player with keyboard shortcuts
  */
 
-import { memo, useState, useCallback, useEffect } from 'react';
+import { memo, useState, useCallback, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { MobileProgressBar } from '../mobile/MobileProgressBar';
 import { useAudioPlayerStore, useCurrentTrack, useIsPlaying, useVolume } from '@/stores/audioPlayerStore';
@@ -37,6 +37,17 @@ export const FullScreenPlayerDesktop = memo(({ onMinimize }: FullScreenPlayerDes
   const [isMuted, setIsMuted] = useState(false);
   const [showLyrics, setShowLyrics] = useState(true);
 
+  // ✅ FIX [React error #185]: Отслеживание mounted состояния
+  // WHY: Callbacks могут быть вызваны после unmount (keyboard shortcuts, progress bar)
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   useEffect(() => {
     setIsMuted(volume === 0);
   }, [volume]);
@@ -47,14 +58,18 @@ export const FullScreenPlayerDesktop = memo(({ onMinimize }: FullScreenPlayerDes
   );
 
   const handleVolumeChange = useCallback((value: number[]) => {
-    setVolume(value[0]);
+    if (isMountedRef.current) {
+      setVolume(value[0]);
+    }
   }, [setVolume]);
 
   const toggleMute = useCallback(() => {
-    if (isMuted) {
-      setVolume(0.5);
-    } else {
-      setVolume(0);
+    if (isMountedRef.current) {
+      if (isMuted) {
+        setVolume(0.5);
+      } else {
+        setVolume(0);
+      }
     }
   }, [isMuted, setVolume]);
 
@@ -63,11 +78,15 @@ export const FullScreenPlayerDesktop = memo(({ onMinimize }: FullScreenPlayerDes
   }, []);
 
   const increaseVolume = useCallback(() => {
-    setVolume(Math.min(volume + 0.1, 1));
+    if (isMountedRef.current) {
+      setVolume(Math.min(volume + 0.1, 1));
+    }
   }, [volume, setVolume]);
 
   const decreaseVolume = useCallback(() => {
-    setVolume(Math.max(volume - 0.1, 0));
+    if (isMountedRef.current) {
+      setVolume(Math.max(volume - 0.1, 0));
+    }
   }, [volume, setVolume]);
 
   // ✅ FIX: Wrap seekForward and seekBackward in useCallback to prevent infinite re-renders
@@ -75,16 +94,27 @@ export const FullScreenPlayerDesktop = memo(({ onMinimize }: FullScreenPlayerDes
   // Without memoization, they are recreated every render, causing event listeners to be re-attached
   // This triggers Zustand updates which cause re-renders (infinite loop)
   const seekForwardCallback = useCallback((seconds: number) => {
-    seekTo(Math.min(currentTime + seconds, 300));
+    // ✅ FIX [React error #185]: Проверка mounted перед seekTo
+    // WHY: Может быть вызван из keyboard shortcuts после unmount
+    if (isMountedRef.current) {
+      seekTo(Math.min(currentTime + seconds, 300));
+    }
   }, [currentTime, seekTo]);
 
   const seekBackwardCallback = useCallback((seconds: number) => {
-    seekTo(Math.max(currentTime - seconds, 0));
+    // ✅ FIX [React error #185]: Проверка mounted перед seekTo
+    // WHY: Может быть вызван из keyboard shortcuts после unmount
+    if (isMountedRef.current) {
+      seekTo(Math.max(currentTime - seconds, 0));
+    }
   }, [currentTime, seekTo]);
 
   // ✅ FIX: Callback for progress bar seek to prevent inline function recreation
   const handleProgressBarSeek = useCallback((value: number[]) => {
-    seekTo(value[0]);
+    // ✅ FIX [React error #185]: Проверка mounted перед seekTo
+    if (isMountedRef.current) {
+      seekTo(value[0]);
+    }
   }, [seekTo]);
 
   // Keyboard shortcuts
