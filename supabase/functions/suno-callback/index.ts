@@ -32,37 +32,32 @@ const mainHandler = async (req: Request) => {
   }
 
   try {
-    // ✅ Webhook signature verification enabled
+    // 🔒 CRITICAL: Webhook signature verification is MANDATORY
     const signature = req.headers.get('X-Suno-Signature');
     const SUNO_WEBHOOK_SECRET = Deno.env.get('SUNO_WEBHOOK_SECRET');
-    
-    if (SUNO_WEBHOOK_SECRET) {
-      if (!signature) {
-        logger.error('Missing webhook signature', new Error('Missing webhook signature'), 'suno-callback');
-        return new Response(JSON.stringify({ ok: false, error: 'missing_signature' }), {
-          status: 401,
-          headers: corsHeaders
-        });
-      }
-      
-      const bodyText = await req.text();
-      const { verifyWebhookSignature } = await import('../_shared/webhook-verify.ts');
-      const isValid = await verifyWebhookSignature(bodyText, signature, SUNO_WEBHOOK_SECRET);
-      
-      if (!isValid) {
-        logger.error('Invalid webhook signature', new Error('Invalid webhook signature'), 'suno-callback');
-        return new Response(JSON.stringify({ ok: false, error: 'invalid_signature' }), {
-          status: 401,
-          headers: corsHeaders
-        });
-      }
-    } else {
-      logger.warn('SUNO_WEBHOOK_SECRET not configured - skipping signature verification', 'suno-callback');
-    }
-    
-    const supabase = createSupabaseAdminClient();
 
-    // Check content length before reading
+    // ✅ FIX: Enforce webhook secret configuration (fail closed, not open)
+    if (!SUNO_WEBHOOK_SECRET) {
+      logger.error('SUNO_WEBHOOK_SECRET not configured - webhook security disabled', new Error('Missing webhook secret'), 'suno-callback');
+      return new Response(JSON.stringify({
+        ok: false,
+        error: 'server_misconfiguration',
+        message: 'Webhook secret not configured on server'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!signature) {
+      logger.error('Missing webhook signature', new Error('Missing webhook signature'), 'suno-callback');
+      return new Response(JSON.stringify({ ok: false, error: 'missing_signature' }), {
+        status: 401,
+        headers: corsHeaders
+      });
+    }
+
+    // Check content length BEFORE reading body
     const contentLength = req.headers.get('content-length');
     if (contentLength && parseInt(contentLength) > MAX_PAYLOAD_SIZE) {
       logger.error('Payload too large', new Error(`Payload too large: ${contentLength}`), 'suno-callback', { contentLength });
@@ -72,8 +67,9 @@ const mainHandler = async (req: Request) => {
       );
     }
 
+    // ✅ FIX: Read body only once and use for both verification and processing
     const bodyText = await req.text();
-    
+
     // Additional size check after reading
     if (bodyText.length > MAX_PAYLOAD_SIZE) {
       logger.error('Payload too large after read', new Error(`Payload size: ${bodyText.length}`), 'suno-callback', { size: bodyText.length });
@@ -82,6 +78,22 @@ const mainHandler = async (req: Request) => {
         { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Verify webhook signature
+    const { verifyWebhookSignature } = await import('../_shared/webhook-verify.ts');
+    const isValid = await verifyWebhookSignature(bodyText, signature, SUNO_WEBHOOK_SECRET);
+
+    if (!isValid) {
+      logger.error('Invalid webhook signature', new Error('Invalid webhook signature'), 'suno-callback');
+      return new Response(JSON.stringify({ ok: false, error: 'invalid_signature' }), {
+        status: 401,
+        headers: corsHeaders
+      });
+    }
+
+    const supabase = createSupabaseAdminClient();
+
+    // Parse JSON payload
     let payload: any;
     try {
       payload = JSON.parse(bodyText || "{}");

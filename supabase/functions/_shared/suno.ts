@@ -485,10 +485,12 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
       hasReference: !!payload.referenceAudioUrl
     });
 
+          // ✅ FIX: Add timeout to prevent hanging functions
           const response = await fetchImpl(endpoint, {
             method: "POST",
             headers: buildSunoHeaders(apiKey, { "Content-Type": "application/json" }),
             body: JSON.stringify(apiPayload),
+            signal: AbortSignal.timeout(30000), // 30 second timeout
           });
 
           const rawText = await response.text();
@@ -589,10 +591,12 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
 
     for (const endpoint of lyricsGenerateEndpoints) {
       try {
+        // ✅ FIX: Add timeout to prevent hanging functions
         const response = await fetchImpl(endpoint, {
           method: "POST",
           headers: buildSunoHeaders(apiKey, { "Content-Type": "application/json" }),
           body: JSON.stringify(payload),
+          signal: AbortSignal.timeout(30000), // 30 second timeout
         });
 
         const rawText = await response.text();
@@ -666,8 +670,10 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
     for (const endpoint of queryEndpoints) {
       const url = appendQueryParam(endpoint, { taskId });
       try {
+        // ✅ FIX: Add timeout to prevent hanging functions
         const response = await fetchImpl(url, {
           headers: buildSunoHeaders(apiKey),
+          signal: AbortSignal.timeout(30000), // 30 second timeout
         });
 
         const rawText = await response.text();
@@ -732,8 +738,10 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
     for (const endpoint of lyricsQueryEndpoints) {
       const url = appendQueryParam(endpoint, { taskId });
       try {
+        // ✅ FIX: Add timeout to prevent hanging functions
         const response = await fetchImpl(url, {
           headers: buildSunoHeaders(apiKey),
+          signal: AbortSignal.timeout(30000), // 30 second timeout
         });
 
         const rawText = await response.text();
@@ -805,10 +813,12 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
     const errors: SunoApiError[] = [];
     for (const endpoint of stemEndpoints) {
       try {
+        // ✅ FIX: Add timeout to prevent hanging functions
         const response = await fetchImpl(endpoint, {
           method: "POST",
           headers: buildSunoHeaders(apiKey, { "Content-Type": "application/json" }),
           body: JSON.stringify(input),
+          signal: AbortSignal.timeout(60000), // 60 second timeout for heavy processing
         });
 
         const rawText = await response.text();
@@ -870,9 +880,11 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
     for (const endpoint of stemQueryEndpoints) {
       try {
         const url = appendQueryParam(endpoint, { taskId });
+        // ✅ FIX: Add timeout to prevent hanging functions
         const response = await fetchImpl(url, {
           method: "GET",
           headers: buildSunoHeaders(apiKey),
+          signal: AbortSignal.timeout(30000), // 30 second timeout
         });
 
         const rawText = await response.text();
@@ -960,6 +972,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
 
     for (const endpoint of wavEndpoints) {
       try {
+        // ✅ FIX: Add timeout to prevent hanging functions
         const response = await fetchImpl(endpoint, {
           method: "POST",
           headers: buildSunoHeaders(apiKey),
@@ -968,6 +981,7 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
             audioId: request.audioId,
             callBackUrl: request.callBackUrl,
           }),
+          signal: AbortSignal.timeout(60000), // 60 second timeout for conversion
         });
 
         const rawText = await response.text();
@@ -1030,15 +1044,17 @@ export const createSunoClient = (options: CreateSunoClientOptions) => {
     const wavQueryEps = wavQueryEndpoints ?? [
       "https://api.sunoapi.org/api/v1/wav/record-info"
     ];
-    
+
     const errors: SunoApiError[] = [];
 
     for (const endpoint of wavQueryEps) {
       try {
         const url = appendQueryParam(endpoint, { taskId });
+        // ✅ FIX: Add timeout to prevent hanging functions
         const response = await fetchImpl(url, {
           method: "GET",
           headers: buildSunoHeaders(apiKey),
+          signal: AbortSignal.timeout(30000), // 30 second timeout
         });
 
         const rawText = await response.text();

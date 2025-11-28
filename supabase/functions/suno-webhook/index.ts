@@ -58,12 +58,71 @@ serve(async (req) => {
   }
 
   try {
+    // 🔒 CRITICAL: Webhook signature verification is MANDATORY
+    const signature = req.headers.get('X-Suno-Signature');
+    const SUNO_WEBHOOK_SECRET = Deno.env.get('SUNO_WEBHOOK_SECRET');
+
+    // ✅ FIX: Enforce webhook secret configuration (fail closed, not open)
+    if (!SUNO_WEBHOOK_SECRET) {
+      logger.error('SUNO_WEBHOOK_SECRET not configured - webhook security disabled', new Error('Missing webhook secret'), 'suno-webhook');
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'server_misconfiguration',
+        message: 'Webhook secret not configured on server'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (!signature) {
+      logger.error('Missing webhook signature', new Error('Missing webhook signature'), 'suno-webhook');
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'missing_signature'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Read body for verification and processing
+    const bodyText = await req.text();
+
+    // Verify webhook signature
+    const { verifyWebhookSignature } = await import('../_shared/webhook-verify.ts');
+    const isValid = await verifyWebhookSignature(bodyText, signature, SUNO_WEBHOOK_SECRET);
+
+    if (!isValid) {
+      logger.error('Invalid webhook signature', new Error('Invalid webhook signature'), 'suno-webhook');
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'invalid_signature'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const payload: SunoWebhookPayload = await req.json();
+    // Parse JSON payload
+    let payload: SunoWebhookPayload;
+    try {
+      payload = JSON.parse(bodyText);
+    } catch (e) {
+      logger.error('Invalid JSON in webhook', e instanceof Error ? e : new Error('Invalid JSON'), 'suno-webhook');
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'invalid_json'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     const taskId = payload.data.task_id;
     const callbackType = payload.data.callbackType;
