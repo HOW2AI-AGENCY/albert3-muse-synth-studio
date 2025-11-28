@@ -9,8 +9,15 @@
  * - Теперь карточка корректно ре-рендерится при изменении cover, title, duration
  * - Исправлена проблема с устаревшими данными в UI
  *
- * @version 2.1.0
+ * ✅ MOBILE OPTIMIZATION FIX (v2.2.0):
+ * - Enhanced visual distinction from list view
+ * - Improved touch targets (44x44px minimum)
+ * - Better border and shadow for mobile clarity
+ * - Optimized text sizes for readability
+ *
+ * @version 2.2.0
  * @created 2025-11-17
+ * @updated 2025-11-28
  */
 
 import React, { memo, useCallback } from 'react';
@@ -80,8 +87,10 @@ export const TrackCardCompact = memo(({
       className={cn(
         'group cursor-pointer overflow-hidden',
         'transition-all duration-200',
+        // ✅ MOBILE OPTIMIZATION: Enhanced visual distinction
+        'border-2 border-primary/10 shadow-md rounded-xl',
+        'hover:shadow-lg hover:border-primary/20',
         'active:scale-95', // Touch feedback
-        'shadow-sm',
         className
       )}
       style={{ contain: 'layout style paint' }}
@@ -140,17 +149,18 @@ export const TrackCardCompact = memo(({
             {formattedDuration && <span>{formattedDuration}</span>}
           </div>
 
-          {/* Actions - Compact */}
+          {/* Actions - ✅ MOBILE OPTIMIZATION: 44x44px touch targets */}
           {isCompleted && (
             <div className="flex items-center justify-between">
               <Button
                 variant="ghost"
                 size="icon"
                 className={cn(
-                  'h-6 w-6',
+                  'h-8 w-8 min-h-[44px] min-w-[44px]',
                   isLiked && 'text-red-500'
                 )}
                 onClick={handleLike}
+                aria-label={isLiked ? 'Убрать из избранного' : 'В избранное'}
               >
                 <Heart className={cn('h-3 w-3', isLiked && 'fill-current')} />
               </Button>
@@ -158,8 +168,9 @@ export const TrackCardCompact = memo(({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-6 w-6"
+                className="h-8 w-8 min-h-[44px] min-w-[44px]"
                 onClick={handleMenu}
+                aria-label="Открыть меню"
               >
                 <MoreVertical className="h-3 w-3" />
               </Button>
