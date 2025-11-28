@@ -1,9 +1,11 @@
 /**
  * ✅ Phase 6: Virtualized List Hook for Large Datasets
  * Оптимизация рендеринга больших списков треков
+ *
+ * ✅ FIX (2025-11-28): Added memoization to prevent re-render storm
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useResponsive } from './useResponsive';
 
 interface VirtualizedListConfig {
@@ -33,22 +35,33 @@ export function useVirtualizedList<T>(
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
 
-  // Calculate visible range
-  const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
-  const endIndex = Math.min(
-    items.length - 1,
-    Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan
+  // ✅ FIX: Memoize startIndex calculation to prevent unnecessary recalculations
+  const startIndex = useMemo(
+    () => Math.max(0, Math.floor(scrollTop / itemHeight) - overscan),
+    [scrollTop, itemHeight, overscan]
   );
 
-  // Generate virtual items
-  const virtualItems = [];
-  for (let i = startIndex; i <= endIndex; i++) {
-    virtualItems.push({
-      index: i,
-      item: items[i],
-      offsetTop: i * itemHeight,
-    });
-  }
+  // ✅ FIX: Memoize endIndex calculation
+  const endIndex = useMemo(
+    () => Math.min(
+      items.length - 1,
+      Math.ceil((scrollTop + containerHeight) / itemHeight) + overscan
+    ),
+    [scrollTop, containerHeight, itemHeight, overscan, items.length]
+  );
+
+  // ✅ FIX: Memoize virtualItems array to prevent re-creating on every render
+  const virtualItems = useMemo(() => {
+    const result = [];
+    for (let i = startIndex; i <= endIndex; i++) {
+      result.push({
+        index: i,
+        item: items[i],
+        offsetTop: i * itemHeight,
+      });
+    }
+    return result;
+  }, [startIndex, endIndex, items, itemHeight]);
 
   // Handle scroll
   const handleScroll = useCallback((e: Event) => {
@@ -67,7 +80,7 @@ export function useVirtualizedList<T>(
   // Scroll to index
   const scrollToIndex = useCallback((index: number) => {
     if (!containerRef.current) return;
-    
+
     const offsetTop = index * itemHeight;
     containerRef.current.scrollTo({
       top: offsetTop,
@@ -75,9 +88,15 @@ export function useVirtualizedList<T>(
     });
   }, [itemHeight, isMobile]);
 
+  // ✅ FIX: Memoize totalHeight calculation
+  const totalHeight = useMemo(
+    () => items.length * itemHeight,
+    [items.length, itemHeight]
+  );
+
   return {
     virtualItems,
-    totalHeight: items.length * itemHeight,
+    totalHeight,
     containerRef,
     scrollToIndex,
   };

@@ -8,6 +8,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import Replicate from 'https://esm.sh/replicate@0.25.2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { logger } from '../_shared/logger.ts';
 import { createCorsHeaders } from '../_shared/cors.ts';
 import { createSecurityHeaders } from '../_shared/security.ts';
@@ -33,6 +34,39 @@ serve(async (req) => {
   }
 
   try {
+    // ✅ FIX: Add authentication to prevent unauthorized expensive API calls
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      logger.error('Missing Authorization header', new Error('Unauthorized'), 'generate-minimax');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify user authentication
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      logger.error('Authentication failed', authError || new Error('No user'), 'generate-minimax');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    logger.info('Authenticated user', 'generate-minimax', { userId: user.id });
+
     const REPLICATE_API_KEY = Deno.env.get('REPLICATE_API_KEY');
     if (!REPLICATE_API_KEY) {
       throw new Error('REPLICATE_API_KEY not configured');
