@@ -1,7 +1,46 @@
 /**
- * AudioController - компонент для управления воспроизведением аудио
- * Отделен от UI для оптимизации производительности
+ * ============================================================================
+ * AUDIO CONTROLLER - HEADLESS AUDIO PLAYBACK MANAGER
+ * ============================================================================
+ *
+ * @file AudioController.tsx
+ * @description Управление воспроизведением аудио без UI (headless component)
+ *              Отделен от UI для оптимизации производительности
+ *
+ * @features
+ * - Headless audio player (без UI, только логика)
+ * - MediaSession API интеграция (lock screen controls)
+ * - Автоматическая предзагрузка следующего трека
+ * - Retry logic с экспоненциальным backoff
+ * - Mureka.ai proxy fallback для CORS проблем
+ * - Mobile-optimized (touch events, background playback)
+ * - Error 185 protection (isMountedRef pattern)
+ * - Comprehensive logging
+ *
+ * @performance
+ * - Throttled timeupdate (250ms вместо 60fps)
+ * - Next track preloading
+ * - Memoized callbacks
+ * - Abort controllers для cleanup
+ *
+ * @mobile
+ * - Background playback через MediaSession
+ * - Lock screen controls
+ * - Network-aware retry (slow 3G, 4G, WiFi)
+ * - Touch event optimization
+ *
+ * @version 3.0.0
+ * @created 2024-XX-XX
+ * @updated 2025-11-28
+ *
+ * @changelog
+ * v3.0.0 - Mobile optimizations, enhanced comments, error 185 fixes
+ * v2.x.x - Mureka proxy, retry logic, MediaSession
+ * v1.x.x - Initial implementation
+ *
+ * ============================================================================
  */
+
 import { useCallback, useEffect, useRef } from 'react';
 import { useAudioPlayerStore, useCurrentTrack, useIsPlaying, useVolume, useAudioRef } from '@/stores/audioPlayerStore';
 import type { AudioPlayerTrack } from '@/stores/audioPlayerStore';
