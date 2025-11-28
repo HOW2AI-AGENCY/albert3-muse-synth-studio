@@ -17,12 +17,13 @@
  */
 
 import { memo, useCallback, useState, useMemo } from 'react';
-import { Play, Pause, Heart, Eye, MessageSquare, Star, Music2 } from 'lucide-react';
+import { Play, Pause, Heart, Eye, MessageSquare, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { TrackRowProps, TrackStatus } from '@/types/suno-ui.types';
+import { UnifiedTrackActionsMenu } from './shared/TrackActionsMenu.unified';
 import { useTrackVariants } from '@/features/tracks/hooks/useTrackVariants';
 import { TrackVariantSelector } from '@/features/tracks/components/TrackVariantSelector';
 import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
@@ -520,27 +521,79 @@ export const TrackRow = memo<TrackRowProps>(({
           </Button>
         )}
 
-        {/* Actions Menu - Simple DropdownMenu for crash prevention */}
-        {showMenu && menu?.onAction && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setMenuOpen(!menuOpen);
-                }}
-                className="h-10 w-10 min-h-[44px] min-w-[44px]"
-                aria-label="Меню действий"
-              >
-                <Music2 className="w-5 h-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Действия с треком</p>
-            </TooltipContent>
-          </Tooltip>
+        {/* Actions Menu - Restored full functionality with UnifiedTrackActionsMenu */}
+        {showMenu && (
+          <div onClick={(e) => e.stopPropagation()}>
+            <UnifiedTrackActionsMenu
+              trackId={track.id}
+              trackStatus={track.status === 'ready' || track.status === 'published' ? 'completed' : track.status === 'queued' ? 'pending' : track.status}
+              trackMetadata={{
+                provider: track.badges.includes('SUNO') ? 'suno' : track.badges.includes('MUREKA') ? 'mureka' : 'unknown',
+                hasVocals: track.badges.includes('Vocals'),
+                isPublic: track.flags.published,
+              }}
+              variant="minimal"
+              showQuickActions={false}
+              enableAITools={track.status === 'ready' || track.status === 'published'}
+              isLiked={track.flags.liked}
+              onLike={onLike ? () => {
+                try {
+                  onLike(track.id);
+                } catch (error) {
+                  logger.error('TrackRow onLike error', error as Error, 'TrackRow', { trackId: track.id });
+                }
+              } : undefined}
+              onDownload={menu?.onAction ? () => {
+                try {
+                  menu.onAction?.('download', track.id);
+                } catch (error) {
+                  logger.error('TrackRow download error', error as Error, 'TrackRow', { trackId: track.id });
+                }
+              } : undefined}
+              onShare={menu?.onAction ? () => {
+                try {
+                  menu.onAction?.('share', track.id);
+                } catch (error) {
+                  logger.error('TrackRow share error', error as Error, 'TrackRow', { trackId: track.id });
+                }
+              } : undefined}
+              onSeparateStems={menu?.onAction ? () => {
+                try {
+                  menu.onAction?.('stems', track.id);
+                } catch (error) {
+                  logger.error('TrackRow stems error', error as Error, 'TrackRow', { trackId: track.id });
+                }
+              } : undefined}
+              onExtend={menu?.onAction ? () => {
+                try {
+                  menu.onAction?.('remix', track.id);
+                } catch (error) {
+                  logger.error('TrackRow extend error', error as Error, 'TrackRow', { trackId: track.id });
+                }
+              } : undefined}
+              onCover={menu?.onAction ? () => {
+                try {
+                  menu.onAction?.('create', track.id);
+                } catch (error) {
+                  logger.error('TrackRow cover error', error as Error, 'TrackRow', { trackId: track.id });
+                }
+              } : undefined}
+              onDelete={menu?.onAction ? () => {
+                try {
+                  menu.onAction?.('trash', track.id);
+                } catch (error) {
+                  logger.error('TrackRow delete error', error as Error, 'TrackRow', { trackId: track.id });
+                }
+              } : undefined}
+              onTogglePublic={onPublish ? () => {
+                try {
+                  onPublish(track.id);
+                } catch (error) {
+                  logger.error('TrackRow publish error', error as Error, 'TrackRow', { trackId: track.id });
+                }
+              } : undefined}
+            />
+          </div>
         )}
       </div>
     </div>
