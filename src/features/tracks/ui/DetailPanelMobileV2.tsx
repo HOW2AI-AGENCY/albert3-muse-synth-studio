@@ -11,12 +11,13 @@
  * 
  * @version 2.0.0
  */
-import { memo, useCallback } from 'react';
+import React, { memo, useCallback, useEffect } from 'react';
 import { X, Trash2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
+import { logger } from '@/utils/logger';
 import type { Track } from '@/types/track.types';
 import { OverviewContent } from './tabs/OverviewContent';
 import { LyricsContent } from './tabs/LyricsContent';
@@ -33,7 +34,7 @@ interface DetailPanelMobileV2Props {
 
 /**
  * Мобильная панель деталей трека
- * 
+ *
  * Реализует:
  * - Управление удалением с подтверждением через toast
  * - Автоматическое закрытие после удаления
@@ -41,6 +42,18 @@ interface DetailPanelMobileV2Props {
  */
 const DetailPanelMobileV2Component = ({ track, open, onOpenChange, onDelete }: DetailPanelMobileV2Props) => {
   const { deleteTrack } = useTracks();
+
+  // ✅ DEBUG: Отслеживание открытия/закрытия панели через logger
+  useEffect(() => {
+    if (open) {
+      logger.info(`DetailPanel opened for track: ${track?.title || 'unknown'}`, 'DetailPanelMobileV2', {
+        trackId: track?.id,
+        trackTitle: track?.title
+      });
+    } else {
+      logger.info('DetailPanel closed', 'DetailPanelMobileV2');
+    }
+  }, [open, track]);
 
   /**
    * Обработчик удаления трека
