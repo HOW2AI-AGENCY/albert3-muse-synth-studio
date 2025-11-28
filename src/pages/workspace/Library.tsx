@@ -381,14 +381,34 @@ const LibraryContent: React.FC = () => {
    * Открывает мобильную панель с полной информацией о треке
    */
   const handleDescribeTrack = useCallback((trackId: string) => {
+    // ✅ DEBUG: Логируем вызов через logger
+    logger.info(`handleDescribeTrack called for trackId: ${trackId}`, 'Library', {
+      trackId,
+      tracksCount: tracks.length
+    });
+
     const track = tracks.find(t => t.id === trackId);
     if (!track) {
-      logger.warn("Track not found for detail panel", 'Library', { trackId });
+      logger.error("Track not found for detail panel", new Error('Track not found'), 'Library', {
+        trackId,
+        availableTrackIds: tracks.map(t => t.id).slice(0, 5)
+      });
       return;
     }
-    logger.info("Opening detail panel for track", 'Library', { trackId, title: track.title });
+
+    logger.info(`Opening detail panel for track: ${track.title}`, 'Library', {
+      trackId,
+      trackTitle: track.title
+    });
+
     setDetailPanelTrack(track);
     setIsDetailPanelOpen(true);
+
+    // ✅ DEBUG: Подтверждаем изменение state
+    logger.info('Detail panel state updated', 'Library', {
+      isDetailPanelOpen: true,
+      detailPanelTrack: track.title
+    });
   }, [tracks]);
 
   const handleUpscaleAudio = useCallback((trackId: string) => {
