@@ -90,13 +90,14 @@ export const LyricsWorkspace = memo<LyricsWorkspaceProps>(({
   // Stats
   const stats = useMemo(() => {
     const text = value || '';
-    const lines = text.split('\n').filter(l => l.trim()).length;
-    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    const sectionsText = document.sections.map(s => s.lines.join('\n')).join('\n');
+    const lines = sectionsText.split('\n').filter(l => l.trim()).length;
+    const words = sectionsText.trim() ? sectionsText.trim().split(/\s+/).length : 0;
     const chars = text.length;
     const sectionsCount = document.sections.length;
 
     return { lines, words, chars, sections: sectionsCount };
-  }, [value, document.sections.length]);
+  }, [value, document.sections]);
 
   // Update document
   const handleDocumentChange = useCallback((newDoc: SongDocument) => {
@@ -181,7 +182,7 @@ export const LyricsWorkspace = memo<LyricsWorkspaceProps>(({
 
   return (
     <>
-      <div className={cn("flex flex-col h-full w-full min-w-0 overflow-hidden", className)}>
+      <div className={cn("flex flex-col h-full w-full min-w-0 overflow-hidden", { 'compact': compact }, className)}>
         <LyricsToolbar
           mode={mode}
           viewMode={viewMode}

@@ -1,506 +1,280 @@
 /**
- * AudioController - компонент для управления воспроизведением аудио
- * Отделен от UI для оптимизации производительности
+ * AudioController - Refactored for Sliced Zustand Store
+ * Manages the <audio> element, reacting to store changes and dispatching updates.
+ * Integrates with useTrackVersions to decouple data fetching from the store.
  */
 import { useCallback, useEffect, useRef } from 'react';
-import { useAudioPlayerStore, useCurrentTrack, useIsPlaying, useVolume, useAudioRef } from '@/stores/audioPlayerStore';
-import type { AudioPlayerTrack } from '@/stores/audioPlayerStore';
+import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
+import type { AudioPlayerTrack } from '@/types/track.types';
 import { logger } from '@/utils/logger';
 import { toast } from 'sonner';
 import { SupabaseFunctions } from "@/integrations/supabase/functions";
+import { useTrackVersions } from '@/features/tracks/api/useTrackVersions';
+import { trackConverters } from '@/types/domain/track.types';
+
 export const AudioController = () => {
-  const currentTrack = useCurrentTrack();
-  const isPlaying = useIsPlaying();
-  const volume = useVolume();
-  const audioRef = useAudioRef();
-  
-  // Служебные флаги для сериализации операций
+  // --- STATE SELECTION ---
+  // Select state and actions from the store.
+  // Using a single selector is often more performant.
+  const {
+    currentTrack,
+    isPlaying,
+    volume,
+    queue,
+    currentQueueIndex,
+    isShuffleEnabled,
+    shuffleHistory,
+    actions,
+  } = useAudioPlayerStore(
+    (state) => ({
+      currentTrack: state.currentTrack,
+      isPlaying: state.isPlaying,
+      volume: state.volume,
+      queue: state.queue,
+      currentQueueIndex: state.currentQueueIndex,
+      isShuffleEnabled: state.isShuffleEnabled,
+      shuffleHistory: state.shuffleHistory,
+      actions: {
+        updateCurrentTime: state.updateCurrentTime,
+        updateDuration: state.updateDuration,
+        updateBufferingProgress: state.updateBufferingProgress,
+        pause: state.pause,
+        resume: state.resume,
+        playNext: state.playNext,
+        playPrevious: state.playPrevious,
+        seekTo: state.seekTo,
+        _setVersions: state._setVersions,
+      },
+    })
+  );
+
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  // --- DATA FETCHING FOR VERSIONS ---
+  const parentTrackId = currentTrack?.parentTrackId ?? currentTrack?.id;
+  const { data: versionsData, error: versionsError } = useTrackVersions(parentTrackId, {
+    enabled: !!parentTrackId,
+  });
+
+  useEffect(() => {
+    if (versionsData) {
+      const versions = [
+        trackConverters.toTrackVersion(versionsData.mainTrack),
+        ...versionsData.variants.map(trackConverters.toTrackVersion),
+      ].filter((v): v is NonNullable<typeof v> => v !== null);
+
+      actions._setVersions(versions, versionsData.preferredVariant?.id);
+    }
+    if (versionsError) {
+      logger.error('Failed to load track versions in AudioController', versionsError, 'AudioController', { parentTrackId });
+    }
+  }, [versionsData, versionsError, actions._setVersions, parentTrackId]);
+
+
+  // --- REFS FOR STABLE CALLBACKS AND STATE ---
   const isSettingSourceRef = useRef(false);
   const playLockRef = useRef(false);
   const lastLoadedTrackIdRef = useRef<string | null>(null);
   const retryTimeoutIdRef = useRef<number | null>(null);
   const mediaSessionSetRef = useRef(false);
-  // ✅ FIX [React error #185]: Отслеживание mounted состояния для предотвращения setState на размонтированном компоненте
   const isMountedRef = useRef(true);
-  // ✅ FIX [React error #185]: AbortController для отмены proxy запросов при unmount
   const proxyAbortControllerRef = useRef<AbortController | null>(null);
-  
-  const updateCurrentTime = useAudioPlayerStore((state) => state.updateCurrentTime);
-  const updateDuration = useAudioPlayerStore((state) => state.updateDuration);
-  const updateBufferingProgress = useAudioPlayerStore((state) => state.updateBufferingProgress);
-  const pause = useAudioPlayerStore((state) => state.pause);
-  const playTrack = useAudioPlayerStore((state) => state.playTrack);
-  const playNext = useAudioPlayerStore((state) => state.playNext);
-  const playPrevious = useAudioPlayerStore((state) => state.playPrevious);
-  const seekTo = useAudioPlayerStore((state) => state.seekTo);
-  const proxyTriedRef = useRef<Record<string, boolean>>({});  // ✅ FIX: Track per audio URL
+  const proxyTriedRef = useRef<Record<string, boolean>>({});
+  const retryCountRef = useRef(0);
 
-  // Стабилизированный обработчик для action 'previoustrack' MediaSession
-  const handlePlayPrevious = useCallback(() => {
-    logger.info('MediaSession: previous track action', 'AudioController');
-    playPrevious();
-  }, [playPrevious]);
+  // Use a ref to hold the latest actions to prevent useEffect dependency issues
+  const latestActions = useRef(actions);
+  useEffect(() => {
+    latestActions.current = actions;
+  });
 
-  // Безопасный запуск воспроизведения с защитой от параллельных вызовов
+  // --- CORE PLAYBACK LOGIC ---
+
   const safePlay = useCallback(async () => {
     const audio = audioRef?.current;
     if (!audio) return;
+    if (isSettingSourceRef.current || playLockRef.current) return;
 
-    // Не пытаться играть во время смены источника
-    if (isSettingSourceRef.current) {
-      logger.info('Skip play: source is being set', 'AudioController', { trackId: currentTrack?.id });
-      return;
-    }
-
-    // Блокировка конкурентных вызовов play()
-    if (playLockRef.current) {
-      logger.warn('Skip play: another play() in progress', 'AudioController', { trackId: currentTrack?.id });
-      return;
-    }
     playLockRef.current = true;
-
     try {
-      // Дождаться готовности к воспроизведению, чтобы избежать AbortError при смене src
       if (audio.readyState < 3) {
         await new Promise<void>((resolve) => {
-          let timeoutId: number | null = null;
-          const cleanup = () => {
-            audio.removeEventListener('canplay', onReady);
-            audio.removeEventListener('loadeddata', onReady);
-            audio.removeEventListener('stalled', onReady);
-            audio.removeEventListener('error', onReady);
-            if (timeoutId) window.clearTimeout(timeoutId);
-          };
-          const onReady = () => {
-            cleanup();
-            resolve();
-          };
+          const onReady = () => resolve();
           audio.addEventListener('canplay', onReady, { once: true });
-          audio.addEventListener('loadeddata', onReady, { once: true });
-          audio.addEventListener('stalled', onReady, { once: true });
-          audio.addEventListener('error', onReady, { once: true });
-          timeoutId = window.setTimeout(onReady, 1500); // fail-soft через 1.5s
+          setTimeout(onReady, 1500); // Failsafe
         });
       }
-
       await audio.play();
-      logger.info('Audio playback started', 'AudioController', { 
-        trackId: currentTrack?.id,
-        audio_url: currentTrack?.audio_url?.substring(0, 100) 
-      });
     } catch (error) {
-      // Частый случай при мгновенной смене трека: AbortError — не считаем ошибкой
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        logger.warn('play() aborted due to a new load; ignoring', 'AudioController', { trackId: currentTrack?.id });
-      } else {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) {
         logger.error('Failed to play audio', error as Error, 'AudioController', { trackId: currentTrack?.id });
-        // Не принудительно ставим на паузу при ошибке автозапуска — оставим решение UI/пользователю
       }
     } finally {
       playLockRef.current = false;
     }
-  }, [audioRef, currentTrack?.id, currentTrack?.audio_url]);
+  }, [audioRef, currentTrack?.id]);
 
-  // ============= MEDIASESSION API =============
-  useEffect(() => {
-    if (!currentTrack || !('mediaSession' in navigator)) return;
-
-    try {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: currentTrack.title,
-        artist: currentTrack.style_tags?.[0] || 'AI Generated',
-        album: 'Albert3 Muse Synth Studio',
-        artwork: currentTrack.cover_url
-          ? [
-              { src: currentTrack.cover_url, sizes: '512x512', type: 'image/jpeg' },
-              { src: currentTrack.cover_url, sizes: '256x256', type: 'image/jpeg' },
-              { src: currentTrack.cover_url, sizes: '128x128', type: 'image/jpeg' },
-            ]
-          : [],
-      });
-
-      // Set action handlers only once
-      if (!mediaSessionSetRef.current) {
-        navigator.mediaSession.setActionHandler('play', () => {
-          logger.info('MediaSession: play action', 'AudioController');
-          playTrack(currentTrack);
-        });
-
-        navigator.mediaSession.setActionHandler('pause', () => {
-          logger.info('MediaSession: pause action', 'AudioController');
-          pause();
-        });
-
-        navigator.mediaSession.setActionHandler('previoustrack', handlePlayPrevious);
-
-        navigator.mediaSession.setActionHandler('nexttrack', () => {
-          logger.info('MediaSession: next track action', 'AudioController');
-          playNext();
-        });
-
-        navigator.mediaSession.setActionHandler('seekto', (details) => {
-          if (details.seekTime !== undefined) {
-            logger.info('MediaSession: seek action', 'AudioController', { seekTime: details.seekTime });
-            seekTo(details.seekTime);
-          }
-        });
-
-        mediaSessionSetRef.current = true;
-      }
-
-      // Update playback state
-      navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
-
-      logger.info('MediaSession metadata updated', 'AudioController', {
-        title: currentTrack.title,
-        isPlaying,
-      });
-    } catch (error) {
-      logger.error('Failed to set MediaSession', error as Error, 'AudioController');
-    }
-
-    return () => {
-      if ('mediaSession' in navigator) {
-        navigator.mediaSession.metadata = null;
-      }
-    };
-  }, [currentTrack, isPlaying, playTrack, pause, playNext, seekTo, handlePlayPrevious]);
-
-  // ============= УПРАВЛЕНИЕ ВОСПРОИЗВЕДЕНИЕМ =============
+  // Effect to handle play/pause state
   useEffect(() => {
     const audio = audioRef?.current;
     if (!audio) return;
 
     if (isPlaying && currentTrack) {
-      // Сериализованный запуск воспроизведения
       safePlay();
     } else {
       audio.pause();
     }
-  }, [isPlaying, audioRef, currentTrack, pause, safePlay]);
+  }, [isPlaying, currentTrack, safePlay]);
 
-  // ============= ЗАГРУЗКА НОВОГО ТРЕКА =============
+  // Effect to handle track source changes
   useEffect(() => {
     const audio = audioRef?.current;
     if (!audio || !currentTrack?.audio_url) return;
 
-    // ✅ FIX: Validate audio_url format
-    const audioUrl = currentTrack.audio_url.trim();
-    if (!audioUrl || (!audioUrl.startsWith('http://') && !audioUrl.startsWith('https://') && !audioUrl.startsWith('blob:'))) {
-      logger.error('Invalid audio_url format', new Error('Invalid URL'), 'AudioController', { 
-        trackId: currentTrack.id,
-        audio_url: audioUrl.substring(0, 100)
-      });
-      toast.error('Некорректный формат аудио файла');
-      pause();
+    // Prevent re-triggering for the same track URL
+    if (lastLoadedTrackIdRef.current === currentTrack.id) return;
+
+    // --- RESET STATE FOR NEW TRACK ---
+    lastLoadedTrackIdRef.current = currentTrack.id;
+    isSettingSourceRef.current = true;
+    retryCountRef.current = 0; // Reset retry count
+    if (retryTimeoutIdRef.current) {
+      clearTimeout(retryTimeoutIdRef.current); // Clear any pending retry
+      retryTimeoutIdRef.current = null;
+    }
+    if (proxyAbortControllerRef.current) {
+      proxyAbortControllerRef.current.abort(); // Abort any pending proxy request
+      proxyAbortControllerRef.current = null;
+    }
+
+    try {
+      audio.src = currentTrack.audio_url;
+      audio.load();
+      actions.updateCurrentTime(0);
+    } catch (error) {
+      logger.error('Failed to set audio source', error as Error, 'AudioController', { trackId: currentTrack.id });
+    } finally {
+      isSettingSourceRef.current = false;
+    }
+
+    const handleLoadedMetadata = () => {
+      if (!isMountedRef.current) return;
+      actions.updateDuration(audio.duration || 0);
+      if (isPlaying) {
+        safePlay();
+      }
+    };
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+
+    return () => {
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    };
+  }, [currentTrack?.id, currentTrack?.audio_url, isPlaying, actions, safePlay]);
+
+  // Effect for volume
+  useEffect(() => {
+    const audio = audioRef?.current;
+    if (audio) audio.volume = volume;
+  }, [volume]);
+
+  // Effect to manage component mount state
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
+  // --- ERROR HANDLING & RESILIENCE ---
+  const handleError = useCallback(() => {
+    if (!isMountedRef.current || !currentTrack?.audio_url || !audioRef.current) return;
+
+    const audio = audioRef.current;
+    const mediaError = audio.error;
+    if (!mediaError || mediaError.code === mediaError.MEDIA_ERR_ABORTED) {
       return;
     }
 
-    // ✅ Retry state
-    let retryCount = 0;
-    const MAX_RETRIES = 3;
-    const RETRY_DELAYS = [1000, 3000, 5000]; // Exponential backoff
+    logger.warn('Audio playback error', {
+      code: mediaError.code,
+      message: mediaError.message,
+      trackId: currentTrack.id,
+      audio_url: currentTrack.audio_url,
+      retryCount: retryCountRef.current,
+    });
 
-    const loadAudioWithRetry = async () => {
-      // Если во время ретрая сменился трек — прекращаем
-      if (lastLoadedTrackIdRef.current && lastLoadedTrackIdRef.current !== currentTrack.id) {
-        logger.info('Abort load: track changed', 'AudioController', {
-          expected: lastLoadedTrackIdRef.current,
-          actual: currentTrack.id,
-        });
-        return;
-      }
-      try {
-        logger.info('Loading new track', 'AudioController', { 
-          trackId: currentTrack.id,
-          audio_url: audioUrl.substring(0, 100),
-          attempt: retryCount + 1,
-        });
+    const maxRetries = 3;
+    const initialRetryDelay = 1000; // ms
 
-        // Сериализованная установка источника
-        isSettingSourceRef.current = true;
-        audio.src = audioUrl;
-        audio.load();
-        updateCurrentTime(0);
-        lastLoadedTrackIdRef.current = currentTrack.id;
-        
-        // Автовоспроизведение при смене трека будет вызвано через обработчик loadedmetadata
-      } catch (error) {
-        // ✅ Retry logic for network/temporary errors
-        const isRetryableError = error instanceof Error && (
-          error.message.includes('network') ||
-          error.message.includes('fetch') ||
-          error.message.includes('timeout') ||
-          error.name === 'AbortError' ||
-          error.name === 'NetworkError'
-        );
-
-        if (isRetryableError && retryCount < MAX_RETRIES) {
-          retryCount++;
-          const delay = RETRY_DELAYS[retryCount - 1];
-          
-          logger.warn(`Audio load failed, retrying in ${delay}ms`, 'AudioController', {
-            trackId: currentTrack.id,
-            attempt: retryCount,
-            maxRetries: MAX_RETRIES,
-            error: error instanceof Error ? error.message : String(error),
-          });
-
-          if (retryTimeoutIdRef.current) {
-            clearTimeout(retryTimeoutIdRef.current);
-          }
-          retryTimeoutIdRef.current = window.setTimeout(() => {
-            loadAudioWithRetry();
-          }, delay);
-        } else {
-          logger.error('Auto-play failed after retries', error as Error, 'AudioController', {
-            trackId: currentTrack.id,
-            attempts: retryCount + 1,
-          });
-          pause();
-        }
-      }
-      finally {
-        isSettingSourceRef.current = false;
-      }
-    };
-
-    // Перед стартом — отменяем возможный предыдущий таймер
-    if (retryTimeoutIdRef.current) {
-      clearTimeout(retryTimeoutIdRef.current);
-      retryTimeoutIdRef.current = null;
-    }
-    lastLoadedTrackIdRef.current = currentTrack.id;
-    isSettingSourceRef.current = true;
-    loadAudioWithRetry();
-
-    // ✅ FIX [React error #185]: Ref для отслеживания timeout из handleLoadedMetadataAndPlay
-    let playTimeoutId: number | null = null;
-
-    // Add a listener for 'loadedmetadata' to trigger playback
-    const handleLoadedMetadataAndPlay = () => {
-      // ✅ FIX [React error #185]: Проверка mounted перед обновлением состояния
-      // WHY: Событие loadedmetadata асинхронное, может произойти после unmount
-      if (!isMountedRef.current) {
-        logger.debug('Component unmounted, skipping metadata handler', 'AudioController');
-        return;
-      }
-
-      updateDuration(audio.duration || 0);
-      logger.info('Audio metadata loaded', 'AudioController', {
-        duration: audio.duration,
-        trackId: currentTrack?.id
-      });
-
-      if (isPlaying) {
-        // ✅ FIX [React error #185]: Сохранить timeoutId для cleanup
-        // Небольшая задержка, чтобы избежать гонки с load()
-        playTimeoutId = window.setTimeout(() => {
-          if (isMountedRef.current) {
-            safePlay();
-          }
-        }, 0);
-      }
-    };
-
-    audio.addEventListener('loadedmetadata', handleLoadedMetadataAndPlay);
-
-    // Очистка при смене трека/размонтировании
-    return () => {
-      // ✅ FIX [React error #185]: Установить unmounted флаг
-      isMountedRef.current = false;
-
+    // --- RETRY LOGIC ---
+    if (retryCountRef.current < maxRetries) {
       if (retryTimeoutIdRef.current) {
         clearTimeout(retryTimeoutIdRef.current);
-        retryTimeoutIdRef.current = null;
       }
+      const delay = initialRetryDelay * Math.pow(2, retryCountRef.current);
+      retryCountRef.current += 1;
+      logger.info(`Retrying audio load in ${delay}ms...`, { attempt: retryCountRef.current });
 
-      // ✅ FIX [React error #185]: Отменить timeout из handleLoadedMetadataAndPlay
-      if (playTimeoutId !== null) {
-        clearTimeout(playTimeoutId);
-        playTimeoutId = null;
+      retryTimeoutIdRef.current = window.setTimeout(() => {
+        if (isMountedRef.current && audioRef.current) {
+          logger.info(`Executing retry attempt #${retryCountRef.current}`);
+          audioRef.current.load();
+          safePlay();
+        }
+      }, delay);
+      return;
+    }
+
+    // --- PROXY FALLBACK LOGIC ---
+    if (currentTrack.id && !proxyTriedRef.current[currentTrack.id]) {
+      proxyTriedRef.current[currentTrack.id] = true;
+      logger.info('All retries failed. Attempting to use proxy.', { trackId: currentTrack.id });
+      toast.info('Проблемы с загрузкой трека. Пробуем альтернативный маршрут...');
+
+      if (proxyAbortControllerRef.current) {
+        proxyAbortControllerRef.current.abort();
       }
+      proxyAbortControllerRef.current = new AbortController();
+      const signal = proxyAbortControllerRef.current.signal;
 
-      isSettingSourceRef.current = false;
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadataAndPlay);
-    };
-  }, [currentTrack?.audio_url, currentTrack?.id, audioRef, isPlaying, pause, updateCurrentTime, updateDuration, safePlay]);
-
-  // ============= ГРОМКОСТЬ =============
-  useEffect(() => {
-    const audio = audioRef?.current;
-    if (!audio) return;
-    
-    audio.volume = volume;
-  }, [volume, audioRef]);
-
-  // ============= СОБЫТИЯ АУДИО =============
-  // Ref-обертка для колбэков, чтобы избежать их в зависимостях useEffect
-  const latestActions = useRef({
-    updateCurrentTime,
-    updateBufferingProgress,
-    playNext,
-    pause,
-    currentTrack,
-  });
-
-  // Обновляем ref при каждом рендере, чтобы иметь доступ к последним версиям функций
-  useEffect(() => {
-    latestActions.current = {
-      updateCurrentTime,
-      updateBufferingProgress,
-      playNext,
-      pause,
-      currentTrack,
-    };
-  });
-
-  useEffect(() => {
-    const audio = audioRef?.current;
-    if (!audio) return;
-
-    let lastUpdateTime = 0;
-    const handleTimeUpdate = () => {
-      if (!isMountedRef.current) {
-        return;
-      }
-
-      const now = Date.now();
-      if (now - lastUpdateTime >= 250) {
-        latestActions.current.updateCurrentTime(audio.currentTime);
-        lastUpdateTime = now;
-      }
-    };
-
-    const handleEnded = () => {
-      logger.info('Track ended, playing next', 'AudioController', {
-        trackId: latestActions.current.currentTrack?.id
-      });
-      latestActions.current.playNext();
-    };
-
-    const handleProgress = () => {
-      if (audio.buffered.length > 0) {
-        const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
-        const duration = audio.duration || 1;
-        latestActions.current.updateBufferingProgress((bufferedEnd / duration) * 100);
-      }
-    };
-
-    const handleError = () => {
-      const errorCode = audio.error?.code;
-      const errorMessage = audio.error?.message || 'Unknown error';
-      
-      logger.error('Audio loading error', new Error('Audio failed to load'), 'AudioController', {
-        trackId: latestActions.current.currentTrack?.id,
-        audio_url: latestActions.current.currentTrack?.audio_url?.substring(0, 100),
-        errorCode,
-        errorMessage,
-      });
-
-      const errorMessages: Record<number, string> = {
-        1: 'Загрузка аудио прервана',
-        2: 'Ошибка сети при загрузке аудио',
-        3: 'Не удалось декодировать аудио',
-        4: 'Формат аудио не поддерживается',
-      };
-
-      const audioUrl = latestActions.current.currentTrack?.audio_url || '';
-      if (
-        !proxyTriedRef.current[audioUrl] &&
-        audioUrl &&
-        /mureka\.ai/.test(audioUrl) &&
-        (errorCode === 3 || errorCode === 4)
-      ) {
-        proxyTriedRef.current[audioUrl] = true;
-        const abortController = new AbortController();
-        proxyAbortControllerRef.current = abortController;
-
-        const loadingToastId = toast.loading('Подготовка аудио для воспроизведения...');
-        const PROXY_TIMEOUT = 15000;
-
-        (async () => {
-          try {
-            const timeoutId = setTimeout(() => {
-              abortController.abort();
-            }, PROXY_TIMEOUT);
-
-            const { data, error } = await SupabaseFunctions.invoke('fetch-audio-proxy', {
-              body: { url: audioUrl },
-            });
-
-            clearTimeout(timeoutId);
-
-            if (!isMountedRef.current) {
-              logger.debug('Component unmounted, aborting proxy fallback', 'AudioController');
-              return;
-            }
-
-            if (abortController.signal.aborted) {
-              throw new Error('Proxy timeout after 15s');
-            }
-
-            if (error || !data || !(data as any).base64) {
-              throw error || new Error('proxy failed');
-            }
-
-            const base64: string = (data as any).base64;
-            const contentType: string = (data as any).contentType || 'audio/mpeg';
-            const binaryStr = atob(base64);
-            const len = binaryStr.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) bytes[i] = binaryStr.charCodeAt(i);
-            const blob = new Blob([bytes], { type: contentType });
-            const objectUrl = URL.createObjectURL(blob);
-
-            if (!isMountedRef.current) {
-              URL.revokeObjectURL(objectUrl);
-              return;
-            }
-
-            audio.src = objectUrl;
-            audio.load();
-
-            try {
-              await audio.play();
-            } catch (e) {
-              logger.error('Failed to play object URL audio', e as Error, 'AudioController', { trackId: latestActions.current.currentTrack?.id });
-            }
-
-            if (isMountedRef.current) {
-              toast.success('Аудио готово к воспроизведению', { id: loadingToastId });
-            }
+      SupabaseFunctions.getProxyUrl({ url: currentTrack.audio_url }, signal)
+        .then(proxyUrl => {
+          if (signal.aborted || !isMountedRef.current || !audioRef.current) return;
+          logger.info('Received proxy URL. Applying to audio element.', { proxyUrl });
+          retryCountRef.current = 0;
+          isSettingSourceRef.current = true;
+          audioRef.current.src = proxyUrl;
+          audioRef.current.load();
+          safePlay();
+          isSettingSourceRef.current = false;
+        })
+        .catch(error => {
+          if (signal.aborted) {
+            logger.info('Proxy request was aborted.');
             return;
-          } catch (e) {
-            if ((e as Error).name === 'AbortError') {
-              logger.debug('Proxy request aborted', 'AudioController');
-              return;
-            }
-
-            logger.error('Proxy audio fallback failed', e as Error, 'AudioController', { trackId: latestActions.current.currentTrack?.id });
-
-            if (!isMountedRef.current) {
-              return;
-            }
-
-            const isTimeout = (e as Error).message?.includes('timeout');
-            const errorMsg = isTimeout
-              ? 'Не удалось подготовить аудио: превышено время ожидания'
-              : (errorCode ? errorMessages[errorCode] || 'Не удалось подготовить аудио' : 'Не удалось подготовить аудио');
-            toast.error(errorMsg, { id: loadingToastId });
-            latestActions.current.pause();
-          } finally {
-            proxyAbortControllerRef.current = null;
           }
-        })();
-        return;
-      }
+          logger.error('Failed to get proxy URL', error, 'AudioController');
+          toast.error('Не удалось загрузить трек даже через прокси.');
+          latestActions.current.pause();
+        });
+      return;
+    }
 
-      const userMessage = errorCode ? errorMessages[errorCode] || 'Ошибка загрузки аудио' : 'Ошибка загрузки аудио';
+    // --- FINAL FAILURE ---
+    logger.error('Audio playback failed after all retries and proxy attempt.', { trackId: currentTrack.id });
+    toast.error('Не удалось загрузить трек. Попробуйте следующий.');
+    latestActions.current.pause();
+  }, [currentTrack, safePlay]);
 
-      if (isMountedRef.current) {
-        toast.error(userMessage);
-        latestActions.current.pause();
+  // Effect for wiring up all audio element events
+  useEffect(() => {
+    const audio = audioRef?.current;
+    if (!audio) return;
+
+    const handleTimeUpdate = () => isMountedRef.current && latestActions.current.updateCurrentTime(audio.currentTime);
+    const handleEnded = () => isMountedRef.current && latestActions.current.playNext();
+    const handleProgress = () => {
+      if (isMountedRef.current && audio.buffered.length > 0) {
+        const bufferedEnd = audio.buffered.end(audio.buffered.length - 1);
+        latestActions.current.updateBufferingProgress((bufferedEnd / audio.duration) * 100);
       }
     };
 
@@ -510,79 +284,41 @@ export const AudioController = () => {
     audio.addEventListener('error', handleError);
 
     return () => {
-      isMountedRef.current = false;
-
-      if (proxyAbortControllerRef.current) {
-        proxyAbortControllerRef.current.abort();
-        proxyAbortControllerRef.current = null;
-      }
-
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('progress', handleProgress);
       audio.removeEventListener('error', handleError);
     };
-  }, [audioRef]);
+  }, [audioRef, handleError]);
 
-  // ============= ПРЕДЗАГРУЗКА СЛЕДУЮЩЕГО ТРЕКА =============
-  const nextTrackInQueue = useRef<HTMLAudioElement | null>(null);
-  const queue = useAudioPlayerStore((state) => state.queue);
-  const currentQueueIndex = useAudioPlayerStore((state) => state.currentQueueIndex);
-  const isShuffleEnabled = useAudioPlayerStore((state) => state.isShuffleEnabled);
-  const shuffleHistory = useAudioPlayerStore((state) => state.shuffleHistory);
 
+  // --- MEDIASESSION API ---
   useEffect(() => {
-    if (!nextTrackInQueue.current) {
-      nextTrackInQueue.current = new Audio();
-      nextTrackInQueue.current.preload = 'auto';
-    }
+    if (!currentTrack || !('mediaSession' in navigator)) return;
 
-    // Определяем следующий трек для предзагрузки
-    let nextTrack: AudioPlayerTrack | null = null;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: currentTrack.title,
+      artist: currentTrack.style_tags?.[0] || 'AI Music',
+      album: 'Albert3 Muse Synth Studio',
+      artwork: currentTrack.cover_url ? [{ src: currentTrack.cover_url }] : [],
+    });
 
-    if (isShuffleEnabled && queue.length > 0) {
-      // В shuffle mode берем случайный трек из непроигранных
-      const unplayedTracks = queue.filter(
-        (track) => !shuffleHistory.includes(track.id)
-      );
-      if (unplayedTracks.length > 0) {
-        nextTrack = unplayedTracks[0]; // Берем первый непроигранный для предзагрузки
-      }
-    } else if (currentQueueIndex >= 0 && currentQueueIndex < queue.length - 1) {
-      // В обычном режиме берем следующий по индексу
-      nextTrack = queue[currentQueueIndex + 1];
-    }
-
-    // Предзагружаем следующий трек
-    if (nextTrack?.audio_url && nextTrackInQueue.current) {
-      try {
-        nextTrackInQueue.current.src = nextTrack.audio_url;
-        logger.info('Preloading next track', 'AudioController', {
-          nextTrackId: nextTrack.id,
-          nextTrackTitle: nextTrack.title,
-        });
-      } catch (error) {
-        logger.error('Failed to preload next track', error as Error, 'AudioController', {
-          nextTrackId: nextTrack?.id,
-        });
-      }
-    }
-
-    return () => {
-      // Cleanup при размонтировании
-      if (nextTrackInQueue.current) {
-        nextTrackInQueue.current.src = '';
-      }
+    // Use latest actions from ref to avoid re-binding handlers
+    const setupMediaActions = () => {
+      if (mediaSessionSetRef.current) return;
+      navigator.mediaSession.setActionHandler('play', () => latestActions.current.resume());
+      navigator.mediaSession.setActionHandler('pause', () => latestActions.current.pause());
+      navigator.mediaSession.setActionHandler('previoustrack', () => latestActions.current.playPrevious());
+      navigator.mediaSession.setActionHandler('nexttrack', () => latestActions.current.playNext());
+      navigator.mediaSession.setActionHandler('seekto', (d) => d.seekTime && latestActions.current.seekTo(d.seekTime));
+      mediaSessionSetRef.current = true;
     };
-  }, [queue, currentQueueIndex, isShuffleEnabled, shuffleHistory]);
+    setupMediaActions();
 
-  // Рендерим скрытый audio элемент
-  return (
-    <audio
-      ref={audioRef}
-      preload="auto"
-      crossOrigin="anonymous"
-      className="hidden"
-    />
-  );
+    navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+
+  }, [currentTrack, isPlaying]);
+
+
+  return <audio ref={audioRef} preload="auto" crossOrigin="anonymous" className="hidden" />;
 };

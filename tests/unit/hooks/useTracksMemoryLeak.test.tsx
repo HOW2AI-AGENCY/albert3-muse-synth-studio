@@ -1,6 +1,6 @@
 /**
  * Memory Leak Test for useTracks realtime subscriptions
- * Tests P0-1 fix: Sync cleanup to prevent memory leaks
+ * Refactored to test the new RealtimeSubscriptionManager integration
  */
 
 import React from 'react';
@@ -8,38 +8,18 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useTracks } from '@/hooks/useTracks';
-import { supabase } from '@/integrations/supabase/client';
+import RealtimeSubscriptionManager from '@/services/realtimeSubscriptionManager';
 import type { ReactNode } from 'react';
 
-// Mock Supabase
-vi.mock('@/integrations/supabase/client', () => {
-  const mockChannel = {
-    on: vi.fn().mockReturnThis(),
-    subscribe: vi.fn().mockReturnThis(),
-    unsubscribe: vi.fn().mockResolvedValue(undefined),
-  };
+// Mock the RealtimeSubscriptionManager
+const mockUnsubscribe = vi.fn();
+vi.mock('@/services/realtimeSubscriptionManager', () => ({
+  default: {
+    subscribeToUserTracks: vi.fn(() => mockUnsubscribe),
+  },
+}));
 
-  return {
-    supabase: {
-      from: vi.fn(() => ({
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            order: vi.fn(() => ({
-              range: vi.fn(() => ({
-                abortSignal: vi.fn(() => Promise.resolve({ data: [], error: null, count: 0 })),
-              })),
-            })),
-          })),
-        })),
-      })),
-      channel: vi.fn(() => mockChannel),
-      removeChannel: vi.fn().mockResolvedValue(undefined),
-      getChannels: vi.fn(() => []),
-    },
-  };
-});
-
-// Mock logger
+// EXPANDED MOCK: Provide all required logger functions to satisfy the module's contract
 vi.mock('@/utils/logger', () => ({
   logger: {
     error: vi.fn(),
@@ -53,22 +33,39 @@ vi.mock('@/utils/logger', () => ({
   logDebug: vi.fn(),
 }));
 
+
 // Mock auth context
-vi.mock('@/contexts/AuthContext', () => ({
+vi.mock('@/contexts/auth/useAuth', () => ({
   useAuth: () => ({
-    user: { id: 'test-user-id' },
-    loading: false,
+    userId: 'test-user-id',
+    isLoading: false,
   }),
 }));
 
-describe('useTracks - Memory Leak Prevention (P0-1)', () => {
+// Provide a minimal mock for supabase since useTracks still imports it
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: {
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          order: vi.fn(() => ({
+            range: vi.fn(() => ({
+              abortSignal: vi.fn(() => Promise.resolve({ data: [], error: null, count: 0 })),
+            })),
+          })),
+        })),
+      })),
+    })),
+  },
+}));
+
+
+describe('useTracks - RealtimeSubscriptionManager Integration', () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
     queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-      },
+      defaultOptions: { queries: { retry: false } },
     });
     vi.clearAllMocks();
   });
@@ -81,116 +78,51 @@ describe('useTracks - Memory Leak Prevention (P0-1)', () => {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 
-  it('should remove realtime channel on unmount', async () => {
-    const { unmount } = renderHook(
-      () => useTracks({ projectId: null, excludeDraftTracks: false }),
-      { wrapper }
-    );
+  it('should subscribe to user tracks on mount', async () => {
+    renderHook(() => useTracks(undefined, { projectId: 'project-1' }), { wrapper });
 
-    // Wait for subscription to be established
     await waitFor(() => {
-      expect(supabase.channel).toHaveBeenCalledWith(
-        expect.stringContaining('tracks-user-test-user-id')
+      expect(RealtimeSubscriptionManager.subscribeToUserTracks).toHaveBeenCalledWith(
+        'test-user-id',
+        'project-1',
+        expect.any(Function)
       );
     });
-
-    const channelCreateCount = (supabase.channel as any).mock.calls.length;
-
-    // Unmount component
-    unmount();
-
-    // Verify removeChannel was called
-    await waitFor(() => {
-      expect(supabase.removeChannel).toHaveBeenCalledTimes(1);
-    });
-
-    // Verify no lingering channels
-    expect(supabase.getChannels()).toHaveLength(0);
   });
 
-  it('should handle rapid mount/unmount cycles without leaking channels', async () => {
+  it('should call the unsubscribe function on unmount', async () => {
+    const { unmount } = renderHook(() => useTracks(), { wrapper });
+
+    await waitFor(() => {
+      expect(RealtimeSubscriptionManager.subscribeToUserTracks).toHaveBeenCalledTimes(1);
+    });
+
+    unmount();
+
+    await waitFor(() => {
+      expect(mockUnsubscribe).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('should handle rapid mount/unmount cycles correctly', async () => {
     const mountCount = 10;
     const hooks: Array<ReturnType<typeof renderHook>> = [];
 
-    // Rapidly mount and unmount
     for (let i = 0; i < mountCount; i++) {
-      const { unmount } = renderHook(
-        () => useTracks({ projectId: null, excludeDraftTracks: false }),
-        { wrapper }
-      );
-      hooks.push({ unmount } as any);
-
-      // Small delay to simulate realistic usage
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      hooks.push(renderHook(() => useTracks(), { wrapper }));
     }
 
-    // Unmount all
     hooks.forEach((hook) => hook.unmount());
 
-    // Wait for all cleanups
     await waitFor(() => {
-      expect(supabase.removeChannel).toHaveBeenCalledTimes(mountCount);
-    });
-
-    // Verify all channels cleaned up
-    expect(supabase.getChannels()).toHaveLength(0);
-  });
-
-  it('should cleanup channel even if subscription fails', async () => {
-    // Mock subscription failure
-    const mockFailedChannel = {
-      on: vi.fn().mockReturnThis(),
-      subscribe: vi.fn((callback) => {
-        callback('CHANNEL_ERROR');
-        return mockFailedChannel;
-      }),
-      unsubscribe: vi.fn().mockResolvedValue(undefined),
-    };
-
-    (supabase.channel as any).mockReturnValue(mockFailedChannel);
-
-    const { unmount } = renderHook(
-      () => useTracks({ projectId: null, excludeDraftTracks: false }),
-      { wrapper }
-    );
-
-    // Wait a bit for subscription attempt
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    unmount();
-
-    // Verify cleanup still happened
-    await waitFor(() => {
-      expect(supabase.removeChannel).toHaveBeenCalled();
+      expect(RealtimeSubscriptionManager.subscribeToUserTracks).toHaveBeenCalledTimes(mountCount);
+      expect(mockUnsubscribe).toHaveBeenCalledTimes(mountCount);
     });
   });
 
-  it('should not create duplicate channels on re-render with same deps', async () => {
+  it('should re-subscribe when projectId dependency changes', async () => {
     const { rerender } = renderHook(
-      () => useTracks({ projectId: 'project-1', excludeDraftTracks: false }),
-      { wrapper }
-    );
-
-    await waitFor(() => {
-      expect(supabase.channel).toHaveBeenCalledTimes(1);
-    });
-
-    const initialCallCount = (supabase.channel as any).mock.calls.length;
-
-    // Re-render with same props (should NOT create new channel)
-    rerender();
-
-    // Wait a bit
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    // Channel should NOT be recreated
-    expect((supabase.channel as any).mock.calls.length).toBe(initialCallCount);
-  });
-
-  it('should cleanup old channel when deps change', async () => {
-    const { rerender } = renderHook(
-      ({ projectId }: { projectId: string | null }) =>
-        useTracks({ projectId, excludeDraftTracks: false }),
+      ({ projectId }) => useTracks(undefined, { projectId }),
       {
         wrapper,
         initialProps: { projectId: 'project-1' },
@@ -198,37 +130,44 @@ describe('useTracks - Memory Leak Prevention (P0-1)', () => {
     );
 
     await waitFor(() => {
-      expect(supabase.channel).toHaveBeenCalledTimes(1);
+      expect(RealtimeSubscriptionManager.subscribeToUserTracks).toHaveBeenCalledWith(
+        'test-user-id',
+        'project-1',
+        expect.any(Function)
+      );
     });
 
-    // Change projectId (should cleanup old channel and create new one)
+    expect(mockUnsubscribe).not.toHaveBeenCalled();
+
     rerender({ projectId: 'project-2' });
 
     await waitFor(() => {
-      expect(supabase.removeChannel).toHaveBeenCalledTimes(1);
-      expect(supabase.channel).toHaveBeenCalledTimes(2);
+      // Check that the old subscription was cleaned up
+      expect(mockUnsubscribe).toHaveBeenCalledTimes(1);
+      // Check that a new subscription was created with the new projectId
+      expect(RealtimeSubscriptionManager.subscribeToUserTracks).toHaveBeenCalledWith(
+        'test-user-id',
+        'project-2',
+        expect.any(Function)
+      );
     });
+
+    expect(RealtimeSubscriptionManager.subscribeToUserTracks).toHaveBeenCalledTimes(2);
   });
 
-  it('should use sync cleanup (not async .then())', async () => {
-    const { unmount } = renderHook(
-      () => useTracks({ projectId: null, excludeDraftTracks: false }),
-      { wrapper }
-    );
+  it('should not re-subscribe on re-renders with the same dependencies', async () => {
+    const { rerender } = renderHook(() => useTracks(undefined, { projectId: 'project-1' }), { wrapper });
 
     await waitFor(() => {
-      expect(supabase.channel).toHaveBeenCalled();
+      expect(RealtimeSubscriptionManager.subscribeToUserTracks).toHaveBeenCalledTimes(1);
     });
 
-    // Unmount
-    unmount();
+    rerender();
 
-    // removeChannel should be called synchronously (void, not .then())
-    // This is verified by checking it's called immediately, not in next tick
-    expect(supabase.removeChannel).toHaveBeenCalled();
+    // Use a small timeout to ensure no async re-subscription happens
+    await new Promise(res => setTimeout(res, 50));
 
-    // No pending promises
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(supabase.removeChannel).toHaveBeenCalledTimes(1);
+    expect(RealtimeSubscriptionManager.subscribeToUserTracks).toHaveBeenCalledTimes(1);
+    expect(mockUnsubscribe).not.toHaveBeenCalled();
   });
 });

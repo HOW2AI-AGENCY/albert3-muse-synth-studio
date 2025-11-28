@@ -4,6 +4,15 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { PerformanceMonitor } from '@/utils/performanceMonitor';
+import { logger } from '@/utils/logger';
+
+vi.mock('@/utils/logger', () => ({
+  logger: {
+    warn: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+  }
+}));
 
 describe('PerformanceMonitor', () => {
   let monitor: PerformanceMonitor;
@@ -11,6 +20,12 @@ describe('PerformanceMonitor', () => {
   beforeEach(() => {
     monitor = new PerformanceMonitor();
     vi.useFakeTimers();
+    // Mock performance.now() to work with fake timers
+    let time = 0;
+    vi.spyOn(performance, 'now').mockImplementation(() => {
+      time += 1000; // Simulate time passing
+      return time;
+    });
   });
 
   it('should start and end timer correctly', () => {
@@ -100,13 +115,19 @@ describe('PerformanceMonitor', () => {
   });
 
   it('should log slow operations', () => {
-    const consoleSpy = vi.spyOn(console, 'warn');
+    // The spy is now on the mocked logger, not the console
+    const loggerSpy = vi.spyOn(logger, 'warn');
 
     monitor.startTimer('slow-op');
-    vi.advanceTimersByTime(1500); // Exceeds default slow threshold (1000ms)
+
+    // We need to advance the mocked performance.now, not just the fake timers
+    const performanceSpy = vi.spyOn(performance, 'now');
+    performanceSpy.mockReturnValueOnce(0); // Start time
+    performanceSpy.mockReturnValueOnce(2000); // End time, exceeds 1000ms threshold
+
     monitor.endTimer('slow-op', 'slow-metric');
 
-    expect(consoleSpy).toHaveBeenCalled();
+    expect(loggerSpy).toHaveBeenCalled();
   });
 
   it('should calculate percentiles correctly', () => {

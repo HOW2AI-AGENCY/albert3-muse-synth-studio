@@ -4,8 +4,8 @@
  */
 import { memo, useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import type { AudioPlayerTrack } from '@/stores/audioPlayerStore';
-import { useAudioPlayerStore, useIsPlaying, useVolume, usePlaybackModeControls } from '@/stores/audioPlayerStore';
+import type { AudioPlayerTrack } from '@/types/track.types';
+import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
 import { usePlayerVisibility } from '../hooks/usePlayerVisibility';
 import { usePlayerKeyboardShortcuts } from '../hooks/usePlayerKeyboardShortcuts';
 import { PlaybackControls } from './PlaybackControls';
@@ -26,16 +26,28 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
   const { isVisible } = usePlayerVisibility(track);
   const [showKaraoke, setShowKaraoke] = useState(false);
 
-  const isPlaying = useIsPlaying();
-  const volume = useVolume();
-  const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
-  const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
-
-  const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
-  const seekTo = useAudioPlayerStore((state) => state.seekTo);
-  const setVolume = useAudioPlayerStore((state) => state.setVolume);
-  const switchToVersion = useAudioPlayerStore((state) => state.switchToVersion);
-  const { toggleRepeatMode, toggleShuffle } = usePlaybackModeControls();
+  // Consolidated store selector for performance
+  const {
+    isPlaying,
+    volume,
+    availableVersions,
+    currentVersionId,
+    actions,
+  } = useAudioPlayerStore((state) => ({
+    isPlaying: state.isPlaying,
+    volume: state.volume,
+    availableVersions: state.availableVersions,
+    currentVersionId: state.currentVersionId,
+    actions: {
+      togglePlayPause: state.togglePlayPause,
+      seekTo: state.seekTo,
+      setVolume: state.setVolume,
+      switchToVersion: state.switchToVersion,
+      toggleRepeatMode: state.toggleRepeatMode,
+      toggleShuffle: state.toggleShuffle,
+      clearCurrentTrack: state.clearCurrentTrack,
+    }
+  }));
 
   const [isMuted, setIsMuted] = useState(false);
   const previousVolumeRef = useRef(volume);
@@ -77,37 +89,35 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
   const toggleMute = useCallback(() => {
     if (isMuted) {
       const restoreVolume = previousVolumeRef.current > 0 ? previousVolumeRef.current : 0.5;
-      setVolume(restoreVolume);
+      actions.setVolume(restoreVolume);
       setIsMuted(false);
     } else {
       previousVolumeRef.current = volume > 0 ? volume : 0.5;
-      setVolume(0);
+      actions.setVolume(0);
       setIsMuted(true);
     }
-  }, [isMuted, volume, setVolume]);
+  }, [isMuted, volume, actions]);
 
   const handleVolumeChange = useCallback((value: number[]) => {
     const newVolume = value[0];
-    setVolume(newVolume);
+    actions.setVolume(newVolume);
     if (newVolume > 0) {
       previousVolumeRef.current = newVolume;
     }
-  }, [setVolume]);
+  }, [actions]);
 
   usePlayerKeyboardShortcuts({
-    togglePlayPause,
-    seekTo,
-    setVolume,
+    togglePlayPause: actions.togglePlayPause,
+    seekTo: actions.seekTo,
+    setVolume: actions.setVolume,
     toggleMute,
-    toggleRepeatMode,
-    toggleShuffle,
+    toggleRepeatMode: actions.toggleRepeatMode,
+    toggleShuffle: actions.toggleShuffle,
   });
 
-  const clearCurrentTrack = useAudioPlayerStore((state) => state.clearCurrentTrack);
-
   const handleClose = useCallback(() => {
-    clearCurrentTrack();
-  }, [clearCurrentTrack]);
+    actions.clearCurrentTrack();
+  }, [actions]);
 
   return (
     <>
@@ -202,7 +212,7 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
                 </h4>
                 {hasVersions && (
                   <Badge variant="outline" className="text-[8px] px-1 py-0 h-3.5 border-primary/30">
-                    V{track.versionNumber ?? currentVersionIndex + 1}
+                    V{availableVersions.find(v => v.id === currentVersionId)?.versionNumber ?? track.versionNumber ?? ''}
                   </Badge>
                 )}
               </div>
@@ -236,13 +246,13 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
           </div>
 
           <div className="flex items-center justify-between gap-2">
-            <PlaybackControls 
+            <PlaybackControls
               isPlaying={isPlaying}
               hasVersions={hasVersions}
               availableVersions={availableVersions}
-              currentVersionIndex={currentVersionIndex}
-              onTogglePlayPause={togglePlayPause}
-              onSwitchVersion={switchToVersion}
+              currentVersionId={currentVersionId}
+              onTogglePlayPause={actions.togglePlayPause}
+              onSwitchVersion={actions.switchToVersion}
             />
 
             <div

@@ -1,5 +1,5 @@
 /**
- * Playback controls for desktop player
+ * Playback controls for desktop player - Refactored
  */
 import { memo, useCallback } from 'react';
 import { Play, Pause, SkipBack, SkipForward, List, Star, Repeat, Repeat1, Shuffle } from '@/utils/iconImports';
@@ -14,20 +14,16 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { PlayerQueue } from '../PlayerQueue';
 import { useVersionNavigation } from '@/hooks/useVersionNavigation';
-import { useAudioPlayerStore, usePlaybackModes, usePlaybackModeControls } from '@/stores/audioPlayerStore';
+import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { TrackVersion } from '@/types/track.types';
 
-interface Version {
-  id: string;
-  versionNumber?: number;
-  isMasterVersion?: boolean;
-}
 
 interface PlaybackControlsProps {
   isPlaying: boolean;
   hasVersions: boolean;
-  availableVersions: Version[];
-  currentVersionIndex: number;
+  availableVersions: TrackVersion[];
+  currentVersionId: string | null;
   onTogglePlayPause: () => void;
   onSwitchVersion: (versionId: string) => void;
 }
@@ -36,18 +32,25 @@ export const PlaybackControls = memo(({
   isPlaying,
   hasVersions,
   availableVersions,
-  currentVersionIndex,
+  currentVersionId,
   onTogglePlayPause,
   onSwitchVersion,
 }: PlaybackControlsProps) => {
   const { handleNext, handlePrevious } = useVersionNavigation();
-  // ✅ FIX: Don't subscribe to currentTime (60 FPS) - use getState() instead
+
+  // Actions can be selected granularly
   const seekTo = useAudioPlayerStore((state) => state.seekTo);
-  const { repeatMode, isShuffleEnabled } = usePlaybackModes();
-  const { toggleRepeatMode, toggleShuffle } = usePlaybackModeControls();
+  const { repeatMode, isShuffleEnabled, toggleRepeatMode, toggleShuffle } = useAudioPlayerStore(
+    (state) => ({
+      repeatMode: state.repeatMode,
+      isShuffleEnabled: state.isShuffleEnabled,
+      toggleRepeatMode: state.toggleRepeatMode,
+      toggleShuffle: state.toggleShuffle,
+    })
+  );
 
   const onPreviousClick = useCallback(() => {
-    // ✅ FIX: Get currentTime on-demand instead of subscribing
+    // Get currentTime on-demand instead of subscribing to frequent updates
     const currentTime = useAudioPlayerStore.getState().currentTime;
     const result = handlePrevious(currentTime);
     if (result === 'restart') {
@@ -59,13 +62,11 @@ export const PlaybackControls = memo(({
     handleNext();
   }, [handleNext]);
 
-  // Get appropriate repeat icon
   const RepeatIcon = repeatMode === 'one' ? Repeat1 : Repeat;
   const repeatTooltip = repeatMode === 'off' ? 'Без повтора' : repeatMode === 'one' ? 'Повтор трека' : 'Повтор всех';
 
   return (
     <div className="flex items-center gap-2">
-      {/* Previous Track/Version */}
       <Tooltip>
         <TooltipTrigger asChild>
           <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.1 }}>
@@ -85,7 +86,6 @@ export const PlaybackControls = memo(({
         </TooltipContent>
       </Tooltip>
 
-      {/* Play/Pause */}
       <Tooltip>
         <TooltipTrigger asChild>
           <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.1 }}>
@@ -131,7 +131,6 @@ export const PlaybackControls = memo(({
         </TooltipContent>
       </Tooltip>
 
-      {/* Next Track/Version */}
       <Tooltip>
         <TooltipTrigger asChild>
           <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.1 }}>
@@ -151,7 +150,6 @@ export const PlaybackControls = memo(({
         </TooltipContent>
       </Tooltip>
 
-      {/* Shuffle Button */}
       <Tooltip>
         <TooltipTrigger asChild>
           <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.1 }}>
@@ -179,7 +177,6 @@ export const PlaybackControls = memo(({
         </TooltipContent>
       </Tooltip>
 
-      {/* Repeat Button */}
       <Tooltip>
         <TooltipTrigger asChild>
           <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.1 }}>
@@ -207,7 +204,6 @@ export const PlaybackControls = memo(({
         </TooltipContent>
       </Tooltip>
 
-      {/* Track Versions - Compact */}
       {hasVersions && (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -235,7 +231,7 @@ export const PlaybackControls = memo(({
                       e.stopPropagation();
                       onSwitchVersion(version.id);
                     }}
-                    className={`text-xs hover:bg-primary/10 transition-colors ${currentVersionIndex === idx ? 'bg-primary/20' : ''}`}
+                    className={`text-xs hover:bg-primary/10 transition-colors ${currentVersionId === version.id ? 'bg-primary/20' : ''}`}
                   >
                     <div className="flex items-center gap-2 w-full">
                       <span className="flex-1">

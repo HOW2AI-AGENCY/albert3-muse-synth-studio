@@ -1,4 +1,4 @@
-import { buildSunoHeaders } from "./suno.ts";
+import { buildSunoHeaders } from "./suno.utils.ts";
 
 export type SunoBalanceAttempt = {
   endpoint: string;
