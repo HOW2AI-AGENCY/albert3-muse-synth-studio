@@ -380,9 +380,18 @@ const LibraryContent: React.FC<{
 
   const handleSwitchVersion = useCallback((trackId: string) => {
     const track = tracks.find(t => t.id === trackId);
-    if (!track) return;
-    // NOTE: This is a placeholder for the actual implementation
-    logger.info("Switching version for track", 'Library', { trackId });
+    if (!track) {
+      logger.error("Track not found for version switching", new Error('Track not found'), 'Library', { trackId });
+      return;
+    }
+
+    // Open detail panel to show versions tab
+    logger.info("Opening detail panel for version switching", 'Library', { trackId, trackTitle: track.title });
+    setDetailPanelTrack(track);
+    setIsDetailPanelOpen(true);
+
+    // NOTE: The DetailPanelMobileV2 has a "Версии" tab that shows all versions
+    // Users can select versions there
   }, [tracks]);
 
   /**

@@ -92,35 +92,27 @@ const DetailPanelMobileV2Component = ({ track, open, onOpenChange, onDelete }: D
         side="bottom" 
         className="h-[95vh] p-0 flex flex-col rounded-t-3xl border-t-2 border-border/50"
       >
-        {/* ============= HEADER: Title + Actions ============= */}
+        {/* ============= HEADER: Title + Close Button ============= */}
         <SheetHeader className="p-4 border-b border-border/50 bg-gradient-to-b from-muted/30 to-transparent">
           <div className="flex items-center justify-between gap-3">
-            {/* Close button */}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => onOpenChange(false)} 
+            {/* Close button - LEFT side for safety */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onOpenChange(false)}
               className="h-10 w-10 rounded-full hover:bg-muted/50 flex-shrink-0"
               aria-label="Закрыть панель"
             >
               <X className="h-5 w-5" />
             </Button>
-            
+
             {/* Track title - centered, truncated */}
-            <SheetTitle className="text-base font-semibold truncate flex-1 text-center">
+            <SheetTitle className="text-base font-semibold truncate flex-1 text-center px-2">
               {track.title}
             </SheetTitle>
-            
-            {/* Delete button - red on hover */}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleDelete} 
-              className="h-10 w-10 rounded-full hover:bg-destructive/10 hover:text-destructive flex-shrink-0"
-              aria-label="Удалить трек"
-            >
-              <Trash2 className="h-5 w-5" />
-            </Button>
+
+            {/* Empty spacer for symmetry - delete button moved to bottom */}
+            <div className="h-10 w-10 flex-shrink-0" />
           </div>
         </SheetHeader>
 
@@ -220,7 +212,7 @@ const DetailPanelMobileV2Component = ({ track, open, onOpenChange, onDelete }: D
             <div className="p-4 pb-8">
               {/* Обзор: Статистика, промпты, технические детали */}
               <TabsContent value="overview" className="mt-0 space-y-4">
-                <OverviewContent track={track as any} />
+                <OverviewContent track={track as any} onDelete={handleDelete} />
               </TabsContent>
 
               {/* Текст песни: Структурированный просмотр + кнопка копирования */}
