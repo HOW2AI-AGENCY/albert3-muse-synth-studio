@@ -40,7 +40,7 @@ import { logger } from "@/utils/logger";
 import { getTrackWithVariants, trackVersionsQueryKeys } from "@/features/tracks/api/trackVersions";
 import { useQueryClient } from "@tanstack/react-query";
 import type { AudioPlayerTrack, DisplayTrack as DisplayTrackType } from "@/types/track.types";
-import { LibraryTrackCard } from "./LibraryTrackCard";
+import { TrackCard } from "@/features/tracks/components/TrackCard";
 
 const useResponsiveGrid = (containerWidth: number) => {
   const getColumns = () => {
@@ -95,8 +95,8 @@ const LibraryContent: React.FC = () => {
   // Debounced search for better performance
   // const debouncedSearchQuery = useDebouncedValue(filters.searchQuery, 300);
 
-  // Track loading state for individual tracks
-  const [loadingTrackId, setLoadingTrackId] = useState<string | null>(null);
+  // Track loading state for individual tracks (now handled by TrackCard internally)
+  // const [loadingTrackId, setLoadingTrackId] = useState<string | null>(null);
 
   // Container width tracking for responsive grid
   const containerRef = useRef<HTMLDivElement>(null);
@@ -145,9 +145,6 @@ const LibraryContent: React.FC = () => {
       return;
     }
 
-    const currentTrackId = track.id;
-    setLoadingTrackId(currentTrackId);
-
     try {
       const variantsData = await getTrackWithVariants(track.id);
       if (variantsData) {
@@ -192,9 +189,8 @@ const LibraryContent: React.FC = () => {
     } catch (error) {
       logger.error('Failed to load track versions', error instanceof Error ? error : new Error(`trackId: ${track.id}`));
       notify.error("Ошибка воспроизведения", "Не удалось загрузить версии трека");
-    } finally {
-      setLoadingTrackId(prev => (prev === currentTrackId ? null : prev));
     }
+    // finally removed as loadingTrackId is no longer used
   }, [filteredAndSortedTracks, mapDisplayTrackToAudio, playTrackWithQueue, notify, queryClient]);
 
   // handleLike is now handled by useTrackLike hook in TrackCard
@@ -607,24 +603,22 @@ const LibraryContent: React.FC = () => {
                     const domain = domainById.get(track.id);
                     if (!domain) return null;
                     return (
-                      <LibraryTrackCard
+                      <TrackCard
                         key={track.id}
-                        track={track}
-                        domain={domain}
-                        loadingTrackId={loadingTrackId}
-                        handleTrackPlay={handleTrackPlay}
-                        handleShare={handleShare}
-                        handleSeparateStems={handleSeparateStems}
-                        handleExtend={handleExtend}
-                        handleCover={handleCover}
-                        handleAddVocal={handleAddVocal}
-                        handleCreatePersona={handleCreatePersona}
-                        handleUpscaleAudio={handleUpscaleAudio}
-                        handleGenerateCover={handleGenerateCover}
-                        handleRetry={handleRetry}
-                        handleDelete={handleDelete}
-                        handleSwitchVersion={handleSwitchVersion}
-                        handleDescribeTrack={handleDescribeTrack}
+                        track={domain}
+                        onClick={() => handleDescribeTrack(track.id)}
+                        onShare={() => handleShare(track.id)}
+                        onRetry={handleRetry}
+                        onDelete={handleDelete}
+                        onExtend={handleExtend}
+                        onCover={handleCover}
+                        onSeparateStems={handleSeparateStems}
+                        onAddVocal={handleAddVocal}
+                        onDescribeTrack={handleDescribeTrack}
+                        onCreatePersona={handleCreatePersona}
+                        onUpscaleAudio={handleUpscaleAudio}
+                        onGenerateCover={handleGenerateCover}
+                        onSwitchVersion={() => handleSwitchVersion(track.id)}
                         enableAITools={true}
                       />
                     );
