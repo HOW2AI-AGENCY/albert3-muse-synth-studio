@@ -176,7 +176,6 @@ const TrackCardComponent = memo(({
           isCurrentTrack && 'ring-2 ring-primary shadow-glow-primary-strong border-primary/70',
           className
         )}
-        onClick={onClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -211,7 +210,7 @@ const TrackCardComponent = memo(({
           />
         </div>
 
-        <CardContent className="p-4 flex-1 flex flex-col gap-3 bg-gradient-to-b from-transparent to-card/50">
+        <CardContent className="p-4 flex-1 flex flex-col gap-3 bg-gradient-to-b from-transparent to-card/50" onClick={onClick}>
           <TrackCardInfo
             title={displayedVersion.title || track.title}
             prompt={track.prompt ?? ''}

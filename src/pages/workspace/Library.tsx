@@ -59,16 +59,25 @@ const useResponsiveGrid = (containerWidth: number) => {
   };
 };
 
-const LibraryContent: React.FC = () => {
-  const {
-    tracks,
-    isLoading,
-    refreshTracks,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    deleteTrack,
-  } = useTracks(undefined, { pageSize: 30 });
+const LibraryContent: React.FC<{
+  filters: any;
+  tracks: any[];
+  isLoading: boolean;
+  refreshTracks: () => void;
+  fetchNextPage: () => void;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  deleteTrack: (trackId: string) => void;
+}> = ({
+  filters,
+  tracks,
+  isLoading,
+  refreshTracks,
+  fetchNextPage,
+  hasNextPage,
+  isFetchingNextPage,
+  deleteTrack,
+}) => {
   const notify = useNotifications();
   const playTrackWithQueue = useAudioPlayerStore((state) => state.playTrackWithQueue);
   const currentTrack = useAudioPlayerStore((state) => state.currentTrack);
@@ -88,8 +97,6 @@ const LibraryContent: React.FC = () => {
   // Ensure userId is string or undefined, not null
   useTrackCleanup(userId ?? undefined, refreshTracks);
 
-  // ✅ OPTIMIZED: Use custom hooks to manage filters and dialogs
-  const filters = useLibraryFilters({ tracks: tracks as DisplayTrackType[] });
   const dialogs = useLibraryDialogs();
 
   // Debounced search for better performance
@@ -780,7 +787,29 @@ const LibraryContent: React.FC = () => {
 };
 
 const Library: React.FC = () => {
-  return <LibraryContent />;
+  const {
+    tracks,
+    isLoading,
+    refreshTracks,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    deleteTrack,
+  } = useTracks(undefined, { pageSize: 30 });
+  const filters = useLibraryFilters({ tracks: tracks as DisplayTrackType[] });
+
+  return (
+    <LibraryContent
+      filters={filters}
+      tracks={tracks}
+      isLoading={isLoading}
+      refreshTracks={refreshTracks}
+      fetchNextPage={fetchNextPage}
+      hasNextPage={hasNextPage}
+      isFetchingNextPage={isFetchingNextPage}
+      deleteTrack={deleteTrack}
+    />
+  );
 };
 
 export default Library;
