@@ -129,6 +129,7 @@ const Generate = () => {
                     isLoading={isLoading}
                     onRefresh={refreshTracks}
                     viewMode={state.viewMode}
+                    onTrackClick={handlers.handleTrackSelect}
                   />
                 </div>
               </div>
@@ -189,6 +190,8 @@ const Generate = () => {
                 tracks={tracks}
                 isLoading={isLoading}
                 onRefresh={refreshTracks}
+                viewMode={state.viewMode}
+                onTrackClick={handlers.handleTrackSelect}
               />
             </div>
           </div>
