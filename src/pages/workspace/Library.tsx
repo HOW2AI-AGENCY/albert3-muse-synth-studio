@@ -14,6 +14,7 @@ import {
 
 import { OptimizedTrackList } from "@/components/OptimizedTrackList";
 import { VirtualizedTrackGrid } from "@/components/tracks/VirtualizedTrackGrid";
+import { TrackRow } from "@/components/tracks/TrackRow";
 import { LibrarySkeleton } from "@/components/skeletons/LibrarySkeleton";
 import { TrackStatusMonitor } from "@/components/TrackStatusMonitor";
 import { DetailPanelMobileV2 } from "@/features/tracks/ui/DetailPanelMobileV2";
@@ -678,21 +679,98 @@ const LibraryContent: React.FC<{
             </div>
           )}
 
+          {/*
+            ============================================================
+            LIST VIEW MODE - TRACK ROWS
+            ============================================================
+            Отображение треков в виде списка (строк) с компактной информацией
+            - Использует TrackRow компонент вместо TrackCard
+            - Показывает больше треков на экране
+            - Оптимизировано для просмотра больших библиотек
+            - Поддерживает все те же действия что и grid view
+          */}
           {filters.viewMode === 'list' && (
-            <div className="w-full" style={{ height: 'calc(100vh - 280px)' }}>
-              <OptimizedTrackList
-                tracks={filteredAndSortedTracks as any}
-                onTrackPlay={handleTrackPlay}
-                onShare={handleShare}
-                onSeparateStems={handleSeparateStems}
-                onExtend={handleExtend}
-                onCover={handleCover}
-                onAddVocal={handleAddVocal}
-                onCreatePersona={handleCreatePersona}
-                onRetry={handleRetry}
-                onDelete={handleDelete}
-                onDescribeTrack={handleDescribeTrack}
-              />
+            <div className="w-full overflow-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent" style={{ height: 'calc(100vh - 280px)' }}>
+              <div className="space-y-2 p-2">
+                {filteredAndSortedTracks.map((track) => {
+                  const domain = domainById.get(track.id);
+                  if (!domain) return null;
+
+                  /**
+                   * Конвертация domain track в формат для TrackRow
+                   * TrackRow ожидает формат из suno-ui.types
+                   */
+                  const trackRowData = {
+                    id: domain.id,
+                    title: domain.title,
+                    thumbnailUrl: domain.cover_url || undefined,
+                    durationSec: domain.duration || 0,
+                    status: domain.status as any,
+                    meta: domain.prompt || '',
+                    summary: domain.style_tags?.join(', ') || '',
+                    errorMessage: domain.error_message || undefined,
+                    badges: [
+                      ...(domain.provider ? [domain.provider.toUpperCase()] : []),
+                      ...(domain.has_vocals ? ['Vocals'] : []),
+                    ],
+                    flags: {
+                      liked: false, // будет обновлено через useTrackLike в TrackRow
+                      published: domain.is_public || false,
+                    },
+                    stats: {
+                      likes: domain.like_count || 0,
+                      plays: 0,
+                      comments: 0,
+                    },
+                  };
+
+                  return (
+                    <TrackRow
+                      key={track.id}
+                      track={trackRowData}
+                      showMenu={true}
+                      showStats={true}
+                      showBadges={true}
+                      isPlaying={currentTrack?.id === track.id}
+                      onPlay={(trackId) => handleTrackPlay(domain)}
+                      onOpenInspector={() => handleDescribeTrack(track.id)}
+                      menu={{
+                        onAction: (actionId) => {
+                          // Обработка действий из меню TrackRow
+                          logger.info(`TrackRow action: ${actionId}`, 'Library', {
+                            trackId: track.id,
+                            action: actionId,
+                          });
+
+                          switch (actionId) {
+                            case 'share':
+                              handleShare(track.id);
+                              break;
+                            case 'stems':
+                              handleSeparateStems(track.id);
+                              break;
+                            case 'remix':
+                              handleExtend(track.id);
+                              break;
+                            case 'create':
+                              handleCover(track.id);
+                              break;
+                            case 'trash':
+                              handleDelete(track.id);
+                              break;
+                            case 'download':
+                              // Download будет обрабатываться через useTrackCardState
+                              break;
+                            case 'details':
+                              handleDescribeTrack(track.id);
+                              break;
+                          }
+                        },
+                      }}
+                    />
+                  );
+                })}
+              </div>
             </div>
           )}
 
