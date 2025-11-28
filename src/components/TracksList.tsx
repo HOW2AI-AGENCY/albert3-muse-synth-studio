@@ -19,15 +19,18 @@ interface TracksListProps {
   viewMode?: 'grid' | 'list';
   onRefresh?: () => void;
   isLoading?: boolean;
+  onTrackClick?: (track: Track) => void;
 }
 
 /**
  * Основной компонент списка треков
- * Отображает треки в виде сетки
+ * Отображает треки в виде сетки или списка
  */
 const TracksListComponent = ({
   tracks,
+  viewMode = 'grid',
   onRefresh,
+  onTrackClick,
 }: TracksListProps) => {
   const { deleteTrack } = useDeleteTrack();
   const { toast } = useToast();
@@ -81,6 +84,7 @@ const TracksListComponent = ({
         <TrackCard
           key={track.id}
           track={track as any}
+          onClick={() => onTrackClick?.(track)}
           onDelete={(trackId: string) => {
             const t = tracks.find(t => t.id === trackId);
             if (t) handleDelete(trackId, t.title);
@@ -109,14 +113,18 @@ const TracksListComponent = ({
         />
       );
     },
-    [handleDelete, tracks]
+    [handleDelete, tracks, onTrackClick]
   );
 
   return (
     <>
       <AnimatePresence>
         <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+          className={
+            viewMode === 'list'
+              ? 'flex flex-col gap-2'
+              : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'
+          }
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
