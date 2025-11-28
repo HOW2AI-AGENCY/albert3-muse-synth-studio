@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 interface ViewportInfo {
   width: number;
@@ -14,6 +14,10 @@ interface ViewportInfo {
  * Вынесен в отдельный файл для соответствия правилу Fast Refresh (экспорт только компонентов из файлов компонентов).
  */
 export const useViewport = () => {
+  // ✅ FIX [Memory Leak]: Использование useRef вместо глобальной переменной window.resizeTimeout
+  // WHY: Глобальная переменная создавала memory leak и race conditions между экземплярами хука
+  const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const [viewport, setViewport] = useState<ViewportInfo>({
     width: typeof window !== 'undefined' ? window.innerWidth : 1024,
     height: typeof window !== 'undefined' ? window.innerHeight : 768,
@@ -50,10 +54,11 @@ export const useViewport = () => {
     updateViewport();
 
     const handleResize = () => {
-      if (window.resizeTimeout) {
-        clearTimeout(window.resizeTimeout);
+      // ✅ FIX [Memory Leak]: Использование ref вместо window.resizeTimeout
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
       }
-      window.resizeTimeout = setTimeout(updateViewport, 100);
+      resizeTimeoutRef.current = setTimeout(updateViewport, 100);
     };
 
     const handleOrientationChange = () => setTimeout(updateViewport, 200);
@@ -64,8 +69,9 @@ export const useViewport = () => {
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleOrientationChange);
-      if (window.resizeTimeout) {
-        clearTimeout(window.resizeTimeout);
+      // ✅ FIX [Memory Leak]: Очистка timeout через ref при unmount
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
       }
     };
   }, []);
