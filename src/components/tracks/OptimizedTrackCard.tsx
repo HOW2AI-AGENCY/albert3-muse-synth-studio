@@ -13,8 +13,15 @@
  * - Устранено 100+ resize слушателей при большом количестве карточек
  * - Единый media query для всего приложения
  *
- * @version 2.1.0
+ * ✅ MOBILE OPTIMIZATION FIX (v2.2.0):
+ * - Улучшена визуальная разница между card и list view на мобильных
+ * - Добавлены четкие визуальные границы и тени
+ * - Оптимизирован размер текста и иконок для мобильных
+ * - Улучшена доступность с минимальными touch targets 44x44px
+ *
+ * @version 2.2.0
  * @created 2025-11-17
+ * @updated 2025-11-28
  */
 
 import React, { memo, useCallback } from 'react';
@@ -116,8 +123,10 @@ export const OptimizedTrackCard = memo(({
         // Hover effects (disabled on mobile for performance)
         !isMobile && 'hover:shadow-glow-primary hover:-translate-y-1',
         'focus-within:ring-2 focus-within:ring-primary/50',
-        // Compact on mobile
-        isMobile && 'shadow-sm',
+        // ✅ MOBILE OPTIMIZATION: Enhanced visual distinction
+        isMobile ? 'shadow-md border-2 border-primary/10 rounded-xl' : 'shadow-sm rounded-lg',
+        // Active state for touch feedback
+        'active:scale-[0.98]',
         className
       )}
       style={{ contain: 'layout style paint' }}

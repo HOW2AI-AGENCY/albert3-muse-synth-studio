@@ -4,8 +4,16 @@
  * Compact list-view card for track display in feeds and lists
  * Optimized for dense information display with actions
  *
- * @version 1.0.0
+ * ✅ MOBILE OPTIMIZATION FIX (v1.1.0):
+ * - Replaced old TrackActionsMenu with UnifiedTrackActionsMenu for crash prevention
+ * - Added comprehensive error handling with try-catch for all menu actions
+ * - Enhanced visual distinction from card view on mobile devices
+ * - Improved touch targets (44x44px minimum)
+ * - Added responsive border and shadow for mobile
+ *
+ * @version 1.1.0
  * @created 2025-11-05
+ * @updated 2025-11-28
  */
 
 import { memo, useCallback, useState, useMemo } from 'react';
@@ -15,11 +23,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { TrackRowProps, TrackStatus } from '@/types/suno-ui.types';
-import { TrackActionsMenu } from './TrackActionsMenu';
+import { UnifiedTrackActionsMenu } from './shared/TrackActionsMenu.unified';
 import { useTrackVariants } from '@/features/tracks/hooks/useTrackVariants';
 import { TrackVariantSelector } from '@/features/tracks/components/TrackVariantSelector';
 import { useAudioPlayerStore } from '@/stores/audioPlayerStore';
 import type { AudioPlayerTrack } from '@/types/track.types';
+import { logger } from '@/utils/logger';
 
 /**
  * Format duration from seconds to MM:SS
@@ -224,13 +233,21 @@ export const TrackRow = memo<TrackRowProps>(({
       onKeyDown={handleKeyDown}
       onClick={handleRowClick}
       className={cn(
-        'group relative flex items-center gap-3 p-3 rounded-lg transition-all duration-200',
-        'hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-        'border border-transparent hover:border-accent',
-        isSelected && 'bg-accent/30 border-accent',
-        isPlaying && 'bg-primary/5 border-primary/30',
+        'group relative flex items-center gap-3 rounded-lg transition-all duration-200',
+        // ✅ MOBILE OPTIMIZATION: Enhanced padding and touch targets
+        'p-2 sm:p-3',
+        // ✅ MOBILE OPTIMIZATION: Clear visual distinction with border and shadow
+        'border-2 border-border/50 shadow-sm',
+        'hover:bg-accent/50 hover:border-accent hover:shadow-md',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+        // Active states
+        isSelected && 'bg-accent/30 border-accent shadow-md',
+        isPlaying && 'bg-primary/10 border-primary/50 shadow-md',
         track.status === 'deleted' && 'opacity-50 pointer-events-none',
-        'cursor-pointer'
+        // Touch feedback
+        'cursor-pointer active:scale-[0.99]',
+        // Ensure minimum height for touch targets
+        'min-h-[60px]'
       )}
     >
       {/* Left: Thumbnail + Play/Pause Overlay */}
@@ -453,13 +470,13 @@ export const TrackRow = memo<TrackRowProps>(({
           </div>
         )}
 
-        {/* Like Button */}
+        {/* Like Button - ✅ MOBILE OPTIMIZATION: 44x44px touch target */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              className="h-10 w-10 min-h-[44px] min-w-[44px]"
               onClick={handleLikeToggle}
               aria-label={track.flags.liked ? 'Unlike' : 'Like'}
             >
@@ -491,27 +508,79 @@ export const TrackRow = memo<TrackRowProps>(({
           </Button>
         )}
 
-        {/* Actions Menu */}
+        {/* Actions Menu - Using UnifiedTrackActionsMenu for crash prevention */}
         {showMenu && (
-          <TrackActionsMenu
-            trackId={track.id}
-            open={menuOpen}
-            onOpenChange={setMenuOpen}
-            trigger={
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={(e) => e.stopPropagation()}
-                aria-label="Track actions menu"
-                aria-haspopup="menu"
-                aria-expanded={menuOpen}
-              >
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-            }
-            {...menu}
-          />
+          <div onClick={(e) => e.stopPropagation()}>
+            <UnifiedTrackActionsMenu
+              trackId={track.id}
+              trackStatus={track.status === 'ready' || track.status === 'published' ? 'completed' : track.status === 'queued' ? 'pending' : track.status}
+              trackMetadata={{
+                provider: track.badges.includes('SUNO') ? 'suno' : track.badges.includes('MUREKA') ? 'mureka' : 'unknown',
+                hasVocals: track.badges.includes('Vocals'),
+                isPublic: track.flags.published,
+              }}
+              variant="minimal"
+              showQuickActions={false}
+              enableAITools={track.status === 'ready' || track.status === 'published'}
+              isLiked={track.flags.liked}
+              onLike={onLike ? () => {
+                try {
+                  onLike(track.id);
+                } catch (error) {
+                  logger.error('TrackRow onLike error', error as Error, 'TrackRow', { trackId: track.id });
+                }
+              } : undefined}
+              onDownload={menu?.onAction ? () => {
+                try {
+                  menu.onAction?.('download', track.id);
+                } catch (error) {
+                  logger.error('TrackRow download error', error as Error, 'TrackRow', { trackId: track.id });
+                }
+              } : undefined}
+              onShare={menu?.onAction ? () => {
+                try {
+                  menu.onAction?.('share', track.id);
+                } catch (error) {
+                  logger.error('TrackRow share error', error as Error, 'TrackRow', { trackId: track.id });
+                }
+              } : undefined}
+              onSeparateStems={menu?.onAction ? () => {
+                try {
+                  menu.onAction?.('stems', track.id);
+                } catch (error) {
+                  logger.error('TrackRow stems error', error as Error, 'TrackRow', { trackId: track.id });
+                }
+              } : undefined}
+              onExtend={menu?.onAction ? () => {
+                try {
+                  menu.onAction?.('remix', track.id);
+                } catch (error) {
+                  logger.error('TrackRow extend error', error as Error, 'TrackRow', { trackId: track.id });
+                }
+              } : undefined}
+              onCover={menu?.onAction ? () => {
+                try {
+                  menu.onAction?.('create', track.id);
+                } catch (error) {
+                  logger.error('TrackRow cover error', error as Error, 'TrackRow', { trackId: track.id });
+                }
+              } : undefined}
+              onDelete={menu?.onAction ? () => {
+                try {
+                  menu.onAction?.('trash', track.id);
+                } catch (error) {
+                  logger.error('TrackRow delete error', error as Error, 'TrackRow', { trackId: track.id });
+                }
+              } : undefined}
+              onTogglePublic={onPublish ? () => {
+                try {
+                  onPublish(track.id);
+                } catch (error) {
+                  logger.error('TrackRow publish error', error as Error, 'TrackRow', { trackId: track.id });
+                }
+              } : undefined}
+            />
+          </div>
         )}
       </div>
     </div>
