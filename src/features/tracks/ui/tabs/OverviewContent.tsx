@@ -79,7 +79,7 @@ export const OverviewContent = ({ track, onDelete }: OverviewContentProps) => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
-            {Object.entries(track.metadata).map(([key, value]) => {
+            {track.metadata && Object.entries(track.metadata).map(([key, value]) => {
               // Format value based on type
               let displayValue: string;
 

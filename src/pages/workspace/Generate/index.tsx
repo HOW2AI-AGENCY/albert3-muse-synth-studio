@@ -7,7 +7,6 @@ import { MusicGeneratorV2 } from "@/components/MusicGeneratorV2";
 import { TracksList } from "@/components/TracksList";
 const DetailPanel = lazy(() => import("@/features/tracks/ui/DetailPanel").then(m => ({ default: m.DetailPanel })));
 import { useBreakpoints } from "@/hooks/useBreakpoints";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { VisuallyHidden } from "@/components/ui/visually-hidden";
 import {

@@ -82,7 +82,7 @@ export const TrackRow = memo<TrackRowProps>(({
   ariaLabel,
   ariaSelected,
 }) => {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [_isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedVersionIndex, setSelectedVersionIndex] = useState(0);
 
   // ✅ Audio player integration
@@ -218,7 +218,7 @@ export const TrackRow = memo<TrackRowProps>(({
       case 'm':
       case 'M':
         e.preventDefault();
-        setMenuOpen(true);
+        setIsMenuOpen(true);
         break;
       case 'l':
       case 'L':
