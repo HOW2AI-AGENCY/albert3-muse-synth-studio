@@ -179,9 +179,9 @@ const LibraryContent: React.FC<{
         const preferredOrMain = variantsData.preferredVariant || variantsData.mainTrack;
         const startTrack = audioTracks.find(t => t.id === preferredOrMain.id);
         const remainingTracks = filteredAndSortedTracks
-          .filter(t => t.id !== track.id && t.audio_url)
-          .map(displayTrack => mapDisplayTrackToAudio(displayTrack as DisplayTrackType))
-          .filter((audioTrack): audioTrack is NonNullable<typeof audioTrack> => audioTrack !== null);
+          .filter((t: DisplayTrackType) => t.id !== track.id && t.audio_url)
+          .map((displayTrack: DisplayTrackType) => mapDisplayTrackToAudio(displayTrack))
+          .filter((audioTrack: AudioPlayerTrack | null): audioTrack is AudioPlayerTrack => audioTrack !== null);
 
         if (startTrack) {
           playTrackWithQueue(startTrack, [...audioTracks, ...remainingTracks]);
@@ -192,9 +192,9 @@ const LibraryContent: React.FC<{
       const fallbackAudio = mapDisplayTrackToAudio(track);
       if (fallbackAudio) {
         const remainingTracks = filteredAndSortedTracks
-          .filter(t => t.id !== track.id && t.audio_url)
-          .map(displayTrack => mapDisplayTrackToAudio(displayTrack as DisplayTrackType))
-          .filter((audioTrack): audioTrack is NonNullable<typeof audioTrack> => audioTrack !== null);
+          .filter((t: DisplayTrackType) => t.id !== track.id && t.audio_url)
+          .map((displayTrack: DisplayTrackType) => mapDisplayTrackToAudio(displayTrack))
+          .filter((audioTrack: AudioPlayerTrack | null): audioTrack is AudioPlayerTrack => audioTrack !== null);
         playTrackWithQueue(fallbackAudio, [fallbackAudio, ...remainingTracks] as AudioPlayerTrack[]);
         return;
       }
@@ -250,7 +250,7 @@ const LibraryContent: React.FC<{
   
   // Prefetch adjacent tracks
   usePrefetchTracks(
-    filteredAndSortedTracks.map(t => t as DisplayTrackType),
+    filteredAndSortedTracks.map((t: DisplayTrackType) => t),
     currentTrack?.id ?? null,
     { enabled: true, prefetchCount: 3 }
   );
@@ -566,7 +566,7 @@ const LibraryContent: React.FC<{
               aria-label="Фильтр по статусу"
             >
               <option value="all">Все статусы</option>
-              {filters.availableStatuses.map(status => (
+              {filters.availableStatuses.map((status: { value: string; label: string }) => (
                 <option key={status.value} value={status.value}>
                   {status.label}
                 </option>
@@ -649,7 +649,7 @@ const LibraryContent: React.FC<{
                       gridClass
                     )}
                   >
-                  {filteredAndSortedTracks.map((track) => {
+                  {filteredAndSortedTracks.map((track: DisplayTrackType) => {
                     const domain = domainById.get(track.id);
                     if (!domain) return null;
                     return (
@@ -692,7 +692,7 @@ const LibraryContent: React.FC<{
           {filters.viewMode === 'list' && (
             <div className="w-full overflow-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent" style={{ height: 'calc(100vh - 280px)' }}>
               <div className="space-y-2 p-2">
-                {filteredAndSortedTracks.map((track) => {
+                {filteredAndSortedTracks.map((track: DisplayTrackType) => {
                   const domain = domainById.get(track.id);
                   if (!domain) return null;
 
@@ -732,9 +732,10 @@ const LibraryContent: React.FC<{
                       showStats={true}
                       showBadges={true}
                       isPlaying={currentTrack?.id === track.id}
-                      onPlay={(trackId) => handleTrackPlay(domain)}
+                      onPlay={(_trackId: string) => handleTrackPlay(domain)}
                       onOpenInspector={() => handleDescribeTrack(track.id)}
                       menu={{
+                        trackId: track.id,
                         onAction: (actionId) => {
                           // Обработка действий из меню TrackRow
                           logger.info(`TrackRow action: ${actionId}`, 'Library', {
