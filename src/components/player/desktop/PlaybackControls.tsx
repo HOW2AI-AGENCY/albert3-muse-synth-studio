@@ -23,11 +23,17 @@ interface Version {
   isMasterVersion?: boolean;
 }
 
+import { Loader2, AlertCircle } from 'lucide-react';
+
+// ... (imports)
+
 interface PlaybackControlsProps {
   isPlaying: boolean;
   hasVersions: boolean;
   availableVersions: Version[];
   currentVersionIndex: number;
+  isLoadingVersions: boolean;
+  versionsError: string | null;
   onTogglePlayPause: () => void;
   onSwitchVersion: (versionId: string) => void;
 }
@@ -37,6 +43,8 @@ export const PlaybackControls = memo(({
   hasVersions,
   availableVersions,
   currentVersionIndex,
+  isLoadingVersions,
+  versionsError,
   onTogglePlayPause,
   onSwitchVersion,
 }: PlaybackControlsProps) => {
@@ -208,7 +216,35 @@ export const PlaybackControls = memo(({
       </Tooltip>
 
       {/* Track Versions - Compact */}
-      {hasVersions && (
+      {isLoadingVersions ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled
+              className="relative touch-target-min sm:h-6 sm:w-6"
+            >
+              <Loader2 className="h-3 w-3 animate-spin" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Загрузка версий...</TooltipContent>
+        </Tooltip>
+      ) : versionsError ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled
+              className="relative touch-target-min sm:h-6 sm:w-6"
+            >
+              <AlertCircle className="h-3 w-3 text-destructive" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{versionsError}</TooltipContent>
+        </Tooltip>
+      ) : hasVersions && (
         <Tooltip>
           <TooltipTrigger asChild>
             <DropdownMenu>
