@@ -20,6 +20,10 @@ interface FullScreenPlayerDesktopProps {
 
 export const FullScreenPlayerDesktop = memo(({ onMinimize }: FullScreenPlayerDesktopProps) => {
   const currentTrack = useCurrentTrack();
+  
+  // ✅ CRITICAL FIX: Early return BEFORE hooks to prevent crash
+  if (!currentTrack) return null;
+
   const isPlaying = useIsPlaying();
   const volume = useVolume();
 
@@ -52,10 +56,8 @@ export const FullScreenPlayerDesktop = memo(({ onMinimize }: FullScreenPlayerDes
     setIsMuted(volume === 0);
   }, [volume]);
 
-  const { isLiked, toggleLike } = useTrackLike(
-    currentTrack?.id ?? "", 
-    0
-  );
+  // ✅ CRITICAL FIX: Safe hook call with currentTrack.id (guaranteed non-null)
+  const { isLiked, toggleLike } = useTrackLike(currentTrack.id, 0);
 
   const handleVolumeChange = useCallback((value: number[]) => {
     if (isMountedRef.current) {
@@ -128,8 +130,6 @@ export const FullScreenPlayerDesktop = memo(({ onMinimize }: FullScreenPlayerDes
     decreaseVolume,
     toggleMute,
   });
-
-  if (!currentTrack) return null;
 
   const hasVersions = availableVersions.length > 1;
 
