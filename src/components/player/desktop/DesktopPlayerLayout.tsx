@@ -28,8 +28,14 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
 
   const isPlaying = useIsPlaying();
   const volume = useVolume();
-  const availableVersions = useAudioPlayerStore((state) => state.availableVersions);
-  const currentVersionIndex = useAudioPlayerStore((state) => state.currentVersionIndex);
+  const { availableVersions, currentVersionIndex, isLoadingVersions, versionsError } = useAudioPlayerStore(
+    (state) => ({
+      availableVersions: state.availableVersions,
+      currentVersionIndex: state.currentVersionIndex,
+      isLoadingVersions: state.isLoadingVersions,
+      versionsError: state.versionsError,
+    })
+  );
 
   const togglePlayPause = useAudioPlayerStore((state) => state.togglePlayPause);
   const seekTo = useAudioPlayerStore((state) => state.seekTo);
@@ -236,11 +242,13 @@ export const DesktopPlayerLayout = memo(({ track }: DesktopPlayerLayoutProps) =>
           </div>
 
           <div className="flex items-center justify-between gap-2">
-            <PlaybackControls 
+            <PlaybackControls
               isPlaying={isPlaying}
               hasVersions={hasVersions}
               availableVersions={availableVersions}
               currentVersionIndex={currentVersionIndex}
+              isLoadingVersions={isLoadingVersions}
+              versionsError={versionsError}
               onTogglePlayPause={togglePlayPause}
               onSwitchVersion={switchToVersion}
             />

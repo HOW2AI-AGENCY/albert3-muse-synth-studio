@@ -85,6 +85,8 @@ interface AudioPlayerState {
   // Version management
   availableVersions: TrackVersion[];
   currentVersionIndex: number;
+  isLoadingVersions: boolean;
+  versionsError: string | null;
 
   // ✅ FIX: Request cancellation
   _loadVersionsAbortController: AbortController | null;
@@ -172,6 +174,8 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
       shuffleHistory: [],
       availableVersions: [],
       currentVersionIndex: -1,
+      isLoadingVersions: false,
+      versionsError: null,
       _loadVersionsAbortController: null,
       _playTrackRequestId: 0,
 
@@ -640,7 +644,11 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             state._loadVersionsAbortController.abort();
           }
           const abortController = new AbortController();
-          set({ _loadVersionsAbortController: abortController });
+          set({
+            _loadVersionsAbortController: abortController,
+            isLoadingVersions: true,
+            versionsError: null
+          });
 
           try {
             const { data: versionCheck } = await supabase
@@ -659,11 +667,18 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
             const currentState = get();
             const currentTrackParentId = currentState.currentTrack?.parentTrackId || currentState.currentTrack?.id;
             if (currentTrackParentId !== parentId) {
+              set({ isLoadingVersions: false });
               return;
             }
 
             if (!variantsData) {
-              set({ availableVersions: [], currentVersionIndex: -1, _loadVersionsAbortController: null });
+              set({
+                availableVersions: [],
+                currentVersionIndex: -1,
+                _loadVersionsAbortController: null,
+                isLoadingVersions: false,
+                versionsError: 'Track not found or has no versions.'
+              });
               return;
             }
 
@@ -716,14 +731,24 @@ export const useAudioPlayerStore = create<AudioPlayerState>()(
               currentTrack: newCurrentTrack,
               availableVersions: versions,
               currentVersionIndex,
+              isLoadingVersions: false,
+              versionsError: null,
               _loadVersionsAbortController: null,
             });
           } catch (error) {
             if (error instanceof Error && error.name === 'AbortError') {
+              set({ isLoadingVersions: false });
               return;
             }
+            const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
             logError('Failed to fetch versions from API', error as Error, 'audioPlayerStore', { trackId });
-            set({ availableVersions: [], currentVersionIndex: -1, _loadVersionsAbortController: null });
+            set({
+              availableVersions: [],
+              currentVersionIndex: -1,
+              _loadVersionsAbortController: null,
+              isLoadingVersions: false,
+              versionsError: errorMessage,
+            });
           }
         },
     }),
