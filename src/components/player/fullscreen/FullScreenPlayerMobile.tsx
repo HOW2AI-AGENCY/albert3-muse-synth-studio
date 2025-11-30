@@ -35,7 +35,11 @@ interface FullScreenPlayerMobileProps {
 
 const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileProps) => {
   const currentTrack = useCurrentTrack();
-  const { data: fullTrack, isLoading } = useTrackQuery(currentTrack?.id || null);
+  
+  // ✅ CRITICAL FIX: Early return BEFORE hooks to prevent crash
+  if (!currentTrack) return null;
+
+  const { data: fullTrack, isLoading } = useTrackQuery(currentTrack.id);
 
   /**
    * ✅ FIX #9: Version switching support for mobile player
@@ -48,8 +52,6 @@ const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileP
   const swipeRef = useSwipeGesture({
     onSwipeDown: onMinimize,
   });
-
-  if (!currentTrack) return null;
 
   const displayTrack = fullTrack || currentTrack;
 
@@ -105,7 +107,8 @@ const FullScreenPlayerMobileComponent = ({ onMinimize }: FullScreenPlayerMobileP
                   <DropdownMenuItem
                     key={version.id || index}
                     onClick={() => {
-                      switchToVersion(String(index));
+                      // ✅ CRITICAL FIX: Pass version.id instead of index
+                      switchToVersion(version.id);
                       setIsMenuOpen(false);
                     }}
                     className="flex items-center justify-between"
