@@ -87,7 +87,7 @@
     "jszip": "^3.10.1",
     "lint-staged": "^16.2.6",
     "lucide-react": "^0.545.0",
-    "next-themes": "^0.3.0",
+    "next-themes": "^0.4.6",
     "react": "^18.3.1",
     "react-autosuggest": "^10.1.0",
     "react-day-picker": "^9.11.1",
