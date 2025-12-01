@@ -10,6 +10,8 @@ import router from "./router";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { TelegramAuthProvider } from "@/contexts/TelegramAuthProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
+// TEST_MODE: Условный импорт мок-провайдера для E2E-тестов
+import { MockAuthProvider } from "@/contexts/MockAuthContext";
 import { LanguageProvider } from "@/i18n";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { toast } from "@/hooks/use-toast";
@@ -115,35 +117,59 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
         <LanguageProvider>
           <TelegramAuthProvider>
-            <AuthProvider>
-              <SubscriptionProvider>
-                <TooltipProvider delayDuration={200}>
-                  <AppLayout>
-                    <Profiler id="AppLayout" onRender={(id, phase, actualDuration) => {
-                      // Записываем метрику рендера компонента через PerformanceMonitor и Sentry
-                      recordPerformanceMetric('rendering', actualDuration, 'ReactProfiler', { id, phase });
-                      if (actualDuration > 1000) {
-                        // 1s+ рендер считаем потенциально проблемным
-                        trackPerformanceMetric('component_render', actualDuration, { component: id, phase });
-                      }
-                    }}>
-                      <Toaster />
-                      <RouterProvider router={router} />
-                      {/* ✅ Lazy load heavy components outside of the main Suspense block */}
-                      <Suspense fallback={null}>
-                        {/* ✅ FIX #8: Wrap player in PlayerErrorBoundary to prevent fullscreen crashes */}
-                        <PlayerErrorBoundary>
-                          <LazyGlobalAudioPlayer />
-                        </PlayerErrorBoundary>
-                        {import.meta.env.DEV && !isMobile && (
+            {import.meta.env.VITE_TEST_MODE === 'true' ? (
+              <MockAuthProvider>
+                <SubscriptionProvider>
+                  <TooltipProvider delayDuration={200}>
+                    <AppLayout>
+                      <Profiler id="AppLayout" onRender={(id, phase, actualDuration) => {
+                        recordPerformanceMetric('rendering', actualDuration, 'ReactProfiler', { id, phase });
+                        if (actualDuration > 1000) {
+                          trackPerformanceMetric('component_render', actualDuration, { component: id, phase });
+                        }
+                      }}>
+                        <Toaster />
+                        <RouterProvider router={router} />
+                        <Suspense fallback={null}>
+                          <PlayerErrorBoundary>
+                            <LazyGlobalAudioPlayer />
+                          </PlayerErrorBoundary>
+                          {import.meta.env.DEV && !isMobile && (
                             <LazyPerformanceMonitorWidget />
-                        )}
-                      </Suspense>
-                    </Profiler>
-                  </AppLayout>
-                </TooltipProvider>
-              </SubscriptionProvider>
-            </AuthProvider>
+                          )}
+                        </Suspense>
+                      </Profiler>
+                    </AppLayout>
+                  </TooltipProvider>
+                </SubscriptionProvider>
+              </MockAuthProvider>
+            ) : (
+              <AuthProvider>
+                <SubscriptionProvider>
+                  <TooltipProvider delayDuration={200}>
+                    <AppLayout>
+                      <Profiler id="AppLayout" onRender={(id, phase, actualDuration) => {
+                        recordPerformanceMetric('rendering', actualDuration, 'ReactProfiler', { id, phase });
+                        if (actualDuration > 1000) {
+                          trackPerformanceMetric('component_render', actualDuration, { component: id, phase });
+                        }
+                      }}>
+                        <Toaster />
+                        <RouterProvider router={router} />
+                        <Suspense fallback={null}>
+                          <PlayerErrorBoundary>
+                            <LazyGlobalAudioPlayer />
+                          </PlayerErrorBoundary>
+                          {import.meta.env.DEV && !isMobile && (
+                            <LazyPerformanceMonitorWidget />
+                          )}
+                        </Suspense>
+                      </Profiler>
+                    </AppLayout>
+                  </TooltipProvider>
+                </SubscriptionProvider>
+              </AuthProvider>
+            )}
           </TelegramAuthProvider>
         </LanguageProvider>
       </QueryClientProvider>
