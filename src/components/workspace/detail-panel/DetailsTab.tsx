@@ -1,30 +1,66 @@
-import { Trash2, ExternalLink } from "@/utils/iconImports";
+import { Trash2, ExternalLink, Loader2 } from "@/utils/iconImports";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StructuredLyrics } from "@/components/lyrics/legacy/StructuredLyrics";
 import type { Track } from "./types";
+import { useTimestampedLyrics } from "@/hooks/useTimestampedLyrics";
 
 interface DetailsTabProps {
     track: Track;
     onDelete: () => void;
 }
 
+const LyricsDisplay = ({ track }: { track: Track }) => {
+    if (track.lyrics) {
+        return <StructuredLyrics lyrics={track.lyrics} />;
+    }
+
+    const { data: lyricsData, isLoading, isError } = useTimestampedLyrics({
+        taskId: track.suno_task_id || track.mureka_task_id,
+        audioId: track.suno_id,
+        enabled: !track.lyrics,
+    });
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center p-4 text-muted-foreground">
+                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                <span>Загрузка текста...</span>
+            </div>
+        );
+    }
+
+    if (isError || !lyricsData?.text) {
+        return (
+            <div className="text-sm text-muted-foreground p-4 text-center">
+                Сгенерированный текст для этого трека недоступен.
+            </div>
+        );
+    }
+
+    return <StructuredLyrics lyrics={lyricsData.text} />;
+};
+
 export const DetailsTab = ({
     track,
     onDelete
 }: DetailsTabProps) => {
+    const lyricsPotentiallyAvailable = track.lyrics || track.suno_id || track.suno_task_id || track.mureka_task_id;
+
     return (
         <>
-            {track.lyrics && <Card className="bg-[var(--card-primary-bg)] border-[var(--card-primary-border)] shadow-[var(--card-primary-shadow)]">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Текст песни</CardTitle>
-                  <CardDescription>Структурированный вывод секций и текста</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <StructuredLyrics lyrics={track.lyrics} />
-                </CardContent>
-              </Card>}
+            {lyricsPotentiallyAvailable && (
+              <Card className="bg-[var(--card-primary-bg)] border-[var(--card-primary-border)] shadow-[var(--card-primary-shadow)]">
+                  <CardHeader className="pb-3">
+                      <CardTitle className="text-lg">Текст песни</CardTitle>
+                      <CardDescription>Структурированный вывод секций и текста</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                      <LyricsDisplay track={track} />
+                  </CardContent>
+              </Card>
+            )}
 
             <Card className="bg-[var(--card-tertiary-bg)] border-[var(--card-tertiary-border)]">
               <CardHeader className="pb-3">
